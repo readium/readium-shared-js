@@ -16,30 +16,20 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+//This is demo file that does nothing
+//Host application has to override this file and provide it's own logic for handling ReadiumSDK events
+//See LauncherOSX and LauncherIOS for examples
+ReadiumSDK.HostAppFeedback = function() {
 
-/**
- * Top level ReadiumSDK namespace
- * @class ReadiumSDK
- * @static
- */
-ReadiumSDK = {
+    ReadiumSDK.on("ReaderInitialized", function(){
+        ReadiumSDK.reader.on("PaginationChanged", this.onPaginationChanged, this);
+    }, this);
 
-    /**
-     Current version of the JS SDK
-     @method version
-     @static
-     @return {string} version
-     */
-    version: function() {
-        return "0.5.1";
-    },
+    this.onPaginationChanged = function(paginationInfo) {
 
-    Models : {},
-    Views : {},
-    Collections: {},
-    Routers: {},
-    Helpers: {}
+        console.log("Pagination Chenged!");
 
-};
+    };
 
-_.extend(ReadiumSDK, Backbone.Events);
+}();
+

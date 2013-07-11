@@ -55,9 +55,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
         this.currentView.on("ViewPaginationChanged", function(){
 
             var paginationReportData = self.currentView.getPaginationInfo();
-
-            window.postMessage({id:"ReadiumSDK.PaginationChanged", args: paginationReportData}, "*");
-
+            self.trigger("PaginationChanged", paginationReportData);
 
         });
 
