@@ -68,6 +68,14 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
         Backbone.View.prototype.remove.call(this);
     },
 
+    updateSettings: function(settings) {
+
+        if(settings.isSyntheticSpread !== undefined && this.spread.isSyntheticSpread != settings.isSyntheticSpread) {
+            this.spread.setSyntheticSpread(settings.isSyntheticSpread);
+            this.redraw();
+        }
+    },
+
     redraw: function() {
 
         var self = this;

@@ -27,6 +27,13 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
     currentView: undefined,
     package: undefined,
     spine: undefined,
+    viewerSettings:undefined,
+
+    initialize: function() {
+
+        this.viewerSettings = new ReadiumSDK.Models.ViewerSettings(true, 20, 20);
+
+    },
 
     renderCurrentView: function(isReflowable) {
 
@@ -48,6 +55,8 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
             this.currentView = new ReadiumSDK.Views.FixedView({spine:this.spine});
         }
+
+        this.currentView.updateSettings(this.viewerSettings);
 
         this.$el.append(this.currentView.render().$el);
 
@@ -149,6 +158,31 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
             this.openPagePrev();
         }
 
+    },
+
+    /**
+     * Updates reader view based on the settings specified in settingsData object
+     * @param settingsData
+     */
+    updateSettings: function(settingsData) {
+
+        console.log("UpdateSettings: " + JSON.stringify(settingsData));
+
+        if(settingsData.isSyntheticSpread !== undefined) {
+            this.viewerSettings.isSyntheticSpread = settingsData.isSyntheticSpread;
+        }
+
+        if(settingsData.columnGap !== undefined) {
+            this.viewerSettings.columnGap = settingsData.columnGap;
+        }
+
+        if(settingsData.fontSize !== undefined) {
+            this.viewerSettings.fontSize = settingsData.fontSize;
+        }
+
+        if(this.currentView) {
+            this.currentView.updateSettings(this.viewerSettings);
+        }
     },
 
     /**
