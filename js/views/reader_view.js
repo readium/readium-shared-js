@@ -56,7 +56,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
             this.currentView = new ReadiumSDK.Views.FixedView({spine:this.spine});
         }
 
-        this.currentView.updateSettings(this.viewerSettings);
+        this.currentView.setViewSettings(this.viewerSettings);
 
         this.$el.append(this.currentView.render().$el);
 
@@ -168,20 +168,32 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
         console.log("UpdateSettings: " + JSON.stringify(settingsData));
 
-        if(settingsData.isSyntheticSpread !== undefined) {
+        var newSetting = false;
+
+        if(settingsData.isSyntheticSpread !== undefined && this.viewerSettings.isSyntheticSpread != settingsData.isSyntheticSpread) {
             this.viewerSettings.isSyntheticSpread = settingsData.isSyntheticSpread;
+            newSetting = true;
         }
 
-        if(settingsData.columnGap !== undefined) {
+        if(settingsData.columnGap !== undefined && this.viewerSettings.columnGap != settingsData.columnGap) {
             this.viewerSettings.columnGap = settingsData.columnGap;
+            newSetting = true;
         }
 
-        if(settingsData.fontSize !== undefined) {
+        if(settingsData.fontSize !== undefined && this.viewerSettings.fontSize != settingsData.fontSize) {
             this.viewerSettings.fontSize = settingsData.fontSize;
+            newSetting = true;
         }
 
-        if(this.currentView) {
-            this.currentView.updateSettings(this.viewerSettings);
+        if(newSetting && this.currentView) {
+
+            var bookMark = this.currentView.bookmarkCurrentPage();
+
+            this.currentView.setViewSettings(this.viewerSettings);
+
+            if(bookMark) {
+                this.openSpineItemElementCfi(bookMark.idref, bookMark.elementCfi);
+            }
         }
     },
 

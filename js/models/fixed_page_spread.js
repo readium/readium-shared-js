@@ -33,20 +33,7 @@ ReadiumSDK.Models.Spread = function(spine) {
     this.isSyntheticSpread = true;
 
     this.setSyntheticSpread = function(isSyntheticSpread) {
-
-        if(this.isSyntheticSpread == isSyntheticSpread) {
-            return;
-        }
-
-        var visibleItems = this.validItems();
-        if(visibleItems.length == 0) {
-            return;
-        }
-
-        var itemToShow = visibleItems[0];
-
         this.isSyntheticSpread = isSyntheticSpread;
-        this.openItem(itemToShow);
     };
 
     this.openFirst = function() {
@@ -90,6 +77,11 @@ ReadiumSDK.Models.Spread = function(spine) {
     };
 
     this.setItem = function(item) {
+
+        if(!this.isSyntheticSpread) {
+            this.centerItem = item;
+            return;
+        }
 
         if(item.isLeftPage()) {
             this.leftItem = item;

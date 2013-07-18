@@ -68,12 +68,8 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
         Backbone.View.prototype.remove.call(this);
     },
 
-    updateSettings: function(settings) {
-
-        if(settings.isSyntheticSpread !== undefined && this.spread.isSyntheticSpread != settings.isSyntheticSpread) {
-            this.spread.setSyntheticSpread(settings.isSyntheticSpread);
-            this.redraw();
-        }
+    setViewSettings: function(settings) {
+        this.spread.setSyntheticSpread(settings.isSyntheticSpread);
     },
 
     redraw: function() {
@@ -215,6 +211,5 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
 
         return new ReadiumSDK.Models.BookmarkData("", "");
     }
-
 
 });

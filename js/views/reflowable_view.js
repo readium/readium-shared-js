@@ -90,30 +90,12 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
 
     },
 
-    updateSettings: function(settings) {
+    setViewSettings: function(settings) {
 
-        var isChanged = false;
+        this.paginationInfo.visibleColumnCount = settings.isSyntheticSpread ? 2 : 1;
+        this.paginationInfo.pageGap = settings.pageGap;
 
-        if(settings.isSyntheticSpread !== undefined) {
-
-            var expectedColumnCount = settings.isSyntheticSpread ? 2 : 1;
-
-            if(this.paginationInfo.visibleColumnCount != expectedColumnCount) {
-                this.paginationInfo.visibleColumnCount = expectedColumnCount;
-                isChanged = true;
-            }
-        }
-
-        if(settings.pageGap !== undefined && this.paginationInfo.columnGap != settings.pageGap) {
-            this.paginationInfo.pageGap = settings.pageGap;
-            isChanged = true;
-        }
-
-        //TODO: implement font size support
-
-        if(isChanged) {
-            this.updatePagination();
-        }
+        this.updatePagination();
     },
 
     registerTriggers: function (doc) {
