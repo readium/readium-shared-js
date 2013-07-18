@@ -15,10 +15,26 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-ReadiumSDK.Models.ViewerSettings = function(isSyntheticSpread, fontSize, columnGap) {
+ReadiumSDK.Models.ViewerSettings = function(settingsData) {
 
-    this.isSyntheticSpread = isSyntheticSpread;
-    this.fontSize = fontSize;
-    this.columnGap = columnGap;
+    this.isSyntheticSpread = true;
+    this.fontSize = 100;
+    this.columnGap = 20;
 
+    this.update = function(settingsData) {
+
+        if(settingsData.isSyntheticSpread !== undefined) {
+            this.isSyntheticSpread = settingsData.isSyntheticSpread;
+        }
+
+        if(settingsData.columnGap !== undefined) {
+            this.columnGap = settingsData.columnGap;
+        }
+
+        if(settingsData.fontSize !== undefined) {
+            this.fontSize = settingsData.fontSize;
+        }
+    };
+
+    this.update(settingsData);
 };

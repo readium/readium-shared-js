@@ -168,24 +168,9 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
         console.log("UpdateSettings: " + JSON.stringify(settingsData));
 
-        var newSetting = false;
+        this.viewerSettings.update(settingsData);
 
-        if(settingsData.isSyntheticSpread !== undefined && this.viewerSettings.isSyntheticSpread != settingsData.isSyntheticSpread) {
-            this.viewerSettings.isSyntheticSpread = settingsData.isSyntheticSpread;
-            newSetting = true;
-        }
-
-        if(settingsData.columnGap !== undefined && this.viewerSettings.columnGap != settingsData.columnGap) {
-            this.viewerSettings.columnGap = settingsData.columnGap;
-            newSetting = true;
-        }
-
-        if(settingsData.fontSize !== undefined && this.viewerSettings.fontSize != settingsData.fontSize) {
-            this.viewerSettings.fontSize = settingsData.fontSize;
-            newSetting = true;
-        }
-
-        if(newSetting && this.currentView) {
+        if(this.currentView) {
 
             var bookMark = this.currentView.bookmarkCurrentPage();
 

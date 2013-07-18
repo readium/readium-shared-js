@@ -29,6 +29,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
     isWaitingFrameRender: false,
     deferredPageRequest: undefined,
     spine: undefined,
+    fontSize:100,
 
     lastViewPortSize : {
         width: undefined,
@@ -94,6 +95,8 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
 
         this.paginationInfo.visibleColumnCount = settings.isSyntheticSpread ? 2 : 1;
         this.paginationInfo.pageGap = settings.pageGap;
+        this.fontSize = settings.fontSize;
+        this.updateHtmlFontSize();
 
         this.updatePagination();
     },
@@ -119,6 +122,13 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         }
     },
 
+    updateHtmlFontSize: function() {
+
+        if(this.$epubHtml) {
+            this.$epubHtml.css("font-size", this.fontSize + "%");
+        }
+    },
+
     onIFrameLoad : function(success) {
 
         this.isWaitingFrameRender = false;
@@ -141,6 +151,8 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         this.$epubHtml.css("position", "absolute");
         this.$epubHtml.css("-webkit-column-axis", "horizontal");
         this.$epubHtml.css("-webkit-column-gap", this.paginationInfo.columnGap + "px");
+        this.updateHtmlFontSize();
+
 
 /////////
 //Columns Debugging
