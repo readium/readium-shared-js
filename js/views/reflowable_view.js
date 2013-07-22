@@ -50,14 +50,13 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
     initialize: function() {
 
         this.spine = this.options.spine;
-        this.template = _.template($("#template-reflowable-view").html());
     },
 
     render: function(){
 
-        this.$el.html(this.template({}));
+        this.template = _.template($("#template-reflowable-view").html(), {});
+        this.setElement(this.template);
 
-        this.$viewport = $("#viewport_reflowable", this.$el);
         this.$iframe = $("#epubContentIframe", this.$el);
 
         this.$iframe.css("left", "");
@@ -196,7 +195,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         }
 
         var pageIndex = undefined;
-        var navigation = new ReadiumSDK.Views.CfiNavigationLogic(this.$viewport, this.$iframe);
+        var navigation = new ReadiumSDK.Views.CfiNavigationLogic(this.$el, this.$iframe);
 
         if(pageRequest.spineItemPageIndex !== undefined) {
             pageIndex = pageRequest.spineItemPageIndex;
@@ -231,8 +230,8 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
 
     updateViewportSize: function() {
 
-        var newWidth = this.$viewport.width();
-        var newHeight = this.$viewport.height();
+        var newWidth = this.$el.width();
+        var newHeight = this.$el.height();
 
         if(this.lastViewPortSize.width !== newWidth || this.lastViewPortSize.height !== newHeight){
 
@@ -405,9 +404,9 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
     getFirstVisibleElementCfi: function(){
 
         var columnsLeftOfViewport = Math.round(this.paginationInfo.pageOffset / (this.paginationInfo.columnWidth + this.paginationInfo.columnGap));
-        var topOffset = columnsLeftOfViewport * this.$viewport.height();
+        var topOffset = columnsLeftOfViewport * this.$el.height();
 
-        var navigation = new ReadiumSDK.Views.CfiNavigationLogic(this.$viewport, this.$iframe);
+        var navigation = new ReadiumSDK.Views.CfiNavigationLogic(this.$el, this.$iframe);
         return navigation.getFirstVisibleElementCfi(topOffset);
     },
 

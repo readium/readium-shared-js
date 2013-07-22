@@ -23,7 +23,6 @@
  * */
 ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
-    el: 'body',
     currentView: undefined,
     package: undefined,
     spine: undefined,
@@ -31,7 +30,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
     initialize: function() {
 
-        this.viewerSettings = new ReadiumSDK.Models.ViewerSettings(true, 20, 20);
+        this.viewerSettings = new ReadiumSDK.Models.ViewerSettings({});
 
     },
 
