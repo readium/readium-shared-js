@@ -25,6 +25,7 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
 
     currentSpineItem: undefined,
     spine: undefined,
+    contentAlignment: undefined, //expected 'center' 'left' 'right'
 
     meta_size : {
         width: 0,
@@ -35,6 +36,7 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
     initialize: function() {
 
         this.spine = this.options.spine;
+        this.contentAlignment = this.options.contentAlignment;
 
     },
 
@@ -100,8 +102,21 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
         var newWidth = this.meta_size.width * scale;
         var newHeight = this.meta_size.height * scale;
 
-        var left = Math.floor((containerWidth - newWidth) / 2);
         var top = Math.floor((containerHeight - newHeight) / 2);
+
+        var left;
+        if(this.contentAlignment == "left") {
+            left = 0;
+        }
+        else if(this.contentAlignment == "right") {
+            left = containerWidth - newWidth;
+        }
+        else { //center
+            left = Math.floor((containerWidth - newWidth) / 2);
+        }
+
+        if(top < 0) top = 0;
+        if(left < 0) left = 0;
 
         var css = this.generateTransformCSS(left, top, scale);
         css["width"] = this.meta_size.width;

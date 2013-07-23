@@ -35,9 +35,9 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
         this.spine = this.options.spine;
         this.spread = new ReadiumSDK.Models.Spread(this.spine);
 
-        this.leftPageView = new ReadiumSDK.Views.OnePageView({spine: this.spine, class: "left_page"});
-        this.rightPageView = new ReadiumSDK.Views.OnePageView({spine: this.spine, class: "right_page"});
-        this.centerPageView = new ReadiumSDK.Views.OnePageView({spine: this.spine, class: "center_page"});
+        this.leftPageView = new ReadiumSDK.Views.OnePageView({spine: this.spine, class: "left_page", contentAlignment: "right"});
+        this.rightPageView = new ReadiumSDK.Views.OnePageView({spine: this.spine, class: "right_page", contentAlignment: "left"});
+        this.centerPageView = new ReadiumSDK.Views.OnePageView({spine: this.spine, class: "center_page", contentAlignment: "center"});
 
         this.pageViews.push(this.leftPageView);
         this.pageViews.push(this.rightPageView);
