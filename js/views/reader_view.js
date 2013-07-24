@@ -48,16 +48,16 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
         if(isReflowable) {
 
-            this.currentView = new ReadiumSDK.Views.ReflowableView({spine:this.spine});
+            this.currentView = new ReadiumSDK.Views.ReflowableView({$viewport: this.$el, spine:this.spine});
         }
         else {
 
-            this.currentView = new ReadiumSDK.Views.FixedView({spine:this.spine});
+            this.currentView = new ReadiumSDK.Views.FixedView({$viewport: this.$el, spine:this.spine});
         }
 
         this.currentView.setViewSettings(this.viewerSettings);
 
-        this.$el.append(this.currentView.render().$el);
+        this.currentView.render();
 
         var self = this;
         this.currentView.on("ViewPaginationChanged", function(){

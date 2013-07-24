@@ -29,9 +29,13 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
     bookMargins: undefined,
     contentMetaSize: undefined,
 
+    $viewport: undefined,
+
     pageViews: [],
 
     initialize: function() {
+
+        this.$viewport = this.options.$viewport;
 
         this.spine = this.options.spine;
         this.spread = new ReadiumSDK.Models.Spread(this.spine);
@@ -56,7 +60,8 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
 
         this.template = _.template($("#template-fixed-view").html(), {});
         this.setElement(this.template);
-        this.$bookBox = $("#book-box-fixed", this.$el);
+
+        this.$viewport.append(this.$el);
 
         this.updateBookMargins();
 
@@ -127,8 +132,8 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
             return;
         }
 
-        var containerWidth = this.$el.width();
-        var containerHeight = this.$el.height();
+        var containerWidth = this.$viewport.width();
+        var containerHeight = this.$viewport.height();
 
         if(!containerWidth || !containerHeight) {
             return;
@@ -152,16 +157,16 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
         var bookWidth = contentWidth + this.bookMargins.width;
         var bookHeight = contentHeight + this.bookMargins.height;
 
-        var bookLeft = Math.floor((this.$el.width() - bookWidth) / 2);
-        var bookTop = Math.floor((this.$el.height() - bookHeight) / 2);
+        var bookLeft = Math.floor((this.$viewport.width() - bookWidth) / 2);
+        var bookTop = Math.floor((this.$viewport.height() - bookHeight) / 2);
 
         if(bookLeft < 0) bookLeft = 0;
         if(bookTop < 0) bookTop = 0;
 
-        this.$bookBox.css("left", bookLeft + "px");
-        this.$bookBox.css("top", bookTop + "px");
-        this.$bookBox.css("width", bookWidth + "px");
-        this.$bookBox.css("height", bookHeight + "px");
+        this.$el.css("left", bookLeft + "px");
+        this.$el.css("top", bookTop + "px");
+        this.$el.css("width", bookWidth + "px");
+        this.$el.css("height", bookHeight + "px");
 
         if(this.leftPageView.isDisplaying()) {
             this.leftPageView.transformContent(scale, 0, 0);
@@ -215,7 +220,7 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
     },
 
     updateBookMargins: function() {
-        this.bookMargins = new ReadiumSDK.Helpers.ElementMargins(this.$bookBox);
+        this.bookMargins = new ReadiumSDK.Helpers.ElementMargins(this.$el);
     },
 
     openPage: function(paginationRequest) {
@@ -252,7 +257,7 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
         }
 
         if(!pageView.isDisplaying()) {
-            this.$bookBox.append(pageView.render().$el);
+            this.$el.append(pageView.render().$el);
         }
 
         var dfd = $.Deferred();
