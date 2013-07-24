@@ -68,6 +68,10 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
         Backbone.View.prototype.remove.call(this);
     },
 
+    setViewSettings: function(settings) {
+        this.spread.setSyntheticSpread(settings.isSyntheticSpread);
+    },
+
     redraw: function() {
 
         var self = this;
@@ -207,6 +211,5 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
 
         return new ReadiumSDK.Models.BookmarkData("", "");
     }
-
 
 });

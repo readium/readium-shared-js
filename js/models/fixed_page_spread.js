@@ -30,6 +30,12 @@ ReadiumSDK.Models.Spread = function(spine) {
     this.rightItem = undefined;
     this.centerItem = undefined;
 
+    this.isSyntheticSpread = true;
+
+    this.setSyntheticSpread = function(isSyntheticSpread) {
+        this.isSyntheticSpread = isSyntheticSpread;
+    };
+
     this.openFirst = function() {
 
         if( this.spine.items.length == 0 ) {
@@ -38,7 +44,7 @@ ReadiumSDK.Models.Spread = function(spine) {
         else {
             this.openItem(this.spine.first());
         }
-    }
+    };
 
     this.openLast = function() {
 
@@ -71,6 +77,11 @@ ReadiumSDK.Models.Spread = function(spine) {
     };
 
     this.setItem = function(item) {
+
+        if(!this.isSyntheticSpread) {
+            this.centerItem = item;
+            return;
+        }
 
         if(item.isLeftPage()) {
             this.leftItem = item;
@@ -137,6 +148,10 @@ ReadiumSDK.Models.Spread = function(spine) {
     this.getNeighbourItem = function(item) {
 
         var neighbourItem = undefined;
+
+        if(!this.isSyntheticSpread) {
+            return neighbourItem;
+        }
 
         if(item.isLeftPage()) {
 
