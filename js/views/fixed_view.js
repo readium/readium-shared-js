@@ -25,8 +25,9 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
     rightPageView: undefined,
     centerPageView: undefined,
     spine: undefined,
-
     spread: undefined,
+    bookMargins: undefined,
+    contentMetaSize: undefined,
 
     pageViews: [],
 
@@ -55,7 +56,9 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
 
         this.template = _.template($("#template-fixed-view").html(), {});
         this.setElement(this.template);
-        this.$spreadWrap = $("#spread-wrap", this.$el);
+        this.$bookBox = $("#book-box-fixed", this.$el);
+
+        this.updateBookMargins();
 
         return this;
     },
@@ -106,17 +109,114 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
     },
 
     onPagesLoaded: function() {
+
+        this.updateContentMetaSize();
+        this.resizeBook();
+
         this.trigger("ViewPaginationChanged");
     },
 
     onViewportResize: function() {
 
-        for(var i = 0; i < this.pageViews.length; i++) {
+        this.resizeBook();
+    },
 
-            this.pageViews[i].fitToScreen();
+    resizeBook: function() {
+
+        if(!this.contentMetaSize || !this.bookMargins) {
+            return;
+        }
+
+        var containerWidth = this.$el.width();
+        var containerHeight = this.$el.height();
+
+        if(!containerWidth || !containerHeight) {
+            return;
+        }
+
+        var targetContentSize = {   with: containerWidth - this.bookMargins.width,
+                                    height: containerHeight + this.bookMargins.height };
+
+        if(targetContentSize.width <= 0 || targetContentSize.height <= 0) {
+            return;
+        }
+
+        var horScale = targetContentSize.with / this.contentMetaSize.width;
+        var verScale = targetContentSize.height / this.contentMetaSize.height;
+
+        var scale = Math.min(horScale, verScale);
+
+        var contentWidth = this.contentMetaSize.width * scale;
+        var contentHeight = this.contentMetaSize.height * scale;
+
+        var bookWidth = contentWidth + this.bookMargins.width;
+        var bookHeight = contentHeight + this.bookMargins.height;
+
+        var bookLeft = Math.floor((this.$el.width() - bookWidth) / 2);
+        var bookTop = Math.floor((this.$el.height() - bookHeight) / 2);
+
+        if(bookLeft < 0) bookLeft = 0;
+        if(bookTop < 0) bookTop = 0;
+
+        this.$bookBox.css("left", bookLeft + "px");
+        this.$bookBox.css("top", bookTop + "px");
+        this.$bookBox.css("width", bookWidth + "px");
+        this.$bookBox.css("height", bookHeight + "px");
+
+        if(this.leftPageView.isDisplaying()) {
+            this.leftPageView.transformContent(scale, 0, 0);
+        }
+
+        if(this.rightPageView.isDisplaying()) {
+            this.rightPageView.transformContent(scale, this.contentMetaSize.separatorPosition * scale, 0);
+        }
+
+        if(this.centerPageView.isDisplaying()) {
+            this.centerPageView.transformContent(scale, 0, 0);
         }
     },
 
+    updateContentMetaSize: function() {
+
+        this.contentMetaSize = {};
+
+        if(this.centerPageView.isDisplaying()) {
+            this.contentMetaSize.width = this.centerPageView.meta_size.width;
+            this.contentMetaSize.height = this.centerPageView.meta_size.height;
+            this.contentMetaSize.separatorPosition = 0;
+        }
+        else if(this.leftPageView.isDisplaying() && this.rightPageView.isDisplaying()) {
+            if(this.leftPageView.meta_size.height == this.rightPageView.meta_size) {
+                this.contentMetaSize.width = this.leftPageView.meta_size.width + this.rightPageView.meta_size.width;
+                this.contentMetaSize.height = this.leftPageView.meta_size.height;
+                this.contentMetaSize.separatorPosition = this.leftPageView.meta_size.width;
+            }
+            else {
+                //normalize by height
+                this.contentMetaSize.width = this.leftPageView.meta_size.width + this.rightPageView.meta_size.width * (this.leftPageView.meta_size.height / this.rightPageView.meta_size.height);
+                this.contentMetaSize.height = this.leftPageView.meta_size.height;
+                this.contentMetaSize.separatorPosition = this.leftPageView.meta_size.width;
+            }
+        }
+        else if(this.leftPageView.isDisplaying()) {
+            this.contentMetaSize.width = this.leftPageView.meta_size.width * 2;
+            this.contentMetaSize.height = this.leftPageView.meta_size.height;
+            this.contentMetaSize.separatorPosition = this.leftPageView.meta_size.width;
+        }
+        else if(this.rightPageView.isDisplaying()) {
+            this.contentMetaSize.width = this.rightPageView.meta_size.width * 2;
+            this.contentMetaSize.height = this.rightPageView.meta_size.height;
+            this.contentMetaSize.separatorPosition = this.rightPageView.meta_size.width;
+        }
+        else {
+            this.contentMetaSize = undefined;
+        }
+
+    },
+
+    updateBookMargins: function() {
+        this.bookMargins = new ReadiumSDK.Helpers.ElementMargins(this.$bookBox);
+    },
 
     openPage: function(paginationRequest) {
 
@@ -152,7 +252,7 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
         }
 
         if(!pageView.isDisplaying()) {
-            this.$spreadWrap.append(pageView.render().$el);
+            this.$bookBox.append(pageView.render().$el);
         }
 
         var dfd = $.Deferred();

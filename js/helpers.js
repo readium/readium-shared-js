@@ -127,5 +127,12 @@ ReadiumSDK.Helpers.EndsWith = function (str, suffix) {
     return str.indexOf(suffix, str.length - suffix.length) !== -1;
 };
 
-ReadiumSDK
+ReadiumSDK.Helpers.ElementMargins = function($element) {
+
+    this.margin = $element.margin();
+    this.border = $element.border();
+    this.padding = $element.padding();
+    this.width = this.margin.left + this.border.left + this.padding.left + this.margin.right + this.border.right + this.padding.right;
+    this.height = this.margin.top + this.border.top + this.padding.top + this.margin.bottom + this.border.bottom + this.padding.bottom;
+};
 
