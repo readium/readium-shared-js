@@ -51,6 +51,10 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
 
             this.template = _.template($("#template-ope-fixed-page-view").html(), {});
             this.setElement(this.template);
+
+            this.$el.css("height", "100%");
+            this.$el.css("width")
+
             this.$el.addClass(this.options.class);
             this.$iframe = $("iframe", this.$el);
         }
@@ -72,6 +76,7 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
             var epubContentDocument = this.$iframe[0].contentDocument;
             this.$epubHtml = $("html", epubContentDocument);
             this.$epubHtml.css("overflow", "hidden");
+            this.updateMetaSize();
             this.fitToScreen();
         }
 

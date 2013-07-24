@@ -127,3 +127,5 @@ ReadiumSDK.Helpers.EndsWith = function (str, suffix) {
     return str.indexOf(suffix, str.length - suffix.length) !== -1;
 };
 
+ReadiumSDK
+
