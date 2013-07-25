@@ -135,7 +135,7 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
         this.$el.css("left", left + "px");
         this.$el.css("top", top + "px");
         this.$el.css("width", Math.floor(this.meta_size.width * scale) + "px");
-        this.$el.css("height", Math.floor(this.meta_size.height + scale) + "px");
+        this.$el.css("height", Math.floor(this.meta_size.height * scale) + "px");
 
         var css = this.generateTransformCSS(scale, 0, 0);
 

@@ -68,6 +68,14 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
         return this;
     },
 
+    //Temp function for debugging
+    //TODO remove this function
+    updateLayout: function() {
+        this.updateBookMargins();
+        this.updateContentMetaSize();
+        this.resizeBook();
+    },
+
     remove: function() {
 
         $(window).off("resize.ReadiumSDK.readerView");
@@ -132,15 +140,15 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
             return;
         }
 
-        var containerWidth = this.$viewport.width();
-        var containerHeight = this.$viewport.height();
+        var viewportWidth = this.$viewport.width();
+        var viewportHeight = this.$viewport.height();
 
-        if(!containerWidth || !containerHeight) {
+        if(!viewportWidth || !viewportHeight) {
             return;
         }
 
-        var targetContentSize = {   with: containerWidth - this.bookMargins.width,
-                                    height: containerHeight + this.bookMargins.height };
+        var targetContentSize = {   with: viewportWidth - this.bookMargins.width,
+                                    height: viewportHeight - this.bookMargins.height };
 
         if(targetContentSize.width <= 0 || targetContentSize.height <= 0) {
             return;
@@ -154,30 +162,27 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
         var contentWidth = this.contentMetaSize.width * scale;
         var contentHeight = this.contentMetaSize.height * scale;
 
-        var bookWidth = contentWidth + this.bookMargins.width;
-        var bookHeight = contentHeight + this.bookMargins.height;
-
-        var bookLeft = Math.floor((this.$viewport.width() - bookWidth) / 2);
-        var bookTop = Math.floor((this.$viewport.height() - bookHeight) / 2);
+        var bookLeft = Math.floor((viewportWidth - (contentWidth + this.bookMargins.width)) / 2);
+        var bookTop = Math.floor((viewportHeight - (contentHeight + this.bookMargins.height)) / 2);
 
         if(bookLeft < 0) bookLeft = 0;
         if(bookTop < 0) bookTop = 0;
 
         this.$el.css("left", bookLeft + "px");
         this.$el.css("top", bookTop + "px");
-        this.$el.css("width", bookWidth + "px");
-        this.$el.css("height", bookHeight + "px");
+        this.$el.css("width", contentWidth + "px");
+        this.$el.css("height", contentHeight + "px");
 
         if(this.leftPageView.isDisplaying()) {
-            this.leftPageView.transformContent(scale, 0, 0);
+            this.leftPageView.transformContent(scale, this.bookMargins.padding.left, this.bookMargins.padding.top);
         }
 
         if(this.rightPageView.isDisplaying()) {
-            this.rightPageView.transformContent(scale, this.contentMetaSize.separatorPosition * scale, 0);
+            this.rightPageView.transformContent(scale, this.contentMetaSize.separatorPosition * scale + this.bookMargins.padding.left, this.bookMargins.padding.top);
         }
 
         if(this.centerPageView.isDisplaying()) {
-            this.centerPageView.transformContent(scale, 0, 0);
+            this.centerPageView.transformContent(scale, this.bookMargins.padding.left, this.bookMargins.padding.top);
         }
     },
 
