@@ -31,7 +31,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
     spine: undefined,
     fontSize:100,
     $viewport: undefined,
-    $contentBox: undefined,
+    $contentFrame: undefined,
 
     lastViewPortSize : {
         width: undefined,
@@ -61,15 +61,15 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         this.setElement(this.template);
         this.$viewport.append(this.$el);
 
-        this.$contentBox = $("#content-box-reflowable", this.$el);
+        this.$contentFrame = $("#content-frame-reflowable", this.$el);
 
         //because left, top, bottom, right setting ignores padding of parent container
         //we have to take it to account manually
         var elementMargins = new ReadiumSDK.Helpers.ElementMargins(this.$el);
-        this.$contentBox.css("left", elementMargins.padding.left);
-        this.$contentBox.css("top", elementMargins.padding.top);
-        this.$contentBox.css("right", elementMargins.padding.right);
-        this.$contentBox.css("bottom", elementMargins.padding.bottom);
+        this.$contentFrame.css("left", elementMargins.padding.left);
+        this.$contentFrame.css("top", elementMargins.padding.top);
+        this.$contentFrame.css("right", elementMargins.padding.right);
+        this.$contentFrame.css("bottom", elementMargins.padding.bottom);
 
 
         this.$iframe = $("#epubContentIframe", this.$el);
@@ -210,7 +210,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         }
 
         var pageIndex = undefined;
-        var navigation = new ReadiumSDK.Views.CfiNavigationLogic(this.$contentBox, this.$iframe);
+        var navigation = new ReadiumSDK.Views.CfiNavigationLogic(this.$contentFrame, this.$iframe);
 
         if(pageRequest.spineItemPageIndex !== undefined) {
             pageIndex = pageRequest.spineItemPageIndex;
@@ -245,8 +245,8 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
 
     updateViewportSize: function() {
 
-        var newWidth = this.$contentBox.width();
-        var newHeight = this.$contentBox.height();
+        var newWidth = this.$contentFrame.width();
+        var newHeight = this.$contentFrame.height();
 
         if(this.lastViewPortSize.width !== newWidth || this.lastViewPortSize.height !== newHeight){
 
@@ -419,9 +419,9 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
     getFirstVisibleElementCfi: function(){
 
         var columnsLeftOfViewport = Math.round(this.paginationInfo.pageOffset / (this.paginationInfo.columnWidth + this.paginationInfo.columnGap));
-        var topOffset = columnsLeftOfViewport * this.$contentBox.height();
+        var topOffset = columnsLeftOfViewport * this.$contentFrame.height();
 
-        var navigation = new ReadiumSDK.Views.CfiNavigationLogic(this.$contentBox, this.$iframe);
+        var navigation = new ReadiumSDK.Views.CfiNavigationLogic(this.$contentFrame, this.$iframe);
         return navigation.getFirstVisibleElementCfi(topOffset);
     },
 
