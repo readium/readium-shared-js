@@ -180,6 +180,8 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
                 this.openSpineItemElementCfi(bookMark.idref, bookMark.elementCfi);
             }
         }
+
+        this.trigger("SettingsApplied");
     },
 
     /**
