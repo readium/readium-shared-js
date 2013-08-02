@@ -27,11 +27,11 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
     package: undefined,
     spine: undefined,
     viewerSettings:undefined,
+    userStyles: {},
 
     initialize: function() {
 
         this.viewerSettings = new ReadiumSDK.Models.ViewerSettings({});
-
     },
 
     renderCurrentView: function(isReflowable) {
@@ -66,6 +66,12 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
             self.trigger("PaginationChanged", paginationReportData);
 
         });
+
+        for(var style in this.userStyles) {
+            if(this.userStyles.hasOwnProperty(style)) {
+                this.setStyleToCurrentView(style);
+            }
+        }
 
     },
 
@@ -349,6 +355,39 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
         }
 
         this.openPage(pageData);
+    },
+
+    /**
+     * Set CSS Styles to the reader
+     *
+     * @method setStyle
+     *
+     * @param selector {string} CSS selector
+     * @param declarations {Object} collection of name:value declarations
+     */
+    setStyle: function(selector, declarations) {
+
+        var style = this.userStyles[selector];
+
+        if(style) {
+            style.setDeclarations(declarations);
+        }
+        else {
+            style = new ReadiumSDK.Models.Style(selector, declarations);
+            this.userStyles[selector] = style;
+        }
+
+        this.setStyleToCurrentView(style);
+
+    },
+
+    setStyleToCurrentView: function(style) {
+
+        if(!this.currentView) {
+            return;
+        }
+
+        $(style.selector, this.currentView.$el).css(style.declarations);
     },
 
     /**
