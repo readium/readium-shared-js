@@ -67,12 +67,13 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
         });
 
-        for(var style in this.userStyles) {
-            if(this.userStyles.hasOwnProperty(style)) {
-                this.setStyleToCurrentView(style);
+        setTimeout(function(){
+            for(var selector in self.userStyles) {
+                if(self.userStyles.hasOwnProperty(selector)) {
+                    self.applyStyle(self.userStyles[selector]);
+                }
             }
-        }
-
+        }, 100);
     },
 
     resetCurrentView: function() {
@@ -377,17 +378,18 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
             this.userStyles[selector] = style;
         }
 
-        this.setStyleToCurrentView(style);
+        this.applyStyle(style);
 
     },
 
-    setStyleToCurrentView: function(style) {
+    applyStyle: function(style) {
 
-        if(!this.currentView) {
-            return;
+        $(style.selector, this.$el).css(style.declarations);
+
+        if(this.currentView) {
+            this.currentView.updateLayout();
+//            this.currentView.onViewportResize();
         }
-
-        $(style.selector, this.currentView.$el).css(style.declarations);
     },
 
     /**
@@ -442,6 +444,33 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
      */
     bookmarkCurrentPage: function() {
         return JSON.stringify(this.currentView.bookmarkCurrentPage());
+    },
+
+    /**
+     * Resets all the custom styles set by setStyle callers at runtime
+     *
+     * @method resetStyles
+     */
+    resetStyles: function() {
+
+        for(var selector in this.userStyles) {
+
+            if(this.userStyles.hasOwnProperty(selector)) {
+                var style = this.userStyles[selector];
+                var declarationsToRemove = {};
+                for(var prop in style.declarations) {
+                    if(style.declarations.hasOwnProperty(prop)) {
+                        declarationsToRemove[prop] = '';
+                    }
+                }
+
+                this.applyStyle(declarationsToRemove);
+            }
+
+        }
+
+        this.userStyles = {};
+
     }
 
 });

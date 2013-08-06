@@ -61,7 +61,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         this.setElement(this.template);
         this.$viewport.append(this.$el);
 
-        this.$contentFrame = $("#content-frame-reflowable", this.$el);
+        this.$contentFrame = $("#reflowable-content-frame", this.$el);
 
         //because left, top, bottom, right setting ignores padding of parent container
         //we have to take it to account manually
@@ -185,6 +185,11 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
 
         this.applySwitches(epubContentDocument);
         this.registerTriggers(epubContentDocument);
+    },
+
+    updateLayout: function() {
+        this.updateViewportSize();
+        this.updatePagination();
     },
 
     openDeferredElement: function() {
