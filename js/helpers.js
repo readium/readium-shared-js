@@ -127,12 +127,36 @@ ReadiumSDK.Helpers.EndsWith = function (str, suffix) {
     return str.indexOf(suffix, str.length - suffix.length) !== -1;
 };
 
-ReadiumSDK.Helpers.ElementMargins = function($element) {
+ReadiumSDK.Helpers.Margins = function(size) {
 
-    this.margin = $element.margin();
-    this.border = $element.border();
-    this.padding = $element.padding();
-    this.width = this.margin.left + this.border.left + this.padding.left + this.margin.right + this.border.right + this.padding.right;
-    this.height = this.margin.top + this.border.top + this.padding.top + this.margin.bottom + this.border.bottom + this.padding.bottom;
+    this.left = size.left || 0;
+    this.right = size.right || 0;
+    this.top = size.top || 0;
+    this.bottom = size.bottom || 0;
+
+    this.width = function() {
+        return this.left + this.right;
+    };
+
+    this.height = function() {
+        return this.top + this.bottom;
+    }
 };
+
+ReadiumSDK.Helpers.Margins.fromElement = function($element) {
+
+    var margins =  new this({});
+
+    margins.margin = $element.margin();
+    margins.border = $element.border();
+    margins.padding = $element.padding();
+
+    margins.left = margins.margin.left + margins.border.left + margins.padding.left;
+    margins.right = margins.margin.right + margins.border.right + margins.padding.right;
+    margins.top = margins.margin.top + margins.border.top + margins.padding.top;
+    margins.bottom = margins.margin.bottom + margins.border.bottom + margins.padding.bottom;
+
+    return margins;
+};
+
 

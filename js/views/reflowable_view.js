@@ -65,7 +65,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
 
         //because left, top, bottom, right setting ignores padding of parent container
         //we have to take it to account manually
-        var elementMargins = new ReadiumSDK.Helpers.ElementMargins(this.$el);
+        var elementMargins = ReadiumSDK.Helpers.Margins.fromElement(this.$el);
         this.setFrameSizesToRectangle(elementMargins.padding);
 
         this.$iframe = $("#epubContentIframe", this.$el);

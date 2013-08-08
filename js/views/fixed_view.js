@@ -145,8 +145,10 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
             return;
         }
 
-        var targetContentSize = {   with: viewportWidth - this.bookMargins.width,
-                                    height: viewportHeight - this.bookMargins.height };
+        var pageMargins = this.getPageMargins();
+
+        var targetContentSize = {   with: viewportWidth - this.bookMargins.width() - pageMargins.width(),
+                                    height: viewportHeight - this.bookMargins.height() - pageMargins.height() };
 
         if(targetContentSize.width <= 0 || targetContentSize.height <= 0) {
             return;
@@ -160,8 +162,8 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
         var contentWidth = this.contentMetaSize.width * scale;
         var contentHeight = this.contentMetaSize.height * scale;
 
-        var bookLeft = Math.floor((viewportWidth - (contentWidth + this.bookMargins.width)) / 2);
-        var bookTop = Math.floor((viewportHeight - (contentHeight + this.bookMargins.height)) / 2);
+        var bookLeft = Math.floor((viewportWidth - (contentWidth + this.bookMargins.width())) / 2);
+        var bookTop = Math.floor((viewportHeight - (contentHeight + this.bookMargins.height())) / 2);
 
         if(bookLeft < 0) bookLeft = 0;
         if(bookTop < 0) bookTop = 0;
@@ -182,6 +184,31 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
         if(this.centerPageView.isDisplaying()) {
             this.centerPageView.transformContent(scale, this.bookMargins.padding.left, this.bookMargins.padding.top);
         }
+    },
+
+    getPageMargins: function () {
+
+        var leftPageMargins = new ReadiumSDK.Helpers.Margins({});
+        var rightPageMargins = new ReadiumSDK.Helpers.Margins({});
+        var centerPageMargins = new ReadiumSDK.Helpers.Margins({});
+
+        if(this.leftPageView.isDisplaying()) {
+            leftPageMargins = ReadiumSDK.Helpers.Margins.fromElement(this.leftPageView.$el);
+        }
+
+        if(this.rightPageView.isDisplaying()) {
+            rightPageMargins = ReadiumSDK.Helpers.Margins.fromElement(this.rightPageView.$el);
+        }
+
+        if(this.centerPageView.isDisplaying()) {
+            centerPageMargins = ReadiumSDK.Helpers.Margins.fromElement(this.centerPageView.$el);
+        }
+
+        return new ReadiumSDK.Helpers.Margins({
+            left: Math.max(leftPageMargins.left, rightPageMargins.left, centerPageMargins.left),
+            right: Math.max(leftPageMargins.right, rightPageMargins.right, centerPageMargins.right),
+            top: Math.max(leftPageMargins.top, rightPageMargins.top, centerPageMargins.top),
+            bottom: Math.max(leftPageMargins.bottom, rightPageMargins.bottom, centerPageMargins.bottom)});
     },
 
     updateContentMetaSize: function() {
@@ -223,7 +250,7 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
     },
 
     updateBookMargins: function() {
-        this.bookMargins = new ReadiumSDK.Helpers.ElementMargins(this.$el);
+        this.bookMargins = ReadiumSDK.Helpers.Margins.fromElement(this.$el);
     },
 
     openPage: function(paginationRequest) {
