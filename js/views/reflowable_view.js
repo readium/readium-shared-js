@@ -57,7 +57,8 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
 
     render: function(){
 
-        this.template = _.template($("#template-reflowable-view").html(), {});
+        this.template = ReadiumSDK.Helpers.loadTemplate("reflowable_book_frame", {});
+
         this.setElement(this.template);
         this.$viewport.append(this.$el);
 

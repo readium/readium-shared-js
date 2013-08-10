@@ -127,12 +127,16 @@ ReadiumSDK.Helpers.EndsWith = function (str, suffix) {
     return str.indexOf(suffix, str.length - suffix.length) !== -1;
 };
 
-ReadiumSDK.Helpers.Margins = function(size) {
+ReadiumSDK.Helpers.Margins = function(margin, border, padding) {
 
-    this.left = size.left || 0;
-    this.right = size.right || 0;
-    this.top = size.top || 0;
-    this.bottom = size.bottom || 0;
+    this.margin = margin;
+    this.border = border;
+    this.padding = padding;
+
+    this.left =  this.margin.left + this.border.left + this.padding.left;
+    this.right = this.margin.right + this.border.right + this.padding.right;
+    this.top = this.margin.top + this.border.top + this.padding.top;
+    this.bottom = this.margin.bottom + this.border.bottom + this.padding.bottom;
 
     this.width = function() {
         return this.left + this.right;
@@ -144,19 +148,50 @@ ReadiumSDK.Helpers.Margins = function(size) {
 };
 
 ReadiumSDK.Helpers.Margins.fromElement = function($element) {
-
-    var margins =  new this({});
-
-    margins.margin = $element.margin();
-    margins.border = $element.border();
-    margins.padding = $element.padding();
-
-    margins.left = margins.margin.left + margins.border.left + margins.padding.left;
-    margins.right = margins.margin.right + margins.border.right + margins.padding.right;
-    margins.top = margins.margin.top + margins.border.top + margins.padding.top;
-    margins.bottom = margins.margin.bottom + margins.border.bottom + margins.padding.bottom;
-
-    return margins;
+    return new this($element.margin(), $element.border(), $element.padding());
 };
 
+ReadiumSDK.Helpers.Margins.empty = function() {
+
+    return new this({left:0, right:0, top:0, bottom: 0}, {left:0, right:0, top:0, bottom: 0}, {left:0, right:0, top:0, bottom: 0});
+
+};
+
+ReadiumSDK.Helpers.loadTemplate = function(name, params) {
+
+    if( !ReadiumSDK.Helpers.loadTemplate.cache ) {
+        ReadiumSDK.Helpers.loadTemplate.cache = {};
+    }
+
+    var template = ReadiumSDK.Helpers.loadTemplate.cache[name];
+
+    if(!template) {
+
+        var dir = "static";
+        var url = dir + "/" + name + ".html";
+
+        var templText = undefined;
+
+        $.ajax({
+            url: url,
+            method: 'GET',
+            async: false,
+            dataType: 'html',
+            success: function(data) {
+                templText = data;
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                console.error(errorThrown);
+                return undefined;
+            }
+
+        });
+
+        template = _.template(templText);
+        ReadiumSDK.Helpers.loadTemplate.cache[name] = template;
+    }
+
+    return template(params);
+
+};
 

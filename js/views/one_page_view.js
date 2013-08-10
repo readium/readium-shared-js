@@ -49,7 +49,8 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
 
         if(!this.$iframe) {
 
-            this.template = _.template($("#template-ope-fixed-page-view").html(), {});
+            this.template = ReadiumSDK.Helpers.loadTemplate("fixed_page_frame", {});
+
             this.setElement(this.template);
 
             this.$el.css("height", "100%");

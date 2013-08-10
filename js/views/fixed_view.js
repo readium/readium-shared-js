@@ -58,7 +58,8 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
 
     render: function(){
 
-        this.template = _.template($("#template-fixed-view").html(), {});
+        this.template = ReadiumSDK.Helpers.loadTemplate("fixed_book_frame", {});
+
         this.setElement(this.template);
 
         this.$viewport.append(this.$el);
@@ -145,70 +146,106 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
             return;
         }
 
-        var pageMargins = this.getPageMargins();
+        var leftPageMargins = this.leftPageView.isDisplaying() ? ReadiumSDK.Helpers.Margins.fromElement(this.leftPageView.$el) : ReadiumSDK.Helpers.Margins.empty();
+        var rightPageMargins = this.rightPageView.isDisplaying() ? ReadiumSDK.Helpers.Margins.fromElement(this.rightPageView.$el) : ReadiumSDK.Helpers.Margins.empty();
+        var centerPageMargins = this.centerPageView.isDisplaying() ? ReadiumSDK.Helpers.Margins.fromElement(this.centerPageView.$el) : ReadiumSDK.Helpers.Margins.empty();
 
-        var targetContentSize = {   with: viewportWidth - this.bookMargins.width() - pageMargins.width(),
-                                    height: viewportHeight - this.bookMargins.height() - pageMargins.height() };
+        var pageMargins = this.getMaxPageMargins(leftPageMargins, rightPageMargins, centerPageMargins);
 
-        if(targetContentSize.width <= 0 || targetContentSize.height <= 0) {
+        var potentialTargetElementSize = {   width: viewportWidth - this.bookMargins.width(),
+                                             height: viewportHeight - this.bookMargins.height()};
+
+        var potentialContentSize = {    width: potentialTargetElementSize.width - pageMargins.width(),
+                                        height: potentialTargetElementSize.height - pageMargins.height() };
+
+        if(potentialTargetElementSize.width <= 0 || potentialTargetElementSize.height <= 0) {
             return;
         }
 
-        var horScale = targetContentSize.with / this.contentMetaSize.width;
-        var verScale = targetContentSize.height / this.contentMetaSize.height;
+        var horScale = potentialContentSize.width / this.contentMetaSize.width;
+        var verScale = potentialContentSize.height / this.contentMetaSize.height;
 
         var scale = Math.min(horScale, verScale);
 
-        var contentWidth = this.contentMetaSize.width * scale;
-        var contentHeight = this.contentMetaSize.height * scale;
+        var contentSize = { width: this.contentMetaSize.width * scale,
+                            height: this.contentMetaSize.height * scale };
 
-        var bookLeft = Math.floor((viewportWidth - (contentWidth + this.bookMargins.width())) / 2);
-        var bookTop = Math.floor((viewportHeight - (contentHeight + this.bookMargins.height())) / 2);
+        var targetElementSize = {   width: contentSize.width + pageMargins.width(),
+                                    height: contentSize.height + pageMargins.height() };
+
+        var bookSize = {    width: targetElementSize.width + this.bookMargins.width(),
+                            height: targetElementSize.height + this.bookMargins.height() };
+
+
+        var bookLeft = Math.floor((viewportWidth - bookSize.width) / 2);
+        var bookTop = Math.floor((viewportHeight - bookSize.height) / 2);
 
         if(bookLeft < 0) bookLeft = 0;
         if(bookTop < 0) bookTop = 0;
 
         this.$el.css("left", bookLeft + "px");
         this.$el.css("top", bookTop + "px");
-        this.$el.css("width", contentWidth + "px");
-        this.$el.css("height", contentHeight + "px");
+        this.$el.css("width", targetElementSize.width + "px");
+        this.$el.css("height", targetElementSize.height + "px");
+
+        var left = this.bookMargins.padding.left;
+        var top = this.bookMargins.padding.top;
 
         if(this.leftPageView.isDisplaying()) {
-            this.leftPageView.transformContent(scale, this.bookMargins.padding.left, this.bookMargins.padding.top);
+
+            if(this.rightPageView.isDisplaying()) {
+                if( leftPageMargins.top < rightPageMargins.top ) {
+                    top += rightPageMargins.top - leftPageMargins.top;
+                }
+            }
+
+            this.leftPageView.transformContent(scale, left, top);
         }
 
         if(this.rightPageView.isDisplaying()) {
-            this.rightPageView.transformContent(scale, this.contentMetaSize.separatorPosition * scale + this.bookMargins.padding.left, this.bookMargins.padding.top);
+
+            left += this.contentMetaSize.separatorPosition * scale;
+            if(this.leftPageView.isDisplaying()) {
+                left += leftPageMargins.left;
+
+                if(rightPageMargins.top < leftPageMargins.top) {
+                    top += leftPageMargins.top - rightPageMargins.top;
+                }
+            }
+            this.rightPageView.transformContent(scale, left, top);
         }
 
         if(this.centerPageView.isDisplaying()) {
-            this.centerPageView.transformContent(scale, this.bookMargins.padding.left, this.bookMargins.padding.top);
+
+            this.centerPageView.transformContent(scale, left, top);
         }
     },
 
-    getPageMargins: function () {
+    getMaxPageMargins: function (leftPageMargins, rightPageMargins, centerPageMargins) {
 
-        var leftPageMargins = new ReadiumSDK.Helpers.Margins({});
-        var rightPageMargins = new ReadiumSDK.Helpers.Margins({});
-        var centerPageMargins = new ReadiumSDK.Helpers.Margins({});
+         var sumMargin = {
+            left: Math.max(leftPageMargins.margin.left, rightPageMargins.margin.left, centerPageMargins.margin.left),
+            right: Math.max(leftPageMargins.margin.right, rightPageMargins.margin.right, centerPageMargins.margin.right),
+            top: Math.max(leftPageMargins.margin.top, rightPageMargins.margin.top, centerPageMargins.margin.top),
+            bottom: Math.max(leftPageMargins.margin.bottom, rightPageMargins.margin.bottom, centerPageMargins.margin.bottom)
+        };
 
-        if(this.leftPageView.isDisplaying()) {
-            leftPageMargins = ReadiumSDK.Helpers.Margins.fromElement(this.leftPageView.$el);
-        }
+        var sumBorder = {
+            left: Math.max(leftPageMargins.border.left, rightPageMargins.border.left, centerPageMargins.border.left),
+            right: Math.max(leftPageMargins.border.right, rightPageMargins.border.right, centerPageMargins.border.right),
+            top: Math.max(leftPageMargins.border.top, rightPageMargins.border.top, centerPageMargins.border.top),
+            bottom: Math.max(leftPageMargins.border.bottom, rightPageMargins.border.bottom, centerPageMargins.border.bottom)
+        };
 
-        if(this.rightPageView.isDisplaying()) {
-            rightPageMargins = ReadiumSDK.Helpers.Margins.fromElement(this.rightPageView.$el);
-        }
+        var sumPAdding = {
+            left: Math.max(leftPageMargins.padding.left, rightPageMargins.padding.left, centerPageMargins.padding.left),
+            right: Math.max(leftPageMargins.padding.right, rightPageMargins.padding.right, centerPageMargins.padding.right),
+            top: Math.max(leftPageMargins.padding.top, rightPageMargins.padding.top, centerPageMargins.padding.top),
+            bottom: Math.max(leftPageMargins.padding.bottom, rightPageMargins.padding.bottom, centerPageMargins.padding.bottom)
+        };
 
-        if(this.centerPageView.isDisplaying()) {
-            centerPageMargins = ReadiumSDK.Helpers.Margins.fromElement(this.centerPageView.$el);
-        }
+        return new ReadiumSDK.Helpers.Margins(sumMargin, sumBorder, sumPAdding);
 
-        return new ReadiumSDK.Helpers.Margins({
-            left: Math.max(leftPageMargins.left, rightPageMargins.left, centerPageMargins.left),
-            right: Math.max(leftPageMargins.right, rightPageMargins.right, centerPageMargins.right),
-            top: Math.max(leftPageMargins.top, rightPageMargins.top, centerPageMargins.top),
-            bottom: Math.max(leftPageMargins.bottom, rightPageMargins.bottom, centerPageMargins.bottom)});
     },
 
     updateContentMetaSize: function() {
