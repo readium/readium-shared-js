@@ -193,25 +193,17 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
 
         if(this.leftPageView.isDisplaying()) {
 
-            if(this.rightPageView.isDisplaying()) {
-                if( leftPageMargins.top < rightPageMargins.top ) {
-                    top += rightPageMargins.top - leftPageMargins.top;
-                }
-            }
-
-            this.leftPageView.transformContent(scale, left, top);
+             this.leftPageView.transformContent(scale, left, top);
         }
 
         if(this.rightPageView.isDisplaying()) {
 
             left += this.contentMetaSize.separatorPosition * scale;
+
             if(this.leftPageView.isDisplaying()) {
                 left += leftPageMargins.left;
-
-                if(rightPageMargins.top < leftPageMargins.top) {
-                    top += leftPageMargins.top - rightPageMargins.top;
-                }
             }
+
             this.rightPageView.transformContent(scale, left, top);
         }
 

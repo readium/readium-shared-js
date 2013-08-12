@@ -27,11 +27,12 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
     package: undefined,
     spine: undefined,
     viewerSettings:undefined,
-    userStyles: {},
+    userStyles: undefined,
 
     initialize: function() {
 
         this.viewerSettings = new ReadiumSDK.Models.ViewerSettings({});
+        this.userStyles = new ReadiumSDK.Collections.StyleCollection();
     },
 
     renderCurrentView: function(isReflowable) {
@@ -68,11 +69,8 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
         });
 
         setTimeout(function(){
-            for(var selector in self.userStyles) {
-                if(self.userStyles.hasOwnProperty(selector)) {
-                    self.applyStyle(self.userStyles[selector]);
-                }
-            }
+            self.applyStyles(self.userStyles.styles);
+
         }, 100);
     },
 
@@ -361,34 +359,40 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
     /**
      * Set CSS Styles to the reader
      *
-     * @method setStyle
+     * @method setStyles
      *
-     * @param selector {string} CSS selector
-     * @param declarations {Object} collection of name:value declarations
+     * @param styles {object} style object contains selector property and declarations object
      */
-    setStyle: function(selector, declarations) {
+    setStyles: function(styles) {
 
-        var style = this.userStyles[selector];
+        var count = styles.length;
 
-        if(style) {
-            style.setDeclarations(declarations);
+        var arr = [];
+
+        for(var i = 0; i < count; i++) {
+            var style = this.userStyles.addStyle(styles[i].selector, styles[i].declarations);
+            arr.push(style);
         }
-        else {
-            style = new ReadiumSDK.Models.Style(selector, declarations);
-            this.userStyles[selector] = style;
-        }
 
-        this.applyStyle(style);
+        this.applyStyles(arr);
 
     },
 
-    applyStyle: function(style) {
+    applyStyles: function(styles) {
 
-        $(style.selector, this.$el).css(style.declarations);
+        var count = styles.length;
+
+        if(!count) {
+            return;
+        }
+
+        for(var i = 0; i < count; i++) {
+            var style = styles[i];
+            $(style.selector, this.$el).css(style.declarations);
+        }
 
         if(this.currentView) {
             this.currentView.updateLayout();
-//            this.currentView.onViewportResize();
         }
     },
 
@@ -453,24 +457,23 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
      */
     resetStyles: function() {
 
-        for(var selector in this.userStyles) {
+        var styles = this.userStyles.styles;
+        var count = styles.length;
 
-            if(this.userStyles.hasOwnProperty(selector)) {
-                var style = this.userStyles[selector];
-                var declarationsToRemove = {};
-                for(var prop in style.declarations) {
-                    if(style.declarations.hasOwnProperty(prop)) {
-                        declarationsToRemove[prop] = '';
-                    }
+        for(var i = 0; i < count; i++) {
+
+            var style = styles[i];
+            var declarations = style.declarations;
+
+            for(var prop in declarations) {
+                if(declarations.hasOwnProperty(prop)) {
+                    declarations[prop] = '';
                 }
-
-                this.applyStyle(new ReadiumSDK.Models.Style(selector, declarationsToRemove));
             }
-
         }
 
-        this.userStyles = {};
-
+        this.applyStyles(styles);
+        this.userStyles.clear();
     }
 
 });
