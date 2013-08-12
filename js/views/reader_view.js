@@ -464,7 +464,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
                     }
                 }
 
-                this.applyStyle(declarationsToRemove);
+                this.applyStyle(new ReadiumSDK.Models.Style(selector, declarationsToRemove));
             }
 
         }
