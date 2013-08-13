@@ -23,16 +23,16 @@
  * */
 ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
-    el: 'body',
     currentView: undefined,
     package: undefined,
     spine: undefined,
     viewerSettings:undefined,
+    userStyles: undefined,
 
     initialize: function() {
 
-        this.viewerSettings = new ReadiumSDK.Models.ViewerSettings(true, 20, 20);
-
+        this.viewerSettings = new ReadiumSDK.Models.ViewerSettings({});
+        this.userStyles = new ReadiumSDK.Collections.StyleCollection();
     },
 
     renderCurrentView: function(isReflowable) {
@@ -49,20 +49,19 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
         if(isReflowable) {
 
-            this.currentView = new ReadiumSDK.Views.ReflowableView({spine:this.spine});
+            this.currentView = new ReadiumSDK.Views.ReflowableView({$viewport: this.$el, spine:this.spine, userStyles: this.userStyles});
         }
         else {
 
-            this.currentView = new ReadiumSDK.Views.FixedView({spine:this.spine});
+            this.currentView = new ReadiumSDK.Views.FixedView({$viewport: this.$el, spine:this.spine, userStyles: this.userStyles});
         }
 
         this.currentView.setViewSettings(this.viewerSettings);
 
-        this.$el.append(this.currentView.render().$el);
+        this.currentView.render();
 
         var self = this;
         this.currentView.on("ViewPaginationChanged", function(){
-
             var paginationReportData = self.currentView.getPaginationInfo();
             self.trigger("PaginationChanged", paginationReportData);
 
@@ -355,6 +354,35 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
     },
 
     /**
+     * Set CSS Styles to the reader
+     *
+     * @method setStyles
+     *
+     * @param styles {object} style object contains selector property and declarations object
+     */
+    setStyles: function(styles) {
+
+        var count = styles.length;
+
+        for(var i = 0; i < count; i++) {
+            this.userStyles.addStyle(styles[i].selector, styles[i].declarations);
+        }
+
+        this.applyStyles();
+
+    },
+
+    applyStyles: function() {
+
+        ReadiumSDK.Helpers.setStyles(this.userStyles.styles, this.$el);
+
+        if(this.currentView) {
+            this.currentView.applyStyles();
+        }
+    },
+
+
+    /**
      * Opens the content document specified by the url
      *
      * @method openContentUrl
@@ -406,6 +434,33 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
      */
     bookmarkCurrentPage: function() {
         return JSON.stringify(this.currentView.bookmarkCurrentPage());
+    },
+
+    /**
+     * Resets all the custom styles set by setStyle callers at runtime
+     *
+     * @method resetStyles
+     */
+    clearStyles: function() {
+
+        var styles = this.userStyles.styles;
+        var count = styles.length;
+
+        for(var i = 0; i < count; i++) {
+
+            var style = styles[i];
+            var declarations = style.declarations;
+
+            for(var prop in declarations) {
+                if(declarations.hasOwnProperty(prop)) {
+                    declarations[prop] = '';
+                }
+            }
+        }
+
+        this.applyStyles();
+
+        this.userStyles.clear();
     }
 
 });
