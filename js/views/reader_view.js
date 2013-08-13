@@ -439,7 +439,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
      *
      * @method resetStyles
      */
-    resetStyles: function() {
+    clearStyles: function() {
 
         var styles = this.userStyles.styles;
         var count = styles.length;
