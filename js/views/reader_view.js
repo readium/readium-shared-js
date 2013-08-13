@@ -49,11 +49,11 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
         if(isReflowable) {
 
-            this.currentView = new ReadiumSDK.Views.ReflowableView({$viewport: this.$el, spine:this.spine});
+            this.currentView = new ReadiumSDK.Views.ReflowableView({$viewport: this.$el, spine:this.spine, userStyles: this.userStyles});
         }
         else {
 
-            this.currentView = new ReadiumSDK.Views.FixedView({$viewport: this.$el, spine:this.spine});
+            this.currentView = new ReadiumSDK.Views.FixedView({$viewport: this.$el, spine:this.spine, userStyles: this.userStyles});
         }
 
         this.currentView.setViewSettings(this.viewerSettings);
@@ -62,16 +62,11 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
         var self = this;
         this.currentView.on("ViewPaginationChanged", function(){
-
             var paginationReportData = self.currentView.getPaginationInfo();
             self.trigger("PaginationChanged", paginationReportData);
 
         });
 
-        setTimeout(function(){
-            self.applyStyles(self.userStyles.styles);
-
-        }, 100);
     },
 
     resetCurrentView: function() {
@@ -367,34 +362,23 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
         var count = styles.length;
 
-        var arr = [];
-
         for(var i = 0; i < count; i++) {
-            var style = this.userStyles.addStyle(styles[i].selector, styles[i].declarations);
-            arr.push(style);
+            this.userStyles.addStyle(styles[i].selector, styles[i].declarations);
         }
 
-        this.applyStyles(arr);
+        this.applyStyles();
 
     },
 
-    applyStyles: function(styles) {
+    applyStyles: function() {
 
-        var count = styles.length;
-
-        if(!count) {
-            return;
-        }
-
-        for(var i = 0; i < count; i++) {
-            var style = styles[i];
-            $(style.selector, this.$el).css(style.declarations);
-        }
+        ReadiumSDK.Helpers.setStyles(this.userStyles.styles, this.$el);
 
         if(this.currentView) {
-            this.currentView.updateLayout();
+            this.currentView.applyStyles();
         }
     },
+
 
     /**
      * Opens the content document specified by the url
@@ -472,7 +456,8 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
             }
         }
 
-        this.applyStyles(styles);
+        this.applyStyles();
+
         this.userStyles.clear();
     }
 

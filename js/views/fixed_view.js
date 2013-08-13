@@ -28,6 +28,7 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
     spread: undefined,
     bookMargins: undefined,
     contentMetaSize: undefined,
+    userStyles: undefined,
 
     $viewport: undefined,
 
@@ -36,6 +37,8 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
     initialize: function() {
 
         this.$viewport = this.options.$viewport;
+
+        this.userStyles = this.options.userStyles;
 
         this.spine = this.options.spine;
         this.spread = new ReadiumSDK.Models.Spread(this.spine);
@@ -64,15 +67,9 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
 
         this.$viewport.append(this.$el);
 
-        this.updateBookMargins();
+        this.applyStyles();
 
         return this;
-    },
-
-    updateLayout: function() {
-        this.updateBookMargins();
-        this.updateContentMetaSize();
-        this.resizeBook();
     },
 
     remove: function() {
@@ -91,16 +88,30 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
 
         var self = this;
 
-        var pageLoadDeferrals = this.createPageLoadDeferrals([{pageView: this.leftPageView, spineItem: this.spread.leftItem},
-                                                              {pageView: this.rightPageView, spineItem: this.spread.rightItem},
-                                                              {pageView: this.centerPageView, spineItem: this.spread.centerItem}]);
+        var context = {isElementAdded : false};
+        var pageLoadDeferrals = this.createPageLoadDeferrals([{pageView: this.leftPageView, spineItem: this.spread.leftItem, context: context},
+                                                              {pageView: this.rightPageView, spineItem: this.spread.rightItem, context: context},
+                                                              {pageView: this.centerPageView, spineItem: this.spread.centerItem, context: context}]);
+
 
         if(pageLoadDeferrals.length > 0) {
             $.when.apply($, pageLoadDeferrals).done(function(){
+                if(context.isElementAdded) {
+                    self.applyStyles();
+                }
                 self.onPagesLoaded()
             });
         }
 
+    },
+
+    applyStyles: function() {
+
+        ReadiumSDK.Helpers.setStyles(this.userStyles.styles, this.$el.parent());
+
+        this.updateBookMargins();
+        this.updateContentMetaSize();
+        this.resizeBook();
     },
 
     createPageLoadDeferrals: function(viewItemPairs) {
@@ -109,7 +120,7 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
 
         for(var i = 0; i < viewItemPairs.length; i++) {
 
-            var dfd = this.updatePageViewForItem(viewItemPairs[i].pageView, viewItemPairs[i].spineItem);
+            var dfd = this.updatePageViewForItem(viewItemPairs[i].pageView, viewItemPairs[i].spineItem, viewItemPairs[i].context);
             if(dfd) {
                 pageLoadDeferrals.push(dfd);
             }
@@ -305,7 +316,7 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
         this.redraw();
     },
 
-    updatePageViewForItem: function(pageView, item) {
+    updatePageViewForItem: function (pageView, item, context) {
 
         if(!item) {
             if(pageView.isDisplaying()) {
@@ -317,6 +328,7 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
 
         if(!pageView.isDisplaying()) {
             this.$el.append(pageView.render().$el);
+            context.isElementAdded = true;
         }
 
         var dfd = $.Deferred();

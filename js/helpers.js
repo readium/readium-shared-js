@@ -195,3 +195,18 @@ ReadiumSDK.Helpers.loadTemplate = function(name, params) {
 
 };
 
+ReadiumSDK.Helpers.setStyles = function(styles, $element) {
+
+    var count = styles.length;
+
+    if(!count) {
+        return;
+    }
+
+    for(var i = 0; i < count; i++) {
+        var style = styles[i];
+        $(style.selector, $element).css(style.declarations);
+    }
+
+};
+

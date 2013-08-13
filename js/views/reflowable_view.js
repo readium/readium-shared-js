@@ -32,6 +32,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
     fontSize:100,
     $viewport: undefined,
     $contentFrame: undefined,
+    userStyles: undefined,
 
     lastViewPortSize : {
         width: undefined,
@@ -53,6 +54,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
 
         this.$viewport = this.options.$viewport;
         this.spine = this.options.spine;
+        this.userStyles = this.options.userStyles;
     },
 
     render: function(){
@@ -63,11 +65,6 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         this.$viewport.append(this.$el);
 
         this.$contentFrame = $("#reflowable-content-frame", this.$el);
-
-        //because left, top, bottom, right setting ignores padding of parent container
-        //we have to take it to account manually
-        var elementMargins = ReadiumSDK.Helpers.Margins.fromElement(this.$el);
-        this.setFrameSizesToRectangle(elementMargins.padding);
 
         this.$iframe = $("#epubContentIframe", this.$el);
 
@@ -181,16 +178,25 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
 //                    $epubHtml.css("background-color", '#b0c4de');
 /////////
 
-        this.updateViewportSize();
-        this.updatePagination();
+        this.applyStyles();
 
         this.applySwitches(epubContentDocument);
         this.registerTriggers(epubContentDocument);
     },
 
-    updateLayout: function() {
+
+    applyStyles: function() {
+
+        ReadiumSDK.Helpers.setStyles(this.userStyles.styles, this.$el.parent());
+
+        //because left, top, bottom, right setting ignores padding of parent container
+        //we have to take it to account manually
+        var elementMargins = ReadiumSDK.Helpers.Margins.fromElement(this.$el);
+        this.setFrameSizesToRectangle(elementMargins.padding);
+
         this.updateViewportSize();
         this.updatePagination();
+
     },
 
     openDeferredElement: function() {
@@ -437,7 +443,8 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
 
     getPaginationInfo: function() {
 
-        var paginationInfo = new ReadiumSDK.Models.CurrentPagesInfo(this.spine.items.length, this.spine.package.isFixedLayout(), this.spine.direction);
+        var isFixedLayout = this.currentSpineItem ? this.currentSpineItem.isFixedLayout() : this.spine.package.isFixedLayout();
+        var paginationInfo = new ReadiumSDK.Models.CurrentPagesInfo(this.spine.items.length, isFixedLayout, this.spine.direction);
 
         if(!this.currentSpineItem) {
             return paginationInfo;
