@@ -31,10 +31,12 @@ ReadiumSDK = {
      @return {string} version
      */
     version: function() {
-        return "0.5.1";
+        return "0.8.0";
     },
 
-    Models : {},
+    Models :    {
+                    Smil: {}
+                },
     Views : {},
     Collections: {},
     Routers: {},
