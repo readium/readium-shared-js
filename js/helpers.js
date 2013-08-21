@@ -167,25 +167,21 @@ ReadiumSDK.Helpers.loadTemplate = function(name, params) {
 
     if(!template) {
 
-        var dir = "static";
-        var url = dir + "/" + name + ".html";
+        var templText;
 
-        var templText = undefined;
-
-        $.ajax({
-            url: url,
-            method: 'GET',
-            async: false,
-            dataType: 'html',
-            success: function(data) {
-                templText = data;
-            },
-            error: function(jqXHR, textStatus, errorThrown) {
-                console.error(errorThrown);
-                return undefined;
-            }
-
-        });
+        if (name == "fixed_book_frame") {
+            templText = '<div id="fixed-book-frame" class="clearfix book-frame fixed-book-frame"></div>';
+        }
+        else if (name == "fixed_page_frame") {
+            templText = '<div class="fixed-page-frame"><iframe scrolling="no" class="iframe-fixed"></iframe></div>';
+        }
+        else if (name == "reflowable_book_frame") {
+            templText = '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"><div id="reflowable-content-frame" class="reflowable-content-frame"><iframe scrolling="no" id="epubContentIframe"></iframe></div></div>';
+        }
+        else {
+            console.error(name + " is not a recognized template name!");
+            return undefined;
+        }
 
         template = _.template(templText);
         ReadiumSDK.Helpers.loadTemplate.cache[name] = template;
