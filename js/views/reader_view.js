@@ -84,34 +84,48 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
      * Triggers the process of opening the book and requesting resources specified in the packageData
      *
      * @method openBook
-     * @param {ReadiumSDK.Models.PackageData} packageData DTO Object hierarchy of Package, Spine, SpineItems passed by
-     * host application to the reader
-     * @param {ReadiumSDK.Models.PageOpenRequest|undefined} openPageRequestData Optional parameter specifying
-     * on what page book should be open when it is loaded. If nothing is specified book will be opened on the first page
+     * @param openBookData object with open book data in format:
+     * {
+     *     package: packageData, (required)
+     *     openPageRequest: openPageRequestData, (optional) data related to open page request
+     *     settings: readerSettings, (optional)
+     *     styles: cssStyles (optional)
+     * }
+     *
      */
-    openBook: function(packageData, openPageRequestData) {
+    openBook: function(openBookData) {
 
-        this.package = new ReadiumSDK.Models.Package({packageData: packageData});
+        this.package = new ReadiumSDK.Models.Package({packageData: openBookData.package});
         this.spine = this.package.spine;
 
         this.resetCurrentView();
 
-        if(openPageRequestData) {
+        if(openBookData.settings) {
+            this.updateSettings(openBookData.settings);
+        }
 
-            if(openPageRequestData.idref) {
+        if(openBookData.styles) {
+            this.setStyles(openBookData.styles);
+        }
 
-                if(openPageRequestData.spineItemPageIndex) {
-                    this.openSpineItemPage(openPageRequestData.idref, openPageRequestData.spineItemPageIndex);
+        if(openBookData.openPageRequest) {
+
+            var pageRequestData = openBookData.openPageRequest;
+
+            if(pageRequestData.idref) {
+
+                if(pageRequestData.spineItemPageIndex) {
+                    this.openSpineItemPage(pageRequestData.idref, pageRequestData.spineItemPageIndex);
                 }
-                else if(openPageRequestData.elementCfi) {
-                    this.openSpineItemElementCfi(openPageRequestData.idref, openPageRequestData.elementCfi);
+                else if(pageRequestData.elementCfi) {
+                    this.openSpineItemElementCfi(pageRequestData.idref, pageRequestData.elementCfi);
                 }
                 else {
-                    this.openSpineItemPage(openPageRequestData.idref, 0);
+                    this.openSpineItemPage(pageRequestData.idref, 0);
                 }
             }
-            else if(openPageRequestData.contentRefUrl && openPageRequestData.sourceFileHref) {
-                this.openContentUrl(openPageRequestData.contentRefUrl, openPageRequestData.sourceFileHref);
+            else if(pageRequestData.contentRefUrl && pageRequestData.sourceFileHref) {
+                this.openContentUrl(pageRequestData.contentRefUrl, pageRequestData.sourceFileHref);
             }
             else {
                 console.log("Invalid page request data: idref required!");
