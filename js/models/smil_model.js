@@ -77,6 +77,7 @@ ReadiumSDK.Models.SmilModel = function() {
     this.children = []; //collection of seq or par smil nodes
     this.id = undefined; //manifest item id
     this.href = undefined; //href of the .smil source file
+    this.duration = undefined;
 
 };
 
@@ -86,6 +87,7 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO) {
     smilModel.id = smilDTO.id;
     smilModel.href = smilDTO.href;
     smilModel.smilVersion = smilDTO.smilVersion;
+    smilModel.duration = smilDTO.duration;
 
     var safeCopyProperty = function(property, from, to, isRequired) {
 
