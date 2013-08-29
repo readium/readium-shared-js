@@ -196,7 +196,7 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
         if(this.currentSpineItem != spineItem) {
 
             this.currentSpineItem = spineItem;
-            var src = this.spine.getItemUrl(spineItem);
+            var src = this.spine.package.resolveRelativeUrl(spineItem.href);
 
             ReadiumSDK.Helpers.LoadIframe(this.$iframe[0], src, this.onIFrameLoad, this);
         }

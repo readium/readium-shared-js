@@ -28,6 +28,8 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
     spine: undefined,
     viewerSettings:undefined,
     userStyles: undefined,
+    currentPaginationInfo: undefined,
+    mediaOverlayPlayer: undefined,
 
     initialize: function() {
 
@@ -62,14 +64,16 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
         var self = this;
         this.currentView.on("ViewPaginationChanged", function(){
-            var paginationReportData = self.currentView.getPaginationInfo();
-            self.trigger("PaginationChanged", paginationReportData);
+            self.currentPaginationInfo = self.currentView.getPaginationInfo();
+            self.trigger("PaginationChanged", self.currentPaginationInfo);
 
         });
 
     },
 
     resetCurrentView: function() {
+
+        this.currentPaginationInfo = undefined;
 
         if(!this.currentView) {
             return;
@@ -97,6 +101,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
         this.package = new ReadiumSDK.Models.Package({packageData: openBookData.package});
         this.spine = this.package.spine;
+        this.mediaOverlayPlayer = new ReadiumSDK.Views.MediaOverlayPlayer(this.package);
 
         this.resetCurrentView();
 
@@ -475,6 +480,52 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
         this.applyStyles();
 
         this.userStyles.clear();
+    },
+
+    /**
+     *
+     * Returns true if media overlay available for one of the open pages.
+     *
+     * @method isMediaOverlayAvailable
+     *
+     * @returns {boolean}
+     */
+    isMediaOverlayAvailable: function() {
+
+        var moItemId = this.findSpreadMediaOverlayItemId();
+
+        return moItemId !== undefined;
+    },
+
+    findSpreadMediaOverlayItemId: function() {
+
+        if(!this.currentPaginationInfo || !this.spine) {
+            return undefined;
+        }
+
+        for(var i = 0, count = this.currentPaginationInfo.openPages.length; i < count; i++) {
+
+            var openPage = this.currentPaginationInfo.openPages[i];
+            var spineItem = this.spine.getItemById(openPage.idref);
+            if( spineItem.media_overlay_id ) {
+                return spineItem.media_overlay_id;
+            }
+        }
+
+        return undefined;
+    },
+
+    /**
+     * Starts/Stop playing media overlay on current page
+     *
+     */
+    toggleMediaOverlay: function() {
+
+        var moItemId = this.findSpreadMediaOverlayItemId();
+        if(moItemId) {
+            this.mediaOverlayPlayer.play(moItemId);
+        }
+
     }
 
 });

@@ -1,3 +1,20 @@
+//  LauncherOSX
+//
+//  Created by Boris Schneiderman.
+//  Copyright (c) 2012-2013 The Readium Foundation.
+//
+//  The Readium SDK is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+
 
 
 /////////////////////////
@@ -5,14 +22,13 @@
 
 ReadiumSDK.Models.Smil.SmilNode = function() {
 
-    this.parent = null;
-
 };
 
 ReadiumSDK.Models.Smil.TimeContainerNode = function() {
     this.id = "";
     this.epubtype = "";
-    this.children = undefined;
+    this.parent = undefined;
+    this.index = undefined;
 };
 
 ReadiumSDK.Models.Smil.TimeContainerNode.prototype = new ReadiumSDK.Models.Smil.SmilNode();
@@ -27,6 +43,7 @@ ReadiumSDK.Models.Smil.MediaNode = function() {
 ReadiumSDK.Models.Smil.MediaNode.prototype = new ReadiumSDK.Models.Smil.SmilNode();
 
 ////////////////////////////
+//SeqNode
 
 ReadiumSDK.Models.Smil.SeqNode = function() {
     this.children = [];
@@ -38,11 +55,12 @@ ReadiumSDK.Models.Smil.SeqNode = function() {
 ReadiumSDK.Models.Smil.SeqNode.prototype = new ReadiumSDK.Models.Smil.TimeContainerNode();
 
 //////////////////////////
-//SeqNode
+//ParNode
 
 ReadiumSDK.Models.Smil.ParNode = function() {
-    this.children = [];
     this.nodeType = "par";
+    this.text = undefined;
+    this.audio = undefined;
 };
 
 ReadiumSDK.Models.Smil.ParNode.prototype = new ReadiumSDK.Models.Smil.TimeContainerNode();
@@ -121,7 +139,19 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO) {
             safeCopyProperty("id", nodeDTO, node);
             safeCopyProperty("epubtype", nodeDTO, node);
 
-            copyChildren(nodeDTO, node);
+            for(var i = 0, count = nodeDTO.children.length; i < count; i++) {
+                var child = createNodeFromDTO(nodeDTO.children[i]);
+
+                if(child.nodeType == "text") {
+                    node.text = child;
+                }
+                else if(child.nodeType == "audio") {
+                    node.audio = child;
+                }
+                else {
+                    console.error("Unexpected smil node type: " + child.nodeType);
+                }
+            }
         }
         else if (nodeDTO.nodeType == "text") {
             node = new ReadiumSDK.Models.Smil.TextNode();
@@ -151,6 +181,7 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO) {
         for(var i = 0; i < count; i++) {
             var node = createNodeFromDTO(from.children[i]);
             node.parent = to;
+            node.index = i;
             to.children.push(node);
         }
 

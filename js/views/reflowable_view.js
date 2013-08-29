@@ -133,7 +133,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
             this.currentSpineItem = spineItem;
             this.isWaitingFrameRender = true;
 
-            var src = this.spine.getItemUrl(spineItem);
+            var src = this.spine.package.resolveRelativeUrl(spineItem.href);
             ReadiumSDK.Helpers.LoadIframe(this.$iframe[0], src, this.onIFrameLoad, this);
         }
     },

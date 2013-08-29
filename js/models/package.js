@@ -47,6 +47,21 @@ ReadiumSDK.Models.Package = Backbone.Model.extend({
         }
     },
 
+    resolveRelativeUrl: function(relativeUrl) {
+
+        if(this.rootUrl) {
+
+            if(ReadiumSDK.Helpers.EndsWith(this.rootUrl, "/")){
+                return this.rootUrl + relativeUrl;
+            }
+            else {
+                return this.rootUrl + "/" + relativeUrl;
+            }
+        }
+
+        return relativeUrl;
+    },
+
     reset: function() {
         this.spine = undefined;
         this.rendition_layout = undefined;
