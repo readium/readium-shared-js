@@ -28,7 +28,6 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
     spine: undefined,
     viewerSettings:undefined,
     userStyles: undefined,
-    currentPaginationInfo: undefined,
     mediaOverlayPlayer: undefined,
 
     initialize: function() {
@@ -63,9 +62,9 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
         this.currentView.render();
 
         var self = this;
-        this.currentView.on("ViewPaginationChanged", function(){
-            self.currentPaginationInfo = self.currentView.getPaginationInfo();
-            self.trigger("PaginationChanged", self.currentPaginationInfo);
+        this.currentView.on("ViewPaginationChanged", function( pageChangeData ){
+            self.mediaOverlayPlayer.onPaginationChanged(pageChangeData);
+            self.trigger("PaginationChanged", pageChangeData);
 
         });
 
@@ -73,7 +72,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
     resetCurrentView: function() {
 
-        this.currentPaginationInfo = undefined;
+        this.mediaOverlayPlayer.onPaginationChanged(undefined);
 
         if(!this.currentView) {
             return;
@@ -140,7 +139,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
             var spineItem = this.spine.first();
             if(spineItem) {
-                var pageOpenRequest = new ReadiumSDK.Models.PageOpenRequest(spineItem);
+                var pageOpenRequest = new ReadiumSDK.Models.PageOpenRequest(spineItem, null);
                 pageOpenRequest.setFirstPage();
                 this.openPage(pageOpenRequest);
             }
@@ -195,7 +194,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
             this.currentView.setViewSettings(this.viewerSettings);
 
             if(bookMark) {
-                this.openSpineItemElementCfi(bookMark.idref, bookMark.elementCfi);
+                this.openSpineItemElementCfi(bookMark.idref, bookMark.elementCfi, null);
             }
         }
 
@@ -228,7 +227,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
             return;
         }
 
-        var openPageRequest = new ReadiumSDK.Models.PageOpenRequest(nextSpineItem);
+        var openPageRequest = new ReadiumSDK.Models.PageOpenRequest(nextSpineItem, null);
         openPageRequest.setFirstPage();
 
         this.openPage(openPageRequest);
@@ -260,7 +259,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
             return;
         }
 
-        var openPageRequest = new ReadiumSDK.Models.PageOpenRequest(prevSpineItem);
+        var openPageRequest = new ReadiumSDK.Models.PageOpenRequest(prevSpineItem, null);
         openPageRequest.setLastPage();
 
         this.openPage(openPageRequest);
@@ -291,8 +290,9 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
      *
      * @param {string} idref Id of the spine item
      * @param {string} elementCfi CFI of the element to be shown
+     * @param {object} userData optional
      */
-    openSpineItemElementCfi: function(idref, elementCfi) {
+    openSpineItemElementCfi: function(idref, elementCfi, userData) {
 
         var spineItem = this.getSpineItem(idref);
 
@@ -300,7 +300,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
             return;
         }
 
-        var pageData = new ReadiumSDK.Models.PageOpenRequest(spineItem);
+        var pageData = new ReadiumSDK.Models.PageOpenRequest(spineItem, userData);
         if(elementCfi) {
             pageData.setElementCfi(elementCfi);
         }
@@ -315,8 +315,9 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
      * @method openPageIndex
      *
      * @param {number} pageIndex Zero based index of the page in the current spine item
+     * @param {object} userData optional
      */
-    openPageIndex: function(pageIndex) {
+    openPageIndex: function(pageIndex, userData) {
 
         if(!this.currentView) {
             return;
@@ -329,12 +330,12 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
                 return;
             }
 
-            pageRequest = new ReadiumSDK.Models.PageOpenRequest(spineItem);
+            pageRequest = new ReadiumSDK.Models.PageOpenRequest(spineItem, userData);
             pageRequest.setPageIndex(0);
         }
         else {
 
-            pageRequest = new ReadiumSDK.Models.PageOpenRequest(undefined);
+            pageRequest = new ReadiumSDK.Models.PageOpenRequest(undefined, userData);
             pageRequest.setPageIndex(pageIndex);
 
         }
@@ -355,8 +356,9 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
      *
      * @param {string} idref Id of the spine item
      * @param {number} pageIndex Zero based index of the page in the spine item
+     * @param {object} userData optional
      */
-    openSpineItemPage: function(idref, pageIndex) {
+    openSpineItemPage: function(idref, pageIndex, userData) {
 
         var spineItem = this.getSpineItem(idref);
 
@@ -364,7 +366,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
             return;
         }
 
-        var pageData = new ReadiumSDK.Models.PageOpenRequest(spineItem);
+        var pageData = new ReadiumSDK.Models.PageOpenRequest(spineItem, userData);
         if(pageIndex) {
             pageData.setPageIndex(pageIndex);
         }
@@ -410,9 +412,9 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
      * @param {string | undefined} sourceFileHref Url to the file that contentRefUrl is relative to. If contentRefUrl is
      * relative ot the source file that contains it instead of the package file (ex. TOC file) We have to know the
      * sourceFileHref to resolve contentUrl relative to the package file.
-     *
+     * @param {object} userData optional
      */
-    openContentUrl: function(contentRefUrl, sourceFileHref) {
+    openContentUrl: function(contentRefUrl, sourceFileHref, userData) {
 
         var combinedPath = ReadiumSDK.Helpers.ResolveContentRef(contentRefUrl, sourceFileHref);
 
@@ -435,7 +437,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
             return;
         }
 
-        var pageData = new ReadiumSDK.Models.PageOpenRequest(spineItem)
+        var pageData = new ReadiumSDK.Models.PageOpenRequest(spineItem, userData);
         if(elementId){
             pageData.setElementId(elementId);
         }
@@ -492,28 +494,9 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
      */
     isMediaOverlayAvailable: function() {
 
-        var moItemId = this.findSpreadMediaOverlayItemId();
-
-        return moItemId !== undefined;
+        return this.mediaOverlayPlayer.isMediaOverlayAvailable();
     },
 
-    findSpreadMediaOverlayItemId: function() {
-
-        if(!this.currentPaginationInfo || !this.spine) {
-            return undefined;
-        }
-
-        for(var i = 0, count = this.currentPaginationInfo.openPages.length; i < count; i++) {
-
-            var openPage = this.currentPaginationInfo.openPages[i];
-            var spineItem = this.spine.getItemById(openPage.idref);
-            if( spineItem.media_overlay_id ) {
-                return spineItem.media_overlay_id;
-            }
-        }
-
-        return undefined;
-    },
 
     /**
      * Starts/Stop playing media overlay on current page
@@ -521,10 +504,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
      */
     toggleMediaOverlay: function() {
 
-        var moItemId = this.findSpreadMediaOverlayItemId();
-        if(moItemId) {
-            this.mediaOverlayPlayer.play(moItemId);
-        }
+        this.mediaOverlayPlayer.toggleMediaOverlay();
 
     }
 

@@ -57,4 +57,6 @@ ReadiumSDK.Models.SmilIterator = function(smil) {
 
         return undefined;
     }
+
+    this.reset();
 };

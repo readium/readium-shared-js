@@ -17,10 +17,21 @@
 
 ReadiumSDK.Views.MediaOverlayPlayer = function(epubPackage) {
 
-    var smilIterator = undefined;
-    var audioPlayer = new ReadiumSDK.Views.AudioPlayer(onAudionPositionChanged, onAudioEnded);
+    //difference between stooped and paused is in what happens when we want to play again
+    //if it is paused we resume playing from the current audio location, if stopped it is for application to decide from where to start paling
+    //when user flips pages during MO play we will stop player.
+    this.PLAYING = "playing";
+    this.STOPPED = "stopped";
+    this.PAUSED = "paused";
 
-    this.play =  function(smilId) {
+    var _smilIterator = undefined;
+    var _audioPlayer = new ReadiumSDK.Views.AudioPlayer(onAudionPositionChanged, onAudioEnded);
+    var _status = this.STOPPED; //mast be one of stooped, paused, playing
+    var _highlightedElement = undefined;
+    var _currentPagination = undefined;
+    var self = this;
+
+    function play(smilId) {
 
         var par = getParForSmil(smilId);
 
@@ -30,55 +41,138 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(epubPackage) {
 
         playPar(par);
 
-    };
+    }
 
     function playPar(par) {
 
         if(par.audio) {
+            _status = self.PLAYING;
             var audioSource = epubPackage.resolveRelativeUrl(par.audio.src);
-            audioPlayer.play(audioSource, par.audio.clipBegin);
+            _audioPlayer.play(audioSource, par.audio.clipBegin);
         }
     }
 
     function getParForSmil(smilId) {
 
-        if(!smilIterator || smilIterator.smil.id != smilId) {
+        if(!_smilIterator || _smilIterator.smil.id != smilId) {
             var smil = epubPackage.media_overlay.getSmilById(smilId);
 
             if(!smil) {
                 return undefined;
             }
 
-            smilIterator = new ReadiumSDK.Models.SmilIterator(smil);
+            _smilIterator = new ReadiumSDK.Models.SmilIterator(smil);
         }
-        else if(!smilIterator.currentPar) {
-            smilIterator.reset();
+        else if(!_smilIterator.currentPar) {
+            _smilIterator.reset();
         }
 
-        return smilIterator.currentPar;
+        return _smilIterator.currentPar;
     }
 
     function onAudionPositionChanged(position) {
 
+        var audio = _smilIterator.currentPar.audio;
+        if(position >= audio.clipBegin && position <= audio.clipEnd && !_highlightedElement) {
+//            highlightElement(_smilIterator.currentPar.text.src);
+        }
     }
+
 
     function onAudioEnded() {
 
     }
 
-    this.isPlaying = function() {
+    function stop() {
 
-        return audioPlayer.isPlaying();
-    };
+        if(_status == self.STOPPED) {
+            return;
+        }
 
-    this.pause = function() {
-
-        audioPlayer.pause();
-    };
-
-    this.resume = function() {
-
-        audioPlayer.resume();
+        _status= self.STOPPED;
+        _audioPlayer.pause();
+        //clear text here
     }
 
+    function pause() {
+
+        if(_status == self.PAUSED || _status == self.STOPPED) {
+            return;
+        }
+
+        _status = self.PAUSED;
+        _audioPlayer.pause();
+    }
+
+    function resume() {
+        if(_status != self.PAUSED) {
+            return;
+        }
+
+        _status = self.PLAYING;
+        _audioPlayer.resume();
+    }
+
+    this.status = function() {
+        return _status;
+    };
+
+//    this.isPlaying = function() {
+//        return _status == self.PLAYING;
+//    };
+
+    this.onPaginationChanged =  function(paginationData) {
+
+        if(!paginationData) {
+            _currentPagination = undefined;
+            stop();
+        }
+        else {
+            _currentPagination = paginationData.paginationInfo;
+            if(paginationData.initiator != self) {
+                stop();
+            }
+        }
+    };
+
+    function findSpreadMediaOverlayItemId() {
+
+        if(!_currentPagination || !epubPackage) {
+            return undefined;
+        }
+
+        for(var i = 0, count = _currentPagination.openPages.length; i < count; i++) {
+
+            var openPage = _currentPagination.openPages[i];
+            var spineItem = epubPackage.spine.getItemById(openPage.idref);
+            if( spineItem && spineItem.media_overlay_id ) {
+                return spineItem.media_overlay_id;
+            }
+        }
+
+        return undefined;
+    }
+
+    this.isMediaOverlayAvailable = function() {
+        return findSpreadMediaOverlayItemId() != undefined;
+    };
+
+    this.toggleMediaOverlay = function() {
+
+        if(_status == self.PLAYING) {
+            pause();
+            return;
+        }
+
+        if(_status == self.PAUSED) {
+            resume();
+            return;
+        }
+
+        var moItemId = findSpreadMediaOverlayItemId();
+        if(moItemId) {
+            play(moItemId);
+        }
+
+    }
 };

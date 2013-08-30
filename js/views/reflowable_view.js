@@ -247,7 +247,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         if(pageIndex !== undefined && pageIndex >= 0 && pageIndex < this.paginationInfo.columnCount) {
 
             this.paginationInfo.currentSpreadIndex = Math.floor(pageIndex / this.paginationInfo.visibleColumnCount) ;
-            this.onPaginationChanged();
+            this.onPaginationChanged({initiator: pageRequest.initiator});
         }
     },
 
@@ -319,11 +319,11 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         })
     },
 
-    onPaginationChanged: function() {
+    onPaginationChanged: function(initiator) {
 
         this.paginationInfo.pageOffset = (this.paginationInfo.columnWidth + this.paginationInfo.columnGap) * this.paginationInfo.visibleColumnCount * this.paginationInfo.currentSpreadIndex;
         this.redraw();
-        this.trigger("ViewPaginationChanged");
+        this.trigger("ViewPaginationChanged", { paginationInfo: this.getPaginationInfo(), initiator: initiator } );
     },
 
     openPagePrev:  function () {
@@ -334,14 +334,14 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
 
         if(this.paginationInfo.currentSpreadIndex > 0) {
             this.paginationInfo.currentSpreadIndex--;
-            this.onPaginationChanged();
+            this.onPaginationChanged(this);
         }
         else {
 
             var prevSpineItem = this.spine.prevItem(this.currentSpineItem);
             if(prevSpineItem) {
 
-                var pageRequest = new ReadiumSDK.Models.PageOpenRequest(prevSpineItem);
+                var pageRequest = new ReadiumSDK.Models.PageOpenRequest(prevSpineItem, null);
                 pageRequest.setLastPage();
                 this.openPage(pageRequest);
             }
@@ -356,14 +356,14 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
 
         if(this.paginationInfo.currentSpreadIndex < this.paginationInfo.spreadCount - 1) {
             this.paginationInfo.currentSpreadIndex++;
-            this.onPaginationChanged();
+            this.onPaginationChanged(this);
         }
         else {
 
             var nextSpineItem = this.spine.nextItem(this.currentSpineItem);
             if(nextSpineItem) {
 
-                var pageRequest = new ReadiumSDK.Models.PageOpenRequest(nextSpineItem);
+                var pageRequest = new ReadiumSDK.Models.PageOpenRequest(nextSpineItem, null);
                 pageRequest.setFirstPage();
                 this.openPage(pageRequest);
             }
@@ -415,7 +415,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
             self.$epubHtml.hide();
             setTimeout(function() {
                 self.$epubHtml.show();
-                self.onPaginationChanged();
+                self.onPaginationChanged(this);
             }, 50);
 
         }, 100);

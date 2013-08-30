@@ -84,7 +84,7 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
         this.spread.setSyntheticSpread(settings.isSyntheticSpread);
     },
 
-    redraw: function() {
+    redraw: function(initiator) {
 
         var self = this;
 
@@ -99,7 +99,7 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
                 if(context.isElementAdded) {
                     self.applyStyles();
                 }
-                self.onPagesLoaded()
+                self.onPagesLoaded(initiator)
             });
         }
 
@@ -131,12 +131,12 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
 
     },
 
-    onPagesLoaded: function() {
+    onPagesLoaded: function(userData) {
 
         this.updateContentMetaSize();
         this.resizeBook();
 
-        this.trigger("ViewPaginationChanged");
+        this.trigger("ViewPaginationChanged", { paginationInfo: this.getPaginationInfo(), userData: userData } );
     },
 
     onViewportResize: function() {
@@ -300,20 +300,20 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
         }
 
         this.spread.openItem(paginationRequest.spineItem);
-        this.redraw();
+        this.redraw(paginationRequest.initiator);
     },
 
 
     openPagePrev: function() {
 
         this.spread.openPrev();
-        this.redraw();
+        this.redraw(this);
     },
 
     openPageNext: function() {
 
         this.spread.openNext();
-        this.redraw();
+        this.redraw(this);
     },
 
     updatePageViewForItem: function (pageView, item, context) {
