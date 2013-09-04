@@ -29,6 +29,18 @@ ReadiumSDK.Models.Smil.TimeContainerNode = function() {
     this.epubtype = "";
     this.parent = undefined;
     this.index = undefined;
+
+    //root node is a smil model
+    this.getSmil = function() {
+
+        var node = this;
+        while(node.parent) {
+            node = node.parent;
+        }
+
+        return node;
+    }
+
 };
 
 ReadiumSDK.Models.Smil.TimeContainerNode.prototype = new ReadiumSDK.Models.Smil.SmilNode();
@@ -61,6 +73,8 @@ ReadiumSDK.Models.Smil.ParNode = function() {
     this.nodeType = "par";
     this.text = undefined;
     this.audio = undefined;
+    this.textFragmentSelector = undefined;
+    this.element = undefined;
 };
 
 ReadiumSDK.Models.Smil.ParNode.prototype = new ReadiumSDK.Models.Smil.TimeContainerNode();
@@ -144,6 +158,7 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO) {
 
                 if(child.nodeType == "text") {
                     node.text = child;
+                    node.textFragmentSelector = extractTextFragmentSelectorFromTextNode(child);
                 }
                 else if(child.nodeType == "audio") {
                     node.audio = child;
@@ -172,6 +187,18 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO) {
 
         return node;
 
+    };
+
+    var extractTextFragmentSelectorFromTextNode = function(textNode) {
+
+        //assumption is that text node is child of the par node and par node is child of seq node: sec.par.text
+        var seq = textNode.parent.parent;
+        if(!seq || ! seq.textref) {
+            console.debug("unexpected smil structure");
+            return undefined;
+        }
+
+        return textNode.src.substring(seq.textref.length);
     };
 
     var copyChildren = function(from, to) {

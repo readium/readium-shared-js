@@ -81,7 +81,7 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
 //            this.fitToScreen();
         }
 
-        this.trigger("PageLoaded");
+        this.trigger(ReadiumSDK.Events.PAGE_LOADED);
     },
 
 //    fitToScreen: function() {
@@ -239,6 +239,21 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
         var navigation = new ReadiumSDK.Views.CfiNavigationLogic(this.$el, this.$iframe);
         return navigation.getFirstVisibleElementCfi(0);
 
+    },
+
+    getElement: function(spineItem, selector) {
+
+        if(spineItem != this.currentSpineItem) {
+            console.error("spine item is not loaded");
+            return undefined;
+        }
+
+        return this.navigationLogic.getElement(selector);
+    },
+
+    getVisibleTextElements: function() {
+        var navigation = new ReadiumSDK.Views.CfiNavigationLogic(this.$el, this.$iframe);
+        return navigation.getVisibleTextElements({top:0, bottom: this.$iframe.height()});
     }
 
 });

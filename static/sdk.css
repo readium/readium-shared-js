@@ -19,6 +19,10 @@ iframe {
     border-width: 0;
 }
 
+#media-overlay-highlight {
+    background: #99CCCC;
+}
+
 #viewport {
     width: 100%;
     height: 100%;

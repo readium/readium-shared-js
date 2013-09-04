@@ -62,11 +62,13 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
         this.currentView.render();
 
         var self = this;
-        this.currentView.on("ViewPaginationChanged", function( pageChangeData ){
+        this.currentView.on(ReadiumSDK.Events.CURRENT_VIEW_PAGINATION_CHANGED, function( pageChangeData ){
             self.mediaOverlayPlayer.onPaginationChanged(pageChangeData);
-            self.trigger("PaginationChanged", pageChangeData);
+            self.trigger(ReadiumSDK.Events.PAGINATION_CHANGED, pageChangeData);
 
         });
+
+        this.currentView.on(ReadiumSDK.Events.CONTENT_LOADED, this.onContentLoaded);
 
     },
 
@@ -78,9 +80,46 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
             return;
         }
 
-        this.currentView.off("ViewPaginationChanged");
+        this.currentView.off(ReadiumSDK.Events.CURRENT_VIEW_PAGINATION_CHANGED);
         this.currentView.remove();
         this.currentView = undefined;
+    },
+
+    onContentLoaded: function() {
+
+        var spineItems = this.currentView.getLoadedSpineItems();
+
+        for(var i = 0, count = spineItems.length; i < count; i++) {
+
+             this.attachMediaOverlayData(spineItems[i]);
+        }
+    },
+
+    attachMediaOverlayData: function(spineItem) {
+
+        if(!spineItem.media_overlay_id) {
+            return;
+        }
+
+        var smil = this.package.media_overlay.getSmilById(spineItem.media_overlay_id);
+        if(!smil) {
+            return;
+        }
+
+        var iter = new ReadiumSDK.Models.SmilIterator(smil);
+
+        while(iter.currentPar) {
+
+            if(iter.currentPar.textFragmentSelector) {
+                var element = this.currentView.getElement(spineItem, iter.currentPar.textFragmentSelector);
+                if(element) {
+                    iter.currentPar.element = element;
+                    $.data(element, "mediaOverlayData", {par: iter.currentPar});
+                }
+            }
+
+            iter.next();
+        }
     },
 
     /**
@@ -100,7 +139,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
         this.package = new ReadiumSDK.Models.Package({packageData: openBookData.package});
         this.spine = this.package.spine;
-        this.mediaOverlayPlayer = new ReadiumSDK.Views.MediaOverlayPlayer(this.package);
+        this.mediaOverlayPlayer = new ReadiumSDK.Views.MediaOverlayPlayer(this);
 
         this.resetCurrentView();
 
@@ -198,7 +237,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
             }
         }
 
-        this.trigger("SettingsApplied");
+        this.trigger(ReadiumSDK.Events.SETTINGS_ALLIED);
     },
 
     /**
@@ -506,6 +545,15 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
         this.mediaOverlayPlayer.toggleMediaOverlay();
 
+    },
+
+    getVisibleTextElements: function() {
+
+        if(this.currentView) {
+            return this.currentView.getVisibleTextElements();
+        }
+
+        return [];
     }
 
 });

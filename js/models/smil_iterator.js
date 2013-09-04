@@ -34,6 +34,17 @@ ReadiumSDK.Models.SmilIterator = function(smil) {
         this.currentPar = findParNode(this.currentPar.index + 1, this.currentPar.parent);
     };
 
+    this.goToPar =  function(par) {
+
+        while(this.currentPar) {
+            if(this.currentPar == par) {
+                break;
+            }
+
+            this.next();
+        }
+    };
+
     function findParNode(startIndex, container) {
 
         for(var i = startIndex, count = container.children.length; i < count; i++) {

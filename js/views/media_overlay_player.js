@@ -15,59 +15,50 @@
 //
 //  You should have received a copy of the GNU General Public License
 
-ReadiumSDK.Views.MediaOverlayPlayer = function(epubPackage) {
-
-    //difference between stooped and paused is in what happens when we want to play again
-    //if it is paused we resume playing from the current audio location, if stopped it is for application to decide from where to start paling
-    //when user flips pages during MO play we will stop player.
-    this.PLAYING = "playing";
-    this.STOPPED = "stopped";
-    this.PAUSED = "paused";
+ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
     var _smilIterator = undefined;
-    var _audioPlayer = new ReadiumSDK.Views.AudioPlayer(onAudionPositionChanged, onAudioEnded);
-    var _status = this.STOPPED; //mast be one of stooped, paused, playing
+    var _audioPlayer = new ReadiumSDK.Views.AudioPlayer(onStatusChanged, onAudionPositionChanged);
     var _highlightedElement = undefined;
     var _currentPagination = undefined;
+    var _package = reader.package;
     var self = this;
 
-    function play(smilId) {
+    reader.on(ReadiumSDK.Events.PAGINATION_CHANGED, function(paginationData) {
 
-        var par = getParForSmil(smilId);
-
-        if(!par) {
-            return;
+        if(!paginationData) {
+            reset();
         }
+        else {
+            _currentPagination = paginationData.paginationInfo;
+            if(paginationData.initiator != self) {
+                reset();
+            }
+        }
+    });
 
-        playPar(par);
-
-    }
 
     function playPar(par) {
 
-        if(par.audio) {
-            _status = self.PLAYING;
-            var audioSource = epubPackage.resolveRelativeUrl(par.audio.src);
-            _audioPlayer.play(audioSource, par.audio.clipBegin);
+        var parSmil = par.getSmil();
+        if(!_smilIterator || _smilIterator.smil != parSmil) {
+            _smilIterator = new ReadiumSDK.Models.SmilIterator(parSmil);
         }
-    }
-
-    function getParForSmil(smilId) {
-
-        if(!_smilIterator || _smilIterator.smil.id != smilId) {
-            var smil = epubPackage.media_overlay.getSmilById(smilId);
-
-            if(!smil) {
-                return undefined;
-            }
-
-            _smilIterator = new ReadiumSDK.Models.SmilIterator(smil);
-        }
-        else if(!_smilIterator.currentPar) {
+        else {
             _smilIterator.reset();
         }
 
-        return _smilIterator.currentPar;
+        _smilIterator.goToPar(par);
+
+        if(!_smilIterator.currentPar) {
+            console.debug("Something very wrong. Par suppose to be found");
+            return;
+        }
+
+        if(_smilIterator.currentPar.audio) {
+            var audioSource = _package.resolveRelativeUrl(_smilIterator.currentPar.audio.src);
+            _audioPlayer.playFile(audioSource, _smilIterator.currentPar.audio.clipBegin);
+        }
     }
 
     function onAudionPositionChanged(position) {
@@ -78,73 +69,22 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(epubPackage) {
         }
     }
 
+    function reset() {
 
-    function onAudioEnded() {
-
-    }
-
-    function stop() {
-
-        if(_status == self.STOPPED) {
-            return;
-        }
-
-        _status= self.STOPPED;
         _audioPlayer.pause();
-        //clear text here
+        _smilIterator = undefined;
     }
-
-    function pause() {
-
-        if(_status == self.PAUSED || _status == self.STOPPED) {
-            return;
-        }
-
-        _status = self.PAUSED;
-        _audioPlayer.pause();
-    }
-
-    function resume() {
-        if(_status != self.PAUSED) {
-            return;
-        }
-
-        _status = self.PLAYING;
-        _audioPlayer.resume();
-    }
-
-    this.status = function() {
-        return _status;
-    };
-
-//    this.isPlaying = function() {
-//        return _status == self.PLAYING;
-//    };
-
-    this.onPaginationChanged =  function(paginationData) {
-
-        if(!paginationData) {
-            _currentPagination = undefined;
-            stop();
-        }
-        else {
-            _currentPagination = paginationData.paginationInfo;
-            if(paginationData.initiator != self) {
-                stop();
-            }
-        }
-    };
 
     function findSpreadMediaOverlayItemId() {
 
-        if(!_currentPagination || !epubPackage) {
+        if(!_currentPagination || !_package) {
             return undefined;
         }
 
         for(var i = 0, count = _currentPagination.openPages.length; i < count; i++) {
 
             var openPage = _currentPagination.openPages[i];
-            var spineItem = epubPackage.spine.getItemById(openPage.idref);
+            var spineItem = _package.spine.getItemById(openPage.idref);
             if( spineItem && spineItem.media_overlay_id ) {
                 return spineItem.media_overlay_id;
             }
@@ -157,22 +97,58 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(epubPackage) {
         return findSpreadMediaOverlayItemId() != undefined;
     };
 
+
     this.toggleMediaOverlay = function() {
 
-        if(_status == self.PLAYING) {
-            pause();
+        if(_audioPlayer.isPlaying()) {
+            _audioPlayer.pause();
             return;
         }
 
-        if(_status == self.PAUSED) {
-            resume();
+        //if we have position to continue from (reset wasn't called)
+        if(_smilIterator) {
+            _audioPlayer.play();
             return;
         }
 
-        var moItemId = findSpreadMediaOverlayItemId();
-        if(moItemId) {
-            play(moItemId);
-        }
 
-    }
+        var visibleTextElements = reader.getVisibleTextElements();
+
+        for(var i = 0, count = visibleTextElements.length; i < count; i++) {
+            var visibleElement = visibleTextElements[i];
+
+            var moData = $.data(visibleElement, "mediaOverlayData");
+
+            if(moData && visibleElement.percentVisible == 100) {
+                playPar(moData.par);
+                return;
+            }
+        }
+    };
+
+//    function findElementWithMediaPar(smilId, elements) {
+//
+//        var smil = _package.media_overlay.getSmilById(smilId);
+//        if(!smil) {
+//            return undefined;
+//        }
+//
+//        var iterator = new ReadiumSDK.Models.SmilIterator(smil);
+//
+//        var $elements = $(elements);
+//        while(iterator.currentPar) {
+//
+//            if(iterator.currentPar.textFragmentSelector) {
+//                var found = $elements.find(iterator.currentPar.textFragmentSelector);
+//
+//                if(found.length > 0) {
+//                    return { par: iterator.currentPar, element: found[0] };
+//                }
+//            }
+//
+//            iterator.next();
+//        }
+//
+//        return undefined;
+//    }
 };

@@ -40,7 +40,15 @@ ReadiumSDK = {
     Views : {},
     Collections: {},
     Routers: {},
-    Helpers: {}
+    Helpers: {},
+    Events: {
+                READER_INITIALIZED: "ReaderInitialized",
+                PAGE_LOADED: "PageLoaded",
+                PAGINATION_CHANGED: "PaginationChanged",
+                SETTINGS_ALLIED: "SettingsApplied",
+                CONTENT_LOADED: "ContentLoaded",
+                CURRENT_VIEW_PAGINATION_CHANGED: "CurrentViewPaginationChanged" // used internally
+            }
 
 };
 

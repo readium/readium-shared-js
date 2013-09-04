@@ -16,90 +16,98 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-ReadiumSDK.Views.AudioPlayer = function(positionChanged, playEnded) {
+ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAudioEnded) {
 
-    var elm = document.getElementById("audioPlayer");
-    var rate = 1.0;
-    var source = undefined;
-    var onPlayEnded = playEnded;
-    var onPositionChanged = positionChanged;
-    var timerId = undefined;
+    var _elm = document.getElementById("audioPlayer");
 
-    elm.playbackRate = rate;
+    var _source = undefined;
+    var _timerId = undefined;
 
-    elm.addEventListener("ended", function() {
+    _elm.playbackRate = 1.0;
+
+    var self = this;
+
+    _elm.addEventListener("play", function() {
+        onStatusChanged(true);
+    });
+
+    _elm.addEventListener("pause", function() {
+        onStatusChanged(false);
+
+    });
+
+    _elm.addEventListener("ended", function() {
 
         stopTimer();
-        onPlayEnded();
+        onAudioEnded();
     });
 
 
-    this.play = function(mediaFile, clipBegin) {
+    this.playFile = function(mediaFile, clipBegin) {
 
-        source = mediaFile;
+        _source = mediaFile;
 
-        if(elm.getAttribute("src") != source) {
-            elm.addEventListener("canplay", function() {
-                elm.removeEventListener("canplay");
+        if(_elm.getAttribute("src") != _source) {
+            _elm.addEventListener("canplay", function() {
+                _elm.removeEventListener("canplay");
 
                 playFromPosition(clipBegin);
             });
 
-            elm.setAttribute("src", source);
+            _elm.setAttribute("src", _source);
         }
         else {
             playFromPosition(clipBegin);
         }
     };
 
-    this.isPlaying = function() {
-
-        return timerId;
-    };
 
     this.pause = function() {
         stopTimer();
-        elm.pause();
+        _elm.pause();
     };
 
-    this.resume = function() {
+    this.play = function() {
 
-        if(!source) {
+        if(!_source) {
             return;
         }
 
         startTimer();
-        elm.play();
+        _elm.play();
+    };
+
+    this.isPlaying = function() {
+        return _timerId != undefined;
     };
 
     function playFromPosition(position) {
 
         stopTimer();
 
-        elm.addEventListener("seeked", function(){
-            elm.removeEventListener("seeked");
+        _elm.addEventListener("seeked", function(){
+            _elm.removeEventListener("seeked");
 
-            startTimer();
-            elm.play();
+            self.play();
         });
 
-        elm.currentTime = position;
+        _elm.currentTime = position;
     }
 
     function stopTimer() {
-        clearInterval(timerId);
-        timerId = undefined;
+        clearInterval(_timerId);
+        _timerId = undefined;
     }
 
     function startTimer() {
 
-        if(timerId) {
+        if(_timerId) {
             return;
         }
 
-        timerId = setInterval(function() {
+        _timerId = setInterval(function() {
 
-            onPositionChanged(elm.currentTime);
+            onPositionChanged(_elm.currentTime);
 
         }, 11);
     }

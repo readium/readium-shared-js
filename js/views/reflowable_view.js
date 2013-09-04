@@ -33,6 +33,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
     $viewport: undefined,
     $contentFrame: undefined,
     userStyles: undefined,
+    navigationLogic: undefined,
 
     lastViewPortSize : {
         width: undefined,
@@ -71,6 +72,8 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         this.$iframe.css("left", "");
         this.$iframe.css("right", "");
         this.$iframe.css(this.spine.isLeftToRight() ? "left" : "right", "0px");
+
+        this.navigationLogic = new ReadiumSDK.Views.CfiNavigationLogic(this.$contentFrame, this.$iframe);
 
         //We will call onViewportResize after user stopped resizing window
         var lazyResize = _.debounce(this.onViewportResize, 100);
@@ -161,6 +164,8 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
             return;
         }
 
+        this.trigger(ReadiumSDK.Events.CONTENT_LOADED);
+
         var epubContentDocument = this.$iframe[0].contentDocument;
         this.$epubHtml = $("html", epubContentDocument);
 
@@ -182,6 +187,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
 
         this.applySwitches(epubContentDocument);
         this.registerTriggers(epubContentDocument);
+
     },
 
 
@@ -226,16 +232,16 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         }
 
         var pageIndex = undefined;
-        var navigation = new ReadiumSDK.Views.CfiNavigationLogic(this.$contentFrame, this.$iframe);
+
 
         if(pageRequest.spineItemPageIndex !== undefined) {
             pageIndex = pageRequest.spineItemPageIndex;
         }
         else if(pageRequest.elementId) {
-            pageIndex = navigation.getPageForElementId(pageRequest.elementId);
+            pageIndex = this.navigationLogic.getPageForElementId(pageRequest.elementId);
         }
         else if(pageRequest.elementCfi) {
-            pageIndex = navigation.getPageForElementCfi(pageRequest.elementCfi);
+            pageIndex = this.navigationLogic.getPageForElementCfi(pageRequest.elementCfi);
         }
         else if(pageRequest.firstPage) {
             pageIndex = 0;
@@ -323,7 +329,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
 
         this.paginationInfo.pageOffset = (this.paginationInfo.columnWidth + this.paginationInfo.columnGap) * this.paginationInfo.visibleColumnCount * this.paginationInfo.currentSpreadIndex;
         this.redraw();
-        this.trigger("ViewPaginationChanged", { paginationInfo: this.getPaginationInfo(), initiator: initiator } );
+        this.trigger(ReadiumSDK.Events.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: this.getPaginationInfo(), initiator: initiator } );
     },
 
     openPagePrev:  function () {
@@ -432,13 +438,10 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         }
     },
 
-    getFirstVisibleElementCfi: function(){
+    getFirstVisibleElementCfi: function() {
 
-        var columnsLeftOfViewport = Math.round(this.paginationInfo.pageOffset / (this.paginationInfo.columnWidth + this.paginationInfo.columnGap));
-        var topOffset = columnsLeftOfViewport * this.$contentFrame.height();
-
-        var navigation = new ReadiumSDK.Views.CfiNavigationLogic(this.$contentFrame, this.$iframe);
-        return navigation.getFirstVisibleElementCfi(topOffset);
+        var contentOffsets = this.getVisibleContentOffsets();
+        return this.navigationLogic.getFirstVisibleElementCfi(contentOffsets.top);
     },
 
     getPaginationInfo: function() {
@@ -469,6 +472,34 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         }
 
         return new ReadiumSDK.Models.BookmarkData(this.currentSpineItem.idref, this.getFirstVisibleElementCfi());
+    },
+
+    getVisibleContentOffsets: function() {
+        var columnsLeftOfViewport = Math.round(this.paginationInfo.pageOffset / (this.paginationInfo.columnWidth + this.paginationInfo.columnGap));
+
+        var topOffset =  columnsLeftOfViewport * this.$contentFrame.height();
+        var bottomOffset = topOffset + this.paginationInfo.visibleColumnCount * this.$contentFrame.height();
+
+        return {top: topOffset, bottom: bottomOffset};
+    },
+
+    getLoadedSpineItems: function() {
+        return [this.currentSpineItem];
+    },
+
+    getElement: function(spineItem, selector) {
+
+        if(spineItem != this.currentSpineItem) {
+            console.error("spine item is not loaded");
+            return undefined;
+        }
+
+        return this.navigationLogic.getElement(selector);
+    },
+
+    getVisibleTextElements: function() {
+
+        return this.navigationLogic.getVisibleTextElements();
     }
 
 });

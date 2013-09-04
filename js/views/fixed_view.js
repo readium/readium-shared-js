@@ -133,10 +133,12 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
 
     onPagesLoaded: function(userData) {
 
+        this.trigger(ReadiumSDK.Events.CONTENT_LOADED);
+
         this.updateContentMetaSize();
         this.resizeBook();
 
-        this.trigger("ViewPaginationChanged", { paginationInfo: this.getPaginationInfo(), userData: userData } );
+        this.trigger(ReadiumSDK.Events.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: this.getPaginationInfo(), userData: userData } );
     },
 
     onViewportResize: function() {
@@ -333,7 +335,7 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
 
         var dfd = $.Deferred();
 
-        pageView.on("PageLoaded", dfd.resolve);
+        pageView.on(ReadiumSDK.Events.PAGE_LOADED, dfd.resolve);
 
         pageView.loadSpineItem(item);
 
@@ -361,6 +363,25 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
 
     bookmarkCurrentPage: function() {
 
+        var views = this.getDisplayingViews();
+
+        if(views.length > 0) {
+
+            var idref = views[0].currentSpineItem.idref;
+            var cfi = views[0].getFirstVisibleElementCfi();
+
+            if(cfi == undefined) {
+                cfi = "";
+            }
+
+            return new ReadiumSDK.Models.BookmarkData(idref, cfi);
+        }
+
+        return new ReadiumSDK.Models.BookmarkData("", "");
+    },
+
+    getDisplayingViews: function() {
+
         var viewsToCheck = [];
 
         if( this.spine.isLeftToRight() ) {
@@ -370,22 +391,49 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
             viewsToCheck = [this.rightPageView, this.centerPageView, this.leftPageView];
         }
 
-        for(var i = 0; i < viewsToCheck.length; i++) {
+        var views = [];
+
+        for(var i = 0, count = viewsToCheck.length; i < count; i++) {
             if(viewsToCheck[i].isDisplaying()) {
-
-                var idref = viewsToCheck[i].currentSpineItem.idref;
-                var cfi = viewsToCheck[i].getFirstVisibleElementCfi();
-
-                if(cfi == undefined) {
-                    cfi = "";
-                }
-
-                return new ReadiumSDK.Models.BookmarkData(idref, cfi);
-
+                views.push(viewsToCheck[i]);
             }
         }
 
-        return new ReadiumSDK.Models.BookmarkData("", "");
+        return views;
+    },
+
+    getLoadedSpineItems: function() {
+
+        return this.spread.validItems();
+    },
+
+    getElement: function(spineItem, selector) {
+
+        var views = this.getDisplayingViews();
+
+        for(var i = 0, count = views.length; i < count; i++) {
+
+            var view = views[i];
+            if(view.currentSpineItem == spineItem) {
+                return view.getElement(spineItem, selector);
+            }
+        }
+
+        console.error("spine item is not loaded");
+        return undefined;
+    },
+
+    getVisibleTextElements: function() {
+
+        var elements = [];
+
+        var views = this.getDisplayingViews();
+
+        for(var i = 0, count = views.length; i < count; i++) {
+            elements.push.apply(elements, views[i].getVisibleTextElements());
+        }
+
+        return elements;
     }
 
 });
