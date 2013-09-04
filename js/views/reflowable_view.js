@@ -500,6 +500,18 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
     getVisibleTextElements: function() {
 
         return this.navigationLogic.getVisibleTextElements();
+    },
+
+    insureElementVisibility: function(element, userData) {
+
+        var page = this.navigationLogic.getPageForElement($(element));
+
+        if(page == -1) {
+            return;
+        }
+
+        var openPageRequest = new ReadiumSDK.Models.PageOpenRequest(this.currentSpineItem, userData);
+        this.openPage(openPageRequest);
     }
 
 });

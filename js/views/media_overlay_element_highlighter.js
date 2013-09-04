@@ -15,11 +15,16 @@
 //
 //  You should have received a copy of the GNU General Public License
 
-ReadiumSDK.Views.MediaOverlayTextHighlighter = function() {
+ReadiumSDK.Views.MediaOverlayElementHighlighter = function() {
 
     var _highlightedElement = undefined;
 
     this.highlightElement = function(element) {
+
+        if(element === _highlightedElement) {
+            return;
+        }
+
         this.reset();
         $(element).addClass("media-overlay-highlight");
         _highlightedElement = element;
@@ -29,6 +34,7 @@ ReadiumSDK.Views.MediaOverlayTextHighlighter = function() {
 
         if(_highlightedElement) {
             $(_highlightedElement).removeClass("media-overlay-highlight");
+            _highlightedElement = undefined;
         }
     }
 

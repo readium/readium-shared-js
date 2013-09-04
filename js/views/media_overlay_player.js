@@ -19,10 +19,10 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
     var _smilIterator = undefined;
     var _audioPlayer = new ReadiumSDK.Views.AudioPlayer(onStatusChanged, onAudionPositionChanged);
-    var _highlightedElement = undefined;
     var _currentPagination = undefined;
     var _package = reader.package;
     var self = this;
+    var _elementHighlighter = new ReadiumSDK.Views.MediaOverlayElementHighlighter();
 
     reader.on(ReadiumSDK.Events.PAGINATION_CHANGED, function(paginationData) {
 
@@ -32,6 +32,9 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         else {
             _currentPagination = paginationData.paginationInfo;
             if(paginationData.initiator != self) {
+                highlightCurrentElement();
+            }
+            else {
                 reset();
             }
         }
@@ -55,23 +58,74 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             return;
         }
 
-        if(_smilIterator.currentPar.audio) {
-            var audioSource = _package.resolveRelativeUrl(_smilIterator.currentPar.audio.src);
-            _audioPlayer.playFile(audioSource, _smilIterator.currentPar.audio.clipBegin);
-        }
+        playCurrentAudio();
+    }
+
+    function playCurrentAudio() {
+
+        var audioSource = _package.resolveRelativeUrl(_smilIterator.currentPar.audio.src);
+        _audioPlayer.playFile(audioSource, _smilIterator.currentPar.audio.clipBegin);
+        highlightCurrentElement();
     }
 
     function onAudionPositionChanged(position) {
 
         var audio = _smilIterator.currentPar.audio;
-        if(position >= audio.clipBegin && position <= audio.clipEnd && !_highlightedElement) {
-//            highlightElement(_smilIterator.currentPar.text.src);
+
+        if(position >= audio.clipBegin && position <= audio.clipEnd) {
+            return;
         }
+
+        _smilIterator.goToAudioPosition(position);
+
+        if(_smilIterator.currentPar) {
+            highlightCurrentElement();
+            return;
+        }
+
+        var newSmilIterator = findSmilFor(audio.src, position);
+        if(newSmilIterator) {
+            _smilIterator = newSmilIterator;
+            reader.openContentUrl(_smilIterator.currentPar.text.src, _smilIterator.smil.href, {initiator: self} );
+            return;
+        }
+
+        //couldn't find smil information for current audion position
+        //we will stop audio play
+        reset();
+    }
+
+    function highlightCurrentElement() {
+
+        if(_smilIterator.currentPar.element) {
+            _elementHighlighter.highlightElement(_smilIterator.currentPar.element);
+        }
+
+
+
+    }
+
+    function findSmilFor(source, position) {
+
+        var smils = _package.media_overlay.getSmilsByHref(source);
+
+        for(var i = 0, count = smils.length; i < count; i++) {
+
+            var iter = new ReadiumSDK.Models.SmilIterator(smils[i]);
+            iter.goToAudioPosition(position);
+
+            if(iter.currentPar) {
+                return iter;
+            }
+        }
+
+        return undefined;
     }
 
     function reset() {
 
         _audioPlayer.pause();
+        _elementHighlighter.reset();
         _smilIterator = undefined;
     }
 

@@ -35,6 +35,21 @@ ReadiumSDK.Models.MediaOverlay = function() {
 
         return undefined;
     }
+
+    this.getSmilsByHref = function(href) {
+
+        var smils = [];
+
+        for(var i = 0, count = this.smil_models.length; i < count; i++) {
+
+            var smil = this.smil_models[i];
+            if(smil.href === href) {
+                smils.push(smil);
+            }
+        }
+
+        return smils;
+    }
 };
 
 ReadiumSDK.Models.MediaOverlay.fromDTO = function(moDTO) {
