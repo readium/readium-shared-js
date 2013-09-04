@@ -21,13 +21,10 @@
 
 ReadiumSDK.Models.Package = Backbone.Model.extend({
 
-
     spine: undefined,
-
-
     rendition_layout: undefined,
     rootUrl: undefined,
-
+    media_overlay: undefined,
 
     initialize : function() {
 
@@ -46,8 +43,8 @@ ReadiumSDK.Models.Package = Backbone.Model.extend({
 
             this.spine = new ReadiumSDK.Models.Spine({spineData: packageData.spine, package: this});
 
+            this.media_overlay = ReadiumSDK.Models.MediaOverlay.fromDTO(packageData.media_overlay);
         }
-
     },
 
     reset: function() {

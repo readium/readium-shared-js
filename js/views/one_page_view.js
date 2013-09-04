@@ -25,6 +25,7 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
 
     currentSpineItem: undefined,
     spine: undefined,
+    contentAlignment: undefined, //expected 'center' 'left' 'right'
 
     meta_size : {
         width: 0,
@@ -35,6 +36,7 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
     initialize: function() {
 
         this.spine = this.options.spine;
+        this.contentAlignment = this.options.contentAlignment;
 
     },
 
@@ -47,8 +49,13 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
 
         if(!this.$iframe) {
 
-            this.template = _.template($("#template-ope-fixed-page-view").html(), {});
+            this.template = ReadiumSDK.Helpers.loadTemplate("fixed_page_frame", {});
+
             this.setElement(this.template);
+
+            this.$el.css("height", "100%");
+            this.$el.css("width", "100%");
+
             this.$el.addClass(this.options.class);
             this.$iframe = $("iframe", this.$el);
         }
@@ -70,51 +77,80 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
             var epubContentDocument = this.$iframe[0].contentDocument;
             this.$epubHtml = $("html", epubContentDocument);
             this.$epubHtml.css("overflow", "hidden");
-            this.fitToScreen();
+            this.updateMetaSize();
+//            this.fitToScreen();
         }
 
         this.trigger("PageLoaded");
     },
 
-    fitToScreen: function() {
+//    fitToScreen: function() {
+//
+//        if(!this.isDisplaying()) {
+//            return;
+//        }
+//
+//        this.updateMetaSize();
+//
+//        if(this.meta_size.width <= 0 || this.meta_size.height <= 0) {
+//            return;
+//        }
+//
+//
+//        var containerWidth = this.$el.width();
+//        var containerHeight = this.$el.height();
+//
+//        var horScale = containerWidth / this.meta_size.width;
+//        var verScale = containerHeight / this.meta_size.height;
+//
+//        var scale = Math.min(horScale, verScale);
+//
+//        var newWidth = this.meta_size.width * scale;
+//        var newHeight = this.meta_size.height * scale;
+//
+//        var top = Math.floor((containerHeight - newHeight) / 2);
+//
+//        var left;
+//        if(this.contentAlignment == "left") {
+//            left = 0;
+//        }
+//        else if(this.contentAlignment == "right") {
+//            left = containerWidth - newWidth;
+//        }
+//        else { //center
+//            left = Math.floor((containerWidth - newWidth) / 2);
+//        }
+//
+//        if(top < 0) top = 0;
+//        if(left < 0) left = 0;
+//
+//        var css = this.generateTransformCSS(scale, left, top);
+//        css["width"] = this.meta_size.width;
+//        css["height"] = this.meta_size.height;
+//
+//        this.$epubHtml.css(css);
+//    },
 
-        if(!this.isDisplaying()) {
-            return;
-        }
+    transformContent: function(scale, left, top) {
 
-        this.updateMetaSize();
+        this.$el.css("left", left + "px");
+        this.$el.css("top", top + "px");
+        this.$el.css("width", Math.floor(this.meta_size.width * scale) + "px");
+        this.$el.css("height", Math.floor(this.meta_size.height * scale) + "px");
 
-        if(this.meta_size.width <= 0 || this.meta_size.height <= 0) {
-            return;
-        }
+        var css = this.generateTransformCSS(scale, 0, 0);
 
-
-        var containerWidth = this.$el.width();
-        var containerHeight = this.$el.height();
-
-        var horScale = containerWidth / this.meta_size.width;
-        var verScale = containerHeight / this.meta_size.height;
-
-        var scale = Math.min(horScale, verScale);
-
-        var newWidth = this.meta_size.width * scale;
-        var newHeight = this.meta_size.height * scale;
-
-        var left = Math.floor((containerWidth - newWidth) / 2);
-        var top = Math.floor((containerHeight - newHeight) / 2);
-
-        var css = this.generateTransformCSS(left, top, scale);
         css["width"] = this.meta_size.width;
         css["height"] = this.meta_size.height;
 
         this.$epubHtml.css(css);
     },
 
-    generateTransformCSS: function(left, top, scale) {
+    generateTransformCSS: function(scale, left, top) {
 
         var transformString = "translate(" + left + "px, " + top + "px) scale(" + scale + ")";
 
-        //modernizer library can be used to get browser independent transform attributes names (implemented in readium-web fixed_layout_book_zoomer.js)
+        //TODO modernizer library can be used to get browser independent transform attributes names (implemented in readium-web fixed_layout_book_zoomer.js)
         var css = {};
         css["-webkit-transform"] = transformString;
         css["-webkit-transform-origin"] = "0 0";

@@ -1,5 +1,3 @@
-//  LauncherOSX
-//
 //  Created by Boris Schneiderman.
 //  Copyright (c) 2012-2013 The Readium Foundation.
 //
@@ -17,31 +15,18 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-/**
- * Top level ReadiumSDK namespace
- * @class ReadiumSDK
- * @static
- */
-ReadiumSDK = {
+ReadiumSDK.Models.Style = function(selector, declarations) {
 
-    /**
-     Current version of the JS SDK
-     @method version
-     @static
-     @return {string} version
-     */
-    version: function() {
-        return "0.8.0";
-    },
+    this.selector = selector;
+    this.declarations = declarations;
 
-    Models :    {
-                    Smil: {}
-                },
-    Views : {},
-    Collections: {},
-    Routers: {},
-    Helpers: {}
+    this.setDeclarations = function(declarations) {
 
+        for(var prop in declarations) {
+            if(declarations.hasOwnProperty(prop)) {
+                this.declarations[prop] = declarations[prop];
+            }
+        }
+
+    }
 };
-
-_.extend(ReadiumSDK, Backbone.Events);

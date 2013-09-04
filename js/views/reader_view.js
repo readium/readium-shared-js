@@ -23,16 +23,16 @@
  * */
 ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
-    el: 'body',
     currentView: undefined,
     package: undefined,
     spine: undefined,
     viewerSettings:undefined,
+    userStyles: undefined,
 
     initialize: function() {
 
-        this.viewerSettings = new ReadiumSDK.Models.ViewerSettings(true, 20, 20);
-
+        this.viewerSettings = new ReadiumSDK.Models.ViewerSettings({});
+        this.userStyles = new ReadiumSDK.Collections.StyleCollection();
     },
 
     renderCurrentView: function(isReflowable) {
@@ -49,20 +49,19 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
         if(isReflowable) {
 
-            this.currentView = new ReadiumSDK.Views.ReflowableView({spine:this.spine});
+            this.currentView = new ReadiumSDK.Views.ReflowableView({$viewport: this.$el, spine:this.spine, userStyles: this.userStyles});
         }
         else {
 
-            this.currentView = new ReadiumSDK.Views.FixedView({spine:this.spine});
+            this.currentView = new ReadiumSDK.Views.FixedView({$viewport: this.$el, spine:this.spine, userStyles: this.userStyles});
         }
 
         this.currentView.setViewSettings(this.viewerSettings);
 
-        this.$el.append(this.currentView.render().$el);
+        this.currentView.render();
 
         var self = this;
         this.currentView.on("ViewPaginationChanged", function(){
-
             var paginationReportData = self.currentView.getPaginationInfo();
             self.trigger("PaginationChanged", paginationReportData);
 
@@ -85,34 +84,48 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
      * Triggers the process of opening the book and requesting resources specified in the packageData
      *
      * @method openBook
-     * @param {ReadiumSDK.Models.PackageData} packageData DTO Object hierarchy of Package, Spine, SpineItems passed by
-     * host application to the reader
-     * @param {ReadiumSDK.Models.PageOpenRequest|undefined} openPageRequestData Optional parameter specifying
-     * on what page book should be open when it is loaded. If nothing is specified book will be opened on the first page
+     * @param openBookData object with open book data in format:
+     * {
+     *     package: packageData, (required)
+     *     openPageRequest: openPageRequestData, (optional) data related to open page request
+     *     settings: readerSettings, (optional)
+     *     styles: cssStyles (optional)
+     * }
+     *
      */
-    openBook: function(packageData, openPageRequestData) {
+    openBook: function(openBookData) {
 
-        this.package = new ReadiumSDK.Models.Package({packageData: packageData});
+        this.package = new ReadiumSDK.Models.Package({packageData: openBookData.package});
         this.spine = this.package.spine;
 
         this.resetCurrentView();
 
-        if(openPageRequestData) {
+        if(openBookData.settings) {
+            this.updateSettings(openBookData.settings);
+        }
 
-            if(openPageRequestData.idref) {
+        if(openBookData.styles) {
+            this.setStyles(openBookData.styles);
+        }
 
-                if(openPageRequestData.spineItemPageIndex) {
-                    this.openSpineItemPage(openPageRequestData.idref, openPageRequestData.spineItemPageIndex);
+        if(openBookData.openPageRequest) {
+
+            var pageRequestData = openBookData.openPageRequest;
+
+            if(pageRequestData.idref) {
+
+                if(pageRequestData.spineItemPageIndex) {
+                    this.openSpineItemPage(pageRequestData.idref, pageRequestData.spineItemPageIndex);
                 }
-                else if(openPageRequestData.elementCfi) {
-                    this.openSpineItemElementCfi(openPageRequestData.idref, openPageRequestData.elementCfi);
+                else if(pageRequestData.elementCfi) {
+                    this.openSpineItemElementCfi(pageRequestData.idref, pageRequestData.elementCfi);
                 }
                 else {
-                    this.openSpineItemPage(openPageRequestData.idref, 0);
+                    this.openSpineItemPage(pageRequestData.idref, 0);
                 }
             }
-            else if(openPageRequestData.contentRefUrl && openPageRequestData.sourceFileHref) {
-                this.openContentUrl(openPageRequestData.contentRefUrl, openPageRequestData.sourceFileHref);
+            else if(pageRequestData.contentRefUrl && pageRequestData.sourceFileHref) {
+                this.openContentUrl(pageRequestData.contentRefUrl, pageRequestData.sourceFileHref);
             }
             else {
                 console.log("Invalid page request data: idref required!");
@@ -180,6 +193,8 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
                 this.openSpineItemElementCfi(bookMark.idref, bookMark.elementCfi);
             }
         }
+
+        this.trigger("SettingsApplied");
     },
 
     /**
@@ -353,6 +368,35 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
     },
 
     /**
+     * Set CSS Styles to the reader
+     *
+     * @method setStyles
+     *
+     * @param styles {object} style object contains selector property and declarations object
+     */
+    setStyles: function(styles) {
+
+        var count = styles.length;
+
+        for(var i = 0; i < count; i++) {
+            this.userStyles.addStyle(styles[i].selector, styles[i].declarations);
+        }
+
+        this.applyStyles();
+
+    },
+
+    applyStyles: function() {
+
+        ReadiumSDK.Helpers.setStyles(this.userStyles.styles, this.$el);
+
+        if(this.currentView) {
+            this.currentView.applyStyles();
+        }
+    },
+
+
+    /**
      * Opens the content document specified by the url
      *
      * @method openContentUrl
@@ -404,6 +448,33 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
      */
     bookmarkCurrentPage: function() {
         return JSON.stringify(this.currentView.bookmarkCurrentPage());
+    },
+
+    /**
+     * Resets all the custom styles set by setStyle callers at runtime
+     *
+     * @method resetStyles
+     */
+    clearStyles: function() {
+
+        var styles = this.userStyles.styles;
+        var count = styles.length;
+
+        for(var i = 0; i < count; i++) {
+
+            var style = styles[i];
+            var declarations = style.declarations;
+
+            for(var prop in declarations) {
+                if(declarations.hasOwnProperty(prop)) {
+                    declarations[prop] = '';
+                }
+            }
+        }
+
+        this.applyStyles();
+
+        this.userStyles.clear();
     }
 
 });

@@ -1,0 +1,52 @@
+
+.book-frame {
+    padding: 6px 17px 6px 17px;
+    margin: 20px;
+    border: 1px solid #005E25;
+    border-radius: 5px;
+    box-shadow: 0 3px 0 #1E2331;
+    background: #576793;
+}
+
+.fixed-page-frame-left {
+
+    border: 0 #f0f0f0;
+    border-right-style: solid;
+    border-bottom: 3px outset;
+    border-left: 3px outset;
+    background-color: white;
+    padding: 10px 0 10px 10px;
+    box-shadow: -5px 5px 5px 0 rgba(0, 0, 0, 0.1);}
+
+.fixed-page-frame-right {
+
+    border: 0 #f0f0f0;
+    border-right: 3px solid;
+    border-bottom: 3px outset;
+    border-left-style: outset;
+    background-color: white;
+    padding:10px 10px 10px 0;
+    box-shadow: 5px 5px 5px 0 rgba(0, 0, 0, 0.1);
+
+}
+
+.fixed-page-frame-center {
+
+    border: 0 #f0f0f0;
+    border-right-style: solid;
+    border-bottom: 3px outset;
+    border-left: 3px outset;
+    background-color: white;
+    padding: 10px;
+    box-shadow: -5px 5px 5px 0 rgba(0, 0, 0, 0.1);
+}
+
+.reflowable-content-frame {
+    border: 0 #f0f0f0;
+    border-right-style: solid;
+    border-bottom: 3px outset;
+    border-left: 3px outset;
+    background-color: white;
+    padding: 10px;
+    box-shadow: -5px 5px 5px 0 rgba(0, 0, 0, 0.1);
+}
