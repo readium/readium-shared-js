@@ -63,18 +63,25 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
         var self = this;
         this.currentView.on(ReadiumSDK.Events.CURRENT_VIEW_PAGINATION_CHANGED, function( pageChangeData ){
-            self.mediaOverlayPlayer.onPaginationChanged(pageChangeData);
             self.trigger(ReadiumSDK.Events.PAGINATION_CHANGED, pageChangeData);
 
         });
 
-        this.currentView.on(ReadiumSDK.Events.CONTENT_LOADED, this.onContentLoaded);
+        this.currentView.on(ReadiumSDK.Events.CONTENT_LOADED, function() {
+
+            var spineItems = self.currentView.getLoadedSpineItems();
+
+            for(var i = 0, count = spineItems.length; i < count; i++) {
+
+                self.attachMediaOverlayData(spineItems[i]);
+            }
+
+        });
 
     },
 
     resetCurrentView: function() {
 
-        this.mediaOverlayPlayer.onPaginationChanged(undefined);
 
         if(!this.currentView) {
             return;
@@ -83,16 +90,6 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
         this.currentView.off(ReadiumSDK.Events.CURRENT_VIEW_PAGINATION_CHANGED);
         this.currentView.remove();
         this.currentView = undefined;
-    },
-
-    onContentLoaded: function() {
-
-        var spineItems = this.currentView.getLoadedSpineItems();
-
-        for(var i = 0, count = spineItems.length; i < count; i++) {
-
-             this.attachMediaOverlayData(spineItems[i]);
-        }
     },
 
     attachMediaOverlayData: function(spineItem) {

@@ -434,6 +434,12 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
         }
 
         return elements;
+    },
+
+    insureElementVisibility: function(element, userData) {
+
+        //for now we assume that for fixed layout element is always visible
+
     }
 
 });

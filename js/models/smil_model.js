@@ -136,12 +136,13 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO) {
         }
     };
 
-    var createNodeFromDTO = function(nodeDTO) {
+    var createNodeFromDTO = function(nodeDTO, parent) {
 
         var node;
 
         if(nodeDTO.nodeType == "seq") {
             node = new ReadiumSDK.Models.Smil.SeqNode();
+            node.parent = parent;
             safeCopyProperty("textref", nodeDTO, node, true);
             safeCopyProperty("id", nodeDTO, node);
             safeCopyProperty("epubtype", nodeDTO, node);
@@ -150,11 +151,12 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO) {
         }
         else if (nodeDTO.nodeType == "par") {
             node = new ReadiumSDK.Models.Smil.ParNode();
+            node.parent = parent;
             safeCopyProperty("id", nodeDTO, node);
             safeCopyProperty("epubtype", nodeDTO, node);
 
             for(var i = 0, count = nodeDTO.children.length; i < count; i++) {
-                var child = createNodeFromDTO(nodeDTO.children[i]);
+                var child = createNodeFromDTO(nodeDTO.children[i], node);
 
                 if(child.nodeType == "text") {
                     node.text = child;
@@ -170,11 +172,13 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO) {
         }
         else if (nodeDTO.nodeType == "text") {
             node = new ReadiumSDK.Models.Smil.TextNode();
+            node.parent = parent;
             safeCopyProperty("src", nodeDTO, node, true);
             safeCopyProperty("id", nodeDTO, node);
         }
         else if (nodeDTO.nodeType == "audio") {
             node = new ReadiumSDK.Models.Smil.AudioNode();
+            node.parent = parent;
             safeCopyProperty("src", nodeDTO, node, true);
             safeCopyProperty("id", nodeDTO, node);
             safeCopyProperty("clipBegin", nodeDTO, node);
@@ -206,8 +210,7 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO) {
         var count = from.children.length;
 
         for(var i = 0; i < count; i++) {
-            var node = createNodeFromDTO(from.children[i]);
-            node.parent = to;
+            var node = createNodeFromDTO(from.children[i], to);
             node.index = i;
             to.children.push(node);
         }
