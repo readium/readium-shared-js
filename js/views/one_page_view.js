@@ -251,9 +251,9 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
         return this.navigationLogic.getElement(selector);
     },
 
-    getVisibleTextElements: function() {
+    getVisibleMediaOverlayElements: function() {
         var navigation = new ReadiumSDK.Views.CfiNavigationLogic(this.$el, this.$iframe);
-        return navigation.getVisibleTextElements({top:0, bottom: this.$iframe.height()});
+        return navigation.getVisibleMediaOverlayElements({top:0, bottom: this.$iframe.height()});
     }
 
 });

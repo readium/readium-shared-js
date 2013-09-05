@@ -249,6 +249,9 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         else if(pageRequest.lastPage) {
             pageIndex = this.paginationInfo.columnCount - 1;
         }
+        else {
+            console.debug("No criteria in pageRequest");
+        }
 
         if(pageIndex !== undefined && pageIndex >= 0 && pageIndex < this.paginationInfo.columnCount) {
 
@@ -332,7 +335,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         this.trigger(ReadiumSDK.Events.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: this.getPaginationInfo(), initiator: initiator } );
     },
 
-    openPagePrev:  function () {
+    openPagePrev:  function (initiator) {
 
         if(!this.currentSpineItem) {
             return;
@@ -340,21 +343,21 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
 
         if(this.paginationInfo.currentSpreadIndex > 0) {
             this.paginationInfo.currentSpreadIndex--;
-            this.onPaginationChanged(this);
+            this.onPaginationChanged(initiator);
         }
         else {
 
             var prevSpineItem = this.spine.prevItem(this.currentSpineItem);
             if(prevSpineItem) {
 
-                var pageRequest = new ReadiumSDK.Models.PageOpenRequest(prevSpineItem, null);
+                var pageRequest = new ReadiumSDK.Models.PageOpenRequest(prevSpineItem, initiator);
                 pageRequest.setLastPage();
                 this.openPage(pageRequest);
             }
         }
     },
 
-    openPageNext: function () {
+    openPageNext: function (initiator) {
 
         if(!this.currentSpineItem) {
             return;
@@ -362,14 +365,14 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
 
         if(this.paginationInfo.currentSpreadIndex < this.paginationInfo.spreadCount - 1) {
             this.paginationInfo.currentSpreadIndex++;
-            this.onPaginationChanged(this);
+            this.onPaginationChanged(initiator);
         }
         else {
 
             var nextSpineItem = this.spine.nextItem(this.currentSpineItem);
             if(nextSpineItem) {
 
-                var pageRequest = new ReadiumSDK.Models.PageOpenRequest(nextSpineItem, null);
+                var pageRequest = new ReadiumSDK.Models.PageOpenRequest(nextSpineItem, initiator);
                 pageRequest.setFirstPage();
                 this.openPage(pageRequest);
             }
@@ -497,12 +500,13 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         return this.navigationLogic.getElement(selector);
     },
 
-    getVisibleTextElements: function() {
+    getVisibleMediaOverlayElements: function() {
 
-        return this.navigationLogic.getVisibleTextElements();
+        var visibleContentOffsets = this.getVisibleContentOffsets();
+        return this.navigationLogic.getVisibleMediaOverlayElements(visibleContentOffsets);
     },
 
-    insureElementVisibility: function(element, userData) {
+    insureElementVisibility: function(element, initiator) {
 
         var page = this.navigationLogic.getPageForElement($(element));
 
@@ -510,7 +514,9 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
             return;
         }
 
-        var openPageRequest = new ReadiumSDK.Models.PageOpenRequest(this.currentSpineItem, userData);
+        var openPageRequest = new ReadiumSDK.Models.PageOpenRequest(this.currentSpineItem, initiator);
+        openPageRequest.setPageIndex(page);
+
         this.openPage(openPageRequest);
     }
 

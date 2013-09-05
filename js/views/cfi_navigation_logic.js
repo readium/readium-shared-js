@@ -114,10 +114,15 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
             return undefined;
         }
 
-        return this.getPageForElement($element, cfiParts.x, cfiParts.y);
+        return this.getPageForPointOnElement($element, cfiParts.x, cfiParts.y);
     };
 
-    this.getPageForElement = function($element, x, y) {
+    this.getPageForElement = function($element) {
+
+        return this.getPageForPointOnElement($element, 0, 0);
+    };
+
+    this.getPageForPointOnElement = function($element, x, y) {
 
         var elementRect = ReadiumSDK.Helpers.Rect.fromElement($element);
         var posInElement = Math.ceil(elementRect.top + y * elementRect.height / 100);
@@ -134,7 +139,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
             return -1;
         }
 
-        return this.getPageForElement($element, 0, 0);
+        return this.getPageForElement($element);
     };
 
     function splitCfi(cfi) {
@@ -169,11 +174,16 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
         return ret;
     }
 
-    this.getVisibleTextElements = function(visibleContentOffsets) {
+    this.getVisibleMediaOverlayElements = function(visibleContentOffsets) {
+
+        var $elements = this.getMediaOverlayElements($("body", this.getRootElement()));
+        return this.getVisibleElements($elements, visibleContentOffsets);
+
+    };
+
+    this.getVisibleElements = function($elements, visibleContentOffsets) {
 
         var visibleElements = [];
-
-        var $elements = this.getTextElements($("body", this.getRootElement()));
 
         // Find the first visible text node
         $.each($elements, function() {
@@ -205,18 +215,41 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
         return visibleElements;
     };
 
-    this.getTextElements = function($element) {
+    this.getVisibleTextElements = function(visibleContentOffsets) {
+
+        var $elements = this.getTextElements($("body", this.getRootElement()));
+
+        return this.getVisibleElements($elements, visibleContentOffsets);
+    };
+
+    this.getMediaOverlayElements = function($root) {
+
+        var $elements = [];
+
+        $root.find(":not(iframe)").contents().each(function () {
+
+            var $element = $(this);
+            if( $element.data("mediaOverlayData") ) {
+                $elements.push($element);
+            }
+        });
+
+        return $elements;
+    };
+
+    this.getTextElements = function($root) {
 
         var $textElements = [];
 
-        $element.find(":not(iframe)").contents().each(function () {
+        $root.find(":not(iframe)").contents().each(function () {
 
             if( isValidTextNode(this) ) {
                 $textElements.push($(this).parent());
             }
 
-            return $textElements;
         });
+
+        return $textElements;
 
     };
 

@@ -131,14 +131,14 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
 
     },
 
-    onPagesLoaded: function(userData) {
+    onPagesLoaded: function(initiator) {
 
         this.trigger(ReadiumSDK.Events.CONTENT_LOADED);
 
         this.updateContentMetaSize();
         this.resizeBook();
 
-        this.trigger(ReadiumSDK.Events.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: this.getPaginationInfo(), userData: userData } );
+        this.trigger(ReadiumSDK.Events.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: this.getPaginationInfo(), initiator: initiator } );
     },
 
     onViewportResize: function() {
@@ -306,16 +306,16 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
     },
 
 
-    openPagePrev: function() {
+    openPagePrev: function(initiator) {
 
         this.spread.openPrev();
-        this.redraw(this);
+        this.redraw(initiator);
     },
 
-    openPageNext: function() {
+    openPageNext: function(initiator) {
 
         this.spread.openNext();
-        this.redraw(this);
+        this.redraw(initiator);
     },
 
     updatePageViewForItem: function (pageView, item, context) {
@@ -423,20 +423,20 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
         return undefined;
     },
 
-    getVisibleTextElements: function() {
+    getVisibleMediaOverlayElements: function() {
 
         var elements = [];
 
         var views = this.getDisplayingViews();
 
         for(var i = 0, count = views.length; i < count; i++) {
-            elements.push.apply(elements, views[i].getVisibleTextElements());
+            elements.push.apply(elements, views[i].getVisibleMediaOverlayElements());
         }
 
         return elements;
     },
 
-    insureElementVisibility: function(element, userData) {
+    insureElementVisibility: function(element, initiator) {
 
         //for now we assume that for fixed layout element is always visible
 

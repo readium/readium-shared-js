@@ -18,7 +18,7 @@
 ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
     var _smilIterator = undefined;
-    var _audioPlayer = new ReadiumSDK.Views.AudioPlayer(onStatusChanged, onAudionPositionChanged);
+    var _audioPlayer = new ReadiumSDK.Views.AudioPlayer(onStatusChanged, onAudionPositionChanged, onAudioEnded);
     var _currentPagination = undefined;
     var _package = reader.package;
     var self = this;
@@ -28,18 +28,29 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
         if(!paginationData) {
             reset();
+            return;
+        }
+
+        _currentPagination = paginationData.paginationInfo;
+
+        if(!_smilIterator) {
+            return;
+        }
+
+        if(paginationData.initiator == self) {
+            highlightCurrentElement();
         }
         else {
-            _currentPagination = paginationData.paginationInfo;
-            if(paginationData.initiator != self) {
-                highlightCurrentElement();
-            }
-            else {
-                reset();
-            }
+            reset();
         }
+
     });
 
+    function onAudioEnded() {
+
+        console.debug("Audio Ended");
+        reset();
+    }
 
     function playPar(par) {
 
@@ -79,6 +90,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         _smilIterator.goToAudioPosition(position);
 
         if(_smilIterator.currentPar) {
+            reader.insureElementVisibility(_smilIterator.currentPar.element, self);
             highlightCurrentElement();
             return;
         }
@@ -86,7 +98,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         var newSmilIterator = findSmilFor(audio.src, position);
         if(newSmilIterator) {
             _smilIterator = newSmilIterator;
-            reader.openContentUrl(_smilIterator.currentPar.text.src, _smilIterator.smil.href, {initiator: self} );
+            reader.openContentUrl(_smilIterator.currentPar.text.src, _smilIterator.smil.href, self);
             return;
         }
 
@@ -100,8 +112,6 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         if(_smilIterator.currentPar.element) {
             _elementHighlighter.highlightElement(_smilIterator.currentPar.element);
         }
-
-
 
     }
 
@@ -147,6 +157,16 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         return undefined;
     }
 
+    function play() {
+        _audioPlayer.play();
+        highlightCurrentElement();
+    }
+
+    function pause() {
+        _audioPlayer.pause();
+        _elementHighlighter.reset();
+    }
+
     this.isMediaOverlayAvailable = function() {
         return findSpreadMediaOverlayItemId() != undefined;
     };
@@ -155,25 +175,24 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
     this.toggleMediaOverlay = function() {
 
         if(_audioPlayer.isPlaying()) {
-            _audioPlayer.pause();
+            pause();
             return;
         }
 
         //if we have position to continue from (reset wasn't called)
         if(_smilIterator) {
-            _audioPlayer.play();
+            play();
             return;
         }
 
+        var visibleMediaElements = reader.getVisibleMediaOverlayElements();
 
-        var visibleTextElements = reader.getVisibleTextElements();
+        for(var i = 0, count = visibleMediaElements.length; i < count; i++) {
+            var visibleElementData = visibleMediaElements[i];
 
-        for(var i = 0, count = visibleTextElements.length; i < count; i++) {
-            var visibleElement = visibleTextElements[i];
+            var moData = $(visibleElementData.element).data("mediaOverlayData");
 
-            var moData = $.data(visibleElement, "mediaOverlayData");
-
-            if(moData && visibleElement.percentVisible == 100) {
+            if(moData && visibleElementData.percentVisible == 100) {
                 playPar(moData.par);
                 return;
             }
