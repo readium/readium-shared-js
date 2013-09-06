@@ -98,6 +98,11 @@ ReadiumSDK.Models.Smil.AudioNode = function() {
     this.clipBegin = "";
     this.clipEnd = "";
 
+    this.isRightAudioPosition = function(source, position) {
+
+        return this.src == source && position >= this.clipBegin && position <= this.clipEnd;
+    }
+
 };
 ReadiumSDK.Models.Smil.AudioNode.prototype = new ReadiumSDK.Models.Smil.MediaNode();
 
@@ -110,7 +115,6 @@ ReadiumSDK.Models.SmilModel = function() {
     this.id = undefined; //manifest item id
     this.href = undefined; //href of the .smil source file
     this.duration = undefined;
-
 };
 
 ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO) {

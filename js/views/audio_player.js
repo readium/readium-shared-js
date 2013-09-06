@@ -42,6 +42,9 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
         onAudioEnded();
     });
 
+    this.source = function() {
+        return _source;
+    };
 
     this.playFile = function(mediaFile, clipBegin) {
 
@@ -85,13 +88,20 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
 
         stopTimer();
 
-        _elm.addEventListener("seeked", function(){
-            _elm.removeEventListener("seeked");
+        if(Math.abs(position - _elm.currentTime) < 0.5) {
 
             self.play();
-        });
+        }
+        else {
 
-        _elm.currentTime = position;
+            _elm.addEventListener("seeked", function(){
+                _elm.removeEventListener("seeked");
+
+                self.play();
+            });
+
+            _elm.currentTime = position;
+        }
     }
 
     function stopTimer() {

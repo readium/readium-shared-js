@@ -34,21 +34,16 @@ ReadiumSDK.Models.MediaOverlay = function() {
         }
 
         return undefined;
-    }
+    };
 
-    this.getSmilsByHref = function(href) {
+    this.getNextSmil = function(smil) {
 
-        var smils = [];
-
-        for(var i = 0, count = this.smil_models.length; i < count; i++) {
-
-            var smil = this.smil_models[i];
-            if(smil.href === href) {
-                smils.push(smil);
-            }
+        var index = this.smil_models.indexOf(smil);
+        if(index == -1 || index == this.smil_models.length - 1) {
+            return undefined;
         }
 
-        return smils;
+        return this.smil_models[index + 1];
     }
 };
 

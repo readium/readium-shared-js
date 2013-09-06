@@ -87,55 +87,66 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             return;
         }
 
-        _smilIterator.goToAudioPosition(position);
+        _smilIterator.next();
 
         if(_smilIterator.currentPar) {
-            reader.insureElementVisibility(_smilIterator.currentPar.element, self);
-            highlightCurrentElement();
+
+            //paranoia test probably audio always should exist
+            if(!_smilIterator.currentPar.audio) {
+                stop();
+                return;
+            }
+
+            if(_smilIterator.currentPar.audio.isRightAudioPosition(_audioPlayer.source(), position) ) {
+                highlightCurrentElement();
+                return;
+            }
+
+            playCurrentAudio();
             return;
         }
 
-        var newSmilIterator = findSmilFor(audio.src, position);
-        if(newSmilIterator) {
-            _smilIterator = newSmilIterator;
-            reader.openContentUrl(_smilIterator.currentPar.text.src, _smilIterator.smil.href, self);
+        var nextSmil = _package.media_overlay.getNextSmil(_smilIterator.smil);
+        if(!nextSmil) {
+            reset();
             return;
         }
 
-        //couldn't find smil information for current audion position
-        //we will stop audio play
-        reset();
+        _smilIterator = new ReadiumSDK.Models.SmilIterator(nextSmil);
+        if(_smilIterator.currentPar) {
+            playCurrentAudio();
+        }
+        else {
+            reset();
+        }
     }
 
     function highlightCurrentElement() {
 
+        if(!_smilIterator) {
+            console.debug("No _smilIterator in highlightElement()");
+            return;
+        }
+
+        if(!_smilIterator.currentPar) {
+            console.debug("No current Par in highlightElement()");
+            return;
+        }
+
         if(_smilIterator.currentPar.element) {
             _elementHighlighter.highlightElement(_smilIterator.currentPar.element);
+            reader.insureElementVisibility(_smilIterator.currentPar.element, self);
         }
-
     }
 
-    function findSmilFor(source, position) {
 
-        var smils = _package.media_overlay.getSmilsByHref(source);
-
-        for(var i = 0, count = smils.length; i < count; i++) {
-
-            var iter = new ReadiumSDK.Models.SmilIterator(smils[i]);
-            iter.goToAudioPosition(position);
-
-            if(iter.currentPar) {
-                return iter;
-            }
-        }
-
-        return undefined;
+    function stop() {
+        _audioPlayer.pause();
+        _elementHighlighter.reset();
     }
 
     function reset() {
-
-        _audioPlayer.pause();
-        _elementHighlighter.reset();
+        stop();
         _smilIterator = undefined;
     }
 
@@ -185,18 +196,33 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             return;
         }
 
+
         var visibleMediaElements = reader.getVisibleMediaOverlayElements();
 
-        for(var i = 0, count = visibleMediaElements.length; i < count; i++) {
-            var visibleElementData = visibleMediaElements[i];
-
-            var moData = $(visibleElementData.element).data("mediaOverlayData");
-
-            if(moData && visibleElementData.percentVisible == 100) {
-                playPar(moData.par);
-                return;
-            }
+        if(visibleMediaElements.length == 0) {
+            return;
         }
+
+        var elementDataToStart;
+
+        //we start form firs element where upper age of the element is visible
+        //or if only one element we will start from it
+        if(visibleMediaElements.length == 1 || visibleMediaElements[0].percentVisible == 100) {
+            elementDataToStart = visibleMediaElements[0];
+        }
+        else { //if first element is partially visible than second element's upper age should be visible
+            elementDataToStart = visibleMediaElements[1];
+        }
+
+        var moData = $(elementDataToStart.element).data("mediaOverlayData");
+
+        if(!moData) {
+            console.debug("Something wrong we only suppose to get elements that have mediaOverlayData available");
+            return;
+        }
+
+        playPar(moData.par);
+
     };
 
 //    function findElementWithMediaPar(smilId, elements) {

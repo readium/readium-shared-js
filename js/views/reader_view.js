@@ -558,10 +558,10 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
         return [];
     },
 
-    insureElementVisibility: function(element) {
+    insureElementVisibility: function(element, initiator) {
 
         if(this.currentView) {
-            this.currentView.insureElementVisibility(element);
+            this.currentView.insureElementVisibility(element, initiator);
         }
 
     }

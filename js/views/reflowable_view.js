@@ -251,12 +251,17 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         }
         else {
             console.debug("No criteria in pageRequest");
+            pageIndex = 0;
         }
 
-        if(pageIndex !== undefined && pageIndex >= 0 && pageIndex < this.paginationInfo.columnCount) {
+        if(this.isPageIndexOpen(pageIndex)) {
+            return;
+        }
+
+        if(pageIndex >= 0 && pageIndex < this.paginationInfo.columnCount) {
 
             this.paginationInfo.currentSpreadIndex = Math.floor(pageIndex / this.paginationInfo.visibleColumnCount) ;
-            this.onPaginationChanged({initiator: pageRequest.initiator});
+            this.onPaginationChanged(pageRequest.initiator);
         }
     },
 
@@ -456,14 +461,36 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
             return paginationInfo;
         }
 
+        var pageIndexes = this.getOpenPageIndexes();
+
+        for(var i = 0, count = pageIndexes.length; i < count; i++) {
+
+            paginationInfo.addOpenPage(pageIndexes[i], this.paginationInfo.columnCount, this.currentSpineItem.idref, this.currentSpineItem.index);
+        }
+
+        return paginationInfo;
+
+    },
+
+    isPageIndexOpen: function(index) {
+
+        var pageIndexes = this.getOpenPageIndexes();
+
+        return pageIndexes.indexOf(index) != -1
+    },
+
+    getOpenPageIndexes: function() {
+
+        var indexes = [];
+
         var currentPage = this.paginationInfo.currentSpreadIndex * this.paginationInfo.visibleColumnCount;
 
         for(var i = 0; i < this.paginationInfo.visibleColumnCount && (currentPage + i) < this.paginationInfo.columnCount; i++) {
 
-            paginationInfo.addOpenPage(currentPage + i, this.paginationInfo.columnCount, this.currentSpineItem.idref, this.currentSpineItem.index);
+            indexes.push(currentPage + i);
         }
 
-        return paginationInfo;
+        return indexes;
 
     },
 

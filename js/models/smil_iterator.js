@@ -45,18 +45,6 @@ ReadiumSDK.Models.SmilIterator = function(smil) {
         }
     };
 
-    this.goToAudioPosition = function(position) {
-
-        while(this.currentPar) {
-
-            if(position >= this.currentPar.audio.clipBegin && position <= this.currentPar.audio.clipEnd) {
-                break;
-            }
-
-            this.next();
-        }
-    };
-
     function findParNode(startIndex, container) {
 
         for(var i = startIndex, count = container.children.length; i < count; i++) {

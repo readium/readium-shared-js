@@ -226,13 +226,23 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
 
         var $elements = [];
 
-        $root.find(":not(iframe)").contents().each(function () {
+        function traverseCollection(elements) {
 
-            var $element = $(this);
-            if( $element.data("mediaOverlayData") ) {
-                $elements.push($element);
+            for(var i = 0, count = elements.length; i < count; i++) {
+
+                var $element = $(elements[i]);
+
+                if( $element.data("mediaOverlayData") ) {
+                    $elements.push($element);
+                }
+                else {
+                    traverseCollection($element[0].children);
+                }
+
             }
-        });
+        }
+
+        traverseCollection($root[0].children);
 
         return $elements;
     };
