@@ -38,7 +38,13 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         }
 
         if(paginationData.initiator == self) {
-            highlightCurrentElement();
+
+            if(_audioPlayer.isPlaying()) {
+                highlightCurrentElement();
+            }
+            else {
+                playCurrentPar();
+            }
         }
         else {
             reset();
@@ -69,13 +75,13 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             return;
         }
 
-        playCurrentAudio();
+        playCurrentPar();
     }
 
-    function playCurrentAudio() {
+    function playCurrentPar() {
 
         var audioSource = _package.resolveRelativeUrl(_smilIterator.currentPar.audio.src);
-        _audioPlayer.playFile(audioSource, _smilIterator.currentPar.audio.clipBegin);
+        _audioPlayer.playFile(_smilIterator.currentPar.audio.src, audioSource, _smilIterator.currentPar.audio.clipBegin);
         highlightCurrentElement();
     }
 
@@ -83,7 +89,9 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
         var audio = _smilIterator.currentPar.audio;
 
-        if(position >= audio.clipBegin && position <= audio.clipEnd) {
+        //audio reports position not exactly one that we asked for but close
+        //sometimes it is a bit before the beginning of the clip
+        if(position >= (audio.clipBegin - 0.05) && position <= audio.clipEnd) {
             return;
         }
 
@@ -97,27 +105,28 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                 return;
             }
 
-            if(_smilIterator.currentPar.audio.isRightAudioPosition(_audioPlayer.source(), position) ) {
+            if(_smilIterator.currentPar.audio.isRightAudioPosition(_audioPlayer.srcRef(), position) ) {
                 highlightCurrentElement();
                 return;
             }
 
-            playCurrentAudio();
+            playCurrentPar();
             return;
         }
+
+        //new smile we assume new spine too
+        //it may take time to render new spine we will stop audio
+
+        //we don't have to stop audio here but then we should stop lisen to audioPositionChanged event antil we finished rendering spine
+        //and got page changed message
+        stop();
 
         var nextSmil = _package.media_overlay.getNextSmil(_smilIterator.smil);
-        if(!nextSmil) {
-            reset();
-            return;
-        }
-
-        _smilIterator = new ReadiumSDK.Models.SmilIterator(nextSmil);
-        if(_smilIterator.currentPar) {
-            playCurrentAudio();
-        }
-        else {
-            reset();
+        if(nextSmil) {
+            _smilIterator = new ReadiumSDK.Models.SmilIterator(nextSmil);
+            if(_smilIterator.currentPar) {
+                reader.openContentUrl(_smilIterator.currentPar.text.src, _smilIterator.smil.href, self);
+            }
         }
     }
 

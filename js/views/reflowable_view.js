@@ -254,10 +254,6 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
             pageIndex = 0;
         }
 
-        if(this.isPageIndexOpen(pageIndex)) {
-            return;
-        }
-
         if(pageIndex >= 0 && pageIndex < this.paginationInfo.columnCount) {
 
             this.paginationInfo.currentSpreadIndex = Math.floor(pageIndex / this.paginationInfo.visibleColumnCount) ;
@@ -421,16 +417,25 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
                 self.paginationInfo.currentSpreadIndex = self.paginationInfo.spreadCount - 1;
             }
 
-            self.openDeferredElement();
+            if(self.deferredPageRequest) {
 
-            //We do this to force re-rendering of the document in the iframe.
-            //There is a bug in WebView control with right to left columns layout - after resizing the window html document
-            //is shifted in side the containing div. Hiding and showing the html element puts document in place.
-            self.$epubHtml.hide();
-            setTimeout(function() {
-                self.$epubHtml.show();
-                self.onPaginationChanged(this);
-            }, 50);
+                //if there is a request for specific page we get here
+                self.openDeferredElement();
+            }
+            else {
+
+                //we get here on resizing the viewport
+
+                //We do this to force re-rendering of the document in the iframe.
+                //There is a bug in WebView control with right to left columns layout - after resizing the window html document
+                //is shifted in side the containing div. Hiding and showing the html element puts document in place.
+                self.$epubHtml.hide();
+                setTimeout(function() {
+                    self.$epubHtml.show();
+                    self.onPaginationChanged(self);
+                }, 50);
+
+            }
 
         }, 100);
 
@@ -535,7 +540,12 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
 
     insureElementVisibility: function(element, initiator) {
 
-        var page = this.navigationLogic.getPageForElement($(element));
+        var $element = $(element);
+        if(this.navigationLogic.isElementVisible($element, this.getVisibleContentOffsets())) {
+            return;
+        }
+
+        var page = this.navigationLogic.getPageForElement($element);
 
         if(page == -1) {
             return;

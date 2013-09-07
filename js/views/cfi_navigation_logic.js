@@ -181,6 +181,13 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
 
     };
 
+    this.isElementVisible = function($element, visibleContentOffsets) {
+
+        var elementRect = ReadiumSDK.Helpers.Rect.fromElement($element);
+
+        return !(elementRect.bottom() <= visibleContentOffsets.top || elementRect.top >= visibleContentOffsets.bottom);
+    };
+
     this.getVisibleElements = function($elements, visibleContentOffsets) {
 
         var visibleElements = [];
