@@ -29,11 +29,11 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
     var self = this;
 
     _elm.addEventListener("play", function() {
-        onStatusChanged(true);
+        onStatusChanged({isPlaying: true});
     });
 
     _elm.addEventListener("pause", function() {
-        onStatusChanged(false);
+        onStatusChanged({isPlaying: false});
 
     });
 
@@ -41,6 +41,8 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
 
         stopTimer();
         onAudioEnded();
+        onStatusChanged({isPlaying: false});
+
     });
 
     this.source = function() {

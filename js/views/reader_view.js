@@ -63,6 +63,12 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
         var self = this;
         this.currentView.on(ReadiumSDK.Events.CURRENT_VIEW_PAGINATION_CHANGED, function( pageChangeData ){
+
+            //we call on onPageChanged explicitly instead of subscribing to the ReadiumSDK.Events.PAGINATION_CHANGED by
+            //mediaOverlayPlayer because we hve to guarantee that mediaOverlayPlayer will be updated before the host
+            //application will be notified by the same ReadiumSDK.Events.PAGINATION_CHANGED event
+            self.mediaOverlayPlayer.onPageChanged(pageChangeData);
+
             self.trigger(ReadiumSDK.Events.PAGINATION_CHANGED, pageChangeData);
 
         });
@@ -136,7 +142,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
         this.package = new ReadiumSDK.Models.Package({packageData: openBookData.package});
         this.spine = this.package.spine;
-        this.mediaOverlayPlayer = new ReadiumSDK.Views.MediaOverlayPlayer(this, this.onMediaPlayerStatusChanged);
+        this.mediaOverlayPlayer = new ReadiumSDK.Views.MediaOverlayPlayer(this, $.proxy(this.onMediaPlayerStatusChanged, this));
 
         this.resetCurrentView();
 
@@ -184,9 +190,9 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
     },
 
-    onMediaPlayerStatusChanged: function(isPaling) {
+    onMediaPlayerStatusChanged: function(status) {
 
-        console.debug("Media overlay: " + (isPaling ? "playing" : "stopped"));
+        this.trigger(ReadiumSDK.Events.MEDIA_OVERLAY_STATUS_CHANGED, status);
     },
 
     /**

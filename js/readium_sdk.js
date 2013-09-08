@@ -47,7 +47,8 @@ ReadiumSDK = {
                 PAGINATION_CHANGED: "PaginationChanged",
                 SETTINGS_ALLIED: "SettingsApplied",
                 CONTENT_LOADED: "ContentLoaded",
-                CURRENT_VIEW_PAGINATION_CHANGED: "CurrentViewPaginationChanged" // used internally
+                CURRENT_VIEW_PAGINATION_CHANGED: "CurrentViewPaginationChanged", // used internally
+                MEDIA_OVERLAY_STATUS_CHANGED: "MediaOverlayStatusChanged"
             }
 
 };

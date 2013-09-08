@@ -24,7 +24,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
     var self = this;
     var _elementHighlighter = new ReadiumSDK.Views.MediaOverlayElementHighlighter();
 
-    reader.on(ReadiumSDK.Events.PAGINATION_CHANGED, function(paginationData) {
+    this.onPageChanged = function(paginationData) {
 
         if(!paginationData) {
             reset();
@@ -49,8 +49,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         else {
             reset();
         }
-
-    });
+    };
 
     function onAudioEnded() {
 
@@ -117,8 +116,8 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         //new smile we assume new spine too
         //it may take time to render new spine we will stop audio
 
-        //we don't have to stop audio here but then we should stop lisen to audioPositionChanged event antil we finished rendering spine
-        //and got page changed message
+        //we don't have to stop audio here but then we should stop listen to audioPositionChanged event until we
+        //finished rendering spine and got page changed message. And stop audio if next smile not found
         stop();
 
         var nextSmil = _package.media_overlay.getNextSmil(_smilIterator.smil);
@@ -191,6 +190,9 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         return findSpreadMediaOverlayItemId() != undefined;
     };
 
+    this.isPlaying = function() {
+        return _audioPlayer.isPlaying();
+    };
 
     this.toggleMediaOverlay = function() {
 
@@ -234,29 +236,4 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
     };
 
-//    function findElementWithMediaPar(smilId, elements) {
-//
-//        var smil = _package.media_overlay.getSmilById(smilId);
-//        if(!smil) {
-//            return undefined;
-//        }
-//
-//        var iterator = new ReadiumSDK.Models.SmilIterator(smil);
-//
-//        var $elements = $(elements);
-//        while(iterator.currentPar) {
-//
-//            if(iterator.currentPar.textFragmentSelector) {
-//                var found = $elements.find(iterator.currentPar.textFragmentSelector);
-//
-//                if(found.length > 0) {
-//                    return { par: iterator.currentPar, element: found[0] };
-//                }
-//            }
-//
-//            iterator.next();
-//        }
-//
-//        return undefined;
-//    }
 };
