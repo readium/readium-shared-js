@@ -27,7 +27,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
     this.onPageChanged = function(paginationData) {
 
         if(!paginationData) {
-            reset();
+            this.reset();
             return;
         }
 
@@ -47,14 +47,14 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             }
         }
         else {
-            reset();
+            this.reset();
         }
     };
 
     function onAudioEnded() {
 
         console.debug("Audio Ended");
-        reset();
+        self.reset();
     }
 
     function playPar(par) {
@@ -79,8 +79,11 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
     function playCurrentPar() {
 
-        var audioSource = _package.resolveRelativeUrl(_smilIterator.currentPar.audio.src);
+        var audioContentRef = ReadiumSDK.Helpers.ResolveContentRef(_smilIterator.currentPar.audio.src, _smilIterator.smil.href);
+
+        var audioSource = _package.resolveRelativeUrl(audioContentRef);
         _audioPlayer.playFile(_smilIterator.currentPar.audio.src, audioSource, _smilIterator.currentPar.audio.clipBegin);
+
         highlightCurrentElement();
     }
 
@@ -100,7 +103,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
             //paranoia test probably audio always should exist
             if(!_smilIterator.currentPar.audio) {
-                stop();
+                pause();
                 return;
             }
 
@@ -118,7 +121,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
         //we don't have to stop audio here but then we should stop listen to audioPositionChanged event until we
         //finished rendering spine and got page changed message. And stop audio if next smile not found
-        stop();
+        pause();
 
         var nextSmil = _package.media_overlay.getNextSmil(_smilIterator.smil);
         if(nextSmil) {
@@ -148,15 +151,11 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
     }
 
 
-    function stop() {
-        _audioPlayer.pause();
+    this.reset = function() {
+        _audioPlayer.reset();
         _elementHighlighter.reset();
-    }
-
-    function reset() {
-        stop();
         _smilIterator = undefined;
-    }
+    };
 
     function findSpreadMediaOverlayItemId() {
 

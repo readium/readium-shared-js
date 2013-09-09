@@ -142,6 +142,11 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
         this.package = new ReadiumSDK.Models.Package({packageData: openBookData.package});
         this.spine = this.package.spine;
+
+        if(this.mediaOverlayPlayer) {
+            this.mediaOverlayPlayer.reset();
+        }
+
         this.mediaOverlayPlayer = new ReadiumSDK.Views.MediaOverlayPlayer(this, $.proxy(this.onMediaPlayerStatusChanged, this));
 
         this.resetCurrentView();

@@ -18,7 +18,7 @@
 
 ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAudioEnded) {
 
-    var _elm = document.getElementById("audioPlayer");
+    var _elm = new Audio();
 
     var _source = undefined;
     var _timerId = undefined;
@@ -28,22 +28,9 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
 
     var self = this;
 
-    _elm.addEventListener("play", function() {
-        onStatusChanged({isPlaying: true});
-    });
-
-    _elm.addEventListener("pause", function() {
-        onStatusChanged({isPlaying: false});
-
-    });
-
-    _elm.addEventListener("ended", function() {
-
-        stopTimer();
-        onAudioEnded();
-        onStatusChanged({isPlaying: false});
-
-    });
+    $(_elm).on("play", onPlay);
+    $(_elm).on("pause", onPause);
+    $(_elm).on("ended", onEnded);
 
     this.source = function() {
         return _source;
@@ -53,18 +40,26 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
       return _srcRef;
     };
 
+    this.reset = function() {
+
+        //we do this because pause event is not triggered after we reset source attribute
+        var wasPlaying = this.isPlaying();
+
+        this.pause();
+        _elm.setAttribute("src", "");
+
+        if(wasPlaying) {
+            onStatusChanged({isPlaying: false});
+        }
+    };
+
     this.playFile = function(srcRef, mediaFile, clipBegin) {
 
         _srcRef = srcRef;
         _source = mediaFile;
 
         if(_elm.getAttribute("src") != _source) {
-            _elm.addEventListener("canplay", function() {
-                _elm.removeEventListener("canplay");
-
-                playFromPosition(clipBegin);
-            });
-
+            $(_elm).on("canplay", {clipBegin: clipBegin}, onCanPlay);
             _elm.setAttribute("src", _source);
         }
         else {
@@ -72,6 +67,10 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
         }
     };
 
+    function onCanPlay(event) {
+        $(_elm).off("canplay", onCanPlay);
+        playFromPosition(event.data.clipBegin);
+    }
 
     this.pause = function() {
         stopTimer();
@@ -108,12 +107,28 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
 
             self.pause();
             _elm.currentTime = position;
-            _elm.addEventListener("seeked", function(){
-                _elm.removeEventListener("seeked");
-                self.play();
-            });
-
+            $(_elm).on("seeked", onSeeked);
         }
+    }
+
+    function onPlay() {
+        onStatusChanged({isPlaying: true});
+    }
+
+    function onPause() {
+        onStatusChanged({isPlaying: false});
+    }
+
+    function onEnded() {
+        stopTimer();
+        onAudioEnded();
+        onStatusChanged({isPlaying: false});
+    }
+
+    function onSeeked() {
+
+        $(_elm).off("seeked", onSeeked);
+        self.play();
     }
 
     function stopTimer() {
