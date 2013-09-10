@@ -157,23 +157,6 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         _smilIterator = undefined;
     };
 
-    function findSpreadMediaOverlayItemId() {
-
-        if(!_currentPagination || !_package) {
-            return undefined;
-        }
-
-        for(var i = 0, count = _currentPagination.openPages.length; i < count; i++) {
-
-            var openPage = _currentPagination.openPages[i];
-            var spineItem = _package.spine.getItemById(openPage.idref);
-            if( spineItem && spineItem.media_overlay_id ) {
-                return spineItem.media_overlay_id;
-            }
-        }
-
-        return undefined;
-    }
 
     function play() {
         _audioPlayer.play();
@@ -186,7 +169,9 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
     }
 
     this.isMediaOverlayAvailable = function() {
-        return findSpreadMediaOverlayItemId() != undefined;
+
+        var visibleMediaElements = reader.getVisibleMediaOverlayElements();
+        return visibleMediaElements.length > 0;
     };
 
     this.isPlaying = function() {

@@ -32,6 +32,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
     initialize: function() {
 
+        debugger;
         this.viewerSettings = new ReadiumSDK.Models.ViewerSettings({});
         this.userStyles = new ReadiumSDK.Collections.StyleCollection();
     },
