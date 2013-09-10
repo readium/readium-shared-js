@@ -18,7 +18,7 @@
 ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
     var _smilIterator = undefined;
-    var _audioPlayer = new ReadiumSDK.Views.AudioPlayer(onStatusChanged, onAudionPositionChanged, onAudioEnded);
+    var _audioPlayer = new ReadiumSDK.Views.AudioPlayer(onStatusChanged, onAudioPositionChanged, onAudioEnded);
     var _currentPagination = undefined;
     var _package = reader.package;
     var self = this;
@@ -87,7 +87,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         highlightCurrentElement();
     }
 
-    function onAudionPositionChanged(position) {
+    function onAudioPositionChanged(position) {
 
         var audio = _smilIterator.currentPar.audio;
 

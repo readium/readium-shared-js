@@ -250,7 +250,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
             }
         }
 
-        this.trigger(ReadiumSDK.Events.SETTINGS_ALLIED);
+        this.trigger(ReadiumSDK.Events.SETTINGS_APPLIED);
     },
 
     /**
