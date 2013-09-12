@@ -5,6 +5,9 @@ ReadiumSDK.Models.MediaOverlay = function() {
     this.duration = undefined;
     this.narrator = undefined;
 
+
+    this.activeClass = undefined;
+    this.playbackActiveClass = undefined;
 };
 
 ReadiumSDK.Models.MediaOverlay.fromDTO = function(moDTO) {
@@ -21,6 +24,12 @@ ReadiumSDK.Models.MediaOverlay.fromDTO = function(moDTO) {
 
     mo.narrator = moDTO.narrator;
     console.debug("Media Overlay Narrator: " + mo.narrator);
+
+    mo.activeClass = moDTO.activeClass;
+    console.debug("Media Overlay Active-Class: " + mo.activeClass);
+
+    mo.playbackActiveClass = moDTO.playbackActiveClass;
+    console.debug("Media Overlay Playback-Active-Class: " + mo.playbackActiveClass);
 
     var count = moDTO.smil_models.length;
     for(var i = 0; i < count; i++) {
