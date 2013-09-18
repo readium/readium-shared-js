@@ -12,6 +12,7 @@ ReadiumSDK.Models.Smil.SmilNode = function() {
 ReadiumSDK.Models.Smil.TimeContainerNode = function() {
     this.id = "";
     this.epubtype = "";
+    this.textref = "";
     this.children = undefined;
 };
 
@@ -31,7 +32,6 @@ ReadiumSDK.Models.Smil.MediaNode.prototype = new ReadiumSDK.Models.Smil.SmilNode
 ReadiumSDK.Models.Smil.SeqNode = function() {
     this.children = [];
     this.nodeType = "seq";
-    this.textref = "";
 
 };
 
@@ -79,15 +79,35 @@ ReadiumSDK.Models.SmilModel = function() {
     this.href = undefined; //href of the .smil source file
     this.duration = undefined;
 
+    this.DEBUG = false;
 };
 
 ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO) {
+
+    var indent = 0;
+    var getIndent = function()
+    {
+        var str = "";
+        for (var i = 0; i < indent; i++)
+        {
+            str += "   ";
+        }
+        return str;
+    }
 
     var smilModel = new ReadiumSDK.Models.SmilModel();
     smilModel.id = smilDTO.id;
     smilModel.href = smilDTO.href;
     smilModel.smilVersion = smilDTO.smilVersion;
     smilModel.duration = smilDTO.duration;
+
+    if (this.DEBUG)
+    {
+    console.log("JS MO smilVersion=" + smilModel.smilVersion);
+    console.log("JS MO id=" + smilModel.id);
+    console.log("JS MO href=" + smilModel.href);
+    console.log("JS MO duration=" + smilModel.duration);
+    }
 
     var safeCopyProperty = function(property, from, to, isRequired) {
 
@@ -98,6 +118,11 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO) {
             }
 
             to[property] = from[property];
+
+            if (this.DEBUG)
+            {
+            console.log(getIndent() + "JS MO: [" + property + "=" + to[property] + "]");
+            }
         }
         else if(isRequired) {
             console.error("Required property " + property + " not found in smil node " + from.nodeType);
@@ -109,26 +134,55 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO) {
         var node;
 
         if(nodeDTO.nodeType == "seq") {
+
+            if (this.DEBUG)
+            {
+            console.log(getIndent() + "JS MO seq");
+            }
+
             node = new ReadiumSDK.Models.Smil.SeqNode();
             safeCopyProperty("textref", nodeDTO, node, true);
             safeCopyProperty("id", nodeDTO, node);
             safeCopyProperty("epubtype", nodeDTO, node);
 
+            indent++;
             copyChildren(nodeDTO, node);
+            indent--;
         }
         else if (nodeDTO.nodeType == "par") {
+
+            if (this.DEBUG)
+            {
+            console.log(getIndent() + "JS MO par");
+            }
+
             node = new ReadiumSDK.Models.Smil.ParNode();
+            safeCopyProperty("textref", nodeDTO, node);
             safeCopyProperty("id", nodeDTO, node);
             safeCopyProperty("epubtype", nodeDTO, node);
 
+            indent++;
             copyChildren(nodeDTO, node);
+            indent--;
         }
         else if (nodeDTO.nodeType == "text") {
+
+            if (this.DEBUG)
+            {
+            console.log(getIndent() + "JS MO text");
+            }
+
             node = new ReadiumSDK.Models.Smil.TextNode();
             safeCopyProperty("src", nodeDTO, node, true);
             safeCopyProperty("id", nodeDTO, node);
         }
         else if (nodeDTO.nodeType == "audio") {
+
+            if (this.DEBUG)
+            {
+            console.log(getIndent() + "JS MO audio");
+            }
+
             node = new ReadiumSDK.Models.Smil.AudioNode();
             safeCopyProperty("src", nodeDTO, node, true);
             safeCopyProperty("id", nodeDTO, node);
@@ -149,6 +203,7 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO) {
         var count = from.children.length;
 
         for(var i = 0; i < count; i++) {
+
             var node = createNodeFromDTO(from.children[i]);
             node.parent = to;
             to.children.push(node);
