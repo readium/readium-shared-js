@@ -27,9 +27,11 @@ ReadiumSDK.Models.Smil.SmilNode = function() {
 ReadiumSDK.Models.Smil.TimeContainerNode = function() {
     this.id = "";
     this.epubtype = "";
-    this.parent = undefined;
+    this.textref = "";
     this.index = undefined;
-
+    this.parent = undefined;
+    this.children = undefined;
+	
     //root node is a smil model
     this.getSmil = function() {
 
@@ -40,7 +42,6 @@ ReadiumSDK.Models.Smil.TimeContainerNode = function() {
 
         return node;
     }
-
 };
 
 ReadiumSDK.Models.Smil.TimeContainerNode.prototype = new ReadiumSDK.Models.Smil.SmilNode();
@@ -60,7 +61,6 @@ ReadiumSDK.Models.Smil.MediaNode.prototype = new ReadiumSDK.Models.Smil.SmilNode
 ReadiumSDK.Models.Smil.SeqNode = function() {
     this.children = [];
     this.nodeType = "seq";
-    this.textref = "";
 
 };
 
@@ -115,15 +115,38 @@ ReadiumSDK.Models.SmilModel = function() {
     this.id = undefined; //manifest item id
     this.href = undefined; //href of the .smil source file
     this.duration = undefined;
+
+    this.DEBUG = true;
 };
 
 ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO) {
+
+    console.debug("Media Overlay DTO...");
+
+    var indent = 0;
+    var getIndent = function()
+    {
+        var str = "";
+        for (var i = 0; i < indent; i++)
+        {
+            str += "   ";
+        }
+        return str;
+    }
 
     var smilModel = new ReadiumSDK.Models.SmilModel();
     smilModel.id = smilDTO.id;
     smilModel.href = smilDTO.href;
     smilModel.smilVersion = smilDTO.smilVersion;
     smilModel.duration = smilDTO.duration;
+
+    if (smilModel.DEBUG)
+    {
+    console.log("JS MO smilVersion=" + smilModel.smilVersion);
+    console.log("JS MO id=" + smilModel.id);
+    console.log("JS MO href=" + smilModel.href);
+    console.log("JS MO duration=" + smilModel.duration);
+    }
 
     var safeCopyProperty = function(property, from, to, isRequired) {
 
@@ -134,6 +157,11 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO) {
             }
 
             to[property] = from[property];
+
+            if (smilModel.DEBUG)
+            {
+            console.log(getIndent() + "JS MO: [" + property + "=" + to[property] + "]");
+            }
         }
         else if(isRequired) {
             console.error("Required property " + property + " not found in smil node " + from.nodeType);
@@ -145,22 +173,41 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO) {
         var node;
 
         if(nodeDTO.nodeType == "seq") {
+
+            if (smilModel.DEBUG)
+            {
+            console.log(getIndent() + "JS MO seq");
+            }
+
             node = new ReadiumSDK.Models.Smil.SeqNode();
             node.parent = parent;
             safeCopyProperty("textref", nodeDTO, node, true);
             safeCopyProperty("id", nodeDTO, node);
             safeCopyProperty("epubtype", nodeDTO, node);
 
+            indent++;
             copyChildren(nodeDTO, node);
+            indent--;
         }
         else if (nodeDTO.nodeType == "par") {
+
+            if (smilModel.DEBUG)
+            {
+            console.log(getIndent() + "JS MO par");
+            }
+
             node = new ReadiumSDK.Models.Smil.ParNode();
             node.parent = parent;
             safeCopyProperty("id", nodeDTO, node);
             safeCopyProperty("epubtype", nodeDTO, node);
+            safeCopyProperty("textref", nodeDTO, node);
 
-            for(var i = 0, count = nodeDTO.children.length; i < count; i++) {
-                var child = createNodeFromDTO(nodeDTO.children[i], node);
+            indent++;
+            copyChildren(nodeDTO, node);
+            indent--;
+			
+            for(var i = 0, count = node.children.length; i < count; i++) {
+                var child = node.children[i];
 
                 if(child.nodeType == "text") {
                     node.text = child;
@@ -175,12 +222,24 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO) {
             }
         }
         else if (nodeDTO.nodeType == "text") {
+
+            if (smilModel.DEBUG)
+            {
+            console.log(getIndent() + "JS MO text");
+            }
+
             node = new ReadiumSDK.Models.Smil.TextNode();
             node.parent = parent;
             safeCopyProperty("src", nodeDTO, node, true);
             safeCopyProperty("id", nodeDTO, node);
         }
         else if (nodeDTO.nodeType == "audio") {
+
+            if (smilModel.DEBUG)
+            {
+            console.log(getIndent() + "JS MO audio");
+            }
+
             node = new ReadiumSDK.Models.Smil.AudioNode();
             node.parent = parent;
             safeCopyProperty("src", nodeDTO, node, true);
