@@ -79,10 +79,12 @@ ReadiumSDK.Models.SmilModel = function() {
     this.href = undefined; //href of the .smil source file
     this.duration = undefined;
 
-    this.DEBUG = false;
+    this.DEBUG = true;
 };
 
 ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO) {
+
+    console.debug("Media Overlay DTO...");
 
     var indent = 0;
     var getIndent = function()
@@ -101,7 +103,7 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO) {
     smilModel.smilVersion = smilDTO.smilVersion;
     smilModel.duration = smilDTO.duration;
 
-    if (this.DEBUG)
+    if (smilModel.DEBUG)
     {
     console.log("JS MO smilVersion=" + smilModel.smilVersion);
     console.log("JS MO id=" + smilModel.id);
@@ -119,7 +121,7 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO) {
 
             to[property] = from[property];
 
-            if (this.DEBUG)
+            if (smilModel.DEBUG)
             {
             console.log(getIndent() + "JS MO: [" + property + "=" + to[property] + "]");
             }
@@ -135,7 +137,7 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO) {
 
         if(nodeDTO.nodeType == "seq") {
 
-            if (this.DEBUG)
+            if (smilModel.DEBUG)
             {
             console.log(getIndent() + "JS MO seq");
             }
@@ -151,7 +153,7 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO) {
         }
         else if (nodeDTO.nodeType == "par") {
 
-            if (this.DEBUG)
+            if (smilModel.DEBUG)
             {
             console.log(getIndent() + "JS MO par");
             }
@@ -167,7 +169,7 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO) {
         }
         else if (nodeDTO.nodeType == "text") {
 
-            if (this.DEBUG)
+            if (smilModel.DEBUG)
             {
             console.log(getIndent() + "JS MO text");
             }
@@ -178,7 +180,7 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO) {
         }
         else if (nodeDTO.nodeType == "audio") {
 
-            if (this.DEBUG)
+            if (smilModel.DEBUG)
             {
             console.log(getIndent() + "JS MO audio");
             }
