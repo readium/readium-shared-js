@@ -70,10 +70,10 @@ ReadiumSDK.Models.Smil.SeqNode.prototype = new ReadiumSDK.Models.Smil.TimeContai
 //ParNode
 
 ReadiumSDK.Models.Smil.ParNode = function() {
+    this.children = [];
     this.nodeType = "par";
     this.text = undefined;
     this.audio = undefined;
-    this.textFragmentSelector = undefined;
     this.element = undefined;
 };
 
@@ -85,6 +85,8 @@ ReadiumSDK.Models.Smil.ParNode.prototype = new ReadiumSDK.Models.Smil.TimeContai
 ReadiumSDK.Models.Smil.TextNode = function() {
 
     this.nodeType = "text";
+    this.srcFile = "";
+    this.srcFragmentID = "";
 };
 
 ReadiumSDK.Models.Smil.TextNode.prototype = new ReadiumSDK.Models.Smil.MediaNode();
@@ -211,7 +213,6 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO) {
 
                 if(child.nodeType == "text") {
                     node.text = child;
-                    node.textFragmentSelector = extractTextFragmentSelectorFromTextNode(child);
                 }
                 else if(child.nodeType == "audio") {
                     node.audio = child;
@@ -231,6 +232,8 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO) {
             node = new ReadiumSDK.Models.Smil.TextNode();
             node.parent = parent;
             safeCopyProperty("src", nodeDTO, node, true);
+            safeCopyProperty("srcFile", nodeDTO, node, true);
+            safeCopyProperty("srcFragmentID", nodeDTO, node, true);
             safeCopyProperty("id", nodeDTO, node);
         }
         else if (nodeDTO.nodeType == "audio") {
@@ -254,18 +257,6 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO) {
 
         return node;
 
-    };
-
-    var extractTextFragmentSelectorFromTextNode = function(textNode) {
-
-        //assumption is that text node is child of the par node and par node is child of seq node: sec.par.text
-        var seq = textNode.parent.parent;
-        if(!seq || ! seq.textref) {
-            console.debug("unexpected smil structure");
-            return undefined;
-        }
-
-        return textNode.src.substring(seq.textref.length);
     };
 
     var copyChildren = function(from, to) {

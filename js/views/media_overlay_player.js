@@ -91,11 +91,15 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
         var audio = _smilIterator.currentPar.audio;
 
-        //audio reports position not exactly one that we asked for but close
-        //sometimes it is a bit before the beginning of the clip
-        if(position >= (audio.clipBegin - 0.05) && position <= audio.clipEnd) {
+        //var TOLERANCE = 0.05;
+        if(
+            //position >= (audio.clipBegin - TOLERANCE) &&
+            position <= audio.clipEnd) {
+
+//console.debug("PLAYING: " + position + " (" + audio.clipBegin + " -- " + audio.clipEnd + ")");
             return;
         }
+//console.debug("PLAY NEXT: " + position + " (" + audio.clipBegin + " -- " + audio.clipEnd + ")");
 
         _smilIterator.next();
 

@@ -114,11 +114,16 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
         while(iter.currentPar) {
 
-            if(iter.currentPar.textFragmentSelector) {
-                var element = this.currentView.getElement(spineItem, iter.currentPar.textFragmentSelector);
+            if(iter.currentPar.text.srcFragmentID) {
+
+                var element = this.currentView.getElement(spineItem, "#" + iter.currentPar.text.srcFragmentID);
                 if(element) {
                     iter.currentPar.element = element;
                     $(element).data("mediaOverlayData", {par: iter.currentPar});
+                }
+                else
+                {
+                    console.error("!! CANNOT FIND ELEMENT: " + iter.currentPar.text.srcFragmentID);
                 }
             }
 
