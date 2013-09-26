@@ -86,7 +86,7 @@ ReadiumSDK.Models.Smil.TextNode = function() {
 
     this.nodeType = "text";
     this.srcFile = "";
-    this.srcFragmentID = "";
+    this.srcFragmentId = "";
 };
 
 ReadiumSDK.Models.Smil.TextNode.prototype = new ReadiumSDK.Models.Smil.MediaNode();
@@ -233,7 +233,7 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO) {
             node.parent = parent;
             safeCopyProperty("src", nodeDTO, node, true);
             safeCopyProperty("srcFile", nodeDTO, node, true);
-            safeCopyProperty("srcFragmentID", nodeDTO, node, true);
+            safeCopyProperty("srcFragmentId", nodeDTO, node, true);
             safeCopyProperty("id", nodeDTO, node);
         }
         else if (nodeDTO.nodeType == "audio") {

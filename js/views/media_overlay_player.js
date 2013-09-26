@@ -149,7 +149,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         }
 
         if(_smilIterator.currentPar.element) {
-            _elementHighlighter.highlightElement(_smilIterator.currentPar.element);
+            _elementHighlighter.highlightElement(_smilIterator.currentPar.element, _package.media_overlay.activeClass);
             reader.insureElementVisibility(_smilIterator.currentPar.element, self);
         }
     }

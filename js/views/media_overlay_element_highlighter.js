@@ -20,27 +20,48 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function() {
     var _highlightedElement = undefined;
     var BACK_COLOR = "#99CCCC";
 
-    this.highlightElement = function(element) {
+    var _activeClass = "";
 
-        if(element === _highlightedElement) {
+    this.highlightElement = function(element, activeClass) {
+
+        if(!element || element === _highlightedElement) {
             return;
         }
 
         this.reset();
 
-
-        //$(element).addClass("media-overlay-highlight");
         _highlightedElement = element;
-        //this is temporary should be changed to applying css with MO highlight class to iframe content
-        $(_highlightedElement).css("background", BACK_COLOR);
+        _activeClass = activeClass;
+
+        if (_activeClass && _activeClass !== "")
+        {
+            console.debug("MO activeClass: " + _activeClass);
+            $(_highlightedElement).addClass(_activeClass);
+        }
+        else
+        {
+            console.debug("MO active NO CLASS: " + _activeClass);
+            $(_highlightedElement).css("background", BACK_COLOR);
+        }
     };
 
     this.reset = function() {
 
         if(_highlightedElement) {
-//            $(_highlightedElement).removeClass("media-overlay-highlight");
-            $(_highlightedElement).css("background", '');
+
+            if (_activeClass && _activeClass !== "")
+            {
+                console.debug("MO RESET activeClass: " + _activeClass);
+                $(_highlightedElement).removeClass(_activeClass);
+            }
+            else
+            {
+                console.debug("MO RESET active NO CLASS: " + _activeClass);
+                $(_highlightedElement).css("background", '');
+            }
+
             _highlightedElement = undefined;
+            _activeClass = "";
         }
     }
 
