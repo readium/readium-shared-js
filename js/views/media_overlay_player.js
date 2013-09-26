@@ -157,6 +157,11 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                 reader.openContentUrl(_smilIterator.currentPar.text.src, _smilIterator.smil.href, self);
             }
         }
+        else
+        {
+            console.debug("MO RESET");
+            self.reset();
+        }
     }
 
     function highlightCurrentElement() {
