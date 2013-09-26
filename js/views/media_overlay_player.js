@@ -87,6 +87,8 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         highlightCurrentElement();
     }
 
+    var DIRECTION_MARK = -999;
+
     function onAudioPositionChanged(position) {
 
         var audio = _smilIterator.currentPar.audio;
@@ -94,6 +96,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         //var TOLERANCE = 0.05;
         if(
             //position >= (audio.clipBegin - TOLERANCE) &&
+        position > DIRECTION_MARK &&
             position <= audio.clipEnd) {
 
 //console.debug("PLAYING: " + position + " (" + audio.clipBegin + " -- " + audio.clipEnd + ")");
@@ -101,7 +104,14 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         }
 //console.debug("PLAY NEXT: " + position + " (" + audio.clipBegin + " -- " + audio.clipEnd + ")");
 
-        _smilIterator.next();
+        if (position > audio.clipEnd)
+        {
+            _smilIterator.next();
+        }
+        else //position <= DIRECTION_MARK
+        {
+            _smilIterator.previous();
+        }
 
         if(_smilIterator.currentPar) {
 
@@ -180,6 +190,42 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
     this.isPlaying = function() {
         return _audioPlayer.isPlaying();
+    };
+    
+    this.nextOrPreviousMediaOverlay = function(previous) {
+        if(_audioPlayer.isPlaying())
+        {
+            pause();
+        }
+        else
+        {
+            if (_smilIterator && _smilIterator.currentPar)
+            {
+                //playCurrentPar();
+                play();
+                return;
+            }
+        }
+
+        if(!_smilIterator)
+        {
+            this.toggleMediaOverlay();
+            return;
+        }
+
+        var position = previous ? DIRECTION_MARK-1 : _smilIterator.currentPar.audio.clipEnd + 0.1;
+
+        onAudioPositionChanged(position);
+
+        playCurrentPar();
+    };
+    
+    this.nextMediaOverlay = function() {
+        this.nextOrPreviousMediaOverlay(false);
+    };
+    
+    this.previousMediaOverlay = function() {
+        this.nextOrPreviousMediaOverlay(true);
     };
 
     this.toggleMediaOverlay = function() {

@@ -563,9 +563,28 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
     toggleMediaOverlay: function() {
 
         this.mediaOverlayPlayer.toggleMediaOverlay();
-
     },
-
+                                                   
+   /**
+    * Plays next fragment media overlay on current page
+    *
+    */
+   nextMediaOverlay: function() {
+   
+   this.mediaOverlayPlayer.nextMediaOverlay();
+   
+   },
+   
+   /**
+    * Plays previous fragment media overlay on current page
+    *
+    */
+   previousMediaOverlay: function() {
+   
+   this.mediaOverlayPlayer.previousMediaOverlay();
+   
+   },
+                                                   
     getVisibleMediaOverlayElements: function() {
 
         if(this.currentView) {

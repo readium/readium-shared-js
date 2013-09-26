@@ -35,12 +35,12 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function() {
 
         if (_activeClass && _activeClass !== "")
         {
-            console.debug("MO activeClass: " + _activeClass);
+            //console.debug("MO activeClass: " + _activeClass);
             $(_highlightedElement).addClass(_activeClass);
         }
         else
         {
-            console.debug("MO active NO CLASS: " + _activeClass);
+            //console.debug("MO active NO CLASS: " + _activeClass);
             $(_highlightedElement).css("background", BACK_COLOR);
         }
     };
@@ -51,12 +51,12 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function() {
 
             if (_activeClass && _activeClass !== "")
             {
-                console.debug("MO RESET activeClass: " + _activeClass);
+                //console.debug("MO RESET activeClass: " + _activeClass);
                 $(_highlightedElement).removeClass(_activeClass);
             }
             else
             {
-                console.debug("MO RESET active NO CLASS: " + _activeClass);
+                //console.debug("MO RESET active NO CLASS: " + _activeClass);
                 $(_highlightedElement).css("background", '');
             }
 
