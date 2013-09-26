@@ -44,6 +44,21 @@ ReadiumSDK.Models.SmilIterator = function(smil) {
         this.currentPar = findParNode(this.currentPar.index - 1, this.currentPar.parent, true);
     };
 
+    this.isLast = function() {
+
+        if(!this.currentPar) {
+            console.debug("Par iterator is out of range");
+            return;
+        }
+
+        if (findParNode(this.currentPar.index + 1, this.currentPar.parent, false))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
     this.goToPar =  function(par) {
 
         while(this.currentPar) {
@@ -66,6 +81,7 @@ ReadiumSDK.Models.SmilIterator = function(smil) {
                 return node;
             }
 
+            // assert(node.nodeType == "seq")
             node = findParNode(0, node, previous);
 
             if(node) {
@@ -74,7 +90,6 @@ ReadiumSDK.Models.SmilIterator = function(smil) {
         }
 
         if(container.parent) {
-
             return findParNode(container.index + (previous ? -1 : 1), container.parent, previous);
         }
 

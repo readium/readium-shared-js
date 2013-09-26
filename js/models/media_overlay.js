@@ -52,6 +52,15 @@ ReadiumSDK.Models.MediaOverlay = function() {
         return this.smil_models[index + 1];
     }
 
+    this.getPreviousSmil = function(smil) {
+
+        var index = this.smil_models.indexOf(smil);
+        if(index == -1 || index == 0) {
+            return undefined;
+        }
+
+        return this.smil_models[index - 1];
+    }
 };
 
 ReadiumSDK.Models.MediaOverlay.fromDTO = function(moDTO) {

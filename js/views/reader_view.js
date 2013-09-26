@@ -101,6 +101,8 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
     attachMediaOverlayData: function(spineItem) {
 
+        var self = this;
+
         if(!spineItem.media_overlay_id) {
             return;
         }
@@ -120,6 +122,13 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
                 if(element) {
                     iter.currentPar.element = element;
                     $(element).data("mediaOverlayData", {par: iter.currentPar});
+
+                    var par = iter.currentPar;
+                    $(element).click(function() {
+                        console.debug("MO CLICK: " + $(this)[0].id);
+                        var par = $(this).data("mediaOverlayData").par;
+                        self.mediaOverlayPlayer.playUserPar(par);
+                    });
                 }
                 else
                 {

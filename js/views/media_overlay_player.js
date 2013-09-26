@@ -91,6 +91,11 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
     function onAudioPositionChanged(position) {
 
+        if (!_smilIterator || !_smilIterator.currentPar)
+        {
+            return;
+        }
+
         var audio = _smilIterator.currentPar.audio;
 
         //var TOLERANCE = 0.05;
@@ -104,7 +109,8 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         }
 //console.debug("PLAY NEXT: " + position + " (" + audio.clipBegin + " -- " + audio.clipEnd + ")");
 
-        if (position > audio.clipEnd)
+        var goNext = position > audio.clipEnd;
+        if (goNext)
         {
             _smilIterator.next();
         }
@@ -137,10 +143,17 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         //finished rendering spine and got page changed message. And stop audio if next smile not found
         pause();
 
-        var nextSmil = _package.media_overlay.getNextSmil(_smilIterator.smil);
+        var nextSmil = goNext ? _package.media_overlay.getNextSmil(_smilIterator.smil) : _package.media_overlay.getPreviousSmil(_smilIterator.smil);
         if(nextSmil) {
             _smilIterator = new ReadiumSDK.Models.SmilIterator(nextSmil);
             if(_smilIterator.currentPar) {
+                if (!goNext)
+                {
+                    while (!_smilIterator.isLast())
+                    {
+                        _smilIterator.next();
+                    }
+                }
                 reader.openContentUrl(_smilIterator.currentPar.text.src, _smilIterator.smil.href, self);
             }
         }
@@ -163,6 +176,11 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             reader.insureElementVisibility(_smilIterator.currentPar.element, self);
         }
     }
+
+
+    this.playUserPar = function(par) {
+        playPar(par);
+    };
 
 
     this.reset = function() {
@@ -213,7 +231,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             return;
         }
 
-        var position = previous ? DIRECTION_MARK-1 : _smilIterator.currentPar.audio.clipEnd + 0.1;
+        var position = previous ? DIRECTION_MARK - 1 : _smilIterator.currentPar.audio.clipEnd + 0.1;
 
         onAudioPositionChanged(position);
 
