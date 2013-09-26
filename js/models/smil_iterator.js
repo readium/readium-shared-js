@@ -21,7 +21,7 @@ ReadiumSDK.Models.SmilIterator = function(smil) {
     this.currentPar = undefined;
 
     this.reset = function() {
-        this.currentPar = findParNode(0, this.smil);
+        this.currentPar = findParNode(0, this.smil, false);
     };
 
     this.next = function() {
@@ -31,7 +31,7 @@ ReadiumSDK.Models.SmilIterator = function(smil) {
             return;
         }
 
-        this.currentPar = findParNode(this.currentPar.index + 1, this.currentPar.parent);
+        this.currentPar = findParNode(this.currentPar.index + 1, this.currentPar.parent, false);
     };
 
     this.previous = function() {
@@ -41,7 +41,7 @@ ReadiumSDK.Models.SmilIterator = function(smil) {
             return;
         }
 
-        this.currentPar = findParNode(this.currentPar.index - 1, this.currentPar.parent);
+        this.currentPar = findParNode(this.currentPar.index - 1, this.currentPar.parent, true);
     };
 
     this.goToPar =  function(par) {
@@ -55,16 +55,18 @@ ReadiumSDK.Models.SmilIterator = function(smil) {
         }
     };
 
-    function findParNode(startIndex, container) {
+    function findParNode(startIndex, container, previous) {
 
-        for(var i = startIndex, count = container.children.length; i < count; i++) {
+        for(var i = startIndex, count = container.children.length;
+            i >= 0 && i < count;
+            i += (previous ? -1 : 1)) {
 
             var node = container.children[i];
             if(node.nodeType == "par") {
                 return node;
             }
 
-            node = findParNode(0, node);
+            node = findParNode(0, node, previous);
 
             if(node) {
                 return node;
@@ -73,7 +75,7 @@ ReadiumSDK.Models.SmilIterator = function(smil) {
 
         if(container.parent) {
 
-            return findParNode(container.index + 1, container.parent);
+            return findParNode(container.index + (previous ? -1 : 1), container.parent, previous);
         }
 
         return undefined;
