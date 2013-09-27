@@ -125,7 +125,9 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
                     var par = iter.currentPar;
                     $(element).click(function() {
-                        console.debug("MO CLICK: " + $(this)[0].id);
+                        var elem = $(this)[0];
+                        console.debug("MO CLICK: " + elem.id);
+
                         var par = $(this).data("mediaOverlayData").par;
                         self.mediaOverlayPlayer.playUserPar(par);
                     });

@@ -21,8 +21,9 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function() {
     var BACK_COLOR = "#99CCCC";
 
     var _activeClass = "";
+    var _playbackActiveClass = "";
 
-    this.highlightElement = function(element, activeClass) {
+    this.highlightElement = function(element, activeClass, playbackActiveClass) {
 
         if(!element || element === _highlightedElement) {
             return;
@@ -32,6 +33,14 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function() {
 
         _highlightedElement = element;
         _activeClass = activeClass;
+        _playbackActiveClass = playbackActiveClass;
+
+        if (_playbackActiveClass && _playbackActiveClass !== "")
+        {
+            //console.debug("MO playbackActiveClass: " + _playbackActiveClass);
+            $(_highlightedElement.ownerDocument.documentElement).addClass(_playbackActiveClass);
+            //console.debug("MO playbackActiveClass 2: " + _highlightedElement.ownerDocument.documentElement.classList);
+        }
 
         if (_activeClass && _activeClass !== "")
         {
@@ -49,6 +58,12 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function() {
 
         if(_highlightedElement) {
 
+            if (_playbackActiveClass && _playbackActiveClass !== "")
+            {
+                //console.debug("MO RESET playbackActiveClass: " + _playbackActiveClass);
+                $(_highlightedElement.ownerDocument.documentElement).removeClass(_playbackActiveClass);
+            }
+
             if (_activeClass && _activeClass !== "")
             {
                 //console.debug("MO RESET activeClass: " + _activeClass);
@@ -62,6 +77,7 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function() {
 
             _highlightedElement = undefined;
             _activeClass = "";
+            _playbackActiveClass = "";
         }
     }
 

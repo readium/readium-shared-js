@@ -248,7 +248,12 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
             return undefined;
         }
 
-        return this.navigationLogic.getElement(selector);
+        var navigation = this.navigationLogic;
+        if (!navigation)
+        {
+            navigation = new ReadiumSDK.Views.CfiNavigationLogic(this.$el, this.$iframe);
+        }
+        return navigation.getElement(selector);
     },
 
     getVisibleMediaOverlayElements: function() {
