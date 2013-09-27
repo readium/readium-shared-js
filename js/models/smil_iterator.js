@@ -88,7 +88,7 @@ ReadiumSDK.Models.SmilIterator = function(smil) {
             }
 
             // assert(node.nodeType == "seq")
-            node = findParNode(0, node, previous);
+            node = findParNode(previous ? node.children.length - 1 : 0, node, previous);
 
             if(node) {
                 return node;

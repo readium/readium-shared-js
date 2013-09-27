@@ -128,15 +128,29 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                 return;
             }
 
-            if(_settings.mediaOverlaysSkipSkippables &&
-                _smilIterator.currentPar.isSkippable())
+            if(_settings.mediaOverlaysSkipSkippables)
             {
-                console.debug("MO SKIP: " + _smilIterator.currentPar.epubtype);
+                var skip = false;
+                var parent = _smilIterator.currentPar;
+                while (parent)
+                {
+                    if (parent.isSkippable && parent.isSkippable())
+                    {
+                        skip = true;
+                        break;
+                    }
+                    parent = parent.parent;
+                }
 
-                var pos = goNext ? _smilIterator.currentPar.audio.clipEnd + 0.1 : DIRECTION_MARK - 1;
+                if (skip)
+                {
+                    console.debug("MO SKIP: " + _smilIterator.currentPar.epubtype);
 
-                onAudioPositionChanged(pos);
-                return;
+                    var pos = goNext ? _smilIterator.currentPar.audio.clipEnd + 0.1 : DIRECTION_MARK - 1;
+
+                    onAudioPositionChanged(pos);
+                    return;
+                }
             }
 
             if(_smilIterator.currentPar.audio.isRightAudioPosition(_audioPlayer.srcRef(), position) ) {
