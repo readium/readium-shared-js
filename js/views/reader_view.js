@@ -140,6 +140,26 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
                                     var par = data.par;
                                     self.mediaOverlayPlayer.playUserPar(par);
                                 }
+                                else
+                                {
+                                    var readaloud = $(elem).attr("ibooks:readaloud");
+                                    if (!readaloud)
+                                    {
+                                        readaloud = $(elem).attr("epub:readaloud");
+                                    }
+                                    if (readaloud)
+                                    {
+                                        console.debug("MO readaloud attr: " + readaloud);
+
+                                        var isPlaying = self.mediaOverlayPlayer.isPlaying();
+                                        if (readaloud === "start" && !isPlaying
+                                            || readaloud === "stop" && isPlaying
+                                            || readaloud === "startstop")
+                                        {
+                                            self.mediaOverlayPlayer.toggleMediaOverlay();
+                                        }
+                                    }
+                                }
                             });
 
                             first = false;
