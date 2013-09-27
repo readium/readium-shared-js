@@ -114,6 +114,8 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
         var iter = new ReadiumSDK.Models.SmilIterator(smil);
 
+        var first = true;
+
         while(iter.currentPar) {
 
             if(iter.currentPar.text.srcFragmentId) {
@@ -123,14 +125,36 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
                     iter.currentPar.element = element;
                     $(element).data("mediaOverlayData", {par: iter.currentPar});
 
-                    var par = iter.currentPar;
-                    $(element).click(function() {
-                        var elem = $(this)[0];
-                        console.debug("MO CLICK: " + elem.id);
+                    if (first)
+                    {
+                        if (element.ownerDocument && element.ownerDocument.body)
+                        {
+                            $(element.ownerDocument.body).click(function(event) {
+                                var elem = $(this)[0]; // body
+                                elem = event.target;
+                                console.debug("MO CLICK (BODY): " + elem.id);
 
-                        var par = $(this).data("mediaOverlayData").par;
-                        self.mediaOverlayPlayer.playUserPar(par);
-                    });
+                                var data = $(elem).data("mediaOverlayData");
+                                if (data && data.par)
+                                {
+                                    var par = data.par;
+                                    self.mediaOverlayPlayer.playUserPar(par);
+                                }
+                            });
+
+                            first = false;
+                        }
+                        else
+                        {
+                            $(element).click(function() {
+                                var elem = $(this)[0];
+                                console.debug("MO CLICK (ELEM): " + elem.id);
+
+                                var par = $(this).data("mediaOverlayData").par;
+                                self.mediaOverlayPlayer.playUserPar(par);
+                            });
+                        }
+                    }
                 }
                 else
                 {
