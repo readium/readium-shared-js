@@ -23,6 +23,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
     var _package = reader.package;
     var self = this;
     var _elementHighlighter = new ReadiumSDK.Views.MediaOverlayElementHighlighter();
+    var _settings = reader.viewerSettings;
 
     this.onPageChanged = function(paginationData) {
 
@@ -124,6 +125,17 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             //paranoia test probably audio always should exist
             if(!_smilIterator.currentPar.audio) {
                 pause();
+                return;
+            }
+
+            if(_settings.mediaOverlaysSkipSkippables &&
+                _smilIterator.currentPar.isSkippable())
+            {
+                console.debug("MO SKIP: " + _smilIterator.currentPar.epubtype);
+
+                var pos = goNext ? _smilIterator.currentPar.audio.clipEnd + 0.1 : DIRECTION_MARK - 1;
+
+                onAudioPositionChanged(pos);
                 return;
             }
 

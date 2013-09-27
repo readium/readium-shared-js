@@ -152,9 +152,9 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
                                         console.debug("MO readaloud attr: " + readaloud);
 
                                         var isPlaying = self.mediaOverlayPlayer.isPlaying();
-                                        if (readaloud === "start" && !isPlaying
-                                            || readaloud === "stop" && isPlaying
-                                            || readaloud === "startstop")
+                                        if (readaloud === "start" && !isPlaying ||
+                                            readaloud === "stop" && isPlaying ||
+                                            readaloud === "startstop")
                                         {
                                             self.mediaOverlayPlayer.toggleMediaOverlay();
                                         }

@@ -38,12 +38,10 @@ ReadiumSDK.Helpers.Rect = function(left, top, width, height) {
             tolerance = 0;
         }
 
-        return !(rect.right() < this.left + tolerance
-            || rect.left > this.right() - tolerance
-            || rect.bottom() < this.top + tolerance
-            || rect.top > this.bottom() - tolerance);
-
-
+        return !(rect.right() < this.left + tolerance ||
+            rect.left > this.right() - tolerance ||
+            rect.bottom() < this.top + tolerance ||
+            rect.top > this.bottom() - tolerance);
     }
 };
 

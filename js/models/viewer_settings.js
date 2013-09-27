@@ -20,6 +20,7 @@ ReadiumSDK.Models.ViewerSettings = function(settingsData) {
     this.isSyntheticSpread = true;
     this.fontSize = 100;
     this.columnGap = 20;
+    this.mediaOverlaysSkipSkippables = false;
 
     this.update = function(settingsData) {
 
@@ -33,6 +34,10 @@ ReadiumSDK.Models.ViewerSettings = function(settingsData) {
 
         if(settingsData.fontSize !== undefined) {
             this.fontSize = settingsData.fontSize;
+        }
+
+        if(settingsData.mediaOverlaysSkipSkippables !== undefined) {
+            this.mediaOverlaysSkipSkippables = settingsData.mediaOverlaysSkipSkippables;
         }
     };
 

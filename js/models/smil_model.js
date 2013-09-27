@@ -42,6 +42,33 @@ ReadiumSDK.Models.Smil.TimeContainerNode = function() {
 
         return node;
     }
+
+    this.isEscapable = function()
+    {
+        // http://www.idpf.org/epub/30/spec/epub30-mediaoverlays.html#sec-escabaility
+
+        if (this.epubtype === "") return false;
+
+        return (this.epubtype.indexOf("sidebar") >= 0) ||
+            (this.epubtype.indexOf("glossary") >= 0);
+    }
+
+    this.isSkippable = function()
+    {
+        // http://www.idpf.org/epub/30/spec/epub30-mediaoverlays.html#sec-skippability
+
+        if (this.epubtype === "") return false;
+
+        return (this.epubtype.indexOf("sidebar") >= 0) ||
+            (this.epubtype.indexOf("practice") >= 0) ||
+            (this.epubtype.indexOf("marginalia") >= 0) ||
+            (this.epubtype.indexOf("annotation") >= 0) ||
+            (this.epubtype.indexOf("help") >= 0) ||
+            (this.epubtype.indexOf("note") >= 0) ||
+            (this.epubtype.indexOf("footnote") >= 0) ||
+            (this.epubtype.indexOf("rearnote") >= 0) ||
+            (this.epubtype.indexOf("pagebreak") >= 0);
+    }
 };
 
 ReadiumSDK.Models.Smil.TimeContainerNode.prototype = new ReadiumSDK.Models.Smil.SmilNode();
