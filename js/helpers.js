@@ -74,6 +74,22 @@ ReadiumSDK.Helpers.LoadIframe = function(iframe, src, callback, context) {
 
     iframe.onload = function() {
 
+        //console.debug("epubReadingSystem (TOP):");
+        //console.debug(navigator.epubReadingSystem);
+
+        // Forward the epubReadingSystem object to the IFRAME
+        try
+        {
+            iframe.contentWindow.navigator["epubReadingSystem"] = navigator.epubReadingSystem;
+        }
+        catch(ex)
+        {
+            console.log("epubReadingSystem INJECTION ERROR! " + ex.message);
+        }
+
+        //console.debug("epubReadingSystem (IFRAME):");
+        //console.debug(iframe.contentWindow.navigator.epubReadingSystem);
+
         isWaitingForFrameLoad = false;
         callback.call(context, true);
 
