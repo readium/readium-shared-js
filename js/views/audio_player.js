@@ -93,7 +93,7 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
 
     function playFromPosition(position) {
 
-        console.debug("Play from position - " + position);
+        //console.debug("Play from position - " + position);
 
         if(Math.abs(position - _elm.currentTime) < 0.3) {
 

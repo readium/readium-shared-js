@@ -195,6 +195,55 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
     }
 
 
+    this.escape = function() {
+
+        if(!_smilIterator || !_smilIterator.currentPar) {
+            return;
+        }
+
+        if(!_audioPlayer.isPlaying())
+        {
+            //playCurrentPar();
+            play();
+            return;
+        }
+
+
+        var parent = _smilIterator.currentPar;
+        while (parent)
+        {
+            if (parent.isEscapable && parent.isEscapable())
+            {
+                var escapable = parent;
+
+                if (!escapable.parent || escapable.index == escapable.parent.children.length - 1)
+                {
+                    pause();
+                    return;
+                }
+
+                var nextSibling = escapable.parent.children[escapable.index + 1];
+
+                var firstPar = _smilIterator.firstDeep(nextSibling);
+                if (!firstPar)
+                {
+                    pause();
+                    return;
+                }
+
+                _smilIterator.goToPar(firstPar);
+
+                //pause();
+                playCurrentPar();
+                return;
+            }
+            parent = parent.parent;
+        }
+
+        this.nextMediaOverlay();
+    };
+
+
     this.playUserPar = function(par) {
         playPar(par);
     };

@@ -24,6 +24,12 @@ ReadiumSDK.Models.SmilIterator = function(smil) {
         this.currentPar = findParNode(0, this.smil, false);
     };
 
+    this.firstDeep = function(container) {
+        var par = container.nodeType === "par" ? container : findParNode(0, container, false);
+
+        return par;
+    };
+
     this.next = function() {
 
         if(!this.currentPar) {
