@@ -55,7 +55,7 @@ ReadiumSDK.Models.Smil.TimeContainerNode = function() {
         var smilModel = this.getSmil();
         if (!smilModel.mo)
         {
-            return;
+            return false;
         }
 
         for (var i = 0; i < smilModel.mo.escapables.length; i++)
@@ -79,7 +79,7 @@ ReadiumSDK.Models.Smil.TimeContainerNode = function() {
         var smilModel = this.getSmil();
         if (!smilModel.mo)
         {
-            return;
+            return false;
         }
 
         for (var i = 0; i < smilModel.mo.skippables.length; i++)
