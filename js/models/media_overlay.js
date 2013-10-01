@@ -30,7 +30,7 @@ ReadiumSDK.Models.MediaOverlay = function() {
     this.activeClass = undefined;
     this.playbackActiveClass = undefined;
 
-    this.DEBUG = true;
+    this.DEBUG = false;
 
 
     this.getSmilById = function (id) {

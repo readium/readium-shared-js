@@ -22,6 +22,21 @@
 
 ReadiumSDK.Models.Smil.SmilNode = function() {
 
+    this.hasAncestor = function(node)
+    {
+        var parent = this.parent;
+        while(parent)
+        {
+            if (parent == node)
+            {
+                return true;
+            }
+
+            parent = parent.parent;
+        }
+
+        return false;
+    }
 };
 
 ReadiumSDK.Models.Smil.TimeContainerNode = function() {
@@ -45,8 +60,6 @@ ReadiumSDK.Models.Smil.TimeContainerNode = function() {
 
     this.isEscapable = function()
     {
-        // http://www.idpf.org/epub/30/spec/epub30-mediaoverlays.html#sec-escabaility
-
         if (this.epubtype === "")
         {
             return false;
@@ -69,8 +82,6 @@ ReadiumSDK.Models.Smil.TimeContainerNode = function() {
 
     this.isSkippable = function()
     {
-        // http://www.idpf.org/epub/30/spec/epub30-mediaoverlays.html#sec-skippability
-
         if (this.epubtype === "")
         {
             return false;
@@ -167,7 +178,7 @@ ReadiumSDK.Models.SmilModel = function() {
     this.duration = undefined;
     this.mo = undefined;
 
-    this.DEBUG = true;
+    this.DEBUG = false;
 };
 
 ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
