@@ -50,6 +50,50 @@ ReadiumSDK.Models.Smil.TimeContainerNode = function() {
         if (this.epubtype === "") return false;
 
         return (this.epubtype.indexOf("sidebar") >= 0) ||
+            (this.epubtype.indexOf("bibliography") >= 0) ||
+            (this.epubtype.indexOf("toc") >= 0) ||
+            (this.epubtype.indexOf("loi") >= 0) ||
+            (this.epubtype.indexOf("appendix") >= 0) ||
+            (this.epubtype.indexOf("landmarks") >= 0) ||
+            (this.epubtype.indexOf("lot") >= 0) ||
+            (this.epubtype.indexOf("index") >= 0) ||
+            (this.epubtype.indexOf("colophon") >= 0) ||
+            (this.epubtype.indexOf("epigraph") >= 0) ||
+            (this.epubtype.indexOf("conclusion") >= 0) ||
+            (this.epubtype.indexOf("afterword") >= 0) ||
+            (this.epubtype.indexOf("warning") >= 0) ||
+            (this.epubtype.indexOf("epilogue") >= 0) ||
+            (this.epubtype.indexOf("foreword") >= 0) ||
+            (this.epubtype.indexOf("introduction") >= 0) ||
+            (this.epubtype.indexOf("prologue") >= 0) ||
+            (this.epubtype.indexOf("preface") >= 0) ||
+            (this.epubtype.indexOf("preamble") >= 0) ||
+            (this.epubtype.indexOf("notice") >= 0) ||
+            (this.epubtype.indexOf("errata") >= 0) ||
+            (this.epubtype.indexOf("copyright-page") >= 0) ||
+            (this.epubtype.indexOf("acknowledgments") >= 0) ||
+            (this.epubtype.indexOf("other-credits") >= 0) ||
+            (this.epubtype.indexOf("titlepage") >= 0) ||
+            (this.epubtype.indexOf("imprimatur") >= 0) ||
+            (this.epubtype.indexOf("contributors") >= 0) ||
+            (this.epubtype.indexOf("halftitlepage") >= 0) ||
+            (this.epubtype.indexOf("dedication") >= 0) ||
+            (this.epubtype.indexOf("help") >= 0) ||
+            (this.epubtype.indexOf("annotation") >= 0) ||
+            (this.epubtype.indexOf("marginalia") >= 0) ||
+            (this.epubtype.indexOf("practice") >= 0) ||
+            (this.epubtype.indexOf("note") >= 0) ||
+            (this.epubtype.indexOf("footnote") >= 0) ||
+            (this.epubtype.indexOf("rearnote") >= 0) ||
+            (this.epubtype.indexOf("footnotes") >= 0) ||
+            (this.epubtype.indexOf("rearnotes") >= 0) ||
+            (this.epubtype.indexOf("bridgehead") >= 0) ||
+            (this.epubtype.indexOf("page-list") >= 0) ||
+            (this.epubtype.indexOf("table") >= 0) ||
+            (this.epubtype.indexOf("table-row") >= 0) ||
+            (this.epubtype.indexOf("table-cell") >= 0) ||
+            (this.epubtype.indexOf("list") >= 0) ||
+            (this.epubtype.indexOf("list-item") >= 0) ||
             (this.epubtype.indexOf("glossary") >= 0);
     }
 
@@ -67,6 +111,11 @@ ReadiumSDK.Models.Smil.TimeContainerNode = function() {
             (this.epubtype.indexOf("note") >= 0) ||
             (this.epubtype.indexOf("footnote") >= 0) ||
             (this.epubtype.indexOf("rearnote") >= 0) ||
+            (this.epubtype.indexOf("table") >= 0) ||
+            (this.epubtype.indexOf("table-row") >= 0) ||
+            (this.epubtype.indexOf("table-cell") >= 0) ||
+            (this.epubtype.indexOf("list") >= 0) ||
+            (this.epubtype.indexOf("list-item") >= 0) ||
             (this.epubtype.indexOf("pagebreak") >= 0);
     }
 };
