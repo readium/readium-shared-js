@@ -178,7 +178,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
                 }
                 else
                 {
-                    console.error("!! CANNOT FIND ELEMENT: " + iter.currentPar.text.srcFragmentId);
+                    console.error("!! CANNOT FIND ELEMENT: " + iter.currentPar.text.srcFragmentId + " /// " + spineItem.href);
                 }
             }
 

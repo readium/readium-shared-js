@@ -48,15 +48,17 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             }
         }
         else {
+            var wasPlaying = _audioPlayer.isPlaying();
+
             this.reset();
+
+            if (wasPlaying)
+            {
+console.debug("wasPlaying paginationData.initiator != self");
+                this.toggleMediaOverlay();
+            }
         }
     };
-
-    function onAudioEnded() {
-
-        console.debug("Audio Ended");
-        self.reset();
-    }
 
     function playPar(par) {
 
@@ -83,6 +85,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         var audioContentRef = ReadiumSDK.Helpers.ResolveContentRef(_smilIterator.currentPar.audio.src, _smilIterator.smil.href);
 
         var audioSource = _package.resolveRelativeUrl(audioContentRef);
+
         _audioPlayer.playFile(_smilIterator.currentPar.audio.src, audioSource, _smilIterator.currentPar.audio.clipBegin);
 
         highlightCurrentElement();
@@ -135,10 +138,9 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         position > DIRECTION_MARK &&
             position <= audio.clipEnd) {
 
-//console.debug("PLAYING: " + position + " (" + audio.clipBegin + " -- " + audio.clipEnd + ")");
             return;
         }
-//console.debug("PLAY NEXT: " + position + " (" + audio.clipBegin + " -- " + audio.clipEnd + ")");
+        //console.debug("PLAY NEXT: " + position + " (" + audio.clipBegin + " -- " + audio.clipEnd + ")");
 
         var goNext = position > audio.clipEnd;
         if (goNext)
@@ -183,16 +185,35 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                 }
             }
 
-            if(_smilIterator.currentPar.audio.isRightAudioPosition(_audioPlayer.srcRef(), position) ) {
+            if(_smilIterator.currentPar.audio.src == _audioPlayer.srcRef()
+                    && position >= _smilIterator.currentPar.audio.clipBegin
+                    && position <= _smilIterator.currentPar.audio.clipEnd)
+            {
                 highlightCurrentElement();
                 return;
             }
+
+            //position < DIRECTION_MARK goes here (goto previous):
 
             playCurrentPar();
             return;
         }
 
         nextSmil(goNext);
+    }
+
+
+    function onAudioEnded() {
+
+        console.debug("Audio Ended");
+
+        if (!_smilIterator || !_smilIterator.currentPar)
+        {
+            self.reset();
+            return;
+        }
+
+        onAudioPositionChanged(_smilIterator.currentPar.audio.clipEnd + 0.1, true);
     }
 
     function highlightCurrentElement() {

@@ -54,6 +54,7 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
     };
 
     this.playFile = function(srcRef, mediaFile, clipBegin) {
+        this.reset();
 
         _srcRef = srcRef;
         _source = mediaFile;
@@ -93,8 +94,6 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
 
     function playFromPosition(position) {
 
-        //console.debug("Play from position - " + position);
-
         if(Math.abs(position - _elm.currentTime) < 0.3) {
 
             if(self.isPlaying()) {
@@ -104,7 +103,6 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
             self.play();
         }
         else {
-
             self.pause();
             _elm.currentTime = position;
             $(_elm).on("seeked", onSeeked);

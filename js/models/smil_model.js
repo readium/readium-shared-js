@@ -172,15 +172,13 @@ ReadiumSDK.Models.Smil.TextNode.prototype = new ReadiumSDK.Models.Smil.MediaNode
 ReadiumSDK.Models.Smil.AudioNode = function() {
 
     this.nodeType = "audio";
-    this.clipBegin = "";
-    this.clipEnd = "";
 
-    this.isRightAudioPosition = function(source, position) {
+    this.clipBegin = 0;
 
-        return this.src == source && position >= this.clipBegin && position <= this.clipEnd;
-    }
-
+    this.MAX = 1234567890.1; //Number.MAX_VALUE - 0.1; //Infinity;
+    this.clipEnd = this.MAX;
 };
+
 ReadiumSDK.Models.Smil.AudioNode.prototype = new ReadiumSDK.Models.Smil.MediaNode();
 
 //////////////////////////////
@@ -324,8 +322,26 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
             node.parent = parent;
             safeCopyProperty("src", nodeDTO, node, true);
             safeCopyProperty("id", nodeDTO, node);
+
             safeCopyProperty("clipBegin", nodeDTO, node);
+            if (node.clipBegin < 0)
+            {
+                if (smilModel.DEBUG)
+                {
+                    console.log(getIndent() + "JS MO clipBegin adjusted to ZERO");
+                }
+                node.clipBegin = 0;
+            }
+
             safeCopyProperty("clipEnd", nodeDTO, node);
+            if (node.clipEnd <= node.clipBegin)
+            {
+                if (smilModel.DEBUG)
+                {
+                    console.log(getIndent() + "JS MO clipEnd adjusted to MAX");
+                }
+                node.clipEnd = node.MAX;
+            }
         }
         else {
             console.error("Unexpected smil node type: " + nodeDTO.nodeType);
