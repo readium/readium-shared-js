@@ -145,7 +145,7 @@ ReadiumSDK.Models.SmilModel = function() {
     this.href = undefined; //href of the .smil source file
     this.duration = undefined;
 
-    this.DEBUG = true;
+    this.DEBUG = false;
 };
 
 ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO) {
