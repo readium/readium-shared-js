@@ -610,6 +610,17 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
         return this.mediaOverlayPlayer.isMediaOverlayAvailable();
     },
 
+/*
+    setMediaOverlaySkippables: function(items) {
+
+        this.mediaOverlayPlayer.setMediaOverlaySkippables(items);
+    },
+
+    setMediaOverlayEscapables: function(items) {
+
+        this.mediaOverlayPlayer.setMediaOverlayEscapables(items);
+    },
+*/
 
     /**
      * Starts/Stop playing media overlay on current page
@@ -626,7 +637,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
     */
    nextMediaOverlay: function() {
 
-   this.mediaOverlayPlayer.nextMediaOverlay();
+        this.mediaOverlayPlayer.nextMediaOverlay();
 
    },
 

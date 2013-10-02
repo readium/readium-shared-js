@@ -164,7 +164,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                 var parent = _smilIterator.currentPar;
                 while (parent)
                 {
-                    if (parent.isSkippable && parent.isSkippable())
+                    if (parent.isSkippable && parent.isSkippable(_settings.mediaOverlaysSkippables))
                     {
                         skip = true;
                         break;
@@ -174,7 +174,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
                 if (skip)
                 {
-                    console.debug("MO SKIP: " + _smilIterator.currentPar.epubtype);
+                    console.debug("MO SKIP: " + parent.epubtype);
 
                     var pos = goNext ? _smilIterator.currentPar.audio.clipEnd + 0.1 : DIRECTION_MARK - 1;
 
@@ -226,28 +226,31 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             return;
         }
 
-        var parent = _smilIterator.currentPar;
-        while (parent)
+        if(_settings.mediaOverlaysEscapeEscapables)
         {
-            if (parent.isEscapable && parent.isEscapable())
+            var parent = _smilIterator.currentPar;
+            while (parent)
             {
-                do
+                if (parent.isEscapable && parent.isEscapable(_settings.mediaOverlaysEscapables))
                 {
-                    _smilIterator.next();
-                } while (_smilIterator.currentPar && _smilIterator.currentPar.hasAncestor(parent));
+                    do
+                    {
+                        _smilIterator.next();
+                    } while (_smilIterator.currentPar && _smilIterator.currentPar.hasAncestor(parent));
 
-                if (!_smilIterator.currentPar)
-                {
-                    nextSmil(true);
+                    if (!_smilIterator.currentPar)
+                    {
+                        nextSmil(true);
+                        return;
+                    }
+
+                    //_smilIterator.goToPar(_smilIterator.currentPar);
+                    playCurrentPar();
                     return;
                 }
 
-                //_smilIterator.goToPar(_smilIterator.currentPar);
-                playCurrentPar();
-                return;
+                parent = parent.parent;
             }
-
-            parent = parent.parent;
         }
 
         this.nextMediaOverlay();
@@ -321,6 +324,16 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
     this.previousMediaOverlay = function() {
         this.nextOrPreviousMediaOverlay(true);
     };
+
+    /*
+    this.setMediaOverlaySkippables = function(items) {
+
+    };
+
+    this.setMediaOverlayEscapables = function(items) {
+
+    };
+    */
 
     this.toggleMediaOverlay = function() {
 

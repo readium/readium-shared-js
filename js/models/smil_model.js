@@ -58,7 +58,7 @@ ReadiumSDK.Models.Smil.TimeContainerNode = function() {
         return node;
     }
 
-    this.isEscapable = function()
+    this.isEscapable = function(userEscapables)
     {
         if (this.epubtype === "")
         {
@@ -71,16 +71,24 @@ ReadiumSDK.Models.Smil.TimeContainerNode = function() {
             return false;
         }
 
-        for (var i = 0; i < smilModel.mo.escapables.length; i++)
+        var arr = smilModel.mo.escapables;
+        if (userEscapables.length > 0)
         {
-            if (this.epubtype.indexOf(smilModel.mo.escapables[i]) >= 0)
+            arr = userEscapables;
+        }
+
+        for (var i = 0; i < arr.length; i++)
+        {
+            if (this.epubtype.indexOf(arr[i]) >= 0)
             {
                 return true;
             }
         }
+
+        return false;
     }
 
-    this.isSkippable = function()
+    this.isSkippable = function(userSkippables)
     {
         if (this.epubtype === "")
         {
@@ -93,13 +101,21 @@ ReadiumSDK.Models.Smil.TimeContainerNode = function() {
             return false;
         }
 
-        for (var i = 0; i < smilModel.mo.skippables.length; i++)
+        var arr = smilModel.mo.skippables;
+        if (userSkippables.length > 0)
         {
-            if (this.epubtype.indexOf(smilModel.mo.skippables[i]) >= 0)
+            arr = userSkippables;
+        }
+
+        for (var i = 0; i < arr.length; i++)
+        {
+            if (this.epubtype.indexOf(arr[i]) >= 0)
             {
                 return true;
             }
         }
+
+        return false;
     }
 };
 
