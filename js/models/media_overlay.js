@@ -19,6 +19,10 @@
 ReadiumSDK.Models.MediaOverlay = function() {
 
     this.smil_models = [];
+
+    this.skippables = [];
+    this.escapables = [];
+
     this.duration = undefined;
     this.narrator = undefined;
 
@@ -95,11 +99,33 @@ ReadiumSDK.Models.MediaOverlay.fromDTO = function(moDTO) {
         console.debug("Media Overlay SMIL count: " + count);
 
     for(var i = 0; i < count; i++) {
-        var smilModel = ReadiumSDK.Models.SmilModel.fromSmilDTO(moDTO.smil_models[i]);
+        var smilModel = ReadiumSDK.Models.SmilModel.fromSmilDTO(moDTO.smil_models[i], mo);
         mo.smil_models.push(smilModel);
 
         if (mo.DEBUG)
             console.debug("Media Overlay Duration (SPINE ITEM): " + smilModel.duration);
+    }
+
+    count = moDTO.skippables.length;
+    if (mo.DEBUG)
+        console.debug("Media Overlay SKIPPABLES count: " + count);
+
+    for(var i = 0; i < count; i++) {
+        mo.skippables.push(moDTO.skippables[i]);
+
+        //if (mo.DEBUG)
+        //    console.debug("Media Overlay SKIPPABLE: " + mo.skippables[i]);
+    }
+
+    count = moDTO.escapables.length;
+    if (mo.DEBUG)
+        console.debug("Media Overlay ESCAPABLES count: " + count);
+
+    for(var i = 0; i < count; i++) {
+        mo.escapables.push(moDTO.escapables[i]);
+
+        //if (mo.DEBUG)
+        //    console.debug("Media Overlay ESCAPABLE: " + mo.escapables[i]);
     }
 
     return mo;

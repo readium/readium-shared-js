@@ -21,6 +21,24 @@ ReadiumSDK.Models.ViewerSettings = function(settingsData) {
     this.fontSize = 100;
     this.columnGap = 20;
     this.mediaOverlaysSkipSkippables = false;
+    this.mediaOverlaysEscapeEscapables = true;
+    this.mediaOverlaysSkippables = [];
+    this.mediaOverlaysEscapables = [];
+
+    function buildArray(str)
+    {
+        var retArr = [];
+        var arr = str.split(/[\s,;]+/); //','
+        for (var i = 0; i < arr.length; i++)
+        {
+            var item = arr[i].trim();
+            if (item !== "")
+            {
+                retArr.push(item);
+            }
+        }
+        return retArr;
+    }
 
     this.update = function(settingsData) {
 
@@ -38,6 +56,18 @@ ReadiumSDK.Models.ViewerSettings = function(settingsData) {
 
         if(settingsData.mediaOverlaysSkipSkippables !== undefined) {
             this.mediaOverlaysSkipSkippables = settingsData.mediaOverlaysSkipSkippables;
+        }
+
+        if(settingsData.mediaOverlaysEscapeEscapables !== undefined) {
+            this.mediaOverlaysEscapeEscapables = settingsData.mediaOverlaysEscapeEscapables;
+        }
+
+        if(settingsData.mediaOverlaysSkippables !== undefined) {
+            this.mediaOverlaysSkippables = buildArray(settingsData.mediaOverlaysSkippables);
+        }
+
+        if(settingsData.mediaOverlaysEscapables !== undefined) {
+            this.mediaOverlaysEscapables = buildArray(settingsData.mediaOverlaysEscapables);
         }
     };
 

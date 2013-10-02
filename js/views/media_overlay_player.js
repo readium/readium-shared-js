@@ -88,6 +88,36 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         highlightCurrentElement();
     }
 
+    function nextSmil(goNext)
+    {
+        //new smile we assume new spine too
+        //it may take time to render new spine we will stop audio
+
+        //we don't have to stop audio here but then we should stop listen to audioPositionChanged event until we
+        //finished rendering spine and got page changed message. And stop audio if next smile not found
+        pause();
+
+        var nextSmil = goNext ? _package.media_overlay.getNextSmil(_smilIterator.smil) : _package.media_overlay.getPreviousSmil(_smilIterator.smil);
+        if(nextSmil) {
+            _smilIterator = new ReadiumSDK.Models.SmilIterator(nextSmil);
+            if(_smilIterator.currentPar) {
+                if (!goNext)
+                {
+                    while (!_smilIterator.isLast())
+                    {
+                        _smilIterator.next();
+                    }
+                }
+                reader.openContentUrl(_smilIterator.currentPar.text.src, _smilIterator.smil.href, self);
+            }
+        }
+        else
+        {
+            console.debug("MO RESET");
+            self.reset();
+        }
+    }
+
     var DIRECTION_MARK = -999;
 
     function onAudioPositionChanged(position) {
@@ -134,7 +164,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                 var parent = _smilIterator.currentPar;
                 while (parent)
                 {
-                    if (parent.isSkippable && parent.isSkippable())
+                    if (parent.isSkippable && parent.isSkippable(_settings.mediaOverlaysSkippables))
                     {
                         skip = true;
                         break;
@@ -144,7 +174,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
                 if (skip)
                 {
-                    console.debug("MO SKIP: " + _smilIterator.currentPar.epubtype);
+                    console.debug("MO SKIP: " + parent.epubtype);
 
                     var pos = goNext ? _smilIterator.currentPar.audio.clipEnd + 0.1 : DIRECTION_MARK - 1;
 
@@ -162,32 +192,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             return;
         }
 
-        //new smile we assume new spine too
-        //it may take time to render new spine we will stop audio
-
-        //we don't have to stop audio here but then we should stop listen to audioPositionChanged event until we
-        //finished rendering spine and got page changed message. And stop audio if next smile not found
-        pause();
-
-        var nextSmil = goNext ? _package.media_overlay.getNextSmil(_smilIterator.smil) : _package.media_overlay.getPreviousSmil(_smilIterator.smil);
-        if(nextSmil) {
-            _smilIterator = new ReadiumSDK.Models.SmilIterator(nextSmil);
-            if(_smilIterator.currentPar) {
-                if (!goNext)
-                {
-                    while (!_smilIterator.isLast())
-                    {
-                        _smilIterator.next();
-                    }
-                }
-                reader.openContentUrl(_smilIterator.currentPar.text.src, _smilIterator.smil.href, self);
-            }
-        }
-        else
-        {
-            console.debug("MO RESET");
-            self.reset();
-        }
+        nextSmil(goNext);
     }
 
     function highlightCurrentElement() {
@@ -208,7 +213,6 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         }
     }
 
-
     this.escape = function() {
 
         if(!_smilIterator || !_smilIterator.currentPar) {
@@ -222,36 +226,31 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             return;
         }
 
-
-        var parent = _smilIterator.currentPar;
-        while (parent)
+        if(_settings.mediaOverlaysEscapeEscapables)
         {
-            if (parent.isEscapable && parent.isEscapable())
+            var parent = _smilIterator.currentPar;
+            while (parent)
             {
-                var escapable = parent;
-
-                if (!escapable.parent || escapable.index == escapable.parent.children.length - 1)
+                if (parent.isEscapable && parent.isEscapable(_settings.mediaOverlaysEscapables))
                 {
-                    pause();
+                    do
+                    {
+                        _smilIterator.next();
+                    } while (_smilIterator.currentPar && _smilIterator.currentPar.hasAncestor(parent));
+
+                    if (!_smilIterator.currentPar)
+                    {
+                        nextSmil(true);
+                        return;
+                    }
+
+                    //_smilIterator.goToPar(_smilIterator.currentPar);
+                    playCurrentPar();
                     return;
                 }
 
-                var nextSibling = escapable.parent.children[escapable.index + 1];
-
-                var firstPar = _smilIterator.firstDeep(nextSibling);
-                if (!firstPar)
-                {
-                    pause();
-                    return;
-                }
-
-                _smilIterator.goToPar(firstPar);
-
-                //pause();
-                playCurrentPar();
-                return;
+                parent = parent.parent;
             }
-            parent = parent.parent;
         }
 
         this.nextMediaOverlay();
@@ -325,6 +324,16 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
     this.previousMediaOverlay = function() {
         this.nextOrPreviousMediaOverlay(true);
     };
+
+    /*
+    this.setMediaOverlaySkippables = function(items) {
+
+    };
+
+    this.setMediaOverlayEscapables = function(items) {
+
+    };
+    */
 
     this.toggleMediaOverlay = function() {
 

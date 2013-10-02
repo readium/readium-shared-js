@@ -22,6 +22,21 @@
 
 ReadiumSDK.Models.Smil.SmilNode = function() {
 
+    this.hasAncestor = function(node)
+    {
+        var parent = this.parent;
+        while(parent)
+        {
+            if (parent == node)
+            {
+                return true;
+            }
+
+            parent = parent.parent;
+        }
+
+        return false;
+    }
 };
 
 ReadiumSDK.Models.Smil.TimeContainerNode = function() {
@@ -43,31 +58,64 @@ ReadiumSDK.Models.Smil.TimeContainerNode = function() {
         return node;
     }
 
-    this.isEscapable = function()
+    this.isEscapable = function(userEscapables)
     {
-        // http://www.idpf.org/epub/30/spec/epub30-mediaoverlays.html#sec-escabaility
+        if (this.epubtype === "")
+        {
+            return false;
+        }
 
-        if (this.epubtype === "") return false;
+        var smilModel = this.getSmil();
+        if (!smilModel.mo)
+        {
+            return false;
+        }
 
-        return (this.epubtype.indexOf("sidebar") >= 0) ||
-            (this.epubtype.indexOf("glossary") >= 0);
+        var arr = smilModel.mo.escapables;
+        if (userEscapables.length > 0)
+        {
+            arr = userEscapables;
+        }
+
+        for (var i = 0; i < arr.length; i++)
+        {
+            if (this.epubtype.indexOf(arr[i]) >= 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
-    this.isSkippable = function()
+    this.isSkippable = function(userSkippables)
     {
-        // http://www.idpf.org/epub/30/spec/epub30-mediaoverlays.html#sec-skippability
+        if (this.epubtype === "")
+        {
+            return false;
+        }
 
-        if (this.epubtype === "") return false;
+        var smilModel = this.getSmil();
+        if (!smilModel.mo)
+        {
+            return false;
+        }
 
-        return (this.epubtype.indexOf("sidebar") >= 0) ||
-            (this.epubtype.indexOf("practice") >= 0) ||
-            (this.epubtype.indexOf("marginalia") >= 0) ||
-            (this.epubtype.indexOf("annotation") >= 0) ||
-            (this.epubtype.indexOf("help") >= 0) ||
-            (this.epubtype.indexOf("note") >= 0) ||
-            (this.epubtype.indexOf("footnote") >= 0) ||
-            (this.epubtype.indexOf("rearnote") >= 0) ||
-            (this.epubtype.indexOf("pagebreak") >= 0);
+        var arr = smilModel.mo.skippables;
+        if (userSkippables.length > 0)
+        {
+            arr = userSkippables;
+        }
+
+        for (var i = 0; i < arr.length; i++)
+        {
+            if (this.epubtype.indexOf(arr[i]) >= 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 };
 
@@ -144,11 +192,12 @@ ReadiumSDK.Models.SmilModel = function() {
     this.id = undefined; //manifest item id
     this.href = undefined; //href of the .smil source file
     this.duration = undefined;
+    this.mo = undefined;
 
     this.DEBUG = false;
 };
 
-ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO) {
+ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
 
     console.debug("Media Overlay DTO...");
 
@@ -168,6 +217,7 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO) {
     smilModel.href = smilDTO.href;
     smilModel.smilVersion = smilDTO.smilVersion;
     smilModel.duration = smilDTO.duration;
+    smilModel.mo = mo; //ReadiumSDK.Models.MediaOverlay
 
     if (smilModel.DEBUG)
     {

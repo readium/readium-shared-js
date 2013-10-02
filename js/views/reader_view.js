@@ -125,9 +125,9 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
                     iter.currentPar.element = element;
                     $(element).data("mediaOverlayData", {par: iter.currentPar});
 
-                    if (first)
+                    if (element.ownerDocument && element.ownerDocument.body)
                     {
-                        if (element.ownerDocument && element.ownerDocument.body)
+                        if (first)
                         {
                             $(element.ownerDocument.body).click(function(event) {
                                 var elem = $(this)[0]; // body
@@ -161,19 +161,19 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
                                     }
                                 }
                             });
-
-                            first = false;
                         }
-                        else
-                        {
-                            $(element).click(function() {
-                                var elem = $(this)[0];
-                                console.debug("MO CLICK (ELEM): " + elem.id);
 
-                                var par = $(this).data("mediaOverlayData").par;
-                                self.mediaOverlayPlayer.playUserPar(par);
-                            });
-                        }
+                        first = false;
+                    }
+                    else
+                    {
+                        $(element).click(function() {
+                            var elem = $(this)[0];
+                            console.debug("MO CLICK (ELEM): " + elem.id);
+
+                            var par = $(this).data("mediaOverlayData").par;
+                            self.mediaOverlayPlayer.playUserPar(par);
+                        });
                     }
                 }
                 else
@@ -610,6 +610,17 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
         return this.mediaOverlayPlayer.isMediaOverlayAvailable();
     },
 
+/*
+    setMediaOverlaySkippables: function(items) {
+
+        this.mediaOverlayPlayer.setMediaOverlaySkippables(items);
+    },
+
+    setMediaOverlayEscapables: function(items) {
+
+        this.mediaOverlayPlayer.setMediaOverlayEscapables(items);
+    },
+*/
 
     /**
      * Starts/Stop playing media overlay on current page
@@ -619,15 +630,15 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
         this.mediaOverlayPlayer.toggleMediaOverlay();
     },
-                                                   
+
    /**
     * Plays next fragment media overlay
     *
     */
    nextMediaOverlay: function() {
-   
-   this.mediaOverlayPlayer.nextMediaOverlay();
-   
+
+        this.mediaOverlayPlayer.nextMediaOverlay();
+
    },
 
     /**
@@ -649,7 +660,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
         this.mediaOverlayPlayer.escape();
 
     },
-                                                   
+
     getVisibleMediaOverlayElements: function() {
 
         if(this.currentView) {
