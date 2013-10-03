@@ -347,7 +347,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
         this.viewerSettings.update(settingsData);
 
-        if(this.currentView) {
+        if(this.currentView && !settingsData.doNotUpdateView) {
 
             var bookMark = this.currentView.bookmarkCurrentPage();
 
