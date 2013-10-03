@@ -21,9 +21,18 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
     var _audioPlayer = new ReadiumSDK.Views.AudioPlayer(onStatusChanged, onAudioPositionChanged, onAudioEnded);
     var _currentPagination = undefined;
     var _package = reader.package;
+    var _settings = reader.viewerSettings;
     var self = this;
     var _elementHighlighter = new ReadiumSDK.Views.MediaOverlayElementHighlighter();
-    var _settings = reader.viewerSettings;
+
+    this.onSettingsApplied = function() {
+//console.debug(_settings);
+        _audioPlayer.setRate(_settings.mediaOverlaysRate);
+        _audioPlayer.setVolume(_settings.mediaOverlaysVolume / 100.0);
+    };
+    self.onSettingsApplied();
+    //ReadiumSDK.
+    reader.on(ReadiumSDK.Events.SETTINGS_APPLIED, this.onSettingsApplied, this);
 
     this.onPageChanged = function(paginationData) {
 

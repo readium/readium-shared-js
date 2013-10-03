@@ -24,13 +24,47 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
     var _timerId = undefined;
     var _srcRef = undefined;
 
-    _elm.playbackRate = 1.0;
-
     var self = this;
 
     $(_elm).on("play", onPlay);
     $(_elm).on("pause", onPause);
     $(_elm).on("ended", onEnded);
+
+    var _rate = 1.0;
+    this.setRate = function(rate)
+    {
+//console.debug("RATE: "+rate);
+        _rate = rate;
+        if (_rate < 0.5)
+        {
+            _rate = 0.5;
+        }
+        if (_rate > 4.0)
+        {
+            _rate = 4.0;
+        }
+        _elm.playbackRate = _rate;
+//console.debug("RATEx: "+_elm.playbackRate);
+    }
+    self.setRate(_rate);
+
+    var _volume = 100.0;
+    this.setVolume = function(volume)
+    {
+//console.debug("VOLUME: "+volume);
+        _volume = volume;
+        if (_volume < 0.0)
+        {
+            _volume = 0.0;
+        }
+        if (_volume > 1.0)
+        {
+            _volume = 1.0;
+        }
+        _elm.volume = _volume;
+//console.debug("VOLUMEx: "+_elm.volume);
+    }
+    self.setVolume(_volume);
 
     this.source = function() {
         return _source;
@@ -85,6 +119,10 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
         }
 
         startTimer();
+
+        self.setVolume(_volume);
+        self.setRate(_rate);
+
         _elm.play();
     };
 

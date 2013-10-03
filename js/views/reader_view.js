@@ -343,7 +343,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
      */
     updateSettings: function(settingsData) {
 
-        console.log("UpdateSettings: " + JSON.stringify(settingsData));
+console.debug("UpdateSettings: " + JSON.stringify(settingsData));
 
         this.viewerSettings.update(settingsData);
 
