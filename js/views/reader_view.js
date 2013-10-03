@@ -101,8 +101,6 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
     attachMediaOverlayData: function(spineItem) {
 
-console.debug("attachMediaOverlayData 1");
-
         var self = this;
 
         if(!spineItem.media_overlay_id) {
@@ -117,23 +115,30 @@ console.debug("attachMediaOverlayData 1");
         else
         {
             var click = $(body).data("mediaOverlayClick");
-            if (!click)
+            if (click)
+            {
+                console.error("ALREADY mediaOverlayClick");
+            }
+            else
             {
                 $(body).data("mediaOverlayClick", {ping:"pong"});
 
                 $(body).click(function(event) {
+
                     var elem = $(this)[0]; // body
                     elem = event.target; // body descendant
 
                     console.debug("MO CLICK: " + elem.id);
-                    if (!elem.id)
-                    {
-                        return;
-                    }
 
                     var data = $(elem).data("mediaOverlayData");
                     if (data && data.par)
                     {
+                        if (!self.viewerSettings.mediaOverlaysEnableClick)
+                        {
+                            console.debug("MO CLICK DISABLED");
+                            return;
+                        }
+
                         var par = data.par;
                         self.mediaOverlayPlayer.playUserPar(par);
                     }
@@ -161,14 +166,14 @@ console.debug("attachMediaOverlayData 1");
             }
         }
 
-        //var smil = this.package.media_overlay.getSmilById(spineItem.media_overlay_id);
-        var smil = this.package.media_overlay.getSmilBySpineItem(spineItem);
+        //var smil = self.package.media_overlay.getSmilById(spineItem.media_overlay_id);
+        var smil = self.package.media_overlay.getSmilBySpineItem(spineItem);
         if(!smil) {
             console.error("NO SMIL?? " + spineItem.idref + " /// " + spineItem.media_overlay_id);
             return;
         }
 
-console.debug("[[MO ATTACH]] " + spineItem.idref + " /// " + spineItem.media_overlay_id + " === " + smil.id);
+//console.debug("[[MO ATTACH]] " + spineItem.idref + " /// " + spineItem.media_overlay_id + " === " + smil.id);
 
         var iter = new ReadiumSDK.Models.SmilIterator(smil);
         while(iter.currentPar) {
@@ -182,7 +187,7 @@ console.debug("[[MO ATTACH]] " + spineItem.idref + " /// " + spineItem.media_ove
                 var same = textRelativeRef === spineItem.href;
                 if (same)
                 {
-                    var element = this.currentView.getElement(spineItem, "#" + iter.currentPar.text.srcFragmentId);
+                    var element = self.currentView.getElement(spineItem, "#" + iter.currentPar.text.srcFragmentId);
                     if(element) {
                         if (iter.currentPar.element && iter.currentPar.element !== element)
                         {
@@ -220,13 +225,12 @@ console.debug("[[MO ATTACH]] " + spineItem.idref + " /// " + spineItem.media_ove
                 }
                 else
                 {
-                    console.debug("[INFO] " + spineItem.href + " != " + textRelativeRef + " # " + iter.currentPar.text.srcFragmentId);
+//console.debug("[INFO] " + spineItem.href + " != " + textRelativeRef + " # " + iter.currentPar.text.srcFragmentId);
                 }
             }
 
             iter.next();
         }
-console.debug("attachMediaOverlayData 2");
     },
 
     /**
@@ -586,7 +590,7 @@ console.debug("attachMediaOverlayData 2");
             hrefPart = combinedPath;
             elementId = undefined;
         }
-console.debug("openContentUrl - hrefPart: " + hrefPart);
+//console.debug("openContentUrl - hrefPart: " + hrefPart);
 
         var spineItem = this.spine.getItemByHref(hrefPart);
         if(!spineItem) {
@@ -598,7 +602,7 @@ console.debug("openContentUrl - hrefPart: " + hrefPart);
         if(elementId){
             pageData.setElementId(elementId);
         }
-console.debug("openContentUrl - elementId: " + elementId);
+//console.debug("openContentUrl - elementId: " + elementId);
 
         this.openPage(pageData);
     },

@@ -24,6 +24,7 @@ ReadiumSDK.Models.ViewerSettings = function(settingsData) {
     this.mediaOverlaysEscapeEscapables = true;
     this.mediaOverlaysSkippables = [];
     this.mediaOverlaysEscapables = [];
+    this.mediaOverlaysEnableClick = true;
 
     function buildArray(str)
     {
@@ -68,6 +69,10 @@ ReadiumSDK.Models.ViewerSettings = function(settingsData) {
 
         if(settingsData.mediaOverlaysEscapables !== undefined) {
             this.mediaOverlaysEscapables = buildArray(settingsData.mediaOverlaysEscapables);
+        }
+
+        if(settingsData.mediaOverlaysEnableClick !== undefined) {
+            this.mediaOverlaysEnableClick = settingsData.mediaOverlaysEnableClick;
         }
     };
 
