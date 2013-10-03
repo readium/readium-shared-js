@@ -101,72 +101,109 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
     attachMediaOverlayData: function(spineItem) {
 
+console.debug("attachMediaOverlayData 1");
+
         var self = this;
 
         if(!spineItem.media_overlay_id) {
             return;
         }
 
-        var smil = this.package.media_overlay.getSmilById(spineItem.media_overlay_id);
-        if(!smil) {
-            return;
+        var body = self.currentView.getElement(spineItem, "body");
+        if (!body)
+        {
+            console.error("! BODY ???");
         }
+        else
+        {
+            var click = $(body).data("mediaOverlayClick");
+            if (!click)
+            {
+                $(body).data("mediaOverlayClick", {ping:"pong"});
 
-        var iter = new ReadiumSDK.Models.SmilIterator(smil);
+                $(body).click(function(event) {
+                    var elem = $(this)[0]; // body
+                    elem = event.target; // body descendant
 
-        var first = true;
-
-        while(iter.currentPar) {
-
-            if(iter.currentPar.text.srcFragmentId) {
-
-                var element = this.currentView.getElement(spineItem, "#" + iter.currentPar.text.srcFragmentId);
-                if(element) {
-                    iter.currentPar.element = element;
-                    $(element).data("mediaOverlayData", {par: iter.currentPar});
-
-                    if (element.ownerDocument && element.ownerDocument.body)
+                    console.debug("MO CLICK: " + elem.id);
+                    if (!elem.id)
                     {
-                        if (first)
-                        {
-                            $(element.ownerDocument.body).click(function(event) {
-                                var elem = $(this)[0]; // body
-                                elem = event.target;
-                                console.debug("MO CLICK (BODY): " + elem.id);
+                        return;
+                    }
 
-                                var data = $(elem).data("mediaOverlayData");
-                                if (data && data.par)
-                                {
-                                    var par = data.par;
-                                    self.mediaOverlayPlayer.playUserPar(par);
-                                }
-                                else
-                                {
-                                    var readaloud = $(elem).attr("ibooks:readaloud");
-                                    if (!readaloud)
-                                    {
-                                        readaloud = $(elem).attr("epub:readaloud");
-                                    }
-                                    if (readaloud)
-                                    {
-                                        console.debug("MO readaloud attr: " + readaloud);
-
-                                        var isPlaying = self.mediaOverlayPlayer.isPlaying();
-                                        if (readaloud === "start" && !isPlaying ||
-                                            readaloud === "stop" && isPlaying ||
-                                            readaloud === "startstop")
-                                        {
-                                            self.mediaOverlayPlayer.toggleMediaOverlay();
-                                        }
-                                    }
-                                }
-                            });
-                        }
-
-                        first = false;
+                    var data = $(elem).data("mediaOverlayData");
+                    if (data && data.par)
+                    {
+                        var par = data.par;
+                        self.mediaOverlayPlayer.playUserPar(par);
                     }
                     else
                     {
+                        var readaloud = $(elem).attr("ibooks:readaloud");
+                        if (!readaloud)
+                        {
+                            readaloud = $(elem).attr("epub:readaloud");
+                        }
+                        if (readaloud)
+                        {
+                            console.debug("MO readaloud attr: " + readaloud);
+
+                            var isPlaying = self.mediaOverlayPlayer.isPlaying();
+                            if (readaloud === "start" && !isPlaying ||
+                                readaloud === "stop" && isPlaying ||
+                                readaloud === "startstop")
+                            {
+                                self.mediaOverlayPlayer.toggleMediaOverlay();
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        //var smil = this.package.media_overlay.getSmilById(spineItem.media_overlay_id);
+        var smil = this.package.media_overlay.getSmilBySpineItem(spineItem);
+        if(!smil) {
+            console.error("NO SMIL?? " + spineItem.idref + " /// " + spineItem.media_overlay_id);
+            return;
+        }
+
+console.debug("[[MO ATTACH]] " + spineItem.idref + " /// " + spineItem.media_overlay_id + " === " + smil.id);
+
+        var iter = new ReadiumSDK.Models.SmilIterator(smil);
+        while(iter.currentPar) {
+            iter.currentPar.element = undefined;
+
+            if(iter.currentPar.text.srcFragmentId) {
+
+                var textRelativeRef = ReadiumSDK.Helpers.ResolveContentRef(iter.currentPar.text.srcFile, iter.smil.href);
+                //var spineItemCheck = self.spine.getItemByHref(textRelativeRef);
+                //var same = spineItemCheck === spineItem;
+                var same = textRelativeRef === spineItem.href;
+                if (same)
+                {
+                    var element = this.currentView.getElement(spineItem, "#" + iter.currentPar.text.srcFragmentId);
+                    if(element) {
+                        if (iter.currentPar.element && iter.currentPar.element !== element)
+                        {
+                            console.error("DIFFERENT ELEMENTS??! " + iter.currentPar.text.srcFragmentId + " /// " + iter.currentPar.element.id);
+                        }
+
+                        iter.currentPar.element = element;
+
+                        var modata = $(element).data("mediaOverlayData");
+                        if (modata)
+                        {
+                            console.error("MO DATA already exists.");
+                            if (modata.par && modata.par !== iter.currentPar)
+                            {
+                                console.error("DIFFERENT PARS??!");
+                            }
+                        }
+
+                        $(element).data("mediaOverlayData", {par: iter.currentPar});
+
+                        /*
                         $(element).click(function() {
                             var elem = $(this)[0];
                             console.debug("MO CLICK (ELEM): " + elem.id);
@@ -174,16 +211,22 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
                             var par = $(this).data("mediaOverlayData").par;
                             self.mediaOverlayPlayer.playUserPar(par);
                         });
+                        */
+                    }
+                    else
+                    {
+                        console.error("!! CANNOT FIND ELEMENT: " + iter.currentPar.text.srcFragmentId + " == " + iter.currentPar.text.srcFile + " /// " + spineItem.href);
                     }
                 }
                 else
                 {
-                    console.error("!! CANNOT FIND ELEMENT: " + iter.currentPar.text.srcFragmentId + " /// " + spineItem.href);
+                    console.debug("[INFO] " + spineItem.href + " != " + textRelativeRef + " # " + iter.currentPar.text.srcFragmentId);
                 }
             }
 
             iter.next();
         }
+console.debug("attachMediaOverlayData 2");
     },
 
     /**
@@ -543,17 +586,19 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
             hrefPart = combinedPath;
             elementId = undefined;
         }
+console.debug("openContentUrl - hrefPart: " + hrefPart);
 
         var spineItem = this.spine.getItemByHref(hrefPart);
-
         if(!spineItem) {
             return;
         }
 
         var pageData = new ReadiumSDK.Models.PageOpenRequest(spineItem, initiator);
+
         if(elementId){
             pageData.setElementId(elementId);
         }
+console.debug("openContentUrl - elementId: " + elementId);
 
         this.openPage(pageData);
     },

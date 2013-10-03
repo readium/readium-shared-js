@@ -33,6 +33,24 @@ ReadiumSDK.Models.MediaOverlay = function() {
     this.DEBUG = false;
 
 
+    this.getSmilBySpineItem = function (spineItem) {
+
+        for(var i = 0, count = this.smil_models.length; i < count; i++) {
+
+            var smil = this.smil_models[i];
+            if(smil.spineItemId === spineItem.idref) {
+                if (spineItem.media_overlay_id !== smil.id)
+                {
+                    console.error("SMIL INCORRECT ID?? " + spineItem.media_overlay_id + " /// " + smil.id);
+                }
+                return smil;
+            }
+        }
+
+        return undefined;
+    };
+
+    /*
     this.getSmilById = function (id) {
 
         for(var i = 0, count = this.smil_models.length; i < count; i++) {
@@ -45,6 +63,7 @@ ReadiumSDK.Models.MediaOverlay = function() {
 
         return undefined;
     };
+    */
 
     this.getNextSmil = function(smil) {
 

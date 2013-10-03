@@ -257,7 +257,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         if(pageIndex >= 0 && pageIndex < this.paginationInfo.columnCount) {
 
             this.paginationInfo.currentSpreadIndex = Math.floor(pageIndex / this.paginationInfo.visibleColumnCount) ;
-            this.onPaginationChanged(pageRequest.initiator);
+            this.onPaginationChanged(pageRequest.initiator, pageRequest.elementId);
         }
     },
 
@@ -329,11 +329,11 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         })
     },
 
-    onPaginationChanged: function(initiator) {
+    onPaginationChanged: function(initiator, pageRequestElementId) {
 
         this.paginationInfo.pageOffset = (this.paginationInfo.columnWidth + this.paginationInfo.columnGap) * this.paginationInfo.visibleColumnCount * this.paginationInfo.currentSpreadIndex;
         this.redraw();
-        this.trigger(ReadiumSDK.Events.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: this.getPaginationInfo(), initiator: initiator } );
+        this.trigger(ReadiumSDK.Events.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: this.getPaginationInfo(), initiator: initiator, elementId: pageRequestElementId } );
     },
 
     openPagePrev:  function (initiator) {

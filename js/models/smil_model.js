@@ -212,6 +212,7 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
 
     var smilModel = new ReadiumSDK.Models.SmilModel();
     smilModel.id = smilDTO.id;
+    smilModel.spineItemId = smilDTO.spineItemId;
     smilModel.href = smilDTO.href;
     smilModel.smilVersion = smilDTO.smilVersion;
     smilModel.duration = smilDTO.duration;
@@ -221,6 +222,7 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
     {
     console.log("JS MO smilVersion=" + smilModel.smilVersion);
     console.log("JS MO id=" + smilModel.id);
+    console.log("JS MO spineItemId=" + smilModel.spineItemId);
     console.log("JS MO href=" + smilModel.href);
     console.log("JS MO duration=" + smilModel.duration);
     }
