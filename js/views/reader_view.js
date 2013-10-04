@@ -562,6 +562,10 @@ console.debug("UpdateSettings: " + JSON.stringify(settingsData));
         }
     },
 
+    mediaOverlaysOpenContentUrl: function(contentRefUrl, sourceFileHref, offset) {
+        this.mediaOverlayPlayer.mediaOverlaysOpenContentUrl(contentRefUrl, sourceFileHref, offset);
+    },
+
 
     /**
      * Opens the content document specified by the url
@@ -680,7 +684,8 @@ console.debug("UpdateSettings: " + JSON.stringify(settingsData));
         this.mediaOverlayPlayer.toggleMediaOverlay();
     },
 
-   /**
+
+    /**
     * Plays next fragment media overlay
     *
     */

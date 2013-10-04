@@ -34,6 +34,11 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
     //ReadiumSDK.
     reader.on(ReadiumSDK.Events.SETTINGS_APPLIED, this.onSettingsApplied, this);
 
+    /*
+    var lastElement = undefined;
+    var lastElementColor = "";
+    */
+
     this.onPageChanged = function(paginationData) {
 
         if(!paginationData) {
@@ -42,6 +47,35 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         }
 
         _currentPagination = paginationData.paginationInfo;
+
+        /*
+        if (lastElement)
+        {
+            $(lastElement).css("background-color", lastElementColor);
+            lastElement = undefined;
+        }
+        */
+
+        var element = undefined;
+        if (paginationData.elementId)
+        {
+            var spineItems = reader.currentView.getLoadedSpineItems();
+            for(var i = 0, count = spineItems.length; i < count; i++)
+            {
+                element = reader.currentView.getElement(spineItems[i], "#" + paginationData.elementId);
+                if (element)
+                {
+                    /*
+                    console.error("GREEN: " + paginationData.elementId);
+                    lastElement = element;
+                    lastElementColor = $(element).css("background-color");
+                    $(element).css("background-color", "green");
+                     */
+
+                    break;
+                }
+            }
+        }
 
         var wasPlaying = _audioPlayer.isPlaying();
 
@@ -52,19 +86,10 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                 return;
             }
 
-            console.error(" onPageChanged !_smilIterator || !_smilIterator.currentPar");
-
             if (!paginationData.elementId)
             {
                 console.error("!paginationData.elementId");
                 return;
-            }
-
-            var element = undefined;
-            var spineItems = reader.currentView.getLoadedSpineItems();
-            for(var i = 0, count = spineItems.length; i < count; i++)
-            {
-                element = reader.currentView.getElement(spineItems[i], "#" + paginationData.elementId);
             }
 
             if(!element)
@@ -138,13 +163,26 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         playCurrentPar();
     }
 
+    var clipBeginOffset = 0;
+
     function playCurrentPar() {
+
+        var dur = _smilIterator.currentPar.audio.clipEnd - _smilIterator.currentPar.audio.clipBegin;
+        if (dur <= 0 || clipBeginOffset > dur)
+        {
+console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
+            clipBeginOffset = 0;
+        }
+        else
+        {
+//console.debug("### MO PAR OFFSET: " + clipBeginOffset);
+        }
 
         var audioContentRef = ReadiumSDK.Helpers.ResolveContentRef(_smilIterator.currentPar.audio.src, _smilIterator.smil.href);
 
         var audioSource = _package.resolveRelativeUrl(audioContentRef);
 
-        _audioPlayer.playFile(_smilIterator.currentPar.audio.src, audioSource, _smilIterator.currentPar.audio.clipBegin);
+        _audioPlayer.playFile(_smilIterator.currentPar.audio.src, audioSource, _smilIterator.currentPar.audio.clipBegin + clipBeginOffset);
 
         highlightCurrentElement();
     }
@@ -460,6 +498,17 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
     };
     */
+
+    this.mediaOverlaysOpenContentUrl = function(contentRefUrl, sourceFileHref, offset)
+    {
+        clipBeginOffset = offset;
+
+        //pause();
+        //self.reset();
+        _smilIterator = undefined;
+
+        reader.openContentUrl(contentRefUrl, sourceFileHref, self);
+    };
 
     this.toggleMediaOverlay = function() {
 
