@@ -135,12 +135,12 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
 
         var elWidth = Math.floor(this.meta_size.width * scale);
         var elHeight = Math.floor(this.meta_size.height * scale);
-
+                                                    
         this.$el.css("left", left + "px");
         this.$el.css("top", top + "px");
         this.$el.css("width", elWidth + "px");
         this.$el.css("height", elHeight + "px");
-
+                                                    
         this.$iframe.css("width", elWidth + "px");
         this.$iframe.css("height", elHeight + "px");
 
@@ -150,7 +150,6 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
         css["height"] = this.meta_size.height;
 
         this.$epubHtml.css(css);
-
     },
 
     generateTransformCSS: function(scale, left, top) {
