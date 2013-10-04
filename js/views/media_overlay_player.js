@@ -17,8 +17,9 @@
 
 ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
+
     var _smilIterator = undefined;
-    var _audioPlayer = new ReadiumSDK.Views.AudioPlayer(onStatusChanged, onAudioPositionChanged, onAudioEnded);
+    var _audioPlayer = new ReadiumSDK.Views.AudioPlayer(onStatusChanged, onAudioPositionChanged, onAudioEnded, onPlay, onPause);
     var _currentPagination = undefined;
     var _package = reader.package;
     var _settings = reader.viewerSettings;
@@ -227,11 +228,15 @@ console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
 
     var _skipAudioEnded = false;
 
+    var audioCurrentTime = 0.0;
+
     var DIRECTION_MARK = -999;
 
     function onAudioPositionChanged(position) {
 
-        self._skipAudioEnded = false;
+        audioCurrentTime = position;
+
+        _skipAudioEnded = false;
 
         if (!_smilIterator || !_smilIterator.currentPar)
         {
@@ -250,7 +255,7 @@ console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
             return;
         }
 
-        self._skipAudioEnded = true;
+        _skipAudioEnded = true;
 
 //console.debug("PLAY NEXT: " + position + " (" + audio.clipBegin + " -- " + audio.clipEnd + ")");
 
@@ -322,12 +327,65 @@ console.debug("nextSmil(goNext)");
         */
     }
 
+    var _timerTick = undefined;
+
+    function onPlay() {
+        onPause();
+
+        _timerTick = setInterval(function() {
+
+            if (!_smilIterator || !_smilIterator.currentPar)
+            {
+                return;
+            }
+
+            var smil = _smilIterator.smil; //currentPar.getSmil();
+            if (!smil.mo)
+            {
+                return;
+            }
+
+            var playPosition = audioCurrentTime - _smilIterator.currentPar.audio.clipBegin;
+            if (playPosition <= 0)
+            {
+                return;
+            }
+
+            var smilIndex = smil.mo.smil_models.indexOf(smil);
+
+            var smilIterator = new ReadiumSDK.Models.SmilIterator(smil);
+            var parIndex = -1;
+            while (smilIterator.currentPar)
+            {
+                parIndex++;
+                if (smilIterator.currentPar == _smilIterator.currentPar)
+                {
+                    break;
+                }
+                smilIterator.next();
+            }
+
+            onStatusChanged({playPosition: playPosition, smilIndex: smilIndex, parIndex: parIndex});
+
+        }, 2000);
+    }
+
+    function onPause() {
+
+        audioCurrentTime = 0;
+        if (_timerTick != undefined)
+        {
+            clearInterval(_timerTick);
+        }
+        _timerTick = undefined;
+    }
 
     function onAudioEnded() {
+        onPause();
 
-        if(self._skipAudioEnded)
+        if(_skipAudioEnded)
         {
-            self._skipAudioEnded = false;
+            _skipAudioEnded = false;
             return;
         }
 

@@ -304,7 +304,6 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
     },
 
     onMediaPlayerStatusChanged: function(status) {
-
         this.trigger(ReadiumSDK.Events.MEDIA_OVERLAY_STATUS_CHANGED, status);
     },
 

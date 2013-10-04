@@ -16,7 +16,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAudioEnded) {
+ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAudioEnded, onAudioPlay, onAudioPause) {
 
     var _elm = new Audio();
 
@@ -84,6 +84,7 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
 
         if(wasPlaying) {
             onStatusChanged({isPlaying: false});
+            onAudioPause();
         }
     };
 
@@ -149,10 +150,12 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
 
     function onPlay() {
         onStatusChanged({isPlaying: true});
+        onAudioPlay();
     }
 
     function onPause() {
         onStatusChanged({isPlaying: false});
+        onAudioPause();
     }
 
     function onEnded() {
