@@ -117,7 +117,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
             var click = $(body).data("mediaOverlayClick");
             if (click)
             {
-                console.error("ALREADY mediaOverlayClick");
+                console.error("[WARN] already mediaOverlayClick");
             }
             else
             {
@@ -199,7 +199,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
                         var modata = $(element).data("mediaOverlayData");
                         if (modata)
                         {
-                            console.error("MO DATA already exists.");
+                            console.error("[WARN] MO DATA already exists.");
                             if (modata.par && modata.par !== iter.currentPar)
                             {
                                 console.error("DIFFERENT PARS??!");
