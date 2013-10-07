@@ -32,6 +32,45 @@ ReadiumSDK.Models.SmilIterator = function(smil) {
     };
     */
 
+    this.findTextId = function(id)
+    {
+        if (!id)
+        {
+            return false;
+        }
+
+        if (!this.currentPar)
+        {
+            this.reset();
+        }
+
+        while(this.currentPar)
+        {
+            if(this.currentPar.element)
+            {
+                if (id == this.currentPar.text.srcFragmentId)
+                {
+                    return true;
+                }
+
+                var parent = this.currentPar.element.parentNode;
+                while(parent)
+                {
+                    if (parent.id && parent.id == id)
+                    {
+                        return true;
+                    }
+
+                    parent = parent.parentNode;
+                }
+            }
+
+            this.next();
+        }
+
+        return false;
+    }
+
     this.next = function() {
 
         if(!this.currentPar) {

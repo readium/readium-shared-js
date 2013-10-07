@@ -79,14 +79,24 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                     break;
                 }
             }
+
+            if (!element)
+            {
+                console.error("paginationData.elementId BUT !element");
+            }
         }
 
         var wasPlaying = _audioPlayer.isPlaying();
 
         if(!_smilIterator || !_smilIterator.currentPar) {
             if(paginationData.initiator !== self) {
-
+                clipBeginOffset = 0;
                 self.reset();
+
+                if (wasPlaying)
+                {
+                    self.toggleMediaOverlay();
+                }
                 return;
             }
 
@@ -115,15 +125,15 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             return;
         }
 
-//console.debug("+++> paginationData.elementId: " + paginationData.elementId + " /// " + _smilIterator.currentPar.text.srcFragmentId); //PageOpenRequest.elementId
-
-        var notSameTargetID = paginationData.elementId && paginationData.elementId !== _smilIterator.currentPar.text.srcFragmentId;
-
         if(!_smilIterator.currentPar.element) {
             console.error("!! _smilIterator.currentPar.element ??");
         }
 
+//console.debug("+++> paginationData.elementId: " + paginationData.elementId + " /// " + _smilIterator.currentPar.text.srcFragmentId); //PageOpenRequest.elementId
+
+
         if(paginationData.initiator == self) {
+            var notSameTargetID = paginationData.elementId && paginationData.elementId !== _smilIterator.currentPar.text.srcFragmentId;
 
             if(notSameTargetID) {
                 console.error("!! paginationData.elementId !== _smilIterator.currentPar.text.srcFragmentId");
@@ -141,13 +151,20 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                 playCurrentPar();
             }
         }
-        else {
-            self.reset();
-
-            if (wasPlaying)
+        else
+        {
+            if(!wasPlaying)
             {
-                self.toggleMediaOverlay();
+                self.reset();
+                return;
             }
+
+            if(!paginationData.elementId)
+            {
+                self.reset();
+            }
+
+            self.toggleMediaOverlay(paginationData.elementId);
         }
     };
 
@@ -493,6 +510,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
 
     this.reset = function() {
+        clipBeginOffset = 0;
         _audioPlayer.reset();
         _elementHighlighter.reset();
         _smilIterator = undefined;
@@ -611,24 +629,27 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         }
     };
 
-    this.toggleMediaOverlay = function() {
+    this.toggleMediaOverlay = function(textId) {
 
-        if(_audioPlayer.isPlaying()) {
-            pause();
-            return;
+        if (!textId)
+        {
+            if(_audioPlayer.isPlaying()) {
+                pause();
+                return;
+            }
+
+            //if we have position to continue from (reset wasn't called)
+            if(_smilIterator) {
+                play();
+                return;
+            }
         }
-
-        //if we have position to continue from (reset wasn't called)
-        if(_smilIterator) {
-            play();
-            return;
-        }
-
 
         var visibleMediaElements = reader.getVisibleMediaOverlayElements();
 
         if(visibleMediaElements.length == 0) {
             console.error("toggleMediaOverlay visibleMediaElements.length == 0");
+            self.reset();
             return;
         }
 
@@ -650,6 +671,49 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
             return;
         }
 
-        playPar(moData.par);
+        var playingPar = undefined;
+        var wasPlaying = _audioPlayer.isPlaying();
+        if(wasPlaying && _smilIterator)
+        {
+            playingPar = _smilIterator.currentPar;
+            pause();
+        }
+
+        if (textId && textId !== elementDataToStart.element.id)
+        {
+            var parSmil = moData.par.getSmil();
+            if(!_smilIterator || _smilIterator.smil != parSmil)
+            {
+                _smilIterator = new ReadiumSDK.Models.SmilIterator(parSmil);
+            }
+            else
+            {
+                _smilIterator.reset();
+            }
+
+            _smilIterator.findTextId(textId);
+
+            if (_smilIterator.currentPar)
+            {
+                if (wasPlaying && playingPar && playingPar === _smilIterator.currentPar)
+                {
+                    play();
+                }
+                else
+                {
+                    playCurrentPar();
+                }
+                return;
+            }
+        }
+
+        if (wasPlaying && playingPar && playingPar === moData.par)
+        {
+            play();
+        }
+        else
+        {
+            playPar(moData.par);
+        }
     };
 };
