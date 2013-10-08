@@ -42,7 +42,6 @@ ReadiumSDK.Models.Smil.SmilNode = function() {
 ReadiumSDK.Models.Smil.TimeContainerNode = function() {
     this.id = "";
     this.epubtype = "";
-    this.textref = "";
     this.index = undefined;
     this.parent = undefined;
     this.children = undefined;
@@ -136,7 +135,7 @@ ReadiumSDK.Models.Smil.MediaNode.prototype = new ReadiumSDK.Models.Smil.SmilNode
 ReadiumSDK.Models.Smil.SeqNode = function() {
     this.children = [];
     this.nodeType = "seq";
-
+    this.textref = "";
 };
 
 ReadiumSDK.Models.Smil.SeqNode.prototype = new ReadiumSDK.Models.Smil.TimeContainerNode();
@@ -279,7 +278,6 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
             node.parent = parent;
             safeCopyProperty("id", nodeDTO, node);
             safeCopyProperty("epubtype", nodeDTO, node);
-            safeCopyProperty("textref", nodeDTO, node);
 
             indent++;
             copyChildren(nodeDTO, node);
