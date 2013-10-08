@@ -205,6 +205,12 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
     function playCurrentPar() {
 
+        if (!_smilIterator || !_smilIterator.currentPar)
+        {
+            console.error("playCurrentPar !_smilIterator || !_smilIterator.currentPar ???");
+            return;
+        }
+
         var dur = _smilIterator.currentPar.audio.clipEnd - _smilIterator.currentPar.audio.clipBegin;
         if (dur <= 0 || clipBeginOffset > dur)
         {
@@ -263,7 +269,7 @@ console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
                 else
                 {
                     self.resetEmbedded();
-                    
+
                     _currentTTS = element.textContent; //.innerText (CSS display sensitive + script + style tags)
                     if (!_currentTTS || _currentTTS == "")
                     {
@@ -285,6 +291,8 @@ console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
 
             var audioSource = _package.resolveRelativeUrl(audioContentRef);
 
+            console.debug("PLAY FILE: " + _smilIterator.currentPar.audio.src);
+
             _audioPlayer.playFile(_smilIterator.currentPar.audio.src, audioSource, _smilIterator.currentPar.audio.clipBegin + clipBeginOffset);
         }
 
@@ -300,6 +308,7 @@ console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
 
         //we don't have to stop audio here but then we should stop listen to audioPositionChanged event until we
         //finished rendering spine and got page changed message. And stop audio if next smile not found
+
         pause();
 
 //console.debug("current Smil: " + _smilIterator.smil.href + " /// " + _smilIterator.smil.id);
@@ -338,9 +347,16 @@ console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
 
     var DIRECTION_MARK = -999;
 
-    function onAudioPositionChanged(position) {
+    var _letPlay = false;
+
+    function onAudioPositionChanged(position, noLetPlay) {
 
         audioCurrentTime = position;
+
+        if (_letPlay)
+        {
+            return;
+        }
 
         _skipAudioEnded = false;
 //        _skipTTSEnded = false;
@@ -404,12 +420,12 @@ console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
 
                     var pos = goNext ? _smilIterator.currentPar.audio.clipEnd + 0.1 : DIRECTION_MARK - 1;
 
-                    onAudioPositionChanged(pos);
+                    onAudioPositionChanged(pos, noLetPlay);
                     return;
                 }
             }
 
-            if(self.isPlaying()
+            if(_audioPlayer.isPlaying()
                 && _smilIterator.currentPar.audio.src
                 && _smilIterator.currentPar.audio.src == _audioPlayer.srcRef()
                     && position >= _smilIterator.currentPar.audio.clipBegin
@@ -420,21 +436,38 @@ console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
                 return;
             }
 
-            //position < DIRECTION_MARK goes here (goto previous):
+            //position <= DIRECTION_MARK goes here (goto previous):
+
+            if (!noLetPlay && position > DIRECTION_MARK
+                && _audioPlayer.isPlaying() && _audioPlayer.srcRef() != _smilIterator.currentPar.audio.src)
+            {
+                _letPlay = true;
+                setTimeout(function()
+                {
+                    _letPlay = false;
+                    playCurrentPar();
+                }, 400);
+
+                return;
+            }
 
             playCurrentPar();
             return;
         }
 
-        nextSmil(goNext);
-
-        /*
-        // To avoid onAudioEnded() race condition + infinite loop
-        setTimeout(function(){
-console.debug("nextSmil(goNext)");
+        if (!noLetPlay)
+        {
+            _letPlay = true;
+            setTimeout(function()
+            {
+                _letPlay = false;
+                nextSmil(goNext);
+            }, 400);
+        }
+        else
+        {
             nextSmil(goNext);
-        }, 200);
-        */
+        }
     }
 
     var _timerTick = undefined;
@@ -477,7 +510,7 @@ console.debug("nextSmil(goNext)");
 
             onStatusChanged({playPosition: playPosition, smilIndex: smilIndex, parIndex: parIndex});
 
-        }, 2000);
+        }, 1500);
     }
 
     function onPause() {
@@ -531,6 +564,11 @@ console.debug("nextSmil(goNext)");
 
     function onAudioEnded() {
         onPause();
+
+        if (_letPlay)
+        {
+            return;
+        }
 
         if(_skipAudioEnded)
         {
@@ -736,7 +774,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
         var position = previous ? DIRECTION_MARK - 1 : _smilIterator.currentPar.audio.clipEnd + 0.1;
 
-        onAudioPositionChanged(position);
+        onAudioPositionChanged(position, true);
 
         //play();
         //playCurrentPar();

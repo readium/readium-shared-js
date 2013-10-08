@@ -110,6 +110,7 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
 
     this.pause = function() {
         stopTimer();
+
         _elm.pause();
     };
 
