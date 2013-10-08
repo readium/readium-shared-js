@@ -220,15 +220,34 @@ console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
 //                _skipTTSEnded = true;
 //            }
 
-            _currentTTS = "The synthetic speech text is missing!";
-            if (_smilIterator.currentPar.element)
+            var element = _smilIterator.currentPar.element;
+            if (element)
             {
-                _currentTTS = _smilIterator.currentPar.element.textContent; //.innerText (CSS display sensitive + script + style tags)
-            }
+                audioCurrentTime = 0.0;
 
-            reader.trigger(ReadiumSDK.Events.MEDIA_OVERLAY_TTS_SPEAK, {tts: _currentTTS});
-            audioCurrentTime = 0.0;
-            _ttsIsPlaying = true;
+                var name = element.name ? element.name.toLowerCase() : undefined;
+                if (name === "audio" || name === "video")
+                {
+                    element.stop();
+                    element.currentTime = 0;
+                    element.play();
+                    onStatusChanged({isPlaying: true});
+
+//                    $(element).on("seeked", function()
+//                    {
+//                        $(element).off("seeked", onSeeked);
+//                    });
+                }
+                else
+                {
+                    _currentTTS = element.textContent; //.innerText (CSS display sensitive + script + style tags)
+
+                    reader.trigger(ReadiumSDK.Events.MEDIA_OVERLAY_TTS_SPEAK, {tts: _currentTTS});
+                    onStatusChanged({isPlaying: true});
+
+                    _ttsIsPlaying = true;
+                }
+            }
         }
         else
         {
@@ -570,6 +589,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         _currentTTS = undefined;
 //        _skipTTSEnded = false;
         reader.trigger(ReadiumSDK.Events.MEDIA_OVERLAY_TTS_STOP, undefined);
+        onStatusChanged({isPlaying: false});
         _ttsIsPlaying = false;
     };
 
@@ -588,6 +608,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         {
             _ttsIsPlaying = true;
             reader.trigger(ReadiumSDK.Events.MEDIA_OVERLAY_TTS_SPEAK, {tts: undefined}); // resume
+            onStatusChanged({isPlaying: true});
         }
         else
         {
@@ -603,6 +624,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         {
             _ttsIsPlaying = false;
             reader.trigger(ReadiumSDK.Events.MEDIA_OVERLAY_TTS_STOP, undefined);
+            onStatusChanged({isPlaying: false});
         }
         else
         {
