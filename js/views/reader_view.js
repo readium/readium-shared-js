@@ -711,8 +711,13 @@ console.debug("UpdateSettings: " + JSON.stringify(settingsData));
     escapeMediaOverlay: function() {
 
         this.mediaOverlayPlayer.escape();
-
     },
+
+    ttsEndedMediaOverlay: function() {
+
+        this.mediaOverlayPlayer.onTTSEnd();
+    },
+
 
     getVisibleMediaOverlayElements: function() {
 

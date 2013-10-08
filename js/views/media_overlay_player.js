@@ -19,7 +19,16 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
 
     var _smilIterator = undefined;
+
     var _audioPlayer = new ReadiumSDK.Views.AudioPlayer(onStatusChanged, onAudioPositionChanged, onAudioEnded, onPlay, onPause);
+    var _ttsIsPlaying = false;
+    var _currentTTS = undefined;
+
+    this.isPlaying = function()
+    {
+        return _audioPlayer.isPlaying() || _ttsIsPlaying;
+    }
+
     var _currentPagination = undefined;
     var _package = reader.package;
     var _settings = reader.viewerSettings;
@@ -86,11 +95,11 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             }
         }
 
-        var wasPlaying = _audioPlayer.isPlaying();
+        var wasPlaying = self.isPlaying();
 
         if(!_smilIterator || !_smilIterator.currentPar) {
             if(paginationData.initiator !== self) {
-                clipBeginOffset = 0;
+                clipBeginOffset = 0.0;
                 self.reset();
 
                 if (wasPlaying)
@@ -103,21 +112,21 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             if (!paginationData.elementId)
             {
                 console.error("!paginationData.elementId");
-                clipBeginOffset = 0;
+                clipBeginOffset = 0.0;
                 return;
             }
 
             if(!element)
             {
                 console.error("!element: " + paginationData.elementId);
-                clipBeginOffset = 0;
+                clipBeginOffset = 0.0;
                 return;
             }
 
             var moData = $(element).data("mediaOverlayData");
             if(!moData) {
                 console.error("!moData: " + paginationData.elementId);
-                clipBeginOffset = 0;
+                clipBeginOffset = 0.0;
                 return;
             }
 
@@ -140,7 +149,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             }
 
             if(notSameTargetID || !_smilIterator.currentPar.element) {
-                clipBeginOffset = 0;
+                clipBeginOffset = 0.0;
                 return;
             }
 
@@ -188,7 +197,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         playCurrentPar();
     }
 
-    var clipBeginOffset = 0;
+    var clipBeginOffset = 0.0;
 
     function playCurrentPar() {
 
@@ -196,20 +205,41 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         if (dur <= 0 || clipBeginOffset > dur)
         {
 console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
-            clipBeginOffset = 0;
+            clipBeginOffset = 0.0;
         }
         else
         {
 //console.debug("### MO PAR OFFSET: " + clipBeginOffset);
         }
 
-        var audioContentRef = ReadiumSDK.Helpers.ResolveContentRef(_smilIterator.currentPar.audio.src, _smilIterator.smil.href);
 
-        var audioSource = _package.resolveRelativeUrl(audioContentRef);
+        if (!_smilIterator.currentPar.audio.src)
+        {
+//            if (_currentTTS)
+//            {
+//                _skipTTSEnded = true;
+//            }
 
-        _audioPlayer.playFile(_smilIterator.currentPar.audio.src, audioSource, _smilIterator.currentPar.audio.clipBegin + clipBeginOffset);
+            _currentTTS = "The synthetic speech text is missing!";
+            if (_smilIterator.currentPar.element)
+            {
+                _currentTTS = _smilIterator.currentPar.element.textContent; //.innerText (CSS display sensitive + script + style tags)
+            }
 
-        clipBeginOffset = 0;
+            reader.trigger(ReadiumSDK.Events.MEDIA_OVERLAY_TTS_SPEAK, {tts: _currentTTS});
+            audioCurrentTime = 0.0;
+            _ttsIsPlaying = true;
+        }
+        else
+        {
+            var audioContentRef = ReadiumSDK.Helpers.ResolveContentRef(_smilIterator.currentPar.audio.src, _smilIterator.smil.href);
+
+            var audioSource = _package.resolveRelativeUrl(audioContentRef);
+
+            _audioPlayer.playFile(_smilIterator.currentPar.audio.src, audioSource, _smilIterator.currentPar.audio.clipBegin + clipBeginOffset);
+        }
+
+        clipBeginOffset = 0.0;
 
         highlightCurrentElement();
     }
@@ -253,6 +283,7 @@ console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
 
 
     var _skipAudioEnded = false;
+//    var _skipTTSEnded = false;
 
     var audioCurrentTime = 0.0;
 
@@ -263,6 +294,7 @@ console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
         audioCurrentTime = position;
 
         _skipAudioEnded = false;
+//        _skipTTSEnded = false;
 
         if (!_smilIterator || !_smilIterator.currentPar)
         {
@@ -328,10 +360,13 @@ console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
                 }
             }
 
-            if(_smilIterator.currentPar.audio.src == _audioPlayer.srcRef()
+            if(self.isPlaying()
+                && _smilIterator.currentPar.audio.src
+                && _smilIterator.currentPar.audio.src == _audioPlayer.srcRef()
                     && position >= _smilIterator.currentPar.audio.clipBegin
                     && position <= _smilIterator.currentPar.audio.clipEnd)
             {
+//console.debug("ONLY highlightCurrentElement");
                 highlightCurrentElement();
                 return;
             }
@@ -398,13 +433,36 @@ console.debug("nextSmil(goNext)");
 
     function onPause() {
 
-        audioCurrentTime = 0;
+        audioCurrentTime = 0.0;
         if (_timerTick != undefined)
         {
             clearInterval(_timerTick);
         }
         _timerTick = undefined;
     }
+
+
+    this.onTTSEnd = function()
+    {
+        audioCurrentTime = 0.0;
+
+        _ttsIsPlaying = false;
+        //_currentTTS = undefined;
+
+//        if(_skipTTSEnded)
+//        {
+//            _skipTTSEnded = false;
+//            return;
+//        }
+
+        if (!_smilIterator || !_smilIterator.currentPar)
+        {
+            self.reset();
+            return;
+        }
+
+        onAudioPositionChanged(_smilIterator.currentPar.audio.clipEnd + 0.1);
+    };
 
     function onAudioEnded() {
         onPause();
@@ -466,7 +524,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
             return;
         }
 
-        if(!_audioPlayer.isPlaying())
+        if(!self.isPlaying())
         {
             //playCurrentPar();
             play();
@@ -508,22 +566,49 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         playPar(par);
     };
 
+    this.resetTTS = function() {
+        _currentTTS = undefined;
+//        _skipTTSEnded = false;
+        reader.trigger(ReadiumSDK.Events.MEDIA_OVERLAY_TTS_STOP, undefined);
+        _ttsIsPlaying = false;
+    };
 
     this.reset = function() {
-        clipBeginOffset = 0;
+        clipBeginOffset = 0.0;
         _audioPlayer.reset();
+        self.resetTTS();
         _elementHighlighter.reset();
         _smilIterator = undefined;
     };
 
 
-    function play() {
-        _audioPlayer.play();
+    function play()
+    {
+        if (_currentTTS)
+        {
+            _ttsIsPlaying = true;
+            reader.trigger(ReadiumSDK.Events.MEDIA_OVERLAY_TTS_SPEAK, {tts: undefined}); // resume
+        }
+        else
+        {
+            _audioPlayer.play();
+        }
+
         highlightCurrentElement();
     }
 
-    function pause() {
-        _audioPlayer.pause();
+    function pause()
+    {
+        if (_ttsIsPlaying)
+        {
+            _ttsIsPlaying = false;
+            reader.trigger(ReadiumSDK.Events.MEDIA_OVERLAY_TTS_STOP, undefined);
+        }
+        else
+        {
+            _audioPlayer.pause();
+        }
+
         _elementHighlighter.reset();
     }
 
@@ -533,12 +618,8 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         return visibleMediaElements.length > 0;
     };
 
-    this.isPlaying = function() {
-        return _audioPlayer.isPlaying();
-    };
-    
     this.nextOrPreviousMediaOverlay = function(previous) {
-        if(_audioPlayer.isPlaying())
+        if(self.isPlaying())
         {
             pause();
         }
@@ -563,7 +644,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         onAudioPositionChanged(position);
 
         //play();
-        playCurrentPar();
+        //playCurrentPar();
     };
     
     this.nextMediaOverlay = function() {
@@ -633,7 +714,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
         if (!textId)
         {
-            if(_audioPlayer.isPlaying()) {
+            if(self.isPlaying()) {
                 pause();
                 return;
             }
@@ -672,7 +753,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         }
 
         var playingPar = undefined;
-        var wasPlaying = _audioPlayer.isPlaying();
+        var wasPlaying = self.isPlaying();
         if(wasPlaying && _smilIterator)
         {
             playingPar = _smilIterator.currentPar;

@@ -296,6 +296,18 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
                     console.error("Unexpected smil node type: " + child.nodeType);
                 }
             }
+
+            if (!node.audio)
+            {
+                // TTS synthetic speech engine
+                var ttsAudio = new ReadiumSDK.Models.Smil.AudioNode();
+                ttsAudio.parent = node;
+                ttsAudio.clipBegin = 0;
+                ttsAudio.clipEnd = ttsAudio.MAX;
+                ttsAudio.src = undefined;
+
+                node.audio = ttsAudio;
+            }
         }
         else if (nodeDTO.nodeType == "text") {
 

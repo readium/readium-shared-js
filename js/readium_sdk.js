@@ -48,7 +48,9 @@ ReadiumSDK = {
                 SETTINGS_APPLIED: "SettingsApplied",
                 CONTENT_LOADED: "ContentLoaded",
                 CURRENT_VIEW_PAGINATION_CHANGED: "CurrentViewPaginationChanged", // used internally
-                MEDIA_OVERLAY_STATUS_CHANGED: "MediaOverlayStatusChanged"
+                MEDIA_OVERLAY_STATUS_CHANGED: "MediaOverlayStatusChanged",
+                MEDIA_OVERLAY_TTS_SPEAK: "MediaOverlayTTSSpeak",
+                MEDIA_OVERLAY_TTS_STOP: "MediaOverlayTTSStop"
             }
 
 };
