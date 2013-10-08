@@ -21,12 +21,16 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
     var _smilIterator = undefined;
 
     var _audioPlayer = new ReadiumSDK.Views.AudioPlayer(onStatusChanged, onAudioPositionChanged, onAudioEnded, onPlay, onPause);
+
     var _ttsIsPlaying = false;
     var _currentTTS = undefined;
 
+    var _embeddedIsPlaying = false;
+    var _currentEmbedded = undefined;
+
     this.isPlaying = function()
     {
-        return _audioPlayer.isPlaying() || _ttsIsPlaying;
+        return _audioPlayer.isPlaying() || _ttsIsPlaying || _embeddedIsPlaying;
     }
 
     var _currentPagination = undefined;
@@ -220,18 +224,36 @@ console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
 //                _skipTTSEnded = true;
 //            }
 
+            _audioPlayer.reset();
+
             var element = _smilIterator.currentPar.element;
             if (element)
             {
                 audioCurrentTime = 0.0;
 
-                var name = element.name ? element.name.toLowerCase() : undefined;
+                var name = element.nodeName ? element.nodeName.toLowerCase() : undefined;
+
                 if (name === "audio" || name === "video")
                 {
-                    element.stop();
-                    element.currentTime = 0;
-                    element.play();
+                    self.resetTTS();
+
+                    if (_currentEmbedded)
+                    {
+                        self.resetEmbedded();
+                    }
+
+                    _currentEmbedded = element;
+                    _currentEmbedded.pause();
+
+                    _currentEmbedded.currentTime = 0;
+
+                    _currentEmbedded.play();
+
+                    $(_currentEmbedded).on("ended", self.onEmbeddedEnd);
+
                     onStatusChanged({isPlaying: true});
+
+                    _embeddedIsPlaying = true;
 
 //                    $(element).on("seeked", function()
 //                    {
@@ -240,12 +262,20 @@ console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
                 }
                 else
                 {
+                    self.resetEmbedded();
+                    
                     _currentTTS = element.textContent; //.innerText (CSS display sensitive + script + style tags)
+                    if (!_currentTTS || _currentTTS == "")
+                    {
+                        _currentTTS = undefined;
+                    }
+                    else
+                    {
+                        reader.trigger(ReadiumSDK.Events.MEDIA_OVERLAY_TTS_SPEAK, {tts: _currentTTS});
+                        onStatusChanged({isPlaying: true});
 
-                    reader.trigger(ReadiumSDK.Events.MEDIA_OVERLAY_TTS_SPEAK, {tts: _currentTTS});
-                    onStatusChanged({isPlaying: true});
-
-                    _ttsIsPlaying = true;
+                        _ttsIsPlaying = true;
+                    }
                 }
             }
         }
@@ -461,6 +491,22 @@ console.debug("nextSmil(goNext)");
     }
 
 
+    this.onEmbeddedEnd = function()
+    {
+        audioCurrentTime = 0.0;
+
+        _embeddedIsPlaying = false;
+        //_currentEmbedded = undefined;
+
+        if (!_smilIterator || !_smilIterator.currentPar)
+        {
+            self.reset();
+            return;
+        }
+
+        onAudioPositionChanged(_smilIterator.currentPar.audio.clipEnd + 0.1);
+    };
+
     this.onTTSEnd = function()
     {
         audioCurrentTime = 0.0;
@@ -593,10 +639,22 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         _ttsIsPlaying = false;
     };
 
+    this.resetEmbedded = function() {
+        if (_currentEmbedded)
+        {
+            $(_currentEmbedded).off("ended", self.onEmbeddedEnd);
+            _currentEmbedded.pause();
+        }
+        _currentEmbedded = undefined;
+        onStatusChanged({isPlaying: false});
+        _embeddedIsPlaying = false;
+    };
+
     this.reset = function() {
         clipBeginOffset = 0.0;
         _audioPlayer.reset();
         self.resetTTS();
+        self.resetEmbedded();
         _elementHighlighter.reset();
         _smilIterator = undefined;
     };
@@ -604,7 +662,13 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
     function play()
     {
-        if (_currentTTS)
+        if (_currentEmbedded)
+        {
+            _embeddedIsPlaying = true;
+            _currentEmbedded.play();
+            onStatusChanged({isPlaying: true});
+        }
+        else if (_currentTTS)
         {
             _ttsIsPlaying = true;
             reader.trigger(ReadiumSDK.Events.MEDIA_OVERLAY_TTS_SPEAK, {tts: undefined}); // resume
@@ -620,7 +684,16 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
     function pause()
     {
-        if (_ttsIsPlaying)
+        if (_embeddedIsPlaying)
+        {
+            _embeddedIsPlaying = false;
+            if (_currentEmbedded)
+            {
+                _currentEmbedded.pause();
+            }
+            onStatusChanged({isPlaying: false});
+        }
+        else if (_ttsIsPlaying)
         {
             _ttsIsPlaying = false;
             reader.trigger(ReadiumSDK.Events.MEDIA_OVERLAY_TTS_STOP, undefined);
