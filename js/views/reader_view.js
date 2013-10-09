@@ -64,27 +64,24 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
         var self = this;
         this.currentView.on(ReadiumSDK.Events.CURRENT_VIEW_PAGINATION_CHANGED, function( pageChangeData ){
-
+console.debug("reader view: page changed");
             //we call on onPageChanged explicitly instead of subscribing to the ReadiumSDK.Events.PAGINATION_CHANGED by
             //mediaOverlayPlayer because we hve to guarantee that mediaOverlayPlayer will be updated before the host
             //application will be notified by the same ReadiumSDK.Events.PAGINATION_CHANGED event
             self.mediaOverlayPlayer.onPageChanged(pageChangeData);
 
             self.trigger(ReadiumSDK.Events.PAGINATION_CHANGED, pageChangeData);
-
         });
 
         this.currentView.on(ReadiumSDK.Events.CONTENT_LOADED, function() {
-
+console.debug("reader view: content loaded");
             var spineItems = self.currentView.getLoadedSpineItems();
 
             for(var i = 0, count = spineItems.length; i < count; i++) {
 
                 self.attachMediaOverlayData(spineItems[i]);
             }
-
         });
-
     },
 
     resetCurrentView: function() {
@@ -173,7 +170,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
             return;
         }
 
-//console.debug("[[MO ATTACH]] " + spineItem.idref + " /// " + spineItem.media_overlay_id + " === " + smil.id);
+console.debug("[[MO ATTACH]] " + spineItem.idref + " /// " + spineItem.media_overlay_id + " === " + smil.id);
 
         var iter = new ReadiumSDK.Models.SmilIterator(smil);
         while(iter.currentPar) {
@@ -206,6 +203,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
                         if (modata)
                         {
                             console.error("[WARN] MO DATA already exists.");
+
                             if (modata.par && modata.par !== iter.currentPar)
                             {
                                 console.error("DIFFERENT PARS??!");

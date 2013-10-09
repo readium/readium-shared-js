@@ -60,6 +60,8 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
     this.onPageChanged = function(paginationData) {
 
+console.debug("this.onPageChanged");
+
         if(!paginationData) {
             self.reset();
             return;
@@ -110,10 +112,13 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             if(paginationData.initiator !== self) {
                 clipBeginOffset = 0.0;
                 self.reset();
-
-                if (wasPlaying)
+console.debug("?? !_smilIterator || !_smilIterator.currentPar");
+                if (paginationData.elementId && element)
                 {
-                    self.toggleMediaOverlay();
+                    if (wasPlaying)
+                    {
+                        self.toggleMediaOverlay();
+                    }
                 }
                 return;
             }
@@ -190,6 +195,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
         var parSmil = par.getSmil();
         if(!_smilIterator || _smilIterator.smil != parSmil) {
+console.debug("playPar - SmilIterator");
             _smilIterator = new ReadiumSDK.Models.SmilIterator(parSmil);
         }
         else {
@@ -327,6 +333,7 @@ console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
 
 //console.debug("nextSmil: " + nextSmil.href + " /// " + nextSmil.id);
 
+console.debug("nextSmil - SmilIterator");
             _smilIterator = new ReadiumSDK.Models.SmilIterator(nextSmil);
             if(_smilIterator.currentPar) {
                 if (!goNext)
@@ -907,6 +914,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
             var parSmil = moData.par.getSmil();
             if(!_smilIterator || _smilIterator.smil != parSmil)
             {
+console.debug("toggleMediaOverlay - SmilIterator");
                 _smilIterator = new ReadiumSDK.Models.SmilIterator(parSmil);
             }
             else

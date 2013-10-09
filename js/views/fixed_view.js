@@ -95,10 +95,12 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
 
 
         if(pageLoadDeferrals.length > 0) {
+console.debug("1 pageLoadDeferrals.length > 0");
             $.when.apply($, pageLoadDeferrals).done(function(){
                 if(context.isElementAdded) {
                     self.applyStyles();
                 }
+console.debug("2 pageLoadDeferrals GO!");
                 self.onPagesLoaded(initiator, paginationRequestElementId)
             });
         }
