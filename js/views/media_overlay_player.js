@@ -446,7 +446,7 @@ console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
                 {
                     _letPlay = false;
                     playCurrentPar();
-                }, 400);
+                }, 100);
 
                 return;
             }
@@ -462,7 +462,7 @@ console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
             {
                 _letPlay = false;
                 nextSmil(goNext);
-            }, 400);
+            }, 200);
         }
         else
         {
