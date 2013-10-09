@@ -326,7 +326,7 @@ console.debug("2 pageLoadDeferrals GO!");
             if(pageView.isDisplaying()) {
                 pageView.remove();
             }
-
+console.debug("deferral REMOVED");
             return undefined;
         }
 
@@ -341,6 +341,7 @@ console.debug("2 pageLoadDeferrals GO!");
 
         pageView.loadSpineItem(item);
 
+console.debug("deferral PROMISE");
         return dfd.promise();
 
     },

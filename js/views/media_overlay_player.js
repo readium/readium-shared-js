@@ -63,6 +63,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 console.debug("this.onPageChanged");
 
         if(!paginationData) {
+console.debug("!paginationData");
             self.reset();
             return;
         }
@@ -176,17 +177,28 @@ console.debug("?? !_smilIterator || !_smilIterator.currentPar");
         }
         else
         {
+console.debug("TRACE 1");
             if(!wasPlaying)
             {
+console.debug("TRACE 2");
                 self.reset();
                 return;
             }
 
             if(!paginationData.elementId)
             {
+console.debug("TRACE 3");
                 self.reset();
             }
 
+            if(paginationData.elementId && !element)
+            {
+console.debug("TRACE 4");
+                self.reset();
+                return;
+            }
+
+console.debug("TRACE 5");
             self.toggleMediaOverlay(paginationData.elementId);
         }
     };

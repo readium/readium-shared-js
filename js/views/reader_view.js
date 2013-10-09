@@ -598,7 +598,7 @@ console.debug("UpdateSettings: " + JSON.stringify(settingsData));
             hrefPart = combinedPath;
             elementId = undefined;
         }
-//console.debug("openContentUrl - hrefPart: " + hrefPart);
+console.debug("============ openContentUrl - hrefPart: " + hrefPart);
 
         var spineItem = this.spine.getItemByHref(hrefPart);
         if(!spineItem) {
@@ -610,7 +610,7 @@ console.debug("UpdateSettings: " + JSON.stringify(settingsData));
         if(elementId){
             pageData.setElementId(elementId);
         }
-//console.debug("openContentUrl - elementId: " + elementId);
+console.debug("------- openContentUrl - elementId: " + elementId);
 
         this.openPage(pageData);
     },
