@@ -565,6 +565,7 @@ console.debug("UpdateSettings: " + JSON.stringify(settingsData));
         if(this.currentView) {
             this.currentView.applyStyles();
         }
+        this.mediaOverlayPlayer.applyStyles();
     },
 
     mediaOverlaysOpenContentUrl: function(contentRefUrl, sourceFileHref, offset) {

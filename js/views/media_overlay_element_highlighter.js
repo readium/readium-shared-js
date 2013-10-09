@@ -15,13 +15,66 @@
 //
 //  You should have received a copy of the GNU General Public License
 
-ReadiumSDK.Views.MediaOverlayElementHighlighter = function() {
+ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
+
+    var DEFAULT_MO_ACTIVE_CLASS = "mo-active-default";
+    //var BACK_COLOR = "#99CCCC";
 
     var _highlightedElement = undefined;
-    var BACK_COLOR = "#99CCCC";
 
     var _activeClass = "";
     var _playbackActiveClass = "";
+
+    var _reader = reader;
+
+    var self = this;
+
+    var $userStyle = undefined;
+    this.clearUserStyle = function()
+    {
+        if ($userStyle)
+        {
+            $userStyle.remove();
+        }
+        $userStyle = undefined;
+    };
+
+    function ensureUserStyle($element)
+    {
+        if ($userStyle)
+        {
+            if ($userStyle[0].ownerDocument === $element[0].ownerDocument)
+            {
+                return;
+            }
+
+            //self.clearUserStyle();
+        }
+
+        var style = _reader.userStyles.findStyle("." + DEFAULT_MO_ACTIVE_CLASS);
+        if (!style)
+        {
+            return;
+        }
+
+        $head = $("head", $element[0].ownerDocument.documentElement);
+
+        $userStyle = $("<style type='text/css'> </style>").appendTo($head);
+
+        $userStyle.append("." + DEFAULT_MO_ACTIVE_CLASS + " {");
+        for(var prop in style.declarations)
+        {
+            if(!style.declarations.hasOwnProperty(prop))
+            {
+                continue;
+            }
+
+            $userStyle.append(prop + ": " + style.declarations[prop] + "; ");
+        }
+        $userStyle.append("}");
+
+//console.debug($userStyle[0].textContent);
+    }
 
     this.highlightElement = function(element, activeClass, playbackActiveClass) {
 
@@ -50,7 +103,12 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function() {
         else
         {
             //console.debug("MO active NO CLASS: " + _activeClass);
-            $(_highlightedElement).css("background", BACK_COLOR);
+
+            var $hel = $(_highlightedElement);
+            ensureUserStyle($hel);
+            $hel.addClass(DEFAULT_MO_ACTIVE_CLASS);
+
+            //$(_highlightedElement).css("background", BACK_COLOR);
         }
     };
 
@@ -72,7 +130,8 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function() {
             else
             {
                 //console.debug("MO RESET active NO CLASS: " + _activeClass);
-                $(_highlightedElement).css("background", '');
+                $(_highlightedElement).removeClass(DEFAULT_MO_ACTIVE_CLASS);
+                //$(_highlightedElement).css("background", '');
             }
 
             _highlightedElement = undefined;

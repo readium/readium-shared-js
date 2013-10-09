@@ -37,7 +37,12 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
     var _package = reader.package;
     var _settings = reader.viewerSettings;
     var self = this;
-    var _elementHighlighter = new ReadiumSDK.Views.MediaOverlayElementHighlighter();
+    var _elementHighlighter = new ReadiumSDK.Views.MediaOverlayElementHighlighter(reader);
+
+    this.applyStyles = function()
+    {
+        _elementHighlighter.clearUserStyle();
+    };
 
     this.onSettingsApplied = function() {
 //console.debug(_settings);
@@ -295,7 +300,7 @@ console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
 
             var audioSource = _package.resolveRelativeUrl(audioContentRef);
 
-            console.debug("PLAY FILE: " + _smilIterator.currentPar.audio.src);
+//console.debug("PLAY FILE: " + _smilIterator.currentPar.audio.src);
 
             _audioPlayer.playFile(_smilIterator.currentPar.audio.src, audioSource, _smilIterator.currentPar.audio.clipBegin + clipBeginOffset);
         }
