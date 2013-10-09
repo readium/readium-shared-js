@@ -249,7 +249,11 @@ console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
                     }
 
                     _currentEmbedded = element;
+
                     _currentEmbedded.pause();
+
+                    // DONE at reader_view.attachMO()
+                    //$(_currentEmbedded).attr("preload", "auto");
 
                     _currentEmbedded.currentTime = 0;
 

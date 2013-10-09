@@ -194,6 +194,12 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
                             console.error("DIFFERENT ELEMENTS??! " + iter.currentPar.text.srcFragmentId + " /// " + iter.currentPar.element.id);
                         }
 
+                        var name = element.nodeName ? element.nodeName.toLowerCase() : undefined;
+                        if (name === "audio" || name === "video")
+                        {
+                            $(element).attr("preload", "auto");
+                        }
+
                         iter.currentPar.element = element;
 
                         var modata = $(element).data("mediaOverlayData");
