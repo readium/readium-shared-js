@@ -93,12 +93,12 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
                                                               {pageView: this.rightPageView, spineItem: this.spread.rightItem, context: context},
                                                               {pageView: this.centerPageView, spineItem: this.spread.centerItem, context: context}]);
         if(pageLoadDeferrals.length > 0) {
-console.debug("1 pageLoadDeferrals.length > 0");
+
             $.when.apply($, pageLoadDeferrals).done(function(){
                 if(context.isElementAdded) {
                     self.applyStyles();
                 }
-console.debug("2 pageLoadDeferrals GO!");
+
                 self.onPagesLoaded(initiator, paginationRequestElementId)
             });
         }
@@ -323,7 +323,7 @@ console.debug("2 pageLoadDeferrals GO!");
             if(pageView.isDisplaying()) {
                 pageView.remove();
             }
-console.debug("deferral REMOVED");
+
             return undefined;
         }
 
@@ -338,7 +338,6 @@ console.debug("deferral REMOVED");
 
         pageView.loadSpineItem(item);
 
-console.debug("deferral PROMISE");
         return dfd.promise();
 
     },

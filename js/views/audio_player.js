@@ -92,7 +92,7 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
 
         this.reset();
 
-console.debug("PLAY FILE " + srcRef + "//" + mediaFile);
+//console.debug("PLAY FILE " + srcRef + "//" + mediaFile);
 
         _srcRef = srcRef;
         _source = mediaFile;
@@ -112,7 +112,7 @@ console.debug("PLAY FILE " + srcRef + "//" + mediaFile);
     }
 
     this.pause = function() {
-console.debug("PAUSE FILE");
+
         stopTimer();
 
         _elm.pause();
