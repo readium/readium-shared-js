@@ -92,8 +92,6 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
         var pageLoadDeferrals = this.createPageLoadDeferrals([{pageView: this.leftPageView, spineItem: this.spread.leftItem, context: context},
                                                               {pageView: this.rightPageView, spineItem: this.spread.rightItem, context: context},
                                                               {pageView: this.centerPageView, spineItem: this.spread.centerItem, context: context}]);
-
-
         if(pageLoadDeferrals.length > 0) {
 console.debug("1 pageLoadDeferrals.length > 0");
             $.when.apply($, pageLoadDeferrals).done(function(){
@@ -104,7 +102,6 @@ console.debug("2 pageLoadDeferrals GO!");
                 self.onPagesLoaded(initiator, paginationRequestElementId)
             });
         }
-
     },
 
     applyStyles: function() {

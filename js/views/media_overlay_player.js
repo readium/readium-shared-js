@@ -194,7 +194,7 @@ console.debug("TRACE 3");
             if(paginationData.elementId && !element)
             {
 console.debug("TRACE 4");
-                self.reset();
+                //self.reset();
                 return;
             }
 
@@ -750,6 +750,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
     function pause()
     {
+console.debug("*** PAUSE");
         if (_embeddedIsPlaying)
         {
             _embeddedIsPlaying = false;

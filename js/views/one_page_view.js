@@ -206,6 +206,10 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
 
             ReadiumSDK.Helpers.LoadIframe(this.$iframe[0], src, this.onIFrameLoad, this);
         }
+        else
+        {
+            this.trigger(ReadiumSDK.Events.PAGE_LOADED);
+        }
     },
 
     parseSize: function(content) {
