@@ -43,6 +43,7 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
         {
             _rate = 4.0;
         }
+
         _elm.playbackRate = _rate;
 //console.debug("RATEx: "+_elm.playbackRate);
     }
@@ -180,6 +181,8 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
         _timerId = undefined;
     }
 
+    //var _audibleLag = 0.5; //seconds, playback buffer latency
+
     function startTimer() {
 
         if(_timerId) {
@@ -188,9 +191,21 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
 
         _timerId = setInterval(function() {
 
-            onPositionChanged(_elm.currentTime);
+            var pos = _elm.currentTime;
+//            if (_rate > 9999)
+//            {
+//                if (pos <= _audibleLag)
+//                {
+//                    pos = 0;
+//                }
+//                else
+//                {
+//                    pos -= _audibleLag;
+//                }
+//            }
+            onPositionChanged(pos);
 
-        }, 11);
+        }, 20);
     }
 
 };

@@ -366,16 +366,16 @@ console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
 
     var DIRECTION_MARK = -999;
 
-    var _letPlay = false;
+//    var _letPlay = false;
 
-    function onAudioPositionChanged(position, noLetPlay) {
+    function onAudioPositionChanged(position) { //noLetPlay
 
         audioCurrentTime = position;
 
-        if (_letPlay)
-        {
-            return;
-        }
+//        if (_letPlay)
+//        {
+//            return;
+//        }
 
         _skipAudioEnded = false;
 //        _skipTTSEnded = false;
@@ -439,7 +439,7 @@ console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
 
                     var pos = goNext ? _smilIterator.currentPar.audio.clipEnd + 0.1 : DIRECTION_MARK - 1;
 
-                    onAudioPositionChanged(pos, noLetPlay);
+                    onAudioPositionChanged(pos); //noLetPlay
                     return;
                 }
             }
@@ -457,36 +457,40 @@ console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
 
             //position <= DIRECTION_MARK goes here (goto previous):
 
-            if (!noLetPlay && position > DIRECTION_MARK
-                && _audioPlayer.isPlaying() && _audioPlayer.srcRef() != _smilIterator.currentPar.audio.src)
-            {
-                _letPlay = true;
-                setTimeout(function()
-                {
-                    _letPlay = false;
-                    playCurrentPar();
-                }, 100);
-
-                return;
-            }
+//            if (!noLetPlay && position > DIRECTION_MARK
+//                && _audioPlayer.isPlaying() && _audioPlayer.srcRef() != _smilIterator.currentPar.audio.src)
+//            {
+//                _letPlay = true;
+//                setTimeout(function()
+//                {
+//                    _letPlay = false;
+//                    playCurrentPar();
+//                }, 100);
+//
+//                playCurrentPar();
+//
+//                return;
+//            }
 
             playCurrentPar();
             return;
         }
+//
+//        if (!noLetPlay)
+//        {
+//            _letPlay = true;
+//            setTimeout(function()
+//            {
+//                _letPlay = false;
+//                nextSmil(goNext);
+//            }, 200);
+//        }
+//        else
+//        {
+//            nextSmil(goNext);
+//        }
 
-        if (!noLetPlay)
-        {
-            _letPlay = true;
-            setTimeout(function()
-            {
-                _letPlay = false;
-                nextSmil(goNext);
-            }, 200);
-        }
-        else
-        {
-            nextSmil(goNext);
-        }
+        nextSmil(goNext);
     }
 
     var _timerTick = undefined;
@@ -583,11 +587,11 @@ console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
 
     function onAudioEnded() {
         onPause();
-
-        if (_letPlay)
-        {
-            return;
-        }
+//
+//        if (_letPlay)
+//        {
+//            return;
+//        }
 
         if(_skipAudioEnded)
         {
@@ -793,7 +797,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
         var position = previous ? DIRECTION_MARK - 1 : _smilIterator.currentPar.audio.clipEnd + 0.1;
 
-        onAudioPositionChanged(position, true);
+        onAudioPositionChanged(position); //true
 
         //play();
         //playCurrentPar();
