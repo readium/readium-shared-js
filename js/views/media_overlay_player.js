@@ -689,6 +689,11 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
 
     this.playUserPar = function(par) {
+        if(self.isPlaying())
+        {
+            pause();
+        }
+
         playPar(par);
     };
 
