@@ -1,6 +1,7 @@
 //  LauncherOSX
 //
 //  Created by Boris Schneiderman.
+// Modified by Daniel Weck
 //  Copyright (c) 2012-2013 The Readium Foundation.
 //
 //  The Readium SDK is free software: you can redistribute it and/or modify
@@ -619,6 +620,8 @@ console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
         }
 
         if(_smilIterator.currentPar.element) {
+//console.error(_smilIterator.currentPar.element.id + ": " + _smilIterator.currentPar.audio.clipBegin + " / " + _smilIterator.currentPar.audio.clipEnd);
+
             _elementHighlighter.highlightElement(_smilIterator.currentPar.element, _package.media_overlay.activeClass, _package.media_overlay.playbackActiveClass);
             reader.insureElementVisibility(_smilIterator.currentPar.element, self);
             return;

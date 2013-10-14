@@ -1,4 +1,5 @@
 //  Created by Boris Schneiderman.
+// Modified by Daniel Weck
 //  Copyright (c) 2012-2013 The Readium Foundation.
 //
 //  The Readium SDK is free software: you can redistribute it and/or modify

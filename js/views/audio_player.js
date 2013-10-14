@@ -1,6 +1,7 @@
 //  LauncherOSX
 //
 //  Created by Boris Schneiderman.
+// Modified by Daniel Weck
 //  Copyright (c) 2012-2013 The Readium Foundation.
 //
 //  The Readium SDK is free software: you can redistribute it and/or modify
@@ -19,6 +20,62 @@
 ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAudioEnded, onAudioPlay, onAudioPause) {
 
     var _elm = new Audio();
+
+//    var _ready = "loadstart";
+//    _elm.setAttribute("preload", "none");
+
+    var _ready = "canplay";
+    _elm.setAttribute("preload", "auto");
+
+//
+//
+//    _elm.addEventListener("progress", function()
+//        {
+//            console.debug("0) progress");
+//        }
+//    );
+//
+//    _elm.addEventListener("loadstart", function()
+//        {
+//            console.debug("1) loadstart");
+//        }
+//    );
+//
+//    _elm.addEventListener("durationchange", function()
+//        {
+//            console.debug("2) durationchange");
+//        }
+//    );
+//
+//    _elm.addEventListener("loadedmetadata", function()
+//        {
+//            console.debug("3) loadedmetadata");
+//        }
+//    );
+//
+//    _elm.addEventListener("loadeddata", function()
+//        {
+//            console.debug("4) loadeddata");
+//        }
+//    );
+//
+//    _elm.addEventListener("progress", function()
+//        {
+//            console.debug("5) progress");
+//        }
+//    );
+//
+//    _elm.addEventListener("canplay", function()
+//        {
+//            console.debug("6) canplay");
+//        }
+//    );
+//
+//    _elm.addEventListener("canplaythrough", function()
+//        {
+//            console.debug("7) canplaythrough");
+//        }
+//    );
 
     var _source = undefined;
     var _timerId = undefined;
@@ -99,7 +156,7 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
         _source = mediaFile;
 
         if(_elm.getAttribute("src") != _source) {
-            $(_elm).on("canplay", {clipBegin: clipBegin}, onCanPlay);
+            $(_elm).on(_ready, {clipBegin: clipBegin}, onCanPlay);
             _elm.setAttribute("src", _source);
         }
         else {
@@ -108,7 +165,7 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
     };
 
     function onCanPlay(event) {
-        $(_elm).off("canplay", onCanPlay);
+        $(_elm).off(_ready, onCanPlay);
         playFromPosition(event.data.clipBegin);
     }
 
@@ -149,8 +206,8 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
         }
         else {
             self.pause();
-            _elm.currentTime = position;
             $(_elm).on("seeked", onSeeked);
+            _elm.currentTime = position;
         }
     }
 
