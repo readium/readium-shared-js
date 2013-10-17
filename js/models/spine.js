@@ -120,7 +120,11 @@ ReadiumSDK.Models.Spine = Backbone.Model.extend({
     },
 
     item: function(index) {
-        return this.item(index);
+		
+		if (this.isValidIndex(index))
+        	return this.items[index];
+			
+		return undefined;
     },
 
     isRightToLeft: function() {
