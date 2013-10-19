@@ -176,15 +176,24 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
 
     this.playFile = function(srcRef, mediaFile, clipBegin) {
 
-        this.reset();
+        var diffAudioFile = _elm.getAttribute("src") != _source;
+
+        if (diffAudioFile)
+        {
+            this.reset();
+        }
+        else
+        {
+            this.pause();
+        }
 
 console.debug("PLAY FILE " + srcRef + " --- " + mediaFile);
 
         _srcRef = srcRef;
         _source = mediaFile;
 
-        if(_elm.getAttribute("src") != _source) {
-
+        if(diffAudioFile)
+        {
             $(_elm).on(_ready, {clipBegin: clipBegin}, onCanPlay);
 
 console.log("BEFORE setAttr");
@@ -196,12 +205,17 @@ console.log("BEFORE load");
             _elm.load();
 console.log("AFTER load");
 
-            if (iOS)
+            if (true) // iOS
             {
                 _elm.addEventListener('play', playToForcePreload, false);
 
+                _elm.volume = 0;
 console.log("BEFORE play to load");
-                _elm.play();
+                //_elm.play();
+                var vol = _volume;
+                _volume = 0;
+                self.play();
+                _volume = vol;
 console.log("AFTER play to load");
             }
         }
@@ -229,9 +243,9 @@ console.log("onCanPlay");
 
         if(Math.abs(position - _elm.currentTime) < 0.3) {
 console.log("MO AUDIO PLAY ALREADY");
-            if(self.isPlaying()) {
-                return;
-            }
+//            if(self.isPlaying()) {
+//                return;
+//            }
 
             self.play();
         }
@@ -257,7 +271,7 @@ console.log("MO AUDIO PLAY");
             {
                 try
                 {
-                    console.log("POS START: " + position);
+console.log("POS START: " + position);
                     _elm.currentTime = position;
                 }
                 catch (ex)
