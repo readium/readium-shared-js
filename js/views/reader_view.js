@@ -78,7 +78,6 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
             var spineItems = self.currentView.getLoadedSpineItems();
 
             for(var i = 0, count = spineItems.length; i < count; i++) {
-
                 self.attachMediaOverlayData(spineItems[i]);
             }
         });
@@ -120,7 +119,8 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
             {
                 $(body).data("mediaOverlayClick", {ping:"pong"});
 
-                $(body).click(function(event) {
+                var clickEvent = 'ontouchstart' in document.documentElement ? 'touchstart': 'click';
+                $(body).bind(clickEvent, function(event) {
 
                     var elem = $(this)[0]; // body
                     elem = event.target; // body descendant
