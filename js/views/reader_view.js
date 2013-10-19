@@ -120,8 +120,8 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
                 $(body).data("mediaOverlayClick", {ping:"pong"});
 
                 var clickEvent = 'ontouchstart' in document.documentElement ? 'touchstart': 'click';
-                $(body).bind(clickEvent, function(event) {
-
+                $(body).bind(clickEvent, function(event)
+                {
                     var elem = $(this)[0]; // body
                     elem = event.target; // body descendant
 
@@ -133,7 +133,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
                         if (!self.viewerSettings.mediaOverlaysEnableClick)
                         {
                             console.debug("MO CLICK DISABLED");
-                            return;
+                            return true;
                         }
 
                         var par = data.par;
@@ -159,6 +159,8 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
                             }
                         }
                     }
+
+                    return true;
                 });
             }
         }
