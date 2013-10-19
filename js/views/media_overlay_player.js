@@ -309,7 +309,7 @@ console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
         {
             var audioContentRef = ReadiumSDK.Helpers.ResolveContentRef(_smilIterator.currentPar.audio.src, _smilIterator.smil.href);
 
-            var audioSource = _package.resolveRelativeUrl(audioContentRef);
+            var audioSource = _package.resolveRelativeUrlMO(audioContentRef);
 
 //console.debug("PLAY FILE: " + _smilIterator.currentPar.audio.src);
 

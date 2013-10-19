@@ -33,6 +33,12 @@ ReadiumSDK.Models.PackageData = {
      */
     rootUrl: "",
     /**
+     * @property rootUrl Url of the package file, to prefix Media Overlays SMIL audio references
+     * @type {string}
+     *
+     */
+    rootUrlMO: "",
+    /**
      *
      * @property rendering_layout expected values "reflowable"|rendering_layout="pre-paginated"
      * @type {string}

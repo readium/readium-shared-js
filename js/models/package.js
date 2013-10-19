@@ -24,6 +24,7 @@ ReadiumSDK.Models.Package = Backbone.Model.extend({
     spine: undefined,
     rendition_layout: undefined,
     rootUrl: undefined,
+    rootUrlMO: undefined,
     media_overlay: undefined,
 
     initialize : function() {
@@ -35,6 +36,8 @@ ReadiumSDK.Models.Package = Backbone.Model.extend({
         if(packageData) {
 
             this.rootUrl = packageData.rootUrl;
+            this.rootUrlMO = packageData.rootUrlMO;
+
             this.rendition_layout = packageData.rendition_layout;
 
             if(!this.rendition_layout) {
@@ -45,6 +48,21 @@ ReadiumSDK.Models.Package = Backbone.Model.extend({
 
             this.media_overlay = ReadiumSDK.Models.MediaOverlay.fromDTO(packageData.media_overlay);
         }
+    },
+
+    resolveRelativeUrlMO: function(relativeUrl) {
+
+        if(this.rootUrlMO && this.rootUrlMO.length > 0) {
+
+            if(ReadiumSDK.Helpers.EndsWith(this.rootUrlMO, "/")){
+                return this.rootUrlMO + relativeUrl;
+            }
+            else {
+                return this.rootUrlMO + "/" + relativeUrl;
+            }
+        }
+
+        return this.resolveRelativeUrl(relativeUrl);
     },
 
     resolveRelativeUrl: function(relativeUrl) {
@@ -66,6 +84,7 @@ ReadiumSDK.Models.Package = Backbone.Model.extend({
         this.spine = undefined;
         this.rendition_layout = undefined;
         this.rootUrl = undefined;
+        this.rootUrlMO = undefined;
     },
 
     isFixedLayout: function() {
