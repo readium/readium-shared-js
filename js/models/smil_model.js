@@ -195,7 +195,7 @@ ReadiumSDK.Models.SmilModel = function() {
 
 ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
 
-    console.debug("Media Overlay DTO...");
+    console.debug("Media Overlay DTO import...");
 
     var indent = 0;
     var getIndent = function()
