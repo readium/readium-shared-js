@@ -31,7 +31,7 @@ ReadiumSDK.Models.MediaOverlay = function() {
     this.activeClass = undefined;
     this.playbackActiveClass = undefined;
 
-    this.DEBUG = false;
+    this.DEBUG = true;
 
 
     this.getSmilBySpineItem = function (spineItem) {

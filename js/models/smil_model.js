@@ -191,8 +191,6 @@ ReadiumSDK.Models.SmilModel = function() {
     this.href = undefined; //href of the .smil source file
     this.duration = undefined;
     this.mo = undefined;
-
-    this.DEBUG = false;
 };
 
 ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
@@ -218,7 +216,7 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
     smilModel.duration = smilDTO.duration;
     smilModel.mo = mo; //ReadiumSDK.Models.MediaOverlay
 
-    if (smilModel.DEBUG)
+    if (smilModel.mo.DEBUG)
     {
     console.log("JS MO smilVersion=" + smilModel.smilVersion);
     console.log("JS MO id=" + smilModel.id);
@@ -237,7 +235,7 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
 
             to[property] = from[property];
 
-            if (smilModel.DEBUG)
+            if (smilModel.mo.DEBUG)
             {
             console.log(getIndent() + "JS MO: [" + property + "=" + to[property] + "]");
             }
@@ -253,7 +251,7 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
 
         if(nodeDTO.nodeType == "seq") {
 
-            if (smilModel.DEBUG)
+            if (smilModel.mo.DEBUG)
             {
             console.log(getIndent() + "JS MO seq");
             }
@@ -270,7 +268,7 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
         }
         else if (nodeDTO.nodeType == "par") {
 
-            if (smilModel.DEBUG)
+            if (smilModel.mo.DEBUG)
             {
             console.log(getIndent() + "JS MO par");
             }
@@ -312,7 +310,7 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
         }
         else if (nodeDTO.nodeType == "text") {
 
-            if (smilModel.DEBUG)
+            if (smilModel.mo.DEBUG)
             {
             console.log(getIndent() + "JS MO text");
             }
@@ -326,7 +324,7 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
         }
         else if (nodeDTO.nodeType == "audio") {
 
-            if (smilModel.DEBUG)
+            if (smilModel.mo.DEBUG)
             {
             console.log(getIndent() + "JS MO audio");
             }
@@ -339,7 +337,7 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
             safeCopyProperty("clipBegin", nodeDTO, node);
             if (node.clipBegin < 0)
             {
-                if (smilModel.DEBUG)
+                if (smilModel.mo.DEBUG)
                 {
                     console.log(getIndent() + "JS MO clipBegin adjusted to ZERO");
                 }
@@ -349,7 +347,7 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
             safeCopyProperty("clipEnd", nodeDTO, node);
             if (node.clipEnd <= node.clipBegin)
             {
-                if (smilModel.DEBUG)
+                if (smilModel.mo.DEBUG)
                 {
                     console.log(getIndent() + "JS MO clipEnd adjusted to MAX");
                 }
