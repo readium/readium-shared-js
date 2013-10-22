@@ -17,103 +17,25 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAudioEnded, onAudioPlay, onAudioPause) {
-
-    var iOS = ( navigator.userAgent.match(/(iPad|iPhone|iPod)/g) ? true : false );
-
-    var _elm = new Audio();
-
-    var _ready = iOS ? "canplaythrough" : "canplay";
-    var _seeked = iOS ? "progress" : "seeked";
-    _elm.setAttribute("preload", "none");
-
-//
-//    _elm.addEventListener("loadstart", function()
-//        {
-//            console.debug("1) loadstart");
-//        }
-//    );
-//
-//    _elm.addEventListener("durationchange", function()
-//        {
-//            console.debug("2) durationchange");
-//        }
-//    );
-//
-//    _elm.addEventListener("loadedmetadata", function()
-//        {
-//            console.debug("3) loadedmetadata");
-//        }
-//    );
-//
-//    _elm.addEventListener("loadeddata", function()
-//        {
-//            console.debug("4) loadeddata");
-//        }
-//    );
-//
-//    _elm.addEventListener("progress", function()
-//        {
-//            console.debug("5) progress");
-//        }
-//    );
-//
-//    _elm.addEventListener("canplay", function()
-//        {
-//            console.debug("6) canplay");
-//        }
-//    );
-//
-//    _elm.addEventListener("canplaythrough", function()
-//        {
-//            console.debug("7) canplaythrough");
-//        }
-//    );
-//
-//    _elm.addEventListener("play", function()
-//        {
-//            console.debug("8) play");
-//        }
-//    );
-//
-//    _elm.addEventListener("pause", function()
-//        {
-//            console.debug("9) pause");
-//        }
-//    );
-//
-//    _elm.addEventListener("ended", function()
-//        {
-//            console.debug("0) ended");
-//        }
-//    );
-//
-//    _elm.addEventListener("seeked", function()
-//        {
-//            console.debug("X) seeked");
-//        }
-//    );
-//
-//    _elm.addEventListener("timeupdate", function()
-//        {
-//            console.debug("O) timeupdate");
-//        }
-//    );
-
-    var _source = undefined;
-    var _timerId = undefined;
-    var _srcRef = undefined;
+ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAudioEnded, onAudioPlay, onAudioPause)
+{
+    var DEBUG = true;
 
     var self = this;
 
-    $(_elm).on("play", onPlay);
-    $(_elm).on("pause", onPause);
-    $(_elm).on("ended", onEnded);
+    var _audioElement = new Audio();
+    _audioElement.setAttribute("preload", "none");
+
+    var _currentEpubSrc = undefined;
+
+    var _currentSmilSrc = undefined;
+    this.currentSmilSrc = function() {
+        return _currentSmilSrc;
+    };
 
     var _rate = 1.0;
     this.setRate = function(rate)
     {
-//console.debug("RATE: "+rate);
         _rate = rate;
         if (_rate < 0.5)
         {
@@ -124,15 +46,14 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
             _rate = 4.0;
         }
 
-        _elm.playbackRate = _rate;
-//console.debug("RATEx: "+_elm.playbackRate);
+        _audioElement.playbackRate = _rate;
     }
     self.setRate(_rate);
+
 
     var _volume = 100.0;
     this.setVolume = function(volume)
     {
-//console.debug("VOLUME: "+volume);
         _volume = volume;
         if (_volume < 0.0)
         {
@@ -142,162 +63,19 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
         {
             _volume = 1.0;
         }
-        _elm.volume = _volume;
-//console.debug("VOLUMEx: "+_elm.volume);
+        _audioElement.volume = _volume;
     }
     self.setVolume(_volume);
 
-    this.source = function() {
-        return _source;
-    };
-
-    this.srcRef = function() {
-      return _srcRef;
-    };
-
-    this.reset = function() {
-
-        //we do this because pause event is not triggered after we reset source attribute
-        var wasPlaying = this.isPlaying();
-
-        this.pause();
-        _elm.setAttribute("src", "");
-
-        if(wasPlaying) {
-            onStatusChanged({isPlaying: false});
-            onAudioPause();
-        }
-    };
-
-    this.playFile = function(srcRef, mediaFile, clipBegin) {
-
-        var curSrc = _elm.getAttribute("src");
-        var needsLoad = !_source || !curSrc || curSrc.length == 0 || curSrc !== _source || mediaFile !== _source;
-
-        if (needsLoad)
-        {
-            this.reset();
-        }
-        else
-        {
-            this.pause();
-        }
-
-//console.debug("PLAY FILE " + srcRef + " --- " + mediaFile);
-
-        _srcRef = srcRef;
-        _source = mediaFile;
-
-        if (needsLoad)
-        {
-            $(_elm).on(_ready, {clipBegin: clipBegin}, onCanPlay);
-
-            _elm.setAttribute("src", _source);
-
-            //_elm.setAttribute("preload", "auto");
-            _elm.load();
-
-
-
-            _elm.addEventListener('play', playToForcePreload, false);
-
-            _elm.volume = 0;
-
-            //_elm.play();
-            var vol = _volume;
-            _volume = 0;
-            self.play();
-            _volume = vol;
-        }
-        else
-        {
-            playFromPosition(clipBegin);
-        }
-    };
-
-
-    var playToForcePreload = function ()
+    this.play = function()
     {
-        _elm.pause();
-        _elm.removeEventListener('play', playToForcePreload, false);
-    };
-
-    function onCanPlay(event)
-    {
-        $(_elm).off(_ready, onCanPlay);
-
-        playFromPosition(event.data.clipBegin);
-    }
-
-    function playFromPosition(position)
-    {
-        if(Math.abs(position - _elm.currentTime) < 0.3)
+        if (DEBUG)
         {
-//            if(self.isPlaying()) {
-//                return;
-//            }
-
-            self.play();
+            console.debug("this.play()");
         }
-        else
+
+        if(!_currentEpubSrc)
         {
-            if (position == 0)
-            {
-                position = 0.01;
-            }
-
-            self.pause();
-
-            $(_elm).on(_seeked, {position: position}, onSeeked);
-
-            if (iOS)
-            {
-                _elm.volume = 0;
-                _elm.play();
-            }
-            else
-            {
-                try
-                {
-                    _elm.currentTime = position;
-                }
-                catch (ex)
-                {
-                    console.error(ex.message);
-                }
-            }
-        }
-    }
-
-    function onSeeked(event)
-    {
-        $(_elm).off(_seeked, onSeeked);
-
-        self.play();
-
-        if (iOS && event && event.data && event.data.position)
-        {
-            try
-            {
-                _elm.currentTime = event.data.position;
-            }
-            catch (ex)
-            {
-                console.error(ex.message);
-            }
-        }
-    }
-
-    this.pause = function() {
-
-        stopTimer();
-
-        _elm.pause();
-    };
-
-    this.play = function() {
-
-        if(!_source) {
             return;
         }
 
@@ -306,59 +84,417 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
         self.setVolume(_volume);
         self.setRate(_rate);
 
-        _elm.play();
+        _audioElement.play();
     };
 
-    this.isPlaying = function() {
-        return _timerId != undefined;
+    this.pause = function()
+    {
+        if (DEBUG)
+        {
+            console.debug("this.pause()");
+        }
+
+        stopTimer();
+
+        _audioElement.pause();
     };
 
-    function onPlay() {
+    _audioElement.addEventListener('play', onPlay, false);
+    _audioElement.addEventListener('pause', onPause, false);
+    _audioElement.addEventListener('ended', onEnded, false);
+
+    function onPlay()
+    {
         onStatusChanged({isPlaying: true});
         onAudioPlay();
     }
 
-    function onPause() {
+    function onPause()
+    {
         onStatusChanged({isPlaying: false});
         onAudioPause();
     }
 
-    function onEnded() {
+    function onEnded()
+    {
         stopTimer();
+
         onAudioEnded();
         onStatusChanged({isPlaying: false});
     }
 
-    function stopTimer() {
-        clearInterval(_timerId);
-        _timerId = undefined;
-    }
 
-    //var _audibleLag = 0.5; //seconds, playback buffer latency
-
-    function startTimer() {
-
-        if(_timerId) {
+    var _intervalTimer = undefined;
+    function startTimer()
+    {
+        if(_intervalTimer)
+        {
             return;
         }
 
-        _timerId = setInterval(function() {
-
-            var pos = _elm.currentTime;
-//            if (_rate > 9999)
-//            {
-//                if (pos <= _audibleLag)
-//                {
-//                    pos = 0;
-//                }
-//                else
-//                {
-//                    pos -= _audibleLag;
-//                }
-//            }
-            onPositionChanged(pos);
-
-        }, 20);
+        _intervalTimer = setInterval(
+            function()
+            {
+                if (_audioElement.moSeeking)
+                {
+                    if (DEBUG)
+                    {
+                        console.debug("interval timer skipped (still seeking...)");
+                    }
+                    return;
+                }
+                var currentTime = _audioElement.currentTime;
+                onPositionChanged(currentTime);
+            }, 20);
     }
 
+    function stopTimer()
+    {
+        if (_intervalTimer)
+        {
+            clearInterval(_intervalTimer);
+        }
+        _intervalTimer = undefined;
+    }
+
+    this.isPlaying = function()
+    {
+        return _intervalTimer != undefined;
+    };
+
+    this.reset = function()
+    {
+        if (DEBUG)
+        {
+            console.debug("this.reset()");
+        }
+
+        this.pause();
+
+        _currentSmilSrc = undefined;
+        _currentEpubSrc = undefined;
+
+        setTimeout(function()
+        {
+            _audioElement.setAttribute("src", "");
+        }, 1);
+    };
+
+    if (DEBUG)
+    {
+        _audioElement.addEventListener("loadstart", function()
+            {
+                console.debug("1) loadstart");
+            }
+        );
+
+        _audioElement.addEventListener("durationchange", function()
+            {
+                console.debug("2) durationchange");
+            }
+        );
+
+        _audioElement.addEventListener("loadedmetadata", function()
+            {
+                console.debug("3) loadedmetadata");
+            }
+        );
+
+        _audioElement.addEventListener("loadeddata", function()
+            {
+                console.debug("4) loadeddata");
+            }
+        );
+
+        _audioElement.addEventListener("progress", function()
+            {
+                console.debug("5) progress");
+            }
+        );
+
+        _audioElement.addEventListener("canplay", function()
+            {
+                console.debug("6) canplay");
+            }
+        );
+
+        _audioElement.addEventListener("canplaythrough", function()
+            {
+                console.debug("7) canplaythrough");
+            }
+        );
+
+        _audioElement.addEventListener("play", function()
+            {
+                console.debug("8) play");
+            }
+        );
+
+        _audioElement.addEventListener("pause", function()
+            {
+                console.debug("9) pause");
+            }
+        );
+
+        _audioElement.addEventListener("ended", function()
+            {
+                console.debug("0) ended");
+            }
+        );
+
+        _audioElement.addEventListener("seeked", function()
+            {
+                console.debug("X) seeked");
+            }
+        );
+
+        _audioElement.addEventListener("timeupdate", function()
+            {
+                console.debug("O) timeupdate");
+            }
+        );
+    }
+
+
+
+
+
+    var _iOS = ( navigator.userAgent.match(/(iPad|iPhone|iPod)/g) ? true : false );
+
+    var _playId = 0;
+
+    this.playFile = function(smilSrc, epubSrc, seekBegin)
+    {
+        _playId++;
+        if (_playId > 99999)
+        {
+            _playId = 0;
+        }
+
+        var playId = _playId;
+
+        if (_audioElement.moSeeking)
+        {
+            if (DEBUG)
+            {
+                console.debug("this.playFile(" + epubSrc + ")" + " @" + seekBegin + " (STILL SEEKING...)");
+            }
+
+            setTimeout(function()
+            {
+                self.playFile(smilSrc, epubSrc, seekBegin);
+            }, 20);
+            return;
+        }
+
+        _audioElement.moSeeking = {};
+
+        if (DEBUG)
+        {
+            console.debug("this.playFile(" + epubSrc + ")" + " @" + seekBegin + " #" + playId);
+        }
+
+        var audioNeedsNewSrc = !_currentEpubSrc || _currentEpubSrc !== epubSrc;
+
+        if (!audioNeedsNewSrc)
+        {
+            if (DEBUG)
+            {
+                console.debug("this.playFile() SAME SRC");
+            }
+
+            this.pause();
+
+            _currentSmilSrc = smilSrc;
+            _currentEpubSrc = epubSrc;
+
+            playSeekCurrentTime(seekBegin, playId, false);
+
+            return;
+        }
+
+        if (DEBUG)
+        {
+            console.debug("this.playFile() NEW SRC");
+            console.debug("_currentEpubSrc: " + _currentEpubSrc);
+            console.debug("epubSrc: " + epubSrc);
+        }
+
+        this.reset();
+
+        _currentSmilSrc = smilSrc;
+        _currentEpubSrc = epubSrc;
+
+        _audioElement.setAttribute("src", _currentEpubSrc);
+
+        //_audioElement.setAttribute("preload", "auto");
+        //_audioElement.load();
+        _audioElement.addEventListener('play', onPlayToForcePreload, false);
+
+        $(_audioElement).on(_readyEvent, {seekBegin: seekBegin, playId: playId}, onReadyToSeek);
+
+        _audioElement.volume = 0;
+        var vol = _volume;
+        self.play(); //_audioElement.play();
+        _volume = vol;
+    };
+
+
+    var onPlayToForcePreload = function ()
+    {
+        _audioElement.pause(); // note: interval timer continues (immediately follows self.play())
+        _audioElement.removeEventListener('play', onPlayToForcePreload, false);
+    };
+
+    var _readyEvent = "canplay"; //_iOS ? "canplaythrough" : "canplay";
+    function onReadyToSeek(event)
+    {
+        $(_audioElement).off(_readyEvent, onReadyToSeek);
+
+        playSeekCurrentTime(event.data.seekBegin, event.data.playId, true);
+    }
+
+    function playSeekCurrentTime(newCurrentTime, playId, isNewSrc)
+    {
+        if (DEBUG)
+        {
+            console.debug("playSeekCurrentTime() #" + playId);
+        }
+
+        if (newCurrentTime == 0)
+        {
+            newCurrentTime = 0.01;
+        }
+
+        if(Math.abs(newCurrentTime - _audioElement.currentTime) < 0.3)
+        {
+            if (DEBUG)
+            {
+                console.debug("playSeekCurrentTime() CONTINUE");
+            }
+
+            _audioElement.moSeeking = undefined;
+            self.play();
+            return;
+        }
+
+        var ev = isNewSrc ? _seekedEvent1 : _seekedEvent2;
+
+        if (DEBUG)
+        {
+            console.debug("playSeekCurrentTime() NEED SEEK, EV: " + ev);
+        }
+
+        self.pause();
+
+        $(_audioElement).on(ev, {newCurrentTime: newCurrentTime, playId: playId, isNewSrc: isNewSrc}, onSeeked);
+
+        try
+        {
+            _audioElement.currentTime = newCurrentTime;
+        }
+        catch (ex)
+        {
+            console.error(ex.message);
+
+            setTimeout(function()
+            {
+                try
+                {
+                    _audioElement.currentTime = newCurrentTime;
+                }
+                catch (ex)
+                {
+                    console.error(ex.message);
+                }
+            }, 5);
+        }
+    }
+
+    var MAX_SEEK_RETRIES = 10;
+    var _seekedEvent1 = _iOS ? "progress" : "seeked";
+    var _seekedEvent2 = _iOS ? "timeupdate" : "seeked";
+    function onSeeked(event)
+    {
+        var ev = event.data.isNewSrc ? _seekedEvent1 : _seekedEvent2;
+
+        var notRetry = event.data.seekRetries == undefined;
+
+        if (notRetry || event.data.seekRetries == MAX_SEEK_RETRIES) // first retry
+        {
+            $(_audioElement).off(ev, onSeeked);
+        }
+
+        if (DEBUG)
+        {
+            console.debug("onSeeked() #" + event.data.playId + " FIRST? " + notRetry + " EV: " + ev);
+        }
+
+        if((notRetry || event.data.seekRetries >= 0) &&
+            Math.abs(event.data.newCurrentTime - _audioElement.currentTime) >= 1)
+        {
+            if (notRetry)
+            {
+                event.data.seekRetries = MAX_SEEK_RETRIES;
+
+                if (DEBUG)
+                {
+                    console.debug("onSeeked() fail => first retry, EV: " + _seekedEvent2);
+                }
+
+                event.data.isNewSrc = false;
+                $(_audioElement).on(_seekedEvent2, event.data, onSeeked);
+            }
+            else
+            {
+                event.data.seekRetries--;
+
+                if (DEBUG)
+                {
+                    console.debug("onSeeked() FAIL => retry again (timeout)");
+                }
+
+                setTimeout(function()
+                {
+                    onSeeked(event);
+                }, 15);
+            }
+
+            setTimeout(function()
+            {
+                try
+                {
+                    _audioElement.currentTime = event.data.newCurrentTime;
+                }
+                catch (ex)
+                {
+                    console.error(ex.message);
+
+                    setTimeout(function()
+                    {
+                        try
+                        {
+                            _audioElement.currentTime = event.data.newCurrentTime;
+                        }
+                        catch (ex)
+                        {
+                            console.error(ex.message);
+                        }
+                    }, 4);
+                }
+            }, 5);
+        }
+        else
+        {
+            if (DEBUG)
+            {
+                console.debug("onSeeked() OKAY => play!");
+            }
+
+            event.data.seekRetries = undefined;
+
+            _audioElement.moSeeking = undefined;
+            self.play();
+        }
+    }
 };
