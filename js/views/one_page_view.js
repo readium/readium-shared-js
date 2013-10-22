@@ -150,6 +150,7 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
         css["height"] = this.meta_size.height;
 
         this.$epubHtml.css(css);
+        this.$iframe.css("visibility", "visible");
     },
 
     generateTransformCSS: function(scale, left, top) {
@@ -204,6 +205,8 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
             this.currentSpineItem = spineItem;
             var src = this.spine.package.resolveRelativeUrl(spineItem.href);
 
+            //hide iframe until content is scaled
+            this.$iframe.css("visibility", "hidden");
             ReadiumSDK.Helpers.LoadIframe(this.$iframe[0], src, this.onIFrameLoad, this);
         }
         else
