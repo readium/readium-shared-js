@@ -876,7 +876,6 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
     };
 
     this.toggleMediaOverlay = function() {
-console.error("toggleMediaOverlay");
         if(self.isPlaying()) {
             pause();
             return;
