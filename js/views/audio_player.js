@@ -171,9 +171,10 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
 
     this.playFile = function(srcRef, mediaFile, clipBegin) {
 
-        var diffAudioFile = _elm.getAttribute("src") != _source;
+        var curSrc = _elm.getAttribute("src");
+        var needsLoad = !_source || !curSrc || curSrc.length == 0 || curSrc !== _source || mediaFile !== _source;
 
-        if (diffAudioFile)
+        if (needsLoad)
         {
             this.reset();
         }
@@ -187,7 +188,7 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
         _srcRef = srcRef;
         _source = mediaFile;
 
-        if (diffAudioFile)
+        if (needsLoad)
         {
             $(_elm).on(_ready, {clipBegin: clipBegin}, onCanPlay);
 

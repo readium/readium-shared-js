@@ -116,7 +116,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                 {
                     if (wasPlaying)
                     {
-                        self.toggleMediaOverlay();
+                        self.toggleMediaOverlayRefresh(paginationData.elementId);
                     }
                 }
                 return;
@@ -183,7 +183,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
             if(!paginationData.elementId)
             {
-                self.reset();
+                //self.reset();
             }
 
             if(paginationData.elementId && !element)
@@ -192,7 +192,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                 return;
             }
 
-            self.toggleMediaOverlay(paginationData.elementId);
+            self.toggleMediaOverlayRefresh(paginationData.elementId);
         }
     };
 
@@ -875,21 +875,23 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         */
     };
 
-    this.toggleMediaOverlay = function(textId) {
-
-        if (!textId)
-        {
-            if(self.isPlaying()) {
-                pause();
-                return;
-            }
-
-            //if we have position to continue from (reset wasn't called)
-            if(_smilIterator) {
-                play();
-                return;
-            }
+    this.toggleMediaOverlay = function() {
+console.error("toggleMediaOverlay");
+        if(self.isPlaying()) {
+            pause();
+            return;
         }
+
+        //if we have position to continue from (reset wasn't called)
+        if(_smilIterator) {
+            play();
+            return;
+        }
+
+        this.toggleMediaOverlayRefresh(undefined);
+    };
+
+    this.toggleMediaOverlayRefresh = function(textId) {
 
         var visibleMediaElements = reader.getVisibleMediaOverlayElements();
 
@@ -921,8 +923,8 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         var wasPlaying = self.isPlaying();
         if(wasPlaying && _smilIterator)
         {
-            playingPar = _smilIterator.currentPar;
             pause();
+            playingPar = _smilIterator.currentPar;
         }
 
         if (textId && textId !== elementDataToStart.element.id)
