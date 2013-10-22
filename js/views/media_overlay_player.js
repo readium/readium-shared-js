@@ -447,7 +447,7 @@ console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
 
             if(_audioPlayer.isPlaying()
                 && _smilIterator.currentPar.audio.src
-                && _smilIterator.currentPar.audio.src == _audioPlayer.srcRef()
+                && _smilIterator.currentPar.audio.src == _audioPlayer.currentSmilSrc()
                     && position >= _smilIterator.currentPar.audio.clipBegin
                     && position <= _smilIterator.currentPar.audio.clipEnd)
             {
