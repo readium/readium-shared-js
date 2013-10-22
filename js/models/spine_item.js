@@ -32,6 +32,7 @@ ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
     this.page_spread = itemData.page_spread;
     this.rendition_layout = itemData.rendition_layout;
     this.media_overlay_id = itemData.media_overlay_id;
+    this.media_type = itemData.media_type;
 
     this.index = index;
     this.spine = spine;
