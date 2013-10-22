@@ -263,6 +263,8 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
 
     var _playId = 0;
 
+    var _seekQueuing = 0;
+    
     this.playFile = function(smilSrc, epubSrc, seekBegin)
     {
         _playId++;
@@ -275,15 +277,23 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
 
         if (_audioElement.moSeeking)
         {
+            _seekQueuing++;
+            if (_seekQueuing > MAX_SEEK_RETRIES)
+            {
+                _seekQueuing = 0;
+                return;
+            }
+            
             if (DEBUG)
             {
-                console.debug("this.playFile(" + epubSrc + ")" + " @" + seekBegin + " (STILL SEEKING...)");
+                console.debug("this.playFile(" + epubSrc + ")" + " @" + seekBegin + " (POSTPONE, SEEKING...)");
             }
 
             setTimeout(function()
             {
                 self.playFile(smilSrc, epubSrc, seekBegin);
             }, 20);
+            
             return;
         }
 
@@ -328,7 +338,7 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
         _audioElement.setAttribute("src", _currentEpubSrc);
 
         //_audioElement.setAttribute("preload", "auto");
-        //_audioElement.load();
+        _audioElement.load();
         _audioElement.addEventListener('play', onPlayToForcePreload, false);
 
         $(_audioElement).on(_readyEvent, {seekBegin: seekBegin, playId: playId}, onReadyToSeek);
