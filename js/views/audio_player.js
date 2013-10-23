@@ -122,8 +122,9 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
         onAudioEnded();
         onStatusChanged({isPlaying: false});
     }
-
-
+    
+    var _intervalTimerSkips = 0;
+    
     var _intervalTimer = undefined;
     function startTimer()
     {
@@ -140,6 +141,13 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
                     if (DEBUG)
                     {
                         console.debug("interval timer skipped (still seeking...)");
+                    }
+                                     
+                    _intervalTimerSkips++;
+                    if (_intervalTimerSkips > 1000)
+                    {
+                        _intervalTimerSkips = 0;
+                        stopTimer();
                     }
                     return;
                 }
@@ -337,7 +345,7 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
 
         _audioElement.setAttribute("src", _currentEpubSrc);
 
-        _audioElement.setAttribute("preload", "auto");
+        //_audioElement.setAttribute("preload", "auto");
         _audioElement.load();
         _audioElement.addEventListener('play', onPlayToForcePreload, false);
 
@@ -354,15 +362,24 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
 
     var onPlayToForcePreload = function ()
     {
-        _audioElement.pause(); // note: interval timer continues (immediately follows self.play())
         _audioElement.removeEventListener('play', onPlayToForcePreload, false);
+        
+        if (DEBUG)
+        {
+            console.debug("onPlayToForcePreload");
+        }
+        _audioElement.pause(); // note: interval timer continues (immediately follows self.play())
     };
 
     var _readyEvent = "canplay"; //_iOS ? "canplaythrough" : "canplay";
     function onReadyToSeek(event)
     {
         $(_audioElement).off(_readyEvent, onReadyToSeek);
-
+        
+        if (DEBUG)
+        {
+            console.debug("onReadyToSeek #" + event.data.playId);
+        }
         playSeekCurrentTime(event.data.seekBegin, event.data.playId, true);
     }
 
