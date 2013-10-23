@@ -313,7 +313,7 @@ console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
 
 //console.debug("PLAY FILE: " + _smilIterator.currentPar.audio.src);
 
-            _audioPlayer.playFile(_smilIterator.currentPar.audio.src, audioSource, _smilIterator.currentPar.audio.clipBegin + clipBeginOffset);
+            _audioPlayer.playFile(_smilIterator.currentPar.audio.src, audioSource, _smilIterator.currentPar.audio.clipBegin + clipBeginOffset, _smilIterator.currentPar.element);
         }
 
         clipBeginOffset = 0.0;

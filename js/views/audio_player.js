@@ -19,12 +19,12 @@
 
 ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAudioEnded, onAudioPlay, onAudioPause)
 {
-    var DEBUG = true;
+    var DEBUG = false;
 
     var self = this;
 
     var _audioElement = new Audio();
-    _audioElement.setAttribute("preload", "none");
+    //_audioElement.setAttribute("preload", "auto");
 
     var _currentEpubSrc = undefined;
 
@@ -273,7 +273,7 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
 
     var _seekQueuing = 0;
     
-    this.playFile = function(smilSrc, epubSrc, seekBegin)
+    this.playFile = function(smilSrc, epubSrc, seekBegin, element)
     {
         _playId++;
         if (_playId > 99999)
@@ -343,20 +343,26 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
         _currentSmilSrc = smilSrc;
         _currentEpubSrc = epubSrc;
 
-        _audioElement.setAttribute("src", _currentEpubSrc);
-
-        //_audioElement.setAttribute("preload", "auto");
-        _audioElement.load();
+        //element.parentNode.insertBefore(_audioElement, element); //element.parentNode.childNodes[0]);
+        
         _audioElement.addEventListener('play', onPlayToForcePreload, false);
 
         $(_audioElement).on(_readyEvent, {seekBegin: seekBegin, playId: playId}, onReadyToSeek);
-
-        //_audioElement.volume = 0;
-        //_audioElement.play();
-        var vol = _volume;
-        _volume = 0;
-        self.play();
-        _volume = vol;
+        
+        setTimeout(function()
+            {
+                   _audioElement.setAttribute("src", _currentEpubSrc);
+                   // _audioElement.src = _currentEpubSrc;
+                   // $(_audioElement).attr("src", _currentEpubSrc);
+                   _audioElement.load();
+                   
+                   //_audioElement.volume = 0;
+                   //_audioElement.play();
+                   var vol = _volume;
+                   _volume = 0;
+                   self.play();
+                   _volume = vol;
+            }, 1);
     };
 
 
