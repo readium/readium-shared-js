@@ -337,15 +337,17 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
 
         _audioElement.setAttribute("src", _currentEpubSrc);
 
-        //_audioElement.setAttribute("preload", "auto");
+        _audioElement.setAttribute("preload", "auto");
         _audioElement.load();
         _audioElement.addEventListener('play', onPlayToForcePreload, false);
 
         $(_audioElement).on(_readyEvent, {seekBegin: seekBegin, playId: playId}, onReadyToSeek);
 
-        _audioElement.volume = 0;
+        //_audioElement.volume = 0;
+        //_audioElement.play();
         var vol = _volume;
-        self.play(); //_audioElement.play();
+        _volume = 0;
+        self.play();
         _volume = vol;
     };
 
