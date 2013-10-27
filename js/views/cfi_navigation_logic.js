@@ -235,6 +235,8 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
 
         function traverseCollection(elements) {
 
+            if (elements == undefined) return;
+            
             for(var i = 0, count = elements.length; i < count; i++) {
 
                 var $element = $(elements[i]);
