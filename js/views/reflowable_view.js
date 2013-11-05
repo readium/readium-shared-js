@@ -555,6 +555,11 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         openPageRequest.setPageIndex(page);
 
         this.openPage(openPageRequest);
+    },
+
+
+    getDom: function ()  {
+        return this.$iframe;
     }
 
 });
