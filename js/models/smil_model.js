@@ -319,7 +319,7 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
             node.parent = parent;
             safeCopyProperty("src", nodeDTO, node, true);
             safeCopyProperty("srcFile", nodeDTO, node, true);
-            safeCopyProperty("srcFragmentId", nodeDTO, node, true);
+            safeCopyProperty("srcFragmentId", nodeDTO, node, false);
             safeCopyProperty("id", nodeDTO, node);
         }
         else if (nodeDTO.nodeType == "audio") {

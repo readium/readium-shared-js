@@ -49,7 +49,7 @@ ReadiumSDK.Models.SmilIterator = function(smil) {
         {
             if(this.currentPar.element)
             {
-                if (id == this.currentPar.text.srcFragmentId)
+                if (id === this.currentPar.text.srcFragmentId)
                 {
                     return true;
                 }

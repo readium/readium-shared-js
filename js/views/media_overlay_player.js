@@ -80,12 +80,12 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         */
 
         var element = undefined;
-        if (paginationData.elementId)
+        if (paginationData.elementId || paginationData.initiator == self)
         {
             var spineItems = reader.currentView.getLoadedSpineItems();
             for(var i = 0, count = spineItems.length; i < count; i++)
             {
-                element = reader.currentView.getElement(spineItems[i], "#" + paginationData.elementId);
+                element = reader.currentView.getElement(spineItems[i], paginationData.initiator == self && !paginationData.elementId ? "body" : "#" + paginationData.elementId);
                 if (element)
                 {
                     /*
@@ -122,12 +122,14 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                 return;
             }
 
-            if (!paginationData.elementId)
-            {
-                console.error("!paginationData.elementId");
-                clipBeginOffset = 0.0;
-                return;
-            }
+            //paginationData.initiator === self
+//            
+//            if (!paginationData.elementId)
+//            {
+//                console.error("!paginationData.elementId");
+//                clipBeginOffset = 0.0;
+//                return;
+//            }
 
             if(!element)
             {
@@ -622,8 +624,12 @@ console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
         if(_smilIterator.currentPar.element) {
 //console.error(_smilIterator.currentPar.element.id + ": " + _smilIterator.currentPar.audio.clipBegin + " / " + _smilIterator.currentPar.audio.clipEnd);
 
-            _elementHighlighter.highlightElement(_smilIterator.currentPar.element, _package.media_overlay.activeClass, _package.media_overlay.playbackActiveClass);
-            reader.insureElementVisibility(_smilIterator.currentPar.element, self);
+            if (_smilIterator.currentPar.text.srcFragmentId.length > 0)
+            {
+                _elementHighlighter.highlightElement(_smilIterator.currentPar.element, _package.media_overlay.activeClass, _package.media_overlay.playbackActiveClass);
+            
+                reader.insureElementVisibility(_smilIterator.currentPar.element, self);
+            }
             return;
         }
 

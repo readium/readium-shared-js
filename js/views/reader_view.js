@@ -127,7 +127,15 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
                     console.debug("MO CLICK: " + elem.id);
 
-                    var data = $(elem).data("mediaOverlayData");
+                    var data = undefined;
+                    var el = elem;
+                    
+                    while (!(data = $(el).data("mediaOverlayData")))
+                    {
+                        el = el.parentNode;
+                        if (!el) break;
+                    }
+
                     if (data && data.par)
                     {
                         if (!self.viewerSettings.mediaOverlaysEnableClick)
@@ -175,10 +183,11 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 //console.debug("[[MO ATTACH]] " + spineItem.idref + " /// " + spineItem.media_overlay_id + " === " + smil.id);
 
         var iter = new ReadiumSDK.Models.SmilIterator(smil);
+
         while(iter.currentPar) {
             iter.currentPar.element = undefined;
 
-            if(iter.currentPar.text.srcFragmentId) {
+            if(true) { //iter.currentPar.text.srcFragmentId (includes empty frag ID)
 
                 var textRelativeRef = ReadiumSDK.Helpers.ResolveContentRef(iter.currentPar.text.srcFile, iter.smil.href);
                 //var spineItemCheck = self.spine.getItemByHref(textRelativeRef);
@@ -186,7 +195,8 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
                 var same = textRelativeRef === spineItem.href;
                 if (same)
                 {
-                    var element = self.currentView.getElement(spineItem, "#" + iter.currentPar.text.srcFragmentId);
+                    var element = self.currentView.getElement(spineItem, iter.currentPar.text.srcFragmentId.length == 0 ? "body" : "#" + iter.currentPar.text.srcFragmentId);
+
                     if(element) {
                         if (iter.currentPar.element && iter.currentPar.element !== element)
                         {
