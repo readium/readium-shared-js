@@ -53,6 +53,13 @@ ReadiumSDK.Helpers.Rect.fromElement = function($element) {
 
     var e = $element[0];
 
+    // TODODM this is somewhat hacky. Text (range?) elements don't have a position so we have to ask the parent.
+    if (e.nodeType === 3)
+    {
+        e = $element.parent()[0];
+    }
+
+
     var offsetLeft = e.offsetLeft;
     var offsetTop = e.offsetTop;
     var offsetWidth = e.offsetWidth;
