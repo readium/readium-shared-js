@@ -99,7 +99,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
         var self = this;
 
-        if(!spineItem.media_overlay_id) {
+        if(!spineItem.media_overlay_id && self.package.media_overlay.smil_models.length === 0) {
             return;
         }
 

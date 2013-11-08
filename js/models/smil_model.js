@@ -298,14 +298,14 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
 
             if (!node.audio)
             {
-                // TTS synthetic speech engine
-                var ttsAudio = new ReadiumSDK.Models.Smil.AudioNode();
-                ttsAudio.parent = node;
-                ttsAudio.clipBegin = 0;
-                ttsAudio.clipEnd = ttsAudio.MAX;
-                ttsAudio.src = undefined;
+                // synthetic speech (playback using TTS engine), or embedded media, or blank page
+                var fakeAudio = new ReadiumSDK.Models.Smil.AudioNode();
+                fakeAudio.parent = node;
+                fakeAudio.clipBegin = 0;
+                fakeAudio.clipEnd = fakeAudio.MAX;
+                fakeAudio.src = undefined;
 
-                node.audio = ttsAudio;
+                node.audio = fakeAudio;
             }
         }
         else if (nodeDTO.nodeType == "text") {
