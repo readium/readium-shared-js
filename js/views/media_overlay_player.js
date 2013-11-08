@@ -1020,15 +1020,36 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
             return;
         }
 
-        var elementDataToStart;
+        var elementDataToStart = undefined;
 
-        //we start form firs element where upper age of the element is visible
-        //or if only one element we will start from it
-        if(visibleMediaElements.length == 1 || visibleMediaElements[0].percentVisible == 100) {
-            elementDataToStart = visibleMediaElements[0];
+        if (textId)
+        {
+            for (var j = 0; j < visibleMediaElements.length; j++)
+            {
+                var vis = visibleMediaElements[j];
+console.debug(vis.element.id);
+                if (vis.element.id === textId)
+                {
+                    elementDataToStart = vis;
+                    break;
+                }
+            }
         }
-        else { //if first element is partially visible than second element's upper age should be visible
-            elementDataToStart = visibleMediaElements[1];
+
+        if (!elementDataToStart)
+        {
+            //we start form firs element where upper age of the element is visible
+            //or if only one element we will start from it
+            if(visibleMediaElements.length == 1 || visibleMediaElements[0].percentVisible == 100 || _package.isFixedLayout())
+            {
+                elementDataToStart = visibleMediaElements[0];
+    //console.debug("visibleMediaElements[0]");
+            }
+            else
+            { //if first element is partially visible than second element's upper age should be visible
+                elementDataToStart = visibleMediaElements[1];
+    //console.debug("visibleMediaElements[1]");
+            }
         }
 
         var moData = $(elementDataToStart.element).data("mediaOverlayData");
@@ -1037,6 +1058,8 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
             console.error("toggleMediaOverlay !moData");
             return;
         }
+
+//console.debug("moData SMIL: " + moData.par.getSmil().href + " // " + + moData.par.getSmil().id);
 
         var playingPar = undefined;
         var wasPlaying = self.isPlaying();
