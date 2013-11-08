@@ -275,10 +275,32 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
     }
 
 
-
-
-
     var _iOS = ( navigator.userAgent.match(/(iPad|iPhone|iPod)/g) ? true : false );
+
+    var _touchInited = false;
+    this.touchInit = function()
+    {
+        if (!_iOS)
+        {
+            return;
+        }
+
+        if (_touchInited)
+        {
+            return;
+        }
+
+        _touchInited = true;
+
+        _audioElement.setAttribute("src", "FAKE.MP3");
+        _audioElement.load();
+
+        setTimeout(function()
+        {
+            this.reset();
+        }, 100);
+    }
+
 
     var _playId = 0;
 

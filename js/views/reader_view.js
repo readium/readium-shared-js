@@ -126,6 +126,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
                     elem = event.target; // body descendant
 
                     console.debug("MO CLICK: " + elem.id);
+                    self.mediaOverlayPlayer.touchInit();
 
                     var data = undefined;
                     var el = elem;

@@ -537,8 +537,13 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 //            nextSmil(goNext);
 //        }
 
-console.log("NEXT SMIL ON AUDIO POS");
+//console.log("NEXT SMIL ON AUDIO POS");
         nextSmil(goNext);
+    }
+
+    this.touchInit = function()
+    {
+        _audioPlayer.touchInit();
     }
 
     var _timerTick = undefined;
