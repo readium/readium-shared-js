@@ -125,14 +125,29 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
                     var elem = $(this)[0]; // body
                     elem = event.target; // body descendant
 
+                    if (!elem)
+                    {
+                        return;
+                    }
+
                     console.debug("MO CLICK: " + elem.id);
                     self.mediaOverlayPlayer.touchInit();
 
                     var data = undefined;
                     var el = elem;
-                    
+
+                    var inLink = false;
+                    if (el.nodeName === "a")
+                    {
+                        inLink = true;
+                    }
+
                     while (!(data = $(el).data("mediaOverlayData")))
                     {
+                        if (el.nodeName === "a")
+                        {
+                            inLink = true;
+                        }
                         el = el.parentNode;
                         if (!el) break;
                     }
@@ -145,7 +160,20 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
                             return true;
                         }
 
+                        if (inLink)
+                        {
+                            console.debug("MO CLICKED LINK");
+                            return true;
+                        }
+
                         var par = data.par;
+
+                        if (el && el != elem && el.nodeName === "body" && par && !par.getSmil().id)
+                        {
+                            console.debug("MO CLICKED BLANK BODY");
+                            return true;
+                        }
+
                         self.mediaOverlayPlayer.playUserPar(par);
                     }
                     else
