@@ -253,9 +253,8 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
      *
      */
     openBook: function(openBookData) {
-
-		var pack = openBookData.package ? openBookData.package : openBookData;
-		
+        var pack = openBookData.package ? openBookData.package : openBookData;
+    
         this.package = new ReadiumSDK.Models.Package({packageData: pack});
 
         this.spine = this.package.spine;
@@ -748,6 +747,10 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
     getDom: function() {
         return this.currentView.getDom();
+    },
+
+    getAnnotaitonsManagerForCurrentSpineItem: function () {
+        return this.currentView.annotations;
     }
 
 });
