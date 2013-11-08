@@ -34,6 +34,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
     $contentFrame: undefined,
     userStyles: undefined,
     navigationLogic: undefined,
+    annotations: undefined,
 
     lastViewPortSize : {
         width: undefined,
@@ -56,6 +57,12 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         this.$viewport = this.options.$viewport;
         this.spine = this.options.spine;
         this.userStyles = this.options.userStyles;
+        this.on(ReadiumSDK.Events.CONTENT_LOADED, this.initializeAnnotations);
+    },
+
+
+    initializeAnnotations: function() {
+        this.annotations = new EpubAnnotationsModule(this.getDom().get(0).contentWindow.document);
     },
 
     render: function(){
@@ -106,6 +113,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
 
         if(this.updateViewportSize()) {
             this.updatePagination();
+            this.annotations.redraw();
         }
 
     },
