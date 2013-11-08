@@ -44,6 +44,7 @@ ReadiumSDK = {
     Events: {
                 READER_INITIALIZED: "ReaderInitialized",
                 PAGE_LOADED: "PageLoaded",
+                // PAGINATION_CHANGED gets triggered on every page turnover. it includes spine information and such.
                 PAGINATION_CHANGED: "PaginationChanged",
                 SETTINGS_APPLIED: "SettingsApplied",
                 CONTENT_LOADED: "ContentLoaded",
