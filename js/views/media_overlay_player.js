@@ -823,7 +823,14 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         }
         else
         {
-            _audioPlayer.play();
+            if (!_audioPlayer.play())
+            {
+                console.log("Audio player was dead, reactivating...");
+
+                self.reset();
+                self.toggleMediaOverlay();
+                return;
+            }
         }
 
         highlightCurrentElement();

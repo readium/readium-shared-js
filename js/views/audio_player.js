@@ -76,7 +76,7 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
 
         if(!_currentEpubSrc)
         {
-            return;
+            return false;
         }
 
         startTimer();
@@ -85,6 +85,8 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
         self.setRate(_rate);
 
         _audioElement.play();
+
+        return true;
     };
 
     this.pause = function()
@@ -178,6 +180,8 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
         }
 
         this.pause();
+
+        _audioElement.moSeeking = undefined;
 
         _currentSmilSrc = undefined;
         _currentEpubSrc = undefined;
