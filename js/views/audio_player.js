@@ -295,10 +295,10 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
         _audioElement.setAttribute("src", "FAKE.MP3");
         _audioElement.load();
 
-        setTimeout(function()
-        {
-            this.reset();
-        }, 100);
+//        setTimeout(function()
+//        {
+//            self.reset();
+//        }, 100);
     }
 
 
