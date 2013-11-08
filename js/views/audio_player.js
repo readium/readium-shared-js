@@ -153,7 +153,14 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
                     }
                     return;
                 }
+
                 var currentTime = _audioElement.currentTime;
+
+//                if (DEBUG)
+//                {
+//                    console.debug("currentTime: " + currentTime);
+//                }
+
                 onPositionChanged(currentTime);
             }, 20);
     }
@@ -343,6 +350,7 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
         }
 
         this.reset();
+        _audioElement.moSeeking = {};
 
         _currentSmilSrc = smilSrc;
         _currentEpubSrc = epubSrc;
@@ -354,19 +362,19 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
         $(_audioElement).on(_readyEvent, {seekBegin: seekBegin, playId: playId}, onReadyToSeek);
         
         setTimeout(function()
-            {
-                   _audioElement.setAttribute("src", _currentEpubSrc);
-                   // _audioElement.src = _currentEpubSrc;
-                   // $(_audioElement).attr("src", _currentEpubSrc);
-                   _audioElement.load();
-                   
-                   //_audioElement.volume = 0;
-                   //_audioElement.play();
-                   var vol = _volume;
-                   _volume = 0;
-                   self.play();
-                   _volume = vol;
-            }, 1);
+        {
+               _audioElement.setAttribute("src", _currentEpubSrc);
+               // _audioElement.src = _currentEpubSrc;
+               // $(_audioElement).attr("src", _currentEpubSrc);
+               _audioElement.load();
+
+               //_audioElement.volume = 0;
+               //_audioElement.play();
+               var vol = _volume;
+               _volume = 0;
+               self.play();
+               _volume = vol;
+        }, 1);
     };
 
 
@@ -532,8 +540,9 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
 
             event.data.seekRetries = undefined;
 
-            _audioElement.moSeeking = undefined;
             self.play();
+
+            _audioElement.moSeeking = undefined;
         }
     }
 };

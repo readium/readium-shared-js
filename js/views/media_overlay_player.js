@@ -153,10 +153,11 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             console.error("!! _smilIterator.currentPar.element ??");
         }
 
-//console.debug("+++> paginationData.elementId: " + paginationData.elementId + " /// " + _smilIterator.currentPar.text.srcFragmentId); //PageOpenRequest.elementId
+//console.debug("+++> paginationData.elementId: " + paginationData.elementId + " /// " + _smilIterator.currentPar.text.srcFile + " # " + _smilIterator.currentPar.text.srcFragmentId); //PageOpenRequest.elementId
 
 
-        if(paginationData.initiator == self) {
+        if(paginationData.initiator == self)
+        {
             var notSameTargetID = paginationData.elementId && paginationData.elementId !== _smilIterator.currentPar.text.srcFragmentId;
 
             if(notSameTargetID) {
@@ -168,10 +169,12 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                 return;
             }
 
-            if(wasPlaying) {
+            if(wasPlaying)
+            {
                 highlightCurrentElement();
             }
-            else {
+            else
+            {
                 playCurrentPar();
             }
         }
@@ -225,12 +228,9 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
     function initBlankPagePlayer()
     {
-        if (_blankPagePlayer)
-        {
-            var timer = _blankPagePlayer;
-            _blankPagePlayer = undefined;
-            clearInterval(timer);
-        }
+        self.resetBlankPage();
+
+        onStatusChanged({isPlaying: true});
 
         _blankPagePlayer = setInterval(function() {
 
@@ -238,9 +238,8 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             {
                 return;
             }
-            var timer = _blankPagePlayer;
-            _blankPagePlayer = undefined;
-            clearInterval(timer);
+
+            self.resetBlankPage();
 
             if (!_smilIterator || !_smilIterator.currentPar)
             {
@@ -249,9 +248,9 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             }
 
             audioCurrentTime = 0.0;
-
-            nextSmil(true);
-            //onAudioPositionChanged(_smilIterator.currentPar.audio.clipEnd + 0.1);
+//console.log("BLANK END.");
+            //nextSmil(true);
+            onAudioPositionChanged(_smilIterator.currentPar.audio.clipEnd + 0.1);
 
         }, 2000);
     }
@@ -271,8 +270,6 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             self.resetEmbedded();
 
             initBlankPagePlayer();
-
-            onStatusChanged({isPlaying: true});
             return;
         }
         else if (!_smilIterator.currentPar.audio.src)
@@ -296,6 +293,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                 if (name === "audio" || name === "video")
                 {
                     self.resetTTS();
+                    self.resetBlankPage();
 
                     if (_currentEmbedded)
                     {
@@ -327,6 +325,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                 else
                 {
                     self.resetEmbedded();
+                    self.resetBlankPage();
 
                     _currentTTS = element.textContent; //.innerText (CSS display sensitive + script + style tags)
                     if (!_currentTTS || _currentTTS == "")
@@ -347,6 +346,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         {
             self.resetTTS();
             self.resetEmbedded();
+            self.resetBlankPage();
 
             var dur = _smilIterator.currentPar.audio.clipEnd - _smilIterator.currentPar.audio.clipBegin;
             if (dur <= 0 || clipBeginOffset > dur)
@@ -375,12 +375,6 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
     function nextSmil(goNext)
     {
-        //new smile we assume new spine too
-        //it may take time to render new spine we will stop audio
-
-        //we don't have to stop audio here but then we should stop listen to audioPositionChanged event until we
-        //finished rendering spine and got page changed message. And stop audio if next smile not found
-
         pause();
 
 //console.debug("current Smil: " + _smilIterator.smil.href + " /// " + _smilIterator.smil.id);
@@ -400,13 +394,14 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                     }
                 }
 
-//console.debug("openContentUrl (nextSmil): " + _smilIterator.currentPar.text.src);
+//console.debug("openContentUrl (nextSmil): " + _smilIterator.currentPar.text.src + " -- " + _smilIterator.smil.href);
 
                 reader.openContentUrl(_smilIterator.currentPar.text.src, _smilIterator.smil.href, self);
             }
         }
         else
         {
+            console.log("No more SMIL");
             self.reset();
         }
     }
@@ -542,6 +537,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 //            nextSmil(goNext);
 //        }
 
+console.log("NEXT SMIL ON AUDIO POS");
         nextSmil(goNext);
     }
 
@@ -807,7 +803,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         if (_smilIterator && _smilIterator.smil && !_smilIterator.smil.id)
         {
             initBlankPagePlayer();
-            onStatusChanged({isPlaying: true});
+            return;
         }
         else if (_currentEmbedded)
         {
@@ -840,11 +836,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
     {
         if (_blankPagePlayer)
         {
-            var timer = _blankPagePlayer;
-            _blankPagePlayer = undefined;
-            clearInterval(timer);
-
-            onStatusChanged({isPlaying: false});
+            self.resetBlankPage();
         }
         else if (_embeddedIsPlaying)
         {
