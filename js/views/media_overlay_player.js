@@ -34,7 +34,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         return _audioPlayer.isPlaying() || _ttsIsPlaying || _embeddedIsPlaying || _blankPagePlayer;
     }
 
-    var _currentPagination = undefined;
+    //var _currentPagination = undefined;
     var _package = reader.package;
     var _settings = reader.viewerSettings;
     var self = this;
@@ -66,10 +66,10 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             return;
         }
 
-        if (paginationData.paginationInfo)
-        {
-            _currentPagination = paginationData.paginationInfo;
-        }
+//        if (paginationData.paginationInfo)
+//        {
+//            _currentPagination = paginationData.paginationInfo;
+//        }
 
         /*
         if (lastElement)
@@ -89,6 +89,10 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             for(var i = rtl ? spineItems.length : 0; rtl && i >=0 || !rtl && i < spineItems.length; i += (rtl ? -1: 1))
             {
                 var spineItem = spineItems[i];
+                if (paginationData.spineItem && paginationData.spineItem != spineItem)
+                {
+                    continue;
+                }
 
                 element = reader.currentView.getElement(spineItem, paginationData.initiator == self && !paginationData.elementId ? "body" : "#" + paginationData.elementId);
                 if (element)
@@ -120,7 +124,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                 {
                     if (wasPlaying)
                     {
-                        self.toggleMediaOverlayRefresh(paginationData.elementId);
+                        self.toggleMediaOverlayRefresh(paginationData);
                     }
                 }
                 return;
@@ -201,7 +205,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                 return;
             }
 
-            self.toggleMediaOverlayRefresh(paginationData.elementId);
+            self.toggleMediaOverlayRefresh(paginationData);
         }
     };
 
@@ -989,77 +993,21 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         this.toggleMediaOverlayRefresh(undefined);
     };
 
-    this.toggleMediaOverlayRefresh = function(textId) {
-
-//        var spineItems = reader.currentView.getLoadedSpineItems();
-//
-//        var rtl = reader.spine.isRightToLeft();
-//
-//        for(var i = rtl ? spineItems.length : 0; rtl && i >=0 || !rtl && i < spineItems.length; i += (rtl ? -1: 1))
-//        {
-//            var spineItem = spineItems[i];
-//
-//            element = reader.currentView.getElement(spineItem, paginationData.initiator == self && !paginationData.elementId ? "body" : "#" + paginationData.elementId);
-//            if (element)
-//            {
-//                /*
-//                 console.error("GREEN: " + paginationData.elementId);
-//                 lastElement = element;
-//                 lastElementColor = $(element).css("background-color");
-//                 $(element).css("background-color", "green");
-//                 */
-//                break;
-//            }
-//        }
-
-        var visibleMediaElements = reader.getVisibleMediaOverlayElements();
-
-        if(visibleMediaElements.length == 0) {
-            console.error("toggleMediaOverlay visibleMediaElements.length == 0");
-            self.reset();
-            return;
-        }
-
-        var elementDataToStart = undefined;
-
-        if (textId)
-        {
-            for (var j = 0; j < visibleMediaElements.length; j++)
-            {
-                var vis = visibleMediaElements[j];
-console.debug(vis.element.id);
-                if (vis.element.id === textId)
-                {
-                    elementDataToStart = vis;
-                    break;
-                }
-            }
-        }
-
-        if (!elementDataToStart)
-        {
-            //we start form firs element where upper age of the element is visible
-            //or if only one element we will start from it
-            if(visibleMediaElements.length == 1 || visibleMediaElements[0].percentVisible == 100 || _package.isFixedLayout())
-            {
-                elementDataToStart = visibleMediaElements[0];
-    //console.debug("visibleMediaElements[0]");
-            }
-            else
-            { //if first element is partially visible than second element's upper age should be visible
-                elementDataToStart = visibleMediaElements[1];
-    //console.debug("visibleMediaElements[1]");
-            }
-        }
-
-        var moData = $(elementDataToStart.element).data("mediaOverlayData");
-
-        if(!moData) {
-            console.error("toggleMediaOverlay !moData");
-            return;
-        }
+    this.toggleMediaOverlayRefresh = function(paginationData)
+    {
 
 //console.debug("moData SMIL: " + moData.par.getSmil().href + " // " + + moData.par.getSmil().id);
+
+
+        var spineItems = reader.currentView.getLoadedSpineItems();
+
+        //paginationData.pageProgressionDirection === "rtl"
+        var rtl = reader.spine.isRightToLeft();
+
+        //paginationData.spineItemCount
+
+        //paginationData.openPages
+        //{spineItemPageIndex: , spineItemPageCount: , idref: , spineItemIndex: }
 
         var playingPar = undefined;
         var wasPlaying = self.isPlaying();
@@ -1069,41 +1017,149 @@ console.debug(vis.element.id);
             playingPar = _smilIterator.currentPar;
         }
 
-        if (textId && textId !== elementDataToStart.element.id)
+        //paginationData && paginationData.elementId
+        //paginationData.initiator != self
+
+        //_package.isFixedLayout()
+
+        var element = undefined;
+
+        var id = paginationData && paginationData.elementId ? paginationData.elementId : undefined;
+
+        for(var i = rtl ? spineItems.length : 0; rtl && i >=0 || !rtl && i < spineItems.length; i += (rtl ? -1: 1))
         {
-            var parSmil = moData.par.getSmil();
-            if(!_smilIterator || _smilIterator.smil != parSmil)
+            var spineItem = spineItems[i];
+            if (paginationData && paginationData.spineItem && paginationData.spineItem != spineItem)
             {
-                _smilIterator = new ReadiumSDK.Models.SmilIterator(parSmil);
-            }
-            else
-            {
-                _smilIterator.reset();
+                continue;
             }
 
-            _smilIterator.findTextId(textId);
-
-            if (_smilIterator.currentPar)
+            if (id)
             {
-                if (wasPlaying && playingPar && playingPar === _smilIterator.currentPar)
-                {
-                    play();
-                }
-                else
-                {
-                    playCurrentPar();
-                }
-                return;
+                element = reader.currentView.getElement(spineItem, "#" + id);
+            }
+            else if (spineItem.isFixedLayout())
+            {
+                element = reader.currentView.getElement(spineItem, "body");
+            }
+
+            if (element)
+            {
+                break;
             }
         }
 
-        if (wasPlaying && playingPar && playingPar === moData.par)
+        if (!element)
+        {
+            var visibleMediaOverlayElements = reader.getVisibleMediaOverlayElements();
+
+            if (visibleMediaOverlayElements.length == 0)
+            {
+                console.error("reader.getVisibleMediaOverlayElements().length == 0");
+            }
+            else
+            {
+                if(visibleMediaOverlayElements.length == 1 || visibleMediaOverlayElements[0].percentVisible == 100)
+                {
+                    element = visibleMediaOverlayElements[0].element;
+                }
+                else
+                {
+                    element = visibleMediaOverlayElements[1].element;
+                }
+            }
+        }
+
+        if (!element)
+        {
+            self.reset();
+            return;
+        }
+
+        var moData = $(element).data("mediaOverlayData");
+
+        if (!moData)
+        {
+            var depthFirstTraversal = function(elements)
+            {
+                if (!elements)
+                {
+                    return false;
+                }
+
+                for (var i = 0; i < elements.length; i++)
+                {
+                    var d = $(elements[i]).data("mediaOverlayData");
+                    if (d)
+                    {
+                        moData = d;
+                        return true;
+                    }
+
+                    var found = depthFirstTraversal(elements[i].children);
+                    if (found)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            var root = element;
+            while (root && root.nodeName.toLowerCase() !== "body")
+            {
+                root = root.parentNode;
+            }
+
+            if (!root)
+            {
+                self.reset();
+                return;
+            }
+
+            depthFirstTraversal([root]);
+        }
+
+        if (!moData)
+        {
+            self.reset();
+            return;
+        }
+
+        var parSmil = moData.par.getSmil();
+        if(!_smilIterator || _smilIterator.smil != parSmil)
+        {
+            _smilIterator = new ReadiumSDK.Models.SmilIterator(parSmil);
+        }
+        else
+        {
+            _smilIterator.reset();
+        }
+
+        if (id)
+        {
+            _smilIterator.findTextId(id);
+        }
+        else
+        {
+            _smilIterator.goToPar(moData.par);
+        }
+
+        if (!_smilIterator.currentPar)
+        {
+            self.reset();
+            return;
+        }
+
+        if (wasPlaying && playingPar && playingPar === _smilIterator.currentPar)
         {
             play();
         }
         else
         {
-            playPar(moData.par);
+            playCurrentPar();
+            //playPar(moData.par);
         }
     };
 };

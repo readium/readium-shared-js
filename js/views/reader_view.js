@@ -137,14 +137,14 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
                     var el = elem;
 
                     var inLink = false;
-                    if (el.nodeName === "a")
+                    if (el.nodeName.toLowerCase() === "a")
                     {
                         inLink = true;
                     }
 
                     while (!(data = $(el).data("mediaOverlayData")))
                     {
-                        if (el.nodeName === "a")
+                        if (el.nodeName.toLowerCase() === "a")
                         {
                             inLink = true;
                         }
@@ -168,7 +168,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
                         var par = data.par;
 
-                        if (el && el != elem && el.nodeName === "body" && par && !par.getSmil().id)
+                        if (el && el != elem && el.nodeName.toLowerCase() === "body" && par && !par.getSmil().id)
                         {
                             console.debug("MO CLICKED BLANK BODY");
                             return true;
