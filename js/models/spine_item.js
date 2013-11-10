@@ -32,20 +32,31 @@ ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
     this.page_spread = itemData.page_spread;
     this.rendition_layout = itemData.rendition_layout;
     this.media_overlay_id = itemData.media_overlay_id;
+    this.media_type = itemData.media_type;
 
     this.index = index;
     this.spine = spine;
 
     this.isLeftPage = function() {
+        if (!this.page_spread)
+        {
+            var odd = ((this.index+1) % 2) == 1;
+            return this.spine.isRightToLeft() ? odd : !odd;
+        }
         return this.page_spread === "page-spread-left";
     };
 
     this.isRightPage = function() {
+        if (!this.page_spread)
+        {
+            var odd = ((this.index+1) % 2) == 1;
+            return this.spine.isRightToLeft() ? !odd : odd;
+        }
         return this.page_spread === "page-spread-right";
     };
 
     this.isCenterPage = function() {
-        return !this.isLeftPage() && !this.isRightPage();
+        return this.page_spread === "page-spread-center";
     };
 
     this.isReflowable = function() {

@@ -81,7 +81,7 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
 //            this.fitToScreen();
         }
 
-        this.trigger("PageLoaded");
+        this.trigger(ReadiumSDK.Events.PAGE_LOADED);
     },
 
 //    fitToScreen: function() {
@@ -150,6 +150,7 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
         css["height"] = this.meta_size.height;
 
         this.$epubHtml.css(css);
+        this.$iframe.css("visibility", "visible");
     },
 
     generateTransformCSS: function(scale, left, top) {
@@ -202,9 +203,15 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
         if(this.currentSpineItem != spineItem) {
 
             this.currentSpineItem = spineItem;
-            var src = this.spine.getItemUrl(spineItem);
+            var src = this.spine.package.resolveRelativeUrl(spineItem.href);
 
+            //hide iframe until content is scaled
+            this.$iframe.css("visibility", "hidden");
             ReadiumSDK.Helpers.LoadIframe(this.$iframe[0], src, this.onIFrameLoad, this);
+        }
+        else
+        {
+            this.trigger(ReadiumSDK.Events.PAGE_LOADED);
         }
     },
 
@@ -245,6 +252,26 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
         var navigation = new ReadiumSDK.Views.CfiNavigationLogic(this.$el, this.$iframe);
         return navigation.getFirstVisibleElementCfi(0);
 
+    },
+
+    getElement: function(spineItem, selector) {
+
+        if(spineItem != this.currentSpineItem) {
+            console.error("spine item is not loaded");
+            return undefined;
+        }
+
+        var navigation = this.navigationLogic;
+        if (!navigation)
+        {
+            navigation = new ReadiumSDK.Views.CfiNavigationLogic(this.$el, this.$iframe);
+        }
+        return navigation.getElement(selector);
+    },
+
+    getVisibleMediaOverlayElements: function() {
+        var navigation = new ReadiumSDK.Views.CfiNavigationLogic(this.$el, this.$iframe);
+        return navigation.getVisibleMediaOverlayElements({top:0, bottom: this.$iframe.height()});
     }
 
 });

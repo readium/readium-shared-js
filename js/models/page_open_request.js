@@ -27,7 +27,7 @@
  *
  * @constructor
  */
-ReadiumSDK.Models.PageOpenRequest = function(spineItem) {
+ReadiumSDK.Models.PageOpenRequest = function(spineItem, initiator) {
 
     this.spineItem = spineItem;
     this.spineItemPageIndex = undefined;
@@ -35,6 +35,7 @@ ReadiumSDK.Models.PageOpenRequest = function(spineItem) {
     this.elementCfi = undefined;
     this.firstPage = false;
     this.lastPage = false;
+    this.initiator = initiator;
 
     this.reset = function() {
         this.spineItemPageIndex = undefined;

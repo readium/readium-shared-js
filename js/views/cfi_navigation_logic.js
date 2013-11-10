@@ -31,7 +31,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
 
     this.getRootElement = function(){
 
-        return this.$iframe[0].contentDocument.documentElement
+        return this.$iframe[0].contentDocument.documentElement;
 
     };
 
@@ -43,7 +43,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
         var percentOfElementHeight = 0;
 
         $elements = $("body", this.getRootElement()).find(":not(iframe)").contents().filter(function () {
-            return this.nodeType === Node.TEXT_NODE || this.nodeName.toLowerCase() === 'img';
+            return isValidTextNode(this) || this.nodeName.toLowerCase() === 'img';
         });
 
         // Find the first visible text node
@@ -52,16 +52,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
             var $element;
 
             if(this.nodeType === Node.TEXT_NODE)  { //text node
-                // Heuristic to find a text node with actual text
-                var nodeText = this.nodeValue.replace(/\n/g, "");
-                nodeText = nodeText.replace(/ /g, "");
-
-                if(nodeText.length > 0) {
-                    $element = $(this).parent();
-                }
-                else {
-                    return true; //next element
-                }
+                $element = $(this).parent();
             }
             else {
                 $element = $(this); //image
@@ -99,6 +90,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
             return undefined;
         }
 
+        //noinspection JSUnresolvedVariable
         var cfi = EPUBcfi.Generator.generateElementCFIComponent(foundElement.$element[0]);
 
         if(cfi[0] == "!") {
@@ -111,9 +103,10 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
     this.getPageForElementCfi = function(cfi) {
 
         var contentDoc = this.$iframe[0].contentDocument;
-        var cfiParts = this.splitCfi(cfi);
+        var cfiParts = splitCfi(cfi);
 
         var wrappedCfi = "epubcfi(" + cfiParts.cfi + ")";
+        //noinspection JSUnresolvedVariable
         var $element = EPUBcfi.Interpreter.getTargetElementWithPartialCFI(wrappedCfi, contentDoc);
 
         if(!$element || $element.length == 0) {
@@ -121,17 +114,20 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
             return undefined;
         }
 
-        return this.getPageForElement($element, cfiParts.x, cfiParts.y);
+        return this.getPageForPointOnElement($element, cfiParts.x, cfiParts.y);
     };
 
-    this.getPageForElement = function($element, x, y) {
+    this.getPageForElement = function($element) {
+
+        return this.getPageForPointOnElement($element, 0, 0);
+    };
+
+    this.getPageForPointOnElement = function($element, x, y) {
 
         var elementRect = ReadiumSDK.Helpers.Rect.fromElement($element);
         var posInElement = Math.ceil(elementRect.top + y * elementRect.height / 100);
 
-        var column = Math.floor(posInElement / this.$viewport.height());
-
-        return column;
+        return Math.floor(posInElement / this.$viewport.height());
     };
 
     this.getPageForElementId = function(id) {
@@ -143,10 +139,10 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
             return -1;
         }
 
-        return this.getPageForElement($element, 0, 0);
+        return this.getPageForElement($element);
     };
 
-    this.splitCfi = function(cfi) {
+    function splitCfi(cfi) {
 
         var ret = {
             cfi: "",
@@ -176,6 +172,130 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
         }
 
         return ret;
+    }
+
+    this.getVisibleMediaOverlayElements = function(visibleContentOffsets) {
+
+        var $elements = this.getMediaOverlayElements($("body", this.getRootElement()));
+        return this.getVisibleElements($elements, visibleContentOffsets);
+
     };
+
+    this.isElementVisible = function($element, visibleContentOffsets) {
+
+        var elementRect = ReadiumSDK.Helpers.Rect.fromElement($element);
+
+        return !(elementRect.bottom() <= visibleContentOffsets.top || elementRect.top >= visibleContentOffsets.bottom);
+    };
+
+    this.getVisibleElements = function($elements, visibleContentOffsets) {
+
+        var visibleElements = [];
+
+        // Find the first visible text node
+        $.each($elements, function() {
+
+            var elementRect = ReadiumSDK.Helpers.Rect.fromElement(this);
+
+            if(elementRect.bottom() <= visibleContentOffsets.top) {
+                return true; //next element
+            }
+
+            if(elementRect.top >= visibleContentOffsets.bottom) {
+
+                // Break the loop
+                return false;
+            }
+
+            var visibleTop = Math.max(elementRect.top, visibleContentOffsets.top);
+            var visibleBottom = Math.min(elementRect.bottom(), visibleContentOffsets.bottom);
+
+            var visibleHeight = visibleBottom - visibleTop;
+            var percentVisible = Math.round((visibleHeight / elementRect.height) * 100);
+
+            visibleElements.push({element: this[0], percentVisible: percentVisible});
+
+            return true;
+
+        });
+
+        return visibleElements;
+    };
+
+    this.getVisibleTextElements = function(visibleContentOffsets) {
+
+        var $elements = this.getTextElements($("body", this.getRootElement()));
+
+        return this.getVisibleElements($elements, visibleContentOffsets);
+    };
+
+    this.getMediaOverlayElements = function($root) {
+
+        var $elements = [];
+
+        function traverseCollection(elements) {
+
+            if (elements == undefined) return;
+            
+            for(var i = 0, count = elements.length; i < count; i++) {
+
+                var $element = $(elements[i]);
+
+                if( $element.data("mediaOverlayData") ) {
+                    $elements.push($element);
+                }
+                else {
+                    traverseCollection($element[0].children);
+                }
+
+            }
+        }
+
+        traverseCollection([$root[0]]);
+
+        return $elements;
+    };
+
+    this.getTextElements = function($root) {
+
+        var $textElements = [];
+
+        $root.find(":not(iframe)").contents().each(function () {
+
+            if( isValidTextNode(this) ) {
+                $textElements.push($(this).parent());
+            }
+
+        });
+
+        return $textElements;
+
+    };
+
+    function isValidTextNode(node) {
+
+        if(node.nodeType === Node.TEXT_NODE) {
+
+            // Heuristic to find a text node with actual text
+            var nodeText = node.nodeValue.replace(/\n/g, "");
+            nodeText = nodeText.replace(/ /g, "");
+
+             return nodeText.length > 0;
+        }
+
+        return false;
+
+    }
+
+    this.getElement = function(selector) {
+
+        var $element = $(selector, this.getRootElement());
+
+        if($element.length > 0) {
+            return $element[0];
+        }
+
+        return 0;
+    }
 
 };
