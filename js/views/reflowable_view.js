@@ -170,7 +170,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         this.$epubHtml = $("html", epubContentDocument);
 
         this.$epubHtml.css("height", "100%");
-        this.$epubHtml.css("position", "absolute");
+        this.$epubHtml.css("position", "fixed");
         this.$epubHtml.css("-webkit-column-axis", "horizontal");
 
         this.updateHtmlFontSizeAndColumnGap();
