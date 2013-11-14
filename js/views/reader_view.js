@@ -51,7 +51,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
         if(isReflowable) {
 
-            this.currentView = new ReadiumSDK.Views.ReflowableView({$viewport: this.$el, spine:this.spine, userStyles: this.userStyles});
+            this.currentView = new ReadiumSDK.Views.ReflowableView({$viewport: this.$el, spine:this.spine, userStyles: this.userStyles, reader: this});
         }
         else {
 

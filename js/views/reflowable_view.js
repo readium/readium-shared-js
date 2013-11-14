@@ -58,11 +58,13 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         this.spine = this.options.spine;
         this.userStyles = this.options.userStyles;
         this.on(ReadiumSDK.Events.CONTENT_LOADED, this.initializeAnnotations);
+        this.reader = this.options.reader
     },
 
 
     initializeAnnotations: function() {
-        this.annotations = new EpubAnnotationsModule(this.getDom().get(0).contentWindow.document);
+        var epubDocument = this.getDom().get(0).contentWindow.document;
+        this.annotations = new EpubAnnotationsModule(epubDocument, this.reader);
     },
 
     render: function(){
