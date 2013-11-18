@@ -156,13 +156,23 @@ ReadiumSDK.Models.Spread = function(spine) {
         if(item.isLeftPage()) {
 
             neighbourItem = this.spine.isRightToLeft() ? this.spine.prevItem(item) : this.spine.nextItem(item);
+
+            if (neighbourItem && neighbourItem.isLeftPage())
+            {
+                neighbourItem = undefined;
+            }
         }
         else if(item.isRightPage()) {
 
             neighbourItem = this.spine.isRightToLeft() ? this.spine.nextItem(item) : this.spine.prevItem(item);
+
+            if (neighbourItem && neighbourItem.isRightPage())
+            {
+                neighbourItem = undefined;
+            }
         }
 
-        if(neighbourItem && (neighbourItem.isCenterPage() || neighbourItem.page_spread === item.page_spread) ) {
+        if(neighbourItem && neighbourItem.isCenterPage()) {
 
             neighbourItem = undefined;
         }

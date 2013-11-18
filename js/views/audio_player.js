@@ -76,7 +76,7 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
 
         if(!_currentEpubSrc)
         {
-            return;
+            return false;
         }
 
         startTimer();
@@ -85,6 +85,8 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
         self.setRate(_rate);
 
         _audioElement.play();
+
+        return true;
     };
 
     this.pause = function()
@@ -151,7 +153,14 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
                     }
                     return;
                 }
+
                 var currentTime = _audioElement.currentTime;
+
+//                if (DEBUG)
+//                {
+//                    console.debug("currentTime: " + currentTime);
+//                }
+
                 onPositionChanged(currentTime);
             }, 20);
     }
@@ -178,6 +187,8 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
         }
 
         this.pause();
+
+        _audioElement.moSeeking = undefined;
 
         _currentSmilSrc = undefined;
         _currentEpubSrc = undefined;
@@ -264,10 +275,32 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
     }
 
 
-
-
-
     var _iOS = ( navigator.userAgent.match(/(iPad|iPhone|iPod)/g) ? true : false );
+
+    var _touchInited = false;
+    this.touchInit = function()
+    {
+        if (!_iOS)
+        {
+            return;
+        }
+
+        if (_touchInited)
+        {
+            return;
+        }
+
+        _touchInited = true;
+
+        _audioElement.setAttribute("src", "FAKE.MP3");
+        _audioElement.load();
+
+//        setTimeout(function()
+//        {
+//            self.reset();
+//        }, 100);
+    }
+
 
     var _playId = 0;
 
@@ -339,6 +372,7 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
         }
 
         this.reset();
+        _audioElement.moSeeking = {};
 
         _currentSmilSrc = smilSrc;
         _currentEpubSrc = epubSrc;
@@ -350,19 +384,19 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
         $(_audioElement).on(_readyEvent, {seekBegin: seekBegin, playId: playId}, onReadyToSeek);
         
         setTimeout(function()
-            {
-                   _audioElement.setAttribute("src", _currentEpubSrc);
-                   // _audioElement.src = _currentEpubSrc;
-                   // $(_audioElement).attr("src", _currentEpubSrc);
-                   _audioElement.load();
-                   
-                   //_audioElement.volume = 0;
-                   //_audioElement.play();
-                   var vol = _volume;
-                   _volume = 0;
-                   self.play();
-                   _volume = vol;
-            }, 1);
+        {
+               _audioElement.setAttribute("src", _currentEpubSrc);
+               // _audioElement.src = _currentEpubSrc;
+               // $(_audioElement).attr("src", _currentEpubSrc);
+               _audioElement.load();
+
+               //_audioElement.volume = 0;
+               //_audioElement.play();
+               var vol = _volume;
+               _volume = 0;
+               self.play();
+               _volume = vol;
+        }, 1);
     };
 
 
@@ -528,8 +562,9 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
 
             event.data.seekRetries = undefined;
 
-            _audioElement.moSeeking = undefined;
             self.play();
+
+            _audioElement.moSeeking = undefined;
         }
     }
 };

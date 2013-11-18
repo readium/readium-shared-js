@@ -84,7 +84,7 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
         this.spread.setSyntheticSpread(settings.isSyntheticSpread);
     },
 
-    redraw: function(initiator, paginationRequestElementId) {
+    redraw: function(initiator, paginationRequest) {
 
         var self = this;
 
@@ -99,7 +99,14 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
                     self.applyStyles();
                 }
 
-                self.onPagesLoaded(initiator, paginationRequestElementId)
+                if (paginationRequest)
+                {
+                    self.onPagesLoaded(initiator, paginationRequest.spineItem, paginationRequest.elementId)
+                }
+                else
+                {
+                    self.onPagesLoaded(initiator);
+                }
             });
         }
     },
@@ -130,14 +137,14 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
 
     },
 
-    onPagesLoaded: function(initiator, paginationRequestElementId) {
+    onPagesLoaded: function(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
 
         this.trigger(ReadiumSDK.Events.CONTENT_LOADED);
 
         this.updateContentMetaSize();
         this.resizeBook();
 
-        this.trigger(ReadiumSDK.Events.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: this.getPaginationInfo(), initiator: initiator, elementId: paginationRequestElementId } );
+        this.trigger(ReadiumSDK.Events.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: this.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
     },
 
     onViewportResize: function() {
@@ -301,7 +308,7 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
         }
 
         this.spread.openItem(paginationRequest.spineItem);
-        this.redraw(paginationRequest.initiator, paginationRequest.elementId);
+        this.redraw(paginationRequest.initiator, paginationRequest);
     },
 
 

@@ -180,7 +180,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         this.$epubHtml = $("html", epubContentDocument);
 
         this.$epubHtml.css("height", "100%");
-        this.$epubHtml.css("position", "absolute");
+        this.$epubHtml.css("position", "fixed");
         this.$epubHtml.css("-webkit-column-axis", "horizontal");
 
         this.updateHtmlFontSizeAndColumnGap();
@@ -267,7 +267,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         if(pageIndex >= 0 && pageIndex < this.paginationInfo.columnCount) {
 
             this.paginationInfo.currentSpreadIndex = Math.floor(pageIndex / this.paginationInfo.visibleColumnCount) ;
-            this.onPaginationChanged(pageRequest.initiator, pageRequest.elementId);
+            this.onPaginationChanged(pageRequest.initiator, pageRequest.spineItem, pageRequest.elementId);
         }
     },
 
@@ -339,11 +339,11 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         })
     },
 
-    onPaginationChanged: function(initiator, pageRequestElementId) {
+    onPaginationChanged: function(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
 
         this.paginationInfo.pageOffset = (this.paginationInfo.columnWidth + this.paginationInfo.columnGap) * this.paginationInfo.visibleColumnCount * this.paginationInfo.currentSpreadIndex;
         this.redraw();
-        this.trigger(ReadiumSDK.Events.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: this.getPaginationInfo(), initiator: initiator, elementId: pageRequestElementId } );
+        this.trigger(ReadiumSDK.Events.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: this.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
     },
 
     openPagePrev:  function (initiator) {

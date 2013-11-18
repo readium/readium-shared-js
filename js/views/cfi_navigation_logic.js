@@ -251,7 +251,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
             }
         }
 
-        traverseCollection($root[0].children);
+        traverseCollection([$root[0]]);
 
         return $elements;
     };

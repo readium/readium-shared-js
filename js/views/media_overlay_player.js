@@ -31,10 +31,10 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
     this.isPlaying = function()
     {
-        return _audioPlayer.isPlaying() || _ttsIsPlaying || _embeddedIsPlaying;
+        return _audioPlayer.isPlaying() || _ttsIsPlaying || _embeddedIsPlaying || _blankPagePlayer;
     }
 
-    var _currentPagination = undefined;
+    //var _currentPagination = undefined;
     var _package = reader.package;
     var _settings = reader.viewerSettings;
     var self = this;
@@ -66,10 +66,10 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             return;
         }
 
-        if (paginationData.paginationInfo)
-        {
-            _currentPagination = paginationData.paginationInfo;
-        }
+//        if (paginationData.paginationInfo)
+//        {
+//            _currentPagination = paginationData.paginationInfo;
+//        }
 
         /*
         if (lastElement)
@@ -80,12 +80,21 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         */
 
         var element = undefined;
-        if (paginationData.elementId)
+        if (paginationData.elementId || paginationData.initiator == self)
         {
             var spineItems = reader.currentView.getLoadedSpineItems();
-            for(var i = 0, count = spineItems.length; i < count; i++)
+
+            var rtl = reader.spine.isRightToLeft();
+
+            for(var i = rtl ? spineItems.length : 0; rtl && i >=0 || !rtl && i < spineItems.length; i += (rtl ? -1: 1))
             {
-                element = reader.currentView.getElement(spineItems[i], "#" + paginationData.elementId);
+                var spineItem = spineItems[i];
+                if (paginationData.spineItem && paginationData.spineItem != spineItem)
+                {
+                    continue;
+                }
+
+                element = reader.currentView.getElement(spineItem, paginationData.initiator == self && !paginationData.elementId ? "body" : "#" + paginationData.elementId);
                 if (element)
                 {
                     /*
@@ -94,7 +103,6 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                     lastElementColor = $(element).css("background-color");
                     $(element).css("background-color", "green");
                      */
-
                     break;
                 }
             }
@@ -116,18 +124,20 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                 {
                     if (wasPlaying)
                     {
-                        self.toggleMediaOverlayRefresh(paginationData.elementId);
+                        self.toggleMediaOverlayRefresh(paginationData);
                     }
                 }
                 return;
             }
 
-            if (!paginationData.elementId)
-            {
-                console.error("!paginationData.elementId");
-                clipBeginOffset = 0.0;
-                return;
-            }
+            //paginationData.initiator === self
+//
+//            if (!paginationData.elementId)
+//            {
+//                console.error("!paginationData.elementId");
+//                clipBeginOffset = 0.0;
+//                return;
+//            }
 
             if(!element)
             {
@@ -151,10 +161,11 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             console.error("!! _smilIterator.currentPar.element ??");
         }
 
-//console.debug("+++> paginationData.elementId: " + paginationData.elementId + " /// " + _smilIterator.currentPar.text.srcFragmentId); //PageOpenRequest.elementId
+//console.debug("+++> paginationData.elementId: " + paginationData.elementId + " /// " + _smilIterator.currentPar.text.srcFile + " # " + _smilIterator.currentPar.text.srcFragmentId); //PageOpenRequest.elementId
 
 
-        if(paginationData.initiator == self) {
+        if(paginationData.initiator == self)
+        {
             var notSameTargetID = paginationData.elementId && paginationData.elementId !== _smilIterator.currentPar.text.srcFragmentId;
 
             if(notSameTargetID) {
@@ -166,10 +177,12 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                 return;
             }
 
-            if(wasPlaying) {
+            if(wasPlaying)
+            {
                 highlightCurrentElement();
             }
-            else {
+            else
+            {
                 playCurrentPar();
             }
         }
@@ -192,7 +205,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                 return;
             }
 
-            self.toggleMediaOverlayRefresh(paginationData.elementId);
+            self.toggleMediaOverlayRefresh(paginationData);
         }
     };
 
@@ -219,6 +232,37 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
     var clipBeginOffset = 0.0;
 
+    var _blankPagePlayer = undefined;
+
+    function initBlankPagePlayer()
+    {
+        self.resetBlankPage();
+
+        _blankPagePlayer = setTimeout(function() {
+
+            if (!_blankPagePlayer)
+            {
+                return;
+            }
+
+            self.resetBlankPage();
+
+            if (!_smilIterator || !_smilIterator.currentPar)
+            {
+                self.reset();
+                return;
+            }
+
+            audioCurrentTime = 0.0;
+//console.log("BLANK END.");
+            //nextSmil(true);
+            onAudioPositionChanged(_smilIterator.currentPar.audio.clipEnd + 0.1);
+
+        }, 2000);
+
+        onStatusChanged({isPlaying: true});
+    }
+
     function playCurrentPar() {
 
         if (!_smilIterator || !_smilIterator.currentPar)
@@ -227,20 +271,24 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             return;
         }
 
-        var dur = _smilIterator.currentPar.audio.clipEnd - _smilIterator.currentPar.audio.clipBegin;
-        if (dur <= 0 || clipBeginOffset > dur)
+        if (!_smilIterator.smil.id)
         {
-console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
+            _audioPlayer.reset();
+
+            self.resetTTS();
+            self.resetEmbedded();
+
+            setTimeout(function()
+            {
+                initBlankPagePlayer();
+            }, 100);
+
+            return;
+        }
+        else if (!_smilIterator.currentPar.audio.src)
+        {
             clipBeginOffset = 0.0;
-        }
-        else
-        {
-//console.debug("### MO PAR OFFSET: " + clipBeginOffset);
-        }
 
-
-        if (!_smilIterator.currentPar.audio.src)
-        {
 //            if (_currentTTS)
 //            {
 //                _skipTTSEnded = true;
@@ -258,6 +306,7 @@ console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
                 if (name === "audio" || name === "video")
                 {
                     self.resetTTS();
+                    self.resetBlankPage();
 
                     if (_currentEmbedded)
                     {
@@ -289,6 +338,7 @@ console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
                 else
                 {
                     self.resetEmbedded();
+                    self.resetBlankPage();
 
                     _currentTTS = element.textContent; //.innerText (CSS display sensitive + script + style tags)
                     if (!_currentTTS || _currentTTS == "")
@@ -307,6 +357,21 @@ console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
         }
         else
         {
+            self.resetTTS();
+            self.resetEmbedded();
+            self.resetBlankPage();
+
+            var dur = _smilIterator.currentPar.audio.clipEnd - _smilIterator.currentPar.audio.clipBegin;
+            if (dur <= 0 || clipBeginOffset > dur)
+            {
+                console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
+                clipBeginOffset = 0.0;
+            }
+            else
+            {
+//console.debug("### MO PAR OFFSET: " + clipBeginOffset);
+            }
+
             var audioContentRef = ReadiumSDK.Helpers.ResolveContentRef(_smilIterator.currentPar.audio.src, _smilIterator.smil.href);
 
             var audioSource = _package.resolveRelativeUrlMO(audioContentRef);
@@ -323,12 +388,6 @@ console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
 
     function nextSmil(goNext)
     {
-        //new smile we assume new spine too
-        //it may take time to render new spine we will stop audio
-
-        //we don't have to stop audio here but then we should stop listen to audioPositionChanged event until we
-        //finished rendering spine and got page changed message. And stop audio if next smile not found
-
         pause();
 
 //console.debug("current Smil: " + _smilIterator.smil.href + " /// " + _smilIterator.smil.id);
@@ -348,13 +407,14 @@ console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
                     }
                 }
 
-//console.debug("openContentUrl (nextSmil): " + _smilIterator.currentPar.text.src);
+//console.debug("openContentUrl (nextSmil): " + _smilIterator.currentPar.text.src + " -- " + _smilIterator.smil.href);
 
                 reader.openContentUrl(_smilIterator.currentPar.text.src, _smilIterator.smil.href, self);
             }
         }
         else
         {
+            console.log("No more SMIL");
             self.reset();
         }
     }
@@ -414,7 +474,6 @@ console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
 
         if(_smilIterator.currentPar) {
 
-            //paranoia test probably audio always should exist
             if(!_smilIterator.currentPar.audio) {
                 pause();
                 return;
@@ -491,7 +550,13 @@ console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
 //            nextSmil(goNext);
 //        }
 
+//console.log("NEXT SMIL ON AUDIO POS");
         nextSmil(goNext);
+    }
+
+    this.touchInit = function()
+    {
+        _audioPlayer.touchInit();
     }
 
     var _timerTick = undefined;
@@ -511,6 +576,11 @@ console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
             {
                 return;
             }
+
+//            if (!_smilIterator.currentPar.audio.src)
+//            {
+//                return;
+//            }
 
             var playPosition = audioCurrentTime - _smilIterator.currentPar.audio.clipBegin;
             if (playPosition <= 0)
@@ -622,8 +692,12 @@ console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
         if(_smilIterator.currentPar.element) {
 //console.error(_smilIterator.currentPar.element.id + ": " + _smilIterator.currentPar.audio.clipBegin + " / " + _smilIterator.currentPar.audio.clipEnd);
 
-            _elementHighlighter.highlightElement(_smilIterator.currentPar.element, _package.media_overlay.activeClass, _package.media_overlay.playbackActiveClass);
-            reader.insureElementVisibility(_smilIterator.currentPar.element, self);
+            if (_smilIterator.currentPar.text.srcFragmentId.length > 0)
+            {
+                _elementHighlighter.highlightElement(_smilIterator.currentPar.element, _package.media_overlay.activeClass, _package.media_overlay.playbackActiveClass);
+
+                reader.insureElementVisibility(_smilIterator.currentPar.element, self);
+            }
             return;
         }
 
@@ -708,6 +782,18 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         _ttsIsPlaying = false;
     };
 
+    this.resetBlankPage = function() {
+        if (_blankPagePlayer)
+        {
+            var timer = _blankPagePlayer;
+            _blankPagePlayer = undefined;
+            clearTimeout(timer);
+        }
+        _blankPagePlayer = undefined;
+
+        onStatusChanged({isPlaying: false});
+    };
+
     this.resetEmbedded = function() {
         if (_currentEmbedded)
         {
@@ -724,6 +810,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         _audioPlayer.reset();
         self.resetTTS();
         self.resetEmbedded();
+        self.resetBlankPage();
         _elementHighlighter.reset();
         _smilIterator = undefined;
     };
@@ -731,7 +818,12 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
     function play()
     {
-        if (_currentEmbedded)
+        if (_smilIterator && _smilIterator.smil && !_smilIterator.smil.id)
+        {
+            initBlankPagePlayer();
+            return;
+        }
+        else if (_currentEmbedded)
         {
             _embeddedIsPlaying = true;
             _currentEmbedded.play();
@@ -745,7 +837,14 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         }
         else
         {
-            _audioPlayer.play();
+            if (!_audioPlayer.play())
+            {
+                console.log("Audio player was dead, reactivating...");
+
+                self.reset();
+                self.toggleMediaOverlay();
+                return;
+            }
         }
 
         highlightCurrentElement();
@@ -753,7 +852,11 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
     function pause()
     {
-        if (_embeddedIsPlaying)
+        if (_blankPagePlayer)
+        {
+            self.resetBlankPage();
+        }
+        else if (_embeddedIsPlaying)
         {
             _embeddedIsPlaying = false;
             if (_currentEmbedded)
@@ -810,11 +913,11 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         //play();
         //playCurrentPar();
     };
-    
+
     this.nextMediaOverlay = function() {
         this.nextOrPreviousMediaOverlay(false);
     };
-    
+
     this.previousMediaOverlay = function() {
         this.nextOrPreviousMediaOverlay(true);
     };
@@ -890,33 +993,21 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         this.toggleMediaOverlayRefresh(undefined);
     };
 
-    this.toggleMediaOverlayRefresh = function(textId) {
+    this.toggleMediaOverlayRefresh = function(paginationData)
+    {
 
-        var visibleMediaElements = reader.getVisibleMediaOverlayElements();
+//console.debug("moData SMIL: " + moData.par.getSmil().href + " // " + + moData.par.getSmil().id);
 
-        if(visibleMediaElements.length == 0) {
-            console.error("toggleMediaOverlay visibleMediaElements.length == 0");
-            self.reset();
-            return;
-        }
 
-        var elementDataToStart;
+        var spineItems = reader.currentView.getLoadedSpineItems();
 
-        //we start form firs element where upper age of the element is visible
-        //or if only one element we will start from it
-        if(visibleMediaElements.length == 1 || visibleMediaElements[0].percentVisible == 100) {
-            elementDataToStart = visibleMediaElements[0];
-        }
-        else { //if first element is partially visible than second element's upper age should be visible
-            elementDataToStart = visibleMediaElements[1];
-        }
+        //paginationData.pageProgressionDirection === "rtl"
+        var rtl = reader.spine.isRightToLeft();
 
-        var moData = $(elementDataToStart.element).data("mediaOverlayData");
+        //paginationData.spineItemCount
 
-        if(!moData) {
-            console.error("toggleMediaOverlay !moData");
-            return;
-        }
+        //paginationData.openPages
+        //{spineItemPageIndex: , spineItemPageCount: , idref: , spineItemIndex: }
 
         var playingPar = undefined;
         var wasPlaying = self.isPlaying();
@@ -926,41 +1017,149 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
             playingPar = _smilIterator.currentPar;
         }
 
-        if (textId && textId !== elementDataToStart.element.id)
+        //paginationData && paginationData.elementId
+        //paginationData.initiator != self
+
+        //_package.isFixedLayout()
+
+        var element = undefined;
+
+        var id = paginationData && paginationData.elementId ? paginationData.elementId : undefined;
+
+        for(var i = rtl ? spineItems.length : 0; rtl && i >=0 || !rtl && i < spineItems.length; i += (rtl ? -1: 1))
         {
-            var parSmil = moData.par.getSmil();
-            if(!_smilIterator || _smilIterator.smil != parSmil)
+            var spineItem = spineItems[i];
+            if (paginationData && paginationData.spineItem && paginationData.spineItem != spineItem)
             {
-                _smilIterator = new ReadiumSDK.Models.SmilIterator(parSmil);
-            }
-            else
-            {
-                _smilIterator.reset();
+                continue;
             }
 
-            _smilIterator.findTextId(textId);
-
-            if (_smilIterator.currentPar)
+            if (id)
             {
-                if (wasPlaying && playingPar && playingPar === _smilIterator.currentPar)
-                {
-                    play();
-                }
-                else
-                {
-                    playCurrentPar();
-                }
-                return;
+                element = reader.currentView.getElement(spineItem, "#" + id);
+            }
+            else if (spineItem.isFixedLayout())
+            {
+                element = reader.currentView.getElement(spineItem, "body");
+            }
+
+            if (element)
+            {
+                break;
             }
         }
 
-        if (wasPlaying && playingPar && playingPar === moData.par)
+        if (!element)
+        {
+            var visibleMediaOverlayElements = reader.getVisibleMediaOverlayElements();
+
+            if (visibleMediaOverlayElements.length == 0)
+            {
+                console.error("reader.getVisibleMediaOverlayElements().length == 0");
+            }
+            else
+            {
+                if(visibleMediaOverlayElements.length == 1 || visibleMediaOverlayElements[0].percentVisible == 100)
+                {
+                    element = visibleMediaOverlayElements[0].element;
+                }
+                else
+                {
+                    element = visibleMediaOverlayElements[1].element;
+                }
+            }
+        }
+
+        if (!element)
+        {
+            self.reset();
+            return;
+        }
+
+        var moData = $(element).data("mediaOverlayData");
+
+        if (!moData)
+        {
+            var depthFirstTraversal = function(elements)
+            {
+                if (!elements)
+                {
+                    return false;
+                }
+
+                for (var i = 0; i < elements.length; i++)
+                {
+                    var d = $(elements[i]).data("mediaOverlayData");
+                    if (d)
+                    {
+                        moData = d;
+                        return true;
+                    }
+
+                    var found = depthFirstTraversal(elements[i].children);
+                    if (found)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            var root = element;
+            while (root && root.nodeName.toLowerCase() !== "body")
+            {
+                root = root.parentNode;
+            }
+
+            if (!root)
+            {
+                self.reset();
+                return;
+            }
+
+            depthFirstTraversal([root]);
+        }
+
+        if (!moData)
+        {
+            self.reset();
+            return;
+        }
+
+        var parSmil = moData.par.getSmil();
+        if(!_smilIterator || _smilIterator.smil != parSmil)
+        {
+            _smilIterator = new ReadiumSDK.Models.SmilIterator(parSmil);
+        }
+        else
+        {
+            _smilIterator.reset();
+        }
+
+        if (id)
+        {
+            _smilIterator.findTextId(id);
+        }
+        else
+        {
+            _smilIterator.goToPar(moData.par);
+        }
+
+        if (!_smilIterator.currentPar)
+        {
+            self.reset();
+            return;
+        }
+
+        if (wasPlaying && playingPar && playingPar === _smilIterator.currentPar)
         {
             play();
         }
         else
         {
-            playPar(moData.par);
+            playCurrentPar();
+            //playPar(moData.par);
         }
     };
 };

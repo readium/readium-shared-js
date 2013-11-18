@@ -32,28 +32,44 @@ ReadiumSDK.Models.SmilIterator = function(smil) {
         return par;
     };
     */
+//
+//    this.ensureNextValidTextElement = function()
+//    {
+//        if (!this.currentPar)
+//        {
+//            console.debug("Par iterator is out of range");
+//            return;
+//        }
+//
+//        while (this.currentPar && !this.currentPar.element)
+//        {
+//            this.next();
+//        }
+//    };
 
     this.findTextId = function(id)
     {
+        if (!this.currentPar)
+        {
+            console.debug("Par iterator is out of range");
+            return;
+        }
+
         if (!id)
         {
             return false;
         }
 
-        if (!this.currentPar)
+        while (this.currentPar)
         {
-            this.reset();
-        }
-
-        while(this.currentPar)
-        {
-            if(this.currentPar.element)
+            if (this.currentPar.element)
             {
-                if (id == this.currentPar.text.srcFragmentId)
+                if (id === this.currentPar.text.srcFragmentId) //this.currentPar.element.id
                 {
                     return true;
                 }
 
+                // OUTER match
                 var parent = this.currentPar.element.parentNode;
                 while(parent)
                 {
@@ -63,6 +79,13 @@ ReadiumSDK.Models.SmilIterator = function(smil) {
                     }
 
                     parent = parent.parentNode;
+                }
+
+                // INNER match
+                var inside = $("#"+id, this.currentPar.element);
+                if (inside && inside[0])
+                {
+                    return true;
                 }
             }
 

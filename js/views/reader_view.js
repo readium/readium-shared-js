@@ -99,7 +99,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
         var self = this;
 
-        if(!spineItem.media_overlay_id) {
+        if(!spineItem.media_overlay_id && self.package.media_overlay.smil_models.length === 0) {
             return;
         }
 
@@ -125,9 +125,33 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
                     var elem = $(this)[0]; // body
                     elem = event.target; // body descendant
 
-                    console.debug("MO CLICK: " + elem.id);
+                    if (!elem)
+                    {
+                        return;
+                    }
 
-                    var data = $(elem).data("mediaOverlayData");
+                    console.debug("MO CLICK: " + elem.id);
+                    self.mediaOverlayPlayer.touchInit();
+
+                    var data = undefined;
+                    var el = elem;
+
+                    var inLink = false;
+                    if (el.nodeName.toLowerCase() === "a")
+                    {
+                        inLink = true;
+                    }
+
+                    while (!(data = $(el).data("mediaOverlayData")))
+                    {
+                        if (el.nodeName.toLowerCase() === "a")
+                        {
+                            inLink = true;
+                        }
+                        el = el.parentNode;
+                        if (!el) break;
+                    }
+
                     if (data && data.par)
                     {
                         if (!self.viewerSettings.mediaOverlaysEnableClick)
@@ -136,7 +160,20 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
                             return true;
                         }
 
+                        if (inLink)
+                        {
+                            console.debug("MO CLICKED LINK");
+                            return true;
+                        }
+
                         var par = data.par;
+
+                        if (el && el != elem && el.nodeName.toLowerCase() === "body" && par && !par.getSmil().id)
+                        {
+                            console.debug("MO CLICKED BLANK BODY");
+                            return true;
+                        }
+
                         self.mediaOverlayPlayer.playUserPar(par);
                     }
                     else
@@ -175,10 +212,11 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 //console.debug("[[MO ATTACH]] " + spineItem.idref + " /// " + spineItem.media_overlay_id + " === " + smil.id);
 
         var iter = new ReadiumSDK.Models.SmilIterator(smil);
+
         while(iter.currentPar) {
             iter.currentPar.element = undefined;
 
-            if(iter.currentPar.text.srcFragmentId) {
+            if(true) { //iter.currentPar.text.srcFragmentId (includes empty frag ID)
 
                 var textRelativeRef = ReadiumSDK.Helpers.ResolveContentRef(iter.currentPar.text.srcFile, iter.smil.href);
                 //var spineItemCheck = self.spine.getItemByHref(textRelativeRef);
@@ -186,7 +224,8 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
                 var same = textRelativeRef === spineItem.href;
                 if (same)
                 {
-                    var element = self.currentView.getElement(spineItem, "#" + iter.currentPar.text.srcFragmentId);
+                    var element = self.currentView.getElement(spineItem, iter.currentPar.text.srcFragmentId.length == 0 ? "body" : "#" + iter.currentPar.text.srcFragmentId);
+
                     if(element) {
                         if (iter.currentPar.element && iter.currentPar.element !== element)
                         {
