@@ -43,10 +43,9 @@ ReadiumSDK = {
     Helpers: {},
     Events: {
                 READER_INITIALIZED: "ReaderInitialized",
-                PAGE_LOADED: "PageLoaded",
                 PAGINATION_CHANGED: "PaginationChanged",
                 SETTINGS_APPLIED: "SettingsApplied",
-                CONTENT_LOADED: "ContentLoaded",
+                CONTENT_DOCUMENT_LOADED: "ContentDocumentLoaded",
                 CURRENT_VIEW_PAGINATION_CHANGED: "CurrentViewPaginationChanged", // used internally
                 MEDIA_OVERLAY_STATUS_CHANGED: "MediaOverlayStatusChanged",
                 MEDIA_OVERLAY_TTS_SPEAK: "MediaOverlayTTSSpeak",

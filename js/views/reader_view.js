@@ -73,13 +73,9 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
             self.trigger(ReadiumSDK.Events.PAGINATION_CHANGED, pageChangeData);
         });
 
-        this.currentView.on(ReadiumSDK.Events.CONTENT_LOADED, function() {
+        this.currentView.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function($iframe, spineItem) {
 
-            var spineItems = self.currentView.getLoadedSpineItems();
-
-            for(var i = 0, count = spineItems.length; i < count; i++) {
-                self.attachMediaOverlayData(spineItems[i]);
-            }
+            self.mediaOverlayDataInjector.attachMediaOverlayData($iframe, spineItem, self.viewerSettings);
         });
     },
 
@@ -304,6 +300,8 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
         }
 
         this.mediaOverlayPlayer = new ReadiumSDK.Views.MediaOverlayPlayer(this, $.proxy(this.onMediaPlayerStatusChanged, this));
+
+        this.mediaOverlayDataInjector = new ReadiumSDK.Views.MediaOverlayDataInjector(this.package.media_overlay, this.mediaOverlayPlayer);
 
         this.resetCurrentView();
 

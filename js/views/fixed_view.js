@@ -139,8 +139,6 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
 
     onPagesLoaded: function(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
 
-        this.trigger(ReadiumSDK.Events.CONTENT_LOADED);
-
         this.updateContentMetaSize();
         this.resizeBook();
 
@@ -341,7 +339,15 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
 
         var dfd = $.Deferred();
 
-        pageView.on(ReadiumSDK.Events.PAGE_LOADED, dfd.resolve);
+        pageView.on(ReadiumSDK.Views.OnePageView.PAGE_LOADED_EVENT, function($iframe, spineItem){
+
+            this.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
+
+            dfd.resolve();
+        });
+
+
+
 
         pageView.loadSpineItem(item);
 
