@@ -81,7 +81,7 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
             this.updateMetaSize();
 //            this.fitToScreen();
 
-            this.trigger(ReadiumSDK.Views.OnePageView.PAGE_LOADED_EVENT, this.currentSpineItem.idref, this.$iframe);
+            this.trigger(ReadiumSDK.Views.OnePageView.PAGE_LOADED_EVENT, this.$iframe, this.currentSpineItem);
         }
     },
 

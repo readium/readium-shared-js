@@ -164,7 +164,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
             return;
         }
 
-        this.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED);
+        this.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, this.$iframe, this.currentSpineItem);
 
         var epubContentDocument = this.$iframe[0].contentDocument;
         this.$epubHtml = $("html", epubContentDocument);
