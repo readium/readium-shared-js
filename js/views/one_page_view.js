@@ -81,7 +81,7 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
             this.updateMetaSize();
 //            this.fitToScreen();
 
-            this.trigger(ReadiumSDK.Views.OnePageView.PAGE_LOADED_EVENT, this.$iframe, this.currentSpineItem);
+            this.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED, this.$iframe, this.currentSpineItem, true);
         }
     },
 
@@ -212,7 +212,7 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
         }
         else
         {
-            this.trigger(ReadiumSDK.Views.OnePageView.PAGE_LOADED_EVENT);
+            this.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED, this.$iframe, this.currentSpineItem, false);
         }
     },
 
@@ -277,4 +277,4 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
 
 });
 
-ReadiumSDK.Views.OnePageView.PAGE_LOADED_EVENT = "SinglePageLoadedEvent";
+ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED = "SpineItemOpened";

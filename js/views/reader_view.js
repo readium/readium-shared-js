@@ -60,9 +60,13 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
         this.currentView.setViewSettings(this.viewerSettings);
 
-        this.currentView.render();
-
         var self = this;
+
+        this.currentView.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function($iframe, spineItem) {
+
+            self.mediaOverlayDataInjector.attachMediaOverlayData($iframe, spineItem, self.viewerSettings);
+        });
+
         this.currentView.on(ReadiumSDK.Events.CURRENT_VIEW_PAGINATION_CHANGED, function( pageChangeData ){
 
             //we call on onPageChanged explicitly instead of subscribing to the ReadiumSDK.Events.PAGINATION_CHANGED by
@@ -73,10 +77,8 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
             self.trigger(ReadiumSDK.Events.PAGINATION_CHANGED, pageChangeData);
         });
 
-        this.currentView.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function($iframe, spineItem) {
 
-            self.mediaOverlayDataInjector.attachMediaOverlayData($iframe, spineItem, self.viewerSettings);
-        });
+        this.currentView.render();
     },
 
     resetCurrentView: function() {

@@ -338,16 +338,18 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
         }
 
         var dfd = $.Deferred();
+        var self = this;
 
-        pageView.on(ReadiumSDK.Views.OnePageView.PAGE_LOADED_EVENT, function($iframe, spineItem){
+        pageView.on(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED, function($iframe, spineItem, isNewContentDocumentLoaded){
 
-            this.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
+            pageView.off(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED);
+
+            if(isNewContentDocumentLoaded) {
+                self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
+            }
 
             dfd.resolve();
         });
-
-
-
 
         pageView.loadSpineItem(item);
 
