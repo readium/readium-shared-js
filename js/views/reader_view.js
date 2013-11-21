@@ -30,11 +30,13 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
     viewerSettings:undefined,
     userStyles: undefined,
     mediaOverlayPlayer: undefined,
+    internalLinksSupport: undefined,
 
     initialize: function() {
 
         this.viewerSettings = new ReadiumSDK.Models.ViewerSettings({});
         this.userStyles = new ReadiumSDK.Collections.StyleCollection();
+        this.internalLinksSupport = new ReadiumSDK.Views.InternalLinksSupport(this);
     },
 
     renderCurrentView: function(isReflowable) {
@@ -65,6 +67,8 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
         this.currentView.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function($iframe, spineItem) {
 
             self.mediaOverlayDataInjector.attachMediaOverlayData($iframe, spineItem, self.viewerSettings);
+            self.internalLinksSupport.processLinkElements($iframe, spineItem);
+
         });
 
         this.currentView.on(ReadiumSDK.Events.CURRENT_VIEW_PAGINATION_CHANGED, function( pageChangeData ){
