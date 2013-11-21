@@ -5,7 +5,7 @@ ReadiumSDK.Views.MediaOverlayDataInjector = function (mediaOverlay, mediaOverlay
 
         var contentDocElement = $iframe[0].contentDocument.documentElement;
 
-        if (!spineItem.media_overlay_id) {
+        if (!spineItem.media_overlay_id && mediaOverlay.smil_models.length === 0) {
             return;
         }
 
