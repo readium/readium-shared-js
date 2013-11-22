@@ -47,7 +47,7 @@ ReadiumSDK = {
                 // PAGINATION_CHANGED gets triggered on every page turnover. it includes spine information and such.
                 PAGINATION_CHANGED: "PaginationChanged",
                 SETTINGS_APPLIED: "SettingsApplied",
-                CONTENT_LOADED: "ContentLoaded",
+                CONTENT_DOCUMENT_LOADED: "ContentDocumentLoaded",
                 CURRENT_VIEW_PAGINATION_CHANGED: "CurrentViewPaginationChanged", // used internally
                 MEDIA_OVERLAY_STATUS_CHANGED: "MediaOverlayStatusChanged",
                 MEDIA_OVERLAY_TTS_SPEAK: "MediaOverlayTTSSpeak",
