@@ -34,6 +34,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
     $contentFrame: undefined,
     userStyles: undefined,
     navigationLogic: undefined,
+    iframeLoader: undefined,
 
     lastViewPortSize : {
         width: undefined,
@@ -56,6 +57,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         this.$viewport = this.options.$viewport;
         this.spine = this.options.spine;
         this.userStyles = this.options.userStyles;
+        this.iframeLoader = this.options.iframeLoader;
     },
 
     render: function(){
@@ -137,7 +139,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
             this.isWaitingFrameRender = true;
 
             var src = this.spine.package.resolveRelativeUrl(spineItem.href);
-            ReadiumSDK.Helpers.LoadIframe(this.$iframe[0], src, this.onIFrameLoad, this);
+            this.iframeLoader.loadIframe(this.$iframe[0], src, this.onIFrameLoad, this);
         }
     },
 

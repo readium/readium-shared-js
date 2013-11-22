@@ -29,6 +29,7 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
     bookMargins: undefined,
     contentMetaSize: undefined,
     userStyles: undefined,
+    iframeLoader: undefined,
 
     $viewport: undefined,
 
@@ -36,16 +37,16 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
 
     initialize: function() {
 
+        this.iframeLoader = this.options.iframeLoader;
         this.$viewport = this.options.$viewport;
-
         this.userStyles = this.options.userStyles;
 
         this.spine = this.options.spine;
         this.spread = new ReadiumSDK.Models.Spread(this.spine);
 
-        this.leftPageView = new ReadiumSDK.Views.OnePageView({spine: this.spine, class: "fixed-page-frame-left", contentAlignment: "right"});
-        this.rightPageView = new ReadiumSDK.Views.OnePageView({spine: this.spine, class: "fixed-page-frame-right", contentAlignment: "left"});
-        this.centerPageView = new ReadiumSDK.Views.OnePageView({spine: this.spine, class: "fixed-page-frame-center", contentAlignment: "center"});
+        this.leftPageView = this.createOnePageView("fixed-page-frame-left", "right");
+        this.rightPageView = this.createOnePageView("fixed-page-frame-right", "left");
+        this.centerPageView = this.createOnePageView("fixed-page-frame-center", "center");
 
         this.pageViews.push(this.leftPageView);
         this.pageViews.push(this.rightPageView);
@@ -53,6 +54,18 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
 
         //event with namespace for clean unbinding
         $(window).on("resize.ReadiumSDK.readerView", _.bind(this.onViewportResize, this));
+    },
+
+    createOnePageView: function(cssclass, contentAlignment) {
+
+        return new ReadiumSDK.Views.OnePageView({
+
+                iframeLoader: this.iframeLoader,
+                spine: this.spine,
+                class: cssclass,
+                contentAlignment: contentAlignment
+
+            });
     },
 
     isReflowable: function() {

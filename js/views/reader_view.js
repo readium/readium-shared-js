@@ -31,12 +31,20 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
     userStyles: undefined,
     mediaOverlayPlayer: undefined,
     internalLinksSupport: undefined,
+    iframeLoader: undefined,
 
     initialize: function() {
 
         this.viewerSettings = new ReadiumSDK.Models.ViewerSettings({});
         this.userStyles = new ReadiumSDK.Collections.StyleCollection();
         this.internalLinksSupport = new ReadiumSDK.Views.InternalLinksSupport(this);
+
+        if(this.options.iframeLoader) {
+            this.iframeLoader = this.options.iframeLoader;
+        }
+        else {
+            this.iframeLoader = new ReadiumSDK.Views.IFrameLoader();
+        }
     },
 
     renderCurrentView: function(isReflowable) {
@@ -51,13 +59,20 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
             this.resetCurrentView();
         }
 
+        var viewCreationParams = {
+            $viewport: this.$el,
+            spine:this.spine,
+            userStyles: this.userStyles,
+            iframeLoader: this.iframeLoader
+        };
+
         if(isReflowable) {
 
-            this.currentView = new ReadiumSDK.Views.ReflowableView({$viewport: this.$el, spine:this.spine, userStyles: this.userStyles});
+            this.currentView = new ReadiumSDK.Views.ReflowableView(viewCreationParams);
         }
         else {
 
-            this.currentView = new ReadiumSDK.Views.FixedView({$viewport: this.$el, spine:this.spine, userStyles: this.userStyles});
+            this.currentView = new ReadiumSDK.Views.FixedView(viewCreationParams);
         }
 
         this.currentView.setViewSettings(this.viewerSettings);
