@@ -294,7 +294,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
     openBook: function(openBookData) {
 
 		var pack = openBookData.package ? openBookData.package : openBookData;
-		
+
         this.package = new ReadiumSDK.Models.Package({packageData: pack});
 
         this.spine = this.package.spine;
