@@ -98,6 +98,9 @@ ReadiumSDK.Models.MediaOverlay.fromDTO = function(moDTO) {
 
     console.debug("Media Overlay INIT...");
 
+    // if (mo.DEBUG)
+    //     console.debug(JSON.stringify(moDTO));
+        
     mo.duration = moDTO.duration;
     if (mo.DEBUG)
         console.debug("Media Overlay Duration (TOTAL): " + mo.duration);
