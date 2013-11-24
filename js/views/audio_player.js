@@ -19,7 +19,7 @@
 
 ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAudioEnded, onAudioPlay, onAudioPause)
 {
-    var DEBUG = false;
+    var DEBUG = true;
 
     var self = this;
 
@@ -275,7 +275,7 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
     }
 
 
-    var _iOS = ( navigator.userAgent.match(/(iPad|iPhone|iPod)/g) ? true : false );
+    var _iOS = ( navigator.userAgent.match(/(iPad|iPhone|iPod)/g) ? true : false ) || navigator.userAgent.toLowerCase().indexOf('android') > -1;
 
     var _touchInited = false;
     this.touchInit = function()
