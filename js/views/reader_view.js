@@ -609,8 +609,59 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
         return this.currentView.getDom();
     },
 
+    setPackageDocument:function(packageDoc) {
+        this.packageDoc = packageDoc;
+    },
+
+
+    createFullyQualifiedCfi : function(cfi) {
+        if (cfi === undefined)
+            return undefined;
+        var spineIndex = this.currentView.currentSpineItem.index
+        var packageDocCFIComponent = EPUBcfi.generatePackageDocumentCFIComponentWithSpineIndex(spineIndex, this.packageDoc);
+        var completeCFI = EPUBcfi.generateCompleteCFI(packageDocCFIComponent, cfi);
+        return completeCFI;
+    },
+
+
     getAnnotaitonsManagerForCurrentSpineItem: function () {
         return this.currentView.annotations;
-    }
+    },
 
+    getCurrentSelectionCFI: function() {
+        var CFI = this.getAnnotaitonsManagerForCurrentSpineItem().getCurrentSelectionCFI();
+        return this.createFullyQualifiedCfi(CFI);
+    },
+
+    addHighlight: function(CFI, id, type) {
+        return this.getAnnotaitonsManagerForCurrentSpineItem().addHighlight(CFI, id, type);
+    },
+
+    addSelectionHighlight: function(id, type) {
+        return this.getAnnotaitonsManagerForCurrentSpineItem().addSelectionHighlight(id, type);
+    },
+
+    showPageByCFI : function (CFI, callback, callbackContext) {
+        var contentDocHref = EPUBcfi.getContentDocHref(CFI, this.packageDoc);
+        var spine = this.spine.getItemByHref(contentDocHref);
+        var idref = spine.idref;
+        var targetElementCFI; 
+
+        // TODODM: this is hacky replace it properly
+        // what i'm doing here is essentially saying that we only expect one indirection step
+        // between package document and content document. to properly make this work, we need
+        // to wait until the content document is open and resolve the indirection then? 
+        // at least that's hwo justin does it.
+        var cfiWrapperPattern = new RegExp("^.*!")
+        // remove epubcfi( and indirection step
+        var partiallyNakedCfi = CFI.replace(cfiWrapperPattern, "");
+        // remove last paren
+        var nakedCfi = partiallyNakedCfi.substring(0, partiallyNakedCfi.length -1);
+        console.log("idref: " + idref + " nakedCfi=" + nakedCfi);
+        return this.openSpineItemElementCfi(idref, nakedCfi);
+    }, 
+    removeAnnotation: function(id) {
+        console.log("Remove annotation=" + id);
+        return this.getAnnotaitonsManagerForCurrentSpineItem().removeHighlight(id);
+    }
 });

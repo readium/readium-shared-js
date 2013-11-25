@@ -57,7 +57,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         this.$viewport = this.options.$viewport;
         this.spine = this.options.spine;
         this.userStyles = this.options.userStyles;
-        this.on(ReadiumSDK.Events.CONTENT_LOADED, this.initializeAnnotations);
+        this.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, this.initializeAnnotations);
         this.reader = this.options.reader
     },
 
