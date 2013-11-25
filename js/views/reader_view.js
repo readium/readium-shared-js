@@ -30,11 +30,21 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
     viewerSettings:undefined,
     userStyles: undefined,
     mediaOverlayPlayer: undefined,
+    internalLinksSupport: undefined,
+    iframeLoader: undefined,
 
     initialize: function() {
 
         this.viewerSettings = new ReadiumSDK.Models.ViewerSettings({});
         this.userStyles = new ReadiumSDK.Collections.StyleCollection();
+        this.internalLinksSupport = new ReadiumSDK.Views.InternalLinksSupport(this);
+
+        if(this.options.iframeLoader) {
+            this.iframeLoader = this.options.iframeLoader;
+        }
+        else {
+            this.iframeLoader = new ReadiumSDK.Views.IFrameLoader();
+        }
     },
 
     renderCurrentView: function(isReflowable) {
@@ -49,20 +59,35 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
             this.resetCurrentView();
         }
 
+        var viewCreationParams = {
+            $viewport: this.$el,
+            spine:this.spine,
+            userStyles: this.userStyles,
+            iframeLoader: this.iframeLoader
+        };
+
         if(isReflowable) {
 
-            this.currentView = new ReadiumSDK.Views.ReflowableView({$viewport: this.$el, spine:this.spine, userStyles: this.userStyles});
+            this.currentView = new ReadiumSDK.Views.ReflowableView(viewCreationParams);
         }
         else {
 
-            this.currentView = new ReadiumSDK.Views.FixedView({$viewport: this.$el, spine:this.spine, userStyles: this.userStyles});
+            this.currentView = new ReadiumSDK.Views.FixedView(viewCreationParams);
         }
 
         this.currentView.setViewSettings(this.viewerSettings);
 
-        this.currentView.render();
-
         var self = this;
+
+        this.currentView.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function($iframe, spineItem) {
+
+            self.mediaOverlayDataInjector.attachMediaOverlayData($iframe, spineItem, self.viewerSettings);
+            self.internalLinksSupport.processLinkElements($iframe, spineItem);
+
+            self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
+
+        });
+
         this.currentView.on(ReadiumSDK.Events.CURRENT_VIEW_PAGINATION_CHANGED, function( pageChangeData ){
 
             //we call on onPageChanged explicitly instead of subscribing to the ReadiumSDK.Events.PAGINATION_CHANGED by
@@ -73,14 +98,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
             self.trigger(ReadiumSDK.Events.PAGINATION_CHANGED, pageChangeData);
         });
 
-        this.currentView.on(ReadiumSDK.Events.CONTENT_LOADED, function() {
-
-            var spineItems = self.currentView.getLoadedSpineItems();
-
-            for(var i = 0, count = spineItems.length; i < count; i++) {
-                self.attachMediaOverlayData(spineItems[i]);
-            }
-        });
+        this.currentView.render();
     },
 
     resetCurrentView: function() {
@@ -93,189 +111,6 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
         this.currentView.off(ReadiumSDK.Events.CURRENT_VIEW_PAGINATION_CHANGED);
         this.currentView.remove();
         this.currentView = undefined;
-    },
-
-    attachMediaOverlayData: function(spineItem) {
-
-        var self = this;
-
-        if(!spineItem.media_overlay_id && self.package.media_overlay.smil_models.length === 0) {
-            return;
-        }
-
-        var body = self.currentView.getElement(spineItem, "body");
-        if (!body)
-        {
-            console.error("! BODY ???");
-        }
-        else
-        {
-            var click = $(body).data("mediaOverlayClick");
-            if (click)
-            {
-                console.error("[WARN] already mediaOverlayClick");
-            }
-            else
-            {
-                $(body).data("mediaOverlayClick", {ping:"pong"});
-
-                var clickEvent = 'ontouchstart' in document.documentElement ? 'touchstart': 'click';
-                $(body).bind(clickEvent, function(event)
-                {
-                    var elem = $(this)[0]; // body
-                    elem = event.target; // body descendant
-
-                    if (!elem)
-                    {
-                        return;
-                    }
-
-                    console.debug("MO CLICK: " + elem.id);
-                    self.mediaOverlayPlayer.touchInit();
-
-                    var data = undefined;
-                    var el = elem;
-
-                    var inLink = false;
-                    if (el.nodeName.toLowerCase() === "a")
-                    {
-                        inLink = true;
-                    }
-
-                    while (!(data = $(el).data("mediaOverlayData")))
-                    {
-                        if (el.nodeName.toLowerCase() === "a")
-                        {
-                            inLink = true;
-                        }
-                        el = el.parentNode;
-                        if (!el) break;
-                    }
-
-                    if (data && data.par)
-                    {
-                        if (!self.viewerSettings.mediaOverlaysEnableClick)
-                        {
-                            console.debug("MO CLICK DISABLED");
-                            return true;
-                        }
-
-                        if (inLink)
-                        {
-                            console.debug("MO CLICKED LINK");
-                            return true;
-                        }
-
-                        var par = data.par;
-
-                        if (el && el != elem && el.nodeName.toLowerCase() === "body" && par && !par.getSmil().id)
-                        {
-                            console.debug("MO CLICKED BLANK BODY");
-                            return true;
-                        }
-
-                        self.mediaOverlayPlayer.playUserPar(par);
-                    }
-                    else
-                    {
-                        var readaloud = $(elem).attr("ibooks:readaloud");
-                        if (!readaloud)
-                        {
-                            readaloud = $(elem).attr("epub:readaloud");
-                        }
-                        if (readaloud)
-                        {
-                            console.debug("MO readaloud attr: " + readaloud);
-
-                            var isPlaying = self.mediaOverlayPlayer.isPlaying();
-                            if (readaloud === "start" && !isPlaying ||
-                                readaloud === "stop" && isPlaying ||
-                                readaloud === "startstop")
-                            {
-                                self.mediaOverlayPlayer.toggleMediaOverlay();
-                            }
-                        }
-                    }
-
-                    return true;
-                });
-            }
-        }
-
-        //var smil = self.package.media_overlay.getSmilById(spineItem.media_overlay_id);
-        var smil = self.package.media_overlay.getSmilBySpineItem(spineItem);
-        if(!smil) {
-            console.error("NO SMIL?? " + spineItem.idref + " /// " + spineItem.media_overlay_id);
-            return;
-        }
-
-//console.debug("[[MO ATTACH]] " + spineItem.idref + " /// " + spineItem.media_overlay_id + " === " + smil.id);
-
-        var iter = new ReadiumSDK.Models.SmilIterator(smil);
-
-        while(iter.currentPar) {
-            iter.currentPar.element = undefined;
-
-            if(true) { //iter.currentPar.text.srcFragmentId (includes empty frag ID)
-
-                var textRelativeRef = ReadiumSDK.Helpers.ResolveContentRef(iter.currentPar.text.srcFile, iter.smil.href);
-                //var spineItemCheck = self.spine.getItemByHref(textRelativeRef);
-                //var same = spineItemCheck === spineItem;
-                var same = textRelativeRef === spineItem.href;
-                if (same)
-                {
-                    var element = self.currentView.getElement(spineItem, iter.currentPar.text.srcFragmentId.length == 0 ? "body" : "#" + iter.currentPar.text.srcFragmentId);
-
-                    if(element) {
-                        if (iter.currentPar.element && iter.currentPar.element !== element)
-                        {
-                            console.error("DIFFERENT ELEMENTS??! " + iter.currentPar.text.srcFragmentId + " /// " + iter.currentPar.element.id);
-                        }
-
-                        var name = element.nodeName ? element.nodeName.toLowerCase() : undefined;
-                        if (name === "audio" || name === "video")
-                        {
-                            $(element).attr("preload", "auto");
-                        }
-
-                        iter.currentPar.element = element;
-
-                        var modata = $(element).data("mediaOverlayData");
-                        if (modata)
-                        {
-                            console.error("[WARN] MO DATA already exists.");
-
-                            if (modata.par && modata.par !== iter.currentPar)
-                            {
-                                console.error("DIFFERENT PARS??!");
-                            }
-                        }
-
-                        $(element).data("mediaOverlayData", {par: iter.currentPar});
-
-                        /*
-                        $(element).click(function() {
-                            var elem = $(this)[0];
-                            console.debug("MO CLICK (ELEM): " + elem.id);
-
-                            var par = $(this).data("mediaOverlayData").par;
-                            self.mediaOverlayPlayer.playUserPar(par);
-                        });
-                        */
-                    }
-                    else
-                    {
-                        console.error("!! CANNOT FIND ELEMENT: " + iter.currentPar.text.srcFragmentId + " == " + iter.currentPar.text.srcFile + " /// " + spineItem.href);
-                    }
-                }
-                else
-                {
-//console.debug("[INFO] " + spineItem.href + " != " + textRelativeRef + " # " + iter.currentPar.text.srcFragmentId);
-                }
-            }
-
-            iter.next();
-        }
     },
 
     /**
@@ -304,6 +139,8 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
         }
 
         this.mediaOverlayPlayer = new ReadiumSDK.Views.MediaOverlayPlayer(this, $.proxy(this.onMediaPlayerStatusChanged, this));
+
+        this.mediaOverlayDataInjector = new ReadiumSDK.Views.MediaOverlayDataInjector(this.package.media_overlay, this.mediaOverlayPlayer);
 
         this.resetCurrentView();
 

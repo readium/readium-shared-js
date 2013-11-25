@@ -66,47 +66,6 @@ ReadiumSDK.Helpers.Rect.fromElement = function($element) {
     return new ReadiumSDK.Helpers.Rect(offsetLeft, offsetTop, offsetWidth, offsetHeight);
 };
 
-ReadiumSDK.Helpers.LoadIframe = function(iframe, src, callback, context) {
-
-    var isWaitingForFrameLoad = true;
-
-    iframe.onload = function() {
-
-        //console.debug("epubReadingSystem (TOP):");
-        //console.debug(navigator.epubReadingSystem);
-
-        // Forward the epubReadingSystem object to the IFRAME
-        try
-        {
-            iframe.contentWindow.navigator["epubReadingSystem"] = navigator.epubReadingSystem;
-        }
-        catch(ex)
-        {
-            console.log("epubReadingSystem INJECTION ERROR! " + ex.message);
-        }
-
-        //console.debug("epubReadingSystem (IFRAME):");
-        //console.debug(iframe.contentWindow.navigator.epubReadingSystem);
-
-        isWaitingForFrameLoad = false;
-        callback.call(context, true);
-
-    };
-
-    //yucks! iframe doesn't trigger onerror event - there is no reliable way to know that iframe finished
-    // attempt tot load resource (successfully or not;
-    window.setTimeout(function(){
-
-        if(isWaitingForFrameLoad) {
-            isWaitingForFrameLoad = false;
-            callback.call(context, false);
-        }
-
-    }, 500);
-
-    iframe.src = src;
-};
-
 
 /**
  * @return {string}
