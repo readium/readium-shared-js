@@ -84,6 +84,8 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
             self.mediaOverlayDataInjector.attachMediaOverlayData($iframe, spineItem, self.viewerSettings);
             self.internalLinksSupport.processLinkElements($iframe, spineItem);
 
+            self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
+
         });
 
         this.currentView.on(ReadiumSDK.Events.CURRENT_VIEW_PAGINATION_CHANGED, function( pageChangeData ){
@@ -95,7 +97,6 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
             self.trigger(ReadiumSDK.Events.PAGINATION_CHANGED, pageChangeData);
         });
-
 
         this.currentView.render();
     },
