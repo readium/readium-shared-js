@@ -610,7 +610,8 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
     },
 
     setPackageDocument:function(packageDoc) {
-        this.packageDoc = packageDoc;
+        var parser = new window.DOMParser;
+        this.packageDoc = parser.parseFromString(packageDoc, "text/xml");
     },
 
 
