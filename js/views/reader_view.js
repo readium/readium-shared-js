@@ -663,5 +663,9 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
     removeAnnotation: function(id) {
         console.log("Remove annotation=" + id);
         return this.getAnnotaitonsManagerForCurrentSpineItem().removeHighlight(id);
+    }, 
+    getCfiForCurrentPage:function(id) {
+        var bookmark = $.parseJSON(this.bookmarkCurrentPage());
+        return this.createFullyQualifiedCfi(bookmark.contentCFI)
     }
 });
