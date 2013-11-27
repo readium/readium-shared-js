@@ -201,6 +201,12 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
 
     if (DEBUG)
     {
+        _audioElement.addEventListener("load", function()
+            {
+                console.debug("0) load");
+            }
+        );
+
         _audioElement.addEventListener("loadstart", function()
             {
                 console.debug("1) loadstart");
@@ -257,7 +263,7 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
 
         _audioElement.addEventListener("ended", function()
             {
-                console.debug("0) ended");
+                console.debug("10) ended");
             }
         );
 
@@ -269,7 +275,7 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
 
         _audioElement.addEventListener("timeupdate", function()
             {
-                console.debug("O) timeupdate");
+                console.debug("Y) timeupdate");
             }
         );
     }
