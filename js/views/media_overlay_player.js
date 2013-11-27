@@ -376,9 +376,11 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
             var audioSource = _package.resolveRelativeUrlMO(audioContentRef);
 
-//console.debug("PLAY FILE: " + _smilIterator.currentPar.audio.src);
+            var startTime = _smilIterator.currentPar.audio.clipBegin + clipBeginOffset;
 
-            _audioPlayer.playFile(_smilIterator.currentPar.audio.src, audioSource, _smilIterator.currentPar.audio.clipBegin + clipBeginOffset, _smilIterator.currentPar.element);
+//console.debug("PLAY START TIME: " + startTime + "("+_smilIterator.currentPar.audio.clipBegin+" + "+clipBeginOffset+")");
+
+            _audioPlayer.playFile(_smilIterator.currentPar.audio.src, audioSource, startTime, _smilIterator.currentPar.element);
         }
 
         clipBeginOffset = 0.0;

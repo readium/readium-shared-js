@@ -213,7 +213,14 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
     smilModel.spineItemId = smilDTO.spineItemId;
     smilModel.href = smilDTO.href;
     smilModel.smilVersion = smilDTO.smilVersion;
+    
     smilModel.duration = smilDTO.duration;
+    if (smilModel.duration && smilModel.duration.length && smilModel.duration.length > 0)
+    {
+        console.error("SMIL duration is string, parsing float... (" + smilModel.duration + ")");
+        smilModel.duration = parseFloat(smilModel.duration);
+    }
+    
     smilModel.mo = mo; //ReadiumSDK.Models.MediaOverlay
 
     if (smilModel.mo.DEBUG)
@@ -335,6 +342,11 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
             safeCopyProperty("id", nodeDTO, node);
 
             safeCopyProperty("clipBegin", nodeDTO, node);
+            if (node.clipBegin && node.clipBegin.length && node.clipBegin.length > 0)
+            {
+                console.error("SMIL clipBegin is string, parsing float... (" + node.clipBegin + ")");
+                node.clipBegin = parseFloat(node.clipBegin);
+            }
             if (node.clipBegin < 0)
             {
                 if (smilModel.mo.DEBUG)
@@ -345,6 +357,11 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
             }
 
             safeCopyProperty("clipEnd", nodeDTO, node);
+            if (node.clipEnd && node.clipEnd.length && node.clipEnd.length > 0)
+            {
+                console.error("SMIL clipEnd is string, parsing float... (" + node.clipEnd + ")");
+                node.clipEnd = parseFloat(node.clipEnd);
+            }
             if (node.clipEnd <= node.clipBegin)
             {
                 if (smilModel.mo.DEBUG)

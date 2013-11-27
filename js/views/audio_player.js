@@ -19,7 +19,7 @@
 
 ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAudioEnded, onAudioPlay, onAudioPause)
 {
-    var DEBUG = true;
+    var DEBUG = false;
 
     var self = this;
 
@@ -119,6 +119,16 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
 
     function onEnded()
     {
+        if (_audioElement.moSeeking)
+        {
+            if (DEBUG)
+            {
+                console.debug("onEnded() skipped (still seeking...)");
+            }
+
+            return;
+        }
+
         stopTimer();
 
         onAudioEnded();
@@ -281,12 +291,14 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
     }
 
 
-    var _iOS = ( navigator.userAgent.match(/(iPad|iPhone|iPod)/g) ? true : false ) || navigator.userAgent.toLowerCase().indexOf('android') > -1;
+    var _iOS = navigator.userAgent.match(/(iPad|iPhone|iPod)/g) ? true : false;
+    var _Android = navigator.userAgent.toLowerCase().indexOf('android') > -1;
+    var _isMobile = _iOS || _Android;
 
     var _touchInited = false;
     this.touchInit = function()
     {
-        if (!_iOS)
+        if (!_isMobile)
         {
             return;
         }
@@ -385,7 +397,10 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
 
         //element.parentNode.insertBefore(_audioElement, element); //element.parentNode.childNodes[0]);
         
-        _audioElement.addEventListener('play', onPlayToForcePreload, false);
+        if (!_Android)
+        {
+            _audioElement.addEventListener('play', onPlayToForcePreload, false);
+        }
 
         $(_audioElement).on(_readyEvent, {seekBegin: seekBegin, playId: playId}, onReadyToSeek);
         
@@ -394,17 +409,47 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
                _audioElement.setAttribute("src", _currentEpubSrc);
                // _audioElement.src = _currentEpubSrc;
                // $(_audioElement).attr("src", _currentEpubSrc);
+
+               // if (_Android)
+               // {
+               //     _audioElement.addEventListener('loadstart', onReadyToPlayToForcePreload, false);
+               // }
+               
                _audioElement.load();
 
-               //_audioElement.volume = 0;
-               //_audioElement.play();
-               var vol = _volume;
-               _volume = 0;
-               self.play();
-               _volume = vol;
+               if (!_Android)
+               {
+                   playToForcePreload();
+               }
         }, 1);
     };
 
+    // var onReadyToPlayToForcePreload = function ()
+    // {
+    //     _audioElement.removeEventListener('loadstart', onReadyToPlayToForcePreload, false);
+    //     
+    //     if (DEBUG)
+    //     {
+    //         console.debug("onReadyToPlayToForcePreload");
+    //     }
+    //     
+    //     playToForcePreload();
+    // };
+    
+    var playToForcePreload = function()
+    {
+        if (DEBUG)
+        {
+            console.debug("playToForcePreload");
+        }
+        
+        //_audioElement.volume = 0;
+        //_audioElement.play();
+        var vol = _volume;
+        _volume = 0;
+        self.play();
+        _volume = vol;
+    };
 
     var onPlayToForcePreload = function ()
     {
@@ -417,7 +462,7 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
         _audioElement.pause(); // note: interval timer continues (immediately follows self.play())
     };
 
-    var _readyEvent = "canplay"; //_iOS ? "canplaythrough" : "canplay";
+    var _readyEvent = _Android ? "canplaythrough" : "canplay";
     function onReadyToSeek(event)
     {
         $(_audioElement).off(_readyEvent, onReadyToSeek);
@@ -505,9 +550,17 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
             console.debug("onSeeked() #" + event.data.playId + " FIRST? " + notRetry + " EV: " + ev);
         }
 
+        var curTime = _audioElement.currentTime;
+        var diff = Math.abs(event.data.newCurrentTime - curTime);
+
         if((notRetry || event.data.seekRetries >= 0) &&
-            Math.abs(event.data.newCurrentTime - _audioElement.currentTime) >= 1)
+            diff >= 1)
         {
+            if (DEBUG)
+            {
+                console.debug("onSeeked() time diff: " + event.data.newCurrentTime + " vs. " + curTime + " ("+diff+")");
+            }
+            
             if (notRetry)
             {
                 event.data.seekRetries = MAX_SEEK_RETRIES;
@@ -532,7 +585,7 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
                 setTimeout(function()
                 {
                     onSeeked(event);
-                }, 15);
+                }, 50);
             }
 
             setTimeout(function()
