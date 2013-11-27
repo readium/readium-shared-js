@@ -195,7 +195,7 @@ ReadiumSDK.Models.SmilModel = function() {
 
 ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
 
-    if (smilModel.mo.DEBUG)
+    if (mo.DEBUG)
     {
         console.debug("Media Overlay DTO import...");
     }

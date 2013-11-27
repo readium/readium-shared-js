@@ -883,25 +883,25 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
     this.isMediaOverlayAvailable = function() {
 
-        console.debug("isMediaOverlayAvailable()");
-
-        var now1 = window.performance && window.performance.now ? window.performance.now() : Date.now();
-
-        if (console.time)
-        {
-            console.time("MO");
-        }
+//        console.debug("isMediaOverlayAvailable()");
+//
+//        var now1 = window.performance && window.performance.now ? window.performance.now() : Date.now();
+//
+//        if (console.time)
+//        {
+//            console.time("MO");
+//        }
 
         var visibleMediaElements = reader.getVisibleMediaOverlayElements();
 
-        if (console.timeEnd)
-        {
-            console.timeEnd("MO");
-        }
-
-        var now2 = window.performance && window.performance.now ? window.performance.now() : Date.now();
-
-        console.debug(now2 - now1);
+//        if (console.timeEnd)
+//        {
+//            console.timeEnd("MO");
+//        }
+//
+//        var now2 = window.performance && window.performance.now ? window.performance.now() : Date.now();
+//
+//        console.debug(now2 - now1);
 
         return visibleMediaElements.length > 0;
     };
