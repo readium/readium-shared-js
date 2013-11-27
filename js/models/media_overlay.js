@@ -102,6 +102,11 @@ ReadiumSDK.Models.MediaOverlay.fromDTO = function(moDTO) {
     //     console.debug(JSON.stringify(moDTO));
         
     mo.duration = moDTO.duration;
+    if (mo.duration && mo.duration.length && mo.duration.length > 0)
+    {
+        console.error("SMIL total duration is string, parsing float... (" + mo.duration + ")");
+        mo.duration = parseFloat(mo.duration);
+    }
     if (mo.DEBUG)
         console.debug("Media Overlay Duration (TOTAL): " + mo.duration);
 

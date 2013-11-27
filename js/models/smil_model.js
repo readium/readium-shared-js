@@ -195,7 +195,10 @@ ReadiumSDK.Models.SmilModel = function() {
 
 ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
 
-    console.debug("Media Overlay DTO import...");
+    if (smilModel.mo.DEBUG)
+    {
+        console.debug("Media Overlay DTO import...");
+    }
 
     var indent = 0;
     var getIndent = function()
@@ -225,11 +228,11 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
 
     if (smilModel.mo.DEBUG)
     {
-    console.log("JS MO smilVersion=" + smilModel.smilVersion);
-    console.log("JS MO id=" + smilModel.id);
-    console.log("JS MO spineItemId=" + smilModel.spineItemId);
-    console.log("JS MO href=" + smilModel.href);
-    console.log("JS MO duration=" + smilModel.duration);
+        console.log("JS MO smilVersion=" + smilModel.smilVersion);
+        console.log("JS MO id=" + smilModel.id);
+        console.log("JS MO spineItemId=" + smilModel.spineItemId);
+        console.log("JS MO href=" + smilModel.href);
+        console.log("JS MO duration=" + smilModel.duration);
     }
 
     var safeCopyProperty = function(property, from, to, isRequired) {
