@@ -1047,7 +1047,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
         var id = paginationData && paginationData.elementId ? paginationData.elementId : undefined;
 
-        for(var i = (rtl ? spineItems.length : 0); (rtl && i >=0) || (!rtl && i < spineItems.length); i += (rtl ? -1: 1))
+        for(var i = (rtl ? (spineItems.length - 1) : 0); (rtl && i >=0) || (!rtl && i < spineItems.length); i += (rtl ? -1: 1))
         {
             var spineItem = spineItems[i];
             if (!spineItem)
