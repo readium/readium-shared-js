@@ -1,11 +1,18 @@
 <html>
     <head>
         <script src="lib/jquery-1.8.2.min.js" type="text/javascript"></script>
+        <script src="lib/jquery.sizes.js" type="text/javascript"></script>
         <script src="lib/underscore.min.js" type="text/javascript"></script>
         <script src="lib/backbone.min.js" type="text/javascript"></script>
+        <script src="lib/URI.js" type="text/javascript"></script>
         <script src="js/readium_sdk.js" type="text/javascript"></script>
         <script src="js/helpers.js" type="text/javascript"></script>
+        <script src="js/models/style.js" type="text/javascript"></script>
+        <script src="js/models/style_collection.js" type="text/javascript"></script>
         <script src="js/models/trigger.js" type="text/javascript"></script>
+        <script src="js/models/smil_model.js" type="text/javascript"></script>
+        <script src="js/models/media_overlay.js" type="text/javascript"></script>
+        <script src="js/models/viewer_settings.js" type="text/javascript"></script>
         <script src="js/models/bookmark_data.js" type="text/javascript"></script>
         <script src="js/models/spine_item.js" type="text/javascript"></script>
         <script src="js/models/spine.js" type="text/javascript"></script>
@@ -13,14 +20,22 @@
         <script src="js/models/package.js" type="text/javascript"></script>
         <script src="js/models/current_pages_info.js" type="text/javascript"></script>
         <script src="js/models/page_open_request.js" type="text/javascript"></script>
+        <script src="js/models/smil_iterator.js" type="text/javascript"></script>
         <script src="lib/epub_cfi.js" type="text/javascript"></script>
+        <script src="js/views/iframe_loader.js" type="text/javascript"></script>
+        <script src="js/views/internal_links_support.js" type="text/javascript"></script>
         <script src="js/views/cfi_navigation_logic.js" type="text/javascript"></script>
         <script src="js/views/reflowable_view.js" type="text/javascript"></script>
         <script src="js/views/one_page_view.js" type="text/javascript"></script>
         <script src="js/views/fixed_view.js" type="text/javascript"></script>
         <script src="js/views/reader_view.js" type="text/javascript"></script>
+        <script src="js/views/media_overlay_element_highlighter.js"></script>
+        <script src="js/views/audio_player.js" type="text/javascript"></script>
+        <script src="js/views/media_overlay_player.js" type="text/javascript"></script>
+        <script src="js/views/media_overlay_data_injector.js" type="text/javascript"></script>
         <script src="host_app_feedback.js" type="text/javascript"></script>
-
+        
+        
         <!--reflowable view-->
         <script type="text/html" id="template-reflowable-view">
             <div id="viewport_reflowable" class="clearfix">
