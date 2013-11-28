@@ -306,7 +306,8 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
                 }
             }
 
-            if (!node.audio)
+            var forceTTS = false;
+            if (forceTTS || !node.audio)
             {
                 // synthetic speech (playback using TTS engine), or embedded media, or blank page
                 var fakeAudio = new ReadiumSDK.Models.Smil.AudioNode();
