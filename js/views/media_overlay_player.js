@@ -347,10 +347,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                     }
                     else
                     {
-                        reader.trigger(ReadiumSDK.Events.MEDIA_OVERLAY_TTS_SPEAK, {tts: _currentTTS});
-                        onStatusChanged({isPlaying: true});
-
-                        _ttsIsPlaying = true;
+                        speakStart(_currentTTS);
                     }
                 }
             }
@@ -556,10 +553,109 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         nextSmil(goNext);
     }
 
+    var _enableHTMLSpeech = false && window.speechSynthesis !== undefined;
+
     this.touchInit = function()
     {
-        _audioPlayer.touchInit();
-    }
+        var todo = _audioPlayer.touchInit();
+        if (todo)
+        {
+            if (_enableHTMLSpeech)
+            {
+                speakStart("o", 0);
+            }
+        }
+    };
+
+    var speakStart = function(txt, volume)
+    {
+        if (!volume || volume > 0)
+        {
+            onStatusChanged({isPlaying: true});
+            _ttsIsPlaying = true;
+        }
+
+        if (!_enableHTMLSpeech)
+        {
+            reader.trigger(ReadiumSDK.Events.MEDIA_OVERLAY_TTS_SPEAK, {tts: txt}); // resume if txt == undefined
+            return;
+        }
+
+        if (!txt && window.speechSynthesis.paused)
+        {
+console.debug("TTS resume");
+            window.speechSynthesis.resume();
+
+            return;
+        }
+
+        var text = txt || _currentTTS;
+
+        if (text)
+        {
+console.debug("TTS pause before speak");
+            window.speechSynthesis.pause();
+
+console.debug("TTS cancel before speak");
+            window.speechSynthesis.cancel();
+
+            var utt = new SpeechSynthesisUtterance();
+
+            utt.onend = function(event)
+            //utt.addEventListener("end", function(event)
+            {
+console.debug("TTS ended");
+console.debug(event);
+                self.onTTSEnd();
+            };
+
+            utt.onboundary = function(event)
+            //utt.addEventListener("boundary", function(event)
+            {
+console.debug("TTS boundary: " + event.name + " / " + event.charIndex);
+            };
+
+            utt.onerror = function(event)
+            //utt.addEventListener("error", function(event)
+            {
+console.debug("TTS error");
+console.debug(event);
+            };
+
+            var vol = volume || _audioPlayer.getVolume();
+            utt.volume = vol;
+console.debug("TTS volume: " + utt.volume);
+
+            utt.rate = _audioPlayer.getRate();
+            utt.pitch = 1;
+
+            //utt.lang = "en-US";
+
+            utt.text = text;
+
+console.debug("TTS speak: " + text);
+            window.speechSynthesis.speak(utt);
+
+//            setTimeout(function()
+//            {
+//            }, 10);
+        }
+    };
+
+    var speakStop = function()
+    {
+        onStatusChanged({isPlaying: false});
+        _ttsIsPlaying = false;
+
+        if (!_enableHTMLSpeech)
+        {
+            reader.trigger(ReadiumSDK.Events.MEDIA_OVERLAY_TTS_STOP, undefined);
+            return;
+        }
+
+console.debug("TTS pause");
+        window.speechSynthesis.pause();
+    };
 
     var _timerTick = undefined;
 
@@ -779,9 +875,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
     this.resetTTS = function() {
         _currentTTS = undefined;
 //        _skipTTSEnded = false;
-        reader.trigger(ReadiumSDK.Events.MEDIA_OVERLAY_TTS_STOP, undefined);
-        onStatusChanged({isPlaying: false});
-        _ttsIsPlaying = false;
+        speakStop();
     };
 
     this.resetBlankPage = function() {
@@ -833,9 +927,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         }
         else if (_currentTTS)
         {
-            _ttsIsPlaying = true;
-            reader.trigger(ReadiumSDK.Events.MEDIA_OVERLAY_TTS_SPEAK, {tts: undefined}); // resume
-            onStatusChanged({isPlaying: true});
+            speakStart(undefined);
         }
         else
         {
@@ -869,9 +961,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         }
         else if (_ttsIsPlaying)
         {
-            _ttsIsPlaying = false;
-            reader.trigger(ReadiumSDK.Events.MEDIA_OVERLAY_TTS_STOP, undefined);
-            onStatusChanged({isPlaying: false});
+            speakStop();
         }
         else
         {

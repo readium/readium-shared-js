@@ -49,6 +49,10 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
         _audioElement.playbackRate = _rate;
     }
     self.setRate(_rate);
+    this.getRate = function()
+    {
+        return _rate;
+    }
 
 
     var _volume = 100.0;
@@ -66,6 +70,10 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
         _audioElement.volume = _volume;
     }
     self.setVolume(_volume);
+    this.getVolume = function()
+    {
+        return _volume;
+    }
 
     this.play = function()
     {
@@ -300,24 +308,21 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
     {
         if (!_iOS)
         {
-            return;
+            return false;
         }
 
         if (_touchInited)
         {
-            return;
+            return false;
         }
+
         _touchInited = true;
 
         _audioElement.setAttribute("src", "touch/init/html5/audio.mp3");
         _audioElement.load();
 
-//        setTimeout(function()
-//        {
-//            self.reset();
-//        }, 100);
+        return true;
     }
-
 
     var _playId = 0;
 
