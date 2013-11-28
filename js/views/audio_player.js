@@ -298,7 +298,7 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
     var _touchInited = false;
     this.touchInit = function()
     {
-        if (!_isMobile)
+        if (!_iOS)
         {
             return;
         }
@@ -307,10 +307,9 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
         {
             return;
         }
-
         _touchInited = true;
 
-        _audioElement.setAttribute("src", "FAKE.MP3");
+        _audioElement.setAttribute("src", "touch/init/html5/audio.mp3");
         _audioElement.load();
 
 //        setTimeout(function()

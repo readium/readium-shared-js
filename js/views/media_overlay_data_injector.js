@@ -22,77 +22,100 @@ ReadiumSDK.Views.MediaOverlayDataInjector = function (mediaOverlay, mediaOverlay
                 $body.data("mediaOverlayClick", {ping: "pong"});
 
                 var clickEvent = 'ontouchstart' in document.documentElement ? 'touchstart' : 'click';
-                $body.bind(clickEvent, function (event) {
+                $body.bind(clickEvent, function (event)
+                {
                     var elem = $(this)[0]; // body
                     elem = event.target; // body descendant
 
-                    if (!elem) {
-                        return;
+                    if (!elem)
+                    {
+                        mediaOverlayPlayer.touchInit();
+                        return true;
                     }
 
                     console.debug("MO CLICK: " + elem.id);
-                    mediaOverlayPlayer.touchInit();
 
                     var data = undefined;
                     var el = elem;
 
                     var inLink = false;
-                    if (el.nodeName.toLowerCase() === "a") {
+                    if (el.nodeName.toLowerCase() === "a")
+                    {
                         inLink = true;
                     }
 
-                    while (!(data = $(el).data("mediaOverlayData"))) {
-                        if (el.nodeName.toLowerCase() === "a") {
+                    while (!(data = $(el).data("mediaOverlayData")))
+                    {
+                        if (el.nodeName.toLowerCase() === "a")
+                        {
                             inLink = true;
                         }
                         el = el.parentNode;
-                        if (!el) break;
+                        if (!el)
+                        {
+                            break;
+                        }
                     }
 
-                    if (data && data.par) {
-                        if (!mediaOverlaySettings.mediaOverlaysEnableClick) {
+                    if (data && data.par)
+                    {
+                        if (!mediaOverlaySettings.mediaOverlaysEnableClick)
+                        {
                             console.debug("MO CLICK DISABLED");
+                            mediaOverlayPlayer.touchInit();
                             return true;
                         }
 
-                        if (inLink) {
+                        if (inLink)
+                        {
                             console.debug("MO CLICKED LINK");
+                            mediaOverlayPlayer.touchInit();
                             return true;
                         }
 
                         var par = data.par;
 
-                        if (el && el != elem && el.nodeName.toLowerCase() === "body" && par && !par.getSmil().id) {
+                        if (el && el != elem && el.nodeName.toLowerCase() === "body" && par && !par.getSmil().id)
+                        {
                             console.debug("MO CLICKED BLANK BODY");
+                            mediaOverlayPlayer.touchInit();
                             return true;
                         }
 
                         mediaOverlayPlayer.playUserPar(par);
+                        return true;
                     }
-                    else {
+                    else
+                    {
                         var readaloud = $(elem).attr("ibooks:readaloud");
-                        if (!readaloud) {
+                        if (!readaloud)
+                        {
                             readaloud = $(elem).attr("epub:readaloud");
                         }
-                        if (readaloud) {
+                        if (readaloud)
+                        {
                             console.debug("MO readaloud attr: " + readaloud);
 
                             var isPlaying = mediaOverlayPlayer.isPlaying();
                             if (readaloud === "start" && !isPlaying ||
                                 readaloud === "stop" && isPlaying ||
-                                readaloud === "startstop") {
+                                readaloud === "startstop")
+                            {
                                 mediaOverlayPlayer.toggleMediaOverlay();
+                                return true;
                             }
                         }
                     }
 
+                    mediaOverlayPlayer.touchInit();
                     return true;
                 });
             }
         }
 
         var smil = mediaOverlay.getSmilBySpineItem(spineItem);
-        if (!smil) {
+        if (!smil)
+        {
             console.error("NO SMIL?? " + spineItem.idref + " /// " + spineItem.media_overlay_id);
             return;
         }
