@@ -188,6 +188,19 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
         return !(elementRect.bottom() <= visibleContentOffsets.top || elementRect.top >= visibleContentOffsets.bottom);
     };
 
+
+    this.getAllVisibleElementsWithSelector = function(selector, visibleContentOffset) {
+        debugger;
+        var elements = $(selector,this.getRootElement()).filter(function(e) { return true; });
+        var $newElements = [];
+        $.each(elements, function() {
+            $newElements.push($(this));
+        });
+        var visibleDivs = this.getVisibleElements($newElements, visibleContentOffset);
+        return visibleDivs;
+
+    };
+
     this.getVisibleElements = function($elements, visibleContentOffsets) {
 
         var visibleElements = [];
@@ -196,6 +209,12 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
         $.each($elements, function() {
 
             var elementRect = ReadiumSDK.Helpers.Rect.fromElement(this);
+            // this is actually a point element, doesnt have a bounding rectangle
+            if (_.isNaN(elementRect.left)) {
+                var left = this.position().left;
+                var top = this.position().top;
+                elementRect = new ReadiumSDK.Helpers.Rect(top, left, 0, 0);
+            }
 
             if(elementRect.bottom() <= visibleContentOffsets.top) {
                 return true; //next element

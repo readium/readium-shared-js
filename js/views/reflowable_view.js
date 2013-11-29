@@ -570,6 +570,21 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
 
     getDom: function ()  {
         return this.$iframe;
+    },
+
+    getVisibleAnnotationMidpoints: function () {
+        var contentOffsets = this.getVisibleContentOffsets();
+        var halfBakedResults = this.navigationLogic.getAllVisibleElementsWithSelector('span.range-start-marker',contentOffsets);
+        var results  = [];
+        $.each(halfBakedResults, function(){
+            var $element = $(this.element);
+            var elementId = $element[0].id;
+            elementId = elementId.substring(6);
+            var $higlighted = {"id": elementId, "position":$element.position()};
+            results.push($higlighted)
+        });
+        return results;
+
     }
 
 });

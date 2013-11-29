@@ -611,9 +611,19 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
     setPackageDocument:function(packageDoc) {
         var parser = new window.DOMParser;
-        this.packageDoc = parser.parseFromString(packageDoc, "text/xml");
+        if (_.isString(packageDoc))
+            this.packageDoc = parser.parseFromString(packageDoc, "text/xml");
+        else
+            this.packageDoc = packageDoc;
     },
 
+    isThisCfiForCurrentSpineItem: function(CFI){ 
+        var paginationInfo = this.currentView.getPaginationInfo();
+        var firstOpenPage = paginationInfo.openPages[0];
+        var contentDocHref = EPUBcfi.getContentDocHref(CFI, this.packageDoc);
+        var spine = this.spine.getItemByHref(contentDocHref);
+        return spine.idref === firstOpenPage.idref;
+    },
 
     createFullyQualifiedCfi : function(cfi) {
         if (cfi === undefined)
@@ -635,11 +645,16 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
     },
 
     addHighlight: function(CFI, id, type) {
-        return this.getAnnotaitonsManagerForCurrentSpineItem().addHighlight(CFI, id, type);
+        if (this.isThisCfiForCurrentSpineItem(CFI))
+            return this.getAnnotaitonsManagerForCurrentSpineItem().addHighlight(CFI, id, type);
+        else 
+            return undefined;
     },
 
     addSelectionHighlight: function(id, type) {
-        return this.getAnnotaitonsManagerForCurrentSpineItem().addSelectionHighlight(id, type);
+        var annotation = this.getAnnotaitonsManagerForCurrentSpineItem().addSelectionHighlight(id, type);
+        annotation.CFI = this.createFullyQualifiedCfi(annotation.CFI);
+        return annotation; 
     },
 
     showPageByCFI : function (CFI, callback, callbackContext) {
@@ -668,5 +683,14 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
     getCfiForCurrentPage:function(id) {
         var bookmark = $.parseJSON(this.bookmarkCurrentPage());
         return this.createFullyQualifiedCfi(bookmark.contentCFI)
+    },
+    redraw: function() {
+        return this.currentView.onViewportResize();
+    },
+    getVisibleAnnotationMidpoints: function () {
+        return this.currentView.getVisibleAnnotationMidpoints();
     }
+
+
+
 });
