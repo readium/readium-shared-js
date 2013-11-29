@@ -179,5 +179,28 @@ ReadiumSDK.Helpers.setStyles = function(styles, $element) {
 
 };
 
+ReadiumSDK.Helpers.getOrientation = function($viewport) {
+
+    var viewportWidth = $viewport.width();
+    var viewportHeight = $viewport.height();
+
+    if(!viewportWidth || !viewportHeight) {
+        return undefined;
+    }
+
+    return viewportWidth >= viewportHeight ? ReadiumSDK.Views.ORIENTATION_LANDSCAPE : ReadiumSDK.Views.ORIENTATION_PORTRAIT;
+};
+
+ReadiumSDK.Helpers.isRenditionSpreadPermittedForItem = function(item, orientation) {
+
+    return  !item.rendition_spread
+        ||  item.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_BOTH
+        ||  item.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_AUTO
+        ||  (item.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_LANDSCAPE
+        && orientation == ReadiumSDK.Views.ORIENTATION_LANDSCAPE)
+        ||  (item.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_PORTRAIT
+        && orientation == ReadiumSDK.Views.ORIENTATION_PORTRAIT );
+};
+
 
 

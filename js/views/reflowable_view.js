@@ -107,6 +107,8 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
     onViewportResize: function() {
 
         if(this.updateViewportSize()) {
+            //depends on aspect ratio of viewport and rendition:spread-* setting we may have to switch spread on/off
+            this.paginationInfo.visibleColumnCount = this.calculateVisibleColumnCount();
             this.updatePagination();
         }
 
@@ -114,12 +116,30 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
 
     setViewSettings: function(settings) {
 
-        this.paginationInfo.visibleColumnCount = settings.isSyntheticSpread ? 2 : 1;
+        this.isSyntheticSpread = settings.isSyntheticSpread;
+        this.paginationInfo.visibleColumnCount = this.calculateVisibleColumnCount();
         this.paginationInfo.columnGap = settings.columnGap;
         this.fontSize = settings.fontSize;
         this.updateHtmlFontSizeAndColumnGap();
 
         this.updatePagination();
+    },
+
+    calculateVisibleColumnCount: function() {
+
+        var columnCount = this.isSyntheticSpread ? 2 : 1;
+
+        if(!this.currentSpineItem) {
+            return columnCount;
+        }
+
+        var orientation = ReadiumSDK.Helpers.getOrientation(this.$viewport);
+        if(!orientation) {
+            return columnCount;
+        }
+
+        return ReadiumSDK.Helpers.isRenditionSpreadPermittedForItem(this.currentSpineItem, orientation)
+                ? 2 : 1;
     },
 
     registerTriggers: function (doc) {
@@ -191,7 +211,6 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         this.registerTriggers(epubContentDocument);
 
     },
-
 
     applyStyles: function() {
 

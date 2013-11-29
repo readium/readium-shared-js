@@ -110,7 +110,7 @@ ReadiumSDK.Models.Spread = function(spine, orientation) {
             return ReadiumSDK.Models.Spread.POSITION_CENTER;
         }
 
-        if(!isRenditionSpreadPermitted(item)) {
+        if(!ReadiumSDK.Helpers.isRenditionSpreadPermittedForItem(item, self.orientation)) {
             return ReadiumSDK.Models.Spread.POSITION_CENTER;
         }
 
@@ -123,17 +123,6 @@ ReadiumSDK.Models.Spread = function(spine, orientation) {
         }
 
         return ReadiumSDK.Models.Spread.POSITION_CENTER;
-    }
-
-    function isRenditionSpreadPermitted(item) {
-
-        return  !item.rendition_spread
-            ||  item.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_BOTH
-            ||  item.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_AUTO
-            ||  (item.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_LANDSCAPE
-                    && self.orientation == ReadiumSDK.Views.ORIENTATION_LANDSCAPE)
-            ||  (item.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_PORTRAIT
-                    && self.orientation == ReadiumSDK.Views.ORIENTATION_PORTRAIT );
     }
 
     this.openNext = function() {

@@ -42,7 +42,7 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
         this.userStyles = this.options.userStyles;
 
         this.spine = this.options.spine;
-        this.spread = new ReadiumSDK.Models.Spread(this.spine, this.getOrientation());
+        this.spread = new ReadiumSDK.Models.Spread(this.spine, ReadiumSDK.Helpers.getOrientation(this.$viewport));
 
         this.leftPageView = this.createOnePageView("fixed-page-frame-left", "right");
         this.rightPageView = this.createOnePageView("fixed-page-frame-right", "left");
@@ -162,7 +162,7 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
 
         //because change of the viewport orientation can alter pagination behaviour we have to check if
         //visible content stays same
-        var newOrientation = this.getOrientation();
+        var newOrientation = ReadiumSDK.Helpers.getOrientation(this.$viewport);
         if(!newOrientation) {
             return;
         }
@@ -191,18 +191,6 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
             this.resizeBook();
         }
 
-    },
-
-    getOrientation: function() {
-
-        var viewportWidth = this.$viewport.width();
-        var viewportHeight = this.$viewport.height();
-
-        if(!viewportWidth || !viewportHeight) {
-            return undefined;
-        }
-
-        return viewportWidth >= viewportHeight ? ReadiumSDK.Views.ORIENTATION_LANDSCAPE : ReadiumSDK.Views.ORIENTATION_PORTRAIT;
     },
 
     isContentRendered: function() {
