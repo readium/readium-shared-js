@@ -22,24 +22,28 @@
  * @constructor
  */
 
-ReadiumSDK.Models.Spread = function(spine) {
+ReadiumSDK.Models.Spread = function(spine, orientation) {
 
+    var self = this;
+
+    this.orientation = orientation;
     this.spine = spine;
 
     this.leftItem = undefined;
     this.rightItem = undefined;
     this.centerItem = undefined;
 
-    this.isSyntheticSpread = true;
+    var _isSyntheticSpread = true;
 
     this.setSyntheticSpread = function(isSyntheticSpread) {
-        this.isSyntheticSpread = isSyntheticSpread;
+        _isSyntheticSpread = isSyntheticSpread;
     };
+
 
     this.openFirst = function() {
 
         if( this.spine.items.length == 0 ) {
-            this.resetItems();
+            resetItems();
         }
         else {
             this.openItem(this.spine.first());
@@ -49,7 +53,7 @@ ReadiumSDK.Models.Spread = function(spine) {
     this.openLast = function() {
 
         if( this.spine.items.length == 0 ) {
-            this.resetItems();
+            resetItems();
         }
         else {
             this.openItem(this.spine.last());
@@ -58,41 +62,79 @@ ReadiumSDK.Models.Spread = function(spine) {
 
     this.openItem = function(item) {
 
-        this.resetItems();
-        this.setItem(item);
+        resetItems();
 
-        var neighbourItem = this.getNeighbourItem(item);
+        var position = getItemPosition(item);
+        setItemToPosition(item, position);
 
-        if(neighbourItem) {
-            this.setItem(neighbourItem);
+        if(position != ReadiumSDK.Models.Spread.POSITION_CENTER) {
+            var neighbour = getNeighbourItem(item);
+            if(neighbour) {
+                var neighbourPos = getItemPosition(neighbour);
+                if(neighbourPos != position && position != ReadiumSDK.Models.Spread.POSITION_CENTER)  {
+                    setItemToPosition(neighbour, neighbourPos);
+                }
+            }
         }
     };
 
-    this.resetItems = function() {
+    function resetItems() {
 
-        this.leftItem = undefined;
-        this.rightItem = undefined;
-        this.centerItem = undefined;
+        self.leftItem = undefined;
+        self.rightItem = undefined;
+        self.centerItem = undefined;
+    }
 
-    };
+    function setItemToPosition(item, position) {
 
-    this.setItem = function(item) {
+        if(position == ReadiumSDK.Models.Spread.POSITION_LEFT) {
+            self.leftItem = item;
+        }
+        else if (position == ReadiumSDK.Models.Spread.POSITION_RIGHT) {
+            self.rightItem = item;
+        }
+        else {
 
-        if(!this.isSyntheticSpread) {
-            this.centerItem = item;
-            return;
+            if(position != ReadiumSDK.Models.Spread.POSITION_CENTER) {
+                console.error("Unrecognized position value");
+            }
+
+            self.centerItem = item;
+        }
+
+    }
+
+    function getItemPosition(item) {
+
+        if(!_isSyntheticSpread) {
+            return ReadiumSDK.Models.Spread.POSITION_CENTER;
+        }
+
+        if(!isRenditionSpreadPermitted(item)) {
+            return ReadiumSDK.Models.Spread.POSITION_CENTER;
         }
 
         if(item.isLeftPage()) {
-            this.leftItem = item;
+            return ReadiumSDK.Models.Spread.POSITION_LEFT;
         }
-        else if (item.isRightPage()) {
-            this.rightItem = item;
+
+        if (item.isRightPage()) {
+            return ReadiumSDK.Models.Spread.POSITION_RIGHT;
         }
-        else {
-            this.centerItem = item;
-        }
-    };
+
+        return ReadiumSDK.Models.Spread.POSITION_CENTER;
+    }
+
+    function isRenditionSpreadPermitted(item) {
+
+        return  !item.rendition_spread
+            ||  item.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_BOTH
+            ||  item.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_AUTO
+            ||  (item.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_LANDSCAPE
+                    && self.orientation == ReadiumSDK.Views.ORIENTATION_LANDSCAPE)
+            ||  (item.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_PORTRAIT
+                    && self.orientation == ReadiumSDK.Views.ORIENTATION_PORTRAIT );
+    }
 
     this.openNext = function() {
 
@@ -110,7 +152,7 @@ ReadiumSDK.Models.Spread = function(spine) {
                 this.openItem(nextItem);
             }
         }
-    }
+    };
 
     this.openPrev = function() {
 
@@ -143,41 +185,23 @@ ReadiumSDK.Models.Spread = function(spine) {
         });
 
         return arr;
-    }
-
-    this.getNeighbourItem = function(item) {
-
-        var neighbourItem = undefined;
-
-        if(!this.isSyntheticSpread) {
-            return neighbourItem;
-        }
-
-        if(item.isLeftPage()) {
-
-            neighbourItem = this.spine.isRightToLeft() ? this.spine.prevItem(item) : this.spine.nextItem(item);
-
-            if (neighbourItem && neighbourItem.isLeftPage())
-            {
-                neighbourItem = undefined;
-            }
-        }
-        else if(item.isRightPage()) {
-
-            neighbourItem = this.spine.isRightToLeft() ? this.spine.nextItem(item) : this.spine.prevItem(item);
-
-            if (neighbourItem && neighbourItem.isRightPage())
-            {
-                neighbourItem = undefined;
-            }
-        }
-
-        if(neighbourItem && neighbourItem.isCenterPage()) {
-
-            neighbourItem = undefined;
-        }
-
-        return neighbourItem;
     };
 
+    function getNeighbourItem(item) {
+
+        if(item.isLeftPage()) {
+            return self.spine.isRightToLeft() ? self.spine.prevItem(item) : self.spine.nextItem(item);
+        }
+
+        if(item.isRightPage()) {
+            return self.spine.isRightToLeft() ? self.spine.nextItem(item) : self.spine.prevItem(item);
+        }
+
+        return undefined;
+    }
+
 };
+
+ReadiumSDK.Models.Spread.POSITION_LEFT = "left";
+ReadiumSDK.Models.Spread.POSITION_RIGHT = "right";
+ReadiumSDK.Models.Spread.POSITION_CENTER = "center";

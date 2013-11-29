@@ -45,7 +45,7 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
 
     isDisplaying:function() {
 
-        return this.currentSpineItem != undefined;
+        return this.currentSpineItem != undefined && this.$epubHtml != null && this.$epubHtml.length > 0;
     },
 
     render: function() {
@@ -151,6 +151,10 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
 
         css["width"] = this.meta_size.width;
         css["height"] = this.meta_size.height;
+
+        if(!this.$epubHtml) {
+            debugger;
+        }
 
         this.$epubHtml.css(css);
         this.$iframe.css("visibility", "visible");

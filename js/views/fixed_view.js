@@ -42,7 +42,7 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
         this.userStyles = this.options.userStyles;
 
         this.spine = this.options.spine;
-        this.spread = new ReadiumSDK.Models.Spread(this.spine);
+        this.spread = new ReadiumSDK.Models.Spread(this.spine, this.getOrientation());
 
         this.leftPageView = this.createOnePageView("fixed-page-frame-left", "right");
         this.rightPageView = this.createOnePageView("fixed-page-frame-right", "left");
@@ -160,21 +160,71 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
 
     onViewportResize: function() {
 
-        this.resizeBook();
-    },
-
-    resizeBook: function() {
-
-        if(!this.contentMetaSize || !this.bookMargins) {
+        //because change of the viewport orientation can alter pagination behaviour we have to check if
+        //visible content stays same
+        var newOrientation = this.getOrientation();
+        if(!newOrientation) {
             return;
         }
+
+        var spreadChanged = false;
+        var itemToDisplay = undefined;
+        if(this.spread.orientation != newOrientation) {
+
+            var newPageSpread = new ReadiumSDK.Models.Spread(this.spine, newOrientation);
+
+            spreadChanged = (  this.spread.leftItem != newPageSpread.leftItem
+                            || this.spread.rightItem != newPageSpread.rightItem
+                            || this.spread.centerItem != newPageSpread.centerItem );
+
+            this.spread.orientation = newOrientation;
+        }
+
+        if(spreadChanged) {
+            itemToDisplay = this.spread.validItems()[0];
+            if(itemToDisplay) {
+                var paginationRequest = new ReadiumSDK.Models.PageOpenRequest(itemToDisplay, this);
+                this.openPage(paginationRequest);
+            }
+        }
+        else {
+            this.resizeBook();
+        }
+
+    },
+
+    getOrientation: function() {
 
         var viewportWidth = this.$viewport.width();
         var viewportHeight = this.$viewport.height();
 
         if(!viewportWidth || !viewportHeight) {
+            return undefined;
+        }
+
+        return viewportWidth >= viewportHeight ? ReadiumSDK.Views.ORIENTATION_LANDSCAPE : ReadiumSDK.Views.ORIENTATION_PORTRAIT;
+    },
+
+    isContentRendered: function() {
+
+        if(!this.contentMetaSize || !this.bookMargins) {
+            return false;
+        }
+
+        var viewportWidth = this.$viewport.width();
+        var viewportHeight = this.$viewport.height();
+
+        return viewportWidth && viewportHeight;
+    },
+
+    resizeBook: function() {
+
+        if(!this.isContentRendered()) {
             return;
         }
+
+        var viewportWidth = this.$viewport.width();
+        var viewportHeight = this.$viewport.height();
 
         var leftPageMargins = this.leftPageView.isDisplaying() ? ReadiumSDK.Helpers.Margins.fromElement(this.leftPageView.$el) : ReadiumSDK.Helpers.Margins.empty();
         var rightPageMargins = this.rightPageView.isDisplaying() ? ReadiumSDK.Helpers.Margins.fromElement(this.rightPageView.$el) : ReadiumSDK.Helpers.Margins.empty();

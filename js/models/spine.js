@@ -20,139 +20,149 @@
  *  @class  ReadiumSDK.Models.Spine
  */
 
-ReadiumSDK.Models.Spine = Backbone.Model.extend({
+ReadiumSDK.Models.Spine = function(epubPackage, spineDTO) {
+
+    var self = this;
 
     /*
      * Collection of spine items
      * @property items
      * @type {Array}
      */
-    items: [],
+    this.items = [];
 
     /*
      * Page progression direction ltr|rtl|default
      * @property direction
      * @type {string}
      */
-    direction: undefined,
+    this.direction = "ltr";
 
     /*
      * @property package
      * @type {ReadiumSDK.Models.Package}
      *
      */
-    package: undefined,
+    this.package = epubPackage;
 
-    initialize : function() {
 
-        this.reset();
 
-        this.package = this.get("package");
-        var spineData = this.get("spineData");
+    this.prevItem = function(item) {
 
-        if(spineData) {
-
-            this.direction = spineData.direction;
-            if(!this.direction) {
-                this.direction = "ltr";
-            }
-
-            var length = spineData.items.length;
-            for(var i = 0; i < length; i++) {
-                var item = new ReadiumSDK.Models.SpineItem(spineData.items[i], i, this);
-                this.items.push(item);
-            }
-        }
-
-    },
-
-    reset: function() {
-        this.items = [];
-        this.direction = undefined;
-        this.package = undefined;
-    },
-
-    prevItem:  function(item) {
-
-        if(this.isValidIndex(item.index - 1)) {
+        if(isValidIndex(item.index - 1)) {
             return this.items[item.index - 1];
         }
 
         return undefined;
-    },
+    };
 
-    nextItem: function(item){
+    this.nextItem = function(item){
 
-        if(this.isValidIndex(item.index + 1)) {
+        if(isValidIndex(item.index + 1)) {
             return this.items[item.index + 1];
         }
 
         return undefined;
-    },
+    };
 
-    getItemUrl: function(item) {
+    this.getItemUrl = function(item) {
 
-        this.package.resolveRelativeUrl(item.href);
+        self.package.resolveRelativeUrl(item.href);
 
-    },
+    };
 
-    isValidIndex: function(index) {
+    function isValidIndex(index) {
 
-        return index >= 0 && index < this.items.length;
-    },
-
-    first: function() {
-        return this.items[0];
-    },
-
-    last: function() {
-        return this.items[this.items.length - 1];
-    },
-
-    item: function(index) {
-		
-		if (this.isValidIndex(index))
-        	return this.items[index];
-			
-		return undefined;
-    },
-
-    isRightToLeft: function() {
-
-        return this.direction == "rtl";
-    },
-
-    isLeftToRight: function() {
-
-        return !this.isRightToLeft();
-    },
-
-    getItemById: function(idref) {
-
-        var length = this.items.length;
-
-        for(var i = 0; i < length; i++) {
-            if(this.items[i].idref == idref) {
-
-                return this.items[i];
-            }
-        }
-
-        return undefined;
-    },
-
-    getItemByHref: function(href) {
-
-        var length = this.items.length;
-
-        for(var i = 0; i < length; i++) {
-            if(this.items[i].href == href) {
-
-                return this.items[i];
-            }
-        }
-
-        return undefined;
+        return index >= 0 && index < self.items.length;
     }
 
-});
+    this.first = function() {
+        return self.items[0];
+    };
+
+    this.last = function() {
+        return self.items[self.items.length - 1];
+    };
+
+    this.item = function(index) {
+		
+		if (isValidIndex(index))
+        	return self.items[index];
+			
+		return undefined;
+    };
+
+    this.isRightToLeft = function() {
+
+        return self.direction == "rtl";
+    };
+
+    this.isLeftToRight = function() {
+
+        return !self.isRightToLeft();
+    };
+
+    this.getItemById = function(idref) {
+
+        var length = self.items.length;
+
+        for(var i = 0; i < length; i++) {
+            if(self.items[i].idref == idref) {
+
+                return self.items[i];
+            }
+        }
+
+        return undefined;
+    };
+
+    this.getItemByHref = function(href) {
+
+        var length = self.items.length;
+
+        for(var i = 0; i < length; i++) {
+            if(self.items[i].href == href) {
+
+                return self.items[i];
+            }
+        }
+
+        return undefined;
+    };
+
+    function updateSpineItemsSpread() {
+
+        var len = self.items.length;
+
+        var isFirstPageInSpread = false;
+        var baseSide = self.isLeftToRight() ? ReadiumSDK.Models.SpineItem.SPREAD_LEFT : ReadiumSDK.Models.SpineItem.SPREAD_RIGHT;
+
+        for(var i = 0; i < len; i++) {
+
+            var spineItem = self.items[i];
+            if( !spineItem.page_spread) {
+
+                var spread = isFirstPageInSpread ? baseSide : ReadiumSDK.Models.SpineItem.alternateSpread(baseSide);
+                spineItem.setSpread(spread);
+            }
+
+            isFirstPageInSpread = !spineItem.isRenditionSpreadAllowed() || spineItem.page_spread != baseSide;
+        }
+    }
+
+    if(spineDTO) {
+
+        if(spineDTO.direction) {
+            this.direction = spineDTO.direction;
+        }
+
+        var length = spineDTO.items.length;
+        for(var i = 0; i < length; i++) {
+            var item = new ReadiumSDK.Models.SpineItem(spineDTO.items[i], i, this);
+            this.items.push(item);
+        }
+
+        updateSpineItemsSpread();
+    }
+
+};
