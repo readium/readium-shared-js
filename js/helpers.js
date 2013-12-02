@@ -52,7 +52,7 @@ ReadiumSDK.Helpers.Rect = function(left, top, width, height) {
 ReadiumSDK.Helpers.Rect.fromElement = function($element) {
 
     var e;
-    if (_.isArray($element))
+    if (_.isArray($element) || $element instanceof jQuery)
        e = $element[0];
     else
         e = $element;
