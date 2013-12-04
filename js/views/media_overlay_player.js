@@ -35,8 +35,8 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
     }
 
     //var _currentPagination = undefined;
-    var _package = reader.package;
-    var _settings = reader.viewerSettings;
+    var _package = reader.package();
+    var _settings = reader.viewerSettings();
     var self = this;
     var _elementHighlighter = new ReadiumSDK.Views.MediaOverlayElementHighlighter(reader);
 
@@ -82,9 +82,9 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         var element = undefined;
         if (paginationData.elementId || paginationData.initiator == self)
         {
-            var spineItems = reader.currentView.getLoadedSpineItems();
+            var spineItems = reader.getLoadedSpineItems();
 
-            var rtl = reader.spine.isRightToLeft();
+            var rtl = reader.spine().isRightToLeft();
 
             for(var i = (rtl ? (spineItems.length - 1) : 0); rtl && i >=0 || !rtl && i < spineItems.length; i += (rtl ? -1: 1))
             {
@@ -94,7 +94,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                     continue;
                 }
 
-                element = reader.currentView.getElement(spineItem, paginationData.initiator == self && !paginationData.elementId ? "body" : "#" + paginationData.elementId);
+                element = reader.getElement(spineItem, paginationData.initiator == self && !paginationData.elementId ? "body" : "#" + paginationData.elementId);
                 if (element)
                 {
                     /*
@@ -1354,10 +1354,10 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 //console.debug("moData SMIL: " + moData.par.getSmil().href + " // " + + moData.par.getSmil().id);
 
 
-        var spineItems = reader.currentView.getLoadedSpineItems();
+        var spineItems = reader.getLoadedSpineItems();
 
         //paginationData.pageProgressionDirection === "rtl"
-        var rtl = reader.spine.isRightToLeft();
+        var rtl = reader.spine().isRightToLeft();
 
         //paginationData.spineItemCount
 
@@ -1397,11 +1397,11 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
             if (id)
             {
-                element = reader.currentView.getElement(spineItem, "#" + id);
+                element = reader.getElement(spineItem, "#" + id);
             }
             else if (spineItem.isFixedLayout())
             {
-                element = reader.currentView.getElement(spineItem, "body");
+                element = reader.getElement(spineItem, "body");
             }
 
             if (element)
