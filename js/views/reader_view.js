@@ -522,12 +522,34 @@ ReadiumSDK.Views.ReaderView = function(options) {
             return;
         }
 
+        self.openSpineItemElementId(spineItem.idref, elementId, initiator);
+
+//console.debug("------- openContentUrl - elementId: " + elementId);
+
+    };
+
+    /**
+     * Opens the page of the spine item with element with provided cfi
+     *
+     * @method openSpineItemElementId
+     *
+     * @param {string} idref Id of the spine item
+     * @param {string} elementId id of the element to be shown
+     * @param {object} initiator optional
+     */
+    this.openSpineItemElementId = function(idref, elementId, initiator) {
+
+        var spineItem = _spine.getItemById(idref);
+        if(!spineItem) {
+            return;
+        }
+
         var pageData = new ReadiumSDK.Models.PageOpenRequest(spineItem, initiator);
 
         if(elementId){
             pageData.setElementId(elementId);
         }
-//console.debug("------- openContentUrl - elementId: " + elementId);
+
 
         openPage(pageData);
     };

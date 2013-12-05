@@ -130,8 +130,7 @@ ReadiumSDK.Views.MediaOverlayDataInjector = function (mediaOverlay, mediaOverlay
             if (true) { //iter.currentPar.text.srcFragmentId (includes empty frag ID)
 
                 var textRelativeRef = ReadiumSDK.Helpers.ResolveContentRef(iter.currentPar.text.srcFile, iter.smil.href);
-                //var spineItemCheck = self.spine.getItemByHref(textRelativeRef);
-                //var same = spineItemCheck === spineItem;
+
                 var same = textRelativeRef === spineItem.href;
                 if (same) {
                     var selector = iter.currentPar.text.srcFragmentId.length == 0 ? "body" : "#" + iter.currentPar.text.srcFragmentId;

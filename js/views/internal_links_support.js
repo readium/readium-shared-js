@@ -28,15 +28,17 @@ ReadiumSDK.Views.InternalLinksSupport = function(reader) {
 
                     var currentSpineItemUri = new URI(spineItem.href);
                     var openedSpineItemUri = hrefUri.absoluteTo(currentSpineItemUri);
-                    var idref = openedSpineItemUri.pathname();
+                    var newSpineItemHref = openedSpineItemUri.pathname();
                     var hashFrag = openedSpineItemUri.fragment();
-                    var newSpineItem = reader.spine().getItemByHref(idref);
-                    var pageData = new ReadiumSDK.Models.PageOpenRequest(newSpineItem, self);
-                    if (hashFrag) {
-                        pageData.setElementId(hashFrag);
+                    var newSpineItem = reader.spine().getItemByHref(newSpineItemHref);
+
+                    if(newSpineItem) {
+                        reader.openSpineItemElementId(newSpineItem.idref, hashFrag, self);
+                    }
+                    else {
+                        console.error("spine item with href=" + newSpineItemHref + " not found");
                     }
 
-                    reader.openPage(pageData);
                     overrideClickEvent = true;
                 } // otherwise it's probably just a hash frag that needs to be handled by browser's default handling
             } else {
