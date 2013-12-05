@@ -644,9 +644,9 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
         return this.createFullyQualifiedCfi(CFI);
     },
 
-    addHighlight: function(CFI, id, type) {
+    addHighlight: function(CFI, id, type, styles) {
         if (this.isThisCfiForCurrentSpineItem(CFI))
-            return this.getAnnotaitonsManagerForCurrentSpineItem().addHighlight(CFI, id, type);
+            return this.getAnnotaitonsManagerForCurrentSpineItem().addHighlight(CFI, id, type, styles);
         else 
             return undefined;
     },
