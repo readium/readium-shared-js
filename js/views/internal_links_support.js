@@ -30,7 +30,7 @@ ReadiumSDK.Views.InternalLinksSupport = function(reader) {
                     var openedSpineItemUri = hrefUri.absoluteTo(currentSpineItemUri);
                     var idref = openedSpineItemUri.pathname();
                     var hashFrag = openedSpineItemUri.fragment();
-                    var newSpineItem = reader.spine.getItemByHref(idref);
+                    var newSpineItem = reader.spine().getItemByHref(idref);
                     var pageData = new ReadiumSDK.Models.PageOpenRequest(newSpineItem, self);
                     if (hashFrag) {
                         pageData.setElementId(hashFrag);
