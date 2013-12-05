@@ -190,7 +190,6 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
 
 
     this.getAllVisibleElementsWithSelector = function(selector, visibleContentOffset) {
-        debugger;
         var elements = $(selector,this.getRootElement()).filter(function(e) { return true; });
         var $newElements = [];
         $.each(elements, function() {
