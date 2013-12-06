@@ -584,7 +584,21 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
             results.push($higlighted)
         });
         return results;
+    },
 
+    isVisibleCFI: function(cfi) {
+        var epubContentDocument = this.$iframe[0].contentDocument;
+        // get the element that the CFI is pointing at
+        var element = EPUBcfi.Interpreter.getTargetElement(cfi, epubContentDocument);
+        var visibility= false;
+
+        if (element)
+        {
+            var $element = $(element);
+            visibility = this.navigationLogic.isElementVisible($element, this.getVisibleContentOffsets());
+        }
+        return visibility;
     }
+
 
 });

@@ -689,7 +689,11 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
     },
     getVisibleAnnotationMidpoints: function () {
         return this.currentView.getVisibleAnnotationMidpoints();
+    },
+    isVisibleCFI: function(cfi) {
+        return this.isThisCfiForCurrentSpineItem(cfi) && this.currentView.isVisibleCFI(cfi);
     }
+
 
 
 
