@@ -651,6 +651,11 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
             return undefined;
     },
 
+    updateAnnotationView: function(id, styles) {
+        return this.getAnnotaitonsManagerForCurrentSpineItem().updateAnnotationView(id, styles);
+    },
+
+    
     addSelectionHighlight: function(id, type) {
         var annotation = this.getAnnotaitonsManagerForCurrentSpineItem().addSelectionHighlight(id, type);
         annotation.CFI = this.createFullyQualifiedCfi(annotation.CFI);
