@@ -27,6 +27,7 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
     currentSpineItem: undefined,
     spine: undefined,
     contentAlignment: undefined, //expected 'center' 'left' 'right'
+    annotations: undefined,
 
     meta_size : {
         width: 0,
@@ -82,6 +83,10 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
 //            this.fitToScreen();
 
             this.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED, this.$iframe, this.currentSpineItem, true);
+
+
+            // TODO DM this should be in its own method
+            this.annotations = new EpubAnnotationsModule(this.getDom());
         }
     },
 
@@ -273,6 +278,10 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
     getVisibleMediaOverlayElements: function() {
         var navigation = new ReadiumSDK.Views.CfiNavigationLogic(this.$el, this.$iframe);
         return navigation.getVisibleMediaOverlayElements({top:0, bottom: this.$iframe.height()});
+    },
+
+    getDom: function() {
+        return epubDocument = this.$iframe.get(0).contentWindow.document;
     }
 
 });

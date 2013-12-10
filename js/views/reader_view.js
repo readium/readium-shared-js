@@ -40,7 +40,6 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
     },
 
     renderCurrentView: function(isReflowable) {
-
         if(this.currentView){
 
             //current view is already rendered
@@ -51,6 +50,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
             this.resetCurrentView();
         }
 
+        
         if(isReflowable) {
 
             this.currentView = new ReadiumSDK.Views.ReflowableView({$viewport: this.$el, spine:this.spine, userStyles: this.userStyles, reader: this});
@@ -617,18 +617,17 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
             this.packageDoc = packageDoc;
     },
 
-    isThisCfiForCurrentSpineItem: function(CFI){ 
-        var paginationInfo = this.currentView.getPaginationInfo();
-        var firstOpenPage = paginationInfo.openPages[0];
-        var contentDocHref = EPUBcfi.getContentDocHref(CFI, this.packageDoc);
-        var spine = this.spine.getItemByHref(contentDocHref);
-        return spine.idref === firstOpenPage.idref;
+    isThisCfiForVisibleSpineItems: function(CFI){ 
+        var result = false;
+        this.forEachVisibleSpineItemThatMatchesCfi(CFI, function() {
+            result = true;
+        });
+        return result;
     },
 
-    createFullyQualifiedCfi : function(cfi) {
+    createFullyQualifiedCfi : function(cfi, spineIndex) {
         if (cfi === undefined)
             return undefined;
-        var spineIndex = this.currentView.currentSpineItem.index
         var packageDocCFIComponent = EPUBcfi.generatePackageDocumentCFIComponentWithSpineIndex(spineIndex, this.packageDoc);
         var completeCFI = EPUBcfi.generateCompleteCFI(packageDocCFIComponent, cfi);
         return completeCFI;
@@ -636,19 +635,32 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
 
     getAnnotaitonsManagerForCurrentSpineItem: function () {
-        return this.currentView.annotations;
+        // TODO DM this needs to be abstracted better. should be the same handler regardless of whether it's reflowable or fixed.
+        if (this.currentView.isReflowable())
+            return {"annotationManager": this.currentView.annotations, "spineItemIndex" : this.currentView.spineItemIndex};
+        else
+            return this.currentView.getAnnotaitonsManagerForCurrentSpineItem();
     },
 
     getCurrentSelectionCFI: function() {
-        var CFI = this.getAnnotaitonsManagerForCurrentSpineItem().getCurrentSelectionCFI();
-        return this.createFullyQualifiedCfi(CFI);
+            var annotationData = this.getAnnotaitonsManagerForCurrentSpineItem();
+            var cfi = annotationData.annotationManager.getCurrentSelectionCFI();
+            return this.createFullyQualifiedCfi(cfi, annotationData.spineItemIndex);
     },
 
     addHighlight: function(CFI, id, type, styles) {
-        if (this.isThisCfiForCurrentSpineItem(CFI))
-            return this.getAnnotaitonsManagerForCurrentSpineItem().addHighlight(CFI, id, type, styles);
-        else 
-            return undefined;
+        var paginationInfo = this.currentView.getPaginationInfo();
+        var contentDocHrefFromCfi = EPUBcfi.getContentDocHref(CFI, this.packageDoc);
+        var spineFromCfi = this.spine.getItemByHref(contentDocHrefFromCfi);
+        var result = undefined;
+        _.each(paginationInfo.openPages, function(openPage) {
+            if (openPage.idref === spineFromCfi.idref)
+            {
+                result = this.getAnnotaitonsManagerForCurrentSpineItem().addHighlight(CFI, id, type, styles);
+                return false;
+            }
+        });
+        return matchedCfi;
     },
 
     updateAnnotationView: function(id, styles) {
@@ -657,8 +669,9 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
     
     addSelectionHighlight: function(id, type) {
-        var annotation = this.getAnnotaitonsManagerForCurrentSpineItem().addSelectionHighlight(id, type);
-        annotation.CFI = this.createFullyQualifiedCfi(annotation.CFI);
+        var annotationData = this.getAnnotaitonsManagerForCurrentSpineItem();
+        var annotation = annotationData.annotationManager.addSelectionHighlight(id, type);
+        annotation.CFI = this.createFullyQualifiedCfi(annotation.CFI, annotationData.spineItemIndex);
         return annotation; 
     },
 
@@ -685,6 +698,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
         console.log("Remove annotation=" + id);
         return this.getAnnotaitonsManagerForCurrentSpineItem().removeHighlight(id);
     }, 
+
     getCfiForCurrentPage:function(id) {
         var bookmark = $.parseJSON(this.bookmarkCurrentPage());
         return this.createFullyQualifiedCfi(bookmark.contentCFI)
@@ -695,9 +709,37 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
     getVisibleAnnotationMidpoints: function () {
         return this.currentView.getVisibleAnnotationMidpoints();
     },
+
     isVisibleCFI: function(cfi) {
         return this.isThisCfiForCurrentSpineItem(cfi) && this.currentView.isVisibleCFI(cfi);
-    }
+    },
+
+    forEachVisibleSpineItem: function(callback) {
+        var paginationInfo = this.currentView.getPaginationInfo();
+        _.each(paginationInfo.openPages, function(openPage) {
+            callback(openPage);
+        });
+    },
+
+    forEachVisibleSpineItemThatMatchesCfi: function(cfi, callback) {
+        var idref = this.getSpineIdRefFromCfi(cfi);
+        var result = undefined;
+        this.forEachVisibleSpineItem(function(page){
+           if (idref === page.idref) 
+           {
+               result = callback(page);
+               return false;
+           }
+        });
+        return result;
+    },
+
+    getSpineIdRefFromCfi: function(cfi) {
+        var contentDocHrefFromCfi = EPUBcfi.getContentDocHref(cfi, this.packageDoc);
+        var spineFromCfi = this.spine.getItemByHref(contentDocHrefFromCfi);
+        return spineFromCfi.idref;
+    },
+
 
 
 

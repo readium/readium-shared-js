@@ -600,5 +600,4 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         return visibility;
     }
 
-
 });
