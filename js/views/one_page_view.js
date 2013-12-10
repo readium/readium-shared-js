@@ -281,8 +281,22 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
     },
 
     getDom: function() {
-        return epubDocument = this.$iframe.get(0).contentWindow.document;
+        return this.$iframe.get(0).contentWindow.document;
+    },
+
+    getVisibleAnnotationMidpoints: function () {
+        var $doc  = $('html',this.getDom());
+        var halfBakedResults = $('span.range-start-marker',$doc);
+        var results  = [];
+        $.each(halfBakedResults, function(){
+            var elementId = this.id;
+            elementId = elementId.substring(6);
+            var higlighted = {"id": elementId, "position":$(this).position()};
+            results.push(higlighted)
+        });
+        return results;
     }
+
 
 });
 

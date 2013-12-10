@@ -29,7 +29,6 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
     bookMargins: undefined,
     contentMetaSize: undefined,
     userStyles: undefined,
-    annotations: undefined,
 
     $viewport: undefined,
 
@@ -57,14 +56,6 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
         
         this.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, this.initializeAnnotations);
     },
-
-    initializeAnnotations: function() {
-        //var epubDocument = this.getDom().get(0).contentWindow.document;
-        //this.annotations = new EpubAnnotationsModule(epubDocument, this.reader);
-        this.annotations = {} ;
-        this.annotations.addSelectionHighlight = function(id, type) {};
-    },
-
 
     isReflowable: function() {
         return false;

@@ -643,24 +643,30 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
     },
 
     getCurrentSelectionCFI: function() {
-            var annotationData = this.getAnnotaitonsManagerForCurrentSpineItem();
-            var cfi = annotationData.annotationManager.getCurrentSelectionCFI();
-            return this.createFullyQualifiedCfi(cfi, annotationData.spineItemIndex);
-    },
+        var cfi = undefined;
+        var self = this;
+        this.currentView.getDisplayingViews().forEach(function(view) {
+                cfi = view.annotations.getCurrentSelectionCFI();
+                cfi = self.createFullyQualifiedCfi(cfi, view.currentSpineItem.index);
+                if (cfi)
+                    return false;
+        });
+        return cfi;
+},
 
     addHighlight: function(CFI, id, type, styles) {
         var paginationInfo = this.currentView.getPaginationInfo();
         var contentDocHrefFromCfi = EPUBcfi.getContentDocHref(CFI, this.packageDoc);
         var spineFromCfi = this.spine.getItemByHref(contentDocHrefFromCfi);
         var result = undefined;
-        _.each(paginationInfo.openPages, function(openPage) {
-            if (openPage.idref === spineFromCfi.idref)
+        this.currentView.getDisplayingViews().forEach(function(view) {
+            if (view.currentSpineItem.idref === spineFromCfi.idref)
             {
-                result = this.getAnnotaitonsManagerForCurrentSpineItem().addHighlight(CFI, id, type, styles);
+                result = view.annotations.addHighlight(CFI, id, type, styles);
                 return false;
             }
         });
-        return matchedCfi;
+        return result;
     },
 
     updateAnnotationView: function(id, styles) {
@@ -669,9 +675,16 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
     
     addSelectionHighlight: function(id, type) {
-        var annotationData = this.getAnnotaitonsManagerForCurrentSpineItem();
-        var annotation = annotationData.annotationManager.addSelectionHighlight(id, type);
-        annotation.CFI = this.createFullyQualifiedCfi(annotation.CFI, annotationData.spineItemIndex);
+        var annotation;
+        var spineItemIndex;
+        this.currentView.getDisplayingViews().forEach(function(view) {
+            if (view.annotations.getCurrentSelectionCFI()) {
+                annotation = view.annotations.addSelectionHighlight(id, type);
+                spineItemIndex = view.currentSpineItem.index;
+                return false;
+            }
+        });
+        annotation.CFI = this.createFullyQualifiedCfi(annotation.CFI, spineItemIndex); 
         return annotation; 
     },
 
@@ -695,19 +708,32 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
         return this.openSpineItemElementCfi(idref, nakedCfi);
     }, 
     removeAnnotation: function(id) {
-        console.log("Remove annotation=" + id);
-        return this.getAnnotaitonsManagerForCurrentSpineItem().removeHighlight(id);
+        var result;
+        this.currentView.getDisplayingViews().forEach(function(view) {
+            console.log("Remove annotation=" + id);
+            result = view.annotations.removeHighlight(id);
+        });
+        return result;
     }, 
 
-    getCfiForCurrentPage:function(id) {
+    getCfiForCurrentPage:function() {
         var bookmark = $.parseJSON(this.bookmarkCurrentPage());
         return this.createFullyQualifiedCfi(bookmark.contentCFI)
     },
+
     redraw: function() {
-        return this.currentView.onViewportResize();
+        this.currentView.getDisplayingViews().forEach(function(view) {
+            view.onViewportResize();
+        });
     },
+
     getVisibleAnnotationMidpoints: function () {
-        return this.currentView.getVisibleAnnotationMidpoints();
+        var midpointsArray = [];
+        this.currentView.getDisplayingViews().forEach(function(view) {
+            var visibleMidpoints = view.getVisibleAnnotationMidpoints();
+            midpointsArray = midpointsArray.concat(visibleMidpoints);
+        });
+        return midpointsArray;
     },
 
     isVisibleCFI: function(cfi) {
