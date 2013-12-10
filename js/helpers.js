@@ -76,47 +76,6 @@ ReadiumSDK.Helpers.Rect.fromElement = function($element) {
     return new ReadiumSDK.Helpers.Rect(offsetLeft, offsetTop, offsetWidth, offsetHeight);
 };
 
-ReadiumSDK.Helpers.LoadIframe = function(iframe, src, callback, context) {
-
-    var isWaitingForFrameLoad = true;
-
-    iframe.onload = function() {
-
-        //console.debug("epubReadingSystem (TOP):");
-        //console.debug(navigator.epubReadingSystem);
-
-        // Forward the epubReadingSystem object to the IFRAME
-        try
-        {
-            iframe.contentWindow.navigator["epubReadingSystem"] = navigator.epubReadingSystem;
-        }
-        catch(ex)
-        {
-            console.log("epubReadingSystem INJECTION ERROR! " + ex.message);
-        }
-
-        //console.debug("epubReadingSystem (IFRAME):");
-        //console.debug(iframe.contentWindow.navigator.epubReadingSystem);
-
-        isWaitingForFrameLoad = false;
-        callback.call(context, true);
-
-    };
-
-    //yucks! iframe doesn't trigger onerror event - there is no reliable way to know that iframe finished
-    // attempt tot load resource (successfully or not;
-    window.setTimeout(function(){
-
-        if(isWaitingForFrameLoad) {
-            isWaitingForFrameLoad = false;
-            callback.call(context, false);
-        }
-
-    }, 500);
-
-    iframe.src = src;
-};
-
 
 /**
  * @return {string}
@@ -182,39 +141,13 @@ ReadiumSDK.Helpers.Margins.empty = function() {
 };
 
 ReadiumSDK.Helpers.loadTemplate = function(name, params) {
-
-    if( !ReadiumSDK.Helpers.loadTemplate.cache ) {
-        ReadiumSDK.Helpers.loadTemplate.cache = {};
-    }
-
-    var template = ReadiumSDK.Helpers.loadTemplate.cache[name];
-
-    if(!template) {
-
-        var templText;
-
-        if (name == "fixed_book_frame") {
-            templText = '<div id="fixed-book-frame" class="clearfix book-frame fixed-book-frame"></div>';
-        }
-        else if (name == "fixed_page_frame") {
-            templText = '<div class="fixed-page-frame"><iframe scrolling="no" class="iframe-fixed"></iframe></div>';
-        }
-        else if (name == "reflowable_book_frame") {
-            templText = '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"><div id="reflowable-content-frame" class="reflowable-content-frame"><iframe scrolling="no" id="epubContentIframe"></iframe></div></div>';
-        }
-        else {
-            console.error(name + " is not a recognized template name!");
-            return undefined;
-        }
-
-        template = _.template(templText);
-        ReadiumSDK.Helpers.loadTemplate.cache[name] = template;
-    }
-
-    return template(params);
-
+    return ReadiumSDK.Helpers.loadTemplate.cache[name];
 };
-
+ReadiumSDK.Helpers.loadTemplate.cache = {
+    "fixed_book_frame" : '<div id="fixed-book-frame" class="clearfix book-frame fixed-book-frame"></div>',
+    "fixed_page_frame" : '<div class="fixed-page-frame"><iframe scrolling="no" class="iframe-fixed"></iframe></div>',
+    "reflowable_book_frame" : '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"><div id="reflowable-content-frame" class="reflowable-content-frame"><iframe scrolling="no" id="epubContentIframe"></iframe></div></div>'
+};
 ReadiumSDK.Helpers.setStyles = function(styles, $element) {
 
     var count = styles.length;
@@ -228,6 +161,29 @@ ReadiumSDK.Helpers.setStyles = function(styles, $element) {
         $(style.selector, $element).css(style.declarations);
     }
 
+};
+
+ReadiumSDK.Helpers.getOrientation = function($viewport) {
+
+    var viewportWidth = $viewport.width();
+    var viewportHeight = $viewport.height();
+
+    if(!viewportWidth || !viewportHeight) {
+        return undefined;
+    }
+
+    return viewportWidth >= viewportHeight ? ReadiumSDK.Views.ORIENTATION_LANDSCAPE : ReadiumSDK.Views.ORIENTATION_PORTRAIT;
+};
+
+ReadiumSDK.Helpers.isRenditionSpreadPermittedForItem = function(item, orientation) {
+
+    return  !item.rendition_spread
+        ||  item.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_BOTH
+        ||  item.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_AUTO
+        ||  (item.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_LANDSCAPE
+        && orientation == ReadiumSDK.Views.ORIENTATION_LANDSCAPE)
+        ||  (item.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_PORTRAIT
+        && orientation == ReadiumSDK.Views.ORIENTATION_PORTRAIT );
 };
 
 

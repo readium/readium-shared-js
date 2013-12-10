@@ -35,8 +35,8 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
     }
 
     //var _currentPagination = undefined;
-    var _package = reader.package;
-    var _settings = reader.viewerSettings;
+    var _package = reader.package();
+    var _settings = reader.viewerSettings();
     var self = this;
     var _elementHighlighter = new ReadiumSDK.Views.MediaOverlayElementHighlighter(reader);
 
@@ -82,11 +82,11 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         var element = undefined;
         if (paginationData.elementId || paginationData.initiator == self)
         {
-            var spineItems = reader.currentView.getLoadedSpineItems();
+            var spineItems = reader.getLoadedSpineItems();
 
-            var rtl = reader.spine.isRightToLeft();
+            var rtl = reader.spine().isRightToLeft();
 
-            for(var i = rtl ? spineItems.length : 0; rtl && i >=0 || !rtl && i < spineItems.length; i += (rtl ? -1: 1))
+            for(var i = (rtl ? (spineItems.length - 1) : 0); rtl && i >=0 || !rtl && i < spineItems.length; i += (rtl ? -1: 1))
             {
                 var spineItem = spineItems[i];
                 if (paginationData.spineItem && paginationData.spineItem != spineItem)
@@ -94,7 +94,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                     continue;
                 }
 
-                element = reader.currentView.getElement(spineItem, paginationData.initiator == self && !paginationData.elementId ? "body" : "#" + paginationData.elementId);
+                element = reader.getElement(spineItem, paginationData.initiator == self && !paginationData.elementId ? "body" : "#" + paginationData.elementId);
                 if (element)
                 {
                     /*
@@ -347,10 +347,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                     }
                     else
                     {
-                        reader.trigger(ReadiumSDK.Events.MEDIA_OVERLAY_TTS_SPEAK, {tts: _currentTTS});
-                        onStatusChanged({isPlaying: true});
-
-                        _ttsIsPlaying = true;
+                        speakStart(_currentTTS);
                     }
                 }
             }
@@ -376,9 +373,11 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
             var audioSource = _package.resolveRelativeUrlMO(audioContentRef);
 
-//console.debug("PLAY FILE: " + _smilIterator.currentPar.audio.src);
+            var startTime = _smilIterator.currentPar.audio.clipBegin + clipBeginOffset;
 
-            _audioPlayer.playFile(_smilIterator.currentPar.audio.src, audioSource, _smilIterator.currentPar.audio.clipBegin + clipBeginOffset, _smilIterator.currentPar.element);
+//console.debug("PLAY START TIME: " + startTime + "("+_smilIterator.currentPar.audio.clipBegin+" + "+clipBeginOffset+")");
+
+            _audioPlayer.playFile(_smilIterator.currentPar.audio.src, audioSource, startTime, _smilIterator.currentPar.element);
         }
 
         clipBeginOffset = 0.0;
@@ -554,10 +553,353 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         nextSmil(goNext);
     }
 
+    var _enableHTMLSpeech = false && window.speechSynthesis !== undefined;
+
     this.touchInit = function()
     {
-        _audioPlayer.touchInit();
+        var todo = _audioPlayer.touchInit();
+        if (todo)
+        {
+            if (_enableHTMLSpeech)
+            {
+                speakStart("o", 0);
+            }
+        }
+    };
+
+    var tokeniseTTS = function(element)
+    {
+        var BLOCK_DELIMITERS = ['p', 'div', 'pagenum', 'td', 'table', 'li', 'ul', 'ol'];
+        var BOUNDARY_PUNCTUATION = [',', ';', '.', '-', 'Ð', 'Ñ', '?', '!'];
+        var IGNORABLE_PUNCTUATION = ['"', '\'', 'Ò', 'Ó', 'Ô', 'Õ'];
+
+        var flush = function(t, r)
+        {
+            if (t.word.length <= 0)
+            {
+                return;
+            }
+
+            var pos = t.text.length;
+            r.spanMap[pos] = t.counter;
+            t.text += t.word;
+            t.markup += t.html.substring(0, t.wordStart) +
+                '<span class="tts_off" id="tts_' + t.counter + '">' +
+                t.html.substring(t.wordStart, t.wordEnd) +
+                '</span>' + t.html.substring(t.wordEnd, t.html.length);
+            t.word = "";
+            t.html = "";
+            t.wordStart = -1;
+            t.wordEnd = -1;
+            t.counter++;
+        };
+
+        var r =
+        {
+            element : element,
+            innerHTML_tts : "",
+            spanMap : {},
+            text : "",
+            lastCharIndex : undefined
+        };
+        r.element.innerHTML_original = element.innerHTML;
+
+        var t =
+        {
+            inTag : false,
+            counter : 0,
+            wordStart : -1,
+            wordEnd : -1,
+            text : '',
+            markup : '',
+            word : '',
+            html : ''
+        };
+
+        var limit = r.element.innerHTML_original.length;
+        var i = 0;
+        while (i <= limit)
+        {
+            if (t.inTag)
+            {
+                t.html += r.element.innerHTML_original[i];
+                if (r.element.innerHTML_original[i] == ">") {
+                    t.inTag = false;
+                    // if it's a block element delimiter, flush
+                    var blockCheck = t.html.match(/<\/(.*?)>$/);
+                    if (blockCheck && BLOCK_DELIMITERS.indexOf(blockCheck[1]) > -1)
+                    {
+                        flush(t, r);
+                        t.text += ' ';
+                    }
+                }
+            }
+            else
+            {
+                if (i == limit || r.element.innerHTML_original[i].match(/\s/))
+                {
+                    flush(t, r);
+
+                    // append the captured whitespace
+                    if (i < limit)
+                    {
+                        t.text += r.element.innerHTML_original[i];
+                        t.markup += r.element.innerHTML_original[i];
+                    }
+                }
+                else if (BOUNDARY_PUNCTUATION.indexOf(r.element.innerHTML_original[i]) > -1)
+                {
+                    flush(t, r);
+
+                    t.wordStart = t.html.length;
+                    t.wordEnd = t.html.length + 1;
+                    t.word += r.element.innerHTML_original[i];
+                    t.html += r.element.innerHTML_original[i];
+
+                    flush(t, r);
+                }
+                else if (r.element.innerHTML_original[i] == "<")
+                {
+                    t.inTag = true;
+                    t.html += r.element.innerHTML_original[i];
+                }
+                else
+                {
+                    if (t.word.length == 0)
+                    {
+                        t.wordStart = t.html.length;
+                    }
+                    t.wordEnd = t.html.length + 1;
+                    t.word += r.element.innerHTML_original[i];
+                    t.html += r.element.innerHTML_original[i];
+                }
+            }
+            i++;
+        }
+//
+//console.debug(t.text);
+//        console.debug("----");
+//console.debug(t.markup);
+
+        r.text = t.text;
+        r.innerHTML_tts = t.markup;
+        r.element.innerHTML = r.innerHTML_tts;
+
+        return r;
+    };
+
+    var $ttsStyle = undefined;
+    function ensureTTSStyle($element)
+    {
+        if ($ttsStyle && $ttsStyle[0].ownerDocument === $element[0].ownerDocument)
+        {
+            return;
+        }
+
+        var style = ".tts_on{background-color:red;color:white;} .tts_off{}";
+
+        $head = $("head", $element[0].ownerDocument.documentElement);
+
+        $ttsStyle = $("<style type='text/css'> </style>").appendTo($head);
+
+        $ttsStyle.append(style);
     }
+
+    var speakStart = function(txt, volume)
+    {
+        var tokenData = undefined;
+        var element = (_smilIterator && _smilIterator.currentPar) ? _smilIterator.currentPar.element : undefined;
+
+        if (!volume || volume > 0)
+        {
+            onStatusChanged({isPlaying: true});
+            _ttsIsPlaying = true;
+
+            if (element)
+            {
+                var $el = $(element);
+                ensureTTSStyle($el);
+
+
+                if (element.innerHTML_original)
+                {
+                    element.innerHTML = element.innerHTML_original;
+                    element.innerHTML_original = undefined;
+                }
+                tokenData = tokeniseTTS(element);
+            }
+        }
+
+        if (!_enableHTMLSpeech)
+        {
+            reader.trigger(ReadiumSDK.Events.MEDIA_OVERLAY_TTS_SPEAK, {tts: txt}); // resume if txt == undefined
+            return;
+        }
+
+        if (!txt && window.speechSynthesis.paused)
+        {
+//console.debug("TTS resume");
+            window.speechSynthesis.resume();
+
+            return;
+        }
+
+        var text = txt || _currentTTS;
+
+        if (text)
+        {
+//console.debug("TTS pause before speak");
+            window.speechSynthesis.pause();
+
+//console.debug("TTS cancel before speak");
+            window.speechSynthesis.cancel();
+
+//            setTimeout(function()
+//            {
+            var utt = new SpeechSynthesisUtterance();
+            if (tokenData)
+            {
+                utt.tokenData = tokenData;
+            }
+
+            utt.onend = function(event)
+            //utt.addEventListener("end", function(event)
+            {
+console.debug("TTS ended");
+//console.debug(event);
+                var tokenised = event.target.tokenData;
+                if (tokenised)
+                {
+                    if (tokenised.element.innerHTML_original)
+                    {
+                        tokenised.element.innerHTML = tokenised.element.innerHTML_original;
+                    }
+                    else
+                    {
+                        [].forEach.call(
+                            tokenised.element.querySelectorAll(".tts_on"),
+                            function(el)
+                            {
+console.debug("TTS OFF (end)" + el.id);
+                                el.className = 'tts_off';
+                            }
+                        );
+                    }
+                    tokenised.element.innerHTML_original = undefined;
+                }
+
+                self.onTTSEnd();
+            };
+
+            utt.onboundary = function(event)
+            //utt.addEventListener("boundary", function(event)
+            {
+console.debug("TTS boundary: " + event.name + " / " + event.charIndex);
+//console.debug(event);
+
+                var tokenised = event.target.tokenData;
+                if (!tokenised || !tokenised.spanMap.hasOwnProperty(event.charIndex))
+                {
+                    return;
+                }
+
+                if (false && tokenised.lastCharIndex)
+                {
+//console.debug("TTS lastCharIndex: " + tokenised.lastCharIndex);
+                    var id = 'tts_' + tokenised.spanMap[tokenised.lastCharIndex];
+//console.debug("TTS lastCharIndex ID: " + id);
+                    var spanPrevious = tokenised.element.querySelector("#"+id);
+                    if (spanPrevious)
+                    {
+//console.debug("TTS OFF");
+                        spanPrevious.className = 'tts_off';
+                        //spanPrevious.style.backgroundColor = "white";
+                    }
+                }
+                else
+                {
+                    [].forEach.call(
+                        tokenised.element.querySelectorAll(".tts_on"),
+                        function(el)
+                        {
+console.debug("TTS OFF " + el.id);
+                            el.className = 'tts_off';
+                        }
+                    );
+                }
+
+                var id = 'tts_' + tokenised.spanMap[event.charIndex];
+console.debug("TTS charIndex ID: " + id);
+                var spanNew = tokenised.element.querySelector("#"+id);
+                if (spanNew)
+                {
+console.debug("TTS ON");
+                    spanNew.className = 'tts_on';
+                    //spanNew.style.backgroundColor = "transparent";
+                }
+
+                tokenised.lastCharIndex = event.charIndex;
+            };
+
+            utt.onerror = function(event)
+            //utt.addEventListener("error", function(event)
+            {
+console.debug("TTS error");
+//console.debug(event);
+
+                var tokenised = event.target.tokenData;
+                if (tokenised)
+                {
+                    if (tokenised.element.innerHTML_original)
+                    {
+                        tokenised.element.innerHTML = tokenised.element.innerHTML_original;
+                    }
+                    else
+                    {
+                        [].forEach.call(
+                            tokenised.element.ownerDocument.querySelectorAll(".tts_on"),
+                            function(el)
+                            {
+console.debug("TTS OFF (error)" + el.id);
+                                el.className = 'tts_off';
+                            }
+                        );
+                    }
+                    tokenised.element.innerHTML_original = undefined;
+                }
+            };
+
+            var vol = volume || _audioPlayer.getVolume();
+            utt.volume = vol;
+
+            utt.rate = _audioPlayer.getRate();
+            utt.pitch = 1;
+
+            //utt.lang = "en-US";
+
+            utt.text = text;
+
+//console.debug("TTS speak: " + text);
+            window.speechSynthesis.speak(utt);
+//
+//            }, 10);
+        }
+    };
+
+    var speakStop = function()
+    {
+        onStatusChanged({isPlaying: false});
+        _ttsIsPlaying = false;
+
+        if (!_enableHTMLSpeech)
+        {
+            reader.trigger(ReadiumSDK.Events.MEDIA_OVERLAY_TTS_STOP, undefined);
+            return;
+        }
+
+console.debug("TTS pause");
+        window.speechSynthesis.pause();
+    };
 
     var _timerTick = undefined;
 
@@ -777,9 +1119,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
     this.resetTTS = function() {
         _currentTTS = undefined;
 //        _skipTTSEnded = false;
-        reader.trigger(ReadiumSDK.Events.MEDIA_OVERLAY_TTS_STOP, undefined);
-        onStatusChanged({isPlaying: false});
-        _ttsIsPlaying = false;
+        speakStop();
     };
 
     this.resetBlankPage = function() {
@@ -831,9 +1171,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         }
         else if (_currentTTS)
         {
-            _ttsIsPlaying = true;
-            reader.trigger(ReadiumSDK.Events.MEDIA_OVERLAY_TTS_SPEAK, {tts: undefined}); // resume
-            onStatusChanged({isPlaying: true});
+            speakStart(undefined);
         }
         else
         {
@@ -867,9 +1205,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         }
         else if (_ttsIsPlaying)
         {
-            _ttsIsPlaying = false;
-            reader.trigger(ReadiumSDK.Events.MEDIA_OVERLAY_TTS_STOP, undefined);
-            onStatusChanged({isPlaying: false});
+            speakStop();
         }
         else
         {
@@ -881,7 +1217,26 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
     this.isMediaOverlayAvailable = function() {
 
+//        console.debug("isMediaOverlayAvailable()");
+//
+//        var now1 = window.performance && window.performance.now ? window.performance.now() : Date.now();
+//
+//        if (console.time)
+//        {
+//            console.time("MO");
+//        }
+
         var visibleMediaElements = reader.getVisibleMediaOverlayElements();
+
+//        if (console.timeEnd)
+//        {
+//            console.timeEnd("MO");
+//        }
+//
+//        var now2 = window.performance && window.performance.now ? window.performance.now() : Date.now();
+//
+//        console.debug(now2 - now1);
+
         return visibleMediaElements.length > 0;
     };
 
@@ -999,10 +1354,10 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 //console.debug("moData SMIL: " + moData.par.getSmil().href + " // " + + moData.par.getSmil().id);
 
 
-        var spineItems = reader.currentView.getLoadedSpineItems();
+        var spineItems = reader.getLoadedSpineItems();
 
         //paginationData.pageProgressionDirection === "rtl"
-        var rtl = reader.spine.isRightToLeft();
+        var rtl = reader.spine().isRightToLeft();
 
         //paginationData.spineItemCount
 
@@ -1026,9 +1381,15 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
         var id = paginationData && paginationData.elementId ? paginationData.elementId : undefined;
 
-        for(var i = rtl ? spineItems.length : 0; rtl && i >=0 || !rtl && i < spineItems.length; i += (rtl ? -1: 1))
+        for(var i = (rtl ? (spineItems.length - 1) : 0); (rtl && i >=0) || (!rtl && i < spineItems.length); i += (rtl ? -1: 1))
         {
             var spineItem = spineItems[i];
+            if (!spineItem)
+            {
+                console.error("spineItems[i] is undefined??");
+                continue;
+            }
+            
             if (paginationData && paginationData.spineItem && paginationData.spineItem != spineItem)
             {
                 continue;
@@ -1036,11 +1397,11 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
             if (id)
             {
-                element = reader.currentView.getElement(spineItem, "#" + id);
+                element = reader.getElement(spineItem, "#" + id);
             }
             else if (spineItem.isFixedLayout())
             {
-                element = reader.currentView.getElement(spineItem, "body");
+                element = reader.getElement(spineItem, "body");
             }
 
             if (element)

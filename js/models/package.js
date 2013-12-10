@@ -44,7 +44,7 @@ ReadiumSDK.Models.Package = Backbone.Model.extend({
                 this.rendition_layout = "reflowable";
             }
 
-            this.spine = new ReadiumSDK.Models.Spine({spineData: packageData.spine, package: this});
+            this.spine = new ReadiumSDK.Models.Spine(this, packageData.spine);
 
             this.media_overlay = ReadiumSDK.Models.MediaOverlay.fromDTO(packageData.media_overlay);
         }

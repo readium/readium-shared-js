@@ -27,6 +27,7 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
     currentSpineItem: undefined,
     spine: undefined,
     contentAlignment: undefined, //expected 'center' 'left' 'right'
+    iframeLoader: undefined,
     annotations: undefined,
 
     meta_size : {
@@ -39,12 +40,13 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
 
         this.spine = this.options.spine;
         this.contentAlignment = this.options.contentAlignment;
+        this.iframeLoader = this.options.iframeLoader;
 
     },
 
     isDisplaying:function() {
 
-        return this.currentSpineItem != undefined;
+        return this.currentSpineItem != undefined && this.$epubHtml != null && this.$epubHtml.length > 0;
     },
 
     render: function() {
@@ -155,6 +157,10 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
         css["width"] = this.meta_size.width;
         css["height"] = this.meta_size.height;
 
+        if(!this.$epubHtml) {
+            debugger;
+        }
+
         this.$epubHtml.css(css);
         this.$iframe.css("visibility", "visible");
     },
@@ -213,7 +219,7 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
 
             //hide iframe until content is scaled
             this.$iframe.css("visibility", "hidden");
-            ReadiumSDK.Helpers.LoadIframe(this.$iframe[0], src, this.onIFrameLoad, this);
+            this.iframeLoader.loadIframe(this.$iframe[0], src, this.onIFrameLoad, this);
         }
         else
         {

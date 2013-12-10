@@ -195,7 +195,10 @@ ReadiumSDK.Models.SmilModel = function() {
 
 ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
 
-    console.debug("Media Overlay DTO import...");
+    if (mo.DEBUG)
+    {
+        console.debug("Media Overlay DTO import...");
+    }
 
     var indent = 0;
     var getIndent = function()
@@ -213,16 +216,23 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
     smilModel.spineItemId = smilDTO.spineItemId;
     smilModel.href = smilDTO.href;
     smilModel.smilVersion = smilDTO.smilVersion;
+    
     smilModel.duration = smilDTO.duration;
+    if (smilModel.duration && smilModel.duration.length && smilModel.duration.length > 0)
+    {
+        console.error("SMIL duration is string, parsing float... (" + smilModel.duration + ")");
+        smilModel.duration = parseFloat(smilModel.duration);
+    }
+    
     smilModel.mo = mo; //ReadiumSDK.Models.MediaOverlay
 
     if (smilModel.mo.DEBUG)
     {
-    console.log("JS MO smilVersion=" + smilModel.smilVersion);
-    console.log("JS MO id=" + smilModel.id);
-    console.log("JS MO spineItemId=" + smilModel.spineItemId);
-    console.log("JS MO href=" + smilModel.href);
-    console.log("JS MO duration=" + smilModel.duration);
+        console.log("JS MO smilVersion=" + smilModel.smilVersion);
+        console.log("JS MO id=" + smilModel.id);
+        console.log("JS MO spineItemId=" + smilModel.spineItemId);
+        console.log("JS MO href=" + smilModel.href);
+        console.log("JS MO duration=" + smilModel.duration);
     }
 
     var safeCopyProperty = function(property, from, to, isRequired) {
@@ -296,7 +306,8 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
                 }
             }
 
-            if (!node.audio)
+            var forceTTS = false; // for testing only!
+            if (forceTTS || !node.audio)
             {
                 // synthetic speech (playback using TTS engine), or embedded media, or blank page
                 var fakeAudio = new ReadiumSDK.Models.Smil.AudioNode();
@@ -335,6 +346,11 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
             safeCopyProperty("id", nodeDTO, node);
 
             safeCopyProperty("clipBegin", nodeDTO, node);
+            if (node.clipBegin && node.clipBegin.length && node.clipBegin.length > 0)
+            {
+                console.error("SMIL clipBegin is string, parsing float... (" + node.clipBegin + ")");
+                node.clipBegin = parseFloat(node.clipBegin);
+            }
             if (node.clipBegin < 0)
             {
                 if (smilModel.mo.DEBUG)
@@ -345,6 +361,11 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
             }
 
             safeCopyProperty("clipEnd", nodeDTO, node);
+            if (node.clipEnd && node.clipEnd.length && node.clipEnd.length > 0)
+            {
+                console.error("SMIL clipEnd is string, parsing float... (" + node.clipEnd + ")");
+                node.clipEnd = parseFloat(node.clipEnd);
+            }
             if (node.clipEnd <= node.clipBegin)
             {
                 if (smilModel.mo.DEBUG)

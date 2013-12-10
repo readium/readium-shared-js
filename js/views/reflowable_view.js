@@ -34,6 +34,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
     $contentFrame: undefined,
     userStyles: undefined,
     navigationLogic: undefined,
+    iframeLoader: undefined,
     annotations: undefined,
 
     lastViewPortSize : {
@@ -57,6 +58,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         this.$viewport = this.options.$viewport;
         this.spine = this.options.spine;
         this.userStyles = this.options.userStyles;
+        this.iframeLoader = this.options.iframeLoader;
         this.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, this.initializeAnnotations);
         this.reader = this.options.reader
     },
@@ -114,6 +116,8 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
     onViewportResize: function() {
 
         if(this.updateViewportSize()) {
+            //depends on aspect ratio of viewport and rendition:spread-* setting we may have to switch spread on/off
+            this.paginationInfo.visibleColumnCount = this.calculateVisibleColumnCount();
             this.updatePagination();
             this.annotations.redraw();
         }
@@ -122,12 +126,30 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
 
     setViewSettings: function(settings) {
 
-        this.paginationInfo.visibleColumnCount = settings.isSyntheticSpread ? 2 : 1;
+        this.isSyntheticSpread = settings.isSyntheticSpread;
+        this.paginationInfo.visibleColumnCount = this.calculateVisibleColumnCount();
         this.paginationInfo.columnGap = settings.columnGap;
         this.fontSize = settings.fontSize;
         this.updateHtmlFontSizeAndColumnGap();
 
         this.updatePagination();
+    },
+
+    calculateVisibleColumnCount: function() {
+
+        var columnCount = this.isSyntheticSpread ? 2 : 1;
+
+        if(!this.currentSpineItem) {
+            return columnCount;
+        }
+
+        var orientation = ReadiumSDK.Helpers.getOrientation(this.$viewport);
+        if(!orientation) {
+            return columnCount;
+        }
+
+        return ReadiumSDK.Helpers.isRenditionSpreadPermittedForItem(this.currentSpineItem, orientation)
+                ? 2 : 1;
     },
 
     registerTriggers: function (doc) {
@@ -147,7 +169,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
             this.isWaitingFrameRender = true;
 
             var src = this.spine.package.resolveRelativeUrl(spineItem.href);
-            ReadiumSDK.Helpers.LoadIframe(this.$iframe[0], src, this.onIFrameLoad, this);
+            this.iframeLoader.loadIframe(this.$iframe[0], src, this.onIFrameLoad, this);
         }
     },
 
@@ -199,7 +221,6 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         this.registerTriggers(epubContentDocument);
 
     },
-
 
     applyStyles: function() {
 

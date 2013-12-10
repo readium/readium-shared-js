@@ -37,7 +37,10 @@ ReadiumSDK = {
     Models :    {
                     Smil: {}
                 },
-    Views : {},
+    Views : {
+        ORIENTATION_LANDSCAPE: "orientation_landscape",
+        ORIENTATION_PORTRAIT: "orientation_portrait"
+    },
     Collections: {},
     Routers: {},
     Helpers: {},

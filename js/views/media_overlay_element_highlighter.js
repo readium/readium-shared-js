@@ -52,7 +52,7 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
             //self.clearUserStyle();
         }
 
-        var style = _reader.userStyles.findStyle("." + DEFAULT_MO_ACTIVE_CLASS);
+        var style = _reader.userStyles().findStyle("." + DEFAULT_MO_ACTIVE_CLASS);
         if (!style)
         {
             return;
