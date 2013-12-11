@@ -29,6 +29,7 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
     contentAlignment: undefined, //expected 'center' 'left' 'right'
     iframeLoader: undefined,
     annotations: undefined,
+    reader: undefined,
 
     meta_size : {
         width: 0,
@@ -41,6 +42,7 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
         this.spine = this.options.spine;
         this.contentAlignment = this.options.contentAlignment;
         this.iframeLoader = this.options.iframeLoader;
+        this.reader = this.options.reader
 
     },
 
@@ -88,7 +90,7 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
 
 
             // TODO DM this should be in its own method
-            this.annotations = new EpubAnnotationsModule(this.getDom());
+            this.annotations = new EpubAnnotationsModule(this.getDom(), this.reader);
         }
     },
 

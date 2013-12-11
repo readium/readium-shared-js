@@ -64,7 +64,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
             $viewport: _$el,
             spine: _spine,
             userStyles: _userStyles,
-            iframeLoader: _iframeLoader
+            iframeLoader: _iframeLoader,
+            reader: self 
         };
 
         if(isReflowable) {
@@ -679,51 +680,49 @@ ReadiumSDK.Views.ReaderView = function(options) {
         }
     }
 
-    // REfactor with boris
-    function setPackageDocument(packageDoc) {
+    // TODO DM We need to refactor CFI library so that it can use package metadata
+    // from the package object instead of the XML.
+    // Refactor wisth boris
+    this.setPackageDocument= function(packageDoc) {
         var parser = new window.DOMParser;
         if (_.isString(packageDoc))
-            this.packageDoc = parser.parseFromString(packageDoc, "text/xml");
+            self.packageDoc = parser.parseFromString(packageDoc, "text/xml");
         else
-            this.packageDoc = packageDoc;
+            self.packageDoc = packageDoc;
     };
 
+    // TODO DM This needs ot move to a helper because it's not view specific
+    // ask the view for currently open spine items and pass the CFI in
     this.isThisCfiForVisibleSpineItems = function(CFI){ 
         var result = false;
-        self.forEachVisibleSpineItemThatMatchesCfi(CFI, function() {
+        forEachVisibleSpineItemThatMatchesCfi(CFI, function() {
             result = true;
         });
         return result;
     };
 
+    /// TODO DM create a separate class - converter
     function createFullyQualifiedCfi(cfi, spineIndex) {
         if (cfi === undefined)
             return undefined;
-        var packageDocCFIComponent = EPUBcfi.generatePackageDocumentCFIComponentWithSpineIndex(spineIndex, this.packageDoc);
+        var packageDocCFIComponent = EPUBcfi.generatePackageDocumentCFIComponentWithSpineIndex(spineIndex, self.packageDoc);
         var completeCFI = EPUBcfi.generateCompleteCFI(packageDocCFIComponent, cfi);
         return completeCFI;
     };
 
-
-    function getAnnotaitonsManagerForCurrentSpineItem() {
-        // TODO DM this needs to be abstracted better. should be the same handler regardless of whether it's reflowable or fixed.
-        if (self.currentView.isReflowable())
-            return {"annotationManager": self.currentView.annotations, "spineItemIndex" : self.currentView.spineItemIndex};
-        else
-            return self.currentView.getAnnotaitonsManagerForCurrentSpineItem();
-    };
-
+    // TODO DM hide this!
     this.getCurrentSelectionCFI =  function() {
         var cfi = undefined;
         _currentView.getDisplayingViews().forEach(function(view) {
                 cfi = view.annotations.getCurrentSelectionCFI();
-                cfi = self.createFullyQualifiedCfi(cfi, view.currentSpineItem.index);
+                cfi = createFullyQualifiedCfi(cfi, view.currentSpineItem.index);
                 if (cfi)
                     return false;
         });
         return cfi;
     };
 
+    // TODO DM same as getCurrentSelection, needs to be implemented within the views.
     this.addHighlight = function(CFI, id, type, styles) {
         var paginationInfo = _currentView.getPaginationInfo();
         var contentDocHrefFromCfi = EPUBcfi.getContentDocHref(CFI, this.packageDoc);
@@ -740,10 +739,13 @@ ReadiumSDK.Views.ReaderView = function(options) {
     };
 
     this.updateAnnotationView = function(id, styles) {
+        console.error("Unimplemented. reader_view.js::updateAnnotationsView");
         return self.getAnnotaitonsManagerForCurrentSpineItem().updateAnnotationView(id, styles);
     };
 
     
+    // TODO DM & Boris this needs to be refactored so that this class doesn't know anything about
+    // internals of _currentView.
     this.addSelectionHighlight =  function(id, type) {
         var annotation;
         var spineItemIndex;
@@ -758,6 +760,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
         return annotation; 
     };
 
+    // TODO DM rename to mention that this is FQ CFI that is being used
+    // - move to the helper just like createFQ CFI
     this.showPageByCFI  = function (CFI, callback, callbackContext) {
         var contentDocHref = EPUBcfi.getContentDocHref(CFI, this.packageDoc);
         var spine = _spine.getItemByHref(contentDocHref);
@@ -778,6 +782,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
         return self.openSpineItemElementCfi(idref, nakedCfi);
     }; 
 
+    // TODO DM same as highlight..
     this.removeAnnotation = function(id) {
         var result;
         _currentView.getDisplayingViews().forEach(function(view) {
@@ -795,12 +800,15 @@ ReadiumSDK.Views.ReaderView = function(options) {
     // refactor with boris?
     // needs a comment as to why this is needed
     // TODO DM
+    // delegate to currentView
     this.redraw = function() {
         _currentView.getDisplayingViews().forEach(function(view) {
             view.onViewportResize();
         });
     };
 
+    /// TODO DM Refactoring - return visible annotations and offload midpoint 
+    // calculations to someone else.
     this.getVisibleAnnotationMidpoints = function () {
         var midpointsArray = [];
         _currentView.getDisplayingViews().forEach(function(view) {
@@ -810,8 +818,10 @@ ReadiumSDK.Views.ReaderView = function(options) {
         return midpointsArray;
     };
 
+
+    // TODO DM move isThisCfiForCurrentSpineItem into _curentView.
     this.isVisibleCFI =  function(cfi) {
-        return this.isThisCfiForCurrentSpineItem(cfi) && _currentView.isVisibleCFI(cfi);
+        return thisisThisCfiForVisibleSpineItems(cfi) && _currentView.isVisibleCFI(cfi);
     };
 
     function forEachVisibleSpineItem(callback) {
@@ -835,7 +845,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     };
 
     function getSpineIdRefFromCfi(cfi) {
-        var contentDocHrefFromCfi = EPUBcfi.getContentDocHref(cfi, this.packageDoc);
+        var contentDocHrefFromCfi = EPUBcfi.getContentDocHref(cfi, self.packageDoc);
         var spineFromCfi = _spine.getItemByHref(contentDocHrefFromCfi);
         return spineFromCfi.idref;
     };

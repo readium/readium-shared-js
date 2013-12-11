@@ -30,6 +30,7 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
     contentMetaSize: undefined,
     userStyles: undefined,
     iframeLoader: undefined,
+    reader: undefined,
 
     $viewport: undefined,
 
@@ -40,6 +41,9 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
         this.iframeLoader = this.options.iframeLoader;
         this.$viewport = this.options.$viewport;
         this.userStyles = this.options.userStyles;
+
+        // TODO DM Refactor. This shouldn't be here.
+        this.reader = this.options.reader;
 
         this.spine = this.options.spine;
         this.spread = new ReadiumSDK.Models.Spread(this.spine, ReadiumSDK.Helpers.getOrientation(this.$viewport));
@@ -54,8 +58,6 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
 
         //event with namespace for clean unbinding
         $(window).on("resize.ReadiumSDK.readerView", _.bind(this.onViewportResize, this));
-        
-        this.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, this.initializeAnnotations);
     },
 
     createOnePageView: function(cssclass, contentAlignment) {
@@ -65,7 +67,8 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
                 iframeLoader: this.iframeLoader,
                 spine: this.spine,
                 class: cssclass,
-                contentAlignment: contentAlignment
+                contentAlignment: contentAlignment,
+                reader: this.reader
 
             });
     },
@@ -507,22 +510,6 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
 
         //for now we assume that for fixed layout element is always visible
 
-    },
-
-    getAnnotaitonsManagerForCurrentSpineItem: function() {
-        var visiblePages = this.getDisplayingViews();
-        var annotations = undefined;
-        var spineItemIndex = -1;
-        $.each(visiblePages, function(index, page) {
-            if (page.annotations.getCurrentSelectionCFI() != undefined)
-            {
-                annotations = page.annotations;
-                spineItemIndex = page.currentSpineItem.index;
-                return false;
-            }
-        });
-
-        return {"annotationManager": annotations, "spineItemIndex":spineItemIndex};
-
     }
+
 });
