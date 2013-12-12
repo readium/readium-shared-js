@@ -28,6 +28,7 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
     spine: undefined,
     contentAlignment: undefined, //expected 'center' 'left' 'right'
     iframeLoader: undefined,
+    bookStyles: undefined,
 
     meta_size : {
         width: 0,
@@ -40,6 +41,7 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
         this.spine = this.options.spine;
         this.contentAlignment = this.options.contentAlignment;
         this.iframeLoader = this.options.iframeLoader;
+        this.bookStyles = this.options.bookStyles;
 
     },
 
@@ -80,10 +82,18 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
             var epubContentDocument = this.$iframe[0].contentDocument;
             this.$epubHtml = $("html", epubContentDocument);
             this.$epubHtml.css("overflow", "hidden");
+            this.applyBookStyles();
             this.updateMetaSize();
 //            this.fitToScreen();
 
             this.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED, this.$iframe, this.currentSpineItem, true);
+        }
+    },
+
+    applyBookStyles: function() {
+
+        if(this.$epubHtml) {
+            ReadiumSDK.Helpers.setStyles(this.bookStyles.getStyles(), this.$epubHtml);
         }
     },
 
