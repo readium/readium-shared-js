@@ -150,7 +150,12 @@ ReadiumSDK.Helpers.setStyles = function(styles, $element) {
 
     for(var i = 0; i < count; i++) {
         var style = styles[i];
-        $(style.selector, $element).css(style.declarations);
+        if(style.selector) {
+            $(style.selector, $element).css(style.declarations);
+        }
+        else {
+            $element.css(style.declarations);
+        }
     }
 
 };

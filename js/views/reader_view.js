@@ -599,7 +599,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     this.clearStyles = function() {
 
         _userStyles.resetStyleValues();
-        self.applyStyles();
+        applyStyles();
         _userStyles.clear();
     };
 

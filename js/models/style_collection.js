@@ -19,7 +19,7 @@ ReadiumSDK.Collections.StyleCollection = function() {
     var _styles = [];
 
     this.clear = function() {
-        _styles.clear();
+        _styles.length = 0;
 
     };
 
