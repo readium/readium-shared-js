@@ -29,6 +29,7 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
     bookMargins: undefined,
     contentMetaSize: undefined,
     userStyles: undefined,
+    bookStyles: undefined,
     iframeLoader: undefined,
 
     $viewport: undefined,
@@ -40,6 +41,7 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
         this.iframeLoader = this.options.iframeLoader;
         this.$viewport = this.options.$viewport;
         this.userStyles = this.options.userStyles;
+        this.bookStyles = this.options.bookStyles;
 
         this.spine = this.options.spine;
         this.spread = new ReadiumSDK.Models.Spread(this.spine, ReadiumSDK.Helpers.getOrientation(this.$viewport));
@@ -62,9 +64,9 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
 
                 iframeLoader: this.iframeLoader,
                 spine: this.spine,
+                bookStyles: this.bookStyles,
                 class: cssclass,
                 contentAlignment: contentAlignment
-
             });
     },
 
@@ -126,11 +128,20 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
 
     applyStyles: function() {
 
-        ReadiumSDK.Helpers.setStyles(this.userStyles.styles, this.$el.parent());
+        ReadiumSDK.Helpers.setStyles(this.userStyles.getStyles(), this.$el.parent());
 
         this.updateBookMargins();
         this.updateContentMetaSize();
         this.resizeBook();
+    },
+
+    applyBookStyles: function() {
+
+        var views = this.getDisplayingViews();
+
+        for(var i = 0, count = views.length; i < count; i++) {
+            views[i].applyBookStyles();
+        }
     },
 
     createPageLoadDeferrals: function(viewItemPairs) {

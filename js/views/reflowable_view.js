@@ -33,6 +33,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
     $viewport: undefined,
     $contentFrame: undefined,
     userStyles: undefined,
+    bookStyles: undefined,
     navigationLogic: undefined,
     iframeLoader: undefined,
 
@@ -57,6 +58,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         this.$viewport = this.options.$viewport;
         this.spine = this.options.spine;
         this.userStyles = this.options.userStyles;
+        this.bookStyles = this.options.bookStyles;
         this.iframeLoader = this.options.iframeLoader;
     },
 
@@ -195,6 +197,8 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         this.$epubHtml.css("position", "fixed");
         this.$epubHtml.css("-webkit-column-axis", "horizontal");
 
+        this.applyBookStyles();
+
         this.updateHtmlFontSizeAndColumnGap();
 
 
@@ -214,7 +218,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
 
     applyStyles: function() {
 
-        ReadiumSDK.Helpers.setStyles(this.userStyles.styles, this.$el.parent());
+        ReadiumSDK.Helpers.setStyles(this.userStyles.getStyles(), this.$el.parent());
 
         //because left, top, bottom, right setting ignores padding of parent container
         //we have to take it to account manually
@@ -224,6 +228,13 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         this.updateViewportSize();
         this.updatePagination();
 
+    },
+
+    applyBookStyles: function() {
+
+        if(this.$epubHtml) {
+            ReadiumSDK.Helpers.setStyles(this.bookStyles.getStyles(), this.$epubHtml);
+        }
     },
 
     openDeferredElement: function() {
