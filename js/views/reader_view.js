@@ -679,5 +679,11 @@ ReadiumSDK.Views.ReaderView = function(options) {
         }
     }
 
+    this.handleViewportResize = function(){
+        if (_currentView){
+            _currentView.onViewportResize();
+        }
+    }
+
 };
 
