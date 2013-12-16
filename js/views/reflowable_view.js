@@ -25,6 +25,8 @@
 
 ReadiumSDK.Views.ReflowableView = function(options){
 
+    _.extend(this, Backbone.Events);
+
     var self = this;
     
     var _$viewport = options.$viewport;
@@ -59,7 +61,6 @@ ReadiumSDK.Views.ReflowableView = function(options){
         pageOffset : 0,
         columnCount: 0
     };
-
 
     this.render = function(){
 
@@ -97,8 +98,9 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
         $(window).off("resize.ReadiumSDK.reflowableView");
 
+        _$el.remove();
         //base remove
-        Backbone.View.prototype.remove.call(self);
+//        Backbone.View.prototype.remove.call(self);
     };
 
     this.isReflowable = function() {
@@ -124,7 +126,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
         updateHtmlFontSizeAndColumnGap();
 
         updatePagination();
-    }
+    };
 
     function calculateVisibleColumnCount() {
 
@@ -215,28 +217,28 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
     }
 
-    applyStyles: function() {
+    this.applyStyles = function() {
 
         ReadiumSDK.Helpers.setStyles(_userStyles.getStyles(), _$el.parent());
 
         //because left, top, bottom, right setting ignores padding of parent container
         //we have to take it to account manually
         var elementMargins = ReadiumSDK.Helpers.Margins.fromElement(_$el);
-        this.setFrameSizesToRectangle(elementMargins.padding);
+        setFrameSizesToRectangle(elementMargins.padding);
 
-        this.updateViewportSize();
-        this.updatePagination();
+        updateViewportSize();
+        updatePagination();
 
-    },
+    };
 
-    applyBookStyles: function() {
+    this.applyBookStyles = function() {
 
         if(_$epubHtml) {
             ReadiumSDK.Helpers.setStyles(_bookStyles.getStyles(), _$epubHtml);
         }
-    },
+    };
 
-    openDeferredElement: function() {
+    function openDeferredElement() {
 
         if(!_deferredPageRequest) {
             return;
@@ -244,11 +246,11 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
         var deferredData = _deferredPageRequest;
         _deferredPageRequest = undefined;
-        this.openPage(deferredData);
+        self.openPage(deferredData);
 
-    },
+    }
 
-    openPage: function(pageRequest) {
+    this.openPage = function(pageRequest) {
 
         if(_isWaitingFrameRender) {
             _deferredPageRequest = pageRequest;
@@ -258,7 +260,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
         // if no spine item specified we are talking about current spine item
         if(pageRequest.spineItem && pageRequest.spineItem != _currentSpineItem) {
             _deferredPageRequest = pageRequest;
-            this.loadSpineItem(pageRequest.spineItem);
+            loadSpineItem(pageRequest.spineItem);
             return;
         }
 
@@ -288,19 +290,19 @@ ReadiumSDK.Views.ReflowableView = function(options){
         if(pageIndex >= 0 && pageIndex < _paginationInfo.columnCount) {
 
             _paginationInfo.currentSpreadIndex = Math.floor(pageIndex / _paginationInfo.visibleColumnCount) ;
-            this.onPaginationChanged(pageRequest.initiator, pageRequest.spineItem, pageRequest.elementId);
+            onPaginationChanged(pageRequest.initiator, pageRequest.spineItem, pageRequest.elementId);
         }
-    },
+    };
 
-    redraw: function() {
+    function redraw() {
 
         var offsetVal =  -_paginationInfo.pageOffset + "px";
 
         _$epubHtml.css("left", _spine.isLeftToRight() ? offsetVal : "");
         _$epubHtml.css("right", _spine.isRightToLeft() ? offsetVal : "");
-    },
+    }
 
-    updateViewportSize: function() {
+    function updateViewportSize() {
 
         var newWidth = _$contentFrame.width();
         var newHeight = _$contentFrame.height();
@@ -313,11 +315,11 @@ ReadiumSDK.Views.ReflowableView = function(options){
         }
 
         return false;
-    },
+    }
 
     // Description: Parse the epub "switch" tags and hide
     // cases that are not supported
-    applySwitches: function(dom) {
+    function applySwitches(dom) {
 
         // helper method, returns true if a given case node
         // is supported, false otherwise
@@ -358,14 +360,14 @@ ReadiumSDK.Views.ReflowableView = function(options){
 //                $('default', this).prop("hidden", true);
             }
         })
-    },
+    }
 
-    onPaginationChanged: function(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
+    function onPaginationChanged(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
 
         _paginationInfo.pageOffset = (_paginationInfo.columnWidth + _paginationInfo.columnGap) * _paginationInfo.visibleColumnCount * _paginationInfo.currentSpreadIndex;
-        this.redraw();
-        this.trigger(ReadiumSDK.Events.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: this.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
-    },
+        redraw();
+        self.trigger(ReadiumSDK.Events.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
+    }
 
     this.openPagePrev = function (initiator) {
 
@@ -409,7 +411,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
                 this.openPage(pageRequest);
             }
         }
-    }
+    };
 
     function updatePagination() {
 
@@ -450,7 +452,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
             if(_deferredPageRequest) {
 
                 //if there is a request for specific page we get here
-                self.openDeferredElement();
+                openDeferredElement();
             }
             else {
 
@@ -462,16 +464,16 @@ ReadiumSDK.Views.ReflowableView = function(options){
                 _$epubHtml.hide();
                 setTimeout(function() {
                     _$epubHtml.show();
-                    _onPaginationChanged(self);
+                    onPaginationChanged(self);
                 }, 50);
 
             }
 
         }, 100);
 
-    },
+    }
 
-    shiftBookOfScreen: function() {
+    function shiftBookOfScreen() {
 
         if(_spine.isLeftToRight()) {
             _$epubHtml.css("left", (_lastViewPortSize.width + 1000) + "px");
@@ -479,13 +481,13 @@ ReadiumSDK.Views.ReflowableView = function(options){
         else {
             _$epubHtml.css("right", (_lastViewPortSize.width + 1000) + "px");
         }
-    },
+    }
 
-    getFirstVisibleElementCfi: function() {
+    this.getFirstVisibleElementCfi = function() {
 
-        var contentOffsets = this.getVisibleContentOffsets();
+        var contentOffsets = getVisibleContentOffsets();
         return _navigationLogic.getFirstVisibleElementCfi(contentOffsets.top);
-    },
+    };
 
     this.getPaginationInfo = function() {
 
@@ -507,14 +509,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
     };
 
-    isPageIndexOpen: function(index) {
-
-        var pageIndexes = this.getOpenPageIndexes();
-
-        return pageIndexes.indexOf(index) != -1
-    },
-
-    getOpenPageIndexes: function() {
+    function getOpenPageIndexes() {
 
         var indexes = [];
 
@@ -527,7 +522,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
         return indexes;
 
-    },
+    }
 
     this.bookmarkCurrentPage = function() {
 
@@ -536,23 +531,23 @@ ReadiumSDK.Views.ReflowableView = function(options){
             return new ReadiumSDK.Models.BookmarkData("", "");
         }
 
-        return new ReadiumSDK.Models.BookmarkData(_currentSpineItem.idref, getFirstVisibleElementCfi());
-    }
+        return new ReadiumSDK.Models.BookmarkData(_currentSpineItem.idref, self.getFirstVisibleElementCfi());
+    };
 
-    getVisibleContentOffsets: function() {
+    function getVisibleContentOffsets() {
         var columnsLeftOfViewport = Math.round(_paginationInfo.pageOffset / (_paginationInfo.columnWidth + _paginationInfo.columnGap));
 
         var topOffset =  columnsLeftOfViewport * _$contentFrame.height();
         var bottomOffset = topOffset + _paginationInfo.visibleColumnCount * _$contentFrame.height();
 
         return {top: topOffset, bottom: bottomOffset};
-    },
+    }
 
     this.getLoadedSpineItems = function() {
         return [_currentSpineItem];
     };
 
-    getElement: function(spineItem, selector) {
+    this.getElement = function(spineItem, selector) {
 
         if(spineItem != _currentSpineItem) {
             console.error("spine item is not loaded");
@@ -560,18 +555,18 @@ ReadiumSDK.Views.ReflowableView = function(options){
         }
 
         return _navigationLogic.getElement(selector);
-    },
+    };
 
-    getVisibleMediaOverlayElements: function() {
+    this.getVisibleMediaOverlayElements = function() {
 
-        var visibleContentOffsets = this.getVisibleContentOffsets();
+        var visibleContentOffsets = getVisibleContentOffsets();
         return _navigationLogic.getVisibleMediaOverlayElements(visibleContentOffsets);
-    },
+    };
 
-    insureElementVisibility: function(element, initiator) {
+    this.insureElementVisibility = function(element, initiator) {
 
         var $element = $(element);
-        if(_navigationLogic.isElementVisible($element, this.getVisibleContentOffsets())) {
+        if(_navigationLogic.isElementVisible($element, getVisibleContentOffsets())) {
             return;
         }
 
@@ -584,7 +579,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
         var openPageRequest = new ReadiumSDK.Models.PageOpenRequest(_currentSpineItem, initiator);
         openPageRequest.setPageIndex(page);
 
-        this.openPage(openPageRequest);
+        self.openPage(openPageRequest);
     }
 
 };
