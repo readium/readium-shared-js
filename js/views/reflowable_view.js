@@ -129,19 +129,24 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
 
     calculateVisibleColumnCount: function() {
 
-        var columnCount = this.isSyntheticSpread ? 2 : 1;
+        if(this.isSyntheticSpread) {
 
-        if(!this.currentSpineItem) {
-            return columnCount;
-        }
+            if(!this.currentSpineItem) {
+                return 2;
+            }
 
-        var orientation = ReadiumSDK.Helpers.getOrientation(this.$viewport);
-        if(!orientation) {
-            return columnCount;
-        }
+            var orientation = ReadiumSDK.Helpers.getOrientation(this.$viewport);
+            if(!orientation) {
+                return 2;
+            }
 
-        return ReadiumSDK.Helpers.isRenditionSpreadPermittedForItem(this.currentSpineItem, orientation)
+            return ReadiumSDK.Helpers.isRenditionSpreadPermittedForItem(this.currentSpineItem, orientation)
                 ? 2 : 1;
+        }
+        else {
+
+            return 1;
+        }
     },
 
     registerTriggers: function (doc) {
