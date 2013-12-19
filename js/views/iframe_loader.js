@@ -25,21 +25,19 @@ ReadiumSDK.Views.IFrameLoader = function() {
 
         iframe.onload = function() {
 
-            //console.debug("epubReadingSystem (TOP):");
-            //console.debug(navigator.epubReadingSystem);
-
-            // Forward the epubReadingSystem object to the IFRAME
             try
             {
-                iframe.contentWindow.navigator["epubReadingSystem"] = navigator.epubReadingSystem;
+                iframe.contentWindow.navigator.epubReadingSystem = navigator.epubReadingSystem;
+                console.debug("epubReadingSystem name:"
+                    + iframe.contentWindow.navigator.epubReadingSystem.name
+                    + " version:"
+                    + iframe.contentWindow.navigator.epubReadingSystem.version
+                    + " is loaded to iframe");
             }
             catch(ex)
             {
                 console.log("epubReadingSystem INJECTION ERROR! " + ex.message);
             }
-
-            //console.debug("epubReadingSystem (IFRAME):");
-            //console.debug(iframe.contentWindow.navigator.epubReadingSystem);
 
             isWaitingForFrameLoad = false;
             callback.call(context, true);
