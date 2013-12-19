@@ -92,7 +92,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
         });
 
-        _currentView.on(ReadiumSDK.Events.CURRENT_VIEW_PAGINATION_CHANGED, function( pageChangeData ){
+        _currentView.on(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, function( pageChangeData ){
 
             //we call on onPageChanged explicitly instead of subscribing to the ReadiumSDK.Events.PAGINATION_CHANGED by
             //mediaOverlayPlayer because we hve to guarantee that mediaOverlayPlayer will be updated before the host
@@ -101,6 +101,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
             self.trigger(ReadiumSDK.Events.PAGINATION_CHANGED, pageChangeData);
         });
+
 
         _currentView.render();
     }
@@ -120,7 +121,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
             return;
         }
 
-        _currentView.off(ReadiumSDK.Events.CURRENT_VIEW_PAGINATION_CHANGED);
+        _currentView.off(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED);
+
         _currentView.remove();
         _currentView = undefined;
     }
