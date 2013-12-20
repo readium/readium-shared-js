@@ -20,6 +20,28 @@ ReadiumSDK.Models.ViewerSettings = function(settingsData) {
     this.isSyntheticSpread = true;
     this.fontSize = 100;
     this.columnGap = 20;
+    this.mediaOverlaysSkipSkippables = false;
+    this.mediaOverlaysEscapeEscapables = true;
+    this.mediaOverlaysSkippables = [];
+    this.mediaOverlaysEscapables = [];
+    this.mediaOverlaysEnableClick = true;
+    this.mediaOverlaysRate = 1;
+    this.mediaOverlaysVolume = 100;
+
+    function buildArray(str)
+    {
+        var retArr = [];
+        var arr = str.split(/[\s,;]+/); //','
+        for (var i = 0; i < arr.length; i++)
+        {
+            var item = arr[i].trim();
+            if (item !== "")
+            {
+                retArr.push(item);
+            }
+        }
+        return retArr;
+    }
 
     this.update = function(settingsData) {
 
@@ -33,6 +55,34 @@ ReadiumSDK.Models.ViewerSettings = function(settingsData) {
 
         if(settingsData.fontSize !== undefined) {
             this.fontSize = settingsData.fontSize;
+        }
+
+        if(settingsData.mediaOverlaysSkipSkippables !== undefined) {
+            this.mediaOverlaysSkipSkippables = settingsData.mediaOverlaysSkipSkippables;
+        }
+
+        if(settingsData.mediaOverlaysEscapeEscapables !== undefined) {
+            this.mediaOverlaysEscapeEscapables = settingsData.mediaOverlaysEscapeEscapables;
+        }
+
+        if(settingsData.mediaOverlaysSkippables !== undefined) {
+            this.mediaOverlaysSkippables = buildArray(settingsData.mediaOverlaysSkippables);
+        }
+
+        if(settingsData.mediaOverlaysEscapables !== undefined) {
+            this.mediaOverlaysEscapables = buildArray(settingsData.mediaOverlaysEscapables);
+        }
+
+        if(settingsData.mediaOverlaysEnableClick !== undefined) {
+            this.mediaOverlaysEnableClick = settingsData.mediaOverlaysEnableClick;
+        }
+
+        if(settingsData.mediaOverlaysRate !== undefined) {
+            this.mediaOverlaysRate = settingsData.mediaOverlaysRate;
+        }
+
+        if(settingsData.mediaOverlaysVolume !== undefined) {
+            this.mediaOverlaysVolume = settingsData.mediaOverlaysVolume;
         }
     };
 

@@ -1,4 +1,5 @@
 //  Created by Boris Schneiderman.
+// Modified by Daniel Weck
 //  Copyright (c) 2012-2013 The Readium Foundation.
 //
 //  The Readium SDK is free software: you can redistribute it and/or modify
@@ -21,64 +22,126 @@
  * @class ReadiumSDK.Views.ReaderView
  *
  * */
-ReadiumSDK.Views.ReaderView = Backbone.View.extend({
+ReadiumSDK.Views.ReaderView = function(options) {
 
-    currentView: undefined,
-    package: undefined,
-    spine: undefined,
-    viewerSettings:undefined,
-    userStyles: undefined,
+    _.extend(this, Backbone.Events);
 
-    initialize: function() {
+    var self = this;
+    var _currentView = undefined;
+    var _package = undefined;
+    var _spine = undefined;
+    var _viewerSettings = new ReadiumSDK.Models.ViewerSettings({});
+    //styles applied to the container divs
+    var _userStyles = new ReadiumSDK.Collections.StyleCollection();
+    //styles applied to the content documents
+    var _bookStyles = new ReadiumSDK.Collections.StyleCollection();
+    var _internalLinksSupport = new ReadiumSDK.Views.InternalLinksSupport(this);
+    var _mediaOverlayPlayer;
+    var _mediaOverlayDataInjector;
+    var _iframeLoader;
+    var _$el = $(options.el);
+    
+ 
 
-        this.viewerSettings = new ReadiumSDK.Models.ViewerSettings({});
-        this.userStyles = new ReadiumSDK.Collections.StyleCollection();
-    },
+    if(options.iframeLoader) {
+        _iframeLoader = options.iframeLoader;
+    }
+    else {
+        _iframeLoader = new ReadiumSDK.Views.IFrameLoader();
+    }
 
-    renderCurrentView: function(isReflowable) {
 
-        if(this.currentView){
+    function renderCurrentView(isReflowable) {
+
+        if(_currentView){
 
             //current view is already rendered
-            if( this.currentView.isReflowable() === isReflowable) {
+            if( _currentView.isReflowable() === isReflowable) {
                 return;
             }
 
-            this.resetCurrentView();
+            resetCurrentView();
         }
+
+        var viewCreationParams = {
+            $viewport: _$el,
+            spine: _spine,
+            userStyles: _userStyles,
+            bookStyles: _bookStyles,
+            iframeLoader: _iframeLoader
+        };
 
         if(isReflowable) {
 
-            this.currentView = new ReadiumSDK.Views.ReflowableView({$viewport: this.$el, spine:this.spine, userStyles: this.userStyles});
+            _currentView = new ReadiumSDK.Views.ReflowableView(viewCreationParams);
         }
         else {
 
-            this.currentView = new ReadiumSDK.Views.FixedView({$viewport: this.$el, spine:this.spine, userStyles: this.userStyles});
+            _currentView = new ReadiumSDK.Views.FixedView(viewCreationParams);
         }
 
-        this.currentView.setViewSettings(this.viewerSettings);
+        _currentView.setViewSettings(_viewerSettings);
 
-        this.currentView.render();
 
-        var self = this;
-        this.currentView.on("ViewPaginationChanged", function(){
-            var paginationReportData = self.currentView.getPaginationInfo();
-            self.trigger("PaginationChanged", paginationReportData);
+        _currentView.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function($iframe, spineItem) {
+
+            _mediaOverlayDataInjector.attachMediaOverlayData($iframe, spineItem, _viewerSettings);
+            _internalLinksSupport.processLinkElements($iframe, spineItem);
+
+            self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
 
         });
 
-    },
+        _currentView.on(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, function( pageChangeData ){
 
-    resetCurrentView: function() {
+            //we call on onPageChanged explicitly instead of subscribing to the ReadiumSDK.Events.PAGINATION_CHANGED by
+            //mediaOverlayPlayer because we hve to guarantee that mediaOverlayPlayer will be updated before the host
+            //application will be notified by the same ReadiumSDK.Events.PAGINATION_CHANGED event
+            _mediaOverlayPlayer.onPageChanged(pageChangeData);
 
-        if(!this.currentView) {
+            self.trigger(ReadiumSDK.Events.PAGINATION_CHANGED, pageChangeData);
+        });
+
+
+        _currentView.render();
+    }
+
+    this.getLoadedSpineItems = function() {
+
+        if(_currentView) {
+            return _currentView.getLoadedSpineItems();
+        }
+
+        return [];
+    };
+
+    function resetCurrentView() {
+
+        if(!_currentView) {
             return;
         }
 
-        this.currentView.off("ViewPaginationChanged");
-        this.currentView.remove();
-        this.currentView = undefined;
-    },
+        _currentView.off(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED);
+
+        _currentView.remove();
+        _currentView = undefined;
+    }
+
+    this.viewerSettings = function() {
+        return _viewerSettings;
+    };
+
+    this.package = function() {
+        return _package;
+    };
+
+    this.spine = function() {
+        return _spine;
+    };
+
+    this.userStyles = function() {
+        return _userStyles;
+    };
 
     /**
      * Triggers the process of opening the book and requesting resources specified in the packageData
@@ -93,19 +156,30 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
      * }
      *
      */
-    openBook: function(openBookData) {
+    this.openBook = function(openBookData) {
 
-        this.package = new ReadiumSDK.Models.Package({packageData: openBookData.package});
-        this.spine = this.package.spine;
+		var pack = openBookData.package ? openBookData.package : openBookData;
 
-        this.resetCurrentView();
+        _package = new ReadiumSDK.Models.Package({packageData: pack});
+
+        _spine = _package.spine;
+
+        if(_mediaOverlayPlayer) {
+            _mediaOverlayPlayer.reset();
+        }
+
+        _mediaOverlayPlayer = new ReadiumSDK.Views.MediaOverlayPlayer(self, $.proxy(onMediaPlayerStatusChanged, self));
+
+        _mediaOverlayDataInjector = new ReadiumSDK.Views.MediaOverlayDataInjector(_package.media_overlay, _mediaOverlayPlayer);
+
+        resetCurrentView();
 
         if(openBookData.settings) {
-            this.updateSettings(openBookData.settings);
+            self.updateSettings(openBookData.settings);
         }
 
         if(openBookData.styles) {
-            this.setStyles(openBookData.styles);
+            self.setStyles(openBookData.styles);
         }
 
         if(openBookData.openPageRequest) {
@@ -115,17 +189,17 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
             if(pageRequestData.idref) {
 
                 if(pageRequestData.spineItemPageIndex) {
-                    this.openSpineItemPage(pageRequestData.idref, pageRequestData.spineItemPageIndex);
+                    self.openSpineItemPage(pageRequestData.idref, pageRequestData.spineItemPageIndex, self);
                 }
                 else if(pageRequestData.elementCfi) {
-                    this.openSpineItemElementCfi(pageRequestData.idref, pageRequestData.elementCfi);
+                    self.openSpineItemElementCfi(pageRequestData.idref, pageRequestData.elementCfi, self);
                 }
                 else {
-                    this.openSpineItemPage(pageRequestData.idref, 0);
+                    self.openSpineItemPage(pageRequestData.idref, 0, self);
                 }
             }
             else if(pageRequestData.contentRefUrl && pageRequestData.sourceFileHref) {
-                this.openContentUrl(pageRequestData.contentRefUrl, pageRequestData.sourceFileHref);
+                self.openContentUrl(pageRequestData.contentRefUrl, pageRequestData.sourceFileHref, self);
             }
             else {
                 console.log("Invalid page request data: idref required!");
@@ -133,76 +207,80 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
         }
         else {// if we where not asked to open specific page we will open the first one
 
-            var spineItem = this.spine.first();
+            var spineItem = _spine.first();
             if(spineItem) {
-                var pageOpenRequest = new ReadiumSDK.Models.PageOpenRequest(spineItem);
+                var pageOpenRequest = new ReadiumSDK.Models.PageOpenRequest(spineItem, self);
                 pageOpenRequest.setFirstPage();
-                this.openPage(pageOpenRequest);
+                openPage(pageOpenRequest);
             }
 
         }
 
-    },
+    };
+
+    function onMediaPlayerStatusChanged(status) {
+        self.trigger(ReadiumSDK.Events.MEDIA_OVERLAY_STATUS_CHANGED, status);
+    }
 
     /**
      * Flips the page from left to right. Takes to account the page progression direction to decide to flip to prev or next page.
      * @method openPageLeft
      */
-    openPageLeft: function() {
+    this.openPageLeft = function() {
 
-        if(this.package.spine.isLeftToRight()) {
-            this.openPagePrev();
+        if(_package.spine.isLeftToRight()) {
+            self.openPagePrev();
         }
         else {
-            this.openPageNext();
+            self.openPageNext();
         }
-    },
+    };
 
     /**
      * Flips the page from right to left. Takes to account the page progression direction to decide to flip to prev or next page.
      * @method openPageRight
      */
-    openPageRight: function() {
+    this.openPageRight = function() {
 
-        if(this.package.spine.isLeftToRight()) {
-            this.openPageNext();
+        if(_package.spine.isLeftToRight()) {
+            self.openPageNext();
         }
         else {
-            this.openPagePrev();
+            self.openPagePrev();
         }
 
-    },
+    };
 
     /**
      * Updates reader view based on the settings specified in settingsData object
      * @param settingsData
      */
-    updateSettings: function(settingsData) {
+    this.updateSettings = function(settingsData) {
 
-        console.log("UpdateSettings: " + JSON.stringify(settingsData));
+//console.debug("UpdateSettings: " + JSON.stringify(settingsData));
 
-        this.viewerSettings.update(settingsData);
+        _viewerSettings.update(settingsData);
 
-        if(this.currentView) {
+        if(_currentView && !settingsData.doNotUpdateView) {
 
-            var bookMark = this.currentView.bookmarkCurrentPage();
+            var bookMark = _currentView.bookmarkCurrentPage();
 
-            this.currentView.setViewSettings(this.viewerSettings);
+            _currentView.setViewSettings(_viewerSettings);
 
             if(bookMark) {
-                this.openSpineItemElementCfi(bookMark.idref, bookMark.elementCfi);
+                self.openSpineItemElementCfi(bookMark.idref, bookMark.elementCfi, self);
             }
         }
 
-        this.trigger("SettingsApplied");
-    },
+        self.trigger(ReadiumSDK.Events.SETTINGS_APPLIED);
+    };
 
     /**
      * Opens the next page.
      */
-    openPageNext: function() {
+    this.openPageNext = function() {
 
-        var paginationInfo = this.currentView.getPaginationInfo();
+        var paginationInfo = _currentView.getPaginationInfo();
 
         if(paginationInfo.openPages.length == 0) {
             return;
@@ -211,30 +289,30 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
         var lastOpenPage = paginationInfo.openPages[paginationInfo.openPages.length - 1];
 
         if(lastOpenPage.spineItemPageIndex < lastOpenPage.spineItemPageCount - 1) {
-            this.currentView.openPageNext();
+            _currentView.openPageNext(this);
             return;
         }
 
-        var currentSpineItem = this.spine.getItemById(lastOpenPage.idref);
+        var currentSpineItem = _spine.getItemById(lastOpenPage.idref);
 
-        var nextSpineItem = this.spine.nextItem(currentSpineItem);
+        var nextSpineItem = _spine.nextItem(currentSpineItem);
 
         if(!nextSpineItem) {
             return;
         }
 
-        var openPageRequest = new ReadiumSDK.Models.PageOpenRequest(nextSpineItem);
+        var openPageRequest = new ReadiumSDK.Models.PageOpenRequest(nextSpineItem, self);
         openPageRequest.setFirstPage();
 
-        this.openPage(openPageRequest);
-    },
+        openPage(openPageRequest);
+    };
 
     /**
      * Opens the previews page.
      */
-    openPagePrev: function() {
+    this.openPagePrev = function() {
 
-        var paginationInfo = this.currentView.getPaginationInfo();
+        var paginationInfo = _currentView.getPaginationInfo();
 
         if(paginationInfo.openPages.length == 0) {
             return;
@@ -243,25 +321,25 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
         var firstOpenPage = paginationInfo.openPages[0];
 
         if(firstOpenPage.spineItemPageIndex > 0) {
-            this.currentView.openPagePrev();
+            _currentView.openPagePrev(self);
             return;
         }
 
-        var currentSpineItem = this.spine.getItemById(firstOpenPage.idref);
+        var currentSpineItem = _spine.getItemById(firstOpenPage.idref);
 
-        var prevSpineItem = this.spine.prevItem(currentSpineItem);
+        var prevSpineItem = _spine.prevItem(currentSpineItem);
 
         if(!prevSpineItem) {
             return;
         }
 
-        var openPageRequest = new ReadiumSDK.Models.PageOpenRequest(prevSpineItem);
+        var openPageRequest = new ReadiumSDK.Models.PageOpenRequest(prevSpineItem, self);
         openPageRequest.setLastPage();
 
-        this.openPage(openPageRequest);
-    },
+        openPage(openPageRequest);
+    };
 
-    getSpineItem: function(idref) {
+    function getSpineItem(idref) {
 
         if(!idref) {
 
@@ -269,7 +347,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
             return undefined;
         }
 
-        var spineItem = this.spine.getItemById(idref);
+        var spineItem = _spine.getItemById(idref);
         if(!spineItem) {
             console.log("Spine item with id " + idref + " not found!");
             return undefined;
@@ -277,7 +355,7 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
 
         return spineItem;
 
-    },
+    }
 
     /**
      * Opens the page of the spine item with element with provided cfi
@@ -286,22 +364,23 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
      *
      * @param {string} idref Id of the spine item
      * @param {string} elementCfi CFI of the element to be shown
+     * @param {object} initiator optional
      */
-    openSpineItemElementCfi: function(idref, elementCfi) {
+    this.openSpineItemElementCfi = function(idref, elementCfi, initiator) {
 
-        var spineItem = this.getSpineItem(idref);
+        var spineItem = getSpineItem(idref);
 
         if(!spineItem) {
             return;
         }
 
-        var pageData = new ReadiumSDK.Models.PageOpenRequest(spineItem);
+        var pageData = new ReadiumSDK.Models.PageOpenRequest(spineItem, initiator);
         if(elementCfi) {
             pageData.setElementCfi(elementCfi);
         }
 
-        this.openPage(pageData);
-    },
+        openPage(pageData);
+    };
 
     /**
      *
@@ -310,38 +389,39 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
      * @method openPageIndex
      *
      * @param {number} pageIndex Zero based index of the page in the current spine item
+     * @param {object} initiator optional
      */
-    openPageIndex: function(pageIndex) {
+    this.openPageIndex = function(pageIndex, initiator) {
 
-        if(!this.currentView) {
+        if(!_currentView) {
             return;
         }
 
         var pageRequest;
-        if(this.package.isFixedLayout()) {
-            var spineItem = this.package.spine.items[pageIndex];
+        if(_package.isFixedLayout()) {
+            var spineItem = _spine.items[pageIndex];
             if(!spineItem) {
                 return;
             }
 
-            pageRequest = new ReadiumSDK.Models.PageOpenRequest(spineItem);
+            pageRequest = new ReadiumSDK.Models.PageOpenRequest(spineItem, initiator);
             pageRequest.setPageIndex(0);
         }
         else {
 
-            pageRequest = new ReadiumSDK.Models.PageOpenRequest(undefined);
+            pageRequest = new ReadiumSDK.Models.PageOpenRequest(undefined, initiator);
             pageRequest.setPageIndex(pageIndex);
 
         }
 
-        this.openPage(pageRequest);
-    },
+        openPage(pageRequest);
+    };
 
-    openPage: function(pageRequest) {
+    function openPage(pageRequest) {
 
-        this.renderCurrentView(pageRequest.spineItem.isReflowable());
-        this.currentView.openPage(pageRequest);
-    },
+        renderCurrentView(pageRequest.spineItem.isReflowable());
+        _currentView.openPage(pageRequest);
+    }
 
 
     /**
@@ -350,50 +430,89 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
      *
      * @param {string} idref Id of the spine item
      * @param {number} pageIndex Zero based index of the page in the spine item
+     * @param {object} initiator optional
      */
-    openSpineItemPage: function(idref, pageIndex) {
+    this.openSpineItemPage = function(idref, pageIndex, initiator) {
 
-        var spineItem = this.getSpineItem(idref);
+        var spineItem = getSpineItem(idref);
 
         if(!spineItem) {
             return;
         }
 
-        var pageData = new ReadiumSDK.Models.PageOpenRequest(spineItem);
+        var pageData = new ReadiumSDK.Models.PageOpenRequest(spineItem, initiator);
         if(pageIndex) {
             pageData.setPageIndex(pageIndex);
         }
 
-        this.openPage(pageData);
-    },
+        openPage(pageData);
+    };
 
     /**
-     * Set CSS Styles to the reader
+     * Set CSS Styles to the reader container
      *
      * @method setStyles
      *
      * @param styles {object} style object contains selector property and declarations object
      */
-    setStyles: function(styles) {
+    this.setStyles = function(styles) {
 
         var count = styles.length;
 
         for(var i = 0; i < count; i++) {
-            this.userStyles.addStyle(styles[i].selector, styles[i].declarations);
+            _userStyles.addStyle(styles[i].selector, styles[i].declarations);
         }
 
-        this.applyStyles();
+        applyStyles();
 
-    },
+    };
 
-    applyStyles: function() {
+    /**
+     * Set CSS Styles to the content documents
+     *
+     * @method setBookStyles
+     *
+     * @param styles {object} style object contains selector property and declarations object
+     */
+    this.setBookStyles = function(styles) {
 
-        ReadiumSDK.Helpers.setStyles(this.userStyles.styles, this.$el);
+        var count = styles.length;
 
-        if(this.currentView) {
-            this.currentView.applyStyles();
+        for(var i = 0; i < count; i++) {
+            _bookStyles.addStyle(styles[i].selector, styles[i].declarations);
         }
-    },
+
+        if(_currentView) {
+            _currentView.applyBookStyles();
+        }
+
+    };
+
+    this.getElement = function(spineItem, selector) {
+
+        if(_currentView) {
+            return _currentView.getElement(spineItem, selector);
+        }
+
+        return undefined;
+
+    };
+
+    function applyStyles() {
+
+        ReadiumSDK.Helpers.setStyles(_userStyles.getStyles(), _$el);
+
+        if(_currentView) {
+            _currentView.applyStyles();
+        }
+
+        _mediaOverlayPlayer.applyStyles();
+    }
+
+    //TODO: this is public function - should be JS Doc-ed
+    this.mediaOverlaysOpenContentUrl = function(contentRefUrl, sourceFileHref, offset) {
+        _mediaOverlayPlayer.mediaOverlaysOpenContentUrl(contentRefUrl, sourceFileHref, offset);
+    };
 
 
     /**
@@ -405,9 +524,9 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
      * @param {string | undefined} sourceFileHref Url to the file that contentRefUrl is relative to. If contentRefUrl is
      * relative ot the source file that contains it instead of the package file (ex. TOC file) We have to know the
      * sourceFileHref to resolve contentUrl relative to the package file.
-     *
+     * @param {object} initiator optional
      */
-    openContentUrl: function(contentRefUrl, sourceFileHref) {
+    this.openContentUrl = function(contentRefUrl, sourceFileHref, initiator) {
 
         var combinedPath = ReadiumSDK.Helpers.ResolveContentRef(contentRefUrl, sourceFileHref);
 
@@ -423,20 +542,44 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
             hrefPart = combinedPath;
             elementId = undefined;
         }
+//console.debug("============ openContentUrl - hrefPart: " + hrefPart);
 
-        var spineItem = this.spine.getItemByHref(hrefPart);
-
+        var spineItem = _spine.getItemByHref(hrefPart);
         if(!spineItem) {
             return;
         }
 
-        var pageData = new ReadiumSDK.Models.PageOpenRequest(spineItem)
+        self.openSpineItemElementId(spineItem.idref, elementId, initiator);
+
+//console.debug("------- openContentUrl - elementId: " + elementId);
+
+    };
+
+    /**
+     * Opens the page of the spine item with element with provided cfi
+     *
+     * @method openSpineItemElementId
+     *
+     * @param {string} idref Id of the spine item
+     * @param {string} elementId id of the element to be shown
+     * @param {object} initiator optional
+     */
+    this.openSpineItemElementId = function(idref, elementId, initiator) {
+
+        var spineItem = _spine.getItemById(idref);
+        if(!spineItem) {
+            return;
+        }
+
+        var pageData = new ReadiumSDK.Models.PageOpenRequest(spineItem, initiator);
+
         if(elementId){
             pageData.setElementId(elementId);
         }
 
-        this.openPage(pageData);
-    },
+
+        openPage(pageData);
+    };
 
     /**
      *
@@ -446,35 +589,129 @@ ReadiumSDK.Views.ReaderView = Backbone.View.extend({
      *
      * @returns {string} Stringified ReadiumSDK.Models.BookmarkData object.
      */
-    bookmarkCurrentPage: function() {
-        return JSON.stringify(this.currentView.bookmarkCurrentPage());
-    },
+    this.bookmarkCurrentPage = function() {
+        return JSON.stringify(_currentView.bookmarkCurrentPage());
+    };
 
     /**
      * Resets all the custom styles set by setStyle callers at runtime
      *
      * @method resetStyles
      */
-    clearStyles: function() {
+    this.clearStyles = function() {
 
-        var styles = this.userStyles.styles;
-        var count = styles.length;
+        _userStyles.resetStyleValues();
+        applyStyles();
+        _userStyles.clear();
+    };
 
-        for(var i = 0; i < count; i++) {
+    /**
+     * Resets all the custom styles set by setBookStyle callers at runtime
+     *
+     * @method resetStyles
+     */
+    this.clearBookStyles = function() {
 
-            var style = styles[i];
-            var declarations = style.declarations;
+        if(_currentView) {
 
-            for(var prop in declarations) {
-                if(declarations.hasOwnProperty(prop)) {
-                    declarations[prop] = '';
-                }
-            }
+            _bookStyles.resetStyleValues();
+            _currentView.applyBookStyles();
         }
 
-        this.applyStyles();
+        _bookStyles.clear();
+    };
 
-        this.userStyles.clear();
+    /**
+     *
+     * Returns true if media overlay available for one of the open pages.
+     *
+     * @method isMediaOverlayAvailable
+     *
+     * @returns {boolean}
+     */
+    this.isMediaOverlayAvailable = function() {
+
+        return _mediaOverlayPlayer.isMediaOverlayAvailable();
+    };
+
+/*
+    this.setMediaOverlaySkippables = function(items) {
+
+        _mediaOverlayPlayer.setMediaOverlaySkippables(items);
+    };
+
+    this.setMediaOverlayEscapables = function(items) {
+
+        _mediaOverlayPlayer.setMediaOverlayEscapables(items);
+    };
+*/
+
+    /**
+     * Starts/Stop playing media overlay on current page
+     *
+     */
+    this.toggleMediaOverlay = function() {
+
+        _mediaOverlayPlayer.toggleMediaOverlay();
+    };
+
+
+    /**
+    * Plays next fragment media overlay
+    *
+    */
+   this.nextMediaOverlay = function() {
+
+        _mediaOverlayPlayer.nextMediaOverlay();
+
+   };
+
+    /**
+     * Plays previous fragment media overlay
+     *
+     */
+    this.previousMediaOverlay = function() {
+
+        _mediaOverlayPlayer.previousMediaOverlay();
+
+    };
+
+    /**
+     * Plays next available fragment media overlay that is outside of the current escapable scope
+     *
+     */
+    this.escapeMediaOverlay = function() {
+
+        _mediaOverlayPlayer.escape();
+    };
+
+    this.ttsEndedMediaOverlay = function() {
+
+        _mediaOverlayPlayer.onTTSEnd();
+    };
+
+
+    this.getVisibleMediaOverlayElements = function() {
+
+        if(_currentView) {
+            return _currentView.getVisibleMediaOverlayElements();
+        }
+
+        return [];
+    };
+
+    this.insureElementVisibility = function(element, initiator) {
+
+        if(_currentView) {
+            _currentView.insureElementVisibility(element, initiator);
+        }
     }
 
-});
+    this.handleViewportResize = function(){
+        if (_currentView){
+            _currentView.onViewportResize();
+        }
+    }
+
+};
+

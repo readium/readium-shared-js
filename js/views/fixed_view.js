@@ -29,6 +29,8 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
     bookMargins: undefined,
     contentMetaSize: undefined,
     userStyles: undefined,
+    bookStyles: undefined,
+    iframeLoader: undefined,
 
     $viewport: undefined,
 
@@ -36,16 +38,17 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
 
     initialize: function() {
 
+        this.iframeLoader = this.options.iframeLoader;
         this.$viewport = this.options.$viewport;
-
         this.userStyles = this.options.userStyles;
+        this.bookStyles = this.options.bookStyles;
 
         this.spine = this.options.spine;
-        this.spread = new ReadiumSDK.Models.Spread(this.spine);
+        this.spread = new ReadiumSDK.Models.Spread(this.spine, ReadiumSDK.Helpers.getOrientation(this.$viewport));
 
-        this.leftPageView = new ReadiumSDK.Views.OnePageView({spine: this.spine, class: "fixed-page-frame-left", contentAlignment: "right"});
-        this.rightPageView = new ReadiumSDK.Views.OnePageView({spine: this.spine, class: "fixed-page-frame-right", contentAlignment: "left"});
-        this.centerPageView = new ReadiumSDK.Views.OnePageView({spine: this.spine, class: "fixed-page-frame-center", contentAlignment: "center"});
+        this.leftPageView = this.createOnePageView("fixed-page-frame-left", "right");
+        this.rightPageView = this.createOnePageView("fixed-page-frame-right", "left");
+        this.centerPageView = this.createOnePageView("fixed-page-frame-center", "center");
 
         this.pageViews.push(this.leftPageView);
         this.pageViews.push(this.rightPageView);
@@ -53,6 +56,18 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
 
         //event with namespace for clean unbinding
         $(window).on("resize.ReadiumSDK.readerView", _.bind(this.onViewportResize, this));
+    },
+
+    createOnePageView: function(cssclass, contentAlignment) {
+
+        return new ReadiumSDK.Views.OnePageView({
+
+            iframeLoader: this.iframeLoader,
+            spine: this.spine,
+            bookStyles: this.bookStyles,
+            class: cssclass,
+            contentAlignment: contentAlignment
+        });
     },
 
     isReflowable: function() {
@@ -84,7 +99,7 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
         this.spread.setSyntheticSpread(settings.isSyntheticSpread);
     },
 
-    redraw: function() {
+    redraw: function(initiator, paginationRequest) {
 
         var self = this;
 
@@ -92,26 +107,41 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
         var pageLoadDeferrals = this.createPageLoadDeferrals([{pageView: this.leftPageView, spineItem: this.spread.leftItem, context: context},
                                                               {pageView: this.rightPageView, spineItem: this.spread.rightItem, context: context},
                                                               {pageView: this.centerPageView, spineItem: this.spread.centerItem, context: context}]);
-
-
         if(pageLoadDeferrals.length > 0) {
+
             $.when.apply($, pageLoadDeferrals).done(function(){
                 if(context.isElementAdded) {
                     self.applyStyles();
                 }
-                self.onPagesLoaded()
+
+                if (paginationRequest)
+                {
+                    self.onPagesLoaded(initiator, paginationRequest.spineItem, paginationRequest.elementId)
+                }
+                else
+                {
+                    self.onPagesLoaded(initiator);
+                }
             });
         }
-
     },
 
     applyStyles: function() {
 
-        ReadiumSDK.Helpers.setStyles(this.userStyles.styles, this.$el.parent());
+        ReadiumSDK.Helpers.setStyles(this.userStyles.getStyles(), this.$el.parent());
 
         this.updateBookMargins();
         this.updateContentMetaSize();
         this.resizeBook();
+    },
+
+    applyBookStyles: function() {
+
+        var views = this.getDisplayingViews();
+
+        for(var i = 0, count = views.length; i < count; i++) {
+            views[i].applyBookStyles();
+        }
     },
 
     createPageLoadDeferrals: function(viewItemPairs) {
@@ -131,31 +161,69 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
 
     },
 
-    onPagesLoaded: function() {
+    onPagesLoaded: function(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
 
         this.updateContentMetaSize();
         this.resizeBook();
 
-        this.trigger("ViewPaginationChanged");
+        this.trigger(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: this.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
     },
 
     onViewportResize: function() {
 
-        this.resizeBook();
+        //because change of the viewport orientation can alter pagination behaviour we have to check if
+        //visible content stays same
+        var newOrientation = ReadiumSDK.Helpers.getOrientation(this.$viewport);
+        if(!newOrientation) {
+            return;
+        }
+
+        var spreadChanged = false;
+        var itemToDisplay = undefined;
+        if(this.spread.orientation != newOrientation) {
+
+            var newPageSpread = new ReadiumSDK.Models.Spread(this.spine, newOrientation);
+
+            spreadChanged = (  this.spread.leftItem != newPageSpread.leftItem
+                            || this.spread.rightItem != newPageSpread.rightItem
+                            || this.spread.centerItem != newPageSpread.centerItem );
+
+            this.spread.orientation = newOrientation;
+        }
+
+        if(spreadChanged) {
+            itemToDisplay = this.spread.validItems()[0];
+            if(itemToDisplay) {
+                var paginationRequest = new ReadiumSDK.Models.PageOpenRequest(itemToDisplay, this);
+                this.openPage(paginationRequest);
+            }
+        }
+        else {
+            this.resizeBook();
+        }
+
     },
 
-    resizeBook: function() {
+    isContentRendered: function() {
 
         if(!this.contentMetaSize || !this.bookMargins) {
-            return;
+            return false;
         }
 
         var viewportWidth = this.$viewport.width();
         var viewportHeight = this.$viewport.height();
 
-        if(!viewportWidth || !viewportHeight) {
+        return viewportWidth && viewportHeight;
+    },
+
+    resizeBook: function() {
+
+        if(!this.isContentRendered()) {
             return;
         }
+
+        var viewportWidth = this.$viewport.width();
+        var viewportHeight = this.$viewport.height();
 
         var leftPageMargins = this.leftPageView.isDisplaying() ? ReadiumSDK.Helpers.Margins.fromElement(this.leftPageView.$el) : ReadiumSDK.Helpers.Margins.empty();
         var rightPageMargins = this.rightPageView.isDisplaying() ? ReadiumSDK.Helpers.Margins.fromElement(this.rightPageView.$el) : ReadiumSDK.Helpers.Margins.empty();
@@ -300,20 +368,20 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
         }
 
         this.spread.openItem(paginationRequest.spineItem);
-        this.redraw();
+        this.redraw(paginationRequest.initiator, paginationRequest);
     },
 
 
-    openPagePrev: function() {
+    openPagePrev: function(initiator) {
 
         this.spread.openPrev();
-        this.redraw();
+        this.redraw(initiator);
     },
 
-    openPageNext: function() {
+    openPageNext: function(initiator) {
 
         this.spread.openNext();
-        this.redraw();
+        this.redraw(initiator);
     },
 
     updatePageViewForItem: function (pageView, item, context) {
@@ -327,13 +395,25 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
         }
 
         if(!pageView.isDisplaying()) {
-            this.$el.append(pageView.render().$el);
+            pageView.render();
+            this.$el.append(pageView.$el);
+
             context.isElementAdded = true;
         }
 
         var dfd = $.Deferred();
+        var self = this;
 
-        pageView.on("PageLoaded", dfd.resolve);
+        pageView.on(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED, function($iframe, spineItem, isNewContentDocumentLoaded){
+
+            pageView.off(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED);
+
+            if(isNewContentDocumentLoaded) {
+                self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
+            }
+
+            dfd.resolve();
+        });
 
         pageView.loadSpineItem(item);
 
@@ -361,6 +441,25 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
 
     bookmarkCurrentPage: function() {
 
+        var views = this.getDisplayingViews();
+
+        if(views.length > 0) {
+
+            var idref = views[0].currentSpineItem.idref;
+            var cfi = views[0].getFirstVisibleElementCfi();
+
+            if(cfi == undefined) {
+                cfi = "";
+            }
+
+            return new ReadiumSDK.Models.BookmarkData(idref, cfi);
+        }
+
+        return new ReadiumSDK.Models.BookmarkData("", "");
+    },
+
+    getDisplayingViews: function() {
+
         var viewsToCheck = [];
 
         if( this.spine.isLeftToRight() ) {
@@ -370,22 +469,55 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
             viewsToCheck = [this.rightPageView, this.centerPageView, this.leftPageView];
         }
 
-        for(var i = 0; i < viewsToCheck.length; i++) {
+        var views = [];
+
+        for(var i = 0, count = viewsToCheck.length; i < count; i++) {
             if(viewsToCheck[i].isDisplaying()) {
-
-                var idref = viewsToCheck[i].currentSpineItem.idref;
-                var cfi = viewsToCheck[i].getFirstVisibleElementCfi();
-
-                if(cfi == undefined) {
-                    cfi = "";
-                }
-
-                return new ReadiumSDK.Models.BookmarkData(idref, cfi);
-
+                views.push(viewsToCheck[i]);
             }
         }
 
-        return new ReadiumSDK.Models.BookmarkData("", "");
+        return views;
+    },
+
+    getLoadedSpineItems: function() {
+
+        return this.spread.validItems();
+    },
+
+    getElement: function(spineItem, selector) {
+
+        var views = this.getDisplayingViews();
+
+        for(var i = 0, count = views.length; i < count; i++) {
+
+            var view = views[i];
+            if(view.currentSpineItem == spineItem) {
+                return view.getElement(spineItem, selector);
+            }
+        }
+
+        console.error("spine item is not loaded");
+        return undefined;
+    },
+
+    getVisibleMediaOverlayElements: function() {
+
+        var elements = [];
+
+        var views = this.getDisplayingViews();
+
+        for(var i = 0, count = views.length; i < count; i++) {
+            elements.push.apply(elements, views[i].getVisibleMediaOverlayElements());
+        }
+
+        return elements;
+    },
+
+    insureElementVisibility: function(element, initiator) {
+
+        //for now we assume that for fixed layout element is always visible
+
     }
 
 });

@@ -23,9 +23,12 @@
 //Representation of one fixed page
 ReadiumSDK.Views.OnePageView = Backbone.View.extend({
 
+
     currentSpineItem: undefined,
     spine: undefined,
     contentAlignment: undefined, //expected 'center' 'left' 'right'
+    iframeLoader: undefined,
+    bookStyles: undefined,
 
     meta_size : {
         width: 0,
@@ -37,12 +40,14 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
 
         this.spine = this.options.spine;
         this.contentAlignment = this.options.contentAlignment;
+        this.iframeLoader = this.options.iframeLoader;
+        this.bookStyles = this.options.bookStyles;
 
     },
 
     isDisplaying:function() {
 
-        return this.currentSpineItem != undefined;
+        return this.currentSpineItem != undefined && this.$epubHtml != null && this.$epubHtml.length > 0;
     },
 
     render: function() {
@@ -71,17 +76,26 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
         Backbone.View.prototype.remove.call(this);
     },
 
+
     onIFrameLoad:  function(success) {
 
         if(success) {
             var epubContentDocument = this.$iframe[0].contentDocument;
             this.$epubHtml = $("html", epubContentDocument);
             this.$epubHtml.css("overflow", "hidden");
+            this.applyBookStyles();
             this.updateMetaSize();
 //            this.fitToScreen();
-        }
 
-        this.trigger("PageLoaded");
+            this.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED, this.$iframe, this.currentSpineItem, true);
+        }
+    },
+
+    applyBookStyles: function() {
+
+        if(this.$epubHtml) {
+            ReadiumSDK.Helpers.setStyles(this.bookStyles.getStyles(), this.$epubHtml);
+        }
     },
 
 //    fitToScreen: function() {
@@ -133,17 +147,28 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
 
     transformContent: function(scale, left, top) {
 
+        var elWidth = Math.floor(this.meta_size.width * scale);
+        var elHeight = Math.floor(this.meta_size.height * scale);
+                                                    
         this.$el.css("left", left + "px");
         this.$el.css("top", top + "px");
-        this.$el.css("width", Math.floor(this.meta_size.width * scale) + "px");
-        this.$el.css("height", Math.floor(this.meta_size.height * scale) + "px");
+        this.$el.css("width", elWidth + "px");
+        this.$el.css("height", elHeight + "px");
+                                                    
+        this.$iframe.css("width", elWidth + "px");
+        this.$iframe.css("height", elHeight + "px");
 
         var css = this.generateTransformCSS(scale, 0, 0);
 
         css["width"] = this.meta_size.width;
         css["height"] = this.meta_size.height;
 
+        if(!this.$epubHtml) {
+            debugger;
+        }
+
         this.$epubHtml.css(css);
+        this.$iframe.css("visibility", "visible");
     },
 
     generateTransformCSS: function(scale, left, top) {
@@ -196,9 +221,15 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
         if(this.currentSpineItem != spineItem) {
 
             this.currentSpineItem = spineItem;
-            var src = this.spine.getItemUrl(spineItem);
+            var src = this.spine.package.resolveRelativeUrl(spineItem.href);
 
-            ReadiumSDK.Helpers.LoadIframe(this.$iframe[0], src, this.onIFrameLoad, this);
+            //hide iframe until content is scaled
+            this.$iframe.css("visibility", "hidden");
+            this.iframeLoader.loadIframe(this.$iframe[0], src, this.onIFrameLoad, this);
+        }
+        else
+        {
+            this.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED, this.$iframe, this.currentSpineItem, false);
         }
     },
 
@@ -239,6 +270,28 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
         var navigation = new ReadiumSDK.Views.CfiNavigationLogic(this.$el, this.$iframe);
         return navigation.getFirstVisibleElementCfi(0);
 
+    },
+
+    getElement: function(spineItem, selector) {
+
+        if(spineItem != this.currentSpineItem) {
+            console.error("spine item is not loaded");
+            return undefined;
+        }
+
+        var navigation = this.navigationLogic;
+        if (!navigation)
+        {
+            navigation = new ReadiumSDK.Views.CfiNavigationLogic(this.$el, this.$iframe);
+        }
+        return navigation.getElement(selector);
+    },
+
+    getVisibleMediaOverlayElements: function() {
+        var navigation = new ReadiumSDK.Views.CfiNavigationLogic(this.$el, this.$iframe);
+        return navigation.getVisibleMediaOverlayElements({top:0, bottom: this.$iframe.height()});
     }
 
 });
+
+ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED = "SpineItemOpened";

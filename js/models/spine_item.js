@@ -27,25 +27,59 @@
 
 ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
 
+    var self = this;
+
     this.idref = itemData.idref;
     this.href = itemData.href;
+
     this.page_spread = itemData.page_spread;
+    this.rendition_spread = itemData.rendition_spread;
+
     this.rendition_layout = itemData.rendition_layout;
     this.media_overlay_id = itemData.media_overlay_id;
+
+    this.media_type = itemData.media_type;
 
     this.index = index;
     this.spine = spine;
 
+    validateSpread();
+
     this.isLeftPage = function() {
-        return this.page_spread === "page-spread-left";
+        return this.page_spread == ReadiumSDK.Models.SpineItem.SPREAD_LEFT;
     };
 
+    this.setSpread = function(spread) {
+        this.page_spread = spread;
+
+        validateSpread();
+    };
+
+    this.isRenditionSpreadAllowed = function() {
+        return !this.rendition_spread || this.rendition_spread != ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_NONE;
+    };
+
+    function validateSpread() {
+
+        if(!self.page_spread) {
+            return;
+        }
+
+        if( self.page_spread != ReadiumSDK.Models.SpineItem.SPREAD_LEFT &&
+            self.page_spread != ReadiumSDK.Models.SpineItem.SPREAD_RIGHT &&
+            self.page_spread != ReadiumSDK.Models.SpineItem.SPREAD_CENTER ) {
+
+            console.error(self.page_spread + " is not a recognized spread type");
+        }
+
+    }
+
     this.isRightPage = function() {
-        return this.page_spread === "page-spread-right";
+        return this.page_spread == ReadiumSDK.Models.SpineItem.SPREAD_RIGHT;
     };
 
     this.isCenterPage = function() {
-        return !this.isLeftPage() && !this.isRightPage();
+        return this.page_spread == ReadiumSDK.Models.SpineItem.SPREAD_CENTER;
     };
 
     this.isReflowable = function() {
@@ -57,3 +91,29 @@ ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
     }
 
 };
+
+ReadiumSDK.Models.SpineItem.SPREAD_LEFT = "page-spread-left";
+ReadiumSDK.Models.SpineItem.SPREAD_RIGHT = "page-spread-right";
+ReadiumSDK.Models.SpineItem.SPREAD_CENTER = "page-spread-center";
+
+ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_NONE = "none";
+ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_LANDSCAPE = "landscape";
+ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_PORTRAIT = "portrait";
+ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_BOTH = "both";
+ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_AUTO = "auto";
+
+
+ReadiumSDK.Models.SpineItem.alternateSpread = function(spread) {
+
+    if(spread === ReadiumSDK.Models.SpineItem.SPREAD_LEFT) {
+        return ReadiumSDK.Models.SpineItem.SPREAD_RIGHT;
+    }
+
+    if(spread === ReadiumSDK.Models.SpineItem.SPREAD_RIGHT) {
+        return ReadiumSDK.Models.SpineItem.SPREAD_LEFT;
+    }
+
+    return spread;
+
+};
+
