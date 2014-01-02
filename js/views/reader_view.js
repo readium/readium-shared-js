@@ -701,177 +701,62 @@ ReadiumSDK.Views.ReaderView = function(options) {
         }
     }
 
-    // TODO DM We need to refactor CFI library so that it can use package metadata
-    // from the package object instead of the XML.
-    // Refactor wisth boris
-    this.setPackageDocument= function(packageDoc) {
-        var parser = new window.DOMParser;
-        if (_.isString(packageDoc))
-            self.packageDoc = parser.parseFromString(packageDoc, "text/xml");
-        else
-            self.packageDoc = packageDoc;
+    /**
+     * Returns current selection partial Cfi, useful for workflows that need to check whether the user has selected something.
+     *
+     * @method getCurrentSelectionCfi 
+     * @returns {object | undefined} partial cfi object or undefined if nothing is selected
+    *
+     */
+
+    this.getCurrentSelectionCfi =  function() {
+        return _annotationsManager.getCurrentSelectionCfi();
     };
 
-    // TODO DM This needs ot move to a helper because it's not view specific
-    // ask the view for currently open spine items and pass the CFI in
-    this.isThisCfiForVisibleSpineItems = function(CFI){ 
-        var result = false;
-        forEachVisibleSpineItemThatMatchesCfi(CFI, function() {
-            result = true;
-        });
-        return result;
-    };
+    /**
+     * Creates a higlight based on given parameters
+     *
+     * @method addHighlight 
+     * @param {string} spineIndex spine Index that defines the partial Cfi
+     * @param {string} CFI partial CFI (withouth the indirection step) relative to the spine index
+     * @param {string} id id of the highlight. must be unique
+     * @param {string} type currently "highlight" only
+     *
+     * @returns {object | undefined} partial cfi object of the created highlight
+    *
+     */
 
-    /// TODO DM create a separate class - converter
-    function createFullyQualifiedCfi(cfi, spineIndex) {
-        if (cfi === undefined)
-            return undefined;
-        var packageDocCFIComponent = EPUBcfi.generatePackageDocumentCFIComponentWithSpineIndex(spineIndex, self.packageDoc);
-        var completeCFI = EPUBcfi.generateCompleteCFI(packageDocCFIComponent, cfi);
-        return completeCFI;
-    };
-
-    // TODO DM hide this!
-    this.getCurrentSelectionCFI =  function() {
-        var cfi = undefined;
-        _currentView.getDisplayingViews().forEach(function(view) {
-                selectionCfi = view.annotations.getCurrentSelectionCFI();
-                selectionCfi = createFullyQualifiedCfi(selectionCfi, view.currentSpineItem.index);
-                if (selectionCfi) {
-                    console.log("Found selection=" + selectionCfi);
-                    cfi = selectionCfi;
-                    return false;
-                }
-        });
-        return cfi;
-    };
-
-    // TODO DM same as getCurrentSelection, needs to be implemented within the views.
     this.addHighlight = function(spineIndex, CFI, id, type, styles) {
         return _annotationsManager.addHighlight(spineIndex, CFI, id, type, styles) ;
-
-/*        var paginationInfo = _currentView.getPaginationInfo();*/
-        //var contentDocHrefFromCfi = EPUBcfi.getContentDocHref(CFI, this.packageDoc);
-        //var spineFromCfi = _spine.getItemByHref(contentDocHrefFromCfi);
-        //var result = undefined;
-        //_currentView.getDisplayingViews().forEach(function(view) {
-            //if (view.currentSpineItem.idref === spineFromCfi.idref)
-            //{
-                //result = view.annotations.addHighlight(CFI, id, type, styles);
-                //return false;
-            //}
-        //});
-        /*return result;*/
     };
-
     
-    // TODO DM & Boris this needs to be refactored so that this class doesn't know anything about
-    // internals of _currentView.
+
+    /**
+     * Creates a higlight based on current selection
+     *
+     * @method addSelectionHighlight
+     * @param {string} id id of the highlight. must be unique
+     * @param {string} type currently "highlight" only
+     *
+     * @returns {object | undefined} partial cfi object of the created highlight
+    *
+     */
+
     this.addSelectionHighlight =  function(id, type) {
         return _annotationsManager.addSelectionHighlight(id,type);
-/*        var annotation;*/
-        //var spineItemIndex;
-        //_currentView.getDisplayingViews().forEach(function(view) {
-            //if (view.annotations.getCurrentSelectionCFI()) {
-                //annotation = view.annotations.addSelectionHighlight(id, type);
-                //spineItemIndex = view.currentSpineItem.index;
-                //return false;
-            //}
-        //});
-        //annotation.CFI = createFullyQualifiedCfi(annotation.CFI, spineItemIndex); 
-        /*return annotation; */
     };
 
-    // TODO DM rename to mention that this is FQ CFI that is being used
-    // - move to the helper just like createFQ CFI
-    this.showPageByCFI  = function (CFI, callback, callbackContext) {
-        var contentDocHref = EPUBcfi.getContentDocHref(CFI, this.packageDoc);
-        var spine = _spine.getItemByHref(contentDocHref);
-        var idref = spine.idref;
-        var targetElementCFI; 
+    /**
+     * Removes given highlight
+     *
+     * @method removeHighlight
+     * @param {string} id id of the highlight.
+     *
+     * @returns {undefined} 
+    *
+     */
 
-        // TODODM: this is hacky replace it properly
-        // what i'm doing here is essentially saying that we only expect one indirection step
-        // between package document and content document. to properly make this work, we need
-        // to wait until the content document is open and resolve the indirection then? 
-        // at least that's hwo justin does it.
-        var cfiWrapperPattern = new RegExp("^.*!")
-        // remove epubcfi( and indirection step
-        var partiallyNakedCfi = CFI.replace(cfiWrapperPattern, "");
-        // remove last paren
-        var nakedCfi = partiallyNakedCfi.substring(0, partiallyNakedCfi.length -1);
-        console.log("idref: " + idref + " nakedCfi=" + nakedCfi);
-        return self.openSpineItemElementCfi(idref, nakedCfi);
-    }; 
-
-    // TODO DM same as highlight..
     this.removeHighlight = function(id) {
         return _annotationsManager.removeHighlight(id);
-/*        var result;*/
-        //_currentView.getDisplayingViews().forEach(function(view) {
-            //console.log("Remove annotation=" + id);
-            //result = view.annotations.removeHighlight(id);
-        //});
-        /*return result;*/
     }; 
-
-    this.getCfiForCurrentPage = function() {
-        var bookmark = $.parseJSON(self.bookmarkCurrentPage());
-        return createFullyQualifiedCfi(bookmark.contentCFI)
-    };
-
-    // refactor with boris?
-    // needs a comment as to why this is needed
-    // TODO DM
-    // delegate to currentView
-    this.redraw = function() {
-        _currentView.getDisplayingViews().forEach(function(view) {
-            view.onViewportResize();
-        });
-    };
-
-    /// TODO DM Refactoring - return visible annotations and offload midpoint 
-    // calculations to someone else.
-    this.getVisibleAnnotationMidpoints = function () {
-        var midpointsArray = [];
-        _currentView.getDisplayingViews().forEach(function(view) {
-            var visibleMidpoints = view.getVisibleAnnotationMidpoints();
-            midpointsArray = midpointsArray.concat(visibleMidpoints);
-        });
-        return midpointsArray;
-    };
-
-
-    // TODO DM move isThisCfiForCurrentSpineItem into _curentView.
-    this.isVisibleCFI =  function(cfi) {
-        return thisisThisCfiForVisibleSpineItems(cfi) && _currentView.isVisibleCFI(cfi);
-    };
-
-    function forEachVisibleSpineItem(callback) {
-        var paginationInfo = _currentView.getPaginationInfo();
-        _.each(paginationInfo.openPages, function(openPage) {
-            callback(openPage);
-        });
-    };
-
-    function forEachVisibleSpineItemThatMatchesCfi(cfi, callback) {
-        var idref = getSpineIdRefFromCfi(cfi);
-        var result = undefined;
-        forEachVisibleSpineItem(function(page){
-           if (idref === page.idref) 
-           {
-               result = callback(page);
-               return false;
-           }
-        });
-        return result;
-    };
-
-    function getSpineIdRefFromCfi(cfi) {
-        var contentDocHrefFromCfi = EPUBcfi.getContentDocHref(cfi, self.packageDoc);
-        var spineFromCfi = _spine.getItemByHref(contentDocHrefFromCfi);
-        return spineFromCfi.idref;
-    };
-
-
 };

@@ -8,7 +8,7 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj) {
 
     this.on("all", function(eventName) {
         var args = Array.prototype.slice.call(arguments);
-        self[eventName].apply(proxy, args);
+        self['trigger'].apply(proxy, args);
     });
 
     this.attachAnnotations = function($iframe, spineItem) {
@@ -21,6 +21,18 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj) {
                 delete liveAnnotations[spineIndex];
             }
         }
+    };
+
+
+    this.getCurrentSelectionCfi = function() {
+        for(spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine]; 
+            var partialCfi = annotationsForView.getCurrentSelectionCFI();
+            if (partialCfi) {
+                return {"spineIndex":spine, "cfi":partialCfi};
+            }
+        }
+        return undefined;
     };
 
     this.addSelectionHighlight = function(id, type) {
