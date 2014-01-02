@@ -35,7 +35,6 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
     userStyles: undefined,
     navigationLogic: undefined,
     iframeLoader: undefined,
-    annotations: undefined,
 
     lastViewPortSize : {
         width: undefined,
@@ -59,15 +58,9 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         this.spine = this.options.spine;
         this.userStyles = this.options.userStyles;
         this.iframeLoader = this.options.iframeLoader;
-        this.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, this.initializeAnnotations);
         this.reader = this.options.reader
     },
 
-
-    initializeAnnotations: function() {
-        var epubDocument = this.getDom().get(0).contentWindow.document;
-        this.annotations = new EpubAnnotationsModule(epubDocument, this.reader);
-    },
 
     render: function(){
 
@@ -114,12 +107,10 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
     },
 
     onViewportResize: function() {
-
         if(this.updateViewportSize()) {
             //depends on aspect ratio of viewport and rendition:spread-* setting we may have to switch spread on/off
             this.paginationInfo.visibleColumnCount = this.calculateVisibleColumnCount();
             this.updatePagination();
-            //this.annotations.redraw();
         }
 
     },
@@ -591,20 +582,6 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
 
     getDom: function ()  {
         return this.$iframe;
-    },
-
-    getVisibleAnnotationMidpoints: function () {
-        var contentOffsets = this.getVisibleContentOffsets();
-        var halfBakedResults = this.navigationLogic.getAllVisibleElementsWithSelector('span.range-start-marker',contentOffsets);
-        var results  = [];
-        $.each(halfBakedResults, function(){
-            var $element = $(this.element);
-            var elementId = $element[0].id;
-            elementId = elementId.substring(6);
-            var $higlighted = {"id": elementId, "position":$element.position()};
-            results.push($higlighted)
-        });
-        return results;
     },
 
     isVisibleCFI: function(cfi) {

@@ -28,7 +28,6 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
     spine: undefined,
     contentAlignment: undefined, //expected 'center' 'left' 'right'
     iframeLoader: undefined,
-    annotations: undefined,
     reader: undefined,
 
     meta_size : {
