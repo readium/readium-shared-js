@@ -143,11 +143,13 @@ ReadiumSDK.Helpers.Margins.empty = function() {
 ReadiumSDK.Helpers.loadTemplate = function(name, params) {
     return ReadiumSDK.Helpers.loadTemplate.cache[name];
 };
+
 ReadiumSDK.Helpers.loadTemplate.cache = {
     "fixed_book_frame" : '<div id="fixed-book-frame" class="clearfix book-frame fixed-book-frame"></div>',
     "fixed_page_frame" : '<div class="fixed-page-frame"><iframe scrolling="no" class="iframe-fixed"></iframe></div>',
     "reflowable_book_frame" : '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"><div id="reflowable-content-frame" class="reflowable-content-frame"><iframe scrolling="no" id="epubContentIframe"></iframe></div></div>'
 };
+
 ReadiumSDK.Helpers.setStyles = function(styles, $element) {
 
     var count = styles.length;
@@ -158,7 +160,12 @@ ReadiumSDK.Helpers.setStyles = function(styles, $element) {
 
     for(var i = 0; i < count; i++) {
         var style = styles[i];
-        $(style.selector, $element).css(style.declarations);
+        if(style.selector) {
+            $(style.selector, $element).css(style.declarations);
+        }
+        else {
+            $element.css(style.declarations);
+        }
     }
 
 };

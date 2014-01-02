@@ -31,7 +31,10 @@ ReadiumSDK.Views.ReaderView = function(options) {
     var _package = undefined;
     var _spine = undefined;
     var _viewerSettings = new ReadiumSDK.Models.ViewerSettings({});
+    //styles applied to the container divs
     var _userStyles = new ReadiumSDK.Collections.StyleCollection();
+    //styles applied to the content documents
+    var _bookStyles = new ReadiumSDK.Collections.StyleCollection();
     var _internalLinksSupport = new ReadiumSDK.Views.InternalLinksSupport(this);
     var _mediaOverlayPlayer;
     var _mediaOverlayDataInjector;
@@ -74,8 +77,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
             $viewport: _$el,
             spine: _spine,
             userStyles: _userStyles,
-            iframeLoader: _iframeLoader,
-            reader: self 
+            bookStyles: _bookStyles,
+            iframeLoader: _iframeLoader
         };
 
         if(isReflowable) {
@@ -102,7 +105,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
         });
 
-        _currentView.on(ReadiumSDK.Events.CURRENT_VIEW_PAGINATION_CHANGED, function( pageChangeData ){
+        _currentView.on(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, function( pageChangeData ){
 
             //we call on onPageChanged explicitly instead of subscribing to the ReadiumSDK.Events.PAGINATION_CHANGED by
             //mediaOverlayPlayer because we hve to guarantee that mediaOverlayPlayer will be updated before the host
@@ -111,6 +114,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
             self.trigger(ReadiumSDK.Events.PAGINATION_CHANGED, pageChangeData);
         });
+
 
         _currentView.render();
     }
@@ -130,7 +134,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
             return;
         }
 
-        _currentView.off(ReadiumSDK.Events.CURRENT_VIEW_PAGINATION_CHANGED);
+        _currentView.off(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED);
+
         _currentView.remove();
         _currentView = undefined;
     }
@@ -465,7 +470,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     };
 
     /**
-     * Set CSS Styles to the reader
+     * Set CSS Styles to the reader container
      *
      * @method setStyles
      *
@@ -483,6 +488,27 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
     };
 
+    /**
+     * Set CSS Styles to the content documents
+     *
+     * @method setBookStyles
+     *
+     * @param styles {object} style object contains selector property and declarations object
+     */
+    this.setBookStyles = function(styles) {
+
+        var count = styles.length;
+
+        for(var i = 0; i < count; i++) {
+            _bookStyles.addStyle(styles[i].selector, styles[i].declarations);
+        }
+
+        if(_currentView) {
+            _currentView.applyBookStyles();
+        }
+
+    };
+
     this.getElement = function(spineItem, selector) {
 
         if(_currentView) {
@@ -495,7 +521,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
     function applyStyles() {
 
-        ReadiumSDK.Helpers.setStyles(_userStyles.styles, _$el);
+        ReadiumSDK.Helpers.setStyles(_userStyles.getStyles(), _$el);
 
         if(_currentView) {
             _currentView.applyStyles();
@@ -595,24 +621,25 @@ ReadiumSDK.Views.ReaderView = function(options) {
      */
     this.clearStyles = function() {
 
-        var styles = _userStyles.styles;
-        var count = styles.length;
+        _userStyles.resetStyleValues();
+        applyStyles();
+        _userStyles.clear();
+    };
 
-        for(var i = 0; i < count; i++) {
+    /**
+     * Resets all the custom styles set by setBookStyle callers at runtime
+     *
+     * @method resetStyles
+     */
+    this.clearBookStyles = function() {
 
-            var style = styles[i];
-            var declarations = style.declarations;
+        if(_currentView) {
 
-            for(var prop in declarations) {
-                if(declarations.hasOwnProperty(prop)) {
-                    declarations[prop] = '';
-                }
-            }
+            _bookStyles.resetStyleValues();
+            _currentView.applyBookStyles();
         }
 
-        self.applyStyles();
-
-        _userStyles.clear();
+        _bookStyles.clear();
     };
 
     /**
@@ -698,6 +725,12 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
         if(_currentView) {
             _currentView.insureElementVisibility(element, initiator);
+        }
+    }
+
+    this.handleViewportResize = function(){
+        if (_currentView){
+            _currentView.onViewportResize();
         }
     }
 

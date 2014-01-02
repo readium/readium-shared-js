@@ -28,7 +28,7 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
     spine: undefined,
     contentAlignment: undefined, //expected 'center' 'left' 'right'
     iframeLoader: undefined,
-    reader: undefined,
+    bookStyles: undefined,
 
     meta_size : {
         width: 0,
@@ -41,7 +41,7 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
         this.spine = this.options.spine;
         this.contentAlignment = this.options.contentAlignment;
         this.iframeLoader = this.options.iframeLoader;
-        this.reader = this.options.reader
+        this.bookStyles = this.options.bookStyles;
 
     },
 
@@ -76,12 +76,14 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
         Backbone.View.prototype.remove.call(this);
     },
 
+
     onIFrameLoad:  function(success) {
 
         if(success) {
             var epubContentDocument = this.$iframe[0].contentDocument;
             this.$epubHtml = $("html", epubContentDocument);
             this.$epubHtml.css("overflow", "hidden");
+            this.applyBookStyles();
             this.updateMetaSize();
 //            this.fitToScreen();
 
@@ -90,6 +92,13 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
 
             // TODO DM this should be in its own method
             this.annotations = new EpubAnnotationsModule(this.getDom(), this.reader);
+        }
+    },
+
+    applyBookStyles: function() {
+
+        if(this.$epubHtml) {
+            ReadiumSDK.Helpers.setStyles(this.bookStyles.getStyles(), this.$epubHtml);
         }
     },
 
@@ -285,25 +294,7 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
     getVisibleMediaOverlayElements: function() {
         var navigation = new ReadiumSDK.Views.CfiNavigationLogic(this.$el, this.$iframe);
         return navigation.getVisibleMediaOverlayElements({top:0, bottom: this.$iframe.height()});
-    },
-
-    getDom: function() {
-        return this.$iframe.get(0).contentWindow.document;
-    },
-
-    getVisibleAnnotationMidpoints: function () {
-        var $doc  = $('html',this.getDom());
-        var halfBakedResults = $('span.range-start-marker',$doc);
-        var results  = [];
-        $.each(halfBakedResults, function(){
-            var elementId = this.id;
-            elementId = elementId.substring(6);
-            var higlighted = {"id": elementId, "position":$(this).position()};
-            results.push(higlighted)
-        });
-        return results;
     }
-
 
 });
 

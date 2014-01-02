@@ -29,6 +29,7 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
     bookMargins: undefined,
     contentMetaSize: undefined,
     userStyles: undefined,
+    bookStyles: undefined,
     iframeLoader: undefined,
     reader: undefined,
 
@@ -41,6 +42,7 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
         this.iframeLoader = this.options.iframeLoader;
         this.$viewport = this.options.$viewport;
         this.userStyles = this.options.userStyles;
+        this.bookStyles = this.options.bookStyles;
 
         // TODO DM Refactor. This shouldn't be here.
         this.reader = this.options.reader;
@@ -64,13 +66,12 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
 
         return new ReadiumSDK.Views.OnePageView({
 
-                iframeLoader: this.iframeLoader,
-                spine: this.spine,
-                class: cssclass,
-                contentAlignment: contentAlignment,
-                reader: this.reader
-
-            });
+            iframeLoader: this.iframeLoader,
+            spine: this.spine,
+            bookStyles: this.bookStyles,
+            class: cssclass,
+            contentAlignment: contentAlignment
+        });
     },
 
     isReflowable: function() {
@@ -131,11 +132,20 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
 
     applyStyles: function() {
 
-        ReadiumSDK.Helpers.setStyles(this.userStyles.styles, this.$el.parent());
+        ReadiumSDK.Helpers.setStyles(this.userStyles.getStyles(), this.$el.parent());
 
         this.updateBookMargins();
         this.updateContentMetaSize();
         this.resizeBook();
+    },
+
+    applyBookStyles: function() {
+
+        var views = this.getDisplayingViews();
+
+        for(var i = 0, count = views.length; i < count; i++) {
+            views[i].applyBookStyles();
+        }
     },
 
     createPageLoadDeferrals: function(viewItemPairs) {
@@ -160,7 +170,7 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
         this.updateContentMetaSize();
         this.resizeBook();
 
-        this.trigger(ReadiumSDK.Events.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: this.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
+        this.trigger(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: this.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
     },
 
     onViewportResize: function() {
@@ -389,7 +399,9 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
         }
 
         if(!pageView.isDisplaying()) {
-            this.$el.append(pageView.render().$el);
+            pageView.render();
+            this.$el.append(pageView.$el);
+
             context.isElementAdded = true;
         }
 

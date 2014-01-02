@@ -33,6 +33,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
     $viewport: undefined,
     $contentFrame: undefined,
     userStyles: undefined,
+    bookStyles: undefined,
     navigationLogic: undefined,
     iframeLoader: undefined,
 
@@ -57,6 +58,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         this.$viewport = this.options.$viewport;
         this.spine = this.options.spine;
         this.userStyles = this.options.userStyles;
+        this.bookStyles = this.options.bookStyles;
         this.iframeLoader = this.options.iframeLoader;
         this.reader = this.options.reader
     },
@@ -128,19 +130,24 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
 
     calculateVisibleColumnCount: function() {
 
-        var columnCount = this.isSyntheticSpread ? 2 : 1;
+        if(this.isSyntheticSpread) {
 
-        if(!this.currentSpineItem) {
-            return columnCount;
-        }
+            if(!this.currentSpineItem) {
+                return 2;
+            }
 
-        var orientation = ReadiumSDK.Helpers.getOrientation(this.$viewport);
-        if(!orientation) {
-            return columnCount;
-        }
+            var orientation = ReadiumSDK.Helpers.getOrientation(this.$viewport);
+            if(!orientation) {
+                return 2;
+            }
 
-        return ReadiumSDK.Helpers.isRenditionSpreadPermittedForItem(this.currentSpineItem, orientation)
+            return ReadiumSDK.Helpers.isRenditionSpreadPermittedForItem(this.currentSpineItem, orientation)
                 ? 2 : 1;
+        }
+        else {
+
+            return 1;
+        }
     },
 
     registerTriggers: function (doc) {
@@ -196,6 +203,8 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         this.$epubHtml.css("position", "fixed");
         this.$epubHtml.css("-webkit-column-axis", "horizontal");
 
+        this.applyBookStyles();
+
         this.updateHtmlFontSizeAndColumnGap();
 
 
@@ -215,7 +224,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
 
     applyStyles: function() {
 
-        ReadiumSDK.Helpers.setStyles(this.userStyles.styles, this.$el.parent());
+        ReadiumSDK.Helpers.setStyles(this.userStyles.getStyles(), this.$el.parent());
 
         //because left, top, bottom, right setting ignores padding of parent container
         //we have to take it to account manually
@@ -225,6 +234,13 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         this.updateViewportSize();
         this.updatePagination();
 
+    },
+
+    applyBookStyles: function() {
+
+        if(this.$epubHtml) {
+            ReadiumSDK.Helpers.setStyles(this.bookStyles.getStyles(), this.$epubHtml);
+        }
     },
 
     openDeferredElement: function() {
@@ -355,7 +371,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
 
         this.paginationInfo.pageOffset = (this.paginationInfo.columnWidth + this.paginationInfo.columnGap) * this.paginationInfo.visibleColumnCount * this.paginationInfo.currentSpreadIndex;
         this.redraw();
-        this.trigger(ReadiumSDK.Events.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: this.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
+        this.trigger(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: this.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
     },
 
     openPagePrev:  function (initiator) {
