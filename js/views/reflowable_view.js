@@ -62,6 +62,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         this.iframeLoader = this.options.iframeLoader;
     },
 
+
     render: function(){
 
         this.template = ReadiumSDK.Helpers.loadTemplate("reflowable_book_frame", {});
@@ -107,7 +108,6 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
     },
 
     onViewportResize: function() {
-
         if(this.updateViewportSize()) {
             //depends on aspect ratio of viewport and rendition:spread-* setting we may have to switch spread on/off
             this.paginationInfo.visibleColumnCount = this.calculateVisibleColumnCount();
@@ -592,6 +592,6 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         openPageRequest.setPageIndex(page);
 
         this.openPage(openPageRequest);
-    }
+    },
 
 });
