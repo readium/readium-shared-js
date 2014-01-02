@@ -36,7 +36,17 @@ ReadiumSDK.Views.ReaderView = function(options) {
     var _mediaOverlayPlayer;
     var _mediaOverlayDataInjector;
     var _iframeLoader;
-    var _$el = $(options.el);
+    var _$el;
+    var _annotationsManager;
+    
+    if (options.el instanceof $) {
+        _$el = options.el;
+        console.log("** EL is a jQuery selector:" + options.el.attr('id'));
+    } else {
+        _$el = $(options.el);
+        console.log("** EL is a string:" + _$el.attr('id'));
+    }
+    
     
  
 
@@ -84,8 +94,11 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
             _mediaOverlayDataInjector.attachMediaOverlayData($iframe, spineItem, _viewerSettings);
             _internalLinksSupport.processLinkElements($iframe, spineItem);
+            _annotationsManager.attachAnnotations($iframe, spineItem);
 
             self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
+
+            console.log("CONTENT_DOCUMENT_LOADED + " + $iframe)
 
         });
 
@@ -166,6 +179,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
         _mediaOverlayPlayer = new ReadiumSDK.Views.MediaOverlayPlayer(self, $.proxy(onMediaPlayerStatusChanged, self));
 
         _mediaOverlayDataInjector = new ReadiumSDK.Views.MediaOverlayDataInjector(_package.media_overlay, _mediaOverlayPlayer);
+
+        _annotationsManager = new ReadiumSDK.Views.AnnotationsManager(self);
 
         resetCurrentView();
 
@@ -393,6 +408,12 @@ ReadiumSDK.Views.ReaderView = function(options) {
         }
 
         var pageRequest;
+        var spineItem = _spine.items[pageIndex];
+        if(!spineItem) {
+            return;
+        }
+
+
         if(_package.isFixedLayout()) {
             var spineItem = _spine.items[pageIndex];
             if(!spineItem) {
@@ -714,50 +735,51 @@ ReadiumSDK.Views.ReaderView = function(options) {
     this.getCurrentSelectionCFI =  function() {
         var cfi = undefined;
         _currentView.getDisplayingViews().forEach(function(view) {
-                cfi = view.annotations.getCurrentSelectionCFI();
-                cfi = createFullyQualifiedCfi(cfi, view.currentSpineItem.index);
-                if (cfi)
+                selectionCfi = view.annotations.getCurrentSelectionCFI();
+                selectionCfi = createFullyQualifiedCfi(selectionCfi, view.currentSpineItem.index);
+                if (selectionCfi) {
+                    console.log("Found selection=" + selectionCfi);
+                    cfi = selectionCfi;
                     return false;
+                }
         });
         return cfi;
     };
 
     // TODO DM same as getCurrentSelection, needs to be implemented within the views.
-    this.addHighlight = function(CFI, id, type, styles) {
-        var paginationInfo = _currentView.getPaginationInfo();
-        var contentDocHrefFromCfi = EPUBcfi.getContentDocHref(CFI, this.packageDoc);
-        var spineFromCfi = _spine.getItemByHref(contentDocHrefFromCfi);
-        var result = undefined;
-        _currentView.getDisplayingViews().forEach(function(view) {
-            if (view.currentSpineItem.idref === spineFromCfi.idref)
-            {
-                result = view.annotations.addHighlight(CFI, id, type, styles);
-                return false;
-            }
-        });
-        return result;
-    };
+    this.addHighlight = function(spineIndex, CFI, id, type, styles) {
+        return _annotationsManager.addHighlight(spineIndex, CFI, id, type, styles) ;
 
-    this.updateAnnotationView = function(id, styles) {
-        console.error("Unimplemented. reader_view.js::updateAnnotationsView");
-        return self.getAnnotaitonsManagerForCurrentSpineItem().updateAnnotationView(id, styles);
+/*        var paginationInfo = _currentView.getPaginationInfo();*/
+        //var contentDocHrefFromCfi = EPUBcfi.getContentDocHref(CFI, this.packageDoc);
+        //var spineFromCfi = _spine.getItemByHref(contentDocHrefFromCfi);
+        //var result = undefined;
+        //_currentView.getDisplayingViews().forEach(function(view) {
+            //if (view.currentSpineItem.idref === spineFromCfi.idref)
+            //{
+                //result = view.annotations.addHighlight(CFI, id, type, styles);
+                //return false;
+            //}
+        //});
+        /*return result;*/
     };
 
     
     // TODO DM & Boris this needs to be refactored so that this class doesn't know anything about
     // internals of _currentView.
     this.addSelectionHighlight =  function(id, type) {
-        var annotation;
-        var spineItemIndex;
-        _currentView.getDisplayingViews().forEach(function(view) {
-            if (view.annotations.getCurrentSelectionCFI()) {
-                annotation = view.annotations.addSelectionHighlight(id, type);
-                spineItemIndex = view.currentSpineItem.index;
-                return false;
-            }
-        });
-        annotation.CFI = createFullyQualifiedCfi(annotation.CFI, spineItemIndex); 
-        return annotation; 
+        return _annotationsManager.addSelectionHighlight(id,type);
+/*        var annotation;*/
+        //var spineItemIndex;
+        //_currentView.getDisplayingViews().forEach(function(view) {
+            //if (view.annotations.getCurrentSelectionCFI()) {
+                //annotation = view.annotations.addSelectionHighlight(id, type);
+                //spineItemIndex = view.currentSpineItem.index;
+                //return false;
+            //}
+        //});
+        //annotation.CFI = createFullyQualifiedCfi(annotation.CFI, spineItemIndex); 
+        /*return annotation; */
     };
 
     // TODO DM rename to mention that this is FQ CFI that is being used
@@ -783,13 +805,14 @@ ReadiumSDK.Views.ReaderView = function(options) {
     }; 
 
     // TODO DM same as highlight..
-    this.removeAnnotation = function(id) {
-        var result;
-        _currentView.getDisplayingViews().forEach(function(view) {
-            console.log("Remove annotation=" + id);
-            result = view.annotations.removeHighlight(id);
-        });
-        return result;
+    this.removeHighlight = function(id) {
+        return _annotationsManager.removeHighlight(id);
+/*        var result;*/
+        //_currentView.getDisplayingViews().forEach(function(view) {
+            //console.log("Remove annotation=" + id);
+            //result = view.annotations.removeHighlight(id);
+        //});
+        /*return result;*/
     }; 
 
     this.getCfiForCurrentPage = function() {

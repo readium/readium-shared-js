@@ -119,7 +119,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
             //depends on aspect ratio of viewport and rendition:spread-* setting we may have to switch spread on/off
             this.paginationInfo.visibleColumnCount = this.calculateVisibleColumnCount();
             this.updatePagination();
-            this.annotations.redraw();
+            //this.annotations.redraw();
         }
 
     },
