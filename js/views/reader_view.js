@@ -100,9 +100,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
             _annotationsManager.attachAnnotations($iframe, spineItem);
 
             self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
-
-            console.log("CONTENT_DOCUMENT_LOADED + " + $iframe)
-
         });
 
         _currentView.on(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, function( pageChangeData ){

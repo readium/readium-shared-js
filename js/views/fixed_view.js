@@ -31,7 +31,6 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
     userStyles: undefined,
     bookStyles: undefined,
     iframeLoader: undefined,
-    reader: undefined,
 
     $viewport: undefined,
 
@@ -43,9 +42,6 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
         this.$viewport = this.options.$viewport;
         this.userStyles = this.options.userStyles;
         this.bookStyles = this.options.bookStyles;
-
-        // TODO DM Refactor. This shouldn't be here.
-        this.reader = this.options.reader;
 
         this.spine = this.options.spine;
         this.spread = new ReadiumSDK.Models.Spread(this.spine, ReadiumSDK.Helpers.getOrientation(this.$viewport));

@@ -88,10 +88,6 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
 //            this.fitToScreen();
 
             this.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED, this.$iframe, this.currentSpineItem, true);
-
-
-            // TODO DM this should be in its own method
-            this.annotations = new EpubAnnotationsModule(this.getDom(), this.reader);
         }
     },
 
