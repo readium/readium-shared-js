@@ -130,20 +130,25 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
     function calculateVisibleColumnCount() {
 
-        var columnCount = _isSyntheticSpread ? 2 : 1;
+        if(this.isSyntheticSpread) {
 
-        if(!_currentSpineItem) {
-            return columnCount;
-        }
+            if(!this.currentSpineItem) {
+                return 2;
+            }
 
-        var orientation = ReadiumSDK.Helpers.getOrientation(_$viewport);
-        if(!orientation) {
-            return columnCount;
-        }
+            var orientation = ReadiumSDK.Helpers.getOrientation(this.$viewport);
+            if(!orientation) {
+                return 2;
+            }
 
-        return ReadiumSDK.Helpers.isRenditionSpreadPermittedForItem(_currentSpineItem, orientation)
+            return ReadiumSDK.Helpers.isRenditionSpreadPermittedForItem(this.currentSpineItem, orientation)
                 ? 2 : 1;
-    }
+        }
+        else {
+
+            return 1;
+        }
+    },
 
     function registerTriggers(doc) {
         $('trigger', doc).each(function() {
@@ -364,10 +369,10 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
     function onPaginationChanged(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
 
-        _paginationInfo.pageOffset = (_paginationInfo.columnWidth + _paginationInfo.columnGap) * _paginationInfo.visibleColumnCount * _paginationInfo.currentSpreadIndex;
-        redraw();
-        self.trigger(ReadiumSDK.Events.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
-    }
+        this.paginationInfo.pageOffset = (this.paginationInfo.columnWidth + this.paginationInfo.columnGap) * this.paginationInfo.visibleColumnCount * this.paginationInfo.currentSpreadIndex;
+        this.redraw();
+        this.trigger(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: this.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
+    },
 
     this.openPagePrev = function (initiator) {
 

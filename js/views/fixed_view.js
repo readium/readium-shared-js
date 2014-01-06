@@ -62,12 +62,12 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
 
         return new ReadiumSDK.Views.OnePageView({
 
-                iframeLoader: this.iframeLoader,
-                spine: this.spine,
-                bookStyles: this.bookStyles,
-                class: cssclass,
-                contentAlignment: contentAlignment
-            });
+            iframeLoader: this.iframeLoader,
+            spine: this.spine,
+            bookStyles: this.bookStyles,
+            class: cssclass,
+            contentAlignment: contentAlignment
+        });
     },
 
     isReflowable: function() {
@@ -166,7 +166,7 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
         this.updateContentMetaSize();
         this.resizeBook();
 
-        this.trigger(ReadiumSDK.Events.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: this.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
+        this.trigger(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: this.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
     },
 
     onViewportResize: function() {
@@ -395,7 +395,9 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
         }
 
         if(!pageView.isDisplaying()) {
-            this.$el.append(pageView.render().$el);
+            pageView.render();
+            this.$el.append(pageView.$el);
+
             context.isElementAdded = true;
         }
 
