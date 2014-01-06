@@ -747,7 +747,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
      * Creates a higlight based on given parameters
      *
      * @method addHighlight 
-     * @param {string} spineIndex spine Index that defines the partial Cfi
+     * @param {string} spineIdRef spine idref that defines the partial Cfi
      * @param {string} CFI partial CFI (withouth the indirection step) relative to the spine index
      * @param {string} id id of the highlight. must be unique
      * @param {string} type currently "highlight" only

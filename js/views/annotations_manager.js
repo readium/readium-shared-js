@@ -6,6 +6,7 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj) {
 
     _.extend(self, Backbone.Events);
 
+    // we want to bubble up all of the events that annotations module may trigger up.
     this.on("all", function(eventName) {
         var args = Array.prototype.slice.call(arguments);
         self['trigger'].apply(proxy, args);
@@ -29,7 +30,7 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj) {
             var annotationsForView = liveAnnotations[spine]; 
             var partialCfi = annotationsForView.getCurrentSelectionCFI();
             if (partialCfi) {
-                return {"spineIndex":spine, "cfi":partialCfi};
+                return {"idref":annotationsForView.idref, "cfi":partialCfi};
             }
         }
         return undefined;
@@ -40,20 +41,20 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj) {
             var annotationsForView = liveAnnotations[spine]; 
             if (annotationsForView.getCurrentSelectionCFI()) {
                 var annotation = annotationsForView.addSelectionHighlight(id, type);
-                annotation.spineIndex = spine;
+                annotation.idref = annotationsForView.idref;
                 return annotation;
             }
         }
         return undefined;
     };
 
-    this.addHighlight = function(spineIndex, partialCfi, id, type, styles) {
+    this.addHighlight = function(spineIdRef, partialCfi, id, type, styles) {
         for(spine in liveAnnotations) {
-            if (spine === spineIndex.toString()) {
+            if (liveAnnotations[spine].idref === spineIdRef) {
                 var fakeCfi = "epubcfi(/99!" + partialCfi + ")";
                 var annotationsForView = liveAnnotations[spine]; 
                 var annotation = annotationsForView.addHighlight(fakeCfi, id, type, styles);
-                annotation.spineIndex = spine;
+                annotation.idref = annotationsForView.idref;
                 annotation.CFI = getPartialCfi(annotation.CFI);
                 return annotation;
             }
