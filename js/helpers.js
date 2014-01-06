@@ -51,7 +51,17 @@ ReadiumSDK.Helpers.Rect = function(left, top, width, height) {
 // reflows between columns this is inconstant and difficult to analyze .
 ReadiumSDK.Helpers.Rect.fromElement = function($element) {
 
-    var e = $element[0];
+    var e;
+    if (_.isArray($element) || $element instanceof jQuery)
+       e = $element[0];
+    else
+        e = $element;
+    // TODODM this is somewhat hacky. Text (range?) elements don't have a position so we have to ask the parent.
+    if (e.nodeType === 3)
+    {
+        e = $element.parent()[0];
+    }
+
 
     var offsetLeft = e.offsetLeft;
     var offsetTop = e.offsetTop;

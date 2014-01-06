@@ -39,7 +39,17 @@ ReadiumSDK.Views.ReaderView = function(options) {
     var _mediaOverlayPlayer;
     var _mediaOverlayDataInjector;
     var _iframeLoader;
-    var _$el = $(options.el);
+    var _$el;
+    var _annotationsManager;
+    
+    if (options.el instanceof $) {
+        _$el = options.el;
+        console.log("** EL is a jQuery selector:" + options.el.attr('id'));
+    } else {
+        _$el = $(options.el);
+        console.log("** EL is a string:" + _$el.attr('id'));
+    }
+    
     
  
 
@@ -87,9 +97,9 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
             _mediaOverlayDataInjector.attachMediaOverlayData($iframe, spineItem, _viewerSettings);
             _internalLinksSupport.processLinkElements($iframe, spineItem);
+            _annotationsManager.attachAnnotations($iframe, spineItem);
 
             self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
-
         });
 
         _currentView.on(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, function( pageChangeData ){
@@ -171,6 +181,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
         _mediaOverlayPlayer = new ReadiumSDK.Views.MediaOverlayPlayer(self, $.proxy(onMediaPlayerStatusChanged, self));
 
         _mediaOverlayDataInjector = new ReadiumSDK.Views.MediaOverlayDataInjector(_package.media_overlay, _mediaOverlayPlayer);
+
+        _annotationsManager = new ReadiumSDK.Views.AnnotationsManager(self);
 
         resetCurrentView();
 
@@ -398,6 +410,12 @@ ReadiumSDK.Views.ReaderView = function(options) {
         }
 
         var pageRequest;
+        var spineItem = _spine.items[pageIndex];
+        if(!spineItem) {
+            return;
+        }
+
+
         if(_package.isFixedLayout()) {
             var spineItem = _spine.items[pageIndex];
             if(!spineItem) {
@@ -713,5 +731,62 @@ ReadiumSDK.Views.ReaderView = function(options) {
         }
     }
 
-};
+    /**
+     * Returns current selection partial Cfi, useful for workflows that need to check whether the user has selected something.
+     *
+     * @method getCurrentSelectionCfi 
+     * @returns {object | undefined} partial cfi object or undefined if nothing is selected
+    *
+     */
 
+    this.getCurrentSelectionCfi =  function() {
+        return _annotationsManager.getCurrentSelectionCfi();
+    };
+
+    /**
+     * Creates a higlight based on given parameters
+     *
+     * @method addHighlight 
+     * @param {string} spineIdRef spine idref that defines the partial Cfi
+     * @param {string} CFI partial CFI (withouth the indirection step) relative to the spine index
+     * @param {string} id id of the highlight. must be unique
+     * @param {string} type currently "highlight" only
+     *
+     * @returns {object | undefined} partial cfi object of the created highlight
+    *
+     */
+
+    this.addHighlight = function(spineIndex, CFI, id, type, styles) {
+        return _annotationsManager.addHighlight(spineIndex, CFI, id, type, styles) ;
+    };
+    
+
+    /**
+     * Creates a higlight based on current selection
+     *
+     * @method addSelectionHighlight
+     * @param {string} id id of the highlight. must be unique
+     * @param {string} type currently "highlight" only
+     *
+     * @returns {object | undefined} partial cfi object of the created highlight
+    *
+     */
+
+    this.addSelectionHighlight =  function(id, type) {
+        return _annotationsManager.addSelectionHighlight(id,type);
+    };
+
+    /**
+     * Removes given highlight
+     *
+     * @method removeHighlight
+     * @param {string} id id of the highlight.
+     *
+     * @returns {undefined} 
+    *
+     */
+
+    this.removeHighlight = function(id) {
+        return _annotationsManager.removeHighlight(id);
+    }; 
+};
