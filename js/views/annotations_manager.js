@@ -2,6 +2,7 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj) {
 
     var self = this;
     var liveAnnotations = {};
+    var spines = {};
     var proxy = proxyObj; 
 
     _.extend(self, Backbone.Events);
@@ -15,6 +16,7 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj) {
     this.attachAnnotations = function($iframe, spineItem) {
         var epubDocument = $iframe[0].contentDocument;
         liveAnnotations[spineItem.index] = new EpubAnnotationsModule(epubDocument, self);
+        spines[spineItem.index] = spineItem;
 
         // check to see which spine indecies can be culled depending on the distance from current spine item
         for(spineIndex in liveAnnotations) {
@@ -30,7 +32,7 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj) {
             var annotationsForView = liveAnnotations[spine]; 
             var partialCfi = annotationsForView.getCurrentSelectionCFI();
             if (partialCfi) {
-                return {"idref":annotationsForView.idref, "cfi":partialCfi};
+                return {"idref":spines[spine].idref, "cfi":partialCfi};
             }
         }
         return undefined;
@@ -50,11 +52,11 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj) {
 
     this.addHighlight = function(spineIdRef, partialCfi, id, type, styles) {
         for(spine in liveAnnotations) {
-            if (liveAnnotations[spine].idref === spineIdRef) {
+            if (spines[spine].idref === spineIdRef) {
                 var fakeCfi = "epubcfi(/99!" + partialCfi + ")";
                 var annotationsForView = liveAnnotations[spine]; 
                 var annotation = annotationsForView.addHighlight(fakeCfi, id, type, styles);
-                annotation.idref = annotationsForView.idref;
+                annotation.idref = spineIdRef;
                 annotation.CFI = getPartialCfi(annotation.CFI);
                 return annotation;
             }
