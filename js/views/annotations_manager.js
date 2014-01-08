@@ -1,3 +1,26 @@
+//  Created by Dmitry Markushevich (dmitrym@evidentpoint.com)
+// 
+//  Copyright (c) 2012-2013 The Readium Foundation.
+//
+//  The Readium SDK is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+/*
+
+
+
+
+*/
 ReadiumSDK.Views.AnnotationsManager = function (proxyObj) {
 
     var self = this;
@@ -10,6 +33,23 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj) {
     // we want to bubble up all of the events that annotations module may trigger up.
     this.on("all", function(eventName) {
         var args = Array.prototype.slice.call(arguments);
+        // mangle annotationClicked event. What really needs to happen is, the annotation_module needs to return a 
+        // bare Cfi, and this class should append the idref.
+        var annotationClickedEvent = 'annotationClicked';
+        if (args.length && args[0] === annotationClickedEvent) {
+            for (var spineIndex in liveAnnotations)
+            {
+                var jQueryEvent = args[4];
+                var annotationId = args[3];
+                var fullFakeCfi = args[2];
+                var type = args[1];
+                if (liveAnnotations[spineIndex].getHighlight(annotationId)) {
+                    var idref = spines[spineIndex].idref;
+                    var partialCfi = getPartialCfi(fullFakeCfi);
+                    args = [annotationClickedEvent, type, idref, partialCfi, annotationId, jQueryEvent];
+                }
+            }
+        }
         self['trigger'].apply(proxy, args);
     });
 
@@ -19,7 +59,7 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj) {
         spines[spineItem.index] = spineItem;
 
         // check to see which spine indecies can be culled depending on the distance from current spine item
-        for(spineIndex in liveAnnotations) {
+        for(var spineIndex in liveAnnotations) {
             if (Math.abs(spineIndex - spineIndex.index) > 3) {
                 delete liveAnnotations[spineIndex];
             }
@@ -28,7 +68,7 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj) {
 
 
     this.getCurrentSelectionCfi = function() {
-        for(spine in liveAnnotations) {
+        for(var spine in liveAnnotations) {
             var annotationsForView = liveAnnotations[spine]; 
             var partialCfi = annotationsForView.getCurrentSelectionCFI();
             if (partialCfi) {
@@ -43,7 +83,7 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj) {
             var annotationsForView = liveAnnotations[spine]; 
             if (annotationsForView.getCurrentSelectionCFI()) {
                 var annotation = annotationsForView.addSelectionHighlight(id, type);
-                annotation.idref = annotationsForView.idref;
+                annotation.idref = spines[spine].idref;
                 return annotation;
             }
         }
@@ -51,7 +91,7 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj) {
     };
 
     this.addHighlight = function(spineIdRef, partialCfi, id, type, styles) {
-        for(spine in liveAnnotations) {
+        for(var spine in liveAnnotations) {
             if (spines[spine].idref === spineIdRef) {
                 var fakeCfi = "epubcfi(/99!" + partialCfi + ")";
                 var annotationsForView = liveAnnotations[spine]; 
@@ -66,7 +106,7 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj) {
 
     this.removeHighlight = function(id) {
         var result = undefined;
-        for(spine in liveAnnotations) {
+        for(var spine in liveAnnotations) {
             var annotationsForView = liveAnnotations[spine]; 
             result  = annotationsForView.removeHighlight(id);
         }

@@ -756,8 +756,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
     *
      */
 
-    this.addHighlight = function(spineIndex, CFI, id, type, styles) {
-        return _annotationsManager.addHighlight(spineIndex, CFI, id, type, styles) ;
+    this.addHighlight = function(spineIdRef, Cfi, id, type, styles) {
+        return _annotationsManager.addHighlight(spineIdRef, Cfi, id, type, styles) ;
     };
     
 
