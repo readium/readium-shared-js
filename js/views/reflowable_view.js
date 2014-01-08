@@ -80,7 +80,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
         _navigationLogic = new ReadiumSDK.Views.CfiNavigationLogic(_$contentFrame, _$iframe);
 
         //We will call onViewportResize after user stopped resizing window
-        var lazyResize = _.debounce(this.onViewportResize, 100);
+        var lazyResize = _.debounce(self.onViewportResize, 100);
         $(window).on("resize.ReadiumSDK.reflowableView", _.bind(lazyResize, this));
 
         return this;
@@ -130,18 +130,18 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
     function calculateVisibleColumnCount() {
 
-        if(this.isSyntheticSpread) {
+        if(_isSyntheticSpread) {
 
-            if(!this.currentSpineItem) {
+            if(!_currentSpineItem) {
                 return 2;
             }
 
-            var orientation = ReadiumSDK.Helpers.getOrientation(this.$viewport);
+            var orientation = ReadiumSDK.Helpers.getOrientation(_$viewport);
             if(!orientation) {
                 return 2;
             }
 
-            return ReadiumSDK.Helpers.isRenditionSpreadPermittedForItem(this.currentSpineItem, orientation)
+            return ReadiumSDK.Helpers.isRenditionSpreadPermittedForItem(_currentSpineItem, orientation)
                 ? 2 : 1;
         }
         else {
@@ -367,11 +367,12 @@ ReadiumSDK.Views.ReflowableView = function(options){
         })
     }
 
+
     function onPaginationChanged(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
 
-        this.paginationInfo.pageOffset = (this.paginationInfo.columnWidth + this.paginationInfo.columnGap) * this.paginationInfo.visibleColumnCount * this.paginationInfo.currentSpreadIndex;
-        this.redraw();
-        this.trigger(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: this.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
+        _paginationInfo.pageOffset = (_paginationInfo.columnWidth + _paginationInfo.columnGap) * _paginationInfo.visibleColumnCount * _paginationInfo.currentSpreadIndex;
+        redraw();
+        self.trigger(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
     }
 
     this.openPagePrev = function (initiator) {
@@ -413,7 +414,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
                 var pageRequest = new ReadiumSDK.Models.PageOpenRequest(nextSpineItem, initiator);
                 pageRequest.setFirstPage();
-                this.openPage(pageRequest);
+                self.openPage(pageRequest);
             }
         }
     };
