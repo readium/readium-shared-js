@@ -19,8 +19,87 @@
 
 
 
+# Highlighting in Readium - A primer
+
+Please note:
+
+- only simple text highlighting is currently supported
+- it's the job of the reading system to keep track of annotations. readium-js simply displays your annotations.
+- full CFIs for annotations are not currently available. We use so called "partial CFI"s, a tuple containing idref of the spine item and the CFI definition relative to the root of the spine item.
+
+Currently, the API exposed via `ReaderView` exposes 4 functions and 1 even which should be sufficient for a simple highlighting workflow.
+
+
+# API
+
+For the purposes of the examples below, `RReader` is a previously instantiated `ReaderView` instance.
+
+
+## Is anything selected (getCurrentSelectionCfi())
+
+Before proceeding with the highlighting workflow it is sometimes necessary to determine whether the user has in fact selected anything. This can be accomplished with the following:
+
+
+	> RReader.getCurrentSelectionCfi()
+	Object {idref: "id-id2604743", cfi: "/4/2/6,/1:74,/1:129"}
+
+The response contains a partial CFI that is sufficient to create a highlight based on selection. If nothing is selected *undefined* is returned. 
+
+You can also use partial Cfi with `openSpineItemElementCfi()` to navigate to where this selection is later.
+
+## Highlighting (addHighlight and addSelectionHighlight)
+
+Once we've determined what needs to be highlighted (by generating a partial CFI from a selection, or having an existing partial CFI stored externally) we can add it to the reader by calling `addHighlight()`:
+
+	> RReader.addHighlight('id-id2604743', "/4/2/6,/1:74,/1:129", 123, "highlight")
+	Object {CFI: "/4/2/6,/1:74,/1:129", selectedElements: Array[1], idref: "id-id2604743"}
+
+*addHighligh*t takes the following parameters:
+
+- *id-id2604743* - `idref` is the idref value from `getCurrentSelectionCfi()
+- * /4/2/6,/1:74,/1:129* - `cfi` is the cfi value from `getCurrentSelectionCfi()
+- *123* - `id` is the unique id that defines this annotation
+- *highlight* - 'type' of annotation. only 'highlight' is currently supported.
+
+### addSelectioHighlight
+
+Alternatively, you can call addSelectionHighlight(). It combines both getCurrentSelectionCfi() and addHighlight into one call:
+
+	> RReader.addSelectionHighlight(124, "highlight")
+	Object {CFI: "/4/2/4,/1:437,/1:503", selectedElements: Array[1], idref: "id-id2604743"}
+
+Note that it provides no validation. If nothing is selected, `undefined` is returned.
+
+
+## Removing highlights 
+
+To remove the highlight, call `removeHighlight`:
+
+	> RReader.removeHighlight(123)
+	undefined
+
+
+# Handling annotation click events
+
+When a user clicks on a highlight `annotationClicked` event is dispatched with the following arguments:
+
+- type of annotation
+- idref of the spine item
+- partial Cfi of the annotation
+- annotationdId
+
+
+	> RReader.on('annotationClicked', function(type, idref, cfi, annotationId) { console.log (type, idref, cfi, annotationId)});
+	ReadiumSDK.Views.ReaderView {on: function, once: function, off: function, trigger: function, listenTo: function…}
+	
+Then when the user clicks on the highlight the following will show up in the console:
+
+	highlight id-id2604743 /4/2/6,/1:74,/1:129 123 
+	
 
 */
+
+
 ReadiumSDK.Views.AnnotationsManager = function (proxyObj) {
 
     var self = this;
