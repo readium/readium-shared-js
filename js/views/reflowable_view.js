@@ -81,9 +81,9 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
         //We will call onViewportResize after user stopped resizing window
         var lazyResize = _.debounce(self.onViewportResize, 100);
-        $(window).on("resize.ReadiumSDK.reflowableView", _.bind(lazyResize, this));
+        $(window).on("resize.ReadiumSDK.reflowableView", _.bind(lazyResize, self));
 
-        return this;
+        return self;
     };
 
     function setFrameSizesToRectangle(rectangle) {
@@ -97,10 +97,8 @@ ReadiumSDK.Views.ReflowableView = function(options){
     this.remove = function() {
 
         $(window).off("resize.ReadiumSDK.reflowableView");
-
         _$el.remove();
-        //base remove
-//        Backbone.View.prototype.remove.call(self);
+
     };
 
     this.isReflowable = function() {
@@ -123,8 +121,9 @@ ReadiumSDK.Views.ReflowableView = function(options){
         _paginationInfo.visibleColumnCount = calculateVisibleColumnCount();
         _paginationInfo.columnGap = settings.columnGap;
         _fontSize = settings.fontSize;
-        updateHtmlFontSizeAndColumnGap();
 
+        updateHtmlFontSize();
+        updateColumnGap();
         updatePagination();
     };
 
@@ -167,14 +166,20 @@ ReadiumSDK.Views.ReflowableView = function(options){
             _isWaitingFrameRender = true;
 
             var src = _spine.package.resolveRelativeUrl(spineItem.href);
-            _iframeLoader.loadIframe(_$iframe[0], src, onIFrameLoad, this);
+            _iframeLoader.loadIframe(_$iframe[0], src, onIFrameLoad, self);
         }
     }
 
-    function updateHtmlFontSizeAndColumnGap() {
+    function updateHtmlFontSize() {
 
         if(_$epubHtml) {
             _$epubHtml.css("font-size", _fontSize + "%");
+        }
+    }
+
+    function updateColumnGap() {
+
+        if(_$epubHtml) {
             _$epubHtml.css("-webkit-column-gap", _paginationInfo.columnGap + "px");
         }
     }
@@ -205,7 +210,8 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
         self.applyBookStyles();
 
-        updateHtmlFontSizeAndColumnGap();
+        updateHtmlFontSize();
+        updateColumnGap();
 
 
 /////////
