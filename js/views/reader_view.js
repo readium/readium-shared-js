@@ -614,7 +614,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     /**
      * Resets all the custom styles set by setStyle callers at runtime
      *
-     * @method resetStyles
+     * @method clearStyles
      */
     this.clearStyles = function() {
 
@@ -626,7 +626,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     /**
      * Resets all the custom styles set by setBookStyle callers at runtime
      *
-     * @method resetStyles
+     * @method clearBookStyles
      */
     this.clearBookStyles = function() {
 
