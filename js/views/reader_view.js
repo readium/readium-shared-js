@@ -157,13 +157,13 @@ ReadiumSDK.Views.ReaderView = function(options) {
      * Triggers the process of opening the book and requesting resources specified in the packageData
      *
      * @method openBook
-     * @param openBookData object with open book data in format:
-     * {
-     *     package: packageData, (required)
-     *     openPageRequest: openPageRequestData, (optional) data related to open page request
-     *     settings: readerSettings, (optional)
-     *     styles: cssStyles (optional)
-     * }
+     * @param openBookData object with open book data:
+     *
+     *     openBookData.package: packageData, (required)
+     *     openBookData.openPageRequest: openPageRequestData, (optional) data related to open page request
+     *     openBookData.settings: readerSettings, (optional)
+     *     openBookData.styles: cssStyles (optional)
+     *
      *
      */
     this.openBook = function(openBookData) {
