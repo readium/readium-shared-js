@@ -25,7 +25,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
     var _ttsIsPlaying = false;
     var _currentTTS = undefined;
-    var _enableHTMLSpeech = true && window.speechSynthesis !== undefined; // set to false to force "native" platform TTS engine, rather than HTML Speech API
+    var _enableHTMLSpeech = false && window.speechSynthesis !== undefined; // set to false to force "native" platform TTS engine, rather than HTML Speech API
     var _SpeechSynthesisUtterance = undefined;
 
     var _embeddedIsPlaying = false;
@@ -748,12 +748,6 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
         if (text)
         {
-//console.debug("TTS pause before speak");
-            window.speechSynthesis.pause();
-
-//console.debug("TTS cancel before speak");
-            window.speechSynthesis.cancel();
-
 //            setTimeout(function()
 //            {
 
@@ -777,8 +771,16 @@ console.debug("OLD TTS error");
                     event.target.tokenData = undefined;
                 };
 
+                _SpeechSynthesisUtterance.tokenData = undefined;
+
                 _SpeechSynthesisUtterance = undefined;
             }
+
+//console.debug("TTS pause before speak");
+            window.speechSynthesis.pause();
+
+//console.debug("TTS cancel before speak");
+            window.speechSynthesis.cancel();
 
 
             _SpeechSynthesisUtterance = new SpeechSynthesisUtterance();
@@ -793,6 +795,9 @@ console.debug("OLD TTS error");
 console.debug("TTS ended");
 //console.debug(event);
                 var tokenised = event.target.tokenData;
+
+                var doEnd = _SpeechSynthesisUtterance === event.target && (!tokenised || tokenised.element.innerHTML_original);
+
                 if (tokenised)
                 {
                     if (tokenised.element.innerHTML_original)
@@ -810,10 +815,18 @@ console.debug("TTS OFF (end)" + el.id);
                             }
                         );
                     }
+
                     tokenised.element.innerHTML_original = undefined;
                 }
 
-                self.onTTSEnd();
+                if (doEnd)
+                {
+                    self.onTTSEnd();
+                }
+                else
+                {
+console.debug("TTS end SKIPPED");
+                }
             };
 
             _SpeechSynthesisUtterance.onboundary = function(event)

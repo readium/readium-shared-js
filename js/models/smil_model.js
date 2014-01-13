@@ -307,7 +307,7 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
             }
 
 ////////////////
-var forceTTS = true; // for testing only!
+var forceTTS = false; // for testing only!
 ////////////////
 
             if (forceTTS || !node.audio)
