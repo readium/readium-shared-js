@@ -553,7 +553,8 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         nextSmil(goNext);
     }
 
-    var _enableHTMLSpeech = false && window.speechSynthesis !== undefined;
+    var _enableHTMLSpeech = true && window.speechSynthesis !== undefined;
+    var _SpeechSynthesisUtterance = undefined;
 
     this.touchInit = function()
     {
@@ -756,14 +757,25 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
 //            setTimeout(function()
 //            {
-            var utt = new SpeechSynthesisUtterance();
-            if (tokenData)
+
+            if (_SpeechSynthesisUtterance)
             {
-                utt.tokenData = tokenData;
+                _SpeechSynthesisUtterance.onend = undefined;
+                _SpeechSynthesisUtterance.onboundary = undefined;
+                _SpeechSynthesisUtterance.onerror = undefined;
+
+                _SpeechSynthesisUtterance = undefined;
             }
 
-            utt.onend = function(event)
-            //utt.addEventListener("end", function(event)
+
+            _SpeechSynthesisUtterance = new SpeechSynthesisUtterance();
+            if (tokenData)
+            {
+                _SpeechSynthesisUtterance.tokenData = tokenData;
+            }
+
+            _SpeechSynthesisUtterance.onend = function(event)
+            //_SpeechSynthesisUtterance.addEventListener("end", function(event)
             {
 console.debug("TTS ended");
 //console.debug(event);
@@ -791,8 +803,8 @@ console.debug("TTS OFF (end)" + el.id);
                 self.onTTSEnd();
             };
 
-            utt.onboundary = function(event)
-            //utt.addEventListener("boundary", function(event)
+            _SpeechSynthesisUtterance.onboundary = function(event)
+            //_SpeechSynthesisUtterance.addEventListener("boundary", function(event)
             {
 console.debug("TTS boundary: " + event.name + " / " + event.charIndex);
 //console.debug(event);
@@ -841,8 +853,8 @@ console.debug("TTS ON");
                 tokenised.lastCharIndex = event.charIndex;
             };
 
-            utt.onerror = function(event)
-            //utt.addEventListener("error", function(event)
+            _SpeechSynthesisUtterance.onerror = function(event)
+            //_SpeechSynthesisUtterance.addEventListener("error", function(event)
             {
 console.debug("TTS error");
 //console.debug(event);
@@ -870,17 +882,17 @@ console.debug("TTS OFF (error)" + el.id);
             };
 
             var vol = volume || _audioPlayer.getVolume();
-            utt.volume = vol;
+            _SpeechSynthesisUtterance.volume = vol;
 
-            utt.rate = _audioPlayer.getRate();
-            utt.pitch = 1;
+            _SpeechSynthesisUtterance.rate = _audioPlayer.getRate();
+            _SpeechSynthesisUtterance.pitch = 1;
 
-            //utt.lang = "en-US";
+            //_SpeechSynthesisUtterance.lang = "en-US";
 
-            utt.text = text;
+            _SpeechSynthesisUtterance.text = text;
 
 //console.debug("TTS speak: " + text);
-            window.speechSynthesis.speak(utt);
+            window.speechSynthesis.speak(_SpeechSynthesisUtterance);
 //
 //            }, 10);
         }
