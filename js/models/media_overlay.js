@@ -36,8 +36,8 @@ ReadiumSDK.Models.MediaOverlay = function() {
 
     this.getSmilBySpineItem = function (spineItem) {
 
-        for(var i = 0, count = this.smil_models.length; i < count; i++) {
-
+        for(var i = 0, count = this.smil_models.length; i < count; i++)
+        {
             var smil = this.smil_models[i];
             if(smil.spineItemId === spineItem.idref) {
                 if (spineItem.media_overlay_id !== smil.id)

@@ -25,6 +25,8 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
     var _ttsIsPlaying = false;
     var _currentTTS = undefined;
+    var _enableHTMLSpeech = true && window.speechSynthesis !== undefined; // set to false to force "native" platform TTS engine, rather than HTML Speech API
+    var _SpeechSynthesisUtterance = undefined;
 
     var _embeddedIsPlaying = false;
     var _currentEmbedded = undefined;
@@ -553,9 +555,6 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         nextSmil(goNext);
     }
 
-    var _enableHTMLSpeech = true && window.speechSynthesis !== undefined;
-    var _SpeechSynthesisUtterance = undefined;
-
     this.touchInit = function()
     {
         var todo = _audioPlayer.touchInit();
@@ -760,9 +759,23 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
             if (_SpeechSynthesisUtterance)
             {
-                _SpeechSynthesisUtterance.onend = undefined;
-                _SpeechSynthesisUtterance.onboundary = undefined;
-                _SpeechSynthesisUtterance.onerror = undefined;
+console.debug("_SpeechSynthesisUtterance nullify");
+
+                _SpeechSynthesisUtterance.onend = function(event)
+                {
+console.debug("OLD TTS ended");
+                    event.target.tokenData = undefined;
+                };
+                _SpeechSynthesisUtterance.onboundary = function(event)
+                {
+console.debug("OLD TTS boundary");
+                    event.target.tokenData = undefined;
+                };
+                _SpeechSynthesisUtterance.onerror = function(event)
+                {
+console.debug("OLD TTS error");
+                    event.target.tokenData = undefined;
+                };
 
                 _SpeechSynthesisUtterance = undefined;
             }
