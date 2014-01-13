@@ -272,6 +272,9 @@ ReadiumSDK.Views.ReaderView = function(options) {
 //console.debug("UpdateSettings: " + JSON.stringify(settingsData));
 
         _viewerSettings.update(settingsData);
+        
+        _annotationsManager && _annotationsManager.updateSettings(settingsData);
+
 
         if(_currentView && !settingsData.doNotUpdateView) {
 
