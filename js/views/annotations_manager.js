@@ -106,6 +106,7 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj) {
     var liveAnnotations = {};
     var spines = {};
     var proxy = proxyObj; 
+    var annotationCSSUrl;
 
     _.extend(self, Backbone.Events);
 
@@ -134,7 +135,7 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj) {
 
     this.attachAnnotations = function($iframe, spineItem) {
         var epubDocument = $iframe[0].contentDocument;
-        liveAnnotations[spineItem.index] = new EpubAnnotationsModule(epubDocument, self);
+        liveAnnotations[spineItem.index] = new EpubAnnotationsModule(epubDocument, self, self.annotationCSSUrl);
         spines[spineItem.index] = spineItem;
 
         // check to see which spine indecies can be culled depending on the distance from current spine item
@@ -191,6 +192,10 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj) {
         }
         return result;
     };
+
+    this.updateSettings = function(updateData) {
+        self.annotationCSSUrl = updateData.annotationCSSUrl;
+    }
 
 
 
