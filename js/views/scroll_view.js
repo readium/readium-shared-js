@@ -19,6 +19,8 @@ ReadiumSDK.Views.ScrollView = function(options){
 
     _.extend(this, Backbone.Events);
 
+    var SCROLL_MARGIN_TO_SHOW_LAST_VISBLE_LINE = 5;
+
     var self = this;
 
     var _$viewport = options.$viewport;
@@ -63,6 +65,7 @@ ReadiumSDK.Views.ScrollView = function(options){
         _$contentFrame = $("#reflowable-content-frame", _$el);
         _$contentFrame.css("overflow", "");
         _$contentFrame.css("overflow-y", "auto");
+        _$contentFrame.css("-webkit-overflow-scrolling", "touch");
         _$contentFrame.css("width", "100%");
         _$contentFrame.css("height", "100%");
 
@@ -185,18 +188,32 @@ ReadiumSDK.Views.ScrollView = function(options){
         var epubContentDocument = _$iframe[0].contentDocument;
         _$epubHtml = $("html", epubContentDocument);
 
-
-
         self.applyBookStyles();
 
         updateHtmlFontSize();
 
         self.applyStyles();
 
-        resizeIFrameToContent();
+        setTimeout(function(){
+            resizeIFrameToContent();
+            openDeferredElement();
+        }, 50);
 
         applySwitches(epubContentDocument);
         registerTriggers(epubContentDocument);
+
+    }
+
+    function openDeferredElement() {
+
+        if(!_deferredPageRequest) {
+            return;
+        }
+
+        var deferredData = _deferredPageRequest;
+        _deferredPageRequest = undefined;
+        self.openPage(deferredData);
+
     }
 
     this.applyStyles = function() {
@@ -217,6 +234,7 @@ ReadiumSDK.Views.ScrollView = function(options){
         }
     };
 
+
     this.openPage = function(pageRequest) {
 
         if(_isWaitingFrameRender) {
@@ -231,11 +249,15 @@ ReadiumSDK.Views.ScrollView = function(options){
             return;
         }
 
-        var scrollOffset = 0;
+        var topOffset = 0;
         var pageCount;
         var $element;
 
-        if(pageRequest.spineItemPageIndex !== undefined) {
+        if(pageRequest.scrollTop !== undefined) {
+
+            topOffset = pageRequest.scrollTop;
+        }
+        else if(pageRequest.spineItemPageIndex !== undefined) {
 
             var pageIndex;
             pageCount = calculatePageCount();
@@ -249,7 +271,7 @@ ReadiumSDK.Views.ScrollView = function(options){
                 pageIndex = pageRequest.spineItemPageIndex;
             }
 
-            scrollOffset = pageIndex * _$viewport.height();
+            topOffset = pageIndex * viewHeight();
         }
         else if(pageRequest.elementId) {
 
@@ -260,7 +282,7 @@ ReadiumSDK.Views.ScrollView = function(options){
                 return;
             }
 
-            scrollOffset = _navigationLogic.getVerticalOffsetForElement($element);
+            topOffset = _navigationLogic.getVerticalOffsetForElement($element);
         }
         else if(pageRequest.elementCfi) {
 
@@ -271,11 +293,11 @@ ReadiumSDK.Views.ScrollView = function(options){
                 return;
             }
 
-            scrollOffset = _navigationLogic.getVerticalOffsetForElement($element);
+            topOffset = _navigationLogic.getVerticalOffsetForElement($element);
         }
         else if(pageRequest.firstPage) {
 
-            scrollOffset = 0;
+            topOffset = 0;
         }
         else if(pageRequest.lastPage) {
             pageCount = calculatePageCount();
@@ -284,13 +306,13 @@ ReadiumSDK.Views.ScrollView = function(options){
                 return;
             }
 
-            scrollOffset = (pageCount - 1) * _$viewport.height();
+            topOffset = scrollHeight() - viewHeight() - 5;
         }
         else {
             console.debug("No criteria in pageRequest");
         }
 
-        scrollTo(scrollOffset);
+        scrollTo(topOffset);
         onPaginationChanged(pageRequest.initiator, pageRequest.spineItem, pageRequest.elementId);
 
     };
@@ -298,12 +320,12 @@ ReadiumSDK.Views.ScrollView = function(options){
     function scrollTo(offset) {
         _$contentFrame.animate({
             scrollTop: offset
-        }, 100);
+        }, 50);
     }
 
     function calculatePageCount() {
 
-        return Math.ceil(_$el[0].scrollHeight / _$viewport.height());
+        return Math.ceil(scrollHeight() / viewHeight());
     }
 
     // Description: Parse the epub "switch" tags and hide
@@ -357,13 +379,25 @@ ReadiumSDK.Views.ScrollView = function(options){
         self.trigger(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
     }
 
-    function getScrollOffset() {
+    function scrollTop() {
         return  _$contentFrame.scrollTop()
+    }
+
+    function scrollBottom() {
+        return scrollHeight() - (scrollTop() + viewHeight());
     }
 
     function getCurrentPageIndex() {
 
-        return Math.ceil(getScrollOffset() / _$viewport.height());
+        return Math.ceil(scrollTop() / _$contentFrame.height());
+    }
+
+    function viewHeight() {
+        return _$contentFrame.height();
+    }
+
+    function scrollHeight() {
+        return _$contentFrame[0].scrollHeight;
     }
 
     this.openPagePrev = function (initiator) {
@@ -373,12 +407,15 @@ ReadiumSDK.Views.ScrollView = function(options){
         }
 
         var pageRequest;
-        var curPageIx = getCurrentPageIndex();
 
-        if(curPageIx > 0) {
+        if(scrollTop() > 0) {
 
             pageRequest = new ReadiumSDK.Models.PageOpenRequest(_currentSpineItem, initiator);
-            pageRequest.setPageIndex(curPageIx - 1);
+            pageRequest.scrollTop = scrollTop() - (viewHeight() - SCROLL_MARGIN_TO_SHOW_LAST_VISBLE_LINE);
+            if(pageRequest.scrollTop < 0) {
+                pageRequest.scrollTop = 0;
+            }
+
         }
         else {
 
@@ -386,8 +423,9 @@ ReadiumSDK.Views.ScrollView = function(options){
             if(prevSpineItem) {
 
                 pageRequest = new ReadiumSDK.Models.PageOpenRequest(prevSpineItem, initiator);
-                pageRequest.setLastPage();
+                pageRequest.scrollTop = scrollHeight() - viewHeight();
             }
+
         }
 
         if(pageRequest) {
@@ -402,13 +440,11 @@ ReadiumSDK.Views.ScrollView = function(options){
         }
 
         var pageRequest;
-        var curPageIx = getCurrentPageIndex();
-        var pageCount = calculatePageCount();
 
-        if(curPageIx < pageCount - 1) {
+        if(scrollBottom() > 0) {
 
             pageRequest = new ReadiumSDK.Models.PageOpenRequest(_currentSpineItem, initiator);
-            pageRequest.setPageIndex(curPageIx + 1);
+            pageRequest.scrollTop = scrollTop() + Math.min(scrollBottom(), viewHeight() - SCROLL_MARGIN_TO_SHOW_LAST_VISBLE_LINE);
 
         }
         else {
@@ -417,7 +453,7 @@ ReadiumSDK.Views.ScrollView = function(options){
             if(nextSpineItem) {
 
                 pageRequest = new ReadiumSDK.Models.PageOpenRequest(nextSpineItem, initiator);
-                pageRequest.setFirstPage();
+                pageRequest.scrollTop = 0;
             }
         }
 
@@ -429,13 +465,12 @@ ReadiumSDK.Views.ScrollView = function(options){
 
     this.getFirstVisibleElementCfi = function() {
 
-        return _navigationLogic.getFirstVisibleElementCfi(getScrollOffset());
+        return _navigationLogic.getFirstVisibleElementCfi(scrollTop());
     };
 
     this.getPaginationInfo = function() {
 
-        var isFixedLayout = _currentSpineItem ? _currentSpineItem.isFixedLayout() : _spine.package.isFixedLayout();
-        var paginationInfo = new ReadiumSDK.Models.CurrentPagesInfo(_spine.items.length, isFixedLayout, _spine.direction);
+        var paginationInfo = new ReadiumSDK.Models.CurrentPagesInfo(_spine.items.length, false, _spine.direction);
 
         if(!_currentSpineItem) {
             return paginationInfo;
@@ -475,14 +510,14 @@ ReadiumSDK.Views.ScrollView = function(options){
 
     this.getVisibleMediaOverlayElements = function() {
 
-        var visibleContentOffsets = getScrollOffset();
+        var visibleContentOffsets = scrollTop();
         return _navigationLogic.getVisibleMediaOverlayElements(visibleContentOffsets);
     };
 
     this.insureElementVisibility = function(element, initiator) {
 
         var $element = $(element);
-        if(_navigationLogic.isElementVisible($element, getScrollOffset())) {
+        if(_navigationLogic.isElementVisible($element, scrollTop())) {
             return;
         }
 

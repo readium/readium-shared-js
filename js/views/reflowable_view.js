@@ -504,8 +504,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
     this.getPaginationInfo = function() {
 
-        var isFixedLayout = _currentSpineItem ? _currentSpineItem.isFixedLayout() : _spine.package.isFixedLayout();
-        var paginationInfo = new ReadiumSDK.Models.CurrentPagesInfo(_spine.items.length, isFixedLayout, _spine.direction);
+        var paginationInfo = new ReadiumSDK.Models.CurrentPagesInfo(_spine.items.length, false, _spine.direction);
 
         if(!_currentSpineItem) {
             return paginationInfo;
