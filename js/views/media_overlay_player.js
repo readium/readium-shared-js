@@ -27,6 +27,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
     var _currentTTS = undefined;
     var _enableHTMLSpeech = false && window.speechSynthesis !== undefined; // set to false to force "native" platform TTS engine, rather than HTML Speech API
     var _SpeechSynthesisUtterance = undefined;
+    //var _skipTTSEndEvent = false;
 
     var _embeddedIsPlaying = false;
     var _currentEmbedded = undefined;
@@ -738,7 +739,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
         if (!txt && window.speechSynthesis.paused)
         {
-//console.debug("TTS resume");
+console.debug("TTS resume");
             window.speechSynthesis.resume();
 
             return;
@@ -748,26 +749,31 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
         if (text)
         {
-//            setTimeout(function()
-//            {
-
             if (_SpeechSynthesisUtterance)
             {
 console.debug("_SpeechSynthesisUtterance nullify");
+
+                if (_SpeechSynthesisUtterance.onend)
+                {
+                    _SpeechSynthesisUtterance.onend({forceSkipEnd: true, target: _SpeechSynthesisUtterance});
+                }
 
                 _SpeechSynthesisUtterance.onend = function(event)
                 {
 console.debug("OLD TTS ended");
                     event.target.tokenData = undefined;
                 };
+
                 _SpeechSynthesisUtterance.onboundary = function(event)
                 {
 console.debug("OLD TTS boundary");
                     event.target.tokenData = undefined;
                 };
+
                 _SpeechSynthesisUtterance.onerror = function(event)
                 {
 console.debug("OLD TTS error");
+console.debug(event);
                     event.target.tokenData = undefined;
                 };
 
@@ -775,13 +781,27 @@ console.debug("OLD TTS error");
 
                 _SpeechSynthesisUtterance = undefined;
             }
+//
+//            if (window.speechSynthesis.pending ||
+//                window.speechSynthesis.speaking)
+//            {
+//                _skipTTSEndEvent = true;
+//            }
 
-//console.debug("TTS pause before speak");
-            window.speechSynthesis.pause();
+            if (!window.speechSynthesis.paused)
+            {
+console.debug("TTS pause before speak");
+                window.speechSynthesis.pause();
+            }
 
-//console.debug("TTS cancel before speak");
-            window.speechSynthesis.cancel();
+            if (true || window.speechSynthesis.pending) // nope :(
+            {
+console.debug("TTS cancel before speak");
+                window.speechSynthesis.cancel();
+            }
 
+            setTimeout(function()
+            {
 
             _SpeechSynthesisUtterance = new SpeechSynthesisUtterance();
             if (tokenData)
@@ -792,11 +812,23 @@ console.debug("OLD TTS error");
             _SpeechSynthesisUtterance.onend = function(event)
             //_SpeechSynthesisUtterance.addEventListener("end", function(event)
             {
+                if (!_SpeechSynthesisUtterance)
+                {
+                    //_skipTTSEndEvent = false;
+                    return;
+                }
+//
+//                if (_skipTTSEndEvent)
+//                {
+//                    _skipTTSEndEvent = false;
+//                    return;
+//                }
+
 console.debug("TTS ended");
 //console.debug(event);
                 var tokenised = event.target.tokenData;
 
-                var doEnd = _SpeechSynthesisUtterance === event.target && (!tokenised || tokenised.element.innerHTML_original);
+                var doEnd = !event.forceSkipEnd && (_SpeechSynthesisUtterance === event.target) && (!tokenised || tokenised.element.innerHTML_original);
 
                 if (tokenised)
                 {
@@ -832,6 +864,11 @@ console.debug("TTS end SKIPPED");
             _SpeechSynthesisUtterance.onboundary = function(event)
             //_SpeechSynthesisUtterance.addEventListener("boundary", function(event)
             {
+                if (!_SpeechSynthesisUtterance)
+                {
+                    return;
+                }
+
 console.debug("TTS boundary: " + event.name + " / " + event.charIndex);
 //console.debug(event);
 
@@ -882,8 +919,13 @@ console.debug("TTS ON");
             _SpeechSynthesisUtterance.onerror = function(event)
             //_SpeechSynthesisUtterance.addEventListener("error", function(event)
             {
+                if (!_SpeechSynthesisUtterance)
+                {
+                    return;
+                }
+
 console.debug("TTS error");
-//console.debug(event);
+console.debug(event);
 
                 var tokenised = event.target.tokenData;
                 if (tokenised)
@@ -917,10 +959,16 @@ console.debug("TTS OFF (error)" + el.id);
 
             _SpeechSynthesisUtterance.text = text;
 
-//console.debug("TTS speak: " + text);
+console.debug("TTS speak: " + text);
             window.speechSynthesis.speak(_SpeechSynthesisUtterance);
-//
-//            }, 10);
+
+            if (window.speechSynthesis.paused)
+            {
+console.debug("TTS resume");
+                window.speechSynthesis.resume();
+            }
+
+            }, 5);
         }
     };
 
