@@ -76,6 +76,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
         _$iframe.css("left", "");
         _$iframe.css("right", "");
         _$iframe.css(_spine.isLeftToRight() ? "left" : "right", "0px");
+        _$iframe.css("overflow", "hidden");
 
         _navigationLogic = new ReadiumSDK.Views.CfiNavigationLogic(_$contentFrame, _$iframe);
 

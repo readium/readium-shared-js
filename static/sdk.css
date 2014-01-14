@@ -56,7 +56,6 @@ iframe {
     position: absolute !important;
     opacity: 1;
     visibility: visible;
-    overflow: hidden;
 }
 
 /*Classes to use for styling the book*/

@@ -61,12 +61,23 @@ ReadiumSDK.Views.ReaderView = function(options) {
     }
 
 
-    function renderCurrentView(isReflowable) {
+    function initViewForItem(spineItem) {
 
-        if(_currentView){
+        var desiredViewType;
+        if(spineItem.isFixedLayout()) {
+            desiredViewType = ReadiumSDK.Views.FixedView;
+        }
+        //we don't support scroll continues yet we will create scroll doc instead
+        else if(spineItem.isScrolledDoc() || spineItem.isScrolledContinuous()) {
+            desiredViewType = ReadiumSDK.Views.ScrollView;
+        }
+        else {
+            desiredViewType = ReadiumSDK.Views.ReflowableView;
+        }
 
+        if(_currentView) {
             //current view is already rendered
-            if( _currentView.isReflowable() === isReflowable) {
+            if(_currentView instanceof desiredViewType) {
                 return;
             }
 
@@ -81,17 +92,10 @@ ReadiumSDK.Views.ReaderView = function(options) {
             iframeLoader: _iframeLoader
         };
 
-        if(isReflowable) {
 
-            _currentView = new ReadiumSDK.Views.ReflowableView(viewCreationParams);
-        }
-        else {
-
-            _currentView = new ReadiumSDK.Views.FixedView(viewCreationParams);
-        }
+        _currentView = new desiredViewType(viewCreationParams);
 
         _currentView.setViewSettings(_viewerSettings);
-
 
         _currentView.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function($iframe, spineItem) {
 
@@ -168,9 +172,9 @@ ReadiumSDK.Views.ReaderView = function(options) {
      */
     this.openBook = function(openBookData) {
 
-		var pack = openBookData.package ? openBookData.package : openBookData;
+		var packageData = openBookData.package ? openBookData.package : openBookData;
 
-        _package = new ReadiumSDK.Models.Package({packageData: pack});
+        _package = new ReadiumSDK.Models.Package(packageData);
 
         _spine = _package.spine;
 
@@ -437,7 +441,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
     function openPage(pageRequest) {
 
-        renderCurrentView(pageRequest.spineItem.isReflowable());
+        initViewForItem(pageRequest.spineItem);
         _currentView.openPage(pageRequest);
     }
 

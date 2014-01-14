@@ -61,12 +61,20 @@ ReadiumSDK.Views.ScrollView = function(options){
         _$viewport.append(_$el);
 
         _$contentFrame = $("#reflowable-content-frame", _$el);
+        _$contentFrame.css("overflow", "");
+        _$contentFrame.css("overflow-y", "auto");
+        _$contentFrame.css("width", "100%");
+        _$contentFrame.css("height", "100%");
 
         _$iframe = $("#epubContentIframe", _$el);
+        _$iframe.css("width", "100%");
+        _$iframe.css("height", "100%");
 
         _$iframe.css("left", "");
         _$iframe.css("right", "");
         _$iframe.css(_spine.isLeftToRight() ? "left" : "right", "0px");
+        _$iframe.css("width", "100%");
+
 
         _navigationLogic = new ReadiumSDK.Views.CfiNavigationLogic(_$contentFrame, _$iframe);
 
@@ -106,6 +114,7 @@ ReadiumSDK.Views.ScrollView = function(options){
     };
 
     this.onViewportResize = function() {
+        resizeIFrameToContent();
         onPaginationChanged(self);
     };
 
@@ -114,6 +123,8 @@ ReadiumSDK.Views.ScrollView = function(options){
         _fontSize = settings.fontSize;
 
         updateHtmlFontSize();
+
+        resizeIFrameToContent();
     };
 
 
@@ -144,6 +155,16 @@ ReadiumSDK.Views.ScrollView = function(options){
         }
     }
 
+    function resizeIFrameToContent() {
+
+        if(!_$iframe || !_$epubHtml) {
+            return;
+        }
+
+        var contHeight = _$epubHtml.height();
+        _$iframe.css("height", contHeight + "px");
+    }
+
     function onIFrameLoad(success) {
 
         _isWaitingFrameRender = false;
@@ -164,14 +185,15 @@ ReadiumSDK.Views.ScrollView = function(options){
         var epubContentDocument = _$iframe[0].contentDocument;
         _$epubHtml = $("html", epubContentDocument);
 
-        _$epubHtml.css("height", "100%");
-        _$epubHtml.css("position", "fixed");
+
 
         self.applyBookStyles();
 
         updateHtmlFontSize();
 
         self.applyStyles();
+
+        resizeIFrameToContent();
 
         applySwitches(epubContentDocument);
         registerTriggers(epubContentDocument);
@@ -211,6 +233,7 @@ ReadiumSDK.Views.ScrollView = function(options){
 
         var scrollOffset = 0;
         var pageCount;
+        var $element;
 
         if(pageRequest.spineItemPageIndex !== undefined) {
 
@@ -230,7 +253,7 @@ ReadiumSDK.Views.ScrollView = function(options){
         }
         else if(pageRequest.elementId) {
 
-            var $element = _navigationLogic.getElementBuyId(pageRequest.elementId);
+            $element = _navigationLogic.getElementBuyId(pageRequest.elementId);
 
             if(!$element) {
                 console.warn("Element id=" + pageRequest.elementId + " not found!");
@@ -241,7 +264,7 @@ ReadiumSDK.Views.ScrollView = function(options){
         }
         else if(pageRequest.elementCfi) {
 
-            var $element = _navigationLogic.getElementByCfi(pageRequest.elementCfi);
+            $element = _navigationLogic.getElementByCfi(pageRequest.elementCfi);
 
             if(!$element) {
                 console.warn("Element cfi=" + pageRequest.elementCfi + " not found!");
@@ -265,7 +288,6 @@ ReadiumSDK.Views.ScrollView = function(options){
         }
         else {
             console.debug("No criteria in pageRequest");
-            pageIndex = 0;
         }
 
         scrollTo(scrollOffset);
@@ -274,7 +296,7 @@ ReadiumSDK.Views.ScrollView = function(options){
     };
 
     function scrollTo(offset) {
-        _$el.animate({
+        _$contentFrame.animate({
             scrollTop: offset
         }, 100);
     }
@@ -336,7 +358,7 @@ ReadiumSDK.Views.ScrollView = function(options){
     }
 
     function getScrollOffset() {
-        return  _$el.scrollTop()
+        return  _$contentFrame.scrollTop()
     }
 
     function getCurrentPageIndex() {
@@ -453,14 +475,14 @@ ReadiumSDK.Views.ScrollView = function(options){
 
     this.getVisibleMediaOverlayElements = function() {
 
-        var visibleContentOffsets = getVisibleContentOffsets();
+        var visibleContentOffsets = getScrollOffset();
         return _navigationLogic.getVisibleMediaOverlayElements(visibleContentOffsets);
     };
 
     this.insureElementVisibility = function(element, initiator) {
 
         var $element = $(element);
-        if(_navigationLogic.isElementVisible($element, getVisibleContentOffsets())) {
+        if(_navigationLogic.isElementVisible($element, getScrollOffset())) {
             return;
         }
 

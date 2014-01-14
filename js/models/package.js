@@ -19,79 +19,69 @@
  * @class ReadiumSDK.Models.Package
  */
 
-ReadiumSDK.Models.Package = Backbone.Model.extend({
+ReadiumSDK.Models.Package = function(packageData){
 
-    spine: undefined,
-    rendition_layout: undefined,
-    rootUrl: undefined,
-    rootUrlMO: undefined,
-    media_overlay: undefined,
+    var self = this;
 
-    initialize : function() {
+    this.spine = undefined;
+    this.rendition_layout = undefined;
+    this.rootUrl = undefined;
+    this.rootUrlMO = undefined;
+    this.media_overlay = undefined;
+    this.rendition_flow = undefined;
 
-        this.reset();
+    if(packageData) {
 
-        var packageData = this.get("packageData");
+        this.rootUrl = packageData.rootUrl;
+        this.rootUrlMO = packageData.rootUrlMO;
 
-        if(packageData) {
+        this.rendition_layout = packageData.rendition_layout;
 
-            this.rootUrl = packageData.rootUrl;
-            this.rootUrlMO = packageData.rootUrlMO;
-
-            this.rendition_layout = packageData.rendition_layout;
-
-            if(!this.rendition_layout) {
-                this.rendition_layout = "reflowable";
-            }
-
-            this.spine = new ReadiumSDK.Models.Spine(this, packageData.spine);
-
-            this.media_overlay = ReadiumSDK.Models.MediaOverlay.fromDTO(packageData.media_overlay);
+        if(!this.rendition_layout) {
+            this.rendition_layout = "reflowable";
         }
-    },
 
-    resolveRelativeUrlMO: function(relativeUrl) {
+        this.spine = new ReadiumSDK.Models.Spine(this, packageData.spine);
 
-        if(this.rootUrlMO && this.rootUrlMO.length > 0) {
+        this.media_overlay = ReadiumSDK.Models.MediaOverlay.fromDTO(packageData.media_overlay);
+        this.rendition_flow = packageData.rendition_flow;
+    }
 
-            if(ReadiumSDK.Helpers.EndsWith(this.rootUrlMO, "/")){
-                return this.rootUrlMO + relativeUrl;
+    this.resolveRelativeUrlMO = function(relativeUrl) {
+
+        if(self.rootUrlMO && self.rootUrlMO.length > 0) {
+
+            if(ReadiumSDK.Helpers.EndsWith(self.rootUrlMO, "/")){
+                return self.rootUrlMO + relativeUrl;
             }
             else {
-                return this.rootUrlMO + "/" + relativeUrl;
+                return self.rootUrlMO + "/" + relativeUrl;
             }
         }
 
-        return this.resolveRelativeUrl(relativeUrl);
-    },
+        return self.resolveRelativeUrl(relativeUrl);
+    };
 
-    resolveRelativeUrl: function(relativeUrl) {
+    this.resolveRelativeUrl = function(relativeUrl) {
 
-        if(this.rootUrl) {
+        if(self.rootUrl) {
 
-            if(ReadiumSDK.Helpers.EndsWith(this.rootUrl, "/")){
-                return this.rootUrl + relativeUrl;
+            if(ReadiumSDK.Helpers.EndsWith(self.rootUrl, "/")){
+                return self.rootUrl + relativeUrl;
             }
             else {
-                return this.rootUrl + "/" + relativeUrl;
+                return self.rootUrl + "/" + relativeUrl;
             }
         }
 
         return relativeUrl;
-    },
+    };
 
-    reset: function() {
-        this.spine = undefined;
-        this.rendition_layout = undefined;
-        this.rootUrl = undefined;
-        this.rootUrlMO = undefined;
-    },
+    this.isFixedLayout = function() {
+        return self.rendition_layout === "pre-paginated";
+    };
 
-    isFixedLayout: function() {
-        return this.rendition_layout === "pre-paginated";
-    },
-
-    isReflowable: function() {
-        return !this.isFixedLayout();
+    this.isReflowable = function() {
+        return !self.isFixedLayout();
     }
-});
+};
