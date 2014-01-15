@@ -711,5 +711,24 @@ ReadiumSDK.Views.ReaderView = function(options) {
         }
     }
 
+    this.pause = function(){
+        _mediaOverlayPlayer.pause();
+    };
+
+    this.play = function(){
+        _mediaOverlayPlayer.play();
+    };
+    
+    this.setRate = function(rate) {
+        _mediaOverlayPlayer.setRate(rate);
+    };
+    
+    this.setVolume = function(volume){
+        _mediaOverlayPlayer.setVolume(volume);
+    };
+
+    this.isPlaying = function(){
+        return _mediaOverlayPlayer.isPlaying();
+    };
 };
 

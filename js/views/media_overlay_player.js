@@ -387,7 +387,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
     function nextSmil(goNext)
     {
-        pause();
+        self.pause();
 
 //console.debug("current Smil: " + _smilIterator.smil.href + " /// " + _smilIterator.smil.id);
 
@@ -474,7 +474,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         if(_smilIterator.currentPar) {
 
             if(!_smilIterator.currentPar.audio) {
-                pause();
+                self.pause();
                 return;
             }
 
@@ -1072,7 +1072,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         if(!self.isPlaying())
         {
             //playCurrentPar();
-            play();
+            this.play();
             return;
         }
 
@@ -1110,7 +1110,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
     this.playUserPar = function(par) {
         if(self.isPlaying())
         {
-            pause();
+            this.pause();
         }
 
         playPar(par);
@@ -1156,7 +1156,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
     };
 
 
-    function play()
+    this.play = function ()
     {
         if (_smilIterator && _smilIterator.smil && !_smilIterator.smil.id)
         {
@@ -1179,8 +1179,8 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
             {
                 console.log("Audio player was dead, reactivating...");
 
-                self.reset();
-                self.toggleMediaOverlay();
+                this.reset();
+                this.toggleMediaOverlay();
                 return;
             }
         }
@@ -1188,11 +1188,11 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         highlightCurrentElement();
     }
 
-    function pause()
+    this.pause = function()
     {
         if (_blankPagePlayer)
         {
-            self.resetBlankPage();
+            this.resetBlankPage();
         }
         else if (_embeddedIsPlaying)
         {
@@ -1243,14 +1243,14 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
     this.nextOrPreviousMediaOverlay = function(previous) {
         if(self.isPlaying())
         {
-            pause();
+            this.pause();
         }
         else
         {
             if (_smilIterator && _smilIterator.currentPar)
             {
                 //playCurrentPar();
-                play();
+                this.play();
                 return;
             }
         }
@@ -1335,13 +1335,13 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
     this.toggleMediaOverlay = function() {
         if(self.isPlaying()) {
-            pause();
+            this.pause();
             return;
         }
 
         //if we have position to continue from (reset wasn't called)
         if(_smilIterator) {
-            play();
+            this.play();
             return;
         }
 
@@ -1368,7 +1368,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         var wasPlaying = self.isPlaying();
         if(wasPlaying && _smilIterator)
         {
-            pause();
+            this.pause();
             playingPar = _smilIterator.currentPar;
         }
 
@@ -1515,7 +1515,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
         if (wasPlaying && playingPar && playingPar === _smilIterator.currentPar)
         {
-            play();
+            self.play();
         }
         else
         {
@@ -1523,4 +1523,13 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
             //playPar(moData.par);
         }
     };
+    
+    this.setRate = function(rate) {
+        _audioPlayer.setRate(rate);
+    };
+
+    this.setVolume = function(volume) {
+        _audioPlayer.setVolume(volume);
+    };
+
 };

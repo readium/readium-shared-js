@@ -746,7 +746,7 @@
         }
     
         this.isPlaying = function() {
-            return _audioElement.paused;
+            return !_audioElement.paused;
         };
     
         this.playFile = function(smilSrc, epubSrc, seekBegin, element) {
