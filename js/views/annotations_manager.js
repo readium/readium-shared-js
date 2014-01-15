@@ -100,13 +100,17 @@ Then when the user clicks on the highlight the following will show up in the con
 */
 
 
-ReadiumSDK.Views.AnnotationsManager = function (proxyObj) {
+ReadiumSDK.Views.AnnotationsManager = function (proxyObj, options) {
 
     var self = this;
     var liveAnnotations = {};
     var spines = {};
     var proxy = proxyObj; 
-    var annotationCSSUrl;
+    var annotationCSSUrl = options.annotationCSSUrl;
+
+    if (!annotationCSSUrl) {
+        console.warn("WARNING! Annotations CSS not supplied. Highlighting is not going to work.");
+    }
 
     _.extend(self, Backbone.Events);
 
@@ -135,7 +139,7 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj) {
 
     this.attachAnnotations = function($iframe, spineItem) {
         var epubDocument = $iframe[0].contentDocument;
-        liveAnnotations[spineItem.index] = new EpubAnnotationsModule(epubDocument, self, self.annotationCSSUrl);
+        liveAnnotations[spineItem.index] = new EpubAnnotationsModule(epubDocument, self, annotationCSSUrl);
         spines[spineItem.index] = spineItem;
 
         // check to see which spine indecies can be culled depending on the distance from current spine item
@@ -192,10 +196,6 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj) {
         }
         return result;
     };
-
-    this.updateSettings = function(updateData) {
-        self.annotationCSSUrl = updateData.annotationCSSUrl;
-    }
 
 
 
