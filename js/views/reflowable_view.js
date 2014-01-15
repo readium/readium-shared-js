@@ -575,6 +575,13 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         return this.navigationLogic.getVisibleMediaOverlayElements(visibleContentOffsets);
     },
 
+    getVisibleElementsWithFilter: function(filterFunction) {
+
+        var visibleContentOffsets = this.getVisibleContentOffsets();
+        return this.navigationLogic.getVisibleElementsWithFilter(visibleContentOffsets,filterFunction);
+    },
+
+
     insureElementVisibility: function(element, initiator) {
 
         var $element = $(element);

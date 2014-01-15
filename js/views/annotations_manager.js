@@ -220,4 +220,16 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj) {
         }
         return result;
     };
+
+    this.getAnnotationMidpoints = function($elements){
+        var results = [];
+        $.each($elements, function(){
+            var $element = $(this.element);
+            var elementId = $element[0].id;
+            elementId = elementId.substring(6);
+            var $highlighted = {"id": elementId, "position":$element.position()};
+            results.push($highlighted)
+        });
+        return results;
+    };
 };

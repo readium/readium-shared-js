@@ -790,7 +790,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
         return _annotationsManager.removeHighlight(id);
     };
 
-
     this.redrawAnnotations = function(){
         _annotationsManager.redrawAnnotations();
     };
@@ -799,8 +798,11 @@ ReadiumSDK.Views.ReaderView = function(options) {
         return _annotationsManager.updateAnnotationView(id, styles);
     };
 
-    this.getVisibleAnnotationMidpoints = function(){
-        console.warn('Unimplemented: reader_view:getVisibleAnnotationMidpoints()');
-        return [];
+    this.getVisibleAnnotationMidpoints = function () {
+        var $visibleElements = _currentView.getVisibleElementsWithFilter(function ($element) {
+            return $element.is('span.range-start-marker');
+        });
+        var elementMidpoints = _annotationsManager.getAnnotationMidpoints($visibleElements);
+        return elementMidpoints;
     }
 };

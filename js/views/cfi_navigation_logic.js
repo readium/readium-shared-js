@@ -176,9 +176,17 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
 
     this.getVisibleMediaOverlayElements = function(visibleContentOffsets) {
 
-        var $elements = this.getMediaOverlayElements($("body", this.getRootElement()));
+        var $elements = this.getElementsWithFilter($("body", this.getRootElement()),function($element){
+            return $element.data("mediaOverlayData");
+        });
         return this.getVisibleElements($elements, visibleContentOffsets);
 
+    };
+
+    this.getVisibleElementsWithFilter = function(visibleContentOffsets, filterFunction) {
+
+        var $elements = this.getElementsWithFilter($("body", this.getRootElement()),filterFunction);
+        return this.getVisibleElements($elements, visibleContentOffsets);
     };
 
     this.isElementVisible = function($element, visibleContentOffsets) {
@@ -247,19 +255,19 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
         return this.getVisibleElements($elements, visibleContentOffsets);
     };
 
-    this.getMediaOverlayElements = function($root) {
+    this.getElementsWithFilter = function($root,filterFunction) {
 
         var $elements = [];
 
         function traverseCollection(elements) {
 
             if (elements == undefined) return;
-            
+
             for(var i = 0, count = elements.length; i < count; i++) {
 
                 var $element = $(elements[i]);
 
-                if( $element.data("mediaOverlayData") ) {
+                if(filterFunction($element)) {
                     $elements.push($element);
                 }
                 else {
@@ -268,7 +276,6 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
 
             }
         }
-
         traverseCollection([$root[0]]);
 
         return $elements;
