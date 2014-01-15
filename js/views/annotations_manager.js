@@ -158,7 +158,7 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj) {
     };
 
     this.addSelectionHighlight = function(id, type) {
-        for(spine in liveAnnotations) {
+        for(var spine in liveAnnotations) {
             var annotationsForView = liveAnnotations[spine]; 
             if (annotationsForView.getCurrentSelectionCFI()) {
                 var annotation = annotationsForView.addSelectionHighlight(id, type);
@@ -203,5 +203,21 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj) {
         return nakedCfi;
     }
 
+    this.redrawAnnotations = function(){
+        for(var annotation in liveAnnotations){
+            annotation.redraw();
+        }
+    };
 
+    this.updateAnnotationView = function(id, styles) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result = annotationsForView.updateAnnotationView(id,styles);
+            if(result){
+                break;
+            }
+        }
+        return result;
+    };
 };

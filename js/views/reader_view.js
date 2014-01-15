@@ -788,5 +788,19 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
     this.removeHighlight = function(id) {
         return _annotationsManager.removeHighlight(id);
-    }; 
+    };
+
+
+    this.redrawAnnotations = function(){
+        _annotationsManager.redrawAnnotations();
+    };
+
+    this.updateAnnotationView = function(id, styles) {
+        return _annotationsManager.updateAnnotationView(id, styles);
+    };
+
+    this.getVisibleAnnotationMidpoints = function(){
+        console.warn('Unimplemented: reader_view:getVisibleAnnotationMidpoints()');
+        return [];
+    }
 };
