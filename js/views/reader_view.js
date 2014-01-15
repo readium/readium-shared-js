@@ -40,7 +40,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     var _mediaOverlayDataInjector;
     var _iframeLoader;
     var _$el;
-    var _annotationsManager;
+    var _annotationsManager = new ReadiumSDK.Views.AnnotationsManager(self, options);
     
     if (options.el instanceof $) {
         _$el = options.el;
@@ -89,6 +89,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
             _currentView = new ReadiumSDK.Views.FixedView(viewCreationParams);
         }
+
 
         _currentView.setViewSettings(_viewerSettings);
 
@@ -182,7 +183,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
         _mediaOverlayDataInjector = new ReadiumSDK.Views.MediaOverlayDataInjector(_package.media_overlay, _mediaOverlayPlayer);
 
-        _annotationsManager = new ReadiumSDK.Views.AnnotationsManager(self);
 
         resetCurrentView();
 
@@ -272,7 +272,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
 //console.debug("UpdateSettings: " + JSON.stringify(settingsData));
 
         _viewerSettings.update(settingsData);
-
+        
         if(_currentView && !settingsData.doNotUpdateView) {
 
             var bookMark = _currentView.bookmarkCurrentPage();
