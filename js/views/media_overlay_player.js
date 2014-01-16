@@ -25,6 +25,9 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
     var _ttsIsPlaying = false;
     var _currentTTS = undefined;
+    var _enableHTMLSpeech = false && window.speechSynthesis !== undefined; // set to false to force "native" platform TTS engine, rather than HTML Speech API
+    var _SpeechSynthesisUtterance = undefined;
+    //var _skipTTSEndEvent = false;
 
     var _embeddedIsPlaying = false;
     var _currentEmbedded = undefined;
@@ -553,8 +556,6 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         nextSmil(goNext);
     }
 
-    var _enableHTMLSpeech = false && window.speechSynthesis !== undefined;
-
     this.touchInit = function()
     {
         var todo = _audioPlayer.touchInit();
@@ -738,7 +739,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
         if (!txt && window.speechSynthesis.paused)
         {
-//console.debug("TTS resume");
+console.debug("TTS resume");
             window.speechSynthesis.resume();
 
             return;
@@ -748,26 +749,87 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
         if (text)
         {
-//console.debug("TTS pause before speak");
-            window.speechSynthesis.pause();
-
-//console.debug("TTS cancel before speak");
-            window.speechSynthesis.cancel();
-
-//            setTimeout(function()
-//            {
-            var utt = new SpeechSynthesisUtterance();
-            if (tokenData)
+            if (_SpeechSynthesisUtterance)
             {
-                utt.tokenData = tokenData;
+console.debug("_SpeechSynthesisUtterance nullify");
+
+                if (_SpeechSynthesisUtterance.onend)
+                {
+                    _SpeechSynthesisUtterance.onend({forceSkipEnd: true, target: _SpeechSynthesisUtterance});
+                }
+
+                _SpeechSynthesisUtterance.onend = function(event)
+                {
+console.debug("OLD TTS ended");
+                    event.target.tokenData = undefined;
+                };
+
+                _SpeechSynthesisUtterance.onboundary = function(event)
+                {
+console.debug("OLD TTS boundary");
+                    event.target.tokenData = undefined;
+                };
+
+                _SpeechSynthesisUtterance.onerror = function(event)
+                {
+console.debug("OLD TTS error");
+console.debug(event);
+                    event.target.tokenData = undefined;
+                };
+
+                _SpeechSynthesisUtterance.tokenData = undefined;
+
+                _SpeechSynthesisUtterance = undefined;
+            }
+//
+//            if (window.speechSynthesis.pending ||
+//                window.speechSynthesis.speaking)
+//            {
+//                _skipTTSEndEvent = true;
+//            }
+
+            if (!window.speechSynthesis.paused)
+            {
+console.debug("TTS pause before speak");
+                window.speechSynthesis.pause();
             }
 
-            utt.onend = function(event)
-            //utt.addEventListener("end", function(event)
+            if (true || window.speechSynthesis.pending) // nope :(
             {
+console.debug("TTS cancel before speak");
+                window.speechSynthesis.cancel();
+            }
+
+            setTimeout(function()
+            {
+
+            _SpeechSynthesisUtterance = new SpeechSynthesisUtterance();
+            if (tokenData)
+            {
+                _SpeechSynthesisUtterance.tokenData = tokenData;
+            }
+
+            _SpeechSynthesisUtterance.onend = function(event)
+            //_SpeechSynthesisUtterance.addEventListener("end", function(event)
+            {
+                if (!_SpeechSynthesisUtterance)
+                {
+                    //_skipTTSEndEvent = false;
+                    return;
+                }
+//
+//                if (_skipTTSEndEvent)
+//                {
+//                    _skipTTSEndEvent = false;
+//                    return;
+//                }
+
 console.debug("TTS ended");
 //console.debug(event);
                 var tokenised = event.target.tokenData;
+
+                var doEnd = !event.forceSkipEnd && (_SpeechSynthesisUtterance === event.target) && (!tokenised || tokenised.element.innerHTML_original);
+
                 if (tokenised)
                 {
                     if (tokenised.element.innerHTML_original)
@@ -785,15 +847,28 @@ console.debug("TTS OFF (end)" + el.id);
                             }
                         );
                     }
+
                     tokenised.element.innerHTML_original = undefined;
                 }
 
-                self.onTTSEnd();
+                if (doEnd)
+                {
+                    self.onTTSEnd();
+                }
+                else
+                {
+console.debug("TTS end SKIPPED");
+                }
             };
 
-            utt.onboundary = function(event)
-            //utt.addEventListener("boundary", function(event)
+            _SpeechSynthesisUtterance.onboundary = function(event)
+            //_SpeechSynthesisUtterance.addEventListener("boundary", function(event)
             {
+                if (!_SpeechSynthesisUtterance)
+                {
+                    return;
+                }
+
 console.debug("TTS boundary: " + event.name + " / " + event.charIndex);
 //console.debug(event);
 
@@ -841,11 +916,16 @@ console.debug("TTS ON");
                 tokenised.lastCharIndex = event.charIndex;
             };
 
-            utt.onerror = function(event)
-            //utt.addEventListener("error", function(event)
+            _SpeechSynthesisUtterance.onerror = function(event)
+            //_SpeechSynthesisUtterance.addEventListener("error", function(event)
             {
+                if (!_SpeechSynthesisUtterance)
+                {
+                    return;
+                }
+
 console.debug("TTS error");
-//console.debug(event);
+console.debug(event);
 
                 var tokenised = event.target.tokenData;
                 if (tokenised)
@@ -870,19 +950,25 @@ console.debug("TTS OFF (error)" + el.id);
             };
 
             var vol = volume || _audioPlayer.getVolume();
-            utt.volume = vol;
+            _SpeechSynthesisUtterance.volume = vol;
 
-            utt.rate = _audioPlayer.getRate();
-            utt.pitch = 1;
+            _SpeechSynthesisUtterance.rate = _audioPlayer.getRate();
+            _SpeechSynthesisUtterance.pitch = 1;
 
-            //utt.lang = "en-US";
+            //_SpeechSynthesisUtterance.lang = "en-US";
 
-            utt.text = text;
+            _SpeechSynthesisUtterance.text = text;
 
-//console.debug("TTS speak: " + text);
-            window.speechSynthesis.speak(utt);
-//
-//            }, 10);
+console.debug("TTS speak: " + text);
+            window.speechSynthesis.speak(_SpeechSynthesisUtterance);
+
+            if (window.speechSynthesis.paused)
+            {
+console.debug("TTS resume");
+                window.speechSynthesis.resume();
+            }
+
+            }, 5);
         }
     };
 

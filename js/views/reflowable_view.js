@@ -129,19 +129,24 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
 
     calculateVisibleColumnCount: function() {
 
-        var columnCount = this.isSyntheticSpread ? 2 : 1;
+        if(this.isSyntheticSpread) {
 
-        if(!this.currentSpineItem) {
-            return columnCount;
-        }
+            if(!this.currentSpineItem) {
+                return 2;
+            }
 
-        var orientation = ReadiumSDK.Helpers.getOrientation(this.$viewport);
-        if(!orientation) {
-            return columnCount;
-        }
+            var orientation = ReadiumSDK.Helpers.getOrientation(this.$viewport);
+            if(!orientation) {
+                return 2;
+            }
 
-        return ReadiumSDK.Helpers.isRenditionSpreadPermittedForItem(this.currentSpineItem, orientation)
+            return ReadiumSDK.Helpers.isRenditionSpreadPermittedForItem(this.currentSpineItem, orientation)
                 ? 2 : 1;
+        }
+        else {
+
+            return 1;
+        }
     },
 
     registerTriggers: function (doc) {
@@ -365,7 +370,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
 
         this.paginationInfo.pageOffset = (this.paginationInfo.columnWidth + this.paginationInfo.columnGap) * this.paginationInfo.visibleColumnCount * this.paginationInfo.currentSpreadIndex;
         this.redraw();
-        this.trigger(ReadiumSDK.Events.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: this.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
+        this.trigger(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: this.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
     },
 
     openPagePrev:  function (initiator) {
