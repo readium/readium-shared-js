@@ -38,6 +38,7 @@ ReadiumSDK.Views.ScrollView = function(options){
     var _$el;
     var _$iframe;
     var _$epubHtml;
+    var _pageRequest;
 
 //    var _lastViewPortSize = {
 //        width: undefined,
@@ -86,15 +87,22 @@ ReadiumSDK.Views.ScrollView = function(options){
         $(window).on("resize.ReadiumSDK.reflowableView", _.bind(lazyResize, self));
 
         var lazyScroll = _.debounce(onScroll, 100);
-        _$el.on("scroll.ReadiumSDK.reflowableView", _.bind(lazyScroll, self));
+
+        _$contentFrame.scroll(function(){
+            lazyScroll();
+        });
 
         return self;
     };
 
     function onScroll() {
 
-        console.log("Page Scrolled!!!");
-        onPaginationChanged(self);
+        var initiator = _pageRequest ? _pageRequest.initiator : self;
+        var elementId = _pageRequest ? _pageRequest.elementId : undefined;
+
+        _pageRequest = undefined;
+
+        onPaginationChanged(initiator, _currentSpineItem, elementId);
     }
 
     function setFrameSizesToRectangle(rectangle) {
@@ -108,7 +116,6 @@ ReadiumSDK.Views.ScrollView = function(options){
     this.remove = function() {
 
         $(window).off("resize.ReadiumSDK.reflowableView");
-        _$el.off("scroll.ReadiumSDK.reflowableView");
         _$el.remove();
     };
 
@@ -312,9 +319,11 @@ ReadiumSDK.Views.ScrollView = function(options){
             console.debug("No criteria in pageRequest");
         }
 
-        scrollTo(topOffset);
-        onPaginationChanged(pageRequest.initiator, pageRequest.spineItem, pageRequest.elementId);
-
+        if(scrollTop() != topOffset ) {
+            //store request for onScroll event
+            _pageRequest = pageRequest;
+            scrollTo(topOffset);
+        }
     };
 
     function scrollTo(offset) {
@@ -510,14 +519,24 @@ ReadiumSDK.Views.ScrollView = function(options){
 
     this.getVisibleMediaOverlayElements = function() {
 
-        var visibleContentOffsets = scrollTop();
-        return _navigationLogic.getVisibleMediaOverlayElements(visibleContentOffsets);
+        return _navigationLogic.getVisibleMediaOverlayElements(visibleOffsets());
     };
+
+    function visibleOffsets() {
+
+        return {
+
+            top: scrollTop(),
+            bottom: scrollTop() + viewHeight()
+        }
+    }
 
     this.insureElementVisibility = function(element, initiator) {
 
         var $element = $(element);
-        if(_navigationLogic.isElementVisible($element, scrollTop())) {
+
+
+        if(_navigationLogic.isElementVisible($element, visibleOffsets())) {
             return;
         }
 
