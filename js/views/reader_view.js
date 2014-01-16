@@ -804,5 +804,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
         });
         var elementMidpoints = _annotationsManager.getAnnotationMidpoints($visibleElements);
         return elementMidpoints;
-    }
+    };
+
 };

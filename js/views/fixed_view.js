@@ -514,6 +514,19 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
         return elements;
     },
 
+    getVisibleElementsWithFilter: function(filterFunction) {
+
+        var elements = [];
+
+        var views = this.getDisplayingViews();
+
+        for(var i = 0, count = views.length; i < count; i++) {
+            elements.push.apply(elements, views[i].getVisibleElementsWithFilter(filterFunction));
+        }
+
+        return elements;
+    },
+
     insureElementVisibility: function(element, initiator) {
 
         //for now we assume that for fixed layout element is always visible
