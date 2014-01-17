@@ -82,6 +82,10 @@ ReadiumSDK.Views.OnePageView = function(options){
         _$el.remove();
     };
 
+    this.currentSpineItem = function() {
+
+        return _currentSpineItem;
+    };
 
     function onIFrameLoad(success) {
 
