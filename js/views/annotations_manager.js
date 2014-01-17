@@ -237,4 +237,10 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj, options) {
         });
         return results;
     };
+
+    this.getAnnotationsElementFilter = function(){
+        return function ($element) {
+            return $element.is('span.range-start-marker');
+        }
+    };
 };

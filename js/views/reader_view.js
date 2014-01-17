@@ -426,8 +426,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
             pageRequest.setPageIndex(0);
         }
         else {
-
-            pageRequest = new ReadiumSDK.Models.PageOpenRequest(undefined, initiator);
+            var spineItems = this.getLoadedSpineItems();
+            pageRequest = new ReadiumSDK.Models.PageOpenRequest(spineItems[0], initiator);
             pageRequest.setPageIndex(pageIndex);
 
         }
@@ -800,9 +800,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
     this.getVisibleAnnotationMidpoints = function () {
         if(_currentView) {
-            var $visibleElements = _currentView.getVisibleElementsWithFilter(function ($element) {
-                return $element.is('span.range-start-marker');
-            });
+            var $visibleElements = _currentView.getVisibleElementsWithFilter(_annotationsManager.getAnnotationsElementFilter());
             var elementMidpoints = _annotationsManager.getAnnotationMidpoints($visibleElements);
             return elementMidpoints;
         }
