@@ -22,7 +22,7 @@ ReadiumSDK.Views.IFrameLoader = function() {
     this.loadIframe = function(iframe, src, callback, context) {
 
         var isWaitingForFrameLoad = true;
-
+        $(iframe).hide();
         iframe.onload = function() {
 
             try
@@ -41,7 +41,7 @@ ReadiumSDK.Views.IFrameLoader = function() {
 
             isWaitingForFrameLoad = false;
             callback.call(context, true);
-
+            $(iframe).show();
         };
 
         //yucks! iframe doesn't trigger onerror event - there is no reliable way to know that iframe finished

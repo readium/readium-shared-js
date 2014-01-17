@@ -799,11 +799,29 @@ ReadiumSDK.Views.ReaderView = function(options) {
     };
 
     this.getVisibleAnnotationMidpoints = function () {
-        var $visibleElements = _currentView.getVisibleElementsWithFilter(function ($element) {
-            return $element.is('span.range-start-marker');
-        });
-        var elementMidpoints = _annotationsManager.getAnnotationMidpoints($visibleElements);
-        return elementMidpoints;
+        if(_currentView) {
+            var $visibleElements = _currentView.getVisibleElementsWithFilter(function ($element) {
+                return $element.is('span.range-start-marker');
+            });
+            var elementMidpoints = _annotationsManager.getAnnotationMidpoints($visibleElements);
+            return elementMidpoints;
+        }
+        return [];
+    };
+
+    this.isVisibleCFI = function(spineIdRef, partialCfi){
+        var spineItem = getSpineItem(spineIdRef);
+
+        if(!spineItem) {
+            return false;
+        }
+        if(_currentView) {
+            var $elementFromCfi = _currentView.getElementFromCfi(partialCfi);
+            if(_currentView.isElementVisible($elementFromCfi)){
+                return true;
+            }
+        }
+        return false;
     };
 
 };

@@ -569,6 +569,10 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         return this.navigationLogic.getElement(selector);
     },
 
+    getElementFromCfi: function(cfi){
+        return this.navigationLogic.getElementFromCfi(cfi);
+    },
+
     getVisibleMediaOverlayElements: function() {
 
         var visibleContentOffsets = this.getVisibleContentOffsets();
@@ -598,6 +602,15 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         openPageRequest.setPageIndex(page);
 
         this.openPage(openPageRequest);
+    },
+
+    isElementVisible: function($element){
+
+        if(this.navigationLogic.isElementVisible($element, this.getVisibleContentOffsets())) {
+            return true;
+        }
+        return false;
     }
+
 
 });
