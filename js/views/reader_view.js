@@ -435,6 +435,32 @@ ReadiumSDK.Views.ReaderView = function(options) {
         openPage(pageRequest);
     };
 
+    /**
+     *
+     * Opens spine item by a specified index
+     *
+     * @method openSpineItemByIndex
+     *
+     * @param {number} spineIndex Zero based index of the spine item
+     * @param {object} initiator optional
+     */
+    this.openSpineItemByIndex = function(spineIndex, initiator) {
+
+        if(!_currentView) {
+            return;
+        }
+
+        var pageRequest;
+        var spineItem = _spine.items[spineIndex];
+        if(!spineItem) {
+            return;
+        }
+
+        pageRequest = new ReadiumSDK.Models.PageOpenRequest(spineItem, initiator);
+        pageRequest.setPageIndex(0);
+        openPage(pageRequest);
+    };
+
     function openPage(pageRequest) {
 
         renderCurrentView(pageRequest.spineItem.isReflowable());
@@ -807,7 +833,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
         return [];
     };
 
-    this.isVisibleCFI = function(spineIdRef, partialCfi){
+    this.isVisibleSpineItemElementCfi = function(spineIdRef, partialCfi){
         var spineItem = getSpineItem(spineIdRef);
 
         if(!spineItem) {
