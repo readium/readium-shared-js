@@ -816,9 +816,11 @@ ReadiumSDK.Views.ReaderView = function(options) {
             return false;
         }
         if(_currentView) {
-            var $elementFromCfi = _currentView.getElementFromCfi(partialCfi);
-            if(_currentView.isElementVisible($elementFromCfi)){
-                return true;
+            var $elementFromCfi = _currentView.getElementFromCfi(spineIdRef,partialCfi);
+            if($elementFromCfi){
+                if(_currentView.isElementVisible($elementFromCfi)){
+                    return true;
+                }
             }
         }
         return false;

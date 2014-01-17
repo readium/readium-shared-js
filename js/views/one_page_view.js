@@ -28,6 +28,7 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
     spine: undefined,
     contentAlignment: undefined, //expected 'center' 'left' 'right'
     iframeLoader: undefined,
+    navigationLogic: undefined,
     bookStyles: undefined,
 
     meta_size : {
@@ -64,7 +65,7 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
             this.$el.addClass(this.options.class);
             this.$iframe = $("iframe", this.$el);
         }
-
+        this.navigationLogic = new ReadiumSDK.Views.CfiNavigationLogic(this.$el, this.$iframe);
         return this;
     },
 
@@ -267,9 +268,7 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
 
     getFirstVisibleElementCfi: function(){
 
-        var navigation = new ReadiumSDK.Views.CfiNavigationLogic(this.$el, this.$iframe);
-        return navigation.getFirstVisibleElementCfi(0);
-
+        return this.navigationLogic.getFirstVisibleElementCfi(0);
     },
 
     getElement: function(spineItem, selector) {
@@ -278,23 +277,23 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
             console.error("spine item is not loaded");
             return undefined;
         }
-
-        var navigation = this.navigationLogic;
-        if (!navigation)
-        {
-            navigation = new ReadiumSDK.Views.CfiNavigationLogic(this.$el, this.$iframe);
-        }
-        return navigation.getElement(selector);
+        return this.navigationLogic.getElement(selector);
     },
 
     getVisibleMediaOverlayElements: function() {
-        var navigation = new ReadiumSDK.Views.CfiNavigationLogic(this.$el, this.$iframe);
-        return navigation.getVisibleMediaOverlayElements({top:0, bottom: this.$iframe.height()});
+
+        return this.navigationLogic.getVisibleMediaOverlayElements({top:0, bottom: this.$iframe.height()});
     },
 
     getVisibleElementsWithFilter: function(filterFunction) {
-        var navigation = new ReadiumSDK.Views.CfiNavigationLogic(this.$el, this.$iframe);
-        return navigation.getVisibleElementsWithFilter({top:0, bottom: this.$iframe.height()},filterFunction);
+        return this.navigationLogic.getVisibleElementsWithFilter({top:0, bottom: this.$iframe.height()},filterFunction);
+    },
+
+    getElementFromCfi: function(spineIdref, partialCfi){
+        if(this.currentSpineItem.idref === spineIdref){
+            return this.navigationLogic.getElementFromCfi(partialCfi);
+        }
+        return undefined;
     }
 
 });

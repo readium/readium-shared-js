@@ -539,11 +539,18 @@ ReadiumSDK.Views.FixedView = Backbone.View.extend({
 
     },
 
-    getElementFromCfi: function(cfi){
+    getElementFromCfi: function(spineIdRef, partialCfi){
 
-        //JC: Uhm, not sure how to implement this with fixed layout
+        var views = this.getDisplayingViews();
 
+        for(var i = 0, count = views.length; i < count; i++) {
+
+            var view = views[i];
+            if(view.currentSpineItem.idref == spineIdRef) {
+                return view.getElementFromCfi(spineIdRef,partialCfi);
+            }
+        }
+        return undefined;
     }
-
 
 });
