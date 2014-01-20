@@ -631,10 +631,10 @@ ReadiumSDK.Views.ReaderView = function(options) {
      *
      * @method bookmarkCurrentPage
      *
-     * @returns {string} Stringified ReadiumSDK.Models.BookmarkData object.
+     * @returns {string} Serialized ReadiumSDK.Models.BookmarkData object as JSON string.
      */
     this.bookmarkCurrentPage = function() {
-        return JSON.stringify(_currentView.bookmarkCurrentPage());
+        return _currentView.bookmarkCurrentPage().toString();
     };
 
     /**

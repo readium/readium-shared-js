@@ -119,21 +119,24 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj, options) {
         var args = Array.prototype.slice.call(arguments);
         // mangle annotationClicked event. What really needs to happen is, the annotation_module needs to return a 
         // bare Cfi, and this class should append the idref.
-        var annotationClickedEvent = 'annotationClicked';
-        if (args.length && args[0] === annotationClickedEvent) {
-            for (var spineIndex in liveAnnotations)
-            {
-                var jQueryEvent = args[4];
-                var annotationId = args[3];
-                var fullFakeCfi = args[2];
-                var type = args[1];
-                if (liveAnnotations[spineIndex].getHighlight(annotationId)) {
-                    var idref = spines[spineIndex].idref;
-                    var partialCfi = getPartialCfi(fullFakeCfi);
-                    args = [annotationClickedEvent, type, idref, partialCfi, annotationId, jQueryEvent];
+        var mangleEvent = function(annotationClickedEvent){
+            if (args.length && args[0] === annotationClickedEvent) {
+                for (var spineIndex in liveAnnotations)
+                {
+                    var jQueryEvent = args[4];
+                    var annotationId = args[3];
+                    var fullFakeCfi = args[2];
+                    var type = args[1];
+                    if (liveAnnotations[spineIndex].getHighlight(annotationId)) {
+                        var idref = spines[spineIndex].idref;
+                        var partialCfi = getPartialCfi(fullFakeCfi);
+                        args = [annotationClickedEvent, type, idref, partialCfi, annotationId, jQueryEvent];
+                    }
                 }
             }
         }
+        mangleEvent('annotationClicked');
+        mangleEvent('annotationRightClicked');
         self['trigger'].apply(proxy, args);
     });
 
@@ -156,7 +159,7 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj, options) {
             var annotationsForView = liveAnnotations[spine]; 
             var partialCfi = annotationsForView.getCurrentSelectionCFI();
             if (partialCfi) {
-                return {"idref":spines[spine].idref, "cfi":partialCfi};
+                return new ReadiumSDK.Models.BookmarkData(spines[spine].idref,partialCfi);
             }
         }
         return undefined;
