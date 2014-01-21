@@ -200,8 +200,6 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj, options) {
         return result;
     };
 
-
-
     function getPartialCfi(CFI) {
         var cfiWrapperPattern = new RegExp("^.*!")
         // remove epubcfi( and indirection step
@@ -212,8 +210,8 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj, options) {
     }
 
     this.redrawAnnotations = function(){
-        for(var annotation in liveAnnotations){
-            annotation.redraw();
+        for(var spine in liveAnnotations){
+            liveAnnotations[spine].redraw();
         }
     };
 

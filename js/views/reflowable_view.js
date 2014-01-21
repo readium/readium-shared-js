@@ -612,7 +612,7 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
 
     getElementFromCfi: function(spineIdref, partialCfi){
         if(this.currentSpineItem.idref === spineIdref){
-            return this.navigationLogic.getElementFromCfi(partialCfi);
+            return this.navigationLogic.getElementWithPartialCfi(partialCfi);
         }
         return undefined;
     }

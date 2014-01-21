@@ -850,4 +850,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
         return false;
     };
 
+    this.getElementFromCfi = function(spineIdRef,partialCfi){
+        return _currentView.getElementFromCfi(spineIdRef,partialCfi);
+    };
+
 };
