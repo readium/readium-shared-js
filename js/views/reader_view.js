@@ -40,7 +40,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     var _mediaOverlayDataInjector;
     var _iframeLoader;
     var _$el;
-    var _annotationsManager;
+    var _annotationsManager = new ReadiumSDK.Views.AnnotationsManager(self, options);
     
     if (options.el instanceof $) {
         _$el = options.el;
@@ -98,6 +98,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
 
         _currentView = new desiredViewType(viewCreationParams);
+
 
         _currentView.setViewSettings(_viewerSettings);
 
@@ -166,13 +167,13 @@ ReadiumSDK.Views.ReaderView = function(options) {
      * Triggers the process of opening the book and requesting resources specified in the packageData
      *
      * @method openBook
-     * @param openBookData object with open book data in format:
-     * {
-     *     package: packageData, (required)
-     *     openPageRequest: openPageRequestData, (optional) data related to open page request
-     *     settings: readerSettings, (optional)
-     *     styles: cssStyles (optional)
-     * }
+     * @param openBookData object with open book data:
+     *
+     *     openBookData.package: packageData, (required)
+     *     openBookData.openPageRequest: openPageRequestData, (optional) data related to open page request
+     *     openBookData.settings: readerSettings, (optional)
+     *     openBookData.styles: cssStyles (optional)
+     *
      *
      */
     this.openBook = function(openBookData) {
@@ -191,7 +192,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
         _mediaOverlayDataInjector = new ReadiumSDK.Views.MediaOverlayDataInjector(_package.media_overlay, _mediaOverlayPlayer);
 
-        _annotationsManager = new ReadiumSDK.Views.AnnotationsManager(self);
 
         resetCurrentView();
 
@@ -281,7 +281,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
 //console.debug("UpdateSettings: " + JSON.stringify(settingsData));
 
         _viewerSettings.update(settingsData);
-
+        
         if(_currentView && !settingsData.doNotUpdateView) {
 
             var bookMark = _currentView.bookmarkCurrentPage();
@@ -631,7 +631,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     /**
      * Resets all the custom styles set by setStyle callers at runtime
      *
-     * @method resetStyles
+     * @method clearStyles
      */
     this.clearStyles = function() {
 
@@ -643,7 +643,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     /**
      * Resets all the custom styles set by setBookStyle callers at runtime
      *
-     * @method resetStyles
+     * @method clearBookStyles
      */
     this.clearBookStyles = function() {
 
@@ -773,8 +773,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
     *
      */
 
-    this.addHighlight = function(spineIndex, CFI, id, type, styles) {
-        return _annotationsManager.addHighlight(spineIndex, CFI, id, type, styles) ;
+    this.addHighlight = function(spineIdRef, Cfi, id, type, styles) {
+        return _annotationsManager.addHighlight(spineIdRef, Cfi, id, type, styles) ;
     };
     
 

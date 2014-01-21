@@ -23,7 +23,13 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
 
     var self = this;
 
-    var _audioElement = new Audio();
+    var _audioElement;
+    try {
+        _audioElement = new Audio();
+    } catch(error) {
+        console.error("Note: Creating new Audio() object has failed.");
+    }
+
     //_audioElement.setAttribute("preload", "auto");
 
     var _currentEpubSrc = undefined;
@@ -46,7 +52,8 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
             _rate = 4.0;
         }
 
-        _audioElement.playbackRate = _rate;
+        if (_audioElement)
+            _audioElement.playbackRate = _rate;
     }
     self.setRate(_rate);
     this.getRate = function()
@@ -67,7 +74,8 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
         {
             _volume = 1.0;
         }
-        _audioElement.volume = _volume;
+        if (_audioElement)
+            _audioElement.volume = _volume;
     }
     self.setVolume(_volume);
     this.getVolume = function()
@@ -106,12 +114,15 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
 
         stopTimer();
 
-        _audioElement.pause();
+        if (_audioElement)
+            _audioElement.pause();
     };
 
-    _audioElement.addEventListener('play', onPlay, false);
-    _audioElement.addEventListener('pause', onPause, false);
-    _audioElement.addEventListener('ended', onEnded, false);
+    if (_audioElement) {
+        _audioElement.addEventListener('play', onPlay, false);
+        _audioElement.addEventListener('pause', onPause, false);
+        _audioElement.addEventListener('ended', onEnded, false);
+    }
 
     function onPlay()
     {
@@ -206,14 +217,16 @@ ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAu
 
         this.pause();
 
-        _audioElement.moSeeking = undefined;
+        if (_audioElement)
+            _audioElement.moSeeking = undefined;
 
         _currentSmilSrc = undefined;
         _currentEpubSrc = undefined;
 
         setTimeout(function()
         {
-            _audioElement.setAttribute("src", "");
+            if (_audioElement)
+                _audioElement.setAttribute("src", "");
         }, 1);
     };
 
