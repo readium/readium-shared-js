@@ -102,10 +102,6 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
     };
 
-    this.isReflowable = function() {
-        return true;
-    };
-
     this.onViewportResize = function() {
 
         if(updateViewportSize()) {

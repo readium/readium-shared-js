@@ -26,17 +26,12 @@ ReadiumSDK.Views.ScrollView = function(options){
     var _$viewport = options.$viewport;
     var _spine = options.spine;
     var _userStyles = options.userStyles;
-    var _bookStyles = options.bookStyles;
-    var _iframeLoader = options.iframeLoader;
-
-    var _currentSpineItem;
     var _isWaitingFrameRender = false;
     var _deferredPageRequest;
     var _fontSize = 100;
     var _$contentFrame;
-    var _navigationLogic;
     var _$el;
-    var _$iframe;
+    var _onePageView;
     var _$epubHtml;
     var _pageRequest;
 
@@ -58,29 +53,30 @@ ReadiumSDK.Views.ScrollView = function(options){
 
     this.render = function(){
 
-        var template = ReadiumSDK.Helpers.loadTemplate("reflowable_book_frame", {});
+        var template = ReadiumSDK.Helpers.loadTemplate("scrolled_book_frame", {});
 
         _$el = $(template);
         _$viewport.append(_$el);
 
-        _$contentFrame = $("#reflowable-content-frame", _$el);
+        _$contentFrame = $("#scrolled-content-frame", _$el);
         _$contentFrame.css("overflow", "");
         _$contentFrame.css("overflow-y", "auto");
         _$contentFrame.css("-webkit-overflow-scrolling", "touch");
         _$contentFrame.css("width", "100%");
         _$contentFrame.css("height", "100%");
 
-        _$iframe = $("#epubContentIframe", _$el);
-        _$iframe.css("width", "100%");
-        _$iframe.css("height", "100%");
+        _onePageView = new ReadiumSDK.Views.OnePageView(options);
+        _$contentFrame.appendChild(_onePageView.render().element());
 
-        _$iframe.css("left", "");
-        _$iframe.css("right", "");
-        _$iframe.css(_spine.isLeftToRight() ? "left" : "right", "0px");
-        _$iframe.css("width", "100%");
+//        _$iframe = $("#epubContentIframe", _$el);
+//        _$iframe.css("width", "100%");
+//        _$iframe.css("height", "100%");
+//
+//        _$iframe.css("left", "");
+//        _$iframe.css("right", "");
+//        _$iframe.css(_spine.isLeftToRight() ? "left" : "right", "0px");
+//        _$iframe.css("width", "100%");
 
-
-        _navigationLogic = new ReadiumSDK.Views.CfiNavigationLogic(_$contentFrame, _$iframe);
 
         //We will call onViewportResize after user stopped resizing window
         var lazyResize = _.debounce(self.onViewportResize, 100);
@@ -119,10 +115,6 @@ ReadiumSDK.Views.ScrollView = function(options){
         _$el.remove();
     };
 
-    this.isReflowable = function() {
-        return true;
-    };
-
     this.onViewportResize = function() {
         resizeIFrameToContent();
         onPaginationChanged(self);
@@ -148,13 +140,9 @@ ReadiumSDK.Views.ScrollView = function(options){
 
     function loadSpineItem(spineItem) {
 
-        if(_currentSpineItem != spineItem) {
-
-            _currentSpineItem = spineItem;
+        if(_onePageView.currentSpineItem() != spineItem) {
             _isWaitingFrameRender = true;
-
-            var src = _spine.package.resolveRelativeUrl(spineItem.href);
-            _iframeLoader.loadIframe(_$iframe[0], src, onIFrameLoad, self);
+            _onePageView.loadSpineItem(spineItem);
         }
     }
 
@@ -236,8 +224,8 @@ ReadiumSDK.Views.ScrollView = function(options){
 
     this.applyBookStyles = function() {
 
-        if(_$epubHtml) {
-            ReadiumSDK.Helpers.setStyles(_bookStyles.getStyles(), _$epubHtml);
+        if(_onePageView) {
+            _onePageView.applyBookStyles();
         }
     };
 
@@ -282,25 +270,27 @@ ReadiumSDK.Views.ScrollView = function(options){
         }
         else if(pageRequest.elementId) {
 
-            $element = _navigationLogic.getElementBuyId(pageRequest.elementId);
+            var navigator = _onePageView.getNavigator();
+            $element = navigator.getElementBuyId(pageRequest.elementId);
 
             if(!$element) {
                 console.warn("Element id=" + pageRequest.elementId + " not found!");
                 return;
             }
 
-            topOffset = _navigationLogic.getVerticalOffsetForElement($element);
+            topOffset = navigator.getVerticalOffsetForElement($element);
         }
         else if(pageRequest.elementCfi) {
 
-            $element = _navigationLogic.getElementByCfi(pageRequest.elementCfi);
+            var navigator = _onePageView.getNavigator();
+            $element = navigator.getElementByCfi(pageRequest.elementCfi);
 
             if(!$element) {
                 console.warn("Element cfi=" + pageRequest.elementCfi + " not found!");
                 return;
             }
 
-            topOffset = _navigationLogic.getVerticalOffsetForElement($element);
+            topOffset = navigator.getVerticalOffsetForElement($element);
         }
         else if(pageRequest.firstPage) {
 

@@ -32,7 +32,6 @@ ReadiumSDK.Views.OnePageView = function(options){
     var _$iframe;
     var _currentSpineItem;
     var _spine = options.spine;
-    var _contentAlignment = options.contentAlignment;
     var _iframeLoader = options.iframeLoader;
     var _bookStyles = options.bookStyles;
 
@@ -105,6 +104,12 @@ ReadiumSDK.Views.OnePageView = function(options){
         if(_$epubHtml) {
             ReadiumSDK.Helpers.setStyles(_bookStyles.getStyles(), _$epubHtml);
         }
+    };
+
+    this.transformContentToFitWidth = function(width) {
+
+        var scale = width / _meta_size.width;
+        self.transformContent(scale, 0, 0);
     };
 
     this.transformContent = function(scale, left, top) {
@@ -232,6 +237,11 @@ ReadiumSDK.Views.OnePageView = function(options){
         var navigation = new ReadiumSDK.Views.CfiNavigationLogic(_$el, _$iframe);
         return navigation.getFirstVisibleElementCfi(0);
 
+    };
+
+    this.getNavigator = function() {
+
+        return new ReadiumSDK.Views.CfiNavigationLogic(_$el, _$iframe);
     };
 
     this.getElement = function(spineItem, selector) {

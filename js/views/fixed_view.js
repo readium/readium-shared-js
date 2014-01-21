@@ -60,10 +60,6 @@ ReadiumSDK.Views.FixedView = function(options){
         });
     }
 
-    this.isReflowable = function() {
-        return false;
-    };
-
     this.render = function(){
 
         var template = ReadiumSDK.Helpers.loadTemplate("fixed_book_frame", {});
