@@ -295,7 +295,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
                     _currentView.setViewSettings(_viewerSettings);
                 }
 
-                self.openSpineItemElementCfi(bookMark.idref, bookMark.elementCfi, self);
+                self.openSpineItemElementCfi(bookMark.idref, bookMark.contentCFI, self);
             }
         }
 
