@@ -60,11 +60,15 @@ ReadiumSDK.Views.ReaderView = function(options) {
         _iframeLoader = new ReadiumSDK.Views.IFrameLoader();
     }
 
-
+    // returns true is view changed
     function initViewForItem(spineItem) {
 
         var desiredViewType;
-        if(spineItem.isFixedLayout()) {
+
+        if(_viewerSettings.isScrollViewDoc || _viewerSettings.isScrollViewContinuous) {
+            desiredViewType = ReadiumSDK.Views.ScrollView;
+        }
+        else if(spineItem.isFixedLayout()) {
             desiredViewType = ReadiumSDK.Views.FixedView;
         }
         //we don't support scroll continues yet we will create scroll doc instead
@@ -78,7 +82,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
         if(_currentView) {
             //current view is already rendered
             if(_currentView instanceof desiredViewType) {
-                return;
+                return false;
             }
 
             resetCurrentView();
@@ -116,8 +120,9 @@ ReadiumSDK.Views.ReaderView = function(options) {
             self.trigger(ReadiumSDK.Events.PAGINATION_CHANGED, pageChangeData);
         });
 
-
         _currentView.render();
+
+        return true;
     }
 
     this.getLoadedSpineItems = function() {
@@ -281,9 +286,15 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
             var bookMark = _currentView.bookmarkCurrentPage();
 
-            _currentView.setViewSettings(_viewerSettings);
-
             if(bookMark) {
+
+                var spineItem = _spine.getItemById(bookMark.idref);
+                var isViewChanged = initViewForItem(spineItem);
+
+                if(!isViewChanged) {
+                    _currentView.setViewSettings(_viewerSettings);
+                }
+
                 self.openSpineItemElementCfi(bookMark.idref, bookMark.elementCfi, self);
             }
         }
@@ -431,9 +442,11 @@ ReadiumSDK.Views.ReaderView = function(options) {
         }
         else {
 
-            pageRequest = new ReadiumSDK.Models.PageOpenRequest(undefined, initiator);
-            pageRequest.setPageIndex(pageIndex);
-
+            var spineItems = this.getLoadedSpineItems();
+            if(spineItems.length > 0) {
+                pageRequest = new ReadiumSDK.Models.PageOpenRequest(spineItems[0], initiator);
+                pageRequest.setPageIndex(pageIndex);
+            }
         }
 
         openPage(pageRequest);

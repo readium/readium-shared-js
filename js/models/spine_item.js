@@ -110,8 +110,7 @@ ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
     };
 
     this.isScrolledDoc = function() {
-        console.warn("----Debugging code has to be removed!!!");
-        return true; //ZZZZZ Debugging
+
         return isPropertyValueSetForItemOrPackage("rendition_flow", ReadiumSDK.Models.SpineItem.RENDITION_FLOW_SCROLLED_DOC);
     };
 };
