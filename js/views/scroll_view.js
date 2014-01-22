@@ -40,21 +40,6 @@ ReadiumSDK.Views.ScrollView = function(options){
     var _$epubHtml;
     var _pageRequest;
 
-//    var _lastViewPortSize = {
-//        width: undefined,
-//        height: undefined
-//    };
-//
-//    var _paginationInfo = {
-//
-//        visibleColumnCount : 2,
-//        columnGap : 20,
-//        spreadCount : 0,
-//        currentSpreadIndex : 0,
-//        columnWidth : undefined,
-//        pageOffset : 0,
-//        columnCount: 0
-//    };
 
     this.render = function(){
 
