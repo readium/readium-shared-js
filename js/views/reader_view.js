@@ -51,7 +51,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     }
     
     
- 
+
 
     if(options.iframeLoader) {
         _iframeLoader = options.iframeLoader;
@@ -291,7 +291,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
      * Opens the next page.
      */
     this.openPageNext = function() {
-
         var paginationInfo = _currentView.getPaginationInfo();
 
         if(paginationInfo.openPages.length == 0) {
@@ -462,7 +461,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
     };
 
     function openPage(pageRequest) {
-
         renderCurrentView(pageRequest.spineItem.isReflowable());
         _currentView.openPage(pageRequest);
     }
@@ -816,16 +814,30 @@ ReadiumSDK.Views.ReaderView = function(options) {
         return _annotationsManager.removeHighlight(id);
     };
 
+    /**
+     * Redraws all annotations
+     *
+     * @method redrawAnnotations
+     */
+
     this.redrawAnnotations = function(){
         _annotationsManager.redrawAnnotations();
     };
+
+    /**
+     *
+     * @method updateAnnotationView
+     * @param {string} id
+     * @param {string} styles
+     * @returns {undefined}
+     */
 
     this.updateAnnotationView = function(id, styles) {
         return _annotationsManager.updateAnnotationView(id, styles);
     };
 
     this.getVisibleAnnotationMidpoints = function () {
-        if(_currentView) {
+        if (_currentView) {
             var $visibleElements = _currentView.getVisibleElementsWithFilter(_annotationsManager.getAnnotationsElementFilter());
             var elementMidpoints = _annotationsManager.getAnnotationMidpoints($visibleElements);
             return elementMidpoints;
@@ -836,15 +848,13 @@ ReadiumSDK.Views.ReaderView = function(options) {
     this.isVisibleSpineItemElementCfi = function(spineIdRef, partialCfi){
         var spineItem = getSpineItem(spineIdRef);
 
-        if(!spineItem) {
+        if (!spineItem) {
             return false;
         }
-        if(_currentView) {
+        if (_currentView) {
             var $elementFromCfi = _currentView.getElementFromCfi(spineIdRef,partialCfi);
-            if($elementFromCfi){
-                if(_currentView.isElementVisible($elementFromCfi)){
-                    return true;
-                }
+            if($elementFromCfi && _currentView.isElementVisible($elementFromCfi)){
+                return true;
             }
         }
         return false;

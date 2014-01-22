@@ -19,9 +19,8 @@
 
 ReadiumSDK.Views.IFrameLoader = function() {
 
-    this.loadIframe = function(iframe, src, callback, context) {
+    this.loadIframe = function(iframe, src, callback, context, attachedData) {
 
-        var isWaitingForFrameLoad = true;
         $(iframe).hide();
         iframe.onload = function() {
 
@@ -38,22 +37,10 @@ ReadiumSDK.Views.IFrameLoader = function() {
             {
                 console.log("epubReadingSystem INJECTION ERROR! " + ex.message);
             }
-
-            isWaitingForFrameLoad = false;
-            callback.call(context, true);
+            console.log('Iframe onload callback');
+            callback.call(context, true, attachedData);
             $(iframe).show();
         };
-
-        //yucks! iframe doesn't trigger onerror event - there is no reliable way to know that iframe finished
-        // attempt tot load resource (successfully or not;
-        window.setTimeout(function(){
-
-            if(isWaitingForFrameLoad) {
-                isWaitingForFrameLoad = false;
-                callback.call(context, false);
-            }
-
-        }, 500);
 
         iframe.src = src;
     };

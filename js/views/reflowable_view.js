@@ -26,7 +26,6 @@
 ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
 
     currentSpineItem: undefined,
-    isWaitingFrameRender: false,
     deferredPageRequest: undefined,
     spine: undefined,
     fontSize:100,
@@ -157,16 +156,15 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         });
     },
 
-    loadSpineItem: function(spineItem) {
-
+    loadSpineItemPageRequest: function(pageRequest) {
+        var spineItem = pageRequest.spineItem;
         if(this.currentSpineItem != spineItem) {
 
             this.paginationInfo.currentSpreadIndex = 0;
             this.currentSpineItem = spineItem;
-            this.isWaitingFrameRender = true;
 
             var src = this.spine.package.resolveRelativeUrl(spineItem.href);
-            this.iframeLoader.loadIframe(this.$iframe[0], src, this.onIFrameLoad, this);
+            this.iframeLoader.loadIframe(this.$iframe[0], src, this.onIFrameLoad, this, pageRequest);
         }
     },
 
@@ -178,13 +176,11 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         }
     },
 
-    onIFrameLoad : function(success) {
-
-        this.isWaitingFrameRender = false;
+    onIFrameLoad : function(success, pageRequest) {
 
         //while we where loading frame new request came
-        if(this.deferredPageRequest && this.deferredPageRequest.spineItem != this.currentSpineItem) {
-            this.loadSpineItem(this.deferredPageRequest.spineItem);
+        if(pageRequest && this.deferredPageRequest && this.deferredPageRequest.spineItem != pageRequest.spineItem) {
+            this.loadSpineItemPageRequest(this.deferredPageRequest);
             return;
         }
 
@@ -256,18 +252,12 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
 
     openPage: function(pageRequest) {
 
-        if(this.isWaitingFrameRender) {
-            this.deferredPageRequest = pageRequest;
-            return;
-        }
-
         // if no spine item specified we are talking about current spine item
         if(pageRequest.spineItem && pageRequest.spineItem != this.currentSpineItem) {
             this.deferredPageRequest = pageRequest;
-            this.loadSpineItem(pageRequest.spineItem);
+            this.loadSpineItemPageRequest(pageRequest);
             return;
         }
-
         var pageIndex = undefined;
 
 
@@ -418,7 +408,6 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
     },
 
     updatePagination: function() {
-
         if(!this.$epubHtml) {
             return;
         }
@@ -443,7 +432,6 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
         //TODO it takes time for rendition_layout engine to arrange columns we waite
         //it would be better to react on rendition_layout column reflow finished event
         setTimeout(function(){
-
             var columnizedContentWidth = self.$epubHtml[0].scrollWidth;
 
             self.paginationInfo.columnCount = Math.round((columnizedContentWidth + self.paginationInfo.columnGap) / (self.paginationInfo.columnWidth + self.paginationInfo.columnGap));
@@ -460,7 +448,6 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
                 self.openDeferredElement();
             }
             else {
-
                 //we get here on resizing the viewport
 
                 //We do this to force re-rendering of the document in the iframe.
@@ -495,7 +482,6 @@ ReadiumSDK.Views.ReflowableView = Backbone.View.extend({
     },
 
     getPaginationInfo: function() {
-
         var isFixedLayout = this.currentSpineItem ? this.currentSpineItem.isFixedLayout() : this.spine.package.isFixedLayout();
         var paginationInfo = new ReadiumSDK.Models.CurrentPagesInfo(this.spine.items.length, isFixedLayout, this.spine.direction);
 
