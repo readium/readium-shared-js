@@ -48,6 +48,16 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         _elementHighlighter.clearUserStyle();
     };
 
+
+//TODO: should use this.onSettingsApplied() instead!
+    this.setRate = function(rate) {
+        _audioPlayer.setRate(rate);
+    };
+    this.setVolume = function(volume) {
+        _audioPlayer.setVolume(volume);
+    };
+
+
     this.onSettingsApplied = function() {
 //console.debug(_settings);
         _audioPlayer.setRate(_settings.mediaOverlaysRate);
@@ -1158,7 +1168,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         if(!self.isPlaying())
         {
             //playCurrentPar();
-            this.play();
+            self.play();
             return;
         }
 
@@ -1196,7 +1206,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
     this.playUserPar = function(par) {
         if(self.isPlaying())
         {
-            this.pause();
+            self.pause();
         }
 
         playPar(par);
@@ -1329,14 +1339,14 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
     this.nextOrPreviousMediaOverlay = function(previous) {
         if(self.isPlaying())
         {
-            this.pause();
+            self.pause();
         }
         else
         {
             if (_smilIterator && _smilIterator.currentPar)
             {
                 //playCurrentPar();
-                this.play();
+                self.play();
                 return;
             }
         }
@@ -1421,13 +1431,13 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
     this.toggleMediaOverlay = function() {
         if(self.isPlaying()) {
-            this.pause();
+            self.pause();
             return;
         }
 
         //if we have position to continue from (reset wasn't called)
         if(_smilIterator) {
-            this.play();
+            self.play();
             return;
         }
 
@@ -1454,7 +1464,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         var wasPlaying = self.isPlaying();
         if(wasPlaying && _smilIterator)
         {
-            this.pause();
+            self.pause();
             playingPar = _smilIterator.currentPar;
         }
 
@@ -1609,13 +1619,4 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
             //playPar(moData.par);
         }
     };
-    
-    this.setRate = function(rate) {
-        _audioPlayer.setRate(rate);
-    };
-
-    this.setVolume = function(volume) {
-        _audioPlayer.setVolume(volume);
-    };
-
 };

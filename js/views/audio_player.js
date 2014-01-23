@@ -25,6 +25,8 @@
     var _Android = navigator.userAgent.toLowerCase().indexOf('android') > -1;
     var _isMobile = _iOS || _Android;
 
+    var _isReadiumJS = false; // TODO!
+
     var DEBUG = false;
 
     var _audioElement = new Audio();
@@ -790,7 +792,14 @@
             //dummy
         }
     }
-    
-    ReadiumSDK.Views.AudioPlayer = (_isMobile)?MobileAudioPlayer:DesktopAudioPlayer;
+
+
+    var useHTML5AudioPlayerForNativeSDKLauncherApps = _isMobile || !_isReadiumJS;
+    if (DEBUG)
+    {
+        console.debug("useHTML5AudioPlayerForNativeSDKLauncherApps: " + useHTML5AudioPlayerForNativeSDKLauncherApps ? "YES" : "NO");
+    }
+
+    ReadiumSDK.Views.AudioPlayer = (useHTML5AudioPlayerForNativeSDKLauncherApps) ? MobileAudioPlayer : DesktopAudioPlayer;
     
 })()
