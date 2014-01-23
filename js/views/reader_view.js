@@ -740,16 +740,16 @@ ReadiumSDK.Views.ReaderView = function(options) {
         return _mediaOverlayPlayer.isPlaying();
     };
 
-
-//TODO: should use ReadiumSDK.Events.SETTINGS_APPLIED instead!
-    this.setRateMediaOverlay = function(rate) {
-
-        _mediaOverlayPlayer.setRate(rate);
-    };
-    this.setVolumeMediaOverlay = function(volume){
-
-        _mediaOverlayPlayer.setVolume(volume);
-    };
+//
+// should use ReadiumSDK.Events.SETTINGS_APPLIED instead!
+//    this.setRateMediaOverlay = function(rate) {
+//
+//        _mediaOverlayPlayer.setRate(rate);
+//    };
+//    this.setVolumeMediaOverlay = function(volume){
+//
+//        _mediaOverlayPlayer.setVolume(volume);
+//    };
 
 
     this.getVisibleMediaOverlayElements = function() {

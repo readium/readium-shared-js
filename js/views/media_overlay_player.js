@@ -48,14 +48,14 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         _elementHighlighter.clearUserStyle();
     };
 
-
-//TODO: should use this.onSettingsApplied() instead!
-    this.setRate = function(rate) {
-        _audioPlayer.setRate(rate);
-    };
-    this.setVolume = function(volume) {
-        _audioPlayer.setVolume(volume);
-    };
+//
+// should use this.onSettingsApplied() instead!
+//    this.setRate = function(rate) {
+//        _audioPlayer.setRate(rate);
+//    };
+//    this.setVolume = function(volume) {
+//        _audioPlayer.setVolume(volume);
+//    };
 
 
     this.onSettingsApplied = function() {
@@ -1152,7 +1152,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         var src = _smilIterator.currentPar.text.src;
         var base = _smilIterator.smil.href;
 
-        //pause();
+        //self.pause();
         //self.reset();
         _smilIterator = undefined;
 
@@ -1361,7 +1361,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
         onAudioPositionChanged(position); //true
 
-        //play();
+        //self.play();
         //playCurrentPar();
     };
 
@@ -1387,7 +1387,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
     {
         clipBeginOffset = offset;
 
-        //pause();
+        //self.pause();
         //self.reset();
         _smilIterator = undefined;
 
