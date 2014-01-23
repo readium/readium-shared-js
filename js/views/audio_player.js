@@ -25,7 +25,7 @@
     var _Android = navigator.userAgent.toLowerCase().indexOf('android') > -1;
     var _isMobile = _iOS || _Android;
 
-    var _isReadiumJS = typeof window.requirejs !== undefined; // TODO!!
+    var _isReadiumJS = typeof window.requirejs !== "undefined"; // TODO!!
 
     var DEBUG = false;
 
