@@ -48,6 +48,16 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         _elementHighlighter.clearUserStyle();
     };
 
+//
+// should use this.onSettingsApplied() instead!
+//    this.setRate = function(rate) {
+//        _audioPlayer.setRate(rate);
+//    };
+//    this.setVolume = function(volume) {
+//        _audioPlayer.setVolume(volume);
+//    };
+
+
     this.onSettingsApplied = function() {
 //console.debug(_settings);
         _audioPlayer.setRate(_settings.mediaOverlaysRate);
@@ -390,7 +400,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
     function nextSmil(goNext)
     {
-        pause();
+        self.pause();
 
 //console.debug("current Smil: " + _smilIterator.smil.href + " /// " + _smilIterator.smil.id);
 
@@ -477,7 +487,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         if(_smilIterator.currentPar) {
 
             if(!_smilIterator.currentPar.audio) {
-                pause();
+                self.pause();
                 return;
             }
 
@@ -1142,7 +1152,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         var src = _smilIterator.currentPar.text.src;
         var base = _smilIterator.smil.href;
 
-        //pause();
+        //self.pause();
         //self.reset();
         _smilIterator = undefined;
 
@@ -1158,7 +1168,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         if(!self.isPlaying())
         {
             //playCurrentPar();
-            play();
+            self.play();
             return;
         }
 
@@ -1196,7 +1206,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
     this.playUserPar = function(par) {
         if(self.isPlaying())
         {
-            pause();
+            self.pause();
         }
 
         playPar(par);
@@ -1242,7 +1252,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
     };
 
 
-    function play()
+    this.play = function ()
     {
         if (_smilIterator && _smilIterator.smil && !_smilIterator.smil.id)
         {
@@ -1265,8 +1275,8 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
             {
                 console.log("Audio player was dead, reactivating...");
 
-                self.reset();
-                self.toggleMediaOverlay();
+                this.reset();
+                this.toggleMediaOverlay();
                 return;
             }
         }
@@ -1274,11 +1284,11 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         highlightCurrentElement();
     }
 
-    function pause()
+    this.pause = function()
     {
         if (_blankPagePlayer)
         {
-            self.resetBlankPage();
+            this.resetBlankPage();
         }
         else if (_embeddedIsPlaying)
         {
@@ -1329,14 +1339,14 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
     this.nextOrPreviousMediaOverlay = function(previous) {
         if(self.isPlaying())
         {
-            pause();
+            self.pause();
         }
         else
         {
             if (_smilIterator && _smilIterator.currentPar)
             {
                 //playCurrentPar();
-                play();
+                self.play();
                 return;
             }
         }
@@ -1351,7 +1361,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
         onAudioPositionChanged(position); //true
 
-        //play();
+        //self.play();
         //playCurrentPar();
     };
 
@@ -1377,7 +1387,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
     {
         clipBeginOffset = offset;
 
-        //pause();
+        //self.pause();
         //self.reset();
         _smilIterator = undefined;
 
@@ -1421,13 +1431,13 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
     this.toggleMediaOverlay = function() {
         if(self.isPlaying()) {
-            pause();
+            self.pause();
             return;
         }
 
         //if we have position to continue from (reset wasn't called)
         if(_smilIterator) {
-            play();
+            self.play();
             return;
         }
 
@@ -1454,7 +1464,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         var wasPlaying = self.isPlaying();
         if(wasPlaying && _smilIterator)
         {
-            pause();
+            self.pause();
             playingPar = _smilIterator.currentPar;
         }
 
@@ -1601,7 +1611,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
         if (wasPlaying && playingPar && playingPar === _smilIterator.currentPar)
         {
-            play();
+            self.play();
         }
         else
         {

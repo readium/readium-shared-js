@@ -91,6 +91,9 @@ ReadiumSDK.Views.OnePageView = function(options){
         if(success) {
             var epubContentDocument = _$iframe[0].contentDocument;
             _$epubHtml = $("html", epubContentDocument);
+            if (!_$epubHtml || _$epubHtml.length == 0) {
+                _$epubHtml = $("svg", epubContentDocument);
+            }
             _$epubHtml.css("overflow", "hidden");
             self.applyBookStyles();
             updateMetaSize();
@@ -170,6 +173,18 @@ ReadiumSDK.Views.OnePageView = function(options){
             }
         }
         else { //try to get direct image size
+            
+            // try SVG element's width/height first
+            var $svg = $(contentDocument).find('svg');
+            if ($svg) {
+                var width = parseInt($svg.attr("width"), 10);
+                var height = parseInt($svg.attr("height"), 10);
+                if (width > 0) {
+                    _meta_size.width = width;
+                    _meta_size.height = height;
+                }
+                return;
+            }
 
             var $img = $(contentDocument).find('img');
             var width = $img.width();

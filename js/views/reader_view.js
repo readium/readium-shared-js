@@ -725,6 +725,32 @@ ReadiumSDK.Views.ReaderView = function(options) {
         _mediaOverlayPlayer.onTTSEnd();
     };
 
+    this.pauseMediaOverlay = function() {
+
+        _mediaOverlayPlayer.pause();
+    };
+
+    this.playMediaOverlay = function() {
+
+        _mediaOverlayPlayer.play();
+    };
+
+    this.isPlayingMediaOverlay = function() {
+
+        return _mediaOverlayPlayer.isPlaying();
+    };
+
+//
+// should use ReadiumSDK.Events.SETTINGS_APPLIED instead!
+//    this.setRateMediaOverlay = function(rate) {
+//
+//        _mediaOverlayPlayer.setRate(rate);
+//    };
+//    this.setVolumeMediaOverlay = function(volume){
+//
+//        _mediaOverlayPlayer.setVolume(volume);
+//    };
+
 
     this.getVisibleMediaOverlayElements = function() {
 
@@ -806,4 +832,5 @@ ReadiumSDK.Views.ReaderView = function(options) {
     this.removeHighlight = function(id) {
         return _annotationsManager.removeHighlight(id);
     }; 
+
 };
