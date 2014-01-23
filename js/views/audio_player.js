@@ -794,7 +794,7 @@
     }
 
 
-    var useHTML5AudioPlayerForNativeSDKLauncherApps = _isMobile || !_isReadiumJS;
+    var useHTML5AudioPlayerForNativeSDKLauncherApps = true || _isMobile || !_isReadiumJS;
     if (true || DEBUG)
     {
         console.log("useHTML5AudioPlayerForNativeSDKLauncherApps: " + (useHTML5AudioPlayerForNativeSDKLauncherApps ? "YES" : "NO"));
