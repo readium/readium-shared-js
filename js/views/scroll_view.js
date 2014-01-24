@@ -163,7 +163,7 @@ ReadiumSDK.Views.ScrollView = function(options){
     function onIFrameLoad(success, attachedData) {
 
         //while we where loading frame new request came
-        if(attachedData.pageRequest && _deferredPageRequest && _deferredPageRequest.spineItem != attachedData.pageRequest.spineItem) {
+        if(attachedData && _deferredPageRequest && _deferredPageRequest.spineItem != attachedData.pageRequest.spineItem) {
             loadSpineItemPageRequest(_deferredPageRequest);
             return;
         }
