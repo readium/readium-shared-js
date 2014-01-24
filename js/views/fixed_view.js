@@ -406,7 +406,7 @@ ReadiumSDK.Views.FixedView = function(options){
             self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADING, $iframe, spineItem);
         });
 
-        pageView.loadSpineItemPageRequest(item);
+        pageView.loadSpineItem(item);
 
         return dfd.promise();
 
