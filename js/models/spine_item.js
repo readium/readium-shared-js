@@ -36,6 +36,7 @@ ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
     this.rendition_spread = itemData.rendition_spread;
 
     this.rendition_layout = itemData.rendition_layout;
+    this.rendition_flow = itemData.rendition_flow;
     this.media_overlay_id = itemData.media_overlay_id;
 
     this.media_type = itemData.media_type;
@@ -88,8 +89,30 @@ ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
 
     this.isFixedLayout = function() {
         return this.rendition_layout ? this.rendition_layout === "pre-paginated" : this.spine.package.isFixedLayout();
+    };
+
+    function isPropertyValueSetForItemOrPackage(propName, propValue) {
+
+        if(self[propName]) {
+            return self[propName] === propValue;
+        }
+
+        if(self.spine.package[propName]) {
+            return self.spine.package[propName] === propValue;
+        }
+
+        return false;
     }
 
+    this.isScrolledContinuous = function() {
+
+        return isPropertyValueSetForItemOrPackage("rendition_flow", ReadiumSDK.Models.SpineItem.RENDITION_FLOW_SCROLLED_CONTINUOUS);
+    };
+
+    this.isScrolledDoc = function() {
+
+        return isPropertyValueSetForItemOrPackage("rendition_flow", ReadiumSDK.Models.SpineItem.RENDITION_FLOW_SCROLLED_DOC);
+    };
 };
 
 ReadiumSDK.Models.SpineItem.SPREAD_LEFT = "page-spread-left";
@@ -102,6 +125,10 @@ ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_PORTRAIT = "portrait";
 ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_BOTH = "both";
 ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_AUTO = "auto";
 
+ReadiumSDK.Models.SpineItem.RENDITION_FLOW_PAGINATED = "paginated";
+ReadiumSDK.Models.SpineItem.RENDITION_FLOW_SCROLLED_CONTINUOUS = "scrolled-continuous";
+ReadiumSDK.Models.SpineItem.RENDITION_FLOW_SCROLLED_DOC = "scrolled-doc";
+ReadiumSDK.Models.SpineItem.RENDITION_FLOW_AUTO = "auto";
 
 ReadiumSDK.Models.SpineItem.alternateSpread = function(spread) {
 

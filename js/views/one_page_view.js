@@ -21,158 +21,124 @@
  */
 
 //Representation of one fixed page
-ReadiumSDK.Views.OnePageView = Backbone.View.extend({
+ReadiumSDK.Views.OnePageView = function(options){
 
+    _.extend(this, Backbone.Events);
 
-    currentSpineItem: undefined,
-    spine: undefined,
-    contentAlignment: undefined, //expected 'center' 'left' 'right'
-    iframeLoader: undefined,
-    navigationLogic: undefined,
-    bookStyles: undefined,
+    var self = this;
 
-    meta_size : {
+    var _$epubHtml;
+    var _$el;
+    var _$iframe;
+    var _currentSpineItem;
+    var _spine = options.spine;
+    var _contentAlignment = options.contentAlignment;
+    var _iframeLoader = options.iframeLoader;
+    var _navigationLogic = undefined;
+    var _bookStyles = options.bookStyles;
+
+    var _meta_size = {
         width: 0,
         height: 0
-    },
+    };
 
 
-    initialize: function() {
+    this.element = function() {
+        return _$el;
+    };
 
-        this.spine = this.options.spine;
-        this.contentAlignment = this.options.contentAlignment;
-        this.iframeLoader = this.options.iframeLoader;
-        this.bookStyles = this.options.bookStyles;
+    this.meta_height = function() {
+        return _meta_size.height;
+    };
 
-    },
+    this.meta_width = function() {
+        return _meta_size.width;
+    };
 
-    isDisplaying:function() {
+    this.isDisplaying = function() {
 
-        return this.currentSpineItem != undefined && this.$epubHtml != null && this.$epubHtml.length > 0;
-    },
+        return _currentSpineItem != undefined && _$epubHtml != null && _$epubHtml.length > 0;
+    };
 
-    render: function() {
+    this.render = function() {
 
-        if(!this.$iframe) {
+        if(!_$iframe) {
 
-            this.template = ReadiumSDK.Helpers.loadTemplate("fixed_page_frame", {});
+            var template = ReadiumSDK.Helpers.loadTemplate("fixed_page_frame", {});
 
-            this.setElement(this.template);
+            _$el = $(template);
 
-            this.$el.css("height", "100%");
-            this.$el.css("width", "100%");
+            _$el.css("height", "100%");
+            _$el.css("width", "100%");
 
-            this.$el.addClass(this.options.class);
-            this.$iframe = $("iframe", this.$el);
+            _$el.addClass(options.class);
+            _$iframe = $("iframe", _$el);
         }
-        this.navigationLogic = new ReadiumSDK.Views.CfiNavigationLogic(this.$el, this.$iframe);
+        _navigationLogic = new ReadiumSDK.Views.CfiNavigationLogic(this.$el, this.$iframe);
         return this;
-    },
-
-    remove: function() {
-
-        this.currentSpineItem = undefined;
-
-        //base remove
-        Backbone.View.prototype.remove.call(this);
-    },
+    };
 
 
-    onIFrameLoad:  function(success) {
+    this.remove = function() {
+        _currentSpineItem = undefined;
+        _$el.remove();
+    };
+
+    this.currentSpineItem = function() {
+
+        return _currentSpineItem;
+    };
+
+    function onIFrameLoad(success) {
 
         if(success) {
-            var epubContentDocument = this.$iframe[0].contentDocument;
-            this.$epubHtml = $("html", epubContentDocument);
-            this.$epubHtml.css("overflow", "hidden");
-            this.applyBookStyles();
-            this.updateMetaSize();
-//            this.fitToScreen();
+            var epubContentDocument = _$iframe[0].contentDocument;
+            _$epubHtml = $("html", epubContentDocument);
+            if (!_$epubHtml || _$epubHtml.length == 0) {
+                _$epubHtml = $("svg", epubContentDocument);
+            }
+            _$epubHtml.css("overflow", "hidden");
+            self.applyBookStyles();
+            updateMetaSize();
 
-            this.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED, this.$iframe, this.currentSpineItem, true);
+            self.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED, _$iframe, _currentSpineItem, self);
         }
-    },
-
-    applyBookStyles: function() {
-
-        if(this.$epubHtml) {
-            ReadiumSDK.Helpers.setStyles(this.bookStyles.getStyles(), this.$epubHtml);
         }
-    },
 
-//    fitToScreen: function() {
-//
-//        if(!this.isDisplaying()) {
-//            return;
-//        }
-//
-//        this.updateMetaSize();
-//
-//        if(this.meta_size.width <= 0 || this.meta_size.height <= 0) {
-//            return;
-//        }
-//
-//
-//        var containerWidth = this.$el.width();
-//        var containerHeight = this.$el.height();
-//
-//        var horScale = containerWidth / this.meta_size.width;
-//        var verScale = containerHeight / this.meta_size.height;
-//
-//        var scale = Math.min(horScale, verScale);
-//
-//        var newWidth = this.meta_size.width * scale;
-//        var newHeight = this.meta_size.height * scale;
-//
-//        var top = Math.floor((containerHeight - newHeight) / 2);
-//
-//        var left;
-//        if(this.contentAlignment == "left") {
-//            left = 0;
-//        }
-//        else if(this.contentAlignment == "right") {
-//            left = containerWidth - newWidth;
-//        }
-//        else { //center
-//            left = Math.floor((containerWidth - newWidth) / 2);
-//        }
-//
-//        if(top < 0) top = 0;
-//        if(left < 0) left = 0;
-//
-//        var css = this.generateTransformCSS(scale, left, top);
-//        css["width"] = this.meta_size.width;
-//        css["height"] = this.meta_size.height;
-//
-//        this.$epubHtml.css(css);
-//    },
+    this.applyBookStyles = function() {
 
-    transformContent: function(scale, left, top) {
+        if(_$epubHtml) {
+            ReadiumSDK.Helpers.setStyles(_bookStyles.getStyles(), _$epubHtml);
+        }
+    };
 
-        var elWidth = Math.floor(this.meta_size.width * scale);
-        var elHeight = Math.floor(this.meta_size.height * scale);
+    this.transformContent = function(scale, left, top) {
+
+        var elWidth = Math.floor(_meta_size.width * scale);
+        var elHeight = Math.floor(_meta_size.height * scale);
                                                     
-        this.$el.css("left", left + "px");
-        this.$el.css("top", top + "px");
-        this.$el.css("width", elWidth + "px");
-        this.$el.css("height", elHeight + "px");
+        _$el.css("left", left + "px");
+        _$el.css("top", top + "px");
+        _$el.css("width", elWidth + "px");
+        _$el.css("height", elHeight + "px");
                                                     
-        this.$iframe.css("width", elWidth + "px");
-        this.$iframe.css("height", elHeight + "px");
+        _$iframe.css("width", elWidth + "px");
+        _$iframe.css("height", elHeight + "px");
 
-        var css = this.generateTransformCSS(scale, 0, 0);
+        var css = generateTransformCSS(scale, 0, 0);
 
-        css["width"] = this.meta_size.width;
-        css["height"] = this.meta_size.height;
+        css["width"] = _meta_size.width;
+        css["height"] = _meta_size.height;
 
-        if(!this.$epubHtml) {
+        if(!_$epubHtml) {
             debugger;
         }
 
-        this.$epubHtml.css(css);
-        this.$iframe.css("visibility", "visible");
-    },
+        _$epubHtml.css(css);
+        _$iframe.css("visibility", "visible");
+    };
 
-    generateTransformCSS: function(scale, left, top) {
+    function generateTransformCSS(scale, left, top) {
 
         var transformString = "translate(" + left + "px, " + top + "px) scale(" + scale + ")";
 
@@ -182,11 +148,11 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
         css["-webkit-transform-origin"] = "0 0";
 
         return css;
-    },
+    }
 
-    updateMetaSize: function() {
+    function updateMetaSize() {
 
-        var contentDocument = this.$iframe[0].contentDocument;
+        var contentDocument = _$iframe[0].contentDocument;
 
         // first try to read viewport size
         var content = $('meta[name=viewport]', contentDocument).attr("content");
@@ -197,44 +163,56 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
         }
 
         if(content) {
-            var size = this.parseSize(content);
+            var size = parseSize(content);
             if(size) {
-                this.meta_size.width = size.width;
-                this.meta_size.height = size.height;
+                _meta_size.width = size.width;
+                _meta_size.height = size.height;
             }
         }
         else { //try to get direct image size
+
+            // try SVG element's width/height first
+            var $svg = $(contentDocument).find('svg');
+            if ($svg) {
+                var width = parseInt($svg.attr("width"), 10);
+                var height = parseInt($svg.attr("height"), 10);
+                if (width > 0) {
+                    _meta_size.width = width;
+                    _meta_size.height = height;
+                }
+                return;
+            }
 
             var $img = $(contentDocument).find('img');
             var width = $img.width();
             var height = $img.height();
 
             if( width > 0) {
-                this.meta_size.width = width;
-                this.meta_size.height = height;
+                _meta_size.width = width;
+                _meta_size.height = height;
             }
         }
 
-    },
+    }
 
-    loadSpineItem: function(spineItem) {
+    this.loadSpineItem = function(spineItem) {
 
-        if(this.currentSpineItem != spineItem) {
+        if(_currentSpineItem != spineItem) {
 
-            this.currentSpineItem = spineItem;
-            var src = this.spine.package.resolveRelativeUrl(spineItem.href);
+            _currentSpineItem = spineItem;
+            var src = _spine.package.resolveRelativeUrl(spineItem.href);
 
             //hide iframe until content is scaled
-            this.$iframe.css("visibility", "hidden");
-            this.iframeLoader.loadIframe(this.$iframe[0], src, this.onIFrameLoad, this);
+            _$iframe.css("visibility", "hidden");
+            _iframeLoader.loadIframe(_$iframe[0], src, onIFrameLoad, self);
         }
         else
         {
-            this.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED, this.$iframe, this.currentSpineItem, false);
+            this.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED, _$iframe, _currentSpineItem, false);
         }
-    },
+    };
 
-    parseSize: function(content) {
+    function parseSize(content) {
 
         var pairs = content.replace(/\s/g, '').split(",");
 
@@ -264,38 +242,39 @@ ReadiumSDK.Views.OnePageView = Backbone.View.extend({
         }
 
         return undefined;
-    },
+    }
 
-    getFirstVisibleElementCfi: function(){
+    this.getFirstVisibleElementCfi = function(){
 
-        return this.navigationLogic.getFirstVisibleElementCfi(0);
-    },
+        return _navigationLogic.getFirstVisibleElementCfi(0);
+    };
 
-    getElement: function(spineItem, selector) {
+    this.getElement = function(spineItem, selector) {
 
-        if(spineItem != this.currentSpineItem) {
+        if(spineItem != _currentSpineItem) {
             console.error("spine item is not loaded");
             return undefined;
         }
-        return this.navigationLogic.getElement(selector);
-    },
 
-    getVisibleMediaOverlayElements: function() {
+        return _navigationLogic.getElement(selector);
+    };
 
-        return this.navigationLogic.getVisibleMediaOverlayElements({top:0, bottom: this.$iframe.height()});
-    },
+    this.getVisibleMediaOverlayElements = function() {
 
-    getVisibleElementsWithFilter: function(filterFunction) {
-        return this.navigationLogic.getVisibleElementsWithFilter({top:0, bottom: this.$iframe.height()},filterFunction);
-    },
+        return _navigationLogic.getVisibleMediaOverlayElements({top:0, bottom: this.$iframe.height()});
+    };
 
-    getElementFromCfi: function(spineIdref, partialCfi){
+    this.getVisibleElementsWithFilter = function(filterFunction) {
+        return _navigationLogic.getVisibleElementsWithFilter({top:0, bottom: this.$iframe.height()},filterFunction);
+    };
+
+    this.getElementFromCfi = function(spineIdref, partialCfi){
         if(this.currentSpineItem.idref === spineIdref){
             return this.navigationLogic.getElementWithPartialCfi(partialCfi);
         }
         return undefined;
-    }
+    };
 
-});
+};
 
 ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED = "SpineItemOpened";

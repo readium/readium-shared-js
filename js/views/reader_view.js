@@ -51,7 +51,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     }
     
     
-
+ 
 
     if(options.iframeLoader) {
         _iframeLoader = options.iframeLoader;
@@ -60,14 +60,30 @@ ReadiumSDK.Views.ReaderView = function(options) {
         _iframeLoader = new ReadiumSDK.Views.IFrameLoader();
     }
 
+    // returns true is view changed
+    function initViewForItem(spineItem) {
 
-    function renderCurrentView(isReflowable) {
+        var desiredViewType;
+
+        if(_viewerSettings.isScrollViewDoc || _viewerSettings.isScrollViewContinuous) {
+            desiredViewType = ReadiumSDK.Views.ScrollView;
+        }
+        else if(spineItem.isFixedLayout()) {
+            desiredViewType = ReadiumSDK.Views.FixedView;
+        }
+        //we don't support scroll continues yet we will create scroll doc instead
+        else if(spineItem.isScrolledDoc() || spineItem.isScrolledContinuous()) {
+            desiredViewType = ReadiumSDK.Views.ScrollView;
+        }
+        else {
+            desiredViewType = ReadiumSDK.Views.ReflowableView;
+        }
 
         if(_currentView){
 
             //current view is already rendered
-            if( _currentView.isReflowable() === isReflowable) {
-                return;
+            if(_currentView instanceof desiredViewType) {
+                return false;
             }
 
             resetCurrentView();
@@ -81,18 +97,11 @@ ReadiumSDK.Views.ReaderView = function(options) {
             iframeLoader: _iframeLoader
         };
 
-        if(isReflowable) {
 
-            _currentView = new ReadiumSDK.Views.ReflowableView(viewCreationParams);
-        }
-        else {
-
-            _currentView = new ReadiumSDK.Views.FixedView(viewCreationParams);
-        }
+        _currentView = new desiredViewType(viewCreationParams);
 
 
         _currentView.setViewSettings(_viewerSettings);
-
 
         _currentView.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function($iframe, spineItem) {
 
@@ -113,8 +122,9 @@ ReadiumSDK.Views.ReaderView = function(options) {
             self.trigger(ReadiumSDK.Events.PAGINATION_CHANGED, pageChangeData);
         });
 
-
         _currentView.render();
+
+        return true;
     }
 
     this.getLoadedSpineItems = function() {
@@ -169,9 +179,9 @@ ReadiumSDK.Views.ReaderView = function(options) {
      */
     this.openBook = function(openBookData) {
 
-		var pack = openBookData.package ? openBookData.package : openBookData;
+		var packageData = openBookData.package ? openBookData.package : openBookData;
 
-        _package = new ReadiumSDK.Models.Package({packageData: pack});
+        _package = new ReadiumSDK.Models.Package(packageData);
 
         _spine = _package.spine;
 
@@ -277,10 +287,16 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
             var bookMark = _currentView.bookmarkCurrentPage();
 
-            _currentView.setViewSettings(_viewerSettings);
-
             if(bookMark) {
-                self.openSpineItemElementCfi(bookMark.idref, bookMark.elementCfi, self);
+
+                var spineItem = _spine.getItemById(bookMark.idref);
+                var isViewChanged = initViewForItem(spineItem);
+
+                if(!isViewChanged) {
+            _currentView.setViewSettings(_viewerSettings);
+                }
+
+                self.openSpineItemElementCfi(bookMark.idref, bookMark.contentCFI, self);
             }
         }
 
@@ -291,6 +307,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
      * Opens the next page.
      */
     this.openPageNext = function() {
+
         var paginationInfo = _currentView.getPaginationInfo();
 
         if(paginationInfo.openPages.length == 0) {
@@ -425,14 +442,17 @@ ReadiumSDK.Views.ReaderView = function(options) {
             pageRequest.setPageIndex(0);
         }
         else {
-            var spineItems = this.getLoadedSpineItems();
-            pageRequest = new ReadiumSDK.Models.PageOpenRequest(spineItems[0], initiator);
-            pageRequest.setPageIndex(pageIndex);
 
+            var spineItems = this.getLoadedSpineItems();
+            if(spineItems.length > 0) {
+                pageRequest = new ReadiumSDK.Models.PageOpenRequest(spineItems[0], initiator);
+            pageRequest.setPageIndex(pageIndex);
+            }
         }
 
         openPage(pageRequest);
     };
+
 
     /**
      *
@@ -461,7 +481,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
     };
 
     function openPage(pageRequest) {
-        renderCurrentView(pageRequest.spineItem.isReflowable());
+
+        initViewForItem(pageRequest.spineItem);
         _currentView.openPage(pageRequest);
     }
 
@@ -732,6 +753,32 @@ ReadiumSDK.Views.ReaderView = function(options) {
         _mediaOverlayPlayer.onTTSEnd();
     };
 
+    this.pauseMediaOverlay = function() {
+
+        _mediaOverlayPlayer.pause();
+    };
+
+    this.playMediaOverlay = function() {
+
+        _mediaOverlayPlayer.play();
+    };
+
+    this.isPlayingMediaOverlay = function() {
+
+        return _mediaOverlayPlayer.isPlaying();
+    };
+
+//
+// should use ReadiumSDK.Events.SETTINGS_APPLIED instead!
+//    this.setRateMediaOverlay = function(rate) {
+//
+//        _mediaOverlayPlayer.setRate(rate);
+//    };
+//    this.setVolumeMediaOverlay = function(volume){
+//
+//        _mediaOverlayPlayer.setVolume(volume);
+//    };
+
 
     this.getVisibleMediaOverlayElements = function() {
 
@@ -863,5 +910,4 @@ ReadiumSDK.Views.ReaderView = function(options) {
     this.getElementFromCfi = function(spineIdRef,partialCfi){
         return _currentView.getElementFromCfi(spineIdRef,partialCfi);
     };
-
 };

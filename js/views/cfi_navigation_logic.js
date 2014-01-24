@@ -26,13 +26,9 @@
 
 ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
 
-    this.$viewport = $viewport;
-    this.$iframe = $iframe;
-
     this.getRootElement = function(){
 
-        return this.$iframe[0].contentDocument.documentElement;
-
+        return $iframe[0].contentDocument.documentElement;
     };
 
     //we look for text and images
@@ -102,10 +98,22 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
 
     this.getPageForElementCfi = function(cfi) {
 
-        var contentDoc = this.$iframe[0].contentDocument;
         var cfiParts = splitCfi(cfi);
 
-        var wrappedCfi = "epubcfi(" + cfiParts.cfi + ")";
+        var $element = getElementByPartialCfi(cfiParts.cfi);
+
+        if(!$element) {
+            return -1;
+        }
+
+        return this.getPageForPointOnElement($element, cfiParts.x, cfiParts.y);
+    };
+
+    function getElementByPartialCfi(cfi) {
+
+        var contentDoc = $iframe[0].contentDocument;
+
+        var wrappedCfi = "epubcfi(" + cfi + ")";
         //noinspection JSUnresolvedVariable
         var $element = EPUBcfi.Interpreter.getTargetElementWithPartialCFI(wrappedCfi, contentDoc);
 
@@ -114,11 +122,17 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
             return undefined;
         }
 
-        return this.getPageForPointOnElement($element, cfiParts.x, cfiParts.y);
+        return $element;
+    }
+
+    this.getElementByCfi = function(cfi) {
+
+        var cfiParts = splitCfi(cfi);
+        return getElementByPartialCfi(cfiParts.cfi);
     };
 
     this.getElementWithPartialCfi = function(cfi){
-        var contentDoc = this.$iframe[0].contentDocument;
+        var contentDoc = $iframe[0].contentDocument;
         var cfiParts = splitCfi(cfi);
 
         var wrappedCfi = "epubcfi(" + cfiParts.cfi + ")";
@@ -135,18 +149,37 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
 
     this.getPageForPointOnElement = function($element, x, y) {
 
-        var elementRect = ReadiumSDK.Helpers.Rect.fromElement($element);
-        var posInElement = Math.ceil(elementRect.top + y * elementRect.height / 100);
+        var posInElement = this.getVerticalOffsetForPointOnElement($element, x, y);
+        return Math.floor(posInElement / $viewport.height());
+    };
 
-        return Math.floor(posInElement / this.$viewport.height());
+    this.getVerticalOffsetForElement = function($element) {
+
+        return this.getVerticalOffsetForPointOnElement($element, 0, 0);
+    };
+
+    this.getVerticalOffsetForPointOnElement = function($element, x, y) {
+
+        var elementRect = ReadiumSDK.Helpers.Rect.fromElement($element);
+        return Math.ceil(elementRect.top + y * elementRect.height / 100);
+    };
+
+    this.getElementBuyId = function(id) {
+
+        var contentDoc = $iframe[0].contentDocument;
+
+        var $element = $("#" + id, contentDoc);
+        if($element.length == 0) {
+            return undefined;
+        }
+
+        return $element;
     };
 
     this.getPageForElementId = function(id) {
 
-        var contentDoc = this.$iframe[0].contentDocument;
-
-        var $element = $("#" + id, contentDoc);
-        if($element.length == 0) {
+        var $element = this.getElementBuyId(id);
+        if(!$element) {
             return -1;
         }
 
@@ -334,6 +367,6 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
         }
 
         return 0;
-    }
+    };
 
 };

@@ -17,6 +17,7 @@
 
 ReadiumSDK.Models.ViewerSettings = function(settingsData) {
 
+    var self = this;
     this.isSyntheticSpread = true;
     this.fontSize = 100;
     this.columnGap = 20;
@@ -27,6 +28,8 @@ ReadiumSDK.Models.ViewerSettings = function(settingsData) {
     this.mediaOverlaysEnableClick = true;
     this.mediaOverlaysRate = 1;
     this.mediaOverlaysVolume = 100;
+    this.isScrollViewDoc = false;
+    this.isScrollViewContinuous = false;
 
     function buildArray(str)
     {
@@ -43,47 +46,35 @@ ReadiumSDK.Models.ViewerSettings = function(settingsData) {
         return retArr;
     }
 
+    function mapProperty(propName, settingsData, functionToApply) {
+
+        if(settingsData[propName] !== undefined) {
+            if(functionToApply) {
+
+                self[propName] = functionToApply(settingsData[propName]);
+            }
+            else {
+                self[propName] = settingsData[propName];
+            }
+        }
+
+    }
+
     this.update = function(settingsData) {
 
-        if(settingsData.isSyntheticSpread !== undefined) {
-            this.isSyntheticSpread = settingsData.isSyntheticSpread;
-        }
+        mapProperty("isSyntheticSpread", settingsData);
+        mapProperty("columnGap", settingsData);
+        mapProperty("fontSize", settingsData);
+        mapProperty("mediaOverlaysSkipSkippables", settingsData);
+        mapProperty("mediaOverlaysEscapeEscapables", settingsData);
+        mapProperty("mediaOverlaysSkippables", settingsData, buildArray);
+        mapProperty("mediaOverlaysEscapables", settingsData, buildArray);
+        mapProperty("mediaOverlaysEnableClick", settingsData);
+        mapProperty("mediaOverlaysRate", settingsData);
+        mapProperty("mediaOverlaysVolume", settingsData);
+        mapProperty("isScrollViewDoc", settingsData);
+        mapProperty("isScrollViewContinuous", settingsData);
 
-        if(settingsData.columnGap !== undefined) {
-            this.columnGap = settingsData.columnGap;
-        }
-
-        if(settingsData.fontSize !== undefined) {
-            this.fontSize = settingsData.fontSize;
-        }
-
-        if(settingsData.mediaOverlaysSkipSkippables !== undefined) {
-            this.mediaOverlaysSkipSkippables = settingsData.mediaOverlaysSkipSkippables;
-        }
-
-        if(settingsData.mediaOverlaysEscapeEscapables !== undefined) {
-            this.mediaOverlaysEscapeEscapables = settingsData.mediaOverlaysEscapeEscapables;
-        }
-
-        if(settingsData.mediaOverlaysSkippables !== undefined) {
-            this.mediaOverlaysSkippables = buildArray(settingsData.mediaOverlaysSkippables);
-        }
-
-        if(settingsData.mediaOverlaysEscapables !== undefined) {
-            this.mediaOverlaysEscapables = buildArray(settingsData.mediaOverlaysEscapables);
-        }
-
-        if(settingsData.mediaOverlaysEnableClick !== undefined) {
-            this.mediaOverlaysEnableClick = settingsData.mediaOverlaysEnableClick;
-        }
-
-        if(settingsData.mediaOverlaysRate !== undefined) {
-            this.mediaOverlaysRate = settingsData.mediaOverlaysRate;
-        }
-
-        if(settingsData.mediaOverlaysVolume !== undefined) {
-            this.mediaOverlaysVolume = settingsData.mediaOverlaysVolume;
-        }
     };
 
     this.update(settingsData);
