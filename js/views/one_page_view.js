@@ -74,7 +74,7 @@ ReadiumSDK.Views.OnePageView = function(options){
             _$el.addClass(options.class);
             _$iframe = $("iframe", _$el);
         }
-        _navigationLogic = new ReadiumSDK.Views.CfiNavigationLogic(this.$el, this.$iframe);
+        _navigationLogic = new ReadiumSDK.Views.CfiNavigationLogic(_$el, _$iframe);
         return this;
     };
 
