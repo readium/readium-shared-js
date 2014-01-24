@@ -154,7 +154,7 @@ ReadiumSDK.Views.FixedView = function(options){
         self.trigger(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
     }
 
-    this.onViewportResize = function() {
+    function onViewportResize() {
 
         //because change of the viewport orientation can alter pagination behaviour we have to check if
         //visible content stays same
