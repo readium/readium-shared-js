@@ -399,7 +399,14 @@ ReadiumSDK.Views.FixedView = function(options){
             dfd.resolve();
         });
 
-        pageView.loadSpineItem(item);
+        pageView.on(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENING, function($iframe, spineItem){
+
+            pageView.off(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENING);
+
+            self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADING, $iframe, spineItem);
+        });
+
+        pageView.loadSpineItemPageRequest(item);
 
         return dfd.promise();
 

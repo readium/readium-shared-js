@@ -157,19 +157,6 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
         });
     }
-
-    function loadSpineItem(spineItem) {
-
-        if(_currentSpineItem != spineItem) {
-
-            _paginationInfo.currentSpreadIndex = 0;
-            _currentSpineItem = spineItem;
-            _isWaitingFrameRender = true;
-
-            var src = _spine.package.resolveRelativeUrl(spineItem.href);
-            _iframeLoader.loadIframe(_$iframe[0], src, onIFrameLoad, self);
-        }
-    }
     
     function loadSpineItemPageRequest(pageRequest) {
         var spineItem = pageRequest.spineItem;
@@ -180,6 +167,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
             var src = _spine.package.resolveRelativeUrl(spineItem.href);
             _iframeLoader.loadIframe(_$iframe[0], src, onIFrameLoad, self, pageRequest);
+            self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADING, _$iframe, _currentSpineItem);
         }
     }
 
@@ -198,6 +186,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
         }
 
     function onIFrameLoad(success, pageRequest) {
+
         //while we where loading frame new request came
         if(pageRequest && _deferredPageRequest && _deferredPageRequest.spineItem != pageRequest.spineItem) {
             loadSpineItemPageRequest(_deferredPageRequest);
@@ -273,11 +262,10 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
     this.openPage = function(pageRequest) {
 
-     
         // if no spine item specified we are talking about current spine item
         if(pageRequest.spineItem && pageRequest.spineItem != _currentSpineItem) {
             _deferredPageRequest = pageRequest;
-            loadSpineItem(pageRequest.spineItem);
+            loadSpineItemPageRequest(pageRequest);
             return;
         }
 

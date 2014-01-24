@@ -30,7 +30,6 @@ ReadiumSDK.Views.ScrollView = function(options){
     var _iframeLoader = options.iframeLoader;
 
     var _currentSpineItem;
-    var _isWaitingFrameRender = false;
     var _deferredPageRequest;
     var _fontSize = 100;
     var _$contentFrame;
@@ -131,15 +130,16 @@ ReadiumSDK.Views.ScrollView = function(options){
         });
     }
 
-    function loadSpineItem(spineItem) {
+    function loadSpineItemPageRequest(pageRequest) {
 
+        var spineItem = pageRequest.spineItem;
         if(_currentSpineItem != spineItem) {
 
             _currentSpineItem = spineItem;
-            _isWaitingFrameRender = true;
 
             var src = _spine.package.resolveRelativeUrl(spineItem.href);
-            _iframeLoader.loadIframe(_$iframe[0], src, onIFrameLoad, self);
+            _iframeLoader.loadIframe(_$iframe[0], src, onIFrameLoad, self, pageRequest);
+            self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADING, _$iframe, _currentSpineItem);
         }
     }
 
@@ -160,13 +160,11 @@ ReadiumSDK.Views.ScrollView = function(options){
         _$iframe.css("height", contHeight + "px");
     }
 
-    function onIFrameLoad(success) {
-
-        _isWaitingFrameRender = false;
+    function onIFrameLoad(success, pageRequest) {
 
         //while we where loading frame new request came
-        if(_deferredPageRequest && _deferredPageRequest.spineItem != _currentSpineItem) {
-            loadSpineItem(_deferredPageRequest.spineItem);
+        if(pageRequest && _deferredPageRequest && _deferredPageRequest.spineItem != pageRequest.spineItem) {
+            loadSpineItemPageRequest(_deferredPageRequest);
             return;
         }
 
@@ -229,15 +227,10 @@ ReadiumSDK.Views.ScrollView = function(options){
 
     this.openPage = function(pageRequest) {
 
-        if(_isWaitingFrameRender) {
-            _deferredPageRequest = pageRequest;
-            return;
-        }
-
         // if no spine item specified we are talking about current spine item
         if(pageRequest.spineItem && pageRequest.spineItem != _currentSpineItem) {
             _deferredPageRequest = pageRequest;
-            loadSpineItem(pageRequest.spineItem);
+            loadSpineItemPageRequest(pageRequest);
             return;
         }
 

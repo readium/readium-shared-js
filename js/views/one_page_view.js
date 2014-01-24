@@ -103,7 +103,7 @@ ReadiumSDK.Views.OnePageView = function(options){
 
             self.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED, _$iframe, _currentSpineItem, self);
         }
-        }
+    }
 
     this.applyBookStyles = function() {
 
@@ -196,7 +196,6 @@ ReadiumSDK.Views.OnePageView = function(options){
     }
 
     this.loadSpineItem = function(spineItem) {
-
         if(_currentSpineItem != spineItem) {
 
             _currentSpineItem = spineItem;
@@ -205,10 +204,11 @@ ReadiumSDK.Views.OnePageView = function(options){
             //hide iframe until content is scaled
             _$iframe.css("visibility", "hidden");
             _iframeLoader.loadIframe(_$iframe[0], src, onIFrameLoad, self);
+            self.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENING, _$iframe, _currentSpineItem);
         }
         else
         {
-            this.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED, _$iframe, _currentSpineItem, false);
+            self.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED, _$iframe, _currentSpineItem, false);
         }
     };
 
@@ -278,3 +278,4 @@ ReadiumSDK.Views.OnePageView = function(options){
 };
 
 ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED = "SpineItemOpened";
+ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENING = "SpineItemOpening";
