@@ -37,7 +37,6 @@ ReadiumSDK.Views.IFrameLoader = function() {
             {
                 console.log("epubReadingSystem INJECTION ERROR! " + ex.message);
             }
-            console.log('Iframe onload callback');
             callback.call(context, true, attachedData);
             $(iframe).show();
         };
