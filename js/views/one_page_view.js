@@ -34,6 +34,7 @@ ReadiumSDK.Views.OnePageView = function(options){
     var _spine = options.spine;
     var _iframeLoader = options.iframeLoader;
     var _bookStyles = options.bookStyles;
+    var _fontSize = 100;
 
     var _meta_size = {
         width: 0,
@@ -62,7 +63,7 @@ ReadiumSDK.Views.OnePageView = function(options){
 
         if(!_$iframe) {
 
-            var template = ReadiumSDK.Helpers.loadTemplate("fixed_page_frame", {});
+            var template = ReadiumSDK.Helpers.loadTemplate("single_page_frame", {});
 
             _$el = $(template);
 
@@ -97,8 +98,16 @@ ReadiumSDK.Views.OnePageView = function(options){
             _$epubHtml.css("overflow", "hidden");
             self.applyBookStyles();
             updateMetaSize();
+            updateHtmlFontSize();
 
             self.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED, _$iframe, _currentSpineItem, self);
+        }
+    }
+
+    function updateHtmlFontSize() {
+
+        if(_$epubHtml) {
+            _$epubHtml.css("font-size", _fontSize + "%");
         }
     }
 
@@ -109,12 +118,24 @@ ReadiumSDK.Views.OnePageView = function(options){
         }
     };
 
-    this.transformContentToFitWidth = function(width) {
+    //this is called by scroll_view for fixed spine item
+    this.scaleToWidth = function(width) {
 
         var scale = width / _meta_size.width;
         self.transformContent(scale, 0, 0);
     };
 
+    //this is called by scroll_view for reflowable spine item
+    this.resizeIFrameToContent = function() {
+
+        var contHeight = _$epubHtml.height();
+        _$iframe.css("height", contHeight + "px");
+        _$iframe.css("visibility", "visible");
+
+        _$el.css("height", contHeight + "px");
+    };
+
+    //this is called by fixed_view
     this.transformContent = function(scale, left, top) {
 
         var elWidth = Math.floor(_meta_size.width * scale);
@@ -165,6 +186,8 @@ ReadiumSDK.Views.OnePageView = function(options){
             content = $('meta[name=viewbox]', contentDocument).attr("content");
         }
 
+        var width, height;
+
         if(content) {
             var size = parseSize(content);
             if(size) {
@@ -177,23 +200,20 @@ ReadiumSDK.Views.OnePageView = function(options){
             // try SVG element's width/height first
             var $svg = $(contentDocument).find('svg');
             if ($svg) {
-                var width = parseInt($svg.attr("width"), 10);
-                var height = parseInt($svg.attr("height"), 10);
-                if (width > 0) {
-                    _meta_size.width = width;
-                    _meta_size.height = height;
-                }
-                return;
+                width = parseInt($svg.attr("width"), 10);
+                height = parseInt($svg.attr("height"), 10);
             }
-
-            var $img = $(contentDocument).find('img');
-            var width = $img.width();
-            var height = $img.height();
+            else {
+                var $img = $(contentDocument).find('img');
+                width = $img.width();
+                height = $img.height();
+            }
 
             if( width > 0) {
                 _meta_size.width = width;
                 _meta_size.height = height;
             }
+
         }
 
     }

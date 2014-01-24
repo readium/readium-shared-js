@@ -104,6 +104,9 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
         _currentView.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function($iframe, spineItem) {
 
+            applySwitches($iframe);
+            registerTriggers($iframe);
+
             _mediaOverlayDataInjector.attachMediaOverlayData($iframe, spineItem, _viewerSettings);
             _internalLinksSupport.processLinkElements($iframe, spineItem);
             _annotationsManager.attachAnnotations($iframe, spineItem);
@@ -831,6 +834,65 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
     this.removeHighlight = function(id) {
         return _annotationsManager.removeHighlight(id);
-    }; 
+    };
+
+
+    function registerTriggers($iframe) {
+
+        var contentDocument = $iframe[0].contentDocument;
+
+        $('trigger', contentDocument).each(function() {
+            var trigger = new ReadiumSDK.Models.Trigger(this);
+            trigger.subscribe(contentDocument);
+
+        });
+    }
+
+    // Description: Parse the epub "switch" tags and hide
+    // cases that are not supported
+    function applySwitches($iframe) {
+
+        var contentDocument = $iframe[0].contentDocument;
+
+        // helper method, returns true if a given case node
+        // is supported, false otherwise
+        var isSupported = function(caseNode) {
+
+            var ns = caseNode.attributes["required-namespace"];
+            if(!ns) {
+                // the namespace was not specified, that should
+                // never happen, we don't support it then
+                console.log("Encountered a case statement with no required-namespace");
+                return false;
+            }
+            // all the xmlns that readium is known to support
+            // TODO this is going to require maintenance
+            var supportedNamespaces = ["http://www.w3.org/1998/Math/MathML"];
+            return _.include(supportedNamespaces, ns);
+        };
+
+        $('switch', contentDocument).each( function() {
+
+            // keep track of whether or now we found one
+            var found = false;
+
+            $('case', this).each(function() {
+
+                if( !found && isSupported(this) ) {
+                    found = true; // we found the node, don't remove it
+                }
+                else {
+                    $(this).remove(); // remove the node from the dom
+//                    $(this).prop("hidden", true);
+                }
+            });
+
+            if(found) {
+                // if we found a supported case, remove the default
+                $('default', this).remove();
+//                $('default', this).prop("hidden", true);
+            }
+        })
+    }
 
 };

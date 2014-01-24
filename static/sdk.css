@@ -58,6 +58,10 @@ iframe {
     visibility: visible;
 }
 
+#scrolled-content-frame {
+    position: absolute !important;
+}
+
 /*Classes to use for styling the book*/
 
 /*book*/
