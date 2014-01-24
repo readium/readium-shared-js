@@ -41,6 +41,13 @@ ReadiumSDK.Views.ReaderView = function(options) {
     var _iframeLoader;
     var _$el;
     var _annotationsManager = new ReadiumSDK.Views.AnnotationsManager(self, options);
+
+    $(window).on("resize.ReadiumSDK.readerView", _.bind(function() {
+
+        self.handleViewportResize();
+
+    }, self));
+
     
     if (options.el instanceof $) {
         _$el = options.el;
@@ -50,8 +57,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
         console.log("** EL is a string:" + _$el.attr('id'));
     }
     
-    
- 
 
     if(options.iframeLoader) {
         _iframeLoader = options.iframeLoader;

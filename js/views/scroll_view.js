@@ -31,8 +31,8 @@ ReadiumSDK.Views.ScrollView = function(options){
     var _$contentFrame;
     var _$el;
     var _onePageView;
-    var _pageRequest;
 
+    var _firePageChangeOnScroll = true;
 
     this.render = function(){
 
@@ -84,13 +84,13 @@ ReadiumSDK.Views.ScrollView = function(options){
 
     function onScroll() {
 
-        var initiator = _pageRequest ? _pageRequest.initiator : self;
-        var elementId = _pageRequest ? _pageRequest.elementId : undefined;
-
-        _pageRequest = undefined;
-
-        onPaginationChanged(initiator, _onePageView.currentSpineItem(), elementId);
+        if(_firePageChangeOnScroll) {
+            onPaginationChanged(self, _onePageView.currentSpineItem());
+        }
     }
+
+
+
 
     function setFrameSizesToRectangle(rectangle) {
         _$contentFrame.css("left", rectangle.left);
@@ -271,16 +271,22 @@ ReadiumSDK.Views.ScrollView = function(options){
         }
 
         if(scrollTop() != topOffset ) {
-            //store request for onScroll event
-            _pageRequest = pageRequest;
-            scrollTo(topOffset);
+            scrollTo(topOffset, pageRequest);
+        }
+        else {
+            onPaginationChanged(pageRequest.initiator, pageRequest.spineItem, pageRequest.elementId);
         }
     };
 
-    function scrollTo(offset) {
+    function scrollTo(offset, pageRequest) {
+
+        _firePageChangeOnScroll = false;
         _$contentFrame.animate({
             scrollTop: offset
-        }, 50);
+        }, 50, undefined, function(){
+            _firePageChangeOnScroll = true;
+            onPaginationChanged(pageRequest.initiator, pageRequest.spineItem, pageRequest.elementId);
+        });
     }
 
     function calculatePageCount() {
@@ -384,16 +390,17 @@ ReadiumSDK.Views.ScrollView = function(options){
 
     this.getPaginationInfo = function() {
 
-        var paginationInfo = new ReadiumSDK.Models.CurrentPagesInfo(_spine.items.length, false, _spine.direction);
+        var paginationInfo = new ReadiumSDK.Models.CurrentPagesInfo(_spine.items.length, true, _spine.direction);
 
         if(!_onePageView) {
             return paginationInfo;
         }
 
-        paginationInfo.addOpenPage(getCurrentPageIndex(), calculatePageCount(), _onePageView.currentSpineItem().idref, _onePageView.currentSpineItem().index);
+        var spineItem = _onePageView.currentSpineItem();
+        var pageInx = getCurrentPageIndex();
+        paginationInfo.addOpenPage(pageInx, calculatePageCount(), spineItem.idref, spineItem.index);
 
         return paginationInfo;
-
     };
 
 
