@@ -133,7 +133,7 @@ ReadiumSDK.Views.MediaOverlayDataInjector = function (mediaOverlay, mediaOverlay
 
                 var same = textRelativeRef === spineItem.href;
                 if (same) {
-                    var selector = iter.currentPar.text.srcFragmentId.length == 0 ? "body" : "#" + iter.currentPar.text.srcFragmentId;
+                    var selector = (!iter.currentPar.text.srcFragmentId || iter.currentPar.text.srcFragmentId.length == 0) ? "body" : "#" + iter.currentPar.text.srcFragmentId;
                     var $element = $(selector, contentDocElement);
 
                     if ($element.length > 0) {

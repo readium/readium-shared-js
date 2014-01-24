@@ -1130,7 +1130,7 @@ console.debug("TTS pause");
         if(_smilIterator.currentPar.element) {
 //console.error(_smilIterator.currentPar.element.id + ": " + _smilIterator.currentPar.audio.clipBegin + " / " + _smilIterator.currentPar.audio.clipEnd);
 
-            if (_smilIterator.currentPar.text.srcFragmentId.length > 0)
+            if (_smilIterator.currentPar.text.srcFragmentId && _smilIterator.currentPar.text.srcFragmentId.length > 0)
             {
                 _elementHighlighter.highlightElement(_smilIterator.currentPar.element, _package.media_overlay.activeClass, _package.media_overlay.playbackActiveClass);
 
