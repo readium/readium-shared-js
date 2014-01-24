@@ -103,9 +103,9 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
         _currentView.setViewSettings(_viewerSettings);
 
-        _currentView.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADING, function($iframe, spineItem) {
+        _currentView.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START, function($iframe, spineItem) {
 
-            self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADING, $iframe, spineItem);
+            self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
         });
 
         _currentView.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function($iframe, spineItem) {

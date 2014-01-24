@@ -138,8 +138,8 @@ ReadiumSDK.Views.ScrollView = function(options){
             _currentSpineItem = spineItem;
 
             var src = _spine.package.resolveRelativeUrl(spineItem.href);
-            _iframeLoader.loadIframe(_$iframe[0], src, onIFrameLoad, self, pageRequest);
-            self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADING, _$iframe, _currentSpineItem);
+            _iframeLoader.loadIframe(_$iframe[0], src, onIFrameLoad, self, {pageRequest:pageRequest});
+            self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START, _$iframe, _currentSpineItem);
         }
     }
 
@@ -160,10 +160,10 @@ ReadiumSDK.Views.ScrollView = function(options){
         _$iframe.css("height", contHeight + "px");
     }
 
-    function onIFrameLoad(success, pageRequest) {
+    function onIFrameLoad(success, attachedData) {
 
         //while we where loading frame new request came
-        if(pageRequest && _deferredPageRequest && _deferredPageRequest.spineItem != pageRequest.spineItem) {
+        if(attachedData.pageRequest && _deferredPageRequest && _deferredPageRequest.spineItem != attachedData.pageRequest.spineItem) {
             loadSpineItemPageRequest(_deferredPageRequest);
             return;
         }

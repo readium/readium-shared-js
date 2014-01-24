@@ -154,7 +154,7 @@ ReadiumSDK.Views.FixedView = function(options){
         self.trigger(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
     }
 
-    function onViewportResize() {
+    this.onViewportResize = function() {
 
         //because change of the viewport orientation can alter pagination behaviour we have to check if
         //visible content stays same
@@ -187,7 +187,7 @@ ReadiumSDK.Views.FixedView = function(options){
             resizeBook();
         }
 
-    }
+    };
 
     function isContentRendered() {
 
@@ -403,7 +403,7 @@ ReadiumSDK.Views.FixedView = function(options){
 
             pageView.off(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENING);
 
-            self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADING, $iframe, spineItem);
+            self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
         });
 
         pageView.loadSpineItem(item);
