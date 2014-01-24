@@ -515,7 +515,7 @@ ReadiumSDK.Views.FixedView = function(options){
 
         var elements = [];
 
-        var views = this.getDisplayingViews();
+        var views = getDisplayingViews();
 
         for(var i = 0, count = views.length; i < count; i++) {
             elements.push.apply(elements, views[i].getVisibleElementsWithFilter(filterFunction));
@@ -532,7 +532,7 @@ ReadiumSDK.Views.FixedView = function(options){
 
     this.getElementFromCfi = function(spineIdRef, partialCfi){
 
-        var views = this.getDisplayingViews();
+        var views = getDisplayingViews();
 
         for(var i = 0, count = views.length; i < count; i++) {
 
