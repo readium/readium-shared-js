@@ -34,6 +34,7 @@ ReadiumSDK.Views.OnePageView = function(options){
     var _spine = options.spine;
     var _contentAlignment = options.contentAlignment;
     var _iframeLoader = options.iframeLoader;
+    var _navigationLogic = undefined;
     var _bookStyles = options.bookStyles;
 
     var _meta_size = {
@@ -73,9 +74,10 @@ ReadiumSDK.Views.OnePageView = function(options){
             _$el.addClass(options.class);
             _$iframe = $("iframe", _$el);
         }
-
+        _navigationLogic = new ReadiumSDK.Views.CfiNavigationLogic(_$el, _$iframe);
         return this;
     };
+
 
     this.remove = function() {
         _currentSpineItem = undefined;
@@ -168,7 +170,7 @@ ReadiumSDK.Views.OnePageView = function(options){
             }
         }
         else { //try to get direct image size
-            
+
             // try SVG element's width/height first
             var $svg = $(contentDocument).find('svg');
             if ($svg) {
@@ -194,7 +196,6 @@ ReadiumSDK.Views.OnePageView = function(options){
     }
 
     this.loadSpineItem = function(spineItem) {
-
         if(_currentSpineItem != spineItem) {
 
             _currentSpineItem = spineItem;
@@ -203,10 +204,11 @@ ReadiumSDK.Views.OnePageView = function(options){
             //hide iframe until content is scaled
             _$iframe.css("visibility", "hidden");
             _iframeLoader.loadIframe(_$iframe[0], src, onIFrameLoad, self);
+            self.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENING, _$iframe, _currentSpineItem);
         }
         else
         {
-            this.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED, _$iframe, _currentSpineItem, false);
+            self.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED, _$iframe, _currentSpineItem, false);
         }
     };
 
@@ -244,9 +246,7 @@ ReadiumSDK.Views.OnePageView = function(options){
 
     this.getFirstVisibleElementCfi = function(){
 
-        var navigation = new ReadiumSDK.Views.CfiNavigationLogic(_$el, _$iframe);
-        return navigation.getFirstVisibleElementCfi(0);
-
+        return _navigationLogic.getFirstVisibleElementCfi(0);
     };
 
     this.getElement = function(spineItem, selector) {
@@ -256,15 +256,26 @@ ReadiumSDK.Views.OnePageView = function(options){
             return undefined;
         }
 
-        var navigation = new ReadiumSDK.Views.CfiNavigationLogic(_$el, _$iframe);
-        return navigation.getElement(selector);
+        return _navigationLogic.getElement(selector);
     };
 
     this.getVisibleMediaOverlayElements = function() {
-        var navigation = new ReadiumSDK.Views.CfiNavigationLogic(_$el, _$iframe);
-        return navigation.getVisibleMediaOverlayElements({top:0, bottom: _$iframe.height()});
-    }
+
+        return _navigationLogic.getVisibleMediaOverlayElements({top:0, bottom: _$iframe.height()});
+    };
+
+    this.getVisibleElementsWithFilter = function(filterFunction) {
+        return _navigationLogic.getVisibleElementsWithFilter({top:0, bottom: _$iframe.height()},filterFunction);
+    };
+
+    this.getElementFromCfi = function(spineIdref, partialCfi){
+        if(_currentSpineItem.idref === spineIdref){
+            return _navigationLogic.getElementWithPartialCfi(partialCfi);
+        }
+        return undefined;
+    };
 
 };
 
 ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED = "SpineItemOpened";
+ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENING = "SpineItemOpening";

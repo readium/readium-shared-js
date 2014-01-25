@@ -79,7 +79,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
             desiredViewType = ReadiumSDK.Views.ReflowableView;
         }
 
-        if(_currentView) {
+        if(_currentView){
+
             //current view is already rendered
             if(_currentView instanceof desiredViewType) {
                 return false;
@@ -101,6 +102,11 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
 
         _currentView.setViewSettings(_viewerSettings);
+
+        _currentView.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START, function($iframe, spineItem) {
+
+            self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
+        });
 
         _currentView.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function($iframe, spineItem) {
 
@@ -292,7 +298,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
                 var isViewChanged = initViewForItem(spineItem);
 
                 if(!isViewChanged) {
-                    _currentView.setViewSettings(_viewerSettings);
+            _currentView.setViewSettings(_viewerSettings);
                 }
 
                 self.openSpineItemElementCfi(bookMark.idref, bookMark.contentCFI, self);
@@ -402,7 +408,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
         }
 
         var pageData = new ReadiumSDK.Models.PageOpenRequest(spineItem, initiator);
-        if(elementCfi) {
+        if(elementCfi && elementCfi !== '') {
             pageData.setElementCfi(elementCfi);
         }
 
@@ -445,10 +451,37 @@ ReadiumSDK.Views.ReaderView = function(options) {
             var spineItems = this.getLoadedSpineItems();
             if(spineItems.length > 0) {
                 pageRequest = new ReadiumSDK.Models.PageOpenRequest(spineItems[0], initiator);
-                pageRequest.setPageIndex(pageIndex);
+            pageRequest.setPageIndex(pageIndex);
             }
         }
 
+        openPage(pageRequest);
+    };
+
+
+    /**
+     *
+     * Opens spine item by a specified index
+     *
+     * @method openSpineItemByIndex
+     *
+     * @param {number} spineIndex Zero based index of the spine item
+     * @param {object} initiator optional
+     */
+    this.openSpineItemByIndex = function(spineIndex, initiator) {
+
+        if(!_currentView) {
+            return;
+        }
+
+        var pageRequest;
+        var spineItem = _spine.items[spineIndex];
+        if(!spineItem) {
+            return;
+        }
+
+        pageRequest = new ReadiumSDK.Models.PageOpenRequest(spineItem, initiator);
+        pageRequest.setPageIndex(0);
         openPage(pageRequest);
     };
 
@@ -622,10 +655,10 @@ ReadiumSDK.Views.ReaderView = function(options) {
      *
      * @method bookmarkCurrentPage
      *
-     * @returns {string} Stringified ReadiumSDK.Models.BookmarkData object.
+     * @returns {string} Serialized ReadiumSDK.Models.BookmarkData object as JSON string.
      */
     this.bookmarkCurrentPage = function() {
-        return JSON.stringify(_currentView.bookmarkCurrentPage());
+        return _currentView.bookmarkCurrentPage().toString();
     };
 
     /**
@@ -831,6 +864,65 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
     this.removeHighlight = function(id) {
         return _annotationsManager.removeHighlight(id);
-    }; 
+    };
 
+    /**
+     * Redraws all annotations
+     *
+     * @method redrawAnnotations
+     */
+
+    this.redrawAnnotations = function(){
+        _annotationsManager.redrawAnnotations();
+    };
+
+    /**
+     *
+     * @method updateAnnotationView
+     * @param {string} id
+     * @param {string} styles
+     * @returns {undefined}
+     */
+
+    this.updateAnnotationView = function(id, styles) {
+        return _annotationsManager.updateAnnotationView(id, styles);
+    };
+
+    this.getVisibleAnnotationMidpoints = function () {
+        if (_currentView) {
+            var $visibleElements = _currentView.getVisibleElementsWithFilter(_annotationsManager.getAnnotationsElementFilter());
+            var elementMidpoints = _annotationsManager.getAnnotationMidpoints($visibleElements);
+            return elementMidpoints;
+        }
+        return [];
+    };
+
+    this.isVisibleSpineItemElementCfi = function(spineIdRef, partialCfi){
+        var spineItem = getSpineItem(spineIdRef);
+
+        if (!spineItem) {
+            return false;
+        }
+
+        if (_currentView) {
+
+            if(!partialCfi || (partialCfi && partialCfi === '')){
+                var spines = _currentView.getLoadedSpineItems();
+                for(var i = 0, count = spines.length; i < count; i++) {
+                    if(spines[i].idref == spineIdRef){
+                        return true;
+                    }
+                }
+            }
+            var $elementFromCfi = _currentView.getElementFromCfi(spineIdRef,partialCfi);
+            if($elementFromCfi && _currentView.isElementVisible($elementFromCfi)){
+                return true;
+            }
+        }
+        return false;
+    };
+
+    this.getElementFromCfi = function(spineIdRef,partialCfi){
+        return _currentView.getElementFromCfi(spineIdRef,partialCfi);
+    };
 };

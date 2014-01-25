@@ -45,7 +45,7 @@ ReadiumSDK.Views.FixedView = function(options){
     var _bookMargins;
     var _contentMetaSize;
 
-    //event with namespace for clean unbinding
+        //event with namespace for clean unbinding
     $(window).on("resize.ReadiumSDK.readerView", _.bind(onViewportResize, self));
 
     function createOnePageView(cssclass, contentAlignment) {
@@ -189,6 +189,11 @@ ReadiumSDK.Views.FixedView = function(options){
 
     }
 
+    this.onViewportResize = function(){
+        //expose this to keep consistent with other views
+        onViewportResize();
+    };
+
     function isContentRendered() {
 
         if(!_contentMetaSize || !_bookMargins) {
@@ -275,7 +280,7 @@ ReadiumSDK.Views.FixedView = function(options){
 
             _centerPageView.transformContent(scale, left, top);
         }
-    }
+        }
 
     function getMaxPageMargins(leftPageMargins, rightPageMargins, centerPageMargins) {
 
@@ -399,6 +404,13 @@ ReadiumSDK.Views.FixedView = function(options){
             dfd.resolve();
         });
 
+        pageView.on(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENING, function($iframe, spineItem){
+
+            pageView.off(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENING);
+
+            self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
+        });
+
         pageView.loadSpineItem(item);
 
         return dfd.promise();
@@ -496,7 +508,7 @@ ReadiumSDK.Views.FixedView = function(options){
         }
 
         return elements;
-    };
+    },
 
     this.insureElementVisibility = function(element, initiator) {
 
@@ -504,4 +516,36 @@ ReadiumSDK.Views.FixedView = function(options){
 
     }
 
+    this.getVisibleElementsWithFilter = function(filterFunction) {
+
+        var elements = [];
+
+        var views = getDisplayingViews();
+
+        for(var i = 0, count = views.length; i < count; i++) {
+            elements.push.apply(elements, views[i].getVisibleElementsWithFilter(filterFunction));
+        }
+
+        return elements;
+    }
+
+    this.isElementVisible = function($element){
+
+        //for now we assume that for fixed layout element is always visible
+        return true;
+    }
+
+    this.getElementFromCfi = function(spineIdRef, partialCfi){
+
+        var views = getDisplayingViews();
+
+        for(var i = 0, count = views.length; i < count; i++) {
+
+            var view = views[i];
+            if(view.currentSpineItem().idref == spineIdRef) {
+                return view.getElementFromCfi(spineIdRef,partialCfi);
+            }
+        }
+        return undefined;
+    }
 };

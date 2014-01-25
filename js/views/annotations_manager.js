@@ -119,21 +119,24 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj, options) {
         var args = Array.prototype.slice.call(arguments);
         // mangle annotationClicked event. What really needs to happen is, the annotation_module needs to return a 
         // bare Cfi, and this class should append the idref.
-        var annotationClickedEvent = 'annotationClicked';
-        if (args.length && args[0] === annotationClickedEvent) {
-            for (var spineIndex in liveAnnotations)
-            {
-                var jQueryEvent = args[4];
-                var annotationId = args[3];
-                var fullFakeCfi = args[2];
-                var type = args[1];
-                if (liveAnnotations[spineIndex].getHighlight(annotationId)) {
-                    var idref = spines[spineIndex].idref;
-                    var partialCfi = getPartialCfi(fullFakeCfi);
-                    args = [annotationClickedEvent, type, idref, partialCfi, annotationId, jQueryEvent];
+        var mangleEvent = function(annotationClickedEvent){
+            if (args.length && args[0] === annotationClickedEvent) {
+                for (var spineIndex in liveAnnotations)
+                {
+                    var jQueryEvent = args[4];
+                    var annotationId = args[3];
+                    var fullFakeCfi = args[2];
+                    var type = args[1];
+                    if (liveAnnotations[spineIndex].getHighlight(annotationId)) {
+                        var idref = spines[spineIndex].idref;
+                        var partialCfi = getPartialCfi(fullFakeCfi);
+                        args = [annotationClickedEvent, type, idref, partialCfi, annotationId, jQueryEvent];
+                    }
                 }
             }
         }
+        mangleEvent('annotationClicked');
+        mangleEvent('annotationRightClicked');
         self['trigger'].apply(proxy, args);
     });
 
@@ -156,14 +159,14 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj, options) {
             var annotationsForView = liveAnnotations[spine]; 
             var partialCfi = annotationsForView.getCurrentSelectionCFI();
             if (partialCfi) {
-                return {"idref":spines[spine].idref, "cfi":partialCfi};
+                return new ReadiumSDK.Models.BookmarkData(spines[spine].idref,partialCfi);
             }
         }
         return undefined;
     };
 
     this.addSelectionHighlight = function(id, type) {
-        for(spine in liveAnnotations) {
+        for(var spine in liveAnnotations) {
             var annotationsForView = liveAnnotations[spine]; 
             if (annotationsForView.getCurrentSelectionCFI()) {
                 var annotation = annotationsForView.addSelectionHighlight(id, type);
@@ -197,8 +200,6 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj, options) {
         return result;
     };
 
-
-
     function getPartialCfi(CFI) {
         var cfiWrapperPattern = new RegExp("^.*!")
         // remove epubcfi( and indirection step
@@ -208,5 +209,39 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj, options) {
         return nakedCfi;
     }
 
+    this.redrawAnnotations = function(){
+        for(var spine in liveAnnotations){
+            liveAnnotations[spine].redraw();
+        }
+    };
 
+    this.updateAnnotationView = function(id, styles) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result = annotationsForView.updateAnnotationView(id,styles);
+            if(result){
+                break;
+            }
+        }
+        return result;
+    };
+
+    this.getAnnotationMidpoints = function($elements){
+        var results = [];
+        $.each($elements, function(){
+            var $element = $(this.element);
+            var elementId = $element[0].id;
+            elementId = elementId.substring(6);
+            var $highlighted = {"id": elementId, "position":$element.position()};
+            results.push($highlighted)
+        });
+        return results;
+    };
+
+    this.getAnnotationsElementFilter = function(){
+        return function ($element) {
+            return $element.is('span.range-start-marker');
+        }
+    };
 };

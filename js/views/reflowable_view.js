@@ -157,17 +157,17 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
         });
     }
-
-    function loadSpineItem(spineItem) {
-
+    
+    function loadSpineItemPageRequest(pageRequest) {
+        var spineItem = pageRequest.spineItem;
         if(_currentSpineItem != spineItem) {
 
             _paginationInfo.currentSpreadIndex = 0;
             _currentSpineItem = spineItem;
-            _isWaitingFrameRender = true;
 
             var src = _spine.package.resolveRelativeUrl(spineItem.href);
-            _iframeLoader.loadIframe(_$iframe[0], src, onIFrameLoad, self);
+            _iframeLoader.loadIframe(_$iframe[0], src, onIFrameLoad, self, {pageRequest:pageRequest});
+            self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START, _$iframe, _currentSpineItem);
         }
     }
 
@@ -185,13 +185,11 @@ ReadiumSDK.Views.ReflowableView = function(options){
         }
     }
 
-    function onIFrameLoad(success) {
-
-        _isWaitingFrameRender = false;
+    function onIFrameLoad(success, attachedData) {
 
         //while we where loading frame new request came
-        if(_deferredPageRequest && _deferredPageRequest.spineItem != _currentSpineItem) {
-            loadSpineItem(_deferredPageRequest.spineItem);
+        if(attachedData && _deferredPageRequest && _deferredPageRequest.spineItem != attachedData.pageRequest.spineItem) {
+            loadSpineItemPageRequest(_deferredPageRequest);
             return;
         }
 
@@ -264,15 +262,10 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
     this.openPage = function(pageRequest) {
 
-        if(_isWaitingFrameRender) {
-            _deferredPageRequest = pageRequest;
-            return;
-        }
-
         // if no spine item specified we are talking about current spine item
         if(pageRequest.spineItem && pageRequest.spineItem != _currentSpineItem) {
             _deferredPageRequest = pageRequest;
-            loadSpineItem(pageRequest.spineItem);
+            loadSpineItemPageRequest(pageRequest);
             return;
         }
 
@@ -373,7 +366,6 @@ ReadiumSDK.Views.ReflowableView = function(options){
             }
         })
     }
-
 
     function onPaginationChanged(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
 
@@ -494,7 +486,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
         else {
             _$epubHtml.css("right", (_lastViewPortSize.width + 1000) + "px");
         }
-    }
+        }
 
     this.getFirstVisibleElementCfi = function() {
 
@@ -574,7 +566,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
         var visibleContentOffsets = getVisibleContentOffsets();
         return _navigationLogic.getVisibleMediaOverlayElements(visibleContentOffsets);
     };
-
+    
     this.insureElementVisibility = function(element, initiator) {
 
         var $element = $(element);
@@ -593,5 +585,26 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
         self.openPage(openPageRequest);
     }
+
+    this.getVisibleElementsWithFilter = function(filterFunction) {
+
+        var visibleContentOffsets = getVisibleContentOffsets();
+        return _navigationLogic.getVisibleElementsWithFilter(visibleContentOffsets,filterFunction);
+    };
+
+    this.isElementVisible = function($element){
+
+        if(_navigationLogic.isElementVisible($element, getVisibleContentOffsets())) {
+            return true;
+        }
+        return false;
+    };
+
+    this.getElementFromCfi = function(spineIdref, partialCfi){
+        if(_currentSpineItem.idref === spineIdref){
+            return _navigationLogic.getElementWithPartialCfi(partialCfi);
+        }
+        return undefined;
+    };
 
 };
