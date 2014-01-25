@@ -408,7 +408,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
         }
 
         var pageData = new ReadiumSDK.Models.PageOpenRequest(spineItem, initiator);
-        if(elementCfi) {
+        if(elementCfi && elementCfi !== '') {
             pageData.setElementCfi(elementCfi);
         }
 
@@ -903,7 +903,17 @@ ReadiumSDK.Views.ReaderView = function(options) {
         if (!spineItem) {
             return false;
         }
+
         if (_currentView) {
+
+            if(!partialCfi || (partialCfi && partialCfi === '')){
+                var spines = _currentView.getLoadedSpineItems();
+                for(var i = 0, count = spines.length; i < count; i++) {
+                    if(spines[i].idref == spineIdRef){
+                        return true;
+                    }
+                }
+            }
             var $elementFromCfi = _currentView.getElementFromCfi(spineIdRef,partialCfi);
             if($elementFromCfi && _currentView.isElementVisible($elementFromCfi)){
                 return true;
