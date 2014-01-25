@@ -46,7 +46,7 @@ ReadiumSDK.Views.FixedView = function(options){
     var _contentMetaSize;
 
         //event with namespace for clean unbinding
-    $(window).on("resize.ReadiumSDK.readerView", _.bind(onViewportResize, self));
+    $(window).on("resize.ReadiumSDK.readerView", _.bind(this.onViewportResize, self));
 
     function createOnePageView(cssclass, contentAlignment) {
 
