@@ -532,7 +532,7 @@ ReadiumSDK.Views.FixedView = function(options){
     this.isElementVisible = function($element){
 
         //for now we assume that for fixed layout element is always visible
-
+        return true;
     }
 
     this.getElementFromCfi = function(spineIdRef, partialCfi){
@@ -542,8 +542,8 @@ ReadiumSDK.Views.FixedView = function(options){
         for(var i = 0, count = views.length; i < count; i++) {
 
             var view = views[i];
-            if(view.currentSpineItem.idref == spineIdRef) {
-                return view.getElementWithPartialCfi(spineIdRef,partialCfi);
+            if(view.currentSpineItem().idref == spineIdRef) {
+                return view.getElementFromCfi(spineIdRef,partialCfi);
             }
         }
         return undefined;
