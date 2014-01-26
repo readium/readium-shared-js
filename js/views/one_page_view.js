@@ -242,6 +242,10 @@ ReadiumSDK.Views.OnePageView = function(options){
         return undefined;
     }
 
+    this.getCurrentSpineItem = function() {
+        return _currentSpineItem;
+    };
+
     this.getFirstVisibleElementCfi = function(){
 
         var navigation = new ReadiumSDK.Views.CfiNavigationLogic(_$el, _$iframe);

@@ -476,6 +476,9 @@ ReadiumSDK.Views.ScrollView = function(options){
 
     };
 
+    this.getCurrentSpineItem = function() {
+        return _currentSpineItem;
+    };
 
     this.bookmarkCurrentPage = function() {
 
