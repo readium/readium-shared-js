@@ -167,7 +167,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
             _isWaitingFrameRender = true;
 
             var src = _spine.package.resolveRelativeUrl(spineItem.href);
-            _iframeLoader.loadIframe(_$iframe[0], src, onIFrameLoad, self);
+            _iframeLoader.loadIframe(_$iframe[0], src, onIFrameLoad, self, {spineItem : spineItem});
         }
     }
 

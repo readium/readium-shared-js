@@ -202,7 +202,7 @@ ReadiumSDK.Views.OnePageView = function(options){
 
             //hide iframe until content is scaled
             _$iframe.css("visibility", "hidden");
-            _iframeLoader.loadIframe(_$iframe[0], src, onIFrameLoad, self);
+            _iframeLoader.loadIframe(_$iframe[0], src, onIFrameLoad, self, {spineItem : spineItem});
         }
         else
         {
