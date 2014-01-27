@@ -521,6 +521,10 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
     };
 
+    this.getCurrentSpineItem = function() {
+        return _currentSpineItem;
+    };
+
     function getOpenPageIndexes() {
 
         var indexes = [];
