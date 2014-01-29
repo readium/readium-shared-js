@@ -19,13 +19,12 @@
 
 
 (function(){
-    
 
     var _iOS = navigator.userAgent.match(/(iPad|iPhone|iPod)/g) ? true : false;
     var _Android = navigator.userAgent.toLowerCase().indexOf('android') > -1;
     var _isMobile = _iOS || _Android;
 
-    var _isReadiumJS = typeof window.requirejs !== "undefined"; // TODO!!
+    //var _isReadiumJS = typeof window.requirejs !== "undefined";
 
     var DEBUG = false;
 
@@ -112,10 +111,8 @@
         );
     }
 
-    
-    var MobileAudioPlayer = function(onStatusChanged, onPositionChanged, onAudioEnded, onAudioPlay, onAudioPause)
+    ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAudioEnded, onAudioPlay, onAudioPause)
     {
-    
         var self = this;
      
         //_audioElement.setAttribute("preload", "auto");
@@ -126,11 +123,7 @@
         this.currentSmilSrc = function() {
             return _currentSmilSrc;
         };
-    
-    
-        
-        
-        
+
         var _rate = 1.0;
         this.setRate = function(rate)
         {
@@ -644,162 +637,5 @@
             }
         }
     };
-    
-    
-    
-    var DesktopAudioPlayer = function(onStatusChanged, onPositionChanged, onAudioEnded, onAudioPlay, onAudioPause) {
-    
-        var self = this;
-    
-        _audioElement.data = {
-            hasInitialized : false,
-            smilSrc : undefined,
-            src : undefined,
-        };
-    
-        this.currentSmilSrc = function() {
-            return _audioElement.data.smilSrc;
-        };
-    
-        this.setRate = function(rate) {
-            if (rate < 0.5) {
-                rate = 0.5;
-            }
-            if (rate > 4.0) {
-                rate = 4.0;
-            }
-            _audioElement.playbackRate = rate;
-        }
-    
-        this.setVolume = function(volume) {
-            if (volume < 0.0) {
-                volume = 0.0;
-            }
-            if (volume > 1.0) {
-                volume = 1.0;
-            }
-            _audioElement.volume = volume;
-        }
-    
-        this.play = function() {
-            if (DEBUG) {
-                console.debug("this.play()");
-            }
-    
-            if (!_audioElement.data.src) {
-                return false;
-            }
-    
-            this.playFile(_audioElement.data.smilSrc, _audioElement.data.src, _audioElement.data.seekBegin, _audioElement.data.element)
-            return true;
-        };
-    
-        this.pause = function() {
-            if (DEBUG) {
-                console.debug("this.pause()");
-            }
-            _audioElement.pause();
-        };
-    
-        this.reset = function() {
-            if (DEBUG) {
-                console.debug("this.reset()");
-            }
-    
-            var tmpOnPause = function() {
-                _audioElement.removeEventListener('pause', tmpOnPause);
-                _audioElement.setAttribute("src", "");
-                _audioElement.data.smilSrc = undefined;
-                _audioElement.data.src = undefined;
-            }
-    
-            _audioElement.addEventListener('pause', tmpOnPause);
-            this.pause();
-        };
-    
-        _audioElement.addEventListener('play', onPlay, false);
-        _audioElement.addEventListener('pause', onPause, false);
-        _audioElement.addEventListener('ended', onEnded, false);
-        _audioElement.addEventListener('timeupdate', onTimeupdate, false);
-    
-        function onPlay() {
-            onStatusChanged({
-                isPlaying : true
-            });
-            onAudioPlay();
-        }
-    
-        function onPause() {
-            onStatusChanged({
-                isPlaying : false
-            });
-            onAudioPause();
-        }
-    
-        function onEnded() {
-            onAudioEnded();
-            onStatusChanged({
-                isPlaying : false
-            });
-        }
-    
-        function onTimeupdate() {
-            onPositionChanged(_audioElement.currentTime);
-        }
-    
-        this.isPlaying = function() {
-            return !_audioElement.paused;
-        };
-    
-        this.playFile = function(smilSrc, epubSrc, seekBegin, element) {
-    
-            var oldSrc = _audioElement.data.src;
-    
-            _audioElement.data.element = element;
-            _audioElement.data.seekBegin = seekBegin;
-            _audioElement.data.src = epubSrc;
-            _audioElement.data.smilSrc = smilSrc;
-    
-            _audioElement.addEventListener("canplay", tmpCan);
-    
-            function tmpSeeked() {
-                _audioElement.removeEventListener("seeked", tmpSeeked);
-                _audioElement.play();
-            }
-    
-            function tmpCan() {
-                if (_audioElement.data.hasInitialized) {
-                    _audioElement.removeEventListener("canplay", tmpCan);
-                    _audioElement.addEventListener("seeked", tmpSeeked);
-                    _audioElement.currentTime = _audioElement.data.seekBegin;
-                } else {
-                    _audioElement.load();
-                    _audioElement.data.hasInitialized = true;
-                }
-            }
-    
-            if (epubSrc !== oldSrc || !_audioElement.data.hasInitialized) {
-                _audioElement.setAttribute("src", _audioElement.data.src);
-                _audioElement.load();
-            } else {
-                _audioElement.addEventListener("seeked", tmpSeeked);
-                _audioElement.currentTime = _audioElement.data.seekBegin;
-            }
-        };
-    
-    
-        this.touchInit = function() {
-            //dummy
-        }
-    }
 
-
-    var useHTML5AudioPlayerForNativeSDKLauncherApps = true || _isMobile || !_isReadiumJS;
-    if (true || DEBUG)
-    {
-        console.log("useHTML5AudioPlayerForNativeSDKLauncherApps: " + (useHTML5AudioPlayerForNativeSDKLauncherApps ? "YES" : "NO"));
-    }
-
-    ReadiumSDK.Views.AudioPlayer = (useHTML5AudioPlayerForNativeSDKLauncherApps) ? MobileAudioPlayer : DesktopAudioPlayer;
-    
 })()
