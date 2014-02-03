@@ -65,28 +65,70 @@ ReadiumSDK.Views.ReaderView = function(options) {
         _iframeLoader = new ReadiumSDK.Views.IFrameLoader();
     }
 
+    function createViewForType(viewType, options) {
+
+        switch(viewType) {
+            case ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED:
+                return new ReadiumSDK.Views.FixedView(options);
+            case ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_DOC:
+                return new ReadiumSDK.Views.ScrollView(options, false);
+            case ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS:
+                return new ReadiumSDK.Views.ScrollView(options, true);
+            default:
+                return new ReadiumSDK.Views.ReflowableView(options);
+        }
+
+    }
+
+    function getViewType(view) {
+
+        if(view instanceof ReadiumSDK.Views.ReflowableView) {
+            return ReadiumSDK.Views.ReaderView.VIEW_TYPE_COLUMNIZED;
+        }
+
+        if(view instanceof ReadiumSDK.Views.FixedView) {
+            return ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED;
+        }
+
+        if(view instanceof ReadiumSDK.Views.ScrollView) {
+            if(view.isContinuousScroll()) {
+                return ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
+            }
+
+            return ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_DOC;
+        }
+
+        console.error("Unrecognized view type");
+        return undefined;
+    }
+
     // returns true is view changed
     function initViewForItem(spineItem) {
 
         var desiredViewType;
 
-        if(_viewerSettings.isScrollViewDoc || _viewerSettings.isScrollViewContinuous) {
-            desiredViewType = ReadiumSDK.Views.ScrollView;
+        if(_viewerSettings.isScrollViewDoc) {
+            desiredViewType = ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_DOC;
+        }
+        else if(_viewerSettings.isScrollViewContinuous) {
+            desiredViewType = ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
         }
         else if(spineItem.isFixedLayout()) {
-            desiredViewType = ReadiumSDK.Views.FixedView;
+            desiredViewType = ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED;
         }
-        //we don't support scroll continues yet we will create scroll doc instead
-        else if(spineItem.isScrolledDoc() || spineItem.isScrolledContinuous()) {
-            desiredViewType = ReadiumSDK.Views.ScrollView;
+        else if(spineItem.isScrolledDoc()) {
+            desiredViewType = ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_DOC;
+        }
+        else if(spineItem.isScrolledContinuous()) {
+            desiredViewType = ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
         }
         else {
-            desiredViewType = ReadiumSDK.Views.ReflowableView;
+            desiredViewType = ReadiumSDK.Views.ReaderView.VIEW_TYPE_COLUMNIZED;
         }
 
         if(_currentView) {
-            //current view is already rendered
-            if(_currentView instanceof desiredViewType) {
+
+            if(getViewType(_currentView) == desiredViewType) {
                 return false;
             }
 
@@ -102,8 +144,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
         };
 
 
-        _currentView = new desiredViewType(viewCreationParams);
-
+        _currentView = createViewForType(desiredViewType, viewCreationParams);
 
         _currentView.setViewSettings(_viewerSettings);
 
@@ -899,5 +940,9 @@ ReadiumSDK.Views.ReaderView = function(options) {
             }
         })
     }
-
 };
+
+ReadiumSDK.Views.ReaderView.VIEW_TYPE_COLUMNIZED = 1;
+ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED = 2;
+ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_DOC = 3;
+ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS = 4;

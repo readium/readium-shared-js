@@ -15,7 +15,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-ReadiumSDK.Views.ScrollView = function(options){
+ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
     _.extend(this, Backbone.Events);
 
@@ -26,13 +26,16 @@ ReadiumSDK.Views.ScrollView = function(options){
     var _$viewport = options.$viewport;
     var _spine = options.spine;
     var _userStyles = options.userStyles;
-    var _isWaitingFrameRender = false;
+    var _isWaitingFramesLoad = false;
     var _deferredPageRequest;
     var _$contentFrame;
     var _$el;
-    var _onePageView;
 
     var _firePageChangeOnScroll = true;
+
+    this.isContinuousScroll = function() {
+        return isContinuousScroll;
+    };
 
     this.render = function(){
 
@@ -49,29 +52,11 @@ ReadiumSDK.Views.ScrollView = function(options){
         _$contentFrame.css("width", "100%");
         _$contentFrame.css("height", "100%");
 
-        _onePageView = new ReadiumSDK.Views.OnePageView(options);
-        _$contentFrame.append(_onePageView.render().element());
+        self.applyStyles();
 
-        _onePageView.on(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED, function($iframe, spineItem, isNewContentDocumentLoaded){
-
-            if(isNewContentDocumentLoaded) {
-
-                self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
-
-                onPageLoaded();
-            }
-        });
-
-
-//        _$iframe = $("#epubContentIframe", _$el);
-//        _$iframe.css("width", "100%");
-//        _$iframe.css("height", "100%");
-//
-//        _$iframe.css("left", "");
-//        _$iframe.css("right", "");
-//        _$iframe.css(_spine.isLeftToRight() ? "left" : "right", "0px");
-//        _$iframe.css("width", "100%");
-
+        if(isContinuousScroll) {
+            loadSpineItems(_spine.items, onPagesLoaded);
+        }
 
         var lazyScroll = _.debounce(onScroll, 100);
 
@@ -85,11 +70,26 @@ ReadiumSDK.Views.ScrollView = function(options){
     function onScroll() {
 
         if(_firePageChangeOnScroll) {
-            onPaginationChanged(self, _onePageView.currentSpineItem());
+            onPaginationChanged(self);
         }
     }
 
+    function loadSpineItems(spineItemsToLoad, callBack) {
 
+        if(!isContinuousScroll) {
+            _$contentFrame.empty();
+        }
+
+        var promises = [];
+
+        for(var i = 0, count = spineItemsToLoad.length; i < count; i++) {
+            promises.push(createPageViewForSpineItem(spineItemsToLoad[i]));
+        }
+
+        $.when.apply($, promises).done(function() {
+            callBack();
+        });
+    }
 
 
     function setFrameSizesToRectangle(rectangle) {
@@ -107,59 +107,133 @@ ReadiumSDK.Views.ScrollView = function(options){
 
     this.onViewportResize = function() {
 
-        if(_onePageView) {
-            resizePageView();
-            onPaginationChanged(self, _onePageView.currentSpineItem());
+        if(!_$contentFrame) {
+            return;
         }
 
+        forEachItemView(resizePageView);
+        onPaginationChanged(self);
     };
 
     this.setViewSettings = function(settings) {
 
     };
 
-    function loadSpineItem(spineItem) {
 
-        if(_onePageView.currentSpineItem() != spineItem) {
-            _isWaitingFrameRender = true;
-            _onePageView.loadSpineItem(spineItem);
-        }
+    function createPageViewForSpineItem(spineItemToLoad) {
+
+        var pageView = new ReadiumSDK.Views.OnePageView(options);
+        var $elem = pageView.render().element();
+        $elem.attr("pageView", pageView);
+
+        var dfd = $.Deferred();
+
+        pageView.on(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED, function($iframe, spineItem, isNewContentDocumentLoaded){
+
+            pageView.off(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED);
+
+            if(isNewContentDocumentLoaded) {
+                self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
+
+                if(spineItem.isFixedLayout()) {
+                    pageView.scaleToWidth(_$contentFrame.width());
+                }
+                else {
+                    pageView.resizeIFrameToContent();
+                }
+
+                insertPageView(pageView)
+            }
+
+            dfd.resolve();
+        });
+
+        pageView.loadSpineItem(spineItemToLoad);
+
+        return dfd.promise();
     }
 
+    function findPageViewForSpineItem(spineItem) {
 
-    function resizePageView() {
+        var pageNodes = _$contentFrame.children();
 
-        if(!_onePageView || !_$contentFrame) {
-            return;
+        for(var i = 0, count = pageNodes.length; i < count; i++) {
+
+            var $element = pageNodes[i];
+            var curView = $element.attr("pageView");
+
+            if(curView.currentSpineItem() == spineItem) {
+                 return curView;
+            }
         }
 
-        if(_onePageView.currentSpineItem().isFixedLayout()) {
-            _onePageView.scaleToWidth(_$contentFrame.width());
+        return undefined;
+    }
+
+    function insertPageView(pageView) {
+
+        var pageNodes = _$contentFrame.children();
+
+        for(var i = 0, count = pageNodes.length; i < count; i++) {
+
+            var $element = pageNodes[i];
+            var curView = $element.attr("pageView");
+
+            if(pageView.currentSpineItem().index < curView.currentSpineItem().index) {
+                pageView.element().insertBefore($element);
+                return;
+            }
+        }
+
+        _$contentFrame.append(pageView.element());
+    }
+
+    function forEachItemView(func) {
+
+        var pageNodes = _$contentFrame.children();
+
+        for(var i = 0, count = pageNodes.length; i < count; i++) {
+
+            var $element = pageNodes[i];
+            var curView = $element.attr("pageView");
+
+            if(func(curView) === false) {
+                return;
+            }
+        }
+
+    }
+
+    function resizePageView(pageView) {
+
+        if(pageView.currentSpineItem().isFixedLayout()) {
+            pageView.scaleToWidth(_$contentFrame.width());
         }
         else {
-            _onePageView.resizeIFrameToContent();
+            pageView.resizeIFrameToContent();
         }
     }
 
-    function onPageLoaded() {
 
-        _isWaitingFrameRender = false;
+    function onPagesLoaded() {
 
-        //while we where loading frame new request came
-        if(_deferredPageRequest && _deferredPageRequest.spineItem != _onePageView.currentSpineItem()) {
-            loadSpineItem(_deferredPageRequest.spineItem);
-            return;
+        _isWaitingFramesLoad = false;
+
+        //while we where loading frames new request came
+        if(_deferredPageRequest && _deferredPageRequest.spineItem) {
+            var loadedView = findPageViewForSpineItem(_deferredPageRequest.spineItem);
+
+            if(!loadedView) {
+                loadSpineItems([_deferredPageRequest.spineItem], onPagesLoaded);
+                return;
+            }
         }
 
-        self.applyBookStyles();
-
-        self.applyStyles();
-
         setTimeout(function(){
-            resizePageView();
             openDeferredElement();
         }, 50);
     }
+
 
     function openDeferredElement() {
 
@@ -170,7 +244,6 @@ ReadiumSDK.Views.ScrollView = function(options){
         var deferredData = _deferredPageRequest;
         _deferredPageRequest = undefined;
         self.openPage(deferredData);
-
     }
 
     this.applyStyles = function() {
@@ -186,30 +259,38 @@ ReadiumSDK.Views.ScrollView = function(options){
 
     this.applyBookStyles = function() {
 
-        if(_onePageView) {
-            _onePageView.applyBookStyles();
-        }
-    };
+        forEachItemView(function(pageView) {
+            pageView.applyBookStyles();
+        });
+     };
 
 
     this.openPage = function(pageRequest) {
 
-        if(_isWaitingFrameRender) {
+        if(_isWaitingFramesLoad) {
             _deferredPageRequest = pageRequest;
             return;
         }
 
+        var pageView;
+
         // if no spine item specified we are talking about current spine item
-        if(pageRequest.spineItem && pageRequest.spineItem != _onePageView.currentSpineItem()) {
-            _deferredPageRequest = pageRequest;
-            loadSpineItem(pageRequest.spineItem);
-            return;
+        if(pageRequest.spineItem) {
+
+            pageView = findPageViewForSpineItem(pageRequest.spineItem);
+
+            if(!pageView) {
+
+                _deferredPageRequest = pageRequest;
+                loadSpineItems([pageRequest.spineItem], onPagesLoaded);
+                return;
+            }
         }
 
         var topOffset = 0;
         var pageCount;
         var $element;
-        var navigator = _onePageView.getNavigator();
+        var navigator;
 
         if(pageRequest.scrollTop !== undefined) {
 
@@ -233,6 +314,7 @@ ReadiumSDK.Views.ScrollView = function(options){
         }
         else if(pageRequest.elementId) {
 
+            navigator = pageView.getNavigator();
             $element = navigator.getElementBuyId(pageRequest.elementId);
 
             if(!$element) {
@@ -240,10 +322,11 @@ ReadiumSDK.Views.ScrollView = function(options){
                 return;
             }
 
-            topOffset = navigator.getVerticalOffsetForElement($element);
+            topOffset = navigator.getVerticalOffsetForElement($element) + pageView.element().position().top;
         }
         else if(pageRequest.elementCfi) {
 
+            navigator = pageView.getNavigator();
             $element = navigator.getElementByCfi(pageRequest.elementCfi);
 
             if(!$element) {
@@ -251,7 +334,7 @@ ReadiumSDK.Views.ScrollView = function(options){
                 return;
             }
 
-            topOffset = navigator.getVerticalOffsetForElement($element);
+            topOffset = navigator.getVerticalOffsetForElement($element) + pageView.element().position().top;
         }
         else if(pageRequest.firstPage) {
 
@@ -320,56 +403,20 @@ ReadiumSDK.Views.ScrollView = function(options){
         return _$contentFrame[0].scrollHeight;
     }
 
-    this.openPagePrev = function (initiator) {
-
-        if(!_onePageView) {
-            return;
-        }
-
-        var pageRequest;
-
-        if(scrollTop() > 0) {
-
-            pageRequest = new ReadiumSDK.Models.PageOpenRequest(_onePageView.currentSpineItem(), initiator);
-            pageRequest.scrollTop = scrollTop() - (viewHeight() - SCROLL_MARGIN_TO_SHOW_LAST_VISBLE_LINE);
-            if(pageRequest.scrollTop < 0) {
-                pageRequest.scrollTop = 0;
-            }
-
-        }
-        else {
-
-            var prevSpineItem = _spine.prevItem(_onePageView.currentSpineItem());
-            if(prevSpineItem) {
-
-                pageRequest = new ReadiumSDK.Models.PageOpenRequest(prevSpineItem, initiator);
-                pageRequest.scrollTop = scrollHeight() - viewHeight();
-            }
-
-        }
-
-        if(pageRequest) {
-            self.openPage(pageRequest);
-        }
-    };
-
     this.openPageNext = function (initiator) {
-
-        if(!_onePageView) {
-            return;
-        }
 
         var pageRequest;
 
         if(scrollBottom() > 0) {
 
-            pageRequest = new ReadiumSDK.Models.PageOpenRequest(_onePageView.currentSpineItem(), initiator);
+            pageRequest = new ReadiumSDK.Models.PageOpenRequest(undefined, initiator);
             pageRequest.scrollTop = scrollTop() + Math.min(scrollBottom(), viewHeight() - SCROLL_MARGIN_TO_SHOW_LAST_VISBLE_LINE);
 
         }
         else {
 
-            var nextSpineItem = _spine.nextItem(_onePageView.currentSpineItem());
+            var pageView = getLastVisiblePageView();
+            var nextSpineItem = _spine.nextItem(pageView.currentSpineItem());
             if(nextSpineItem) {
 
                 pageRequest = new ReadiumSDK.Models.PageOpenRequest(nextSpineItem, initiator);
@@ -383,20 +430,110 @@ ReadiumSDK.Views.ScrollView = function(options){
     };
 
 
+    this.openPagePrev = function (initiator) {
+
+        var pageRequest;
+
+        if(scrollTop() > 0) {
+
+            pageRequest = new ReadiumSDK.Models.PageOpenRequest(undefined, initiator);
+            pageRequest.scrollTop = scrollTop() - (viewHeight() - SCROLL_MARGIN_TO_SHOW_LAST_VISBLE_LINE);
+            if(pageRequest.scrollTop < 0) {
+                pageRequest.scrollTop = 0;
+            }
+
+        }
+        else {
+
+            var pageView = getFirstVisiblePageView();
+            var prevSpineItem = _spine.prevItem(pageView.currentSpineItem());
+            if(prevSpineItem) {
+
+                pageRequest = new ReadiumSDK.Models.PageOpenRequest(prevSpineItem, initiator);
+                pageRequest.scrollTop = scrollHeight() - viewHeight();
+            }
+        }
+
+        if(pageRequest) {
+            self.openPage(pageRequest);
+        }
+    };
+
+
+    function getLastVisiblePageView() {
+
+        var visiblePageView = undefined;
+
+        var range  = getVisibleRange(SCROLL_MARGIN_TO_SHOW_LAST_VISBLE_LINE);
+
+        forEachItemView(function(pageView){
+
+            if( isPageViewIntersectsRange(range, pageView) ) {
+
+                visiblePageView = pageView;
+            }
+            else if(visiblePageView) {
+                return false;
+            }
+
+            return true;
+
+        });
+
+        return visiblePageView;
+    }
+
+    function getFirstVisiblePageView() {
+
+        var visiblePageView = undefined;
+
+        var range  = getVisibleRange(SCROLL_MARGIN_TO_SHOW_LAST_VISBLE_LINE);
+
+        forEachItemView(function(pageView){
+
+            if( isPageViewIntersectsRange(range, pageView) ) {
+
+                visiblePageView = pageView;
+                return false;
+            }
+
+            return true;
+        });
+
+        return visiblePageView;
+    }
+
+    function isPageViewIntersectsRange(range, pageView) {
+
+        var pageViewTop = pageView.element().position().top;
+        var pageViewBottom = pageViewTop + pageView.element().height();
+
+        return !(pageViewTop > range.top || pageViewBottom < range.bottom);
+
+    }
+
+
     this.getFirstVisibleElementCfi = function() {
 
-        return _onePageView.getNavigator().getFirstVisibleElementCfi(scrollTop());
+        var visibleViewPage = getFirstVisiblePageView();
+        if(visibleViewPage) {
+            return visibleViewPage.getNavigator().getFirstVisibleElementCfi(scrollTop());
+        }
+
+        return undefined;
     };
 
     this.getPaginationInfo = function() {
 
+        var pageView = getFirstVisiblePageView();
+
         var paginationInfo = new ReadiumSDK.Models.CurrentPagesInfo(_spine.items.length, true, _spine.direction);
 
-        if(!_onePageView) {
+        if(!pageView) {
             return paginationInfo;
         }
 
-        var spineItem = _onePageView.currentSpineItem();
+        var spineItem = pageView.currentSpineItem();
         var pageInx = getCurrentPageIndex();
         paginationInfo.addOpenPage(pageInx, calculatePageCount(), spineItem.idref, spineItem.index);
 
@@ -406,40 +543,72 @@ ReadiumSDK.Views.ScrollView = function(options){
 
     this.bookmarkCurrentPage = function() {
 
-        if(!_onePageView) {
+        var pageView = getFirstVisiblePageView();
+
+        if(!pageView) {
 
             return new ReadiumSDK.Models.BookmarkData("", "");
         }
 
-        return new ReadiumSDK.Models.BookmarkData(_onePageView.currentSpineItem().idref, self.getFirstVisibleElementCfi());
+        return new ReadiumSDK.Models.BookmarkData(pageView.currentSpineItem().idref, self.getFirstVisibleElementCfi());
     };
 
 
     this.getLoadedSpineItems = function() {
-        return _onePageView ? [_onePageView.currentSpineItem()] : [];
+
+        var spineItems = [];
+
+        forEachItemView(function(pageView){
+            spineItems.push(pageView.currentSpineItem());
+        });
+
+        return spineItems;
     };
 
     this.getElement = function(spineItem, selector) {
 
-        if(spineItem != _onePageView.currentSpineItem()) {
-            console.error("spine item is not loaded");
-            return undefined;
-        }
+        var element = undefined;
 
-        return _onePageView.getNavigator().getElement(selector);
+        forEachItemView(function(pageView){
+
+            if(pageView.currentSpineItem() == spineItem) {
+
+                element = pageView.getNavigator().getElement(selector);
+
+                return false;
+            }
+
+            return true;
+
+        });
+
+        return element;
     };
 
     this.getVisibleMediaOverlayElements = function() {
 
-        return _onePageView.getNavigator().getVisibleMediaOverlayElements(visibleOffsets());
+        var range = getVisibleRange(SCROLL_MARGIN_TO_SHOW_LAST_VISBLE_LINE);
+
+        var moElements = [];
+
+        forEachItemView(function(pageView){
+
+            if(isPageViewIntersectsRange(range, pageView)){
+
+                moElements.push.apply(moElements, pageView.getNavigator().getVisibleMediaOverlayElements(range));
+            }
+
+        });
+
+        return moElements;
     };
 
-    function visibleOffsets() {
+    function getVisibleRange(expand) {
 
         return {
 
-            top: scrollTop(),
-            bottom: scrollTop() + viewHeight()
+            top: scrollTop() + expand,
+            bottom: scrollTop() + viewHeight() - expand
         }
     }
 
@@ -447,23 +616,42 @@ ReadiumSDK.Views.ScrollView = function(options){
 
         var $element = $(element);
 
+        var $pageElement = $element.closest("#single-page-frame");
 
-        var navigator = _onePageView.getNavigator();
+        var elementPageView = undefined;
 
-        if(navigator.isElementVisible($element, visibleOffsets())) {
+        forEachItemView(function(pageView){
+
+            if(pageView.element() == $pageElement) {
+
+                elementPageView = pageView;
+            }
+
+        });
+
+        if(!elementPageView) {
+            console.warn("Page for element " + element + " not found");
             return;
         }
 
-        var page = navigator.getPageForElement($element);
+        var elemOffset = $element.offset();
+        var elemTop = elemOffset.top + $pageElement.offset().top;
+        var elemBottom = elemTop + $element.height();
 
-        if(page == -1) {
-            return;
+        var visibleRange = getVisibleRange(SCROLL_MARGIN_TO_SHOW_LAST_VISBLE_LINE);
+
+        var smallestRange = Math.min((visibleRange.bottom - visibleRange.top), (elemBottom - elemTop));
+
+        // if element less than 60 % visible
+        var percentVisible = 60;
+        if(  (visibleRange.top - elemBottom) * 100 / smallestRange < percentVisible
+          || (elemBottom - visibleRange.bottom) * 100 / smallestRange <  percentVisible ) {
+
+            var openPageRequest = new ReadiumSDK.Models.PageOpenRequest(undefined, initiator);
+            openPageRequest.scrollTop = elemTop;
+            self.openPage(openPageRequest);
         }
 
-        var openPageRequest = new ReadiumSDK.Models.PageOpenRequest(_onePageView.currentSpineItem(), initiator);
-        openPageRequest.setPageIndex(page);
-
-        self.openPage(openPageRequest);
     }
 
 };

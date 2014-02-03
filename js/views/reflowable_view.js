@@ -394,9 +394,17 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
             var columnizedContentWidth = _$epubHtml[0].scrollWidth;
 
+            if(!columnizedContentWidth) {
+                console.debug("columnizedContentWidth:" + columnizedContentWidth);
+            }
+
             _paginationInfo.columnCount = Math.round((columnizedContentWidth + _paginationInfo.columnGap) / (_paginationInfo.columnWidth + _paginationInfo.columnGap));
 
+            console.debug("columnCount:" + _paginationInfo.columnCount);
+
             _paginationInfo.spreadCount =  Math.ceil(_paginationInfo.columnCount / _paginationInfo.visibleColumnCount);
+
+            console.debug("spreadCount:" + _paginationInfo.spreadCount);
 
             if(_paginationInfo.currentSpreadIndex >= _paginationInfo.spreadCount) {
                 _paginationInfo.currentSpreadIndex = _paginationInfo.spreadCount - 1;
