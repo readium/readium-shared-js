@@ -42,13 +42,10 @@ ReadiumSDK.Views.ReaderView = function(options) {
     var _$el;
     var _annotationsManager = new ReadiumSDK.Views.AnnotationsManager(self, options);
 
-    $(window).on("resize.ReadiumSDK.readerView", _.bind(function() {
+    //We will call onViewportResize after user stopped resizing window
+    var lazyResize = _.debounce(function() { self.handleViewportResize() }, 100);
+    $(window).on("resize.ReadiumSDK.readerView", _.bind(lazyResize, self));
 
-        self.handleViewportResize();
-
-    }, self));
-
-    
     if (options.el instanceof $) {
         _$el = options.el;
         console.log("** EL is a jQuery selector:" + options.el.attr('id'));
