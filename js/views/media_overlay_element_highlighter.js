@@ -60,7 +60,7 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
 
         $head = $("head", $element[0].ownerDocument.documentElement);
 
-        $userStyle = $("<style type='text/css'> </style>").appendTo($head);
+        $userStyle = $("<style type='text/css'> </style>");
 
         $userStyle.append("." + DEFAULT_MO_ACTIVE_CLASS + " {");
         for(var prop in style.declarations)
@@ -73,6 +73,8 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
             $userStyle.append(prop + ": " + style.declarations[prop] + "; ");
         }
         $userStyle.append("}");
+        
+        $userStyle.appendTo($head);
 
 //console.debug($userStyle[0].textContent);
     }
@@ -98,20 +100,23 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
 
         var $hel = $(_highlightedElement);
 
-        if (_activeClass && _activeClass !== "")
+        var hasAuthorStyle = _activeClass && _activeClass !== "";
+        var overrideWithUserStyle = _reader.userStyles().findStyle("." + DEFAULT_MO_ACTIVE_CLASS); // TODO: performance issue?
+        
+        if (overrideWithUserStyle || !hasAuthorStyle)
         {
-            //console.debug("MO activeClass: " + _activeClass);
-            $hel.addClass(_activeClass);
-        }
-        //else
-        //{
             //console.debug("MO active NO CLASS: " + _activeClass);
 
             ensureUserStyle($hel);
             $hel.addClass(DEFAULT_MO_ACTIVE_CLASS);
 
             //$(_highlightedElement).css("background", BACK_COLOR);
-        //}
+        }
+        else
+        {
+            //console.debug("MO activeClass: " + _activeClass);
+            $hel.addClass(_activeClass);
+        }
     };
 
     this.reset = function() {
