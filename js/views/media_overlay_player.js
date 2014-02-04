@@ -1134,7 +1134,7 @@ console.debug("TTS pause");
             {
                 _elementHighlighter.highlightElement(_smilIterator.currentPar.element, _package.media_overlay.activeClass, _package.media_overlay.playbackActiveClass);
 
-                reader.insureElementVisibility(_smilIterator.currentPar.element, self);
+                reader.insureElementVisibility(_smilIterator.smil.spineItemId, _smilIterator.currentPar.element, self);
             }
             return;
         }

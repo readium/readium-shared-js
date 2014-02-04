@@ -124,7 +124,9 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
         var pageView = new ReadiumSDK.Views.OnePageView(options);
         var $elem = pageView.render().element();
-        $elem.attr("pageView", pageView);
+        $elem.data("pageView", pageView);
+
+        insertPageView(pageView, spineItemToLoad.index);
 
         var dfd = $.Deferred();
 
@@ -141,8 +143,6 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                 else {
                     pageView.resizeIFrameToContent();
                 }
-
-                insertPageView(pageView)
             }
 
             dfd.resolve();
@@ -159,8 +159,8 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
         for(var i = 0, count = pageNodes.length; i < count; i++) {
 
-            var $element = pageNodes[i];
-            var curView = $element.attr("pageView");
+            var $element = pageNodes.eq(i);
+            var curView = $element.data("pageView");
 
             if(curView.currentSpineItem() == spineItem) {
                  return curView;
@@ -170,16 +170,16 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         return undefined;
     }
 
-    function insertPageView(pageView) {
+    function insertPageView(pageView, index) {
 
         var pageNodes = _$contentFrame.children();
 
         for(var i = 0, count = pageNodes.length; i < count; i++) {
 
-            var $element = pageNodes[i];
-            var curView = $element.attr("pageView");
+            var $element = pageNodes.eq(i);
+            var curView = $element.data("pageView");
 
-            if(pageView.currentSpineItem().index < curView.currentSpineItem().index) {
+            if(index < curView.currentSpineItem().index) {
                 pageView.element().insertBefore($element);
                 return;
             }
@@ -194,8 +194,8 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
         for(var i = 0, count = pageNodes.length; i < count; i++) {
 
-            var $element = pageNodes[i];
-            var curView = $element.attr("pageView");
+            var $element = pageNodes.eq(i);
+            var curView = $element.data("pageView");
 
             if(func(curView) === false) {
                 return;
@@ -468,7 +468,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
         forEachItemView(function(pageView){
 
-            if( isPageViewIntersectsRange(range, pageView) ) {
+            if( isPageViewVisibleInRange(pageView, range) ) {
 
                 visiblePageView = pageView;
             }
@@ -491,7 +491,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
         forEachItemView(function(pageView){
 
-            if( isPageViewIntersectsRange(range, pageView) ) {
+            if( isPageViewVisibleInRange(pageView, range) ) {
 
                 visiblePageView = pageView;
                 return false;
@@ -503,13 +503,20 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         return visiblePageView;
     }
 
-    function isPageViewIntersectsRange(range, pageView) {
+    function isPageViewVisibleInRange(pageView, range) {
 
-        var pageViewTop = pageView.element().position().top;
-        var pageViewBottom = pageViewTop + pageView.element().height();
+        var pageViewRange = getPageViewRange(pageView);
+        return rangeLength(intersectRanges(pageViewRange, range)) > 0;
+    }
 
-        return !(pageViewTop > range.top || pageViewBottom < range.bottom);
+    function getPageViewRange(pageView) {
 
+        var range = {top: 0, bottom: 0};
+
+        range.top = pageView.element().position().top + scrollTop();
+        range.bottom = range.top + pageView.element().height();
+
+        return range;
     }
 
 
@@ -527,7 +534,9 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
         var pageView = getFirstVisiblePageView();
 
-        var paginationInfo = new ReadiumSDK.Models.CurrentPagesInfo(_spine.items.length, true, _spine.direction);
+        var isFixedLayout = pageView ? pageView.currentSpineItem().isFixedLayout() : false;
+
+        var paginationInfo = new ReadiumSDK.Models.CurrentPagesInfo(_spine.items.length, isFixedLayout, _spine.direction);
 
         if(!pageView) {
             return paginationInfo;
@@ -593,7 +602,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
         forEachItemView(function(pageView){
 
-            if(isPageViewIntersectsRange(range, pageView)){
+            if(isPageViewVisibleInRange(pageView, range)){
 
                 moElements.push.apply(moElements, pageView.getNavigator().getVisibleMediaOverlayElements(range));
             }
@@ -612,43 +621,64 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         }
     }
 
-    this.insureElementVisibility = function(element, initiator) {
+    function intersectRanges(r1, r2) {
 
-        var $element = $(element);
+        return {
 
-        var $pageElement = $element.closest("#single-page-frame");
+            top: Math.max(r1.top, r2.top),
+            bottom: Math.min(r1.bottom, r2.bottom)
+        };
+    }
 
-        var elementPageView = undefined;
+    function rangeLength(range) {
+        if(range.bottom < range.top) {
+            return 0;
+        }
 
-        forEachItemView(function(pageView){
+        return range.bottom - range.top;
+    }
 
-            if(pageView.element() == $pageElement) {
+    this.insureElementVisibility = function(spineItemId, element, initiator) {
 
-                elementPageView = pageView;
+        var pageView = undefined;
+
+        forEachItemView(function(pv){
+
+            if(pv.currentSpineItem().idref === spineItemId) {
+
+                pageView = pv;
+                return false;
             }
 
+            return true;
         });
 
-        if(!elementPageView) {
+        if(!pageView) {
             console.warn("Page for element " + element + " not found");
             return;
         }
 
-        var elemOffset = $element.offset();
-        var elemTop = elemOffset.top + $pageElement.offset().top;
-        var elemBottom = elemTop + $element.height();
+        var $element = $(element);
 
-        var visibleRange = getVisibleRange(SCROLL_MARGIN_TO_SHOW_LAST_VISBLE_LINE);
+        var visibleRange = getVisibleRange(0);
+        var pageRange = getPageViewRange(pageView);
 
-        var smallestRange = Math.min((visibleRange.bottom - visibleRange.top), (elemBottom - elemTop));
+        var elementRange = {top:0, bottom:0};
+        elementRange.top = $element.offset().top + pageRange.top;
+        elementRange.bottom = elementRange.top + $element.height();
+
+        var smallestVisibleLength = Math.min(rangeLength(visibleRange), rangeLength(elementRange));
+
+        var intersectionRange = intersectRanges(visibleRange, elementRange);
+
+        var visiblePercent = (rangeLength(intersectionRange) / smallestVisibleLength) * 100;
 
         // if element less than 60 % visible
-        var percentVisible = 60;
-        if(  (visibleRange.top - elemBottom) * 100 / smallestRange < percentVisible
-          || (elemBottom - visibleRange.bottom) * 100 / smallestRange <  percentVisible ) {
+        if(visiblePercent < 60 ) {
 
-            var openPageRequest = new ReadiumSDK.Models.PageOpenRequest(undefined, initiator);
-            openPageRequest.scrollTop = elemTop;
+            var spineItem = _spine.getItemById(spineItemId);
+            var openPageRequest = new ReadiumSDK.Models.PageOpenRequest(spineItem, initiator);
+            openPageRequest.scrollTop = elementRange.top;
             self.openPage(openPageRequest);
         }
 

@@ -490,7 +490,7 @@ ReadiumSDK.Views.FixedView = function(options){
         return elements;
     };
 
-    this.insureElementVisibility = function(element, initiator) {
+    this.insureElementVisibility = function(spineItemId, element, initiator) {
 
         //for now we assume that for fixed layout element is always visible
 

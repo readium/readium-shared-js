@@ -102,7 +102,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     // returns true is view changed
     function initViewForItem(spineItem) {
 
-        var desiredViewType;
+         var desiredViewType;
 
         if(_viewerSettings.isScrollViewDoc) {
             desiredViewType = ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_DOC;
@@ -332,7 +332,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
             var bookMark = _currentView.bookmarkCurrentPage();
 
-            if(bookMark) {
+            if(bookMark && bookMark.idref) {
 
                 var spineItem = _spine.getItemById(bookMark.idref);
                 var isViewChanged = initViewForItem(spineItem);
@@ -807,10 +807,10 @@ ReadiumSDK.Views.ReaderView = function(options) {
         return [];
     };
 
-    this.insureElementVisibility = function(element, initiator) {
+    this.insureElementVisibility = function(spineItemId, element, initiator) {
 
         if(_currentView) {
-            _currentView.insureElementVisibility(element, initiator);
+            _currentView.insureElementVisibility(spineItemId, element, initiator);
         }
     }
 

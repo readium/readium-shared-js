@@ -25,6 +25,8 @@ ReadiumSDK.Views.IFrameLoader = function() {
 
         iframe.onload = function() {
 
+            isWaitingForFrameLoad = false;
+
             try
             {
                 iframe.contentWindow.navigator.epubReadingSystem = navigator.epubReadingSystem;
@@ -39,7 +41,6 @@ ReadiumSDK.Views.IFrameLoader = function() {
                 console.log("epubReadingSystem INJECTION ERROR! " + ex.message);
             }
 
-            isWaitingForFrameLoad = false;
             callback.call(context, true);
 
         };
