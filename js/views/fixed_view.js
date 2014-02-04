@@ -32,9 +32,9 @@ ReadiumSDK.Views.FixedView = function(options){
     var _bookStyles = options.bookStyles;
     var _iframeLoader = options.iframeLoader;
 
-    var _leftPageView = createOnePageView("fixed-page-frame-left", "right");
-    var _rightPageView = createOnePageView("fixed-page-frame-right", "left");
-    var _centerPageView = createOnePageView("fixed-page-frame-center", "center");
+    var _leftPageView = createOnePageView("fixed-page-frame-left");
+    var _rightPageView = createOnePageView("fixed-page-frame-right");
+    var _centerPageView = createOnePageView("fixed-page-frame-center");
 
     var _pageViews = [];
     _pageViews.push(_leftPageView);
@@ -45,16 +45,14 @@ ReadiumSDK.Views.FixedView = function(options){
     var _bookMargins;
     var _contentMetaSize;
 
-    function createOnePageView(cssclass, contentAlignment) {
+    function createOnePageView(elementClass) {
 
         return new ReadiumSDK.Views.OnePageView({
 
             iframeLoader: _iframeLoader,
             spine: _spine,
-            bookStyles: _bookStyles,
-            class: cssclass,
-            contentAlignment: contentAlignment
-        });
+            bookStyles: _bookStyles
+        }, [elementClass]);
     }
 
     this.render = function(){

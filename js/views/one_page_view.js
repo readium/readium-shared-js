@@ -21,7 +21,7 @@
  */
 
 //Representation of one fixed page
-ReadiumSDK.Views.OnePageView = function(options){
+ReadiumSDK.Views.OnePageView = function(options, classes){
 
     _.extend(this, Backbone.Events);
 
@@ -70,7 +70,10 @@ ReadiumSDK.Views.OnePageView = function(options){
             _$el.css("height", "100%");
             _$el.css("width", "100%");
 
-            _$el.addClass(options.class);
+            for(var i = 0, count = classes.length; i < count; i++) {
+                _$el.addClass(classes[i]);
+            }
+
             _$iframe = $("iframe", _$el);
         }
 
