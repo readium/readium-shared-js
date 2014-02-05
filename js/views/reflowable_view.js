@@ -80,6 +80,12 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
         _navigationLogic = new ReadiumSDK.Views.CfiNavigationLogic(_$contentFrame, _$iframe);
 
+        //we need this styles for css columnizer not to chop big images
+        var declarations = {};
+        declarations["max-width"] = "100%";
+        declarations["max-height"] = "100%";
+        _bookStyles.addStyle("img", declarations);
+
         //We will call onViewportResize after user stopped resizing window
         var lazyResize = _.debounce(self.onViewportResize, 100);
         $(window).on("resize.ReadiumSDK.reflowableView", _.bind(lazyResize, self));
