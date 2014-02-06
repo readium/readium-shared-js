@@ -49,9 +49,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
         _$el = $(options.el);
         console.log("** EL is a string:" + _$el.attr('id'));
     }
-    
-    
- 
+
 
     if(options.iframeLoader) {
         _iframeLoader = options.iframeLoader;
@@ -107,6 +105,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
             _mediaOverlayDataInjector.attachMediaOverlayData($iframe, spineItem, _viewerSettings);
             _internalLinksSupport.processLinkElements($iframe, spineItem);
             _annotationsManager.attachAnnotations($iframe, spineItem);
+
+            injectMathJax($iframe);
 
             self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
         });
@@ -408,6 +408,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
         openPage(pageData);
     };
+
 
     /**
      *
@@ -831,6 +832,23 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
     this.removeHighlight = function(id) {
         return _annotationsManager.removeHighlight(id);
-    }; 
+    };
+
+
+    function injectMathJax($iframe) {
+
+        var doc, script, head;
+
+        doc = $iframe[0].contentDocument;
+        head = doc.getElementsByTagName("head")[0];
+        // if the content doc is SVG there is no head, and thus
+        // mathjax will not be required
+        if(head) {
+            script = doc.createElement("script");
+            script.type = "text/javascript";
+            script.src = MathJax.Hub.config.root+"/MathJax.js?config=readium-iframe";
+            head.appendChild(script);
+        }
+    }
 
 };
