@@ -33,7 +33,7 @@ ReadiumSDK.Views.MediaOverlayDataInjector = function (mediaOverlay, mediaOverlay
                         return true;
                     }
 
-                    console.debug("MO CLICK: " + elem.id);
+//console.debug("MO CLICK: " + elem.id);
 
                     var data = undefined;
                     var el = elem;
@@ -59,16 +59,21 @@ ReadiumSDK.Views.MediaOverlayDataInjector = function (mediaOverlay, mediaOverlay
 
                     if (data && data.par)
                     {
+                        if (el !== elem)
+                        {
+//console.debug("MO CLICK REDIRECT: " + el.id);
+                        }
+
                         if (!mediaOverlaySettings.mediaOverlaysEnableClick)
                         {
-                            console.debug("MO CLICK DISABLED");
+console.debug("MO CLICK DISABLED");
                             mediaOverlayPlayer.touchInit();
                             return true;
                         }
 
                         if (inLink)
                         {
-                            console.debug("MO CLICKED LINK");
+console.debug("MO CLICKED LINK");
                             mediaOverlayPlayer.touchInit();
                             return true;
                         }
@@ -77,7 +82,7 @@ ReadiumSDK.Views.MediaOverlayDataInjector = function (mediaOverlay, mediaOverlay
 
                         if (el && el != elem && el.nodeName.toLowerCase() === "body" && par && !par.getSmil().id)
                         {
-                            console.debug("MO CLICKED BLANK BODY");
+//console.debug("MO CLICKED BLANK BODY");
                             mediaOverlayPlayer.touchInit();
                             return true;
                         }
@@ -94,7 +99,7 @@ ReadiumSDK.Views.MediaOverlayDataInjector = function (mediaOverlay, mediaOverlay
                         }
                         if (readaloud)
                         {
-                            console.debug("MO readaloud attr: " + readaloud);
+console.debug("MO readaloud attr: " + readaloud);
 
                             var isPlaying = mediaOverlayPlayer.isPlaying();
                             if (readaloud === "start" && !isPlaying ||

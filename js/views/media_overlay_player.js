@@ -1048,7 +1048,7 @@ console.debug("TTS pause");
     function onPause() {
 
         audioCurrentTime = 0.0;
-        if (_timerTick != undefined)
+        if (_timerTick !== undefined)
         {
             clearInterval(_timerTick);
         }

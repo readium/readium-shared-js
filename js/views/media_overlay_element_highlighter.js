@@ -52,33 +52,39 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
             //self.clearUserStyle();
         }
 
-        var style = _reader.userStyles().findStyle("." + DEFAULT_MO_ACTIVE_CLASS);
-        if (!style)
-        {
-            return;
-        }
 
         $head = $("head", $element[0].ownerDocument.documentElement);
 
         $userStyle = $("<style type='text/css'> </style>");
 
         $userStyle.append("." + DEFAULT_MO_ACTIVE_CLASS + " {");
-        for(var prop in style.declarations)
+        
+        var style = _reader.userStyles().findStyle("." + DEFAULT_MO_ACTIVE_CLASS);        
+        if (style)
         {
-            if(!style.declarations.hasOwnProperty(prop))
+            for(var prop in style.declarations)
             {
-                continue;
-            }
+                if(!style.declarations.hasOwnProperty(prop))
+                {
+                    continue;
+                }
 
-            $userStyle.append(prop + ": " + style.declarations[prop] + "; ");
+                $userStyle.append(prop + ": " + style.declarations[prop] + "; ");
+            }
         }
+        
         $userStyle.append("}");
+        
+        
+        // ---- CFI
+        //$userStyle.append(" .highlight {background-color: blue; border: 2x solid green;}"); //.hover-highlight
+        
         
         $userStyle.appendTo($head);
 
 //console.debug($userStyle[0].textContent);
     }
-
+    
     this.highlightElement = function(element, activeClass, playbackActiveClass) {
 
         if(!element || element === _highlightedElement) {
@@ -102,12 +108,13 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
 
         var hasAuthorStyle = _activeClass && _activeClass !== "";
         var overrideWithUserStyle = _reader.userStyles().findStyle("." + DEFAULT_MO_ACTIVE_CLASS); // TODO: performance issue?
-        
+
+        ensureUserStyle($hel);
+                
         if (overrideWithUserStyle || !hasAuthorStyle)
         {
             //console.debug("MO active NO CLASS: " + _activeClass);
 
-            ensureUserStyle($hel);
             $hel.addClass(DEFAULT_MO_ACTIVE_CLASS);
 
             //$(_highlightedElement).css("background", BACK_COLOR);
@@ -117,9 +124,128 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
             //console.debug("MO activeClass: " + _activeClass);
             $hel.addClass(_activeClass);
         }
+        
+        
+// ---- CFI
+//         removeHighlight();
+//         try
+//         {
+//             // //noinspection JSUnresolvedVariable
+//             // var cfi = EPUBcfi.Generator.generateElementCFIComponent(_highlightedElement); //$hel[0]
+//             // if(cfi[0] == "!") {
+//             //     cfi = cfi.substring(1);
+//             // }
+// 
+// //console.log(_highlightedElement);
+//         
+//             var firstTextNode = getFirstTextNode(_highlightedElement);
+//             var txtFirst = firstTextNode.textContent;
+// //console.log(txtFirst);
+// 
+//             var lastTextNode = getLastTextNode(_highlightedElement);
+//             var txtLast = lastTextNode.textContent;
+// //console.log(txtLast);
+//         
+//             var cfi = EPUBcfi.Generator.generateCharOffsetRangeComponent(
+//                     firstTextNode, 
+//                     0, 
+//                     lastTextNode, 
+//                     txtLast.length,
+//                     ["cfi-marker"],
+//                     [],
+//                     ["MathJax_Message"]
+//                     );
+//             
+//             var id = $hel.data("mediaOverlayData").par.getSmil().spineItemId;
+//             _reader.addHighlight(id, cfi, HIGHLIGHT_ID,
+//             "highlight", //"underline"
+//             undefined // styles
+//                         );
+//         }
+//         catch(error)
+//         {
+//             console.error(error);
+//         
+//             removeHighlight();
+//         }
     };
+    
+// ---- CFI
+//     var HIGHLIGHT_ID = "MO_SPEAK";
+//     
+//     function getFirstTextNode(node)
+//     {
+//         if (node.nodeType === Node.TEXT_NODE)
+//         {
+//             if (node.textContent.trim().length > 0)
+//                 return node;
+//         }
+//         
+//         for (var i = 0; i < node.childNodes.length; i++)
+//         {
+//             var child = node.childNodes[i];
+//             var first = getFirstTextNode(child);
+//             if (first)
+//             {
+//                 return first;
+//             }
+//         }
+//         
+//         return undefined;
+//     }
+//     
+//     function getLastTextNode(node)
+//     {
+//         if (node.nodeType === Node.TEXT_NODE)
+//         {
+//             if (node.textContent.trim().length > 0)
+//                 return node;
+//         }
+//         
+//         for (var i = node.childNodes.length-1; i >= 0; i--)
+//         {
+//             var child = node.childNodes[i];
+//             var last = getLastTextNode(child);
+//             if (last)
+//             {
+//                 return last;
+//             }
+//         }
+//         
+//         return undefined;
+//     }
+//     
+//     function removeHighlight()
+//     {
+//         _reader.removeHighlight(HIGHLIGHT_ID);
+//         
+//         var toRemove = undefined;
+//         while ((toRemove = document.getElementById("start-" + HIGHLIGHT_ID)) !== null)
+//         {
+// console.log("toRemove START");
+// console.log(toRemove);
+//             toRemove.parent.removeChild(toRemove);
+//         }
+//         while ((toRemove = document.getElementById("end-" + HIGHLIGHT_ID)) !== null)
+//         {
+// console.log("toRemove END");
+// console.log(toRemove);
+//             toRemove.parent.removeChild(toRemove);
+//         }
+//     }
 
     this.reset = function() {
+
+        // ---- CFI
+        // try
+        // {
+        //     removeHighlight();
+        // }
+        // catch(error)
+        // {
+        //     console.error(error);
+        // }
+        
 
         if(_highlightedElement) {
 
