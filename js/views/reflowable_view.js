@@ -565,6 +565,16 @@ ReadiumSDK.Views.ReflowableView = function(options){
         return [_currentSpineItem];
     };
 
+    this.getElementByCfi = function(spineItem, cfi) {
+
+        if(spineItem != _currentSpineItem) {
+            console.error("spine item is not loaded");
+            return undefined;
+        }
+
+        return _navigationLogic.getElementByCfi(cfi);
+    };
+
     this.getElement = function(spineItem, selector) {
 
         if(spineItem != _currentSpineItem) {
@@ -574,7 +584,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
         return _navigationLogic.getElement(selector);
     };
-
+    
     this.getVisibleMediaOverlayElements = function() {
 
         var visibleContentOffsets = getVisibleContentOffsets();

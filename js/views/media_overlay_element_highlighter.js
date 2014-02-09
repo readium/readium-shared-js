@@ -22,6 +22,7 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
     //var BACK_COLOR = "#99CCCC";
 
     var _highlightedElement = undefined;
+    var _highlightedCfi = undefined;
 
     var _activeClass = "";
     var _playbackActiveClass = "";
@@ -94,6 +95,7 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
         this.reset();
 
         _highlightedElement = element;
+        _highlightedCfi = undefined;
         _activeClass = activeClass;
         _playbackActiveClass = playbackActiveClass;
 
@@ -127,7 +129,6 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
         
         
 // ---- CFI
-//         removeHighlight();
 //         try
 //         {
 //             // //noinspection JSUnresolvedVariable
@@ -170,8 +171,47 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
 //         }
     };
     
+    this.highlightCfi = function(par, activeClass, playbackActiveClass) {
+
+        this.reset();
+
+        _highlightedElement = undefined;
+        _highlightedCfi = par.cfi;
+        _activeClass = activeClass;
+        _playbackActiveClass = playbackActiveClass;
+
+        var $hel = $(_highlightedCfi.cfiRangeStart.textNode[0].parentNode);
+
+        var hasAuthorStyle = _activeClass && _activeClass !== "";
+        var overrideWithUserStyle = _reader.userStyles().findStyle("." + DEFAULT_MO_ACTIVE_CLASS); // TODO: performance issue?
+
+        ensureUserStyle($hel);
+
+        var clazz = (overrideWithUserStyle || !hasAuthorStyle) ? DEFAULT_MO_ACTIVE_CLASS : _activeClass;
+        
+        // TODO: use Rangy span-based highlighter? (instead of readium-annotation div overlay)
+        // http://rangy.googlecode.com/svn/trunk/demos/highlighter.html
+        // https://code.google.com/p/rangy/wiki/HighlighterModule
+        try
+        {
+            //var id = $hel.data("mediaOverlayData").par.getSmil().spineItemId;
+            var id = par.getSmil().spineItemId;
+            _reader.addHighlight(id, par.cfi.partialRangeCfi, HIGHLIGHT_ID,
+            "highlight", //"underline"
+            undefined // styles
+                        );
+        }
+        catch(error)
+        {
+            console.error(error);
+        
+            removeHighlight();
+        }
+    };
+    
+    var HIGHLIGHT_ID = "MO_SPEAK";
+    
 // ---- CFI
-//     var HIGHLIGHT_ID = "MO_SPEAK";
 //     
 //     function getFirstTextNode(node)
 //     {
@@ -215,36 +255,35 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
 //         return undefined;
 //     }
 //     
-//     function removeHighlight()
-//     {
-//         _reader.removeHighlight(HIGHLIGHT_ID);
-//         
-//         var toRemove = undefined;
-//         while ((toRemove = document.getElementById("start-" + HIGHLIGHT_ID)) !== null)
-//         {
-// console.log("toRemove START");
-// console.log(toRemove);
-//             toRemove.parent.removeChild(toRemove);
-//         }
-//         while ((toRemove = document.getElementById("end-" + HIGHLIGHT_ID)) !== null)
-//         {
-// console.log("toRemove END");
-// console.log(toRemove);
-//             toRemove.parent.removeChild(toRemove);
-//         }
-//     }
+    function removeHighlight()
+    {
+        _reader.removeHighlight(HIGHLIGHT_ID);
+        
+        var toRemove = undefined;
+        while ((toRemove = document.getElementById("start-" + HIGHLIGHT_ID)) !== null)
+        {
+console.log("toRemove START");
+console.log(toRemove);
+            toRemove.parent.removeChild(toRemove);
+        }
+        while ((toRemove = document.getElementById("end-" + HIGHLIGHT_ID)) !== null)
+        {
+console.log("toRemove END");
+console.log(toRemove);
+            toRemove.parent.removeChild(toRemove);
+        }
+    }
 
     this.reset = function() {
 
-        // ---- CFI
-        // try
-        // {
-        //     removeHighlight();
-        // }
-        // catch(error)
-        // {
-        //     console.error(error);
-        // }
+        try
+        {
+            removeHighlight();
+        }
+        catch(error)
+        {
+            console.error(error);
+        }
         
 
         if(_highlightedElement) {

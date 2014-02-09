@@ -249,6 +249,17 @@ ReadiumSDK.Views.OnePageView = function(options){
 
     };
 
+    this.getElementByCfi = function(spineItem, cfi) {
+
+        if(spineItem != _currentSpineItem) {
+            console.error("spine item is not loaded");
+            return undefined;
+        }
+
+        var navigation = new ReadiumSDK.Views.CfiNavigationLogic(_$el, _$iframe);
+        return navigation.getElementByCfi(cfi);
+    };
+
     this.getElement = function(spineItem, selector) {
 
         if(spineItem != _currentSpineItem) {

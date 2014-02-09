@@ -115,7 +115,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
 
         var wrappedCfi = "epubcfi(" + cfi + ")";
         //noinspection JSUnresolvedVariable
-        var $element = EPUBcfi.Interpreter.getTargetElementWithPartialCFI(wrappedCfi, contentDoc);
+        var $element = EPUBcfi.getTargetElementWithPartialCFI(wrappedCfi, contentDoc);
 
         if(!$element || $element.length == 0) {
             console.log("Can't find element for CFI: " + cfi);

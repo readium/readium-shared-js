@@ -56,8 +56,8 @@ ReadiumSDK.Views.MediaOverlayDataInjector = function (mediaOverlay, mediaOverlay
                             break;
                         }
                     }
-
-                    if (data && data.par)
+                    
+                    if (data && (data.par || data.pars))
                     {
                         if (el !== elem)
                         {
@@ -78,7 +78,25 @@ console.debug("MO CLICKED LINK");
                             return true;
                         }
 
-                        var par = data.par;
+                        var par = data.par ? data.par : data.pars[0];
+
+// TODO (clicked character offset => find corresponding CFI range)
+//                         if (!data.par)
+//                         {
+//                             var selection = window.getSelection();
+//                             if (selection)
+//                             {
+// console.log(selection);
+// console.log(selection.focusOffset);
+//                                 for (var iPar = 0; iPar < data.pars.length; iPar++)
+//                                 {
+//                                     var p = data.pars[iPar];
+// console.log("===");
+// console.log(p.cfi.cfiRangeStart);
+// console.log(p.cfi.cfiRangeEnd);
+//                                 }
+//                             }
+//                         }
 
                         if (el && el != elem && el.nodeName.toLowerCase() === "body" && par && !par.getSmil().id)
                         {
@@ -128,9 +146,13 @@ console.debug("MO readaloud attr: " + readaloud);
 //console.debug("[[MO ATTACH]] " + spineItem.idref + " /// " + spineItem.media_overlay_id + " === " + smil.id);
 
         var iter = new ReadiumSDK.Models.SmilIterator(smil);
-
+        
+        var fakeOpfRoot = "/99!";
+        var epubCfiPrefix = "epubcfi";
+        
         while (iter.currentPar) {
             iter.currentPar.element = undefined;
+            iter.currentPar.cfi = undefined;
 
             if (true) { //iter.currentPar.text.srcFragmentId (includes empty frag ID)
 
@@ -138,42 +160,149 @@ console.debug("MO readaloud attr: " + readaloud);
 
                 var same = textRelativeRef === spineItem.href;
                 if (same) {
-                    var selector = (!iter.currentPar.text.srcFragmentId || iter.currentPar.text.srcFragmentId.length == 0) ? "body" : "#" + iter.currentPar.text.srcFragmentId;
-                    var $element = $(selector, contentDocElement);
+                    var selector = (!iter.currentPar.text.srcFragmentId || iter.currentPar.text.srcFragmentId.length == 0) ? "body" : (iter.currentPar.text.srcFragmentId.indexOf(epubCfiPrefix) == 0 ? undefined : "#" + iter.currentPar.text.srcFragmentId);
 
-                    if ($element.length > 0) {
+                    var $element = undefined;
+                    var isCfiTextRange = false;
+                    if (!selector)
+                    {
+                        if (iter.currentPar.text.srcFragmentId.indexOf(epubCfiPrefix) === 0)
+                        {
+                            var partial = iter.currentPar.text.srcFragmentId.substr(epubCfiPrefix.length + 1, iter.currentPar.text.srcFragmentId.length - epubCfiPrefix.length - 2);
+                            
+                            if (partial.indexOf(fakeOpfRoot) === 0)
+                            {
+                                partial = partial.substr(fakeOpfRoot.length, partial.length - fakeOpfRoot.length);
+                            }
+//console.log(partial);
+                            var parts = partial.split(",");
+                            if (parts && parts.length === 3)
+                            {
+                                try
+                                {
+                                    var startCFI = "epubcfi(" + parts[0] + parts[1] + ")";
+                                    var infoStart = EPUBcfi.getTextTerminusInfoWithPartialCFI(startCFI, $iframe[0].contentDocument);
+//console.log(infoStart);
+                                    var endCFI = "epubcfi(" + parts[0] + parts[2] + ")";
+                                    var infoEnd = EPUBcfi.getTextTerminusInfoWithPartialCFI(endCFI, $iframe[0].contentDocument);
+//console.log(infoEnd);
 
-                        if (iter.currentPar.element && iter.currentPar.element !== $element[0]) {
-                            console.error("DIFFERENT ELEMENTS??! " + iter.currentPar.text.srcFragmentId + " /// " + iter.currentPar.element.id);
-                        }
+                                    iter.currentPar.cfi = {
+                                        smilTextSrcCfi: iter.currentPar.text.srcFragmentId,
+                                        partialRangeCfi: partial,
+                                        cfiRangeStart: infoStart,
+                                        cfiRangeEnd: infoEnd
+                                    };
+                                    
+                                    // TODO: not just start textNode, but all of them between start and end...
+                                    // ...that being said, CFI text ranges likely to be used only within a single common parent,
+                                    // so this is an acceptable implementation shortcut for this CFI experimentation (word-level text/audio synchronisation).
+                                    isCfiTextRange = true;
+                                    $element = $(infoStart.textNode[0].parentNode);
+                                    var modata = $element.data("mediaOverlayData");
+                                    if (!modata)
+                                    {
+                                        modata = {pars: [iter.currentPar]};
+                                        $element.data("mediaOverlayData", modata);
+                                    }
+                                    else
+                                    {
+                                        if (modata.par)
+                                        {
+                                            console.error("[WARN] non-CFI MO DATA already exists!");
+                                            modata.par = undefined;
+                                        }
 
-                        var name = $element[0].nodeName ? $element[0].nodeName.toLowerCase() : undefined;
-                        if (name === "audio" || name === "video") {
-                            $element.attr("preload", "auto");
-                        }
+                                        var found = false;
+                                        if (modata.pars)
+                                        {
+                                            for (var iPars = 0; iPars < modata.pars.length; iPars++)
+                                            {
+                                                var par = modata.pars[iPars];
 
-                        iter.currentPar.element = $element[0];
+                                                if (par === iter.currentPar)
+                                                {
+                                                    found = true;
+                                                    console.error("[WARN] mediaOverlayData CFI PAR already registered!");
+                                                }
+                                            }
+                                        }
+                                        else
+                                        {
+                                            modata.pars = [];
+                                        }
 
-                        var modata = $element.data("mediaOverlayData");
-                        if (modata) {
-                            console.error("[WARN] MO DATA already exists.");
+                                        if (!found)
+                                        {
+                                            modata.pars.push(iter.currentPar);
+                                        }
+                                    }
 
-                            if (modata.par && modata.par !== iter.currentPar) {
-                                console.error("DIFFERENT PARS??!");
+                                }
+                                catch (error)
+                                {
+                                    console.error(error);
+                                }
+                            }
+                            else
+                            {
+                                try
+                                {
+                                    var cfi = "epubcfi(" + partial + ")";
+                                    $element = EPUBcfi.getTargetElementWithPartialCFI(cfi, $iframe[0].contentDocument);
+                                }
+                                catch (error)
+                                {
+                                    console.error(error);
+                                }
                             }
                         }
+                        else 
+                        {
+                            console.error("SMIL text@src CFI fragment identifier scheme not supported: " + iter.currentPar.text.srcFragmentId);
+                        }
+                    }
+                    else
+                    {
+                        $element = $(selector, contentDocElement);
+                    }
 
-                        $element.data("mediaOverlayData", {par: iter.currentPar});
+                    if ($element && $element.length > 0) {
 
-                        /*
-                         $element.click(function() {
-                         var elem = $(this)[0];
-                         console.debug("MO CLICK (ELEM): " + elem.id);
+                        if (!isCfiTextRange)
+                        {
+                            if (iter.currentPar.element && iter.currentPar.element !== $element[0]) {
+                                console.error("DIFFERENT ELEMENTS??! " + iter.currentPar.text.srcFragmentId + " /// " + iter.currentPar.element.id);
+                            }
 
-                         var par = $(this).data("mediaOverlayData").par;
-                         mediaOverlayPlayer.playUserPar(par);
-                         });
-                         */
+                            var name = $element[0].nodeName ? $element[0].nodeName.toLowerCase() : undefined;
+                            if (name === "audio" || name === "video") {
+                                $element.attr("preload", "auto");
+                            }
+
+                            iter.currentPar.element = $element[0];
+
+                            var modata = $element.data("mediaOverlayData");
+                            if (modata) {
+                                console.error("[WARN] MO DATA already exists.");
+
+                                if (modata.par && modata.par !== iter.currentPar) {
+                                    console.error("DIFFERENT PARS??!");
+                                }
+                            }
+
+                            $element.data("mediaOverlayData", {par: iter.currentPar});
+
+                            /*
+                             $element.click(function() {
+                             var elem = $(this)[0];
+                             console.debug("MO CLICK (ELEM): " + elem.id);
+
+                             var par = $(this).data("mediaOverlayData").par;
+                             mediaOverlayPlayer.playUserPar(par);
+                             });
+                             */
+                        }
                     }
                     else {
                         console.error("!! CANNOT FIND ELEMENT: " + iter.currentPar.text.srcFragmentId + " == " + iter.currentPar.text.srcFile + " /// " + spineItem.href);

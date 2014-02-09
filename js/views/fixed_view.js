@@ -485,6 +485,22 @@ ReadiumSDK.Views.FixedView = function(options){
         return undefined;
     };
 
+    this.getElementByCfi = function(spineItem, cfi) {
+
+        var views = getDisplayingViews();
+
+        for(var i = 0, count = views.length; i < count; i++) {
+
+            var view = views[i];
+            if(view.currentSpineItem() == spineItem) {
+                return view.getElementByCfi(spineItem, cfi);
+            }
+        }
+
+        console.error("spine item is not loaded");
+        return undefined;
+    };
+
     this.getVisibleMediaOverlayElements = function() {
 
         var elements = [];

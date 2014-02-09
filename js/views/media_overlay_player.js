@@ -93,6 +93,11 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         */
 
         var element = undefined;
+        var isCfiTextRange = false;
+        
+        var fakeOpfRoot = "/99!";
+        var epubCfiPrefix = "epubcfi";
+        
         if (paginationData.elementId || paginationData.initiator == self)
         {
             var spineItems = reader.getLoadedSpineItems();
@@ -106,8 +111,65 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                 {
                     continue;
                 }
+                
+                if (paginationData.elementId && paginationData.elementId.indexOf(epubCfiPrefix) === 0)
+                {
+                    var partial = paginationData.elementId.substr(epubCfiPrefix.length + 1, paginationData.elementId.length - epubCfiPrefix.length - 2);
+                    
+                    if (partial.indexOf(fakeOpfRoot) === 0)
+                    {
+                        partial = partial.substr(fakeOpfRoot.length, partial.length - fakeOpfRoot.length);
+                    }
+//console.log(partial);
+                    var parts = partial.split(",");
+                    if (parts && parts.length === 3)
+                    {
+                        try
+                        {
+                            var cfi = parts[0] + parts[1];
+                            var $element = reader.getElementByCfi(spineItem, cfi);
 
-                element = reader.getElement(spineItem, paginationData.initiator == self && !paginationData.elementId ? "body" : "#" + paginationData.elementId);
+                            element = ($element && $element.length > 0) ? $element[0] : undefined;
+                            if (element)
+                            {
+                                if (element.nodeType === Node.TEXT_NODE)
+                                {
+                                    element = element.parentNode;
+                                }
+                                break;
+                            }
+                        }
+                        catch (error)
+                        {
+                            console.error(error);
+                        }
+                    }
+                    else
+                    {
+                        try
+                        {
+                            //var cfi = "epubcfi(" + partial + ")";
+                            //var $element = EPUBcfi.getTargetElementWithPartialCFI(cfi, DOC);
+                            var $element = reader.getElementByCfi(spineItem, partial);
+                                
+                            element = ($element && $element.length > 0) ? $element[0] : undefined;
+                            if (element)
+                            {
+                                if (element.nodeType === Node.TEXT_NODE)
+                                {
+                                    element = element.parentNode;
+                                }
+                                break;
+                            }
+                        }
+                        catch (error)
+                        {
+                            console.error(error);
+                        }
+                    }
+                }
+
+                element = reader.getElement(spineItem, (paginationData.initiator == self && !paginationData.elementId) ? "body" : ("#" + paginationData.elementId));
                 if (element)
                 {
                     /*
@@ -122,7 +184,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
             if (!element)
             {
-                console.error("paginationData.elementId BUT !element");
+                console.error("paginationData.elementId BUT !element: " + paginationData.elementId);
             }
         }
 
@@ -137,6 +199,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                 {
                     if (wasPlaying)
                     {
+                        paginationData.elementIdResolved = element;
                         self.toggleMediaOverlayRefresh(paginationData);
                     }
                 }
@@ -166,11 +229,12 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                 return;
             }
 
-            playPar(moData.par);
+            playPar(moData.par ? moData.par : moData.pars[0]);
             return;
         }
 
-        if(!_smilIterator.currentPar.element) {
+        var noReverseData = !_smilIterator.currentPar.element && !_smilIterator.currentPar.cfi;
+        if(noReverseData) {
             console.error("!! _smilIterator.currentPar.element ??");
         }
 
@@ -185,7 +249,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                 console.error("!! paginationData.elementId !== _smilIterator.currentPar.text.srcFragmentId");
             }
 
-            if(notSameTargetID || !_smilIterator.currentPar.element) {
+            if(notSameTargetID || noReverseData) {
                 clipBeginOffset = 0.0;
                 return;
             }
@@ -218,6 +282,10 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                 return;
             }
 
+            if(paginationData.elementId)
+            {
+                paginationData.elementIdResolved = element;
+            }
             self.toggleMediaOverlayRefresh(paginationData);
         }
     };
@@ -390,7 +458,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
 //console.debug("PLAY START TIME: " + startTime + "("+_smilIterator.currentPar.audio.clipBegin+" + "+clipBeginOffset+")");
 
-            _audioPlayer.playFile(_smilIterator.currentPar.audio.src, audioSource, startTime, _smilIterator.currentPar.element);
+            _audioPlayer.playFile(_smilIterator.currentPar.audio.src, audioSource, startTime, _smilIterator.currentPar.element ? _smilIterator.currentPar.element : _smilIterator.currentPar.cfi.cfiRangeStart.textNode[0].parentNode );
         }
 
         clipBeginOffset = 0.0;
@@ -1127,18 +1195,26 @@ console.debug("TTS pause");
             return;
         }
 
-        if(_smilIterator.currentPar.element) {
-//console.error(_smilIterator.currentPar.element.id + ": " + _smilIterator.currentPar.audio.clipBegin + " / " + _smilIterator.currentPar.audio.clipEnd);
+        if (_smilIterator.currentPar.text.srcFragmentId && _smilIterator.currentPar.text.srcFragmentId.length > 0)
+        {
+            if (_smilIterator.currentPar.element) {
+    //console.error(_smilIterator.currentPar.element.id + ": " + _smilIterator.currentPar.audio.clipBegin + " / " + _smilIterator.currentPar.audio.clipEnd);
 
-            if (_smilIterator.currentPar.text.srcFragmentId && _smilIterator.currentPar.text.srcFragmentId.length > 0)
-            {
                 _elementHighlighter.highlightElement(_smilIterator.currentPar.element, _package.media_overlay.activeClass, _package.media_overlay.playbackActiveClass);
 
                 reader.insureElementVisibility(_smilIterator.currentPar.element, self);
-            }
-            return;
-        }
+            
+                return;
+            
+            } else if (_smilIterator.currentPar.cfi) {
 
+                _elementHighlighter.highlightCfi(_smilIterator.currentPar, _package.media_overlay.activeClass, _package.media_overlay.playbackActiveClass);
+
+                reader.insureElementVisibility(_smilIterator.currentPar.cfi.cfiRangeStart.textNode[0].parentNode, self);
+                
+                return;
+            }
+        }
         /*
         var textRelativeRef = ReadiumSDK.Helpers.ResolveContentRef(_smilIterator.currentPar.text.srcFile, _smilIterator.smil.href);
 console.debug("textRelativeRef: " + textRelativeRef);
@@ -1473,36 +1549,44 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
         //_package.isFixedLayout()
 
-        var element = undefined;
+        var element = (paginationData && paginationData.elementIdResolved) ? paginationData.elementIdResolved : undefined;
 
-        var id = paginationData && paginationData.elementId ? paginationData.elementId : undefined;
+        var id = (paginationData && paginationData.elementId) ? paginationData.elementId : undefined;
 
-        for(var i = (rtl ? (spineItems.length - 1) : 0); (rtl && i >=0) || (!rtl && i < spineItems.length); i += (rtl ? -1: 1))
+        if (!element)
         {
-            var spineItem = spineItems[i];
-            if (!spineItem)
-            {
-                console.error("spineItems[i] is undefined??");
-                continue;
-            }
-            
-            if (paginationData && paginationData.spineItem && paginationData.spineItem != spineItem)
-            {
-                continue;
-            }
-
             if (id)
             {
-                element = reader.getElement(spineItem, "#" + id);
+                console.error("[WARN] id did not resolve to element?");
             }
-            else if (spineItem.isFixedLayout())
+            
+            for(var i = (rtl ? (spineItems.length - 1) : 0); (rtl && i >=0) || (!rtl && i < spineItems.length); i += (rtl ? -1: 1))
             {
-                element = reader.getElement(spineItem, "body");
-            }
+                var spineItem = spineItems[i];
+                if (!spineItem)
+                {
+                    console.error("spineItems[i] is undefined??");
+                    continue;
+                }
+            
+                if (paginationData && paginationData.spineItem && paginationData.spineItem != spineItem)
+                {
+                    continue;
+                }
 
-            if (element)
-            {
-                break;
+                if (id)
+                {
+                    element = reader.getElement(spineItem, "#" + id);
+                }
+                else if (spineItem.isFixedLayout())
+                {
+                    element = reader.getElement(spineItem, "body");
+                }
+
+                if (element)
+                {
+                    break;
+                }
             }
         }
 
@@ -1584,7 +1668,8 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
             return;
         }
 
-        var parSmil = moData.par.getSmil();
+        var zPar = moData.par ? moData.par : moData.pars[0];
+        var parSmil = zPar.getSmil();
         if(!_smilIterator || _smilIterator.smil != parSmil)
         {
             _smilIterator = new ReadiumSDK.Models.SmilIterator(parSmil);
@@ -1600,7 +1685,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         }
         else
         {
-            _smilIterator.goToPar(moData.par);
+            _smilIterator.goToPar(zPar);
         }
 
         if (!_smilIterator.currentPar)
@@ -1616,7 +1701,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         else
         {
             playCurrentPar();
-            //playPar(moData.par);
+            //playPar(zPar);
         }
     };
 };

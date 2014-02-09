@@ -492,6 +492,16 @@ ReadiumSDK.Views.ScrollView = function(options){
         return [_currentSpineItem];
     };
 
+    this.getElementByCfi = function(spineItem, cfi) {
+
+        if(spineItem != _currentSpineItem) {
+            console.error("spine item is not loaded");
+            return undefined;
+        }
+
+        return _navigationLogic.getElementByCfi(cfi);
+    };
+    
     this.getElement = function(spineItem, selector) {
 
         if(spineItem != _currentSpineItem) {
