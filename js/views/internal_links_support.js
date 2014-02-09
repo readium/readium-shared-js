@@ -2,6 +2,69 @@
 
 ReadiumSDK.Views.InternalLinksSupport = function(reader) {
 
+    function processDeepLink(uri, $iframe, spineItem) {
+
+        var rootUri = new URI(reader.package().rootUrl);
+        var contentDocUri = new URI(spineItem.href);
+        var contendToAbsoluteUri = contentDocUri.absoluteTo(rootUri);
+        var opfUri = new URI(uri.pathname());
+        var absoluteOpfUri = opfUri.absoluteTo(contendToAbsoluteUri);
+
+        if(!absoluteOpfUri) {
+            console.error("Unable to resolve " + opfUri.href())
+            return;
+        }
+
+        var fullPath = reader.package().resolveRelativeUrl(absoluteOpfUri.path());
+        var fullCfi = uri.fragment();
+
+        readOpfFile(fullPath, function(opfText) {
+
+            if(!opfText) {
+                return;
+            }
+
+            var parser = new window.DOMParser;
+            var packageDom = parser.parseFromString(opfText, 'text/xml');
+
+            var contentDocRef = EPUBcfi.Interpreter.getContentDocHref(fullCfi, packageDom);
+
+            if(contentDocRef) {
+                console.log("Succseesss contenDocHref=" + contentDocRef);
+            }
+            else {
+                console.warn("Unable to find document ref from " +  fullCfi +" cfi");
+            }
+
+        });
+
+    }
+
+    function readOpfFile(path, callback) {
+
+        $.ajax({
+            url: path,
+            dataType: 'text',
+            async: true,
+            success: function (result) {
+                callback(result);
+            },
+            error: function (xhr, status, errorThrown) {
+                console.error('Error when AJAX fetching ' + path);
+                console.error(status);
+                console.error(errorThrown);
+                callback();
+            }
+        });
+    }
+
+    //checks if href includes path to opf file and full cfi
+    function isDeepLikHref(uri) {
+
+        var fileName = uri.filename();
+        return fileName && ReadiumSDK.Helpers.EndsWith(fileName, ".opf");
+    }
+
     this.processLinkElements = function($iframe, spineItem) {
 
         var epubContentDocument = $iframe[0].contentDocument;
@@ -17,7 +80,14 @@ ReadiumSDK.Views.InternalLinksSupport = function(reader) {
             else {
                 href = clickEvent.currentTarget.attributes["href"].value;
             }
+
             var hrefUri = new URI(href);
+
+            if(isDeepLikHref(hrefUri)) {
+                processDeepLink(hrefUri, $iframe, spineItem);
+                return;
+            }
+
             var hrefIsRelative = hrefUri.is('relative');
             var hrefUriHasFilename = hrefUri.filename();
             var overrideClickEvent = false;
