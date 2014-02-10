@@ -92,8 +92,8 @@ console.debug("MO CLICKED LINK");
 //                                 {
 //                                     var p = data.pars[iPar];
 // console.log("===");
-// console.log(p.cfi.cfiRangeStart);
-// console.log(p.cfi.cfiRangeEnd);
+// console.log(p.cfi.partialStartCfi);
+// console.log(p.cfi.partialEndCfi);
 //                                 }
 //                             }
 //                         }
@@ -180,25 +180,36 @@ console.debug("MO readaloud attr: " + readaloud);
                             {
                                 try
                                 {
-                                    var startCFI = "epubcfi(" + parts[0] + parts[1] + ")";
+                                    var partialStartCfi = parts[0] + parts[1];
+                                    var startCFI = "epubcfi(" + partialStartCfi + ")";
                                     var infoStart = EPUBcfi.getTextTerminusInfoWithPartialCFI(startCFI, $iframe[0].contentDocument);
 //console.log(infoStart);
-                                    var endCFI = "epubcfi(" + parts[0] + parts[2] + ")";
+
+                                    var partialEndCfi = parts[0] + parts[2];
+                                    var endCFI = "epubcfi(" + partialEndCfi + ")";
                                     var infoEnd = EPUBcfi.getTextTerminusInfoWithPartialCFI(endCFI, $iframe[0].contentDocument);
 //console.log(infoEnd);
+
+                                    var cfiTextParent = infoStart.textNode[0].parentNode;
 
                                     iter.currentPar.cfi = {
                                         smilTextSrcCfi: iter.currentPar.text.srcFragmentId,
                                         partialRangeCfi: partial,
-                                        cfiRangeStart: infoStart,
-                                        cfiRangeEnd: infoEnd
+                                        partialStartCfi: partialStartCfi,
+                                        partialEndCfi: partialEndCfi,
+                                        
+                                        cfiTextParent: cfiTextParent
+                                        
+                                        // textNode becomes invalid after highlighting! (dynamic span insertion/removal changes DOM)
+                                        // cfiRangeStart: infoStart,
+                                        // cfiRangeEnd: infoEnd
                                     };
                                     
                                     // TODO: not just start textNode, but all of them between start and end...
                                     // ...that being said, CFI text ranges likely to be used only within a single common parent,
                                     // so this is an acceptable implementation shortcut for this CFI experimentation (word-level text/audio synchronisation).
                                     isCfiTextRange = true;
-                                    $element = $(infoStart.textNode[0].parentNode);
+                                    $element = $(cfiTextParent);
                                     var modata = $element.data("mediaOverlayData");
                                     if (!modata)
                                     {

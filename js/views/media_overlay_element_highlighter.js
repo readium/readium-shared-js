@@ -183,7 +183,7 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
         _activeClass = activeClass;
         _playbackActiveClass = playbackActiveClass;
 
-        var $hel = $(_highlightedCfi.cfiRangeStart.textNode[0].parentNode);
+        var $hel = $(_highlightedCfi.cfiTextParent);
 
         var hasAuthorStyle = _activeClass && _activeClass !== "";
         var overrideWithUserStyle = _reader.userStyles().findStyle("." + DEFAULT_MO_ACTIVE_CLASS); // TODO: performance issue?
@@ -194,10 +194,22 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
         
         if (USE_RANGY)
         {
-            var doc = _highlightedCfi.cfiRangeStart.textNode[0].parentNode.ownerDocument;
+            var doc = _highlightedCfi.cfiTextParent.ownerDocument;
 
             var range = rangy.createRange(doc); //createNativeRange
-            range.setStartAndEnd(_highlightedCfi.cfiRangeStart.textNode[0], _highlightedCfi.cfiRangeStart.textOffset, _highlightedCfi.cfiRangeEnd.textNode[0], _highlightedCfi.cfiRangeEnd.textOffset);
+
+            var startCFI = "epubcfi(" + _highlightedCfi.partialStartCfi + ")";
+            var infoStart = EPUBcfi.getTextTerminusInfoWithPartialCFI(startCFI, doc);
+//console.log(infoStart);
+
+            var endCFI = "epubcfi(" + _highlightedCfi.partialEndCfi + ")";
+            var infoEnd = EPUBcfi.getTextTerminusInfoWithPartialCFI(endCFI, doc);
+//console.log(infoEnd);
+            
+            range.setStartAndEnd(
+                infoStart.textNode[0], infoStart.textOffset,
+                infoEnd.textNode[0], infoEnd.textOffset
+            );
             
             if (range.canSurroundContents())
             {
@@ -280,7 +292,7 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
         
         if (_highlightedCfi)
         {
-            var doc = _highlightedCfi.cfiRangeStart.textNode[0].parentNode.ownerDocument;
+            var doc = _highlightedCfi.cfiTextParent.ownerDocument;
             if (USE_RANGY)
             {
                     var toRemove = undefined;

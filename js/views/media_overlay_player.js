@@ -458,7 +458,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
 //console.debug("PLAY START TIME: " + startTime + "("+_smilIterator.currentPar.audio.clipBegin+" + "+clipBeginOffset+")");
 
-            _audioPlayer.playFile(_smilIterator.currentPar.audio.src, audioSource, startTime, _smilIterator.currentPar.element ? _smilIterator.currentPar.element : _smilIterator.currentPar.cfi.cfiRangeStart.textNode[0].parentNode );
+            _audioPlayer.playFile(_smilIterator.currentPar.audio.src, audioSource, startTime, _smilIterator.currentPar.element ? _smilIterator.currentPar.element : _smilIterator.currentPar.cfi.cfiTextParent );
         }
 
         clipBeginOffset = 0.0;
@@ -1210,7 +1210,7 @@ console.debug("TTS pause");
 
                 _elementHighlighter.highlightCfi(_smilIterator.currentPar, _package.media_overlay.activeClass, _package.media_overlay.playbackActiveClass);
 
-                reader.insureElementVisibility(_smilIterator.currentPar.cfi.cfiRangeStart.textNode[0].parentNode, self);
+                reader.insureElementVisibility(_smilIterator.currentPar.cfi.cfiTextParent, self);
                 
                 return;
             }
