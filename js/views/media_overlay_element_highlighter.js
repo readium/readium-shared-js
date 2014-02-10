@@ -29,7 +29,7 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
 
     var _reader = reader;
     
-    var USE_RANGY = true && (typeof rangy !== undefined);
+    var USE_RANGY = true && (typeof rangy !== "undefined");
     var HIGHLIGHT_ID = "MO_SPEAK";
     
     var self = this;
