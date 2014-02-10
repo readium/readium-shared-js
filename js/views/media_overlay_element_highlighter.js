@@ -28,7 +28,10 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
     var _playbackActiveClass = "";
 
     var _reader = reader;
-
+    
+    var USE_RANGY = true;
+    var HIGHLIGHT_ID = "MO_SPEAK";
+    
     var self = this;
 
     var $userStyle = undefined;
@@ -189,27 +192,44 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
 
         var clazz = (overrideWithUserStyle || !hasAuthorStyle) ? DEFAULT_MO_ACTIVE_CLASS : _activeClass;
         
-        // TODO: use Rangy span-based highlighter? (instead of readium-annotation div overlay)
-        // http://rangy.googlecode.com/svn/trunk/demos/highlighter.html
-        // https://code.google.com/p/rangy/wiki/HighlighterModule
-        try
+        if (USE_RANGY)
         {
-            //var id = $hel.data("mediaOverlayData").par.getSmil().spineItemId;
-            var id = par.getSmil().spineItemId;
-            _reader.addHighlight(id, par.cfi.partialRangeCfi, HIGHLIGHT_ID,
-            "highlight", //"underline"
-            undefined // styles
-                        );
+            var doc = _highlightedCfi.cfiRangeStart.textNode[0].parentNode.ownerDocument;
+
+            var range = rangy.createRange(doc); //createNativeRange
+            range.setStartAndEnd(_highlightedCfi.cfiRangeStart.textNode[0], _highlightedCfi.cfiRangeStart.textOffset, _highlightedCfi.cfiRangeEnd.textNode[0], _highlightedCfi.cfiRangeEnd.textOffset);
+            
+            if (range.canSurroundContents())
+            {
+                var span = doc.createElementNS("http://www.w3.org/1999/xhtml", 'span');
+                span.id = HIGHLIGHT_ID;
+                span.setAttribute("id", span.id);
+                span.setAttribute("class", clazz);
+            
+                range.surroundContents(span);
+            }
+            else
+            {
+                console.error("RANGY unsupported text range");
+            }
         }
-        catch(error)
+        else
         {
-            console.error(error);
-        
-            removeHighlight();
+            try
+            {
+                //var id = $hel.data("mediaOverlayData").par.getSmil().spineItemId;
+                var id = par.getSmil().spineItemId;
+                _reader.addHighlight(id, par.cfi.partialRangeCfi, HIGHLIGHT_ID,
+                "highlight", //"underline"
+                undefined // styles
+                            );
+            }
+            catch(error)
+            {
+                console.error(error);
+            }
         }
     };
-    
-    var HIGHLIGHT_ID = "MO_SPEAK";
     
 // ---- CFI
 //     
@@ -255,35 +275,52 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
 //         return undefined;
 //     }
 //     
-    function removeHighlight()
-    {
-        _reader.removeHighlight(HIGHLIGHT_ID);
-        
-        var toRemove = undefined;
-        while ((toRemove = document.getElementById("start-" + HIGHLIGHT_ID)) !== null)
-        {
-console.log("toRemove START");
-console.log(toRemove);
-            toRemove.parent.removeChild(toRemove);
-        }
-        while ((toRemove = document.getElementById("end-" + HIGHLIGHT_ID)) !== null)
-        {
-console.log("toRemove END");
-console.log(toRemove);
-            toRemove.parent.removeChild(toRemove);
-        }
-    }
 
     this.reset = function() {
-
-        try
+        
+        if (_highlightedCfi)
         {
-            removeHighlight();
+            var doc = _highlightedCfi.cfiRangeStart.textNode[0].parentNode.ownerDocument;
+            if (USE_RANGY)
+            {
+                    var toRemove = undefined;
+                    while ((toRemove = doc.getElementById(HIGHLIGHT_ID)) !== null)
+                    {
+                        var txt = toRemove.textContent; // innerHTML?
+                        var txtNode = doc.createTextNode(txt);
+                        
+                        toRemove.parentNode.replaceChild(txtNode, toRemove);
+                        txtNode.parentNode.normalize();
+                    }
+            }
+            else
+            {
+                try
+                {
+                    _reader.removeHighlight(HIGHLIGHT_ID);
+        
+                    var toRemove = undefined;
+                    while ((toRemove = doc.getElementById("start-" + HIGHLIGHT_ID)) !== null)
+                    {
+            console.log("toRemove START");
+            console.log(toRemove);
+                        toRemove.parentNode.removeChild(toRemove);
+                    }
+                    while ((toRemove = doc.getElementById("end-" + HIGHLIGHT_ID)) !== null)
+                    {
+            console.log("toRemove END");
+            console.log(toRemove);
+                        toRemove.parentNode.removeChild(toRemove);
+                    }
+                }
+                catch(error)
+                {
+                    console.error(error);
+                }
+            }
         }
-        catch(error)
-        {
-            console.error(error);
-        }
+        
+        
         
 
         if(_highlightedElement) {
