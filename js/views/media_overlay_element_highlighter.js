@@ -30,6 +30,9 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
     var _reader = reader;
     
     var USE_RANGY = true && (typeof rangy !== "undefined");
+    var _rangyCSS = undefined;
+    var _rangyRange = undefined;
+    
     var HIGHLIGHT_ID = "MO_SPEAK";
     
     var self = this;
@@ -37,6 +40,8 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
     var $userStyle = undefined;
     this.clearUserStyle = function()
     {
+        this.reset();
+        
         if ($userStyle)
         {
             $userStyle.remove();
@@ -99,6 +104,7 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
 
         _highlightedElement = element;
         _highlightedCfi = undefined;
+        
         _activeClass = activeClass;
         _playbackActiveClass = playbackActiveClass;
 
@@ -180,6 +186,7 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
 
         _highlightedElement = undefined;
         _highlightedCfi = par.cfi;
+        
         _activeClass = activeClass;
         _playbackActiveClass = playbackActiveClass;
 
@@ -196,7 +203,7 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
         {
             var doc = _highlightedCfi.cfiTextParent.ownerDocument;
 
-            var range = rangy.createRange(doc); //createNativeRange
+            _rangyRange = rangy.createRange(doc); //createNativeRange
 
             var startCFI = "epubcfi(" + _highlightedCfi.partialStartCfi + ")";
             var infoStart = EPUBcfi.getTextTerminusInfoWithPartialCFI(startCFI, doc);
@@ -206,23 +213,41 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
             var infoEnd = EPUBcfi.getTextTerminusInfoWithPartialCFI(endCFI, doc);
 //console.log(infoEnd);
             
-            range.setStartAndEnd(
+            _rangyRange.setStartAndEnd(
                 infoStart.textNode[0], infoStart.textOffset,
                 infoEnd.textNode[0], infoEnd.textOffset
             );
             
-            if (range.canSurroundContents())
+            if (false && // we use CssClassApplier instead
+                _rangyRange.canSurroundContents())
             {
+                _rangyRange.MO_createCssClassApplier = false;
+                
                 var span = doc.createElementNS("http://www.w3.org/1999/xhtml", 'span');
                 span.id = HIGHLIGHT_ID;
                 span.setAttribute("id", span.id);
                 span.setAttribute("class", clazz);
             
-                range.surroundContents(span);
+                _rangyRange.surroundContents(span);
             }
             else
             {
-                console.error("RANGY unsupported text range");
+                _rangyRange.MO_createCssClassApplier = true;
+                
+                if (!_rangyCSS || _rangyCSS.cssClass !== clazz)
+                {
+                    _rangyCSS = rangy.createCssClassApplier(clazz,
+                    {
+                        elementTagName: "span",
+                        elementProperties: undefined,
+                        ignoreWhiteSpace: true,
+                        applyToEditableOnly: false,
+                        normalize: true
+                    },
+                    ["span"]);
+                }
+
+                _rangyCSS.applyToRange(_rangyRange);
             }
         }
         else
@@ -295,6 +320,12 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
             var doc = _highlightedCfi.cfiTextParent.ownerDocument;
             if (USE_RANGY)
             {
+                if (_rangyCSS && _rangyRange.MO_createCssClassApplier)
+                {
+                    _rangyCSS.undoToRange(_rangyRange);
+                }
+                else
+                {
                     var toRemove = undefined;
                     while ((toRemove = doc.getElementById(HIGHLIGHT_ID)) !== null)
                     {
@@ -304,6 +335,10 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
                         toRemove.parentNode.replaceChild(txtNode, toRemove);
                         txtNode.parentNode.normalize();
                     }
+                }
+        
+                //_rangyCSS = undefined;
+                _rangyRange = undefined;
             }
             else
             {
@@ -330,6 +365,8 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
                     console.error(error);
                 }
             }
+            
+            _highlightedCfi = undefined;
         }
         
         
@@ -356,9 +393,10 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
             //}
 
             _highlightedElement = undefined;
-            _activeClass = "";
-            _playbackActiveClass = "";
         }
+
+        _activeClass = "";
+        _playbackActiveClass = "";
     }
 
 };
