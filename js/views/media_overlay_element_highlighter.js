@@ -218,7 +218,7 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
                 infoEnd.textNode[0], infoEnd.textOffset
             );
             
-            if (false && // we use CssClassApplier instead
+            if (false && // we use CssClassApplier instead, because surroundContents() has no trivial undoSurroundContents() function (inc. text nodes normalisation, etc.)
                 _rangyRange.canSurroundContents())
             {
                 _rangyRange.MO_createCssClassApplier = false;
@@ -329,7 +329,7 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
                     var toRemove = undefined;
                     while ((toRemove = doc.getElementById(HIGHLIGHT_ID)) !== null)
                     {
-                        var txt = toRemove.textContent; // innerHTML?
+                        var txt = toRemove.textContent; // TODO: innerHTML? or better: hasChildNodes loop + detach and re-attach
                         var txtNode = doc.createTextNode(txt);
                         
                         toRemove.parentNode.replaceChild(txtNode, toRemove);
