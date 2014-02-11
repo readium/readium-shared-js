@@ -1704,4 +1704,10 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
             //playPar(zPar);
         }
     };
+
+    this.isPlayingCfi = function()
+    {
+        return _smilIterator && _smilIterator.currentPar && _smilIterator.currentPar.cfi;
+    };
+    
 };

@@ -80,23 +80,106 @@ console.debug("MO CLICKED LINK");
 
                         var par = data.par ? data.par : data.pars[0];
 
-// TODO (clicked character offset => find corresponding CFI range)
-//                         if (!data.par)
-//                         {
-//                             var selection = window.getSelection();
-//                             if (selection)
-//                             {
-// console.log(selection);
-// console.log(selection.focusOffset);
-//                                 for (var iPar = 0; iPar < data.pars.length; iPar++)
+                        if (data.pars && (typeof rangy !== "undefined"))
+                        {
+                            
+                            // To remove highlight which may have altered DOM (and break CFI expressions)
+                            if (mediaOverlayPlayer.isPlayingCfi())
+                            {
+                                mediaOverlayPlayer.pause();
+                            }
+                         
+                            // /////////////////////
+                            // 
+                            // var p = {x: event.pageX, y: event.pageY};
+                            // if (webkitConvertPointFromPageToNode)
+                            // {
+                            //     p = webkitConvertPointFromPageToNode(elem.ownerDocument.body, new WebKitPoint(event.pageX, event.pageY));
+                            // }
+                            // 
+                            // var div = elem.ownerDocument.getElementById("CLICKED");
+                            // if (div)
+                            // {
+                            //     div.parentNode.removeChild(div);
+                            // }
+                            // 
+                            // div = elem.ownerDocument.createElementNS("http://www.w3.org/1999/xhtml", 'div');
+                            // div.setAttribute("style", "background-color: red; position: absolute; z-index: 999; width: 50px; height: 50px; left: " + p.x + "px; top: " + p.y + "px;");
+                            // div.id = "CLICKED";
+                            // div.setAttribute("id", div.id);
+                            // var divTxt = elem.ownerDocument.createTextNode(" ");
+                            // div.appendChild(divTxt);
+                            // elem.ownerDocument.body.appendChild(div);
+                            //                          
+                            // /////////////////////
+
+
+                            //rangy.init();
+                            try
+                            {
+// THIS WORKS (same as Rangy's method below)
+//                                 var r;
+//                                 if (elem.ownerDocument.caretRangeFromPoint)
 //                                 {
-//                                     var p = data.pars[iPar];
-// console.log("===");
+//                                     r = elem.ownerDocument.caretRangeFromPoint(event.pageX, event.pageY);
+//                                 }
+//                                 else if (event.rangeParent)
+//                                 {
+//                                     r = elem.ownerDocument.createRange();
+//                                     range.setStart(event.rangeParent, event.rangeOffset);
+//                                 }
+//                                 
+// console.log("------ 1");
+// console.log(elem.ownerDocument);
+// console.log(event.pageX);
+// console.log(event.pageY);
+// console.log(r.startContainer);
+// console.log(r.startOffset);
+// console.log("------");
+
+                                var pos = rangy.positionFromPoint(event.pageX, event.pageY, elem.ownerDocument);
+// console.log("------ 2");
+// console.log(pos.node.textContent);
+// console.log(pos.offset);
+// console.log("------");
+
+                                par = undefined;
+                                
+                                for (var iPar = 0; iPar < data.pars.length; iPar++)
+                                {
+                                    var p = data.pars[iPar];
+
+                                    var startCFI = "epubcfi(" + p.cfi.partialStartCfi + ")";
+                                    var infoStart = EPUBcfi.getTextTerminusInfoWithPartialCFI(startCFI, elem.ownerDocument);
+//console.log(infoStart);
+
+                                    var endCFI = "epubcfi(" + p.cfi.partialEndCfi + ")";
+                                    var infoEnd = EPUBcfi.getTextTerminusInfoWithPartialCFI(endCFI, elem.ownerDocument);
+//console.log(infoEnd);
+
+                                    var range = rangy.createRange(elem.ownerDocument); //createNativeRange
+                                    range.setStartAndEnd(
+                                        infoStart.textNode[0], infoStart.textOffset,
+                                        infoEnd.textNode[0], infoEnd.textOffset
+                                    );
+        
+                                    if (range.isPointInRange(pos.node, pos.offset))
+                                    {
 // console.log(p.cfi.partialStartCfi);
 // console.log(p.cfi.partialEndCfi);
-//                                 }
-//                             }
-//                         }
+                                        // DOUBLE CHECK WITH getClientRects ??
+                                        
+                                        par = p;
+                                        break;
+                                    }
+                                }
+                            }
+                            catch (e)
+                            {
+                                console.error(e);
+                            }
+                        }
+
 
                         if (el && el != elem && el.nodeName.toLowerCase() === "body" && par && !par.getSmil().id)
                         {
