@@ -198,9 +198,10 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
         ensureUserStyle($hel);
 
         var clazz = (overrideWithUserStyle || !hasAuthorStyle) ? DEFAULT_MO_ACTIVE_CLASS : _activeClass;
-        
+        console.log(" D 1");
         if (USE_RANGY)
         {
+            console.log(" D 2");
             var doc = _highlightedCfi.cfiTextParent.ownerDocument;
 
             _rangyRange = rangy.createRange(doc); //createNativeRange
