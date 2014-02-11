@@ -181,9 +181,12 @@ console.debug("MO CLICKED LINK");
                                 console.error(e);
                             }
                             
-                            if (!par && wasPaused)
+                            if (!par)
                             {
-                                mediaOverlayPlayer.toggleMediaOverlay();
+                                if (wasPaused)
+                                {
+                                    mediaOverlayPlayer.toggleMediaOverlay();
+                                }
                                 return true;
                             }
                         }
