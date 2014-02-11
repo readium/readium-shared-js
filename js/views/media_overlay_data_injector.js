@@ -82,10 +82,12 @@ console.debug("MO CLICKED LINK");
 
                         if (data.pars && (typeof rangy !== "undefined"))
                         {
+                            var wasPaused = false;
                             
                             // To remove highlight which may have altered DOM (and break CFI expressions)
                             if (mediaOverlayPlayer.isPlayingCfi())
                             {
+                                wasPaused = true;
                                 mediaOverlayPlayer.pause();
                             }
                          
@@ -177,6 +179,12 @@ console.debug("MO CLICKED LINK");
                             catch (e)
                             {
                                 console.error(e);
+                            }
+                            
+                            if (!par && wasPaused)
+                            {
+                                mediaOverlayPlayer.toggleMediaOverlay();
+                                return true;
                             }
                         }
 
