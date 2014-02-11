@@ -229,7 +229,23 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                 return;
             }
 
-            playPar(moData.par ? moData.par : moData.pars[0]);
+            var parToPlay = moData.par ? moData.par : moData.pars[0];
+
+            if (moData.pars)
+            {
+                for (var iPar = 0; iPar < moData.pars.length; iPar++)
+                {
+                    var p = moData.pars[iPar];
+                    
+                    if (paginationData.elementId === p.cfi.smilTextSrcCfi)
+                    {
+                        parToPlay = p;
+                        break;
+                    }
+                }
+            }
+            
+            playPar(parToPlay);
             return;
         }
 
