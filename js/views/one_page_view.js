@@ -202,6 +202,7 @@ ReadiumSDK.Views.OnePageView = function(options){
 
             //hide iframe until content is scaled
             _$iframe.css("visibility", "hidden");
+            self.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPEN_START, _$iframe, _currentSpineItem);
             _iframeLoader.loadIframe(_$iframe[0], src, onIFrameLoad, self, {spineItem : spineItem});
         }
         else
@@ -267,4 +268,5 @@ ReadiumSDK.Views.OnePageView = function(options){
 
 };
 
+ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPEN_START = "SpineItemOpenStart";
 ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED = "SpineItemOpened";

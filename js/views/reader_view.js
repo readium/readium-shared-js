@@ -50,8 +50,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
         console.log("** EL is a string:" + _$el.attr('id'));
     }
     
-    
- 
 
     if(options.iframeLoader) {
         _iframeLoader = options.iframeLoader;
@@ -99,8 +97,11 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
         _currentView = new desiredViewType(viewCreationParams);
 
-
         _currentView.setViewSettings(_viewerSettings);
+
+        _currentView.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START, function($iframe, spineItem){
+            self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
+        });
 
         _currentView.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function($iframe, spineItem) {
 
@@ -831,6 +832,20 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
     this.removeHighlight = function(id) {
         return _annotationsManager.removeHighlight(id);
-    }; 
+    };
+
+    /**
+     * Lets user to subscribe to iframe's window events
+     *
+     * @method addIFrameEventsListener
+     * @param {string} eventName event name.
+     * @param {string} callback callback function.
+     * @param {string} context user specified data passed to the callback function.
+     *
+     * @returns {undefined}
+     */
+    this.addIFrameEventListener = function(eventName, callback, context) {
+        _iframeLoader.addIFrameEventListener(eventName, callback, context);
+    }
 
 };

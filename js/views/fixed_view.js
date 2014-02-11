@@ -50,7 +50,7 @@ ReadiumSDK.Views.FixedView = function(options){
 
     function createOnePageView(cssclass, contentAlignment) {
 
-        return new ReadiumSDK.Views.OnePageView({
+        var pageView = new ReadiumSDK.Views.OnePageView({
 
             iframeLoader: _iframeLoader,
             spine: _spine,
@@ -58,6 +58,14 @@ ReadiumSDK.Views.FixedView = function(options){
             class: cssclass,
             contentAlignment: contentAlignment
         });
+
+        pageView.on(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPEN_START, function($iframe, spineItem) {
+
+            self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
+        });
+
+
+        return pageView;
     }
 
     this.isReflowable = function() {
