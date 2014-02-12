@@ -109,13 +109,13 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
         return this.getPageForPointOnElement($element, cfiParts.x, cfiParts.y);
     };
 
-    function getElementByPartialCfi(cfi) {
+    function getElementByPartialCfi(cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
         var contentDoc = $iframe[0].contentDocument;
 
         var wrappedCfi = "epubcfi(" + cfi + ")";
         //noinspection JSUnresolvedVariable
-        var $element = EPUBcfi.getTargetElementWithPartialCFI(wrappedCfi, contentDoc);
+        var $element = EPUBcfi.getTargetElementWithPartialCFI(wrappedCfi, contentDoc, classBlacklist, elementBlacklist, idBlacklist);
 
         if(!$element || $element.length == 0) {
             console.log("Can't find element for CFI: " + cfi);
@@ -125,10 +125,10 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
         return $element;
     }
 
-    this.getElementByCfi = function(cfi) {
+    this.getElementByCfi = function(cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
         var cfiParts = splitCfi(cfi);
-        return getElementByPartialCfi(cfiParts.cfi);
+        return getElementByPartialCfi(cfiParts.cfi, classBlacklist, elementBlacklist, idBlacklist);
     };
 
     this.getPageForElement = function($element) {

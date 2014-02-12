@@ -249,7 +249,7 @@ ReadiumSDK.Views.OnePageView = function(options){
 
     };
 
-    this.getElementByCfi = function(spineItem, cfi) {
+    this.getElementByCfi = function(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
         if(spineItem != _currentSpineItem) {
             console.error("spine item is not loaded");
@@ -257,7 +257,7 @@ ReadiumSDK.Views.OnePageView = function(options){
         }
 
         var navigation = new ReadiumSDK.Views.CfiNavigationLogic(_$el, _$iframe);
-        return navigation.getElementByCfi(cfi);
+        return navigation.getElementByCfi(cfi, classBlacklist, elementBlacklist, idBlacklist);
     };
 
     this.getElement = function(spineItem, selector) {

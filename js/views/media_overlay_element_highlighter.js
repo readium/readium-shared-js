@@ -206,11 +206,17 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
             _rangyRange = rangy.createRange(doc); //createNativeRange
 
             var startCFI = "epubcfi(" + _highlightedCfi.partialStartCfi + ")";
-            var infoStart = EPUBcfi.getTextTerminusInfoWithPartialCFI(startCFI, doc);
+            var infoStart = EPUBcfi.getTextTerminusInfoWithPartialCFI(startCFI, doc,
+                ["cfi-marker", "mo-cfi-highlight"],
+                [],
+                ["MathJax_Message"]);
 //console.log(infoStart);
 
             var endCFI = "epubcfi(" + _highlightedCfi.partialEndCfi + ")";
-            var infoEnd = EPUBcfi.getTextTerminusInfoWithPartialCFI(endCFI, doc);
+            var infoEnd = EPUBcfi.getTextTerminusInfoWithPartialCFI(endCFI, doc,
+                ["cfi-marker", "mo-cfi-highlight"],
+                [],
+                ["MathJax_Message"]);
 //console.log(infoEnd);
             
             _rangyRange.setStartAndEnd(
@@ -226,7 +232,7 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
                 var span = doc.createElementNS("http://www.w3.org/1999/xhtml", 'span');
                 span.id = HIGHLIGHT_ID;
                 span.setAttribute("id", span.id);
-                span.setAttribute("class", clazz);
+                span.setAttribute("class", clazz + " mo-cfi-highlight");
             
                 _rangyRange.surroundContents(span);
             }
@@ -239,7 +245,7 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
                     _rangyCSS = rangy.createCssClassApplier(clazz,
                     {
                         elementTagName: "span",
-                        elementProperties: undefined,
+                        elementProperties: {className: "mo-cfi-highlight"},
                         ignoreWhiteSpace: true,
                         applyToEditableOnly: false,
                         normalize: true

@@ -152,11 +152,17 @@ console.debug("MO CLICKED LINK");
                                     var p = data.pars[iPar];
 
                                     var startCFI = "epubcfi(" + p.cfi.partialStartCfi + ")";
-                                    var infoStart = EPUBcfi.getTextTerminusInfoWithPartialCFI(startCFI, elem.ownerDocument);
+                                    var infoStart = EPUBcfi.getTextTerminusInfoWithPartialCFI(startCFI, elem.ownerDocument,
+                ["cfi-marker", "mo-cfi-highlight"],
+                [],
+                ["MathJax_Message"]);
 //console.log(infoStart);
 
                                     var endCFI = "epubcfi(" + p.cfi.partialEndCfi + ")";
-                                    var infoEnd = EPUBcfi.getTextTerminusInfoWithPartialCFI(endCFI, elem.ownerDocument);
+                                    var infoEnd = EPUBcfi.getTextTerminusInfoWithPartialCFI(endCFI, elem.ownerDocument,
+                ["cfi-marker", "mo-cfi-highlight"],
+                [],
+                ["MathJax_Message"]);
 //console.log(infoEnd);
 
                                     var range = rangy.createRange(elem.ownerDocument); //createNativeRange
@@ -276,12 +282,18 @@ console.debug("MO readaloud attr: " + readaloud);
                                 {
                                     var partialStartCfi = parts[0] + parts[1];
                                     var startCFI = "epubcfi(" + partialStartCfi + ")";
-                                    var infoStart = EPUBcfi.getTextTerminusInfoWithPartialCFI(startCFI, $iframe[0].contentDocument);
+                                    var infoStart = EPUBcfi.getTextTerminusInfoWithPartialCFI(startCFI, $iframe[0].contentDocument,
+                ["cfi-marker", "mo-cfi-highlight"],
+                [],
+                ["MathJax_Message"]);
 //console.log(infoStart);
 
                                     var partialEndCfi = parts[0] + parts[2];
                                     var endCFI = "epubcfi(" + partialEndCfi + ")";
-                                    var infoEnd = EPUBcfi.getTextTerminusInfoWithPartialCFI(endCFI, $iframe[0].contentDocument);
+                                    var infoEnd = EPUBcfi.getTextTerminusInfoWithPartialCFI(endCFI, $iframe[0].contentDocument,
+                ["cfi-marker", "mo-cfi-highlight"],
+                [],
+                ["MathJax_Message"]);
 //console.log(infoEnd);
 
                                     var cfiTextParent = infoStart.textNode[0].parentNode;
@@ -354,7 +366,10 @@ console.debug("MO readaloud attr: " + readaloud);
                                 try
                                 {
                                     var cfi = "epubcfi(" + partial + ")";
-                                    $element = EPUBcfi.getTargetElementWithPartialCFI(cfi, $iframe[0].contentDocument);
+                                    $element = EPUBcfi.getTargetElementWithPartialCFI(cfi, $iframe[0].contentDocument,
+                ["cfi-marker", "mo-cfi-highlight"],
+                [],
+                ["MathJax_Message"]);
                                 }
                                 catch (error)
                                 {
