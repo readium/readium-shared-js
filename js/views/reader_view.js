@@ -103,7 +103,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
         _currentView.setViewSettings(_viewerSettings);
 
         _currentView.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function($iframe, spineItem) {
-
             _mediaOverlayDataInjector.attachMediaOverlayData($iframe, spineItem, _viewerSettings);
             _internalLinksSupport.processLinkElements($iframe, spineItem);
             _annotationsManager.attachAnnotations($iframe, spineItem);
