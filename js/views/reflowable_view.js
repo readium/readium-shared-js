@@ -292,7 +292,18 @@ ReadiumSDK.Views.ReflowableView = function(options){
             pageIndex = _navigationLogic.getPageForElementId(pageRequest.elementId);
         }
         else if(pageRequest.elementCfi) {
-            pageIndex = _navigationLogic.getPageForElementCfi(pageRequest.elementCfi);
+            try
+            {
+                pageIndex = _navigationLogic.getPageForElementCfi(pageRequest.elementCfi,
+                    ["cfi-marker", "mo-cfi-highlight"],
+                    [],
+                    ["MathJax_Message"]);
+            }
+            catch (e)
+            {
+                pageIndex = 0;
+                console.error(e);
+            }
         }
         else if(pageRequest.firstPage) {
             pageIndex = 0;

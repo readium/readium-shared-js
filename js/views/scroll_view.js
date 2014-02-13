@@ -278,10 +278,18 @@ ReadiumSDK.Views.ScrollView = function(options){
         }
         else if(pageRequest.elementCfi) {
 
-            $element = _navigationLogic.getElementByCfi(pageRequest.elementCfi,
-                ["cfi-marker", "mo-cfi-highlight"],
-                [],
-                ["MathJax_Message"]);
+            try
+            {
+                $element = _navigationLogic.getElementByCfi(pageRequest.elementCfi,
+                    ["cfi-marker", "mo-cfi-highlight"],
+                    [],
+                    ["MathJax_Message"]);
+            }
+            catch (e)
+            {
+                $element = undefined;
+                console.error(e);
+            }
 
             if(!$element) {
                 console.warn("Element cfi=" + pageRequest.elementCfi + " not found!");

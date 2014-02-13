@@ -96,11 +96,11 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
         return cfi + "@0:" + foundElement.percentY;
     };
 
-    this.getPageForElementCfi = function(cfi) {
+    this.getPageForElementCfi = function(cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
         var cfiParts = splitCfi(cfi);
 
-        var $element = getElementByPartialCfi(cfiParts.cfi);
+        var $element = getElementByPartialCfi(cfiParts.cfi, classBlacklist, elementBlacklist, idBlacklist);
 
         if(!$element) {
             return -1;
