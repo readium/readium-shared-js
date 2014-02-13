@@ -21,8 +21,21 @@
 /////////////////////////
 //SmilNode
 
-ReadiumSDK.Models.Smil.SmilNode = function() {
+ReadiumSDK.Models.Smil.SmilNode = function(parent) {
 
+    this.parent = parent;
+	
+    //root node is a smil model
+    this.getSmil = function() {
+
+        var node = this;
+        while(node.parent) {
+            node = node.parent;
+        }
+
+        return node;
+    };
+    
     this.hasAncestor = function(node)
     {
         var parent = this.parent;
@@ -37,26 +50,18 @@ ReadiumSDK.Models.Smil.SmilNode = function() {
         }
 
         return false;
-    }
+    };
 };
 
-ReadiumSDK.Models.Smil.TimeContainerNode = function() {
+ReadiumSDK.Models.Smil.TimeContainerNode = function(parent) {
+
+    this.parent = parent;
+    
     this.id = "";
     this.epubtype = "";
     this.index = undefined;
-    this.parent = undefined;
     this.children = undefined;
 	
-    //root node is a smil model
-    this.getSmil = function() {
-
-        var node = this;
-        while(node.parent) {
-            node = node.parent;
-        }
-
-        return node;
-    }
 
     this.isEscapable = function(userEscapables)
     {
@@ -86,7 +91,7 @@ ReadiumSDK.Models.Smil.TimeContainerNode = function() {
         }
 
         return false;
-    }
+    };
 
     this.isSkippable = function(userSkippables)
     {
@@ -116,7 +121,7 @@ ReadiumSDK.Models.Smil.TimeContainerNode = function() {
         }
 
         return false;
-    }
+    };
 };
 
 ReadiumSDK.Models.Smil.TimeContainerNode.prototype = new ReadiumSDK.Models.Smil.SmilNode();
@@ -124,7 +129,10 @@ ReadiumSDK.Models.Smil.TimeContainerNode.prototype = new ReadiumSDK.Models.Smil.
 //////////////////////////
 //MediaNode
 
-ReadiumSDK.Models.Smil.MediaNode = function() {
+ReadiumSDK.Models.Smil.MediaNode = function(parent) {
+
+    this.parent = parent;
+    
     this.src = "";
 };
 
@@ -133,10 +141,164 @@ ReadiumSDK.Models.Smil.MediaNode.prototype = new ReadiumSDK.Models.Smil.SmilNode
 ////////////////////////////
 //SeqNode
 
-ReadiumSDK.Models.Smil.SeqNode = function() {
+ReadiumSDK.Models.Smil.SeqNode = function(parent) {
+
+    this.parent = parent;
+    
     this.children = [];
     this.nodeType = "seq";
     this.textref = "";
+    
+    this.durationMilliseconds = function()
+    {
+        var smilData = this.getSmil();
+            
+        var total = 0;
+        
+        for (var i = 0; i < this.children.length; i++)
+        {
+            var container = this.children[i];
+            if (container.nodeType === "par")
+            {
+                if (!container.audio)
+                {
+                    continue;
+                }
+                if (container.text && (!container.text.manifestItemId || container.text.manifestItemId != smilData.spineItemId))
+                {
+// console.log(container.text);
+// console.log(smilData.spineItemId);
+                    continue;
+                }
+                
+                var clipDur = container.audio.clipDurationMilliseconds();
+                total += clipDur;
+            }
+            else if (container.nodeType === "seq")
+            {
+                total += container.durationMilliseconds();
+            }
+        }
+
+        return total;
+    };
+    
+    this.clipOffset = function(offset, par)
+    {
+        var smilData = this.getSmil();
+        
+        for (var i = 0; i < this.children.length; i++)
+        {
+            var container = this.children[i];
+            if (container.nodeType === "par")
+            {
+                if (container == par)
+                {
+                    return true;
+                }
+
+                if (!container.audio)
+                {
+                    continue;
+                }
+
+                if (container.text && (!container.text.manifestItemId || container.text.manifestItemId != smilData.spineItemId))
+                {
+                    continue;
+                }
+
+                var clipDur = container.audio.clipDurationMilliseconds();
+                offset.offset += clipDur;
+            }
+            else if (container.nodeType === "seq")
+            {
+                var found = container.clipOffset(offset, par);
+                if (found)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    };
+
+    this.parallelAt = function(timeMilliseconds)
+    {
+        var smilData = this.getSmil();
+        
+        var offset = 0;
+
+        for (var i = 0; i < this.children.length; i++)
+        {
+            var timeAdjusted = timeMilliseconds - offset;
+
+            var container = this.children[i];
+            
+            if (container.nodeType === "par")
+            {
+                if (!container.audio)
+                {
+                    continue;
+                }
+
+                if (container.text && (!container.text.manifestItemId || container.text.manifestItemId != smilData.spineItemId))
+                {
+                    continue;
+                }
+
+                var clipDur = container.audio.clipDurationMilliseconds();
+
+                if (clipDur > 0 && timeAdjusted <= clipDur)
+                {
+                    return container;
+                }
+
+                offset += clipDur;
+            }
+            else if (container.nodeType === "seq")
+            {
+                var para = container.parallelAt(timeAdjusted);
+                if (para)
+                {
+                    return para;
+                }
+
+                offset += container.durationMilliseconds();
+            }
+        }
+
+        return undefined;
+    };
+
+    this.nthParallel = function(index, count)
+    {
+        for (var i = 0; i < this.children.length; i++)
+        {
+            var container = this.children[i];
+            
+            if (container.nodeType === "par")
+            {
+                count.count++;
+
+                if (count.count == index)
+                {
+                    return container;
+                }
+            }
+            else if (container.nodeType === "seq")
+            {
+                var para = container.nthParallel(index, count);
+                if (para)
+                {
+                    return para;
+                }
+            }
+        }
+
+        return undefined;
+    };
+    
 };
 
 ReadiumSDK.Models.Smil.SeqNode.prototype = new ReadiumSDK.Models.Smil.TimeContainerNode();
@@ -144,7 +306,10 @@ ReadiumSDK.Models.Smil.SeqNode.prototype = new ReadiumSDK.Models.Smil.TimeContai
 //////////////////////////
 //ParNode
 
-ReadiumSDK.Models.Smil.ParNode = function() {
+ReadiumSDK.Models.Smil.ParNode = function(parent) {
+
+    this.parent = parent;
+    
     this.children = [];
     this.nodeType = "par";
     this.text = undefined;
@@ -157,11 +322,56 @@ ReadiumSDK.Models.Smil.ParNode.prototype = new ReadiumSDK.Models.Smil.TimeContai
 //////////////////////////
 //TextNode
 
-ReadiumSDK.Models.Smil.TextNode = function() {
+ReadiumSDK.Models.Smil.TextNode = function(parent) {
+
+    this.parent = parent;
 
     this.nodeType = "text";
     this.srcFile = "";
     this.srcFragmentId = "";
+    
+    
+    this.manifestItemId = undefined;
+    this.updateMediaManifestItemId = function()
+    {
+        var smilData = this.getSmil();
+        
+        if (!smilData.href || !smilData.href.length)
+        {
+            return; // Blank MO page placeholder, no real SMIL
+        }
+        
+        // var srcParts = item.src.split('#');
+//         item.srcFile = srcParts[0];
+//         item.srcFragmentId = (srcParts.length === 2) ? srcParts[1] : "";
+        
+        var src = this.srcFile ? this.srcFile : this.src;
+// console.log("src: " + src);
+// console.log("smilData.href: " + smilData.href);
+        var ref = ReadiumSDK.Helpers.ResolveContentRef(src, smilData.href);
+//console.log("ref: " + ref);
+        var full = smilData.mo.package.resolveRelativeUrlMO(ref);
+// console.log("full: " + full);
+// console.log("---");
+        for (var j = 0; j < smilData.mo.package.spine.items.length; j++)
+        {
+            var item = smilData.mo.package.spine.items[j];
+//console.log("item.href: " + item.href);
+            var url = smilData.mo.package.resolveRelativeUrl(item.href);
+//console.log("url: " + url);
+            if (url === full)
+            {
+//console.error("FOUND: " + item.idref);
+                this.manifestItemId = item.idref;
+                return;
+            }
+        }
+        
+        console.error("Cannot set the Media ManifestItemId? " + this.src + " && " + smilData.href);
+        
+//        throw "BREAK";
+    };
+    
 };
 
 ReadiumSDK.Models.Smil.TextNode.prototype = new ReadiumSDK.Models.Smil.MediaNode();
@@ -169,7 +379,9 @@ ReadiumSDK.Models.Smil.TextNode.prototype = new ReadiumSDK.Models.Smil.MediaNode
 ///////////////////////////
 //AudioNode
 
-ReadiumSDK.Models.Smil.AudioNode = function() {
+ReadiumSDK.Models.Smil.AudioNode = function(parent) {
+
+    this.parent = parent;
 
     this.nodeType = "audio";
 
@@ -177,6 +389,20 @@ ReadiumSDK.Models.Smil.AudioNode = function() {
 
     this.MAX = 1234567890.1; //Number.MAX_VALUE - 0.1; //Infinity;
     this.clipEnd = this.MAX;
+    
+
+    this.clipDurationMilliseconds = function()
+    {
+        var _clipBeginMilliseconds = this.clipBegin * 1000;
+        var _clipEndMilliseconds = this.clipEnd * 1000;
+        
+        if (this.clipEnd >= this.MAX || _clipEndMilliseconds <= _clipBeginMilliseconds)
+        {
+            return 0;
+        }
+
+        return _clipEndMilliseconds - _clipBeginMilliseconds;
+    };  
 };
 
 ReadiumSDK.Models.Smil.AudioNode.prototype = new ReadiumSDK.Models.Smil.MediaNode();
@@ -186,26 +412,41 @@ ReadiumSDK.Models.Smil.AudioNode.prototype = new ReadiumSDK.Models.Smil.MediaNod
 
 ReadiumSDK.Models.SmilModel = function() {
 
+    this.parent = undefined;
+    
+    
+    
     this.children = []; //collection of seq or par smil nodes
     this.id = undefined; //manifest item id
     this.href = undefined; //href of the .smil source file
     this.duration = undefined;
     this.mo = undefined;
     
-    this.durationMilliseconds_Calculated = function()
+    this.parallelAt = function(timeMilliseconds)
     {
-        return 0;
+        return this.children[0].parallelAt(timeMilliseconds);
     };
-    
-    this.nthParallel = function(parIndex)
+
+    this.nthParallel = function(index)
     {
-        var par = undefined;
-        return par;
+        var count = {count: -1};
+        return this.children[0].nthParallel(index, count);
     };
-    
+
     this.clipOffset = function(par)
     {
+        var offset = {offset: 0};
+        if (this.children[0].clipOffset(offset, par))
+        {
+            return offset.offset;
+        }
+
         return 0;
+    };
+    
+    this.durationMilliseconds_Calculated = function()
+    {
+        return this.children[0].durationMilliseconds();
     };
 };
 
@@ -231,6 +472,7 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
     smilModel.id = smilDTO.id;
     smilModel.spineItemId = smilDTO.spineItemId;
     smilModel.href = smilDTO.href;
+    
     smilModel.smilVersion = smilDTO.smilVersion;
     
     smilModel.duration = smilDTO.duration;
@@ -282,8 +524,8 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
             console.log(getIndent() + "JS MO seq");
             }
 
-            node = new ReadiumSDK.Models.Smil.SeqNode();
-            node.parent = parent;
+            node = new ReadiumSDK.Models.Smil.SeqNode(parent);
+
             safeCopyProperty("textref", nodeDTO, node, true);
             safeCopyProperty("id", nodeDTO, node);
             safeCopyProperty("epubtype", nodeDTO, node);
@@ -299,8 +541,8 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
             console.log(getIndent() + "JS MO par");
             }
 
-            node = new ReadiumSDK.Models.Smil.ParNode();
-            node.parent = parent;
+            node = new ReadiumSDK.Models.Smil.ParNode(parent);
+
             safeCopyProperty("id", nodeDTO, node);
             safeCopyProperty("epubtype", nodeDTO, node);
 
@@ -329,8 +571,8 @@ var forceTTS = false; // for testing only!
             if (forceTTS || !node.audio)
             {
                 // synthetic speech (playback using TTS engine), or embedded media, or blank page
-                var fakeAudio = new ReadiumSDK.Models.Smil.AudioNode();
-                fakeAudio.parent = node;
+                var fakeAudio = new ReadiumSDK.Models.Smil.AudioNode(node);
+
                 fakeAudio.clipBegin = 0;
                 fakeAudio.clipEnd = fakeAudio.MAX;
                 fakeAudio.src = undefined;
@@ -345,12 +587,14 @@ var forceTTS = false; // for testing only!
             console.log(getIndent() + "JS MO text");
             }
 
-            node = new ReadiumSDK.Models.Smil.TextNode();
-            node.parent = parent;
+            node = new ReadiumSDK.Models.Smil.TextNode(parent);
+
             safeCopyProperty("src", nodeDTO, node, true);
             safeCopyProperty("srcFile", nodeDTO, node, true);
             safeCopyProperty("srcFragmentId", nodeDTO, node, false);
             safeCopyProperty("id", nodeDTO, node);
+            
+            node.updateMediaManifestItemId();
         }
         else if (nodeDTO.nodeType == "audio") {
 
@@ -359,8 +603,8 @@ var forceTTS = false; // for testing only!
             console.log(getIndent() + "JS MO audio");
             }
 
-            node = new ReadiumSDK.Models.Smil.AudioNode();
-            node.parent = parent;
+            node = new ReadiumSDK.Models.Smil.AudioNode(parent);
+
             safeCopyProperty("src", nodeDTO, node, true);
             safeCopyProperty("id", nodeDTO, node);
 
@@ -393,6 +637,8 @@ var forceTTS = false; // for testing only!
                 }
                 node.clipEnd = node.MAX;
             }
+            
+            //node.updateMediaManifestItemId(); ONLY XHTML SPINE ITEMS 
         }
         else {
             console.error("Unexpected smil node type: " + nodeDTO.nodeType);

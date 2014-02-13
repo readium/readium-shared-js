@@ -17,13 +17,92 @@
 //  You should have received a copy of the GNU General Public License
 
 
-ReadiumSDK.Models.MediaOverlay = function() {
+ReadiumSDK.Models.MediaOverlay = function(package) {
 
+    this.package = package;
+    
+
+    this.parallelAt = function(timeMilliseconds)
+    {
+        var offset = 0;
+        
+        for (var i = 0; i < this.smil_models.length; i++)
+        {
+            var smilData = this.smil_models[i];
+            
+            var timeAdjusted = timeMilliseconds - offset;
+
+            var para = smilData.parallelAt(timeAdjusted);
+            if (para)
+            {
+                return para;
+            }
+
+            offset += smilData.durationMilliseconds_Calculated();
+        }
+
+        return undefined;
+    };
+
+    this.percentToPosition = function(percent, smilData, smilIndex, par, parIndex, milliseconds)
+    {
+        if (percent < 0.0 || percent > 100.0)
+        {
+            percent = 0.0;
+        }
+
+        var total = durationMilliseconds_Calculated();
+
+        var timeMs = total * (percent / 100.0);
+
+        par.par = parallelAt(timeMs);
+        if (!par.par)
+        {
+            return;
+        }
+        
+        var smilDataPar = par.par.getSmil();
+        if (!smilDataPar)
+        {
+            return;
+        }
+        
+        var smilDataOffset = 0;
+        
+        for (var i = 0; i < this.smil_models.length; i++)
+        {
+            smilData.smilData = this.smil_models[i];
+            if (smilData.smilData == smilDataPar)
+            {
+                break;
+            }
+            smilDataOffset += smilData.smilData.durationMilliseconds_Calculated();
+        }
+
+        milliseconds.milliseconds = timeMs - (smilDataOffset + smilData.smilData.clipOffset(par.par));
+    };
+
+    this.durationMilliseconds_Calculated = function()
+    {
+        var total = 0;
+        
+        for (var i = 0; i < this.smil_models.length; i++)
+        {
+            var smilData = this.smil_models[i];
+
+            total += smilData.durationMilliseconds_Calculated();
+        }
+        
+        return total;
+    };
+    
     this.positionToPercent = function(smilIndex, parIndex, milliseconds)
     {
-                console.log(playPosition);
-                console.log(smilIndex);
-                console.log(parIndex);
+// console.log(">>>>>>>>>>");
+// console.log(milliseconds);
+// console.log(smilIndex);
+// console.log(parIndex);
+// console.log("-------");
                 
         if (smilIndex >= this.smil_models.length)
         {
@@ -37,6 +116,8 @@ ReadiumSDK.Models.MediaOverlay = function() {
             smilDataOffset += sd.durationMilliseconds_Calculated();
         }
 
+//console.log(smilDataOffset);
+        
         var smilData = this.smil_models[smilIndex];
 
         var par = smilData.nthParallel(parIndex);
@@ -47,9 +128,16 @@ ReadiumSDK.Models.MediaOverlay = function() {
 
         var offset = smilDataOffset + smilData.clipOffset(par) + milliseconds;
 
+//console.log(offset);
+        
         var total = this.durationMilliseconds_Calculated();
 
+///console.log(total);
+
         var percent = (offset / total) * 100;
+
+//console.log("<<<<<<<<<<< " + percent);
+        
         return percent;
       };
       
@@ -121,9 +209,9 @@ ReadiumSDK.Models.MediaOverlay = function() {
     }
 };
 
-ReadiumSDK.Models.MediaOverlay.fromDTO = function(moDTO) {
+ReadiumSDK.Models.MediaOverlay.fromDTO = function(moDTO, package) {
 
-    var mo = new ReadiumSDK.Models.MediaOverlay();
+    var mo = new ReadiumSDK.Models.MediaOverlay(package);
 
     if(!moDTO) {
         console.debug("No Media Overlay.");
