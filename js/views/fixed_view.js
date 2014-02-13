@@ -46,7 +46,7 @@ ReadiumSDK.Views.FixedView = function(options){
     var _contentMetaSize;
 
     //event with namespace for clean unbinding
-    $(window).on("resize.ReadiumSDK.readerView", _.bind(onViewportResize, self));
+    $(window).on("resize.ReadiumSDK.readerView", _.bind(onViewportResizeInternal, self));
 
     function createOnePageView(cssclass, contentAlignment) {
 
@@ -162,7 +162,11 @@ ReadiumSDK.Views.FixedView = function(options){
         self.trigger(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
     }
 
-    function onViewportResize() {
+    this.onViewportResize = function() {
+        onViewportResizeInternal();
+    };
+
+    function onViewportResizeInternal() {
 
         //because change of the viewport orientation can alter pagination behaviour we have to check if
         //visible content stays same
