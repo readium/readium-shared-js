@@ -495,7 +495,8 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
 
     var safeCopyProperty = function(property, from, to, isRequired) {
 
-        if(property in from) {
+        if((property in from))
+        { // && from[property] !== ""
 
             if( !(property in to) ) {
                 console.debug("property " + property + " not declared in smil node " + to.nodeType);

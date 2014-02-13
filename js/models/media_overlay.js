@@ -43,7 +43,7 @@ ReadiumSDK.Models.MediaOverlay = function(package) {
 
         return undefined;
     };
-
+    
     this.percentToPosition = function(percent, smilData, par, milliseconds)
     {
         if (percent < 0.0 || percent > 100.0)

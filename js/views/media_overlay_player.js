@@ -1343,6 +1343,12 @@ console.debug("TTS resume");
                 return;
             }
         }
+        
+        // body (not FRAG ID)
+        if (_smilIterator.currentPar.element) {
+            return;
+        }
+        
         /*
         var textRelativeRef = ReadiumSDK.Helpers.ResolveContentRef(_smilIterator.currentPar.text.srcFile, _smilIterator.smil.href);
 console.debug("textRelativeRef: " + textRelativeRef);
