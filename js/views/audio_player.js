@@ -212,8 +212,8 @@
     
         function onPause()
         {
-            onStatusChanged({isPlaying: false});
             onAudioPause();
+            onStatusChanged({isPlaying: false});
         }
     
         function onEnded()

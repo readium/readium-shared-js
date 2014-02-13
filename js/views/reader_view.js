@@ -103,7 +103,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
         _currentView.setViewSettings(_viewerSettings);
 
         _currentView.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function($iframe, spineItem) {
-
             _mediaOverlayDataInjector.attachMediaOverlayData($iframe, spineItem, _viewerSettings);
             _internalLinksSupport.processLinkElements($iframe, spineItem);
             _annotationsManager.attachAnnotations($iframe, spineItem);
@@ -522,7 +521,17 @@ ReadiumSDK.Views.ReaderView = function(options) {
         }
 
     };
+    
+    this.getElementByCfi = function(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
+        if(_currentView) {
+            return _currentView.getElementByCfi(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist);
+        }
+
+        return undefined;
+
+    };
+    
     this.getElement = function(spineItem, selector) {
 
         if(_currentView) {
@@ -544,7 +553,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
         _mediaOverlayPlayer.applyStyles();
     }
 
-    //TODO: this is public function - should be JS Doc-ed
+    // calls openContentUrl after setting MO state
     this.mediaOverlaysOpenContentUrl = function(contentRefUrl, sourceFileHref, offset) {
         _mediaOverlayPlayer.mediaOverlaysOpenContentUrl(contentRefUrl, sourceFileHref, offset);
     };

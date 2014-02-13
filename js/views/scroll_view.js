@@ -278,7 +278,18 @@ ReadiumSDK.Views.ScrollView = function(options){
         }
         else if(pageRequest.elementCfi) {
 
-            $element = _navigationLogic.getElementByCfi(pageRequest.elementCfi);
+            try
+            {
+                $element = _navigationLogic.getElementByCfi(pageRequest.elementCfi,
+                    ["cfi-marker", "mo-cfi-highlight"],
+                    [],
+                    ["MathJax_Message"]);
+            }
+            catch (e)
+            {
+                $element = undefined;
+                console.error(e);
+            }
 
             if(!$element) {
                 console.warn("Element cfi=" + pageRequest.elementCfi + " not found!");
@@ -492,6 +503,16 @@ ReadiumSDK.Views.ScrollView = function(options){
         return [_currentSpineItem];
     };
 
+    this.getElementByCfi = function(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
+
+        if(spineItem != _currentSpineItem) {
+            console.error("spine item is not loaded");
+            return undefined;
+        }
+
+        return _navigationLogic.getElementByCfi(cfi, classBlacklist, elementBlacklist, idBlacklist);
+    };
+    
     this.getElement = function(spineItem, selector) {
 
         if(spineItem != _currentSpineItem) {
