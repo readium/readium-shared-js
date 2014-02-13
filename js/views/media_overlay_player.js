@@ -1364,8 +1364,10 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
     }
 
     this.escape = function() {
-
+        
         if(!_smilIterator || !_smilIterator.currentPar) {
+
+            this.toggleMediaOverlay();
             return;
         }
 
