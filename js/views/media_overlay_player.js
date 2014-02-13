@@ -633,7 +633,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                 self.pause();
                 return;
             }
-
+            
             if(_settings.mediaOverlaysSkipSkippables)
             {
                 var skip = false;

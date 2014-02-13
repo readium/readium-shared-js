@@ -94,7 +94,7 @@ ReadiumSDK.Models.Smil.TimeContainerNode = function() {
         {
             return false;
         }
-
+        
         var smilModel = this.getSmil();
         if (!smilModel.mo)
         {
