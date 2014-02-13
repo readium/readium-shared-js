@@ -19,6 +19,40 @@
 
 ReadiumSDK.Models.MediaOverlay = function() {
 
+    this.positionToPercent = function(smilIndex, parIndex, milliseconds)
+    {
+                console.log(playPosition);
+                console.log(smilIndex);
+                console.log(parIndex);
+                
+        if (smilIndex >= this.smil_models.length)
+        {
+            return -1.0;
+        }
+
+        var smilDataOffset = 0;
+        for (var i = 0; i < smilIndex; i++)
+        {
+            var sd = this.smil_models[i];
+            smilDataOffset += sd.durationMilliseconds_Calculated();
+        }
+
+        var smilData = this.smil_models[smilIndex];
+
+        var par = smilData.nthParallel(parIndex);
+        if (!par)
+        {
+            return -1.0;
+        }
+
+        var offset = smilDataOffset + smilData.clipOffset(par) + milliseconds;
+
+        var total = this.durationMilliseconds_Calculated();
+
+        var percent = (offset / total) * 100;
+        return percent;
+      };
+      
     this.smil_models = [];
 
     this.skippables = [];

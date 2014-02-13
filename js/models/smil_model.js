@@ -191,6 +191,22 @@ ReadiumSDK.Models.SmilModel = function() {
     this.href = undefined; //href of the .smil source file
     this.duration = undefined;
     this.mo = undefined;
+    
+    this.durationMilliseconds_Calculated = function()
+    {
+        return 0;
+    };
+    
+    this.nthParallel = function(parIndex)
+    {
+        var par = undefined;
+        return par;
+    };
+    
+    this.clipOffset = function(par)
+    {
+        return 0;
+    };
 };
 
 ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
