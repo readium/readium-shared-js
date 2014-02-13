@@ -1202,14 +1202,12 @@ console.debug("TTS resume");
 
             if (!_smilIterator || !_smilIterator.currentPar)
             {
-console.log("UP 1");
                 return;
             }
 
             var smil = _smilIterator.smil; //currentPar.getSmil();
             if (!smil.mo)
             {
-console.log("UP 2");
                 return;
             }
 
@@ -1221,7 +1219,6 @@ console.log("UP 2");
             var playPosition = audioCurrentTime - _smilIterator.currentPar.audio.clipBegin;
             if (playPosition <= 0)
             {
-console.log("UP 3");
                 return;
             }
 

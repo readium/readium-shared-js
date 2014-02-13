@@ -509,7 +509,7 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
             }
         }
         else if(isRequired) {
-            console.error("Required property " + property + " not found in smil node " + from.nodeType);
+            console.log("Required property " + property + " not found in smil node " + from.nodeType);
         }
     };
 

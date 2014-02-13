@@ -44,18 +44,18 @@ ReadiumSDK.Models.MediaOverlay = function(package) {
         return undefined;
     };
 
-    this.percentToPosition = function(percent, smilData, smilIndex, par, parIndex, milliseconds)
+    this.percentToPosition = function(percent, smilData, par, milliseconds)
     {
         if (percent < 0.0 || percent > 100.0)
         {
             percent = 0.0;
         }
-
-        var total = durationMilliseconds_Calculated();
+            
+        var total = this.durationMilliseconds_Calculated();
 
         var timeMs = total * (percent / 100.0);
 
-        par.par = parallelAt(timeMs);
+        par.par = this.parallelAt(timeMs);
         if (!par.par)
         {
             return;

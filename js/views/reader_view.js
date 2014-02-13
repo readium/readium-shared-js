@@ -553,7 +553,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
         _mediaOverlayPlayer.applyStyles();
     }
 
-    //TODO: this is public function - should be JS Doc-ed
+    // calls openContentUrl after setting MO state
     this.mediaOverlaysOpenContentUrl = function(contentRefUrl, sourceFileHref, offset) {
         _mediaOverlayPlayer.mediaOverlaysOpenContentUrl(contentRefUrl, sourceFileHref, offset);
     };
