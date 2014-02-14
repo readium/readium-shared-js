@@ -22,7 +22,16 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
     //var BACK_COLOR = "#99CCCC";
 
     var _highlightedElement = undefined;
+    this.isElementHighlighted = function(element)
+    {
+        return _highlightedElement && element === _highlightedElement;
+    }
+    
     var _highlightedCfi = undefined;
+    this.isCfiHighlighted = function(cfi)
+    {
+        return _highlightedCfi && cfi === _highlightedCfi;
+    }
 
     var _activeClass = "";
     var _playbackActiveClass = "";
@@ -49,7 +58,7 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
         $userStyle = undefined;
     };
 
-    function ensureUserStyle($element)
+    function ensureUserStyle($element, hasAuthorStyle, overrideWithUserStyle)
     {
         if ($userStyle)
         {
@@ -68,9 +77,12 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
 
         $userStyle.append("." + DEFAULT_MO_ACTIVE_CLASS + " {");
         
-        var style = _reader.userStyles().findStyle("." + DEFAULT_MO_ACTIVE_CLASS);        
+        var fallbackUserStyle = "background-color: #333333 !important; color: white !important; border-radius: 0.4em;";
+        
+        var style = overrideWithUserStyle; //_reader.userStyles().findStyle("." + DEFAULT_MO_ACTIVE_CLASS);        
         if (style)
         {
+            var atLeastOne = false;
             for(var prop in style.declarations)
             {
                 if(!style.declarations.hasOwnProperty(prop))
@@ -78,8 +90,18 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
                     continue;
                 }
 
+                atLeastOne = true;
                 $userStyle.append(prop + ": " + style.declarations[prop] + "; ");
             }
+            
+            if (!atLeastOne && !hasAuthorStyle)
+            {
+                $userStyle.append(fallbackUserStyle);
+            }
+        }
+        else if (!hasAuthorStyle)
+        {
+            $userStyle.append(fallbackUserStyle);
         }
         
         $userStyle.append("}");
@@ -120,7 +142,7 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
         var hasAuthorStyle = _activeClass && _activeClass !== "";
         var overrideWithUserStyle = _reader.userStyles().findStyle("." + DEFAULT_MO_ACTIVE_CLASS); // TODO: performance issue?
 
-        ensureUserStyle($hel);
+        ensureUserStyle($hel, hasAuthorStyle, overrideWithUserStyle);
                 
         if (overrideWithUserStyle || !hasAuthorStyle)
         {
@@ -195,7 +217,7 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
         var hasAuthorStyle = _activeClass && _activeClass !== "";
         var overrideWithUserStyle = _reader.userStyles().findStyle("." + DEFAULT_MO_ACTIVE_CLASS); // TODO: performance issue?
 
-        ensureUserStyle($hel);
+        ensureUserStyle($hel, hasAuthorStyle, overrideWithUserStyle);
 
         var clazz = (overrideWithUserStyle || !hasAuthorStyle) ? DEFAULT_MO_ACTIVE_CLASS : _activeClass;
 

@@ -617,6 +617,16 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
         var openPageRequest = new ReadiumSDK.Models.PageOpenRequest(_currentSpineItem, initiator);
         openPageRequest.setPageIndex(page);
+        
+        var id = element.id;
+        if (!id)
+        {
+            id = element.getAttribute("id");
+        }
+        if (id)
+        {
+            openPageRequest.setElementId(id);
+        }
 
         self.openPage(openPageRequest);
     }

@@ -1328,17 +1328,23 @@ console.debug("TTS resume");
             if (_smilIterator.currentPar.element) {
     //console.error(_smilIterator.currentPar.element.id + ": " + _smilIterator.currentPar.audio.clipBegin + " / " + _smilIterator.currentPar.audio.clipEnd);
 
-                _elementHighlighter.highlightElement(_smilIterator.currentPar.element, _package.media_overlay.activeClass, _package.media_overlay.playbackActiveClass);
+                if (!_elementHighlighter.isElementHighlighted(_smilIterator.currentPar.element))
+                {
+                    _elementHighlighter.highlightElement(_smilIterator.currentPar.element, _package.media_overlay.activeClass, _package.media_overlay.playbackActiveClass);
 
-                reader.insureElementVisibility(_smilIterator.currentPar.element, self);
+                    reader.insureElementVisibility(_smilIterator.currentPar.element, self);
+                }
             
                 return;
             
             } else if (_smilIterator.currentPar.cfi) {
 
-                _elementHighlighter.highlightCfi(_smilIterator.currentPar, _package.media_overlay.activeClass, _package.media_overlay.playbackActiveClass);
+                if (!_elementHighlighter.isCfiHighlighted())
+                {
+                    _elementHighlighter.highlightCfi(_smilIterator.currentPar, _package.media_overlay.activeClass, _package.media_overlay.playbackActiveClass);
 
-                reader.insureElementVisibility(_smilIterator.currentPar.cfi.cfiTextParent, self);
+                    reader.insureElementVisibility(_smilIterator.currentPar.cfi.cfiTextParent, self);
+                }
                 
                 return;
             }
