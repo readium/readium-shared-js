@@ -75,10 +75,11 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
         _$iframe.css("left", "");
         _$iframe.css("right", "");
+        _$iframe.css("position", "relative");
         _$iframe.css(_spine.isLeftToRight() ? "left" : "right", "0px");
         _$iframe.css("overflow", "hidden");
 
-        _navigationLogic = new ReadiumSDK.Views.CfiNavigationLogic(_$contentFrame, _$iframe);
+        _navigationLogic = new ReadiumSDK.Views.CfiNavigationLogicReflowable(_$contentFrame, _$iframe, _paginationInfo);
 
         //we need this styles for css columnizer not to chop big images
         var declarations = {};
@@ -181,6 +182,9 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
         if(_$epubHtml) {
             _$epubHtml.css("font-size", _fontSize + "%");
+            _$epubHtml.css("-webkit-column-gap", _paginationInfo.columnGap + "px");
+            _$epubHtml.css("-moz-column-gap", _paginationInfo.columnGap + "px");
+            _$epubHtml.css("column-gap", _paginationInfo.columnGap + "px");
         }
     }
 
@@ -188,6 +192,8 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
         if(_$epubHtml) {
             _$epubHtml.css("-webkit-column-gap", _paginationInfo.columnGap + "px");
+            _$epubHtml.css("-moz-column-gap", _paginationInfo.columnGap + "px");
+            _$epubHtml.css("column-gap", _paginationInfo.columnGap + "px");
         }
     }
 
@@ -211,8 +217,8 @@ ReadiumSDK.Views.ReflowableView = function(options){
         var epubContentDocument = _$iframe[0].contentDocument;
         _$epubHtml = $("html", epubContentDocument);
 
-        _$epubHtml.css("height", "100%");
-        _$epubHtml.css("position", "fixed");
+        _$epubHtml.css("height", _lastViewPortSize.height + "px");
+        _$epubHtml.css("position", "relative");
         _$epubHtml.css("-webkit-column-axis", "horizontal");
 
         self.applyBookStyles();
@@ -452,22 +458,19 @@ ReadiumSDK.Views.ReflowableView = function(options){
         _$iframe.css("width", _lastViewPortSize.width + "px");
         _$iframe.css("height", _lastViewPortSize.height + "px");
 
-        _$epubHtml.css("height", _lastViewPortSize.height + "px");
-
-        _paginationInfo.columnWidth = (_lastViewPortSize.width - _paginationInfo.columnGap * (_paginationInfo.visibleColumnCount - 1)) / _paginationInfo.visibleColumnCount;
-
-        //we do this because CSS will floor column with by itself if it is not a round number
-        _paginationInfo.columnWidth = Math.floor(_paginationInfo.columnWidth);
-
-        _$epubHtml.css("width", _paginationInfo.columnWidth);
+        _paginationInfo.columnWidth = Math.floor(
+                (_lastViewPortSize.width - _paginationInfo.columnGap) / 2);
 
         shiftBookOfScreen();
 
         _$epubHtml.css("-webkit-column-width", _paginationInfo.columnWidth + "px");
+        _$epubHtml.css("-moz-column-width", _paginationInfo.columnWidth + "px");
+        _$epubHtml.css("column-width", _paginationInfo.columnWidth + "px");
 
         //TODO it takes time for rendition_layout engine to arrange columns we waite
         //it would be better to react on rendition_layout column reflow finished event
         setTimeout(function(){
+            _$epubHtml.css("left", 0);
 
             var columnizedContentWidth = _$epubHtml[0].scrollWidth;
 
@@ -516,7 +519,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
     this.getFirstVisibleElementCfi = function() {
 
         var contentOffsets = getVisibleContentOffsets();
-        return _navigationLogic.getFirstVisibleElementCfi(contentOffsets.top);
+        return _navigationLogic.getFirstVisibleElementCfi(contentOffsets);
     };
 
     this.getPaginationInfo = function() {
@@ -564,12 +567,11 @@ ReadiumSDK.Views.ReflowableView = function(options){
     };
 
     function getVisibleContentOffsets() {
-        var columnsLeftOfViewport = Math.round(_paginationInfo.pageOffset / (_paginationInfo.columnWidth + _paginationInfo.columnGap));
+        var outFrameWidth = $(window).width() - _$iframe.width();
+        var leftOffset = ((_paginationInfo.columnWidth + _paginationInfo.columnGap) * _paginationInfo.visibleColumnCount  + outFrameWidth) * _paginationInfo.currentSpreadIndex;
+        var rightOffset = leftOffset + $(window).width();
 
-        var topOffset =  columnsLeftOfViewport * _$contentFrame.height();
-        var bottomOffset = topOffset + _paginationInfo.visibleColumnCount * _$contentFrame.height();
-
-        return {top: topOffset, bottom: bottomOffset};
+        return {left: leftOffset, right: rightOffset};
     }
 
     this.getLoadedSpineItems = function() {
