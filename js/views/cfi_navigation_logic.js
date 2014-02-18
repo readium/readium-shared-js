@@ -21,18 +21,277 @@
  *
  * @param $viewport
  * @param $iframe
+ * @param options Additional settings for NavigationLogic object
+ *      - rectangleBased    If truthy, clientRect-based geometry will be used
+ *      - paginationInfo    Layout details, used by clientRect-based geometry
  * @constructor
  */
 
-ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
+ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
+
+    options = options || {};
 
     this.getRootElement = function(){
 
         return $iframe[0].contentDocument.documentElement;
     };
 
+    var visibilityCheckerFunc = options.rectangleBased
+        ? checkVisibilityByRectangles
+        : checkVisibilityByVerticalOffsets;
+
+    /**
+     * @private
+     * Retrieves _current_ full width of a column (including its gap)
+     *
+     * @returns {number} Full width of a column in pixels
+     */
+    function getColumnFullWidth() {
+        return options.paginationInfo.columnWidth + options.paginationInfo.columnGap;
+    }
+
+    /**
+     * @private
+     *
+     * Retrieves _current_ offset of a viewport
+     * (related to the beginning of the chapter)
+     */
+    function getVisibleContentOffsets() {
+        return {
+            left: options.paginationInfo.pageOffset
+        };
+    }
+
+    // Old (offsetTop-based) algorithm, useful in top-to-bottom layouts
+    function checkVisibilityByVerticalOffsets(
+            $element, visibleContentOffsets, shouldCalculateVisibilityOffset) {
+
+        var elementRect = ReadiumSDK.Helpers.Rect.fromElement($element);
+        if (_.isNaN(elementRect.left)) {
+            // this is actually a point element, doesnt have a bounding rectangle
+            elementRect = new ReadiumSDK.Helpers.Rect(
+                    $element.position().top, $element.position().left, 0, 0);
+        }
+        var topOffset = visibleContentOffsets.top || 0;
+        var isBelowVisibleTop = elementRect.bottom() > topOffset;
+        var isAboveVisibleBottom = visibleContentOffsets.bottom === undefined
+            ? elementRect.top < visibleContentOffsets.bottom
+            : true; //this check always passed, if corresponding offset isn't set
+
+        var percentOfElementHeight = 0;
+        if (isBelowVisibleTop && isAboveVisibleBottom) { // element is visible
+            if (!shouldCalculateVisibilityOffset) {
+                return true;
+            }
+            else if (elementRect.top <= topOffset) {
+                percentOfElementHeight = Math.ceil(
+                    100 * (topOffset - elementRect.top) / elementRect.height
+                );
+
+                // below goes another algorithm, which has been used in getVisibleElements pattern,
+                // but it seems to be a bit incorrect
+                // (as spatial offset should be measured at the first visible point of the element):
+                //
+                // var visibleTop = Math.max(elementRect.top, visibleContentOffsets.top);
+                // var visibleBottom = Math.min(elementRect.bottom(), visibleContentOffsets.bottom);
+                // var visibleHeight = visibleBottom - visibleTop;
+                // var percentVisible = Math.round((visibleHeight / elementRect.height) * 100);
+            }
+            return [$element, percentOfElementHeight];
+        }
+        return false; // element isn't visible
+    }
+
+    /**
+     * New (rectangle-based) algorithm, useful in multi-column layouts
+     *
+     * Note: the second param (props) ignored intentionally
+     * (no need to use them in normalization)
+     *
+     * @param {jQuery} $element
+     * @param {Object} _props
+     * @param {boolean} shouldCalculateVisibilityOffset
+     * @returns {Boolean|Array}
+     */
+    function checkVisibilityByRectangles(
+            $element, _props, shouldCalculateVisibilityOffset) {
+
+        var elementRectangles = getNormalizedRectangles($element);
+        var clientRectangles = elementRectangles.clientRectangles;
+
+        // for an element split between several CSS columns,
+        // both Firefox and IE produce as many client rectangles
+        // only the last one's `left` property should be checked
+        var rightmostRectangle = _.last(clientRectangles);
+        if (clientRectangles.length === 1) {
+            var frameHeight = $iframe.height();
+            // because of webkit inconsistency, that single rectangle should be adjusted
+            // until it hits the end OR will be based on the FIRST column that is visible
+            adjustRectangle(rightmostRectangle, frameHeight);
+        }
+
+        if (rightmostRectangle.left >= 0) {
+            // some part of element IS visible
+            return shouldCalculateVisibilityOffset
+                ? [$element, measureVisibilityRangeOffsetsByRectangles(clientRectangles)]
+                : true;
+        }
+        return false;
+    }
+
+    function findPageByRectangles($element) {
+        var visibleContentOffsets = getVisibleContentOffsets();
+        var elementRectangles = getNormalizedRectangles($element, visibleContentOffsets);
+        var clientRectangles  = elementRectangles.clientRectangles;
+        var leftmostRectangle = _.first(clientRectangles);
+        var frameHeight = $iframe.height();
+        if (clientRectangles.length === 1) {
+            adjustRectangle(leftmostRectangle, frameHeight);
+        }
+
+        var columnFullWidth = getColumnFullWidth();
+        var pageIndex = Math.round(leftmostRectangle.left / columnFullWidth);
+        if (leftmostRectangle.top < 0) {
+            pageIndex -= Math.ceil(-leftmostRectangle.top / frameHeight);
+        }
+
+        return pageIndex;
+    }
+
+    /**
+     * @private
+     * Calculates the visibility percentage based on its ClientRect dimensions
+     *
+     * @param {Array} clientRectangles (should already be normalized)
+     * @returns {number} - visibility percentage (0 < n <= 100)
+     */
+    function measureVisibilityRangeOffsetsByRectangles(clientRectangles) {
+
+        var heightTotal = 0;
+        var heightVisible = 0;
+
+        if (clientRectangles.length > 1) {
+            _.each(clientRectangles, function(rect) {
+                heightTotal += rect.height;
+                if (rect.left > 0) {
+                    heightVisible += rect.height;
+                }
+            });
+        }
+        else if (clientRectangles[0].top < 0) {
+            heightTotal   = clientRectangles[0].height;
+            heightVisible = heightTotal + clientRectangles[0].top;
+        }
+        else { // trivial case: element is 100% visible, y-offset is 0
+            return 0; // ... percents
+        }
+        return 100 - Math.floor(100 * heightVisible / heightTotal);
+    }
+
+    /**
+     * @private
+     * Retrieves the position of $element in multi-column layout
+     *
+     * @param {jQuery} $el
+     * @param {Object} [visibleContentOffsets]
+     * @returns {Object}
+     */
+    function getNormalizedRectangles($el, visibleContentOffsets) {
+
+        visibleContentOffsets = visibleContentOffsets || {};
+        var leftOffset = visibleContentOffsets.left || 0;
+        var topOffset  = visibleContentOffsets.top  || 0;
+
+        // union of all rectangles wrapping the element
+        var wrapperRectangle = normalizeRectangle(
+                $el[0].getBoundingClientRect(), leftOffset, topOffset);
+
+        // all the separate rectangles (for detecting position of the element
+        // split between several columns)
+        var clientRectangles = [];
+        var clientRectList = $el[0].getClientRects();
+        for (var i = 0, l = clientRectList.length; i < l; ++i) {
+            if (clientRectList[i].height > 0) {
+                // Firefox sometimes gets it wrong,
+                // adding literally empty (height = 0) client rectangle preceding the real one,
+                // that empty client rectanle shouldn't be retrieved
+                clientRectangles.push(
+                    normalizeRectangle(clientRectList[i], leftOffset, topOffset));
+            }
+        }
+
+        return {
+            wrapperRectangle: wrapperRectangle,
+            clientRectangles: clientRectangles
+        };
+    }
+
+    /**
+     * @private
+     * Converts TextRectangle object into a plain object,
+     * taking content offsets (=scrolls, position shifts etc.) into account
+     *
+     * @param {TextRectangle} textRect
+     * @param {number} leftOffset
+     * @param {number} topOffset
+     * @returns {Object}
+     */
+    function normalizeRectangle(textRect, leftOffset, topOffset) {
+
+        return {
+            left: textRect.left + leftOffset,
+            right: textRect.right + leftOffset,
+            top: textRect.top + topOffset,
+            bottom: textRect.bottom + topOffset,
+            width: textRect.right - textRect.left,
+            height: textRect.bottom - textRect.top
+        };
+    }
+
+    /**
+     * @private
+     *
+     * When element is spilled over two or more columns,
+     * most of the time Webkit-based browsers
+     * still assign a single clientRectangle to it, setting its `top` property to negative value
+     * (so it looks like it's rendered based on the second column)
+     * Alas, sometimes they decide to continue the first (leftmost) column - from _below_ its real height.
+     * In this case, `bottom` property is actually greater than element's height and had to be adjusted accordingly).
+     *
+     * Ugh.
+     *
+     * @param {Object} rectangleToAdjust
+     * @param {number} frameHeight
+     */
+    function adjustRectangle(rectangleToAdjust, frameHeight) {
+        var columnFullWidth = getColumnFullWidth();
+        // because of webkit inconsistency, that rectangle should be adjusted
+        // until it will be based on the rightmost column (and still won't be visible)
+        // OR will be based on the FIRST column that is visible
+        // so first we go left (rebasing on the leftmost column)
+        while (rectangleToAdjust.top < 0) {
+            rectangleToAdjust.left  -= columnFullWidth;
+            rectangleToAdjust.right -= columnFullWidth;
+            rectangleToAdjust.top    += frameHeight;
+            rectangleToAdjust.bottom += frameHeight;
+        }
+        // ... then go to right checking the visibility after each step
+        while (rectangleToAdjust.bottom > frameHeight
+                && rectangleToAdjust.left < 0 ) {
+            rectangleToAdjust.left  += columnFullWidth;
+            rectangleToAdjust.right += columnFullWidth;
+            rectangleToAdjust.top    -= frameHeight;
+            rectangleToAdjust.bottom -= frameHeight;
+        }
+    }
+
     //we look for text and images
-    this.findFirstVisibleElement = function (topOffset) {
+    this.findFirstVisibleElement = function (props) {
+
+        if (typeof props !== 'object') {
+            // compatibility with legacy code, `props` is `topOffset` actually
+            props = { top: props };
+        }
 
         var $elements;
         var $firstVisibleTextNode = null;
@@ -54,24 +313,13 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
                 $element = $(this); //image
             }
 
-            var elementRect = ReadiumSDK.Helpers.Rect.fromElement($element);
-
-            if (elementRect.bottom() > topOffset) {
-
-                $firstVisibleTextNode = $element;
-
-                if(elementRect.top > topOffset) {
-                    percentOfElementHeight = 0;
-                }
-                else {
-                    percentOfElementHeight = Math.ceil(((topOffset - elementRect.top) / elementRect.height) * 100);
-                }
-
-                // Break the loop
+            var visibilityResult = visibilityCheckerFunc($element, props, true);
+            if (visibilityResult) {
+                $firstVisibleTextNode = visibilityResult[0];
+                percentOfElementHeight = visibilityResult[1];
                 return false;
             }
-
-            return true; //next element
+            return true;
         });
 
         return {$element: $firstVisibleTextNode, percentY: percentOfElementHeight};
@@ -133,7 +381,9 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
 
     this.getPageForElement = function($element) {
 
-        return this.getPageForPointOnElement($element, 0, 0);
+        return options.rectangleBased
+            ? findPageByRectangles($element)
+            : this.getPageForPointOnElement($element, 0, 0);
     };
 
     this.getPageForPointOnElement = function($element, x, y) {
@@ -214,13 +464,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
 
     };
 
-    this.isElementVisible = function($element, visibleContentOffsets) {
-
-        var elementRect = ReadiumSDK.Helpers.Rect.fromElement($element);
-
-        return !(elementRect.bottom() <= visibleContentOffsets.top || elementRect.top >= visibleContentOffsets.bottom);
-    };
-
+    this.isElementVisible = visibilityCheckerFunc;
 
     this.getAllVisibleElementsWithSelector = function(selector, visibleContentOffset) {
         var elements = $(selector,this.getRootElement()).filter(function(e) { return true; });
@@ -239,35 +483,23 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
 
         // Find the first visible text node
         $.each($elements, function() {
+            var $element = this;
+            var visibilityResult = visibilityCheckerFunc(
+                    $element, visibleContentOffsets, true);
 
-            var elementRect = ReadiumSDK.Helpers.Rect.fromElement(this);
-            // this is actually a point element, doesnt have a bounding rectangle
-            if (_.isNaN(elementRect.left)) {
-                var left = this.position().left;
-                var top = this.position().top;
-                elementRect = new ReadiumSDK.Helpers.Rect(top, left, 0, 0);
-            }
-
-            if(elementRect.bottom() <= visibleContentOffsets.top) {
-                return true; //next element
-            }
-
-            if(elementRect.top >= visibleContentOffsets.bottom) {
-
-                // Break the loop
+            if (visibilityResult) {
+                var $visibleElement = visibilityResult[0];
+                var visibilityPercentage = 100 - visibilityResult[1];
+                visibleElements.push({
+                    element: $visibleElement[0], // DOM Element is pushed
+                    percentVisible: visibilityPercentage
+                });
                 return false;
             }
 
-            var visibleTop = Math.max(elementRect.top, visibleContentOffsets.top);
-            var visibleBottom = Math.min(elementRect.bottom(), visibleContentOffsets.bottom);
-
-            var visibleHeight = visibleBottom - visibleTop;
-            var percentVisible = Math.round((visibleHeight / elementRect.height) * 100);
-
-            visibleElements.push({element: this[0], percentVisible: percentVisible});
-
-            return true;
-
+            // continue if no visibleElements have been found yet,
+            // stop otherwise
+            return visibleElements.length === 0;
         });
 
         return visibleElements;

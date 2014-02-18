@@ -75,10 +75,13 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
         _$iframe.css("left", "");
         _$iframe.css("right", "");
+        _$iframe.css("position", "relative");
         _$iframe.css(_spine.isLeftToRight() ? "left" : "right", "0px");
         _$iframe.css("overflow", "hidden");
 
-        _navigationLogic = new ReadiumSDK.Views.CfiNavigationLogic(_$contentFrame, _$iframe);
+        _navigationLogic = new ReadiumSDK.Views.CfiNavigationLogic(
+                _$contentFrame, _$iframe,
+                { rectangleBased: true, paginationInfo: _paginationInfo });
 
         //we need this styles for css columnizer not to chop big images
         var declarations = {};
@@ -188,6 +191,8 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
         if(_$epubHtml) {
             _$epubHtml.css("-webkit-column-gap", _paginationInfo.columnGap + "px");
+            _$epubHtml.css("-moz-column-gap", _paginationInfo.columnGap + "px");
+            _$epubHtml.css("column-gap", _paginationInfo.columnGap + "px");
         }
     }
 
@@ -211,8 +216,8 @@ ReadiumSDK.Views.ReflowableView = function(options){
         var epubContentDocument = _$iframe[0].contentDocument;
         _$epubHtml = $("html", epubContentDocument);
 
-        _$epubHtml.css("height", "100%");
-        _$epubHtml.css("position", "fixed");
+        _$epubHtml.css("height", _lastViewPortSize.height + "px");
+        _$epubHtml.css("position", "relative");
         _$epubHtml.css("-webkit-column-axis", "horizontal");
 
         self.applyBookStyles();
@@ -464,10 +469,13 @@ ReadiumSDK.Views.ReflowableView = function(options){
         shiftBookOfScreen();
 
         _$epubHtml.css("-webkit-column-width", _paginationInfo.columnWidth + "px");
+        _$epubHtml.css("-moz-column-width", _paginationInfo.columnWidth + "px");
+        _$epubHtml.css("column-width", _paginationInfo.columnWidth + "px");
 
         //TODO it takes time for rendition_layout engine to arrange columns we waite
         //it would be better to react on rendition_layout column reflow finished event
         setTimeout(function(){
+            _$epubHtml.css("left", 0);
 
             var columnizedContentWidth = _$epubHtml[0].scrollWidth;
 
@@ -516,7 +524,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
     this.getFirstVisibleElementCfi = function() {
 
         var contentOffsets = getVisibleContentOffsets();
-        return _navigationLogic.getFirstVisibleElementCfi(contentOffsets.top);
+        return _navigationLogic.getFirstVisibleElementCfi(contentOffsets);
     };
 
     this.getPaginationInfo = function() {
