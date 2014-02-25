@@ -49,9 +49,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
         _$el = $(options.el);
         console.log("** EL is a string:" + _$el.attr('id'));
     }
-    
-    
- 
 
     if(options.iframeLoader) {
         _iframeLoader = options.iframeLoader;
@@ -103,6 +100,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
         _currentView.setViewSettings(_viewerSettings);
 
         _currentView.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function($iframe, spineItem) {
+
             _mediaOverlayDataInjector.attachMediaOverlayData($iframe, spineItem, _viewerSettings);
             _internalLinksSupport.processLinkElements($iframe, spineItem);
             _annotationsManager.attachAnnotations($iframe, spineItem);
@@ -280,7 +278,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
 //console.debug("UpdateSettings: " + JSON.stringify(settingsData));
 
         _viewerSettings.update(settingsData);
-        
+
         if(_currentView && !settingsData.doNotUpdateView) {
 
             var bookMark = _currentView.bookmarkCurrentPage();
@@ -408,6 +406,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
         openPage(pageData);
     };
 
+
     /**
      *
      * Opens specified page index of the current spine item
@@ -521,17 +520,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
         }
 
     };
-    
-    this.getElementByCfi = function(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
-        if(_currentView) {
-            return _currentView.getElementByCfi(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist);
-        }
-
-        return undefined;
-
-    };
-    
     this.getElement = function(spineItem, selector) {
 
         if(_currentView) {
@@ -553,7 +542,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
         _mediaOverlayPlayer.applyStyles();
     }
 
-    // calls openContentUrl after setting MO state
+    //TODO: this is public function - should be JS Doc-ed
     this.mediaOverlaysOpenContentUrl = function(contentRefUrl, sourceFileHref, offset) {
         _mediaOverlayPlayer.mediaOverlaysOpenContentUrl(contentRefUrl, sourceFileHref, offset);
     };
@@ -786,7 +775,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     /**
      * Returns current selection partial Cfi, useful for workflows that need to check whether the user has selected something.
      *
-     * @method getCurrentSelectionCfi 
+     * @method getCurrentSelectionCfi
      * @returns {object | undefined} partial cfi object or undefined if nothing is selected
     *
      */
@@ -798,7 +787,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     /**
      * Creates a higlight based on given parameters
      *
-     * @method addHighlight 
+     * @method addHighlight
      * @param {string} spineIdRef spine idref that defines the partial Cfi
      * @param {string} CFI partial CFI (withouth the indirection step) relative to the spine index
      * @param {string} id id of the highlight. must be unique
@@ -811,7 +800,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     this.addHighlight = function(spineIdRef, Cfi, id, type, styles) {
         return _annotationsManager.addHighlight(spineIdRef, Cfi, id, type, styles) ;
     };
-    
+
 
     /**
      * Creates a higlight based on current selection
@@ -834,12 +823,26 @@ ReadiumSDK.Views.ReaderView = function(options) {
      * @method removeHighlight
      * @param {string} id id of the highlight.
      *
-     * @returns {undefined} 
+     * @returns {undefined}
     *
      */
 
     this.removeHighlight = function(id) {
         return _annotationsManager.removeHighlight(id);
-    }; 
+    };
+
+    /**
+     * Lets user to subscribe to iframe's window events
+     *
+     * @method addIFrameEventsListener
+     * @param {string} eventName event name.
+     * @param {string} callback callback function.
+     * @param {string} context user specified data passed to the callback function.
+     *
+     * @returns {undefined}
+     */
+    this.addIFrameEventListener = function(eventName, callback, context) {
+        _iframeLoader.addIFrameEventListener(eventName, callback, context);
+    }
 
 };
