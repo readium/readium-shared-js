@@ -45,9 +45,6 @@ ReadiumSDK.Views.FixedView = function(options){
     var _bookMargins;
     var _contentMetaSize;
 
-    //event with namespace for clean unbinding
-    $(window).on("resize.ReadiumSDK.readerView", _.bind(onViewportResizeInternal, self));
-
     function createOnePageView(cssclass, contentAlignment) {
 
         var pageView = new ReadiumSDK.Views.OnePageView({
@@ -80,6 +77,10 @@ ReadiumSDK.Views.FixedView = function(options){
         _$viewport.append(_$el);
 
         self.applyStyles();
+
+        //event with namespace for clean unbinding
+        $(window).on("resize.ReadiumSDK.readerView", _.bind(self.onViewportResize, self));
+
 
         return this;
     };
@@ -163,10 +164,6 @@ ReadiumSDK.Views.FixedView = function(options){
     }
 
     this.onViewportResize = function() {
-        onViewportResizeInternal();
-    };
-
-    function onViewportResizeInternal() {
 
         //because change of the viewport orientation can alter pagination behaviour we have to check if
         //visible content stays same
@@ -198,8 +195,10 @@ ReadiumSDK.Views.FixedView = function(options){
         else {
             resizeBook();
         }
+    };
 
-    }
+    //event with namespace for clean unbinding
+    $(window).on("resize.ReadiumSDK.readerView", _.bind(self.onViewportResize, self));
 
     function isContentRendered() {
 
@@ -490,6 +489,22 @@ ReadiumSDK.Views.FixedView = function(options){
             var view = views[i];
             if(view.currentSpineItem() == spineItem) {
                 return view.getElement(spineItem, selector);
+            }
+        }
+
+        console.error("spine item is not loaded");
+        return undefined;
+    };
+
+    this.getElementByCfi = function(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
+
+        var views = getDisplayingViews();
+
+        for(var i = 0, count = views.length; i < count; i++) {
+
+            var view = views[i];
+            if(view.currentSpineItem() == spineItem) {
+                return view.getElementByCfi(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist);
             }
         }
 

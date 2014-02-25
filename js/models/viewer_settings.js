@@ -23,8 +23,10 @@ ReadiumSDK.Models.ViewerSettings = function(settingsData) {
     this.columnGap = 20;
     this.mediaOverlaysSkipSkippables = false;
     this.mediaOverlaysEscapeEscapables = true;
+
     this.mediaOverlaysSkippables = [];
     this.mediaOverlaysEscapables = [];
+    
     this.mediaOverlaysEnableClick = true;
     this.mediaOverlaysRate = 1;
     this.mediaOverlaysVolume = 100;
@@ -74,7 +76,6 @@ ReadiumSDK.Models.ViewerSettings = function(settingsData) {
         mapProperty("mediaOverlaysVolume", settingsData);
         mapProperty("isScrollViewDoc", settingsData);
         mapProperty("isScrollViewContinuous", settingsData);
-
     };
 
     this.update(settingsData);

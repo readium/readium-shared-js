@@ -22,17 +22,35 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
     //var BACK_COLOR = "#99CCCC";
 
     var _highlightedElement = undefined;
+    this.isElementHighlighted = function(element)
+    {
+        return _highlightedElement && element === _highlightedElement;
+    }
+    
+    var _highlightedCfi = undefined;
+    this.isCfiHighlighted = function(cfi)
+    {
+        return _highlightedCfi && cfi === _highlightedCfi;
+    }
 
     var _activeClass = "";
     var _playbackActiveClass = "";
 
     var _reader = reader;
-
+    
+    var USE_RANGY = true && (typeof rangy !== "undefined");
+    var _rangyCSS = undefined;
+    var _rangyRange = undefined;
+    
+    var HIGHLIGHT_ID = "MO_SPEAK";
+    
     var self = this;
 
     var $userStyle = undefined;
     this.clearUserStyle = function()
     {
+        this.reset();
+        
         if ($userStyle)
         {
             $userStyle.remove();
@@ -40,7 +58,7 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
         $userStyle = undefined;
     };
 
-    function ensureUserStyle($element)
+    function ensureUserStyle($element, hasAuthorStyle, overrideWithUserStyle)
     {
         if ($userStyle)
         {
@@ -59,9 +77,12 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
 
         $userStyle.append("." + DEFAULT_MO_ACTIVE_CLASS + " {");
         
-        var style = _reader.userStyles().findStyle("." + DEFAULT_MO_ACTIVE_CLASS);        
+        var fallbackUserStyle = "background-color: #333333 !important; color: white !important; border-radius: 0.4em;";
+        
+        var style = overrideWithUserStyle; //_reader.userStyles().findStyle("." + DEFAULT_MO_ACTIVE_CLASS);        
         if (style)
         {
+            var atLeastOne = false;
             for(var prop in style.declarations)
             {
                 if(!style.declarations.hasOwnProperty(prop))
@@ -69,8 +90,18 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
                     continue;
                 }
 
+                atLeastOne = true;
                 $userStyle.append(prop + ": " + style.declarations[prop] + "; ");
             }
+            
+            if (!atLeastOne && !hasAuthorStyle)
+            {
+                $userStyle.append(fallbackUserStyle);
+            }
+        }
+        else if (!hasAuthorStyle)
+        {
+            $userStyle.append(fallbackUserStyle);
         }
         
         $userStyle.append("}");
@@ -94,6 +125,8 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
         this.reset();
 
         _highlightedElement = element;
+        _highlightedCfi = undefined;
+        
         _activeClass = activeClass;
         _playbackActiveClass = playbackActiveClass;
 
@@ -109,7 +142,7 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
         var hasAuthorStyle = _activeClass && _activeClass !== "";
         var overrideWithUserStyle = _reader.userStyles().findStyle("." + DEFAULT_MO_ACTIVE_CLASS); // TODO: performance issue?
 
-        ensureUserStyle($hel);
+        ensureUserStyle($hel, hasAuthorStyle, overrideWithUserStyle);
                 
         if (overrideWithUserStyle || !hasAuthorStyle)
         {
@@ -127,7 +160,6 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
         
         
 // ---- CFI
-//         removeHighlight();
 //         try
 //         {
 //             // //noinspection JSUnresolvedVariable
@@ -170,8 +202,101 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
 //         }
     };
     
+    this.highlightCfi = function(par, activeClass, playbackActiveClass) {
+
+        this.reset();
+
+        _highlightedElement = undefined;
+        _highlightedCfi = par.cfi;
+        
+        _activeClass = activeClass;
+        _playbackActiveClass = playbackActiveClass;
+
+        var $hel = $(_highlightedCfi.cfiTextParent);
+
+        var hasAuthorStyle = _activeClass && _activeClass !== "";
+        var overrideWithUserStyle = _reader.userStyles().findStyle("." + DEFAULT_MO_ACTIVE_CLASS); // TODO: performance issue?
+
+        ensureUserStyle($hel, hasAuthorStyle, overrideWithUserStyle);
+
+        var clazz = (overrideWithUserStyle || !hasAuthorStyle) ? DEFAULT_MO_ACTIVE_CLASS : _activeClass;
+
+        if (USE_RANGY)
+        {
+            var doc = _highlightedCfi.cfiTextParent.ownerDocument;
+
+            _rangyRange = rangy.createRange(doc); //createNativeRange
+
+            var startCFI = "epubcfi(" + _highlightedCfi.partialStartCfi + ")";
+            var infoStart = EPUBcfi.getTextTerminusInfoWithPartialCFI(startCFI, doc,
+                ["cfi-marker", "mo-cfi-highlight"],
+                [],
+                ["MathJax_Message"]);
+//console.log(infoStart);
+
+            var endCFI = "epubcfi(" + _highlightedCfi.partialEndCfi + ")";
+            var infoEnd = EPUBcfi.getTextTerminusInfoWithPartialCFI(endCFI, doc,
+                ["cfi-marker", "mo-cfi-highlight"],
+                [],
+                ["MathJax_Message"]);
+//console.log(infoEnd);
+            
+            _rangyRange.setStartAndEnd(
+                infoStart.textNode[0], infoStart.textOffset,
+                infoEnd.textNode[0], infoEnd.textOffset
+            );
+            
+            if (false && // we use CssClassApplier instead, because surroundContents() has no trivial undoSurroundContents() function (inc. text nodes normalisation, etc.)
+                _rangyRange.canSurroundContents())
+            {
+                _rangyRange.MO_createCssClassApplier = false;
+                
+                var span = doc.createElementNS("http://www.w3.org/1999/xhtml", 'span');
+                span.id = HIGHLIGHT_ID;
+                span.setAttribute("id", span.id);
+                span.setAttribute("class", clazz + " mo-cfi-highlight");
+            
+                _rangyRange.surroundContents(span);
+            }
+            else
+            {
+                _rangyRange.MO_createCssClassApplier = true;
+                
+                if (!_rangyCSS || _rangyCSS.cssClass !== clazz)
+                {
+                    _rangyCSS = rangy.createCssClassApplier(clazz,
+                    {
+                        elementTagName: "span",
+                        elementProperties: {className: "mo-cfi-highlight"},
+                        ignoreWhiteSpace: true,
+                        applyToEditableOnly: false,
+                        normalize: true
+                    },
+                    ["span"]);
+                }
+
+                _rangyCSS.applyToRange(_rangyRange);
+            }
+        }
+        else
+        {
+            try
+            {
+                //var id = $hel.data("mediaOverlayData").par.getSmil().spineItemId;
+                var id = par.getSmil().spineItemId;
+                _reader.addHighlight(id, par.cfi.partialRangeCfi, HIGHLIGHT_ID,
+                "highlight", //"underline"
+                undefined // styles
+                            );
+            }
+            catch(error)
+            {
+                console.error(error);
+            }
+        }
+    };
+    
 // ---- CFI
-//     var HIGHLIGHT_ID = "MO_SPEAK";
 //     
 //     function getFirstTextNode(node)
 //     {
@@ -215,36 +340,64 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
 //         return undefined;
 //     }
 //     
-//     function removeHighlight()
-//     {
-//         _reader.removeHighlight(HIGHLIGHT_ID);
-//         
-//         var toRemove = undefined;
-//         while ((toRemove = document.getElementById("start-" + HIGHLIGHT_ID)) !== null)
-//         {
-// console.log("toRemove START");
-// console.log(toRemove);
-//             toRemove.parent.removeChild(toRemove);
-//         }
-//         while ((toRemove = document.getElementById("end-" + HIGHLIGHT_ID)) !== null)
-//         {
-// console.log("toRemove END");
-// console.log(toRemove);
-//             toRemove.parent.removeChild(toRemove);
-//         }
-//     }
 
     this.reset = function() {
-
-        // ---- CFI
-        // try
-        // {
-        //     removeHighlight();
-        // }
-        // catch(error)
-        // {
-        //     console.error(error);
-        // }
+        
+        if (_highlightedCfi)
+        {
+            var doc = _highlightedCfi.cfiTextParent.ownerDocument;
+            if (USE_RANGY)
+            {
+                if (_rangyCSS && _rangyRange.MO_createCssClassApplier)
+                {
+                    _rangyCSS.undoToRange(_rangyRange);
+                }
+                else
+                {
+                    var toRemove = undefined;
+                    while ((toRemove = doc.getElementById(HIGHLIGHT_ID)) !== null)
+                    {
+                        var txt = toRemove.textContent; // TODO: innerHTML? or better: hasChildNodes loop + detach and re-attach
+                        var txtNode = doc.createTextNode(txt);
+                        
+                        toRemove.parentNode.replaceChild(txtNode, toRemove);
+                        txtNode.parentNode.normalize();
+                    }
+                }
+        
+                //_rangyCSS = undefined;
+                _rangyRange = undefined;
+            }
+            else
+            {
+                try
+                {
+                    _reader.removeHighlight(HIGHLIGHT_ID);
+        
+                    var toRemove = undefined;
+                    while ((toRemove = doc.getElementById("start-" + HIGHLIGHT_ID)) !== null)
+                    {
+            console.log("toRemove START");
+            console.log(toRemove);
+                        toRemove.parentNode.removeChild(toRemove);
+                    }
+                    while ((toRemove = doc.getElementById("end-" + HIGHLIGHT_ID)) !== null)
+                    {
+            console.log("toRemove END");
+            console.log(toRemove);
+                        toRemove.parentNode.removeChild(toRemove);
+                    }
+                }
+                catch(error)
+                {
+                    console.error(error);
+                }
+            }
+            
+            _highlightedCfi = undefined;
+        }
+        
+        
         
 
         if(_highlightedElement) {
@@ -268,9 +421,10 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
             //}
 
             _highlightedElement = undefined;
-            _activeClass = "";
-            _playbackActiveClass = "";
         }
+
+        _activeClass = "";
+        _playbackActiveClass = "";
     }
 
 };

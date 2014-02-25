@@ -293,7 +293,18 @@ ReadiumSDK.Views.ReflowableView = function(options){
             pageIndex = _navigationLogic.getPageForElementId(pageRequest.elementId);
         }
         else if(pageRequest.elementCfi) {
-            pageIndex = _navigationLogic.getPageForElementCfi(pageRequest.elementCfi);
+            try
+            {
+                pageIndex = _navigationLogic.getPageForElementCfi(pageRequest.elementCfi,
+                    ["cfi-marker", "mo-cfi-highlight"],
+                    [],
+                    ["MathJax_Message"]);
+            }
+            catch (e)
+            {
+                pageIndex = 0;
+                console.error(e);
+            }
         }
         else if(pageRequest.firstPage) {
             pageIndex = 0;
@@ -566,6 +577,16 @@ ReadiumSDK.Views.ReflowableView = function(options){
         return [_currentSpineItem];
     };
 
+    this.getElementByCfi = function(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
+
+        if(spineItem != _currentSpineItem) {
+            console.error("spine item is not loaded");
+            return undefined;
+        }
+
+        return _navigationLogic.getElementByCfi(cfi, classBlacklist, elementBlacklist, idBlacklist);
+    };
+
     this.getElement = function(spineItem, selector) {
 
         if(spineItem != _currentSpineItem) {
@@ -575,7 +596,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
         return _navigationLogic.getElement(selector);
     };
-
+    
     this.getVisibleMediaOverlayElements = function() {
 
         var visibleContentOffsets = getVisibleContentOffsets();
@@ -597,6 +618,16 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
         var openPageRequest = new ReadiumSDK.Models.PageOpenRequest(_currentSpineItem, initiator);
         openPageRequest.setPageIndex(page);
+        
+        var id = element.id;
+        if (!id)
+        {
+            id = element.getAttribute("id");
+        }
+        if (id)
+        {
+            openPageRequest.setElementId(id);
+        }
 
         self.openPage(openPageRequest);
     }

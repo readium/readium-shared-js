@@ -32,6 +32,8 @@ ReadiumSDK.Views.IFrameLoader = function() {
 
     this.loadIframe = function(iframe, src, callback, context) {
 
+        //iframe.setAttribute("sandbox", "allow-scripts allow-same-origin");
+        
         var isWaitingForFrameLoad = true;
 
         iframe.onload = function() {

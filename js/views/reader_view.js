@@ -49,7 +49,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
         _$el = $(options.el);
         console.log("** EL is a string:" + _$el.attr('id'));
     }
-    
 
     if(options.iframeLoader) {
         _iframeLoader = options.iframeLoader;
@@ -97,11 +96,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
         _currentView = new desiredViewType(viewCreationParams);
 
-        _currentView.setViewSettings(_viewerSettings);
 
-        _currentView.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START, function($iframe, spineItem){
-            self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
-        });
+        _currentView.setViewSettings(_viewerSettings);
 
         _currentView.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function($iframe, spineItem) {
 
@@ -282,7 +278,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
 //console.debug("UpdateSettings: " + JSON.stringify(settingsData));
 
         _viewerSettings.update(settingsData);
-        
+
         if(_currentView && !settingsData.doNotUpdateView) {
 
             var bookMark = _currentView.bookmarkCurrentPage();
@@ -409,6 +405,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
         openPage(pageData);
     };
+
 
     /**
      *
@@ -778,7 +775,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     /**
      * Returns current selection partial Cfi, useful for workflows that need to check whether the user has selected something.
      *
-     * @method getCurrentSelectionCfi 
+     * @method getCurrentSelectionCfi
      * @returns {object | undefined} partial cfi object or undefined if nothing is selected
     *
      */
@@ -790,7 +787,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     /**
      * Creates a higlight based on given parameters
      *
-     * @method addHighlight 
+     * @method addHighlight
      * @param {string} spineIdRef spine idref that defines the partial Cfi
      * @param {string} CFI partial CFI (withouth the indirection step) relative to the spine index
      * @param {string} id id of the highlight. must be unique
@@ -803,7 +800,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     this.addHighlight = function(spineIdRef, Cfi, id, type, styles) {
         return _annotationsManager.addHighlight(spineIdRef, Cfi, id, type, styles) ;
     };
-    
+
 
     /**
      * Creates a higlight based on current selection
@@ -826,7 +823,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
      * @method removeHighlight
      * @param {string} id id of the highlight.
      *
-     * @returns {undefined} 
+     * @returns {undefined}
     *
      */
 
@@ -834,18 +831,5 @@ ReadiumSDK.Views.ReaderView = function(options) {
         return _annotationsManager.removeHighlight(id);
     };
 
-    /**
-     * Lets user to subscribe to iframe's window events
-     *
-     * @method addIFrameEventsListener
-     * @param {string} eventName event name.
-     * @param {string} callback callback function.
-     * @param {string} context user specified data passed to the callback function.
-     *
-     * @returns {undefined}
-     */
-    this.addIFrameEventListener = function(eventName, callback, context) {
-        _iframeLoader.addIFrameEventListener(eventName, callback, context);
-    }
 
 };
