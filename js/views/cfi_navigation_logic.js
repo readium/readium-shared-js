@@ -153,7 +153,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
         return Math.ceil(elementRect.top + y * elementRect.height / 100);
     };
 
-    this.getElementBuyId = function(id) {
+    this.getElementById = function(id) {
 
         var contentDoc = $iframe[0].contentDocument;
 
@@ -167,7 +167,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
 
     this.getPageForElementId = function(id) {
 
-        var $element = this.getElementBuyId(id);
+        var $element = this.getElementById(id);
         if(!$element) {
             return -1;
         }

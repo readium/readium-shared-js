@@ -268,7 +268,7 @@ ReadiumSDK.Views.ScrollView = function(options){
         }
         else if(pageRequest.elementId) {
 
-            $element = _navigationLogic.getElementBuyId(pageRequest.elementId);
+            $element = _navigationLogic.getElementById(pageRequest.elementId);
 
             if(!$element) {
                 console.warn("Element id=" + pageRequest.elementId + " not found!");

@@ -538,6 +538,16 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
     };
 
+    this.getElementByCfi = function(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
+
+        if(_currentView) {
+            return _currentView.getElementByCfi(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist);
+        }
+
+        return undefined;
+
+    };
+
     function applyStyles(doNotUpdateView) {
 
         ReadiumSDK.Helpers.setStyles(_userStyles.getStyles(), _$el);

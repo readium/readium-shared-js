@@ -178,16 +178,19 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                     }
                 }
 
-                element = reader.getElement(spineItem, (paginationData.initiator == self && !paginationData.elementId) ? "body" : ("#" + paginationData.elementId));
-                if (element)
+                if (!element)
                 {
-                    /*
-                    console.error("GREEN: " + paginationData.elementId);
-                    lastElement = element;
-                    lastElementColor = $(element).css("background-color");
-                    $(element).css("background-color", "green");
-                     */
-                    break;
+                    element = reader.getElement(spineItem, (paginationData.initiator == self && !paginationData.elementId) ? "body" : ("#" + paginationData.elementId));
+                    if (element)
+                    {
+                        /*
+                        console.error("GREEN: " + paginationData.elementId);
+                        lastElement = element;
+                        lastElementColor = $(element).css("background-color");
+                        $(element).css("background-color", "green");
+                         */
+                        break;
+                    }
                 }
             }
 
