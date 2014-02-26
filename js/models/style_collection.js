@@ -50,6 +50,19 @@ ReadiumSDK.Collections.StyleCollection = function() {
         return style;
     };
 
+    this.removeStyle = function(selector) {
+        
+        var count = _styles.length;
+
+        for(var i = 0; i < count; i++) {
+
+            if(_styles[i].selector === selector) {
+                _styles.splice(i, 1);
+                return;
+            }
+        }
+    };
+
     this.getStyles = function() {
         return _styles;
     };

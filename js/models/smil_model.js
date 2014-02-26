@@ -24,7 +24,9 @@
 ReadiumSDK.Models.Smil.SmilNode = function(parent) {
 
     this.parent = parent;
-	
+    
+    this.id = "";
+    
     //root node is a smil model
     this.getSmil = function() {
 
@@ -57,11 +59,10 @@ ReadiumSDK.Models.Smil.TimeContainerNode = function(parent) {
 
     this.parent = parent;
     
-    this.id = "";
-    this.epubtype = "";
-    this.index = undefined;
     this.children = undefined;
-	
+    this.index = undefined;
+    
+    this.epubtype = "";
 
     this.isEscapable = function(userEscapables)
     {

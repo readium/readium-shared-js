@@ -46,7 +46,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
     this.applyStyles = function()
     {
-        _elementHighlighter.clearUserStyle();
+        _elementHighlighter.reDo();
     };
 
 //
