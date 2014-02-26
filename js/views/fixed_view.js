@@ -512,17 +512,16 @@ ReadiumSDK.Views.FixedView = function(options){
         return undefined;
     };
 
-    this.getVisibleMediaOverlayElements = function() {
-
-        var elements = [];
+    this.getFirstVisibleMediaOverlayElement = function() {
 
         var views = getDisplayingViews();
 
         for(var i = 0, count = views.length; i < count; i++) {
-            elements.push.apply(elements, views[i].getVisibleMediaOverlayElements());
+            var el = views[i].getFirstVisibleMediaOverlayElement();
+            if (el) return el;
         }
 
-        return elements;
+        return undefined;
     };
 
     this.insureElementVisibility = function(element, initiator) {

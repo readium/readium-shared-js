@@ -769,13 +769,13 @@ ReadiumSDK.Views.ReaderView = function(options) {
 //    };
 
 
-    this.getVisibleMediaOverlayElements = function() {
+    this.getFirstVisibleMediaOverlayElement = function() {
 
         if(_currentView) {
-            return _currentView.getVisibleMediaOverlayElements();
+            return _currentView.getFirstVisibleMediaOverlayElement();
         }
 
-        return [];
+        return undefined;
     };
 
     this.insureElementVisibility = function(element, initiator) {

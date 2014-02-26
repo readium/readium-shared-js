@@ -272,9 +272,9 @@ ReadiumSDK.Views.OnePageView = function(options){
         return navigation.getElement(selector);
     };
 
-    this.getVisibleMediaOverlayElements = function() {
+    this.getFirstVisibleMediaOverlayElement = function() {
         var navigation = new ReadiumSDK.Views.CfiNavigationLogic(_$el, _$iframe);
-        return navigation.getVisibleMediaOverlayElements({top:0, bottom: _$iframe.height()});
+        return navigation.getFirstVisibleMediaOverlayElement({top:0, bottom: _$iframe.height()});
     }
 
 };

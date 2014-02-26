@@ -1543,7 +1543,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 //            console.time("MO");
 //        }
 
-        var visibleMediaElements = reader.getVisibleMediaOverlayElements();
+        var visibleMediaElement = reader.getFirstVisibleMediaOverlayElement();
 
 //        if (console.timeEnd)
 //        {
@@ -1554,7 +1554,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 //
 //        console.debug(now2 - now1);
 
-        return visibleMediaElements.length > 0;
+        return typeof visibleMediaElement !== "undefined";
     };
 
     this.nextOrPreviousMediaOverlay = function(previous) {
@@ -1737,23 +1737,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
         if (!element)
         {
-            var visibleMediaOverlayElements = reader.getVisibleMediaOverlayElements();
-
-            if (visibleMediaOverlayElements.length == 0)
-            {
-                console.error("reader.getVisibleMediaOverlayElements().length == 0");
-            }
-            else
-            {
-                if(visibleMediaOverlayElements.length == 1 || visibleMediaOverlayElements[0].percentVisible == 100)
-                {
-                    element = visibleMediaOverlayElements[0].element;
-                }
-                else
-                {
-                    element = visibleMediaOverlayElements[1].element;
-                }
-            }
+            element = reader.getFirstVisibleMediaOverlayElement();
         }
 
         if (!element)
