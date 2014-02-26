@@ -46,6 +46,8 @@ ReadiumSDK.Views.ReflowableView = function(options){
     var _$iframe;
     var _$epubHtml;
 
+    var _currentOpacity;
+
     var _lastViewPortSize = {
         width: undefined,
         height: undefined
@@ -334,6 +336,8 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
         _$epubHtml.css("left", _spine.isLeftToRight() ? offsetVal : "");
         _$epubHtml.css("right", _spine.isRightToLeft() ? offsetVal : "");
+
+        showBook(); // as it's no longer hidden by shifting the position
     }
 
     function updateViewportSize() {
@@ -459,6 +463,8 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
         _$epubHtml.css("height", _lastViewPortSize.height + "px");
 
+        _paginationInfo.rightToLeft = _spine.isRightToLeft();
+
         _paginationInfo.columnWidth = (_lastViewPortSize.width - _paginationInfo.columnGap * (_paginationInfo.visibleColumnCount - 1)) / _paginationInfo.visibleColumnCount;
 
         //we do this because CSS will floor column with by itself if it is not a round number
@@ -466,7 +472,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
         _$epubHtml.css("width", _paginationInfo.columnWidth);
 
-        shiftBookOfScreen();
+        hideBook(); // shiftBookOfScreen();
 
         _$epubHtml.css("-webkit-column-width", _paginationInfo.columnWidth + "px");
         _$epubHtml.css("-moz-column-width", _paginationInfo.columnWidth + "px");
@@ -475,7 +481,9 @@ ReadiumSDK.Views.ReflowableView = function(options){
         //TODO it takes time for rendition_layout engine to arrange columns we waite
         //it would be better to react on rendition_layout column reflow finished event
         setTimeout(function(){
-            _$epubHtml.css("left", 0);
+
+            // resetting the position
+            _$epubHtml.css({left: 0, right: 0});
 
             var columnizedContentWidth = _$epubHtml[0].scrollWidth;
 
@@ -519,6 +527,20 @@ ReadiumSDK.Views.ReflowableView = function(options){
         else {
             _$epubHtml.css("right", (_lastViewPortSize.width + 1000) + "px");
         }
+    }
+
+    function hideBook() {
+
+        _currentOpacity = _$epubHtml.css('opacity');
+        _$epubHtml.css('opacity', 0);
+    }
+
+    function showBook() {
+
+        if (_currentOpacity) {
+            _$epubHtml.css('opacity', _currentOpacity);
+        }
+        _currentOpacity = 0;
     }
 
     this.getFirstVisibleElementCfi = function() {
