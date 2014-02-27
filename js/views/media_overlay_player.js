@@ -73,7 +73,30 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
     var lastElementColor = "";
     */
 
+    var _wasPlayingAtDocLoadStart = false;
+    this.onDocLoadStart = function() {
+        // 1) ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START
+        // (maybe 2-page fixed-layout or reflowable spread == 2 documents == 2x events)
+        // MOPLayer.onDocLoad()
+        
+        // 2) ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED
+        // (maybe 2-page fixed-layout or reflowable spread == 2 documents == 2x events)
+        //_mediaOverlayDataInjector.attachMediaOverlayData($iframe, spineItem, _viewerSettings);
+        
+        // 3) ReadiumSDK.Events.PAGINATION_CHANGED (layout finished, notified before rest of app, just once)
+        // MOPLayer.onPageChanged()
+
+        var wasPlaying = self.isPlaying();
+        
+        if (wasPlaying) self.pause();
+        
+        _wasPlayingAtDocLoadStart = wasPlaying;
+    };
+    
     this.onPageChanged = function(paginationData) {
+
+        var wasPlayingAtDocLoadStart = _wasPlayingAtDocLoadStart;
+        _wasPlayingAtDocLoadStart = false;
 
         if(!paginationData) {
             self.reset();
@@ -200,7 +223,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             }
         }
 
-        var wasPlaying = self.isPlaying();
+        var wasPlaying = self.isPlaying() || wasPlayingAtDocLoadStart;
 
         if(!_smilIterator || !_smilIterator.currentPar) {
             if(paginationData.initiator !== self) {
