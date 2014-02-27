@@ -180,7 +180,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
                 if (!element)
                 {
-                    element = reader.getElement(spineItem, (paginationData.initiator == self && !paginationData.elementId) ? "body" : ("#" + paginationData.elementId));
+                    element = reader.getElement(spineItem, (paginationData.initiator == self && !paginationData.elementId) ? "body" : ("#" + ReadiumSDK.Helpers.escapeJQuerySelector(paginationData.elementId)));
                     if (element)
                     {
                         /*
@@ -1728,7 +1728,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
                 if (id)
                 {
-                    element = reader.getElement(spineItem, "#" + id);
+                    element = reader.getElement(spineItem, "#" + ReadiumSDK.Helpers.escapeJQuerySelector(id));
                 }
                 else if (spineItem.isFixedLayout())
                 {

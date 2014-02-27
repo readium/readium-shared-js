@@ -72,7 +72,7 @@ ReadiumSDK.Views.IFrameLoader = function() {
                 callback.call(context, false);
             }
 
-        }, 500);
+        }, 8000);
 
         iframe.src = src;
     };
