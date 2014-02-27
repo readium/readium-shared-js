@@ -19,11 +19,30 @@
 
 ReadiumSDK.Views.IFrameLoader = function() {
 
+    var eventListeners = {};
+
+    this.addIFrameEventListener = function(eventName, callback, context) {
+
+        if(eventListeners[eventName] == undefined) {
+            eventListeners[eventName] = [];
+        }
+
+        eventListeners[eventName].push({callback: callback, context: context});
+    };
+
     this.loadIframe = function(iframe, src, callback, context) {
 
+        //iframe.setAttribute("sandbox", "allow-scripts allow-same-origin");
+        
         var isWaitingForFrameLoad = true;
 
         iframe.onload = function() {
+
+            _.each(eventListeners, function(value, key){
+                for(var i = 0, count = value.length; i< count; i++) {
+                    $(iframe.contentWindow).on(key, value[i].callback, value[i].context);
+                }
+            });
 
             try
             {

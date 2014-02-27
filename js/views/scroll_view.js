@@ -138,7 +138,8 @@ ReadiumSDK.Views.ScrollView = function(options){
             _currentSpineItem = spineItem;
             _isWaitingFrameRender = true;
 
-            var src = _spine.package.resolveRelativeUrl(spineItem.href);
+            self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START, _$iframe, spineItem);
+
             _iframeLoader.loadIframe(_$iframe[0], src, onIFrameLoad, self, {spineItem : spineItem});
         }
     }
@@ -267,7 +268,7 @@ ReadiumSDK.Views.ScrollView = function(options){
         }
         else if(pageRequest.elementId) {
 
-            $element = _navigationLogic.getElementBuyId(pageRequest.elementId);
+            $element = _navigationLogic.getElementById(pageRequest.elementId);
 
             if(!$element) {
                 console.warn("Element id=" + pageRequest.elementId + " not found!");
@@ -278,7 +279,18 @@ ReadiumSDK.Views.ScrollView = function(options){
         }
         else if(pageRequest.elementCfi) {
 
-            $element = _navigationLogic.getElementByCfi(pageRequest.elementCfi);
+            try
+            {
+                $element = _navigationLogic.getElementByCfi(pageRequest.elementCfi,
+                    ["cfi-marker", "mo-cfi-highlight"],
+                    [],
+                    ["MathJax_Message"]);
+            }
+            catch (e)
+            {
+                $element = undefined;
+                console.error(e);
+            }
 
             if(!$element) {
                 console.warn("Element cfi=" + pageRequest.elementCfi + " not found!");
@@ -492,6 +504,16 @@ ReadiumSDK.Views.ScrollView = function(options){
         return [_currentSpineItem];
     };
 
+    this.getElementByCfi = function(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
+
+        if(spineItem != _currentSpineItem) {
+            console.error("spine item is not loaded");
+            return undefined;
+        }
+
+        return _navigationLogic.getElementByCfi(cfi, classBlacklist, elementBlacklist, idBlacklist);
+    };
+    
     this.getElement = function(spineItem, selector) {
 
         if(spineItem != _currentSpineItem) {
@@ -502,9 +524,9 @@ ReadiumSDK.Views.ScrollView = function(options){
         return _navigationLogic.getElement(selector);
     };
 
-    this.getVisibleMediaOverlayElements = function() {
+    this.getFirstVisibleMediaOverlayElement = function() {
 
-        return _navigationLogic.getVisibleMediaOverlayElements(visibleOffsets());
+        return _navigationLogic.getFirstVisibleMediaOverlayElement(visibleOffsets());
     };
 
     function visibleOffsets() {
@@ -521,7 +543,7 @@ ReadiumSDK.Views.ScrollView = function(options){
         var $element = $(element);
 
 
-        if(_navigationLogic.isElementVisible($element, visibleOffsets())) {
+        if(_navigationLogic.getElementVisibility($element, visibleOffsets()) > 0) {
             return;
         }
 

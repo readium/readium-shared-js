@@ -45,12 +45,9 @@ ReadiumSDK.Views.FixedView = function(options){
     var _bookMargins;
     var _contentMetaSize;
 
-    //event with namespace for clean unbinding
-    $(window).on("resize.ReadiumSDK.readerView", _.bind(onViewportResize, self));
-
     function createOnePageView(cssclass, contentAlignment) {
 
-        return new ReadiumSDK.Views.OnePageView({
+        var pageView = new ReadiumSDK.Views.OnePageView({
 
             iframeLoader: _iframeLoader,
             spine: _spine,
@@ -58,6 +55,14 @@ ReadiumSDK.Views.FixedView = function(options){
             class: cssclass,
             contentAlignment: contentAlignment
         });
+
+        pageView.on(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPEN_START, function($iframe, spineItem) {
+
+            self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
+        });
+
+
+        return pageView;
     }
 
     this.isReflowable = function() {
@@ -72,6 +77,10 @@ ReadiumSDK.Views.FixedView = function(options){
         _$viewport.append(_$el);
 
         self.applyStyles();
+
+        //event with namespace for clean unbinding
+        $(window).on("resize.ReadiumSDK.readerView", _.bind(self.onViewportResize, self));
+
 
         return this;
     };
@@ -154,7 +163,7 @@ ReadiumSDK.Views.FixedView = function(options){
         self.trigger(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
     }
 
-    function onViewportResize() {
+    this.onViewportResize = function() {
 
         //because change of the viewport orientation can alter pagination behaviour we have to check if
         //visible content stays same
@@ -186,8 +195,10 @@ ReadiumSDK.Views.FixedView = function(options){
         else {
             resizeBook();
         }
+    };
 
-    }
+    //event with namespace for clean unbinding
+    $(window).on("resize.ReadiumSDK.readerView", _.bind(self.onViewportResize, self));
 
     function isContentRendered() {
 
@@ -485,17 +496,32 @@ ReadiumSDK.Views.FixedView = function(options){
         return undefined;
     };
 
-    this.getVisibleMediaOverlayElements = function() {
-
-        var elements = [];
+    this.getElementByCfi = function(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
         var views = getDisplayingViews();
 
         for(var i = 0, count = views.length; i < count; i++) {
-            elements.push.apply(elements, views[i].getVisibleMediaOverlayElements());
+
+            var view = views[i];
+            if(view.currentSpineItem() == spineItem) {
+                return view.getElementByCfi(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist);
+            }
         }
 
-        return elements;
+        console.error("spine item is not loaded");
+        return undefined;
+    };
+
+    this.getFirstVisibleMediaOverlayElement = function() {
+
+        var views = getDisplayingViews();
+
+        for(var i = 0, count = views.length; i < count; i++) {
+            var el = views[i].getFirstVisibleMediaOverlayElement();
+            if (el) return el;
+        }
+
+        return undefined;
     };
 
     this.insureElementVisibility = function(element, initiator) {

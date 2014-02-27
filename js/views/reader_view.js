@@ -50,7 +50,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
         console.log("** EL is a string:" + _$el.attr('id'));
     }
 
-
     if(options.iframeLoader) {
         _iframeLoader = options.iframeLoader;
     }
@@ -281,7 +280,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
 //console.debug("UpdateSettings: " + JSON.stringify(settingsData));
 
         _viewerSettings.update(settingsData);
-        
+
         if(_currentView && !settingsData.doNotUpdateView) {
 
             var bookMark = _currentView.bookmarkCurrentPage();
@@ -491,15 +490,22 @@ ReadiumSDK.Views.ReaderView = function(options) {
      *
      * @param styles {object} style object contains selector property and declarations object
      */
-    this.setStyles = function(styles) {
+    this.setStyles = function(styles, doNotUpdateView) {
 
         var count = styles.length;
 
         for(var i = 0; i < count; i++) {
-            _userStyles.addStyle(styles[i].selector, styles[i].declarations);
+            if (styles[i].declarations)
+            {
+                _userStyles.addStyle(styles[i].selector, styles[i].declarations);
+            }
+            else
+            {
+                _userStyles.removeStyle(styles[i].selector);
+            }
         }
 
-        applyStyles();
+        applyStyles(doNotUpdateView);
 
     };
 
@@ -534,15 +540,27 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
     };
 
-    function applyStyles() {
+    this.getElementByCfi = function(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
+
+        if(_currentView) {
+            return _currentView.getElementByCfi(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist);
+        }
+
+        return undefined;
+
+    };
+
+    function applyStyles(doNotUpdateView) {
 
         ReadiumSDK.Helpers.setStyles(_userStyles.getStyles(), _$el);
+
+        _mediaOverlayPlayer.applyStyles();
+
+        if(doNotUpdateView) return;
 
         if(_currentView) {
             _currentView.applyStyles();
         }
-
-        _mediaOverlayPlayer.applyStyles();
     }
 
     //TODO: this is public function - should be JS Doc-ed
@@ -753,13 +771,13 @@ ReadiumSDK.Views.ReaderView = function(options) {
 //    };
 
 
-    this.getVisibleMediaOverlayElements = function() {
+    this.getFirstVisibleMediaOverlayElement = function() {
 
         if(_currentView) {
-            return _currentView.getVisibleMediaOverlayElements();
+            return _currentView.getFirstVisibleMediaOverlayElement();
         }
 
-        return [];
+        return undefined;
     };
 
     this.insureElementVisibility = function(element, initiator) {
@@ -778,7 +796,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     /**
      * Returns current selection partial Cfi, useful for workflows that need to check whether the user has selected something.
      *
-     * @method getCurrentSelectionCfi 
+     * @method getCurrentSelectionCfi
      * @returns {object | undefined} partial cfi object or undefined if nothing is selected
     *
      */
@@ -790,7 +808,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     /**
      * Creates a higlight based on given parameters
      *
-     * @method addHighlight 
+     * @method addHighlight
      * @param {string} spineIdRef spine idref that defines the partial Cfi
      * @param {string} CFI partial CFI (withouth the indirection step) relative to the spine index
      * @param {string} id id of the highlight. must be unique
@@ -803,7 +821,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     this.addHighlight = function(spineIdRef, Cfi, id, type, styles) {
         return _annotationsManager.addHighlight(spineIdRef, Cfi, id, type, styles) ;
     };
-    
+
 
     /**
      * Creates a higlight based on current selection
@@ -826,7 +844,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
      * @method removeHighlight
      * @param {string} id id of the highlight.
      *
-     * @returns {undefined} 
+     * @returns {undefined}
     *
      */
 
@@ -834,6 +852,19 @@ ReadiumSDK.Views.ReaderView = function(options) {
         return _annotationsManager.removeHighlight(id);
     };
 
+    /**
+     * Lets user to subscribe to iframe's window events
+     *
+     * @method addIFrameEventsListener
+     * @param {string} eventName event name.
+     * @param {string} callback callback function.
+     * @param {string} context user specified data passed to the callback function.
+     *
+     * @returns {undefined}
+     */
+    this.addIFrameEventListener = function(eventName, callback, context) {
+        _iframeLoader.addIFrameEventListener(eventName, callback, context);
+    };
 
     function injectMathJax($iframe) {
 
@@ -850,5 +881,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
             head.appendChild(script);
         }
     }
+
 
 };

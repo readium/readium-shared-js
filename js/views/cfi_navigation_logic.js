@@ -96,11 +96,11 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
         return cfi + "@0:" + foundElement.percentY;
     };
 
-    this.getPageForElementCfi = function(cfi) {
+    this.getPageForElementCfi = function(cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
         var cfiParts = splitCfi(cfi);
 
-        var $element = getElementByPartialCfi(cfiParts.cfi);
+        var $element = getElementByPartialCfi(cfiParts.cfi, classBlacklist, elementBlacklist, idBlacklist);
 
         if(!$element) {
             return -1;
@@ -109,13 +109,13 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
         return this.getPageForPointOnElement($element, cfiParts.x, cfiParts.y);
     };
 
-    function getElementByPartialCfi(cfi) {
+    function getElementByPartialCfi(cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
         var contentDoc = $iframe[0].contentDocument;
 
         var wrappedCfi = "epubcfi(" + cfi + ")";
         //noinspection JSUnresolvedVariable
-        var $element = EPUBcfi.Interpreter.getTargetElementWithPartialCFI(wrappedCfi, contentDoc);
+        var $element = EPUBcfi.getTargetElementWithPartialCFI(wrappedCfi, contentDoc, classBlacklist, elementBlacklist, idBlacklist);
 
         if(!$element || $element.length == 0) {
             console.log("Can't find element for CFI: " + cfi);
@@ -125,10 +125,10 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
         return $element;
     }
 
-    this.getElementByCfi = function(cfi) {
+    this.getElementByCfi = function(cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
         var cfiParts = splitCfi(cfi);
-        return getElementByPartialCfi(cfiParts.cfi);
+        return getElementByPartialCfi(cfiParts.cfi, classBlacklist, elementBlacklist, idBlacklist);
     };
 
     this.getPageForElement = function($element) {
@@ -153,7 +153,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
         return Math.ceil(elementRect.top + y * elementRect.height / 100);
     };
 
-    this.getElementBuyId = function(id) {
+    this.getElementById = function(id) {
 
         var contentDoc = $iframe[0].contentDocument;
 
@@ -167,7 +167,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
 
     this.getPageForElementId = function(id) {
 
-        var $element = this.getElementBuyId(id);
+        var $element = this.getElementById(id);
         if(!$element) {
             return -1;
         }
@@ -207,121 +207,168 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe){
         return ret;
     }
 
-    this.getVisibleMediaOverlayElements = function(visibleContentOffsets) {
+    this.getFirstVisibleMediaOverlayElement = function(visibleContentOffsets)
+    {
+        var docElement = this.getRootElement();
+        if (!docElement) return undefined;
+        
+        var $root = $("body", docElement);
+        if (!$root || !$root[0]) return undefined;
 
-        var $elements = this.getMediaOverlayElements($("body", this.getRootElement()));
-        return this.getVisibleElements($elements, visibleContentOffsets);
-
-    };
-
-    this.isElementVisible = function($element, visibleContentOffsets) {
-
-        var elementRect = ReadiumSDK.Helpers.Rect.fromElement($element);
-
-        return !(elementRect.bottom() <= visibleContentOffsets.top || elementRect.top >= visibleContentOffsets.bottom);
-    };
-
-
-    this.getAllVisibleElementsWithSelector = function(selector, visibleContentOffset) {
-        var elements = $(selector,this.getRootElement()).filter(function(e) { return true; });
-        var $newElements = [];
-        $.each(elements, function() {
-            $newElements.push($(this));
-        });
-        var visibleDivs = this.getVisibleElements($newElements, visibleContentOffset);
-        return visibleDivs;
-
-    };
-
-    this.getVisibleElements = function($elements, visibleContentOffsets) {
-
-        var visibleElements = [];
-
-        // Find the first visible text node
-        $.each($elements, function() {
-
-            var elementRect = ReadiumSDK.Helpers.Rect.fromElement(this);
-            // this is actually a point element, doesnt have a bounding rectangle
-            if (_.isNaN(elementRect.left)) {
-                var left = this.position().left;
-                var top = this.position().top;
-                elementRect = new ReadiumSDK.Helpers.Rect(top, left, 0, 0);
-            }
-
-            if(elementRect.bottom() <= visibleContentOffsets.top) {
-                return true; //next element
-            }
-
-            if(elementRect.top >= visibleContentOffsets.bottom) {
-
-                // Break the loop
-                return false;
-            }
-
-            var visibleTop = Math.max(elementRect.top, visibleContentOffsets.top);
-            var visibleBottom = Math.min(elementRect.bottom(), visibleContentOffsets.bottom);
-
-            var visibleHeight = visibleBottom - visibleTop;
-            var percentVisible = Math.round((visibleHeight / elementRect.height) * 100);
-
-            visibleElements.push({element: this[0], percentVisible: percentVisible});
-
-            return true;
-
-        });
-
-        return visibleElements;
-    };
-
-    this.getVisibleTextElements = function(visibleContentOffsets) {
-
-        var $elements = this.getTextElements($("body", this.getRootElement()));
-
-        return this.getVisibleElements($elements, visibleContentOffsets);
-    };
-
-    this.getMediaOverlayElements = function($root) {
-
-        var $elements = [];
-
-        function traverseCollection(elements) {
-
-            if (elements == undefined) return;
+        var that = this;
+        
+        var firstPartial = undefined;
+        
+        function traverseArray(arr)
+        {
+            if (!arr || !arr.length) return undefined;
             
-            for(var i = 0, count = elements.length; i < count; i++) {
+            for (var i = 0, count = arr.length; i < count; i++)
+            {
+                var item = arr[i];
+                if (!item) continue;
+                
+                var $item = $(item);
 
-                var $element = $(elements[i]);
-
-                if( $element.data("mediaOverlayData") ) {
-                    $elements.push($element);
+                if($item.data("mediaOverlayData"))
+                {
+                    var visible = that.getElementVisibility($item, visibleContentOffsets);
+                    if (visible)
+                    {
+                        if (!firstPartial) firstPartial = item;
+                        
+                        if (visible == 100) return item;
+                    }
                 }
-                else {
-                    traverseCollection($element[0].children);
+                else
+                {
+                    var elem = traverseArray(item.children);
+                    if (elem) return elem;
                 }
-
             }
+            
+            return undefined;
         }
 
-        traverseCollection([$root[0]]);
+        var el = traverseArray([$root[0]]);
+        if (!el) el = firstPartial;
+        return el;
 
-        return $elements;
+        // var $elements = this.getMediaOverlayElements($root);
+        // return this.getVisibleElements($elements, visibleContentOffsets);
     };
 
-    this.getTextElements = function($root) {
+    this.getElementVisibility = function($element, visibleContentOffsets) {
 
-        var $textElements = [];
+        var elementRect = ReadiumSDK.Helpers.Rect.fromElement($element);
+        // this is actually a point element, doesnt have a bounding rectangle
+        if (_.isNaN(elementRect.left)) {
+            var left = $element.position().left;
+            var top = $element.position().top;
+            elementRect = new ReadiumSDK.Helpers.Rect(top, left, 0, 0);
+        }
 
-        $root.find(":not(iframe)").contents().each(function () {
+        var visible = !(elementRect.bottom() <= visibleContentOffsets.top || elementRect.top >= visibleContentOffsets.bottom);
+        if (!visible) return 0;
 
-            if( isValidTextNode(this) ) {
-                $textElements.push($(this).parent());
-            }
+        var visibleTop = Math.max(elementRect.top, visibleContentOffsets.top);
+        var visibleBottom = Math.min(elementRect.bottom(), visibleContentOffsets.bottom);
 
-        });
+        var visibleHeight = visibleBottom - visibleTop;
+        var percentVisible = Math.round((visibleHeight / elementRect.height) * 100);
 
-        return $textElements;
-
+        return percentVisible;
     };
+
+    // 
+    // this.getAllVisibleElementsWithSelector = function(selector, visibleContentOffset) {
+    //     var elements = $(selector,this.getRootElement()).filter(function(e) { return true; });
+    //     var $newElements = [];
+    //     $.each(elements, function() {
+    //         $newElements.push($(this));
+    //     });
+    //     var visibleDivs = this.getVisibleElements($newElements, visibleContentOffset);
+    //     return visibleDivs;
+    // 
+    // };
+    // 
+    // this.getVisibleElements = function($elements, visibleContentOffsets) {
+    // 
+    //     var visibleElements = [];
+    //     var that = this;
+    //     
+    //     var previousWasVisible = false;
+    // 
+    //     $.each($elements, function() {
+    // 
+    //         var visibility = that.getElementVisibility(this, visibleContentOffsets);
+    // 
+    //         if (visibility > 0) {
+    //             visibleElements.push({element: this[0], percentVisible: visibility});
+    // 
+    //             previousWasVisible = true;
+    //             return true; //continue
+    //         }
+    //         
+    //         if (previousWasVisible) return false; // break
+    //         
+    //         return true; // continue (not reached the first visible one yet)
+    // 
+    // 
+    //         // var elementRect = ReadiumSDK.Helpers.Rect.fromElement(this);
+    //         // // this is actually a point element, doesnt have a bounding rectangle
+    //         // if (_.isNaN(elementRect.left)) {
+    //         //     var left = this.position().left;
+    //         //     var top = this.position().top;
+    //         //     elementRect = new ReadiumSDK.Helpers.Rect(top, left, 0, 0);
+    //         // }
+    //         // 
+    //         // if(elementRect.bottom() <= visibleContentOffsets.top) {
+    //         //     return true; //next element
+    //         // }
+    //         // 
+    //         // if(elementRect.top >= visibleContentOffsets.bottom) {
+    //         // 
+    //         //     // Break the loop
+    //         //     return false;
+    //         // }
+    //         // 
+    //         // var visibleTop = Math.max(elementRect.top, visibleContentOffsets.top);
+    //         // var visibleBottom = Math.min(elementRect.bottom(), visibleContentOffsets.bottom);
+    //         // 
+    //         // var visibleHeight = visibleBottom - visibleTop;
+    //         // var percentVisible = Math.round((visibleHeight / elementRect.height) * 100);
+    //         // 
+    //         // visibleElements.push({element: this[0], percentVisible: percentVisible});
+    //         // 
+    //         // return true;
+    //     });
+    // 
+    //     return visibleElements;
+    // };
+
+    // this.getVisibleTextElements = function(visibleContentOffsets) {
+    // 
+    //     var $elements = this.getTextElements($("body", this.getRootElement()));
+    // 
+    //     return this.getVisibleElements($elements, visibleContentOffsets);
+    // };
+    // 
+    // this.getTextElements = function($root) {
+    // 
+    //     var $textElements = [];
+    // 
+    //     $root.find(":not(iframe)").contents().each(function () {
+    // 
+    //         if( isValidTextNode(this) ) {
+    //             $textElements.push($(this).parent());
+    //         }
+    // 
+    //     });
+    // 
+    //     return $textElements;
+    // 
+    // };
 
     function isValidTextNode(node) {
 

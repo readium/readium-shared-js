@@ -1,5 +1,60 @@
 ReadiumSDK.Views.MediaOverlayDataInjector = function (mediaOverlay, mediaOverlayPlayer) {
 
+    var escapeSelector = function(sel)
+    {
+        //http://api.jquery.com/category/selectors/
+        //!"#$%&'()*+,./:;<=>?@[\]^`{|}~
+        // double backslash escape
+        
+        if (!sel) return undefined;
+        
+        var selector = sel.replace(/([;&,\.\+\*\~\?':"\!\^#$%@\[\]\(\)<=>\|\/\\{}`])/g, '\\$1');
+        
+        // if (selector !== sel)
+        // {
+        //     console.debug("---- SELECTOR ESCAPED");
+        //     console.debug("1: " + sel);
+        //     console.debug("2: " + selector);
+        // }
+        // else
+        // {
+        //     console.debug("---- SELECTOR OKAY: " + sel);
+        // }
+        
+        return selector;
+    };
+    // ALL WORKING FINE :)
+    // (RegExp typos are hard to spot!)
+    // escapeSelector('!');
+    // escapeSelector('"');
+    // escapeSelector('#');
+    // escapeSelector('$');
+    // escapeSelector('%');
+    // escapeSelector('&');
+    // escapeSelector("'");
+    // escapeSelector('(');
+    // escapeSelector(')');
+    // escapeSelector('*');
+    // escapeSelector('+');
+    // escapeSelector(',');
+    // escapeSelector('.');
+    // escapeSelector('/');
+    // escapeSelector(':');
+    // escapeSelector(';');
+    // escapeSelector('<');
+    // escapeSelector('=');
+    // escapeSelector('>');
+    // escapeSelector('?');
+    // escapeSelector('@');
+    // escapeSelector('[');
+    // escapeSelector('\\');
+    // escapeSelector(']');
+    // escapeSelector('^');
+    // escapeSelector('`');
+    // escapeSelector('{');
+    // escapeSelector('|');
+    // escapeSelector('}');
+    // escapeSelector('~');
 
     this.attachMediaOverlayData = function ($iframe, spineItem, mediaOverlaySettings) {
 
@@ -33,7 +88,7 @@ ReadiumSDK.Views.MediaOverlayDataInjector = function (mediaOverlay, mediaOverlay
                         return true;
                     }
 
-                    console.debug("MO CLICK: " + elem.id);
+//console.debug("MO CLICK: " + elem.id);
 
                     var data = undefined;
                     var el = elem;
@@ -56,28 +111,151 @@ ReadiumSDK.Views.MediaOverlayDataInjector = function (mediaOverlay, mediaOverlay
                             break;
                         }
                     }
-
-                    if (data && data.par)
+                    
+                    if (data && (data.par || data.pars))
                     {
+                        if (el !== elem)
+                        {
+//console.debug("MO CLICK REDIRECT: " + el.id);
+                        }
+
                         if (!mediaOverlaySettings.mediaOverlaysEnableClick)
                         {
-                            console.debug("MO CLICK DISABLED");
+console.debug("MO CLICK DISABLED");
                             mediaOverlayPlayer.touchInit();
                             return true;
                         }
 
                         if (inLink)
                         {
-                            console.debug("MO CLICKED LINK");
+console.debug("MO CLICKED LINK");
                             mediaOverlayPlayer.touchInit();
                             return true;
                         }
 
-                        var par = data.par;
+                        var par = data.par ? data.par : data.pars[0];
+
+                        if (data.pars && (typeof rangy !== "undefined"))
+                        {
+                            var wasPaused = false;
+                            
+                            // To remove highlight which may have altered DOM (and break CFI expressions)
+                            if (mediaOverlayPlayer.isPlayingCfi())
+                            {
+                                wasPaused = true;
+                                mediaOverlayPlayer.pause();
+                            }
+                         
+                            // /////////////////////
+                            // 
+                            // var p = {x: event.pageX, y: event.pageY};
+                            // if (webkitConvertPointFromPageToNode)
+                            // {
+                            //     p = webkitConvertPointFromPageToNode(elem.ownerDocument.body, new WebKitPoint(event.pageX, event.pageY));
+                            // }
+                            // 
+                            // var div = elem.ownerDocument.getElementById("CLICKED");
+                            // if (div)
+                            // {
+                            //     div.parentNode.removeChild(div);
+                            // }
+                            // 
+                            // div = elem.ownerDocument.createElementNS("http://www.w3.org/1999/xhtml", 'div');
+                            // div.setAttribute("style", "background-color: red; position: absolute; z-index: 999; width: 50px; height: 50px; left: " + p.x + "px; top: " + p.y + "px;");
+                            // div.id = "CLICKED";
+                            // div.setAttribute("id", div.id);
+                            // var divTxt = elem.ownerDocument.createTextNode(" ");
+                            // div.appendChild(divTxt);
+                            // elem.ownerDocument.body.appendChild(div);
+                            //                          
+                            // /////////////////////
+
+
+                            //rangy.init();
+                            try
+                            {
+// THIS WORKS (same as Rangy's method below)
+//                                 var r;
+//                                 if (elem.ownerDocument.caretRangeFromPoint)
+//                                 {
+//                                     r = elem.ownerDocument.caretRangeFromPoint(event.pageX, event.pageY);
+//                                 }
+//                                 else if (event.rangeParent)
+//                                 {
+//                                     r = elem.ownerDocument.createRange();
+//                                     range.setStart(event.rangeParent, event.rangeOffset);
+//                                 }
+//                                 
+// console.log("------ 1");
+// console.log(elem.ownerDocument);
+// console.log(event.pageX);
+// console.log(event.pageY);
+// console.log(r.startContainer);
+// console.log(r.startOffset);
+// console.log("------");
+
+                                var pos = rangy.positionFromPoint(event.pageX, event.pageY, elem.ownerDocument);
+// console.log("------ 2");
+// console.log(pos.node.textContent);
+// console.log(pos.offset);
+// console.log("------");
+
+                                par = undefined;
+                                
+                                for (var iPar = 0; iPar < data.pars.length; iPar++)
+                                {
+                                    var p = data.pars[iPar];
+
+                                    var startCFI = "epubcfi(" + p.cfi.partialStartCfi + ")";
+                                    var infoStart = EPUBcfi.getTextTerminusInfoWithPartialCFI(startCFI, elem.ownerDocument,
+                ["cfi-marker", "mo-cfi-highlight"],
+                [],
+                ["MathJax_Message"]);
+//console.log(infoStart);
+
+                                    var endCFI = "epubcfi(" + p.cfi.partialEndCfi + ")";
+                                    var infoEnd = EPUBcfi.getTextTerminusInfoWithPartialCFI(endCFI, elem.ownerDocument,
+                ["cfi-marker", "mo-cfi-highlight"],
+                [],
+                ["MathJax_Message"]);
+//console.log(infoEnd);
+
+                                    var range = rangy.createRange(elem.ownerDocument); //createNativeRange
+                                    range.setStartAndEnd(
+                                        infoStart.textNode[0], infoStart.textOffset,
+                                        infoEnd.textNode[0], infoEnd.textOffset
+                                    );
+        
+                                    if (range.isPointInRange(pos.node, pos.offset))
+                                    {
+// console.log(p.cfi.partialStartCfi);
+// console.log(p.cfi.partialEndCfi);
+                                        // DOUBLE CHECK WITH getClientRects ??
+                                        
+                                        par = p;
+                                        break;
+                                    }
+                                }
+                            }
+                            catch (e)
+                            {
+                                console.error(e);
+                            }
+                            
+                            if (!par)
+                            {
+                                if (wasPaused)
+                                {
+                                    mediaOverlayPlayer.toggleMediaOverlay();
+                                }
+                                return true;
+                            }
+                        }
+
 
                         if (el && el != elem && el.nodeName.toLowerCase() === "body" && par && !par.getSmil().id)
                         {
-                            console.debug("MO CLICKED BLANK BODY");
+//console.debug("MO CLICKED BLANK BODY");
                             mediaOverlayPlayer.touchInit();
                             return true;
                         }
@@ -94,7 +272,7 @@ ReadiumSDK.Views.MediaOverlayDataInjector = function (mediaOverlay, mediaOverlay
                         }
                         if (readaloud)
                         {
-                            console.debug("MO readaloud attr: " + readaloud);
+console.debug("MO readaloud attr: " + readaloud);
 
                             var isPlaying = mediaOverlayPlayer.isPlaying();
                             if (readaloud === "start" && !isPlaying ||
@@ -123,9 +301,13 @@ ReadiumSDK.Views.MediaOverlayDataInjector = function (mediaOverlay, mediaOverlay
 //console.debug("[[MO ATTACH]] " + spineItem.idref + " /// " + spineItem.media_overlay_id + " === " + smil.id);
 
         var iter = new ReadiumSDK.Models.SmilIterator(smil);
-
+        
+        var fakeOpfRoot = "/99!";
+        var epubCfiPrefix = "epubcfi";
+        
         while (iter.currentPar) {
             iter.currentPar.element = undefined;
+            iter.currentPar.cfi = undefined;
 
             if (true) { //iter.currentPar.text.srcFragmentId (includes empty frag ID)
 
@@ -133,42 +315,169 @@ ReadiumSDK.Views.MediaOverlayDataInjector = function (mediaOverlay, mediaOverlay
 
                 var same = textRelativeRef === spineItem.href;
                 if (same) {
-                    var selector = (!iter.currentPar.text.srcFragmentId || iter.currentPar.text.srcFragmentId.length == 0) ? "body" : "#" + iter.currentPar.text.srcFragmentId;
-                    var $element = $(selector, contentDocElement);
+                    var selector = (!iter.currentPar.text.srcFragmentId || iter.currentPar.text.srcFragmentId.length == 0) ? "body" : (iter.currentPar.text.srcFragmentId.indexOf(epubCfiPrefix) == 0 ? undefined : "#" + escapeSelector(iter.currentPar.text.srcFragmentId));
 
-                    if ($element.length > 0) {
+                    var $element = undefined;
+                    var isCfiTextRange = false;
+                    if (!selector)
+                    {
+                        if (iter.currentPar.text.srcFragmentId.indexOf(epubCfiPrefix) === 0)
+                        {
+                            var partial = iter.currentPar.text.srcFragmentId.substr(epubCfiPrefix.length + 1, iter.currentPar.text.srcFragmentId.length - epubCfiPrefix.length - 2);
+                            
+                            if (partial.indexOf(fakeOpfRoot) === 0)
+                            {
+                                partial = partial.substr(fakeOpfRoot.length, partial.length - fakeOpfRoot.length);
+                            }
+//console.log(partial);
+                            var parts = partial.split(",");
+                            if (parts && parts.length === 3)
+                            {
+                                try
+                                {
+                                    var partialStartCfi = parts[0] + parts[1];
+                                    var startCFI = "epubcfi(" + partialStartCfi + ")";
+                                    var infoStart = EPUBcfi.getTextTerminusInfoWithPartialCFI(startCFI, $iframe[0].contentDocument,
+                ["cfi-marker", "mo-cfi-highlight"],
+                [],
+                ["MathJax_Message"]);
+//console.log(infoStart);
 
-                        if (iter.currentPar.element && iter.currentPar.element !== $element[0]) {
-                            console.error("DIFFERENT ELEMENTS??! " + iter.currentPar.text.srcFragmentId + " /// " + iter.currentPar.element.id);
-                        }
+                                    var partialEndCfi = parts[0] + parts[2];
+                                    var endCFI = "epubcfi(" + partialEndCfi + ")";
+                                    var infoEnd = EPUBcfi.getTextTerminusInfoWithPartialCFI(endCFI, $iframe[0].contentDocument,
+                ["cfi-marker", "mo-cfi-highlight"],
+                [],
+                ["MathJax_Message"]);
+//console.log(infoEnd);
 
-                        var name = $element[0].nodeName ? $element[0].nodeName.toLowerCase() : undefined;
-                        if (name === "audio" || name === "video") {
-                            $element.attr("preload", "auto");
-                        }
+                                    var cfiTextParent = infoStart.textNode[0].parentNode;
 
-                        iter.currentPar.element = $element[0];
+                                    iter.currentPar.cfi = {
+                                        smilTextSrcCfi: iter.currentPar.text.srcFragmentId,
+                                        partialRangeCfi: partial,
+                                        partialStartCfi: partialStartCfi,
+                                        partialEndCfi: partialEndCfi,
+                                        
+                                        cfiTextParent: cfiTextParent
+                                        
+                                        // textNode becomes invalid after highlighting! (dynamic span insertion/removal changes DOM)
+                                        // cfiRangeStart: infoStart,
+                                        // cfiRangeEnd: infoEnd
+                                    };
+                                    
+                                    // TODO: not just start textNode, but all of them between start and end...
+                                    // ...that being said, CFI text ranges likely to be used only within a single common parent,
+                                    // so this is an acceptable implementation shortcut for this CFI experimentation (word-level text/audio synchronisation).
+                                    isCfiTextRange = true;
+                                    $element = $(cfiTextParent);
+                                    var modata = $element.data("mediaOverlayData");
+                                    if (!modata)
+                                    {
+                                        modata = {pars: [iter.currentPar]};
+                                        $element.data("mediaOverlayData", modata);
+                                    }
+                                    else
+                                    {
+                                        if (modata.par)
+                                        {
+                                            console.error("[WARN] non-CFI MO DATA already exists!");
+                                            modata.par = undefined;
+                                        }
 
-                        var modata = $element.data("mediaOverlayData");
-                        if (modata) {
-                            console.error("[WARN] MO DATA already exists.");
+                                        var found = false;
+                                        if (modata.pars)
+                                        {
+                                            for (var iPars = 0; iPars < modata.pars.length; iPars++)
+                                            {
+                                                var par = modata.pars[iPars];
 
-                            if (modata.par && modata.par !== iter.currentPar) {
-                                console.error("DIFFERENT PARS??!");
+                                                if (par === iter.currentPar)
+                                                {
+                                                    found = true;
+                                                    console.error("[WARN] mediaOverlayData CFI PAR already registered!");
+                                                }
+                                            }
+                                        }
+                                        else
+                                        {
+                                            modata.pars = [];
+                                        }
+
+                                        if (!found)
+                                        {
+                                            modata.pars.push(iter.currentPar);
+                                        }
+                                    }
+
+                                }
+                                catch (error)
+                                {
+                                    console.error(error);
+                                }
+                            }
+                            else
+                            {
+                                try
+                                {
+                                    var cfi = "epubcfi(" + partial + ")";
+                                    $element = EPUBcfi.getTargetElementWithPartialCFI(cfi, $iframe[0].contentDocument,
+                ["cfi-marker", "mo-cfi-highlight"],
+                [],
+                ["MathJax_Message"]);
+                                }
+                                catch (error)
+                                {
+                                    console.error(error);
+                                }
                             }
                         }
+                        else 
+                        {
+                            console.error("SMIL text@src CFI fragment identifier scheme not supported: " + iter.currentPar.text.srcFragmentId);
+                        }
+                    }
+                    else
+                    {
+                        $element = $(selector, contentDocElement);
+                    }
 
-                        $element.data("mediaOverlayData", {par: iter.currentPar});
+                    if ($element && $element.length > 0) {
 
-                        /*
-                         $element.click(function() {
-                         var elem = $(this)[0];
-                         console.debug("MO CLICK (ELEM): " + elem.id);
+                        if (!isCfiTextRange)
+                        {
+                            if (iter.currentPar.element && iter.currentPar.element !== $element[0]) {
+                                console.error("DIFFERENT ELEMENTS??! " + iter.currentPar.text.srcFragmentId + " /// " + iter.currentPar.element.id);
+                            }
 
-                         var par = $(this).data("mediaOverlayData").par;
-                         mediaOverlayPlayer.playUserPar(par);
-                         });
-                         */
+                            var name = $element[0].nodeName ? $element[0].nodeName.toLowerCase() : undefined;
+                            if (name === "audio" || name === "video") {
+                                $element.attr("preload", "auto");
+                            }
+
+                            iter.currentPar.element = $element[0];
+
+                            var modata = $element.data("mediaOverlayData");
+                            if (modata) {
+                                console.error("[WARN] MO DATA already exists.");
+
+                                if (modata.par && modata.par !== iter.currentPar) {
+                                    console.error("DIFFERENT PARS??!");
+                                }
+                            }
+
+                            $element.data("mediaOverlayData", {par: iter.currentPar});
+
+                            /*
+                             $element.click(function() {
+                             var elem = $(this)[0];
+                             console.debug("MO CLICK (ELEM): " + elem.id);
+
+                             var par = $(this).data("mediaOverlayData").par;
+                             mediaOverlayPlayer.playUserPar(par);
+                             });
+                             */
+                        }
                     }
                     else {
                         console.error("!! CANNOT FIND ELEMENT: " + iter.currentPar.text.srcFragmentId + " == " + iter.currentPar.text.srcFile + " /// " + spineItem.href);

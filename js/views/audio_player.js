@@ -212,8 +212,8 @@
     
         function onPause()
         {
-            onStatusChanged({isPlaying: false});
             onAudioPause();
+            onStatusChanged({isPlaying: false});
         }
     
         function onEnded()
@@ -285,7 +285,7 @@
     
         this.isPlaying = function()
         {
-            return _intervalTimer != undefined;
+            return _intervalTimer !== undefined;
         };
     
         this.reset = function()
