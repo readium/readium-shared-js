@@ -136,7 +136,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
         var percentOfElementHeight = 0;
         if (isBelowVisibleTop && isAboveVisibleBottom) { // element is visible
             if (!shouldCalculateVisibilityOffset) {
-                return true;
+                return 100;
             }
             else if (elementRect.top <= topOffset) {
                 percentOfElementHeight = Math.ceil(
@@ -152,9 +152,9 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
                 // var visibleHeight = visibleBottom - visibleTop;
                 // var percentVisible = Math.round((visibleHeight / elementRect.height) * 100);
             }
-            return percentOfElementHeight;
+            return 100 - percentOfElementHeight;
         }
-        return false; // element isn't visible
+        return 0; // element isn't visible
     }
 
     /**
@@ -166,11 +166,10 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
      * @param {jQuery} $element
      * @param {Object} _props
      * @param {boolean} shouldCalculateVisibilityOffset
-     * @returns {boolean|number}
-     *      false/visibilityRangeOffsetInPercents,
-     *              if `shouldCalculateVisibilityOffset` => true
-     *      false/true,
-     *              if `shouldCalculateVisibilityOffset` => false
+     * @returns {number}
+     *      0 for non-visible elements,
+     *      0 < n <= 100 for visible elements
+     *      (will just give 100, if `shouldCalculateVisibilityOffset` => false)
      */
     function checkVisibilityByRectangles(
             $element, _props, shouldCalculateVisibilityOffset) {
@@ -196,11 +195,11 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
         if (helpers.isVisible(lastRectangle)) {
             // some part of element IS visible
             return shouldCalculateVisibilityOffset
-                ? measureVisibilityRangeOffsetsByRectangles(
+                ? measureVisibilityPercentageByRectangles(
                             clientRectangles, frameHeight, helpers)
-                : true;
+                : 100;
         }
-        return false;
+        return 0;
     }
 
     /**
@@ -248,9 +247,9 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
      * @param {Array} clientRectangles (should already be normalized)
      * @param {number} frameHeight
      * @param {Object} helpers
-     * @returns {number} - visibility offset percentage (0 <= n < 100)
+     * @returns {number} - visibility percentage (0 < n <= 100)
      */
-    function measureVisibilityRangeOffsetsByRectangles(
+    function measureVisibilityPercentageByRectangles(
             clientRectangles, frameHeight, helpers) {
 
         var heightTotal = 0;
@@ -270,8 +269,8 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
                     clientRectangles[0], frameHeight);
         }
         return heightVisible === heightTotal
-            ? 0 // trivial case: element is 100% visible, y-offset is 0
-            : 100 - Math.floor(100 * heightVisible / heightTotal);
+            ? 100 // trivial case: element is 100% visible
+            : Math.floor(100 * heightVisible / heightTotal);
     }
 
     /**
@@ -455,9 +454,9 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
             }
 
             var visibilityResult = visibilityCheckerFunc($element, props, true);
-            if (visibilityResult !== false) { // can be 0
+            if (visibilityResult) {
                 $firstVisibleTextNode = $element;
-                percentOfElementHeight = visibilityResult;
+                percentOfElementHeight = 100 - visibilityResult;
                 return false;
             }
             return true;
@@ -652,8 +651,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
     };
 
     this.getElementVisibility = function($element, visibleContentOffsets) {
-        var visibilityOffset = visibilityCheckerFunc($element, visibleContentOffsets, true);
-        return visibilityOffset === false ? 0 : 100 - visibilityOffset;
+        return visibilityCheckerFunc($element, visibleContentOffsets, true);
     };
 
     this.getVisibleMediaOverlayElements = function(visibleContentOffsets) {
@@ -683,12 +681,11 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
         // Find the first visible text node
         $.each($elements, function() {
             var $element = this;
-            var visibilityResult = visibilityCheckerFunc(
+            var visibilityPercentage = visibilityCheckerFunc(
                     $element, visibleContentOffsets, true);
 
-            if (visibilityResult !== false) {
+            if (visibilityPercentage) {
                 var $visibleElement = $element;
-                var visibilityPercentage = 100 - visibilityResult;
                 visibleElements.push({
                     element: $visibleElement[0], // DOM Element is pushed
                     percentVisible: visibilityPercentage
