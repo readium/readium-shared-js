@@ -208,14 +208,19 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
      * Calculations are based on rectangles retrieved with getClientRects() method.
      *
      * @param {jQuery} $element
+     * @param {number} spatialVerticalOffset
      * @returns {number}
      */
-    function findPageByRectangles($element) {
+    function findPageByRectangles($element, spatialVerticalOffset) {
         var visibleContentOffsets = getVisibleContentOffsets();
         var elementRectangles = getNormalizedRectangles($element, visibleContentOffsets);
         var clientRectangles  = elementRectangles.clientRectangles;
 
         var isRtl = isPageProgressionRightToLeft();
+
+        if (spatialVerticalOffset) {
+            trimRectanglesByVertOffset(clientRectangles, spatialVerticalOffset);
+        }
 
         var firstRectangle = _.first(clientRectangles);
         var frameHeight = $iframe.height();
@@ -392,6 +397,35 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
         }
     }
 
+    /**
+     * @private
+     * Trims the rectangle(s) representing the given element.
+     *
+     * @param {Array} rects
+     * @param {number} verticalOffset
+     */
+    function trimRectanglesByVertOffset(rects, verticalOffset) {
+        var totalHeight = _.reduce(rects, function(prev, cur) {
+            return prev + cur.height;
+        }, 0);
+
+        var heightToHide = totalHeight * verticalOffset / 100;
+        if (rects.length > 1) {
+            var heightAccum = 0;
+            do {
+                heightAccum += rects[0].height;
+                if (heightAccum > heightToHide) {
+                    break;
+                }
+                rects.shift();
+            } while (rects.length > 1);
+        }
+        else {
+            rects[0].top += heightToHide;
+            rects[0].height -= heightToHide;
+        }
+    }
+
     //we look for text and images
     this.findFirstVisibleElement = function (props) {
 
@@ -488,12 +522,14 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
 
     this.getPageForElement = function($element) {
 
-        return options.rectangleBased
-            ? findPageByRectangles($element)
-            : this.getPageForPointOnElement($element, 0, 0);
+        return this.getPageForPointOnElement($element, 0, 0);
     };
 
     this.getPageForPointOnElement = function($element, x, y) {
+
+        if (options.rectangleBased) {
+            return findPageByRectangles($element, y);
+        }
 
         var posInElement = this.getVerticalOffsetForPointOnElement($element, x, y);
         return Math.floor(posInElement / $viewport.height());
