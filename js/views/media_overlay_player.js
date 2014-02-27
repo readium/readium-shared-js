@@ -87,10 +87,11 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         // MOPLayer.onPageChanged()
 
         var wasPlaying = self.isPlaying();
-        
-        if (wasPlaying) self.pause();
-        
-        _wasPlayingAtDocLoadStart = wasPlaying;
+        if (wasPlaying)
+        {
+            _wasPlayingAtDocLoadStart = true;
+            self.pause();
+        }
     };
     
     this.onPageChanged = function(paginationData) {
@@ -562,7 +563,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
 //console.debug("PLAY START TIME: " + startTime + "("+_smilIterator.currentPar.audio.clipBegin+" + "+clipBeginOffset+")");
 
-            _audioPlayer.playFile(_smilIterator.currentPar.audio.src, audioSource, startTime, _smilIterator.currentPar.element ? _smilIterator.currentPar.element : _smilIterator.currentPar.cfi.cfiTextParent );
+            _audioPlayer.playFile(_smilIterator.currentPar.audio.src, audioSource, startTime); //_smilIterator.currentPar.element ? _smilIterator.currentPar.element : _smilIterator.currentPar.cfi.cfiTextParent
         }
 
         clipBeginOffset = 0.0;
@@ -1387,6 +1388,8 @@ console.debug("TTS resume");
         if (_smilIterator.currentPar.element) {
             return;
         }
+        
+        //else: single SMIL per multiple XHTML? ==> open new spine item
         
         /*
         var textRelativeRef = ReadiumSDK.Helpers.ResolveContentRef(_smilIterator.currentPar.text.srcFile, _smilIterator.smil.href);

@@ -334,7 +334,7 @@
     
         var _seekQueuing = 0;
         
-        this.playFile = function(smilSrc, epubSrc, seekBegin, element)
+        this.playFile = function(smilSrc, epubSrc, seekBegin) //element
         {
             _playId++;
             if (_playId > 99999)
