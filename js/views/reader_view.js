@@ -687,6 +687,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
      */
     this.isMediaOverlayAvailable = function() {
 
+        if (!_mediaOverlayPlayer) return false;
+        
         return _mediaOverlayPlayer.isMediaOverlayAvailable();
     };
 
