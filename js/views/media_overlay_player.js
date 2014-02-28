@@ -735,20 +735,24 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             if (scopeTo && scopeTo !== _smilIterator.currentPar)
             {
                 var scopeFrom = _elementHighlighter.adjustParToSeqSyncGranularity(parFrom);
-                if (scopeFrom && scopeFrom === scopeTo)
+                if (scopeFrom && (scopeFrom === scopeTo || !goNext))
                 {
-                    do
+                    if (scopeFrom === scopeTo)
                     {
-                        if (goNext) _smilIterator.next();
-                        else  _smilIterator.previous();
-                    } while (_smilIterator.currentPar && _smilIterator.currentPar.hasAncestor(scopeFrom));
+                        do
+                        {
+                            if (goNext) _smilIterator.next();
+                            else  _smilIterator.previous();
+                        } while (_smilIterator.currentPar && _smilIterator.currentPar.hasAncestor(scopeFrom));
 
-                    if (!_smilIterator.currentPar)
-                    {
-//console.debug("adjustParToSeqSyncGranularity nextSmil(goNext)");
-                        nextSmil(goNext);
-                        return;
+                        if (!_smilIterator.currentPar)
+                        {
+    //console.debug("adjustParToSeqSyncGranularity nextSmil(goNext)");
+                            nextSmil(goNext);
+                            return;
+                        }
                     }
+                    
 //console.debug("ADJUSTED: " + _smilIterator.currentPar.text.srcFragmentId);
                     if (!goNext)
                     {
