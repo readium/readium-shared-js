@@ -1362,9 +1362,9 @@ console.debug("TTS resume");
             if (_smilIterator.currentPar.element) {
     //console.error(_smilIterator.currentPar.element.id + ": " + _smilIterator.currentPar.audio.clipBegin + " / " + _smilIterator.currentPar.audio.clipEnd);
 
-                if (!_elementHighlighter.isElementHighlighted(_smilIterator.currentPar.element))
+                if (!_elementHighlighter.isElementHighlighted(_smilIterator.currentPar))
                 {
-                    _elementHighlighter.highlightElement(_smilIterator.currentPar.element, _package.media_overlay.activeClass, _package.media_overlay.playbackActiveClass);
+                    _elementHighlighter.highlightElement(_smilIterator.currentPar, _package.media_overlay.activeClass, _package.media_overlay.playbackActiveClass);
 
                     reader.insureElementVisibility(_smilIterator.currentPar.element, self);
                 }
@@ -1373,7 +1373,7 @@ console.debug("TTS resume");
             
             } else if (_smilIterator.currentPar.cfi) {
 
-                if (!_elementHighlighter.isCfiHighlighted())
+                if (!_elementHighlighter.isCfiHighlighted(_smilIterator.currentPar))
                 {
                     _elementHighlighter.highlightCfi(_smilIterator.currentPar, _package.media_overlay.activeClass, _package.media_overlay.playbackActiveClass);
 

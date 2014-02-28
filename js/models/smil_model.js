@@ -316,6 +316,24 @@ ReadiumSDK.Models.Smil.ParNode = function(parent) {
     this.text = undefined;
     this.audio = undefined;
     this.element = undefined;
+    
+
+    this.getFirstSeqAncestorWithEpubType = function(epubtype) {
+        if (!epubtype) return undefined;
+        
+        var parent = this.parent;
+        while (parent)
+        {
+            if (parent.epubtype === epubtype)
+            {
+                return parent; // assert(parent.nodeType === "seq")
+            }
+            
+            parent = parent.parent;
+        }
+        
+        return undefined;
+    };
 };
 
 ReadiumSDK.Models.Smil.ParNode.prototype = new ReadiumSDK.Models.Smil.TimeContainerNode();
