@@ -147,8 +147,9 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
         _activeClass = activeClass;
         _playbackActiveClass = playbackActiveClass;
 
-        var element = this.adjustParToSeqSyncGranularity(_highlightedElementPar).element;
-        if (_highlightedElementPar.element !== element)
+        var seq = this.adjustParToSeqSyncGranularity(_highlightedElementPar);
+        var element = seq.element;
+        if (_highlightedElementPar !== seq)
         {
             $(_highlightedElementPar.element).addClass("mo-sub-sync");
         }
@@ -434,8 +435,9 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
 
         if(_highlightedElementPar) {
 
-            var element = this.adjustParToSeqSyncGranularity(_highlightedElementPar).element;
-            if (_highlightedElementPar.element !== element)
+            var seq = this.adjustParToSeqSyncGranularity(_highlightedElementPar);
+            var element = seq.element;
+            if (_highlightedElementPar !== seq)
             {
                 $(_highlightedElementPar.element).removeClass("mo-sub-sync");
             }
