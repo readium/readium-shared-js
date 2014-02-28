@@ -324,7 +324,7 @@ ReadiumSDK.Models.Smil.ParNode = function(parent) {
         var parent = this.parent;
         while (parent)
         {
-            if (parent.epubtype === epubtype)
+            if (parent.epubtype && parent.epubtype.indexOf(epubtype) >= 0)
             {
                 return parent; // assert(parent.nodeType === "seq")
             }
