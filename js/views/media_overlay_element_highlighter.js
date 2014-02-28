@@ -27,10 +27,10 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
         return _highlightedElement && element === _highlightedElement;
     }
     
-    var _highlightedCfi = undefined;
+    var _highlightedCfiPar = undefined;
     this.isCfiHighlighted = function(cfi)
     {
-        return _highlightedCfi && cfi === _highlightedCfi;
+        return _highlightedCfiPar && cfi === _highlightedCfiPar.cfi;
     }
 
     var _activeClass = "";
@@ -47,15 +47,34 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
     var self = this;
 
     var $userStyle = undefined;
-    this.clearUserStyle = function()
+    
+    this.reDo = function()
     {
-        this.reset();
+        //this.reset();
         
         if ($userStyle)
         {
             $userStyle.remove();
         }
         $userStyle = undefined;
+
+        var he = _highlightedElement;
+        var hc = _highlightedCfiPar;
+        var c1 = _activeClass;
+        var c2 = _playbackActiveClass;
+        
+        if (_highlightedElement)
+        {
+            this.reset();
+
+            this.highlightElement(he, c1, c2);
+        }
+        else if (_highlightedCfiPar)
+        {
+            this.reset();
+
+            this.highlightCfi(hc, c1, c2);
+        }
     };
 
     function ensureUserStyle($element, hasAuthorStyle, overrideWithUserStyle)
@@ -66,8 +85,6 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
             {
                 return;
             }
-
-            //self.clearUserStyle();
         }
 
 
@@ -77,9 +94,9 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
 
         $userStyle.append("." + DEFAULT_MO_ACTIVE_CLASS + " {");
         
-        var fallbackUserStyle = "background-color: #333333 !important; color: white !important; border-radius: 0.4em;";
+        var fallbackUserStyle = "background-color: yellow !important; color: black !important; border-radius: 0.4em;";
         
-        var style = overrideWithUserStyle; //_reader.userStyles().findStyle("." + DEFAULT_MO_ACTIVE_CLASS);        
+        var style = overrideWithUserStyle; //_reader.userStyles().findStyle("." + DEFAULT_MO_ACTIVE_CLASS);
         if (style)
         {
             var atLeastOne = false;
@@ -125,7 +142,7 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
         this.reset();
 
         _highlightedElement = element;
-        _highlightedCfi = undefined;
+        _highlightedCfiPar = undefined;
         
         _activeClass = activeClass;
         _playbackActiveClass = playbackActiveClass;
@@ -140,7 +157,7 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
         var $hel = $(_highlightedElement);
 
         var hasAuthorStyle = _activeClass && _activeClass !== "";
-        var overrideWithUserStyle = _reader.userStyles().findStyle("." + DEFAULT_MO_ACTIVE_CLASS); // TODO: performance issue?
+        var overrideWithUserStyle = _reader.userStyles().findStyle("." + DEFAULT_MO_ACTIVE_CLASS);
 
         ensureUserStyle($hel, hasAuthorStyle, overrideWithUserStyle);
                 
@@ -148,6 +165,11 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
         {
             //console.debug("MO active NO CLASS: " + _activeClass);
 
+            if (hasAuthorStyle)
+            {
+                $hel.addClass(_activeClass);
+            }
+            
             $hel.addClass(DEFAULT_MO_ACTIVE_CLASS);
 
             //$(_highlightedElement).css("background", BACK_COLOR);
@@ -204,37 +226,41 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
     
     this.highlightCfi = function(par, activeClass, playbackActiveClass) {
 
+        if(!par || par === _highlightedCfiPar) {
+            return;
+        }
+
         this.reset();
 
         _highlightedElement = undefined;
-        _highlightedCfi = par.cfi;
+        _highlightedCfiPar = par;
         
         _activeClass = activeClass;
         _playbackActiveClass = playbackActiveClass;
 
-        var $hel = $(_highlightedCfi.cfiTextParent);
+        var $hel = $(_highlightedCfiPar.cfi.cfiTextParent);
 
         var hasAuthorStyle = _activeClass && _activeClass !== "";
         var overrideWithUserStyle = _reader.userStyles().findStyle("." + DEFAULT_MO_ACTIVE_CLASS); // TODO: performance issue?
 
         ensureUserStyle($hel, hasAuthorStyle, overrideWithUserStyle);
 
-        var clazz = (overrideWithUserStyle || !hasAuthorStyle) ? DEFAULT_MO_ACTIVE_CLASS : _activeClass;
+        var clazz = (overrideWithUserStyle || !hasAuthorStyle) ? ((hasAuthorStyle ? (_activeClass + " ") : "") + DEFAULT_MO_ACTIVE_CLASS) : _activeClass;
 
         if (USE_RANGY)
         {
-            var doc = _highlightedCfi.cfiTextParent.ownerDocument;
+            var doc = _highlightedCfiPar.cfi.cfiTextParent.ownerDocument;
 
             _rangyRange = rangy.createRange(doc); //createNativeRange
 
-            var startCFI = "epubcfi(" + _highlightedCfi.partialStartCfi + ")";
+            var startCFI = "epubcfi(" + _highlightedCfiPar.cfi.partialStartCfi + ")";
             var infoStart = EPUBcfi.getTextTerminusInfoWithPartialCFI(startCFI, doc,
                 ["cfi-marker", "mo-cfi-highlight"],
                 [],
                 ["MathJax_Message"]);
 //console.log(infoStart);
 
-            var endCFI = "epubcfi(" + _highlightedCfi.partialEndCfi + ")";
+            var endCFI = "epubcfi(" + _highlightedCfiPar.cfi.partialEndCfi + ")";
             var infoEnd = EPUBcfi.getTextTerminusInfoWithPartialCFI(endCFI, doc,
                 ["cfi-marker", "mo-cfi-highlight"],
                 [],
@@ -343,9 +369,9 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
 
     this.reset = function() {
         
-        if (_highlightedCfi)
+        if (_highlightedCfiPar)
         {
-            var doc = _highlightedCfi.cfiTextParent.ownerDocument;
+            var doc = _highlightedCfiPar.cfi.cfiTextParent.ownerDocument;
             if (USE_RANGY)
             {
                 if (_rangyCSS && _rangyRange.MO_createCssClassApplier)
@@ -394,7 +420,7 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
                 }
             }
             
-            _highlightedCfi = undefined;
+            _highlightedCfiPar = undefined;
         }
         
         

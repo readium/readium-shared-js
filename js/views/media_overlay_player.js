@@ -46,7 +46,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
     this.applyStyles = function()
     {
-        _elementHighlighter.clearUserStyle();
+        _elementHighlighter.reDo();
     };
 
 //
@@ -178,16 +178,19 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                     }
                 }
 
-                element = reader.getElement(spineItem, (paginationData.initiator == self && !paginationData.elementId) ? "body" : ("#" + paginationData.elementId));
-                if (element)
+                if (!element)
                 {
-                    /*
-                    console.error("GREEN: " + paginationData.elementId);
-                    lastElement = element;
-                    lastElementColor = $(element).css("background-color");
-                    $(element).css("background-color", "green");
-                     */
-                    break;
+                    element = reader.getElement(spineItem, (paginationData.initiator == self && !paginationData.elementId) ? "body" : ("#" + paginationData.elementId));
+                    if (element)
+                    {
+                        /*
+                        console.error("GREEN: " + paginationData.elementId);
+                        lastElement = element;
+                        lastElementColor = $(element).css("background-color");
+                        $(element).css("background-color", "green");
+                         */
+                        break;
+                    }
                 }
             }
 
@@ -432,9 +435,12 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
                     $(_currentEmbedded).on("ended", self.onEmbeddedEnd);
 
-                    onStatusChanged({isPlaying: true});
-
                     _embeddedIsPlaying = true;
+                    
+                    // gives the audio player some dispatcher time to raise the onPause event
+                    setTimeout(function(){
+                        onStatusChanged({isPlaying: true});
+                    }, 80);
 
 //                    $(element).on("seeked", function()
 //                    {
@@ -868,7 +874,11 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
         if (!volume || volume > 0)
         {
-            onStatusChanged({isPlaying: true});
+            // gives the audio player some dispatcher time to raise the onPause event
+            setTimeout(function(){
+                onStatusChanged({isPlaying: true});
+            }, 80);
+            
             _ttsIsPlaying = true;
 
             if (TOKENIZE_TTS && element)
@@ -1540,7 +1550,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 //            console.time("MO");
 //        }
 
-        var visibleMediaElements = reader.getVisibleMediaOverlayElements();
+        var visibleMediaElement = reader.getFirstVisibleMediaOverlayElement();
 
 //        if (console.timeEnd)
 //        {
@@ -1551,7 +1561,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 //
 //        console.debug(now2 - now1);
 
-        return visibleMediaElements.length > 0;
+        return typeof visibleMediaElement !== "undefined";
     };
 
     this.nextOrPreviousMediaOverlay = function(previous) {
@@ -1734,23 +1744,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
         if (!element)
         {
-            var visibleMediaOverlayElements = reader.getVisibleMediaOverlayElements();
-
-            if (visibleMediaOverlayElements.length == 0)
-            {
-                console.error("reader.getVisibleMediaOverlayElements().length == 0");
-            }
-            else
-            {
-                if(visibleMediaOverlayElements.length == 1 || visibleMediaOverlayElements[0].percentVisible == 100)
-                {
-                    element = visibleMediaOverlayElements[0].element;
-                }
-                else
-                {
-                    element = visibleMediaOverlayElements[1].element;
-                }
-            }
+            element = reader.getFirstVisibleMediaOverlayElement();
         }
 
         if (!element)

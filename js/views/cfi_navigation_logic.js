@@ -186,10 +186,12 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
         var lastRectangle = _.last(clientRectangles);
 
         if (clientRectangles.length === 1) {
+            var columnFullWidth = getColumnFullWidth();
             var frameHeight = $iframe.height();
             // because of webkit inconsistency, that single rectangle should be adjusted
             // until it hits the end OR will be based on the FIRST column that is visible
-            adjustRectangle(lastRectangle, frameHeight, isRtl, helpers.isVisible);
+            adjustRectangle(lastRectangle, frameHeight, columnFullWidth,
+                    isRtl, helpers.isVisible);
         }
 
         if (helpers.isVisible(lastRectangle)) {
@@ -216,27 +218,25 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
         var clientRectangles  = elementRectangles.clientRectangles;
 
         var isRtl = isPageProgressionRightToLeft();
+        var columnFullWidth = getColumnFullWidth();
+        var frameHeight = $iframe.height();
 
         if (spatialVerticalOffset) {
-            trimRectanglesByVertOffset(clientRectangles, spatialVerticalOffset);
+            trimRectanglesByVertOffset(clientRectangles, spatialVerticalOffset,
+                frameHeight, columnFullWidth);
         }
 
         var firstRectangle = _.first(clientRectangles);
-        var frameHeight = $iframe.height();
         if (clientRectangles.length === 1) {
-            adjustRectangle(firstRectangle, frameHeight, isRtl);
+            adjustRectangle(firstRectangle, frameHeight, columnFullWidth, isRtl);
         }
 
-        var columnFullWidth = getColumnFullWidth();
         var leftOffset = firstRectangle.left;
         if (isRtl) {
-            leftOffset = columnFullWidth - leftOffset;
+            leftOffset = columnFullWidth * options.paginationInfo.visibleColumnCount - leftOffset;
         }
 
-        var pageIndex = Math.round(leftOffset / columnFullWidth);
-        if (isRtl && options.paginationInfo.visibleColumnCount === 1) {
-            --pageIndex;
-        }
+        var pageIndex = Math.floor(leftOffset / columnFullWidth);
         return pageIndex;
     }
 
@@ -365,14 +365,14 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
      *
      * @param {Object} rect
      * @param {number} frameHeight
+     * @param {number} columnFullWidth
      * @param {boolean} isRtl
      * @param {Function} [isVisibleCb]
      *      If set, will be used in the second phase
      *      (to align a rectangle with a viewport)
      */
-    function adjustRectangle(rect, frameHeight, isRtl, isVisibleCb) {
+    function adjustRectangle(rect, frameHeight, columnFullWidth, isRtl, isVisibleCb) {
 
-        var columnFullWidth = getColumnFullWidth();
         if (isRtl) {
             columnFullWidth *= -1; // horizontal shifts are reverted in RTL mode
         }
@@ -402,8 +402,12 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
      *
      * @param {Array} rects
      * @param {number} verticalOffset
+     * @param {number} frameHeight
+     * @param {number} columnFullWidth
      */
-    function trimRectanglesByVertOffset(rects, verticalOffset) {
+    function trimRectanglesByVertOffset(
+            rects, verticalOffset, frameHeight, columnFullWidth) {
+
         var totalHeight = _.reduce(rects, function(prev, cur) {
             return prev + cur.height;
         }, 0);
@@ -420,6 +424,11 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
             } while (rects.length > 1);
         }
         else {
+            // rebase to the last possible column
+            // (so that adding to top will be properly processed later)
+            while (rects[0].bottom >= frameHeight) {
+                offsetRectangle(rects[0], columnFullWidth, -frameHeight);
+            }
             rects[0].top += heightToHide;
             rects[0].height -= heightToHide;
         }
@@ -654,6 +663,9 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
         return visibilityCheckerFunc($element, visibleContentOffsets, true);
     };
 
+    /**
+     * @deprecated
+     */
     this.getVisibleMediaOverlayElements = function(visibleContentOffsets) {
 
         var $elements = this.getMediaOverlayElements($("body", this.getRootElement()));
@@ -708,6 +720,9 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
         return this.getVisibleElements($elements, visibleContentOffsets);
     };
 
+    /**
+     * @deprecated
+     */
     this.getMediaOverlayElements = function($root) {
 
         var $elements = [];
@@ -715,7 +730,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
         function traverseCollection(elements) {
 
             if (elements == undefined) return;
-            
+
             for(var i = 0, count = elements.length; i < count; i++) {
 
                 var $element = $(elements[i]);

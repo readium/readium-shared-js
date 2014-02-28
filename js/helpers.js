@@ -110,6 +110,22 @@ ReadiumSDK.Helpers.EndsWith = function (str, suffix) {
     return str.indexOf(suffix, str.length - suffix.length) !== -1;
 };
 
+ReadiumSDK.Helpers.BeginsWith = function (str, suffix) {
+
+    return str.indexOf(suffix) === 0;
+};
+
+ReadiumSDK.Helpers.RemoveFromString = function(str, toRemove) {
+
+    var startIx = str.indexOf(toRemove);
+
+    if(startIx == -1) {
+        return str;
+    }
+
+    return str.substring(0, startIx) + str.substring(startIx + toRemove.length);
+};
+
 ReadiumSDK.Helpers.Margins = function(margin, border, padding) {
 
     this.margin = margin;
