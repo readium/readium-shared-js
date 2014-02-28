@@ -248,6 +248,11 @@ console.debug("MO readaloud attr: " + readaloud);
             
             if (root.nodeType && root.nodeType === "seq")
             {
+                if (root.epubtype)
+                {
+                    mediaOverlayPlayer.addSync(root.epubtype);
+                }
+                
                // if (root.element)
                // {
                //     console.error("WARN: seq.element already set: " + root.textref);
