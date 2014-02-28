@@ -21,79 +21,17 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
     var DEFAULT_MO_ACTIVE_CLASS = "mo-active-default";
     //var BACK_COLOR = "#99CCCC";
 
-    var adjustParToSeqSyncGranularity = function(par)
-    {
-        if (!par) return undefined;
-        
-        // TODO "paragraph" "sentence"...
-        var sync = _reader.viewerSettings().mediaOverlaysSynchronizationGranularity;
-        if (sync)
-        {
-            var element = par.element || (par.cfi ? par.cfi.cfiTextParent : undefined);
-            if (!element)
-            {
-                console.error("adjustParToSeqSyncGranularity !element ???");
-                return par; // should never happen!
-            }
-
-            var contentDocElement = element.ownerDocument.documentElement;
-        
-            var seq = par.getFirstSeqAncestorWithEpubType(sync);
-            if (seq)
-            {
-                if (!seq.element)
-                {
-                    if (seq.textref)
-                    {
-                        var parts = seq.textref.split('#');
-                        var file = parts[0];
-                        var fragmentId = (parts.length === 2) ? parts[1] : "";
-                        // 
-                        // console.debug(seq.textref);
-                        // console.debug(fragmentId);
-                        // console.log("---- SHOULD BE EQUAL:");
-                        // console.debug(file);
-                        // console.debug(par.text.srcFile);
-                        // 
-                        if (file !== par.text.srcFile)
-                        {
-                            console.error("adjustParToSeqSyncGranularity textref.file !== par.text.srcFile ???");
-                            return par;
-                        }
-                        
-                        if (!fragmentId)
-                        {
-                            console.error("adjustParToSeqSyncGranularity !fragmentId ???");
-                            return par;
-                        }
-
-                        var selector = "#" + ReadiumSDK.Helpers.escapeJQuerySelector(fragmentId);
-                        var $element = $(selector, contentDocElement);
-                        
-                        if ($element) seq.element = $element[0];
-                    }
-                }
-                if (seq.element)
-                {
-                    return seq;
-                }
-            }
-        }
-        
-        return par;
-    };
-
     var _highlightedElementPar = undefined;
     this.isElementHighlighted = function(par)
     {
         return _highlightedElementPar && par === _highlightedElementPar;
-    }
+    };
     
     var _highlightedCfiPar = undefined;
     this.isCfiHighlighted = function(par)
     {
         return _highlightedCfiPar && par === _highlightedCfiPar;
-    }
+    };
 
     var _activeClass = "";
     var _playbackActiveClass = "";
@@ -193,7 +131,7 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
         $userStyle.appendTo($head);
 
 //console.debug($userStyle[0].textContent);
-    }
+    };
     
     this.highlightElement = function(par, activeClass, playbackActiveClass) {
 
@@ -209,7 +147,11 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
         _activeClass = activeClass;
         _playbackActiveClass = playbackActiveClass;
 
-        var element = adjustParToSeqSyncGranularity(_highlightedElementPar).element;
+        var element = this.adjustParToSeqSyncGranularity(_highlightedElementPar).element;
+        if (_highlightedElementPar.element !== element)
+        {
+            $(_highlightedElementPar.element).addClass("mo-sub-sync");
+        }
         
         if (_playbackActiveClass && _playbackActiveClass !== "")
         {
@@ -492,8 +434,12 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
 
         if(_highlightedElementPar) {
 
-            var element = adjustParToSeqSyncGranularity(_highlightedElementPar).element;
-
+            var element = this.adjustParToSeqSyncGranularity(_highlightedElementPar).element;
+            if (_highlightedElementPar.element !== element)
+            {
+                $(_highlightedElementPar.element).removeClass("mo-sub-sync");
+            }
+            
             if (_playbackActiveClass && _playbackActiveClass !== "")
             {
                 //console.debug("MO RESET playbackActiveClass: " + _playbackActiveClass);
@@ -517,6 +463,29 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
 
         _activeClass = "";
         _playbackActiveClass = "";
-    }
+    };
 
+    this.adjustParToSeqSyncGranularity = function(par)
+    {
+        if (!par) return undefined;
+        
+        var sync = _reader.viewerSettings().mediaOverlaysSynchronizationGranularity;
+        if (sync)
+        {
+            var element = par.element || (par.cfi ? par.cfi.cfiTextParent : undefined);
+            if (!element)
+            {
+                console.error("adjustParToSeqSyncGranularity !element ???");
+                return par; // should never happen!
+            }
+
+            var seq = par.getFirstSeqAncestorWithEpubType(sync);
+            if (seq && seq.element)
+            {
+                return seq;
+            }
+        }
+        
+        return par;
+    };
 };

@@ -270,7 +270,7 @@
     //                    console.debug("currentTime: " + currentTime);
     //                }
     
-                    onPositionChanged(currentTime);
+                    onPositionChanged(currentTime, 1);
                 }, 20);
         }
     

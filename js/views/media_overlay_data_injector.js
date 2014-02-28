@@ -242,6 +242,77 @@ console.debug("MO readaloud attr: " + readaloud);
             return;
         }
 
+        var traverseSmilSeqs = function(root)
+        {
+            if (!root) return;
+            
+            if (root.nodeType && root.nodeType === "seq")
+            {
+               // if (root.element)
+               // {
+               //     console.error("WARN: seq.element already set: " + root.textref);
+               // }
+                   
+               if (root.textref)
+               {
+                   var parts = root.textref.split('#');
+                   var file = parts[0];
+                   var fragmentId = (parts.length === 2) ? parts[1] : "";
+                   // 
+                   // console.debug(root.textref);
+                   // console.debug(fragmentId);
+                   // console.log("---- SHOULD BE EQUAL:");
+                   // console.debug(file);
+                   // console.debug(par.text.srcFile);
+                   // 
+                   // if (file !== par.text.srcFile)
+                   // {
+                   //     console.error("adjustParToSeqSyncGranularity textref.file !== par.text.srcFile ???");
+                   //     return par;
+                   // }
+                   // 
+                   // if (!fragmentId)
+                   // {
+                   //     console.error("adjustParToSeqSyncGranularity !fragmentId ???");
+                   //     return par;
+                   // }
+
+                   if (file && fragmentId)
+                   {
+                       var textRelativeRef = ReadiumSDK.Helpers.ResolveContentRef(file, smil.href);
+                       var same = textRelativeRef === spineItem.href;
+                       if (same)
+                       {                       
+                           root.element = $iframe[0].contentDocument.getElementById(fragmentId);
+                   
+                           if (!root.element)
+                           {
+                               console.error("seq.textref !element? " + root.textref);
+                           }
+
+                           // var selector = "#" + ReadiumSDK.Helpers.escapeJQuerySelector(fragmentId);
+                           // var $element = $(selector, element.ownerDocument.documentElement);
+                           // if ($element)
+                           // {
+                           //     seq.element = $element[0];
+                           // }
+                       }
+                   }
+               }
+            }
+            
+            if (root.children && root.children.length)
+            {
+                for (var i = 0; i < root.children.length; i++)
+                {
+                    var child = root.children[i];
+                    traverseSmilSeqs(child);
+                }
+            }
+        };
+        traverseSmilSeqs(smil);
+
+
 //console.debug("[[MO ATTACH]] " + spineItem.idref + " /// " + spineItem.media_overlay_id + " === " + smil.id);
 
         var iter = new ReadiumSDK.Models.SmilIterator(smil);
