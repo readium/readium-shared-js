@@ -105,7 +105,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
         _currentView.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function($iframe, spineItem) {
 
-            _mediaOverlayPlayer.clearSyncs();
             _mediaOverlayDataInjector.attachMediaOverlayData($iframe, spineItem, _viewerSettings);
             
             _internalLinksSupport.processLinkElements($iframe, spineItem);
@@ -767,12 +766,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
         return _mediaOverlayPlayer.isPlaying();
     };
     
-    this.mediaOverlaysHasSync = function(epubtype) {
-        return _mediaOverlayPlayer.hasSync(epubtype);
-    };
-
-
-
 //
 // should use ReadiumSDK.Events.SETTINGS_APPLIED instead!
 //    this.setRateMediaOverlay = function(rate) {
