@@ -316,6 +316,24 @@ ReadiumSDK.Models.Smil.ParNode = function(parent) {
     this.text = undefined;
     this.audio = undefined;
     this.element = undefined;
+    
+
+    this.getFirstSeqAncestorWithEpubType = function(epubtype) {
+        if (!epubtype) return undefined;
+        
+        var parent = this.parent;
+        while (parent)
+        {
+            if (parent.epubtype && parent.epubtype.indexOf(epubtype) >= 0)
+            {
+                return parent; // assert(parent.nodeType === "seq")
+            }
+            
+            parent = parent.parent;
+        }
+        
+        return undefined;
+    };
 };
 
 ReadiumSDK.Models.Smil.ParNode.prototype = new ReadiumSDK.Models.Smil.TimeContainerNode();
@@ -449,6 +467,50 @@ ReadiumSDK.Models.SmilModel = function() {
     {
         return this.children[0].durationMilliseconds();
     };
+    
+
+    var _epubtypeSyncs = [];
+    // 
+    // this.clearSyncs = function()
+    // {
+    //     _epubtypeSyncs = [];
+    // };
+
+    this.hasSync = function(epubtype)
+    {
+        for (var i = 0; i < _epubtypeSyncs.length; i++)
+        {
+            if (_epubtypeSyncs[i] === epubtype)
+            {
+//console.debug("hasSync OK: ["+epubtype+"]");
+                return true;
+            }
+        }
+        
+//console.debug("hasSync??: ["+epubtype+"] " + _epubtypeSyncs);
+        return false;
+    };
+    
+    this.addSync = function(epubtypes)
+    {
+        if (!epubtypes) return;
+        
+//console.debug("addSyncs: "+epubtypes);
+
+        var parts = epubtypes.split(' ');
+        for (var i = 0; i < parts.length; i++)
+        {
+            var epubtype = parts[i].trim();
+
+            if (epubtype.length > 0 && !this.hasSync(epubtype))
+            {
+                _epubtypeSyncs.push(epubtype);
+
+//console.debug("addSync: "+epubtype);
+            }
+        }
+    };
+    
 };
 
 ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
@@ -532,6 +594,11 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
             safeCopyProperty("id", nodeDTO, node);
             safeCopyProperty("epubtype", nodeDTO, node);
 
+            if (node.epubtype)
+            {
+                node.getSmil().addSync(node.epubtype);
+            }
+            
             indent++;
             copyChildren(nodeDTO, node);
             indent--;

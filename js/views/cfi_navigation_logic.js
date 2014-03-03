@@ -558,7 +558,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
 
         var contentDoc = $iframe[0].contentDocument;
 
-        var $element = $("#" + id, contentDoc);
+        var $element = $("#" + ReadiumSDK.Helpers.escapeJQuerySelector(id), contentDoc);
         if($element.length == 0) {
             return undefined;
         }

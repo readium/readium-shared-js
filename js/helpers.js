@@ -209,3 +209,57 @@ ReadiumSDK.Helpers.isRenditionSpreadPermittedForItem = function(item, orientatio
         && orientation == ReadiumSDK.Views.ORIENTATION_PORTRAIT );
 };
 
+ReadiumSDK.Helpers.escapeJQuerySelector = function(sel) {
+        //http://api.jquery.com/category/selectors/
+        //!"#$%&'()*+,./:;<=>?@[\]^`{|}~
+        // double backslash escape
+        
+        if (!sel) return undefined;
+        
+        var selector = sel.replace(/([;&,\.\+\*\~\?':"\!\^#$%@\[\]\(\)<=>\|\/\\{}`])/g, '\\$1');
+        
+        // if (selector !== sel)
+        // {
+        //     console.debug("---- SELECTOR ESCAPED");
+        //     console.debug("1: " + sel);
+        //     console.debug("2: " + selector);
+        // }
+        // else
+        // {
+        //     console.debug("---- SELECTOR OKAY: " + sel);
+        // }
+        
+        return selector;
+};
+    // TESTS BELOW ALL WORKING FINE :)
+    // (RegExp typos are hard to spot!)
+    // escapeSelector('!');
+    // escapeSelector('"');
+    // escapeSelector('#');
+    // escapeSelector('$');
+    // escapeSelector('%');
+    // escapeSelector('&');
+    // escapeSelector("'");
+    // escapeSelector('(');
+    // escapeSelector(')');
+    // escapeSelector('*');
+    // escapeSelector('+');
+    // escapeSelector(',');
+    // escapeSelector('.');
+    // escapeSelector('/');
+    // escapeSelector(':');
+    // escapeSelector(';');
+    // escapeSelector('<');
+    // escapeSelector('=');
+    // escapeSelector('>');
+    // escapeSelector('?');
+    // escapeSelector('@');
+    // escapeSelector('[');
+    // escapeSelector('\\');
+    // escapeSelector(']');
+    // escapeSelector('^');
+    // escapeSelector('`');
+    // escapeSelector('{');
+    // escapeSelector('|');
+    // escapeSelector('}');
+    // escapeSelector('~');

@@ -99,9 +99,14 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
         _currentView.setViewSettings(_viewerSettings);
 
+        _currentView.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START, function($iframe, spineItem) {
+            _mediaOverlayPlayer.onDocLoadStart();
+        });
+
         _currentView.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function($iframe, spineItem) {
 
             _mediaOverlayDataInjector.attachMediaOverlayData($iframe, spineItem, _viewerSettings);
+            
             _internalLinksSupport.processLinkElements($iframe, spineItem);
             _annotationsManager.attachAnnotations($iframe, spineItem);
 
@@ -182,6 +187,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
         _spine = _package.spine;
 
         if(_mediaOverlayPlayer) {
+            
             _mediaOverlayPlayer.reset();
         }
 
@@ -552,7 +558,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
         ReadiumSDK.Helpers.setStyles(_userStyles.getStyles(), _$el);
 
-        _mediaOverlayPlayer.applyStyles();
+        if (_mediaOverlayPlayer)
+            _mediaOverlayPlayer.applyStyles();
 
         if(doNotUpdateView) return;
 
@@ -683,6 +690,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
      */
     this.isMediaOverlayAvailable = function() {
 
+        if (!_mediaOverlayPlayer) return false;
+        
         return _mediaOverlayPlayer.isMediaOverlayAvailable();
     };
 
@@ -756,7 +765,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
         return _mediaOverlayPlayer.isPlaying();
     };
-
+    
 //
 // should use ReadiumSDK.Events.SETTINGS_APPLIED instead!
 //    this.setRateMediaOverlay = function(rate) {

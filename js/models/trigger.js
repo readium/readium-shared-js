@@ -41,7 +41,7 @@ ReadiumSDK.Models.Trigger.prototype.subscribe = function(dom) {
 };
 
 ReadiumSDK.Models.Trigger.prototype.execute = function(dom) {
-    var $target = $( "#" + this.ref, dom);
+    var $target = $( "#" + ReadiumSDK.Helpers.escapeJQuerySelector(this.ref), dom);
     switch(this.action)
     {
         case "show":
