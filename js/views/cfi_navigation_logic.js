@@ -52,44 +52,27 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
 
     /**
      * @private
+     * Checks whether or not a (fully adjusted) rectangle is at least partly visible
      *
-     * These methods are applied to a fully adjusted rectangle object
-     * to determine its visibility (is/isn't)
-     * as well as spatial offsets (of visibility's terminator)
+     * @param {Object} rect
+     * @param {Object} frameDimensions
+     * @returns {boolean}
      */
-    var visibilityHelpers = {
-        ltr: {
-            isVisible: function(rect) {
-                return rect.left >= 0;
-            },
-            getNonVisibleHeight: function(rect) {
-                // rectangle should be the first visible (in left-to-right order)
-                return rect.top < 0 ? -rect.top : 0;
-            }
-        },
-        rtl: {
-            isVisible: function(rect) {
-                return rect.left < $iframe.width();
-            },
-            getNonVisibleHeight: function(rect, frameHeight) {
-                // rectangle should be the first visible (in right-to-left order)
-                return rect.bottom >= frameHeight
-                    ? rect.bottom - (frameHeight - 1)
-                    : 0;
-            }
-        }
-    };
+    function isRectVisible(rect, frameDimensions) {
+        return rect.left >= 0 && rect.left < frameDimensions.width;
+    }
 
     /**
      * @private
-     * Retrieves set of helpers for a specific page progression
      *
-     * @param {boolean} isRightToLeft
-     * @returns {Object}
+     * @param {Object} rect
+     * @param {number} frameHeight
+     * @param {boolean} isRtl
+     * @returns {number}
      */
-    function getVisibilityHelpers(isRightToLeft) {
-        var progression = isRightToLeft ? 'rtl' : 'ltr';
-        return visibilityHelpers[progression];
+    function getRectVisibleHeight(rect, frameHeight, isRtl) {
+        return rect.height - Math.max(0,
+                isRtl ? rect.bottom - frameHeight : -rect.top);
     }
 
     /**
@@ -129,7 +112,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
         }
         var topOffset = visibleContentOffsets.top || 0;
         var isBelowVisibleTop = elementRect.bottom() > topOffset;
-        var isAboveVisibleBottom = visibleContentOffsets.bottom === undefined
+        var isAboveVisibleBottom = visibleContentOffsets.bottom !== undefined
             ? elementRect.top < visibleContentOffsets.bottom
             : true; //this check always passed, if corresponding offset isn't set
 
@@ -165,43 +148,46 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
      *
      * @param {jQuery} $element
      * @param {Object} _props
-     * @param {boolean} shouldCalculateVisibilityOffset
+     * @param {boolean} shouldCalculateVisibilityPercentage
      * @returns {number}
      *      0 for non-visible elements,
      *      0 < n <= 100 for visible elements
-     *      (will just give 100, if `shouldCalculateVisibilityOffset` => false)
+     *      (will just give 100, if `shouldCalculateVisibilityPercentage` => false)
      */
     function checkVisibilityByRectangles(
-            $element, _props, shouldCalculateVisibilityOffset) {
+            $element, _props, shouldCalculateVisibilityPercentage) {
 
         var elementRectangles = getNormalizedRectangles($element);
         var clientRectangles = elementRectangles.clientRectangles;
 
         var isRtl = isPageProgressionRightToLeft();
-        var helpers = getVisibilityHelpers(isRtl);
-
-        // for an element split between several CSS columns,
-        // both Firefox and IE produce as many client rectangles
-        // only the last one's property should be checked
-        var lastRectangle = _.last(clientRectangles);
+        var columnFullWidth = getColumnFullWidth();
+        var frameDimensions = {
+            width: $iframe.width(),
+            height: $iframe.height()
+        };
 
         if (clientRectangles.length === 1) {
-            var columnFullWidth = getColumnFullWidth();
-            var frameHeight = $iframe.height();
             // because of webkit inconsistency, that single rectangle should be adjusted
             // until it hits the end OR will be based on the FIRST column that is visible
-            adjustRectangle(lastRectangle, frameHeight, columnFullWidth,
-                    isRtl, helpers.isVisible);
+            adjustRectangle(clientRectangles[0], frameDimensions, columnFullWidth,
+                    isRtl, true);
         }
 
-        if (helpers.isVisible(lastRectangle)) {
-            // some part of element IS visible
-            return shouldCalculateVisibilityOffset
-                ? measureVisibilityPercentageByRectangles(
-                            clientRectangles, frameHeight, helpers)
-                : 100;
+        // for an element split between several CSS columns,
+        // both Firefox and IE produce as many client rectangles;
+        // each of those should be checked
+        var visibilityPercentage = 0;
+        for (var i = 0, l = clientRectangles.length; i < l; ++i) {
+            if (isRectVisible(clientRectangles[i], frameDimensions)) {
+                visibilityPercentage = shouldCalculateVisibilityPercentage
+                    ? measureVisibilityPercentageByRectangles(
+                            clientRectangles, frameDimensions, isRtl, i)
+                    : 100;
+                break;
+            }
         }
-        return 0;
+        return visibilityPercentage;
     }
 
     /**
@@ -220,6 +206,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
         var isRtl = isPageProgressionRightToLeft();
         var columnFullWidth = getColumnFullWidth();
         var frameHeight = $iframe.height();
+        var frameWidth  = $iframe.width();
 
         if (spatialVerticalOffset) {
             trimRectanglesByVertOffset(clientRectangles, spatialVerticalOffset,
@@ -228,7 +215,9 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
 
         var firstRectangle = _.first(clientRectangles);
         if (clientRectangles.length === 1) {
-            adjustRectangle(firstRectangle, frameHeight, columnFullWidth, isRtl);
+            adjustRectangle(firstRectangle, {
+                height: frameHeight, width: frameWidth
+            }, columnFullWidth, isRtl);
         }
 
         var leftOffset = firstRectangle.left;
@@ -245,28 +234,31 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
      * Calculates the visibility offset percentage based on ClientRect dimensions
      *
      * @param {Array} clientRectangles (should already be normalized)
-     * @param {number} frameHeight
-     * @param {Object} helpers
+     * @param {Object} frameDimensions
+     * @param {boolean} isRtl
+     * @param {number} firstVisibleRectIndex
      * @returns {number} - visibility percentage (0 < n <= 100)
      */
     function measureVisibilityPercentageByRectangles(
-            clientRectangles, frameHeight, helpers) {
+            clientRectangles, frameDimensions, isRtl, firstVisibleRectIndex) {
 
         var heightTotal = 0;
         var heightVisible = 0;
 
         if (clientRectangles.length > 1) {
-            _.each(clientRectangles, function(rect) {
+            _.each(clientRectangles, function(rect, index) {
                 heightTotal += rect.height;
-                if (helpers.isVisible(rect)) {
+                if (index >= firstVisibleRectIndex) {
+                    // in this case, all the rectangles after the first visible
+                    // should be counted as visible
                     heightVisible += rect.height;
                 }
             });
         }
         else {
             heightTotal   = clientRectangles[0].height;
-            heightVisible = heightTotal - helpers.getNonVisibleHeight(
-                    clientRectangles[0], frameHeight);
+            heightVisible = getRectVisibleHeight(
+                    clientRectangles[0], frameDimensions.height, isRtl);
         }
         return heightVisible === heightTotal
             ? 100 // trivial case: element is 100% visible
@@ -364,14 +356,15 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
      * Ugh.
      *
      * @param {Object} rect
-     * @param {number} frameHeight
+     * @param {Object} frameDimensions
      * @param {number} columnFullWidth
      * @param {boolean} isRtl
-     * @param {Function} [isVisibleCb]
-     *      If set, will be used in the second phase
+     * @param {boolean} shouldLookForFirstVisibleColumn
+     *      If set, there'll be two-phase adjustment
      *      (to align a rectangle with a viewport)
      */
-    function adjustRectangle(rect, frameHeight, columnFullWidth, isRtl, isVisibleCb) {
+    function adjustRectangle(rect, frameDimensions, columnFullWidth, isRtl,
+            shouldLookForFirstVisibleColumn) {
 
         if (isRtl) {
             columnFullWidth *= -1; // horizontal shifts are reverted in RTL mode
@@ -379,19 +372,19 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
 
         // first we go left/right (rebasing onto the very first column available)
         while (rect.top < 0) {
-            offsetRectangle(rect, -columnFullWidth, frameHeight);
+            offsetRectangle(rect, -columnFullWidth, frameDimensions.height);
         }
 
         // ... then, if necessary (for visibility offset checks),
         // each column is tried again (now in reverse order)
         // the loop will be stopped when the column is aligned with a viewport
         // (i.e., is the first visible one).
-        if (isVisibleCb) {
-            while (rect.bottom >= frameHeight) {
-                if (isVisibleCb(rect)) {
+        if (shouldLookForFirstVisibleColumn) {
+            while (rect.bottom >= frameDimensions.height) {
+                if (isRectVisible(rect, frameDimensions)) {
                     break;
                 }
-                offsetRectangle(rect, columnFullWidth, -frameHeight);
+                offsetRectangle(rect, columnFullWidth, -frameDimensions.height);
             }
         }
     }
