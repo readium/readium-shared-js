@@ -64,19 +64,6 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
 
     /**
      * @private
-     *
-     * @param {Object} rect
-     * @param {number} frameHeight
-     * @param {boolean} isRtl
-     * @returns {number}
-     */
-    function getRectVisibleHeight(rect, frameHeight, isRtl) {
-        return rect.height - Math.max(0,
-                isRtl ? rect.bottom - frameHeight : -rect.top);
-    }
-
-    /**
-     * @private
      * Retrieves _current_ full width of a column (including its gap)
      *
      * @returns {number} Full width of a column in pixels
@@ -181,8 +168,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
         for (var i = 0, l = clientRectangles.length; i < l; ++i) {
             if (isRectVisible(clientRectangles[i], frameDimensions)) {
                 visibilityPercentage = shouldCalculateVisibilityPercentage
-                    ? measureVisibilityPercentageByRectangles(
-                            clientRectangles, frameDimensions, isRtl, i)
+                    ? measureVisibilityPercentageByRectangles(clientRectangles, i)
                     : 100;
                 break;
             }
@@ -210,7 +196,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
 
         if (spatialVerticalOffset) {
             trimRectanglesByVertOffset(clientRectangles, spatialVerticalOffset,
-                frameHeight, columnFullWidth);
+                frameHeight, columnFullWidth, isRtl);
         }
 
         var firstRectangle = _.first(clientRectangles);
@@ -226,6 +212,12 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
         }
 
         var pageIndex = Math.floor(leftOffset / columnFullWidth);
+
+        // fix for the glitch with first opening of the book with RTL dir and lang
+        if (pageIndex < 0 || pageIndex >= options.paginationInfo.columnCount) {
+            pageIndex = options.paginationInfo.visibleColumnCount - pageIndex;
+        }
+
         return pageIndex;
     }
 
@@ -234,13 +226,11 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
      * Calculates the visibility offset percentage based on ClientRect dimensions
      *
      * @param {Array} clientRectangles (should already be normalized)
-     * @param {Object} frameDimensions
-     * @param {boolean} isRtl
      * @param {number} firstVisibleRectIndex
      * @returns {number} - visibility percentage (0 < n <= 100)
      */
     function measureVisibilityPercentageByRectangles(
-            clientRectangles, frameDimensions, isRtl, firstVisibleRectIndex) {
+            clientRectangles, firstVisibleRectIndex) {
 
         var heightTotal = 0;
         var heightVisible = 0;
@@ -256,9 +246,10 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
             });
         }
         else {
+            // should already be normalized and adjusted
             heightTotal   = clientRectangles[0].height;
-            heightVisible = getRectVisibleHeight(
-                    clientRectangles[0], frameDimensions.height, isRtl);
+            heightVisible = clientRectangles[0].height - Math.max(
+                    0, -clientRectangles[0].top);
         }
         return heightVisible === heightTotal
             ? 100 // trivial case: element is 100% visible
@@ -397,9 +388,10 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
      * @param {number} verticalOffset
      * @param {number} frameHeight
      * @param {number} columnFullWidth
+     * @param {boolean} isRtl
      */
     function trimRectanglesByVertOffset(
-            rects, verticalOffset, frameHeight, columnFullWidth) {
+            rects, verticalOffset, frameHeight, columnFullWidth, isRtl) {
 
         var totalHeight = _.reduce(rects, function(prev, cur) {
             return prev + cur.height;
@@ -419,9 +411,13 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
         else {
             // rebase to the last possible column
             // (so that adding to top will be properly processed later)
+            if (isRtl) {
+                columnFullWidth *= -1;
+            }
             while (rects[0].bottom >= frameHeight) {
                 offsetRectangle(rects[0], columnFullWidth, -frameHeight);
             }
+
             rects[0].top += heightToHide;
             rects[0].height -= heightToHide;
         }

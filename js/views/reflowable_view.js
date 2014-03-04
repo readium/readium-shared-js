@@ -330,6 +330,9 @@ ReadiumSDK.Views.ReflowableView = function(options){
             _paginationInfo.currentSpreadIndex = Math.floor(pageIndex / _paginationInfo.visibleColumnCount) ;
             onPaginationChanged(pageRequest.initiator, pageRequest.spineItem, pageRequest.elementId);
         }
+        else {
+            console.log('Illegal pageIndex value: ', pageIndex, 'column count is ', _paginationInfo.columnCount);
+        }
     };
 
     function redraw() {
@@ -472,7 +475,8 @@ ReadiumSDK.Views.ReflowableView = function(options){
         //we do this because CSS will floor column with by itself if it is not a round number
         _paginationInfo.columnWidth = Math.floor(_paginationInfo.columnWidth);
 
-        _$epubHtml.css("width", _paginationInfo.columnWidth);
+        // _$epubHtml.css("width", _paginationInfo.columnWidth);
+        _$epubHtml.css("width", _lastViewPortSize.width);
 
         hideBook(); // shiftBookOfScreen();
 
