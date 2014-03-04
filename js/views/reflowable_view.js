@@ -162,6 +162,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
         if(_currentSpineItem != spineItem) {
 
+            _paginationInfo.pageOffset = 0;
             _paginationInfo.currentSpreadIndex = 0;
             _currentSpineItem = spineItem;
             _isWaitingFrameRender = true;
