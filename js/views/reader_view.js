@@ -143,8 +143,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
         _currentView = createViewForType(desiredViewType, viewCreationParams);
 
-        _currentView.setViewSettings(_viewerSettings);
-
         _currentView.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function($iframe, spineItem) {
 
             applySwitches($iframe);
@@ -168,6 +166,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
         });
 
         _currentView.render();
+
+        _currentView.setViewSettings(_viewerSettings);
 
         return true;
     }

@@ -56,7 +56,7 @@ iframe {
     visibility: visible;
 }
 
-.scrolled-content-frame {
+.content-doc-frame {
     position: relative !important;
 }
 

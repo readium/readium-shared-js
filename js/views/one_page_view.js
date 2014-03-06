@@ -107,6 +107,18 @@ ReadiumSDK.Views.OnePageView = function(options, classes){
         }
     }
 
+    this.setViewSettings = function(settings) {
+
+        var isFontChanged = settings.fontSize !== undefined && _fontSize !== settings.fontSize;
+
+        if(isFontChanged) {
+            _fontSize = settings.fontSize;
+            updateHtmlFontSize();
+        }
+
+        return isFontChanged;
+    };
+
     function updateHtmlFontSize() {
 
         if(_$epubHtml) {
@@ -131,11 +143,24 @@ ReadiumSDK.Views.OnePageView = function(options, classes){
     //this is called by scroll_view for reflowable spine item
     this.resizeIFrameToContent = function() {
 
-        var contHeight = _$epubHtml.height();
+        var contHeight = self.getContentDocHeight();
         _$iframe.css("height", contHeight + "px");
+        //before we resize the iframe first time _$epubHtml gives wrong height
+        //TODO investigate alternative of setting _$iframe twice
+        contHeight = self.getContentDocHeight();
         _$iframe.css("visibility", "visible");
+        _$iframe.css("height", contHeight + "px");
 
         _$el.css("height", contHeight + "px");
+    };
+
+    this.getContentDocHeight = function() {
+
+        if(!_$epubHtml) {
+            return 0;
+        }
+
+        return _$epubHtml.height();
     };
 
     //this is called by fixed_view
