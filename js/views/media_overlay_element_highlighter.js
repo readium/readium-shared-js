@@ -472,7 +472,7 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
         if (!par) return undefined;
         
         var sync = _reader.viewerSettings().mediaOverlaysSynchronizationGranularity;
-        if (sync)
+        if (sync && sync.length > 0)
         {
             var element = par.element || (par.cfi ? par.cfi.cfiTextParent : undefined);
             if (!element)
