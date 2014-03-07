@@ -1560,6 +1560,29 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
             self.pause();
         }
 
+        if (par.element || par.cfi && par.cfi.cfiTextParent)
+        {
+            var seq = _elementHighlighter.adjustParToSeqSyncGranularity(par);
+            if (seq && seq !== par)
+            {
+                var findFirstPar = function(smilNode)
+                {
+                    if (smilNode.nodeType && smilNode.nodeType === "par") return smilNode;
+                    
+                    if (!smilNode.children || smilNode.children.length <= 0) return undefined;
+                    
+                    for (var i = 0; i < smilNode.children.length; i++)
+                    {
+                        var child = smilNode.children[i];
+                        var inPar = findFirstPar(child);
+                        if (inPar) return inPar;
+                    }
+                };
+                var firstPar = findFirstPar(seq);
+                if (firstPar) par = firstPar;
+            }
+        }
+
         playPar(par);
     };
 

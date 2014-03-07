@@ -60,19 +60,19 @@ ReadiumSDK.Views.MediaOverlayDataInjector = function (mediaOverlay, mediaOverlay
                     {
                         if (el !== elem)
                         {
-//console.debug("MO CLICK REDIRECT: " + el.id);
+//console.log("MO CLICK REDIRECT: " + el.id);
                         }
 
                         if (!mediaOverlaySettings.mediaOverlaysEnableClick)
                         {
-console.debug("MO CLICK DISABLED");
+console.log("MO CLICK DISABLED");
                             mediaOverlayPlayer.touchInit();
                             return true;
                         }
 
                         if (inLink)
                         {
-console.debug("MO CLICKED LINK");
+console.log("MO CLICKED LINK");
                             mediaOverlayPlayer.touchInit();
                             return true;
                         }
