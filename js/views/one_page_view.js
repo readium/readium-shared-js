@@ -35,6 +35,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes){
     var _iframeLoader = options.iframeLoader;
     var _bookStyles = options.bookStyles;
     var _fontSize = 100;
+    var _isIframeLoaded = false;
 
     var _meta_size = {
         width: 0,
@@ -56,7 +57,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes){
 
     this.isDisplaying = function() {
 
-        return _currentSpineItem != undefined && _$epubHtml != null && _$epubHtml.length > 0;
+        return _isIframeLoaded;
     };
 
     this.render = function() {
@@ -81,8 +82,14 @@ ReadiumSDK.Views.OnePageView = function(options, classes){
     };
 
     this.remove = function() {
+        _isIframeLoaded = false;
         _currentSpineItem = undefined;
         _$el.remove();
+    };
+
+    this.clear = function() {
+        _isIframeLoaded = false;
+        _$iframe[0].src = "";
     };
 
     this.currentSpineItem = function() {
@@ -93,6 +100,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes){
     function onIFrameLoad(success) {
 
         if(success) {
+            _isIframeLoaded = true;
             var epubContentDocument = _$iframe[0].contentDocument;
             _$epubHtml = $("html", epubContentDocument);
             if (!_$epubHtml || _$epubHtml.length == 0) {
@@ -103,7 +111,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes){
             updateMetaSize();
             updateHtmlFontSize();
 
-            self.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED, _$iframe, _currentSpineItem, self);
+            self.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED, _$iframe, _currentSpineItem, true);
         }
     }
 
@@ -143,25 +151,35 @@ ReadiumSDK.Views.OnePageView = function(options, classes){
     //this is called by scroll_view for reflowable spine item
     this.resizeIFrameToContent = function() {
 
-        var contHeight = self.getContentDocHeight();
+        var contHeight = getContentDocHeight();
         _$iframe.css("height", contHeight + "px");
         //before we resize the iframe first time _$epubHtml gives wrong height
         //TODO investigate alternative of setting _$iframe twice
-        contHeight = self.getContentDocHeight();
-        _$iframe.css("visibility", "visible");
+        contHeight = getContentDocHeight();
         _$iframe.css("height", contHeight + "px");
-
         _$el.css("height", contHeight + "px");
     };
 
-    this.getContentDocHeight = function() {
+    this.elementHeight = function() {
+        return _$el.height();
+    };
+
+    this.showIFrame = function() {
+        _$iframe.css("visibility", "visible");
+    };
+
+    this.hideIFrame = function() {
+        _$iframe.css("visibility", "hidden");
+    };
+
+    function getContentDocHeight(){
 
         if(!_$epubHtml) {
             return 0;
         }
 
         return _$epubHtml.height();
-    };
+    }
 
     //this is called by fixed_view
     this.transformContent = function(scale, left, top) {
@@ -187,7 +205,6 @@ ReadiumSDK.Views.OnePageView = function(options, classes){
         }
 
         _$epubHtml.css(css);
-        _$iframe.css("visibility", "visible");
     };
 
     function generateTransformCSS(scale, left, top) {
@@ -246,19 +263,26 @@ ReadiumSDK.Views.OnePageView = function(options, classes){
 
     }
 
-    this.loadSpineItem = function(spineItem) {
+    this.loadSpineItem = function(spineItem, callback) {
 
         if(_currentSpineItem != spineItem) {
 
             _currentSpineItem = spineItem;
             var src = _spine.package.resolveRelativeUrl(spineItem.href);
 
-            //hide iframe until content is scaled
-            _$iframe.css("visibility", "hidden");
-            _iframeLoader.loadIframe(_$iframe[0], src, onIFrameLoad, self);
+            _iframeLoader.loadIframe(_$iframe[0], src, function(sucsess){
+
+                onIFrameLoad(sucsess);
+
+                if(callback) {
+                    callback(sucsess);
+                }
+
+            }, self);
         }
         else
         {
+            callback(true);
             this.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED, _$iframe, _currentSpineItem, false);
         }
     };

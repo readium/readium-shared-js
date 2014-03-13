@@ -148,7 +148,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
             applySwitches($iframe);
             registerTriggers($iframe);
 
-            _mediaOverlayDataInjector.attachMediaOverlayData($iframe, spineItem, _viewerSettings);
+//            _mediaOverlayDataInjector.attachMediaOverlayData($iframe, spineItem, _viewerSettings);
             _internalLinksSupport.processLinkElements($iframe, spineItem);
             _annotationsManager.attachAnnotations($iframe, spineItem);
 

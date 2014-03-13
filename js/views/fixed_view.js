@@ -247,7 +247,8 @@ ReadiumSDK.Views.FixedView = function(options){
 
         if(_leftPageView.isDisplaying()) {
 
-             _leftPageView.transformContent(scale, left, top);
+            _leftPageView.transformContent(scale, left, top);
+            _leftPageView.showIFrame();
         }
 
         if(_rightPageView.isDisplaying()) {
@@ -259,11 +260,13 @@ ReadiumSDK.Views.FixedView = function(options){
             }
 
             _rightPageView.transformContent(scale, left, top);
+            _leftPageView.showIFrame();
         }
 
         if(_centerPageView.isDisplaying()) {
 
             _centerPageView.transformContent(scale, left, top);
+            _leftPageView.showIFrame();
         }
     }
 
@@ -389,6 +392,7 @@ ReadiumSDK.Views.FixedView = function(options){
             dfd.resolve();
         });
 
+        pageView.hideIFrame();
         pageView.loadSpineItem(item);
 
         return dfd.promise();
