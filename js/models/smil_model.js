@@ -590,7 +590,7 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
 
             node = new ReadiumSDK.Models.Smil.SeqNode(parent);
 
-            safeCopyProperty("textref", nodeDTO, node, true);
+            safeCopyProperty("textref", nodeDTO, node, ((parent && parent.parent) ? true : false));
             safeCopyProperty("id", nodeDTO, node);
             safeCopyProperty("epubtype", nodeDTO, node);
 
