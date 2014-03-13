@@ -96,7 +96,7 @@ ReadiumSDK.Views.OnePageView = function(options){
                 _$epubHtml = $("svg", epubContentDocument);
             }
             _$epubHtml.css("overflow", "hidden");
-            self.applyBookStyles();
+            //self.applyBookStyles();
             updateMetaSize();
 
             self.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED, _$iframe, _currentSpineItem, self);
@@ -133,7 +133,14 @@ ReadiumSDK.Views.OnePageView = function(options){
         }
 
         _$epubHtml.css(css);
+        
+        _$epubHtml.css("visibility", "hidden");
         _$iframe.css("visibility", "visible");
+        
+        setTimeout(function()
+        {
+            _$epubHtml.css("visibility", "visible");
+        }, 30);
     };
 
     function generateTransformCSS(scale, left, top) {
