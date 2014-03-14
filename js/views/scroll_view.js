@@ -122,15 +122,6 @@ ReadiumSDK.Views.ScrollView = function(options){
         resizeIFrameToContent();
     };
 
-
-    function registerTriggers(doc) {
-        $('trigger', doc).each(function() {
-            var trigger = new ReadiumSDK.Models.Trigger(this);
-            trigger.subscribe(doc);
-
-        });
-    }
-
     function loadSpineItem(spineItem) {
 
         if(_currentSpineItem != spineItem) {
@@ -140,7 +131,7 @@ ReadiumSDK.Views.ScrollView = function(options){
 
             self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START, _$iframe, spineItem);
 
-            _iframeLoader.loadIframe(_$iframe[0], src, onIFrameLoad, self, {spineItem : spineItem});
+            _iframeLoader.loadIframe(_$iframe[0], spineItem.href, onIFrameLoad, {spineItem : spineItem});
         }
     }
 
@@ -191,9 +182,6 @@ ReadiumSDK.Views.ScrollView = function(options){
             resizeIFrameToContent();
             openDeferredElement();
         }, 50);
-
-        applySwitches(epubContentDocument);
-        registerTriggers(epubContentDocument);
 
     }
 
@@ -289,7 +277,7 @@ ReadiumSDK.Views.ScrollView = function(options){
             catch (e)
             {
                 $element = undefined;
-                console.error(e);
+                console.log(e);
             }
 
             if(!$element) {
@@ -333,52 +321,6 @@ ReadiumSDK.Views.ScrollView = function(options){
 
         return Math.ceil(scrollHeight() / viewHeight());
     }
-
-    // Description: Parse the epub "switch" tags and hide
-    // cases that are not supported
-    function applySwitches(dom) {
-
-        // helper method, returns true if a given case node
-        // is supported, false otherwise
-        var isSupported = function(caseNode) {
-
-            var ns = caseNode.attributes["required-namespace"];
-            if(!ns) {
-                // the namespace was not specified, that should
-                // never happen, we don't support it then
-                console.log("Encountered a case statement with no required-namespace");
-                return false;
-            }
-            // all the xmlns that readium is known to support
-            // TODO this is going to require maintenance
-            var supportedNamespaces = ["http://www.w3.org/1998/Math/MathML"];
-            return _.include(supportedNamespaces, ns);
-        };
-
-        $('switch', dom).each( function() {
-
-            // keep track of whether or now we found one
-            var found = false;
-
-            $('case', this).each(function() {
-
-                if( !found && isSupported(this) ) {
-                    found = true; // we found the node, don't remove it
-                }
-                else {
-                    $(this).remove(); // remove the node from the dom
-//                    $(this).prop("hidden", true);
-                }
-            });
-
-            if(found) {
-                // if we found a supported case, remove the default
-                $('default', this).remove();
-//                $('default', this).prop("hidden", true);
-            }
-        })
-    }
-
 
     function onPaginationChanged(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
 

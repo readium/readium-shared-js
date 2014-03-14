@@ -32,6 +32,13 @@ ReadiumSDK.Models.Trigger = function(domNode) {
     this.ref 		= $el.attr("ref");
 };
 
+ReadiumSDK.Models.Trigger.register = function(dom) {
+    $('trigger', dom).each(function() {
+        var trigger = new ReadiumSDK.Models.Trigger(this);
+        trigger.subscribe(dom);
+    });
+};
+
 ReadiumSDK.Models.Trigger.prototype.subscribe = function(dom) {
     var selector = "#" + this.observer;
     var that = this;
