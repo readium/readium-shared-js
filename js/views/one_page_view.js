@@ -134,13 +134,17 @@ ReadiumSDK.Views.OnePageView = function(options){
 
         _$epubHtml.css(css);
         
-        _$epubHtml.css("visibility", "hidden");
+        // Chrome workaround: otherwise text is sometimes invisible (probably a rendering glitch due to the 3D transform graphics backend?)
+        //_$epubHtml.css("visibility", "hidden"); // "flashing" in two-page spread mode is annoying :(
+        _$epubHtml.css("opacity", "0.9");
+        
         _$iframe.css("visibility", "visible");
         
         setTimeout(function()
         {
-            _$epubHtml.css("visibility", "visible");
-        }, 30);
+            //_$epubHtml.css("visibility", "visible");
+            _$epubHtml.css("opacity", "1");
+        }, 0);
     };
 
     function generateTransformCSS(scale, left, top) {
