@@ -84,6 +84,14 @@ ReadiumSDK.Models.Spine = function(epubPackage, spineDTO) {
         return self.items[self.items.length - 1];
     };
 
+    this.isFirstItem = function(item) {
+        return item.index === 0;
+    };
+
+    this.isLastItem = function(item) {
+        return item.index  === self.items.length - 1;
+    };
+
     this.item = function(index) {
 		
 		if (isValidIndex(index))
