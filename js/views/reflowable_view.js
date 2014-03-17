@@ -476,7 +476,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
     function hideBook() {
 
         _currentOpacity = _$epubHtml.css('opacity');
-        _$epubHtml.css('opacity', 1);
+        _$epubHtml.css('opacity', 0);
     }
 
     function showBook() {

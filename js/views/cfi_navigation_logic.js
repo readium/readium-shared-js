@@ -525,7 +525,15 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
     this.getPageForPointOnElement = function($element, x, y) {
 
         if (options.rectangleBased) {
-            return findPageByRectangles($element, y);
+            try
+            {
+                return findPageByRectangles($element, y);
+            }
+            catch (e) // when clientRects fail (element display:none)
+            {
+                console.error(e);
+                return 0;
+            }
         }
 
         var posInElement = this.getVerticalOffsetForPointOnElement($element, x, y);
