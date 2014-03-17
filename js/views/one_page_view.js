@@ -112,7 +112,7 @@ ReadiumSDK.Views.OnePageView = function(options){
 
     this.transformContent = function(scale, left, top) {
 
-        var elWidth = Math.floor(_meta_size.width * scale);
+        var elWidth = Math.ceil(_meta_size.width * scale);
         var elHeight = Math.floor(_meta_size.height * scale);
                                                     
         _$el.css("left", left + "px");
