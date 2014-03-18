@@ -547,8 +547,13 @@ ReadiumSDK.Views.ReflowableView = function(options){
             $elem.css('max-width', '98%');
             $elem.css('max-height', '98%');
 
-            $elem.css('height', 'auto');
-            $elem.css('width', 'auto');
+            if(!$elem.css('height')) {
+                $elem.css('height', 'auto');
+            }
+
+            if(!$elem.css('width')) {
+                $elem.css('width', 'auto');
+            }
 
         });
     }
