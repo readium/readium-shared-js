@@ -107,7 +107,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes){
                 _$epubHtml = $("svg", epubContentDocument);
             }
             _$epubHtml.css("overflow", "hidden");
-            self.applyBookStyles();
+            //self.applyBookStyles();
             updateMetaSize();
             updateHtmlFontSize();
 
@@ -184,7 +184,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes){
     //this is called by fixed_view
     this.transformContent = function(scale, left, top) {
 
-        var elWidth = Math.floor(_meta_size.width * scale);
+        var elWidth = Math.ceil(_meta_size.width * scale);
         var elHeight = Math.floor(_meta_size.height * scale);
                                                     
         _$el.css("left", left + "px");
@@ -205,6 +205,18 @@ ReadiumSDK.Views.OnePageView = function(options, classes){
         }
 
         _$epubHtml.css(css);
+        
+        // Chrome workaround: otherwise text is sometimes invisible (probably a rendering glitch due to the 3D transform graphics backend?)
+        //_$epubHtml.css("visibility", "hidden"); // "flashing" in two-page spread mode is annoying :(
+        _$epubHtml.css("opacity", "0.9");
+        
+        _$iframe.css("visibility", "visible");
+        
+        setTimeout(function()
+        {
+            //_$epubHtml.css("visibility", "visible");
+            _$epubHtml.css("opacity", "1");
+        }, 0);
     };
 
     function generateTransformCSS(scale, left, top) {
@@ -221,6 +233,9 @@ ReadiumSDK.Views.OnePageView = function(options, classes){
 
     function updateMetaSize() {
 
+        _meta_size.width = 0;
+        _meta_size.height = 0;
+
         var contentDocument = _$iframe[0].contentDocument;
 
         // first try to read viewport size
@@ -231,8 +246,6 @@ ReadiumSDK.Views.OnePageView = function(options, classes){
             content = $('meta[name=viewbox]', contentDocument).attr("content");
         }
 
-        var width, height;
-
         if(content) {
             var size = parseSize(content);
             if(size) {
@@ -240,25 +253,25 @@ ReadiumSDK.Views.OnePageView = function(options, classes){
                 _meta_size.height = size.height;
             }
         }
-        else { //try to get direct image size
+        else { //try to get direct svg or image size
             
             // try SVG element's width/height first
             var $svg = $(contentDocument).find('svg');
-            if ($svg) {
-                width = parseInt($svg.attr("width"), 10);
-                height = parseInt($svg.attr("height"), 10);
+            if ($svg.length > 0) {
+                _meta_size.width = parseInt($svg.attr("width"), 10);
+                _meta_size.height = parseInt($svg.attr("height"), 10);
             }
             else {
                 var $img = $(contentDocument).find('img');
-                width = $img.width();
-                height = $img.height();
+                if($img.length > 0) {
+                    _meta_size.width = $img.width();
+                    _meta_size.height = $img.height();
+                }
+                }
             }
 
-            if( width > 0) {
-                _meta_size.width = width;
-                _meta_size.height = height;
-            }
-
+        if(!_meta_size.width || !_meta_size.height) {
+            console.error("Invalid document: viewport is not specified!");
         }
 
     }
@@ -270,6 +283,9 @@ ReadiumSDK.Views.OnePageView = function(options, classes){
             _currentSpineItem = spineItem;
             var src = _spine.package.resolveRelativeUrl(spineItem.href);
 
+            //hide iframe until content is scaled
+            _$iframe.css("visibility", "hidden");
+            self.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPEN_START, _$iframe, _currentSpineItem);
             _iframeLoader.loadIframe(_$iframe[0], src, function(sucsess){
 
                 onIFrameLoad(sucsess);
@@ -282,7 +298,10 @@ ReadiumSDK.Views.OnePageView = function(options, classes){
         }
         else
         {
-            callback(true);
+            if(callback) {
+                callback(true);
+            }
+
             this.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED, _$iframe, _currentSpineItem, false);
         }
     };
@@ -331,6 +350,17 @@ ReadiumSDK.Views.OnePageView = function(options, classes){
         return new ReadiumSDK.Views.CfiNavigationLogic(_$el, _$iframe);
     };
 
+    this.getElementByCfi = function(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
+
+        if(spineItem != _currentSpineItem) {
+            console.error("spine item is not loaded");
+            return undefined;
+        }
+
+        var navigation = new ReadiumSDK.Views.CfiNavigationLogic(_$el, _$iframe);
+        return navigation.getElementByCfi(cfi, classBlacklist, elementBlacklist, idBlacklist);
+    };
+
     this.getElement = function(spineItem, selector) {
 
         if(spineItem != _currentSpineItem) {
@@ -342,11 +372,12 @@ ReadiumSDK.Views.OnePageView = function(options, classes){
         return navigation.getElement(selector);
     };
 
-    this.getVisibleMediaOverlayElements = function() {
+    this.getFirstVisibleMediaOverlayElement = function() {
         var navigation = new ReadiumSDK.Views.CfiNavigationLogic(_$el, _$iframe);
-        return navigation.getVisibleMediaOverlayElements({top:0, bottom: _$iframe.height()});
+        return navigation.getFirstVisibleMediaOverlayElement({top:0, bottom: _$iframe.height()});
     }
 
 };
 
+ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPEN_START = "SpineItemOpenStart";
 ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED = "SpineItemOpened";

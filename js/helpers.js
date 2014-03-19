@@ -110,6 +110,22 @@ ReadiumSDK.Helpers.EndsWith = function (str, suffix) {
     return str.indexOf(suffix, str.length - suffix.length) !== -1;
 };
 
+ReadiumSDK.Helpers.BeginsWith = function (str, suffix) {
+
+    return str.indexOf(suffix) === 0;
+};
+
+ReadiumSDK.Helpers.RemoveFromString = function(str, toRemove) {
+
+    var startIx = str.indexOf(toRemove);
+
+    if(startIx == -1) {
+        return str;
+    }
+
+    return str.substring(0, startIx) + str.substring(startIx + toRemove.length);
+};
+
 ReadiumSDK.Helpers.Margins = function(margin, border, padding) {
 
     this.margin = margin;
@@ -194,5 +210,57 @@ ReadiumSDK.Helpers.isRenditionSpreadPermittedForItem = function(item, orientatio
         && orientation == ReadiumSDK.Views.ORIENTATION_PORTRAIT );
 };
 
-
-
+ReadiumSDK.Helpers.escapeJQuerySelector = function(sel) {
+        //http://api.jquery.com/category/selectors/
+        //!"#$%&'()*+,./:;<=>?@[\]^`{|}~
+        // double backslash escape
+        
+        if (!sel) return undefined;
+        
+        var selector = sel.replace(/([;&,\.\+\*\~\?':"\!\^#$%@\[\]\(\)<=>\|\/\\{}`])/g, '\\$1');
+        
+        // if (selector !== sel)
+        // {
+        //     console.debug("---- SELECTOR ESCAPED");
+        //     console.debug("1: " + sel);
+        //     console.debug("2: " + selector);
+        // }
+        // else
+        // {
+        //     console.debug("---- SELECTOR OKAY: " + sel);
+        // }
+        
+        return selector;
+};
+    // TESTS BELOW ALL WORKING FINE :)
+    // (RegExp typos are hard to spot!)
+    // escapeSelector('!');
+    // escapeSelector('"');
+    // escapeSelector('#');
+    // escapeSelector('$');
+    // escapeSelector('%');
+    // escapeSelector('&');
+    // escapeSelector("'");
+    // escapeSelector('(');
+    // escapeSelector(')');
+    // escapeSelector('*');
+    // escapeSelector('+');
+    // escapeSelector(',');
+    // escapeSelector('.');
+    // escapeSelector('/');
+    // escapeSelector(':');
+    // escapeSelector(';');
+    // escapeSelector('<');
+    // escapeSelector('=');
+    // escapeSelector('>');
+    // escapeSelector('?');
+    // escapeSelector('@');
+    // escapeSelector('[');
+    // escapeSelector('\\');
+    // escapeSelector(']');
+    // escapeSelector('^');
+    // escapeSelector('`');
+    // escapeSelector('{');
+    // escapeSelector('|');
+    // escapeSelector('}');
+    // escapeSelector('~');

@@ -47,13 +47,24 @@ ReadiumSDK.Views.FixedView = function(options){
 
     function createOnePageView(elementClass) {
 
-        return new ReadiumSDK.Views.OnePageView({
+        var pageView = new ReadiumSDK.Views.OnePageView({
 
             iframeLoader: _iframeLoader,
             spine: _spine,
             bookStyles: _bookStyles
         }, [elementClass]);
+    
+         pageView.on(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPEN_START, function($iframe, spineItem) {
+
+            self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
+        });   
+    
+        return pageView;
     }
+
+    this.isReflowable = function() {
+        return false;
+    };
 
     this.render = function(){
 
@@ -159,6 +170,11 @@ ReadiumSDK.Views.FixedView = function(options){
 
             var newPageSpread = new ReadiumSDK.Models.Spread(_spine, newOrientation);
 
+            var visibleItems = _spread.validItems();
+            if(visibleItems.length > 0) {
+                newPageSpread.openItem(visibleItems[0]);
+            }
+
             spreadChanged = (  _spread.leftItem != newPageSpread.leftItem
                             || _spread.rightItem != newPageSpread.rightItem
                             || _spread.centerItem != newPageSpread.centerItem );
@@ -176,7 +192,6 @@ ReadiumSDK.Views.FixedView = function(options){
         else {
             resizeBook();
         }
-
     };
 
     function isContentRendered() {
@@ -247,8 +262,7 @@ ReadiumSDK.Views.FixedView = function(options){
 
         if(_leftPageView.isDisplaying()) {
 
-            _leftPageView.transformContent(scale, left, top);
-            _leftPageView.showIFrame();
+             _leftPageView.transformContent(scale, left, top);
         }
 
         if(_rightPageView.isDisplaying()) {
@@ -260,13 +274,11 @@ ReadiumSDK.Views.FixedView = function(options){
             }
 
             _rightPageView.transformContent(scale, left, top);
-            _leftPageView.showIFrame();
         }
 
         if(_centerPageView.isDisplaying()) {
 
             _centerPageView.transformContent(scale, left, top);
-            _leftPageView.showIFrame();
         }
     }
 
@@ -392,7 +404,6 @@ ReadiumSDK.Views.FixedView = function(options){
             dfd.resolve();
         });
 
-        pageView.hideIFrame();
         pageView.loadSpineItem(item);
 
         return dfd.promise();
@@ -478,21 +489,36 @@ ReadiumSDK.Views.FixedView = function(options){
         console.error("spine item is not loaded");
         return undefined;
     };
-
-    this.getVisibleMediaOverlayElements = function() {
-
-        var elements = [];
+    
+    this.getElementByCfi = function(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
         var views = getDisplayingViews();
 
         for(var i = 0, count = views.length; i < count; i++) {
-            elements.push.apply(elements, views[i].getVisibleMediaOverlayElements());
+
+            var view = views[i];
+            if(view.currentSpineItem() == spineItem) {
+                return view.getElementByCfi(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist);
+            }
         }
 
-        return elements;
+        console.error("spine item is not loaded");
+        return undefined;
     };
 
-    this.insureElementVisibility = function(spineItemId, element, initiator) {
+    this.getFirstVisibleMediaOverlayElement = function() {
+
+        var views = getDisplayingViews();
+
+        for(var i = 0, count = views.length; i < count; i++) {
+            var el = views[i].getFirstVisibleMediaOverlayElement();
+            if (el) return el;
+        }
+
+        return undefined;
+    };
+
+    this.insureElementVisibility = function(element, initiator) {
 
         //for now we assume that for fixed layout element is always visible
 

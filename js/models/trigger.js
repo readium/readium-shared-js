@@ -32,6 +32,13 @@ ReadiumSDK.Models.Trigger = function(domNode) {
     this.ref 		= $el.attr("ref");
 };
 
+ReadiumSDK.Models.Trigger.register = function(dom) {
+    $('trigger', dom).each(function() {
+        var trigger = new ReadiumSDK.Models.Trigger(this);
+        trigger.subscribe(dom);
+    });
+};
+
 ReadiumSDK.Models.Trigger.prototype.subscribe = function(dom) {
     var selector = "#" + this.observer;
     var that = this;
@@ -41,7 +48,7 @@ ReadiumSDK.Models.Trigger.prototype.subscribe = function(dom) {
 };
 
 ReadiumSDK.Models.Trigger.prototype.execute = function(dom) {
-    var $target = $( "#" + this.ref, dom);
+    var $target = $( "#" + ReadiumSDK.Helpers.escapeJQuerySelector(this.ref), dom);
     switch(this.action)
     {
         case "show":

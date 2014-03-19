@@ -41,7 +41,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     var _iframeLoader;
     var _$el;
     var _annotationsManager = new ReadiumSDK.Views.AnnotationsManager(self, options);
-
+    
     //We will call onViewportResize after user stopped resizing window
     var lazyResize = _.debounce(function() { self.handleViewportResize() }, 100);
     $(window).on("resize.ReadiumSDK.readerView", _.bind(lazyResize, self));
@@ -54,6 +54,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
         console.log("** EL is a string:" + _$el.attr('id'));
     }
     
+    
+ 
 
     if(options.iframeLoader) {
         _iframeLoader = options.iframeLoader;
@@ -102,7 +104,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     // returns true is view changed
     function initViewForItem(spineItem) {
 
-         var desiredViewType;
+        var desiredViewType;
 
         if(_viewerSettings.isScrollViewDoc) {
             desiredViewType = ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_DOC;
@@ -145,12 +147,14 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
         _currentView.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function($iframe, spineItem) {
 
-            applySwitches($iframe);
-            registerTriggers($iframe);
-
-//            _mediaOverlayDataInjector.attachMediaOverlayData($iframe, spineItem, _viewerSettings);
+            _mediaOverlayDataInjector.attachMediaOverlayData($iframe, spineItem, _viewerSettings);
+            
             _internalLinksSupport.processLinkElements($iframe, spineItem);
             _annotationsManager.attachAnnotations($iframe, spineItem);
+
+            var contentDoc = $iframe[0].contentDocument;
+            ReadiumSDK.Models.Trigger.register(contentDoc);
+            ReadiumSDK.Models.Switches.apply(contentDoc);
 
             self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
         });
@@ -249,9 +253,21 @@ ReadiumSDK.Views.ReaderView = function(options) {
             self.setStyles(openBookData.styles);
         }
 
+        var pageRequestData = undefined;
+
         if(openBookData.openPageRequest) {
 
-            var pageRequestData = openBookData.openPageRequest;
+            if(openBookData.openPageRequest.idref || (openBookData.openPageRequest.contentRefUrl && openBookData.openPageRequest.sourceFileHref)) {
+                pageRequestData = openBookData.openPageRequest;
+            }
+            else {
+                console.log("Invalid page request data: idref required!");
+            }
+        }
+
+        if(pageRequestData) {
+
+            pageRequestData = openBookData.openPageRequest;
 
             if(pageRequestData.idref) {
 
@@ -265,12 +281,10 @@ ReadiumSDK.Views.ReaderView = function(options) {
                     self.openSpineItemPage(pageRequestData.idref, 0, self);
                 }
             }
-            else if(pageRequestData.contentRefUrl && pageRequestData.sourceFileHref) {
+            else {
                 self.openContentUrl(pageRequestData.contentRefUrl, pageRequestData.sourceFileHref, self);
             }
-            else {
-                console.log("Invalid page request data: idref required!");
-            }
+
         }
         else {// if we where not asked to open specific page we will open the first one
 
@@ -536,15 +550,22 @@ ReadiumSDK.Views.ReaderView = function(options) {
      *
      * @param styles {object} style object contains selector property and declarations object
      */
-    this.setStyles = function(styles) {
+    this.setStyles = function(styles, doNotUpdateView) {
 
         var count = styles.length;
 
         for(var i = 0; i < count; i++) {
+            if (styles[i].declarations)
+            {
             _userStyles.addStyle(styles[i].selector, styles[i].declarations);
         }
+            else
+            {
+                _userStyles.removeStyle(styles[i].selector);
+            }
+        }
 
-        applyStyles();
+        applyStyles(doNotUpdateView);
 
     };
 
@@ -578,16 +599,29 @@ ReadiumSDK.Views.ReaderView = function(options) {
         return undefined;
 
     };
+    
+    this.getElementByCfi = function(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
-    function applyStyles() {
+        if(_currentView) {
+            return _currentView.getElementByCfi(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist);
+        }
+
+        return undefined;
+
+    };
+
+    function applyStyles(doNotUpdateView) {
 
         ReadiumSDK.Helpers.setStyles(_userStyles.getStyles(), _$el);
+
+        if (_mediaOverlayPlayer)
+            _mediaOverlayPlayer.applyStyles();
+
+        if(doNotUpdateView) return;
 
         if(_currentView) {
             _currentView.applyStyles();
         }
-
-        _mediaOverlayPlayer.applyStyles();
     }
 
     //TODO: this is public function - should be JS Doc-ed
@@ -712,6 +746,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
      */
     this.isMediaOverlayAvailable = function() {
 
+        if (!_mediaOverlayPlayer) return false;
+        
         return _mediaOverlayPlayer.isMediaOverlayAvailable();
     };
 
@@ -798,19 +834,19 @@ ReadiumSDK.Views.ReaderView = function(options) {
 //    };
 
 
-    this.getVisibleMediaOverlayElements = function() {
+    this.getFirstVisibleMediaOverlayElement = function() {
 
         if(_currentView) {
-            return _currentView.getVisibleMediaOverlayElements();
+            return _currentView.getFirstVisibleMediaOverlayElement();
         }
 
-        return [];
+        return undefined;
     };
 
-    this.insureElementVisibility = function(spineItemId, element, initiator) {
+    this.insureElementVisibility = function(element, initiator) {
 
         if(_currentView) {
-            _currentView.insureElementVisibility(spineItemId, element, initiator);
+            _currentView.insureElementVisibility(element, initiator);
         }
     }
 
@@ -877,66 +913,22 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
     this.removeHighlight = function(id) {
         return _annotationsManager.removeHighlight(id);
-    };
+    }; 
 
-
-    function registerTriggers($iframe) {
-
-        var contentDocument = $iframe[0].contentDocument;
-
-        $('trigger', contentDocument).each(function() {
-            var trigger = new ReadiumSDK.Models.Trigger(this);
-            trigger.subscribe(contentDocument);
-
-        });
+    /**
+     * Lets user to subscribe to iframe's window events
+     *
+     * @method addIFrameEventsListener
+     * @param {string} eventName event name.
+     * @param {string} callback callback function.
+     * @param {string} context user specified data passed to the callback function.
+     *
+     * @returns {undefined}
+     */
+    this.addIFrameEventListener = function(eventName, callback, context) {
+        _iframeLoader.addIFrameEventListener(eventName, callback, context);
     }
 
-    // Description: Parse the epub "switch" tags and hide
-    // cases that are not supported
-    function applySwitches($iframe) {
-
-        var contentDocument = $iframe[0].contentDocument;
-
-        // helper method, returns true if a given case node
-        // is supported, false otherwise
-        var isSupported = function(caseNode) {
-
-            var ns = caseNode.attributes["required-namespace"];
-            if(!ns) {
-                // the namespace was not specified, that should
-                // never happen, we don't support it then
-                console.log("Encountered a case statement with no required-namespace");
-                return false;
-            }
-            // all the xmlns that readium is known to support
-            // TODO this is going to require maintenance
-            var supportedNamespaces = ["http://www.w3.org/1998/Math/MathML"];
-            return _.include(supportedNamespaces, ns);
-        };
-
-        $('switch', contentDocument).each( function() {
-
-            // keep track of whether or now we found one
-            var found = false;
-
-            $('case', this).each(function() {
-
-                if( !found && isSupported(this) ) {
-                    found = true; // we found the node, don't remove it
-                }
-                else {
-                    $(this).remove(); // remove the node from the dom
-//                    $(this).prop("hidden", true);
-                }
-            });
-
-            if(found) {
-                // if we found a supported case, remove the default
-                $('default', this).remove();
-//                $('default', this).prop("hidden", true);
-            }
-        })
-    }
 };
 
 ReadiumSDK.Views.ReaderView.VIEW_TYPE_COLUMNIZED = 1;
