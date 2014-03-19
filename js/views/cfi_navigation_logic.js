@@ -136,16 +136,20 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
      * @param {jQuery} $element
      * @param {Object} _props
      * @param {boolean} shouldCalculateVisibilityPercentage
-     * @returns {number}
+     * @returns {number|null}
      *      0 for non-visible elements,
      *      0 < n <= 100 for visible elements
      *      (will just give 100, if `shouldCalculateVisibilityPercentage` => false)
+     *      null for elements with display:none
      */
     function checkVisibilityByRectangles(
             $element, _props, shouldCalculateVisibilityPercentage) {
 
         var elementRectangles = getNormalizedRectangles($element);
         var clientRectangles = elementRectangles.clientRectangles;
+        if (clientRectangles.length === 0) { // elements with display:none, etc.
+            return null;
+        }
 
         var isRtl = isPageProgressionRightToLeft();
         var columnFullWidth = getColumnFullWidth();
@@ -182,12 +186,15 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
      *
      * @param {jQuery} $element
      * @param {number} spatialVerticalOffset
-     * @returns {number}
+     * @returns {number|null}
      */
     function findPageByRectangles($element, spatialVerticalOffset) {
         var visibleContentOffsets = getVisibleContentOffsets();
         var elementRectangles = getNormalizedRectangles($element, visibleContentOffsets);
         var clientRectangles  = elementRectangles.clientRectangles;
+        if (clientRectangles.length === 0) { // elements with display:none, etc.
+            return null;
+        }
 
         var isRtl = isPageProgressionRightToLeft();
         var columnFullWidth = getColumnFullWidth();
@@ -524,14 +531,11 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
 
     this.getPageForPointOnElement = function($element, x, y) {
 
+        var pageIndex;
         if (options.rectangleBased) {
-            try
-            {
-                return findPageByRectangles($element, y);
-            }
-            catch (e) // when clientRects fail (element display:none)
-            {
-                console.error(e);
+            pageIndex = findPageByRectangles($element, y);
+            if (pageIndex === null) {
+                console.warn('Impossible to locate a hidden element: ', $element);
                 return 0;
             }
         }
@@ -699,7 +703,12 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
                     element: $visibleElement[0], // DOM Element is pushed
                     percentVisible: visibilityPercentage
                 });
-                return false;
+                return true;
+            }
+
+            // if element's position cannot be determined, just go to next one
+            if (visibilityPercentage === null) {
+                return true;
             }
 
             // continue if no visibleElements have been found yet,
