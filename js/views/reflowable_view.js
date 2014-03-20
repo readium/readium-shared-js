@@ -422,45 +422,45 @@ ReadiumSDK.Views.ReflowableView = function(options){
         _$epubHtml.css("-moz-column-width", _paginationInfo.columnWidth + "px");
         _$epubHtml.css("column-width", _paginationInfo.columnWidth + "px");
 
-        //TODO it takes time for rendition_layout engine to arrange columns we waite
-        //it would be better to react on rendition_layout column reflow finished event
-        setTimeout(function(){
+        var doc = _$iframe[0].contentDocument;
+	    var el = doc.createElementNS("http://www.w3.org/1999/xhtml", "style");
+	    el.appendChild(doc.createTextNode("*{}"));
+	    doc.body.appendChild(el);
+	    doc.body.removeChild(el);
+	    var blocking = doc.body.offsetTop; // browser rendering / layout done
+        
+        // resetting the position
+        _$epubHtml.css({left: 0, right: 0});
 
-            // resetting the position
-            _$epubHtml.css({left: 0, right: 0});
+        var columnizedContentWidth = _$epubHtml[0].scrollWidth;
 
-            var columnizedContentWidth = _$epubHtml[0].scrollWidth;
+        _paginationInfo.columnCount = Math.round((columnizedContentWidth + _paginationInfo.columnGap) / (_paginationInfo.columnWidth + _paginationInfo.columnGap));
 
-            _paginationInfo.columnCount = Math.round((columnizedContentWidth + _paginationInfo.columnGap) / (_paginationInfo.columnWidth + _paginationInfo.columnGap));
+        _paginationInfo.spreadCount =  Math.ceil(_paginationInfo.columnCount / _paginationInfo.visibleColumnCount);
 
-            _paginationInfo.spreadCount =  Math.ceil(_paginationInfo.columnCount / _paginationInfo.visibleColumnCount);
+        if(_paginationInfo.currentSpreadIndex >= _paginationInfo.spreadCount) {
+            _paginationInfo.currentSpreadIndex = _paginationInfo.spreadCount - 1;
+        }
 
-            if(_paginationInfo.currentSpreadIndex >= _paginationInfo.spreadCount) {
-                _paginationInfo.currentSpreadIndex = _paginationInfo.spreadCount - 1;
-            }
+        if(_deferredPageRequest) {
 
-            if(_deferredPageRequest) {
+            //if there is a request for specific page we get here
+            openDeferredElement();
+        }
+        else {
 
-                //if there is a request for specific page we get here
-                openDeferredElement();
-            }
-            else {
+            //we get here on resizing the viewport
 
-                //we get here on resizing the viewport
+            //We do this to force re-rendering of the document in the iframe.
+            //There is a bug in WebView control with right to left columns layout - after resizing the window html document
+            //is shifted in side the containing div. Hiding and showing the html element puts document in place.
+            _$epubHtml.hide();
+            setTimeout(function() {
+                _$epubHtml.show();
+                onPaginationChanged(self); // => redraw() => showBook()
+            }, 50);
 
-                //We do this to force re-rendering of the document in the iframe.
-                //There is a bug in WebView control with right to left columns layout - after resizing the window html document
-                //is shifted in side the containing div. Hiding and showing the html element puts document in place.
-                _$epubHtml.hide();
-                setTimeout(function() {
-                    _$epubHtml.show();
-                    onPaginationChanged(self); // => redraw() => showBook()
-                }, 50);
-
-            }
-
-        }, 100);
-
+        }
     }
 
 //    function shiftBookOfScreen() {
