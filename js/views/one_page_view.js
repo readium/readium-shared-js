@@ -96,7 +96,7 @@ ReadiumSDK.Views.OnePageView = function(options){
                 _$epubHtml = $("svg", epubContentDocument);
             }
             _$epubHtml.css("overflow", "hidden");
-            //self.applyBookStyles();
+            self.applyBookStyles();
             updateMetaSize();
 
             self.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED, _$iframe, _currentSpineItem, self);
@@ -104,7 +104,10 @@ ReadiumSDK.Views.OnePageView = function(options){
     }
 
     this.applyBookStyles = function() {
-
+        
+        //TODO: code refactoring candidate? (no CSS override for fixed-layout content, publishers do not like when reading systems mess-up their design)
+        return;
+        
         if(_$epubHtml) {
             ReadiumSDK.Helpers.setStyles(_bookStyles.getStyles(), _$epubHtml);
         }
