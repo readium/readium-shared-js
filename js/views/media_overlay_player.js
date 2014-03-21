@@ -25,7 +25,8 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
     var _ttsIsPlaying = false;
     var _currentTTS = undefined;
-    var _enableHTMLSpeech = true && window.speechSynthesis !== undefined; // set to false to force "native" platform TTS engine, rather than HTML Speech API
+    var _enableHTMLSpeech = true && typeof window.speechSynthesis !== "undefined" && speechSynthesis != null; // set to false to force "native" platform TTS engine, rather than HTML Speech API
+    
     var _SpeechSynthesisUtterance = undefined;
     //var _skipTTSEndEvent = false;
     var TOKENIZE_TTS = false;

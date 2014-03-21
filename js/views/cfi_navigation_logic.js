@@ -795,7 +795,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
         var $element = $(selector, this.getRootElement());
 
         if($element.length > 0) {
-            return $element[0];
+            return $element;
         }
 
         return undefined;
