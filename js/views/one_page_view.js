@@ -241,8 +241,10 @@ ReadiumSDK.Views.OnePageView = function(options){
 
         //TODO modernizer library can be used to get browser independent transform attributes names (implemented in readium-web fixed_layout_book_zoomer.js)
         var css = {};
-        css["-webkit-transform"] = transformString;
-        css["-webkit-transform-origin"] = "0 0";
+        _.each(['-webkit-', '-ms-', ''], function(prefix) {
+            css[prefix + 'transform'] = transformString;
+            css[prefix + 'transform-origin'] = '0 0';
+        });
 
         return css;
     }
