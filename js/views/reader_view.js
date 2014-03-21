@@ -820,7 +820,26 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
     this.handleViewportResize = function(){
         if (_currentView){
+            
+            var wasPlaying = false;
+            if (_currentView.isReflowable && _currentView.isReflowable())
+            {
+                wasPlaying = this.isPlayingMediaOverlay();
+                if (wasPlaying)
+                {
+                    this.pauseMediaOverlay();
+                }
+            }
+            
             _currentView.onViewportResize();
+
+            if (wasPlaying)
+            {
+                setTimeout(function()
+                {
+                    self.playMediaOverlay();
+                }, 150);
+            }
         }
     }
 
