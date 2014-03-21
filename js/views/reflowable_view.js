@@ -46,7 +46,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
     var _$iframe;
     var _$epubHtml;
 
-    var _currentOpacity;
+    var _currentOpacity = -1;
 
     var _lastViewPortSize = {
         width: undefined,
@@ -166,6 +166,9 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
             var src = _spine.package.resolveRelativeUrl(spineItem.href);
             self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START, _$iframe, spineItem);
+
+            _$iframe.css("opacity", "0.01");
+            
             _iframeLoader.loadIframe(_$iframe[0], src, onIFrameLoad, self, {spineItem : spineItem});
         }
     }
@@ -197,6 +200,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
         }
 
         if(!success) {
+            _$iframe.css("opacity", "1");
             _deferredPageRequest = undefined;
             return;
         }
@@ -205,6 +209,9 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
         var epubContentDocument = _$iframe[0].contentDocument;
         _$epubHtml = $("html", epubContentDocument);
+
+        hideBook();
+        _$iframe.css("opacity", "1");
 
         _$epubHtml.css("height", _lastViewPortSize.height + "px");
         _$epubHtml.css("position", "relative");
@@ -225,7 +232,6 @@ ReadiumSDK.Views.ReflowableView = function(options){
 /////////
 
         self.applyStyles();
-
     }
 
     this.applyStyles = function() {
@@ -401,6 +407,8 @@ ReadiumSDK.Views.ReflowableView = function(options){
             return;
         }
 
+        hideBook(); // shiftBookOfScreen();
+
         _$iframe.css("width", _lastViewPortSize.width + "px");
         _$iframe.css("height", _lastViewPortSize.height + "px");
 
@@ -415,8 +423,6 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
         // _$epubHtml.css("width", _paginationInfo.columnWidth);
         _$epubHtml.css("width", _lastViewPortSize.width);
-
-        hideBook(); // shiftBookOfScreen();
 
         _$epubHtml.css("-webkit-column-width", _paginationInfo.columnWidth + "px");
         _$epubHtml.css("-moz-column-width", _paginationInfo.columnWidth + "px");
@@ -450,15 +456,17 @@ ReadiumSDK.Views.ReflowableView = function(options){
         else {
 
             //we get here on resizing the viewport
+            
+            onPaginationChanged(self); // => redraw() => showBook(), so the trick below is not needed
 
-            //We do this to force re-rendering of the document in the iframe.
-            //There is a bug in WebView control with right to left columns layout - after resizing the window html document
-            //is shifted in side the containing div. Hiding and showing the html element puts document in place.
-            _$epubHtml.hide();
-            setTimeout(function() {
-                _$epubHtml.show();
-                onPaginationChanged(self); // => redraw() => showBook()
-            }, 50);
+            // //We do this to force re-rendering of the document in the iframe.
+            // //There is a bug in WebView control with right to left columns layout - after resizing the window html document
+            // //is shifted in side the containing div. Hiding and showing the html element puts document in place.
+            // _$epubHtml.hide();
+            // setTimeout(function() {
+            //     _$epubHtml.show();
+            //     onPaginationChanged(self); // => redraw() => showBook()
+            // }, 50);
 
         }
     }
@@ -473,18 +481,21 @@ ReadiumSDK.Views.ReflowableView = function(options){
 //        }
 //    }
 
-    function hideBook() {
-
+    function hideBook()
+    {
+        if (_currentOpacity != -1) return; // already hidden
+        
         _currentOpacity = _$epubHtml.css('opacity');
         _$epubHtml.css('opacity', 0);
     }
 
-    function showBook() {
-
-        if (_currentOpacity) {
+    function showBook()
+    {
+        if (_currentOpacity != -1)
+        {
             _$epubHtml.css('opacity', _currentOpacity);
         }
-        _currentOpacity = 0;
+        _currentOpacity = -1;
     }
 
     this.getFirstVisibleElementCfi = function() {

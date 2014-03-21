@@ -338,6 +338,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             {
                 paginationData.elementIdResolved = element;
             }
+            
             self.toggleMediaOverlayRefresh(paginationData);
         }
     };
@@ -1827,7 +1828,6 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
 //console.debug("moData SMIL: " + moData.par.getSmil().href + " // " + + moData.par.getSmil().id);
 
-
         var spineItems = reader.getLoadedSpineItems();
 
         //paginationData.pageProgressionDirection === "rtl"
@@ -1882,7 +1882,16 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
                 }
                 else if (spineItem.isFixedLayout())
                 {
-                    element = reader.getElement(spineItem, "body");
+                    if (paginationData && paginationData.paginationInfo && paginationData.paginationInfo.openPages)
+                    {
+                        // openPages are sorted by spineItem index, so the smallest index on display is the one we need to play (page on the left in LTR, or page on the right in RTL progression)
+                        var index = 0; // paginationData.paginationInfo.pageProgressionDirection === "ltr" ? 0 : paginationData.paginationInfo.openPages.length - 1;
+                    
+                        if (paginationData.paginationInfo.openPages[index] && paginationData.paginationInfo.openPages[index].idref && paginationData.paginationInfo.openPages[index].idref === spineItem.idref)
+                        {
+                            element = reader.getElement(spineItem, "body");
+                        }
+                    }
                 }
 
                 if (element)

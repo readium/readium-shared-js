@@ -41,6 +41,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
     var _iframeLoader;
     var _$el;
     var _annotationsManager = new ReadiumSDK.Views.AnnotationsManager(self, options);
+
+    var _enablePageTransitions = options.enablePageTransitions;
     
     if (options.el instanceof $) {
         _$el = options.el;
@@ -90,7 +92,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
             spine: _spine,
             userStyles: _userStyles,
             bookStyles: _bookStyles,
-            iframeLoader: _iframeLoader
+            iframeLoader: _iframeLoader,
+            enablePageTransitions: _enablePageTransitions
         };
 
 
@@ -251,7 +254,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
             if(spineItem) {
                 var pageOpenRequest = new ReadiumSDK.Models.PageOpenRequest(spineItem, self);
                 pageOpenRequest.setFirstPage();
-                openPage(pageOpenRequest);
+                openPage(pageOpenRequest, 0);
             }
 
         }
@@ -335,7 +338,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
         var lastOpenPage = paginationInfo.openPages[paginationInfo.openPages.length - 1];
 
         if(lastOpenPage.spineItemPageIndex < lastOpenPage.spineItemPageCount - 1) {
-            _currentView.openPageNext(this);
+            _currentView.openPageNext(self);
             return;
         }
 
@@ -350,7 +353,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
         var openPageRequest = new ReadiumSDK.Models.PageOpenRequest(nextSpineItem, self);
         openPageRequest.setFirstPage();
 
-        openPage(openPageRequest);
+        openPage(openPageRequest, 2);
     };
 
     /**
@@ -382,7 +385,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
         var openPageRequest = new ReadiumSDK.Models.PageOpenRequest(prevSpineItem, self);
         openPageRequest.setLastPage();
 
-        openPage(openPageRequest);
+        openPage(openPageRequest, 1);
     };
 
     function getSpineItem(idref) {
@@ -425,7 +428,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
             pageData.setElementCfi(elementCfi);
         }
 
-        openPage(pageData);
+        openPage(pageData, 0);
     };
 
 
@@ -469,13 +472,13 @@ ReadiumSDK.Views.ReaderView = function(options) {
             }
         }
 
-        openPage(pageRequest);
+        openPage(pageRequest, 0);
     };
 
-    function openPage(pageRequest) {
+    function openPage(pageRequest, dir) {
 
         initViewForItem(pageRequest.spineItem);
-        _currentView.openPage(pageRequest);
+        _currentView.openPage(pageRequest, dir);
     }
 
 
@@ -500,7 +503,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
             pageData.setPageIndex(pageIndex);
         }
 
-        openPage(pageData);
+        openPage(pageData, 0);
     };
 
     /**
@@ -617,7 +620,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
             hrefPart = combinedPath;
             elementId = undefined;
         }
-//console.debug("============ openContentUrl - hrefPart: " + hrefPart);
 
         var spineItem = _spine.getItemByHref(hrefPart);
         if(!spineItem) {
@@ -625,9 +627,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
         }
 
         self.openSpineItemElementId(spineItem.idref, elementId, initiator);
-
-//console.debug("------- openContentUrl - elementId: " + elementId);
-
     };
 
     /**
@@ -653,7 +652,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
         }
 
 
-        openPage(pageData);
+        openPage(pageData, 0);
     };
 
     /**

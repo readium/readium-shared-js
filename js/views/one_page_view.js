@@ -35,12 +35,28 @@ ReadiumSDK.Views.OnePageView = function(options){
     var _contentAlignment = options.contentAlignment;
     var _iframeLoader = options.iframeLoader;
     var _bookStyles = options.bookStyles;
+    var _enablePageTransitions = options.enablePageTransitions;
 
     var _meta_size = {
         width: 0,
         height: 0
     };
-
+    
+    var _pageSwitchDir = 0; // 0 => stay on same page, 1 => previous, 2 => next
+    var _pageSwitchActuallyChanged = false;
+    var _pageSwitchActuallyChanged_IFRAME_LOAD = false;
+    this.pageSwitchDir = function(dir, hasChanged)
+    {
+        if (_pageSwitchActuallyChanged_IFRAME_LOAD)
+        {
+//console.error("pageSwitchDir _pageSwitchActuallyChanged_IFRAME_LOAD SKIP");
+            return;
+        }
+        
+        _pageSwitchDir = dir;
+        _pageSwitchActuallyChanged = hasChanged;
+    };
+    
 
     this.element = function() {
         return _$el;
@@ -67,6 +83,8 @@ ReadiumSDK.Views.OnePageView = function(options){
 
             _$el = $(template);
 
+            _$el.css("-webkit-transition", "all 0 ease 0");
+            
             _$el.css("height", "100%");
             _$el.css("width", "100%");
 
@@ -98,7 +116,9 @@ ReadiumSDK.Views.OnePageView = function(options){
             _$epubHtml.css("overflow", "hidden");
             self.applyBookStyles();
             updateMetaSize();
-
+            
+            _pageSwitchActuallyChanged_IFRAME_LOAD = true; // second pass, but initial display for transition
+            
             self.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED, _$iframe, _currentSpineItem, self);
         }
     }
@@ -112,12 +132,40 @@ ReadiumSDK.Views.OnePageView = function(options){
             ReadiumSDK.Helpers.setStyles(_bookStyles.getStyles(), _$epubHtml);
         }
     };
-
-    this.transformContent = function(scale, left, top) {
+    
+    this.transformContentImmediate = function(scale, left, top) {
+        
+        var pageTransition_Translate = false; // TODO: from options
+        
+        var pageSwitchActuallyChanged = _pageSwitchActuallyChanged || _pageSwitchActuallyChanged_IFRAME_LOAD;
+        _pageSwitchActuallyChanged_IFRAME_LOAD = false;
+// console.error("transformContent: "+pageSwitchActuallyChanged + " - " + _pageSwitchDir);
 
         var elWidth = Math.ceil(_meta_size.width * scale);
         var elHeight = Math.floor(_meta_size.height * scale);
-                                                    
+
+        _$el.css("-webkit-transition", "all 0 ease 0");
+        if (pageSwitchActuallyChanged && _enablePageTransitions)
+        {
+            if (_pageSwitchDir === 0)
+            {
+                _$el.css("opacity", "0");
+            }
+            else
+            {
+                if (pageTransition_Translate)
+                {
+                    var initialLeft = elWidth * 0.3 * (_pageSwitchDir === 2 ? 1 : -1);
+                    var move = generateTransformCSS(1, Math.round(initialLeft), 0);
+                    _$el.css(move);
+                }
+                else
+                {
+                    _$el.css("opacity", "0");
+                }
+            }
+        }
+        
         _$el.css("left", left + "px");
         _$el.css("top", top + "px");
         _$el.css("width", elWidth + "px");
@@ -136,11 +184,11 @@ ReadiumSDK.Views.OnePageView = function(options){
         }
 
         _$epubHtml.css(css);
-        
-        // Chrome workaround: otherwise text is sometimes invisible (probably a rendering glitch due to the 3D transform graphics backend?)
-        //_$epubHtml.css("visibility", "hidden"); // "flashing" in two-page spread mode is annoying :(
-        _$epubHtml.css("opacity", "0.9");
-        
+
+        // // Chrome workaround: otherwise text is sometimes invisible (probably a rendering glitch due to the 3D transform graphics backend?)
+        // //_$epubHtml.css("visibility", "hidden"); // "flashing" in two-page spread mode is annoying :(
+        _$epubHtml.css("opacity", "0.999");
+
         _$iframe.css("visibility", "visible");
         
         setTimeout(function()
@@ -148,11 +196,48 @@ ReadiumSDK.Views.OnePageView = function(options){
             //_$epubHtml.css("visibility", "visible");
             _$epubHtml.css("opacity", "1");
         }, 0);
+        
+        if (pageSwitchActuallyChanged && _enablePageTransitions)
+        {
+            setTimeout(function()
+            {
+                if (_pageSwitchDir === 0)
+                {
+                    _$el.css("-webkit-transition", "opacity 250ms linear");
+                    _$el.css("opacity", "1");
+                }
+                else
+                {
+                    if (pageTransition_Translate)
+                    {
+                        _$el.css("-webkit-transition", "-webkit-transform 200ms ease-out");
+                        _$el.css("-webkit-transform", "none");
+                    }
+                    else
+                    {
+                        _$el.css("-webkit-transition", "opacity 150ms ease-out");
+                        _$el.css("opacity", "1");
+                    }
+                }
+
+                // var moveBack = generateTransformCSS(0, 0, 0);
+                // _$el.css(css);
+                //             
+                //_$el.css("left", left + "px");
+
+            }, 10);
+        }
     };
+    this.transformContent = _.bind(_.debounce(this.transformContentImmediate, 50), self);
 
     function generateTransformCSS(scale, left, top) {
 
-        var transformString = "translate(" + left + "px, " + top + "px) scale(" + scale + ")";
+        var translate = (left !== 0 || top !== 0) ? "translate(" + left + "px, " + top + "px)" : undefined;
+        var scale = scale !== 1 ? "scale(" + scale + ")" : undefined;
+        
+        if (!(translate || scale)) return {};
+        
+        var transformString = (translate && scale) ? (translate + " " + scale) : (translate ? translate : scale); // the order is important!
 
         //TODO modernizer library can be used to get browser independent transform attributes names (implemented in readium-web fixed_layout_book_zoomer.js)
         var css = {};
