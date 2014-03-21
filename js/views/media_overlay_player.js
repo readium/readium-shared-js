@@ -204,7 +204,18 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
                 if (!element)
                 {
-                    element = reader.getElement(spineItem, (paginationData.initiator == self && !paginationData.elementId) ? "body" : ("#" + ReadiumSDK.Helpers.escapeJQuerySelector(paginationData.elementId)));
+                    if (paginationData.initiator == self && !paginationData.elementId)
+                    {
+                        var $element = reader.getElement(spineItem, "body");
+                        element = ($element && $element.length > 0) ? $element[0] : undefined;
+                    }
+                    else
+                    {
+                        var $element = reader.getElementById(spineItem, paginationData.elementId);
+                        element = ($element && $element.length > 0) ? $element[0] : undefined;
+                        //("#" + ReadiumSDK.Helpers.escapeJQuerySelector(paginationData.elementId))
+                    }
+                    
                     if (element)
                     {
                         /*
@@ -1878,7 +1889,9 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
                 if (id)
                 {
-                    element = reader.getElement(spineItem, "#" + ReadiumSDK.Helpers.escapeJQuerySelector(id));
+                    var $element = reader.getElementById(spineItem, id);
+                    //var $element = reader.getElement(spineItem, "#" + ReadiumSDK.Helpers.escapeJQuerySelector(id));
+                    element = ($element && $element.length > 0) ? $element[0] : undefined;
                 }
                 else if (spineItem.isFixedLayout())
                 {
@@ -1889,7 +1902,8 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
                     
                         if (paginationData.paginationInfo.openPages[index] && paginationData.paginationInfo.openPages[index].idref && paginationData.paginationInfo.openPages[index].idref === spineItem.idref)
                         {
-                            element = reader.getElement(spineItem, "body");
+                            var $element = reader.getElement(spineItem, "body");
+                            element = ($element && $element.length > 0) ? $element[0] : undefined;
                         }
                     }
                 }
@@ -1916,6 +1930,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
         if (!moData)
         {
+            var foundMe = false;
             var depthFirstTraversal = function(elements)
             {
                 if (!elements)
@@ -1925,11 +1940,16 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
                 for (var i = 0; i < elements.length; i++)
                 {
-                    var d = $(elements[i]).data("mediaOverlayData");
-                    if (d)
+                    if (element === elements[i]) foundMe = true;
+                    
+                    if (foundMe)
                     {
-                        moData = d;
-                        return true;
+                        var d = $(elements[i]).data("mediaOverlayData");
+                        if (d)
+                        {
+                            moData = d;
+                            return true;
+                        }
                     }
 
                     var found = depthFirstTraversal(elements[i].children);
@@ -1973,16 +1993,15 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         {
             _smilIterator.reset();
         }
-
-        if (id)
+        
+        _smilIterator.goToPar(zPar);
+        
+        if (!_smilIterator.currentPar && id)
         {
+            _smilIterator.reset();
             _smilIterator.findTextId(id);
         }
-        else
-        {
-            _smilIterator.goToPar(zPar);
-        }
-
+        
         if (!_smilIterator.currentPar)
         {
             self.reset();

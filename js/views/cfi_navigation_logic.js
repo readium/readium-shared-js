@@ -559,7 +559,9 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
 
         var contentDoc = $iframe[0].contentDocument;
 
-        var $element = $("#" + ReadiumSDK.Helpers.escapeJQuerySelector(id), contentDoc);
+        var $element = $(contentDoc.getElementById(id));
+        //$("#" + ReadiumSDK.Helpers.escapeJQuerySelector(id), contentDoc);
+        
         if($element.length == 0) {
             return undefined;
         }
@@ -609,13 +611,14 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
         return ret;
     }
 
+    // returns raw DOM element (not $ jQuery-wrapped)
     this.getFirstVisibleMediaOverlayElement = function(visibleContentOffsets)
     {
         var docElement = this.getRootElement();
         if (!docElement) return undefined;
 
         var $root = $("body", docElement);
-        if (!$root || !$root[0]) return undefined;
+        if (!$root || !$root.length || !$root[0]) return undefined;
 
         var that = this;
 
@@ -795,7 +798,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
             return $element[0];
         }
 
-        return 0;
+        return undefined;
     };
 
 };

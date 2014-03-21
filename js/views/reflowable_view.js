@@ -602,6 +602,16 @@ ReadiumSDK.Views.ReflowableView = function(options){
         return _navigationLogic.getElementByCfi(cfi, classBlacklist, elementBlacklist, idBlacklist);
     };
 
+    this.getElementById = function(spineItem, id) {
+
+        if(spineItem != _currentSpineItem) {
+            console.error("spine item is not loaded");
+            return undefined;
+        }
+
+        return _navigationLogic.getElementById(id);
+    };
+
     this.getElement = function(spineItem, selector) {
 
         if(spineItem != _currentSpineItem) {

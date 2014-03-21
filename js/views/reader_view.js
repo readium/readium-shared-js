@@ -561,7 +561,15 @@ ReadiumSDK.Views.ReaderView = function(options) {
         }
 
         return undefined;
+    };
 
+    this.getElementById = function(spineItem, id) {
+
+        if(_currentView) {
+            return _currentView.getElementById(spineItem, id);
+        }
+
+        return undefined;
     };
 
     this.getElementByCfi = function(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
