@@ -323,7 +323,6 @@ ReadiumSDK.Views.ReflowableView = function(options){
         }
 
         if(pageIndex >= 0 && pageIndex < _paginationInfo.columnCount) {
-
             _paginationInfo.currentSpreadIndex = Math.floor(pageIndex / _paginationInfo.visibleColumnCount) ;
             onPaginationChanged(pageRequest.initiator, pageRequest.spineItem, pageRequest.elementId);
         }
@@ -642,16 +641,18 @@ ReadiumSDK.Views.ReflowableView = function(options){
         return _navigationLogic.getVisibleMediaOverlayElements(visibleContentOffsets);
     };
 
-    this.insureElementVisibility = function(element, initiator) {
-
+    this.insureElementVisibility = function(element, initiator)
+    {
         var $element = $(element);
-        if(_navigationLogic.isElementVisible($element, getVisibleContentOffsets())) {
+        if(_navigationLogic.isElementVisible($element, getVisibleContentOffsets()))
+        {
             return;
         }
 
         var page = _navigationLogic.getPageForElement($element);
 
-        if(page == -1) {
+        if(page == -1)
+        {
             return;
         }
 
@@ -663,6 +664,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
         {
             id = element.getAttribute("id");
         }
+        
         if (id)
         {
             openPageRequest.setElementId(id);

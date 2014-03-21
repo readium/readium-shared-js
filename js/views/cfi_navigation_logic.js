@@ -538,6 +538,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
                 console.warn('Impossible to locate a hidden element: ', $element);
                 return 0;
             }
+            return pageIndex;
         }
 
         var posInElement = this.getVerticalOffsetForPointOnElement($element, x, y);
