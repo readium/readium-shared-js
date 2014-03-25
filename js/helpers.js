@@ -146,6 +146,21 @@ ReadiumSDK.Helpers.Margins = function(margin, border, padding) {
     }
 };
 
+ReadiumSDK.Helpers.waitForRendering = function($iframe) {
+
+    var doc = $iframe[0].contentDocument;
+
+    if(!doc) {
+        return;
+    }
+
+    var el = doc.createElementNS("http://www.w3.org/1999/xhtml", "style");
+    el.appendChild(doc.createTextNode("*{}"));
+    doc.body.appendChild(el);
+    doc.body.removeChild(el);
+    var blocking = doc.body.offsetTop; // browser rendering / layout done
+};
+
 ReadiumSDK.Helpers.Margins.fromElement = function($element) {
     return new this($element.margin(), $element.border(), $element.padding());
 };

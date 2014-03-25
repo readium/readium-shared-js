@@ -53,9 +53,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
         _$el = $(options.el);
         console.log("** EL is a string:" + _$el.attr('id'));
     }
-    
-    
- 
+
 
     if(options.iframeLoader) {
         _iframeLoader = options.iframeLoader;
@@ -101,8 +99,14 @@ ReadiumSDK.Views.ReaderView = function(options) {
         return undefined;
     }
 
-    // returns true is view changed
-    function initViewForItem(spineItem) {
+    function deduceDesiredViewType(spineItem) {
+
+        //////////////////////////////
+        //Fo Debug only!!! ZZZZZZZ
+        console.error("ZZZZ view type is explisetly set to continues scrolling");
+        return ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
+        //
+        /////////////////////////
 
         var desiredViewType;
 
@@ -124,6 +128,15 @@ ReadiumSDK.Views.ReaderView = function(options) {
         else {
             desiredViewType = ReadiumSDK.Views.ReaderView.VIEW_TYPE_COLUMNIZED;
         }
+
+        return desiredViewType;
+
+    }
+
+    // returns true is view changed
+    function initViewForItem(spineItem) {
+
+        var desiredViewType = deduceDesiredViewType(spineItem);
 
         if(_currentView) {
 
@@ -367,6 +380,11 @@ ReadiumSDK.Views.ReaderView = function(options) {
      */
     this.openPageNext = function() {
 
+        if(getViewType(_currentView) === ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS) {
+            _currentView.openPageNext(self);
+            return;
+        }
+
         var paginationInfo = _currentView.getPaginationInfo();
 
         if(paginationInfo.openPages.length == 0) {
@@ -376,7 +394,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
         var lastOpenPage = paginationInfo.openPages[paginationInfo.openPages.length - 1];
 
         if(lastOpenPage.spineItemPageIndex < lastOpenPage.spineItemPageCount - 1) {
-            _currentView.openPageNext(this);
+            _currentView.openPageNext(self);
             return;
         }
 
@@ -398,6 +416,11 @@ ReadiumSDK.Views.ReaderView = function(options) {
      * Opens the previews page.
      */
     this.openPagePrev = function() {
+
+        if(getViewType(_currentView) === ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS) {
+            _currentView.openPagePrev(self);
+            return;
+        }
 
         var paginationInfo = _currentView.getPaginationInfo();
 

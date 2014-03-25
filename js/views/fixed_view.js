@@ -398,6 +398,12 @@ ReadiumSDK.Views.FixedView = function(options){
             pageView.off(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED);
 
             if(isNewContentDocumentLoaded) {
+
+                //if we a re loading fixed view meta size should be defined
+                if(!pageView.meta_height() || !pageView.meta_width()) {
+                    console.error("Invalid document " + spineItem.href + ": viewport is not specified!");
+                }
+
                 self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
             }
 

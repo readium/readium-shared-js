@@ -34,7 +34,15 @@ ReadiumSDK.Views.IFrameLoader = function() {
 
         var isWaitingForFrameLoad = true;
 
+        console.log("zzzzz !! pleas load" + src);
+
         iframe.onload = function() {
+
+            iframe.onload = undefined;
+
+            isWaitingForFrameLoad = false;
+
+            console.log("zzzzz ++ " + src + " loaded!");
 
             _.each(eventListeners, function(value, key){
                 for(var i = 0, count = value.length; i< count; i++) {
@@ -56,7 +64,6 @@ ReadiumSDK.Views.IFrameLoader = function() {
                 console.log("epubReadingSystem INJECTION ERROR! " + ex.message);
             }
 
-            isWaitingForFrameLoad = false;
             callback.call(context, true);
 
         };
@@ -66,6 +73,9 @@ ReadiumSDK.Views.IFrameLoader = function() {
         window.setTimeout(function(){
 
             if(isWaitingForFrameLoad) {
+
+                console.log("zzzzz -- " + src + " failed!");
+
                 isWaitingForFrameLoad = false;
                 callback.call(context, false);
             }

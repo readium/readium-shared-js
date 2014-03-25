@@ -54,22 +54,23 @@ ReadiumSDK.Views.OnePageViewProxy = function(spineItem, $contentFrame, options, 
 
         if(_pageView.isDisplaying()) {
             if(callback) {
-                callback(false);
+                callback(true);
             }
 
             return;
         }
 
-        _pageView.loadSpineItem(spineItem, function(){
+        _pageView.loadSpineItem(spineItem, function(sucsess){
 
             _pageView.resizeIFrameToContent();
 
             if(callback) {
-                callback(true);
+                callback(sucsess);
             }
 
         });
     };
+
 
     this.hide = function(callback) {
 

@@ -153,11 +153,11 @@ ReadiumSDK.Views.OnePageView = function(options, classes){
 
         var contHeight = getContentDocHeight();
         _$iframe.css("height", contHeight + "px");
-        //before we resize the iframe first time _$epubHtml gives wrong height
-        //TODO investigate alternative of setting _$iframe twice
-        contHeight = getContentDocHeight();
-        _$iframe.css("height", contHeight + "px");
+        _$iframe.css("visibility", "visible");
+
         _$el.css("height", contHeight + "px");
+
+        ReadiumSDK.Helpers.waitForRendering(_$iframe);
     };
 
     this.elementHeight = function() {
@@ -267,11 +267,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes){
                     _meta_size.width = $img.width();
                     _meta_size.height = $img.height();
                 }
-                }
             }
-
-        if(!_meta_size.width || !_meta_size.height) {
-            console.error("Invalid document: viewport is not specified!");
         }
 
     }
