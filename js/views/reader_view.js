@@ -310,6 +310,16 @@ ReadiumSDK.Views.ReaderView = function(options) {
             var bookMark = _currentView.bookmarkCurrentPage();
 
             if(bookMark) {
+            
+                var wasPlaying = false;
+                if (_currentView.isReflowable && _currentView.isReflowable())
+                {
+                    wasPlaying = self.isPlayingMediaOverlay();
+                    if (wasPlaying)
+                    {
+                        self.pauseMediaOverlay();
+                    }
+                }
 
                 var spineItem = _spine.getItemById(bookMark.idref);
                 var isViewChanged = initViewForItem(spineItem);
@@ -319,6 +329,14 @@ ReadiumSDK.Views.ReaderView = function(options) {
                 }
 
                 self.openSpineItemElementCfi(bookMark.idref, bookMark.contentCFI, self);
+
+                if (wasPlaying)
+                {
+                    self.playMediaOverlay();
+                    // setTimeout(function()
+                    // {
+                    // }, 60);
+                }
             }
         }
 
@@ -824,10 +842,10 @@ ReadiumSDK.Views.ReaderView = function(options) {
             var wasPlaying = false;
             if (_currentView.isReflowable && _currentView.isReflowable())
             {
-                wasPlaying = this.isPlayingMediaOverlay();
+                wasPlaying = self.isPlayingMediaOverlay();
                 if (wasPlaying)
                 {
-                    this.pauseMediaOverlay();
+                    self.pauseMediaOverlay();
                 }
             }
             
