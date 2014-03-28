@@ -295,6 +295,16 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
             }
         }
 
+        if (clientRectangles.length === 0) {
+            // sometimes an element is either hidden or empty, and that means
+            // Webkit-based browsers fail to assign proper clientRects to it
+            // in this case we need to go for its sibling (if it exists)
+            $el = $el.next();
+            if ($el.length) {
+                return getNormalizedRectangles($el, visibleContentOffsets);
+            }
+        }
+
         return {
             wrapperRectangle: wrapperRectangle,
             clientRectangles: clientRectangles
