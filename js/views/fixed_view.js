@@ -393,11 +393,9 @@ ReadiumSDK.Views.FixedView = function(options){
 
         var dfd = $.Deferred();
 
-        pageView.on(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED, function($iframe, spineItem, isNewContentDocumentLoaded){
+        pageView.loadSpineItem(item, function(success, $iframe, spineItem, isNewContentDocumentLoaded, context){
 
-            pageView.off(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED);
-
-            if(isNewContentDocumentLoaded) {
+            if(success && isNewContentDocumentLoaded) {
 
                 //if we a re loading fixed view meta size should be defined
                 if(!pageView.meta_height() || !pageView.meta_width()) {
@@ -408,9 +406,8 @@ ReadiumSDK.Views.FixedView = function(options){
             }
 
             dfd.resolve();
-        });
 
-        pageView.loadSpineItem(item);
+        }, context);
 
         return dfd.promise();
 

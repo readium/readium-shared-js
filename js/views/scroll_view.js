@@ -27,14 +27,13 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
     var _$viewport = options.$viewport;
     var _spine = options.spine;
     var _userStyles = options.userStyles;
-    var _isWaitingFramesLoad = false;
     var _deferredPageRequest;
     var _$contentFrame;
     var _$el;
 
-    var _lastScrollPos;
-
     var _updateViewsOnScroll = true;
+
+    var _stopTransientViewUpdate = false;
 
     var _firePageChangeOnScroll = true;
 
@@ -70,11 +69,17 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         return self;
     };
 
-    function updateLoadedViewsTop() {
+    function updateLoadedViewsTop(callback) {
+
+        if(_stopTransientViewUpdate) {
+            callback();
+            return;
+        }
 
         var viewPage = firstLoadedView();
         if(!viewPage) {
-            return undefined
+            callback();
+            return;
         }
 
         var viewPortRange = getVisibleRange(0);
@@ -82,22 +87,36 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
         if((viewPortRange.top - firstViewRange.bottom) > ITEM_LOAD_SCROLL_BUFFER) {
             removePageView(viewPage);
-            _updateViewsOnScroll = false;
             scrollTo(viewPortRange.top - (firstViewRange.bottom - firstViewRange.top));
-            _updateViewsOnScroll = true;
-            updateTransientViews(); //recursion
+            updateLoadedViewsTop(callback); //recursion
         }
         else if((viewPortRange.top - firstViewRange.top) < ITEM_LOAD_SCROLL_BUFFER) {
-            addToTopOf(viewPage);
+            addToTopOf(viewPage, function(isElementAdded){
+                if(isElementAdded) {
+                    updateLoadedViewsTop(callback); //recursion
+                }
+                else {
+                    callback();
+                }
+            });
+        }
+        else {
+            callback();
         }
 
     }
 
-    function updateLoadedViewsBottom() {
+    function updateLoadedViewsBottom(callback) {
+
+        if(_stopTransientViewUpdate) {
+            callback();
+            return;
+        }
 
         var viewPage = lastLoadedView();
         if(!viewPage) {
-            return undefined
+            callback();
+            return;
         }
 
         var viewPortRange = getVisibleRange(0);
@@ -105,11 +124,22 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
         if((lastViewRange.top - viewPortRange.bottom) > ITEM_LOAD_SCROLL_BUFFER) {
             removePageView(viewPage);
-            updateTransientViews(); //recursion;
+            updateLoadedViewsBottom(callback); //recursion
         }
         else if((lastViewRange.bottom - viewPortRange.bottom) < ITEM_LOAD_SCROLL_BUFFER) {
-            addToBottomOf(viewPage);
+            addToBottomOf(viewPage, function(newPageLoaded) {
+                if(newPageLoaded) {
+                    updateLoadedViewsBottom(callback); //recursion
+                }
+                else {
+                    callback();
+                }
+            });
         }
+        else {
+            callback();
+        }
+
     }
 
     function updateTransientViews() {
@@ -118,9 +148,13 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
             return;
         }
 
-        updateLoadedViewsBottom();
-        updateLoadedViewsTop();
+        _updateViewsOnScroll = false;
 
+        updateLoadedViewsBottom(function() {
+            updateLoadedViewsTop(function() {
+                _updateViewsOnScroll = true;
+            });
+        });
     }
 
     function onScroll() {
@@ -135,95 +169,92 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
     }
 
-    /*
-    function addToTopOf(topView) {
+
+    function addToTopOf(topView, callback) {
 
         var prevSpineItem = _spine.prevItem(topView.currentSpineItem());
         if(!prevSpineItem) {
+            callback(false);
             return;
         }
 
-        var newView = createPageViewForSpineItem(prevSpineItem);
-
-        _updateViewsOnScroll = false;
-
-        newView.element().insertBefore(topView.element());
-
-        newView.load(function(sucsess){
-
-            _updateViewsOnScroll = true;
-
-            if(sucsess) {
-
-                var range = getPageViewRange(newView);
-
-                _updateViewsOnScroll = false;
-                scrollTo(scrollTop() + (range.bottom - range.top));
-                _updateViewsOnScroll = true;
-
-                updateTransientViews();
-            }
-            else {
-                removePageView(newView);
-            }
-
-
-        });
-    }
-    */
-
-
-    function addToTopOf(topView) {
-
-        var prevSpineItem = _spine.prevItem(topView.currentSpineItem());
-        if(!prevSpineItem) {
-            return;
-        }
-
-        var newView = createPageViewForSpineItem(prevSpineItem);
-
+        var tmpView = createPageViewForSpineItem(true);
 
         // add to the end first to avoid scrolling during load
         var lastView = lastLoadedView();
-        newView.element().insertAfter(lastView.element());
+        tmpView.element().insertAfter(lastView.element());
 
-        newView.load(function(sucsess){
+        tmpView.loadSpineItem(prevSpineItem, function(success, $iframe, spineItem, isNewlyLoaded, context){
 
-            if(sucsess) {
+            if(success) {
 
-                var range = getPageViewRange(newView);
+                updatePageViewSize(tmpView);
+                var range = getPageViewRange(tmpView);
+                console.log("zzzzz tmpView height: " + (range.bottom - range.top));
+                removePageView(tmpView);
 
-                _updateViewsOnScroll = false;
                 var scrollPos = scrollTop();
-                newView.element().insertBefore(topView.element());
-                console.log("zzzzz new view height: " + (range.bottom - range.top));
-                scrollTo(scrollPos + (range.bottom - range.top));
-                _updateViewsOnScroll = true;
 
-                updateTransientViews();
+                var newView = createPageViewForSpineItem();
+                newView.setHeight(range.bottom - range.top);
+                newView.element().insertBefore(topView.element());
+                scrollTo(scrollPos + (range.bottom - range.top));
+
+                newView.loadSpineItem(prevSpineItem, function(success, $iframe, spineItem, isNewlyLoaded, context){
+
+                    updatePageViewSize(newView);
+                    onPageViewLoaded(newView, success, $iframe, spineItem, isNewlyLoaded, context);
+
+                    callback(true);
+
+                });
             }
             else {
-                removePageView(newView);
+                console.log("Unable to open " + prevSpineItem.href);
+                removePageView(tmpView);
+                callback(false);
             }
 
         });
     }
 
-    function addToBottomOf(bottomView) {
+    function updatePageViewSize(pageView) {
+
+        if(pageView.currentSpineItem().isFixedLayout()) {
+            pageView.scaleToWidth(_$contentFrame.width());
+        }
+        else {
+            pageView.resizeIFrameToContent();
+        }
+    }
+
+    function addToBottomOf(bottomView, callback) {
 
         var nexSpineItem = _spine.nextItem(bottomView.currentSpineItem());
         if(!nexSpineItem) {
+            callback(false);
             return;
         }
 
-        var newView = createPageViewForSpineItem(nexSpineItem);
+        var newView = createPageViewForSpineItem();
         newView.element().insertAfter(bottomView.element());
 
-        newView.load(function() {
+        newView.loadSpineItem(nexSpineItem, function(success, $iframe, spineItem, isNewlyLoaded, context) {
 
-            console.log("++++ loaded spine item " + newView.currentSpineItem().href);
+            if(success) {
+                updatePageViewSize(newView);
 
-            updateTransientViews();
+                console.log("++++ loaded spine item " + newView.currentSpineItem().href);
+
+                onPageViewLoaded(newView, success, $iframe, spineItem, isNewlyLoaded, context);
+
+                callback(true);
+            }
+            else {
+                console.log("Unable to load " + nexSpineItem.href);
+                callback(false);
+            }
+
         });
     }
 
@@ -272,10 +303,12 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         }
 
         forEachItemView(function(pageView){
-            pageView.updateSize();
+            updatePageViewSize(pageView);
         }, false);
 
         onPaginationChanged(self);
+
+        updateTransientViews();
     };
 
     this.setViewSettings = function(settings) {
@@ -288,24 +321,19 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
     };
 
-    function createPageViewForSpineItem(spineItem) {
+    function createPageViewForSpineItem(isTemporaryView) {
 
-        var pageView = new ReadiumSDK.Views.OnePageViewProxy(spineItem, _$contentFrame, options, ["content-doc-frame"]);
-        var $elem = pageView.render().element();
-        $elem.data("pageView", pageView);
+        var pageView = new ReadiumSDK.Views.OnePageView(options, ["content-doc-frame"]);
+        pageView.render();
 
-        pageView.on(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED, function($iframe, spineItem, isNewContentDocumentLoaded){
-
-            if(isNewContentDocumentLoaded) {
-                self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
-            }
-
-        });
+        if(!isTemporaryView) {
+            pageView.element().data("pageView", pageView);
+        }
 
         return pageView;
     }
 
-    function findPageViewForSpineItem(spineItem) {
+    function findPageViewForSpineItem(spineItem, reverse) {
 
         var retView = undefined;
 
@@ -320,7 +348,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                 return true;
             }
 
-        }, false);
+        }, reverse);
 
         return retView;
     }
@@ -380,46 +408,39 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         return lastView;
     }
 
-    function onSpineItemLoaded(sucsess, pageView) {
+    function onPageViewLoaded(pageView, success, $iframe, spineItem, isNewlyLoaded, context) {
 
-        if(!_deferredPageRequest) {
-            return;
+        if(success && isNewlyLoaded) {
+            self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
         }
 
-        if(pageView.currentSpineItem() !== _deferredPageRequest.spineItem) {
-            return;
-        }
-
-        var pageRequest = _deferredPageRequest;
-        _deferredPageRequest = undefined;
-
-        if(sucsess) {
-            setTimeout(function(){
-                openPageViewElement(pageView, pageRequest);
-            }, 50);
-        }
     }
 
-    function loadSpineItem(spineItem) {
+    function loadSpineItem(spineItem, callback) {
 
-        if(!isContinuousScroll) {
-            removeLoadedItems();
-        }
+        removeLoadedItems();
 
-        var loadedView = findPageViewForSpineItem(spineItem);
+        var loadedView = createPageViewForSpineItem();
 
-        if(!loadedView) {
-            loadedView = createPageViewForSpineItem(spineItem);
+        _$contentFrame.append(loadedView.element());
 
-            _$contentFrame.append(loadedView.element());
-        }
+        _updateViewsOnScroll = false;
+        loadedView.loadSpineItem(spineItem, function(success, $iframe, spineItem, isNewlyLoaded, context) {
 
-        _isWaitingFramesLoad = true;
-        loadedView.load(function(sucsess){
-            _isWaitingFramesLoad = false;
-            updateTransientViews();
-            onSpineItemLoaded(sucsess, loadedView);
+            if(success) {
+                updatePageViewSize(loadedView);
+                onPageViewLoaded(loadedView, success, $iframe, spineItem, isNewlyLoaded, context);
+            }
+            else {
+                removePageView(loadedView);
+                loadedView = undefined;
+            }
+
+            _updateViewsOnScroll = true;
+            callback(loadedView);
+
         });
+
     }
 
     this.applyStyles = function() {
@@ -443,11 +464,42 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
     this.openPage = function(pageRequest) {
 
-        _deferredPageRequest = pageRequest;
+        _stopTransientViewUpdate = true;
 
-        if(!_isWaitingFramesLoad) {
-            loadSpineItem(pageRequest.spineItem);
+        var navigateToPositionForRequest = function(pageView, pageRequest) {
+
+            _deferredPageRequest = undefined;
+            openPageViewElement(pageView, pageRequest);
+            _stopTransientViewUpdate = false;
+            updateTransientViews();
+        };
+
+        if(pageRequest.spineItem) {
+
+            var pageView = findPageViewForSpineItem(pageRequest.spineItem);
+            if(pageView) {
+                navigateToPositionForRequest(pageView, pageRequest);
+            }
+            else {
+                _deferredPageRequest = pageRequest;
+                loadSpineItem(pageRequest.spineItem, function(pageView) {
+
+                    if(pageView) {
+                        if(pageView.currentSpineItem() === _deferredPageRequest.spineItem) {
+                            navigateToPositionForRequest(pageView, _deferredPageRequest);
+                        }
+                        else { //while we where waiting for load new request come
+                            self.openPage(_deferredPageRequest); //recursion
+                        }
+                    }
+
+                });
+            }
         }
+        else {
+            navigateToPositionForRequest(undefined, pageRequest);
+        }
+
     };
 
     function openPageViewElement(pageView, pageRequest) {
@@ -455,7 +507,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         var topOffset = 0;
         var pageCount;
         var $element;
-        var navigator;
+        var sfiNav;
         var pageRange;
 
         if(pageRequest.scrollTop !== undefined) {
@@ -481,28 +533,30 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         else if(pageRequest.elementId) {
 
             pageRange = getPageViewRange(pageView);
-            navigator = pageView.getNavigator();
-            $element = navigator.getElementBuyId(pageRequest.elementId);
+            sfiNav = pageView.getNavigator();
+            $element = sfiNav.getElementById(pageRequest.elementId);
 
             if(!$element) {
                 console.warn("Element id=" + pageRequest.elementId + " not found!");
                 return;
             }
 
-            topOffset = navigator.getVerticalOffsetForElement($element) + pageRange.top;
+            topOffset = sfiNav.getVerticalOffsetForElement($element) + pageRange.top;
+
         }
         else if(pageRequest.elementCfi) {
 
             pageRange = getPageViewRange(pageView);
-            navigator = pageView.getNavigator();
-            $element = navigator.getElementByCfi(pageRequest.elementCfi);
+            sfiNav = pageView.getNavigator();
+            $element = sfiNav.getElementByCfi(pageRequest.elementCfi);
 
             if(!$element) {
                 console.warn("Element cfi=" + pageRequest.elementCfi + " not found!");
                 return;
             }
 
-            topOffset = navigator.getVerticalOffsetForElement($element) + pageRange.top;
+            topOffset = sfiNav.getVerticalOffsetForElement($element) + pageRange.top;
+
         }
         else if(pageRequest.firstPage) {
 
@@ -518,6 +572,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
             topOffset = scrollHeight() - viewHeight() - 5;
         }
         else {
+
             pageRange = getPageViewRange(pageView);
             topOffset = pageRange.top;
         }
@@ -532,32 +587,12 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
     function scrollTo(offset, pageRequest) {
 
-        if(offset < _lastScrollPos) {
-
-            var zzzzz = 9;
-        }
-
         _$contentFrame[0].scrollTop = offset;
 
         _firePageChangeOnScroll = true;
         if(pageRequest) {
             onPaginationChanged(pageRequest.initiator, pageRequest.spineItem, pageRequest.elementId);
         }
-
-        _lastScrollPos = offset;
-
-//        console.log("---- scrollTo:" + offset);
-//
-//        _firePageChangeOnScroll = false;
-//
-//        _$contentFrame.animate({
-//            scrollTop: offset
-//        }, 10, undefined, function() {
-//            _firePageChangeOnScroll = true;
-//            if(pageRequest) {
-//                onPaginationChanged(pageRequest.initiator, pageRequest.spineItem, pageRequest.elementId);
-//            }
-//        });
     }
 
     function calculatePageCount() {
@@ -579,13 +614,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         return scrollHeight() - (scrollTop() + viewHeight());
     }
 
-    function getCurrentPageIndex() {
-
-        return Math.ceil(scrollTop() / _$contentFrame.height());
-    }
-
     function viewHeight() {
-//        return _$contentFrame.outerHeight(true);
         return _$contentFrame.height();
     }
 
@@ -648,12 +677,6 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
     }
 
-    function getLastVisiblePageView() {
-
-        var visibleViews = getVisiblePageViews();
-
-        return visibleViews[visibleViews.length - 1];
-    }
 
     function getFirstVisiblePageView() {
 

@@ -19,7 +19,9 @@
 
 ReadiumSDK.Views.IFrameLoader = function() {
 
+    var self = this;
     var eventListeners = {};
+
 
     this.addIFrameEventListener = function(eventName, callback, context) {
 
@@ -29,6 +31,17 @@ ReadiumSDK.Views.IFrameLoader = function() {
 
         eventListeners[eventName].push({callback: callback, context: context});
     };
+
+    this.updateIframeEvents = function(iframe) {
+
+        _.each(eventListeners, function(value, key){
+            for(var i = 0, count = value.length; i< count; i++) {
+                $(iframe.contentWindow).off(key);
+                $(iframe.contentWindow).on(key, value[i].callback, value[i].context);
+            }
+        });
+    };
+
 
     this.loadIframe = function(iframe, src, callback, context) {
 
@@ -44,11 +57,7 @@ ReadiumSDK.Views.IFrameLoader = function() {
 
             console.log("zzzzz ++ " + src + " loaded!");
 
-            _.each(eventListeners, function(value, key){
-                for(var i = 0, count = value.length; i< count; i++) {
-                    $(iframe.contentWindow).on(key, value[i].callback, value[i].context);
-                }
-            });
+            self.updateIframeEvents(iframe);
 
             try
             {

@@ -151,11 +151,32 @@ ReadiumSDK.Views.OnePageView = function(options, classes){
     //this is called by scroll_view for reflowable spine item
     this.resizeIFrameToContent = function() {
 
+//        ReadiumSDK.Helpers.waitForRendering(_$iframe);
+
         var contHeight = getContentDocHeight();
         _$iframe.css("height", contHeight + "px");
         _$iframe.css("visibility", "visible");
 
         _$el.css("height", contHeight + "px");
+
+        _$iframe.css("height", contHeight + "px");
+        _$iframe.css("visibility", "visible");
+
+        _$el.css("height", contHeight + "px");
+
+        setTimeout(function(){}, 0);
+
+//        ReadiumSDK.Helpers.waitForRendering(_$iframe);
+    };
+
+    this.setHeight = function(height) {
+
+        _$iframe.css("height", height + "px");
+        _$iframe.css("visibility", "visible");
+
+        _$el.css("height", height + "px");
+
+        setTimeout(function(){}, 0);
 
         ReadiumSDK.Helpers.waitForRendering(_$iframe);
     };
@@ -272,7 +293,8 @@ ReadiumSDK.Views.OnePageView = function(options, classes){
 
     }
 
-    this.loadSpineItem = function(spineItem, callback) {
+    //expected callback signature: function(success, $iframe, spineItem, isNewlyLoaded, context)
+    this.loadSpineItem = function(spineItem, callback, context) {
 
         if(_currentSpineItem != spineItem) {
 
@@ -282,12 +304,12 @@ ReadiumSDK.Views.OnePageView = function(options, classes){
             //hide iframe until content is scaled
             _$iframe.css("visibility", "hidden");
             self.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPEN_START, _$iframe, _currentSpineItem);
-            _iframeLoader.loadIframe(_$iframe[0], src, function(sucsess){
+            _iframeLoader.loadIframe(_$iframe[0], src, function(success){
 
-                onIFrameLoad(sucsess);
+                onIFrameLoad(success);
 
                 if(callback) {
-                    callback(sucsess);
+                    callback(success, _$iframe, _currentSpineItem, true, context);
                 }
 
             }, self);
@@ -295,7 +317,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes){
         else
         {
             if(callback) {
-                callback(true);
+                callback(true, _$iframe, _currentSpineItem, false, context);
             }
 
             this.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED, _$iframe, _currentSpineItem, false);
