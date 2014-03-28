@@ -89,6 +89,7 @@ ReadiumSDK.Views.InternalLinksSupport = function(reader) {
     function readOpfFile(path, callback) {
 
         $.ajax({
+            isLocal: path.indexOf("http") === 0 ? false : true,
             url: path,
             dataType: 'text',
             async: true,
