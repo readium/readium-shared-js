@@ -650,7 +650,16 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
         var spineItem = _spine.getItemByHref(hrefPart);
         if(!spineItem) {
-            return;
+            console.warn('spineItem ' + hrefPart + ' not found');
+            // sometimes that happens because spine item's URI gets encoded,
+            // yet it's compared with raw strings by `getItemByHref()` -
+            // so we try to search with decoded link as well
+            var decodedHrefPart = decodeURIComponent(hrefPart);
+            spineItem = _spine.getItemByHref(decodedHrefPart);
+            if (!spineItem) {
+                console.warn('decoded spineItem ' + decodedHrefPart + ' missing as well');
+                return;
+            }
         }
 
         self.openSpineItemElementId(spineItem.idref, elementId, initiator);
