@@ -866,10 +866,10 @@ ReadiumSDK.Views.ReaderView = function(options) {
         return undefined;
     };
 
-    this.insureElementVisibility = function(element, initiator) {
+    this.insureElementVisibility = function(spineItemId, element, initiator) {
 
         if(_currentView) {
-            _currentView.insureElementVisibility(element, initiator);
+            _currentView.insureElementVisibility(spineItemId, element, initiator);
         }
     }
 
