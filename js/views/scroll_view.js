@@ -254,8 +254,6 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
             if(success) {
                 updatePageViewSize(newView);
 
-                console.log("++++ loaded spine item " + newView.currentSpineItem().href);
-
                 onPageViewLoaded(newView, success, $iframe, spineItem, isNewlyLoaded, context);
 
                 callback(true);
