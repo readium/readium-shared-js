@@ -103,7 +103,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
         //////////////////////////////
         //Fo Debug only!!! ZZZZZZZ
-        console.error("ZZZZ view type is explisetly set to continues scrolling");
+        console.error("ZZZZ view type is explicitly set to continues scrolling");
         return ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
         //
         /////////////////////////

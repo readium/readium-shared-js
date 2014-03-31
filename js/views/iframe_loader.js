@@ -47,15 +47,11 @@ ReadiumSDK.Views.IFrameLoader = function() {
 
         var isWaitingForFrameLoad = true;
 
-        console.log("zzzzz !! pleas load" + src);
-
         iframe.onload = function() {
 
             iframe.onload = undefined;
 
             isWaitingForFrameLoad = false;
-
-            console.log("zzzzz ++ " + src + " loaded!");
 
             self.updateIframeEvents(iframe);
 
@@ -82,8 +78,6 @@ ReadiumSDK.Views.IFrameLoader = function() {
         window.setTimeout(function(){
 
             if(isWaitingForFrameLoad) {
-
-                console.log("zzzzz -- " + src + " failed!");
 
                 isWaitingForFrameLoad = false;
                 callback.call(context, false);

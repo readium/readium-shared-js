@@ -43,9 +43,6 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
     var _isLoadingNewSpineItemOnPageRequest = false; //
 
     this.isContinuousScroll = function() {
-
-        console.debug("zzzz -> 1");
-
         return isContinuousScroll;
     };
 
@@ -156,11 +153,9 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
             return;
         }
 
-        console.log("----> Detaching in updateTransientView "); //zzzzzzzzz
         _isPerformingLayoutModifications = true;
         updateLoadedViewsBottom(function() {
             updateLoadedViewsTop(function() {
-                console.log("----> Attaching in updateTransientView "); //zzzzzzzzz
                 setTimeout(function(){
                     _isPerformingLayoutModifications = false;
                 }, ON_SCROLL_TIME_DALAY + 100);
@@ -174,12 +169,9 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
             && !_isSettingScrollPosition
             && !_isLoadingNewSpineItemOnPageRequest) {
 
-            console.log("zzzzzzz --++-- OnScroll!");
             updateTransientViews();
-//        onPaginationChanged(self);
+            onPaginationChanged(self);
         }
-
-
     }
 
     function scrollTo(offset, pageRequest) {
@@ -211,7 +203,6 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
                 updatePageViewSize(tmpView);
                 var range = getPageViewRange(tmpView);
-                console.log("zzzzz tmpView height: " + (range.bottom - range.top));
                 removePageView(tmpView);
 
                 var scrollPos = scrollTop();
@@ -292,14 +283,9 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
     function removePageView(pageView) {
 
-        console.log(">zzzzzzz>before remove childern count=" + _$contentFrame.children().length );
-
-        console.log("--- removing spine item " + pageView.currentSpineItem().href);
-
         pageView.off(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED);
         pageView.element().remove();
 
-        console.log(">zzzzzzz>Ufter remove childern count=" + _$contentFrame.children().length );
     }
 
 
@@ -503,7 +489,9 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                 _isLoadingNewSpineItemOnPageRequest = true;
                 loadSpineItem(pageRequest.spineItem, function(pageView) {
 
-                    _isLoadingNewSpineItemOnPageRequest = false;
+                    setTimeout(function(){
+                        _isLoadingNewSpineItemOnPageRequest = false;
+                    }, ON_SCROLL_TIME_DALAY + 100);
 
                     if(pageView) {
                         if(pageView.currentSpineItem() === _deferredPageRequest.spineItem) {
@@ -523,7 +511,6 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         else {
             doneLoadingSpineItem(undefined, pageRequest);
         }
-
     };
 
     function openPageViewElement(pageView, pageRequest) {
@@ -603,12 +590,10 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
         if(scrollTop() != topOffset ) {
 
-            console.log("----> Detaching in openPageViewElement "); //zzzzzzzzz
             _isSettingScrollPosition = true;
             scrollTo(topOffset, pageRequest);
 
             setTimeout(function() {
-                console.log("----> Attaching in openPageViewElement "); //zzzzzzzzz
                 _isSettingScrollPosition = false;
             }, ON_SCROLL_TIME_DALAY + 100); //we have to wait more than scroll delay to make sure that we don't react on onScroll
 
@@ -618,12 +603,10 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         }
     }
 
-
     function calculatePageCount() {
 
         return Math.ceil(scrollHeight() / viewHeight());
     }
-
 
     function onPaginationChanged(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
         self.trigger(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
@@ -720,7 +703,6 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
         return range;
     }
-
 
     this.getFirstVisibleElementCfi = function() {
         var visibleViewPage = getFirstVisiblePageView();
@@ -931,6 +913,9 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         elementRange.bottom = elementRange.top + $element.height();
 
         var smallestVisibleLength = Math.min(rangeLength(visibleRange), rangeLength(elementRange));
+        if(smallestVisibleLength === 0) {
+            smallestVisibleLength = 5; // if element is 0 height we will set it to arbitrary 5 pixels - not to divide by 0
+        }
 
         var intersectionRange = intersectRanges(visibleRange, elementRange);
 
@@ -942,10 +927,6 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
             var spineItem = _spine.getItemById(spineItemId);
             var openPageRequest = new ReadiumSDK.Models.PageOpenRequest(spineItem, initiator);
             openPageRequest.scrollTop = elementRange.top;
-
-            if(elementRange.top <= 0) {
-                var n = 9; //zzzzzzzzzzz
-            }
 
             self.openPage(openPageRequest);
         }
