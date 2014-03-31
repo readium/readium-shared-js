@@ -28,15 +28,15 @@ ReadiumSDK.Views.ReflowableView = function(options){
     _.extend(this, Backbone.Events);
 
     var self = this;
-    
+
     var _$viewport = options.$viewport;
     var _spine = options.spine;
     var _userStyles = options.userStyles;
     var _bookStyles = options.bookStyles;
     var _iframeLoader = options.iframeLoader;
-    
+
     var _currentSpineItem;
-    var _isWaitingFrameRender = false;    
+    var _isWaitingFrameRender = false;
     var _deferredPageRequest;
     var _fontSize = 100;
     var _$contentFrame;
@@ -168,7 +168,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
             self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START, _$iframe, spineItem);
 
             _$iframe.css("opacity", "0.01");
-            
+
             _iframeLoader.loadIframe(_$iframe[0], src, onIFrameLoad, self, {spineItem : spineItem});
         }
     }
@@ -183,10 +183,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
     function updateColumnGap() {
 
         if(_$epubHtml) {
-        
-            _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
-                _$epubHtml.css(prefix + "column-gap", _paginationInfo.columnGap + "px");
-            });
+          _$epubHtml.css("column-gap", _paginationInfo.columnGap + "px");
         }
     }
 
@@ -214,11 +211,10 @@ ReadiumSDK.Views.ReflowableView = function(options){
         hideBook();
         _$iframe.css("opacity", "1");
 
-        _$epubHtml.css("height", _lastViewPortSize.height + "px");
-        _$epubHtml.css("position", "relative");
-
-        _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
-            _$epubHtml.css(prefix + "column-axis", "horizontal");
+        _$epubHtml.css({
+          height: _lastViewPortSize.height + "px",
+          position:"relative",
+          "column-axis": "horizontal"
         });
 
         self.applyBookStyles();
@@ -230,7 +226,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
 /////////
 //Columns Debugging
-// 
+//
 // _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
 //     _$epubHtml.css(prefix + "column-rule-color", "red");
 //     _$epubHtml.css(prefix + "column-rule-style", "dashed");
@@ -428,20 +424,18 @@ ReadiumSDK.Views.ReflowableView = function(options){
         _paginationInfo.columnWidth = Math.floor(_paginationInfo.columnWidth);
 
         // _$epubHtml.css("width", _paginationInfo.columnWidth);
-        _$epubHtml.css("width", _lastViewPortSize.width);
-
-        _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
-            _$epubHtml.css(prefix + "column-width", _paginationInfo.columnWidth + "px");
+        _$epubHtml.css({
+          width: _lastViewPortSize.width,
+          "column-width": _paginationInfo.columnWidth + "px"
         });
 
-
         var doc = _$iframe[0].contentDocument;
-	    var el = doc.createElementNS("http://www.w3.org/1999/xhtml", "style");
-	    el.appendChild(doc.createTextNode("*{}"));
-	    doc.body.appendChild(el);
-	    doc.body.removeChild(el);
-	    var blocking = doc.body.offsetTop; // browser rendering / layout done
-        
+        var el = doc.createElementNS("http://www.w3.org/1999/xhtml", "style");
+        el.appendChild(doc.createTextNode("*{}"));
+        doc.body.appendChild(el);
+        doc.body.removeChild(el);
+        var blocking = doc.body.offsetTop; // browser rendering / layout done
+
         // resetting the position
         _$epubHtml.css({left: 0, right: 0});
 
@@ -463,7 +457,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
         else {
 
             //we get here on resizing the viewport
-            
+
             onPaginationChanged(self); // => redraw() => showBook(), so the trick below is not needed
 
             // //We do this to force re-rendering of the document in the iframe.
@@ -491,7 +485,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
     function hideBook()
     {
         if (_currentOpacity != -1) return; // already hidden
-        
+
         _currentOpacity = _$epubHtml.css('opacity');
         _$epubHtml.css('opacity', 0);
     }
@@ -658,13 +652,13 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
         var openPageRequest = new ReadiumSDK.Models.PageOpenRequest(_currentSpineItem, initiator);
         openPageRequest.setPageIndex(page);
-        
+
         var id = element.id;
         if (!id)
         {
             id = element.getAttribute("id");
         }
-        
+
         if (id)
         {
             openPageRequest.setElementId(id);

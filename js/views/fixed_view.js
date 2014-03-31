@@ -76,13 +76,12 @@ ReadiumSDK.Views.FixedView = function(options){
         var template = ReadiumSDK.Helpers.loadTemplate("fixed_book_frame", {});
 
         _$el = $(template);
-        
-        _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
-            _$el.css(prefix + "transition", "all 0 ease 0");
+
+        _$el.css({
+          transition: "all 0 ease 0",
+          overflow: "hidden"
         });
-        
-        _$el.css("overflow", "hidden");
-        
+
         _$viewport.append(_$el);
 
         self.applyStyles();
@@ -134,7 +133,7 @@ ReadiumSDK.Views.FixedView = function(options){
 // console.error("updatePageSwitchDir");
 // console.log(dir);
 // console.log(hasChanged);
-// 
+//
         // irrespective of display state
         if (_leftPageView) _leftPageView.pageSwitchDir(dir, hasChanged);
         if (_rightPageView) _rightPageView.pageSwitchDir(dir, hasChanged);
@@ -145,7 +144,7 @@ ReadiumSDK.Views.FixedView = function(options){
         //     views[i].pageSwitchDir(dir, hasChanged);
         // }
     };
-    
+
 
     this.applyStyles = function() {
 
@@ -292,7 +291,7 @@ ReadiumSDK.Views.FixedView = function(options){
 
         if(bookLeft < 0) bookLeft = 0;
         if(bookTop < 0) bookTop = 0;
-        
+
         _$el.css("left", bookLeft + "px");
         _$el.css("top", bookTop + "px");
         _$el.css("width", targetElementSize.width + "px");
@@ -403,12 +402,12 @@ ReadiumSDK.Views.FixedView = function(options){
         var leftItem = _spread.leftItem;
         var rightItem = _spread.rightItem;
         var centerItem = _spread.centerItem;
-        
+
         _spread.openItem(paginationRequest.spineItem);
-        
+
         var hasChanged = leftItem !== _spread.leftItem || rightItem !== _spread.rightItem || centerItem !== _spread.centerItem;
         updatePageSwitchDir(dir === 0 ? 0 : (_spread.spine.isRightToLeft() ? (dir === 1 ? 2 : 1) : dir), hasChanged);
-        
+
         redraw(paginationRequest.initiator, paginationRequest);
     };
 
@@ -558,7 +557,7 @@ ReadiumSDK.Views.FixedView = function(options){
         console.error("spine item is not loaded");
         return undefined;
     };
-    
+
     this.getElementByCfi = function(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
         var views = getDisplayingViews();
