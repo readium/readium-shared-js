@@ -101,19 +101,12 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
     function deduceDesiredViewType(spineItem) {
 
-        //////////////////////////////
-        //Fo Debug only!!! ZZZZZZZ
-        console.error("ZZZZ view type is explicitly set to continues scrolling");
-        return ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
-        //
-        /////////////////////////
-
         var desiredViewType;
 
-        if(_viewerSettings.isScrollViewDoc) {
+        if(_viewerSettings.isScrollDoc) {
             desiredViewType = ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_DOC;
         }
-        else if(_viewerSettings.isScrollViewContinuous) {
+        else if(_viewerSettings.isScrollContinuous) {
             desiredViewType = ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
         }
         else if(spineItem.isFixedLayout()) {
