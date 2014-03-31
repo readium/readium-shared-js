@@ -281,7 +281,6 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
     function removePageView(pageView) {
 
-        pageView.off(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED);
         pageView.element().remove();
 
     }

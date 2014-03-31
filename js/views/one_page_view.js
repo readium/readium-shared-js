@@ -107,11 +107,11 @@ ReadiumSDK.Views.OnePageView = function(options, classes){
                 _$epubHtml = $("svg", epubContentDocument);
             }
             _$epubHtml.css("overflow", "hidden");
-            //self.applyBookStyles();
+
+            self.applyBookStyles();
+
             updateMetaSize();
             updateHtmlFontSize();
-
-            self.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED, _$iframe, _currentSpineItem, true);
         }
     }
 
@@ -319,8 +319,6 @@ ReadiumSDK.Views.OnePageView = function(options, classes){
             if(callback) {
                 callback(true, _$iframe, _currentSpineItem, false, context);
             }
-
-            this.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED, _$iframe, _currentSpineItem, false);
         }
     };
 
@@ -398,4 +396,3 @@ ReadiumSDK.Views.OnePageView = function(options, classes){
 };
 
 ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPEN_START = "SpineItemOpenStart";
-ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED = "SpineItemOpened";
