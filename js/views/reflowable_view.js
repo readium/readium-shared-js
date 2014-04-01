@@ -180,8 +180,6 @@ ReadiumSDK.Views.ReflowableView = function(options){
     function updateColumnGap() {
 
         if(_$epubHtml) {
-            _$epubHtml.css("-webkit-column-gap", _paginationInfo.columnGap + "px");
-            _$epubHtml.css("-moz-column-gap", _paginationInfo.columnGap + "px");
             _$epubHtml.css("column-gap", _paginationInfo.columnGap + "px");
         }
     }
@@ -206,9 +204,11 @@ ReadiumSDK.Views.ReflowableView = function(options){
         var epubContentDocument = _$iframe[0].contentDocument;
         _$epubHtml = $("html", epubContentDocument);
 
-        _$epubHtml.css("height", _lastViewPortSize.height + "px");
-        _$epubHtml.css("position", "relative");
-        _$epubHtml.css("-webkit-column-axis", "horizontal");
+        _$epubHtml.css({
+            height: _lastViewPortSize.height + "px",
+            position: "relative",
+            "column-axis": "horizontal"
+        });
 
         self.applyBookStyles();
         resizeImages();
@@ -418,8 +418,6 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
         hideBook(); // shiftBookOfScreen();
 
-        _$epubHtml.css("-webkit-column-width", _paginationInfo.columnWidth + "px");
-        _$epubHtml.css("-moz-column-width", _paginationInfo.columnWidth + "px");
         _$epubHtml.css("column-width", _paginationInfo.columnWidth + "px");
 
         //TODO it takes time for rendition_layout engine to arrange columns we waite
