@@ -457,7 +457,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
     this.applyBookStyles = function() {
 
         forEachItemView(function(pageView) {
-            pageView.applyBookStyles();
+            pageView.applyBookStyles(true);
         }, false);
      };
 

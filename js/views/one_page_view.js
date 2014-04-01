@@ -163,10 +163,10 @@ ReadiumSDK.Views.OnePageView = function(options, classes){
         }
     }
 
-    this.applyBookStyles = function() {
+    this.applyBookStyles = function(force) {
         
-        //TODO: code refactoring candidate? (no CSS override for fixed-layout content, publishers do not like when reading systems mess-up their design)
-        return;
+         // fixed layout does not apply user styles to publisher content, but reflowable scroll view does
+        if (!force) return;
         
         if(_$epubHtml) {
             ReadiumSDK.Helpers.setStyles(_bookStyles.getStyles(), _$epubHtml);
