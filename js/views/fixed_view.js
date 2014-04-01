@@ -32,6 +32,7 @@ ReadiumSDK.Views.FixedView = function(options){
     var _bookStyles = options.bookStyles;
     var _zoom = options.zoom || {style: 'default'};
     var _iframeLoader = options.iframeLoader;
+    var _enablePageTransitions = options.enablePageTransitions;
 
     var _leftPageView = createOnePageView("fixed-page-frame-left", "right");
     var _rightPageView = createOnePageView("fixed-page-frame-right", "left");
@@ -54,7 +55,8 @@ ReadiumSDK.Views.FixedView = function(options){
             spine: _spine,
             bookStyles: _bookStyles,
             class: cssclass,
-            contentAlignment: contentAlignment
+            contentAlignment: contentAlignment,
+            enablePageTransitions: _enablePageTransitions
         });
 
         pageView.on(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPEN_START, function($iframe, spineItem) {
@@ -75,6 +77,13 @@ ReadiumSDK.Views.FixedView = function(options){
         var template = ReadiumSDK.Helpers.loadTemplate("fixed_book_frame", {});
 
         _$el = $(template);
+        
+        _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
+            _$el.css(prefix + "transition", "all 0 ease 0");
+        });
+        
+        _$el.css("overflow", "hidden");
+        
         _$viewport.append(_$el);
 
         self.applyStyles();
@@ -121,12 +130,32 @@ ReadiumSDK.Views.FixedView = function(options){
         }
     }
 
+    var updatePageSwitchDir = function(dir, hasChanged)
+    {
+// console.error("updatePageSwitchDir");
+// console.log(dir);
+// console.log(hasChanged);
+// 
+        // irrespective of display state
+        if (_leftPageView) _leftPageView.pageSwitchDir(dir, hasChanged);
+        if (_rightPageView) _rightPageView.pageSwitchDir(dir, hasChanged);
+        if (_centerPageView) _centerPageView.pageSwitchDir(dir, hasChanged);
+
+        // var views = getDisplayingViews();
+        // for(var i = 0, count = views.length; i < count; i++) {
+        //     views[i].pageSwitchDir(dir, hasChanged);
+        // }
+    };
+    
+
     this.applyStyles = function() {
 
         ReadiumSDK.Helpers.setStyles(_userStyles.getStyles(), _$el.parent());
 
         updateBookMargins();
         updateContentMetaSize();
+
+        updatePageSwitchDir(0, false);
         resizeBook();
     };
 
@@ -199,7 +228,8 @@ ReadiumSDK.Views.FixedView = function(options){
             }
         }
         else {
-            resizeBook();
+            updatePageSwitchDir(0, false);
+            resizeBook(true);
         }
     };
 
@@ -218,7 +248,7 @@ ReadiumSDK.Views.FixedView = function(options){
         return viewportWidth && viewportHeight;
     }
 
-    function resizeBook() {
+    function resizeBook(viewportIsResizing) {
 
         if(!isContentRendered()) {
             return;
@@ -275,7 +305,7 @@ ReadiumSDK.Views.FixedView = function(options){
 
         if(bookLeft < 0) bookLeft = 0;
         if(bookTop < 0) bookTop = 0;
-
+        
         _$el.css("left", bookLeft + "px");
         _$el.css("top", bookTop + "px");
         _$el.css("width", targetElementSize.width + "px");
@@ -284,9 +314,11 @@ ReadiumSDK.Views.FixedView = function(options){
         var left = _bookMargins.padding.left;
         var top = _bookMargins.padding.top;
 
+        var transFunc = viewportIsResizing ? "transformContentImmediate" : "transformContent";
+
         if(_leftPageView.isDisplaying()) {
 
-             _leftPageView.transformContent(scale, left, top);
+             _leftPageView[transFunc](scale, left, top);
         }
 
         if(_rightPageView.isDisplaying()) {
@@ -297,12 +329,12 @@ ReadiumSDK.Views.FixedView = function(options){
                 left += leftPageMargins.left;
             }
 
-            _rightPageView.transformContent(scale, left, top);
+            _rightPageView[transFunc](scale, left, top);
         }
 
         if(_centerPageView.isDisplaying()) {
 
-            _centerPageView.transformContent(scale, left, top);
+            _centerPageView[transFunc](scale, left, top);
         }
     }
 
@@ -375,13 +407,21 @@ ReadiumSDK.Views.FixedView = function(options){
         _bookMargins = ReadiumSDK.Helpers.Margins.fromElement(_$el);
     }
 
-    this.openPage =  function(paginationRequest) {
+    this.openPage =  function(paginationRequest, dir) {
 
         if(!paginationRequest.spineItem) {
             return;
         }
 
+        var leftItem = _spread.leftItem;
+        var rightItem = _spread.rightItem;
+        var centerItem = _spread.centerItem;
+        
         _spread.openItem(paginationRequest.spineItem);
+        
+        var hasChanged = leftItem !== _spread.leftItem || rightItem !== _spread.rightItem || centerItem !== _spread.centerItem;
+        updatePageSwitchDir(dir === 0 ? 0 : (_spread.spine.isRightToLeft() ? (dir === 1 ? 2 : 1) : dir), hasChanged);
+        
         redraw(paginationRequest.initiator, paginationRequest);
     };
 
@@ -389,13 +429,15 @@ ReadiumSDK.Views.FixedView = function(options){
     this.openPagePrev = function(initiator) {
 
         _spread.openPrev();
-        redraw(initiator);
+        updatePageSwitchDir(_spread.spine.isRightToLeft() ? 2 : 1, true);
+        redraw(initiator, undefined);
     };
 
     this.openPageNext = function(initiator) {
 
         _spread.openNext();
-        redraw(initiator);
+        updatePageSwitchDir(_spread.spine.isRightToLeft() ? 1 : 2, true);
+        redraw(initiator, undefined);
     };
 
     function updatePageViewForItem(pageView, item, context) {
@@ -514,6 +556,22 @@ ReadiumSDK.Views.FixedView = function(options){
         return undefined;
     };
 
+    this.getElementById = function(spineItem, id) {
+
+        var views = getDisplayingViews();
+
+        for(var i = 0, count = views.length; i < count; i++) {
+
+            var view = views[i];
+            if(view.currentSpineItem() == spineItem) {
+                return view.getElementById(spineItem, id);
+            }
+        }
+
+        console.error("spine item is not loaded");
+        return undefined;
+    };
+    
     this.getElementByCfi = function(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
         var views = getDisplayingViews();

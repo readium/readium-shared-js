@@ -312,7 +312,6 @@ console.debug("MO readaloud attr: " + readaloud);
         };
         traverseSmilSeqs(smil);
 
-
 //console.debug("[[MO ATTACH]] " + spineItem.idref + " /// " + spineItem.media_overlay_id + " === " + smil.id);
 
         var iter = new ReadiumSDK.Models.SmilIterator(smil);
@@ -330,11 +329,12 @@ console.debug("MO readaloud attr: " + readaloud);
 
                 var same = textRelativeRef === spineItem.href;
                 if (same) {
-                    var selector = (!iter.currentPar.text.srcFragmentId || iter.currentPar.text.srcFragmentId.length == 0) ? "body" : (iter.currentPar.text.srcFragmentId.indexOf(epubCfiPrefix) == 0 ? undefined : "#" + ReadiumSDK.Helpers.escapeJQuerySelector(iter.currentPar.text.srcFragmentId));
+                    var selectBody = !iter.currentPar.text.srcFragmentId || iter.currentPar.text.srcFragmentId.length == 0;
+                    var selectId = iter.currentPar.text.srcFragmentId.indexOf(epubCfiPrefix) == 0 ? undefined : iter.currentPar.text.srcFragmentId;
 
                     var $element = undefined;
                     var isCfiTextRange = false;
-                    if (!selector)
+                    if (!selectBody && !selectId)
                     {
                         if (iter.currentPar.text.srcFragmentId.indexOf(epubCfiPrefix) === 0)
                         {
@@ -454,7 +454,15 @@ console.debug("MO readaloud attr: " + readaloud);
                     }
                     else
                     {
-                        $element = $(selector, contentDocElement);
+                        if (selectBody)
+                        {
+                            $element = $body; //$("body", contentDocElement);
+                        }
+                        else
+                        {
+                            $element = $($iframe[0].contentDocument.getElementById(selectId));
+                            //$element = $("#" + ReadiumSDK.Helpers.escapeJQuerySelector(iter.currentPar.text.srcFragmentId), contentDocElement);
+                        }
                     }
 
                     if ($element && $element.length > 0) {

@@ -318,10 +318,10 @@ ReadiumSDK.Models.Smil.ParNode = function(parent) {
     this.element = undefined;
     
 
-    this.getFirstSeqAncestorWithEpubType = function(epubtype) {
+    this.getFirstSeqAncestorWithEpubType = function(epubtype, includeSelf) {
         if (!epubtype) return undefined;
         
-        var parent = this.parent;
+        var parent = includeSelf ? this : this.parent;
         while (parent)
         {
             if (parent.epubtype && parent.epubtype.indexOf(epubtype) >= 0)
@@ -590,7 +590,7 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
 
             node = new ReadiumSDK.Models.Smil.SeqNode(parent);
 
-            safeCopyProperty("textref", nodeDTO, node, true);
+            safeCopyProperty("textref", nodeDTO, node, ((parent && parent.parent) ? true : false));
             safeCopyProperty("id", nodeDTO, node);
             safeCopyProperty("epubtype", nodeDTO, node);
 
@@ -614,6 +614,11 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
 
             safeCopyProperty("id", nodeDTO, node);
             safeCopyProperty("epubtype", nodeDTO, node);
+
+            if (node.epubtype)
+            {
+                node.getSmil().addSync(node.epubtype);
+            }
 
             indent++;
             copyChildren(nodeDTO, node);

@@ -18,7 +18,11 @@
 
 ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
 
+    this.includeParWhenAdjustingToSeqSyncGranularity = true;
+
     var DEFAULT_MO_ACTIVE_CLASS = "mo-active-default";
+    var DEFAULT_MO_SUB_SYNC_CLASS = "mo-sub-sync";
+    
     //var BACK_COLOR = "#99CCCC";
 
     var _highlightedElementPar = undefined;
@@ -81,9 +85,16 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
     {
         if ($userStyle)
         {
-            if ($userStyle[0].ownerDocument === $element[0].ownerDocument)
+            try
             {
-                return;
+                if ($userStyle[0].ownerDocument === $element[0].ownerDocument)
+                {
+                    return;
+                }
+            }
+            catch (e)
+            {
+                
             }
         }
 
@@ -149,10 +160,6 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
 
         var seq = this.adjustParToSeqSyncGranularity(_highlightedElementPar);
         var element = seq.element;
-        if (_highlightedElementPar !== seq)
-        {
-            $(_highlightedElementPar.element).addClass("mo-sub-sync");
-        }
         
         if (_playbackActiveClass && _playbackActiveClass !== "")
         {
@@ -187,6 +194,10 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
             $hel.addClass(_activeClass);
         }
         
+        if (this.includeParWhenAdjustingToSeqSyncGranularity || _highlightedElementPar !== seq)
+        {
+            $(_highlightedElementPar.element).addClass(DEFAULT_MO_SUB_SYNC_CLASS);
+        }
         
 // ---- CFI
 //         try
@@ -437,9 +448,9 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
 
             var seq = this.adjustParToSeqSyncGranularity(_highlightedElementPar);
             var element = seq.element;
-            if (_highlightedElementPar !== seq)
+            if (this.includeParWhenAdjustingToSeqSyncGranularity || _highlightedElementPar !== seq)
             {
-                $(_highlightedElementPar.element).removeClass("mo-sub-sync");
+                $(_highlightedElementPar.element).removeClass(DEFAULT_MO_SUB_SYNC_CLASS);
             }
             
             if (_playbackActiveClass && _playbackActiveClass !== "")
@@ -481,7 +492,7 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
                 return par; // should never happen!
             }
 
-            var seq = par.getFirstSeqAncestorWithEpubType(sync);
+            var seq = par.getFirstSeqAncestorWithEpubType(sync, this.includeParWhenAdjustingToSeqSyncGranularity);
             if (seq && seq.element)
             {
                 return seq;
