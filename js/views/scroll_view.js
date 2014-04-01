@@ -799,7 +799,17 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
         return element;
     };
+    
+    this.getElementById = function(spineItem, id) {
 
+        if(spineItem != _currentSpineItem) {
+            console.error("spine item is not loaded");
+            return undefined;
+        }
+
+        return _navigationLogic.getElementById(id);
+    };
+    
     this.getFirstVisibleMediaOverlayElement =  function() {
         var viewPortRange = getVisibleRange();
 

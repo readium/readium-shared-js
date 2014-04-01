@@ -82,8 +82,9 @@ ReadiumSDK.Models.SmilIterator = function(smil) {
                 }
 
                 // INNER match
+                //var inside = this.currentPar.element.ownerDocument.getElementById(id);
                 var inside = $("#" + ReadiumSDK.Helpers.escapeJQuerySelector(id), this.currentPar.element);
-                if (inside && inside[0])
+                if (inside && inside.length && inside[0])
                 {
                     return true;
                 }

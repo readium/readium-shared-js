@@ -85,9 +85,16 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
     {
         if ($userStyle)
         {
-            if ($userStyle[0].ownerDocument === $element[0].ownerDocument)
+            try
             {
-                return;
+                if ($userStyle[0].ownerDocument === $element[0].ownerDocument)
+                {
+                    return;
+                }
+            }
+            catch (e)
+            {
+                
             }
         }
 

@@ -41,6 +41,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
     var _iframeLoader;
     var _$el;
     var _annotationsManager = new ReadiumSDK.Views.AnnotationsManager(self, options);
+
+    var _enablePageTransitions = options.enablePageTransitions;
     
     //We will call onViewportResize after user stopped resizing window
     var lazyResize = _.debounce(function() { self.handleViewportResize() }, 100);
@@ -145,7 +147,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
             spine: _spine,
             userStyles: _userStyles,
             bookStyles: _bookStyles,
-            iframeLoader: _iframeLoader
+            iframeLoader: _iframeLoader,
+            enablePageTransitions: _enablePageTransitions
         };
 
 
@@ -153,6 +156,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
         _currentView.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function($iframe, spineItem) {
 
+            // performance degrades with large DOM (e.g. word-level text-audio sync)
             _mediaOverlayDataInjector.attachMediaOverlayData($iframe, spineItem, _viewerSettings);
             
             _internalLinksSupport.processLinkElements($iframe, spineItem);
@@ -298,7 +302,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
             if(spineItem) {
                 var pageOpenRequest = new ReadiumSDK.Models.PageOpenRequest(spineItem, self);
                 pageOpenRequest.setFirstPage();
-                openPage(pageOpenRequest);
+                openPage(pageOpenRequest, 0);
             }
 
         }
@@ -353,6 +357,16 @@ ReadiumSDK.Views.ReaderView = function(options) {
             var bookMark = _currentView.bookmarkCurrentPage();
 
             if(bookMark && bookMark.idref) {
+     
+                var wasPlaying = false;
+                if (_currentView.isReflowable && _currentView.isReflowable())
+                {
+                    wasPlaying = self.isPlayingMediaOverlay();
+                    if (wasPlaying)
+                    {
+                        self.pauseMediaOverlay();
+                    }
+                }
 
                 var spineItem = _spine.getItemById(bookMark.idref);
                 var isViewChanged = initViewForItem(spineItem);
@@ -362,6 +376,14 @@ ReadiumSDK.Views.ReaderView = function(options) {
                 }
 
                 self.openSpineItemElementCfi(bookMark.idref, bookMark.contentCFI, self);
+
+                if (wasPlaying)
+                {
+                    self.playMediaOverlay();
+                    // setTimeout(function()
+                    // {
+                    // }, 60);
+                }
             }
         }
 
@@ -402,7 +424,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
         var openPageRequest = new ReadiumSDK.Models.PageOpenRequest(nextSpineItem, self);
         openPageRequest.setFirstPage();
 
-        openPage(openPageRequest);
+        openPage(openPageRequest, 2);
     };
 
     /**
@@ -439,7 +461,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
         var openPageRequest = new ReadiumSDK.Models.PageOpenRequest(prevSpineItem, self);
         openPageRequest.setLastPage();
 
-        openPage(openPageRequest);
+        openPage(openPageRequest, 1);
     };
 
     function getSpineItem(idref) {
@@ -482,7 +504,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
             pageData.setElementCfi(elementCfi);
         }
 
-        openPage(pageData);
+        openPage(pageData, 0);
     };
 
     /**
@@ -525,13 +547,13 @@ ReadiumSDK.Views.ReaderView = function(options) {
             }
         }
 
-        openPage(pageRequest);
+        openPage(pageRequest, 0);
     };
 
-    function openPage(pageRequest) {
+    function openPage(pageRequest, dir) {
 
         initViewForItem(pageRequest.spineItem);
-        _currentView.openPage(pageRequest);
+        _currentView.openPage(pageRequest, dir);
     }
 
 
@@ -556,7 +578,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
             pageData.setPageIndex(pageIndex);
         }
 
-        openPage(pageData);
+        openPage(pageData, 0);
     };
 
     /**
@@ -613,7 +635,15 @@ ReadiumSDK.Views.ReaderView = function(options) {
         }
 
         return undefined;
+    };
 
+    this.getElementById = function(spineItem, id) {
+
+        if(_currentView) {
+            return _currentView.getElementById(spineItem, id);
+        }
+
+        return undefined;
     };
     
     this.getElementByCfi = function(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
@@ -673,17 +703,22 @@ ReadiumSDK.Views.ReaderView = function(options) {
             hrefPart = combinedPath;
             elementId = undefined;
         }
-//console.debug("============ openContentUrl - hrefPart: " + hrefPart);
 
         var spineItem = _spine.getItemByHref(hrefPart);
         if(!spineItem) {
-            return;
+            console.warn('spineItem ' + hrefPart + ' not found');
+            // sometimes that happens because spine item's URI gets encoded,
+            // yet it's compared with raw strings by `getItemByHref()` -
+            // so we try to search with decoded link as well
+            var decodedHrefPart = decodeURIComponent(hrefPart);
+            spineItem = _spine.getItemByHref(decodedHrefPart);
+            if (!spineItem) {
+                console.warn('decoded spineItem ' + decodedHrefPart + ' missing as well');
+                return;
+            }
         }
 
         self.openSpineItemElementId(spineItem.idref, elementId, initiator);
-
-//console.debug("------- openContentUrl - elementId: " + elementId);
-
     };
 
     /**
@@ -709,7 +744,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
         }
 
 
-        openPage(pageData);
+        openPage(pageData, 0);
     };
 
     /**
@@ -868,7 +903,26 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
     this.handleViewportResize = function(){
         if (_currentView){
+            
+            var wasPlaying = false;
+            if (_currentView.isReflowable && _currentView.isReflowable())
+            {
+                wasPlaying = self.isPlayingMediaOverlay();
+                if (wasPlaying)
+                {
+                    self.pauseMediaOverlay();
+                }
+            }
+            
             _currentView.onViewportResize();
+
+            if (wasPlaying)
+            {
+                setTimeout(function()
+                {
+                    self.playMediaOverlay();
+                }, 150);
+            }
         }
     }
 

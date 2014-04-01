@@ -25,7 +25,8 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
     var _ttsIsPlaying = false;
     var _currentTTS = undefined;
-    var _enableHTMLSpeech = true && window.speechSynthesis !== undefined; // set to false to force "native" platform TTS engine, rather than HTML Speech API
+    var _enableHTMLSpeech = true && typeof window.speechSynthesis !== "undefined" && speechSynthesis != null; // set to false to force "native" platform TTS engine, rather than HTML Speech API
+    
     var _SpeechSynthesisUtterance = undefined;
     //var _skipTTSEndEvent = false;
     var TOKENIZE_TTS = false;
@@ -204,7 +205,18 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
                 if (!element)
                 {
-                    element = reader.getElement(spineItem, (paginationData.initiator == self && !paginationData.elementId) ? "body" : ("#" + ReadiumSDK.Helpers.escapeJQuerySelector(paginationData.elementId)));
+                    if (paginationData.initiator == self && !paginationData.elementId)
+                    {
+                        var $element = reader.getElement(spineItem, "body");
+                        element = ($element && $element.length > 0) ? $element[0] : undefined;
+                    }
+                    else
+                    {
+                        var $element = reader.getElementById(spineItem, paginationData.elementId);
+                        element = ($element && $element.length > 0) ? $element[0] : undefined;
+                        //("#" + ReadiumSDK.Helpers.escapeJQuerySelector(paginationData.elementId))
+                    }
+                    
                     if (element)
                     {
                         /*
@@ -338,6 +350,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             {
                 paginationData.elementIdResolved = element;
             }
+            
             self.toggleMediaOverlayRefresh(paginationData);
         }
     };
@@ -1827,7 +1840,6 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
 //console.debug("moData SMIL: " + moData.par.getSmil().href + " // " + + moData.par.getSmil().id);
 
-
         var spineItems = reader.getLoadedSpineItems();
 
         //paginationData.pageProgressionDirection === "rtl"
@@ -1878,11 +1890,23 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
                 if (id)
                 {
-                    element = reader.getElement(spineItem, "#" + ReadiumSDK.Helpers.escapeJQuerySelector(id));
+                    var $element = reader.getElementById(spineItem, id);
+                    //var $element = reader.getElement(spineItem, "#" + ReadiumSDK.Helpers.escapeJQuerySelector(id));
+                    element = ($element && $element.length > 0) ? $element[0] : undefined;
                 }
                 else if (spineItem.isFixedLayout())
                 {
-                    element = reader.getElement(spineItem, "body");
+                    if (paginationData && paginationData.paginationInfo && paginationData.paginationInfo.openPages)
+                    {
+                        // openPages are sorted by spineItem index, so the smallest index on display is the one we need to play (page on the left in LTR, or page on the right in RTL progression)
+                        var index = 0; // paginationData.paginationInfo.pageProgressionDirection === "ltr" ? 0 : paginationData.paginationInfo.openPages.length - 1;
+                    
+                        if (paginationData.paginationInfo.openPages[index] && paginationData.paginationInfo.openPages[index].idref && paginationData.paginationInfo.openPages[index].idref === spineItem.idref)
+                        {
+                            var $element = reader.getElement(spineItem, "body");
+                            element = ($element && $element.length > 0) ? $element[0] : undefined;
+                        }
+                    }
                 }
 
                 if (element)
@@ -1907,6 +1931,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
         if (!moData)
         {
+            var foundMe = false;
             var depthFirstTraversal = function(elements)
             {
                 if (!elements)
@@ -1916,11 +1941,16 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
                 for (var i = 0; i < elements.length; i++)
                 {
-                    var d = $(elements[i]).data("mediaOverlayData");
-                    if (d)
+                    if (element === elements[i]) foundMe = true;
+                    
+                    if (foundMe)
                     {
-                        moData = d;
-                        return true;
+                        var d = $(elements[i]).data("mediaOverlayData");
+                        if (d)
+                        {
+                            moData = d;
+                            return true;
+                        }
                     }
 
                     var found = depthFirstTraversal(elements[i].children);
@@ -1964,16 +1994,15 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         {
             _smilIterator.reset();
         }
-
-        if (id)
+        
+        _smilIterator.goToPar(zPar);
+        
+        if (!_smilIterator.currentPar && id)
         {
+            _smilIterator.reset();
             _smilIterator.findTextId(id);
         }
-        else
-        {
-            _smilIterator.goToPar(zPar);
-        }
-
+        
         if (!_smilIterator.currentPar)
         {
             self.reset();

@@ -295,6 +295,16 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
             }
         }
 
+        if (clientRectangles.length === 0) {
+            // sometimes an element is either hidden or empty, and that means
+            // Webkit-based browsers fail to assign proper clientRects to it
+            // in this case we need to go for its sibling (if it exists)
+            $el = $el.next();
+            if ($el.length) {
+                return getNormalizedRectangles($el, visibleContentOffsets);
+            }
+        }
+
         return {
             wrapperRectangle: wrapperRectangle,
             clientRectangles: clientRectangles
@@ -538,6 +548,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
                 console.warn('Impossible to locate a hidden element: ', $element);
                 return 0;
             }
+            return pageIndex;
         }
 
         var posInElement = this.getVerticalOffsetForPointOnElement($element, x, y);
@@ -559,7 +570,9 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
 
         var contentDoc = $iframe[0].contentDocument;
 
-        var $element = $("#" + ReadiumSDK.Helpers.escapeJQuerySelector(id), contentDoc);
+        var $element = $(contentDoc.getElementById(id));
+        //$("#" + ReadiumSDK.Helpers.escapeJQuerySelector(id), contentDoc);
+        
         if($element.length == 0) {
             return undefined;
         }
@@ -609,13 +622,14 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
         return ret;
     }
 
+    // returns raw DOM element (not $ jQuery-wrapped)
     this.getFirstVisibleMediaOverlayElement = function(visibleContentOffsets)
     {
         var docElement = this.getRootElement();
         if (!docElement) return undefined;
 
         var $root = $("body", docElement);
-        if (!$root || !$root[0]) return undefined;
+        if (!$root || !$root.length || !$root[0]) return undefined;
 
         var that = this;
 
@@ -792,10 +806,10 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
         var $element = $(selector, this.getRootElement());
 
         if($element.length > 0) {
-            return $element[0];
+            return $element;
         }
 
-        return 0;
+        return undefined;
     };
 
 };
