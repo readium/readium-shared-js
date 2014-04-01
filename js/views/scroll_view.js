@@ -19,6 +19,8 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
     _.extend(this, Backbone.Events);
 
+    options.enablePageTransitions = true; // force (not fixed layout!)
+
     var SCROLL_MARGIN_TO_SHOW_LAST_VISBLE_LINE = 5;
     var ITEM_LOAD_SCROLL_BUFFER = 2000;
     var ON_SCROLL_TIME_DALAY = 300;
@@ -315,14 +317,16 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         updateTransientViews();
     };
 
+    var _viewSettings = undefined;
     this.setViewSettings = function(settings) {
+        
+        _viewSettings = settings;
 
         forEachItemView(function(pageView){
 
             pageView.setViewSettings(settings);
 
         }, false);
-
     };
 
     function createPageViewForSpineItem(isTemporaryView) {
@@ -333,6 +337,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
             true); //enableBookStyleOverrides
             
         pageView.render();
+        if (_viewSettings) pageView.setViewSettings(_viewSettings);
 
         if(!isTemporaryView) {
             pageView.element().data("pageView", pageView);

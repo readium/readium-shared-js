@@ -105,14 +105,14 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
         var desiredViewType;
 
-        if(_viewerSettings.isScrollDoc) {
+        if(spineItem.isFixedLayout()) {
+            desiredViewType = ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED;
+        }
+        else if(_viewerSettings.isScrollDoc) {
             desiredViewType = ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_DOC;
         }
         else if(_viewerSettings.isScrollContinuous) {
             desiredViewType = ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
-        }
-        else if(spineItem.isFixedLayout()) {
-            desiredViewType = ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED;
         }
         else if(spineItem.isScrolledDoc()) {
             desiredViewType = ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_DOC;
@@ -369,8 +369,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
                 }
 
                 var spineItem = _spine.getItemById(bookMark.idref);
+                
                 var isViewChanged = initViewForItem(spineItem);
-
                 if(!isViewChanged) {
                     _currentView.setViewSettings(_viewerSettings);
                 }
@@ -552,7 +552,11 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
     function openPage(pageRequest, dir) {
 
-        initViewForItem(pageRequest.spineItem);
+        var isViewChanged = initViewForItem(pageRequest.spineItem);
+        if(!isViewChanged) {
+            _currentView.setViewSettings(_viewerSettings);
+        }
+        
         _currentView.openPage(pageRequest, dir);
     }
 

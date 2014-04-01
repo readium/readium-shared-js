@@ -121,12 +121,16 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
     };
 
+    var _viewSettings = undefined;
     this.setViewSettings = function(settings) {
+        
+        _viewSettings = settings;
 
         _isSyntheticSpread = settings.isSyntheticSpread;
-        _paginationInfo.visibleColumnCount = calculateVisibleColumnCount();
         _paginationInfo.columnGap = settings.columnGap;
         _fontSize = settings.fontSize;
+        
+        _paginationInfo.visibleColumnCount = calculateVisibleColumnCount();
 
         updateHtmlFontSize();
         updateColumnGap();

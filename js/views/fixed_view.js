@@ -96,8 +96,17 @@ ReadiumSDK.Views.FixedView = function(options){
         _$el.remove();
     };
 
+    var _viewSettings = undefined;
     this.setViewSettings = function(settings) {
+        
+        _viewSettings = settings;
+        
         _spread.setSyntheticSpread(settings.isSyntheticSpread);
+
+        var views = getDisplayingViews();
+        for(var i = 0, count = views.length; i < count; i++) {
+            views[i].setViewSettings(settings);
+        }
     };
 
     function redraw(initiator, paginationRequest) {

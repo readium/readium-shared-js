@@ -35,11 +35,11 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
     var _iframeLoader = options.iframeLoader;
     var _bookStyles = options.bookStyles;
 
-    var _fontSize = 100;
     var _isIframeLoaded = false;
 
     var _enablePageTransitions = options.enablePageTransitions;
 
+    // fixed layout does not apply user styles to publisher content, but reflowable scroll view does
     var _enableBookStyleOverrides = enableBookStyleOverrides || false;
 
     var _meta_size = {
@@ -132,46 +132,44 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             }
             _$epubHtml.css("overflow", "hidden");
 
-            self.applyBookStyles();
-
+            if (_enableBookStyleOverrides) {
+                self.applyBookStyles();
+            }
             updateMetaSize();
-            updateHtmlFontSize();
-        }
-    }
 
-    this.setViewSettings = function(settings) {
-
-        var isFontChanged = settings.fontSize !== undefined && _fontSize !== settings.fontSize;
-
-        if(isFontChanged) {
-            _fontSize = settings.fontSize;
-            updateHtmlFontSize();
-        }
-
-        return isFontChanged;
-    };
-
-    function updateHtmlFontSize() {
-
-        if(_$epubHtml) {
-            _$epubHtml.css("font-size", _fontSize + "%");
-
-            self.applyBookStyles();
-            updateMetaSize();
-            
             _pageSwitchActuallyChanged_IFRAME_LOAD = true; // second pass, but initial display for transition
             
             self.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED, _$iframe, _currentSpineItem, self);
         }
     }
 
+    var _viewSettings = undefined;
+    this.setViewSettings = function(settings) {
+        
+        _viewSettings = settings;
+
+        if (_enableBookStyleOverrides) {
+            self.applyBookStyles();
+        }
+        updateMetaSize();
+    };
+
+    function updateHtmlFontSize() {
+        
+        if (!_enableBookStyleOverrides) return;
+        
+        if(_$epubHtml && _viewSettings) {
+            _$epubHtml.css("font-size", _viewSettings.fontSize + "%");
+        }
+    }
+
     this.applyBookStyles = function() {
         
-         // fixed layout does not apply user styles to publisher content, but reflowable scroll view does
         if (!_enableBookStyleOverrides) return;
         
         if(_$epubHtml) {
             ReadiumSDK.Helpers.setStyles(_bookStyles.getStyles(), _$epubHtml);
+            updateHtmlFontSize();
         }
     };
 
@@ -238,7 +236,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
 
     this.transformContentImmediate = function(scale, left, top) {
         
-        var pageTransition_Translate = false; // TODO: from options
+        var pageTransition_Translate = true; // TODO: from options
         
         var pageSwitchActuallyChanged = _pageSwitchActuallyChanged || _pageSwitchActuallyChanged_IFRAME_LOAD;
         _pageSwitchActuallyChanged_IFRAME_LOAD = false;
