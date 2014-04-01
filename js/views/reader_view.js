@@ -111,14 +111,14 @@ ReadiumSDK.Views.ReaderView = function(options) {
         else if(_viewerSettings.isScrollContinuous) {
             desiredViewType = ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
         }
+        else if(spineItem.isFixedLayout()) {
+            desiredViewType = ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED;
+        }
         else if(spineItem.isScrolledDoc()) {
             desiredViewType = ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_DOC;
         }
         else if(spineItem.isScrolledContinuous()) {
             desiredViewType = ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
-        }
-        else if(spineItem.isFixedLayout()) {
-            desiredViewType = ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED;
         }
         else {
             desiredViewType = ReadiumSDK.Views.ReaderView.VIEW_TYPE_COLUMNIZED;
