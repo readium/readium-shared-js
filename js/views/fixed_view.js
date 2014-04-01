@@ -30,6 +30,7 @@ ReadiumSDK.Views.FixedView = function(options){
     var _spine = options.spine;
     var _userStyles = options.userStyles;
     var _bookStyles = options.bookStyles;
+    var _zoom = options.zoom || {style: 'default'};
     var _iframeLoader = options.iframeLoader;
 
     var _leftPageView = createOnePageView("fixed-page-frame-left", "right");
@@ -245,7 +246,19 @@ ReadiumSDK.Views.FixedView = function(options){
         var horScale = potentialContentSize.width / _contentMetaSize.width;
         var verScale = potentialContentSize.height / _contentMetaSize.height;
 
-        var scale = Math.min(horScale, verScale);
+        var scale;
+        if (zoom.style == 'fit-width'){
+            scale = horScale;
+        }
+        else if (zoom.style == 'fit-height'){
+            scale = verScale;
+        }
+        else if (zoom.style == 'user'){
+            scale = zoom.scale;
+        }
+        else{
+            scale = Math.min(horScale, verScale);
+        }
 
         var contentSize = { width: _contentMetaSize.width * scale,
                             height: _contentMetaSize.height * scale };
