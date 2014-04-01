@@ -678,15 +678,15 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
         return visibilityCheckerFunc($element, visibleContentOffsets, true);
     };
 
-    /**
-     * @deprecated
-     */
-    this.getVisibleMediaOverlayElements = function(visibleContentOffsets) {
-
-        var $elements = this.getMediaOverlayElements($("body", this.getRootElement()));
-        return this.getVisibleElements($elements, visibleContentOffsets);
-
-    };
+    // /**
+    //  * @deprecated
+    //  */
+    // this.getVisibleMediaOverlayElements = function(visibleContentOffsets) {
+    // 
+    //     var $elements = this.getMediaOverlayElements($("body", this.getRootElement()));
+    //     return this.getVisibleElements($elements, visibleContentOffsets);
+    // 
+    // };
 
     this.isElementVisible = visibilityCheckerFunc;
 

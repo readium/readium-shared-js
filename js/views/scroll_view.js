@@ -801,13 +801,26 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
     };
     
     this.getElementById = function(spineItem, id) {
+        
+        var found = undefined;
+        
+        forEachItemView(function(pageView){
+            if(pageView.currentSpineItem() == spineItem) {
 
-        if(spineItem != _currentSpineItem) {
+                found = pageView.getNavigator().getElementById(id);
+                return false;
+            }
+
+            return true;
+
+        }, false);
+
+        if(!found) {
             console.error("spine item is not loaded");
             return undefined;
         }
 
-        return _navigationLogic.getElementById(id);
+        return found;
     };
     
     this.getFirstVisibleMediaOverlayElement =  function() {
@@ -843,29 +856,32 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
         return moElement;
     };
-
-    this.getVisibleMediaOverlayElements = function() {
-        var viewPortRange = getVisibleRange();
-
-        var pageMoElements;
-        var moElements = [];
-        var normalizedRange = {top: 0, bottom: 0};
-        var pageViewRange;
-
-        forEachItemView(function(pageView){
-            pageViewRange = getPageViewRange(pageView);
-
-            normalizedRange.top = Math.max(pageViewRange.top, viewPortRange.top) - pageViewRange.top;
-            normalizedRange.bottom = Math.min(pageViewRange.bottom, viewPortRange.bottom) - pageViewRange.top;
-
-            if(rangeLength(normalizedRange) > 0) {
-                pageMoElements = pageView.getNavigator().getVisibleMediaOverlayElements(normalizedRange);
-                moElements.push.apply(moElements, pageMoElements);
-            }
-        }, false);
-
-        return moElements;
-    };
+    
+    // /**
+    //  * @deprecated
+    //  */
+    // this.getVisibleMediaOverlayElements = function() {
+    //     var viewPortRange = getVisibleRange();
+    // 
+    //     var pageMoElements;
+    //     var moElements = [];
+    //     var normalizedRange = {top: 0, bottom: 0};
+    //     var pageViewRange;
+    // 
+    //     forEachItemView(function(pageView){
+    //         pageViewRange = getPageViewRange(pageView);
+    // 
+    //         normalizedRange.top = Math.max(pageViewRange.top, viewPortRange.top) - pageViewRange.top;
+    //         normalizedRange.bottom = Math.min(pageViewRange.bottom, viewPortRange.bottom) - pageViewRange.top;
+    // 
+    //         if(rangeLength(normalizedRange) > 0) {
+    //             pageMoElements = pageView.getNavigator().getVisibleMediaOverlayElements(normalizedRange);
+    //             moElements.push.apply(moElements, pageMoElements);
+    //         }
+    //     }, false);
+    // 
+    //     return moElements;
+    // };
 
     function getVisibleRange(expand) {
         if(expand !== 0 && !expand) {

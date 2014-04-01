@@ -634,12 +634,15 @@ ReadiumSDK.Views.ReflowableView = function(options){
         var visibleContentOffsets = getVisibleContentOffsets();
         return _navigationLogic.getFirstVisibleMediaOverlayElement(visibleContentOffsets);
     };
-
-    this.getVisibleMediaOverlayElements = function() {
-
-        var visibleContentOffsets = getVisibleContentOffsets();
-        return _navigationLogic.getVisibleMediaOverlayElements(visibleContentOffsets);
-    };
+    
+    // /**
+    //  * @deprecated
+    //  */
+    // this.getVisibleMediaOverlayElements = function() {
+    // 
+    //     var visibleContentOffsets = getVisibleContentOffsets();
+    //     return _navigationLogic.getVisibleMediaOverlayElements(visibleContentOffsets);
+    // };
 
     this.insureElementVisibility = function(spineItemId, element, initiator) {
 
