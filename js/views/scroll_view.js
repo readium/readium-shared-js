@@ -195,7 +195,8 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         }
 
         var tmpView = createPageViewForSpineItem(true);
-
+        //tmpView.setHeight(100);
+                
         // add to the end first to avoid scrolling during load
         var lastView = lastLoadedView();
         tmpView.element().insertAfter(lastView.element());
@@ -205,7 +206,17 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
                 updatePageViewSize(tmpView);
                 var range = getPageViewRange(tmpView);
+
+                // var tmpRange = getPageViewRange(tmpView);
+                // var tmpHeight = tmpRange.bottom - tmpRange.top;
+                // var tmpContentHeight = tmpView.getContentDocHeight();
+                // spineItem.href
+                // var tmpIframeHeight = Math.round(parseFloat(window.getComputedStyle($iframe[0]).height));
+                // var doc = _$iframe[0].contentDocument; //_$epubHtml[0].documentOwner
+                // var win = _$iframe[0].contentWindow;
+
                 removePageView(tmpView);
+                                
 
                 var scrollPos = scrollTop();
 
@@ -216,6 +227,13 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
                 newView.loadSpineItem(prevSpineItem, function(success, $iframe, spineItem, isNewlyLoaded, context){
                     updatePageViewSize(newView);
+
+                    // var newRange = getPageViewRange(newView);
+                    // var newHeight = newRange.bottom - newRange.top;
+                    // var newContentHeight = newView.getContentDocHeight();
+                    // spineItem.href
+                    // var newIframeHeight = Math.round(parseFloat(window.getComputedStyle($iframe[0]).height));
+
                     onPageViewLoaded(newView, success, $iframe, spineItem, isNewlyLoaded, context);
 
                     callback(true);
@@ -459,6 +477,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         //because left, top, bottom, right setting ignores padding of parent container
         //we have to take it to account manually
         var elementMargins = ReadiumSDK.Helpers.Margins.fromElement(_$el);
+
         setFrameSizesToRectangle(elementMargins.padding);
 
     };

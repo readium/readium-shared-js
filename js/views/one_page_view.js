@@ -135,6 +135,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             if (_enableBookStyleOverrides) {
                 self.applyBookStyles();
             }
+            
             updateMetaSize();
 
             _pageSwitchActuallyChanged_IFRAME_LOAD = true; // second pass, but initial display for transition
@@ -183,9 +184,8 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
     //this is called by scroll_view for reflowable spine item
     this.resizeIFrameToContent = function() {
 
-//        ReadiumSDK.Helpers.waitForRendering(_$iframe);
-
-        var contHeight = getContentDocHeight();
+        var contHeight = self.getContentDocHeight();
+        
         _$iframe.css("height", contHeight + "px");
         _$iframe.css("visibility", "visible");
 
@@ -195,10 +195,6 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         _$iframe.css("visibility", "visible");
 
         _$el.css("height", contHeight + "px");
-
-        setTimeout(function(){}, 0);
-
-//        ReadiumSDK.Helpers.waitForRendering(_$iframe);
     };
 
     this.setHeight = function(height) {
@@ -207,10 +203,6 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         _$iframe.css("visibility", "visible");
 
         _$el.css("height", height + "px");
-
-        setTimeout(function(){}, 0);
-
-        ReadiumSDK.Helpers.waitForRendering(_$iframe);
     };
 
     this.elementHeight = function() {
@@ -225,13 +217,14 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         _$iframe.css("visibility", "hidden");
     };
 
-    function getContentDocHeight(){
+    this.getContentDocHeight = function(){
 
         if(!_$epubHtml) {
             return 0;
         }
 
-        return _$epubHtml.height();
+        var jqueryHeight = _$epubHtml.height();
+        return jqueryHeight;
     }
 
     this.transformContentImmediate = function(scale, left, top) {
@@ -420,9 +413,16 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
 
                 onIFrameLoad(success);
 
+                ReadiumSDK.Helpers.triggerLayout(_$iframe);
+                //var height = self.getContentDocHeight();
+                
                 if(callback) {
                     callback(success, _$iframe, _currentSpineItem, true, context);
-                }
+                }                
+                
+                // setTimeout(function(){
+                // 
+                // }, 200);
 
             }, self);
         }

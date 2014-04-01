@@ -146,7 +146,7 @@ ReadiumSDK.Helpers.Margins = function(margin, border, padding) {
     }
 };
 
-ReadiumSDK.Helpers.waitForRendering = function($iframe) {
+ReadiumSDK.Helpers.triggerLayout = function($iframe) {
 
     var doc = $iframe[0].contentDocument;
 
@@ -158,7 +158,7 @@ ReadiumSDK.Helpers.waitForRendering = function($iframe) {
     el.appendChild(doc.createTextNode("*{}"));
     doc.body.appendChild(el);
     doc.body.removeChild(el);
-    var blocking = doc.body.offsetTop; // browser rendering / layout done
+    var blocking = doc.body.offsetTop; // triggers layout
 };
 
 ReadiumSDK.Helpers.Margins.fromElement = function($element) {
