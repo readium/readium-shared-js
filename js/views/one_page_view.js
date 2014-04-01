@@ -21,7 +21,7 @@
  */
 
 //Representation of one fixed page
-ReadiumSDK.Views.OnePageView = function(options, classes){
+ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrides){
 
     _.extend(this, Backbone.Events);
 
@@ -39,6 +39,8 @@ ReadiumSDK.Views.OnePageView = function(options, classes){
     var _isIframeLoaded = false;
 
     var _enablePageTransitions = options.enablePageTransitions;
+
+    var _enableBookStyleOverrides = enableBookStyleOverrides || false;
 
     var _meta_size = {
         width: 0,
@@ -163,10 +165,10 @@ ReadiumSDK.Views.OnePageView = function(options, classes){
         }
     }
 
-    this.applyBookStyles = function(force) {
+    this.applyBookStyles = function() {
         
          // fixed layout does not apply user styles to publisher content, but reflowable scroll view does
-        if (!force) return;
+        if (!_enableBookStyleOverrides) return;
         
         if(_$epubHtml) {
             ReadiumSDK.Helpers.setStyles(_bookStyles.getStyles(), _$epubHtml);

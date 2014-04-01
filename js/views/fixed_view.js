@@ -56,7 +56,9 @@ ReadiumSDK.Views.FixedView = function(options){
             // class: cssclass,
             // contentAlignment: contentAlignment,
             enablePageTransitions: _enablePageTransitions
-        }, [elementClass]);
+        },
+        [elementClass],
+        false); //enableBookStyleOverrides
 
         pageView.on(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPEN_START, function($iframe, spineItem) {
 

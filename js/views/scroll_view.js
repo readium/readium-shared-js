@@ -327,7 +327,11 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
     function createPageViewForSpineItem(isTemporaryView) {
 
-        var pageView = new ReadiumSDK.Views.OnePageView(options, ["content-doc-frame"]);
+        var pageView = new ReadiumSDK.Views.OnePageView(
+            options,
+            ["content-doc-frame"],
+            true); //enableBookStyleOverrides
+            
         pageView.render();
 
         if(!isTemporaryView) {
@@ -457,7 +461,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
     this.applyBookStyles = function() {
 
         forEachItemView(function(pageView) {
-            pageView.applyBookStyles(true);
+            pageView.applyBookStyles();
         }, false);
      };
 
