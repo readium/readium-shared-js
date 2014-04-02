@@ -158,6 +158,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         var scrollPosBefore = undefined;
         if (pageView)
         {
+            _$el.css("background-color", "silver");
             _$contentFrame.css("transform", "translate(3000px, 0px)");
             
             var offset = pageView.offset();
@@ -187,6 +188,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                             }
                         }
 
+                        _$el.css("background-color", "transparent");
                         _$contentFrame.css("transform", "none");
                     }
 
@@ -218,8 +220,8 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
     function checkHeightDiscrepancy(updateScroll, pageView, iframe, href, fixedLayout, metaWidth, msg)
     {
-        var N = 10;
-        var time = 100;
+        var N = 5;
+        var time = 300;
         
         var tryAgainFunc = function(tryAgain)
         {
@@ -231,7 +233,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
             tryAgain--;
             if (tryAgain < 0)
             {
-                console.error("tryAgainFunc abort after tries: " + N + " == " + href);
+                console.error("tryAgainFunc abort: " + href);
                 return;
             }
     
