@@ -268,10 +268,11 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                                     }
                                     
                                     var docHeight = parseInt(Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height) * scale)); //body can be shorter!
-                                    if (iframeHeight !== docHeight)
+                                    var diff = iframeHeight-docHeight;
+                                    if (Math.abs(diff) > 4)
                                     {
                                         console.error("IFRAME HEIGHT ADJUST: " + href);
-                                        console.log(iframeHeight-docHeight);
+                                        console.log(diff);
                                         _debounced_onViewportResize();
                                     
                                         setTimeout(function(){
@@ -285,7 +286,8 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                                                     var docHeight = parseInt(Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height) * scale)); //body can be shorter!
                                                     var iframeHeight = parseInt(Math.round(parseFloat(window.getComputedStyle(iframe).height)));
                             
-                                                    if (iframeHeight !== docHeight)
+                                                    diff = iframeHeight-docHeight;
+                                                    if (Math.abs(diff) > 4)
                                                     {
                                                         console.error("## IFRAME HEIGHT ADJUST: " + href);
                                                         console.log(iframeHeight-docHeight);
