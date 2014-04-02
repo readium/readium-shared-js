@@ -221,13 +221,13 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         {
             if (tryAgain !== N)
             {
-                console.log("tryAgainFunc: " + tryAgain);
+                console.log("tryAgainFunc: " + tryAgain + " == " + href);
             }
             
             tryAgain--;
             if (tryAgain < 0)
             {
-                console.error("tryAgainFunc abort after tries: " + N);
+                console.error("tryAgainFunc abort after tries: " + N + " == " + href);
                 return;
             }
     
@@ -322,6 +322,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                             }
                             else
                             {
+                                tryAgain = -1;
                                 console.log("tryAgainFunc win && doc? " + tryAgain);
                                 tryAgainFunc(tryAgain);
                             }
@@ -334,6 +335,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                     }
                     else
                     {
+                        tryAgain = -1;
                         console.log("tryAgainFunc win && doc? " + tryAgain);
                         tryAgainFunc(tryAgain);
                     }
