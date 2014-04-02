@@ -185,7 +185,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         }
     }
 
-    function checkHeightDiscrepancy(callback, pageView, iframe, href, fixedLayout, metaWidth, msg)
+    function checkHeightDiscrepancy(updateScroll, pageView, iframe, href, fixedLayout, metaWidth, msg)
     {
         setTimeout(function()
         {
@@ -211,6 +211,9 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                         console.log(msg);
                         console.log(diff);
                         
+                        var iframeHeightBefore = iframeHeight;
+                        var scrollPos = scrollTop();
+                        
                         //_debounced_updatePageViewSize();
                         updatePageViewSize(pageView);
                     
@@ -220,6 +223,39 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                         {
                             var docHeight = parseInt(Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height) * scale)); //body can be shorter!
                             var iframeHeight = parseInt(Math.round(parseFloat(window.getComputedStyle(iframe).height)));
+
+
+                            var iframeHeightAfter = iframeHeight;
+                            var iframeHeightDiff = iframeHeightAfter - iframeHeightBefore;
+                            if (Math.abs(iframeHeightDiff) > 0)
+                            {
+                                // updateScroll
+                                // 0 => top
+                                // 1 => page
+                                // 2 => bottom
+                                
+                                var factor = 0;
+                                if (updateScroll === 0)
+                                {
+                                    factor = -1;
+                                }
+                                else if (updateScroll === 1)
+                                {
+                                    factor = 0;
+                                }
+                                else if (updateScroll === 2)
+                                {
+                                    factor = 0;
+                                }
+                                
+                                
+console.debug("SCROLL ADJUST");
+console.log(updateScroll);
+console.log(scrollPos);
+console.log(iframeHeightDiff);
+                                scrollTo(scrollPos + factor * iframeHeightDiff);
+                            }
+                            
     
                             diff = iframeHeight-docHeight;
                             if (Math.abs(diff) > 4)
@@ -235,18 +271,18 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                             }
                         }
                     
-                        callback(true);
+                        //callback(true);
                     }
                     else
                     {
-                        callback(true);
+                        //callback(true);
                     }
                 }
             }
             catch(ex)
             {
                 console.error(ex);
-                callback(true);
+                //callback(true);
             }
         }, 1000);
     }
@@ -303,7 +339,9 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
                         onPageViewLoaded(newView, success, $iframe, spineItem, isNewlyLoaded, context);
 
-                        checkHeightDiscrepancy(callback, newView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToTopOf"); // //onIFrameLoad called before this callback, so okay.
+                        callback(true);
+
+                        checkHeightDiscrepancy(0, newView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToTopOf"); // //onIFrameLoad called before this callback, so okay.
                     }
                     else {
                         console.log("Unable to open 2 " + prevSpineItem.href);
@@ -348,8 +386,10 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                 updatePageViewSize(newView);
                 
                 onPageViewLoaded(newView, success, $iframe, spineItem, isNewlyLoaded, context);
-
-                checkHeightDiscrepancy(callback, newView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToBottomOf"); // //onIFrameLoad called before this callback, so okay.
+                
+                callback(true);
+                
+                checkHeightDiscrepancy(2, newView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToBottomOf"); // //onIFrameLoad called before this callback, so okay.
             }
             else {
                 console.log("Unable to load " + nexSpineItem.href);
@@ -555,7 +595,9 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                 
                 onPageViewLoaded(loadedView, success, $iframe, spineItem, isNewlyLoaded, context);
             
-                checkHeightDiscrepancy(callback, loadedView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? loadedView.meta_width() : 0, "openPage"); // //onIFrameLoad called before this callback, so okay.
+                callback(loadedView);
+            
+                checkHeightDiscrepancy(1, loadedView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? loadedView.meta_width() : 0, "openPage"); // //onIFrameLoad called before this callback, so okay.
             }
             else {
                 console.log("Unable to load " + spineItem.href);
@@ -641,7 +683,8 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
     function openPageViewElement(pageView, pageRequest) {
 
-console.error("openPageViewElement");
+var si = pageView ? pageView.currentSpineItem() : undefined;
+console.log("openPageViewElement: " + si ? si.href : (pageRequest ? pageRequest.scrollTop : undefined));
 
         var topOffset = 0;
         var pageCount;
