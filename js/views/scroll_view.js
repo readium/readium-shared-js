@@ -179,7 +179,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                             var diff = scrollPosAfter - scrollPosBefore;
                             if (Math.abs(diff) > 4)
                             {
-                                //console.error("SCROLL HAS SHIFTED! " + diff);
+                                console.log("SCROLL ADJUST: " + diff);
                                 
                                 _$contentFrame[0].scrollTop = _$contentFrame[0].scrollTop + diff;
                             }
