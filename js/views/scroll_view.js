@@ -185,6 +185,11 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         }
     }
 
+    function decorateIframe($iframe)
+    {
+        $iframe.css("border-bottom", "1px dashed silver");
+        $iframe.css("border-top", "1px dashed silver");
+    }
 
     function addToTopOf(topView, callback) {
 
@@ -228,10 +233,9 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                     if(success) {
                     
                         updatePageViewSize(newView);
-
-                        $iframe.css("border-bottom", "1px dashed silver");
-                        $iframe.css("border-top", "1px dashed silver");
-
+                        
+                        decorateIframe($iframe);
+                        
                         // var newRange = getPageViewRange(newView);
                         // var newHeight = newRange.bottom - newRange.top;
                         // var newContentHeight = newView.getContentDocHeight();
@@ -337,9 +341,8 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
             if(success) {
                 updatePageViewSize(newView);
 
-                $iframe.css("border-bottom", "1px dashed silver");
-                $iframe.css("border-top", "1px dashed silver");
-
+                decorateIframe($iframe);
+                
                 onPageViewLoaded(newView, success, $iframe, spineItem, isNewlyLoaded, context);
 
                 callback(true);
@@ -527,8 +530,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
             if(success) {
                 updatePageViewSize(loadedView);
 
-                $iframe.css("border-bottom", "1px dashed silver");
-                $iframe.css("border-top", "1px dashed silver");
+                decorateIframe($iframe);
                 
                 onPageViewLoaded(loadedView, success, $iframe, spineItem, isNewlyLoaded, context);
             }
