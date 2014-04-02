@@ -185,7 +185,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         }
     }
 
-    function checkHeightDiscrepancy(iframe, href, fixedLayout, metaWidth, msg)
+    function checkHeightDiscrepancy(pageView, iframe, href, fixedLayout, metaWidth, msg)
     {
         setTimeout(function()
         {
@@ -211,7 +211,8 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                         console.log(msg);
                         console.log(diff);
                         
-                        _debounced_updatePageViewSize();
+                        //_debounced_updatePageViewSize();
+                        updatePageViewSize(pageView);
                     
                         setTimeout(function(){
 
@@ -307,7 +308,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
                         callback(true);
                     
-                        checkHeightDiscrepancy($iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToTopOf"); // //onIFrameLoad called before this callback, so okay.
+                        checkHeightDiscrepancy(newView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToTopOf"); // //onIFrameLoad called before this callback, so okay.
                     }
                     else {
                         console.log("Unable to open 2 " + prevSpineItem.href);
@@ -355,7 +356,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
                 callback(true);
             
-                checkHeightDiscrepancy($iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToBottomOf"); // //onIFrameLoad called before this callback, so okay.
+                checkHeightDiscrepancy(newView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToBottomOf"); // //onIFrameLoad called before this callback, so okay.
             }
             else {
                 console.log("Unable to load " + nexSpineItem.href);
@@ -398,22 +399,22 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         _$el.remove();
     };
 
-
-    //var _debounced_onViewportResize = _.bind(_.debounce(this.onViewportResize, 100), self);
-    var _debounced_updatePageViewSize = _.debounce(function(){
-        //self.onViewportResize();
-
-        if(!_$contentFrame) {
-            return;
-        }
-
-        forEachItemView(function(pageView){
-
-            updatePageViewSize(pageView);
-        }, false);
-
-    }, 100);
-    
+    // 
+    // //var _debounced_onViewportResize = _.bind(_.debounce(this.onViewportResize, 100), self);
+    // var _debounced_updatePageViewSize = _.debounce(function(){
+    //     //self.onViewportResize();
+    // 
+    //     if(!_$contentFrame) {
+    //         return;
+    //     }
+    // 
+    //     forEachItemView(function(pageView){
+    // 
+    //         updatePageViewSize(pageView);
+    //     }, false);
+    // 
+    // }, 100);
+    // 
     this.onViewportResize = function() {
 
         if(!_$contentFrame) {
@@ -561,7 +562,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                 
                 onPageViewLoaded(loadedView, success, $iframe, spineItem, isNewlyLoaded, context);
             
-                checkHeightDiscrepancy($iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? loadedView.meta_width() : 0, "openPage"); // //onIFrameLoad called before this callback, so okay.
+                checkHeightDiscrepancy(loadedView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? loadedView.meta_width() : 0, "openPage"); // //onIFrameLoad called before this callback, so okay.
             }
             else {
                 console.log("Unable to load " + spineItem.href);
