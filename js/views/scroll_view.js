@@ -185,13 +185,73 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         }
     }
 
-    function decorateIframe($iframe)
+    function checkHeightDiscrepancy(iframe, href, fixedLayout, metaWidth, msg)
     {
-        if (!isContinuousScroll) return;
-        
-        $iframe.css("border-bottom", "1px dashed silver");
-        $iframe.css("border-top", "1px dashed silver");
+        setTimeout(function()
+        {
+            try
+            {
+                var win = iframe.contentWindow;
+                var doc = iframe.contentDocument;
+                if (win && doc)
+                {
+                    var iframeHeight = parseInt(Math.round(parseFloat(window.getComputedStyle(iframe).height)));
+
+                    var scale = 1;
+                    if (fixedLayout) {
+                        //var iframeWidth = parseInt(Math.round(parseFloat(window.getComputedStyle(iframe).width)));
+                        scale = _$contentFrame.width() / metaWidth;
+                    }
+                    
+                    var docHeight = parseInt(Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height) * scale)); //body can be shorter!
+                    var diff = iframeHeight-docHeight;
+                    if (Math.abs(diff) > 4)
+                    {
+                        console.error("IFRAME HEIGHT ADJUST: " + href);
+                        console.log(msg);
+                        console.log(diff);
+                        _debounced_onViewportResize();
+                    
+                        setTimeout(function(){
+
+                            try
+                            {
+                                var win = iframe.contentWindow;
+                                var doc = iframe.contentDocument;
+                                if (win && doc)
+                                {
+                                    var docHeight = parseInt(Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height) * scale)); //body can be shorter!
+                                    var iframeHeight = parseInt(Math.round(parseFloat(window.getComputedStyle(iframe).height)));
+            
+                                    diff = iframeHeight-docHeight;
+                                    if (Math.abs(diff) > 4)
+                                    {
+                                        console.error("## IFRAME HEIGHT ADJUST: " + href);
+                                        console.log(msg);
+                                        console.log(iframeHeight-docHeight);
+                                    }
+                                    else
+                                    {
+                                        console.log("## IFRAME HEIGHT OKAY: " + href);
+                                        console.log(msg);
+                                    }
+                                }
+                            }
+                            catch(ex)
+                            {
+                                console.error(ex);
+                            }
+                        }, 800);
+                    }
+                }
+            }
+            catch(ex)
+            {
+                console.error(ex);
+            }
+        }, 1000);
     }
+    
 
     function addToTopOf(topView, callback) {
 
@@ -236,8 +296,6 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                     
                         updatePageViewSize(newView);
                         
-                        decorateIframe($iframe);
-                        
                         // var newRange = getPageViewRange(newView);
                         // var newHeight = newRange.bottom - newRange.top;
                         // var newContentHeight = newView.getContentDocHeight();
@@ -248,68 +306,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
                         callback(true);
                     
-                        var iframe = $iframe[0];
-                        var href = spineItem.href;
-                        var fixedLayout = spineItem.isFixedLayout();
-                        var metaWidth = fixedLayout ? newView.meta_width() : 0; //onIFrameLoad called before this callback, so okay.
-                    
-                        setTimeout(function(){
-        
-                            try
-                            {
-                                var win = iframe.contentWindow;
-                                var doc = iframe.contentDocument;
-                                if (win && doc)
-                                {
-                                    var iframeHeight = parseInt(Math.round(parseFloat(window.getComputedStyle(iframe).height)));
-
-                                    var scale = 1;
-                                    if (fixedLayout) {
-                                        //var iframeWidth = parseInt(Math.round(parseFloat(window.getComputedStyle(iframe).width)));
-                                        scale = _$contentFrame.width() / metaWidth;
-                                    }
-                                    
-                                    var docHeight = parseInt(Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height) * scale)); //body can be shorter!
-                                    var diff = iframeHeight-docHeight;
-                                    if (Math.abs(diff) > 4)
-                                    {
-                                        console.error("IFRAME HEIGHT ADJUST: " + href);
-                                        console.log(diff);
-                                        _debounced_onViewportResize();
-                                    
-                                        setTimeout(function(){
-        
-                                            try
-                                            {
-                                                var win = iframe.contentWindow;
-                                                var doc = iframe.contentDocument;
-                                                if (win && doc)
-                                                {
-                                                    var docHeight = parseInt(Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height) * scale)); //body can be shorter!
-                                                    var iframeHeight = parseInt(Math.round(parseFloat(window.getComputedStyle(iframe).height)));
-                            
-                                                    diff = iframeHeight-docHeight;
-                                                    if (Math.abs(diff) > 4)
-                                                    {
-                                                        console.error("## IFRAME HEIGHT ADJUST: " + href);
-                                                        console.log(iframeHeight-docHeight);
-                                                    }
-                                                }
-                                            }
-                                            catch(ex)
-                                            {
-                                                console.error(ex);
-                                            }
-                                        }, 800);
-                                    }
-                                }
-                            }
-                            catch(ex)
-                            {
-                                console.error(ex);
-                            }
-                        }, 1000);
-
+                        checkHeightDiscrepancy($iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToTopOf"); // //onIFrameLoad called before this callback, so okay.
                     }
                     else {
                         console.log("Unable to open 2 " + prevSpineItem.href);
@@ -352,12 +349,12 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         newView.loadSpineItem(nexSpineItem, function(success, $iframe, spineItem, isNewlyLoaded, context) {
             if(success) {
                 updatePageViewSize(newView);
-
-                decorateIframe($iframe);
                 
                 onPageViewLoaded(newView, success, $iframe, spineItem, isNewlyLoaded, context);
 
                 callback(true);
+            
+                checkHeightDiscrepancy($iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToBottomOf"); // //onIFrameLoad called before this callback, so okay.
             }
             else {
                 console.log("Unable to load " + nexSpineItem.href);
@@ -443,6 +440,12 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
         if(!isTemporaryView) {
             pageView.element().data("pageView", pageView);
+        }
+        
+
+        if (isContinuousScroll)
+        {
+            pageView.decorateIframe();
         }
 
         return pageView;
@@ -541,12 +544,14 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
             if(success) {
                 updatePageViewSize(loadedView);
-
-                decorateIframe($iframe);
                 
                 onPageViewLoaded(loadedView, success, $iframe, spineItem, isNewlyLoaded, context);
+            
+                checkHeightDiscrepancy($iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? loadedView.meta_width() : 0, "openPage"); // //onIFrameLoad called before this callback, so okay.
             }
             else {
+                console.log("Unable to load " + spineItem.href);
+                
                 removePageView(loadedView);
                 loadedView = undefined;
             }

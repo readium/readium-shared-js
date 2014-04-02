@@ -101,12 +101,21 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
 
             _$iframe = $("iframe", _$el);
             _$iframe.css("width", "100%");
-            _$iframe.css("height", "10px");
+            _$iframe.css("height", "100%");
         }
 
         return this;
     };
 
+
+    this.decorateIframe = function()
+    {
+        if (!_$iframe || !_$iframe.length) return;
+        
+        _$iframe.css("border-bottom", "1px dashed silver");
+        _$iframe.css("border-top", "1px dashed silver");
+    }
+    
     this.remove = function() {
         _isIframeLoaded = false;
         _currentSpineItem = undefined;
