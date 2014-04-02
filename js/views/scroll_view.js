@@ -19,7 +19,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
     _.extend(this, Backbone.Events);
 
-    options.enablePageTransitions = true; // force (not fixed layout!)
+    options.enablePageTransitions = false; // force (not fixed layout!)
 
     var SCROLL_MARGIN_TO_SHOW_LAST_VISBLE_LINE = 5;
     var ITEM_LOAD_SCROLL_BUFFER = 2000;
