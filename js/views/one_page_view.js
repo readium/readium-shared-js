@@ -101,7 +101,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
 
             _$iframe = $("iframe", _$el);
             _$iframe.css("width", "100%");
-            _$iframe.css("height", "3000");
+            _$iframe.css("height", "10px");
         }
 
         return this;
