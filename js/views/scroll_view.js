@@ -149,16 +149,43 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
     }
 
-    function updateTransientViews() {
+    function updateTransientViews(pageView) {
 
         if(!isContinuousScroll) {
             return;
+        }
+
+        var scrollPosBefore = undefined;
+        if (pageView)
+        {
+            var offset = pageView.offset();
+            if (offset) scrollPosBefore = offset.top;
         }
 
         _isPerformingLayoutModifications = true;
         updateLoadedViewsBottom(function() {
             updateLoadedViewsTop(function() {
                 setTimeout(function(){
+
+                    if (scrollPosBefore)
+                    {
+                        var scrollPosAfter = undefined;
+                    
+                        var offset = pageView.offset();
+                        if (offset) scrollPosAfter = offset.top;
+                        
+                        if (scrollPosAfter)
+                        {
+                            var diff = scrollPosAfter - scrollPosBefore;
+                            if (Math.abs(diff) > 4)
+                            {
+                                console.error("SCROLL HAS SHIFTED! " + diff);
+                                
+                                _$contentFrame[0].scrollTop = _$contentFrame[0].scrollTop + diff;
+                            }
+                        }
+                    }
+
                     _isPerformingLayoutModifications = false;
                 }, ON_SCROLL_TIME_DALAY + 100);
             });
@@ -647,7 +674,7 @@ console.log("factor: " + factor);
             _deferredPageRequest = undefined;
             openPageViewElement(pageView, pageRequest);
             _stopTransientViewUpdate = false;
-            updateTransientViews();
+            updateTransientViews(pageView);
         };
 
         if(pageRequest.spineItem) {
