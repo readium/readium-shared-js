@@ -210,7 +210,8 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                         console.error("IFRAME HEIGHT ADJUST: " + href);
                         console.log(msg);
                         console.log(diff);
-                        _debounced_onViewportResize();
+                        
+                        _debounced_updatePageViewSize();
                     
                         setTimeout(function(){
 
@@ -399,7 +400,20 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
 
     //var _debounced_onViewportResize = _.bind(_.debounce(this.onViewportResize, 100), self);
-    var _debounced_onViewportResize = _.debounce(function(){self.onViewportResize();}, 100);
+    var _debounced_updatePageViewSize = _.debounce(function(){
+        //self.onViewportResize();
+
+        if(!_$contentFrame) {
+            return;
+        }
+
+        forEachItemView(function(pageView){
+
+            updatePageViewSize(pageView);
+        }, false);
+
+    }, 100);
+    
     this.onViewportResize = function() {
 
         if(!_$contentFrame) {
@@ -412,7 +426,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         }, false);
 
         onPaginationChanged(self);
-
+        
         updateTransientViews();
     };
 
