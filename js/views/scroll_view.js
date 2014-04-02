@@ -187,6 +187,8 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
     function decorateIframe($iframe)
     {
+        if (!isContinuousScroll) return;
+        
         $iframe.css("border-bottom", "1px dashed silver");
         $iframe.css("border-top", "1px dashed silver");
     }
