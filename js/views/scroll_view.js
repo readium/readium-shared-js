@@ -227,6 +227,8 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                 newView.loadSpineItem(prevSpineItem, function(success, $iframe, spineItem, isNewlyLoaded, context){
                     updatePageViewSize(newView);
 
+                    $iframe.css("border-bottom", "1px dashed silver");
+
                     // var newRange = getPageViewRange(newView);
                     // var newHeight = newRange.bottom - newRange.top;
                     // var newContentHeight = newView.getContentDocHeight();
@@ -236,6 +238,34 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                     onPageViewLoaded(newView, success, $iframe, spineItem, isNewlyLoaded, context);
 
                     callback(true);
+                    
+                    var iframe = $iframe[0];
+                    var href = spineItem.href;
+                    
+                    setTimeout(function(){
+        
+                        try
+                        {
+                            var win = iframe.contentWindow;
+                            var doc = iframe.contentDocument;
+                            if (win && doc)
+                            {
+                                var docHeight = parseInt(Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height))); //body can be shorter!
+                                var iframeHeight = parseInt(Math.round(parseFloat(window.getComputedStyle(iframe).height)));
+                            
+                                if (iframeHeight !== docHeight)
+                                {
+                                    console.error("IFRAME HEIGHT ADJUST: " + href);
+                                    console.log(iframeHeight-docHeight);
+                                    _debounced_onViewportResize();
+                                }
+                            }
+                        }
+                        catch(ex)
+                        {
+                            console.error(ex);
+                        }
+                    }, 1000);
 
                 });
             }
@@ -318,6 +348,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         _$el.remove();
     };
 
+    var _debounced_onViewportResize = _.debounce(self.onViewportResize, 100);
     this.onViewportResize = function() {
 
         if(!_$contentFrame) {
