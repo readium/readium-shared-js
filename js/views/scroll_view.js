@@ -158,7 +158,8 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         var scrollPosBefore = undefined;
         if (pageView)
         {
-            _$el.css("background-color", "silver");
+            // _$el.css("transition", "background-color 500ms ease-out");
+            // _$el.css("background-color", "#dddddd");
             _$contentFrame.css("transform", "translate(3000px, 0px)");
             
             var offset = pageView.offset();
@@ -188,7 +189,8 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                             }
                         }
 
-                        _$el.css("background-color", "transparent");
+                        // _$el.css("transition", "all 0 ease 0");
+                        // _$el.css("background-color", "transparent");
                         _$contentFrame.css("transform", "none");
                     }
 
