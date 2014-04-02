@@ -253,6 +253,7 @@ console.debug("SCROLL ADJUST");
 console.log(updateScroll);
 console.log(scrollPos);
 console.log(iframeHeightDiff);
+console.log(factor);
                                 scrollTo(scrollPos + factor * iframeHeightDiff);
                             }
                             
@@ -275,6 +276,8 @@ console.log(iframeHeightDiff);
                     }
                     else
                     {
+                        console.debug("IFRAME HEIGHT NO ADJUST: " + href);
+                        console.log(msg);
                         //callback(true);
                     }
                 }
