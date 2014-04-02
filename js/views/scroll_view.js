@@ -179,7 +179,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                             var diff = scrollPosAfter - scrollPosBefore;
                             if (Math.abs(diff) > 4)
                             {
-                                console.error("SCROLL HAS SHIFTED! " + diff);
+                                //console.error("SCROLL HAS SHIFTED! " + diff);
                                 
                                 _$contentFrame[0].scrollTop = _$contentFrame[0].scrollTop + diff;
                             }
@@ -214,109 +214,138 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
     function checkHeightDiscrepancy(updateScroll, pageView, iframe, href, fixedLayout, metaWidth, msg)
     {
-        setTimeout(function()
+        var N = 10;
+        var time = 100;
+        
+        var tryAgainFunc = function(tryAgain)
         {
-            try
+            if (tryAgain !== N)
             {
-                var win = iframe.contentWindow;
-                var doc = iframe.contentDocument;
-                if (win && doc)
+                console.log("tryAgainFunc: " + tryAgain);
+            }
+            
+            tryAgain--;
+            if (tryAgain < 0)
+            {
+                console.error("tryAgainFunc abort after tries: " + N);
+                return;
+            }
+    
+            setTimeout(function()
+            {
+                try
                 {
-                    var iframeHeight = parseInt(Math.round(parseFloat(window.getComputedStyle(iframe).height)));
-
-                    var scale = 1;
-                    if (fixedLayout) {
-                        //var iframeWidth = parseInt(Math.round(parseFloat(window.getComputedStyle(iframe).width)));
-                        scale = _$contentFrame.width() / metaWidth;
-                    }
-                    
-                    var docHeight = parseInt(Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height) * scale)); //body can be shorter!
-                    var diff = iframeHeight-docHeight;
-                    if (Math.abs(diff) > 4)
+                    var win = iframe.contentWindow;
+                    var doc = iframe.contentDocument;
+                    if (win && doc)
                     {
-                        console.error("IFRAME HEIGHT ADJUST: " + href);
-                        console.log(msg);
-                        console.log(diff);
-                        
-                        var iframeHeightBefore = iframeHeight;
-                        var scrollPos = scrollTop();
-                        
-                        //_debounced_updatePageViewSize();
-                        updatePageViewSize(pageView);
+                        var iframeHeight = parseInt(Math.round(parseFloat(window.getComputedStyle(iframe).height)));
+
+                        var scale = 1;
+                        if (fixedLayout) {
+                            //var iframeWidth = parseInt(Math.round(parseFloat(window.getComputedStyle(iframe).width)));
+                            scale = _$contentFrame.width() / metaWidth;
+                        }
                     
-                        var win = iframe.contentWindow;
-                        var doc = iframe.contentDocument;
-                        if (win && doc)
+                        var docHeight = parseInt(Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height) * scale)); //body can be shorter!
+                        var diff = iframeHeight-docHeight;
+                        if (Math.abs(diff) > 4)
                         {
-                            var docHeight = parseInt(Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height) * scale)); //body can be shorter!
-                            var iframeHeight = parseInt(Math.round(parseFloat(window.getComputedStyle(iframe).height)));
+                            // console.error("IFRAME HEIGHT ADJUST: " + href);
+                            // console.log(msg);
+                            // console.log(diff);
 
+                            // var iframeHeightBefore = iframeHeight;
+                            // var scrollPos = scrollTop();
 
-                            var iframeHeightAfter = iframeHeight;
-                            var iframeHeightDiff = iframeHeightAfter - iframeHeightBefore;
-                            if (Math.abs(iframeHeightDiff) > 0)
+                            //_debounced_updatePageViewSize();
+                            updatePageViewSize(pageView);
+                    
+                            var win = iframe.contentWindow;
+                            var doc = iframe.contentDocument;
+                            if (win && doc)
                             {
-                                // updateScroll
-                                // 0 => top
-                                // 1 => page
-                                // 2 => bottom
-                                
-                                var factor = 0;
-                                if (updateScroll === 0)
-                                {
-                                    factor = -1;
-                                }
-                                else if (updateScroll === 1)
-                                {
-                                    factor = 0;
-                                }
-                                else if (updateScroll === 2)
-                                {
-                                    factor = 0;
-                                }
-                                
-if (factor !== 0)
-{
-console.debug("SCROLL ADJUST");
-console.log("updateScroll: " + updateScroll);
-console.log("scrollPos: " + scrollPos);
-console.log("iframeHeightDiff: " + iframeHeightDiff);
-console.log("factor: " + factor);
-}
-                                scrollTo(scrollPos + factor * iframeHeightDiff);
-                            }
+                                var docHeight = parseInt(Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height) * scale)); //body can be shorter!
+                                var iframeHeight = parseInt(Math.round(parseFloat(window.getComputedStyle(iframe).height)));
+    // 
+    // 
+    //                             var iframeHeightAfter = iframeHeight;
+    //                             var iframeHeightDiff = iframeHeightAfter - iframeHeightBefore;
+    //                             if (Math.abs(iframeHeightDiff) > 0)
+    //                             {
+    //                                 // updateScroll
+    //                                 // 0 => top
+    //                                 // 1 => page
+    //                                 // 2 => bottom
+    //                                 
+    //                                 var factor = 0;
+    //                                 if (updateScroll === 0)
+    //                                 {
+    //                                     factor = -1;
+    //                                 }
+    //                                 else if (updateScroll === 1)
+    //                                 {
+    //                                     factor = 0;
+    //                                 }
+    //                                 else if (updateScroll === 2)
+    //                                 {
+    //                                     factor = 0;
+    //                                 }
+    //                                 
+    // if (factor !== 0)
+    // {
+    // // console.debug("SCROLL ADJUST");
+    // // console.log("updateScroll: " + updateScroll);
+    // // console.log("scrollPos: " + scrollPos);
+    // // console.log("iframeHeightDiff: " + iframeHeightDiff);
+    // // console.log("factor: " + factor);
+    // 
+    // scrollTo(scrollPos + factor * iframeHeightDiff);
+    // }
+    //                             }
                             
     
-                            diff = iframeHeight-docHeight;
-                            if (Math.abs(diff) > 4)
-                            {
-                                console.error("## IFRAME HEIGHT ADJUST: " + href);
-                                console.log(msg);
-                                console.log(iframeHeight-docHeight);
+                                var newdiff = iframeHeight-docHeight;
+                                if (Math.abs(newdiff) > 4)
+                                {
+                                    console.error("## IFRAME HEIGHT ADJUST: " + href);
+                                    console.log(msg);
+                                    console.log(newdiff);
+                                    
+                                    tryAgainFunc(tryAgain);
+                                }
+                                else
+                                {
+                                    console.log(">> IFRAME HEIGHT ADJUSTED: " + href + " ("+diff+")");
+                                    // console.log(msg);
+                                }
                             }
                             else
                             {
-                                console.log("## IFRAME HEIGHT OKAY: " + href);
-                                console.log(msg);
+                                console.log("tryAgainFunc win && doc? " + tryAgain);
+                                tryAgainFunc(tryAgain);
                             }
                         }
-                    
-                        //callback(true);
+                        else
+                        {
+                            // console.debug("IFRAME HEIGHT NO ADJUST: " + href);
+                            // console.log(msg);
+                        }
                     }
                     else
                     {
-                        console.debug("IFRAME HEIGHT NO ADJUST: " + href);
-                        console.log(msg);
-                        //callback(true);
+                        console.log("tryAgainFunc win && doc? " + tryAgain);
+                        tryAgainFunc(tryAgain);
                     }
                 }
-            }
-            catch(ex)
-            {
-                console.error(ex);
-                //callback(true);
-            }
-        }, 1000);
+                catch(ex)
+                {
+                    console.error(ex);
+                }
+            }, time);
+    
+        };
+        tryAgainFunc(N);
     }
     
 
@@ -376,7 +405,7 @@ console.log("factor: " + factor);
                         checkHeightDiscrepancy(0, newView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToTopOf"); // //onIFrameLoad called before this callback, so okay.
                     }
                     else {
-                        console.log("Unable to open 2 " + prevSpineItem.href);
+                        console.error("Unable to open 2 " + prevSpineItem.href);
                         removePageView(newView);
                         callback(false);
                     }
@@ -384,7 +413,7 @@ console.log("factor: " + factor);
                 });
             }
             else {
-                console.log("Unable to open 1 " + prevSpineItem.href);
+                console.error("Unable to open 1 " + prevSpineItem.href);
                 removePageView(tmpView);
                 callback(false);
             }
@@ -424,7 +453,7 @@ console.log("factor: " + factor);
                 checkHeightDiscrepancy(2, newView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToBottomOf"); // //onIFrameLoad called before this callback, so okay.
             }
             else {
-                console.log("Unable to load " + nexSpineItem.href);
+                console.error("Unable to load " + nexSpineItem.href);
                 callback(false);
             }
 
@@ -632,7 +661,7 @@ console.log("factor: " + factor);
                 checkHeightDiscrepancy(1, loadedView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? loadedView.meta_width() : 0, "openPage"); // //onIFrameLoad called before this callback, so okay.
             }
             else {
-                console.log("Unable to load " + spineItem.href);
+                console.error("Unable to load " + spineItem.href);
                 
                 removePageView(loadedView);
                 loadedView = undefined;
@@ -715,8 +744,8 @@ console.log("factor: " + factor);
 
     function openPageViewElement(pageView, pageRequest) {
 
-var si = pageView ? pageView.currentSpineItem() : undefined;
-console.log("openPageViewElement: " + (si ? si.href : (pageRequest ? pageRequest.scrollTop : undefined)));
+// var si = pageView ? pageView.currentSpineItem() : undefined;
+// console.log("openPageViewElement: " + (si ? si.href : (pageRequest ? pageRequest.scrollTop : undefined)));
 
         var topOffset = 0;
         var pageCount;

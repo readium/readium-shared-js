@@ -475,7 +475,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
                     }
                     else
                     {
-                        console.error("onIFrameLoad + TIMEOUT");
+                        console.error("onIFrameLoad !! doc && win + TIMEOUT");
                         console.debug(spineItem.href);
                         console.log(win); // sometimes null!
                         console.log(doc); // sometimes null!
