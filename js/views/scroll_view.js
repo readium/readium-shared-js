@@ -250,10 +250,10 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                                 
                                 
 console.debug("SCROLL ADJUST");
-console.log(updateScroll);
-console.log(scrollPos);
-console.log(iframeHeightDiff);
-console.log(factor);
+console.log("updateScroll: " + updateScroll);
+console.log("scrollPos: " + scrollPos);
+console.log("iframeHeightDiff: " + iframeHeightDiff);
+console.log("factor: " + factor);
                                 scrollTo(scrollPos + factor * iframeHeightDiff);
                             }
                             
