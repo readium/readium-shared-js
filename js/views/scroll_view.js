@@ -225,76 +225,86 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                 scrollTo(scrollPos + (range.bottom - range.top));
 
                 newView.loadSpineItem(prevSpineItem, function(success, $iframe, spineItem, isNewlyLoaded, context){
-                    updatePageViewSize(newView);
-
-                    $iframe.css("border-bottom", "1px dashed silver");
-
-                    // var newRange = getPageViewRange(newView);
-                    // var newHeight = newRange.bottom - newRange.top;
-                    // var newContentHeight = newView.getContentDocHeight();
-                    // spineItem.href
-                    // var newIframeHeight = Math.round(parseFloat(window.getComputedStyle($iframe[0]).height));
-
-                    onPageViewLoaded(newView, success, $iframe, spineItem, isNewlyLoaded, context);
-
-                    callback(true);
+                    if(success) {
                     
-                    var iframe = $iframe[0];
-                    var href = spineItem.href;
+                        updatePageViewSize(newView);
+
+                        $iframe.css("border-bottom", "1px dashed silver");
+                        $iframe.css("border-top", "1px dashed silver");
+
+                        // var newRange = getPageViewRange(newView);
+                        // var newHeight = newRange.bottom - newRange.top;
+                        // var newContentHeight = newView.getContentDocHeight();
+                        // spineItem.href
+                        // var newIframeHeight = Math.round(parseFloat(window.getComputedStyle($iframe[0]).height));
+
+                        onPageViewLoaded(newView, success, $iframe, spineItem, isNewlyLoaded, context);
+
+                        callback(true);
                     
-                    setTimeout(function(){
+                        var iframe = $iframe[0];
+                        var href = spineItem.href;
+                    
+                        setTimeout(function(){
         
-                        try
-                        {
-                            var win = iframe.contentWindow;
-                            var doc = iframe.contentDocument;
-                            if (win && doc)
+                            try
                             {
-                                var docHeight = parseInt(Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height))); //body can be shorter!
-                                var iframeHeight = parseInt(Math.round(parseFloat(window.getComputedStyle(iframe).height)));
-                            
-                                if (iframeHeight !== docHeight)
+                                var win = iframe.contentWindow;
+                                var doc = iframe.contentDocument;
+                                if (win && doc)
                                 {
-                                    console.error("IFRAME HEIGHT ADJUST: " + href);
-                                    console.log(iframeHeight-docHeight);
-                                    _debounced_onViewportResize();
-                                    
-                                    setTimeout(function(){
-        
-                                        try
-                                        {
-                                            var win = iframe.contentWindow;
-                                            var doc = iframe.contentDocument;
-                                            if (win && doc)
-                                            {
-                                                var docHeight = parseInt(Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height))); //body can be shorter!
-                                                var iframeHeight = parseInt(Math.round(parseFloat(window.getComputedStyle(iframe).height)));
+                                    var docHeight = parseInt(Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height))); //body can be shorter!
+                                    var iframeHeight = parseInt(Math.round(parseFloat(window.getComputedStyle(iframe).height)));
                             
-                                                if (iframeHeight !== docHeight)
+                                    if (iframeHeight !== docHeight)
+                                    {
+                                        console.error("IFRAME HEIGHT ADJUST: " + href);
+                                        console.log(iframeHeight-docHeight);
+                                        _debounced_onViewportResize();
+                                    
+                                        setTimeout(function(){
+        
+                                            try
+                                            {
+                                                var win = iframe.contentWindow;
+                                                var doc = iframe.contentDocument;
+                                                if (win && doc)
                                                 {
-                                                    console.error("## IFRAME HEIGHT ADJUST: " + href);
-                                                    console.log(iframeHeight-docHeight);
+                                                    var docHeight = parseInt(Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height))); //body can be shorter!
+                                                    var iframeHeight = parseInt(Math.round(parseFloat(window.getComputedStyle(iframe).height)));
+                            
+                                                    if (iframeHeight !== docHeight)
+                                                    {
+                                                        console.error("## IFRAME HEIGHT ADJUST: " + href);
+                                                        console.log(iframeHeight-docHeight);
+                                                    }
                                                 }
                                             }
-                                        }
-                                        catch(ex)
-                                        {
-                                            console.error(ex);
-                                        }
-                                    }, 800);
+                                            catch(ex)
+                                            {
+                                                console.error(ex);
+                                            }
+                                        }, 800);
+                                    }
                                 }
                             }
-                        }
-                        catch(ex)
-                        {
-                            console.error(ex);
-                        }
-                    }, 1000);
+                            catch(ex)
+                            {
+                                console.error(ex);
+                            }
+                        }, 1000);
+
+                    }
+                    else {
+                        console.log("Unable to open 2 " + prevSpineItem.href);
+                        removePageView(newView);
+                        callback(false);
+                    }
 
                 });
             }
             else {
-                console.log("Unable to open " + prevSpineItem.href);
+                console.log("Unable to open 1 " + prevSpineItem.href);
                 removePageView(tmpView);
                 callback(false);
             }
@@ -326,6 +336,9 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         newView.loadSpineItem(nexSpineItem, function(success, $iframe, spineItem, isNewlyLoaded, context) {
             if(success) {
                 updatePageViewSize(newView);
+
+                $iframe.css("border-bottom", "1px dashed silver");
+                $iframe.css("border-top", "1px dashed silver");
 
                 onPageViewLoaded(newView, success, $iframe, spineItem, isNewlyLoaded, context);
 
@@ -513,6 +526,10 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
             if(success) {
                 updatePageViewSize(loadedView);
+
+                $iframe.css("border-bottom", "1px dashed silver");
+                $iframe.css("border-top", "1px dashed silver");
+                
                 onPageViewLoaded(loadedView, success, $iframe, spineItem, isNewlyLoaded, context);
             }
             else {
