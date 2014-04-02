@@ -58,11 +58,11 @@ ReadiumSDK.Views.IFrameLoader = function() {
             try
             {
                 iframe.contentWindow.navigator.epubReadingSystem = navigator.epubReadingSystem;
-                console.debug("epubReadingSystem name:"
-                    + iframe.contentWindow.navigator.epubReadingSystem.name
-                    + " version:"
-                    + iframe.contentWindow.navigator.epubReadingSystem.version
-                    + " is loaded to iframe");
+                // console.debug("epubReadingSystem name:"
+                //     + iframe.contentWindow.navigator.epubReadingSystem.name
+                //     + " version:"
+                //     + iframe.contentWindow.navigator.epubReadingSystem.version
+                //     + " is loaded to iframe");
             }
             catch(ex)
             {
