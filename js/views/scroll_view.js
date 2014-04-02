@@ -348,7 +348,8 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         _$el.remove();
     };
 
-    var _debounced_onViewportResize = _.debounce(self.onViewportResize, 100);
+
+    var _debounced_onViewportResize = _.bind(_.debounce(self.onViewportResize, 100), self);
     this.onViewportResize = function() {
 
         if(!_$contentFrame) {
