@@ -158,6 +158,8 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         var scrollPosBefore = undefined;
         if (pageView)
         {
+            _$contentFrame.css("transform", "translate(3000px, 0px)");
+            
             var offset = pageView.offset();
             if (offset) scrollPosBefore = offset.top;
         }
@@ -179,11 +181,13 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                             var diff = scrollPosAfter - scrollPosBefore;
                             if (Math.abs(diff) > 4)
                             {
-                                console.log("SCROLL ADJUST: " + diff);
+                                console.log("SCROLL ADJUST: " + diff + " -- " + pageView.currentSpineItem().href);
                                 
                                 _$contentFrame[0].scrollTop = _$contentFrame[0].scrollTop + diff;
                             }
                         }
+
+                        _$contentFrame.css("transform", "none");
                     }
 
                     _isPerformingLayoutModifications = false;
