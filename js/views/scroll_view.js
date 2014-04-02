@@ -248,6 +248,8 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                     
                         var iframe = $iframe[0];
                         var href = spineItem.href;
+                        var fixedLayout = spineItem.isFixedLayout();
+                        var metaWidth = fixedLayout ? newView.meta_width() : 0; //onIFrameLoad called before this callback, so okay.
                     
                         setTimeout(function(){
         
@@ -257,9 +259,15 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                                 var doc = iframe.contentDocument;
                                 if (win && doc)
                                 {
-                                    var docHeight = parseInt(Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height))); //body can be shorter!
                                     var iframeHeight = parseInt(Math.round(parseFloat(window.getComputedStyle(iframe).height)));
-                            
+
+                                    var scale = 1;
+                                    if (fixedLayout) {
+                                        //var iframeWidth = parseInt(Math.round(parseFloat(window.getComputedStyle(iframe).width)));
+                                        scale = _$contentFrame.width() / metaWidth;
+                                    }
+                                    
+                                    var docHeight = parseInt(Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height) * scale)); //body can be shorter!
                                     if (iframeHeight !== docHeight)
                                     {
                                         console.error("IFRAME HEIGHT ADJUST: " + href);
@@ -274,7 +282,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                                                 var doc = iframe.contentDocument;
                                                 if (win && doc)
                                                 {
-                                                    var docHeight = parseInt(Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height))); //body can be shorter!
+                                                    var docHeight = parseInt(Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height) * scale)); //body can be shorter!
                                                     var iframeHeight = parseInt(Math.round(parseFloat(window.getComputedStyle(iframe).height)));
                             
                                                     if (iframeHeight !== docHeight)

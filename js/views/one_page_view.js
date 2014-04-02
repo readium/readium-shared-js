@@ -293,7 +293,8 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         css["height"] = _meta_size.height;
 
         if(!_$epubHtml) {
-            debugger;
+//            debugger;
+            return;
         }
 
         _$epubHtml.css(css);
