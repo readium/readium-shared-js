@@ -248,12 +248,14 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                                     factor = 0;
                                 }
                                 
-                                
+if (factor !== 0)
+{
 console.debug("SCROLL ADJUST");
 console.log("updateScroll: " + updateScroll);
 console.log("scrollPos: " + scrollPos);
 console.log("iframeHeightDiff: " + iframeHeightDiff);
 console.log("factor: " + factor);
+}
                                 scrollTo(scrollPos + factor * iframeHeightDiff);
                             }
                             
@@ -687,7 +689,7 @@ console.log("factor: " + factor);
     function openPageViewElement(pageView, pageRequest) {
 
 var si = pageView ? pageView.currentSpineItem() : undefined;
-console.log("openPageViewElement: " + si ? si.href : (pageRequest ? pageRequest.scrollTop : undefined));
+console.log("openPageViewElement: " + (si ? si.href : (pageRequest ? pageRequest.scrollTop : undefined)));
 
         var topOffset = 0;
         var pageCount;
