@@ -195,7 +195,6 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         }
 
         var tmpView = createPageViewForSpineItem(true);
-        //tmpView.setHeight(100);
                 
         // add to the end first to avoid scrolling during load
         var lastView = lastLoadedView();
@@ -518,7 +517,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                         _isLoadingNewSpineItemOnPageRequest = false;
                     }, ON_SCROLL_TIME_DALAY + 100);
 
-                    if(pageView) {
+                    if(pageView && _deferredPageRequest) {
                         if(pageView.currentSpineItem() === _deferredPageRequest.spineItem) {
                             doneLoadingSpineItem(pageView, _deferredPageRequest);
                         }

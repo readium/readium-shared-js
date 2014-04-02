@@ -100,6 +100,8 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             }
 
             _$iframe = $("iframe", _$el);
+            _$iframe.css("width", "100%");
+            _$iframe.css("height", "3000");
         }
 
         return this;
@@ -183,8 +185,8 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
 
     //this is called by scroll_view for reflowable spine item
     this.resizeIFrameToContent = function() {
-
         var contHeight = self.getContentDocHeight();
+        //console.log("resizeIFrameToContent: " + contHeight);
         
         _$iframe.css("height", contHeight + "px");
         _$iframe.css("visibility", "visible");
@@ -219,12 +221,26 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
 
     this.getContentDocHeight = function(){
 
-        if(!_$epubHtml) {
+        if(!_$iframe || !_$iframe.length) {
             return 0;
         }
+        
+        var win = _$iframe[0].contentWindow;
+        var doc = _$iframe[0].contentDocument;
+        if (win && doc)
+        {
+            var height = Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height)); //body can be shorter!
+            return height;
+        }
+        else if (_$epubHtml)
+        {
+            console.error("getContentDocHeight ??");
+            
+            var jqueryHeight = _$epubHtml.height();
+            return jqueryHeight;
+        }
 
-        var jqueryHeight = _$epubHtml.height();
-        return jqueryHeight;
+        return 0;
     }
 
     this.transformContentImmediate = function(scale, left, top) {
@@ -411,19 +427,57 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             self.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPEN_START, _$iframe, _currentSpineItem);
             _iframeLoader.loadIframe(_$iframe[0], src, function(success){
 
-                onIFrameLoad(success);
-
-                ReadiumSDK.Helpers.triggerLayout(_$iframe);
-                //var height = self.getContentDocHeight();
+                if(callback)
+                {    
+                    var func = function() {
+                        callback(success, _$iframe, _currentSpineItem, true, context);
+                    };
+                    
+                    var win = _$iframe[0].contentWindow;
+                    var doc = _$iframe[0].contentDocument;
+                    if (doc && win)
+                    {
+                        onIFrameLoad(success); // applies styles
+                        
+                        //ReadiumSDK.Helpers.triggerLayout(_$iframe);
+                        
+                        // setTimeout(function(){
+                        //     
+                        // console.debug(spineItem.href);
+                        // 
+                        // // var height = self.getContentDocHeight();
+                        // // console.log("body:" + height);
+                        // 
+                        // var bodyHeight = Math.round(parseFloat(win.getComputedStyle(doc.body).height));
+                        // console.log("body:" + bodyHeight);
+                        // 
+                        // var docHeight = Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height));
+                        // console.log("doc:" + docHeight);
+                        // 
+                        // var iframeHeight = Math.round(parseFloat(win.getComputedStyle(_$iframe[0]).height));
+                        // console.log("iframe:" + iframeHeight);
+                        // 
+                        func();
+                        
+                        // }, 100);
+                    }
+                    else
+                    {
+                        console.error("onIFrameLoad + TIMEOUT");
+                        console.debug(spineItem.href);
+                        console.log(win); // sometimes null!
+                        console.log(doc); // sometimes null!
+                        
+                        onIFrameLoad(success);
+                        
+                        setTimeout(func, 500);
+                    }
+                }
+                else
+                {
+                    onIFrameLoad(success);
+                }
                 
-                if(callback) {
-                    callback(success, _$iframe, _currentSpineItem, true, context);
-                }                
-                
-                // setTimeout(function(){
-                // 
-                // }, 200);
-
             }, self);
         }
         else
