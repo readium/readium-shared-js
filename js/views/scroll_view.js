@@ -76,7 +76,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         return self;
     };
 
-    function updateLoadedViewsTop(callback) {
+    function updateLoadedViewsTop(callback, checkScroll) {
 
         if(_stopTransientViewUpdate) {
             callback();
@@ -94,13 +94,15 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
         if((viewPortRange.top - firstViewRange.bottom) > ITEM_LOAD_SCROLL_BUFFER) {
             removePageView(viewPage);
-            scrollTo(viewPortRange.top - (firstViewRange.bottom - firstViewRange.top));
-            updateLoadedViewsTop(callback); //recursion
+            scrollTo(viewPortRange.top - (firstViewRange.bottom - firstViewRange.top), undefined);
+            checkScroll("updateLoadedViewsTop 1");
+            updateLoadedViewsTop(callback, checkScroll); //recursion
         }
         else if((viewPortRange.top - firstViewRange.top) < ITEM_LOAD_SCROLL_BUFFER) {
             addToTopOf(viewPage, function(isElementAdded){
                 if(isElementAdded) {
-                    updateLoadedViewsTop(callback); //recursion
+                    checkScroll("updateLoadedViewsTop 2");
+                    updateLoadedViewsTop(callback, checkScroll); //recursion
                 }
                 else {
                     callback();
@@ -113,7 +115,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
     }
 
-    function updateLoadedViewsBottom(callback) {
+    function updateLoadedViewsBottom(callback, checkScroll) {
 
         if(_stopTransientViewUpdate) {
             callback();
@@ -131,12 +133,14 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
         if((lastViewRange.top - viewPortRange.bottom) > ITEM_LOAD_SCROLL_BUFFER) {
             removePageView(viewPage);
-            updateLoadedViewsBottom(callback); //recursion
+            checkScroll("updateLoadedViewsBottom 1");
+            updateLoadedViewsBottom(callback, checkScroll); //recursion
         }
         else if((lastViewRange.bottom - viewPortRange.bottom) < ITEM_LOAD_SCROLL_BUFFER) {
             addToBottomOf(viewPage, function(newPageLoaded) {
+                checkScroll("updateLoadedViewsBottom 2");
                 if(newPageLoaded) {
-                    updateLoadedViewsBottom(callback); //recursion
+                    updateLoadedViewsBottom(callback, checkScroll); //recursion
                 }
                 else {
                     callback();
@@ -168,6 +172,25 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
             if (offset) scrollPosBefore = offset.top;
         }
 
+        var checkScroll = function(msg)
+        {
+            if (!scrollPosBefore) return;
+            var scrollPosAfter = undefined;
+        
+            var offset = pageView.offset();
+            if (offset) scrollPosAfter = offset.top;
+            
+            if (!scrollPosAfter) return;
+
+            var diff = scrollPosAfter - scrollPosBefore;
+            if (Math.abs(diff) > 1)
+            {
+                console.debug("SCROLL ADJUST (" + msg + ") " + diff + " -- " + pageView.currentSpineItem().href);
+                
+                _$contentFrame[0].scrollTop = _$contentFrame[0].scrollTop + diff;
+            }
+        };
+
         _isPerformingLayoutModifications = true;
         updateLoadedViewsBottom(function() {
             // if (pageView)
@@ -177,33 +200,14 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
             updateLoadedViewsTop(function() {
                 setTimeout(function(){
 
-                    if (scrollPosBefore)
-                    {
-                        var scrollPosAfter = undefined;
-                    
-                        var offset = pageView.offset();
-                        if (offset) scrollPosAfter = offset.top;
-                        
-                        if (scrollPosAfter)
-                        {
-                            var diff = scrollPosAfter - scrollPosBefore;
-                            if (Math.abs(diff) > 1)
-                            {
-                                console.debug("SCROLL ADJUST: " + diff + " -- " + pageView.currentSpineItem().href);
-                                
-                                _$contentFrame[0].scrollTop = _$contentFrame[0].scrollTop + diff;
-                            }
-                        }
-
                         // _$el.css("transition", "all 0 ease 0");
                         // _$el.css("background-color", "transparent");
                         // _$contentFrame.css("transform", "none");
-                    }
 
                     _isPerformingLayoutModifications = false;
                 }, ON_SCROLL_TIME_DALAY + 100);
-            });
-        });
+            }, checkScroll);
+        }, checkScroll);
     }
 
     function onScroll(e) {
@@ -251,7 +255,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         }
         
         var previousPolledContentHeight = parseInt(Math.round(parseFloat(w.getComputedStyle(d.documentElement).height))); //body can be shorter!;
-        
+        if (previousPolledContentHeight <= 100) console.debug("SHORT previousPolledContentHeight: " + previousPolledContentHeight);
         
         var initialContentHeight = previousPolledContentHeight;
         
@@ -346,7 +350,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
     // // console.log("iframeHeightDiff: " + iframeHeightDiff);
     // // console.log("factor: " + factor);
     // 
-    // scrollTo(scrollPos + factor * iframeHeightDiff);
+    // scrollTo(scrollPos + factor * iframeHeightDiff, undefined);
     // }
     //                             }
                             
@@ -428,7 +432,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                 var newView = createPageViewForSpineItem();
                 newView.setHeight(range.bottom - range.top);
                 newView.element().insertBefore(topView.element());
-                scrollTo(scrollPos + (range.bottom - range.top));
+                scrollTo(scrollPos + (range.bottom - range.top), undefined);
 
                 newView.loadSpineItem(prevSpineItem, function(success, $iframe, spineItem, isNewlyLoaded, context){
                     if(success) {
