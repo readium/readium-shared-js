@@ -160,7 +160,9 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         {
             // _$el.css("transition", "background-color 500ms ease-out");
             // _$el.css("background-color", "#dddddd");
-            _$contentFrame.css("transform", "translate(3000px, 0px)");
+            //_$contentFrame.css("transform", "translate(3000px, 0px)");
+            // _$contentFrame.css("transform-origin", "50% 50%");
+            // _$contentFrame.css("transform", "scale(0.5)");
             
             var offset = pageView.offset();
             if (offset) scrollPosBefore = offset.top;
@@ -168,6 +170,10 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
         _isPerformingLayoutModifications = true;
         updateLoadedViewsBottom(function() {
+            // if (pageView)
+            // {
+            //     _$contentFrame.css("transform", "scale(0.75)");
+            // }
             updateLoadedViewsTop(function() {
                 setTimeout(function(){
 
@@ -181,9 +187,9 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                         if (scrollPosAfter)
                         {
                             var diff = scrollPosAfter - scrollPosBefore;
-                            if (Math.abs(diff) > 4)
+                            if (Math.abs(diff) > 1)
                             {
-                                console.log("SCROLL ADJUST: " + diff + " -- " + pageView.currentSpineItem().href);
+                                console.debug("SCROLL ADJUST: " + diff + " -- " + pageView.currentSpineItem().href);
                                 
                                 _$contentFrame[0].scrollTop = _$contentFrame[0].scrollTop + diff;
                             }
@@ -191,7 +197,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
                         // _$el.css("transition", "all 0 ease 0");
                         // _$el.css("background-color", "transparent");
-                        _$contentFrame.css("transform", "none");
+                        // _$contentFrame.css("transform", "none");
                     }
 
                     _isPerformingLayoutModifications = false;
@@ -810,13 +816,13 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
             topOffset = pageIndex * viewHeight();
         }
-        else if(pageRequest.elementId) {
+        else if(pageView && pageRequest.elementId) {
 
             pageRange = getPageViewRange(pageView);
             sfiNav = pageView.getNavigator();
             $element = sfiNav.getElementById(pageRequest.elementId);
 
-            if(!$element) {
+            if(!$element || !$element.length) {
                 console.warn("Element id=" + pageRequest.elementId + " not found!");
                 return;
             }
@@ -831,13 +837,13 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
             topOffset = sfiNav.getVerticalOffsetForElement($element) + pageRange.top;
 
         }
-        else if(pageRequest.elementCfi) {
+        else if(pageView && pageRequest.elementCfi) {
 
             pageRange = getPageViewRange(pageView);
             sfiNav = pageView.getNavigator();
             $element = sfiNav.getElementByCfi(pageRequest.elementCfi);
 
-            if(!$element) {
+            if(!$element || !$element.length) {
                 console.warn("Element cfi=" + pageRequest.elementCfi + " not found!");
                 return;
             }
@@ -865,10 +871,13 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
             topOffset = scrollHeight() - viewHeight() - 5;
         }
-        else {
+        else if (pageView) {
 
             pageRange = getPageViewRange(pageView);
             topOffset = pageRange.top;
+        }
+        else {
+            topOffset = 0;
         }
 
         if(scrollTop() != topOffset ) {

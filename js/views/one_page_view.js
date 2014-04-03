@@ -143,7 +143,8 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             if (!_$epubHtml || _$epubHtml.length == 0) {
                 _$epubHtml = $("svg", epubContentDocument);
             }
-            _$epubHtml.css("overflow", "hidden");
+            
+            //_$epubHtml.css("overflow", "hidden");
 
             if (_enableBookStyleOverrides) {
                 self.applyBookStyles();
