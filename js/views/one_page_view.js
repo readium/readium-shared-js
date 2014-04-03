@@ -199,24 +199,17 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
     this.resizeIFrameToContent = function() {
         var contHeight = self.getContentDocHeight();
         //console.log("resizeIFrameToContent: " + contHeight);
-        
-        _$iframe.css("height", contHeight + "px");
-        _$iframe.css("visibility", "visible");
 
-        _$el.css("height", contHeight + "px");
+        this.setHeight(contHeight);
 
-        _$iframe.css("height", contHeight + "px");
-        _$iframe.css("visibility", "visible");
-
-        _$el.css("height", contHeight + "px");
+        this.showIFrame();
     };
-
+    
     this.setHeight = function(height) {
 
-        _$iframe.css("height", height + "px");
-        _$iframe.css("visibility", "visible");
-
         _$el.css("height", height + "px");
+
+        _$iframe.css("height", height + "px");
     };
 
     this.elementHeight = function() {
@@ -237,10 +230,11 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             return 0;
         }
         
-        var win = _$iframe[0].contentWindow;
-        var doc = _$iframe[0].contentDocument;
-        if (win && doc)
+        if (ReadiumSDK.Helpers.isIframeAlive(_$iframe[0]))
         {
+            var win = _$iframe[0].contentWindow;
+            var doc = _$iframe[0].contentDocument;
+            
             var height = Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height)); //body can be shorter!
             return height;
         }
@@ -315,7 +309,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         // //_$epubHtml.css("visibility", "hidden"); // "flashing" in two-page spread mode is annoying :(
         _$epubHtml.css("opacity", "0.999");
 
-        _$iframe.css("visibility", "visible");
+        this.showIFrame();
         
         setTimeout(function()
         {
@@ -435,51 +429,33 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             _currentSpineItem = spineItem;
             var src = _spine.package.resolveRelativeUrl(spineItem.href);
 
-            //hide iframe until content is scaled
-            _$iframe.css("visibility", "hidden");
+            //if (spineItem && spineItem.isFixedLayout())
+            if (true) // both fixed layout and reflowable documents need hiding due to flashing during layout/rendering
+            {
+                //hide iframe until content is scaled
+                this.hideIFrame();
+                //_$iframe.css("visibility", "hidden");
+            }
+            
             self.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPEN_START, _$iframe, _currentSpineItem);
             _iframeLoader.loadIframe(_$iframe[0], src, function(success){
 
-                if(callback)
+                if(success && callback)
                 {    
                     var func = function() {
                         callback(success, _$iframe, _currentSpineItem, true, context);
                     };
                     
-                    var win = _$iframe[0].contentWindow;
-                    var doc = _$iframe[0].contentDocument;
-                    if (doc && win)
+                    if (ReadiumSDK.Helpers.isIframeAlive(_$iframe[0]))
                     {
                         onIFrameLoad(success); // applies styles
                         
-                        //ReadiumSDK.Helpers.triggerLayout(_$iframe);
-                        
-                        // setTimeout(function(){
-                        //     
-                        // console.debug(spineItem.href);
-                        // 
-                        // // var height = self.getContentDocHeight();
-                        // // console.log("body:" + height);
-                        // 
-                        // var bodyHeight = Math.round(parseFloat(win.getComputedStyle(doc.body).height));
-                        // console.log("body:" + bodyHeight);
-                        // 
-                        // var docHeight = Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height));
-                        // console.log("doc:" + docHeight);
-                        // 
-                        // var iframeHeight = Math.round(parseFloat(win.getComputedStyle(_$iframe[0]).height));
-                        // console.log("iframe:" + iframeHeight);
-                        // 
                         func();
-                        
-                        // }, 100);
                     }
                     else
                     {
                         console.error("onIFrameLoad !! doc && win + TIMEOUT");
                         console.debug(spineItem.href);
-                        console.log(win); // sometimes null!
-                        console.log(doc); // sometimes null!
                         
                         onIFrameLoad(success);
                         

@@ -233,6 +233,25 @@ ReadiumSDK.Helpers.setStyles = function(styles, $element) {
 
 };
 
+ReadiumSDK.Helpers.isIframeAlive = function(iframe)
+{
+    var w = undefined;
+    var d = undefined;
+    try
+    {
+        w = iframe.contentWindow;
+        d = iframe.contentDocument;
+    }
+    catch (ex)
+    {
+        console.error(ex);
+        return false;
+    }
+    
+    return w && d;
+}
+
+
 ReadiumSDK.Helpers.getOrientation = function($viewport) {
 
     var viewportWidth = $viewport.width();
