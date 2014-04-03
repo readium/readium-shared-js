@@ -31,9 +31,14 @@ ReadiumSDK.Models.Package = function(packageData){
     this.media_overlay = undefined;
     
     this.rendition_flow = undefined;
+    
     this.rendition_layout = undefined;
-    this.rendition_orientation = undefined;
+
+    //TODO: unused yet!
     this.rendition_spread = undefined;
+
+    //TODO: unused yet!
+    this.rendition_orientation = undefined;
 
     this.resolveRelativeUrlMO = function(relativeUrl) {
 

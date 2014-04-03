@@ -250,7 +250,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         }
         if (!w || !d)
         {
-            console.error("checkHeightDiscrepancy ! win / doc (iFrame already disposed?)");
+            console.log("checkHeightDiscrepancy ! win && doc (iFrame disposed?)");
             return;
         }
         
