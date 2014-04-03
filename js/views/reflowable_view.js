@@ -379,7 +379,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
         }
         else {
 
-            var prevSpineItem = _spine.prevItem(_currentSpineItem);
+            var prevSpineItem = _spine.prevItem(_currentSpineItem, true);
             if(prevSpineItem) {
 
                 var pageRequest = new ReadiumSDK.Models.PageOpenRequest(prevSpineItem, initiator);
@@ -401,7 +401,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
         }
         else {
 
-            var nextSpineItem = _spine.nextItem(_currentSpineItem);
+            var nextSpineItem = _spine.nextItem(_currentSpineItem, true);
             if(nextSpineItem) {
 
                 var pageRequest = new ReadiumSDK.Models.PageOpenRequest(nextSpineItem, initiator);

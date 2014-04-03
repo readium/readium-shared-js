@@ -40,23 +40,23 @@ ReadiumSDK.Models.Spread = function(spine, orientation) {
     };
 
 
-    this.openFirst = function() {
+    this.openFirst = function(handleLinear) {
 
         if( this.spine.items.length == 0 ) {
             resetItems();
         }
         else {
-            this.openItem(this.spine.first());
+            this.openItem(this.spine.first(handleLinear));
         }
     };
 
-    this.openLast = function() {
+    this.openLast = function(handleLinear) {
 
         if( this.spine.items.length == 0 ) {
             resetItems();
         }
         else {
-            this.openItem(this.spine.last());
+            this.openItem(this.spine.last(handleLinear));
         }
     };
 
@@ -68,7 +68,7 @@ ReadiumSDK.Models.Spread = function(spine, orientation) {
         setItemToPosition(item, position);
 
         if(position != ReadiumSDK.Models.Spread.POSITION_CENTER) {
-            var neighbour = getNeighbourItem(item);
+            var neighbour = getNeighbourItem(item, true);
             if(neighbour) {
                 var neighbourPos = getItemPosition(neighbour);
                 if(neighbourPos != position && position != ReadiumSDK.Models.Spread.POSITION_CENTER)  {
@@ -125,17 +125,17 @@ ReadiumSDK.Models.Spread = function(spine, orientation) {
         return ReadiumSDK.Models.Spread.POSITION_CENTER;
     }
 
-    this.openNext = function() {
+    this.openNext = function(handleLinear) {
 
         var items = this.validItems();
 
         if(items.length == 0) {
 
-            this.openFirst();
+            this.openFirst(handleLinear);
         }
         else {
 
-            var nextItem = this.spine.nextItem(items[items.length - 1]);
+            var nextItem = this.spine.nextItem(items[items.length - 1], handleLinear);
             if(nextItem) {
 
                 this.openItem(nextItem);
@@ -143,16 +143,16 @@ ReadiumSDK.Models.Spread = function(spine, orientation) {
         }
     };
 
-    this.openPrev = function() {
+    this.openPrev = function(handleLinear) {
 
         var items = this.validItems();
 
         if(items.length == 0) {
-            this.openLast();
+            this.openLast(handleLinear);
         }
         else {
 
-            var prevItem = this.spine.prevItem(items[0]);
+            var prevItem = this.spine.prevItem(items[0], handleLinear);
             if(prevItem) {
 
                 this.openItem(prevItem);
@@ -176,14 +176,14 @@ ReadiumSDK.Models.Spread = function(spine, orientation) {
         return arr;
     };
 
-    function getNeighbourItem(item) {
+    function getNeighbourItem(item, handleLinear) {
 
         if(item.isLeftPage()) {
-            return self.spine.isRightToLeft() ? self.spine.prevItem(item) : self.spine.nextItem(item);
+            return self.spine.isRightToLeft() ? self.spine.prevItem(item, handleLinear) : self.spine.nextItem(item, handleLinear);
         }
 
         if(item.isRightPage()) {
-            return self.spine.isRightToLeft() ? self.spine.nextItem(item) : self.spine.prevItem(item);
+            return self.spine.isRightToLeft() ? self.spine.nextItem(item, handleLinear) : self.spine.prevItem(item, handleLinear);
         }
 
         return undefined;

@@ -415,7 +415,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
         var currentSpineItem = _spine.getItemById(lastOpenPage.idref);
 
-        var nextSpineItem = _spine.nextItem(currentSpineItem);
+        var nextSpineItem = _spine.nextItem(currentSpineItem, true);
 
         if(!nextSpineItem) {
             return;
@@ -452,7 +452,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
         var currentSpineItem = _spine.getItemById(firstOpenPage.idref);
 
-        var prevSpineItem = _spine.prevItem(currentSpineItem);
+        var prevSpineItem = _spine.prevItem(currentSpineItem, true);
 
         if(!prevSpineItem) {
             return;

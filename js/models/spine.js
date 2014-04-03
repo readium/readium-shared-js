@@ -47,19 +47,29 @@ ReadiumSDK.Models.Spine = function(epubPackage, spineDTO) {
 
 
 
-    this.prevItem = function(item) {
+    this.prevItem = function(item, handleLinear) {
 
         if(isValidIndex(item.index - 1)) {
-            return this.items[item.index - 1];
+            var previous = this.items[item.index - 1];
+            if (handleLinear && previous && previous.linear && previous.linear === "no")
+            {
+                return this.prevItem(previous, true);
+            }
+            return previous;
         }
 
         return undefined;
     };
 
-    this.nextItem = function(item){
+    this.nextItem = function(item, handleLinear){
 
         if(isValidIndex(item.index + 1)) {
-            return this.items[item.index + 1];
+            var next = this.items[item.index + 1];
+            if (handleLinear && next && next.linear && next.linear === "no")
+            {
+                return this.nextItem(next, true);
+            }
+            return next;
         }
 
         return undefined;
@@ -76,19 +86,37 @@ ReadiumSDK.Models.Spine = function(epubPackage, spineDTO) {
         return index >= 0 && index < self.items.length;
     }
 
-    this.first = function() {
-        return self.items[0];
+    this.first = function(handleLinear) {
+        var item = self.items[0];
+        if (handleLinear && item && item.linear && item.linear === "no")
+        {
+            return this.nextItem(item, true);
+        }
     };
 
-    this.last = function() {
-        return self.items[self.items.length - 1];
+    this.last = function(handleLinear) {
+        var item = self.items[self.items.length - 1];
+        if (handleLinear && item && item.linear && item.linear === "no")
+        {
+            return this.prevItem(item, true);
+        }
     };
 
-    this.isFirstItem = function(item) {
+    this.isFirstItem = function(item, handleLinear) {
+        if (handleLinear)
+        {
+            var spi = this.first(true);
+            return item === spi;
+        }
         return item.index === 0;
     };
 
-    this.isLastItem = function(item) {
+    this.isLastItem = function(item, handleLinear) {
+        if (handleLinear)
+        {
+            var spi = this.last(true);
+            return item === spi;
+        }
         return item.index  === self.items.length - 1;
     };
 

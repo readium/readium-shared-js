@@ -398,7 +398,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
     function addToTopOf(topView, callback) {
 
-        var prevSpineItem = _spine.prevItem(topView.currentSpineItem());
+        var prevSpineItem = _spine.prevItem(topView.currentSpineItem(), true);
         if(!prevSpineItem) {
             callback(false);
             return;
@@ -480,7 +480,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
     function addToBottomOf(bottomView, callback) {
 
-        var nexSpineItem = _spine.nextItem(bottomView.currentSpineItem());
+        var nexSpineItem = _spine.nextItem(bottomView.currentSpineItem(), true);
         if(!nexSpineItem) {
             callback(false);
             return;
