@@ -222,14 +222,38 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
     function checkHeightDiscrepancy(updateScroll, pageView, iframe, href, fixedLayout, metaWidth, msg)
     {
-        var N = 5;
-        var time = 300;
+        var MAX_ATTEMPTS = 10;
+        var TIME_MS = 300;
+    
+
+        var w = undefined;
+        var d = undefined;
+        
+        try
+        {
+            w = iframe.contentWindow;
+            d = iframe.contentDocument;
+        }   
+        catch (ex)
+        {
+            console.error(ex);
+        }
+        if (!w || !d)
+        {
+            console.error("checkHeightDiscrepancy ! win / doc (iFrame already disposed?)");
+            return;
+        }
+        
+        var previousPolledContentHeight = parseInt(Math.round(parseFloat(w.getComputedStyle(d.documentElement).height))); //body can be shorter!;
+        
+        
+        var initialContentHeight = previousPolledContentHeight;
         
         var tryAgainFunc = function(tryAgain)
         {
-            if (tryAgain !== N)
+            if (tryAgain !== MAX_ATTEMPTS)
             {
-                console.log("tryAgainFunc: " + tryAgain + " == " + href);
+                console.log("tryAgainFunc - " + tryAgain + ": " + href + "  <" + initialContentHeight +" -- "+ previousPolledContentHeight + ">");
             }
             
             tryAgain--;
@@ -256,12 +280,21 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                         }
                     
                         var docHeight = parseInt(Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height) * scale)); //body can be shorter!
+                        
+                        if (previousPolledContentHeight != docHeight)
+                        {
+                            previousPolledContentHeight = docHeight;
+                            tryAgainFunc(tryAgain);
+                            return;
+                        }
+                        
+                        // CONTENT HEIGHT IS NOW STABILISED
+                        
                         var diff = iframeHeight-docHeight;
                         if (Math.abs(diff) > 4)
                         {
-                            // console.error("IFRAME HEIGHT ADJUST: " + href);
-                            // console.log(msg);
-                            // console.log(diff);
+                            console.log("$$$ IFRAME HEIGHT ADJUST: " + href + "  [" + diff +"]<" + initialContentHeight +" -- "+ previousPolledContentHeight + ">");
+                            console.log(msg);
 
                             // var iframeHeightBefore = iframeHeight;
                             // var scrollPos = scrollTop();
@@ -273,12 +306,11 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                             var doc = iframe.contentDocument;
                             if (win && doc)
                             {
-                                var docHeight = parseInt(Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height) * scale)); //body can be shorter!
-                                var iframeHeight = parseInt(Math.round(parseFloat(window.getComputedStyle(iframe).height)));
+                                var docHeightAfter = parseInt(Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height) * scale)); //body can be shorter!
+                                var iframeHeightAfter = parseInt(Math.round(parseFloat(window.getComputedStyle(iframe).height)));
     // 
     // 
-    //                             var iframeHeightAfter = iframeHeight;
-    //                             var iframeHeightDiff = iframeHeightAfter - iframeHeightBefore;
+    //                             var iframeHeightDiff = iframeHeightAfter - iframeHeightefore;
     //                             if (Math.abs(iframeHeightDiff) > 0)
     //                             {
     //                                 // updateScroll
@@ -313,26 +345,23 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
     //                             }
                             
     
-                                var newdiff = iframeHeight-docHeight;
+                                var newdiff = iframeHeightAfter-docHeightAfter;
                                 if (Math.abs(newdiff) > 4)
                                 {
-                                    console.error("## IFRAME HEIGHT ADJUST: " + href);
+                                    console.error("## IFRAME HEIGHT ADJUST: " + href + "  [" + newdiff +"]<" + initialContentHeight +" -- "+ previousPolledContentHeight + ">");
                                     console.log(msg);
-                                    console.log(newdiff);
-                                    
+                            
                                     tryAgainFunc(tryAgain);
                                 }
                                 else
                                 {
-                                    console.log(">> IFRAME HEIGHT ADJUSTED: " + href + " ("+diff+")");
+                                    console.log(">> IFRAME HEIGHT ADJUSTED OKAY: " + href + "  ["+diff+"]<" + initialContentHeight +" -- "+ previousPolledContentHeight + ">");
                                     // console.log(msg);
                                 }
                             }
                             else
                             {
-                                tryAgain = -1;
-                                console.log("tryAgainFunc win && doc? " + tryAgain);
-                                tryAgainFunc(tryAgain);
+                                console.log("tryAgainFunc ! win && doc (iFrame disposed?)");
                             }
                         }
                         else
@@ -343,19 +372,17 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                     }
                     else
                     {
-                        tryAgain = -1;
-                        console.log("tryAgainFunc win && doc? " + tryAgain);
-                        tryAgainFunc(tryAgain);
+                        console.log("tryAgainFunc ! win && doc (iFrame disposed?)");
                     }
                 }
                 catch(ex)
                 {
                     console.error(ex);
                 }
-            }, time);
-    
+            }, TIME_MS);
         };
-        tryAgainFunc(N);
+        
+        tryAgainFunc(MAX_ATTEMPTS);
     }
     
 
