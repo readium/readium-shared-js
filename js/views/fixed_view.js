@@ -417,14 +417,14 @@ ReadiumSDK.Views.FixedView = function(options){
 
     this.openPagePrev = function(initiator) {
 
-        _spread.openPrev(true);
+        _spread.openPrev();
         updatePageSwitchDir(_spread.spine.isRightToLeft() ? 2 : 1, true);
         redraw(initiator, undefined);
     };
 
     this.openPageNext = function(initiator) {
 
-        _spread.openNext(true);
+        _spread.openNext();
         updatePageSwitchDir(_spread.spine.isRightToLeft() ? 1 : 2, true);
         redraw(initiator, undefined);
     };

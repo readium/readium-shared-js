@@ -45,39 +45,59 @@ ReadiumSDK.Models.Spine = function(epubPackage, spineDTO) {
      */
     this.package = epubPackage;
 
+    var _handleLinear = false;
 
-
-    this.prevItem = function(item, handleLinear) {
-
-        if(isValidIndex(item.index - 1)) {
-            var previous = this.items[item.index - 1];
-            if (handleLinear && previous && previous.linear && previous.linear === "no")
-            {
-                return this.prevItem(previous, true);
-            }
-            return previous;
-        }
-
-        return undefined;
+    this.handleLinear = function(handleLinear) {
+        _handleLinear = handleLinear;
     };
 
-    this.nextItem = function(item, handleLinear){
+    function isValidLinearItem(item) {
+        return !_handleLinear || item.linear !== "no";
+    }
 
-        if(isValidIndex(item.index + 1)) {
-            var next = this.items[item.index + 1];
-            if (handleLinear && next && next.linear && next.linear === "no")
-            {
-                return this.nextItem(next, true);
-            }
-            return next;
+    this.prevItem = function(item) {
+
+        return lookForPrevValidItem(item.index - 1);
+    };
+
+    function lookForNextValidItem(ix) {
+
+        if(!isValidIndex(ix)) {
+            return undefined;
         }
 
-        return undefined;
+        var item = self.items[ix];
+
+        if(isValidLinearItem(item)) {
+            return item;
+        }
+
+        return lookForNextValidItem(item.index + 1);
+    }
+
+    function lookForPrevValidItem(ix) {
+
+        if(!isValidIndex(ix)) {
+            return undefined;
+        }
+
+        var item = self.items[ix];
+
+        if(isValidLinearItem(item)) {
+            return item;
+        }
+
+        return lookForNextValidItem(item.index - 1);
+    }
+
+    this.nextItem = function(item){
+
+        return lookForNextValidItem(item.index + 1);
     };
 
     this.getItemUrl = function(item) {
 
-        self.package.resolveRelativeUrl(item.href);
+        return self.package.resolveRelativeUrl(item.href);
 
     };
 
@@ -86,38 +106,24 @@ ReadiumSDK.Models.Spine = function(epubPackage, spineDTO) {
         return index >= 0 && index < self.items.length;
     }
 
-    this.first = function(handleLinear) {
-        var item = self.items[0];
-        if (handleLinear && item && item.linear && item.linear === "no")
-        {
-            return this.nextItem(item, true);
-        }
+    this.first = function() {
+
+        return lookForNextValidItem(0);
     };
 
-    this.last = function(handleLinear) {
-        var item = self.items[self.items.length - 1];
-        if (handleLinear && item && item.linear && item.linear === "no")
-        {
-            return this.prevItem(item, true);
-        }
+    this.last = function() {
+
+        return lookForPrevValidItem(this.items.length - 1);
     };
 
-    this.isFirstItem = function(item, handleLinear) {
-        if (handleLinear)
-        {
-            var spi = this.first(true);
-            return item === spi;
-        }
-        return item.index === 0;
+    this.isFirstItem = function(item) {
+
+        return self.first() === item;
     };
 
-    this.isLastItem = function(item, handleLinear) {
-        if (handleLinear)
-        {
-            var spi = this.last(true);
-            return item === spi;
-        }
-        return item.index  === self.items.length - 1;
+    this.isLastItem = function(item) {
+
+        return self.last() === item;
     };
 
     this.item = function(index) {

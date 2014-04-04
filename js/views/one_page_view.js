@@ -153,8 +153,6 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             updateMetaSize();
 
             _pageSwitchActuallyChanged_IFRAME_LOAD = true; // second pass, but initial display for transition
-            
-            self.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED, _$iframe, _currentSpineItem, self);
         }
     }
 
@@ -309,7 +307,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         // //_$epubHtml.css("visibility", "hidden"); // "flashing" in two-page spread mode is annoying :(
         _$epubHtml.css("opacity", "0.999");
 
-        this.showIFrame();
+        self.showIFrame();
         
         setTimeout(function()
         {
@@ -359,6 +357,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             }, 10);
         }
     };
+
     this.transformContent = _.bind(_.debounce(this.transformContentImmediate, 50), self);
 
     function generateTransformCSS(scale, left, top) {

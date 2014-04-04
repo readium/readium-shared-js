@@ -40,23 +40,23 @@ ReadiumSDK.Models.Spread = function(spine, orientation) {
     };
 
 
-    this.openFirst = function(handleLinear) {
+    this.openFirst = function() {
 
         if( this.spine.items.length == 0 ) {
             resetItems();
         }
         else {
-            this.openItem(this.spine.first(handleLinear));
+            this.openItem(this.spine.first());
         }
     };
 
-    this.openLast = function(handleLinear) {
+    this.openLast = function() {
 
         if( this.spine.items.length == 0 ) {
             resetItems();
         }
         else {
-            this.openItem(this.spine.last(handleLinear));
+            this.openItem(this.spine.last());
         }
     };
 
@@ -125,17 +125,17 @@ ReadiumSDK.Models.Spread = function(spine, orientation) {
         return ReadiumSDK.Models.Spread.POSITION_CENTER;
     }
 
-    this.openNext = function(handleLinear) {
+    this.openNext = function() {
 
         var items = this.validItems();
 
         if(items.length == 0) {
 
-            this.openFirst(handleLinear);
+            this.openFirst();
         }
         else {
 
-            var nextItem = this.spine.nextItem(items[items.length - 1], handleLinear);
+            var nextItem = this.spine.nextItem(items[items.length - 1]);
             if(nextItem) {
 
                 this.openItem(nextItem);
@@ -143,16 +143,16 @@ ReadiumSDK.Models.Spread = function(spine, orientation) {
         }
     };
 
-    this.openPrev = function(handleLinear) {
+    this.openPrev = function() {
 
         var items = this.validItems();
 
         if(items.length == 0) {
-            this.openLast(handleLinear);
+            this.openLast();
         }
         else {
 
-            var prevItem = this.spine.prevItem(items[0], handleLinear);
+            var prevItem = this.spine.prevItem(items[0]);
             if(prevItem) {
 
                 this.openItem(prevItem);
@@ -176,14 +176,14 @@ ReadiumSDK.Models.Spread = function(spine, orientation) {
         return arr;
     };
 
-    function getNeighbourItem(item, handleLinear) {
+    function getNeighbourItem(item) {
 
         if(item.isLeftPage()) {
-            return self.spine.isRightToLeft() ? self.spine.prevItem(item, handleLinear) : self.spine.nextItem(item, handleLinear);
+            return self.spine.isRightToLeft() ? self.spine.prevItem(item) : self.spine.nextItem(item);
         }
 
         if(item.isRightPage()) {
-            return self.spine.isRightToLeft() ? self.spine.nextItem(item, handleLinear) : self.spine.prevItem(item, handleLinear);
+            return self.spine.isRightToLeft() ? self.spine.nextItem(item) : self.spine.prevItem(item);
         }
 
         return undefined;

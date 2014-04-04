@@ -245,6 +245,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
         _package = new ReadiumSDK.Models.Package(packageData);
 
         _spine = _package.spine;
+        _spine.handleLinear(true);
 
         if(_mediaOverlayPlayer) {
             _mediaOverlayPlayer.reset();
@@ -417,7 +418,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
         var currentSpineItem = _spine.getItemById(lastOpenPage.idref);
 
-        var nextSpineItem = _spine.nextItem(currentSpineItem, true);
+        var nextSpineItem = _spine.nextItem(currentSpineItem);
 
         if(!nextSpineItem) {
             return;
@@ -454,7 +455,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
         var currentSpineItem = _spine.getItemById(firstOpenPage.idref);
 
-        var prevSpineItem = _spine.prevItem(currentSpineItem, true);
+        var prevSpineItem = _spine.prevItem(currentSpineItem);
 
         if(!prevSpineItem) {
             return;
