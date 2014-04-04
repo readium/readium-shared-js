@@ -190,7 +190,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
     this.scaleToWidth = function(width) {
 
         var scale = width / _meta_size.width;
-        self.transformContent(scale, 0, 0);
+        self.transformContentImmediate(scale, 0, 0);
     };
 
     //this is called by scroll_view for reflowable spine item
@@ -198,9 +198,9 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         var contHeight = self.getContentDocHeight();
         //console.log("resizeIFrameToContent: " + contHeight);
 
-        this.setHeight(contHeight);
+        self.setHeight(contHeight);
 
-        this.showIFrame();
+        self.showIFrame();
     };
     
     this.setHeight = function(height) {
@@ -432,7 +432,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             if (true) // both fixed layout and reflowable documents need hiding due to flashing during layout/rendering
             {
                 //hide iframe until content is scaled
-                this.hideIFrame();
+                self.hideIFrame();
                 //_$iframe.css("visibility", "hidden");
             }
             
@@ -556,7 +556,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
     this.getFirstVisibleMediaOverlayElement = function() {
         var navigation = new ReadiumSDK.Views.CfiNavigationLogic(_$el, _$iframe);
         return navigation.getFirstVisibleMediaOverlayElement({top:0, bottom: _$iframe.height()});
-    }
+    };
 
     this.offset = function()
     {

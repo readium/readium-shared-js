@@ -95,8 +95,9 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         var firstViewRange = getPageViewRange(viewPage);
 
         if((viewPortRange.top - firstViewRange.bottom) > ITEM_LOAD_SCROLL_BUFFER) {
+            var scrollPos = scrollTop();
             removePageView(viewPage);
-            scrollTo(viewPortRange.top - (firstViewRange.bottom - firstViewRange.top), undefined);
+            scrollTo(scrollPos - (firstViewRange.bottom - firstViewRange.top), undefined);
             assertScrollPosition("updateLoadedViewsTop 1");
             updateLoadedViewsTop(callback, assertScrollPosition); //recursion
         }
@@ -224,8 +225,9 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         }
     }
 
-    var updatePageViewSizeAndAdjustScroll = function(pageView, scrollPos)
+    function updatePageViewSizeAndAdjustScroll(pageView)
     {
+        var scrollPos = scrollTop();
         var rangeBeforeResize = getPageViewRange(pageView);
 
         updatePageViewSize(pageView);
@@ -243,11 +245,11 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
             {
                 console.debug("IMMEDIATE SCROLL ADJUST: " + pageView.currentSpineItem().href + " == " + delta);
             }
-            scrollTo(scrollPos + heightAfter);
+            scrollTo(scrollPos + delta);
         }
-    };
+    }
     
-    function reachStableContentHeight(updateScroll, pageView, iframe, href, fixedLayout, metaWidth, msg, callback, scrollPos)
+    function reachStableContentHeight(updateScroll, pageView, iframe, href, fixedLayout, metaWidth, msg, callback)
     {
         if (!ReadiumSDK.Helpers.isIframeAlive(iframe))
         {
@@ -272,7 +274,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
         if (updateScroll === 0)
         {
-            updatePageViewSizeAndAdjustScroll(pageView, scrollPos);
+            updatePageViewSizeAndAdjustScroll(pageView);
         }
         else
         {
@@ -297,7 +299,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                 if (callback) callback(true);
                 return;
             }
-    
+
             setTimeout(function()
             {
                 try
@@ -338,7 +340,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
                             if (updateScroll === 0)
                             {
-                                updatePageViewSizeAndAdjustScroll(pageView, scrollPos);
+                                updatePageViewSizeAndAdjustScroll(pageView);
                             }
                             else
                             {
@@ -455,8 +457,10 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                 //===> not necessary here (temporary iframe)
                 
                 newView.element().insertBefore(topView.element());
-                
-                scrollTo(scrollPos + originalHeight, undefined);
+
+                scrollPos = scrollPos + originalHeight;
+
+                scrollTo(scrollPos, undefined);
 
                 newView.loadSpineItem(prevSpineItem, function(success, $iframe, spineItem, isNewlyLoaded, context){
                     if(success) {
@@ -468,7 +472,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                             callback(successFlag);
                         };
                         
-                        reachStableContentHeight(0, newView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToTopOf", continueCallback, scrollPos); // //onIFrameLoad called before this callback, so okay.
+                        reachStableContentHeight(0, newView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToTopOf", continueCallback); // //onIFrameLoad called before this callback, so okay.
                     }
                     else {
                         console.error("Unable to open 2 " + prevSpineItem.href);
@@ -520,7 +524,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                     callback(successFlag);
                 };
 
-                reachStableContentHeight(2, newView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToBottomOf", continueCallback, scrollPos); // //onIFrameLoad called before this callback, so okay.
+                reachStableContentHeight(2, newView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToBottomOf", continueCallback); // //onIFrameLoad called before this callback, so okay.
             }
             else {
                 console.error("Unable to load " + nexSpineItem.href);
@@ -718,7 +722,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
                     //successFlag should always be true as loadedView iFrame cannot be dead at this stage.
                 };
                 
-                reachStableContentHeight(1, loadedView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? loadedView.meta_width() : 0, "openPage", continueCallback, scrollPos); // //onIFrameLoad called before this callback, so okay.
+                reachStableContentHeight(1, loadedView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? loadedView.meta_width() : 0, "openPage", continueCallback); // //onIFrameLoad called before this callback, so okay.
             }
             else {
                 console.error("Unable to load " + spineItem.href);
