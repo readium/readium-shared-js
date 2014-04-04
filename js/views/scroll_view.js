@@ -17,7 +17,7 @@
 
 ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
-    var _DEBUG = true;
+    var _DEBUG = false;
 
     _.extend(this, Backbone.Events);
 

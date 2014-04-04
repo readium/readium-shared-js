@@ -249,7 +249,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
 
     this.transformContentImmediate = function(scale, left, top) {
         
-        var pageTransition_Translate = true; // TODO: from options
+        var pageTransition_Translate = false; // TODO: from options
         
         var pageSwitchActuallyChanged = _pageSwitchActuallyChanged || _pageSwitchActuallyChanged_IFRAME_LOAD;
         _pageSwitchActuallyChanged_IFRAME_LOAD = false;
