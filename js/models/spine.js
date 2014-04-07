@@ -45,29 +45,59 @@ ReadiumSDK.Models.Spine = function(epubPackage, spineDTO) {
      */
     this.package = epubPackage;
 
+    var _handleLinear = false;
 
+    this.handleLinear = function(handleLinear) {
+        _handleLinear = handleLinear;
+    };
+
+    function isValidLinearItem(item) {
+        return !_handleLinear || item.linear !== "no";
+    }
 
     this.prevItem = function(item) {
 
-        if(isValidIndex(item.index - 1)) {
-            return this.items[item.index - 1];
+        return lookForPrevValidItem(item.index - 1);
+    };
+
+    function lookForNextValidItem(ix) {
+
+        if(!isValidIndex(ix)) {
+            return undefined;
         }
 
-        return undefined;
-    };
+        var item = self.items[ix];
+
+        if(isValidLinearItem(item)) {
+            return item;
+        }
+
+        return lookForNextValidItem(item.index + 1);
+    }
+
+    function lookForPrevValidItem(ix) {
+
+        if(!isValidIndex(ix)) {
+            return undefined;
+        }
+
+        var item = self.items[ix];
+
+        if(isValidLinearItem(item)) {
+            return item;
+        }
+
+        return lookForNextValidItem(item.index - 1);
+    }
 
     this.nextItem = function(item){
 
-        if(isValidIndex(item.index + 1)) {
-            return this.items[item.index + 1];
-        }
-
-        return undefined;
+        return lookForNextValidItem(item.index + 1);
     };
 
     this.getItemUrl = function(item) {
 
-        self.package.resolveRelativeUrl(item.href);
+        return self.package.resolveRelativeUrl(item.href);
 
     };
 
@@ -77,11 +107,23 @@ ReadiumSDK.Models.Spine = function(epubPackage, spineDTO) {
     }
 
     this.first = function() {
-        return self.items[0];
+
+        return lookForNextValidItem(0);
     };
 
     this.last = function() {
-        return self.items[self.items.length - 1];
+
+        return lookForPrevValidItem(this.items.length - 1);
+    };
+
+    this.isFirstItem = function(item) {
+
+        return self.first() === item;
+    };
+
+    this.isLastItem = function(item) {
+
+        return self.last() === item;
     };
 
     this.item = function(index) {

@@ -32,11 +32,21 @@ ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
     this.idref = itemData.idref;
     this.href = itemData.href;
 
+    this.linear = itemData.linear;
+
     this.page_spread = itemData.page_spread;
+    
     this.rendition_spread = itemData.rendition_spread;
+    
+    //TODO: unused yet!
+    this.rendition_orientation = itemData.rendition_orientation;
 
     this.rendition_layout = itemData.rendition_layout;
+    
     this.rendition_flow = itemData.rendition_flow;
+    
+    
+    
     this.media_overlay_id = itemData.media_overlay_id;
 
     this.media_type = itemData.media_type;
@@ -45,10 +55,6 @@ ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
     this.spine = spine;
 
     validateSpread();
-
-    this.isLeftPage = function() {
-        return this.page_spread == ReadiumSDK.Models.SpineItem.SPREAD_LEFT;
-    };
 
     this.setSpread = function(spread) {
         this.page_spread = spread;
@@ -75,6 +81,10 @@ ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
 
     }
 
+    this.isLeftPage = function() {
+        return this.page_spread == ReadiumSDK.Models.SpineItem.SPREAD_LEFT;
+    };
+
     this.isRightPage = function() {
         return this.page_spread == ReadiumSDK.Models.SpineItem.SPREAD_RIGHT;
     };
@@ -88,7 +98,17 @@ ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
     };
 
     this.isFixedLayout = function() {
-        return this.rendition_layout ? this.rendition_layout === "pre-paginated" : this.spine.package.isFixedLayout();
+        
+        // cannot use isPropertyValueSetForItemOrPackage() here!
+        
+        //http://www.idpf.org/epub/fxl/#property-layout
+        if (this.rendition_layout)
+        {
+            if (this.rendition_layout === ReadiumSDK.Models.SpineItem.RENDITION_LAYOUT_PREPAGINATED) return true;
+            if (this.rendition_layout === ReadiumSDK.Models.SpineItem.RENDITION_LAYOUT_REFLOWABLE) return false;
+        }
+
+        return this.spine.package.isFixedLayout();
     };
 
     function isPropertyValueSetForItemOrPackage(propName, propValue) {
@@ -114,6 +134,13 @@ ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
         return isPropertyValueSetForItemOrPackage("rendition_flow", ReadiumSDK.Models.SpineItem.RENDITION_FLOW_SCROLLED_DOC);
     };
 };
+
+ReadiumSDK.Models.SpineItem.RENDITION_LAYOUT_REFLOWABLE = "reflowable";
+ReadiumSDK.Models.SpineItem.RENDITION_LAYOUT_PREPAGINATED = "pre-paginated";
+
+ReadiumSDK.Models.SpineItem.RENDITION_ORIENTATION_LANDSCAPE = "landscape";
+ReadiumSDK.Models.SpineItem.RENDITION_ORIENTATION_PORTRAIT = "portrait";
+ReadiumSDK.Models.SpineItem.RENDITION_ORIENTATION_AUTO = "auto";
 
 ReadiumSDK.Models.SpineItem.SPREAD_LEFT = "page-spread-left";
 ReadiumSDK.Models.SpineItem.SPREAD_RIGHT = "page-spread-right";

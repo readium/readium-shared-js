@@ -18,20 +18,24 @@
 
 ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
 
+    this.includeParWhenAdjustingToSeqSyncGranularity = true;
+
     var DEFAULT_MO_ACTIVE_CLASS = "mo-active-default";
+    var DEFAULT_MO_SUB_SYNC_CLASS = "mo-sub-sync";
+    
     //var BACK_COLOR = "#99CCCC";
 
-    var _highlightedElement = undefined;
-    this.isElementHighlighted = function(element)
+    var _highlightedElementPar = undefined;
+    this.isElementHighlighted = function(par)
     {
-        return _highlightedElement && element === _highlightedElement;
-    }
+        return _highlightedElementPar && par === _highlightedElementPar;
+    };
     
     var _highlightedCfiPar = undefined;
-    this.isCfiHighlighted = function(cfi)
+    this.isCfiHighlighted = function(par)
     {
-        return _highlightedCfiPar && cfi === _highlightedCfiPar.cfi;
-    }
+        return _highlightedCfiPar && par === _highlightedCfiPar;
+    };
 
     var _activeClass = "";
     var _playbackActiveClass = "";
@@ -58,12 +62,12 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
         }
         $userStyle = undefined;
 
-        var he = _highlightedElement;
+        var he = _highlightedElementPar;
         var hc = _highlightedCfiPar;
         var c1 = _activeClass;
         var c2 = _playbackActiveClass;
         
-        if (_highlightedElement)
+        if (_highlightedElementPar)
         {
             this.reset();
 
@@ -81,9 +85,16 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
     {
         if ($userStyle)
         {
-            if ($userStyle[0].ownerDocument === $element[0].ownerDocument)
+            try
             {
-                return;
+                if ($userStyle[0].ownerDocument === $element[0].ownerDocument)
+                {
+                    return;
+                }
+            }
+            catch (e)
+            {
+                
             }
         }
 
@@ -131,30 +142,33 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
         $userStyle.appendTo($head);
 
 //console.debug($userStyle[0].textContent);
-    }
+    };
     
-    this.highlightElement = function(element, activeClass, playbackActiveClass) {
+    this.highlightElement = function(par, activeClass, playbackActiveClass) {
 
-        if(!element || element === _highlightedElement) {
+        if(!par || par === _highlightedElementPar) {
             return;
         }
 
         this.reset();
 
-        _highlightedElement = element;
+        _highlightedElementPar = par;
         _highlightedCfiPar = undefined;
         
         _activeClass = activeClass;
         _playbackActiveClass = playbackActiveClass;
 
+        var seq = this.adjustParToSeqSyncGranularity(_highlightedElementPar);
+        var element = seq.element;
+        
         if (_playbackActiveClass && _playbackActiveClass !== "")
         {
             //console.debug("MO playbackActiveClass: " + _playbackActiveClass);
-            $(_highlightedElement.ownerDocument.documentElement).addClass(_playbackActiveClass);
-            //console.debug("MO playbackActiveClass 2: " + _highlightedElement.ownerDocument.documentElement.classList);
+            $(element.ownerDocument.documentElement).addClass(_playbackActiveClass);
+            //console.debug("MO playbackActiveClass 2: " + element.ownerDocument.documentElement.classList);
         }
 
-        var $hel = $(_highlightedElement);
+        var $hel = $(element);
 
         var hasAuthorStyle = _activeClass && _activeClass !== "";
         var overrideWithUserStyle = _reader.userStyles().findStyle("." + DEFAULT_MO_ACTIVE_CLASS);
@@ -172,7 +186,7 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
             
             $hel.addClass(DEFAULT_MO_ACTIVE_CLASS);
 
-            //$(_highlightedElement).css("background", BACK_COLOR);
+            //$(element).css("background", BACK_COLOR);
         }
         else
         {
@@ -180,23 +194,27 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
             $hel.addClass(_activeClass);
         }
         
+        if (this.includeParWhenAdjustingToSeqSyncGranularity || _highlightedElementPar !== seq)
+        {
+            $(_highlightedElementPar.element).addClass(DEFAULT_MO_SUB_SYNC_CLASS);
+        }
         
 // ---- CFI
 //         try
 //         {
 //             // //noinspection JSUnresolvedVariable
-//             // var cfi = EPUBcfi.Generator.generateElementCFIComponent(_highlightedElement); //$hel[0]
+//             // var cfi = EPUBcfi.Generator.generateElementCFIComponent(element); //$hel[0]
 //             // if(cfi[0] == "!") {
 //             //     cfi = cfi.substring(1);
 //             // }
 // 
-// //console.log(_highlightedElement);
+// //console.log(element);
 //         
-//             var firstTextNode = getFirstTextNode(_highlightedElement);
+//             var firstTextNode = getFirstTextNode(element);
 //             var txtFirst = firstTextNode.textContent;
 // //console.log(txtFirst);
 // 
-//             var lastTextNode = getLastTextNode(_highlightedElement);
+//             var lastTextNode = getLastTextNode(element);
 //             var txtLast = lastTextNode.textContent;
 // //console.log(txtLast);
 //         
@@ -232,7 +250,7 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
 
         this.reset();
 
-        _highlightedElement = undefined;
+        _highlightedElementPar = undefined;
         _highlightedCfiPar = par;
         
         _activeClass = activeClass;
@@ -426,31 +444,61 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
         
         
 
-        if(_highlightedElement) {
+        if(_highlightedElementPar) {
 
+            var seq = this.adjustParToSeqSyncGranularity(_highlightedElementPar);
+            var element = seq.element;
+            if (this.includeParWhenAdjustingToSeqSyncGranularity || _highlightedElementPar !== seq)
+            {
+                $(_highlightedElementPar.element).removeClass(DEFAULT_MO_SUB_SYNC_CLASS);
+            }
+            
             if (_playbackActiveClass && _playbackActiveClass !== "")
             {
                 //console.debug("MO RESET playbackActiveClass: " + _playbackActiveClass);
-                $(_highlightedElement.ownerDocument.documentElement).removeClass(_playbackActiveClass);
+                $(element.ownerDocument.documentElement).removeClass(_playbackActiveClass);
             }
 
             if (_activeClass && _activeClass !== "")
             {
                 //console.debug("MO RESET activeClass: " + _activeClass);
-                $(_highlightedElement).removeClass(_activeClass);
+                $(element).removeClass(_activeClass);
             }
             //else
             //{
                 //console.debug("MO RESET active NO CLASS: " + _activeClass);
-                $(_highlightedElement).removeClass(DEFAULT_MO_ACTIVE_CLASS);
-                //$(_highlightedElement).css("background", '');
+                $(element).removeClass(DEFAULT_MO_ACTIVE_CLASS);
+                //$(element).css("background", '');
             //}
 
-            _highlightedElement = undefined;
+            _highlightedElementPar = undefined;
         }
 
         _activeClass = "";
         _playbackActiveClass = "";
-    }
+    };
 
+    this.adjustParToSeqSyncGranularity = function(par)
+    {
+        if (!par) return undefined;
+        
+        var sync = _reader.viewerSettings().mediaOverlaysSynchronizationGranularity;
+        if (sync && sync.length > 0)
+        {
+            var element = par.element || (par.cfi ? par.cfi.cfiTextParent : undefined);
+            if (!element)
+            {
+                console.error("adjustParToSeqSyncGranularity !element ???");
+                return par; // should never happen!
+            }
+
+            var seq = par.getFirstSeqAncestorWithEpubType(sync, this.includeParWhenAdjustingToSeqSyncGranularity);
+            if (seq && seq.element)
+            {
+                return seq;
+            }
+        }
+        
+        return par;
+    };
 };

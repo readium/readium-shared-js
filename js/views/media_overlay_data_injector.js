@@ -1,61 +1,5 @@
 ReadiumSDK.Views.MediaOverlayDataInjector = function (mediaOverlay, mediaOverlayPlayer) {
 
-    var escapeSelector = function(sel)
-    {
-        //http://api.jquery.com/category/selectors/
-        //!"#$%&'()*+,./:;<=>?@[\]^`{|}~
-        // double backslash escape
-        
-        if (!sel) return undefined;
-        
-        var selector = sel.replace(/([;&,\.\+\*\~\?':"\!\^#$%@\[\]\(\)<=>\|\/\\{}`])/g, '\\$1');
-        
-        // if (selector !== sel)
-        // {
-        //     console.debug("---- SELECTOR ESCAPED");
-        //     console.debug("1: " + sel);
-        //     console.debug("2: " + selector);
-        // }
-        // else
-        // {
-        //     console.debug("---- SELECTOR OKAY: " + sel);
-        // }
-        
-        return selector;
-    };
-    // ALL WORKING FINE :)
-    // (RegExp typos are hard to spot!)
-    // escapeSelector('!');
-    // escapeSelector('"');
-    // escapeSelector('#');
-    // escapeSelector('$');
-    // escapeSelector('%');
-    // escapeSelector('&');
-    // escapeSelector("'");
-    // escapeSelector('(');
-    // escapeSelector(')');
-    // escapeSelector('*');
-    // escapeSelector('+');
-    // escapeSelector(',');
-    // escapeSelector('.');
-    // escapeSelector('/');
-    // escapeSelector(':');
-    // escapeSelector(';');
-    // escapeSelector('<');
-    // escapeSelector('=');
-    // escapeSelector('>');
-    // escapeSelector('?');
-    // escapeSelector('@');
-    // escapeSelector('[');
-    // escapeSelector('\\');
-    // escapeSelector(']');
-    // escapeSelector('^');
-    // escapeSelector('`');
-    // escapeSelector('{');
-    // escapeSelector('|');
-    // escapeSelector('}');
-    // escapeSelector('~');
-
     this.attachMediaOverlayData = function ($iframe, spineItem, mediaOverlaySettings) {
 
         var contentDocElement = $iframe[0].contentDocument.documentElement;
@@ -116,19 +60,19 @@ ReadiumSDK.Views.MediaOverlayDataInjector = function (mediaOverlay, mediaOverlay
                     {
                         if (el !== elem)
                         {
-//console.debug("MO CLICK REDIRECT: " + el.id);
+//console.log("MO CLICK REDIRECT: " + el.id);
                         }
 
                         if (!mediaOverlaySettings.mediaOverlaysEnableClick)
                         {
-console.debug("MO CLICK DISABLED");
+console.log("MO CLICK DISABLED");
                             mediaOverlayPlayer.touchInit();
                             return true;
                         }
 
                         if (inLink)
                         {
-console.debug("MO CLICKED LINK");
+console.log("MO CLICKED LINK");
                             mediaOverlayPlayer.touchInit();
                             return true;
                         }
@@ -298,6 +242,76 @@ console.debug("MO readaloud attr: " + readaloud);
             return;
         }
 
+        var traverseSmilSeqs = function(root)
+        {
+            if (!root) return;
+            
+            if (root.nodeType && root.nodeType === "seq")
+            {
+               // if (root.element)
+               // {
+               //     console.error("WARN: seq.element already set: " + root.textref);
+               // }
+                   
+               if (root.textref)
+               {
+                   var parts = root.textref.split('#');
+                   var file = parts[0];
+                   var fragmentId = (parts.length === 2) ? parts[1] : "";
+                   // 
+                   // console.debug(root.textref);
+                   // console.debug(fragmentId);
+                   // console.log("---- SHOULD BE EQUAL:");
+                   // console.debug(file);
+                   // console.debug(par.text.srcFile);
+                   // 
+                   // if (file !== par.text.srcFile)
+                   // {
+                   //     console.error("adjustParToSeqSyncGranularity textref.file !== par.text.srcFile ???");
+                   //     return par;
+                   // }
+                   // 
+                   // if (!fragmentId)
+                   // {
+                   //     console.error("adjustParToSeqSyncGranularity !fragmentId ???");
+                   //     return par;
+                   // }
+
+                   if (file && fragmentId)
+                   {
+                       var textRelativeRef = ReadiumSDK.Helpers.ResolveContentRef(file, smil.href);
+                       var same = textRelativeRef === spineItem.href;
+                       if (same)
+                       {                       
+                           root.element = $iframe[0].contentDocument.getElementById(fragmentId);
+                   
+                           if (!root.element)
+                           {
+                               console.error("seq.textref !element? " + root.textref);
+                           }
+
+                           // var selector = "#" + ReadiumSDK.Helpers.escapeJQuerySelector(fragmentId);
+                           // var $element = $(selector, element.ownerDocument.documentElement);
+                           // if ($element)
+                           // {
+                           //     seq.element = $element[0];
+                           // }
+                       }
+                   }
+               }
+            }
+            
+            if (root.children && root.children.length)
+            {
+                for (var i = 0; i < root.children.length; i++)
+                {
+                    var child = root.children[i];
+                    traverseSmilSeqs(child);
+                }
+            }
+        };
+        traverseSmilSeqs(smil);
+
 //console.debug("[[MO ATTACH]] " + spineItem.idref + " /// " + spineItem.media_overlay_id + " === " + smil.id);
 
         var iter = new ReadiumSDK.Models.SmilIterator(smil);
@@ -315,11 +329,12 @@ console.debug("MO readaloud attr: " + readaloud);
 
                 var same = textRelativeRef === spineItem.href;
                 if (same) {
-                    var selector = (!iter.currentPar.text.srcFragmentId || iter.currentPar.text.srcFragmentId.length == 0) ? "body" : (iter.currentPar.text.srcFragmentId.indexOf(epubCfiPrefix) == 0 ? undefined : "#" + escapeSelector(iter.currentPar.text.srcFragmentId));
+                    var selectBody = !iter.currentPar.text.srcFragmentId || iter.currentPar.text.srcFragmentId.length == 0;
+                    var selectId = iter.currentPar.text.srcFragmentId.indexOf(epubCfiPrefix) == 0 ? undefined : iter.currentPar.text.srcFragmentId;
 
                     var $element = undefined;
                     var isCfiTextRange = false;
-                    if (!selector)
+                    if (!selectBody && !selectId)
                     {
                         if (iter.currentPar.text.srcFragmentId.indexOf(epubCfiPrefix) === 0)
                         {
@@ -439,7 +454,15 @@ console.debug("MO readaloud attr: " + readaloud);
                     }
                     else
                     {
-                        $element = $(selector, contentDocElement);
+                        if (selectBody)
+                        {
+                            $element = $body; //$("body", contentDocElement);
+                        }
+                        else
+                        {
+                            $element = $($iframe[0].contentDocument.getElementById(selectId));
+                            //$element = $("#" + ReadiumSDK.Helpers.escapeJQuerySelector(iter.currentPar.text.srcFragmentId), contentDocElement);
+                        }
                     }
 
                     if ($element && $element.length > 0) {

@@ -24,11 +24,21 @@ ReadiumSDK.Models.Package = function(packageData){
     var self = this;
 
     this.spine = undefined;
-    this.rendition_layout = undefined;
+    
     this.rootUrl = undefined;
     this.rootUrlMO = undefined;
+    
     this.media_overlay = undefined;
+    
     this.rendition_flow = undefined;
+    
+    this.rendition_layout = undefined;
+
+    //TODO: unused yet!
+    this.rendition_spread = undefined;
+
+    //TODO: unused yet!
+    this.rendition_orientation = undefined;
 
     this.resolveRelativeUrlMO = function(relativeUrl) {
 
@@ -61,7 +71,7 @@ ReadiumSDK.Models.Package = function(packageData){
     };
 
     this.isFixedLayout = function() {
-        return self.rendition_layout === "pre-paginated";
+        return self.rendition_layout === ReadiumSDK.Models.SpineItem.RENDITION_LAYOUT_PREPAGINATED;
     };
 
     this.isReflowable = function() {
@@ -70,22 +80,21 @@ ReadiumSDK.Models.Package = function(packageData){
     
 
     if(packageData) {
-
+        
         this.rootUrl = packageData.rootUrl;
         this.rootUrlMO = packageData.rootUrlMO;
 
         this.rendition_layout = packageData.rendition_layout;
-
         if(!this.rendition_layout) {
-            this.rendition_layout = "reflowable";
+            this.rendition_layout = ReadiumSDK.Models.SpineItem.RENDITION_LAYOUT_REFLOWABLE;
         }
         
         this.rendition_flow = packageData.rendition_flow;
+        this.rendition_orientation = packageData.rendition_orientation;
+        this.rendition_spread = packageData.rendition_spread;
         
         this.spine = new ReadiumSDK.Models.Spine(this, packageData.spine);
 
         this.media_overlay = ReadiumSDK.Models.MediaOverlay.fromDTO(packageData.media_overlay, this);
-        
     }
-    
 };

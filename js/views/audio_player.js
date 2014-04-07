@@ -170,7 +170,7 @@
         {
             if (DEBUG)
             {
-                console.debug("this.play()");
+                console.error("this.play()");
             }
     
             if(!_currentEpubSrc)
@@ -192,7 +192,7 @@
         {
             if (DEBUG)
             {
-                console.debug("this.pause()");
+                console.error("this.pause()");
             }
     
             stopTimer();
@@ -270,7 +270,7 @@
     //                    console.debug("currentTime: " + currentTime);
     //                }
     
-                    onPositionChanged(currentTime);
+                    onPositionChanged(currentTime, 1);
                 }, 20);
         }
     
@@ -292,7 +292,7 @@
         {
             if (DEBUG)
             {
-                console.debug("this.reset()");
+                console.error("this.reset()");
             }
     
             this.pause();
@@ -308,7 +308,12 @@
             }, 1);
         };
     
-    
+
+        _audioElement.addEventListener("loadstart", function()
+            {
+                _touchInited = true;
+            }
+        );
         var _touchInited = false;
         this.touchInit = function()
         {
@@ -334,7 +339,7 @@
     
         var _seekQueuing = 0;
         
-        this.playFile = function(smilSrc, epubSrc, seekBegin, element)
+        this.playFile = function(smilSrc, epubSrc, seekBegin) //element
         {
             _playId++;
             if (_playId > 99999)
@@ -542,7 +547,7 @@
         }
     
         var MAX_SEEK_RETRIES = 10;
-        var _seekedEvent1 = _iOS ? "progress" : "seeked";
+        var _seekedEvent1 = _iOS ? "canplaythrough" : "seeked"; //"progress"
         var _seekedEvent2 = _iOS ? "timeupdate" : "seeked";
         function onSeeked(event)
         {
@@ -575,15 +580,16 @@
                 {
                     event.data.seekRetries = MAX_SEEK_RETRIES;
     
-                    if (DEBUG)
-                    {
-                        console.debug("onSeeked() fail => first retry, EV: " + _seekedEvent2);
-                    }
+                    // if (DEBUG)
+                    // {
+                    //     console.debug("onSeeked() fail => first retry, EV: " + _seekedEvent2);
+                    // }
     
                     event.data.isNewSrc = false;
-                    $(_audioElement).on(_seekedEvent2, event.data, onSeeked);
+                    //$(_audioElement).on(_seekedEvent2, event.data, onSeeked);
                 }
-                else
+                
+                //else
                 {
                     event.data.seekRetries--;
     
@@ -602,7 +608,11 @@
                 {
                     try
                     {
-                        _audioElement.currentTime = event.data.newCurrentTime;
+                        _audioElement.pause();
+                        setTimeout(function()
+                        {
+                            _audioElement.currentTime = event.data.newCurrentTime;
+                        }, 0);
                     }
                     catch (ex)
                     {
@@ -612,7 +622,11 @@
                         {
                             try
                             {
-                                _audioElement.currentTime = event.data.newCurrentTime;
+                                _audioElement.pause();
+                                setTimeout(function()
+                                {
+                                    _audioElement.currentTime = event.data.newCurrentTime;
+                                }, 0);
                             }
                             catch (ex)
                             {
@@ -626,9 +640,38 @@
             {
                 if (DEBUG)
                 {
-                    console.debug("onSeeked() OKAY => play!");
+                    console.debug("onSeeked() STATE:");
+                    console.debug(notRetry);
+                    console.debug(event.data.seekRetries);
+                    console.debug(diff);
                 }
     
+                if (diff >= 1)
+                {
+                    if (DEBUG)
+                    {
+                        console.debug("onSeeked() ABORT, TRY AGAIN FROM SCRATCH!");
+                    }
+                    
+                    var smilSrc = _currentSmilSrc;
+                    var epubSrc = _currentEpubSrc;
+                    var seekBegin = event.data.newCurrentTime;
+                    
+                    self.reset();
+                    
+                    setTimeout(function()
+                    {
+                        self.playFile(smilSrc, epubSrc, seekBegin);
+                    }, 10);
+                    
+                    return;
+                }
+
+                if (DEBUG)
+                {
+                    console.debug("onSeeked() OKAY => play!");
+                }
+                
                 event.data.seekRetries = undefined;
     
                 self.play();

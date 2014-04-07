@@ -146,6 +146,52 @@ ReadiumSDK.Helpers.Margins = function(margin, border, padding) {
     }
 };
 
+ReadiumSDK.Helpers.triggerLayout = function($iframe) {
+
+    var doc = $iframe[0].contentDocument;
+
+    if(!doc) {
+        return;
+    }
+    
+    var ss = undefined;
+    try
+    {
+        ss = doc.styleSheets && doc.styleSheets.length ? doc.styleSheets[0] : undefined;
+        if (!ss)
+        {
+            var style = doc.createElement('style');
+            doc.head.appendChild(style);
+            style.appendChild(doc.createTextNode(''));
+            ss = style.sheet;
+        }
+    
+        if (ss)
+            ss.insertRule('body:first-child::before {content:\'READIUM\';color: red;font-weight: bold;}', ss.cssRules.length);
+    }
+    catch (ex)
+    {
+        console.error(ex);
+    }
+    
+    try
+    {
+        var el = doc.createElementNS("http://www.w3.org/1999/xhtml", "style");
+        el.appendChild(doc.createTextNode("*{}"));
+        doc.body.appendChild(el);
+        doc.body.removeChild(el);
+
+        if (ss)
+            ss.deleteRule(ss.cssRules.length-1);
+    }
+    catch (ex)
+    {
+        console.error(ex);
+    }
+    
+    var val = doc.body.offsetTop; // triggers layout
+};
+
 ReadiumSDK.Helpers.Margins.fromElement = function($element) {
     return new this($element.margin(), $element.border(), $element.padding());
 };
@@ -162,7 +208,8 @@ ReadiumSDK.Helpers.loadTemplate = function(name, params) {
 
 ReadiumSDK.Helpers.loadTemplate.cache = {
     "fixed_book_frame" : '<div id="fixed-book-frame" class="clearfix book-frame fixed-book-frame"></div>',
-    "fixed_page_frame" : '<div class="fixed-page-frame"><iframe scrolling="no" class="iframe-fixed"></iframe></div>',
+    "single_page_frame" : '<div><iframe scrolling="no" class="iframe-fixed"></iframe></div>',
+    "scrolled_book_frame" : '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"><div id="scrolled-content-frame"></div></div>',
     "reflowable_book_frame" : '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"><div id="reflowable-content-frame" class="reflowable-content-frame"><iframe scrolling="no" id="epubContentIframe"></iframe></div></div>'
 };
 
@@ -185,6 +232,25 @@ ReadiumSDK.Helpers.setStyles = function(styles, $element) {
     }
 
 };
+
+ReadiumSDK.Helpers.isIframeAlive = function(iframe)
+{
+    var w = undefined;
+    var d = undefined;
+    try
+    {
+        w = iframe.contentWindow;
+        d = iframe.contentDocument;
+    }
+    catch (ex)
+    {
+        console.error(ex);
+        return false;
+    }
+    
+    return w && d;
+}
+
 
 ReadiumSDK.Helpers.getOrientation = function($viewport) {
 
@@ -209,3 +275,57 @@ ReadiumSDK.Helpers.isRenditionSpreadPermittedForItem = function(item, orientatio
         && orientation == ReadiumSDK.Views.ORIENTATION_PORTRAIT );
 };
 
+ReadiumSDK.Helpers.escapeJQuerySelector = function(sel) {
+        //http://api.jquery.com/category/selectors/
+        //!"#$%&'()*+,./:;<=>?@[\]^`{|}~
+        // double backslash escape
+        
+        if (!sel) return undefined;
+        
+        var selector = sel.replace(/([;&,\.\+\*\~\?':"\!\^#$%@\[\]\(\)<=>\|\/\\{}`])/g, '\\$1');
+        
+        // if (selector !== sel)
+        // {
+        //     console.debug("---- SELECTOR ESCAPED");
+        //     console.debug("1: " + sel);
+        //     console.debug("2: " + selector);
+        // }
+        // else
+        // {
+        //     console.debug("---- SELECTOR OKAY: " + sel);
+        // }
+        
+        return selector;
+};
+    // TESTS BELOW ALL WORKING FINE :)
+    // (RegExp typos are hard to spot!)
+    // escapeSelector('!');
+    // escapeSelector('"');
+    // escapeSelector('#');
+    // escapeSelector('$');
+    // escapeSelector('%');
+    // escapeSelector('&');
+    // escapeSelector("'");
+    // escapeSelector('(');
+    // escapeSelector(')');
+    // escapeSelector('*');
+    // escapeSelector('+');
+    // escapeSelector(',');
+    // escapeSelector('.');
+    // escapeSelector('/');
+    // escapeSelector(':');
+    // escapeSelector(';');
+    // escapeSelector('<');
+    // escapeSelector('=');
+    // escapeSelector('>');
+    // escapeSelector('?');
+    // escapeSelector('@');
+    // escapeSelector('[');
+    // escapeSelector('\\');
+    // escapeSelector(']');
+    // escapeSelector('^');
+    // escapeSelector('`');
+    // escapeSelector('{');
+    // escapeSelector('|');
+    // escapeSelector('}');
+    // escapeSelector('~');
