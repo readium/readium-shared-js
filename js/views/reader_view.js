@@ -168,6 +168,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
             ReadiumSDK.Models.Trigger.register(contentDoc);
             ReadiumSDK.Models.Switches.apply(contentDoc);
 
+            injectMathJax($iframe);
+
             self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
         });
 
@@ -1004,6 +1006,22 @@ ReadiumSDK.Views.ReaderView = function(options) {
      */
     this.addIFrameEventListener = function(eventName, callback, context) {
         _iframeLoader.addIFrameEventListener(eventName, callback, context);
+    };
+
+    function injectMathJax($iframe) {
+
+        var doc, script, head;
+
+        doc = $iframe[0].contentDocument;
+        head = doc.getElementsByTagName("head")[0];
+        // if the content doc is SVG there is no head, and thus
+        // mathjax will not be required
+        if(head) {
+            script = doc.createElement("script");
+            script.type = "text/javascript";
+            script.src = MathJax.Hub.config.root+"/MathJax.js?config=readium-iframe";
+            head.appendChild(script);
+        }
     }
 
 };
