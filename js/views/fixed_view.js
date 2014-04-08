@@ -31,6 +31,7 @@ ReadiumSDK.Views.FixedView = function(options){
     var _userStyles = options.userStyles;
     var _bookStyles = options.bookStyles;
     var _zoom = options.zoom || {style: 'default'};
+    var _currentScale;
     var _iframeLoader = options.iframeLoader;
     var _enablePageTransitions = options.enablePageTransitions;
 
@@ -71,6 +72,11 @@ ReadiumSDK.Views.FixedView = function(options){
     this.isReflowable = function() {
         return false;
     };
+
+    this.setZoom = function(zoom){
+        _zoom = zoom;
+        resizeBook(false); 
+    }
 
     this.render = function(){
 
@@ -233,6 +239,10 @@ ReadiumSDK.Views.FixedView = function(options){
         }
     };
 
+    this.getViewScale = function(){
+        return _currentScale;
+    };
+
     //event with namespace for clean unbinding
     $(window).on("resize.ReadiumSDK.readerView", _.bind(self.onViewportResize, self));
 
@@ -277,18 +287,19 @@ ReadiumSDK.Views.FixedView = function(options){
         var verScale = potentialContentSize.height / _contentMetaSize.height;
 
         var scale;
-        if (zoom.style == 'fit-width'){
+        if (_zoom.style == 'fit-width'){
             scale = horScale;
         }
-        else if (zoom.style == 'fit-height'){
+        else if (_zoom.style == 'fit-height'){
             scale = verScale;
         }
-        else if (zoom.style == 'user'){
-            scale = zoom.scale;
+        else if (_zoom.style == 'user'){
+            scale = _zoom.scale;
         }
         else{
             scale = Math.min(horScale, verScale);
         }
+        _currentScale = scale;
 
         var contentSize = { width: _contentMetaSize.width * scale,
                             height: _contentMetaSize.height * scale };
@@ -336,6 +347,7 @@ ReadiumSDK.Views.FixedView = function(options){
 
             _centerPageView[transFunc](scale, left, top);
         }
+        self.trigger(ReadiumSDK.Events.FXL_VIEW_RESIZED);
     }
 
     function getMaxPageMargins(leftPageMargins, rightPageMargins, centerPageMargins) {

@@ -133,6 +133,10 @@ ReadiumSDK.Views.ReaderView = function(options) {
             self.trigger(ReadiumSDK.Events.PAGINATION_CHANGED, pageChangeData);
         });
 
+        _currentView.on(ReadiumSDK.Events.FXL_VIEW_RESIZED, function(){
+            self.trigger(ReadiumSDK.Events.FXL_VIEW_RESIZED);
+        })
+
         _currentView.render();
 
         return true;
@@ -295,6 +299,25 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
     };
 
+    this.isCurrentViewReflowable = function(){
+        return _currentView.isReflowable && _currentView.isReflowable();
+    }
+
+    this.setZoom = function(zoom){
+        // zoom only handled by fixed layout views 
+        if (!_currentView.isReflowable || !_currentView.isReflowable()){
+            _currentView.setZoom(zoom);
+        }
+    }
+
+    this.getViewScale = function(){
+        if (!_currentView.isReflowable || !_currentView.isReflowable()){
+            return 100 * _currentView.getViewScale();
+        }
+        else{
+            return 100;
+        }
+    }
     /**
      * Updates reader view based on the settings specified in settingsData object
      * @param settingsData
