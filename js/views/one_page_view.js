@@ -215,11 +215,19 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
     };
 
     this.showIFrame = function() {
+
         _$iframe.css("visibility", "visible");
+        _$iframe.css('transform', "none");
     };
 
     this.hideIFrame = function() {
+
+        // With some books, despite the iframe and its containing div wrapper being hidden,
+        // the iframe's contentWindow / contentDocument is still visible!
+        // Thus why we translate the iframe out of view instead.
+        
         _$iframe.css("visibility", "hidden");
+        _$iframe.css('transform', "translate(10000px, 10000px)");
     };
 
     this.getContentDocHeight = function(){
@@ -303,12 +311,12 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
 
         _$epubHtml.css(css);
 
-        // // Chrome workaround: otherwise text is sometimes invisible (probably a rendering glitch due to the 3D transform graphics backend?)
-        // //_$epubHtml.css("visibility", "hidden"); // "flashing" in two-page spread mode is annoying :(
+        // Chrome workaround: otherwise text is sometimes invisible (probably a rendering glitch due to the 3D transform graphics backend?)
+        //_$epubHtml.css("visibility", "hidden"); // "flashing" in two-page spread mode is annoying :(
         _$epubHtml.css("opacity", "0.999");
 
         self.showIFrame();
-        
+                
         setTimeout(function()
         {
             //_$epubHtml.css("visibility", "visible");
@@ -433,14 +441,13 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             {
                 //hide iframe until content is scaled
                 self.hideIFrame();
-                //_$iframe.css("visibility", "hidden");
             }
             
             self.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPEN_START, _$iframe, _currentSpineItem);
             _iframeLoader.loadIframe(_$iframe[0], src, function(success){
 
                 if(success && callback)
-                {    
+                {
                     var func = function() {
                         callback(success, _$iframe, _currentSpineItem, true, context);
                     };
