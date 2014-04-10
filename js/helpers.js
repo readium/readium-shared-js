@@ -188,8 +188,11 @@ ReadiumSDK.Helpers.triggerLayout = function($iframe) {
     {
         console.error(ex);
     }
-    
-    var val = doc.body.offsetTop; // triggers layout
+
+    if(doc.body) {
+        var val = doc.body.offsetTop; // triggers layout
+    }
+
 };
 
 ReadiumSDK.Helpers.Margins.fromElement = function($element) {

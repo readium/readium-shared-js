@@ -85,10 +85,7 @@ ReadiumSDK.Models.Package = function(packageData){
         this.rootUrlMO = packageData.rootUrlMO;
 
         this.rendition_layout = packageData.rendition_layout;
-        if(!this.rendition_layout) {
-            this.rendition_layout = ReadiumSDK.Models.SpineItem.RENDITION_LAYOUT_REFLOWABLE;
-        }
-        
+
         this.rendition_flow = packageData.rendition_flow;
         this.rendition_orientation = packageData.rendition_orientation;
         this.rendition_spread = packageData.rendition_spread;

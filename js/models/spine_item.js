@@ -63,7 +63,7 @@ ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
     };
 
     this.isRenditionSpreadAllowed = function() {
-        return !this.rendition_spread || this.rendition_spread != ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_NONE;
+        return !self.rendition_spread || self.rendition_spread != ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_NONE;
     };
 
     function validateSpread() {
@@ -82,34 +82,43 @@ ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
     }
 
     this.isLeftPage = function() {
-        return this.page_spread == ReadiumSDK.Models.SpineItem.SPREAD_LEFT;
+        return self.page_spread == ReadiumSDK.Models.SpineItem.SPREAD_LEFT;
     };
 
     this.isRightPage = function() {
-        return this.page_spread == ReadiumSDK.Models.SpineItem.SPREAD_RIGHT;
+        return self.page_spread == ReadiumSDK.Models.SpineItem.SPREAD_RIGHT;
     };
 
     this.isCenterPage = function() {
-        return this.page_spread == ReadiumSDK.Models.SpineItem.SPREAD_CENTER;
+        return self.page_spread == ReadiumSDK.Models.SpineItem.SPREAD_CENTER;
     };
 
     this.isReflowable = function() {
-        return !this.isFixedLayout();
+        return !self.isFixedLayout();
     };
 
     this.isFixedLayout = function() {
         
         // cannot use isPropertyValueSetForItemOrPackage() here!
-        
-        //http://www.idpf.org/epub/fxl/#property-layout
-        if (this.rendition_layout)
-        {
-            if (this.rendition_layout === ReadiumSDK.Models.SpineItem.RENDITION_LAYOUT_PREPAGINATED) return true;
-            if (this.rendition_layout === ReadiumSDK.Models.SpineItem.RENDITION_LAYOUT_REFLOWABLE) return false;
+
+        var isLayoutExplicitlyDefined = self.rendition_layout || self.spine.package.rendition_layout;
+
+        if(isLayoutExplicitlyDefined) {
+
+            if (self.rendition_layout)
+            {
+                if (self.rendition_layout === ReadiumSDK.Models.SpineItem.RENDITION_LAYOUT_PREPAGINATED) return true;
+                if (self.rendition_layout === ReadiumSDK.Models.SpineItem.RENDITION_LAYOUT_REFLOWABLE) return false;
+            }
+
+            return self.spine.package.isFixedLayout();
         }
 
-        return this.spine.package.isFixedLayout();
+        // if image or svg use fixed layout
+        return self.media_type.indexOf("image/") >= 0;
+
     };
+
 
     function isPropertyValueSetForItemOrPackage(propName, propValue) {
 

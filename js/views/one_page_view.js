@@ -392,7 +392,10 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         _meta_size.width = 0;
         _meta_size.height = 0;
 
+        var size;
+
         var contentDocument = _$iframe[0].contentDocument;
+
 
         // first try to read viewport size
         var content = $('meta[name=viewport]', contentDocument).attr("content");
@@ -403,26 +406,38 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         }
 
         if(content) {
-            var size = parseSize(content);
-            if(size) {
-                _meta_size.width = size.width;
-                _meta_size.height = size.height;
+            size = parseMetaSize(content);
+        }
+        else {
+            //no meta data look for svg directly
+            var $svg = $(contentDocument).find('svg');
+            if($svg.length > 0) {
+                content = $svg.attr('viewBox');
+
+                if(content) {
+                    size = parseViewBoxSize(content);
+                }
+                else { // no viewBox check for
+
+                    size = {
+                        width: parseInt($svg.attr("width"), 10),
+                        height: parseInt($svg.attr("height"), 10)
+                    }
+
+                }
             }
         }
-        else { //try to get direct svg or image size
-            
-            // try SVG element's width/height first
-            var $svg = $(contentDocument).find('svg');
-            if ($svg.length > 0) {
-                _meta_size.width = parseInt($svg.attr("width"), 10);
-                _meta_size.height = parseInt($svg.attr("height"), 10);
-            }
-            else {
-                var $img = $(contentDocument).find('img');
-                if($img.length > 0) {
-                    _meta_size.width = $img.width();
-                    _meta_size.height = $img.height();
-                }
+
+        if(size) {
+            _meta_size.width = size.width;
+            _meta_size.height = size.height;
+        }
+        else { //try to get direct image size
+
+            var $img = $(contentDocument).find('img');
+            if($img.length > 0) {
+                _meta_size.width = $img.width();
+                _meta_size.height = $img.height();
             }
         }
 
@@ -483,7 +498,26 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         }
     };
 
-    function parseSize(content) {
+    function parseViewBoxSize(viewBoxString) {
+
+        var parts = viewBoxString.split(' ');
+
+        if(parts.length < 4) {
+            console.warn(viewBoxString + " value is not valid viewBox size")
+            return undefined;
+        }
+
+        var width = parseInt(parts[2]);
+        var height = parseInt(parts[3]);
+
+        if(!isNaN(width) && !isNaN(height)) {
+            return { width: width, height: height} ;
+        }
+
+        return undefined;
+    }
+
+    function parseMetaSize(content) {
 
         var pairs = content.replace(/\s/g, '').split(",");
 

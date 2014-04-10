@@ -438,14 +438,8 @@ ReadiumSDK.Views.ReflowableView = function(options){
             _$epubHtml.css(prefix + "column-width", _paginationInfo.columnWidth + "px");
         });
 
+        ReadiumSDK.Helpers.triggerLayout(_$iframe);
 
-        var doc = _$iframe[0].contentDocument;
-	    var el = doc.createElementNS("http://www.w3.org/1999/xhtml", "style");
-	    el.appendChild(doc.createTextNode("*{}"));
-	    doc.body.appendChild(el);
-	    doc.body.removeChild(el);
-	    var blocking = doc.body.offsetTop; // browser rendering / layout done
-        
         // resetting the position
         _$epubHtml.css({left: 0, right: 0});
 
