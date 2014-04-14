@@ -1476,7 +1476,7 @@ console.debug("TTS resume");
                 {
                     _elementHighlighter.highlightElement(_smilIterator.currentPar, _package.media_overlay.activeClass, _package.media_overlay.playbackActiveClass);
 
-                    reader.insureElementVisibility(_smilIterator.currentPar.element, self);
+                    reader.insureElementVisibility(_smilIterator.currentPar.getSmil().spineItemId, _smilIterator.currentPar.element, self);
                 }
             
                 return;
@@ -1487,7 +1487,7 @@ console.debug("TTS resume");
                 {
                     _elementHighlighter.highlightCfi(_smilIterator.currentPar, _package.media_overlay.activeClass, _package.media_overlay.playbackActiveClass);
 
-                    reader.insureElementVisibility(_smilIterator.currentPar.cfi.cfiTextParent, self);
+                    reader.insureElementVisibility(_smilIterator.currentPar.getSmil().spineItemId, _smilIterator.currentPar.cfi.cfiTextParent, self);
                 }
                 
                 return;

@@ -35,9 +35,9 @@ ReadiumSDK.Views.FixedView = function(options){
     var _iframeLoader = options.iframeLoader;
     var _enablePageTransitions = options.enablePageTransitions;
 
-    var _leftPageView = createOnePageView("fixed-page-frame-left", "right");
-    var _rightPageView = createOnePageView("fixed-page-frame-right", "left");
-    var _centerPageView = createOnePageView("fixed-page-frame-center", "center");
+    var _leftPageView = createOnePageView("fixed-page-frame-left");
+    var _rightPageView = createOnePageView("fixed-page-frame-right");
+    var _centerPageView = createOnePageView("fixed-page-frame-center");
 
     var _pageViews = [];
     _pageViews.push(_leftPageView);
@@ -48,24 +48,25 @@ ReadiumSDK.Views.FixedView = function(options){
     var _bookMargins;
     var _contentMetaSize;
 
-    function createOnePageView(cssclass, contentAlignment) {
+    function createOnePageView(elementClass) {
 
         var pageView = new ReadiumSDK.Views.OnePageView({
 
             iframeLoader: _iframeLoader,
             spine: _spine,
             bookStyles: _bookStyles,
-            class: cssclass,
-            contentAlignment: contentAlignment,
+            // class: cssclass,
+            // contentAlignment: contentAlignment,
             enablePageTransitions: _enablePageTransitions
-        });
+        },
+        [elementClass],
+        false); //enableBookStyleOverrides
 
         pageView.on(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPEN_START, function($iframe, spineItem) {
 
             self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
-        });
-
-
+        });   
+    
         return pageView;
     }
 
@@ -94,21 +95,25 @@ ReadiumSDK.Views.FixedView = function(options){
 
         self.applyStyles();
 
-        //event with namespace for clean unbinding
-        $(window).on("resize.ReadiumSDK.readerView", _.bind(self.onViewportResize, self));
-
-
         return this;
     };
 
     this.remove = function() {
 
-        $(window).off("resize.ReadiumSDK.readerView");
         _$el.remove();
     };
 
+    var _viewSettings = undefined;
     this.setViewSettings = function(settings) {
+        
+        _viewSettings = settings;
+        
         _spread.setSyntheticSpread(settings.isSyntheticSpread);
+
+        var views = getDisplayingViews();
+        for(var i = 0, count = views.length; i < count; i++) {
+            views[i].setViewSettings(settings);
+        }
     };
 
     function redraw(initiator, paginationRequest) {
@@ -242,9 +247,6 @@ ReadiumSDK.Views.FixedView = function(options){
     this.getViewScale = function(){
         return _currentScale;
     };
-
-    //event with namespace for clean unbinding
-    $(window).on("resize.ReadiumSDK.readerView", _.bind(self.onViewportResize, self));
 
     function isContentRendered() {
 
@@ -471,18 +473,21 @@ ReadiumSDK.Views.FixedView = function(options){
 
         var dfd = $.Deferred();
 
-        pageView.on(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED, function($iframe, spineItem, isNewContentDocumentLoaded){
+        pageView.loadSpineItem(item, function(success, $iframe, spineItem, isNewContentDocumentLoaded, context){
 
-            pageView.off(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED);
+            if(success && isNewContentDocumentLoaded) {
 
-            if(isNewContentDocumentLoaded) {
+                //if we a re loading fixed view meta size should be defined
+                if(!pageView.meta_height() || !pageView.meta_width()) {
+                    console.error("Invalid document " + spineItem.href + ": viewport is not specified!");
+                }
+
                 self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
             }
 
             dfd.resolve();
-        });
 
-        pageView.loadSpineItem(item);
+        }, context);
 
         return dfd.promise();
 
@@ -583,7 +588,7 @@ ReadiumSDK.Views.FixedView = function(options){
         console.error("spine item is not loaded");
         return undefined;
     };
-    
+
     this.getElementByCfi = function(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
         var views = getDisplayingViews();
@@ -612,7 +617,7 @@ ReadiumSDK.Views.FixedView = function(options){
         return undefined;
     };
 
-    this.insureElementVisibility = function(element, initiator) {
+    this.insureElementVisibility = function(spineItemId, element, initiator) {
 
         //for now we assume that for fixed layout element is always visible
 

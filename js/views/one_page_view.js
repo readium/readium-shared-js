@@ -21,7 +21,7 @@
  */
 
 //Representation of one fixed page
-ReadiumSDK.Views.OnePageView = function(options){
+ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrides){
 
     _.extend(this, Backbone.Events);
 
@@ -32,10 +32,15 @@ ReadiumSDK.Views.OnePageView = function(options){
     var _$iframe;
     var _currentSpineItem;
     var _spine = options.spine;
-    var _contentAlignment = options.contentAlignment;
     var _iframeLoader = options.iframeLoader;
     var _bookStyles = options.bookStyles;
+
+    var _isIframeLoaded = false;
+
     var _enablePageTransitions = options.enablePageTransitions;
+
+    // fixed layout does not apply user styles to publisher content, but reflowable scroll view does
+    var _enableBookStyleOverrides = enableBookStyleOverrides || false;
 
     var _meta_size = {
         width: 0,
@@ -72,14 +77,14 @@ ReadiumSDK.Views.OnePageView = function(options){
 
     this.isDisplaying = function() {
 
-        return _currentSpineItem != undefined && _$epubHtml != null && _$epubHtml.length > 0;
+        return _isIframeLoaded;
     };
 
     this.render = function() {
 
         if(!_$iframe) {
 
-            var template = ReadiumSDK.Helpers.loadTemplate("fixed_page_frame", {});
+            var template = ReadiumSDK.Helpers.loadTemplate("single_page_frame", {});
 
             _$el = $(template);
         
@@ -90,16 +95,38 @@ ReadiumSDK.Views.OnePageView = function(options){
             _$el.css("height", "100%");
             _$el.css("width", "100%");
 
-            _$el.addClass(options.class);
+            for(var i = 0, count = classes.length; i < count; i++) {
+                _$el.addClass(classes[i]);
+            }
+
             _$iframe = $("iframe", _$el);
+            
+            _$iframe.css("width", "100%");
+            //_$iframe.css("height", "100%");
+            _$iframe.css("height", window.innerHeight || window.clientHeight);
         }
 
         return this;
     };
 
+
+    this.decorateIframe = function()
+    {
+        if (!_$iframe || !_$iframe.length) return;
+        
+        _$iframe.css("border-bottom", "1px dashed silver");
+        _$iframe.css("border-top", "1px dashed silver");
+    }
+    
     this.remove = function() {
+        _isIframeLoaded = false;
         _currentSpineItem = undefined;
         _$el.remove();
+    };
+
+    this.clear = function() {
+        _isIframeLoaded = false;
+        _$iframe[0].src = "";
     };
 
     this.currentSpineItem = function() {
@@ -110,31 +137,124 @@ ReadiumSDK.Views.OnePageView = function(options){
     function onIFrameLoad(success) {
 
         if(success) {
+            _isIframeLoaded = true;
             var epubContentDocument = _$iframe[0].contentDocument;
             _$epubHtml = $("html", epubContentDocument);
             if (!_$epubHtml || _$epubHtml.length == 0) {
                 _$epubHtml = $("svg", epubContentDocument);
             }
-            _$epubHtml.css("overflow", "hidden");
-            self.applyBookStyles();
+            
+            //_$epubHtml.css("overflow", "hidden");
+
+            if (_enableBookStyleOverrides) {
+                self.applyBookStyles();
+            }
+            
             updateMetaSize();
-            
+
             _pageSwitchActuallyChanged_IFRAME_LOAD = true; // second pass, but initial display for transition
-            
-            self.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED, _$iframe, _currentSpineItem, self);
+        }
+    }
+
+    var _viewSettings = undefined;
+    this.setViewSettings = function(settings) {
+        
+        _viewSettings = settings;
+
+        if (_enableBookStyleOverrides) {
+            self.applyBookStyles();
+        }
+        updateMetaSize();
+    };
+
+    function updateHtmlFontSize() {
+        
+        if (!_enableBookStyleOverrides) return;
+        
+        if(_$epubHtml && _viewSettings) {
+            _$epubHtml.css("font-size", _viewSettings.fontSize + "%");
         }
     }
 
     this.applyBookStyles = function() {
         
-        //TODO: code refactoring candidate? (no CSS override for fixed-layout content, publishers do not like when reading systems mess-up their design)
-        return;
+        if (!_enableBookStyleOverrides) return;
         
         if(_$epubHtml) {
             ReadiumSDK.Helpers.setStyles(_bookStyles.getStyles(), _$epubHtml);
+            updateHtmlFontSize();
         }
     };
+
+    //this is called by scroll_view for fixed spine item
+    this.scaleToWidth = function(width) {
+
+        var scale = width / _meta_size.width;
+        self.transformContentImmediate(scale, 0, 0);
+    };
+
+    //this is called by scroll_view for reflowable spine item
+    this.resizeIFrameToContent = function() {
+        var contHeight = self.getContentDocHeight();
+        //console.log("resizeIFrameToContent: " + contHeight);
+
+        self.setHeight(contHeight);
+
+        self.showIFrame();
+    };
     
+    this.setHeight = function(height) {
+
+        _$el.css("height", height + "px");
+
+        _$iframe.css("height", height + "px");
+    };
+
+    this.elementHeight = function() {
+        return _$el.height();
+    };
+
+    this.showIFrame = function() {
+
+        _$iframe.css("visibility", "visible");
+        _$iframe.css('transform', "none");
+    };
+
+    this.hideIFrame = function() {
+
+        // With some books, despite the iframe and its containing div wrapper being hidden,
+        // the iframe's contentWindow / contentDocument is still visible!
+        // Thus why we translate the iframe out of view instead.
+        
+        _$iframe.css("visibility", "hidden");
+        _$iframe.css('transform', "translate(10000px, 10000px)");
+    };
+
+    this.getContentDocHeight = function(){
+
+        if(!_$iframe || !_$iframe.length) {
+            return 0;
+        }
+        
+        if (ReadiumSDK.Helpers.isIframeAlive(_$iframe[0]))
+        {
+            var win = _$iframe[0].contentWindow;
+            var doc = _$iframe[0].contentDocument;
+            
+            var height = Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height)); //body can be shorter!
+            return height;
+        }
+        else if (_$epubHtml)
+        {
+            console.error("getContentDocHeight ??");
+            
+            var jqueryHeight = _$epubHtml.height();
+            return jqueryHeight;
+        }
+
+        return 0;
+    }
+
     this.transformContentImmediate = function(scale, left, top) {
         
         var pageTransition_Translate = false; // TODO: from options
@@ -185,17 +305,18 @@ ReadiumSDK.Views.OnePageView = function(options){
         css["height"] = _meta_size.height;
 
         if(!_$epubHtml) {
-            debugger;
+//            debugger;
+            return;
         }
 
         _$epubHtml.css(css);
 
-        // // Chrome workaround: otherwise text is sometimes invisible (probably a rendering glitch due to the 3D transform graphics backend?)
-        // //_$epubHtml.css("visibility", "hidden"); // "flashing" in two-page spread mode is annoying :(
+        // Chrome workaround: otherwise text is sometimes invisible (probably a rendering glitch due to the 3D transform graphics backend?)
+        //_$epubHtml.css("visibility", "hidden"); // "flashing" in two-page spread mode is annoying :(
         _$epubHtml.css("opacity", "0.999");
 
-        _$iframe.css("visibility", "visible");
-        
+        self.showIFrame();
+                
         setTimeout(function()
         {
             //_$epubHtml.css("visibility", "visible");
@@ -244,6 +365,7 @@ ReadiumSDK.Views.OnePageView = function(options){
             }, 10);
         }
     };
+
     this.transformContent = _.bind(_.debounce(this.transformContentImmediate, 50), self);
 
     function generateTransformCSS(scale, left, top) {
@@ -270,7 +392,10 @@ ReadiumSDK.Views.OnePageView = function(options){
         _meta_size.width = 0;
         _meta_size.height = 0;
 
+        var size;
+
         var contentDocument = _$iframe[0].contentDocument;
+
 
         // first try to read viewport size
         var content = $('meta[name=viewport]', contentDocument).attr("content");
@@ -281,54 +406,118 @@ ReadiumSDK.Views.OnePageView = function(options){
         }
 
         if(content) {
-            var size = parseSize(content);
-            if(size) {
-                _meta_size.width = size.width;
-                _meta_size.height = size.height;
-            }
+            size = parseMetaSize(content);
         }
-        else { //try to get direct svg or image size
-            
-            // try SVG element's width/height first
+        else {
+            //no meta data look for svg directly
             var $svg = $(contentDocument).find('svg');
-            if ($svg.length > 0) {
-                _meta_size.width = parseInt($svg.attr("width"), 10);
-                _meta_size.height = parseInt($svg.attr("height"), 10);
-            }
-            else {
-                var $img = $(contentDocument).find('img');
-                if($img.length > 0) {
-                    _meta_size.width = $img.width();
-                    _meta_size.height = $img.height();
+            if($svg.length > 0) {
+                content = $svg.attr('viewBox');
+
+                if(content) {
+                    size = parseViewBoxSize(content);
+                }
+                else { // no viewBox check for
+
+                    size = {
+                        width: parseInt($svg.attr("width"), 10),
+                        height: parseInt($svg.attr("height"), 10)
+                    }
+
                 }
             }
         }
 
-        if(!_meta_size.width || !_meta_size.height) {
-            console.error("Invalid document: viewport is not specified!");
+        if(size) {
+            _meta_size.width = size.width;
+            _meta_size.height = size.height;
+        }
+        else { //try to get direct image size
+
+            var $img = $(contentDocument).find('img');
+            if($img.length > 0) {
+                _meta_size.width = $img.width();
+                _meta_size.height = $img.height();
+            }
         }
 
     }
 
-    this.loadSpineItem = function(spineItem) {
+    //expected callback signature: function(success, $iframe, spineItem, isNewlyLoaded, context)
+    this.loadSpineItem = function(spineItem, callback, context) {
 
         if(_currentSpineItem != spineItem) {
 
             _currentSpineItem = spineItem;
             var src = _spine.package.resolveRelativeUrl(spineItem.href);
 
-            //hide iframe until content is scaled
-            _$iframe.css("visibility", "hidden");
+            //if (spineItem && spineItem.isFixedLayout())
+            if (true) // both fixed layout and reflowable documents need hiding due to flashing during layout/rendering
+            {
+                //hide iframe until content is scaled
+                self.hideIFrame();
+            }
+            
             self.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPEN_START, _$iframe, _currentSpineItem);
-            _iframeLoader.loadIframe(_$iframe[0], src, onIFrameLoad, self, {spineItem : spineItem});
+            _iframeLoader.loadIframe(_$iframe[0], src, function(success){
+
+                if(success && callback)
+                {
+                    var func = function() {
+                        callback(success, _$iframe, _currentSpineItem, true, context);
+                    };
+                    
+                    if (ReadiumSDK.Helpers.isIframeAlive(_$iframe[0]))
+                    {
+                        onIFrameLoad(success); // applies styles
+                        
+                        func();
+                    }
+                    else
+                    {
+                        console.error("onIFrameLoad !! doc && win + TIMEOUT");
+                        console.debug(spineItem.href);
+                        
+                        onIFrameLoad(success);
+                        
+                        setTimeout(func, 500);
+                    }
+                }
+                else
+                {
+                    onIFrameLoad(success);
+                }
+                
+            }, self);
         }
         else
         {
-            this.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED, _$iframe, _currentSpineItem, false);
+            if(callback) {
+                callback(true, _$iframe, _currentSpineItem, false, context);
+            }
         }
     };
 
-    function parseSize(content) {
+    function parseViewBoxSize(viewBoxString) {
+
+        var parts = viewBoxString.split(' ');
+
+        if(parts.length < 4) {
+            console.warn(viewBoxString + " value is not valid viewBox size")
+            return undefined;
+        }
+
+        var width = parseInt(parts[2]);
+        var height = parseInt(parts[3]);
+
+        if(!isNaN(width) && !isNaN(height)) {
+            return { width: width, height: height} ;
+        }
+
+        return undefined;
+    }
+
+    function parseMetaSize(content) {
 
         var pairs = content.replace(/\s/g, '').split(",");
 
@@ -367,6 +556,11 @@ ReadiumSDK.Views.OnePageView = function(options){
 
     };
 
+    this.getNavigator = function() {
+
+        return new ReadiumSDK.Views.CfiNavigationLogic(_$el, _$iframe);
+    };
+
     this.getElementByCfi = function(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
         if(spineItem != _currentSpineItem) {
@@ -403,9 +597,16 @@ ReadiumSDK.Views.OnePageView = function(options){
     this.getFirstVisibleMediaOverlayElement = function() {
         var navigation = new ReadiumSDK.Views.CfiNavigationLogic(_$el, _$iframe);
         return navigation.getFirstVisibleMediaOverlayElement({top:0, bottom: _$iframe.height()});
-    }
+    };
 
+    this.offset = function()
+    {
+        if (_$iframe)
+        {
+            return _$iframe.offset();
+        }
+        return undefined;
+    }
 };
 
 ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPEN_START = "SpineItemOpenStart";
-ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPENED = "SpineItemOpened";

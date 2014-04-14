@@ -32,11 +32,21 @@ ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
     this.idref = itemData.idref;
     this.href = itemData.href;
 
+    this.linear = itemData.linear;
+
     this.page_spread = itemData.page_spread;
+    
     this.rendition_spread = itemData.rendition_spread;
+    
+    //TODO: unused yet!
+    this.rendition_orientation = itemData.rendition_orientation;
 
     this.rendition_layout = itemData.rendition_layout;
+    
     this.rendition_flow = itemData.rendition_flow;
+    
+    
+    
     this.media_overlay_id = itemData.media_overlay_id;
 
     this.media_type = itemData.media_type;
@@ -46,10 +56,6 @@ ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
 
     validateSpread();
 
-    this.isLeftPage = function() {
-        return this.page_spread == ReadiumSDK.Models.SpineItem.SPREAD_LEFT;
-    };
-
     this.setSpread = function(spread) {
         this.page_spread = spread;
 
@@ -57,7 +63,7 @@ ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
     };
 
     this.isRenditionSpreadAllowed = function() {
-        return !this.rendition_spread || this.rendition_spread != ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_NONE;
+        return !self.rendition_spread || self.rendition_spread != ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_NONE;
     };
 
     function validateSpread() {
@@ -75,21 +81,44 @@ ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
 
     }
 
+    this.isLeftPage = function() {
+        return self.page_spread == ReadiumSDK.Models.SpineItem.SPREAD_LEFT;
+    };
+
     this.isRightPage = function() {
-        return this.page_spread == ReadiumSDK.Models.SpineItem.SPREAD_RIGHT;
+        return self.page_spread == ReadiumSDK.Models.SpineItem.SPREAD_RIGHT;
     };
 
     this.isCenterPage = function() {
-        return this.page_spread == ReadiumSDK.Models.SpineItem.SPREAD_CENTER;
+        return self.page_spread == ReadiumSDK.Models.SpineItem.SPREAD_CENTER;
     };
 
     this.isReflowable = function() {
-        return !this.isFixedLayout();
+        return !self.isFixedLayout();
     };
 
     this.isFixedLayout = function() {
-        return this.rendition_layout ? this.rendition_layout === "pre-paginated" : this.spine.package.isFixedLayout();
+        
+        // cannot use isPropertyValueSetForItemOrPackage() here!
+
+        var isLayoutExplicitlyDefined = self.rendition_layout || self.spine.package.rendition_layout;
+
+        if(isLayoutExplicitlyDefined) {
+
+            if (self.rendition_layout)
+            {
+                if (self.rendition_layout === ReadiumSDK.Models.SpineItem.RENDITION_LAYOUT_PREPAGINATED) return true;
+                if (self.rendition_layout === ReadiumSDK.Models.SpineItem.RENDITION_LAYOUT_REFLOWABLE) return false;
+            }
+
+            return self.spine.package.isFixedLayout();
+        }
+
+        // if image or svg use fixed layout
+        return self.media_type.indexOf("image/") >= 0;
+
     };
+
 
     function isPropertyValueSetForItemOrPackage(propName, propValue) {
 
@@ -114,6 +143,13 @@ ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
         return isPropertyValueSetForItemOrPackage("rendition_flow", ReadiumSDK.Models.SpineItem.RENDITION_FLOW_SCROLLED_DOC);
     };
 };
+
+ReadiumSDK.Models.SpineItem.RENDITION_LAYOUT_REFLOWABLE = "reflowable";
+ReadiumSDK.Models.SpineItem.RENDITION_LAYOUT_PREPAGINATED = "pre-paginated";
+
+ReadiumSDK.Models.SpineItem.RENDITION_ORIENTATION_LANDSCAPE = "landscape";
+ReadiumSDK.Models.SpineItem.RENDITION_ORIENTATION_PORTRAIT = "portrait";
+ReadiumSDK.Models.SpineItem.RENDITION_ORIENTATION_AUTO = "auto";
 
 ReadiumSDK.Models.SpineItem.SPREAD_LEFT = "page-spread-left";
 ReadiumSDK.Models.SpineItem.SPREAD_RIGHT = "page-spread-right";

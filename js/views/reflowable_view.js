@@ -121,12 +121,16 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
     };
 
+    var _viewSettings = undefined;
     this.setViewSettings = function(settings) {
+        
+        _viewSettings = settings;
 
         _isSyntheticSpread = settings.isSyntheticSpread;
-        _paginationInfo.visibleColumnCount = calculateVisibleColumnCount();
         _paginationInfo.columnGap = settings.columnGap;
         _fontSize = settings.fontSize;
+        
+        _paginationInfo.visibleColumnCount = calculateVisibleColumnCount();
 
         updateHtmlFontSize();
         updateColumnGap();
@@ -375,7 +379,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
         }
         else {
 
-            var prevSpineItem = _spine.prevItem(_currentSpineItem);
+            var prevSpineItem = _spine.prevItem(_currentSpineItem, true);
             if(prevSpineItem) {
 
                 var pageRequest = new ReadiumSDK.Models.PageOpenRequest(prevSpineItem, initiator);
@@ -397,7 +401,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
         }
         else {
 
-            var nextSpineItem = _spine.nextItem(_currentSpineItem);
+            var nextSpineItem = _spine.nextItem(_currentSpineItem, true);
             if(nextSpineItem) {
 
                 var pageRequest = new ReadiumSDK.Models.PageOpenRequest(nextSpineItem, initiator);
@@ -434,14 +438,8 @@ ReadiumSDK.Views.ReflowableView = function(options){
             _$epubHtml.css(prefix + "column-width", _paginationInfo.columnWidth + "px");
         });
 
+        ReadiumSDK.Helpers.triggerLayout(_$iframe);
 
-        var doc = _$iframe[0].contentDocument;
-	    var el = doc.createElementNS("http://www.w3.org/1999/xhtml", "style");
-	    el.appendChild(doc.createTextNode("*{}"));
-	    doc.body.appendChild(el);
-	    doc.body.removeChild(el);
-	    var blocking = doc.body.offsetTop; // browser rendering / layout done
-        
         // resetting the position
         _$epubHtml.css({left: 0, right: 0});
 
@@ -634,15 +632,18 @@ ReadiumSDK.Views.ReflowableView = function(options){
         var visibleContentOffsets = getVisibleContentOffsets();
         return _navigationLogic.getFirstVisibleMediaOverlayElement(visibleContentOffsets);
     };
+    
+    // /**
+    //  * @deprecated
+    //  */
+    // this.getVisibleMediaOverlayElements = function() {
+    // 
+    //     var visibleContentOffsets = getVisibleContentOffsets();
+    //     return _navigationLogic.getVisibleMediaOverlayElements(visibleContentOffsets);
+    // };
 
-    this.getVisibleMediaOverlayElements = function() {
+    this.insureElementVisibility = function(spineItemId, element, initiator) {
 
-        var visibleContentOffsets = getVisibleContentOffsets();
-        return _navigationLogic.getVisibleMediaOverlayElements(visibleContentOffsets);
-    };
-
-    this.insureElementVisibility = function(element, initiator)
-    {
         var $element = $(element);
         if(_navigationLogic.isElementVisible($element, getVisibleContentOffsets()))
         {
@@ -658,7 +659,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
         var openPageRequest = new ReadiumSDK.Models.PageOpenRequest(_currentSpineItem, initiator);
         openPageRequest.setPageIndex(page);
-        
+
         var id = element.id;
         if (!id)
         {
