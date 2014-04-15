@@ -43,6 +43,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     var _annotationsManager = new ReadiumSDK.Views.AnnotationsManager(self, options);
 
     var _enablePageTransitions = options.enablePageTransitions;
+    var _mathJaxUrl = options.mathJaxUrl;
     
     //We will call onViewportResize after user stopped resizing window
     var lazyResize = _.debounce(function() { self.handleViewportResize() }, 100);
@@ -1010,6 +1011,16 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
     function injectMathJax($iframe) {
 
+        if(!_mathJaxUrl) {
+            return;
+        }
+
+        //is mathjax required
+        var $mathNode = $('math', $iframe[0].contentDocument);
+        if($mathNode.length === 0) {
+            return;
+        }
+
         var doc, script, head;
 
         doc = $iframe[0].contentDocument;
@@ -1019,7 +1030,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
         if(head) {
             script = doc.createElement("script");
             script.type = "text/javascript";
-            script.src = MathJax.Hub.config.root+"/MathJax.js?config=readium-iframe";
+            script.src = _mathJaxUrl;
             head.appendChild(script);
         }
     }
