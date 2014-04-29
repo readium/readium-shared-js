@@ -41,7 +41,6 @@ ReadiumSDK.Views.ReflowableView = function(options){
     var _fontSize = 100;
     var _$contentFrame;
     var _navigationLogic;
-    var _isSyntheticSpread;
     var _$el;
     var _$iframe;
     var _$epubHtml;
@@ -115,7 +114,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
         if(updateViewportSize()) {
             //depends on aspect ratio of viewport and rendition:spread-* setting we may have to switch spread on/off
-            _paginationInfo.visibleColumnCount = calculateVisibleColumnCount();
+            _paginationInfo.visibleColumnCount = recalculateColumnCount();
             updatePagination();
         }
 
@@ -126,37 +125,18 @@ ReadiumSDK.Views.ReflowableView = function(options){
         
         _viewSettings = settings;
 
-        _isSyntheticSpread = settings.isSyntheticSpread;
         _paginationInfo.columnGap = settings.columnGap;
         _fontSize = settings.fontSize;
         
-        _paginationInfo.visibleColumnCount = calculateVisibleColumnCount();
+        _paginationInfo.visibleColumnCount = recalculateColumnCount();
 
         updateHtmlFontSize();
         updateColumnGap();
         updatePagination();
     };
 
-    function calculateVisibleColumnCount() {
-
-        if(_isSyntheticSpread) {
-
-            if(!_currentSpineItem) {
-                return 2;
-            }
-
-            var orientation = ReadiumSDK.Helpers.getOrientation(_$viewport);
-            if(!orientation) {
-                return 2;
-            }
-
-            return ReadiumSDK.Helpers.isRenditionSpreadPermittedForItem(_currentSpineItem, orientation)
-                ? 2 : 1;
-        }
-        else {
-
-            return 1;
-        }
+    function recalculateColumnCount() {
+        return ReadiumSDK.Helpers.deduceSyntheticSpread(_$viewport, _currentSpineItem, _viewSettings) ? 2 : 1;
     }
 
     function loadSpineItem(spineItem) {

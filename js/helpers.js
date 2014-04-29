@@ -195,6 +195,42 @@ ReadiumSDK.Helpers.triggerLayout = function($iframe) {
 
 };
 
+//Based on https://docs.google.com/spreadsheet/ccc?key=0AoPMUkQhc4wcdDI0anFvWm96N0xRT184ZE96MXFRdFE&usp=drive_web#gid=0 doc
+ReadiumSDK.Helpers.deduceSyntheticSpread = function($viewport, spineItem, settings) {
+
+    if(item.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_NONE) {
+        return false;
+    }
+
+    var orientation = ReadiumSDK.Helpers.getOrientation($viewport);
+
+    var isSpreadSetInSettings = typeof settings.isSyntheticSpread != 'undefined';
+
+    if(isSpreadSetInSettings) {
+        return settings.isSyntheticSpread;
+    }
+
+    if(!spineItem) {
+        return false;
+    }
+
+    if(item.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_AUTO || item.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_BOTH) {
+        return true;
+    }
+
+    if(item.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_LANDSCAPE) {
+        return orientation === ReadiumSDK.Views.ORIENTATION_LANDSCAPE;
+    }
+
+    if(item.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_PORTRAIT) {
+        return orientation === ReadiumSDK.Views.ORIENTATION_PORTRAIT;
+    }
+
+    console.warn("Unexpected spread properties condition!");
+    return false;
+
+};
+
 ReadiumSDK.Helpers.Margins.fromElement = function($element) {
     return new this($element.margin(), $element.border(), $element.padding());
 };
