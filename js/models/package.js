@@ -1,97 +1,106 @@
 //  Created by Boris Schneiderman.
-//  Copyright (c) 2012-2013 The Readium Foundation.
-//
-//  The Readium SDK is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  
+//  Redistribution and use in source and binary forms, with or without modification, 
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this 
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice, 
+//  this list of conditions and the following disclaimer in the documentation and/or 
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be 
+//  used to endorse or promote products derived from this software without specific 
+//  prior written permission.
+//  
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*
  *
  * @class ReadiumSDK.Models.Package
  */
 
-ReadiumSDK.Models.Package = Backbone.Model.extend({
+ReadiumSDK.Models.Package = function(packageData){
 
-    spine: undefined,
-    rendition_layout: undefined,
-    rootUrl: undefined,
-    rootUrlMO: undefined,
-    media_overlay: undefined,
+    var self = this;
 
-    initialize : function() {
+    this.spine = undefined;
+    
+    this.rootUrl = undefined;
+    this.rootUrlMO = undefined;
+    
+    this.media_overlay = undefined;
+    
+    this.rendition_flow = undefined;
+    
+    this.rendition_layout = undefined;
 
-        this.reset();
+    //TODO: unused yet!
+    this.rendition_spread = undefined;
 
-        var packageData = this.get("packageData");
+    //TODO: unused yet!
+    this.rendition_orientation = undefined;
 
-        if(packageData) {
+    this.resolveRelativeUrlMO = function(relativeUrl) {
 
-            this.rootUrl = packageData.rootUrl;
-            this.rootUrlMO = packageData.rootUrlMO;
+        if(self.rootUrlMO && self.rootUrlMO.length > 0) {
 
-            this.rendition_layout = packageData.rendition_layout;
-
-            if(!this.rendition_layout) {
-                this.rendition_layout = "reflowable";
-            }
-
-            this.spine = new ReadiumSDK.Models.Spine(this, packageData.spine);
-
-            this.media_overlay = ReadiumSDK.Models.MediaOverlay.fromDTO(packageData.media_overlay);
-        }
-    },
-
-    resolveRelativeUrlMO: function(relativeUrl) {
-
-        if(this.rootUrlMO && this.rootUrlMO.length > 0) {
-
-            if(ReadiumSDK.Helpers.EndsWith(this.rootUrlMO, "/")){
-                return this.rootUrlMO + relativeUrl;
+            if(ReadiumSDK.Helpers.EndsWith(self.rootUrlMO, "/")){
+                return self.rootUrlMO + relativeUrl;
             }
             else {
-                return this.rootUrlMO + "/" + relativeUrl;
+                return self.rootUrlMO + "/" + relativeUrl;
             }
         }
 
-        return this.resolveRelativeUrl(relativeUrl);
-    },
+        return self.resolveRelativeUrl(relativeUrl);
+    };
 
-    resolveRelativeUrl: function(relativeUrl) {
+    this.resolveRelativeUrl = function(relativeUrl) {
 
-        if(this.rootUrl) {
+        if(self.rootUrl) {
 
-            if(ReadiumSDK.Helpers.EndsWith(this.rootUrl, "/")){
-                return this.rootUrl + relativeUrl;
+            if(ReadiumSDK.Helpers.EndsWith(self.rootUrl, "/")){
+                return self.rootUrl + relativeUrl;
             }
             else {
-                return this.rootUrl + "/" + relativeUrl;
+                return self.rootUrl + "/" + relativeUrl;
             }
         }
 
         return relativeUrl;
-    },
+    };
 
-    reset: function() {
-        this.spine = undefined;
-        this.rendition_layout = undefined;
-        this.rootUrl = undefined;
-        this.rootUrlMO = undefined;
-    },
+    this.isFixedLayout = function() {
+        return self.rendition_layout === ReadiumSDK.Models.SpineItem.RENDITION_LAYOUT_PREPAGINATED;
+    };
 
-    isFixedLayout: function() {
-        return this.rendition_layout === "pre-paginated";
-    },
+    this.isReflowable = function() {
+        return !self.isFixedLayout();
+    };
+    
 
-    isReflowable: function() {
-        return !this.isFixedLayout();
+    if(packageData) {
+        
+        this.rootUrl = packageData.rootUrl;
+        this.rootUrlMO = packageData.rootUrlMO;
+
+        this.rendition_layout = packageData.rendition_layout;
+
+        this.rendition_flow = packageData.rendition_flow;
+        this.rendition_orientation = packageData.rendition_orientation;
+        this.rendition_spread = packageData.rendition_spread;
+        
+        this.spine = new ReadiumSDK.Models.Spine(this, packageData.spine);
+
+        this.media_overlay = ReadiumSDK.Models.MediaOverlay.fromDTO(packageData.media_overlay, this);
     }
-});
+};

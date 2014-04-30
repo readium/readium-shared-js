@@ -32,9 +32,7 @@ iframe {
     position: absolute !important;
 }
 
-.fixed-page-frame {
-    position: absolute !important;
-}
+
 
 .iframe-fixed {
     width: 100%;
@@ -56,7 +54,10 @@ iframe {
     position: absolute !important;
     opacity: 1;
     visibility: visible;
-    overflow: hidden;
+}
+
+.content-doc-frame {
+    position: relative !important;
 }
 
 /*Classes to use for styling the book*/
@@ -71,6 +72,10 @@ iframe {
 }
 
 /*fixed layout frames only*/
+.fixed-page-frame, .fixed-page-frame-left, .fixed-page-frame-right, .fixed-page-frame-center {
+    position: absolute !important;
+}
+
 .fixed-page-frame-left {
 
 }
