@@ -198,11 +198,13 @@ ReadiumSDK.Helpers.triggerLayout = function($iframe) {
 //Based on https://docs.google.com/spreadsheet/ccc?key=0AoPMUkQhc4wcdDI0anFvWm96N0xRT184ZE96MXFRdFE&usp=drive_web#gid=0 doc
 ReadiumSDK.Helpers.deduceSyntheticSpread = function($viewport, spineItem, settings) {
 
-    if(item.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_NONE) {
+    if(!$viewport || $viewport.length == 0) {
         return false;
     }
 
-    var orientation = ReadiumSDK.Helpers.getOrientation($viewport);
+    if(spineItem && item.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_NONE) {
+        return false;
+    }
 
     var isSpreadSetInSettings = typeof settings.isSyntheticSpread != 'undefined';
 
@@ -217,6 +219,8 @@ ReadiumSDK.Helpers.deduceSyntheticSpread = function($viewport, spineItem, settin
     if(item.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_AUTO || item.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_BOTH) {
         return true;
     }
+
+    var orientation = ReadiumSDK.Helpers.getOrientation($viewport);
 
     if(item.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_LANDSCAPE) {
         return orientation === ReadiumSDK.Views.ORIENTATION_LANDSCAPE;

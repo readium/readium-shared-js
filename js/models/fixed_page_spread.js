@@ -22,23 +22,25 @@
  * @constructor
  */
 
-ReadiumSDK.Models.Spread = function(spine, orientation) {
+ReadiumSDK.Models.Spread = function(spine, isSyntheticSpread) {
 
     var self = this;
 
-    this.orientation = orientation;
     this.spine = spine;
 
     this.leftItem = undefined;
     this.rightItem = undefined;
     this.centerItem = undefined;
 
-    var _isSyntheticSpread = true;
+    var _isSyntheticSpread = isSyntheticSpread;
 
     this.setSyntheticSpread = function(isSyntheticSpread) {
         _isSyntheticSpread = isSyntheticSpread;
     };
 
+    this.isSyntheticSpread = function() {
+        return _isSyntheticSpread;
+    };
 
     this.openFirst = function() {
 
@@ -68,7 +70,7 @@ ReadiumSDK.Models.Spread = function(spine, orientation) {
         setItemToPosition(item, position);
 
         if(position != ReadiumSDK.Models.Spread.POSITION_CENTER) {
-            var neighbour = getNeighbourItem(item, true);
+            var neighbour = getNeighbourItem(item);
             if(neighbour) {
                 var neighbourPos = getItemPosition(neighbour);
                 if(neighbourPos != position && position != ReadiumSDK.Models.Spread.POSITION_CENTER)  {
@@ -101,16 +103,11 @@ ReadiumSDK.Models.Spread = function(spine, orientation) {
 
             self.centerItem = item;
         }
-
     }
 
     function getItemPosition(item) {
 
         if(!_isSyntheticSpread) {
-            return ReadiumSDK.Models.Spread.POSITION_CENTER;
-        }
-
-        if(!ReadiumSDK.Helpers.isRenditionSpreadPermittedForItem(item, self.orientation)) {
             return ReadiumSDK.Models.Spread.POSITION_CENTER;
         }
 

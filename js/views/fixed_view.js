@@ -32,6 +32,7 @@ ReadiumSDK.Views.FixedView = function(options){
     var _bookStyles = options.bookStyles;
     var _iframeLoader = options.iframeLoader;
     var _enablePageTransitions = options.enablePageTransitions;
+    var _viewSettings = undefined;
 
     var _leftPageView = createOnePageView("fixed-page-frame-left");
     var _rightPageView = createOnePageView("fixed-page-frame-right");
@@ -42,7 +43,7 @@ ReadiumSDK.Views.FixedView = function(options){
     _pageViews.push(_rightPageView);
     _pageViews.push(_centerPageView);
 
-    var _spread = new ReadiumSDK.Models.Spread(_spine, ReadiumSDK.Helpers.getOrientation(_$viewport));
+    var _spread = new ReadiumSDK.Models.Spread(_spine, false);
     var _bookMargins;
     var _contentMetaSize;
 
@@ -96,18 +97,24 @@ ReadiumSDK.Views.FixedView = function(options){
         _$el.remove();
     };
 
-    var _viewSettings = undefined;
+
     this.setViewSettings = function(settings) {
         
         _viewSettings = settings;
         
-        _spread.setSyntheticSpread(settings.isSyntheticSpread);
+        _spread.setSyntheticSpread(ReadiumSDK.Helpers.deduceSyntheticSpread(_$viewport, getFirstVisibleItem(), _viewSettings));
 
         var views = getDisplayingViews();
         for(var i = 0, count = views.length; i < count; i++) {
             views[i].setViewSettings(settings);
         }
     };
+
+    function getFirstVisibleItem() {
+
+        var visibleItems = _spread.validItems();
+        return visibleItems[0];
+    }
 
     function redraw(initiator, paginationRequest) {
 
@@ -201,41 +208,32 @@ ReadiumSDK.Views.FixedView = function(options){
 
         //because change of the viewport orientation can alter pagination behaviour we have to check if
         //visible content stays same
-        var newOrientation = ReadiumSDK.Helpers.getOrientation(_$viewport);
-        if(!newOrientation) {
+
+        var firstVisibleItem = getFirstVisibleItem();
+        if(!firstVisibleItem) {
             return;
         }
 
-        var spreadChanged = false;
-        var itemToDisplay = undefined;
-        if(_spread.orientation != newOrientation) {
+        var isSyntheticSpread = ReadiumSDK.Helpers.deduceSyntheticSpread(_$viewport, firstVisibleItem, _viewSettings);
 
-            var newPageSpread = new ReadiumSDK.Models.Spread(_spine, newOrientation);
-
-            var visibleItems = _spread.validItems();
-            if(visibleItems.length > 0) {
-                newPageSpread.openItem(visibleItems[0]);
-            }
-
-            spreadChanged = (  _spread.leftItem != newPageSpread.leftItem
-                            || _spread.rightItem != newPageSpread.rightItem
-                            || _spread.centerItem != newPageSpread.centerItem );
-
-            _spread.orientation = newOrientation;
-        }
-
-        if(spreadChanged) {
-            itemToDisplay = _spread.validItems()[0];
-            if(itemToDisplay) {
-                var paginationRequest = new ReadiumSDK.Models.PageOpenRequest(itemToDisplay, self);
-                self.openPage(paginationRequest);
-            }
+        if(isSpreadChanged(firstVisibleItem, isSyntheticSpread)) {
+            _spread.setSyntheticSpread(isSyntheticSpread);
+            var paginationRequest = new ReadiumSDK.Models.PageOpenRequest(firstVisibleItem, self);
+            self.openPage(paginationRequest);
         }
         else {
             updatePageSwitchDir(0, false);
             resizeBook(true);
         }
     };
+
+    function isSpreadChanged(firstVisibleItem, isSyntheticSpread) {
+
+        var tmpSpread = new ReadiumSDK.Models.Spread(_spine, isSyntheticSpread);
+        tmpSpread.openItem(firstVisibleItem);
+
+        return _spread.leftItem != tmpSpread.leftItem || _spread.rightItem != tmpSpread.rightItem || _spread.centerItem != tmpSpread.centerItem;
+    }
 
     function isContentRendered() {
 
