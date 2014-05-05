@@ -97,6 +97,10 @@ ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
         return !self.isFixedLayout();
     };
 
+    this.isLayoutSetExplicitly = function() {
+        return self.rendition_layout;
+    };
+
     this.isFixedLayout = function() {
         
         // cannot use isPropertyValueSetForItemOrPackage() here!
@@ -119,6 +123,14 @@ ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
 
     };
 
+    this.getRenditionFlow = function() {
+
+        if(self.rendition_flow) {
+            return self.rendition_flow;
+        }
+
+        return self.package.rendition_flow;
+    };
 
     function isPropertyValueSetForItemOrPackage(propName, propValue) {
 
@@ -133,12 +145,12 @@ ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
         return false;
     }
 
-    this.isScrolledContinuous = function() {
+    this.isFlowScrolledContinuous = function() {
 
         return isPropertyValueSetForItemOrPackage("rendition_flow", ReadiumSDK.Models.SpineItem.RENDITION_FLOW_SCROLLED_CONTINUOUS);
     };
 
-    this.isScrolledDoc = function() {
+    this.isFlowScrolledDoc = function() {
 
         return isPropertyValueSetForItemOrPackage("rendition_flow", ReadiumSDK.Models.SpineItem.RENDITION_FLOW_SCROLLED_DOC);
     };

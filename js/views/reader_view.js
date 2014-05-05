@@ -104,6 +104,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     //based on https://docs.google.com/spreadsheet/ccc?key=0AoPMUkQhc4wcdDI0anFvWm96N0xRT184ZE96MXFRdFE&usp=drive_web#gid=0 document
     function deduceDesiredViewType(spineItem) {
 
+        //check settings
         if(_viewerSettings.isScrollDoc) {
             return ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_DOC;
         }
@@ -112,19 +113,20 @@ ReadiumSDK.Views.ReaderView = function(options) {
             return ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
         }
 
+        //is fixed layout ignore flow
         if(spineItem.isFixedLayout()) {
             return ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED;
         }
 
-        if(spineItem.isScrolledDoc()) {
+        //flow
+        if(spineItem.isFlowScrolledDoc()) {
             return ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_DOC;
         }
 
-        if(spineItem.isScrolledContinuous()) {
+        if(spineItem.isFlowScrolledContinuous()) {
             return ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
         }
 
-        //default
         return ReadiumSDK.Views.ReaderView.VIEW_TYPE_COLUMNIZED;
     }
 
