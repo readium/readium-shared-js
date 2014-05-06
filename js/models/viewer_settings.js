@@ -18,7 +18,9 @@
 ReadiumSDK.Models.ViewerSettings = function(settingsData) {
 
     var self = this;
-    this.isSyntheticSpread = true;
+
+    this.isSyntheticSpreadSingle = false;
+    this.isSyntheticSpreadDouble = false;
     this.fontSize = 100;
     this.columnGap = 20;
     this.mediaOverlaysSkipSkippables = false;
@@ -67,7 +69,8 @@ ReadiumSDK.Models.ViewerSettings = function(settingsData) {
 
     this.update = function(settingsData) {
 
-        mapProperty("isSyntheticSpread", settingsData);
+        mapProperty("isSyntheticSpreadSingle", settingsData);
+        mapProperty("isSyntheticSpreadDouble", settingsData);
         mapProperty("columnGap", settingsData);
         mapProperty("fontSize", settingsData);
         mapProperty("mediaOverlaysSkipSkippables", settingsData);
