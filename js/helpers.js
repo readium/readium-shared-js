@@ -231,6 +231,11 @@ ReadiumSDK.Helpers.deduceSyntheticSpread = function($viewport, spineItem, settin
         return orientation === ReadiumSDK.Views.ORIENTATION_PORTRAIT;
     }
 
+    if(!spineItem.rendition_spread) {
+        // if no spread set in document and user didn't set in in setting we will do double for landscape
+        return orientation === ReadiumSDK.Views.ORIENTATION_LANDSCAPE;
+    }
+
     console.warn("Unexpected spread properties condition!");
     return false;
 
