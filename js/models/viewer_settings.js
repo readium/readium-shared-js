@@ -19,8 +19,7 @@ ReadiumSDK.Models.ViewerSettings = function(settingsData) {
 
     var self = this;
 
-    this.isSyntheticSpreadSingle = false;
-    this.isSyntheticSpreadDouble = false;
+    this.syntheticSpread = "auto";
     this.fontSize = 100;
     this.columnGap = 20;
     this.mediaOverlaysSkipSkippables = false;
@@ -35,8 +34,7 @@ ReadiumSDK.Models.ViewerSettings = function(settingsData) {
     
     this.mediaOverlaysSynchronizationGranularity = "";
     
-    this.isScrollDoc = false;
-    this.isScrollContinuous = false;
+    this.scroll = "auto";
 
     function buildArray(str)
     {
@@ -81,8 +79,8 @@ ReadiumSDK.Models.ViewerSettings = function(settingsData) {
         mapProperty("mediaOverlaysRate", settingsData);
         mapProperty("mediaOverlaysVolume", settingsData);
         mapProperty("mediaOverlaysSynchronizationGranularity", settingsData);
-        mapProperty("isScrollDoc", settingsData);
-        mapProperty("isScrollContinuous", settingsData);
+        mapProperty("scroll", settingsData);
+        mapProperty("syntheticSpread", settingsData);
     };
 
     this.update(settingsData);

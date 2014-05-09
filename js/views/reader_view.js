@@ -105,11 +105,11 @@ ReadiumSDK.Views.ReaderView = function(options) {
     function deduceDesiredViewType(spineItem) {
 
         //check settings
-        if(_viewerSettings.isScrollDoc) {
+        if(_viewerSettings.scroll == "scroll-doc") {
             return ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_DOC;
         }
 
-        if(_viewerSettings.isScrollContinuous) {
+        if(_viewerSettings.scroll == "scroll-continuous") {
             return ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
         }
 

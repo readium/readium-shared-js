@@ -206,10 +206,10 @@ ReadiumSDK.Helpers.deduceSyntheticSpread = function($viewport, spineItem, settin
         return false;
     }
 
-    if(settings.isSyntheticSpreadDouble) {
+    if(settings.syntheticSpread == "double") {
         return true;
     }
-    else if(settings.isSyntheticSpreadSingle) {
+    else if(settings.syntheticSpread == "single") {
         return false;
     }
 
