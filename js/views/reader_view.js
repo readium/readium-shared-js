@@ -110,31 +110,33 @@ ReadiumSDK.Views.ReaderView = function(options) {
         return undefined;
     }
 
+    //based on https://docs.google.com/spreadsheet/ccc?key=0AoPMUkQhc4wcdDI0anFvWm96N0xRT184ZE96MXFRdFE&usp=drive_web#gid=0 document
     function deduceDesiredViewType(spineItem) {
 
-        var desiredViewType;
-
-        if(_viewerSettings.isScrollDoc) {
-            desiredViewType = ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_DOC;
-        }
-        else if(_viewerSettings.isScrollContinuous) {
-            desiredViewType = ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
-        }
-        else if(spineItem.isFixedLayout()) {
-            desiredViewType = ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED;
-        }
-        else if(spineItem.isScrolledDoc()) {
-            desiredViewType = ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_DOC;
-        }
-        else if(spineItem.isScrolledContinuous()) {
-            desiredViewType = ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
-        }
-        else {
-            desiredViewType = ReadiumSDK.Views.ReaderView.VIEW_TYPE_COLUMNIZED;
+        //check settings
+        if(_viewerSettings.scroll == "scroll-doc") {
+            return ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_DOC;
         }
 
-        return desiredViewType;
+        if(_viewerSettings.scroll == "scroll-continuous") {
+            return ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
+        }
 
+        //is fixed layout ignore flow
+        if(spineItem.isFixedLayout()) {
+            return ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED;
+        }
+
+        //flow
+        if(spineItem.isFlowScrolledDoc()) {
+            return ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_DOC;
+        }
+
+        if(spineItem.isFlowScrolledContinuous()) {
+            return ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
+        }
+
+        return ReadiumSDK.Views.ReaderView.VIEW_TYPE_COLUMNIZED;
     }
 
     // returns true is view changed

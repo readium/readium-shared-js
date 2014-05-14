@@ -204,6 +204,52 @@ ReadiumSDK.Helpers.triggerLayout = function($iframe) {
 
 };
 
+//Based on https://docs.google.com/spreadsheet/ccc?key=0AoPMUkQhc4wcdDI0anFvWm96N0xRT184ZE96MXFRdFE&usp=drive_web#gid=0 doc
+ReadiumSDK.Helpers.deduceSyntheticSpread = function($viewport, spineItem, settings) {
+
+    if(!$viewport || $viewport.length == 0) {
+        return false;
+    }
+
+    if(spineItem && spineItem.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_NONE) {
+        return false;
+    }
+
+    if(settings.syntheticSpread == "double") {
+        return true;
+    }
+    else if(settings.syntheticSpread == "single") {
+        return false;
+    }
+
+    if(!spineItem) {
+        return false;
+    }
+
+    if(spineItem.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_AUTO || spineItem.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_BOTH) {
+        return true;
+    }
+
+    var orientation = ReadiumSDK.Helpers.getOrientation($viewport);
+
+    if(spineItem.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_LANDSCAPE) {
+        return orientation === ReadiumSDK.Views.ORIENTATION_LANDSCAPE;
+    }
+
+    if(spineItem.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_PORTRAIT) {
+        return orientation === ReadiumSDK.Views.ORIENTATION_PORTRAIT;
+    }
+
+    if(!spineItem.rendition_spread) {
+        // if no spread set in document and user didn't set in in setting we will do double for landscape
+        return orientation === ReadiumSDK.Views.ORIENTATION_LANDSCAPE;
+    }
+
+    console.warn("Unexpected spread properties condition!");
+    return false;
+
+};
+
 ReadiumSDK.Helpers.Margins.fromElement = function($element) {
     return new this($element.margin(), $element.border(), $element.padding());
 };
