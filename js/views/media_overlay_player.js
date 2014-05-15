@@ -44,6 +44,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
     var _embeddedIsPlaying = false;
     var _currentEmbedded = undefined;
 
+
     this.isPlaying = function()
     {
         return _audioPlayer.isPlaying() || _ttsIsPlaying || _embeddedIsPlaying || _blankPagePlayer;
@@ -54,6 +55,13 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
     var _settings = reader.viewerSettings();
     var self = this;
     var _elementHighlighter = new ReadiumSDK.Views.MediaOverlayElementHighlighter(reader);
+
+    reader.on(ReadiumSDK.Events.READER_VIEW_DESTROYED, function(){
+
+        self.reset();
+
+    });
+
 
     this.applyStyles = function()
     {

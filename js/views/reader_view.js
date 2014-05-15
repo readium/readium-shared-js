@@ -74,18 +74,24 @@ ReadiumSDK.Views.ReaderView = function(options) {
     }
 
     function createViewForType(viewType, options) {
-
+        var createdView;
         switch(viewType) {
             case ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED:
-                return new ReadiumSDK.Views.FixedView(options);
+                createdView = new ReadiumSDK.Views.FixedView(options);
+                break;
             case ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_DOC:
-                return new ReadiumSDK.Views.ScrollView(options, false);
+                createdView = new ReadiumSDK.Views.ScrollView(options, false);
+                break;
             case ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS:
-                return new ReadiumSDK.Views.ScrollView(options, true);
+                createdView = new ReadiumSDK.Views.ScrollView(options, true);
+                break;
             default:
-                return new ReadiumSDK.Views.ReflowableView(options);
+                createdView = new ReadiumSDK.Views.ReflowableView(options);
+                break;
         }
 
+        self.trigger(ReadiumSDK.Events.READER_VIEW_CREATED, viewType);
+        return createdView;
     }
 
     function getViewType(view) {
@@ -218,8 +224,9 @@ ReadiumSDK.Views.ReaderView = function(options) {
             return;
         }
 
-        _currentView.off(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED);
+        self.trigger(ReadiumSDK.Events.READER_VIEW_DESTROYED);
 
+        _currentView.off(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED);
         _currentView.remove();
         _currentView = undefined;
     }
