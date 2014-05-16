@@ -76,8 +76,6 @@ ReadiumSDK.Models.ViewerSettings = function(settingsData) {
 
     this.update = function(settingsData) {
 
-        mapProperty("isSyntheticSpreadSingle", settingsData);
-        mapProperty("isSyntheticSpreadDouble", settingsData);
         mapProperty("columnGap", settingsData);
         mapProperty("fontSize", settingsData);
         mapProperty("mediaOverlaysSkipSkippables", settingsData);

@@ -123,7 +123,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
         if(updateViewportSize()) {
             //depends on aspect ratio of viewport and rendition:spread-* setting we may have to switch spread on/off
-            _paginationInfo.visibleColumnCount = recalculateColumnCount();
+            updateColumnCount();
             updatePagination();
         }
 
@@ -137,15 +137,15 @@ ReadiumSDK.Views.ReflowableView = function(options){
         _paginationInfo.columnGap = settings.columnGap;
         _fontSize = settings.fontSize;
         
-        _paginationInfo.visibleColumnCount = recalculateColumnCount();
+        updateColumnCount();
 
         updateHtmlFontSize();
         updateColumnGap();
         updatePagination();
     };
 
-    function recalculateColumnCount() {
-        return ReadiumSDK.Helpers.deduceSyntheticSpread(_$viewport, _currentSpineItem, _viewSettings) ? 2 : 1;
+    function updateColumnCount() {
+        _paginationInfo.visibleColumnCount = ReadiumSDK.Helpers.deduceSyntheticSpread(_$viewport, _currentSpineItem, _viewSettings) ? 2 : 1;
     }
 
     function loadSpineItem(spineItem) {
@@ -243,7 +243,9 @@ ReadiumSDK.Views.ReflowableView = function(options){
         var elementMargins = ReadiumSDK.Helpers.Margins.fromElement(_$el);
         setFrameSizesToRectangle(elementMargins.padding);
 
+
         updateViewportSize();
+        updateColumnCount();
         updatePagination();
 
     };
