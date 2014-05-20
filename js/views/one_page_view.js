@@ -497,7 +497,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
                     onIFrameLoad(success);
                 }
                 
-            }, self);
+            }, self, {spineItem: _currentSpineItem});
         }
         else
         {
