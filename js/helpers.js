@@ -333,6 +333,33 @@ ReadiumSDK.Helpers.isRenditionSpreadPermittedForItem = function(item, orientatio
         && orientation == ReadiumSDK.Views.ORIENTATION_PORTRAIT );
 };
 
+ReadiumSDK.Helpers.CSSTransformString = function(scale, left, top, angle, origin) {
+
+    var translate = (left !== 0 || top !== 0) ? "translate(" + left + "px, " + top + "px)" : undefined;
+    var scale = scale !== 1 ? "scale(" + scale + ")" : undefined;
+    var rotation = angle !== 0 ? "rotate(" + angle + "deg)" : undefined;
+    
+    if (!(translate || scale || rotation)) return {};
+    
+    var transformString = (translate && scale) ? (translate + " " + scale) : (translate ? translate : scale); // the order is important!
+    if (rotation)
+    {
+        transformString = transformString + " " + rotation;
+        //transformString = rotation + " " + transformString;
+    }
+
+    //TODO modernizer library can be used to get browser independent transform attributes names (implemented in readium-web fixed_layout_book_zoomer.js)
+    var css = {};
+    _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
+        css[prefix + 'transform'] = transformString;
+        css[prefix + 'transform-origin'] = origin ? origin : '0 0';
+    });
+
+    return css;
+};
+
+
+
 ReadiumSDK.Helpers.escapeJQuerySelector = function(sel) {
         //http://api.jquery.com/category/selectors/
         //!"#$%&'()*+,./:;<=>?@[\]^`{|}~

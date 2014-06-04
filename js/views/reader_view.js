@@ -51,8 +51,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
     var _$el;
     var _annotationsManager = new ReadiumSDK.Views.AnnotationsManager(self, options);
 
-    var _enablePageTransitions = options.enablePageTransitions;
-    
     //We will call onViewportResize after user stopped resizing window
     var lazyResize = _.debounce(function() { self.handleViewportResize() }, 100);
     $(window).on("resize.ReadiumSDK.readerView", _.bind(lazyResize, self));
@@ -164,8 +162,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
             spine: _spine,
             userStyles: _userStyles,
             bookStyles: _bookStyles,
-            iframeLoader: _iframeLoader,
-            enablePageTransitions: _enablePageTransitions
+            iframeLoader: _iframeLoader
         };
 
 
@@ -595,6 +592,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
         openPage(pageRequest, 0);
     };
 
+    // dir: 0 => new or same page, 1 => previous, 2 => next
     function openPage(pageRequest, dir) {
 
         var isViewChanged = initViewForItem(pageRequest.spineItem);

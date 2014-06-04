@@ -43,6 +43,10 @@ ReadiumSDK.Models.ViewerSettings = function(settingsData) {
     
     this.mediaOverlaysSynchronizationGranularity = "";
     
+    // -1 ==> disable
+    // [0...n] ==> index of transition in pre-defined array
+    this.pageTransition = -1;
+    
     this.scroll = "auto";
 
     function buildArray(str)
@@ -88,6 +92,7 @@ ReadiumSDK.Models.ViewerSettings = function(settingsData) {
         mapProperty("mediaOverlaysSynchronizationGranularity", settingsData);
         mapProperty("scroll", settingsData);
         mapProperty("syntheticSpread", settingsData);
+        mapProperty("pageTransition", settingsData);
     };
 
     this.update(settingsData);

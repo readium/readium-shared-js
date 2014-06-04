@@ -46,7 +46,250 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
 
     var _isIframeLoaded = false;
 
-    var _enablePageTransitions = options.enablePageTransitions;
+    var PageTransitionHandler = function(opts)
+    {
+        var PageTransition = function(begin, end)
+        {
+            this.begin = begin;
+            this.end = end;
+        };
+        
+        var _pageTransition_OPACITY = new PageTransition(
+            function(scale, left, top, $el, meta_width, meta_height, pageSwitchDir)
+            {
+                $el.css("opacity", "0");
+            },
+            function(scale, left, top, $el, meta_width, meta_height, pageSwitchDir)
+            {
+                var css = {};
+                _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
+                    css[prefix + "transition"] = "opacity 150ms ease-out";
+                });
+                $el.css(css);
+
+                $el.css("opacity", "1");
+            }
+        );
+        
+        var _pageTransition_TRANSLATE = new PageTransition(
+            function(scale, left, top, $el, meta_width, meta_height, pageSwitchDir)
+            {
+                $el.css("opacity", "0");
+                
+                var elWidth = Math.ceil(meta_width * scale);
+                
+                var initialLeft = elWidth * 0.8 * (pageSwitchDir === 2 ? 1 : -1);
+                var move = ReadiumSDK.Helpers.CSSTransformString(1, Math.round(initialLeft), 0, 0, "50% 50%");
+                $el.css(move);
+            },
+            function(scale, left, top, $el, meta_width, meta_height, pageSwitchDir)
+            {
+                var css = {};
+                _.each(['', '-webkit-', '-moz-', '-ms-'], function(prefix) { // NOTE THAT empty '' must be the FIRST prefix!!
+                    css[prefix + "transition"] = prefix + "transform 150ms ease-out";
+                });
+                $el.css(css);
+
+                //$el.css("-webkit-transition", "-webkit-transform 200ms ease-out");
+                
+                $el.css("opacity", "1");
+                
+                css = {};
+                _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
+                    //css[prefix + 'transition'] = prefix + "transform 200ms ease-out";
+                    css[prefix + 'transform'] = "none";
+                });
+                $el.css(css);
+            }
+        );
+        
+        var _pageTransition_ROTATE = new PageTransition(
+            function(scale, left, top, $el, meta_width, meta_height, pageSwitchDir)
+            {
+                $el.css("opacity", "0");
+
+                var elWidth = Math.ceil(meta_width * scale);
+
+                var initialLeft = elWidth * 1.7 * (pageSwitchDir === 2 ? 1 : -1);
+                var trans = ReadiumSDK.Helpers.CSSTransformString(1, Math.round(initialLeft), 0, (pageSwitchDir === 2 ? -1 : 1) * 30, "50% 50%"); //(pageSwitchDir === 2 ? '0% 0%' : '100% 0%')
+                $el.css(trans);
+            },
+            function(scale, left, top, $el, meta_width, meta_height, pageSwitchDir)
+            {
+                var css = {};
+                _.each(['', '-webkit-', '-moz-', '-ms-'], function(prefix) { // NOTE THAT empty '' must be the FIRST prefix!!
+                    css[prefix + "transition"] = prefix + "transform 300ms ease-in-out";
+                });
+                $el.css(css);
+
+                //$el.css("-webkit-transition", "-webkit-transform 200ms ease-out");
+                
+                $el.css("opacity", "1");
+                
+                css = {};
+                _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
+                    //css[prefix + 'transition'] = prefix + "transform 200ms ease-out";
+                    css[prefix + 'transform'] = "none";
+                });
+                $el.css(css);
+            }
+        );
+        
+        var _pageTransition_SWING = new PageTransition(
+            function(scale, left, top, $el, meta_width, meta_height, pageSwitchDir)
+            {            
+                $el.css("opacity", "0");
+                
+                // SUPER HACKY!! (just for demo)
+                var isLeft = false;
+                var isCenter = false;
+                var isRight = false;
+                for (var i = 0; i < classes.length; i++)
+                {
+                    var c = classes[i].toLowerCase();
+                    if (c.indexOf("left") >= 0)
+                    {
+                        isLeft = true;
+                        break;
+                    }
+                    if (c.indexOf("right") >= 0)
+                    {
+                        isRight = true;
+                        break;
+                    }
+                    if (c.indexOf("center") >= 0)
+                    {
+                        isCenter = true;
+                        break;
+                    }
+                }
+                
+                var elWidth = Math.ceil(meta_width * scale);
+                
+                var initialLeft = elWidth * 0.5 * ((isLeft || isCenter && pageSwitchDir === 1) ? 1 : -1);
+                var trans = ReadiumSDK.Helpers.CSSTransformString(0.2, Math.round(initialLeft), 0, ((isLeft || isCenter && pageSwitchDir === 1) ? 1 : -1) * 30, '50% 50%');
+                $el.css(trans);
+            },
+            function(scale, left, top, $el, meta_width, meta_height, pageSwitchDir)
+            {
+                var css = {};
+                _.each(['', '-webkit-', '-moz-', '-ms-'], function(prefix) { // NOTE THAT empty '' must be the FIRST prefix!!
+                    css[prefix + "transition"] = prefix + "transform 400ms ease-out";
+                });
+                $el.css(css);
+
+                //$el.css("-webkit-transition", "-webkit-transform 200ms ease-out");
+                
+                $el.css("opacity", "1");
+                
+                css = {};
+                _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
+                    //css[prefix + 'transition'] = prefix + "transform 200ms ease-out";
+                    css[prefix + 'transform'] = "none";
+                });
+                $el.css(css);
+            }
+        );
+        
+        var _pageTransitions = [];
+        _pageTransitions.push(_pageTransition_OPACITY); // 0
+        _pageTransitions.push(_pageTransition_TRANSLATE); // 1
+        _pageTransitions.push(_pageTransition_ROTATE); // 2
+        _pageTransitions.push(_pageTransition_SWING); // 3
+        
+        var _disablePageTransitions = opts.disablePageTransitions || false;
+
+        var _pageTransition = -1;
+        
+        this.updateOptions = function(o)
+        {
+            if (o.pageTransition !== null && typeof o.pageTransition !== "undefined")
+            {
+                _pageTransition = o.pageTransition;
+            }
+        };
+        this.updateOptions(opts);
+        
+        var _pageSwitchDir = 0;
+        var _pageSwitchActuallyChanged = false;
+        var _pageSwitchActuallyChanged_IFRAME_LOAD = false;
+
+        // dir: 0 => new or same page, 1 => previous, 2 => next
+        this.updatePageSwitchDir = function(dir, hasChanged)
+        {
+            if (_pageSwitchActuallyChanged_IFRAME_LOAD)
+            {
+                return;
+            }
+            
+            _pageSwitchDir = dir;
+            _pageSwitchActuallyChanged = hasChanged;
+        };
+        
+        this.onIFrameLoad = function()
+        {
+            _pageSwitchActuallyChanged_IFRAME_LOAD = true; // second pass, but initial display for transition
+        };
+        
+        this.transformContentImmediate_BEGIN = function(scale, left, top)
+        {
+            var pageSwitchActuallyChanged = _pageSwitchActuallyChanged || _pageSwitchActuallyChanged_IFRAME_LOAD;
+            _pageSwitchActuallyChanged_IFRAME_LOAD = false;
+
+            if (_disablePageTransitions || _pageTransition === -1) return;
+
+            var $el = self.element(); //_$el
+            
+            var css = {};
+            _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
+                css[prefix + "transition"] = "all 0 ease 0";
+            });
+            $el.css(css);
+
+            if (!pageSwitchActuallyChanged) return;
+
+            var pageTransition = (_pageTransition >= 0 && _pageTransition < _pageTransitions.length) ? _pageTransitions[_pageTransition] : undefined;
+
+            if (_pageSwitchDir === 0 || !pageTransition)
+            {
+                $el.css("opacity", "0");
+            }
+            else
+            {
+                pageTransition.begin(scale, left, top, $el, self.meta_width(), self.meta_height(), _pageSwitchDir);
+            }
+        };
+        
+        this.transformContentImmediate_END = function(scale, left, top)
+        {
+            if (_disablePageTransitions || _pageTransition === -1) return;
+        
+            setTimeout(function()
+            {
+                var $el = self.element(); //_$el
+
+                var pageTransition = (_pageTransition >= 0 && _pageTransition < _pageTransitions.length) ? _pageTransitions[_pageTransition] : undefined;
+
+                if (_pageSwitchDir === 0 || !pageTransition)
+                {
+                    var css = {};
+                    _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
+                        css[prefix + "transition"] = "opacity 250ms linear";
+                    });
+                    $el.css(css);
+
+                    $el.css("opacity", "1");
+                }
+                else
+                {
+                    pageTransition.end(scale, left, top, $el, self.meta_width(), self.meta_height(), _pageSwitchDir);
+                }
+
+            }, 10);
+        };  
+    };
+    var _pageTransitionHandler = new PageTransitionHandler(options);
+
 
     // fixed layout does not apply user styles to publisher content, but reflowable scroll view does
     var _enableBookStyleOverrides = enableBookStyleOverrides || false;
@@ -56,22 +299,6 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         height: 0
     };
     
-    var _pageSwitchDir = 0; // 0 => stay on same page, 1 => previous, 2 => next
-    var _pageSwitchActuallyChanged = false;
-    var _pageSwitchActuallyChanged_IFRAME_LOAD = false;
-    this.pageSwitchDir = function(dir, hasChanged)
-    {
-        if (_pageSwitchActuallyChanged_IFRAME_LOAD)
-        {
-//console.error("pageSwitchDir _pageSwitchActuallyChanged_IFRAME_LOAD SKIP");
-            return;
-        }
-        
-        _pageSwitchDir = dir;
-        _pageSwitchActuallyChanged = hasChanged;
-    };
-    
-
     this.element = function() {
         return _$el;
     };
@@ -96,7 +323,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             var template = ReadiumSDK.Helpers.loadTemplate("single_page_frame", {});
 
             _$el = $(template);
-        
+
             _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
                 _$el.css(prefix + "transition", "all 0 ease 0");
             });
@@ -161,7 +388,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             
             updateMetaSize();
 
-            _pageSwitchActuallyChanged_IFRAME_LOAD = true; // second pass, but initial display for transition
+            _pageTransitionHandler.onIFrameLoad();
         }
     }
 
@@ -173,7 +400,10 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         if (_enableBookStyleOverrides) {
             self.applyBookStyles();
         }
+        
         updateMetaSize();
+        
+        _pageTransitionHandler.updateOptions(settings);
     };
 
     function updateHtmlFontSize() {
@@ -264,59 +494,37 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         return 0;
     }
 
+    // dir: 0 => new or same page, 1 => previous, 2 => next
+    this.updatePageSwitchDir = function(dir, hasChanged)
+    {
+        _pageTransitionHandler.updatePageSwitchDir(dir, hasChanged);
+    };
+    
+
     this.transformContentImmediate = function(scale, left, top) {
-        
-        var pageTransition_Translate = false; // TODO: from options
-        
-        var pageSwitchActuallyChanged = _pageSwitchActuallyChanged || _pageSwitchActuallyChanged_IFRAME_LOAD;
-        _pageSwitchActuallyChanged_IFRAME_LOAD = false;
-// console.error("transformContent: "+pageSwitchActuallyChanged + " - " + _pageSwitchDir);
 
         var elWidth = Math.ceil(_meta_size.width * scale);
         var elHeight = Math.floor(_meta_size.height * scale);
-    
-        _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
-            _$el.css(prefix + "transition", "all 0 ease 0");
-        });
-    
-        if (pageSwitchActuallyChanged && _enablePageTransitions)
-        {
-            if (_pageSwitchDir === 0)
-            {
-                _$el.css("opacity", "0");
-            }
-            else
-            {
-                if (pageTransition_Translate)
-                {
-                    var initialLeft = elWidth * 0.7 * (_pageSwitchDir === 2 ? 1 : -1);
-                    var move = generateTransformCSS(1, Math.round(initialLeft), 0);
-                    _$el.css(move);
-                }
-                else
-                {
-                    _$el.css("opacity", "0");
-                }
-            }
-        }
-        
+
+        _pageTransitionHandler.transformContentImmediate_BEGIN(scale, left, top);
+
         _$el.css("left", left + "px");
         _$el.css("top", top + "px");
         _$el.css("width", elWidth + "px");
         _$el.css("height", elHeight + "px");
-                                                    
+
         _$iframe.css("width", elWidth + "px");
         _$iframe.css("height", elHeight + "px");
-
-        var css = generateTransformCSS(scale, 0, 0);
-
-        css["width"] = _meta_size.width;
-        css["height"] = _meta_size.height;
 
         if(!_$epubHtml) {
 //            debugger;
             return;
         }
+
+        var css = ReadiumSDK.Helpers.CSSTransformString(scale, 0, 0, 0, "0 0");
+
+        css["width"] = _meta_size.width;
+        css["height"] = _meta_size.height;
 
         _$epubHtml.css(css);
 
@@ -331,70 +539,11 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             //_$epubHtml.css("visibility", "visible");
             _$epubHtml.css("opacity", "1");
         }, 0);
-        
-        if (pageSwitchActuallyChanged && _enablePageTransitions)
-        {
-            setTimeout(function()
-            {
-                if (_pageSwitchDir === 0)
-                {
-                    _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
-                        _$el.css(prefix + "transition", "opacity 250ms linear");
-                    });
-        
-                    _$el.css("opacity", "1");
-                }
-                else
-                {
-                    if (pageTransition_Translate)
-                    {
-                        _$el.css("-webkit-transition", "-webkit-transform 200ms ease-out");
-                        var css = {};
-                        _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
-                            //css[prefix + 'transition'] = prefix + "transform 200ms ease-out";
-                            css[prefix + 'transform'] = "none";
-                        });
-                        _$el.css(css);
-                    }
-                    else
-                    {
-                        _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
-                            _$el.css(prefix + "transition", "opacity 150ms ease-out");
-                        });
 
-                        _$el.css("opacity", "1");
-                    }
-                }
-
-                // var moveBack = generateTransformCSS(0, 0, 0);
-                // _$el.css(css);
-                //             
-                //_$el.css("left", left + "px");
-
-            }, 10);
-        }
+        _pageTransitionHandler.transformContentImmediate_END(scale, left, top);
     };
 
     this.transformContent = _.bind(_.debounce(this.transformContentImmediate, 50), self);
-
-    function generateTransformCSS(scale, left, top) {
-
-        var translate = (left !== 0 || top !== 0) ? "translate(" + left + "px, " + top + "px)" : undefined;
-        var scale = scale !== 1 ? "scale(" + scale + ")" : undefined;
-        
-        if (!(translate || scale)) return {};
-        
-        var transformString = (translate && scale) ? (translate + " " + scale) : (translate ? translate : scale); // the order is important!
-
-        //TODO modernizer library can be used to get browser independent transform attributes names (implemented in readium-web fixed_layout_book_zoomer.js)
-        var css = {};
-        _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
-            css[prefix + 'transform'] = transformString;
-            css[prefix + 'transform-origin'] = '0 0';
-        });
-
-        return css;
-    }
 
     function updateMetaSize() {
 
