@@ -1359,7 +1359,7 @@ console.debug("TTS resume");
     function onPlay() {
         onPause();
 
-        _timerTick = setInterval(function() {
+        var func = function() {
 
             if (!_smilIterator || !_smilIterator.currentPar)
             {
@@ -1398,8 +1398,11 @@ console.debug("TTS resume");
             }
 
             onStatusChanged({playPosition: playPosition, smilIndex: smilIndex, parIndex: parIndex});
+        };
 
-        }, 1500);
+        setTimeout(func, 500);
+
+        _timerTick = setInterval(func, 1500);
     }
 
     function onPause() {
