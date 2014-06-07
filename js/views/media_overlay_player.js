@@ -114,7 +114,10 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
     };
     
     this.onPageChanged = function(paginationData) {
-
+        
+        var wasPausedBecauseNoAutoNextSmil = _wasPausedBecauseNoAutoNextSmil;
+        _wasPausedBecauseNoAutoNextSmil = false;
+        
         var wasPlayingAtDocLoadStart = _wasPlayingAtDocLoadStart;
         _wasPlayingAtDocLoadStart = false;
 
@@ -263,11 +266,15 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
                 if (paginationData.elementId && element)
                 {
-                    if (wasPlaying)
+                    if (wasPlaying || wasPausedBecauseNoAutoNextSmil)
                     {
                         paginationData.elementIdResolved = element;
                         self.toggleMediaOverlayRefresh(paginationData);
                     }
+                }
+                else if (wasPlaying || wasPausedBecauseNoAutoNextSmil)
+                {
+                    self.toggleMediaOverlay();
                 }
                 return;
             }
@@ -347,7 +354,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         }
         else
         {
-            if(!wasPlaying)
+            if(!wasPlaying && !wasPausedBecauseNoAutoNextSmil)
             {
                 self.reset();
                 return;
@@ -695,6 +702,9 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         }
 
         var goNext = position > audio.clipEnd;
+
+        var doNotNextSmil = !_autoNextSmil && from !== 6 && goNext;
+        
         if (goNext)
         {
             _smilIterator.next();
@@ -723,7 +733,15 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
 //console.debug("NEXT SMIL ON AUDIO POS");
         
-            nextSmil(goNext);
+            if (doNotNextSmil)
+            {
+                _wasPausedBecauseNoAutoNextSmil = true;
+                self.pause();
+            }
+            else
+            {
+                nextSmil(goNext);
+            }
             return;
         }
 
@@ -779,7 +797,17 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                         if (!_smilIterator.currentPar)
                         {
     //console.debug("adjustParToSeqSyncGranularity nextSmil(goNext)");
-                            nextSmil(goNext);
+
+                            if (doNotNextSmil)
+                            {
+                                _wasPausedBecauseNoAutoNextSmil = true;
+                                self.pause();
+                            }
+                            else
+                            {
+                                nextSmil(goNext);
+                            }
+                            
                             return;
                         }
                     }
@@ -2044,5 +2072,12 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
     this.isPlayingCfi = function()
     {
         return _smilIterator && _smilIterator.currentPar && _smilIterator.currentPar.cfi;
+    };
+    
+    var _wasPausedBecauseNoAutoNextSmil = false;
+    var _autoNextSmil = true;
+    this.setAutomaticNextSmil = function(autoNext)
+    {
+        _autoNextSmil = autoNext;
     };
 };
