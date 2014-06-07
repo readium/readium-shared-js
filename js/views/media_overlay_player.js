@@ -736,7 +736,8 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             if (doNotNextSmil)
             {
                 _wasPausedBecauseNoAutoNextSmil = true;
-                self.pause();
+                self.reset();
+                //self.pause();
             }
             else
             {
@@ -801,7 +802,8 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                             if (doNotNextSmil)
                             {
                                 _wasPausedBecauseNoAutoNextSmil = true;
-                                self.pause();
+                                self.reset();
+                                //self.pause();
                             }
                             else
                             {
