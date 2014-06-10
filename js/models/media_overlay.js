@@ -106,6 +106,16 @@ ReadiumSDK.Models.MediaOverlay = function(package) {
         return total;
     };
     
+    this.smilAt = function(smilIndex)
+    {
+        if (smilIndex < 0 || smilIndex >= this.smil_models.length)
+        {
+            return undefined;
+        }
+        
+        return this.smil_models[smilIndex];
+    }
+    
     this.positionToPercent = function(smilIndex, parIndex, milliseconds)
     {
 // console.log(">>>>>>>>>>");

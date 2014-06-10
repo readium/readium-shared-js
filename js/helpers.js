@@ -204,6 +204,52 @@ ReadiumSDK.Helpers.triggerLayout = function($iframe) {
 
 };
 
+//Based on https://docs.google.com/spreadsheet/ccc?key=0AoPMUkQhc4wcdDI0anFvWm96N0xRT184ZE96MXFRdFE&usp=drive_web#gid=0 doc
+ReadiumSDK.Helpers.deduceSyntheticSpread = function($viewport, spineItem, settings) {
+
+    if(!$viewport || $viewport.length == 0) {
+        return false;
+    }
+
+    if(spineItem && spineItem.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_NONE) {
+        return false;
+    }
+
+    if(settings.syntheticSpread == "double") {
+        return true;
+    }
+    else if(settings.syntheticSpread == "single") {
+        return false;
+    }
+
+    if(!spineItem) {
+        return false;
+    }
+
+    if(spineItem.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_BOTH) {
+        return true;
+    }
+
+    var orientation = ReadiumSDK.Helpers.getOrientation($viewport);
+
+    if(spineItem.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_LANDSCAPE) {
+        return orientation === ReadiumSDK.Views.ORIENTATION_LANDSCAPE;
+    }
+
+    if(spineItem.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_PORTRAIT) {
+        return orientation === ReadiumSDK.Views.ORIENTATION_PORTRAIT;
+    }
+
+    if(!spineItem.rendition_spread || spineItem.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_AUTO) {
+        // if no spread set in document and user didn't set in in setting we will do double for landscape
+        return orientation === ReadiumSDK.Views.ORIENTATION_LANDSCAPE;
+    }
+
+    console.warn("Unexpected spread properties condition!");
+    return false;
+
+};
+
 ReadiumSDK.Helpers.Margins.fromElement = function($element) {
     return new this($element.margin(), $element.border(), $element.padding());
 };
@@ -286,6 +332,33 @@ ReadiumSDK.Helpers.isRenditionSpreadPermittedForItem = function(item, orientatio
         ||  (item.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_PORTRAIT
         && orientation == ReadiumSDK.Views.ORIENTATION_PORTRAIT );
 };
+
+ReadiumSDK.Helpers.CSSTransformString = function(scale, left, top, angle, origin) {
+
+    var translate = (left !== 0 || top !== 0) ? "translate(" + left + "px, " + top + "px)" : undefined;
+    var scale = scale !== 1 ? "scale(" + scale + ")" : undefined;
+    var rotation = angle !== 0 ? "rotate(" + angle + "deg)" : undefined;
+    
+    if (!(translate || scale || rotation)) return {};
+    
+    var transformString = (translate && scale) ? (translate + " " + scale) : (translate ? translate : scale); // the order is important!
+    if (rotation)
+    {
+        transformString = transformString + " " + rotation;
+        //transformString = rotation + " " + transformString;
+    }
+
+    //TODO modernizer library can be used to get browser independent transform attributes names (implemented in readium-web fixed_layout_book_zoomer.js)
+    var css = {};
+    _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
+        css[prefix + 'transform'] = transformString;
+        css[prefix + 'transform-origin'] = origin ? origin : '0 0';
+    });
+
+    return css;
+};
+
+
 
 ReadiumSDK.Helpers.escapeJQuerySelector = function(sel) {
         //http://api.jquery.com/category/selectors/
