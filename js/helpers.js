@@ -211,7 +211,9 @@ ReadiumSDK.Helpers.deduceSyntheticSpread = function($viewport, spineItem, settin
         return false;
     }
 
-    if(spineItem && spineItem.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_NONE) {
+    var rendition_spread = spineItem ? spineItem.getRenditionSpread() : undefined;
+
+    if(rendition_spread === ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_NONE) {
         return false;
     }
 
@@ -226,21 +228,21 @@ ReadiumSDK.Helpers.deduceSyntheticSpread = function($viewport, spineItem, settin
         return false;
     }
 
-    if(spineItem.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_BOTH) {
+    if(rendition_spread === ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_BOTH) {
         return true;
     }
 
     var orientation = ReadiumSDK.Helpers.getOrientation($viewport);
 
-    if(spineItem.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_LANDSCAPE) {
+    if(rendition_spread === ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_LANDSCAPE) {
         return orientation === ReadiumSDK.Views.ORIENTATION_LANDSCAPE;
     }
 
-    if(spineItem.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_PORTRAIT) {
+    if(rendition_spread === ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_PORTRAIT) {
         return orientation === ReadiumSDK.Views.ORIENTATION_PORTRAIT;
     }
 
-    if(!spineItem.rendition_spread || spineItem.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_AUTO) {
+    if(!rendition_spread || rendition_spread === ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_AUTO) {
         // if no spread set in document and user didn't set in in setting we will do double for landscape
         return orientation === ReadiumSDK.Views.ORIENTATION_LANDSCAPE;
     }
@@ -324,12 +326,14 @@ ReadiumSDK.Helpers.getOrientation = function($viewport) {
 
 ReadiumSDK.Helpers.isRenditionSpreadPermittedForItem = function(item, orientation) {
 
-    return  !item.rendition_spread
-        ||  item.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_BOTH
-        ||  item.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_AUTO
-        ||  (item.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_LANDSCAPE
+    var rendition_spread = item.getRenditionSpread();
+
+    return  !rendition_spread
+        ||  rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_BOTH
+        ||  rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_AUTO
+        ||  (rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_LANDSCAPE
         && orientation == ReadiumSDK.Views.ORIENTATION_LANDSCAPE)
-        ||  (item.rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_PORTRAIT
+        ||  (rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_PORTRAIT
         && orientation == ReadiumSDK.Views.ORIENTATION_PORTRAIT );
 };
 
