@@ -72,7 +72,9 @@ ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
     };
 
     this.isRenditionSpreadAllowed = function() {
-        return !self.rendition_spread || self.rendition_spread != ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_NONE;
+        
+        var rendition_spread = self.getRenditionSpread();
+        return !rendition_spread || rendition_spread != ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_NONE;
     };
 
     function validateSpread() {
@@ -106,15 +108,11 @@ ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
         return !self.isFixedLayout();
     };
 
-    this.isLayoutSetExplicitly = function() {
-        return self.rendition_layout;
-    };
-
     this.isFixedLayout = function() {
         
         // cannot use isPropertyValueSetForItemOrPackage() here!
 
-        var isLayoutExplicitlyDefined = self.rendition_layout || self.spine.package.rendition_layout;
+        var isLayoutExplicitlyDefined = self.getRenditionLayout();
 
         if(isLayoutExplicitlyDefined) {
 
@@ -135,10 +133,37 @@ ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
     this.getRenditionFlow = function() {
 
         if(self.rendition_flow) {
-            return self.rendition_flow;
+            return self.spine.rendition_flow;
         }
 
-        return self.package.rendition_flow;
+        return self.spine.package.rendition_flow;
+    };
+
+    this.getRenditionSpread = function() {
+
+        if(self.rendition_spread) {
+            return self.spine.rendition_spread;
+        }
+
+        return self.spine.package.rendition_spread;
+    };
+
+    this.getRenditionOrientation = function() {
+
+        if(self.rendition_orientation) {
+            return self.spine.rendition_orientation;
+        }
+
+        return self.spine.package.rendition_orientation;
+    };
+
+    this.getRenditionLayout = function() {
+
+        if(self.rendition_layout) {
+            return self.spine.rendition_layout;
+        }
+
+        return self.spine.package.rendition_layout;
     };
 
     function isPropertyValueSetForItemOrPackage(propName, propValue) {
