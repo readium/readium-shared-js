@@ -148,6 +148,15 @@ ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
         return self.spine.package.rendition_spread;
     };
 
+    this.getRenditionOrientation = function() {
+
+        if(self.rendition_orientation) {
+            return self.spine.rendition_orientation;
+        }
+
+        return self.spine.package.rendition_orientation;
+    };
+
     this.getRenditionLayout = function() {
 
         if(self.rendition_layout) {
