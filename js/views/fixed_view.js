@@ -56,6 +56,8 @@ ReadiumSDK.Views.FixedView = function(options){
     var _spread = new ReadiumSDK.Models.Spread(_spine, false);
     var _bookMargins;
     var _contentMetaSize;
+    var _isRedrowing = false;
+    var _redrawRequest = false;
 
     function createOnePageView(elementClass) {
 
@@ -133,13 +135,28 @@ ReadiumSDK.Views.FixedView = function(options){
 
     function redraw(initiator, paginationRequest) {
 
+        if(_isRedrowing) {
+            _redrawRequest = {initiator: initiator, paginationRequest: paginationRequest};
+            return;
+        }
+
+        _isRedrowing = true;
+
         var context = {isElementAdded : false};
         var pageLoadDeferrals = createPageLoadDeferrals([{pageView: _leftPageView, spineItem: _spread.leftItem, context: context},
                                                               {pageView: _rightPageView, spineItem: _spread.rightItem, context: context},
                                                               {pageView: _centerPageView, spineItem: _spread.centerItem, context: context}]);
-        if(pageLoadDeferrals.length > 0) {
 
-            $.when.apply($, pageLoadDeferrals).done(function(){
+        $.when.apply($, pageLoadDeferrals).done(function(){
+            _isRedrowing = false;
+
+            if(_redrawRequest) {
+                var p1 = _redrawRequest.initiator;
+                var p2 = _redrawRequest.paginationRequest;
+                _redrawRequest = undefined;
+                redraw(p1, p2);
+            }
+            else {
                 if(context.isElementAdded) {
                     self.applyStyles();
                 }
@@ -152,8 +169,10 @@ ReadiumSDK.Views.FixedView = function(options){
                 {
                     onPagesLoaded(initiator);
                 }
-            });
-        }
+            }
+
+        });
+
     }
 
     // dir: 0 => new or same page, 1 => previous, 2 => next
@@ -197,10 +216,7 @@ ReadiumSDK.Views.FixedView = function(options){
         for(var i = 0; i < viewItemPairs.length; i++) {
 
             var dfd = updatePageViewForItem(viewItemPairs[i].pageView, viewItemPairs[i].spineItem, viewItemPairs[i].context);
-            if(dfd) {
-                pageLoadDeferrals.push(dfd);
-            }
-
+            pageLoadDeferrals.push(dfd);
         }
 
         return pageLoadDeferrals;
@@ -434,7 +450,9 @@ ReadiumSDK.Views.FixedView = function(options){
         var leftItem = _spread.leftItem;
         var rightItem = _spread.rightItem;
         var centerItem = _spread.centerItem;
-        
+
+        var isSyntheticSpread = ReadiumSDK.Helpers.deduceSyntheticSpread(_$viewport, paginationRequest.spineItem, _viewSettings);
+        _spread.setSyntheticSpread(isSyntheticSpread);
         _spread.openItem(paginationRequest.spineItem);
         
         var hasChanged = leftItem !== _spread.leftItem || rightItem !== _spread.rightItem || centerItem !== _spread.centerItem;
@@ -467,41 +485,42 @@ ReadiumSDK.Views.FixedView = function(options){
 
     function updatePageViewForItem(pageView, item, context) {
 
+        var dfd = $.Deferred();
+
         if(!item) {
             if(pageView.isDisplaying()) {
                 pageView.remove();
             }
 
-            return undefined;
+            dfd.resolve();
         }
+        else {
 
-        if(!pageView.isDisplaying()) {
+            if(!pageView.isDisplaying()) {
 
-            _$el.append(pageView.render().element());
+                _$el.append(pageView.render().element());
 
-            context.isElementAdded = true;
-        }
-
-        var dfd = $.Deferred();
-
-        pageView.loadSpineItem(item, function(success, $iframe, spineItem, isNewContentDocumentLoaded, context){
-
-            if(success && isNewContentDocumentLoaded) {
-
-                //if we a re loading fixed view meta size should be defined
-                if(!pageView.meta_height() || !pageView.meta_width()) {
-                    console.error("Invalid document " + spineItem.href + ": viewport is not specified!");
-                }
-
-                self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
+                context.isElementAdded = true;
             }
 
-            dfd.resolve();
+            pageView.loadSpineItem(item, function(success, $iframe, spineItem, isNewContentDocumentLoaded, context){
 
-        }, context);
+                if(success && isNewContentDocumentLoaded) {
+
+                    //if we a re loading fixed view meta size should be defined
+                    if(!pageView.meta_height() || !pageView.meta_width()) {
+                        console.error("Invalid document " + spineItem.href + ": viewport is not specified!");
+                    }
+
+                    self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
+                }
+
+                dfd.resolve();
+
+            }, context);
+        }
 
         return dfd.promise();
-
     }
 
     this.getPaginationInfo = function() {
