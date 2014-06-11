@@ -210,6 +210,18 @@ ReadiumSDK.Models.Spine = function(epubPackage, spineDTO) {
         var length = spineDTO.items.length;
         for(var i = 0; i < length; i++) {
             var item = new ReadiumSDK.Models.SpineItem(spineDTO.items[i], i, this);
+            if (!item.rendition_spread)
+            {
+                item.rendition_spread = epubPackage.rendition_spread;
+            }
+            if (!item.rendition_layout)
+            {
+                item.rendition_layout = epubPackage.rendition_layout;
+            }
+            if (!item.rendition_orientation)
+            {
+                item.rendition_orientation = epubPackage.rendition_orientation;
+            }
             this.items.push(item);
         }
 
