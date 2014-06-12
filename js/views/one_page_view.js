@@ -513,8 +513,8 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         _$el.css("width", elWidth + "px");
         _$el.css("height", elHeight + "px");
 
-        _$iframe.css("width", elWidth + "px");
-        _$iframe.css("height", elHeight + "px");
+        _$iframe.css("width", _meta_size.width + "px");
+        _$iframe.css("height", _meta_size.height + "px");
 
         if(!_$epubHtml) {
 //            debugger;
