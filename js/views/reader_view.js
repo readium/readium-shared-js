@@ -144,14 +144,14 @@ ReadiumSDK.Views.ReaderView = function(options) {
     }
 
     // returns true is view changed
-    function initViewForItem(spineItem) {
+    function initViewForItem(spineItem, callback) {
 
         var desiredViewType = deduceDesiredViewType(spineItem);
 
         if(_currentView) {
 
             if(getViewType(_currentView) == desiredViewType) {
-                return false;
+                callback(false);
             }
 
             resetCurrentView();
@@ -200,10 +200,15 @@ ReadiumSDK.Views.ReaderView = function(options) {
         })
 
         _currentView.render();
-
         _currentView.setViewSettings(_viewerSettings);
 
-        return true;
+        // we do this to wait until elements are rendered otherwise book is not able to determine view size.
+        setTimeout(function(){
+
+            callback(true);
+
+        }, 50);
+
     }
 
     this.getLoadedSpineItems = function() {
@@ -426,20 +431,25 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
                 var spineItem = _spine.getItemById(bookMark.idref);
                 
-                var isViewChanged = initViewForItem(spineItem);
-                if(!isViewChanged) {
-                    _currentView.setViewSettings(_viewerSettings);
-                }
+                initViewForItem(spineItem, function(isViewChanged){
 
-                self.openSpineItemElementCfi(bookMark.idref, bookMark.contentCFI, self);
+                    if(!isViewChanged) {
+                        _currentView.setViewSettings(_viewerSettings);
+                    }
 
-                if (wasPlaying)
-                {
-                    self.playMediaOverlay();
-                    // setTimeout(function()
-                    // {
-                    // }, 60);
-                }
+                    self.openSpineItemElementCfi(bookMark.idref, bookMark.contentCFI, self);
+
+                    if (wasPlaying)
+                    {
+                        self.playMediaOverlay();
+                        // setTimeout(function()
+                        // {
+                        // }, 60);
+                    }
+
+                    self.trigger(ReadiumSDK.Events.SETTINGS_APPLIED);
+                    return;
+                });
             }
         }
 
@@ -613,12 +623,14 @@ ReadiumSDK.Views.ReaderView = function(options) {
     // dir: 0 => new or same page, 1 => previous, 2 => next
     function openPage(pageRequest, dir) {
 
-        var isViewChanged = initViewForItem(pageRequest.spineItem);
-        if(!isViewChanged) {
-            _currentView.setViewSettings(_viewerSettings);
-        }
-        
-        _currentView.openPage(pageRequest, dir);
+        initViewForItem(pageRequest.spineItem, function(isViewChanged){
+
+            if(!isViewChanged) {
+                _currentView.setViewSettings(_viewerSettings);
+            }
+
+            _currentView.openPage(pageRequest, dir);
+        });
     }
 
 

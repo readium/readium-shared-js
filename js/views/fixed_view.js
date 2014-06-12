@@ -143,6 +143,7 @@ ReadiumSDK.Views.FixedView = function(options){
         _isRedrowing = true;
 
         var context = {isElementAdded : false};
+
         var pageLoadDeferrals = createPageLoadDeferrals([{pageView: _leftPageView, spineItem: _spread.leftItem, context: context},
                                                               {pageView: _rightPageView, spineItem: _spread.rightItem, context: context},
                                                               {pageView: _centerPageView, spineItem: _spread.centerItem, context: context}]);
