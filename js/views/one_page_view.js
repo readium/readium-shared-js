@@ -337,9 +337,9 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
 
             _$iframe = $("iframe", _$el);
             
-            _$iframe.css("width", "100%");
+//            _$iframe.css("width", "100%");
             //_$iframe.css("height", "100%");
-            _$iframe.css("height", window.innerHeight || window.clientHeight);
+            // _$iframe.css("height", window.innerHeight || window.clientHeight);
         }
 
         return this;
@@ -434,7 +434,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
 
     //this is called by scroll_view for reflowable spine item
     this.resizeIFrameToContent = function() {
-        var contHeight = self.getContentDocHeight();
+        var contHeight = getContentDocHeight();
         //console.log("resizeIFrameToContent: " + contHeight);
 
         self.setHeight(contHeight);
@@ -446,7 +446,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
 
         _$el.css("height", height + "px");
 
-        _$iframe.css("height", height + "px");
+//        _$iframe.css("height", height + "px");
     };
 
     this.elementHeight = function() {
@@ -469,7 +469,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         _$iframe.css('transform', "translate(10000px, 10000px)");
     };
 
-    this.getContentDocHeight = function(){
+    function getContentDocHeight(){
 
         if(!_$iframe || !_$iframe.length) {
             return 0;
@@ -513,8 +513,8 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         _$el.css("width", elWidth + "px");
         _$el.css("height", elHeight + "px");
 
-        _$iframe.css("width", elWidth + "px");
-        _$iframe.css("height", elHeight + "px");
+//        _$iframe.css("width", elWidth + "px");
+//        _$iframe.css("height", elHeight + "px");
 
         if(!_$epubHtml) {
 //            debugger;
@@ -526,7 +526,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         css["width"] = _meta_size.width;
         css["height"] = _meta_size.height;
 
-        _$epubHtml.css(css);
+        _$el.css(css);
 
         // Chrome workaround: otherwise text is sometimes invisible (probably a rendering glitch due to the 3D transform graphics backend?)
         //_$epubHtml.css("visibility", "hidden"); // "flashing" in two-page spread mode is annoying :(
@@ -542,6 +542,12 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
 
         _pageTransitionHandler.transformContentImmediate_END(scale, left, top);
     };
+
+    this.getCalculatedPageHeight = function() {
+
+        var rect = (_$el[0]).getBoundingClientRect();
+        return rect.bottom - rect.top;
+    }
 
     this.transformContent = _.bind(_.debounce(this.transformContentImmediate, 50), self);
 

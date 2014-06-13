@@ -1018,7 +1018,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         var range = {top: 0, bottom: 0};
 
         range.top = pageView.element().position().top + scrollTop();
-        range.bottom = range.top + pageView.element().height();
+        range.bottom = range.top + pageView.getCalculatedPageHeight();
 
         return range;
     }
