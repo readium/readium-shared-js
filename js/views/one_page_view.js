@@ -46,6 +46,8 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
 
     var _isIframeLoaded = false;
 
+    var _$scaler;
+
     var PageTransitionHandler = function(opts)
     {
         var PageTransition = function(begin, end)
@@ -231,15 +233,13 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             _pageSwitchActuallyChanged_IFRAME_LOAD = true; // second pass, but initial display for transition
         };
         
-        this.transformContentImmediate_BEGIN = function(scale, left, top)
+        this.transformContentImmediate_BEGIN = function($el, scale, left, top)
         {
             var pageSwitchActuallyChanged = _pageSwitchActuallyChanged || _pageSwitchActuallyChanged_IFRAME_LOAD;
             _pageSwitchActuallyChanged_IFRAME_LOAD = false;
 
             if (_disablePageTransitions || _pageTransition === -1) return;
 
-            var $el = self.element(); //_$el
-            
             var css = {};
             _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
                 css[prefix + "transition"] = "all 0 ease 0";
@@ -260,14 +260,12 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             }
         };
         
-        this.transformContentImmediate_END = function(scale, left, top)
+        this.transformContentImmediate_END = function($el, scale, left, top)
         {
             if (_disablePageTransitions || _pageTransition === -1) return;
         
             setTimeout(function()
             {
-                var $el = self.element(); //_$el
-
                 var pageTransition = (_pageTransition >= 0 && _pageTransition < _pageTransitions.length) ? _pageTransitions[_pageTransition] : undefined;
 
                 if (_pageSwitchDir === 0 || !pageTransition)
@@ -323,6 +321,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             var template = ReadiumSDK.Helpers.loadTemplate("single_page_frame", {});
 
             _$el = $(template);
+            _$scaler = $("#scaler", _$el);
 
             _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
                 _$el.css(prefix + "transition", "all 0 ease 0");
@@ -506,15 +505,12 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         var elWidth = Math.ceil(_meta_size.width * scale);
         var elHeight = Math.floor(_meta_size.height * scale);
 
-        _pageTransitionHandler.transformContentImmediate_BEGIN(scale, left, top);
+        _pageTransitionHandler.transformContentImmediate_BEGIN(_$el, scale, left, top);
 
         _$el.css("left", left + "px");
         _$el.css("top", top + "px");
         _$el.css("width", elWidth + "px");
         _$el.css("height", elHeight + "px");
-
-//        _$iframe.css("width", elWidth + "px");
-//        _$iframe.css("height", elHeight + "px");
 
         if(!_$epubHtml) {
 //            debugger;
@@ -526,7 +522,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         css["width"] = _meta_size.width;
         css["height"] = _meta_size.height;
 
-        _$el.css(css);
+        _$scaler.css(css);
 
         // Chrome workaround: otherwise text is sometimes invisible (probably a rendering glitch due to the 3D transform graphics backend?)
         //_$epubHtml.css("visibility", "hidden"); // "flashing" in two-page spread mode is annoying :(
@@ -540,14 +536,12 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             _$epubHtml.css("opacity", "1");
         }, 0);
 
-        _pageTransitionHandler.transformContentImmediate_END(scale, left, top);
+        _pageTransitionHandler.transformContentImmediate_END(_$el, scale, left, top);
     };
 
     this.getCalculatedPageHeight = function() {
-
-        var rect = (_$el[0]).getBoundingClientRect();
-        return rect.bottom - rect.top;
-    }
+        return _$el.height();
+    };
 
     this.transformContent = _.bind(_.debounce(this.transformContentImmediate, 50), self);
 
@@ -559,7 +553,6 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         var size;
 
         var contentDocument = _$iframe[0].contentDocument;
-
 
         // first try to read viewport size
         var content = $('meta[name=viewport]', contentDocument).attr("content");

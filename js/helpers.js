@@ -268,7 +268,7 @@ ReadiumSDK.Helpers.loadTemplate = function(name, params) {
 
 ReadiumSDK.Helpers.loadTemplate.cache = {
     "fixed_book_frame" : '<div id="fixed-book-frame" class="clearfix book-frame fixed-book-frame"></div>',
-    "single_page_frame" : '<div><iframe scrolling="no" class="iframe-fixed"></iframe></div>',
+    "single_page_frame" : '<div><div id="scaler"><iframe scrolling="no" class="iframe-fixed"></iframe></div></div>',
     "scrolled_book_frame" : '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"><div id="scrolled-content-frame"></div></div>',
     "reflowable_book_frame" : '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"><div id="reflowable-content-frame" class="reflowable-content-frame"><iframe scrolling="no" id="epubContentIframe"></iframe></div></div>'
 };
