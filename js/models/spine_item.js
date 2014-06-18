@@ -133,7 +133,7 @@ ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
     this.getRenditionFlow = function() {
 
         if(self.rendition_flow) {
-            return self.spine.rendition_flow;
+            return self.rendition_flow;
         }
 
         return self.spine.package.rendition_flow;
@@ -142,7 +142,7 @@ ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
     this.getRenditionSpread = function() {
 
         if(self.rendition_spread) {
-            return self.spine.rendition_spread;
+            return self.rendition_spread;
         }
 
         return self.spine.package.rendition_spread;
@@ -151,7 +151,7 @@ ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
     this.getRenditionOrientation = function() {
 
         if(self.rendition_orientation) {
-            return self.spine.rendition_orientation;
+            return self.rendition_orientation;
         }
 
         return self.spine.package.rendition_orientation;
@@ -160,7 +160,7 @@ ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
     this.getRenditionLayout = function() {
 
         if(self.rendition_layout) {
-            return self.spine.rendition_layout;
+            return self.rendition_layout;
         }
 
         return self.spine.package.rendition_layout;
