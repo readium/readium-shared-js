@@ -41,7 +41,7 @@ ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
     this.idref = itemData.idref;
     this.href = itemData.href;
 
-    this.linear = itemData.linear;
+    this.linear = itemData.linear ? itemData.linear.toLowerCase() : itemData.linear;
 
     this.page_spread = itemData.page_spread;
     
