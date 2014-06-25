@@ -208,7 +208,8 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
         {
             $(_highlightedElementPar.element).addClass(DEFAULT_MO_SUB_SYNC_CLASS);
         }
-        
+
+        _reader.trigger(ReadiumSDK.Events.MEDIA_OVERLAY_HIGHLIGHT_APPLIED, element);
 // ---- CFI
 //         try
 //         {
@@ -482,6 +483,7 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
             //}
 
             _highlightedElementPar = undefined;
+            _reader.trigger(ReadiumSDK.Events.MEDIA_OVERLAY_HIGHLIGHT_REMOVED, element);
         }
 
         _activeClass = "";
