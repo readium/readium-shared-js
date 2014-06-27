@@ -1107,6 +1107,29 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
         return element;
     };
+
+    this.getElementByCfi = function(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
+
+        var found = undefined;
+
+        forEachItemView(function (pageView) {
+            if(pageView.currentSpineItem() == spineItem) {
+
+                found = pageView.getElementByCfi(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist);
+                return false;
+            }
+
+            return true;
+
+        }, false);
+
+        if(!found) {
+            console.error("spine item is not loaded");
+            return undefined;
+        }
+
+        return found;
+    };
     
     this.getElementById = function(spineItem, id) {
         
