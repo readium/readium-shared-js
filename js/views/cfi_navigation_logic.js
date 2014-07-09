@@ -44,7 +44,9 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
 
         return $iframe[0].contentDocument.documentElement;
     };
-
+    
+    // FIXED LAYOUT if (!options.rectangleBased) alert("!!!options.rectangleBased");
+    
     var visibilityCheckerFunc = options.rectangleBased
         ? checkVisibilityByRectangles
         : checkVisibilityByVerticalOffsets;
@@ -56,7 +58,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
      * @returns {boolean}
      */
     function isPageProgressionRightToLeft() {
-        return !!options.paginationInfo.rightToLeft;
+        return options.paginationInfo && !!options.paginationInfo.rightToLeft;
     }
 
     /**
@@ -78,6 +80,12 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
      * @returns {number} Full width of a column in pixels
      */
     function getColumnFullWidth() {
+        
+        if (!options.paginationInfo || options.paginationInfo.isVerticalWritingMode)
+        {
+            return $iframe.width();
+        }
+        
         return options.paginationInfo.columnWidth + options.paginationInfo.columnGap;
     }
 
@@ -91,7 +99,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
      */
     function getVisibleContentOffsets() {
         return {
-            left: options.paginationInfo.pageOffset
+            left: (options.paginationInfo ? options.paginationInfo.pageOffset : 0)
                 * (isPageProgressionRightToLeft() ? -1 : 1)
         };
     }
@@ -207,6 +215,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
 
         var isRtl = isPageProgressionRightToLeft();
         var columnFullWidth = getColumnFullWidth();
+
         var frameHeight = $iframe.height();
         var frameWidth  = $iframe.width();
 
@@ -224,14 +233,16 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
 
         var leftOffset = firstRectangle.left;
         if (isRtl) {
-            leftOffset = columnFullWidth * options.paginationInfo.visibleColumnCount - leftOffset;
+            leftOffset = (columnFullWidth * (options.paginationInfo ? options.paginationInfo.visibleColumnCount : 1)) - leftOffset;
         }
 
-        var pageIndex = Math.floor(leftOffset / columnFullWidth);
+        var pageIndex = Math.ceil(leftOffset / columnFullWidth);
 
-        // fix for the glitch with first opening of the book with RTL dir and lang
-        if (pageIndex < 0 || pageIndex >= options.paginationInfo.columnCount) {
-            pageIndex = options.paginationInfo.visibleColumnCount - pageIndex;
+        if (pageIndex < 0) {
+            pageIndex = 0;
+        }
+        else if (pageIndex >= (options.paginationInfo ? options.paginationInfo.columnCount : 1)) {
+            pageIndex = (options.paginationInfo ? (options.paginationInfo.columnCount - 1) : 0);
         }
 
         return pageIndex;
