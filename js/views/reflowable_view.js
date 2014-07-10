@@ -487,7 +487,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
         _$epubHtml.css({left: "0", right: "0", top: "0"});
         
-        //ReadiumSDK.Helpers.triggerLayout(_$iframe);
+        ReadiumSDK.Helpers.triggerLayout(_$iframe);
 
         _paginationInfo.columnCount = ((_htmlBodyIsVerticalWritingMode ? _$epubHtml[0].scrollHeight : _$epubHtml[0].scrollWidth) + _paginationInfo.columnGap) / (_paginationInfo.columnWidth + _paginationInfo.columnGap);
         _paginationInfo.columnCount = Math.round(_paginationInfo.columnCount);
