@@ -1030,6 +1030,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
                 }
                 else
                 {
+                    //_currentView.onViewportResize();
+                    
                     // setTimeout(function()
                     // {
                         var spineItem = _spine.getItemById(bookMark.idref);

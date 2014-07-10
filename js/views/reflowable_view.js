@@ -475,14 +475,15 @@ ReadiumSDK.Views.ReflowableView = function(options){
         
         _paginationInfo.rightToLeft = _spine.isRightToLeft();
 
-        _paginationInfo.columnWidth = Math.floor(((_htmlBodyIsVerticalWritingMode ? _lastViewPortSize.height : _lastViewPortSize.width) - _paginationInfo.columnGap * (_paginationInfo.visibleColumnCount - 1)) / _paginationInfo.visibleColumnCount);
+        _paginationInfo.columnWidth = Math.round(((_htmlBodyIsVerticalWritingMode ? _lastViewPortSize.height : _lastViewPortSize.width) - _paginationInfo.columnGap * (_paginationInfo.visibleColumnCount - 1)) / _paginationInfo.visibleColumnCount);
+
+        _$epubHtml.css("width", (_htmlBodyIsVerticalWritingMode ? _lastViewPortSize.width : _paginationInfo.columnWidth) + "px");
+        _$epubHtml.css("min-width", (_htmlBodyIsVerticalWritingMode ? _lastViewPortSize.width : _paginationInfo.columnWidth) + "px");
+        _$epubHtml.css("max-width", (_htmlBodyIsVerticalWritingMode ? _lastViewPortSize.width : _paginationInfo.columnWidth) + "px");
 
         _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
             _$epubHtml.css(prefix + "column-width", _paginationInfo.columnWidth + "px");
         });
-        _$epubHtml.css("width", _lastViewPortSize.width + "px");
-        _$epubHtml.css("min-width", _lastViewPortSize.width + "px");
-        _$epubHtml.css("max-width", _lastViewPortSize.width + "px");
 
         _$epubHtml.css({left: "0", right: "0", top: "0"});
         
@@ -490,6 +491,19 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
         _paginationInfo.columnCount = ((_htmlBodyIsVerticalWritingMode ? _$epubHtml[0].scrollHeight : _$epubHtml[0].scrollWidth) + _paginationInfo.columnGap) / (_paginationInfo.columnWidth + _paginationInfo.columnGap);
         _paginationInfo.columnCount = Math.round(_paginationInfo.columnCount);
+                //
+        // var totalGaps = (_paginationInfo.columnCount-1) * _paginationInfo.columnGap;
+        // var colWidthCheck = ((_htmlBodyIsVerticalWritingMode ? _$epubHtml[0].scrollHeight : _$epubHtml[0].scrollWidth) - totalGaps) / _paginationInfo.columnCount;
+        //
+        // console.error(colWidthCheck);
+        // colWidthCheck = Math.round(colWidthCheck);
+        //
+        // if (colWidthCheck > _paginationInfo.columnWidth)
+        // {
+        //     console.debug(_paginationInfo.columnWidth);
+        //     _paginationInfo.columnWidth = colWidthCheck;
+        //     console.log(colWidthCheck);
+        // }
 
         _paginationInfo.spreadCount =  Math.ceil(_paginationInfo.columnCount / _paginationInfo.visibleColumnCount);
 
