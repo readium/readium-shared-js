@@ -1165,7 +1165,7 @@ console.debug("RESIZE NO RESTORE BOOKMARK");
     };
 
     function injectMathJax($iframe) {
-
+        return;
         if(!_mathJaxUrl) {
             return;
         }
