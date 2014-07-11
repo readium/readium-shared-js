@@ -71,7 +71,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
         _iframeLoader = options.iframeLoader;
     }
     else {
-        _iframeLoader = new ReadiumSDK.Views.IFrameLoader();
+        _iframeLoader = new ReadiumSDK.Views.IFrameLoader({ mathJaxUrl: _mathJaxUrl});
     }
 
     this.createViewForType = function(viewType, options) {
