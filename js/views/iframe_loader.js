@@ -26,7 +26,7 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-ReadiumSDK.Views.IFrameLoader = function() {
+ReadiumSDK.Views.IFrameLoader = function(options) {
 
     var self = this;
     var eventListeners = {};
@@ -129,8 +129,12 @@ ReadiumSDK.Views.IFrameLoader = function() {
 
             var securityScript = "<script>(" + disableParent.toString() + ")()<\/script>";
             var readingSystemScript = "<script>navigator.epubReadingSystem = "+readingSystemForInjection()+";<\/script>";
+            var mathJaxScript = "";
+            if (options && options.mathJaxUrl && contentFileData.indexOf("<math") !== 0) {
+                mathJaxScript = "<script type=\"text/javascript\" src=\"" + options.mathJaxUrl + "\"><\/script>";
+            }
 
-            var mangledContent = contentFileData.replace(/(<head.*?>)/, "$1" + base + securityScript + readingSystemScript);
+            var mangledContent = contentFileData.replace(/(<head.*?>)/, "$1" + base + securityScript + readingSystemScript + mathJaxScript);
             callback(mangledContent);
         });
     }
