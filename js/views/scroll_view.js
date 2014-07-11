@@ -1,27 +1,34 @@
 //  Created by Boris Schneiderman.
 // Modified by Daniel Weck
-//  Copyright (c) 2012-2013 The Readium Foundation.
-//
-//  The Readium SDK is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  
+//  Redistribution and use in source and binary forms, with or without modification, 
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this 
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice, 
+//  this list of conditions and the following disclaimer in the documentation and/or 
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be 
+//  used to endorse or promote products derived from this software without specific 
+//  prior written permission.
+//  
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
     var _DEBUG = false;
 
     _.extend(this, Backbone.Events);
-
-    options.enablePageTransitions = false; // force (not fixed layout!)
 
     var SCROLL_MARGIN_TO_SHOW_LAST_VISBLE_LINE = 5;
     var ITEM_LOAD_SCROLL_BUFFER = 2000;
@@ -597,6 +604,8 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
     function createPageViewForSpineItem(isTemporaryView) {
 
+        options.disablePageTransitions = true; // force
+
         var pageView = new ReadiumSDK.Views.OnePageView(
             options,
             ["content-doc-frame"],
@@ -1009,7 +1018,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         var range = {top: 0, bottom: 0};
 
         range.top = pageView.element().position().top + scrollTop();
-        range.bottom = range.top + pageView.element().height();
+        range.bottom = range.top + pageView.getCalculatedPageHeight();
 
         return range;
     }
@@ -1097,6 +1106,29 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         }, false);
 
         return element;
+    };
+
+    this.getElementByCfi = function(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
+
+        var found = undefined;
+
+        forEachItemView(function (pageView) {
+            if(pageView.currentSpineItem() == spineItem) {
+
+                found = pageView.getElementByCfi(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist);
+                return false;
+            }
+
+            return true;
+
+        }, false);
+
+        if(!found) {
+            console.error("spine item is not loaded");
+            return undefined;
+        }
+
+        return found;
     };
     
     this.getElementById = function(spineItem, id) {

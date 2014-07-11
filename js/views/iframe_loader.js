@@ -2,20 +2,29 @@
 //
 //  Created by Boris Schneiderman.
 // Modified by Daniel Weck
-//  Copyright (c) 2012-2013 The Readium Foundation.
-//
-//  The Readium SDK is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  
+//  Redistribution and use in source and binary forms, with or without modification, 
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this 
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice, 
+//  this list of conditions and the following disclaimer in the documentation and/or 
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be 
+//  used to endorse or promote products derived from this software without specific 
+//  prior written permission.
+//  
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ReadiumSDK.Views.IFrameLoader = function() {
 
@@ -47,31 +56,22 @@ ReadiumSDK.Views.IFrameLoader = function() {
 
         var isWaitingForFrameLoad = true;
 
-        iframe.onload = function() {
+        injectScripts(src, function (htmlText) {
 
-            iframe.onload = undefined;
+            iframe.contentWindow.document.open();
+            iframe.contentWindow.document.write(htmlText);
 
-            isWaitingForFrameLoad = false;
+            iframe.onload = function () {
 
-            self.updateIframeEvents(iframe);
+                isWaitingForFrameLoad = false;
 
-            try
-            {
-                iframe.contentWindow.navigator.epubReadingSystem = navigator.epubReadingSystem;
-                // console.debug("epubReadingSystem name:"
-                //     + iframe.contentWindow.navigator.epubReadingSystem.name
-                //     + " version:"
-                //     + iframe.contentWindow.navigator.epubReadingSystem.version
-                //     + " is loaded to iframe");
-            }
-            catch(ex)
-            {
-                console.log("epubReadingSystem INJECTION ERROR! " + ex.message);
-            }
+                self.updateIframeEvents(iframe);
 
-            callback.call(context, true);
+                callback.call(context, true);
+            };
 
-        };
+            iframe.contentWindow.document.close();
+        });
 
         //yucks! iframe doesn't trigger onerror event - there is no reliable way to know that iframe finished
         // attempt tot load resource (successfully or not;
@@ -85,6 +85,72 @@ ReadiumSDK.Views.IFrameLoader = function() {
 
         }, 8000);
 
-        iframe.src = src;
     };
+
+    function getFileText(path, callback) {
+
+        $.ajax({
+            url: path,
+            dataType: 'html',
+            async: true,
+            success: function (result) {
+
+                callback(result);
+            },
+            error: function (xhr, status, errorThrown) {
+                console.error('Error when AJAX fetching ' + path);
+                console.error(status);
+                console.error(errorThrown);
+                callback();
+            }
+        });
+    }
+
+    function injectScripts(src, callback) {
+
+        getFileText(src, function (contentFileData) {
+
+            if (!contentFileData) {
+                callback();
+                return;
+            }
+
+            var sourceParts = src.split("/");
+            sourceParts.pop(); //remove source file name
+
+            /* TODO:
+             IE requires the base href to be a full absolute URI, with protocol and hostname.
+             There needs to be a way to determine if the given source URI (`src` parameter) is already an absolute URI.
+             */
+            if (!window.location.origin) {
+                window.location.origin = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port : '');
+            }
+            var base = "<base href=\"" + window.location.origin + "/" + sourceParts.join("/") + "/" + "\">";
+
+            var securityScript = "<script>(" + disableParent.toString() + ")()<\/script>";
+            var readingSystemScript = "<script>navigator.epubReadingSystem = "+readingSystemForInjection()+";<\/script>";
+
+            var mangledContent = contentFileData.replace(/(<head.*?>)/, "$1" + base + securityScript + readingSystemScript);
+            callback(mangledContent);
+        });
+    }
+
+    function disableParent() {
+
+        window.parent = undefined;
+    }
+
+    function readingSystemForInjection() {
+        
+        var functions = [];
+        return JSON.stringify(navigator.epubReadingSystem, function (key, value) {
+            if (typeof value === 'function') {
+                functions.push(value.toString());
+                return "{{fn#" + (functions.length - 1) + "}}";
+            }
+            return value;
+        }).replace(/"\{\{fn#(.*?)\}\}"/g, function (match, value) {
+            return functions[value];
+        });
+    }
 };

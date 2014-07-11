@@ -2,20 +2,29 @@
 //  LauncherOSX
 //
 //  Created by Boris Schneiderman.
-//  Copyright (c) 2012-2013 The Readium Foundation.
-//
-//  The Readium SDK is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  
+//  Redistribution and use in source and binary forms, with or without modification, 
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this 
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice, 
+//  this list of conditions and the following disclaimer in the documentation and/or 
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be 
+//  used to endorse or promote products derived from this software without specific 
+//  prior written permission.
+//  
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*
  * Renders reflowable content using CSS columns
@@ -41,11 +50,17 @@ ReadiumSDK.Views.ReflowableView = function(options){
     var _fontSize = 100;
     var _$contentFrame;
     var _navigationLogic;
-    var _isSyntheticSpread;
     var _$el;
     var _$iframe;
     var _$epubHtml;
-
+    
+    var _$htmlBody;
+    
+    var _htmlBodyIsVerticalWritingMode;
+    var _htmlBodyIsLTRDirection;
+    var _htmlBodyIsLTRWritingMode;
+    
+    
     var _currentOpacity = -1;
 
     var _lastViewPortSize = {
@@ -78,31 +93,32 @@ ReadiumSDK.Views.ReflowableView = function(options){
         _$iframe.css("left", "");
         _$iframe.css("right", "");
         _$iframe.css("position", "relative");
-        _$iframe.css(_spine.isLeftToRight() ? "left" : "right", "0px");
+        //_$iframe.css(_spine.isLeftToRight() ? "left" : "right", "0px");
         _$iframe.css("overflow", "hidden");
 
         _navigationLogic = new ReadiumSDK.Views.CfiNavigationLogic(
                 _$contentFrame, _$iframe,
                 { rectangleBased: true, paginationInfo: _paginationInfo });
 
-        //We will call onViewportResize after user stopped resizing window
-        var lazyResize = _.debounce(self.onViewportResize, 100);
-        $(window).on("resize.ReadiumSDK.reflowableView", _.bind(lazyResize, self));
+
+        // See ReaderView.handleViewportResize
+        // var lazyResize = _.debounce(self.onViewportResize, 100);
+        // $(window).on("resize.ReadiumSDK.reflowableView", _.bind(lazyResize, self));
 
         return self;
     };
 
     function setFrameSizesToRectangle(rectangle) {
-        _$contentFrame.css("left", rectangle.left);
-        _$contentFrame.css("top", rectangle.top);
-        _$contentFrame.css("right", rectangle.right);
-        _$contentFrame.css("bottom", rectangle.bottom);
+        _$contentFrame.css("left", rectangle.left + "px");
+        _$contentFrame.css("top", rectangle.top + "px");
+        _$contentFrame.css("right", rectangle.right + "px");
+        _$contentFrame.css("bottom", rectangle.bottom + "px");
 
     }
 
     this.remove = function() {
 
-        $(window).off("resize.ReadiumSDK.reflowableView");
+        //$(window).off("resize.ReadiumSDK.reflowableView");
         _$el.remove();
 
     };
@@ -115,7 +131,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
         if(updateViewportSize()) {
             //depends on aspect ratio of viewport and rendition:spread-* setting we may have to switch spread on/off
-            _paginationInfo.visibleColumnCount = calculateVisibleColumnCount();
+            updateColumnCount();
             updatePagination();
         }
 
@@ -126,37 +142,19 @@ ReadiumSDK.Views.ReflowableView = function(options){
         
         _viewSettings = settings;
 
-        _isSyntheticSpread = settings.isSyntheticSpread;
         _paginationInfo.columnGap = settings.columnGap;
         _fontSize = settings.fontSize;
-        
-        _paginationInfo.visibleColumnCount = calculateVisibleColumnCount();
 
         updateHtmlFontSize();
         updateColumnGap();
+        
+        updateViewportSize();
+        updateColumnCount();
         updatePagination();
     };
 
-    function calculateVisibleColumnCount() {
-
-        if(_isSyntheticSpread) {
-
-            if(!_currentSpineItem) {
-                return 2;
-            }
-
-            var orientation = ReadiumSDK.Helpers.getOrientation(_$viewport);
-            if(!orientation) {
-                return 2;
-            }
-
-            return ReadiumSDK.Helpers.isRenditionSpreadPermittedForItem(_currentSpineItem, orientation)
-                ? 2 : 1;
-        }
-        else {
-
-            return 1;
-        }
+    function updateColumnCount() {
+        _paginationInfo.visibleColumnCount = _htmlBodyIsVerticalWritingMode ? 1 : (ReadiumSDK.Helpers.deduceSyntheticSpread(_$viewport, _currentSpineItem, _viewSettings) ? 2 : 1);
     }
 
     function loadSpineItem(spineItem) {
@@ -214,32 +212,66 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
         var epubContentDocument = _$iframe[0].contentDocument;
         _$epubHtml = $("html", epubContentDocument);
+        _$htmlBody = $("body", _$epubHtml);
+        
+        _htmlBodyIsVerticalWritingMode = false;
+        _htmlBodyIsLTRDirection = true;
+        _htmlBodyIsLTRWritingMode = false;
+        
+        //Helpers.isIframeAlive
+        var htmlBodyComputedStyle = _$iframe[0].contentWindow.getComputedStyle(_$htmlBody[0]);
+        if (htmlBodyComputedStyle)
+        {
+            _htmlBodyIsLTRDirection = htmlBodyComputedStyle.direction === "ltr";
+            
+            var writingMode = htmlBodyComputedStyle.webkitWritingMode || htmlBodyComputedStyle.mozWritingMode || htmlBodyComputedStyle.msWritingMode || htmlBodyComputedStyle.oWritingMode || htmlBodyComputedStyle.epubWritingMode || htmlBodyComputedStyle.writingMode;
 
+            _htmlBodyIsLTRWritingMode = writingMode && writingMode.indexOf("lr") >= 0;
+            
+            if (writingMode && writingMode.indexOf("vertical") >= 0)
+            {
+                _htmlBodyIsVerticalWritingMode = true;
+                
+                console.debug("VERTICAL WRITING MODE: " + writingMode);
+                console.log("HTML DIR: " + htmlBodyComputedStyle.direction);
+                console.debug("LTR PAGE PROGRESSION DIRECTION: " + _spine.isLeftToRight());
+            }
+        }
+        
+        _paginationInfo.isVerticalWritingMode = _htmlBodyIsVerticalWritingMode;
+        
         hideBook();
         _$iframe.css("opacity", "1");
-
+        
+        updateViewportSize();
         _$epubHtml.css("height", _lastViewPortSize.height + "px");
+        
         _$epubHtml.css("position", "relative");
+        _$epubHtml.css("margin", "0");
+        _$epubHtml.css("padding", "0");
 
         _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
-            _$epubHtml.css(prefix + "column-axis", "horizontal");
+            _$epubHtml.css(prefix + "column-axis", (_htmlBodyIsVerticalWritingMode ? "vertical" : "horizontal"));
         });
 
+        //
+        // /////////
+        // //Columns Debugging
+        //
+        // _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
+        //     _$epubHtml.css(prefix + "column-rule-color", "red");
+        //     _$epubHtml.css(prefix + "column-rule-style", "dashed");
+        //     _$epubHtml.css(prefix + "column-rule-width", "1px");
+        // });
+        // _$epubHtml.css("background-color", '#b0c4de');
+        //
+        // ////
+        
         self.applyBookStyles();
         resizeImages();
 
         updateHtmlFontSize();
         updateColumnGap();
-
-
-/////////
-//Columns Debugging
-// 
-// _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
-//     _$epubHtml.css(prefix + "column-rule-color", "red");
-//     _$epubHtml.css(prefix + "column-rule-style", "dashed");
-// });
-// $epubHtml.css("background-color", '#b0c4de');
 
 
         self.applyStyles();
@@ -254,7 +286,9 @@ ReadiumSDK.Views.ReflowableView = function(options){
         var elementMargins = ReadiumSDK.Helpers.Margins.fromElement(_$el);
         setFrameSizesToRectangle(elementMargins.padding);
 
+
         updateViewportSize();
+        updateColumnCount();
         updatePagination();
 
     };
@@ -339,8 +373,17 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
         var offsetVal =  -_paginationInfo.pageOffset + "px";
 
-        _$epubHtml.css("left", _spine.isLeftToRight() ? offsetVal : "");
-        _$epubHtml.css("right", _spine.isRightToLeft() ? offsetVal : "");
+        if (_htmlBodyIsVerticalWritingMode)
+        {
+            _$epubHtml.css("top", offsetVal);
+        }
+        else
+        {
+            var ltr = _htmlBodyIsLTRDirection || _htmlBodyIsLTRWritingMode;
+
+            _$epubHtml.css("left", ltr ? offsetVal : "");
+            _$epubHtml.css("right", !ltr ? offsetVal : "");
+        }
 
         showBook(); // as it's no longer hidden by shifting the position
     }
@@ -363,6 +406,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
     function onPaginationChanged(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
 
         _paginationInfo.pageOffset = (_paginationInfo.columnWidth + _paginationInfo.columnGap) * _paginationInfo.visibleColumnCount * _paginationInfo.currentSpreadIndex;
+        
         redraw();
         self.trigger(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
     }
@@ -423,35 +467,43 @@ ReadiumSDK.Views.ReflowableView = function(options){
         _$iframe.css("height", _lastViewPortSize.height + "px");
 
         _$epubHtml.css("height", _lastViewPortSize.height + "px");
+        _$epubHtml.css("min-height", _lastViewPortSize.height + "px");
+        _$epubHtml.css("max-height", _lastViewPortSize.height + "px");
 
+        // Needed for Firefox, but unfortunately sometimes scrollWidth goes sky high even when value < _lastViewPortSize.height
+        _$htmlBody.css("min-height", "90%");
+        
         _paginationInfo.rightToLeft = _spine.isRightToLeft();
 
-        _paginationInfo.columnWidth = (_lastViewPortSize.width - _paginationInfo.columnGap * (_paginationInfo.visibleColumnCount - 1)) / _paginationInfo.visibleColumnCount;
+        _paginationInfo.columnWidth = Math.round(((_htmlBodyIsVerticalWritingMode ? _lastViewPortSize.height : _lastViewPortSize.width) - _paginationInfo.columnGap * (_paginationInfo.visibleColumnCount - 1)) / _paginationInfo.visibleColumnCount);
 
-        //we do this because CSS will floor column with by itself if it is not a round number
-        _paginationInfo.columnWidth = Math.floor(_paginationInfo.columnWidth);
-
-        // _$epubHtml.css("width", _paginationInfo.columnWidth);
-        _$epubHtml.css("width", _lastViewPortSize.width);
+        _$epubHtml.css("width", (_htmlBodyIsVerticalWritingMode ? _lastViewPortSize.width : _paginationInfo.columnWidth) + "px");
+        _$epubHtml.css("min-width", (_htmlBodyIsVerticalWritingMode ? _lastViewPortSize.width : _paginationInfo.columnWidth) + "px");
+        _$epubHtml.css("max-width", (_htmlBodyIsVerticalWritingMode ? _lastViewPortSize.width : _paginationInfo.columnWidth) + "px");
 
         _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
             _$epubHtml.css(prefix + "column-width", _paginationInfo.columnWidth + "px");
         });
 
-
-        var doc = _$iframe[0].contentDocument;
-	    var el = doc.createElementNS("http://www.w3.org/1999/xhtml", "style");
-	    el.appendChild(doc.createTextNode("*{}"));
-	    doc.body.appendChild(el);
-	    doc.body.removeChild(el);
-	    var blocking = doc.body.offsetTop; // browser rendering / layout done
+        _$epubHtml.css({left: "0", right: "0", top: "0"});
         
-        // resetting the position
-        _$epubHtml.css({left: 0, right: 0});
+        ReadiumSDK.Helpers.triggerLayout(_$iframe);
 
-        var columnizedContentWidth = _$epubHtml[0].scrollWidth;
+        _paginationInfo.columnCount = ((_htmlBodyIsVerticalWritingMode ? _$epubHtml[0].scrollHeight : _$epubHtml[0].scrollWidth) + _paginationInfo.columnGap) / (_paginationInfo.columnWidth + _paginationInfo.columnGap);
+        _paginationInfo.columnCount = Math.round(_paginationInfo.columnCount);
 
-        _paginationInfo.columnCount = Math.round((columnizedContentWidth + _paginationInfo.columnGap) / (_paginationInfo.columnWidth + _paginationInfo.columnGap));
+        var totalGaps = (_paginationInfo.columnCount-1) * _paginationInfo.columnGap;
+        var colWidthCheck = ((_htmlBodyIsVerticalWritingMode ? _$epubHtml[0].scrollHeight : _$epubHtml[0].scrollWidth) - totalGaps) / _paginationInfo.columnCount;
+        colWidthCheck = Math.round(colWidthCheck);
+
+        if (colWidthCheck > _paginationInfo.columnWidth)
+        {
+            console.debug("ADJUST COLUMN");
+            console.log(_paginationInfo.columnWidth);
+            console.log(colWidthCheck);
+            
+            _paginationInfo.columnWidth = colWidthCheck;
+        }
 
         _paginationInfo.spreadCount =  Math.ceil(_paginationInfo.columnCount / _paginationInfo.visibleColumnCount);
 
@@ -497,7 +549,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
         if (_currentOpacity != -1) return; // already hidden
         
         _currentOpacity = _$epubHtml.css('opacity');
-        _$epubHtml.css('opacity', 0);
+        _$epubHtml.css('opacity', "0");
     }
 
     function showBook()
@@ -591,6 +643,8 @@ ReadiumSDK.Views.ReflowableView = function(options){
     };
 
     function getVisibleContentOffsets() {
+        //TODO: _htmlBodyIsVerticalWritingMode ? (_lastViewPortSize.height * _paginationInfo.currentSpreadIndex)
+        // NOT used with options.rectangleBased anyway (see CfiNavigationLogic constructor call, here in this reflow engine class)
         var columnsLeftOfViewport = Math.round(_paginationInfo.pageOffset / (_paginationInfo.columnWidth + _paginationInfo.columnGap));
 
         var topOffset =  columnsLeftOfViewport * _$contentFrame.height();

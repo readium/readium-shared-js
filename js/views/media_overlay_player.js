@@ -2,19 +2,29 @@
 //
 //  Created by Boris Schneiderman.
 // Modified by Daniel Weck
-//  Copyright (c) 2012-2013 The Readium Foundation.
-//
-//  The Readium SDK is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  
+//  Redistribution and use in source and binary forms, with or without modification, 
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this 
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice, 
+//  this list of conditions and the following disclaimer in the documentation and/or 
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be 
+//  used to endorse or promote products derived from this software without specific 
+//  prior written permission.
+//  
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
@@ -34,6 +44,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
     var _embeddedIsPlaying = false;
     var _currentEmbedded = undefined;
 
+
     this.isPlaying = function()
     {
         return _audioPlayer.isPlaying() || _ttsIsPlaying || _embeddedIsPlaying || _blankPagePlayer;
@@ -44,6 +55,13 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
     var _settings = reader.viewerSettings();
     var self = this;
     var _elementHighlighter = new ReadiumSDK.Views.MediaOverlayElementHighlighter(reader);
+
+    reader.on(ReadiumSDK.Events.READER_VIEW_DESTROYED, function(){
+
+        self.reset();
+
+    });
+
 
     this.applyStyles = function()
     {
@@ -95,8 +113,15 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         }
     };
     
+    var _lastPaginationData = undefined;
+    
     this.onPageChanged = function(paginationData) {
-
+        
+        _lastPaginationData = paginationData;
+        
+        var wasPausedBecauseNoAutoNextSmil = _wasPausedBecauseNoAutoNextSmil;
+        _wasPausedBecauseNoAutoNextSmil = false;
+        
         var wasPlayingAtDocLoadStart = _wasPlayingAtDocLoadStart;
         _wasPlayingAtDocLoadStart = false;
 
@@ -245,11 +270,15 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
                 if (paginationData.elementId && element)
                 {
-                    if (wasPlaying)
+                    if (wasPlaying || wasPausedBecauseNoAutoNextSmil)
                     {
                         paginationData.elementIdResolved = element;
                         self.toggleMediaOverlayRefresh(paginationData);
                     }
+                }
+                else if (wasPlaying || wasPausedBecauseNoAutoNextSmil)
+                {
+                    self.toggleMediaOverlay();
                 }
                 return;
             }
@@ -329,7 +358,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         }
         else
         {
-            if(!wasPlaying)
+            if(!wasPlaying && !wasPausedBecauseNoAutoNextSmil)
             {
                 self.reset();
                 return;
@@ -677,6 +706,22 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         }
 
         var goNext = position > audio.clipEnd;
+
+        var doNotNextSmil = !_autoNextSmil && from !== 6 && goNext;
+
+        var spineItemIdRef = (_smilIterator && _smilIterator.smil && _smilIterator.smil.spineItemId) ? _smilIterator.smil.spineItemId : ((_lastPaginationData && _lastPaginationData.spineItem && _lastPaginationData.spineItem.idref) ? _lastPaginationData.spineItem.idref : undefined);
+        if (doNotNextSmil && spineItemIdRef && _lastPaginationData && _lastPaginationData.paginationInfo && _lastPaginationData.paginationInfo.openPages && _lastPaginationData.paginationInfo.openPages.length > 1)
+        {
+            //var iPage = _lastPaginationData.paginationInfo.pageProgressionDirection === "rtl" ? _lastPaginationData.paginationInfo.openPages.length - 1 : 0;
+            var iPage = 0;
+            
+            var openPage = _lastPaginationData.paginationInfo.openPages[iPage];
+            if (spineItemIdRef === openPage.idref)
+            {
+                doNotNextSmil = false;
+            }
+        }
+        
         if (goNext)
         {
             _smilIterator.next();
@@ -705,7 +750,16 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
 //console.debug("NEXT SMIL ON AUDIO POS");
         
-            nextSmil(goNext);
+            if (doNotNextSmil)
+            {
+                _wasPausedBecauseNoAutoNextSmil = true;
+                self.reset();
+                //self.pause();
+            }
+            else
+            {
+                nextSmil(goNext);
+            }
             return;
         }
 
@@ -761,7 +815,18 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                         if (!_smilIterator.currentPar)
                         {
     //console.debug("adjustParToSeqSyncGranularity nextSmil(goNext)");
-                            nextSmil(goNext);
+
+                            if (doNotNextSmil)
+                            {
+                                _wasPausedBecauseNoAutoNextSmil = true;
+                                self.reset();
+                                //self.pause();
+                            }
+                            else
+                            {
+                                nextSmil(goNext);
+                            }
+                            
                             return;
                         }
                     }
@@ -863,8 +928,8 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
     var tokeniseTTS = function(element)
     {
         var BLOCK_DELIMITERS = ['p', 'div', 'pagenum', 'td', 'table', 'li', 'ul', 'ol'];
-        var BOUNDARY_PUNCTUATION = [',', ';', '.', '-', 'Ð', 'Ñ', '?', '!'];
-        var IGNORABLE_PUNCTUATION = ['"', '\'', 'Ò', 'Ó', 'Ô', 'Õ'];
+        var BOUNDARY_PUNCTUATION = [',', ';', '.', '-', '??', '??', '?', '!'];
+        var IGNORABLE_PUNCTUATION = ['"', '\'', '??', '??', '??', '??'];
 
         var flush = function(t, r)
         {
@@ -1341,7 +1406,7 @@ console.debug("TTS resume");
     function onPlay() {
         onPause();
 
-        _timerTick = setInterval(function() {
+        var func = function() {
 
             if (!_smilIterator || !_smilIterator.currentPar)
             {
@@ -1380,8 +1445,11 @@ console.debug("TTS resume");
             }
 
             onStatusChanged({playPosition: playPosition, smilIndex: smilIndex, parIndex: parIndex});
+        };
 
-        }, 1500);
+        setTimeout(func, 500);
+
+        _timerTick = setInterval(func, 1500);
     }
 
     function onPause() {
@@ -2023,5 +2091,12 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
     this.isPlayingCfi = function()
     {
         return _smilIterator && _smilIterator.currentPar && _smilIterator.currentPar.cfi;
+    };
+    
+    var _wasPausedBecauseNoAutoNextSmil = false;
+    var _autoNextSmil = true;
+    this.setAutomaticNextSmil = function(autoNext)
+    {
+        _autoNextSmil = autoNext;
     };
 };
