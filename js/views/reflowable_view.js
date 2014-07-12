@@ -86,24 +86,10 @@ ReadiumSDK.Views.ReflowableView = function(options){
         _$el = $(template);
         _$viewport.append(_$el);
 
-        _$contentFrame = $("#reflowable-content-frame", _$el);
-
-        _$iframe = $("#epubContentIframe", _$el);
-
-        _$iframe.css("left", "");
-        _$iframe.css("right", "");
-        _$iframe.css("position", "relative");
-        //_$iframe.css(_spine.isLeftToRight() ? "left" : "right", "0px");
-        _$iframe.css("overflow", "hidden");
-
-        _navigationLogic = new ReadiumSDK.Views.CfiNavigationLogic(
-                _$contentFrame, _$iframe,
-                { rectangleBased: true, paginationInfo: _paginationInfo });
-
-
         // See ReaderView.handleViewportResize
         // var lazyResize = _.debounce(self.onViewportResize, 100);
         // $(window).on("resize.ReadiumSDK.reflowableView", _.bind(lazyResize, self));
+        renderIframe();
 
         return self;
     };
@@ -157,9 +143,37 @@ ReadiumSDK.Views.ReflowableView = function(options){
         _paginationInfo.visibleColumnCount = _htmlBodyIsVerticalWritingMode ? 1 : (ReadiumSDK.Helpers.deduceSyntheticSpread(_$viewport, _currentSpineItem, _viewSettings) ? 2 : 1);
     }
 
+    function renderIframe() {
+        if (_$contentFrame) {
+            //destroy old contentFrame
+            _$contentFrame.remove();
+        }
+
+        var template = ReadiumSDK.Helpers.loadTemplate("reflowable_book_page_frame", {});
+        var $bookFrame = $(template);
+        $bookFrame = $('#reflowable-book-frame', _$viewport).append($bookFrame);
+
+        _$contentFrame = $("#reflowable-content-frame", $bookFrame);
+
+        _$iframe = $("#epubContentIframe", $bookFrame);
+
+        _$iframe.css("left", "");
+        _$iframe.css("right", "");
+        _$iframe.css("position", "relative");
+        //_$iframe.css(_spine.isLeftToRight() ? "left" : "right", "0px");
+        _$iframe.css("overflow", "hidden");
+
+        _navigationLogic = new ReadiumSDK.Views.CfiNavigationLogic(
+            _$contentFrame, _$iframe,
+            { rectangleBased: true, paginationInfo: _paginationInfo });
+    }
+
     function loadSpineItem(spineItem) {
 
         if(_currentSpineItem != spineItem) {
+
+            //create & append iframe to container frame
+            renderIframe();
 
             _paginationInfo.pageOffset = 0;
             _paginationInfo.currentSpreadIndex = 0;
