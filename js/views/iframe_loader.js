@@ -59,6 +59,9 @@ ReadiumSDK.Views.IFrameLoader = function(options) {
         injectScripts(src, function (htmlText) {
 
             iframe.contentWindow.document.open();
+            //inject reading system object before writing to the iframe DOM
+            iframe.contentWindow.navigator.epubReadingSystem = navigator.epubReadingSystem;
+
             iframe.contentWindow.document.write(htmlText);
 
             iframe.onload = function () {
@@ -128,13 +131,12 @@ ReadiumSDK.Views.IFrameLoader = function(options) {
             var base = "<base href=\"" + window.location.origin + "/" + sourceParts.join("/") + "/" + "\">";
 
             var securityScript = "<script>(" + disableParent.toString() + ")()<\/script>";
-            var readingSystemScript = "<script>navigator.epubReadingSystem = "+readingSystemForInjection()+";<\/script>";
             var mathJaxScript = "";
             if (options && options.mathJaxUrl && contentFileData.indexOf("<math") !== 0) {
                 mathJaxScript = "<script type=\"text/javascript\" src=\"" + options.mathJaxUrl + "\"><\/script>";
             }
 
-            var mangledContent = contentFileData.replace(/(<head.*?>)/, "$1" + base + securityScript + readingSystemScript + mathJaxScript);
+            var mangledContent = contentFileData.replace(/(<head.*?>)/, "$1" + base + securityScript + mathJaxScript);
             callback(mangledContent);
         });
     }
@@ -144,17 +146,4 @@ ReadiumSDK.Views.IFrameLoader = function(options) {
         window.parent = undefined;
     }
 
-    function readingSystemForInjection() {
-        
-        var functions = [];
-        return JSON.stringify(navigator.epubReadingSystem, function (key, value) {
-            if (typeof value === 'function') {
-                functions.push(value.toString());
-                return "{{fn#" + (functions.length - 1) + "}}";
-            }
-            return value;
-        }).replace(/"\{\{fn#(.*?)\}\}"/g, function (match, value) {
-            return functions[value];
-        });
-    }
 };
