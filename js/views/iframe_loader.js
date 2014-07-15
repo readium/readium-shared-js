@@ -128,7 +128,7 @@ ReadiumSDK.Views.IFrameLoader = function(options) {
             if (!window.location.origin) {
                 window.location.origin = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port : '');
             }
-            var base = "<base href=\"" + window.location.origin + "/" + sourceParts.join("/") + "/" + "\">";
+            var base = "<base href=\"" + sourceParts.join("/") + "/" + "\">";
 
             var securityScript = "<script>(" + disableParent.toString() + ")()<\/script>";
             var mathJaxScript = "";
