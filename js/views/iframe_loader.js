@@ -136,7 +136,7 @@ ReadiumSDK.Views.IFrameLoader = function(options) {
                 mathJaxScript = "<script type=\"text/javascript\" src=\"" + options.mathJaxUrl + "\"><\/script>";
             }
 
-            var mangledContent = contentFileData.replace(/(<head.*?>)/, "$1" + base + securityScript + mathJaxScript);
+            var mangledContent = contentFileData.replace(/(<head.*?>)/, "$1" + base + mathJaxScript);
             callback(mangledContent);
         });
     }
