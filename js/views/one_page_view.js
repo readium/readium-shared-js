@@ -330,6 +330,9 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             _$el.css("height", "100%");
             _$el.css("width", "100%");
 
+            // This fixes rendering issues with WebView (native apps), probably related to hardware acceleration
+            _$el.css("transform", "translateZ(0)");
+
             for(var i = 0, count = classes.length; i < count; i++) {
                 _$el.addClass(classes[i]);
             }
