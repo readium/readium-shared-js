@@ -86,7 +86,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
         _$el = $(template);
         _$viewport.append(_$el);
 
-        // This fixes rendering issues with WebView (native apps), probably related to hardware acceleration
+        // This fixes rendering issues with WebView (native apps), which clips content embedded in iframes unless GPU hardware acceleration is enabled for CSS rendering.
         _$el.css("transform", "translateZ(0)");
         
         _$contentFrame = $("#reflowable-content-frame", _$el);
