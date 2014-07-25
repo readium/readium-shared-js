@@ -73,6 +73,8 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         _$contentFrame.css("height", "100%");
         _$contentFrame.css("position", "relative");
 
+        // _$contentFrame.css("box-sizing", "border-box");
+        // _$contentFrame.css("border", "20px solid red");
 
         self.applyStyles();
 

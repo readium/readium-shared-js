@@ -363,7 +363,9 @@ ReadiumSDK.Helpers.CSSTransformString = function(scale, left, top, angle, origin
 };
 
 
-
+//TODO: consider using CSSOM escape() or polyfill
+//https://github.com/mathiasbynens/CSS.escape/blob/master/css.escape.js
+//http://mathiasbynens.be/notes/css-escapes
 ReadiumSDK.Helpers.escapeJQuerySelector = function(sel) {
         //http://api.jquery.com/category/selectors/
         //!"#$%&'()*+,./:;<=>?@[\]^`{|}~
