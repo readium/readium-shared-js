@@ -490,10 +490,26 @@ ReadiumSDK.Views.ReflowableView = function(options){
         _$epubHtml.css("min-height", _lastViewPortSize.height + "px");
         _$epubHtml.css("max-height", _lastViewPortSize.height + "px");
 
-        // Needed for Firefox, but unfortunately sometimes scrollWidth goes sky high even when value < _lastViewPortSize.height
-        _$htmlBody.css("min-height", "90%");
-        _$htmlBody.css("max-height", "100%");
-        
+        //normalise spacing to avoid interference with column-isation
+        _$epubHtml.css('margin', 0);
+        _$epubHtml.css('padding', 0);
+        _$epubHtml.css('border', 0);
+        _$htmlBody.css('margin-bottom', 0);
+        _$htmlBody.css('padding-bottom', 0);
+
+        var spacing = 0;
+        try
+        {
+            spacing = parseInt(_$htmlBody.css('padding-top')) + parseInt(_$htmlBody.css('border-top-width')) + parseInt(_$htmlBody.css('border-bottom-width'));
+        }
+        catch(err)
+        {
+            
+        }
+        // Needed for Firefox, otherwise content shrinks vertically, resulting in scrollWidth accomodating more columns than necessary
+        _$htmlBody.css("min-height", _lastViewPortSize.height-spacing + "px");
+        _$htmlBody.css("max-height", _lastViewPortSize.height-spacing + "px");
+
         _paginationInfo.rightToLeft = _spine.isRightToLeft();
 
         _paginationInfo.columnWidth = Math.round(((_htmlBodyIsVerticalWritingMode ? _lastViewPortSize.height : _lastViewPortSize.width) - _paginationInfo.columnGap * (_paginationInfo.visibleColumnCount - 1)) / _paginationInfo.visibleColumnCount);
