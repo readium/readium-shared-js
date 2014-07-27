@@ -507,7 +507,7 @@ ReadiumSDK.Views.ReflowableView = function(options){
             
         }
         // Needed for Firefox, otherwise content shrinks vertically, resulting in scrollWidth accomodating more columns than necessary
-        _$htmlBody.css("min-height", _lastViewPortSize.height-spacing + "px");
+        _$htmlBody.css("min-height", _lastViewPortSize.height-spacing-9 + "px");
         _$htmlBody.css("max-height", _lastViewPortSize.height-spacing + "px");
 
         _paginationInfo.rightToLeft = _spine.isRightToLeft();
