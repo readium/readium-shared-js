@@ -520,16 +520,13 @@ ReadiumSDK.Views.ReflowableView = function(options){
         _$iframe.css("height", _lastViewPortSize.height + "px");
 
         _$epubHtml.css("height", _lastViewPortSize.height + "px");
-        // Same unit => redundant
-        // _$epubHtml.css("min-height", _lastViewPortSize.height + "px");
-        // _$epubHtml.css("max-height", _lastViewPortSize.height + "px");
 
         //normalise spacing to avoid interference with column-isation
         _$epubHtml.css('margin', 0);
         _$epubHtml.css('padding', 0);
         _$epubHtml.css('border', 0);
-        _$htmlBody.css('margin-bottom', 0);
-        _$htmlBody.css('padding-bottom', 0);
+        _$htmlBody.css('margin', 0);
+        _$htmlBody.css('padding', 0);
 
         var spacing = 0;
         try
@@ -549,9 +546,6 @@ ReadiumSDK.Views.ReflowableView = function(options){
         _paginationInfo.columnWidth = Math.round(((_htmlBodyIsVerticalWritingMode ? _lastViewPortSize.height : _lastViewPortSize.width) - _paginationInfo.columnGap * (_paginationInfo.visibleColumnCount - 1)) / _paginationInfo.visibleColumnCount);
 
         _$epubHtml.css("width", (_htmlBodyIsVerticalWritingMode ? _lastViewPortSize.width : _paginationInfo.columnWidth) + "px");
-        // Same unit => redundant
-        // _$epubHtml.css("min-width", (_htmlBodyIsVerticalWritingMode ? _lastViewPortSize.width : _paginationInfo.columnWidth) + "px");
-        // _$epubHtml.css("max-width", (_htmlBodyIsVerticalWritingMode ? _lastViewPortSize.width : _paginationInfo.columnWidth) + "px");
 
         _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
             _$epubHtml.css(prefix + "column-width", _paginationInfo.columnWidth + "px");
