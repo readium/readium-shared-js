@@ -32,7 +32,7 @@
  * @class ReadiumSDK.Views.ReflowableView
  */
 
-ReadiumSDK.Views.ReflowableView = function(options){
+ReadiumSDK.Views.ReflowableView = function(options, reader){
 
     _.extend(this, Backbone.Events);
 
