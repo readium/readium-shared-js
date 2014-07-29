@@ -31,6 +31,9 @@ ReadiumSDK.Models.ViewerSettings = function(settingsData) {
     this.syntheticSpread = "auto";
     this.fontSize = 100;
     this.columnGap = 20;
+
+    this.mediaOverlaysPreservePlaybackWhenScroll = false;
+
     this.mediaOverlaysSkipSkippables = false;
     this.mediaOverlaysEscapeEscapables = true;
 
