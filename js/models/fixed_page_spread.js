@@ -82,7 +82,7 @@ ReadiumSDK.Models.Spread = function(spine, isSyntheticSpread) {
             var neighbour = getNeighbourItem(item);
             if(neighbour) {
                 var neighbourPos = getItemPosition(neighbour);
-                if(neighbourPos != position && position != ReadiumSDK.Models.Spread.POSITION_CENTER)  {
+                if(neighbourPos != position && neighbourPos != ReadiumSDK.Models.Spread.POSITION_CENTER)  {
                     setItemToPosition(neighbour, neighbourPos);
                 }
             }

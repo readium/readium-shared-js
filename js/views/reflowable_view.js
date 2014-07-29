@@ -32,7 +32,7 @@
  * @class ReadiumSDK.Views.ReflowableView
  */
 
-ReadiumSDK.Views.ReflowableView = function(options){
+ReadiumSDK.Views.ReflowableView = function(options, reader){
 
     _.extend(this, Backbone.Events);
 
@@ -85,6 +85,9 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
         _$el = $(template);
         _$viewport.append(_$el);
+
+        // This fixes rendering issues with WebView (native apps), which clips content embedded in iframes unless GPU hardware acceleration is enabled for CSS rendering.
+        _$el.css("transform", "translateZ(0)");
 
         // See ReaderView.handleViewportResize
         // var lazyResize = _.debounce(self.onViewportResize, 100);
@@ -230,25 +233,42 @@ ReadiumSDK.Views.ReflowableView = function(options){
         
         _htmlBodyIsVerticalWritingMode = false;
         _htmlBodyIsLTRDirection = true;
-        _htmlBodyIsLTRWritingMode = false;
+        _htmlBodyIsLTRWritingMode = undefined;
+        
+        var win = _$iframe[0].contentDocument.defaultView || _$iframe[0].contentWindow;
         
         //Helpers.isIframeAlive
-        var htmlBodyComputedStyle = _$iframe[0].contentWindow.getComputedStyle(_$htmlBody[0]);
+        var htmlBodyComputedStyle = win.getComputedStyle(_$htmlBody[0], null);
         if (htmlBodyComputedStyle)
         {
             _htmlBodyIsLTRDirection = htmlBodyComputedStyle.direction === "ltr";
-            
-            var writingMode = htmlBodyComputedStyle.webkitWritingMode || htmlBodyComputedStyle.mozWritingMode || htmlBodyComputedStyle.msWritingMode || htmlBodyComputedStyle.oWritingMode || htmlBodyComputedStyle.epubWritingMode || htmlBodyComputedStyle.writingMode;
 
-            _htmlBodyIsLTRWritingMode = writingMode && writingMode.indexOf("lr") >= 0;
-            
-            if (writingMode && writingMode.indexOf("vertical") >= 0)
+            var writingMode = undefined;
+            if (htmlBodyComputedStyle.getPropertyValue)
             {
-                _htmlBodyIsVerticalWritingMode = true;
-                
-                console.debug("VERTICAL WRITING MODE: " + writingMode);
-                console.log("HTML DIR: " + htmlBodyComputedStyle.direction);
-                console.debug("LTR PAGE PROGRESSION DIRECTION: " + _spine.isLeftToRight());
+                writingMode = htmlBodyComputedStyle.getPropertyValue("-webkit-writing-mode") || htmlBodyComputedStyle.getPropertyValue("-moz-writing-mode") || htmlBodyComputedStyle.getPropertyValue("-ms-writing-mode") || htmlBodyComputedStyle.getPropertyValue("-o-writing-mode") || htmlBodyComputedStyle.getPropertyValue("-epub-writing-mode") || htmlBodyComputedStyle.getPropertyValue("writing-mode");
+            }
+            else
+            {
+                writingMode = htmlBodyComputedStyle.webkitWritingMode || htmlBodyComputedStyle.mozWritingMode || htmlBodyComputedStyle.msWritingMode || htmlBodyComputedStyle.oWritingMode || htmlBodyComputedStyle.epubWritingMode || htmlBodyComputedStyle.writingMode;
+            }
+
+            if (writingMode)
+            {
+                _htmlBodyIsLTRWritingMode = writingMode.indexOf("-lr") >= 0;
+            
+                if (writingMode.indexOf("vertical") >= 0 || writingMode.indexOf("tb-") >= 0 || writingMode.indexOf("bt-") >= 0)
+                {
+                    _htmlBodyIsVerticalWritingMode = true;
+                }
+            }
+        }
+
+        if (_htmlBodyIsLTRDirection)
+        {
+            if (_$htmlBody[0].getAttribute("dir") === "rtl" || _$epubHtml[0].getAttribute("dir") === "rtl")
+            {
+                _htmlBodyIsLTRDirection = false;
             }
         }
         
@@ -484,9 +504,26 @@ ReadiumSDK.Views.ReflowableView = function(options){
         _$epubHtml.css("min-height", _lastViewPortSize.height + "px");
         _$epubHtml.css("max-height", _lastViewPortSize.height + "px");
 
-        // Needed for Firefox, but unfortunately sometimes scrollWidth goes sky high even when value < _lastViewPortSize.height
-        _$htmlBody.css("min-height", "90%");
-        
+        //normalise spacing to avoid interference with column-isation
+        _$epubHtml.css('margin', 0);
+        _$epubHtml.css('padding', 0);
+        _$epubHtml.css('border', 0);
+        _$htmlBody.css('margin-bottom', 0);
+        _$htmlBody.css('padding-bottom', 0);
+
+        var spacing = 0;
+        try
+        {
+            spacing = parseInt(_$htmlBody.css('padding-top')) + parseInt(_$htmlBody.css('border-top-width')) + parseInt(_$htmlBody.css('border-bottom-width'));
+        }
+        catch(err)
+        {
+            
+        }
+        // Needed for Firefox, otherwise content shrinks vertically, resulting in scrollWidth accomodating more columns than necessary
+        _$htmlBody.css("min-height", _lastViewPortSize.height-spacing-9 + "px");
+        _$htmlBody.css("max-height", _lastViewPortSize.height-spacing + "px");
+
         _paginationInfo.rightToLeft = _spine.isRightToLeft();
 
         _paginationInfo.columnWidth = Math.round(((_htmlBodyIsVerticalWritingMode ? _lastViewPortSize.height : _lastViewPortSize.width) - _paginationInfo.columnGap * (_paginationInfo.visibleColumnCount - 1)) / _paginationInfo.visibleColumnCount);

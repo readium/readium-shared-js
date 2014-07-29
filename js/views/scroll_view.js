@@ -24,7 +24,7 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
+ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
 
     var _DEBUG = false;
 
@@ -73,6 +73,12 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         _$contentFrame.css("height", "100%");
         _$contentFrame.css("position", "relative");
 
+        // This is a necessary counterpart for the same CSS GPU hardware acceleration trick in one_page_view.js
+        // This affects the stacking order and re-enables the scrollbar in Safari (works fine in Chrome otherwise)
+        _$contentFrame.css("transform", "translateZ(0)");
+        
+        // _$contentFrame.css("box-sizing", "border-box");
+        // _$contentFrame.css("border", "20px solid red");
 
         self.applyStyles();
 
@@ -80,6 +86,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
 
         _$contentFrame.on('scroll', function(e){
             lazyScroll(e);
+            onScrollDirect();
         });
 
         return self;
@@ -212,14 +219,45 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll){
         }, assertScrollPosition);
     }
 
-    function onScroll(e) {
+    var _mediaOverlaysWasPlayingLastTimeScrollStarted = false;
 
+    function onScrollDirect(e)
+    {
+        var settings = reader.viewerSettings();
+        if (!settings.mediaOverlaysPreservePlaybackWhenScroll)
+        {
+            if (!_mediaOverlaysWasPlayingLastTimeScrollStarted && reader.isMediaOverlayAvailable())
+            {
+                _mediaOverlaysWasPlayingLastTimeScrollStarted = reader.isPlayingMediaOverlay();
+                if (_mediaOverlaysWasPlayingLastTimeScrollStarted)
+                {
+                    reader.pauseMediaOverlay();
+                }
+            }
+        }
+    }
+    
+    function onScroll(e)
+    {
         if(    !_isPerformingLayoutModifications
             && !_isSettingScrollPosition
             && !_isLoadingNewSpineItemOnPageRequest) {
 
             updateTransientViews();
             onPaginationChanged(self);
+
+            var settings = reader.viewerSettings();
+            if (!settings.mediaOverlaysPreservePlaybackWhenScroll)
+            {
+                if (_mediaOverlaysWasPlayingLastTimeScrollStarted)
+                {
+                    setTimeout(function()
+                    {
+                        reader.playMediaOverlay();
+                        _mediaOverlaysWasPlayingLastTimeScrollStarted = false;
+                    }, 100);
+                }
+            }
         }
     }
 

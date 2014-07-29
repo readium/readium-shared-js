@@ -78,16 +78,16 @@ ReadiumSDK.Views.ReaderView = function(options) {
         var createdView;
         switch(viewType) {
             case ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED:
-                createdView = new ReadiumSDK.Views.FixedView(options);
+                createdView = new ReadiumSDK.Views.FixedView(options, self);
                 break;
             case ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_DOC:
-                createdView = new ReadiumSDK.Views.ScrollView(options, false);
+                createdView = new ReadiumSDK.Views.ScrollView(options, false, self);
                 break;
             case ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS:
-                createdView = new ReadiumSDK.Views.ScrollView(options, true);
+                createdView = new ReadiumSDK.Views.ScrollView(options, true, self);
                 break;
             default:
-                createdView = new ReadiumSDK.Views.ReflowableView(options);
+                createdView = new ReadiumSDK.Views.ReflowableView(options, self);
                 break;
         }
 

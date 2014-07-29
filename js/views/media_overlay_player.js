@@ -439,7 +439,8 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
     }
 
     function playCurrentPar() {
-
+        _wasPlayingScrolling = false;
+        
         if (!_smilIterator || !_smilIterator.currentPar)
         {
             console.error("playCurrentPar !_smilIterator || !_smilIterator.currentPar ???");
@@ -1544,7 +1545,10 @@ console.debug("TTS resume");
                 {
                     _elementHighlighter.highlightElement(_smilIterator.currentPar, _package.media_overlay.activeClass, _package.media_overlay.playbackActiveClass);
 
-                    reader.insureElementVisibility(_smilIterator.currentPar.getSmil().spineItemId, _smilIterator.currentPar.element, self);
+                    if (!_wasPlayingScrolling)
+                    {
+                        reader.insureElementVisibility(_smilIterator.currentPar.getSmil().spineItemId, _smilIterator.currentPar.element, self);
+                    }
                 }
             
                 return;
@@ -1555,7 +1559,10 @@ console.debug("TTS resume");
                 {
                     _elementHighlighter.highlightCfi(_smilIterator.currentPar, _package.media_overlay.activeClass, _package.media_overlay.playbackActiveClass);
 
-                    reader.insureElementVisibility(_smilIterator.currentPar.getSmil().spineItemId, _smilIterator.currentPar.cfi.cfiTextParent, self);
+                    if (!_wasPlayingScrolling)
+                    {
+                        reader.insureElementVisibility(_smilIterator.currentPar.getSmil().spineItemId, _smilIterator.currentPar.cfi.cfiTextParent, self);
+                    }
                 }
                 
                 return;
@@ -1707,7 +1714,6 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         _skipAudioEnded = false;
     };
 
-
     this.play = function ()
     {
         if (_smilIterator && _smilIterator.smil && !_smilIterator.smil.id)
@@ -1742,6 +1748,8 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
     this.pause = function()
     {
+        _wasPlayingScrolling = false;
+        
         if (_blankPagePlayer)
         {
             this.resetBlankPage();
@@ -1903,9 +1911,10 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         this.toggleMediaOverlayRefresh(undefined);
     };
 
+    var _wasPlayingScrolling = false;
+
     this.toggleMediaOverlayRefresh = function(paginationData)
     {
-
 //console.debug("moData SMIL: " + moData.par.getSmil().href + " // " + + moData.par.getSmil().id);
 
         var spineItems = reader.getLoadedSpineItems();
@@ -1914,7 +1923,6 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         var rtl = reader.spine().isRightToLeft();
 
         //paginationData.spineItemCount
-
         //paginationData.openPages
         //{spineItemPageIndex: , spineItemPageCount: , idref: , spineItemIndex: }
 
@@ -1922,9 +1930,18 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         var wasPlaying = self.isPlaying();
         if(wasPlaying && _smilIterator)
         {
-            self.pause();
+            var isScrollView = paginationData.initiator && paginationData.initiator instanceof ReadiumSDK.Views.ScrollView;
+            if (isScrollView && _settings.mediaOverlaysPreservePlaybackWhenScroll)
+            {
+                _wasPlayingScrolling = true;
+                return;
+            }
+            
             playingPar = _smilIterator.currentPar;
+            self.pause();
         }
+        
+        _wasPlayingScrolling = false;
 
         //paginationData && paginationData.elementId
         //paginationData.initiator != self
