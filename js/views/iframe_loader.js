@@ -26,71 +26,70 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-ReadiumSDK.Views.IFrameLoader = function(options) {
+ReadiumSDK.Views.IFrameLoader = function (options) {
 
     var self = this;
     var eventListeners = {};
 
 
-    this.addIFrameEventListener = function(eventName, callback, context) {
+    this.addIFrameEventListener = function (eventName, callback, context) {
 
-        if(eventListeners[eventName] == undefined) {
+        if (eventListeners[eventName] == undefined) {
             eventListeners[eventName] = [];
         }
 
         eventListeners[eventName].push({callback: callback, context: context});
     };
 
-    this.updateIframeEvents = function(iframe) {
+    this.updateIframeEvents = function (iframe) {
 
-        _.each(eventListeners, function(value, key){
-            for(var i = 0, count = value.length; i< count; i++) {
+        _.each(eventListeners, function (value, key) {
+            for (var i = 0, count = value.length; i < count; i++) {
                 $(iframe.contentWindow).off(key);
                 $(iframe.contentWindow).on(key, value[i].callback, value[i].context);
             }
         });
     };
 
+    this.loadIframe = function (iframe, src, callback, context, attachedData) {
 
-    this.loadIframe = function(iframe, src, callback, context) {
+        var loadedDocumentUri = new URI(src).absoluteTo(iframe.baseURI).search('').hash('').toString();
 
-        var isWaitingForFrameLoad = true;
+        fetchContentDocument(loadedDocumentUri, function (contentDocumentHtml) {
 
-        injectScripts(src, function (htmlText) {
-
-            iframe.contentWindow.document.open();
-            //inject reading system object before writing to the iframe DOM
-            iframe.contentWindow.navigator.epubReadingSystem = navigator.epubReadingSystem;
-
-            iframe.contentWindow.document.write(htmlText);
-
-            iframe.onload = function () {
-
-                isWaitingForFrameLoad = false;
-
-                self.updateIframeEvents(iframe);
-
-                callback.call(context, true);
-            };
-
-            iframe.contentWindow.document.close();
-        });
-
-        //yucks! iframe doesn't trigger onerror event - there is no reliable way to know that iframe finished
-        // attempt tot load resource (successfully or not;
-        window.setTimeout(function(){
-
-            if(isWaitingForFrameLoad) {
-
-                isWaitingForFrameLoad = false;
-                callback.call(context, false);
+            if (!contentDocumentHtml) {
+                //failed to load content document
+                callback.call(context, false, attachedData);
+            } else {
+                self._loadIframeWithDocument(iframe, attachedData, contentDocumentHtml, function () {
+                    callback.call(context, true, attachedData);
+                });
             }
-
-        }, 8000);
-
+        });
     };
 
-    function getFileText(path, callback) {
+    this._loadIframeWithDocument = function(iframe, attachedData, contentDocumentData, callback) {
+
+        var contentType = 'text/html';
+        if (attachedData.spineItem.media_type && attachedData.spineItem.media_type.length) {
+            contentType = attachedData.spineItem.media_type;
+        }
+
+        var documentDataUri = window.URL.createObjectURL(
+            new Blob([contentDocumentData], {'type': contentType})
+        );
+
+        iframe.onload = function () {
+
+            self.updateIframeEvents(iframe);
+            callback();
+            window.URL.revokeObjectURL(documentDataUri);
+        };
+
+        iframe.setAttribute("src", documentDataUri);
+    };
+
+    function fetchHtmlAsText(path, callback) {
 
         $.ajax({
             url: path,
@@ -109,11 +108,11 @@ ReadiumSDK.Views.IFrameLoader = function(options) {
         });
     }
 
-    function injectScripts(src, callback) {
+    function fetchContentDocument(src, callback) {
 
-        getFileText(src, function (contentFileData) {
+        fetchHtmlAsText(src, function (contentDocumentHtml) {
 
-            if (!contentFileData) {
+            if (!contentDocumentHtml) {
                 callback();
                 return;
             }
@@ -121,28 +120,22 @@ ReadiumSDK.Views.IFrameLoader = function(options) {
             var sourceParts = src.split("/");
             sourceParts.pop(); //remove source file name
 
-            /* TODO:
-             IE requires the base href to be a full absolute URI, with protocol and hostname.
-             There needs to be a way to determine if the given source URI (`src` parameter) is already an absolute URI.
-             */
-            if (!window.location.origin) {
-                window.location.origin = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port : '');
-            }
-            var base = "<base href=\"" + sourceParts.join("/") + "/" + "\">";
+            var base = "<base href=\"" + sourceParts.join("/") + "/" + "\"/>";
 
-            var securityScript = "<script>(" + disableParent.toString() + ")()<\/script>";
-            var mathJaxScript = "";
-            if (options && options.mathJaxUrl && contentFileData.indexOf("<math") !== 0) {
-                mathJaxScript = "<script type=\"text/javascript\" src=\"" + options.mathJaxUrl + "\"><\/script>";
+            var scripts = "<script type=\"text/javascript\">(" + injectedScript.toString() + ")()<\/script>";
+
+            if (options && options.mathJaxUrl && contentFileData.indexOf("<math") >= 0) {
+                scripts += "<script type=\"text/javascript\" src=\"" + options.mathJaxUrl + "\"><\/script>";
             }
 
-            var mangledContent = contentFileData.replace(/(<head.*?>)/, "$1" + base + mathJaxScript);
+            var mangledContent = contentDocumentHtml.replace(/(<head.*?>)/, "$1" + base + scripts);
             callback(mangledContent);
         });
     }
 
-    function disableParent() {
+    function injectedScript() {
 
+        navigator.epubReadingSystem = window.parent.navigator.epubReadingSystem;
         window.parent = undefined;
     }
 
