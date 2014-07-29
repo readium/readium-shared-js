@@ -486,8 +486,8 @@ ReadiumSDK.Views.ReflowableView = function(options){
 
         var filler = 0;
         
-        var MAXW = 500; // TODO: user-configurable + font-size dependent
-        var MINW = 300;
+        var MAXW = 550;
+        var MINW = 440;
         
         var availableWidth = _$viewport.width();
         var textWidth = availableWidth - borderLeft - borderRight - adjustedGapLeft - adjustedGapRight;
