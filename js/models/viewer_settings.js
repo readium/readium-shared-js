@@ -87,6 +87,7 @@ ReadiumSDK.Models.ViewerSettings = function(settingsData) {
 
         mapProperty("columnGap", settingsData);
         mapProperty("fontSize", settingsData);
+        mapProperty("mediaOverlaysPreservePlaybackWhenScroll", settingsData);
         mapProperty("mediaOverlaysSkipSkippables", settingsData);
         mapProperty("mediaOverlaysEscapeEscapables", settingsData);
         mapProperty("mediaOverlaysSkippables", settingsData, buildArray);
