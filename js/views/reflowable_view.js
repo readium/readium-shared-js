@@ -469,6 +469,19 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
     function updatePagination() {
 
         var isDoublePageSyntheticSpread = ReadiumSDK.Helpers.deduceSyntheticSpread(_$viewport, _currentSpineItem, _viewSettings);
+        
+        var forced = (isDoublePageSyntheticSpread === false) || (isDoublePageSyntheticSpread === true);
+        // excludes 0 and 1 truthy values which denote non-forced result
+        
+// console.debug("isDoublePageSyntheticSpread: " + isDoublePageSyntheticSpread);
+// console.debug("forced: " + forced);
+        
+        if (isDoublePageSyntheticSpread == 0)
+        {
+            isDoublePageSyntheticSpread = 1; // try double page, will shrink if doesn't fit
+// console.debug("TRYING SPREAD INSTEAD OF SINGLE...");
+        }
+        
         _paginationInfo.visibleColumnCount = _htmlBodyIsVerticalWritingMode ? 1 : (isDoublePageSyntheticSpread ? 2 : 1);
    
         if(!_$epubHtml) {
@@ -486,8 +499,8 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
 
         var filler = 0;
         
-        var MAXW = 550;
-        var MINW = 440;
+        var MAXW = 550; //TODO user/vendor-configurable?
+        var MINW = 400;
         
         var availableWidth = _$viewport.width();
         var textWidth = availableWidth - borderLeft - borderRight - adjustedGapLeft - adjustedGapRight;
@@ -498,10 +511,12 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         
         if (textWidth > MAXW)
         {
+//console.debug("LIMITING WIDTH");
             filler = Math.floor((textWidth - MAXW) * (isDoublePageSyntheticSpread ? 1 : 0.5));
         }
-        else if (textWidth < MINW && isDoublePageSyntheticSpread)
+        else if (!forced && textWidth < MINW && isDoublePageSyntheticSpread)
         {
+//console.debug("REDUCING SPREAD TO SINGLE");
             isDoublePageSyntheticSpread = false;
             _paginationInfo.visibleColumnCount = 1;
             
