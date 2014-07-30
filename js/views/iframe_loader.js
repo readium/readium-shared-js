@@ -91,7 +91,18 @@ ReadiumSDK.Views.IFrameLoader = function (options) {
         iframe.onload = function () {
 
             self.updateIframeEvents(iframe);
-            callback();
+
+            var mathJax = iframe.contentWindow.MathJax;
+            if (mathJax) {
+                // If MathJax is being used, delay the callback until it has completed rendering
+                var mathJaxCallback = _.once(callback);
+                mathJax.Hub.Queue(mathJaxCallback);
+                // Or at an 8 second timeout, which ever comes first
+                window.setTimeout(mathJaxCallback, 8000);
+            } else {
+                callback();
+            }
+
             if (!isIE) {
                 window.URL.revokeObjectURL(documentDataUri);
             }
