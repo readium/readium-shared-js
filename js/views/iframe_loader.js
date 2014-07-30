@@ -124,7 +124,7 @@ ReadiumSDK.Views.IFrameLoader = function (options) {
 
             var scripts = "<script type=\"text/javascript\">(" + injectedScript.toString() + ")()<\/script>";
 
-            if (options && options.mathJaxUrl && contentFileData.indexOf("<math") >= 0) {
+            if (options && options.mathJaxUrl && contentDocumentHtml.indexOf("<math") >= 0) {
                 scripts += "<script type=\"text/javascript\" src=\"" + options.mathJaxUrl + "\"><\/script>";
             }
 
