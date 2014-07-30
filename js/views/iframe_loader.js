@@ -53,7 +53,7 @@ ReadiumSDK.Views.IFrameLoader = function (options) {
 
     this.loadIframe = function (iframe, src, callback, context, attachedData) {
 
-        var loadedDocumentUri = new URI(src).absoluteTo(iframe.baseURI).search('').hash('').toString();
+        var loadedDocumentUri = new URI(src).absoluteTo(iframe.baseURI).toString();
 
         fetchContentDocument(loadedDocumentUri, function (contentDocumentHtml) {
 
