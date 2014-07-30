@@ -151,7 +151,8 @@ ReadiumSDK.Views.IFrameLoader = function (options) {
     function injectedScript() {
 
         navigator.epubReadingSystem = window.parent.navigator.epubReadingSystem;
-        window.parent = undefined;
+        window.parent = window.self;
+        window.top = window.self;
     }
 
 };
