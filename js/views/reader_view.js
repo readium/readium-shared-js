@@ -50,9 +50,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
     var _iframeLoader;
     var _$el;
     var _annotationsManager = new ReadiumSDK.Views.AnnotationsManager(self, options);
-
-    var _enablePageTransitions = options.enablePageTransitions;
-    var _mathJaxUrl = options.mathJaxUrl;
     
     //We will call onViewportResize after user stopped resizing window
     var lazyResize = _.debounce(function() { self.handleViewportResize() }, 200, false);
@@ -71,7 +68,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
         _iframeLoader = options.iframeLoader;
     }
     else {
-        _iframeLoader = new ReadiumSDK.Views.IFrameLoader({ mathJaxUrl: _mathJaxUrl});
+        _iframeLoader = new ReadiumSDK.Views.IFrameLoader({ mathJaxUrl: options.mathJaxUrl});
     }
 
     this.createViewForType = function(viewType, options) {
@@ -189,8 +186,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
             var contentDoc = $iframe[0].contentDocument;
             ReadiumSDK.Models.Trigger.register(contentDoc);
             ReadiumSDK.Models.Switches.apply(contentDoc);
-
-            injectMathJax($iframe);
 
             self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
         });
@@ -1163,32 +1158,6 @@ console.debug("RESIZE NO RESTORE BOOKMARK");
     this.addIFrameEventListener = function(eventName, callback, context) {
         _iframeLoader.addIFrameEventListener(eventName, callback, context);
     };
-
-    function injectMathJax($iframe) {
-        return;
-        if(!_mathJaxUrl) {
-            return;
-        }
-
-        //is mathjax required
-        var $mathNode = $('math', $iframe[0].contentDocument);
-        if($mathNode.length === 0) {
-            return;
-        }
-
-        var doc, script, head;
-
-        doc = $iframe[0].contentDocument;
-        head = doc.getElementsByTagName("head")[0];
-        // if the content doc is SVG there is no head, and thus
-        // mathjax will not be required
-        if(head) {
-            script = doc.createElement("script");
-            script.type = "text/javascript";
-            script.src = _mathJaxUrl;
-            head.appendChild(script);
-        }
-    }
 
     var BackgroundAudioTrackManager = function()
     {
