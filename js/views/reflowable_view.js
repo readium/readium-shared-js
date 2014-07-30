@@ -499,12 +499,29 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
 
         var filler = 0;
         
+        // At 100% font-size = 16px (on HTML, not body or descendant markup!)
         var MAXW = 550; //TODO user/vendor-configurable?
         var MINW = 400;
         
+//         var win = _$iframe[0].contentDocument.defaultView || _$iframe[0].contentWindow;
+//         var htmlBodyComputedStyle = win.getComputedStyle(_$htmlBody[0], null);
+//         if (htmlBodyComputedStyle)
+//         {
+//             var fontSize = undefined;
+//             if (htmlBodyComputedStyle.getPropertyValue)
+//             {
+//                 fontSize = htmlBodyComputedStyle.getPropertyValue("font-size");
+//             }
+//             else
+//             {
+//                 fontSize = htmlBodyComputedStyle.fontSize;
+//             }
+// console.debug(fontSize);
+//         }
+        
         if (_viewSettings.fontSize)
         {
-            var fontSizeAdjust = (_viewSettings.fontSize*(_viewSettings.fontSize >= 50 ? 0.8 : 1.2))/100;
+            var fontSizeAdjust = (_viewSettings.fontSize*0.8)/100;
             MAXW = Math.floor(MAXW * fontSizeAdjust);
             MINW = Math.floor(MINW * fontSizeAdjust);
         }
