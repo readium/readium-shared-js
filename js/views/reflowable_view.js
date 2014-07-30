@@ -475,8 +475,8 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         
 // console.debug("isDoublePageSyntheticSpread: " + isDoublePageSyntheticSpread);
 // console.debug("forced: " + forced);
-        
-        if (isDoublePageSyntheticSpread == 0)
+//
+        if (isDoublePageSyntheticSpread === 0)
         {
             isDoublePageSyntheticSpread = 1; // try double page, will shrink if doesn't fit
 // console.debug("TRYING SPREAD INSTEAD OF SINGLE...");
@@ -511,7 +511,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         
         if (textWidth > MAXW)
         {
-//console.debug("LIMITING WIDTH");
+// console.debug("LIMITING WIDTH");
             filler = Math.floor((textWidth - MAXW) * (isDoublePageSyntheticSpread ? 1 : 0.5));
         }
         else if (!forced && textWidth < MINW && isDoublePageSyntheticSpread)
