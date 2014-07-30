@@ -154,7 +154,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
 
         var template = ReadiumSDK.Helpers.loadTemplate("reflowable_book_page_frame", {});
         var $bookFrame = $(template);
-        $bookFrame = $('#reflowable-book-frame', _$viewport).append($bookFrame);
+        $bookFrame = _$el.append($bookFrame);
 
         _$contentFrame = $("#reflowable-content-frame", $bookFrame);
 
