@@ -338,14 +338,28 @@ ReadiumSDK.Helpers.isRenditionSpreadPermittedForItem = function(item, orientatio
         && orientation == ReadiumSDK.Views.ORIENTATION_PORTRAIT );
 };
 
-ReadiumSDK.Helpers.CSSTransformString = function(scale, left, top, angle, origin) {
+//scale, left, top, angle, origin
+ReadiumSDK.Helpers.CSSTransformString = function(options) {
+    var translate, scale, rotation,
+        origin = options.origin;
 
-    var translate = (left !== 0 || top !== 0) ? "translate(" + left + "px, " + top + "px)" : undefined;
-    var scale = scale !== 1 ? "scale(" + scale + ")" : undefined;
-    var rotation = angle !== 0 ? "rotate(" + angle + "deg)" : undefined;
+    if (options.left || options.top){
+        var left = options.left || 0, 
+            top = options.top || 0;
+
+        translate = "translate(" + left + "px, " + top + "px)";
+    }
+    if (options.scale){
+        scale = "scale(" + options.scale + ")";
+    }
+    if (options.angle){
+        rotation =  "rotate(" + options.angle + "deg)";
+    }
     
-    if (!(translate || scale || rotation)) return {};
-    
+    if (!(translate || scale || rotation)){
+        return {};
+    }
+
     var transformString = (translate && scale) ? (translate + " " + scale) : (translate ? translate : scale); // the order is important!
     if (rotation)
     {
