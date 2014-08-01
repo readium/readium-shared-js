@@ -603,14 +603,26 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
                 }
                 else
                 {
-                    content = $svg.attr('viewBox');
-                    if(content) {
-                        size = parseViewBoxSize(content);
-                    }
-        
-                    if (size) {
-                        console.warn("Viewport SVG: using viewbox!");
-                    }
+                    /// DISABLED (not a satisfactory fallback)
+                    // content = $svg.attr('viewBox');
+                    // if(content) {
+                    //     size = parseViewBoxSize(content);
+                    // }
+                    //
+                    // if (size) {
+                    //     console.warn("Viewport SVG: using viewbox!");
+                    // }
+                }
+            }
+        }
+
+        if(!size && _currentSpineItem) {
+            content = _currentSpineItem.getRenditionViewport();
+
+            if(content) {
+                size = parseMetaSize(content);
+                if (size) {
+                    console.log("Viewport: using rendition:viewport dimensions");
                 }
             }
         }
@@ -664,9 +676,9 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
                         //     contentDocument.documentElement.setAttribute("width", size.width);
                         //     contentDocument.documentElement.setAttribute("height", size.height);
                         // }
-                    }
 
-                    console.warn("Viewport: using image dimensions!");
+                        console.warn("Viewport: using image dimensions!");
+                    }
                 }
             }
         }
@@ -743,25 +755,25 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             }
         }
     };
-
-    function parseViewBoxSize(viewBoxString) {
-
-        var parts = viewBoxString.split(' ');
-
-        if(parts.length < 4) {
-            console.warn(viewBoxString + " value is not valid viewBox size")
-            return undefined;
-        }
-
-        var width = parseInt(parts[2]);
-        var height = parseInt(parts[3]);
-
-        if(!isNaN(width) && !isNaN(height)) {
-            return { width: width, height: height} ;
-        }
-
-        return undefined;
-    }
+    //
+    // function parseViewBoxSize(viewBoxString) {
+    //
+    //     var parts = viewBoxString.split(' ');
+    //
+    //     if(parts.length < 4) {
+    //         console.warn(viewBoxString + " value is not valid viewBox size")
+    //         return undefined;
+    //     }
+    //
+    //     var width = parseInt(parts[2]);
+    //     var height = parseInt(parts[3]);
+    //
+    //     if(!isNaN(width) && !isNaN(height)) {
+    //         return { width: width, height: height} ;
+    //     }
+    //
+    //     return undefined;
+    // }
 
     function parseMetaSize(content) {
 
