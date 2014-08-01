@@ -50,7 +50,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     var _iframeLoader;
     var _$el;
     var _annotationsManager = new ReadiumSDK.Views.AnnotationsManager(self, options);
-
+    
     //We will call onViewportResize after user stopped resizing window
     var lazyResize = _.debounce(function() { self.handleViewportResize() }, 200, false);
     $(window).on("resize.ReadiumSDK.readerView", _.bind(lazyResize, self));
@@ -68,7 +68,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
         _iframeLoader = options.iframeLoader;
     }
     else {
-        _iframeLoader = new ReadiumSDK.Views.IFrameLoader();
+        _iframeLoader = new ReadiumSDK.Views.IFrameLoader({ mathJaxUrl: options.mathJaxUrl});
     }
 
     this.createViewForType = function(viewType, options) {
@@ -188,6 +188,10 @@ ReadiumSDK.Views.ReaderView = function(options) {
             ReadiumSDK.Models.Switches.apply(contentDoc);
 
             self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
+        });
+
+        _currentView.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START, function ($iframe, spineItem) {
+            self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
         });
 
         _currentView.on(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, function( pageChangeData ){
@@ -1157,7 +1161,7 @@ console.debug("RESIZE NO RESTORE BOOKMARK");
      */
     this.addIFrameEventListener = function(eventName, callback, context) {
         _iframeLoader.addIFrameEventListener(eventName, callback, context);
-    }
+    };
 
     var BackgroundAudioTrackManager = function()
     {

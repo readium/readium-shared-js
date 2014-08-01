@@ -316,8 +316,6 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
 
     this.render = function() {
 
-        if(!_$iframe) {
-
             var template = ReadiumSDK.Helpers.loadTemplate("single_page_frame", {});
 
             _$el = $(template);
@@ -342,7 +340,6 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
 //            _$iframe.css("width", "100%");
             //_$iframe.css("height", "100%");
             // _$iframe.css("height", window.innerHeight || window.clientHeight);
-        }
 
         return this;
     };

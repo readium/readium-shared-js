@@ -26,74 +26,144 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-ReadiumSDK.Views.IFrameLoader = function() {
+ReadiumSDK.Views.IFrameLoader = function (options) {
 
     var self = this;
     var eventListeners = {};
 
 
-    this.addIFrameEventListener = function(eventName, callback, context) {
+    this.addIFrameEventListener = function (eventName, callback, context) {
 
-        if(eventListeners[eventName] == undefined) {
+        if (eventListeners[eventName] == undefined) {
             eventListeners[eventName] = [];
         }
 
         eventListeners[eventName].push({callback: callback, context: context});
     };
 
-    this.updateIframeEvents = function(iframe) {
+    this.updateIframeEvents = function (iframe) {
 
-        _.each(eventListeners, function(value, key){
-            for(var i = 0, count = value.length; i< count; i++) {
+        _.each(eventListeners, function (value, key) {
+            for (var i = 0, count = value.length; i < count; i++) {
                 $(iframe.contentWindow).off(key);
                 $(iframe.contentWindow).on(key, value[i].callback, value[i].context);
             }
         });
     };
 
+    this.loadIframe = function (iframe, src, callback, context, attachedData) {
 
-    this.loadIframe = function(iframe, src, callback, context) {
+        var loadedDocumentUri = new URI(src).absoluteTo(iframe.baseURI).toString();
 
-        var isWaitingForFrameLoad = true;
+        fetchContentDocument(loadedDocumentUri, function (contentDocumentHtml) {
 
-        iframe.onload = function() {
+            if (!contentDocumentHtml) {
+                //failed to load content document
+                callback.call(context, false, attachedData);
+            } else {
+                self._loadIframeWithDocument(iframe, attachedData, contentDocumentHtml, function () {
+                    callback.call(context, true, attachedData);
+                });
+            }
+        });
+    };
 
-            iframe.onload = undefined;
+    this._loadIframeWithDocument = function (iframe, attachedData, contentDocumentData, callback) {
 
-            isWaitingForFrameLoad = false;
+        var isIE = (window.navigator.userAgent.indexOf("Trident") > 0);
+        if (!isIE) {
+            var contentType = 'text/html';
+            if (attachedData.spineItem.media_type && attachedData.spineItem.media_type.length) {
+                contentType = attachedData.spineItem.media_type;
+            }
+
+            var documentDataUri = window.URL.createObjectURL(
+                new Blob([contentDocumentData], {'type': contentType})
+            );
+        } else {
+            // Internet Explorer doesn't handle loading documents from Blobs correctly.
+            // TODO: Currently using the document.write() approach only for IE, as it breaks CSS selectors
+            // with namespaces for some reason (e.g. the childrens-media-query sample EPUB)
+            iframe.contentWindow.document.open();
+            iframe.contentWindow.document.write(contentDocumentData);
+        }
+
+        iframe.onload = function () {
 
             self.updateIframeEvents(iframe);
 
-            try
-            {
-                iframe.contentWindow.navigator.epubReadingSystem = navigator.epubReadingSystem;
-                // console.debug("epubReadingSystem name:"
-                //     + iframe.contentWindow.navigator.epubReadingSystem.name
-                //     + " version:"
-                //     + iframe.contentWindow.navigator.epubReadingSystem.version
-                //     + " is loaded to iframe");
-            }
-            catch(ex)
-            {
-                console.log("epubReadingSystem INJECTION ERROR! " + ex.message);
+            var mathJax = iframe.contentWindow.MathJax;
+            if (mathJax) {
+                // If MathJax is being used, delay the callback until it has completed rendering
+                var mathJaxCallback = _.once(callback);
+                mathJax.Hub.Queue(mathJaxCallback);
+                // Or at an 8 second timeout, which ever comes first
+                window.setTimeout(mathJaxCallback, 8000);
+            } else {
+                callback();
             }
 
-            callback.call(context, true);
-
+            if (!isIE) {
+                window.URL.revokeObjectURL(documentDataUri);
+            }
         };
 
-        //yucks! iframe doesn't trigger onerror event - there is no reliable way to know that iframe finished
-        // attempt tot load resource (successfully or not;
-        window.setTimeout(function(){
+        if (!isIE) {
+            iframe.setAttribute("src", documentDataUri);
+        } else {
+            iframe.contentWindow.document.close();
+        }
+    };
 
-            if(isWaitingForFrameLoad) {
+    function fetchHtmlAsText(path, callback) {
 
-                isWaitingForFrameLoad = false;
-                callback.call(context, false);
+        $.ajax({
+            url: path,
+            dataType: 'html',
+            async: true,
+            success: function (result) {
+
+                callback(result);
+            },
+            error: function (xhr, status, errorThrown) {
+                console.error('Error when AJAX fetching ' + path);
+                console.error(status);
+                console.error(errorThrown);
+                callback();
+            }
+        });
+    }
+
+    function fetchContentDocument(src, callback) {
+
+        fetchHtmlAsText(src, function (contentDocumentHtml) {
+
+            if (!contentDocumentHtml) {
+                callback();
+                return;
             }
 
-        }, 8000);
+            var sourceParts = src.split("/");
+            sourceParts.pop(); //remove source file name
 
-        iframe.src = src;
-    };
+            var base = "<base href=\"" + sourceParts.join("/") + "/" + "\"/>";
+
+            var scripts = "<script type=\"text/javascript\">(" + injectedScript.toString() + ")()<\/script>";
+
+            if (options && options.mathJaxUrl && contentDocumentHtml.indexOf("<math") >= 0) {
+                scripts += "<script type=\"text/javascript\" src=\"" + options.mathJaxUrl + "\"><\/script>";
+            }
+
+            var mangledContent = contentDocumentHtml.replace(/(<head.*?>)/, "$1" + base + scripts);
+            callback(mangledContent);
+        });
+    }
+
+    function injectedScript() {
+
+        navigator.epubReadingSystem = window.parent.navigator.epubReadingSystem;
+        window.parent = window.self;
+        window.top = window.self;
+    }
+
 };
