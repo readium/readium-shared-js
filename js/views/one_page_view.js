@@ -427,6 +427,8 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
     //this is called by scroll_view for fixed spine item
     this.scaleToWidth = function(width) {
 
+        if (_meta_size.width <= 0) return; // resize event too early!
+
         var scale = width / _meta_size.width;
         self.transformContentImmediate(scale, 0, 0);
     };
