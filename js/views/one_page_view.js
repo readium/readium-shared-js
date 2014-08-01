@@ -83,7 +83,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
                 var elWidth = Math.ceil(meta_width * scale);
                 
                 var initialLeft = elWidth * 0.8 * (pageSwitchDir === 2 ? 1 : -1);
-                var move = ReadiumSDK.Helpers.CSSTransformString(1, Math.round(initialLeft), 0, 0, "50% 50%");
+                var move = ReadiumSDK.Helpers.CSSTransformString({left: Math.round(initialLeft), origin: "50% 50%"});
                 $el.css(move);
             },
             function(scale, left, top, $el, meta_width, meta_height, pageSwitchDir)
@@ -115,7 +115,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
                 var elWidth = Math.ceil(meta_width * scale);
 
                 var initialLeft = elWidth * 1.7 * (pageSwitchDir === 2 ? 1 : -1);
-                var trans = ReadiumSDK.Helpers.CSSTransformString(1, Math.round(initialLeft), 0, (pageSwitchDir === 2 ? -1 : 1) * 30, "50% 50%"); //(pageSwitchDir === 2 ? '0% 0%' : '100% 0%')
+                var trans = ReadiumSDK.Helpers.CSSTransformString({left: Math.round(initialLeft), angle: (pageSwitchDir === 2 ? -1 : 1) * 30, origin: "50% 50%"}); //(pageSwitchDir === 2 ? '0% 0%' : '100% 0%')
                 $el.css(trans);
             },
             function(scale, left, top, $el, meta_width, meta_height, pageSwitchDir)
@@ -171,7 +171,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
                 var elWidth = Math.ceil(meta_width * scale);
                 
                 var initialLeft = elWidth * 0.5 * ((isLeft || isCenter && pageSwitchDir === 1) ? 1 : -1);
-                var trans = ReadiumSDK.Helpers.CSSTransformString(0.2, Math.round(initialLeft), 0, ((isLeft || isCenter && pageSwitchDir === 1) ? 1 : -1) * 30, '50% 50%');
+                var trans = ReadiumSDK.Helpers.CSSTransformString({scale: 0.2, left: Math.round(initialLeft), angle: ((isLeft || isCenter && pageSwitchDir === 1) ? 1 : -1) * 30, origin: '50% 50%'});
                 $el.css(trans);
             },
             function(scale, left, top, $el, meta_width, meta_height, pageSwitchDir)
@@ -518,7 +518,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             return;
         }
 
-        var css = ReadiumSDK.Helpers.CSSTransformString(scale, 0, 0, 0, "0 0");
+        var css = ReadiumSDK.Helpers.CSSTransformString({scale : scale});
 
         css["width"] = _meta_size.width;
         css["height"] = _meta_size.height;
