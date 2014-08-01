@@ -44,6 +44,8 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
     var _iframeLoader = options.iframeLoader;
     var _bookStyles = options.bookStyles;
 
+    var _$viewport = options.$viewport;
+    
     var _isIframeLoaded = false;
 
     var _$scaler;
@@ -568,19 +570,44 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             //no meta data look for svg directly
             var $svg = $(contentDocument).find('svg');
             if($svg.length > 0) {
-                content = $svg.attr('viewBox');
 
-                if(content) {
-                    size = parseViewBoxSize(content);
-                }
-                else { // no viewBox check for
+                var width = _$viewport.width();
+                var height = _$viewport.height();
 
-                    size = {
-                        width: parseInt($svg.attr("width"), 10),
-                        height: parseInt($svg.attr("height"), 10)
+                var wAttr = $svg[0].getAttribute("width");
+                if (wAttr) {
+                    try {
+                        width = parseInt(wAttr, 10);
                     }
-
+                    catch (err)
+                    {}
                 }
+                var hAttr = $svg[0].getAttribute("height");
+                if (hAttr) {
+                    try {
+                        height = parseInt(hAttr, 10);
+                    }
+                    catch (err)
+                    {}
+                }
+
+                size = {
+                    width: width,
+                    height: height
+                }
+
+                // content = $svg.attr('viewBox');
+                // if(content) {
+                //     size = parseViewBoxSize(content);
+                // }
+                // else { // no viewBox check for
+                //
+                //     size = {
+                //         width: parseInt($svg.attr("width"), 10),
+                //         height: parseInt($svg.attr("height"), 10)
+                //     }
+                //
+                // }
             }
         }
 
@@ -654,24 +681,24 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         }
     };
 
-    function parseViewBoxSize(viewBoxString) {
-
-        var parts = viewBoxString.split(' ');
-
-        if(parts.length < 4) {
-            console.warn(viewBoxString + " value is not valid viewBox size")
-            return undefined;
-        }
-
-        var width = parseInt(parts[2]);
-        var height = parseInt(parts[3]);
-
-        if(!isNaN(width) && !isNaN(height)) {
-            return { width: width, height: height} ;
-        }
-
-        return undefined;
-    }
+    // function parseViewBoxSize(viewBoxString) {
+    //
+    //     var parts = viewBoxString.split(' ');
+    //
+    //     if(parts.length < 4) {
+    //         console.warn(viewBoxString + " value is not valid viewBox size")
+    //         return undefined;
+    //     }
+    //
+    //     var width = parseInt(parts[2]);
+    //     var height = parseInt(parts[3]);
+    //
+    //     if(!isNaN(width) && !isNaN(height)) {
+    //         return { width: width, height: height} ;
+    //     }
+    //
+    //     return undefined;
+    // }
 
     function parseMetaSize(content) {
 
