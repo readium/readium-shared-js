@@ -58,21 +58,38 @@ ReadiumSDK.Views.IFrameLoader = function (options) {
 
         var loadedDocumentUri = new URI(src).absoluteTo(iframe.baseURI).toString();
 
-        fetchContentDocument(loadedDocumentUri, function (contentDocumentHtml) {
+        var contentType = 'text/html';
+        if (attachedData.spineItem.media_type && attachedData.spineItem.media_type.length) {
+            contentType = attachedData.spineItem.media_type;
+        }
+        var isImage = contentType.indexOf("image/") == 0;
 
-            if (!contentDocumentHtml) {
-                //failed to load content document
-                callback.call(context, false, attachedData);
-            } else {
-                self._loadIframeWithDocument(iframe, attachedData, contentDocumentHtml, function () {
-                    callback.call(context, true, attachedData);
-                });
-            }
-        });
+        if (isImage) {
+            iframe.onload = function () {
+                self.updateIframeEvents(iframe);
+                callback.call(context, true, attachedData);
+            };
+
+            iframe.setAttribute("src", loadedDocumentUri);
+        }
+        else {
+            fetchContentDocument(loadedDocumentUri, function (contentDocumentHtml) {
+                if (!contentDocumentHtml) {
+                    //failed to load content document
+                    callback.call(context, false, attachedData);
+                } else {
+                    self._loadIframeWithDocument(iframe, attachedData, contentDocumentHtml, function () {
+                        callback.call(context, true, attachedData);
+                    });
+                }
+            });
+        }
     };
 
     this._loadIframeWithDocument = function (iframe, attachedData, contentDocumentData, callback) {
 
+        var documentDataUri = undefined;
+        
         var isIE = (window.navigator.userAgent.indexOf("Trident") > 0);
         if (!isIE) {
             var contentType = 'text/html';
@@ -80,7 +97,7 @@ ReadiumSDK.Views.IFrameLoader = function (options) {
                 contentType = attachedData.spineItem.media_type;
             }
 
-            var documentDataUri = window.URL.createObjectURL(
+            documentDataUri = window.URL.createObjectURL(
                 new Blob([contentDocumentData], {'type': contentType})
             );
         } else {
