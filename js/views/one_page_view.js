@@ -628,7 +628,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         }
         
         if (!size) {
-            // Image fallback ... a bit of a hack, but it works with some eBooks :(
+            // Image fallback (auto-generated HTML template when WebView / iFrame is fed with image media type)
             var $img = $(contentDocument).find('img');
             if($img.length > 0) {
                 size = {
@@ -640,7 +640,10 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
                 //     contentDocument.documentElement.setAttribute("height", size.height);
                 // }
 
-                console.warn("Viewport: using img dimensions!");
+                var isImage = _currentSpineItem && _currentSpineItem.media_type && _currentSpineItem.media_type.length && _currentSpineItem.media_type.indexOf("image/") == 0;
+                if (!isImage) {
+                    console.warn("Viewport: using img dimensions!");
+                }
             }
             else {
                 $img = $(contentDocument).find('image');
