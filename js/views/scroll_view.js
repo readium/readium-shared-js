@@ -73,9 +73,17 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
         _$contentFrame.css("height", "100%");
         _$contentFrame.css("position", "relative");
 
-        // This is a necessary counterpart for the same CSS GPU hardware acceleration trick in one_page_view.js
-        // This affects the stacking order and re-enables the scrollbar in Safari (works fine in Chrome otherwise)
-        _$contentFrame.css("transform", "translateZ(0)");
+        var settings = _viewSettings;
+        if (!settings)
+        {
+            //defaults
+            settings = new ReadiumSDK.Models.ViewerSettings({});
+        }
+        if (settings.enableGPUHardwareAccelerationCSS3D) {
+            // This is a necessary counterpart for the same CSS GPU hardware acceleration trick in one_page_view.js
+            // This affects the stacking order and re-enables the scrollbar in Safari (works fine in Chrome otherwise)
+            _$contentFrame.css("transform", "translateZ(0)");
+        }
         
         // _$contentFrame.css("box-sizing", "border-box");
         // _$contentFrame.css("border", "20px solid red");

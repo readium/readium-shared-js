@@ -86,8 +86,16 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         _$el = $(template);
         _$viewport.append(_$el);
 
-        // This fixes rendering issues with WebView (native apps), which clips content embedded in iframes unless GPU hardware acceleration is enabled for CSS rendering.
-        _$el.css("transform", "translateZ(0)");
+        var settings = _viewSettings;
+        if (!settings)
+        {
+            //defaults
+            settings = new ReadiumSDK.Models.ViewerSettings({});
+        }
+        if (settings.enableGPUHardwareAccelerationCSS3D) {
+            // This fixes rendering issues with WebView (native apps), which clips content embedded in iframes unless GPU hardware acceleration is enabled for CSS rendering.
+            _$el.css("transform", "translateZ(0)");
+        }
 
         // See ReaderView.handleViewportResize
         // var lazyResize = _.debounce(self.onViewportResize, 100);
