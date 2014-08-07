@@ -45,6 +45,8 @@ ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
 
     this.page_spread = itemData.page_spread;
     
+    this.rendition_viewport = itemData.rendition_viewport;
+    
     this.rendition_spread = itemData.rendition_spread;
     
     //TODO: unused yet!
@@ -137,6 +139,15 @@ ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
         }
 
         return self.spine.package.rendition_flow;
+    };
+    
+    this.getRenditionViewport = function() {
+
+        if(self.rendition_viewport) {
+            return self.rendition_viewport;
+        }
+
+        return self.spine.package.rendition_viewport;
     };
 
     this.getRenditionSpread = function() {

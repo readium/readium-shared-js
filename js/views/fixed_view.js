@@ -61,14 +61,7 @@ ReadiumSDK.Views.FixedView = function(options, reader){
 
     function createOnePageView(elementClass) {
 
-        var pageView = new ReadiumSDK.Views.OnePageView({
-
-            iframeLoader: _iframeLoader,
-            spine: _spine,
-            bookStyles: _bookStyles,
-            // class: cssclass,
-            // contentAlignment: contentAlignment
-        },
+        var pageView = new ReadiumSDK.Views.OnePageView(options,
         [elementClass],
         false); //enableBookStyleOverrides
 

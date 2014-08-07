@@ -44,6 +44,8 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
     var _iframeLoader = options.iframeLoader;
     var _bookStyles = options.bookStyles;
 
+    var _$viewport = options.$viewport;
+    
     var _isIframeLoaded = false;
 
     var _$scaler;
@@ -81,7 +83,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
                 var elWidth = Math.ceil(meta_width * scale);
                 
                 var initialLeft = elWidth * 0.8 * (pageSwitchDir === 2 ? 1 : -1);
-                var move = ReadiumSDK.Helpers.CSSTransformString(1, Math.round(initialLeft), 0, 0, "50% 50%");
+                var move = ReadiumSDK.Helpers.CSSTransformString({left: Math.round(initialLeft), origin: "50% 50%"});
                 $el.css(move);
             },
             function(scale, left, top, $el, meta_width, meta_height, pageSwitchDir)
@@ -113,7 +115,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
                 var elWidth = Math.ceil(meta_width * scale);
 
                 var initialLeft = elWidth * 1.7 * (pageSwitchDir === 2 ? 1 : -1);
-                var trans = ReadiumSDK.Helpers.CSSTransformString(1, Math.round(initialLeft), 0, (pageSwitchDir === 2 ? -1 : 1) * 30, "50% 50%"); //(pageSwitchDir === 2 ? '0% 0%' : '100% 0%')
+                var trans = ReadiumSDK.Helpers.CSSTransformString({left: Math.round(initialLeft), angle: (pageSwitchDir === 2 ? -1 : 1) * 30, origin: "50% 50%"}); //(pageSwitchDir === 2 ? '0% 0%' : '100% 0%')
                 $el.css(trans);
             },
             function(scale, left, top, $el, meta_width, meta_height, pageSwitchDir)
@@ -169,7 +171,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
                 var elWidth = Math.ceil(meta_width * scale);
                 
                 var initialLeft = elWidth * 0.5 * ((isLeft || isCenter && pageSwitchDir === 1) ? 1 : -1);
-                var trans = ReadiumSDK.Helpers.CSSTransformString(0.2, Math.round(initialLeft), 0, ((isLeft || isCenter && pageSwitchDir === 1) ? 1 : -1) * 30, '50% 50%');
+                var trans = ReadiumSDK.Helpers.CSSTransformString({scale: 0.2, left: Math.round(initialLeft), angle: ((isLeft || isCenter && pageSwitchDir === 1) ? 1 : -1) * 30, origin: '50% 50%'});
                 $el.css(trans);
             },
             function(scale, left, top, $el, meta_width, meta_height, pageSwitchDir)
@@ -328,8 +330,16 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             _$el.css("height", "100%");
             _$el.css("width", "100%");
 
-            // This fixes rendering issues with WebView (native apps), which clips content embedded in iframes unless GPU hardware acceleration is enabled for CSS rendering.
-            _$el.css("transform", "translateZ(0)");
+            var settings = _viewSettings;
+            if (!settings)
+            {
+                //defaults
+                settings = new ReadiumSDK.Models.ViewerSettings({});
+            }
+            if (settings.enableGPUHardwareAccelerationCSS3D) {
+                // This fixes rendering issues with WebView (native apps), which clips content embedded in iframes unless GPU hardware acceleration is enabled for CSS rendering.
+                _$el.css("transform", "translateZ(0)");
+            }
 
             for(var i = 0, count = classes.length; i < count; i++) {
                 _$el.addClass(classes[i]);
@@ -516,7 +526,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             return;
         }
 
-        var css = ReadiumSDK.Helpers.CSSTransformString(scale, 0, 0, 0, "0 0");
+        var css = ReadiumSDK.Helpers.CSSTransformString({scale : scale});
 
         css["width"] = _meta_size.width;
         css["height"] = _meta_size.height;
@@ -549,7 +559,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         _meta_size.width = 0;
         _meta_size.height = 0;
 
-        var size;
+        var size = undefined;
 
         var contentDocument = _$iframe[0].contentDocument;
 
@@ -564,39 +574,142 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         if(content) {
             size = parseMetaSize(content);
         }
-        else {
-            //no meta data look for svg directly
+        
+        if (!size) {
+            // TODO: the picked SVG element may be the root...may be deep inside the markup!
             var $svg = $(contentDocument).find('svg');
+            //var $svg = $(contentDocument.documentElement);
+            // contentDocument.documentElement.nodeName == "svg"
             if($svg.length > 0) {
-                content = $svg.attr('viewBox');
 
-                if(content) {
-                    size = parseViewBoxSize(content);
-                }
-                else { // no viewBox check for
-
-                    size = {
-                        width: parseInt($svg.attr("width"), 10),
-                        height: parseInt($svg.attr("height"), 10)
+                var width = undefined;
+                var height = undefined;
+                
+                var wAttr = $svg[0].getAttribute("width");
+                if (wAttr) {
+                    try {
+                        width = parseInt(wAttr, 10);
                     }
+                    catch (err)
+                    {}
+                }
+                var hAttr = $svg[0].getAttribute("height");
+                if (hAttr) {
+                    try {
+                        height = parseInt(hAttr, 10);
+                    }
+                    catch (err)
+                    {}
+                }
 
+                if (width && height)
+                {
+                    size = {
+                        width: width,
+                        height: height
+                    }
+                }
+                else
+                {
+                    /// DISABLED (not a satisfactory fallback)
+                    // content = $svg.attr('viewBox');
+                    // if(content) {
+                    //     size = parseViewBoxSize(content);
+                    // }
+                    //
+                    // if (size) {
+                    //     console.warn("Viewport SVG: using viewbox!");
+                    // }
                 }
             }
         }
 
+        if(!size && _currentSpineItem) {
+            content = _currentSpineItem.getRenditionViewport();
+
+            if(content) {
+                size = parseMetaSize(content);
+                if (size) {
+                    console.log("Viewport: using rendition:viewport dimensions");
+                }
+            }
+        }
+        
+        if (!size) {
+            // Image fallback (auto-generated HTML template when WebView / iFrame is fed with image media type)
+            var $img = $(contentDocument).find('img');
+            if($img.length > 0) {
+                size = {
+                    width: $img.width(),
+                    height: $img.height()
+                }
+                // if (contentDocument && contentDocument.documentElement && contentDocument.documentElement.nodeName && contentDocument.documentElement.nodeName.toLowerCase() == "svg") {
+                //     contentDocument.documentElement.setAttribute("width", size.width);
+                //     contentDocument.documentElement.setAttribute("height", size.height);
+                // }
+
+                var isImage = _currentSpineItem && _currentSpineItem.media_type && _currentSpineItem.media_type.length && _currentSpineItem.media_type.indexOf("image/") == 0;
+                if (!isImage) {
+                    console.warn("Viewport: using img dimensions!");
+                }
+            }
+            else {
+                $img = $(contentDocument).find('image');
+                if($img.length > 0) {
+                    var width = undefined;
+                    var height = undefined;
+                
+                    var wAttr = $img[0].getAttribute("width");
+                    if (wAttr) {
+                        try {
+                            width = parseInt(wAttr, 10);
+                        }
+                        catch (err)
+                        {}
+                    }
+                    var hAttr = $img[0].getAttribute("height");
+                    if (hAttr) {
+                        try {
+                            height = parseInt(hAttr, 10);
+                        }
+                        catch (err)
+                        {}
+                    }
+
+                    if (width && height)
+                    {
+                        size = {
+                            width: width,
+                            height: height
+                        }
+
+                        // if (contentDocument && contentDocument.documentElement && contentDocument.documentElement.nodeName && contentDocument.documentElement.nodeName.toLowerCase() == "svg") {
+                        //     contentDocument.documentElement.setAttribute("width", size.width);
+                        //     contentDocument.documentElement.setAttribute("height", size.height);
+                        // }
+
+                        console.warn("Viewport: using image dimensions!");
+                    }
+                }
+            }
+        }
+        
+        if (!size) {
+            // Not a great fallback, as it has the aspect ratio of the full window, but it is better than no display at all.
+            width = _$viewport.width();
+            height = _$viewport.height();
+            size = {
+                width: width,
+                height: height
+            }
+
+            console.warn("Viewport: using browser / e-reader viewport dimensions!");
+        }
+        
         if(size) {
             _meta_size.width = size.width;
             _meta_size.height = size.height;
         }
-        else { //try to get direct image size
-
-            var $img = $(contentDocument).find('img');
-            if($img.length > 0) {
-                _meta_size.width = $img.width();
-                _meta_size.height = $img.height();
-            }
-        }
-
     }
 
     //expected callback signature: function(success, $iframe, spineItem, isNewlyLoaded, context)
@@ -653,25 +766,25 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             }
         }
     };
-
-    function parseViewBoxSize(viewBoxString) {
-
-        var parts = viewBoxString.split(' ');
-
-        if(parts.length < 4) {
-            console.warn(viewBoxString + " value is not valid viewBox size")
-            return undefined;
-        }
-
-        var width = parseInt(parts[2]);
-        var height = parseInt(parts[3]);
-
-        if(!isNaN(width) && !isNaN(height)) {
-            return { width: width, height: height} ;
-        }
-
-        return undefined;
-    }
+    //
+    // function parseViewBoxSize(viewBoxString) {
+    //
+    //     var parts = viewBoxString.split(' ');
+    //
+    //     if(parts.length < 4) {
+    //         console.warn(viewBoxString + " value is not valid viewBox size")
+    //         return undefined;
+    //     }
+    //
+    //     var width = parseInt(parts[2]);
+    //     var height = parseInt(parts[3]);
+    //
+    //     if(!isNaN(width) && !isNaN(height)) {
+    //         return { width: width, height: height} ;
+    //     }
+    //
+    //     return undefined;
+    // }
 
     function parseMetaSize(content) {
 
