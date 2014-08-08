@@ -581,6 +581,9 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         _$iframe.css("height", _lastViewPortSize.height + "px");
 
         _$epubHtml.css("height", _lastViewPortSize.height + "px");
+        
+        _$epubHtml.css("min-height", _lastViewPortSize.height + "px");
+        _$epubHtml.css("max-height", _lastViewPortSize.height + "px");
 
         //normalise spacing to avoid interference with column-isation
         _$epubHtml.css('margin', 0);
