@@ -582,6 +582,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
 
         _$epubHtml.css("height", _lastViewPortSize.height + "px");
         
+        // below min- max- are required in vertical writing mode (height is not enough, in some cases...weird!)
         _$epubHtml.css("min-height", _lastViewPortSize.height + "px");
         _$epubHtml.css("max-height", _lastViewPortSize.height + "px");
 
