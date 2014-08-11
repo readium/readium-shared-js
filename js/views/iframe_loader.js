@@ -58,38 +58,12 @@ ReadiumSDK.Views.IFrameLoader = function (options) {
 
         var loadedDocumentUri = new URI(src).absoluteTo(iframe.baseURI).toString();
 
-        fetchContentDocument(loadedDocumentUri, function (contentDocumentHtml) {
-
-            if (!contentDocumentHtml) {
-                //failed to load content document
-                callback.call(context, false, attachedData);
-            } else {
-                self._loadIframeWithDocument(iframe, attachedData, contentDocumentHtml, function () {
-                    callback.call(context, true, attachedData);
-                });
-            }
+        self._loadIframeWithDocument(iframe, attachedData, loadedDocumentUri, function () {
+            callback.call(context, true, attachedData);
         });
     };
 
-    this._loadIframeWithDocument = function (iframe, attachedData, contentDocumentData, callback) {
-
-        var isIE = (window.navigator.userAgent.indexOf("Trident") > 0);
-        if (!isIE) {
-            var contentType = 'text/html';
-            if (attachedData.spineItem.media_type && attachedData.spineItem.media_type.length) {
-                contentType = attachedData.spineItem.media_type;
-            }
-
-            var documentDataUri = window.URL.createObjectURL(
-                new Blob([contentDocumentData], {'type': contentType})
-            );
-        } else {
-            // Internet Explorer doesn't handle loading documents from Blobs correctly.
-            // TODO: Currently using the document.write() approach only for IE, as it breaks CSS selectors
-            // with namespaces for some reason (e.g. the childrens-media-query sample EPUB)
-            iframe.contentWindow.document.open();
-            iframe.contentWindow.document.write(contentDocumentData);
-        }
+    this._loadIframeWithDocument = function (iframe, attachedData, contentUri, callback) {
 
         iframe.onload = function () {
 
@@ -105,68 +79,12 @@ ReadiumSDK.Views.IFrameLoader = function (options) {
             } else {
                 callback();
             }
-
-            if (!isIE) {
-                window.URL.revokeObjectURL(documentDataUri);
-            }
         };
 
-        if (!isIE) {
-            iframe.setAttribute("src", documentDataUri);
-        } else {
-            iframe.contentWindow.document.close();
-        }
+        iframe.setAttribute("src", contentUri);
+        
     };
 
-    function fetchHtmlAsText(path, callback) {
-
-        $.ajax({
-            url: path,
-            dataType: 'html',
-            async: true,
-            success: function (result) {
-
-                callback(result);
-            },
-            error: function (xhr, status, errorThrown) {
-                console.error('Error when AJAX fetching ' + path);
-                console.error(status);
-                console.error(errorThrown);
-                callback();
-            }
-        });
-    }
-
-    function fetchContentDocument(src, callback) {
-
-        fetchHtmlAsText(src, function (contentDocumentHtml) {
-
-            if (!contentDocumentHtml) {
-                callback();
-                return;
-            }
-
-            var sourceParts = src.split("/");
-            sourceParts.pop(); //remove source file name
-
-            var base = "<base href=\"" + sourceParts.join("/") + "/" + "\"/>";
-
-            var scripts = "<script type=\"text/javascript\">(" + injectedScript.toString() + ")()<\/script>";
-
-            if (options && options.mathJaxUrl && contentDocumentHtml.indexOf("<math") >= 0) {
-                scripts += "<script type=\"text/javascript\" src=\"" + options.mathJaxUrl + "\"><\/script>";
-            }
-
-            var mangledContent = contentDocumentHtml.replace(/(<head.*?>)/, "$1" + base + scripts);
-            callback(mangledContent);
-        });
-    }
-
-    function injectedScript() {
-
-        navigator.epubReadingSystem = window.parent.navigator.epubReadingSystem;
-        window.parent = window.self;
-        window.top = window.self;
-    }
+    
 
 };
