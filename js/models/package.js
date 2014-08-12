@@ -39,6 +39,8 @@ ReadiumSDK.Models.Package = function(packageData){
     
     this.media_overlay = undefined;
     
+    this.rendition_viewport = undefined;
+    
     this.rendition_flow = undefined;
     
     this.rendition_layout = undefined;
@@ -92,6 +94,8 @@ ReadiumSDK.Models.Package = function(packageData){
         
         this.rootUrl = packageData.rootUrl;
         this.rootUrlMO = packageData.rootUrlMO;
+
+        this.rendition_viewport = packageData.rendition_viewport;
 
         this.rendition_layout = packageData.rendition_layout;
 

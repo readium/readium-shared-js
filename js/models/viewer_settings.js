@@ -48,6 +48,8 @@ ReadiumSDK.Models.ViewerSettings = function(settingsData) {
 
     this.mediaOverlaysAutomaticPageTurn = true;
 
+    this.enableGPUHardwareAccelerationCSS3D = true;
+
     // -1 ==> disable
     // [0...n] ==> index of transition in pre-defined array
     this.pageTransition = -1;
@@ -100,6 +102,7 @@ ReadiumSDK.Models.ViewerSettings = function(settingsData) {
         mapProperty("scroll", settingsData);
         mapProperty("syntheticSpread", settingsData);
         mapProperty("pageTransition", settingsData);
+        mapProperty("enableGPUHardwareAccelerationCSS3D", settingsData);
     };
 
     this.update(settingsData);

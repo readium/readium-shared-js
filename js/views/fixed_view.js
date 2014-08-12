@@ -112,7 +112,7 @@ ReadiumSDK.Views.FixedView = function(options, reader){
         
         _viewSettings = settings;
         
-        _spread.setSyntheticSpread(ReadiumSDK.Helpers.deduceSyntheticSpread(_$viewport, getFirstVisibleItem(), _viewSettings));
+        _spread.setSyntheticSpread(ReadiumSDK.Helpers.deduceSyntheticSpread(_$viewport, getFirstVisibleItem(), _viewSettings) == true); // force boolean value (from truthy/falsey return value)
 
         var views = getDisplayingViews();
         for(var i = 0, count = views.length; i < count; i++) {
@@ -235,7 +235,7 @@ ReadiumSDK.Views.FixedView = function(options, reader){
             return;
         }
 
-        var isSyntheticSpread = ReadiumSDK.Helpers.deduceSyntheticSpread(_$viewport, firstVisibleItem, _viewSettings);
+        var isSyntheticSpread = ReadiumSDK.Helpers.deduceSyntheticSpread(_$viewport, firstVisibleItem, _viewSettings) == true; // force boolean value (from truthy/falsey return value)
 
         if(isSpreadChanged(firstVisibleItem, isSyntheticSpread)) {
             _spread.setSyntheticSpread(isSyntheticSpread);
@@ -445,7 +445,7 @@ ReadiumSDK.Views.FixedView = function(options, reader){
         var rightItem = _spread.rightItem;
         var centerItem = _spread.centerItem;
 
-        var isSyntheticSpread = ReadiumSDK.Helpers.deduceSyntheticSpread(_$viewport, paginationRequest.spineItem, _viewSettings);
+        var isSyntheticSpread = ReadiumSDK.Helpers.deduceSyntheticSpread(_$viewport, paginationRequest.spineItem, _viewSettings) == true; // force boolean value (from truthy/falsey return value)
         _spread.setSyntheticSpread(isSyntheticSpread);
         _spread.openItem(paginationRequest.spineItem);
         
