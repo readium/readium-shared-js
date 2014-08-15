@@ -59,6 +59,10 @@ ReadiumSDK.Views.IFrameLoader = function () {
         var loadedDocumentUri = new URI(src).absoluteTo(iframe.baseURI).toString();
 
         self._loadIframeWithDocument(iframe, attachedData, loadedDocumentUri, function () {
+            var doc = iframe.contentDocument || iframe.contentWindow.document;
+            $('svg', doc).load(function(){
+                console.log('loaded');
+            });
             callback.call(context, true, attachedData);
         });
     };
@@ -75,7 +79,7 @@ ReadiumSDK.Views.IFrameLoader = function () {
                 var mathJaxCallback = _.once(callback);
                 mathJax.Hub.Queue(mathJaxCallback);
                 // Or at an 8 second timeout, which ever comes first
-                window.setTimeout(mathJaxCallback, 8000);
+                //window.setTimeout(mathJaxCallback, 8000);
             } else {
                 callback();
             }
