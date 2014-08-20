@@ -891,6 +891,9 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         {
 //console.debug("ONLY highlightCurrentElement");
             highlightCurrentElement();
+            if (skipping){
+                playCurrentPar();
+            }
             return;
         }
 
