@@ -177,6 +177,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
             if (!ReadiumSDK.Helpers.isIframeAlive($iframe[0])) return;
 
+            self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED_BEFORE_INJECTION, $iframe, spineItem);
+
             // performance degrades with large DOM (e.g. word-level text-audio sync)
             _mediaOverlayDataInjector.attachMediaOverlayData($iframe, spineItem, _viewerSettings);
             

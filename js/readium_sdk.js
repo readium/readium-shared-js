@@ -62,6 +62,10 @@ ReadiumSDK = {
                 READER_VIEW_CREATED: "ReaderViewCreated",
                 READER_VIEW_DESTROYED: "ReaderViewDestroyed",
                 CONTENT_DOCUMENT_LOAD_START: "ContentDocumentLoadStart",
+                // Triggered when the content document is loaded but before
+                // injecting Readium listeners into the page. Use this to
+                // override default listeners.
+                CONTENT_DOCUMENT_LOADED_BEFORE_INJECTION: "ContentDocumentLoadedBeforeInjection",
                 CONTENT_DOCUMENT_LOADED: "ContentDocumentLoaded",
                 MEDIA_OVERLAY_STATUS_CHANGED: "MediaOverlayStatusChanged",
                 MEDIA_OVERLAY_TTS_SPEAK: "MediaOverlayTTSSpeak",
