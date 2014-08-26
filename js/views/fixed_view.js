@@ -519,7 +519,7 @@ ReadiumSDK.Views.FixedView = function(options, reader){
 
     this.getPaginationInfo = function() {
 
-        var paginationInfo = new ReadiumSDK.Models.CurrentPagesInfo(_spine.items.length, true, _spine.direction);
+        var paginationInfo = new ReadiumSDK.Models.CurrentPagesInfo(_spine, true);
 
         var spreadItems = [_spread.leftItem, _spread.rightItem, _spread.centerItem];
 
