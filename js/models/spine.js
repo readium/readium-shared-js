@@ -64,6 +64,11 @@ ReadiumSDK.Models.Spine = function(epubPackage, spineDTO) {
         return !_handleLinear || item.linear !== "no";
     }
 
+
+    this.isValidLinearItem = function(index) {
+        return isValidLinearItem(this.item(index));
+    };
+
     this.prevItem = function(item) {
 
         return lookForPrevValidItem(item.index - 1);
