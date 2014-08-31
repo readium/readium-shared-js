@@ -58,7 +58,7 @@ ReadiumSDK.Views.IFrameLoader = function () {
 
         var loadedDocumentUri = new URI(src).absoluteTo(iframe.baseURI).toString();
 
-        self._loadIframeWithDocument(iframe, attachedData, loadedDocumentUri, function () {
+        self._loadIframeWithUri(iframe, attachedData, loadedDocumentUri, function () {
             var doc = iframe.contentDocument || iframe.contentWindow.document;
             $('svg', doc).load(function(){
                 console.log('loaded');
@@ -67,7 +67,7 @@ ReadiumSDK.Views.IFrameLoader = function () {
         });
     };
 
-    this._loadIframeWithDocument = function (iframe, attachedData, contentUri, callback) {
+    this._loadIframeWithUri = function (iframe, attachedData, contentUri, callback) {
 
         iframe.onload = function () {
 
