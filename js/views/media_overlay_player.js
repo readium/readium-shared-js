@@ -713,7 +713,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         var spineItemIdRef = (_smilIterator && _smilIterator.smil && _smilIterator.smil.spineItemId) ? _smilIterator.smil.spineItemId : ((_lastPaginationData && _lastPaginationData.spineItem && _lastPaginationData.spineItem.idref) ? _lastPaginationData.spineItem.idref : undefined);
         if (doNotNextSmil && spineItemIdRef && _lastPaginationData && _lastPaginationData.paginationInfo && _lastPaginationData.paginationInfo.openPages && _lastPaginationData.paginationInfo.openPages.length > 1)
         {
-            //var iPage = _lastPaginationData.paginationInfo.pageProgressionDirection === "rtl" ? _lastPaginationData.paginationInfo.openPages.length - 1 : 0;
+            //var iPage = _lastPaginationData.paginationInfo.isRightToLeft ? _lastPaginationData.paginationInfo.openPages.length - 1 : 0;
             var iPage = 0;
             
             var openPage = _lastPaginationData.paginationInfo.openPages[iPage];
@@ -1921,7 +1921,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
         var spineItems = reader.getLoadedSpineItems();
 
-        //paginationData.pageProgressionDirection === "rtl"
+        //paginationData.isRightToLeft
         var rtl = reader.spine().isRightToLeft();
 
         //paginationData.spineItemCount
@@ -1986,7 +1986,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
                     if (paginationData && paginationData.paginationInfo && paginationData.paginationInfo.openPages)
                     {
                         // openPages are sorted by spineItem index, so the smallest index on display is the one we need to play (page on the left in LTR, or page on the right in RTL progression)
-                        var index = 0; // paginationData.paginationInfo.pageProgressionDirection === "ltr" ? 0 : paginationData.paginationInfo.openPages.length - 1;
+                        var index = 0; // !paginationData.paginationInfo.isRightToLeft ? 0 : paginationData.paginationInfo.openPages.length - 1;
                     
                         if (paginationData.paginationInfo.openPages[index] && paginationData.paginationInfo.openPages[index].idref && paginationData.paginationInfo.openPages[index].idref === spineItem.idref)
                         {

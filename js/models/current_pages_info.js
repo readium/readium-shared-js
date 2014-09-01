@@ -32,13 +32,12 @@ Used to report pagination state back to the host application
 
 @param {ReadiumSDK.Models.Spine} spine
 @param {boolean} isFixedLayout is fixed or reflowable spine item
-@param {string} pageProgressionDirection ltr | rtl
 */
 
 ReadiumSDK.Models.CurrentPagesInfo = function(spine, isFixedLayout) {
 
 
-    this.isRightToLeft = spine.direction == "rtl";
+    this.isRightToLeft = spine.isRightToLeft();
     this.isFixedLayout = isFixedLayout;
     this.spineItemCount = spine.items.length
     this.openPages = [];
