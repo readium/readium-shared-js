@@ -789,6 +789,8 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             {
                 console.log("MO SKIP: " + parent.epubtype);
 
+                self.pause();
+
                 var pos = goNext ? _smilIterator.currentPar.audio.clipEnd + 0.1 : DIRECTION_MARK - 1;
 
                 onAudioPositionChanged(pos, from, true); //noLetPlay
@@ -891,9 +893,6 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         {
 //console.debug("ONLY highlightCurrentElement");
             highlightCurrentElement();
-            if (skipping){
-                playCurrentPar();
-            }
             return;
         }
 
