@@ -1208,7 +1208,7 @@ console.debug("RESIZE NO RESTORE BOOKMARK");
                     $iframe = data["$iframe"];
                     if (!$iframe) continue;
         
-                    var $audios = $("body > audio", $iframe[0].contentDocument);
+                    var $audios = $("audio", $iframe[0].contentDocument);
 
                     $.each($audios, function() {
 
@@ -1216,8 +1216,8 @@ console.debug("RESIZE NO RESTORE BOOKMARK");
 
                         if (!attr) return true; // continue
 
-                        if (attr !== "ibooks:soundtrack") return true; // continue
-            
+                        if (attr.indexOf("ibooks:soundtrack") < 0 && attr.indexOf("media:soundtrack") < 0 && attr.indexOf("media:background") < 0) return true; // continue
+
                         if (doPlay && this.play)
                         {
                             this.play();
@@ -1326,15 +1326,15 @@ console.debug("RESIZE NO RESTORE BOOKMARK");
                         var $iframe = data["$iframe"];
                         var href = data.href;
 
-                        var $audios = $("body > audio", $iframe[0].contentDocument);
+                        var $audios = $("audio", $iframe[0].contentDocument);
                         $.each($audios, function() {
 
                             var attr = this.getAttribute("epub:type") || this.getAttribute("type");
 
                             if (!attr) return true; // continue
 
-                            if (attr !== "ibooks:soundtrack") return true; // continue
-        
+                            if (attr.indexOf("ibooks:soundtrack") < 0 && attr.indexOf("media:soundtrack") < 0 && attr.indexOf("media:background") < 0) return true; // continue
+
                             this.setAttribute("loop", "loop");
                             this.removeAttribute("autoplay");
 
