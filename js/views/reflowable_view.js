@@ -271,35 +271,13 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
                 _htmlBodyIsLTRDirection = false;
             }
         }
-        
-        // According to the spec, the spine page-progression-direction is the direction of the default content 
-        // flow but it can be overridden by css and attributes. This is an attempt to reconcile a difference
-        // between the content direction and the spine's page-progression-direction. This is necessary  
-        // because the default content direction for a locale will be returned by getComputedStyle even if it 
-        // has not been explicitly set in a stylesheet or inline style.
-        if (_htmlBodyIsLTRDirection !== _spine.isLeftToRight()){
-            var spineSetting = _spine.isLeftToRight() ? 'ltr' : 'rtl',
-                bodySetting = _htmlBodyIsLTRDirection ? 'ltr' : 'rtl';
 
-            // dir attributes will be overridden by any css rule, so we don't put the rule in if these exist. 
-            if (_$htmlBody[0].getAttribute("dir") !== bodySetting && _$epubHtml[0].getAttribute("dir") !== bodySetting){
-                // Add a css rule at the lowest possible priority 
-                var $head = $("head", epubContentDocument);
-                if (!$head.length){
-                    $head = $("<head></head>").appendTo(_$epubHtml);
-                }
-                $head.prepend("<style>html{direction:" + spineSetting + ";}</style>");
-
-                // Accessing the offsetHeight forces a css reflow so the computed style will be up to date
-                console.log(_$epubHtml[0].offsetHeight);
-
-                // recheck the computed style and continue with this value
-                var htmlBodyComputedStyle = win.getComputedStyle(_$htmlBody[0], null);
-
-                if (htmlBodyComputedStyle && (htmlBodyComputedStyle.direction === spineSetting)){
-                    _htmlBodyIsLTRDirection = _spine.isLeftToRight();
-                }
-            }
+        // Some EPUBs may not have explicit RTL content direction (via CSS "direction" property or @dir attribute) despite having a RTL page progression direction. Readium consequently tweaks the HTML in order to restore the correct block flow in the browser renderer, resulting in the appropriate CSS columnisation (which is used to emulate pagination).
+        if (!_spine.isLeftToRight() && _htmlBodyIsLTRDirection && !_htmlBodyIsVerticalWritingMode)
+        {
+            _$htmlBody[0].setAttribute("dir", "rtl");
+            _htmlBodyIsLTRDirection = false;
+            _htmlBodyIsLTRWritingMode = false;
         }
         
         _paginationInfo.isVerticalWritingMode = _htmlBodyIsVerticalWritingMode;
