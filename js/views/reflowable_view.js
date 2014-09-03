@@ -79,6 +79,17 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         columnCount: 0
     };
 
+    var _fontSizeConversion = {
+
+        "xx-small": "0.5625rem",
+        "x-small": "0.625rem",
+        "small": "0.8125rem",
+        "medium": "1rem",
+        "large": "1.125rem",
+        "x-large": "1.5rem",
+        "xx-large": "2rem"
+    };
+
     this.render = function(){
 
         var template = ReadiumSDK.Helpers.loadTemplate("reflowable_book_frame", {});
@@ -236,7 +247,36 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         _htmlBodyIsLTRWritingMode = undefined;
         
         var win = _$iframe[0].contentDocument.defaultView || _$iframe[0].contentWindow;
-        
+
+        //font absolute sizes conversion
+        var sheets, ruleIndex, nbRules, rules;
+        try {
+            sheets = _$iframe[0].contentDocument.styleSheets || _$iframe[0].contentWindow.document.styleSheets;
+
+            for(var i = 0; i < sheets.length; i++) {
+                rules = sheets[i].rules ? sheets[i].rules : sheets[i].cssRules;
+                for(ruleIndex = 0, nbRules = rules.length; ruleIndex < nbRules; ruleIndex++) {
+                    var rule = rules[ruleIndex];
+                    var match = rule.cssText.match(/font-size: ([-\w]+);/); // search for font-size keyword values
+                    if (match && _fontSizeConversion[match[1]]) {
+                        try {
+                            var updatedRule = rule.cssText.replace(match[1], _fontSizeConversion[match[1]]);
+// console.debug("rule updated :", updatedRule);
+
+                            // can't update a rule so delete/create it
+                            sheets[i].deleteRule(ruleIndex);
+                            sheets[i].insertRule(updatedRule, ruleIndex);
+                        }
+                        catch (err) {
+                            console.warn("illegal rule", rule, err);
+                        }
+                    }
+                }
+            }
+        } catch(err) {
+            console.error("can't get css rules : " + err.message);
+        }
+
         //Helpers.isIframeAlive
         var htmlBodyComputedStyle = win.getComputedStyle(_$htmlBody[0], null);
         if (htmlBodyComputedStyle)
