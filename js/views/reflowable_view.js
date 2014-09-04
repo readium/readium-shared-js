@@ -257,24 +257,14 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
                 rules = sheets[i].rules ? sheets[i].rules : sheets[i].cssRules;
                 for(ruleIndex = 0, nbRules = rules.length; ruleIndex < nbRules; ruleIndex++) {
                     var rule = rules[ruleIndex];
-                    var match = rule.cssText.match(/font-size: ([-\w]+);/); // search for font-size keyword values
-                    if (match && _fontSizeConversion[match[1]]) {
-                        try {
-                            var updatedRule = rule.cssText.replace(match[1], _fontSizeConversion[match[1]]);
-// console.debug("rule updated :", updatedRule);
-
-                            // can't update a rule so delete/create it
-                            sheets[i].deleteRule(ruleIndex);
-                            sheets[i].insertRule(updatedRule, ruleIndex);
-                        }
-                        catch (err) {
-                            console.warn("illegal rule", rule, err);
-                        }
+                    var newFontSize = _fontSizeConversion[rule.style.fontSize];
+                    if (newFontSize) {
+                        rule.style.fontSize = newFontSize;
                     }
                 }
             }
         } catch(err) {
-            console.error("can't get css rules : " + err.message);
+            console.warn("can't get css rules : " + err.message);
         }
 
         //Helpers.isIframeAlive
