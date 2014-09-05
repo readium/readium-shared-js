@@ -752,7 +752,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         var height;
         var width;
 
-        $('img', _$epubHtml).each(function(){
+        $('img, svg', _$epubHtml).each(function(){
 
             $elem = $(this);
 
