@@ -207,6 +207,35 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
 
         if(_$epubHtml) {
             _$epubHtml.css("font-size", _fontSize + "%");
+            if(_fontSize != 100) {
+                fixFontSize();
+            }
+        }
+    }
+
+    function fixFontSize() {
+        var win = _$iframe[0].contentDocument.defaultView || _$iframe[0].contentWindow;
+
+        //font absolute sizes conversion
+        var sheets, ruleIndex, nbRules, rules;
+        try {
+            sheets = win.document.styleSheets;
+
+            for(var i = 0; i < sheets.length; i++) {
+                rules = sheets[i].rules ? sheets[i].rules : sheets[i].cssRules;
+                for(ruleIndex = 0, nbRules = rules.length; ruleIndex < nbRules; ruleIndex++) {
+                    var rule = rules[ruleIndex];
+                    if(rule.style) {
+                        var newFontSize = _fontSizeConversion[rule.style.fontSize];
+                        if (newFontSize) {
+                            console.info("fix font size : " + rule.style.fontSize + " to " + newFontSize);
+                            rule.style.fontSize = newFontSize;
+                        }
+                    }
+                }
+            }
+        } catch(err) {
+            console.warn("can't get css rules : " + err.message);
         }
     }
 
@@ -247,25 +276,6 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         _htmlBodyIsLTRWritingMode = undefined;
         
         var win = _$iframe[0].contentDocument.defaultView || _$iframe[0].contentWindow;
-
-        //font absolute sizes conversion
-        var sheets, ruleIndex, nbRules, rules;
-        try {
-            sheets = _$iframe[0].contentDocument.styleSheets || _$iframe[0].contentWindow.document.styleSheets;
-
-            for(var i = 0; i < sheets.length; i++) {
-                rules = sheets[i].rules ? sheets[i].rules : sheets[i].cssRules;
-                for(ruleIndex = 0, nbRules = rules.length; ruleIndex < nbRules; ruleIndex++) {
-                    var rule = rules[ruleIndex];
-                    var newFontSize = _fontSizeConversion[rule.style.fontSize];
-                    if (newFontSize) {
-                        rule.style.fontSize = newFontSize;
-                    }
-                }
-            }
-        } catch(err) {
-            console.warn("can't get css rules : " + err.message);
-        }
 
         //Helpers.isIframeAlive
         var htmlBodyComputedStyle = win.getComputedStyle(_$htmlBody[0], null);
