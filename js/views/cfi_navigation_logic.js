@@ -230,6 +230,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
         }
 
         var isRtl = isPageProgressionRightToLeft();
+        var isVwm = isVerticalWritingMode();
         var columnFullWidth = getColumnFullWidth();
 
         var frameHeight = $iframe.height();
@@ -237,22 +238,31 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
 
         if (spatialVerticalOffset) {
             trimRectanglesByVertOffset(clientRectangles, spatialVerticalOffset,
-                frameHeight, columnFullWidth, isRtl);
+                frameHeight, columnFullWidth, isRtl, isVwm);
         }
 
         var firstRectangle = _.first(clientRectangles);
         if (clientRectangles.length === 1) {
             adjustRectangle(firstRectangle, {
                 height: frameHeight, width: frameWidth
-            }, columnFullWidth, isRtl);
+            }, columnFullWidth, isRtl, isVwm);
         }
 
-        var leftOffset = firstRectangle.left;
-        if (isRtl) {
-            leftOffset = (columnFullWidth * (options.paginationInfo ? options.paginationInfo.visibleColumnCount : 1)) - leftOffset;
-        }
+        var pageIndex;
 
-        var pageIndex = Math.floor(leftOffset / columnFullWidth);
+        if (isVwm) {
+            var topOffset = firstRectangle.top;
+            if (isRtl) {
+                topOffset = (frameHeight * (options.paginationInfo ? options.paginationInfo.visibleColumnCount : 1)) - topOffset;
+            }
+            pageIndex = Math.floor(topOffset / frameHeight);
+        } else {
+            var leftOffset = firstRectangle.left;
+            if (isRtl) {
+                leftOffset = (columnFullWidth * (options.paginationInfo ? options.paginationInfo.visibleColumnCount : 1)) - leftOffset;
+            }
+            pageIndex = Math.floor(leftOffset / columnFullWidth);
+        }
 
         if (pageIndex < 0) {
             pageIndex = 0;
@@ -458,7 +468,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
         if (isVwm) {
             return;
         }
-
+        
         var totalHeight = _.reduce(rects, function(prev, cur) {
             return prev + cur.height;
         }, 0);
