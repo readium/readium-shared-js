@@ -113,6 +113,12 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
      * @returns {Object}
      */
     function getVisibleContentOffsets() {
+        if(isVerticalWritingMode()){
+            return {
+                top: (options.paginationInfo ? options.paginationInfo.pageOffset : 0)
+//                    * (isPageProgressionRightToLeft() ? -1 : 1)
+            };
+        }
         return {
             left: (options.paginationInfo ? options.paginationInfo.pageOffset : 0)
                 * (isPageProgressionRightToLeft() ? -1 : 1)
@@ -252,9 +258,9 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
 
         if (isVwm) {
             var topOffset = firstRectangle.top;
-            if (isRtl) {
-                topOffset = (frameHeight * (options.paginationInfo ? options.paginationInfo.visibleColumnCount : 1)) - topOffset;
-            }
+//            if (isRtl) {
+//                topOffset = (frameHeight * (options.paginationInfo ? options.paginationInfo.visibleColumnCount : 1)) - topOffset;
+//            }
             pageIndex = Math.floor(topOffset / frameHeight);
         } else {
             var leftOffset = firstRectangle.left;
