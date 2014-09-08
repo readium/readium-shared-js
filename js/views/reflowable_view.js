@@ -497,11 +497,15 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
 
 
     function updatePagination() {
-
+        
+        // At 100% font-size = 16px (on HTML, not body or descendant markup!)
+        var MAXW = 550; //TODO user/vendor-configurable?
+        var MINW = 400;
+        
         var isDoublePageSyntheticSpread = ReadiumSDK.Helpers.deduceSyntheticSpread(_$viewport, _currentSpineItem, _viewSettings);
         
         var forced = (isDoublePageSyntheticSpread === false) || (isDoublePageSyntheticSpread === true);
-        // excludes 0 and 1 truthy values which denote non-forced result
+        // excludes 0 and 1 falsy/truthy values which denote non-forced result
         
 // console.debug("isDoublePageSyntheticSpread: " + isDoublePageSyntheticSpread);
 // console.debug("forced: " + forced);
@@ -512,8 +516,17 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
 // console.debug("TRYING SPREAD INSTEAD OF SINGLE...");
         }
         
-        _paginationInfo.visibleColumnCount = _htmlBodyIsVerticalWritingMode ? 1 : (isDoublePageSyntheticSpread ? 2 : 1);
+        _paginationInfo.visibleColumnCount = isDoublePageSyntheticSpread ? 2 : 1;
    
+        if (_htmlBodyIsVerticalWritingMode)
+        {
+            MAXW *= 2;
+            isDoublePageSyntheticSpread = false;
+            forced = true;
+            _paginationInfo.visibleColumnCount = 1;
+// console.debug("Vertical Writing Mode => single CSS column, but behaves as if two-page spread");
+        }
+
         if(!_$epubHtml) {
             return;
         }
@@ -528,10 +541,6 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         adjustedGapRight = Math.max(0, adjustedGapRight-borderRight)
 
         var filler = 0;
-        
-        // At 100% font-size = 16px (on HTML, not body or descendant markup!)
-        var MAXW = 550; //TODO user/vendor-configurable?
-        var MINW = 400;
         
 //         var win = _$iframe[0].contentDocument.defaultView || _$iframe[0].contentWindow;
 //         var htmlBodyComputedStyle = win.getComputedStyle(_$htmlBody[0], null);
