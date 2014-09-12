@@ -30,17 +30,16 @@ Used to report pagination state back to the host application
 
 @constructor
 
-@param {Number} spineItemCount Number of spine items
+@param {ReadiumSDK.Models.Spine} spine
 @param {boolean} isFixedLayout is fixed or reflowable spine item
-@param {string} pageProgressionDirection ltr | rtl
 */
 
-ReadiumSDK.Models.CurrentPagesInfo = function(spineItemCount, isFixedLayout, pageProgressionDirection) {
+ReadiumSDK.Models.CurrentPagesInfo = function(spine, isFixedLayout) {
 
 
-    this.pageProgressionDirection = pageProgressionDirection;
+    this.isRightToLeft = spine.isRightToLeft();
     this.isFixedLayout = isFixedLayout;
-    this.spineItemCount = spineItemCount;
+    this.spineItemCount = spine.items.length
     this.openPages = [];
 
     this.addOpenPage = function(spineItemPageIndex, spineItemPageCount, idref, spineItemIndex) {
@@ -49,6 +48,50 @@ ReadiumSDK.Models.CurrentPagesInfo = function(spineItemCount, isFixedLayout, pag
         this.sort();
     };
 
+    this.canGoLeft = function () {
+        return this.isRightToLeft ? this.canGoNext() : this.canGoPrev();
+    };
+
+    this.canGoRight = function () {
+        return this.isRightToLeft ? this.canGoPrev() : this.canGoNext();
+    };
+
+    this.canGoNext = function() {
+
+        if(this.openPages.length == 0)
+            return false;
+
+        var lastOpenPage = this.openPages[this.openPages.length - 1];
+
+        // TODO: handling of non-linear spine items ("ancillary" documents), allowing page turn within the reflowable XHTML, but preventing previous/next access to sibling spine items. Also needs "go back" feature to navigate to source hyperlink location that led to the non-linear document.
+        // See https://github.com/readium/readium-shared-js/issues/26
+        
+        // Removed, needs to be implemented properly as per above.
+        // See https://github.com/readium/readium-shared-js/issues/108
+        // if(!spine.isValidLinearItem(lastOpenPage.spineItemIndex))
+        //     return false;
+
+        return lastOpenPage.spineItemIndex < spine.last().index || lastOpenPage.spineItemPageIndex < lastOpenPage.spineItemPageCount - 1;
+    };
+
+    this.canGoPrev = function() {
+
+        if(this.openPages.length == 0)
+            return false;
+
+        var firstOpenPage = this.openPages[0];
+
+        // TODO: handling of non-linear spine items ("ancillary" documents), allowing page turn within the reflowable XHTML, but preventing previous/next access to sibling spine items. Also needs "go back" feature to navigate to source hyperlink location that led to the non-linear document.
+        // See https://github.com/readium/readium-shared-js/issues/26
+        
+        // Removed, needs to be implemented properly as per above.
+        // //https://github.com/readium/readium-shared-js/issues/108
+        // if(!spine.isValidLinearItem(firstOpenPage.spineItemIndex))
+        //     return false;
+
+        return spine.first().index < firstOpenPage.spineItemIndex || 0 < firstOpenPage.spineItemPageIndex;
+    };
+    
     this.sort = function() {
 
         this.openPages.sort(function(a, b) {

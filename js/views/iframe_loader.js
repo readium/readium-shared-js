@@ -26,74 +26,69 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-ReadiumSDK.Views.IFrameLoader = function() {
+ReadiumSDK.Views.IFrameLoader = function () {
 
     var self = this;
     var eventListeners = {};
 
 
-    this.addIFrameEventListener = function(eventName, callback, context) {
+    this.addIFrameEventListener = function (eventName, callback, context) {
 
-        if(eventListeners[eventName] == undefined) {
+        if (eventListeners[eventName] == undefined) {
             eventListeners[eventName] = [];
         }
 
         eventListeners[eventName].push({callback: callback, context: context});
     };
 
-    this.updateIframeEvents = function(iframe) {
+    this.updateIframeEvents = function (iframe) {
 
-        _.each(eventListeners, function(value, key){
-            for(var i = 0, count = value.length; i< count; i++) {
+        _.each(eventListeners, function (value, key) {
+            for (var i = 0, count = value.length; i < count; i++) {
                 $(iframe.contentWindow).off(key);
                 $(iframe.contentWindow).on(key, value[i].callback, value[i].context);
             }
         });
     };
 
+    this.loadIframe = function (iframe, src, callback, context, attachedData) {
 
-    this.loadIframe = function(iframe, src, callback, context) {
+        iframe.setAttribute("data-baseUri", iframe.baseURI);
+        iframe.setAttribute("data-src", src);
 
-        var isWaitingForFrameLoad = true;
+        var loadedDocumentUri = new URI(src).absoluteTo(iframe.baseURI).toString();
 
-        iframe.onload = function() {
+        self._loadIframeWithUri(iframe, attachedData, loadedDocumentUri, function () {
+            var doc = iframe.contentDocument || iframe.contentWindow.document;
+            $('svg', doc).load(function(){
+                console.log('loaded');
+            });
+            callback.call(context, true, attachedData);
+        });
+    };
 
-            iframe.onload = undefined;
+    this._loadIframeWithUri = function (iframe, attachedData, contentUri, callback) {
 
-            isWaitingForFrameLoad = false;
+        iframe.onload = function () {
 
             self.updateIframeEvents(iframe);
 
-            try
-            {
-                iframe.contentWindow.navigator.epubReadingSystem = navigator.epubReadingSystem;
-                // console.debug("epubReadingSystem name:"
-                //     + iframe.contentWindow.navigator.epubReadingSystem.name
-                //     + " version:"
-                //     + iframe.contentWindow.navigator.epubReadingSystem.version
-                //     + " is loaded to iframe");
+            var mathJax = iframe.contentWindow.MathJax;
+            if (mathJax) {
+                // If MathJax is being used, delay the callback until it has completed rendering
+                var mathJaxCallback = _.once(callback);
+                mathJax.Hub.Queue(mathJaxCallback);
+                // Or at an 8 second timeout, which ever comes first
+                //window.setTimeout(mathJaxCallback, 8000);
+            } else {
+                callback();
             }
-            catch(ex)
-            {
-                console.log("epubReadingSystem INJECTION ERROR! " + ex.message);
-            }
-
-            callback.call(context, true);
-
         };
 
-        //yucks! iframe doesn't trigger onerror event - there is no reliable way to know that iframe finished
-        // attempt tot load resource (successfully or not;
-        window.setTimeout(function(){
-
-            if(isWaitingForFrameLoad) {
-
-                isWaitingForFrameLoad = false;
-                callback.call(context, false);
-            }
-
-        }, 8000);
-
-        iframe.src = src;
+        iframe.setAttribute("src", contentUri);
+        
     };
+
+    
+
 };

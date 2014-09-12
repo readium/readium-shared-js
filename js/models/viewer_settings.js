@@ -27,9 +27,13 @@
 ReadiumSDK.Models.ViewerSettings = function(settingsData) {
 
     var self = this;
-    this.isSyntheticSpread = true;
+
+    this.syntheticSpread = "auto";
     this.fontSize = 100;
     this.columnGap = 20;
+
+    this.mediaOverlaysPreservePlaybackWhenScroll = false;
+
     this.mediaOverlaysSkipSkippables = false;
     this.mediaOverlaysEscapeEscapables = true;
 
@@ -41,9 +45,16 @@ ReadiumSDK.Models.ViewerSettings = function(settingsData) {
     this.mediaOverlaysVolume = 100;
     
     this.mediaOverlaysSynchronizationGranularity = "";
+
+    this.mediaOverlaysAutomaticPageTurn = true;
+
+    this.enableGPUHardwareAccelerationCSS3D = true;
+
+    // -1 ==> disable
+    // [0...n] ==> index of transition in pre-defined array
+    this.pageTransition = -1;
     
-    this.isScrollDoc = false;
-    this.isScrollContinuous = false;
+    this.scroll = "auto";
 
     function buildArray(str)
     {
@@ -76,9 +87,9 @@ ReadiumSDK.Models.ViewerSettings = function(settingsData) {
 
     this.update = function(settingsData) {
 
-        mapProperty("isSyntheticSpread", settingsData);
         mapProperty("columnGap", settingsData);
         mapProperty("fontSize", settingsData);
+        mapProperty("mediaOverlaysPreservePlaybackWhenScroll", settingsData);
         mapProperty("mediaOverlaysSkipSkippables", settingsData);
         mapProperty("mediaOverlaysEscapeEscapables", settingsData);
         mapProperty("mediaOverlaysSkippables", settingsData, buildArray);
@@ -87,8 +98,11 @@ ReadiumSDK.Models.ViewerSettings = function(settingsData) {
         mapProperty("mediaOverlaysRate", settingsData);
         mapProperty("mediaOverlaysVolume", settingsData);
         mapProperty("mediaOverlaysSynchronizationGranularity", settingsData);
-        mapProperty("isScrollDoc", settingsData);
-        mapProperty("isScrollContinuous", settingsData);
+        mapProperty("mediaOverlaysAutomaticPageTurn", settingsData);
+        mapProperty("scroll", settingsData);
+        mapProperty("syntheticSpread", settingsData);
+        mapProperty("pageTransition", settingsData);
+        mapProperty("enableGPUHardwareAccelerationCSS3D", settingsData);
     };
 
     this.update(settingsData);
