@@ -195,7 +195,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
     function updateHtmlFontSize() {
 
         if(_$epubHtml) {
-            _$epubHtml.css("font-size", _fontSize + "%");
+            ReadiumSDK.Helpers.UpdateHtmlFontSize(_$epubHtml, _fontSize);
         }
     }
 

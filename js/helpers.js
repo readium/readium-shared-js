@@ -85,6 +85,41 @@ ReadiumSDK.Helpers.Rect.fromElement = function($element) {
     return new ReadiumSDK.Helpers.Rect(offsetLeft, offsetTop, offsetWidth, offsetHeight);
 };
 
+ReadiumSDK.Helpers.UpdateHtmlFontSize = function($epubHtml, fontSize){
+    var factor = fontSize/100;
+    var win = $epubHtml[0].ownerDocument.defaultView;
+    var $textblocks = $('p, div, span', $epubHtml);
+
+
+    // need to do two passes because it is possible to have nested text blocks. 
+    // If you change the font size of the parent this will then create an inaccurate
+    // font size for any children. 
+    for (var i = 0; i < $textblocks.length; i++){
+        var ele = $textblocks[i],
+            fontSizeAttr = ele.getAttribute('data-original-font-size');
+
+        if (!fontSizeAttr){
+            var style = win.getComputedStyle(ele);
+            var originalFontSize = parseInt(style.fontSize);
+            var originalLineHeight = parseInt(style.lineHeight);
+            ele.setAttribute('data-original-font-size', originalFontSize);
+            ele.setAttribute('data-original-line-height', originalLineHeight)
+        }
+    }
+
+    for (var i = 0; i < $textblocks.length; i++){
+        var ele = $textblocks[i],
+            fontSizeAttr = ele.getAttribute('data-original-font-size'),
+            lineHeightAttr = ele.getAttribute('data-original-line-height'),
+            originalFontSize = Number(fontSizeAttr),
+            originalLineHeight = Number(lineHeightAttr);
+
+        ele.style.fontSize = (originalFontSize * factor) + 'px';
+        ele.style.lineHeight = (originalLineHeight * factor) + 'px';
+
+    }
+}
+
 
 /**
  * @return {string}

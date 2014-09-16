@@ -420,7 +420,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         if (!_enableBookStyleOverrides) return;
         
         if(_$epubHtml && _viewSettings) {
-            _$epubHtml.css("font-size", _viewSettings.fontSize + "%");
+            ReadiumSDK.Helpers.UpdateHtmlFontSize(_$epubHtml, _viewSettings.fontSize);
         }
     }
 
