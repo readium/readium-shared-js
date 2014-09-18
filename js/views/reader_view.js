@@ -52,8 +52,12 @@ ReadiumSDK.Views.ReaderView = function(options) {
     var _annotationsManager = new ReadiumSDK.Views.AnnotationsManager(self, options);
     
     //We will call onViewportResize after user stopped resizing window
-    var lazyResize = _.debounce(function() { self.handleViewportResize() }, 200, false);
-    $(window).on("resize.ReadiumSDK.readerView", _.bind(lazyResize, self));
+    var lazyResize = ReadiumSDK.Helpers.extendedThrottle(
+        handleViewportResizeStart,
+        handleViewportResizeTick,
+        handleViewportResizeEnd, 250, 1000, self);
+
+    $(window).on("resize.ReadiumSDK.readerView", lazyResize);
 
     if (options.el instanceof $) {
         _$el = options.el;
@@ -989,13 +993,33 @@ ReadiumSDK.Views.ReaderView = function(options) {
         if(_currentView) {
             _currentView.insureElementVisibility(spineItemId, element, initiator);
         }
+    };
+
+    var _resizeBookmark = null;
+
+    function handleViewportResizeStart() {
+        if (_currentView) {
+            _resizeBookmark = _currentView.bookmarkCurrentPage(); // not self! (JSON string)
+            //console.debug('Captured bookmark: '+ _resizeBookmark);
+        }
     }
-    
-    this.handleViewportResize = function()
+
+    function handleViewportResizeTick() {
+        if (_currentView) {
+            self.handleViewportResize(_resizeBookmark);
+        }
+    }
+
+    function handleViewportResizeEnd() {
+        //same as doing one final tick for now
+        handleViewportResizeTick();
+    }
+
+    this.handleViewportResize = function(bookmarkToRestore)
     {
         if (_currentView)
         {
-            var bookMark = _currentView.bookmarkCurrentPage(); // not self! (JSON string)
+            var bookMark = bookmarkToRestore || _currentView.bookmarkCurrentPage(); // not self! (JSON string)
             //
             // console.debug("Saving reading position (handleViewportResize)...");
             // console.error(bookMark.idref);
@@ -1047,8 +1071,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
                             // {
                             //     _currentView.setViewSettings(_viewerSettings);
                             // }
-                    
-//console.debug("Restoring reading position: " + bookMark.contentCFI);
+
+//console.debug("Restoring reading position: " + bookMark);
                             self.openSpineItemElementCfi(bookMark.idref, bookMark.contentCFI, self);
 
                             if (wasPlaying)
