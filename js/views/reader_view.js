@@ -996,11 +996,23 @@ ReadiumSDK.Views.ReaderView = function(options) {
     };
 
     var _resizeBookmark = null;
+    var _resizeMOWasPlaying = false;
 
     function handleViewportResizeStart() {
+
+        _resizeBookmark = null;
+        _resizeMOWasPlaying = false;
+        
         if (_currentView) {
+
+            if (_currentView.isReflowable && _currentView.isReflowable()) {
+                _resizeMOWasPlaying = self.isPlayingMediaOverlay();
+                if (_resizeMOWasPlaying) {
+                    self.pauseMediaOverlay();
+                }
+            }
+            
             _resizeBookmark = _currentView.bookmarkCurrentPage(); // not self! (JSON string)
-            //console.debug('Captured bookmark: '+ _resizeBookmark);
         }
     }
 
@@ -1013,104 +1025,29 @@ ReadiumSDK.Views.ReaderView = function(options) {
     function handleViewportResizeEnd() {
         //same as doing one final tick for now
         handleViewportResizeTick();
+        
+        if (_resizeMOWasPlaying) self.playMediaOverlay();
     }
 
     this.handleViewportResize = function(bookmarkToRestore)
     {
-        if (_currentView)
+        if (!_currentView) return;
+
+        var bookMark = bookmarkToRestore || _currentView.bookmarkCurrentPage(); // not self! (JSON string)
+
+        if (_currentView.isReflowable && _currentView.isReflowable() && bookMark && bookMark.idref)
         {
-            var bookMark = bookmarkToRestore || _currentView.bookmarkCurrentPage(); // not self! (JSON string)
-            //
-            // console.debug("Saving reading position (handleViewportResize)...");
-            // console.error(bookMark.idref);
-            // console.error(bookMark.contentCFI);
+            var spineItem = _spine.getItemById(bookMark.idref);
 
-            // NOT NEEDED
-            // if (_lastResizeBookmark)
-            // {
-            //     bookMark = _lastResizeBookmark;
-            //     _lastResizeBookmark = undefined;
-            //
-            //     console.debug("INITIAL BOOKMARK");
-            //     console.error(bookMark.idref);
-            //     console.error(bookMark.contentCFI);
-            // }
-            //
-            if (_currentView.isReflowable && _currentView.isReflowable() && bookMark && bookMark.idref)
+            initViewForItem(spineItem, function(isViewChanged)
             {
-                var wasPlaying = self.isPlayingMediaOverlay();
-                if (wasPlaying)
-                {
-                    self.pauseMediaOverlay();
-                }
-
-                if (false)
-                {            
-                    _currentView.onViewportResize();
-
-                    if (wasPlaying)
-                    {
-                        setTimeout(function()
-                        {
-                            self.playMediaOverlay();
-                        }, 150);
-                    }
-                }
-                else
-                {
-                    //_currentView.onViewportResize();
-                    
-                    // setTimeout(function()
-                    // {
-                        var spineItem = _spine.getItemById(bookMark.idref);
-//console.debug("bookMark.idref: " + bookMark.idref);
-                        initViewForItem(spineItem, function(isViewChanged)
-                        {
-//console.debug("initViewForItem: " + isViewChanged);
-                            // if(!isViewChanged)
-                            // {
-                            //     _currentView.setViewSettings(_viewerSettings);
-                            // }
-
-//console.debug("Restoring reading position: " + bookMark);
-                            self.openSpineItemElementCfi(bookMark.idref, bookMark.contentCFI, self);
-
-                            if (wasPlaying)
-                            {
-                                self.playMediaOverlay();
-                                // setTimeout(function()
-                                // {
-                                // }, 60);
-                            }
-
-                            return;
-                        });
-//                    }, 1000);
-                }
-            }
-            else
-            {
-console.debug("RESIZE NO RESTORE BOOKMARK");
-                var wasPlaying = false;
-                if (_currentView.isReflowable && _currentView.isReflowable())
-                {
-                    wasPlaying = self.isPlayingMediaOverlay();
-                    if (wasPlaying)
-                    {
-                        self.pauseMediaOverlay();
-                    }
-                }
-            
-                _currentView.onViewportResize();
-
-                if (wasPlaying)
-                {
-                    setTimeout(function()
-                    {
-                        self.playMediaOverlay();
-                    }, 150);
-                }
-            }
+                self.openSpineItemElementCfi(bookMark.idref, bookMark.contentCFI, self);
+                return;
+            });
+        }
+        else
+        {
+            _currentView.onViewportResize();
         }
     }
 
