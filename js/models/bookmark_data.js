@@ -43,4 +43,7 @@ ReadiumSDK.Models.BookmarkData = function(idref, contentCFI) {
      */
     this.contentCFI = contentCFI;
 
+    this.toString = function () {
+        return JSON.stringify(this);
+    }
 };
