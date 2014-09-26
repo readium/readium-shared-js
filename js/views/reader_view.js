@@ -1414,3 +1414,4 @@ ReadiumSDK.Views.ReaderView.VIEW_TYPE_COLUMNIZED = 1;
 ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED = 2;
 ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_DOC = 3;
 ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS = 4;
+ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED_MIXED_REFLOWABE = 5;
