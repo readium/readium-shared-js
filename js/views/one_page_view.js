@@ -303,11 +303,17 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         return _$el;
     };
 
-    this.meta_height = function() {
+    this.meta_height = function (input) {
+        if (input) {
+            _meta_size.height = input;
+        }
         return _meta_size.height;
     };
 
-    this.meta_width = function() {
+    this.meta_width = function(input) {
+        if (input) {
+            _meta_size.width = input;
+        }
         return _meta_size.width;
     };
 
@@ -632,6 +638,19 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
                 if (size) {
                     console.log("Viewport: using rendition:viewport dimensions");
                 }
+            }
+        }
+
+        if(!size && _currentSpineItem) {
+            var isReflowable = _currentSpineItem.isReflowable();
+
+            if(isReflowable) {
+                size = {
+                    width: -1,
+                    height: -1
+                };
+                console.log("Viewport: using reflowable dimensions (unknown dimensions)");
+
             }
         }
         
