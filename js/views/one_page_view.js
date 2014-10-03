@@ -532,12 +532,18 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             return;
         }
 
-        var css = ReadiumSDK.Helpers.CSSTransformString({scale : scale});
+        if (!_currentSpineItem.isReflowable()) {
+            var css = ReadiumSDK.Helpers.CSSTransformString({scale: scale});
 
-        css["width"] = _meta_size.width;
-        css["height"] = _meta_size.height;
+            css["width"] = _meta_size.width;
+            css["height"] = _meta_size.height;
 
-        _$scaler.css(css);
+            _$scaler.css(css);
+        } else {
+            //disable scaling if this one_page_view is "reflowable"
+            _$scaler.css({height: "100%"});
+        }
+
 
         // Chrome workaround: otherwise text is sometimes invisible (probably a rendering glitch due to the 3D transform graphics backend?)
         //_$epubHtml.css("visibility", "hidden"); // "flashing" in two-page spread mode is annoying :(
