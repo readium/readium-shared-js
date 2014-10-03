@@ -400,6 +400,11 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
             pageIndex = 0;
         }
 
+        //start the pagination with an initial vertical offset if the page request has this information
+        if (pageRequest.initialVerticalOffset) {
+            _$htmlBody.css({marginTop: "-" + pageRequest.initialVerticalOffset + "px"});
+        }
+
         if(pageIndex >= 0 && pageIndex < _paginationInfo.columnCount) {
             _paginationInfo.currentSpreadIndex = Math.floor(pageIndex / _paginationInfo.visibleColumnCount) ;
             onPaginationChanged(pageRequest.initiator, pageRequest.spineItem, pageRequest.elementId);

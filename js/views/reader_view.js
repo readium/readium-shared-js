@@ -508,6 +508,11 @@ ReadiumSDK.Views.ReaderView = function(options) {
         var openPageRequest = new ReadiumSDK.Models.PageOpenRequest(nextSpineItem, self);
         openPageRequest.setFirstPage();
 
+        if (currentSpineItem.isReflowable() && currentSpineItem.isRightPage()) {
+            //hack to deal with reflowable pages inside fixed views
+            openPageRequest.setInitialVerticalOffset(190);
+        }
+
         openPage(openPageRequest, 2);
     };
 
