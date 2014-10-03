@@ -496,6 +496,11 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
         var nextSpineItem = _spine.nextItem(currentSpineItem);
 
+        if (currentSpineItem.isReflowable() && currentSpineItem.isRightPage()) {
+            //hack to deal with reflowable pages inside fixed views
+            nextSpineItem = currentSpineItem;
+        }
+
         if(!nextSpineItem) {
             return;
         }
