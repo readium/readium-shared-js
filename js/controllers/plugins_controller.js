@@ -44,6 +44,13 @@
 //      onDocumentLoaded($iframe, $document, spineItem);
 //
 
+var pluginApi = {
+    reader: null,
+    extendReader : function(extendWith){
+        _(ReadiumSDK.Views.ReaderView.prototype).extend(extendWith);
+    }
+};
+
 function PluginsController() {
     this.plugins = [];
 
@@ -53,60 +60,44 @@ function PluginsController() {
 
         self.initializePlugins(reader);
 
-        reader.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START, function($iframe, spineItem) {
-            var $document = $($iframe[0].contentDocument);
-            self.notifyPlugins("onDocumentLoadStart", $iframe, spineItem)
-        });
-
-        reader.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED_BEFORE_INJECTION, function($iframe, spineItem) {
-            var $document = $($iframe[0].contentDocument);
-            self.notifyPlugins("onDocumentLoadedBeforeInjection", $iframe, $document, spineItem)
-        });
-
-        reader.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function($iframe, spineItem) {
-            var $document = $($iframe[0].contentDocument);
-            self.notifyPlugins("onDocumentLoaded", $iframe, $document, spineItem);
+        _.defer(function () {
+            ReadiumSDK.trigger(ReadiumSDK.Events.PLUGINS_LOADED);
         });
     });
 };
 
 // Creates a new instance of the given plugin constructor.
-PluginsController.prototype.loadPlugin = function(name, dependencies, options, initFunc) {
+PluginsController.prototype.loadPlugin = function(name, optDependencies, initFunc) {
 
-    var newPlugin = new Plugin(name, dependencies, options, function(plugin, api) {
+    var dependencies;
+    if (typeof optDependencies === 'function') {
+        initFunc = optDependencies;
+    } else {
+        dependencies = optDependencies;
+    }
+
+    var newPlugin = new Plugin(name, dependencies, function(plugin, api) {
         if (!plugin.initialized) {
             plugin.initialized = true;
             try {
-                initFunc(api, plugin);
+                initFunc.call({}, api, plugin);
                 plugin.supported = true;
             } catch (ex) {
                 var errorMessage = "Module '" + name + "' failed to load: " + getErrorDesc(ex);
-                consoleLog(errorMessage);
+                console.log(errorMessage);
             }
         }
     });
     this.plugins[name] = newPlugin;
 };
 
-// Calls the method <name> on any plugin that implements it, forwarding any
-// given argument.
-PluginsController.prototype.notifyPlugins = function(name) {
-    var args = $.makeArray(arguments);
-    args.shift();
+PluginsController.prototype.initializePlugins = function(reader){
+    pluginApi.reader = reader;
 
-    var self = this;
-    $(this.plugins).each(function(index, plugin) {
-        var callback = plugin[name];
-        if (callback)
-            callback.apply(plugin, args);
-    });
-};
-
-PluginsController.prototype.initializePlugins = function(api){
     var plugin;
     for (var pluginName in this.plugins) {
         if ( (plugin = this.plugins[pluginName]) instanceof Plugin ) {
-            plugin.init(api);
+            plugin.init(pluginApi);
         }
     }
 };
@@ -137,10 +128,9 @@ ReadiumSDK.Plugins = new PluginsController();
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-function Plugin(name, dependencies, options, initializer) {
+function Plugin(name, dependencies, initializer) {
     this.name = name;
     this.dependencies = dependencies;
-    this.options = options;
     this.initialized = false;
     this.supported = false;
     this.initializer = initializer;
@@ -175,11 +165,11 @@ Plugin.prototype = {
     },
 
     warn: function(msg) {
-        api.warn("Plugin " + this.name + ": " + msg);
+        console.warn("Plugin " + this.name + ": " + msg);
     },
 
     deprecationNotice: function(deprecated, replacement) {
-        api.warn("DEPRECATED: " + deprecated + " in Plugin " + this.name + "is deprecated. Please use "
+        console.warn("DEPRECATED: " + deprecated + " in Plugin " + this.name + "is deprecated. Please use "
             + replacement + " instead");
     },
 
