@@ -65,7 +65,8 @@ ReadiumSDK = {
                 CONTENT_DOCUMENT_LOADED: "ContentDocumentLoaded",
                 MEDIA_OVERLAY_STATUS_CHANGED: "MediaOverlayStatusChanged",
                 MEDIA_OVERLAY_TTS_SPEAK: "MediaOverlayTTSSpeak",
-                MEDIA_OVERLAY_TTS_STOP: "MediaOverlayTTSStop"
+                MEDIA_OVERLAY_TTS_STOP: "MediaOverlayTTSStop",
+                PLUGINS_LOADED: "PluginsLoaded"
             },
 
     InternalEvents: {
