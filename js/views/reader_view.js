@@ -496,12 +496,28 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
         var nextSpineItem = _spine.nextItem(currentSpineItem);
 
+        if (currentSpineItem.isReflowable()
+            && currentSpineItem.isRightPage()
+            && (self.getCurrentViewType() === ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED
+                || self.getCurrentViewType() === ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED_MIXED_REFLOWABE)) {
+
+            //hack to deal with reflowable pages inside fixed views
+            nextSpineItem = currentSpineItem;
+        }
+
         if(!nextSpineItem) {
             return;
         }
 
         var openPageRequest = new ReadiumSDK.Models.PageOpenRequest(nextSpineItem, self);
         openPageRequest.setFirstPage();
+
+        if (currentSpineItem.isReflowable() && currentSpineItem.isRightPage()
+            && (self.getCurrentViewType() === ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED
+                || self.getCurrentViewType() === ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED_MIXED_REFLOWABE)) {
+            //hack to deal with reflowable pages inside fixed views
+            openPageRequest.setInitialVerticalOffset(190);
+        }
 
         openPage(openPageRequest, 2);
     };
@@ -1414,3 +1430,4 @@ ReadiumSDK.Views.ReaderView.VIEW_TYPE_COLUMNIZED = 1;
 ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED = 2;
 ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_DOC = 3;
 ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS = 4;
+ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED_MIXED_REFLOWABE = 5;

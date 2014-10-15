@@ -44,6 +44,7 @@ ReadiumSDK.Models.PageOpenRequest = function(spineItem, initiator) {
     this.elementCfi = undefined;
     this.firstPage = false;
     this.lastPage = false;
+    this.initialVerticalOffset = undefined;
     this.initiator = initiator;
 
     this.reset = function() {
@@ -78,6 +79,12 @@ ReadiumSDK.Models.PageOpenRequest = function(spineItem, initiator) {
 
         this.reset();
         this.elementCfi = elementCfi;
+    };
+
+    this.setInitialVerticalOffset = function (initialVerticalOffset) {
+
+        this.reset();
+        this.initialVerticalOffset = initialVerticalOffset;
     };
 
 

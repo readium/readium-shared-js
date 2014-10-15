@@ -407,19 +407,38 @@ ReadiumSDK.Views.FixedView = function(options, reader){
                 _contentMetaSize.height = _leftPageView.meta_height();
                 _contentMetaSize.separatorPosition = _leftPageView.meta_width();
             }
-            else {
+            else if( _leftPageView.meta_width() !== -1 && _rightPageView.meta_width() !== -1){
                 //normalize by height
                 _contentMetaSize.width = _leftPageView.meta_width() + _rightPageView.meta_width() * (_leftPageView.meta_height() / _rightPageView.meta_height());
                 _contentMetaSize.height = _leftPageView.meta_height();
                 _contentMetaSize.separatorPosition = _leftPageView.meta_width();
             }
+            else {
+                //figure out which page has real dimensions, and copy those to the one that doesn't
+                var useLeft = _leftPageView.meta_width() !== -1;
+                var width = useLeft ? _leftPageView.meta_width() : _rightPageView.meta_width();
+                var height = useLeft ? _leftPageView.meta_height() : _rightPageView.meta_height();
+
+                //set the meta_width and meta_height
+                if (useLeft) {
+                    _rightPageView.meta_width(width);
+                    _rightPageView.meta_height(height);
+                } else {
+                    _leftPageView.meta_width(width);
+                    _leftPageView.meta_height(height);
+                }
+                
+                _contentMetaSize.width = width * 2;
+                _contentMetaSize.height = height;
+                _contentMetaSize.separatorPosition = width;
+            }
         }
-        else if(_leftPageView.isDisplaying()) {
+        else if(_leftPageView.isDisplaying() && _leftPageView.meta_width() !== -1) {
             _contentMetaSize.width = _leftPageView.meta_width() * 2;
             _contentMetaSize.height = _leftPageView.meta_height();
             _contentMetaSize.separatorPosition = _leftPageView.meta_width();
         }
-        else if(_rightPageView.isDisplaying()) {
+        else if(_rightPageView.isDisplaying() && _rightPageView.meta_width() !== -1) {
             _contentMetaSize.width = _rightPageView.meta_width() * 2;
             _contentMetaSize.height = _rightPageView.meta_height();
             _contentMetaSize.separatorPosition = _rightPageView.meta_width();

@@ -303,11 +303,17 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         return _$el;
     };
 
-    this.meta_height = function() {
+    this.meta_height = function (input) {
+        if (input) {
+            _meta_size.height = input;
+        }
         return _meta_size.height;
     };
 
-    this.meta_width = function() {
+    this.meta_width = function(input) {
+        if (input) {
+            _meta_size.width = input;
+        }
         return _meta_size.width;
     };
 
@@ -526,12 +532,21 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             return;
         }
 
-        var css = ReadiumSDK.Helpers.CSSTransformString({scale : scale});
+        //reset css styles
+        _$scaler.removeAttr('style');
 
-        css["width"] = _meta_size.width;
-        css["height"] = _meta_size.height;
+        if (!_currentSpineItem.isReflowable()) {
+            var css = ReadiumSDK.Helpers.CSSTransformString({scale: scale});
 
-        _$scaler.css(css);
+            css["width"] = _meta_size.width;
+            css["height"] = _meta_size.height;
+
+            _$scaler.css(css);
+        } else {
+            //disable scaling if this one_page_view is "reflowable"
+            _$scaler.css({height: "100%"});
+        }
+
 
         // Chrome workaround: otherwise text is sometimes invisible (probably a rendering glitch due to the 3D transform graphics backend?)
         //_$epubHtml.css("visibility", "hidden"); // "flashing" in two-page spread mode is annoying :(
@@ -632,6 +647,19 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
                 if (size) {
                     console.log("Viewport: using rendition:viewport dimensions");
                 }
+            }
+        }
+
+        if(!size && _currentSpineItem) {
+            var isReflowable = _currentSpineItem.isReflowable();
+
+            if(isReflowable) {
+                size = {
+                    width: -1,
+                    height: -1
+                };
+                console.log("Viewport: using reflowable dimensions (unknown dimensions)");
+
             }
         }
         
@@ -822,6 +850,13 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
 
         var navigation = new ReadiumSDK.Views.CfiNavigationLogic(_$el, _$iframe);
         return navigation.getFirstVisibleElementCfi(0);
+
+    };
+
+    this.getLastVisibleElementCfi = function(){
+
+        var navigation = new ReadiumSDK.Views.CfiNavigationLogic(_$el, _$iframe,{rectangleBased: true});
+        return navigation.getLastVisibleElementCfi(0);
 
     };
 
