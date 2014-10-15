@@ -616,7 +616,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         _$epubHtml.css('margin', 0);
         _$epubHtml.css('padding', 0);
         _$epubHtml.css('border', 0);
-        _$htmlBody.css('margin', 0);
+        //_$htmlBody.css('margin', 0);
         _$htmlBody.css('padding', 0);
 
         var spacing = 0;
@@ -648,6 +648,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         ReadiumSDK.Helpers.triggerLayout(_$iframe);
 
         _paginationInfo.columnCount = ((_htmlBodyIsVerticalWritingMode ? _$epubHtml[0].scrollHeight : _$epubHtml[0].scrollWidth) + _paginationInfo.columnGap) / (_paginationInfo.columnWidth + _paginationInfo.columnGap);
+        console.log('_paginationInfo.columnCount:' +_paginationInfo.columnCount);
         _paginationInfo.columnCount = Math.round(_paginationInfo.columnCount);
 
         var totalGaps = (_paginationInfo.columnCount-1) * _paginationInfo.columnGap;

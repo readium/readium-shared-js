@@ -853,6 +853,13 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
 
     };
 
+    this.getLastVisibleElementCfi = function(){
+
+        var navigation = new ReadiumSDK.Views.CfiNavigationLogic(_$el, _$iframe,{rectangleBased: true});
+        return navigation.getLastVisibleElementCfi(0);
+
+    };
+
     this.getNavigator = function() {
 
         return new ReadiumSDK.Views.CfiNavigationLogic(_$el, _$iframe);

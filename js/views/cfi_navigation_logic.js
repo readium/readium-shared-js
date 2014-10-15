@@ -78,14 +78,11 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
      *
      * @param {Object} rect
      * @param {Object} frameDimensions
-     * @param {boolean} [isVwm]           isVerticalWritingMode
      * @returns {boolean}
      */
-    function isRectVisible(rect, frameDimensions, isVwm) {
-        if (isVwm) {
-            return rect.top >= 0 && rect.top < frameDimensions.height;
-        }
-        return rect.left >= 0 && rect.left < frameDimensions.width;
+    function isRectVisible(rect, frameDimensions) {
+        return (rect.left >= 0 && rect.left < frameDimensions.width)
+            && (rect.top >= 0 && rect.top < frameDimensions.height);
     }
 
     /**
@@ -208,7 +205,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
         // each of those should be checked
         var visibilityPercentage = 0;
         for (var i = 0, l = clientRectangles.length; i < l; ++i) {
-            if (isRectVisible(clientRectangles[i], frameDimensions, isVwm)) {
+            if (isRectVisible(clientRectangles[i], frameDimensions)) {
                 visibilityPercentage = shouldCalculateVisibilityPercentage
                     ? measureVisibilityPercentageByRectangles(clientRectangles, i)
                     : 100;
@@ -444,7 +441,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
         // (i.e., is the first visible one).
         if (shouldLookForFirstVisibleColumn) {
             while (rect.bottom >= frameDimensions.height) {
-                if (isRectVisible(rect, frameDimensions, isVwm)) {
+                if (isRectVisible(rect, frameDimensions)) {
                     break;
                 }
                 offsetRectangle(rect, columnFullWidth, -frameDimensions.height);
@@ -501,6 +498,19 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
         }
     }
 
+    function findAllValidElements(element, output) {
+        if (!output) {
+            output = [];
+        }
+        for (var child = element.firstChild; child !== null; child = child.nextSibling) {
+            if (isValidTextNode(child) || child.nodeName.toLowerCase() === 'img')
+                output.push(child);
+            else if (child.nodeType === Node.ELEMENT_NODE)
+                findAllValidElements(child, output);
+        }
+        return output;
+    }
+
     //we look for text and images
     this.findFirstVisibleElement = function (props) {
 
@@ -513,9 +523,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
         var $firstVisibleTextNode = null;
         var percentOfElementHeight = 0;
 
-        $elements = $("body", this.getRootElement()).find(":not(iframe)").contents().filter(function () {
-            return isValidTextNode(this) || this.nodeName.toLowerCase() === 'img';
-        });
+        $elements = findAllValidElements($("body", this.getRootElement())[0]);
 
         // Find the first visible text node
         $.each($elements, function() {
@@ -541,9 +549,66 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
         return {$element: $firstVisibleTextNode, percentY: percentOfElementHeight};
     };
 
+    //we look for text and images
+    this.findLastVisibleElement = function (props) {
+
+        if (typeof props !== 'object') {
+            // compatibility with legacy code, `props` is `topOffset` actually
+            props = { top: props };
+        }
+
+        var $elements;
+        var $lastVisibleTextNode = null;
+        var percentOfElementHeight = 0;
+
+        $elements = findAllValidElements($("body", this.getRootElement())[0]);
+
+        // Find the first visible text node
+        $.each($elements, function() {
+
+            var $element;
+
+            if(this.nodeType === Node.TEXT_NODE)  { //text node
+                $element = $(this).parent();
+            }
+            else {
+                $element = $(this); //image
+            }
+
+            var visibilityResult = visibilityCheckerFunc($element, props, true);
+            if (visibilityResult) {
+                $lastVisibleTextNode = $element;
+                percentOfElementHeight = 100 - visibilityResult;
+                return true;
+            }
+            return false;
+        });
+
+        return {$element: $lastVisibleTextNode, percentY: percentOfElementHeight};
+    };
+
     this.getFirstVisibleElementCfi = function(topOffset) {
 
         var foundElement = this.findFirstVisibleElement(topOffset);
+
+        if(!foundElement.$element) {
+            console.log("Could not generate CFI no visible element on page");
+            return undefined;
+        }
+
+        //noinspection JSUnresolvedVariable
+        var cfi = EPUBcfi.Generator.generateElementCFIComponent(foundElement.$element[0]);
+
+        if(cfi[0] == "!") {
+            cfi = cfi.substring(1);
+        }
+
+        return cfi + "@0:" + foundElement.percentY;
+    };
+
+    this.getLastVisibleElementCfi = function(topOffset) {
+
+        var foundElement = this.findLastVisibleElement(topOffset);
 
         if(!foundElement.$element) {
             console.log("Could not generate CFI no visible element on page");
@@ -849,13 +914,11 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
 
     function isValidTextNode(node) {
 
-        if(node.nodeType === Node.TEXT_NODE) {
+        if (node.nodeType === Node.TEXT_NODE) {
 
-            // Heuristic to find a text node with actual text
-            var nodeText = node.nodeValue.replace(/\n/g, "");
-            nodeText = nodeText.replace(/ /g, "");
-
-             return nodeText.length > 0;
+            // Find a text node with actual text
+            var nodeText = node.nodeValue.trim();
+            return nodeText.length > 0;
         }
 
         return false;
