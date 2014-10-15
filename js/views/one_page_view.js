@@ -532,6 +532,9 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             return;
         }
 
+        //reset css styles
+        _$scaler.removeAttr('style');
+
         if (!_currentSpineItem.isReflowable()) {
             var css = ReadiumSDK.Helpers.CSSTransformString({scale: scale});
 

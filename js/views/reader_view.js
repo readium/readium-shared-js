@@ -496,7 +496,11 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
         var nextSpineItem = _spine.nextItem(currentSpineItem);
 
-        if (currentSpineItem.isReflowable() && currentSpineItem.isRightPage()) {
+        if (currentSpineItem.isReflowable()
+            && currentSpineItem.isRightPage()
+            && (self.getCurrentViewType() === ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED
+                || self.getCurrentViewType() === ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED_MIXED_REFLOWABE)) {
+
             //hack to deal with reflowable pages inside fixed views
             nextSpineItem = currentSpineItem;
         }
@@ -508,7 +512,9 @@ ReadiumSDK.Views.ReaderView = function(options) {
         var openPageRequest = new ReadiumSDK.Models.PageOpenRequest(nextSpineItem, self);
         openPageRequest.setFirstPage();
 
-        if (currentSpineItem.isReflowable() && currentSpineItem.isRightPage()) {
+        if (currentSpineItem.isReflowable() && currentSpineItem.isRightPage()
+            && (self.getCurrentViewType() === ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED
+                || self.getCurrentViewType() === ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED_MIXED_REFLOWABE)) {
             //hack to deal with reflowable pages inside fixed views
             openPageRequest.setInitialVerticalOffset(190);
         }
