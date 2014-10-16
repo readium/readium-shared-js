@@ -82,7 +82,10 @@ ReadiumSDK.Models.Spread = function(spine, isSyntheticSpread) {
             var neighbour = getNeighbourItem(item);
             if(neighbour) {
                 var neighbourPos = getItemPosition(neighbour);
-                if(neighbourPos != position && neighbourPos != ReadiumSDK.Models.Spread.POSITION_CENTER)  {
+                if (neighbourPos != position
+                    && neighbourPos != ReadiumSDK.Models.Spread.POSITION_CENTER
+                    //exclude a neighbour that is a reflowable item from the spread (see RSJ#115)
+                    && !neighbour.isReflowable()) {
                     setItemToPosition(neighbour, neighbourPos);
                 }
             }
