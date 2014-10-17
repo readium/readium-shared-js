@@ -44,63 +44,62 @@
 //      onDocumentLoaded($iframe, $document, spineItem);
 //
 
-var pluginApi = {
-    reader: null,
-    extendReader : function(extendWith){
-        _(ReadiumSDK.Views.ReaderView.prototype).extend(extendWith);
-    }
-};
-
 function PluginsController() {
-    this.plugins = [];
-
     var self = this;
+
+    var _plugins = [];
+
+    var PluginApi = function (reader, pluginName) {
+        this.reader = reader;
+
+        this.extendReader = function (extendWith) {
+            var obj = {};
+            obj[pluginName] = extendWith;
+            _(ReadiumSDK.Views.ReaderView.prototype).extend(obj);
+        };
+    };
+
+    function _initializePlugins (reader) {
+        var plugin;
+        for (var pluginName in _plugins) {
+            if ( (plugin = _plugins[pluginName]) instanceof Plugin ) {
+                plugin.init(new PluginApi(reader, pluginName));
+            }
+        }
+    }
+
+    // Creates a new instance of the given plugin constructor.
+    this.loadPlugin = function(name, optDependencies, initFunc) {
+
+        var dependencies;
+        if (typeof optDependencies === 'function') {
+            initFunc = optDependencies;
+        } else {
+            dependencies = optDependencies;
+        }
+
+        this.plugins[name] = new Plugin(name, dependencies, function (plugin, api) {
+            if (!plugin.initialized) {
+                plugin.initialized = true;
+                try {
+                    initFunc.call({}, api, plugin);
+                    plugin.supported = true;
+                } catch (ex) {
+                    plugin.fail(ex.message || ex.description || String(ex));
+                }
+            }
+        });
+    };
 
     ReadiumSDK.on(ReadiumSDK.Events.READER_INITIALIZED, function(reader) {
 
-        self.initializePlugins(reader);
+        _initializePlugins(reader);
 
         _.defer(function () {
             ReadiumSDK.trigger(ReadiumSDK.Events.PLUGINS_LOADED);
         });
     });
-};
-
-// Creates a new instance of the given plugin constructor.
-PluginsController.prototype.loadPlugin = function(name, optDependencies, initFunc) {
-
-    var dependencies;
-    if (typeof optDependencies === 'function') {
-        initFunc = optDependencies;
-    } else {
-        dependencies = optDependencies;
-    }
-
-    var newPlugin = new Plugin(name, dependencies, function(plugin, api) {
-        if (!plugin.initialized) {
-            plugin.initialized = true;
-            try {
-                initFunc.call({}, api, plugin);
-                plugin.supported = true;
-            } catch (ex) {
-                var errorMessage = "Module '" + name + "' failed to load: " + getErrorDesc(ex);
-                console.log(errorMessage);
-            }
-        }
-    });
-    this.plugins[name] = newPlugin;
-};
-
-PluginsController.prototype.initializePlugins = function(reader){
-    pluginApi.reader = reader;
-
-    var plugin;
-    for (var pluginName in this.plugins) {
-        if ( (plugin = this.plugins[pluginName]) instanceof Plugin ) {
-            plugin.init(pluginApi);
-        }
-    }
-};
+}
 
 ReadiumSDK.Plugins = new PluginsController();
 
