@@ -91,7 +91,7 @@ function PluginsController() {
             if (!plugin.initialized) {
                 plugin.initialized = true;
                 try {
-                    initFunc.call(api);
+                    initFunc.call({}, api);
                     plugin.supported = true;
                 } catch (ex) {
                     plugin.fail(ex.message || ex.description || String(ex));
