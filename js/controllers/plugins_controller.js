@@ -44,32 +44,41 @@
 //      onDocumentLoaded($iframe, $document, spineItem);
 //
 
+function PluginApi(reader, plugin) {
+    this.reader = reader;
+    this.plugin = plugin;
+
+    this.extendReader = function (extendWith) {
+        var obj = {};
+        obj[plugin.name] = extendWith;
+        _(ReadiumSDK.Views.ReaderView.prototype).extend(obj);
+    };
+}
+
+function PluginApiFactory(reader) {
+    this.create = function (plugin) {
+        return new PluginApi(reader, plugin);
+    }
+}
+
 function PluginsController() {
     var self = this;
 
     var _plugins = [];
 
-    var PluginApi = function (reader, pluginName) {
-        this.reader = reader;
+    function _initializePlugins(reader) {
+        var plugin,
+            apiFactory = new PluginApiFactory(reader);
 
-        this.extendReader = function (extendWith) {
-            var obj = {};
-            obj[pluginName] = extendWith;
-            _(ReadiumSDK.Views.ReaderView.prototype).extend(obj);
-        };
-    };
-
-    function _initializePlugins (reader) {
-        var plugin;
         for (var pluginName in _plugins) {
-            if ( (plugin = _plugins[pluginName]) instanceof Plugin ) {
-                plugin.init(new PluginApi(reader, pluginName));
+            if ((plugin = _plugins[pluginName]) instanceof Plugin) {
+                plugin.init(apiFactory);
             }
         }
     }
 
     // Creates a new instance of the given plugin constructor.
-    this.loadPlugin = function(name, optDependencies, initFunc) {
+    this.loadPlugin = function (name, optDependencies, initFunc) {
 
         var dependencies;
         if (typeof optDependencies === 'function') {
@@ -82,7 +91,7 @@ function PluginsController() {
             if (!plugin.initialized) {
                 plugin.initialized = true;
                 try {
-                    initFunc.call({}, api, plugin);
+                    initFunc.call(api);
                     plugin.supported = true;
                 } catch (ex) {
                     plugin.fail(ex.message || ex.description || String(ex));
@@ -91,7 +100,7 @@ function PluginsController() {
         });
     };
 
-    ReadiumSDK.on(ReadiumSDK.Events.READER_INITIALIZED, function(reader) {
+    ReadiumSDK.on(ReadiumSDK.Events.READER_INITIALIZED, function (reader) {
 
         _initializePlugins(reader);
 
@@ -136,7 +145,7 @@ function Plugin(name, dependencies, initializer) {
 }
 
 Plugin.prototype = {
-    init: function(api) {
+    init: function (apiFactory) {
         var requiredPluginNames = this.dependencies || [];
         for (var i = 0, len = requiredPluginNames.length, requiredPlugin, PluginName; i < len; ++i) {
             PluginName = requiredPluginNames[i];
@@ -146,7 +155,7 @@ Plugin.prototype = {
                 throw new Error("required Plugin '" + PluginName + "' not found");
             }
 
-            requiredPlugin.init(api);
+            requiredPlugin.init(apiFactory);
 
             if (!requiredPlugin.supported) {
                 throw new Error("required Plugin '" + PluginName + "' not supported");
@@ -154,25 +163,25 @@ Plugin.prototype = {
         }
 
         // Now run initializer
-        this.initializer(this, api);
+        this.initializer(this, apiFactory.create(this));
     },
 
-    fail: function(reason) {
+    fail: function (reason) {
         this.initialized = true;
         this.supported = false;
         throw new Error("Plugin '" + this.name + "' failed to load: " + reason);
     },
 
-    warn: function(msg) {
+    warn: function (msg) {
         console.warn("Plugin " + this.name + ": " + msg);
     },
 
-    deprecationNotice: function(deprecated, replacement) {
+    deprecationNotice: function (deprecated, replacement) {
         console.warn("DEPRECATED: " + deprecated + " in Plugin " + this.name + "is deprecated. Please use "
             + replacement + " instead");
     },
 
-    createError: function(msg) {
+    createError: function (msg) {
         return new Error("Error in " + this.name + " Plugin: " + msg);
     }
 };
