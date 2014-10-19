@@ -74,7 +74,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
         _$contentFrame.css("position", "relative");
 
         var settings = _viewSettings;
-        if (!settings)
+        if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefined")
         {
             //defaults
             settings = new ReadiumSDK.Models.ViewerSettings({});

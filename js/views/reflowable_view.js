@@ -87,7 +87,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         _$viewport.append(_$el);
 
         var settings = _viewSettings;
-        if (!settings)
+        if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefined")
         {
             //defaults
             settings = new ReadiumSDK.Models.ViewerSettings({});
