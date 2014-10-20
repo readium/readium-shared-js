@@ -48,7 +48,7 @@ ReadiumSDK.Models.ViewerSettings = function(settingsData) {
 
     this.mediaOverlaysAutomaticPageTurn = true;
 
-    this.enableGPUHardwareAccelerationCSS3D = true;
+    this.enableGPUHardwareAccelerationCSS3D = false;
 
     // -1 ==> disable
     // [0...n] ==> index of transition in pre-defined array
