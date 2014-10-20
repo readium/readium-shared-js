@@ -521,7 +521,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
                 enable3D = true;
             }
 
-            var css = ReadiumSDK.Helpers.CSSTransformString({left: "10000px", top: "10000px", enable3D: enable3D});
+            var css = ReadiumSDK.Helpers.CSSTransformString({left: "10000", top: "10000", enable3D: enable3D});
             _$iframe.css(css);
         }
         else
