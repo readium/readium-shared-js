@@ -52,25 +52,6 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
 
     var PageTransitionHandler = function(opts)
     {
-        var _viewerSettings = undefined;
-        function applyNoTransformCss3D($el)
-        {
-            var settings = _viewerSettings;
-            if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefined")
-            {
-                //defaults
-                settings = new ReadiumSDK.Models.ViewerSettings({});
-            }
-            if (settings.enableGPUHardwareAccelerationCSS3D) {
-                // This fixes rendering issues with WebView (native apps), which clips content embedded in iframes unless GPU hardware acceleration is enabled for CSS rendering.
-                $el.css("transform", "translateZ(0)");
-                return true;
-            }
-
-            $el.css("transform", "none");
-            return false;
-        }
-        
         var PageTransition = function(begin, end)
         {
             this.begin = begin;
@@ -84,6 +65,8 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             },
             function(scale, left, top, $el, meta_width, meta_height, pageSwitchDir)
             {
+                $el.css("transform", "none");
+                
                 var css = {};
                 _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
                     css[prefix + "transition"] = "opacity 150ms ease-out";
@@ -91,8 +74,6 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
                 $el.css(css);
 
                 $el.css("opacity", "1");
-                
-                applyNoTransformCss3D($el);
             }
         );
         
@@ -104,11 +85,13 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
                 var elWidth = Math.ceil(meta_width * scale);
                 
                 var initialLeft = elWidth * 0.8 * (pageSwitchDir === 2 ? 1 : -1);
-                var move = ReadiumSDK.Helpers.CSSTransformString({left: Math.round(initialLeft), origin: "50% 50%"});
+                var move = ReadiumSDK.Helpers.CSSTransformString({left: Math.round(initialLeft), origin: "50% 50% 0", enable3D: _enable3D});
                 $el.css(move);
             },
             function(scale, left, top, $el, meta_width, meta_height, pageSwitchDir)
             {
+                $el.css("opacity", "1");
+                
                 var css = {};
                 _.each(['', '-webkit-', '-moz-', '-ms-'], function(prefix) { // NOTE THAT empty '' must be the FIRST prefix!!
                     css[prefix + "transition"] = prefix + "transform 150ms ease-out";
@@ -117,9 +100,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
 
                 //$el.css("-webkit-transition", "-webkit-transform 200ms ease-out");
                 
-                $el.css("opacity", "1");
-                
-                applyNoTransformCss3D($el);
+                $el.css("transform", "none");
             }
         );
         
@@ -131,11 +112,13 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
                 var elWidth = Math.ceil(meta_width * scale);
 
                 var initialLeft = elWidth * 1.7 * (pageSwitchDir === 2 ? 1 : -1);
-                var trans = ReadiumSDK.Helpers.CSSTransformString({left: Math.round(initialLeft), angle: (pageSwitchDir === 2 ? -1 : 1) * 30, origin: "50% 50%"}); //(pageSwitchDir === 2 ? '0% 0%' : '100% 0%')
+                var trans = ReadiumSDK.Helpers.CSSTransformString({left: Math.round(initialLeft), angle: (pageSwitchDir === 2 ? -1 : 1) * 30, origin: "50% 50% 0", enable3D: _enable3D}); //(pageSwitchDir === 2 ? '0% 0%' : '100% 0%')
                 $el.css(trans);
             },
             function(scale, left, top, $el, meta_width, meta_height, pageSwitchDir)
             {
+                $el.css("opacity", "1");
+                
                 var css = {};
                 _.each(['', '-webkit-', '-moz-', '-ms-'], function(prefix) { // NOTE THAT empty '' must be the FIRST prefix!!
                     css[prefix + "transition"] = prefix + "transform 300ms ease-in-out";
@@ -144,9 +127,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
 
                 //$el.css("-webkit-transition", "-webkit-transform 200ms ease-out");
                 
-                $el.css("opacity", "1");
-                
-                applyNoTransformCss3D($el);
+                $el.css("transform", "none");
             }
         );
         
@@ -182,11 +163,13 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
                 var elWidth = Math.ceil(meta_width * scale);
                 
                 var initialLeft = elWidth * 0.5 * ((isLeft || isCenter && pageSwitchDir === 1) ? 1 : -1);
-                var trans = ReadiumSDK.Helpers.CSSTransformString({scale: 0.2, left: Math.round(initialLeft), angle: ((isLeft || isCenter && pageSwitchDir === 1) ? 1 : -1) * 30, origin: '50% 50%'});
+                var trans = ReadiumSDK.Helpers.CSSTransformString({scale: 0.2, left: Math.round(initialLeft), angle: ((isLeft || isCenter && pageSwitchDir === 1) ? 1 : -1) * 30, origin: '50% 50% 0', enable3D: _enable3D});
                 $el.css(trans);
             },
             function(scale, left, top, $el, meta_width, meta_height, pageSwitchDir)
             {
+                $el.css("opacity", "1");
+                
                 var css = {};
                 _.each(['', '-webkit-', '-moz-', '-ms-'], function(prefix) { // NOTE THAT empty '' must be the FIRST prefix!!
                     css[prefix + "transition"] = prefix + "transform 400ms ease-out";
@@ -195,9 +178,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
 
                 //$el.css("-webkit-transition", "-webkit-transform 200ms ease-out");
                 
-                $el.css("opacity", "1");
-                
-                applyNoTransformCss3D($el);
+                $el.css("transform", "none");
             }
         );
         
@@ -210,10 +191,24 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         var _disablePageTransitions = opts.disablePageTransitions || false;
 
         var _pageTransition = -1;
+
+        var _enable3D = new ReadiumSDK.Models.ViewerSettings({}).enableGPUHardwareAccelerationCSS3D;
         
+        var _viewerSettings = undefined;
         this.updateOptions = function(o)
         {
             _viewerSettings = o;
+        
+            var settings = _viewerSettings;
+            if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefined")
+            {
+                //defaults
+                settings = new ReadiumSDK.Models.ViewerSettings({});
+            }
+            if (settings.enableGPUHardwareAccelerationCSS3D)
+            {
+                _enable3D = true;
+            }
             
             if (o.pageTransition !== null && typeof o.pageTransition !== "undefined")
             {
@@ -274,7 +269,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         {
             if (_disablePageTransitions || _pageTransition === -1)
             {
-                applyNoTransformCss3D($el);
+                $el.css("transform", "none");
                 return;
             }
         
@@ -284,6 +279,8 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
 
                 if (_pageSwitchDir === 0 || !pageTransition)
                 {
+                    $el.css("transform", "none");
+                    
                     var css = {};
                     _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
                         css[prefix + "transition"] = "opacity 250ms linear";
@@ -291,8 +288,6 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
                     $el.css(css);
 
                     $el.css("opacity", "1");
-                    
-                    applyNoTransformCss3D($el);
                 }
                 else
                 {
@@ -332,28 +327,43 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
 
     this.render = function() {
 
-            var template = ReadiumSDK.Helpers.loadTemplate("single_page_frame", {});
+        var template = ReadiumSDK.Helpers.loadTemplate("single_page_frame", {});
 
-            _$el = $(template);
-            _$scaler = $("#scaler", _$el);
-
-            _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
-                _$el.css(prefix + "transition", "all 0 ease 0");
-            });
+        _$el = $(template);
         
-            _$el.css("height", "100%");
-            _$el.css("width", "100%");
+        _$scaler = $("#scaler", _$el);
+    
+        _$scaler.css("position", "relative");
+        
+        _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
+            _$el.css(prefix + "transition", "all 0 ease 0");
+        });
+        
+        _$el.css("transform", "none");
+    
+        var settings = _viewSettings;
+        if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefined")
+        {
+            //defaults
+            settings = new ReadiumSDK.Models.ViewerSettings({});
+        }
+        if (settings.enableGPUHardwareAccelerationCSS3D) {
 
-            for(var i = 0, count = classes.length; i < count; i++) {
-                _$el.addClass(classes[i]);
-            }
+            // This fixes rendering issues with WebView (native apps), which crops content embedded in iframes unless GPU hardware acceleration is enabled for CSS rendering.
+            _$el.css("transform", "translateZ(0)");
+        }
+    
+        _$el.css("height", "100%");
+        _$el.css("width", "100%");
 
-            _$iframe = $("iframe", _$el);
-            
-//            _$iframe.css("width", "100%");
-            //_$iframe.css("height", "100%");
-            // _$iframe.css("height", window.innerHeight || window.clientHeight);
+        for(var i = 0, count = classes.length; i < count; i++) {
+            _$el.addClass(classes[i]);
+        }
 
+        _$iframe = $("iframe", _$el);
+    
+        _$iframe.css("position", "relative");
+        
         return this;
     };
 
@@ -464,20 +474,64 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
 //        _$iframe.css("height", height + "px");
     };
 
+    var _useCSSTransformToHideIframe = true;
+
     this.showIFrame = function() {
 
         _$iframe.css("visibility", "visible");
-        _$iframe.css('transform', "none");
+        
+        if (_useCSSTransformToHideIframe)
+        {
+            _$iframe.css('transform', "none");
+
+            var enable3D = false;
+            var settings = _viewSettings;
+            if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefined")
+            {
+                //defaults
+                settings = new ReadiumSDK.Models.ViewerSettings({});
+            }
+            if (settings.enableGPUHardwareAccelerationCSS3D)
+            {
+                enable3D = true;
+                _$iframe.css("transform", "translateZ(0)");
+            }
+        }
+        else
+        {
+            _$iframe.css({left: "0px", top: "0px"});
+        }
     };
 
     this.hideIFrame = function() {
+
+        _$iframe.css("visibility", "hidden");
 
         // With some books, despite the iframe and its containing div wrapper being hidden,
         // the iframe's contentWindow / contentDocument is still visible!
         // Thus why we translate the iframe out of view instead.
         
-        _$iframe.css("visibility", "hidden");
-        _$iframe.css('transform', "translate(10000px, 10000px)");
+        if (_useCSSTransformToHideIframe)
+        {
+            var enable3D = false;
+            var settings = _viewSettings;
+            if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefined")
+            {
+                //defaults
+                settings = new ReadiumSDK.Models.ViewerSettings({});
+            }
+            if (settings.enableGPUHardwareAccelerationCSS3D)
+            {
+                enable3D = true;
+            }
+
+            var css = ReadiumSDK.Helpers.CSSTransformString({left: "10000px", top: "10000px", enable3D: enable3D});
+            _$iframe.css(css);
+        }
+        else
+        {
+            _$iframe.css({left: "10000px", top: "10000px"});
+        }
     };
 
     function getContentDocHeight(){
@@ -517,23 +571,35 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         var elWidth = Math.ceil(_meta_size.width * scale);
         var elHeight = Math.floor(_meta_size.height * scale);
 
-        _pageTransitionHandler.transformContentImmediate_BEGIN(_$el, scale, left, top);
-
         _$el.css("left", left + "px");
         _$el.css("top", top + "px");
         _$el.css("width", elWidth + "px");
         _$el.css("height", elHeight + "px");
 
+        _pageTransitionHandler.transformContentImmediate_BEGIN(_$el, scale, left, top);
+
         if(!_$epubHtml) {
 //            debugger;
             return;
         }
+    
+        var enable3D = false;
+        var settings = _viewSettings;
+        if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefined")
+        {
+            //defaults
+            settings = new ReadiumSDK.Models.ViewerSettings({});
+        }
+        if (settings.enableGPUHardwareAccelerationCSS3D)
+        {
+            enable3D = true;
+        }
 
-        var css = ReadiumSDK.Helpers.CSSTransformString({scale : scale});
+        var css = ReadiumSDK.Helpers.CSSTransformString({scale : scale, enable3D: enable3D});
 
         css["width"] = _meta_size.width;
         css["height"] = _meta_size.height;
-
+        
         _$scaler.css(css);
 
         // Chrome workaround: otherwise text is sometimes invisible (probably a rendering glitch due to the 3D transform graphics backend?)
