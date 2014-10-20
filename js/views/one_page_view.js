@@ -68,7 +68,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
                 $el.css("transform", "none");
                 
                 var css = {};
-                _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
+                _.each(['', '-webkit-', '-moz-', '-ms-'], function(prefix) { // NOTE THAT empty '' must be the FIRST prefix!!
                     css[prefix + "transition"] = "opacity 150ms ease-out";
                 });
                 $el.css(css);
@@ -246,7 +246,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             if (_disablePageTransitions || _pageTransition === -1) return;
 
             var css = {};
-            _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
+            _.each(['', '-webkit-', '-moz-', '-ms-'], function(prefix) { // NOTE THAT empty '' must be the FIRST prefix!!
                 css[prefix + "transition"] = "all 0 ease 0";
             });
             $el.css(css);
@@ -282,7 +282,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
                     $el.css("transform", "none");
                     
                     var css = {};
-                    _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
+                    _.each(['', '-webkit-', '-moz-', '-ms-'], function(prefix) {// NOTE THAT empty '' must be the FIRST prefix!!
                         css[prefix + "transition"] = "opacity 250ms linear";
                     });
                     $el.css(css);
@@ -333,9 +333,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         
         _$scaler = $("#scaler", _$el);
     
-        _$scaler.css("position", "relative");
-        
-        _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
+        _.each(['', '-webkit-', '-moz-', '-ms-'], function(prefix) {// NOTE THAT empty '' must be the FIRST prefix!!
             _$el.css(prefix + "transition", "all 0 ease 0");
         });
         
@@ -362,8 +360,6 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
 
         _$iframe = $("iframe", _$el);
     
-        _$iframe.css("position", "relative");
-        
         return this;
     };
 
@@ -482,7 +478,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         
         if (_useCSSTransformToHideIframe)
         {
-            _$iframe.css('transform', "none");
+            _$iframe.css("transform", "none");
 
             var enable3D = false;
             var settings = _viewSettings;
@@ -506,7 +502,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
     this.hideIFrame = function() {
 
         _$iframe.css("visibility", "hidden");
-
+        
         // With some books, despite the iframe and its containing div wrapper being hidden,
         // the iframe's contentWindow / contentDocument is still visible!
         // Thus why we translate the iframe out of view instead.
@@ -571,12 +567,12 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         var elWidth = Math.ceil(_meta_size.width * scale);
         var elHeight = Math.floor(_meta_size.height * scale);
 
+        _pageTransitionHandler.transformContentImmediate_BEGIN(_$el, scale, left, top);
+
         _$el.css("left", left + "px");
         _$el.css("top", top + "px");
         _$el.css("width", elWidth + "px");
         _$el.css("height", elHeight + "px");
-
-        _pageTransitionHandler.transformContentImmediate_BEGIN(_$el, scale, left, top);
 
         if(!_$epubHtml) {
 //            debugger;

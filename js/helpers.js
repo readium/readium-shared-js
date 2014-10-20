@@ -440,9 +440,8 @@ ReadiumSDK.Helpers.CSSTransformString = function(options) {
         //transformString = rotation + " " + transformString;
     }
 
-    //TODO modernizer library can be used to get browser independent transform attributes names (implemented in readium-web fixed_layout_book_zoomer.js)
     var css = {};
-    _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
+    _.each(['', '-webkit-', '-moz-', '-ms-'], function(prefix) { // NOTE THAT empty '' must be the FIRST prefix!!
         css[prefix + 'transform'] = transformString;
         css[prefix + 'transform-origin'] = origin ? origin : (enable3D ? '0 0 0' : '0 0');
     });

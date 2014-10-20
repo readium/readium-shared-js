@@ -89,7 +89,7 @@ ReadiumSDK.Views.FixedView = function(options, reader){
 
         _$el = $(template);
         
-        _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
+        _.each(['', '-webkit-', '-moz-', '-ms-'], function(prefix) { // NOTE THAT empty '' must be the FIRST prefix!!
             _$el.css(prefix + "transition", "all 0 ease 0");
         });
         

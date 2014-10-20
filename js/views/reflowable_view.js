@@ -203,7 +203,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
 
         if(_$epubHtml) {
         
-            _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
+            _.each(['', '-webkit-', '-moz-', '-ms-'], function(prefix) {// NOTE THAT empty '' must be the FIRST prefix!!
                 _$epubHtml.css(prefix + "column-gap", _paginationInfo.columnGap + "px");
             });
         }
@@ -292,7 +292,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         _$epubHtml.css("margin", "0");
         _$epubHtml.css("padding", "0");
 
-        _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
+        _.each(['', '-webkit-', '-moz-', '-ms-'], function(prefix) {// NOTE THAT empty '' must be the FIRST prefix!!
             _$epubHtml.css(prefix + "column-axis", (_htmlBodyIsVerticalWritingMode ? "vertical" : "horizontal"));
         });
 
@@ -300,7 +300,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         // /////////
         // //Columns Debugging
         //
-        // _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
+        // _.each(['', '-webkit-', '-moz-', '-ms-'], function(prefix) {// NOTE THAT empty '' must be the FIRST prefix!!
         //     _$epubHtml.css(prefix + "column-rule-color", "red");
         //     _$epubHtml.css(prefix + "column-rule-style", "dashed");
         //     _$epubHtml.css(prefix + "column-rule-width", "1px");
@@ -630,7 +630,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
 
         _$epubHtml.css("width", (_htmlBodyIsVerticalWritingMode ? _lastViewPortSize.width : _paginationInfo.columnWidth) + "px");
 
-        _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
+        _.each(['', '-webkit-', '-moz-', '-ms-'], function(prefix) {// NOTE THAT empty '' must be the FIRST prefix!!
             _$epubHtml.css(prefix + "column-width", _paginationInfo.columnWidth + "px");
         });
 
