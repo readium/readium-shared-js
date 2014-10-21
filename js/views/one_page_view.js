@@ -30,7 +30,7 @@
  */
 
 //Representation of one fixed page
-ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrides){
+ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrides, reader){
 
     _.extend(this, Backbone.Events);
 
@@ -339,7 +339,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         
         _$el.css("transform", "none");
     
-        var settings = _viewSettings;
+        var settings = reader.viewerSettings();
         if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefined")
         {
             //defaults

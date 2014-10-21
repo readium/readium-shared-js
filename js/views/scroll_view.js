@@ -73,7 +73,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
         _$contentFrame.css("height", "100%");
         _$contentFrame.css("position", "relative");
 
-        var settings = _viewSettings;
+        var settings = reader.viewerSettings();
         if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefined")
         {
             //defaults
@@ -649,7 +649,8 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
         var pageView = new ReadiumSDK.Views.OnePageView(
             options,
             ["content-doc-frame"],
-            true); //enableBookStyleOverrides
+            true, //enableBookStyleOverrides
+            reader);
             
         pageView.render();
         if (_viewSettings) pageView.setViewSettings(_viewSettings);

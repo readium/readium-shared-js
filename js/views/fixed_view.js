@@ -63,7 +63,9 @@ ReadiumSDK.Views.FixedView = function(options, reader){
 
         var pageView = new ReadiumSDK.Views.OnePageView(options,
         [elementClass],
-        false); //enableBookStyleOverrides
+        false, //enableBookStyleOverrides
+        reader
+        );
 
         pageView.on(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPEN_START, function($iframe, spineItem) {
 
@@ -96,7 +98,7 @@ ReadiumSDK.Views.FixedView = function(options, reader){
         _$el.css("overflow", "hidden");
         
         // Removed, see one_page_view@render()
-        // var settings = _viewSettings;
+        // var settings = reader.viewerSettings();
         // if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefined")
         // {
         //     //defaults
