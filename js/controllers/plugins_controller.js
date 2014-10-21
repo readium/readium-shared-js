@@ -102,7 +102,7 @@ function PluginsController() {
             dependencies = optDependencies;
         }
 
-        this.plugins[name] = new Plugin(name, dependencies, function (plugin, api) {
+        _plugins[name] = new Plugin(name, dependencies, function (plugin, api) {
             if (!plugin.initialized) {
                 plugin.initialized = true;
                 try {
