@@ -49,9 +49,12 @@ function PluginApi(reader, plugin) {
     this.plugin = plugin;
 
     this.extendReader = function (extendWith) {
-        var obj = {};
-        obj[plugin.name] = extendWith;
-        _(ReadiumSDK.Views.ReaderView.prototype).extend(obj);
+        if (reader.plugins) {
+            var obj = {};
+            obj[plugin.name] = extendWith;
+
+            _(reader.plugins).extend(obj);
+        }
     };
 }
 
@@ -69,6 +72,14 @@ function PluginsController() {
     function _initializePlugins(reader) {
         var plugin,
             apiFactory = new PluginApiFactory(reader);
+
+        if (!reader.plugins) {
+            //attach an object to the reader that will be
+            // used for plugin namespaces and their extensions
+            reader.plugins = {};
+        } else {
+            throw new Error("Already initialized on reader!");
+        }
 
         for (var pluginName in _plugins) {
             if ((plugin = _plugins[pluginName]) instanceof Plugin) {
