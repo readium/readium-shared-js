@@ -103,7 +103,5 @@ ReadiumSDK.Plugins.loadPlugin("annotations", function (api, plugin) {
     });
 
     // Extend the Reader API with the Annotations API under its own namespace
-    api.extendReader({
-        annotations: new _annotationsApi()
-    });
+    api.extendReader(new _annotationsApi());
 });
