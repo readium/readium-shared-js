@@ -77,6 +77,10 @@ function PluginsController() {
         }
     }
 
+    function _getExceptionMessage(ex) {
+        return ex.message || ex.description || String(ex);
+    }
+
     // Creates a new instance of the given plugin constructor.
     this.loadPlugin = function (name, optDependencies, initFunc) {
 
@@ -94,7 +98,7 @@ function PluginsController() {
                     initFunc.call({}, api);
                     plugin.supported = true;
                 } catch (ex) {
-                    plugin.fail(ex.message || ex.description || String(ex));
+                    plugin.fail(_getExceptionMessage(ex));
                 }
             }
         });
@@ -102,7 +106,11 @@ function PluginsController() {
 
     ReadiumSDK.on(ReadiumSDK.Events.READER_INITIALIZED, function (reader) {
 
-        _initializePlugins(reader);
+        try {
+            _initializePlugins(reader);
+        } catch (ex) {
+            console.error("Plugins failed to initialize:" + _getExceptionMessage(ex));
+        }
 
         _.defer(function () {
             ReadiumSDK.trigger(ReadiumSDK.Events.PLUGINS_LOADED);
