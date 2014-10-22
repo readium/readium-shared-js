@@ -1,4 +1,4 @@
-ReadiumSDK.Plugins.loadPlugin("annotations", function (api, plugin) {
+ReadiumSDK.Plugins.loadPlugin("annotations", function (api) {
     var _annotationsManager, _annotationsApi, _initialized = false, _initializedLate = false;
 
     _annotationsApi = function() {
@@ -7,21 +7,21 @@ ReadiumSDK.Plugins.loadPlugin("annotations", function (api, plugin) {
 
         function isInitialized() {
             if (!_initialized) {
-                plugin.warn('Not initialized!')
+                api.plugin.warn('Not initialized!')
             }
             return _initialized;
         }
 
         this.initialize = function(options){
             if (_initialized) {
-                plugin.warn('Already initialized!');
+                api.plugin.warn('Already initialized!');
                 return;
             }
 
             _annotationsManager = new ReadiumSDK.Views.AnnotationsManager(self, options);
 
             if (_initializedLate) {
-                plugin.warn('Unable to attach to currently loaded content document.\n' +
+                api.plugin.warn('Unable to attach to currently loaded content document.\n' +
                     'Initialize the plugin before loading a content document.');
             }
 
