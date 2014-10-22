@@ -78,11 +78,14 @@ ReadiumSDK.Models.Spread = function(spine, isSyntheticSpread) {
         var position = getItemPosition(item);
         setItemToPosition(item, position);
 
-        if(position != ReadiumSDK.Models.Spread.POSITION_CENTER) {
+        if(position != ReadiumSDK.Models.Spread.POSITION_CENTER && this.spine.isValidLinearItem(item.index)) { // && item.isRenditionSpreadAllowed() not necessary, see getItemPosition() below
             var neighbour = getNeighbourItem(item);
             if(neighbour) {
                 var neighbourPos = getItemPosition(neighbour);
-                if(neighbourPos != position && neighbourPos != ReadiumSDK.Models.Spread.POSITION_CENTER)  {
+                if(neighbourPos != position
+                    && neighbourPos != ReadiumSDK.Models.Spread.POSITION_CENTER
+                    && !neighbour.isReflowable()
+                    && neighbour.isRenditionSpreadAllowed())  {
                     setItemToPosition(neighbour, neighbourPos);
                 }
             }
@@ -115,7 +118,8 @@ ReadiumSDK.Models.Spread = function(spine, isSyntheticSpread) {
     }
 
     function getItemPosition(item) {
-
+        
+        // includes !item.isRenditionSpreadAllowed() ("rendition:spread-none") ==> force center position
         if(!_isSyntheticSpread) {
             return ReadiumSDK.Models.Spread.POSITION_CENTER;
         }

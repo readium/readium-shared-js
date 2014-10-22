@@ -66,6 +66,11 @@ ReadiumSDK.Models.Spine = function(epubPackage, spineDTO) {
 
 
     this.isValidLinearItem = function(index) {
+        
+        if(!isValidIndex(index)) {
+            return undefined;
+        }
+
         return isValidLinearItem(this.item(index));
     };
 
@@ -198,7 +203,7 @@ ReadiumSDK.Models.Spine = function(epubPackage, spineDTO) {
             var spineItem = self.items[i];
             if( !spineItem.page_spread) {
 
-                var spread = isFirstPageInSpread ? baseSide : ReadiumSDK.Models.SpineItem.alternateSpread(baseSide);
+                var spread = spineItem.isRenditionSpreadAllowed() ? (isFirstPageInSpread ? baseSide : ReadiumSDK.Models.SpineItem.alternateSpread(baseSide)) : ReadiumSDK.Models.SpineItem.SPREAD_CENTER;
                 spineItem.setSpread(spread);
             }
 
