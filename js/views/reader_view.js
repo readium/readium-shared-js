@@ -67,13 +67,16 @@ ReadiumSDK.Views.ReaderView = function(options) {
         console.log("** EL is a string:" + _$el.attr('id'));
     }
 
-
     if(options.iframeLoader) {
         _iframeLoader = options.iframeLoader;
     }
     else {
         _iframeLoader = new ReadiumSDK.Views.IFrameLoader({ mathJaxUrl: options.mathJaxUrl});
     }
+
+
+    _needsFixedLayoutScalerWorkAround = options.needsFixedLayoutScalerWorkAround;
+    this.needsFixedLayoutScalerWorkAround = function() { return _needsFixedLayoutScalerWorkAround; }
 
     this.createViewForType = function(viewType, options) {
         var createdView;

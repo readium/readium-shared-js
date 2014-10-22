@@ -591,12 +591,23 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             enable3D = true;
         }
 
-        var css = ReadiumSDK.Helpers.CSSTransformString({scale : scale, enable3D: enable3D});
+        if (reader.needsFixedLayoutScalerWorkAround())
+        {
+            var css1 = ReadiumSDK.Helpers.CSSTransformString({scale : scale, enable3D: enable3D});
+            _$epubHtml.css(css1);
 
-        css["width"] = _meta_size.width;
-        css["height"] = _meta_size.height;
-        
-        _$scaler.css(css);
+            var css2 = ReadiumSDK.Helpers.CSSTransformString({scale : 1, enable3D: enable3D});
+            css2["width"] = _meta_size.width;
+            css2["height"] = _meta_size.height;
+            _$scaler.css(css2);
+        }
+        else
+        {
+            var css = ReadiumSDK.Helpers.CSSTransformString({scale : scale, enable3D: enable3D});
+            css["width"] = _meta_size.width;
+            css["height"] = _meta_size.height;
+            _$scaler.css(css);
+        }
 
         // Chrome workaround: otherwise text is sometimes invisible (probably a rendering glitch due to the 3D transform graphics backend?)
         //_$epubHtml.css("visibility", "hidden"); // "flashing" in two-page spread mode is annoying :(
