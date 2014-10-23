@@ -410,8 +410,12 @@ ReadiumSDK.Helpers.isRenditionSpreadPermittedForItem = function(item, orientatio
 };
 
 ReadiumSDK.Helpers.CSSTransition = function($el, trans) {
+    
+    // does not work!
+    //$el.css('transition', trans);
+    
     var css={};
-    // Note that empty '' MUST be the first prefix!
+    // empty '' prefix FIRST!
     _.each(['', '-webkit-', '-moz-', '-ms-'], function(prefix) {
         css[prefix + 'transition'] = prefix + trans;
     });
