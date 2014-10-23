@@ -67,7 +67,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             {
                 $el.css("transform", "none");
 
-                $el.css("transition", "opacity 150ms ease-out");
+                ReadiumSDK.Helpers.CSSTransition($el, "opacity 150ms ease-out");
 
                 $el.css("opacity", "1");
             }
@@ -88,7 +88,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             {
                 $el.css("opacity", "1");
                 
-                $el.css("transition", "transform 150ms ease-out");
+                ReadiumSDK.Helpers.CSSTransition($el, "transform 150ms ease-out");
 
                 $el.css("transform", "none");
             }
@@ -109,7 +109,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             {
                 $el.css("opacity", "1");
                 
-                $el.css("transition", "transform 300ms ease-in-out");
+                ReadiumSDK.Helpers.CSSTransition($el, "transform 300ms ease-in-out");
                 
                 $el.css("transform", "none");
             }
@@ -154,7 +154,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             {
                 $el.css("opacity", "1");
                 
-                $el.css("transition", "transform 400ms ease-out");
+                ReadiumSDK.Helpers.CSSTransition($el, "transform 400ms ease-out");
 
                 $el.css("transform", "none");
             }
@@ -223,7 +223,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
 
             if (_disablePageTransitions || _pageTransition === -1) return;
 
-            $el.css("transition", "all 0 ease 0");
+            ReadiumSDK.Helpers.CSSTransition($el, "all 0 ease 0");
 
             if (!pageSwitchActuallyChanged) return;
 
@@ -255,7 +255,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
                 {
                     $el.css("transform", "none");
                     
-                    $el.css("transition", "opacity 250ms linear");
+                    ReadiumSDK.Helpers.CSSTransition($el, "opacity 250ms linear");
 
                     $el.css("opacity", "1");
                 }
@@ -303,7 +303,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         
         _$scaler = $("#scaler", _$el);
 
-        _$el.css("transition", "all 0 ease 0");
+        ReadiumSDK.Helpers.CSSTransition(_$el, "all 0 ease 0");
         
         _$el.css("transform", "none");
     

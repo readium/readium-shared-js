@@ -409,6 +409,15 @@ ReadiumSDK.Helpers.isRenditionSpreadPermittedForItem = function(item, orientatio
         && orientation == ReadiumSDK.Views.ORIENTATION_PORTRAIT );
 };
 
+ReadiumSDK.Helpers.CSSTransition = function($el, trans) {
+    var css={};
+    // Note that empty '' MUST be the first prefix!
+    _.each(['', '-webkit-', '-moz-', '-ms-'], function(prefix) {
+        css[prefix + 'transition'] = prefix + trans;
+    });
+    $el.css(css);
+}
+
 //scale, left, top, angle, origin
 ReadiumSDK.Helpers.CSSTransformString = function(options) {
     var enable3D = options.enable3D ? true : false;
