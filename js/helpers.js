@@ -409,6 +409,19 @@ ReadiumSDK.Helpers.isRenditionSpreadPermittedForItem = function(item, orientatio
         && orientation == ReadiumSDK.Views.ORIENTATION_PORTRAIT );
 };
 
+ReadiumSDK.Helpers.CSSTransition = function($el, trans) {
+    
+    // does not work!
+    //$el.css('transition', trans);
+    
+    var css={};
+    // empty '' prefix FIRST!
+    _.each(['', '-webkit-', '-moz-', '-ms-'], function(prefix) {
+        css[prefix + 'transition'] = prefix + trans;
+    });
+    $el.css(css);
+}
+
 //scale, left, top, angle, origin
 ReadiumSDK.Helpers.CSSTransformString = function(options) {
     var enable3D = options.enable3D ? true : false;
@@ -441,11 +454,8 @@ ReadiumSDK.Helpers.CSSTransformString = function(options) {
     }
 
     var css = {};
-    _.each(['', '-webkit-', '-moz-', '-ms-'], function(prefix) { // NOTE THAT empty '' must be the FIRST prefix!!
-        css[prefix + 'transform'] = transformString;
-        css[prefix + 'transform-origin'] = origin ? origin : (enable3D ? '0 0 0' : '0 0');
-    });
-
+    css['transform'] = transformString;
+    css['transform-origin'] = origin ? origin : (enable3D ? '0 0 0' : '0 0');
     return css;
 };
 
