@@ -90,10 +90,8 @@ ReadiumSDK.Views.FixedView = function(options, reader){
         var template = ReadiumSDK.Helpers.loadTemplate("fixed_book_frame", {});
 
         _$el = $(template);
-        
-        _.each(['', '-webkit-', '-moz-', '-ms-'], function(prefix) { // NOTE THAT empty '' must be the FIRST prefix!!
-            _$el.css(prefix + "transition", "all 0 ease 0");
-        });
+
+        _$el.css("transition", "all 0 ease 0");
         
         _$el.css("overflow", "hidden");
         

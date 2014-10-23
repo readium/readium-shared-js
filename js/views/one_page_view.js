@@ -66,12 +66,8 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             function(scale, left, top, $el, meta_width, meta_height, pageSwitchDir)
             {
                 $el.css("transform", "none");
-                
-                var css = {};
-                _.each(['', '-webkit-', '-moz-', '-ms-'], function(prefix) { // NOTE THAT empty '' must be the FIRST prefix!!
-                    css[prefix + "transition"] = "opacity 150ms ease-out";
-                });
-                $el.css(css);
+
+                $el.css("transition", "opacity 150ms ease-out");
 
                 $el.css("opacity", "1");
             }
@@ -92,14 +88,8 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             {
                 $el.css("opacity", "1");
                 
-                var css = {};
-                _.each(['', '-webkit-', '-moz-', '-ms-'], function(prefix) { // NOTE THAT empty '' must be the FIRST prefix!!
-                    css[prefix + "transition"] = prefix + "transform 150ms ease-out";
-                });
-                $el.css(css);
+                $el.css("transition", "transform 150ms ease-out");
 
-                //$el.css("-webkit-transition", "-webkit-transform 200ms ease-out");
-                
                 $el.css("transform", "none");
             }
         );
@@ -119,13 +109,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             {
                 $el.css("opacity", "1");
                 
-                var css = {};
-                _.each(['', '-webkit-', '-moz-', '-ms-'], function(prefix) { // NOTE THAT empty '' must be the FIRST prefix!!
-                    css[prefix + "transition"] = prefix + "transform 300ms ease-in-out";
-                });
-                $el.css(css);
-
-                //$el.css("-webkit-transition", "-webkit-transform 200ms ease-out");
+                $el.css("transition", "transform 300ms ease-in-out");
                 
                 $el.css("transform", "none");
             }
@@ -170,14 +154,8 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             {
                 $el.css("opacity", "1");
                 
-                var css = {};
-                _.each(['', '-webkit-', '-moz-', '-ms-'], function(prefix) { // NOTE THAT empty '' must be the FIRST prefix!!
-                    css[prefix + "transition"] = prefix + "transform 400ms ease-out";
-                });
-                $el.css(css);
+                $el.css("transition", "transform 400ms ease-out");
 
-                //$el.css("-webkit-transition", "-webkit-transform 200ms ease-out");
-                
                 $el.css("transform", "none");
             }
         );
@@ -245,11 +223,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
 
             if (_disablePageTransitions || _pageTransition === -1) return;
 
-            var css = {};
-            _.each(['', '-webkit-', '-moz-', '-ms-'], function(prefix) { // NOTE THAT empty '' must be the FIRST prefix!!
-                css[prefix + "transition"] = "all 0 ease 0";
-            });
-            $el.css(css);
+            $el.css("transition", "all 0 ease 0");
 
             if (!pageSwitchActuallyChanged) return;
 
@@ -281,11 +255,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
                 {
                     $el.css("transform", "none");
                     
-                    var css = {};
-                    _.each(['', '-webkit-', '-moz-', '-ms-'], function(prefix) {// NOTE THAT empty '' must be the FIRST prefix!!
-                        css[prefix + "transition"] = "opacity 250ms linear";
-                    });
-                    $el.css(css);
+                    $el.css("transition", "opacity 250ms linear");
 
                     $el.css("opacity", "1");
                 }
@@ -332,10 +302,8 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         _$el = $(template);
         
         _$scaler = $("#scaler", _$el);
-    
-        _.each(['', '-webkit-', '-moz-', '-ms-'], function(prefix) {// NOTE THAT empty '' must be the FIRST prefix!!
-            _$el.css(prefix + "transition", "all 0 ease 0");
-        });
+
+        _$el.css("transition", "all 0 ease 0");
         
         _$el.css("transform", "none");
     

@@ -441,11 +441,8 @@ ReadiumSDK.Helpers.CSSTransformString = function(options) {
     }
 
     var css = {};
-    _.each(['', '-webkit-', '-moz-', '-ms-'], function(prefix) { // NOTE THAT empty '' must be the FIRST prefix!!
-        css[prefix + 'transform'] = transformString;
-        css[prefix + 'transform-origin'] = origin ? origin : (enable3D ? '0 0 0' : '0 0');
-    });
-
+    css['transform'] = transformString;
+    css['transform-origin'] = origin ? origin : (enable3D ? '0 0 0' : '0 0');
     return css;
 };
 
