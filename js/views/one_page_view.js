@@ -441,12 +441,15 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
     var _useCSSTransformToHideIframe = true;
 
     this.showIFrame = function() {
-
+        var css = {};
         _$iframe.css("visibility", "visible");
         
         if (_useCSSTransformToHideIframe)
         {
-            _$iframe.css("transform", "none");
+            _.each([ "", "-webkit-", "-moz-", "-ms-" ], function(prefix) {
+                css[prefix + "transform"] = "none";
+            });
+            _$iframe.css(css);
 
             var enable3D = false;
             var settings = _viewSettings;
@@ -458,7 +461,10 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             if (settings.enableGPUHardwareAccelerationCSS3D)
             {
                 enable3D = true;
-                _$iframe.css("transform", "translateZ(0)");
+                _.each([ "", "-webkit-", "-moz-", "-ms-" ], function(prefix) {
+                    css[prefix + "transform"] = "translateZ(0)";
+                });
+                _$iframe.css(css);
             }
         }
         else
