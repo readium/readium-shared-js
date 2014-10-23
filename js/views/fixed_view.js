@@ -91,7 +91,7 @@ ReadiumSDK.Views.FixedView = function(options, reader){
 
         _$el = $(template);
 
-        _$el.css("transition", "all 0 ease 0");
+        ReadiumSDK.Helpers.CSSTransition(_$el, "all 0 ease 0");
         
         _$el.css("overflow", "hidden");
         
