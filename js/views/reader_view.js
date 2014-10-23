@@ -80,8 +80,15 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
     this.createViewForType = function(viewType, options) {
         var createdView;
+
+        // NOTE: _$el == options.$viewport
+        _$el.css("overflow", "hidden");
+        
         switch(viewType) {
             case ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED:
+
+                _$el.css("overflow", "auto"); // for content pan, see self.setZoom()
+                
                 createdView = new ReadiumSDK.Views.FixedView(options, self);
                 break;
             case ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_DOC:

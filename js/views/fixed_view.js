@@ -313,7 +313,9 @@ ReadiumSDK.Views.FixedView = function(options, reader){
 
         var horScale = potentialContentSize.width / _contentMetaSize.width;
         var verScale = potentialContentSize.height / _contentMetaSize.height;
-
+        
+        _$viewport.css("overflow", "auto");
+            
         var scale;
         if (_zoom.style == 'fit-width'){
             scale = horScale;
@@ -326,6 +328,9 @@ ReadiumSDK.Views.FixedView = function(options, reader){
         }
         else{
             scale = Math.min(horScale, verScale);
+
+            // no need for pan during "viewport fit" zoom
+            _$viewport.css("overflow", "hidden");
         }
 
         _currentScale = scale;
