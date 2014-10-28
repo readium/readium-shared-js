@@ -79,6 +79,17 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         columnCount: 0
     };
 
+    var _fontSizeConversion = {
+
+        "xx-small": "0.5625rem",
+        "x-small": "0.625rem",
+        "small": "0.8125rem",
+        "medium": "1rem",
+        "large": "1.125rem",
+        "x-large": "1.5rem",
+        "xx-large": "2rem"
+    };
+
     this.render = function(){
 
         var template = ReadiumSDK.Helpers.loadTemplate("reflowable_book_frame", {});
@@ -195,7 +206,36 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
     function updateHtmlFontSize() {
 
         if(_$epubHtml) {
+            if(_fontSize != 100) {
+                fixFontSize();
+            }
             ReadiumSDK.Helpers.UpdateHtmlFontSize(_$epubHtml, _fontSize);
+        }
+    }
+
+    function fixFontSize() {
+        var win = _$iframe[0].contentDocument.defaultView || _$iframe[0].contentWindow;
+
+        //font absolute sizes conversion
+        var sheets, ruleIndex, nbRules, rules;
+        try {
+            sheets = win.document.styleSheets;
+
+            for(var i = 0; i < sheets.length; i++) {
+                rules = sheets[i].rules ? sheets[i].rules : sheets[i].cssRules;
+                for(ruleIndex = 0, nbRules = rules.length; ruleIndex < nbRules; ruleIndex++) {
+                    var rule = rules[ruleIndex];
+                    if(rule.style) {
+                        var newFontSize = _fontSizeConversion[rule.style.fontSize];
+                        if (newFontSize) {
+                            console.info("fix font size : " + rule.style.fontSize + " to " + newFontSize);
+                            rule.style.fontSize = newFontSize;
+                        }
+                    }
+                }
+            }
+        } catch(err) {
+            console.warn("can't get css rules : " + err.message);
         }
     }
 
@@ -234,7 +274,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         _htmlBodyIsLTRWritingMode = undefined;
         
         var win = _$iframe[0].contentDocument.defaultView || _$iframe[0].contentWindow;
-        
+
         //Helpers.isIframeAlive
         var htmlBodyComputedStyle = win.getComputedStyle(_$htmlBody[0], null);
         if (htmlBodyComputedStyle)
