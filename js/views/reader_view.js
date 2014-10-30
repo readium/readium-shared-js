@@ -614,11 +614,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
         }
 
         var pageRequest;
-        var spineItem = _spine.items[pageIndex];
-        if(!spineItem) {
-            return false;
-        }
-
 
         if(_package.isFixedLayout()) {
             var spineItem = _spine.items[pageIndex];
