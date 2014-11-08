@@ -234,6 +234,11 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
     }
 
+    /**
+     * Returns a list of the currently active spine items
+     *
+     * @returns {ReadiumSDK.Models.SpineItem[]}
+     */
     this.getLoadedSpineItems = function() {
 
         if(_currentView) {
@@ -256,34 +261,57 @@ ReadiumSDK.Views.ReaderView = function(options) {
         _currentView = undefined;
     }
 
+    /**
+     * Returns the currently instanced viewer settings
+     *
+     * @returns {ReadiumSDK.Models.ViewerSettings}
+     */
     this.viewerSettings = function() {
         return _viewerSettings;
     };
 
+    /**
+     * Returns a data object based on the package document
+     *
+     * @returns {ReadiumSDK.Models.Package}
+     */
     this.package = function() {
         return _package;
     };
 
+    /**
+     * Returns a representation of the spine as a data object, also acts as list of spine items
+     *
+     * @returns {ReadiumSDK.Models.Spine}
+     */
     this.spine = function() {
         return _spine;
     };
 
+    /**
+     * Returns the user CSS styles collection
+     *
+     * @returns {ReadiumSDK.Collections.StyleCollection}
+     */
     this.userStyles = function() {
         return _userStyles;
     };
 
     /**
+     * Open book data
+     * @typedef {object} OpenBookData
+     * @property {ReadiumSDK.Models.Package} package - packageData (required)
+     * @property {OpenPageRequestData} openPageRequest - openPageRequestData, (optional) data related to open page request
+     * @property {ReaderSettings} [settings]
+     * @property {CssStyles} styles: [cssStyles]
+     * @todo Define missing types
+     */
+
+    /**
      * Triggers the process of opening the book and requesting resources specified in the packageData
      *
      * @method openBook
-     * @param openBookData object with open book data:
-     *
-     *     openBookData.package: packageData, (required)
-     *     openBookData.openPageRequest: openPageRequestData, (optional) data related to open page request
-     *     openBookData.settings: readerSettings, (optional)
-     *     openBookData.styles: cssStyles (optional)
-     *
-     *
+     * @param {OpenBookData} openBookData - object with open book data
      */
     this.openBook = function(openBookData) {
 
@@ -375,6 +403,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
     /**
      * Flips the page from left to right. Takes to account the page progression direction to decide to flip to prev or next page.
      * @method openPageLeft
+     *
+     * @returns {boolean} True if page successfully opened, false if page failed to open, undefined if the result is undetermined (as this depends on child view implementations)
      */
     this.openPageLeft = function() {
 
@@ -389,6 +419,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
     /**
      * Flips the page from right to left. Takes to account the page progression direction to decide to flip to prev or next page.
      * @method openPageRight
+     *
+     * @returns {boolean} True if page successfully opened, false if page failed to open, undefined if the result is undetermined (as this depends on child view implementations)
      */
     this.openPageRight = function() {
 
@@ -401,10 +433,26 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
     };
 
+    /**
+     * Returns if the current child view is an instance of a fixed page view
+     * @returns {boolean}
+     */
     this.isCurrentViewFixedLayout = function() {
         return _currentView instanceof ReadiumSDK.Views.FixedView;
     };
 
+    /**
+     * Zoom options
+     * @typedef {object} ZoomOptions
+     * @property {string} style - "user"|"fit-screen"|"fit-width"
+     * @property {number} scale - 0.0 to 1.0
+     */
+
+    /**
+     * Set the zoom options.
+     *
+     * @param {ZoomOptions} zoom Zoom options
+     */
     this.setZoom = function(zoom) {
         // zoom only handled by fixed layout views 
         if (self.isCurrentViewFixedLayout()) {
@@ -412,6 +460,10 @@ ReadiumSDK.Views.ReaderView = function(options) {
         }
     };
 
+    /**
+     * Returns the current view scale as a percentage
+     * @returns {number}
+     */
     this.getViewScale = function() {
         if (self.isCurrentViewFixedLayout()) {
             return 100 * _currentView.getViewScale();
@@ -422,8 +474,19 @@ ReadiumSDK.Views.ReaderView = function(options) {
     };
 
     /**
+     * Settings data options
+     * @typedef {object} SettingsData
+     * @property {number} fontSize - Font size as percentage
+     * @property {(string|boolean)} syntheticSpread - "auto"|true|false
+     * @property {(string|boolean)} scroll - "auto"|true|false
+     * @property {boolean} doNotUpdateView - Indicates whether the view should be updated after the settings are applied
+     * @property {boolean} mediaOverlaysEnableClick - Indicates whether media overlays are interactive on mouse clicks
+     */
+
+    /**
      * Updates reader view based on the settings specified in settingsData object
-     * @param settingsData
+     * @param {SettingsData} settingsData Settings data
+     * @fires ReadiumSDK.Events.SETTINGS_APPLIED
      */
     this.updateSettings = function(settingsData) {
 
@@ -481,6 +544,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
     /**
      * Opens the next page.
+     * @returns {boolean} True if page successfully opened, false if page failed to open, undefined if the result is undetermined (as this depends on child view implementations)
      */
     this.openPageNext = function() {
 
@@ -517,7 +581,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
     };
 
     /**
-     * Opens the previews page.
+     * Opens the previous page.
+     * @returns {boolean} True if page successfully opened, false if page failed to open, undefined if the result is undetermined (as this depends on child view implementations)
      */
     this.openPagePrev = function() {
 
