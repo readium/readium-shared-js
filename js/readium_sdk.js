@@ -70,6 +70,9 @@ ReadiumSDK = {
 
     InternalEvents: {
         CURRENT_VIEW_PAGINATION_CHANGED: "CurrentViewPaginationChanged",
+    },
+    Overrides: {
+        TextNodeFragmentBuffer: 60
     }
 
 };
