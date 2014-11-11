@@ -26,12 +26,11 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-/*
+/**
  * Renders reflowable content using CSS columns
- *
- * @class ReadiumSDK.Views.ReflowableView
+ * @param options
+ * @constructor
  */
-
 ReadiumSDK.Views.ReflowableView = function(options, reader){
 
     _.extend(this, Backbone.Events);

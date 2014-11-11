@@ -23,11 +23,12 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-/*
+/**
  * View for rendering fixed layout page spread
- * @class ReadiumSDK.Views.FixedView
+ * @param options
+ * @param reader
+ * @constructor
  */
-
 ReadiumSDK.Views.FixedView = function(options, reader){
 
     _.extend(this, Backbone.Events);

@@ -28,47 +28,116 @@
 
 /**
  * Top level ReadiumSDK namespace
- * @class ReadiumSDK
- * @static
+ * @namespace
  */
 ReadiumSDK = {
 
     /**
-     Current version of the JS SDK
-     @method version
-     @static
-     @return {string} version
+     * Current version of the JS SDK
+     * @static
+     * @return {string} version
      */
-    version: function() {
+    version: function () {
         return "0.8.0";
     },
-
-    Models :    {
-                    Smil: {}
-                },
-    Views : {
+    /**
+     * @namespace
+     */
+    Models: {
+        /**
+         * @type {object}
+         */
+        Smil: {}
+    },
+    /**
+     * @namespace
+     */
+    Views: {
+        /**
+         * Landscape Orientation
+         */
         ORIENTATION_LANDSCAPE: "orientation_landscape",
+        /**
+         * Portrait Orientation
+         */
         ORIENTATION_PORTRAIT: "orientation_portrait"
     },
+    /**
+     * @namespace
+     */
     Collections: {},
+    /**
+     * @namespace
+     */
     Routers: {},
+    /**
+     * @namespace
+     */
     Helpers: {},
+    /**
+     * @namespace
+     */
+    Overrides: {},
+    /**
+     * @namespace
+     */
     Events: {
-                READER_INITIALIZED: "ReaderInitialized",
-                // PAGINATION_CHANGED gets triggered on every page turnover. it includes spine information and such.
-                PAGINATION_CHANGED: "PaginationChanged",
-                SETTINGS_APPLIED: "SettingsApplied",
-                FXL_VIEW_RESIZED: "FXLViewResized",
-                READER_VIEW_CREATED: "ReaderViewCreated",
-                READER_VIEW_DESTROYED: "ReaderViewDestroyed",
-                CONTENT_DOCUMENT_LOAD_START: "ContentDocumentLoadStart",
-                CONTENT_DOCUMENT_LOADED: "ContentDocumentLoaded",
-                MEDIA_OVERLAY_STATUS_CHANGED: "MediaOverlayStatusChanged",
-                MEDIA_OVERLAY_TTS_SPEAK: "MediaOverlayTTSSpeak",
-                MEDIA_OVERLAY_TTS_STOP: "MediaOverlayTTSStop"
-            },
-
+        /**
+         * @event
+         */
+        READER_INITIALIZED: "ReaderInitialized",
+        /**
+         * This gets triggered on every page turnover. It includes spine information and such.
+         * @event
+         */
+        PAGINATION_CHANGED: "PaginationChanged",
+        /**
+         * @event
+         */
+        SETTINGS_APPLIED: "SettingsApplied",
+        /**
+         * @event
+         */
+        FXL_VIEW_RESIZED: "FXLViewResized",
+        /**
+         * @event
+         */
+        READER_VIEW_CREATED: "ReaderViewCreated",
+        /**
+         * @event
+         */
+        READER_VIEW_DESTROYED: "ReaderViewDestroyed",
+        /**
+         * @event
+         */
+        CONTENT_DOCUMENT_LOAD_START: "ContentDocumentLoadStart",
+        /**
+         * @event
+         */
+        CONTENT_DOCUMENT_LOADED: "ContentDocumentLoaded",
+        /**
+         * @event
+         */
+        MEDIA_OVERLAY_STATUS_CHANGED: "MediaOverlayStatusChanged",
+        /**
+         * @event
+         */
+        MEDIA_OVERLAY_TTS_SPEAK: "MediaOverlayTTSSpeak",
+        /**
+         * @event
+         */
+        MEDIA_OVERLAY_TTS_STOP: "MediaOverlayTTSStop"
+    },
+    /**
+     * Internal Events
+     *
+     * @desc Should not be triggered outside of {@link ReadiumSDK.Views.ReaderView}.
+     * @namespace
+     */
     InternalEvents: {
+        /**
+         * @event
+         */
         CURRENT_VIEW_PAGINATION_CHANGED: "CurrentViewPaginationChanged",
     }
 
