@@ -61,8 +61,6 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
     var _htmlBodyIsLTRWritingMode;
     
     
-    var _currentOpacity = -1;
-
     var _lastViewPortSize = {
         width: undefined,
         height: undefined
@@ -687,19 +685,12 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
 
     function hideBook()
     {
-        if (_currentOpacity != -1) return; // already hidden
-        
-        _currentOpacity = _$epubHtml.css('opacity');
         _$epubHtml.css('opacity', "0");
     }
 
     function showBook()
     {
-        if (_currentOpacity != -1)
-        {
-            _$epubHtml.css('opacity', "1");
-        }
-        _currentOpacity = -1;
+        _$epubHtml.css('opacity', "1");
     }
 
     this.getFirstVisibleElementCfi = function() {
