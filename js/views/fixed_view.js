@@ -90,10 +90,8 @@ ReadiumSDK.Views.FixedView = function(options, reader){
         var template = ReadiumSDK.Helpers.loadTemplate("fixed_book_frame", {});
 
         _$el = $(template);
-        
-        _.each(['', '-webkit-', '-moz-', '-ms-'], function(prefix) { // NOTE THAT empty '' must be the FIRST prefix!!
-            _$el.css(prefix + "transition", "all 0 ease 0");
-        });
+
+        ReadiumSDK.Helpers.CSSTransition(_$el, "all 0 ease 0");
         
         _$el.css("overflow", "hidden");
         
@@ -315,7 +313,9 @@ ReadiumSDK.Views.FixedView = function(options, reader){
 
         var horScale = potentialContentSize.width / _contentMetaSize.width;
         var verScale = potentialContentSize.height / _contentMetaSize.height;
-
+        
+        _$viewport.css("overflow", "auto");
+            
         var scale;
         if (_zoom.style == 'fit-width'){
             scale = horScale;
@@ -328,6 +328,9 @@ ReadiumSDK.Views.FixedView = function(options, reader){
         }
         else{
             scale = Math.min(horScale, verScale);
+
+            // no need for pan during "viewport fit" zoom
+            _$viewport.css("overflow", "hidden");
         }
 
         _currentScale = scale;
