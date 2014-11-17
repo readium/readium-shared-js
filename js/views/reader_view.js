@@ -30,6 +30,7 @@
  * @typedef {object} ReaderOptions
  * @property {jQueryElement|string} el   The element the reader view should create itself in. Can be a jquery wrapped element or a query selector.
  * @property {ReadiumSDK.Views.IFrameLoader} iframeLoader   An instance of an iframe loader or one expanding it.
+ * @property {boolean} needsFixedLayoutScalerWorkAround
  */
 
 /**
@@ -82,8 +83,17 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
 
     _needsFixedLayoutScalerWorkAround = options.needsFixedLayoutScalerWorkAround;
+    /**
+     * @returns {boolean}
+     */
     this.needsFixedLayoutScalerWorkAround = function() { return _needsFixedLayoutScalerWorkAround; }
 
+    /**
+     * Create a view based on the given view type.
+     * @param {ReaderView.ViewType} viewType
+     * @param {ReaderView.ViewCreationOptions} options
+     * @returns {*}
+     */
     this.createViewForType = function(viewType, options) {
         var createdView;
 
@@ -111,6 +121,10 @@ ReadiumSDK.Views.ReaderView = function(options) {
         return createdView;
     };
 
+    /**
+     * Returns the current view type of the reader view
+     * @returns {ReaderView.ViewType}
+     */
     this.getCurrentViewType = function() {
 
         if(!_currentView) {
@@ -181,6 +195,15 @@ ReadiumSDK.Views.ReaderView = function(options) {
             resetCurrentView();
         }
 
+        /**
+         * View creation options
+         * @typedef {object} ReaderView.ViewCreationOptions
+         * @property {jQueryElement} $viewport  The view port element the reader view has created.
+         * @property {ReadiumSDK.Models.Spine} spine The spine item collection object
+         * @property {ReadiumSDK.Collections.StyleCollection} userStyles User styles
+         * @property {ReadiumSDK.Collections.StyleCollection} bookStyles Book styles
+         * @property {ReadiumSDK.Views.IFrameLoader} iframeLoader   An instance of an iframe loader or one expanding it.
+         */
         var viewCreationParams = {
             $viewport: _$el,
             spine: _spine,
@@ -409,8 +432,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
     /**
      * Flips the page from left to right.
      * Takes to account the page progression direction to decide to flip to prev or next page.
-     *
-     * @returns {boolean} True if page successfully opened, false if page failed to open, undefined if the result is undetermined (as this depends on child view implementations)
      */
     this.openPageLeft = function() {
 
@@ -425,8 +446,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
     /**
      * Flips the page from right to left.
      * Takes to account the page progression direction to decide to flip to prev or next page.
-     *
-     * @returns {boolean} True if page successfully opened, false if page failed to open, undefined if the result is undetermined (as this depends on child view implementations)
      */
     this.openPageRight = function() {
 
@@ -555,8 +574,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
     /**
      * Opens the next page.
-     *
-     * @returns {boolean} True if page successfully opened, false if page failed to open, undefined if the result is undetermined (as this depends on child view implementations)
      */
     this.openPageNext = function() {
 
@@ -594,8 +611,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
     /**
      * Opens the previous page.
-     *
-     * @returns {boolean} True if page successfully opened, false if page failed to open, undefined if the result is undetermined (as this depends on child view implementations)
      */
     this.openPagePrev = function() {
 
@@ -1518,6 +1533,14 @@ ReadiumSDK.Views.ReaderView = function(options) {
     this.backgroundAudioTrackManager = new BackgroundAudioTrackManager();
 };
 
+/**
+ * View Type
+ * @typedef {object} ReaderView.ViewType
+ * @property {number} VIEW_TYPE_COLUMNIZED          Reflowable document view
+ * @property {number} VIEW_TYPE_FIXED               Fixed layout document view
+ * @property {number} VIEW_TYPE_SCROLLED_DOC        Scrollable document view
+ * @property {number} VIEW_TYPE_SCROLLED_CONTINUOUS Continuous scrollable document view
+ */
 ReadiumSDK.Views.ReaderView.VIEW_TYPE_COLUMNIZED = 1;
 ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED = 2;
 ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_DOC = 3;
