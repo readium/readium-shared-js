@@ -27,7 +27,7 @@
 /**
  * Options passed on the reader from the readium loader/initializer
  *
- * @typedef {object} ReaderOptions
+ * @typedef {object} ReadiumSDK.Views.ReaderView.ReaderOptions
  * @property {jQueryElement|string} el   The element the reader view should create itself in. Can be a jquery wrapped element or a query selector.
  * @property {ReadiumSDK.Views.IFrameLoader} iframeLoader   An instance of an iframe loader or one expanding it.
  * @property {boolean} needsFixedLayoutScalerWorkAround
@@ -35,7 +35,7 @@
 
 /**
  * Top level View object. Interface for view manipulation public APIs
- * @param {ReaderOptions} options
+ * @param {ReadiumSDK.Views.ReaderView.ReaderOptions} options
  * @constructor
  */
 ReadiumSDK.Views.ReaderView = function(options) {
@@ -90,8 +90,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
     /**
      * Create a view based on the given view type.
-     * @param {ReaderView.ViewType} viewType
-     * @param {ReaderView.ViewCreationOptions} options
+     * @param {ReadiumSDK.Views.ReaderView.ViewType} viewType
+     * @param {ReadiumSDK.Views.ReaderView.ViewCreationOptions} options
      * @returns {*}
      */
     this.createViewForType = function(viewType, options) {
@@ -197,7 +197,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
         /**
          * View creation options
-         * @typedef {object} ReaderView.ViewCreationOptions
+         * @typedef {object} ReadiumSDK.Views.ReaderView.ViewCreationOptions
          * @property {jQueryElement} $viewport  The view port element the reader view has created.
          * @property {ReadiumSDK.Models.Spine} spine The spine item collection object
          * @property {ReadiumSDK.Collections.StyleCollection} userStyles User styles
@@ -329,10 +329,10 @@ ReadiumSDK.Views.ReaderView = function(options) {
     /**
      * Open Book Data
      *
-     * @typedef {object} OpenBookData
+     * @typedef {object} ReadiumSDK.Views.ReaderView.OpenBookData
      * @property {ReadiumSDK.Models.Package} package - packageData (required)
      * @property {ReadiumSDK.Models.PageOpenRequest} openPageRequest - openPageRequestData, (optional) data related to open page request
-     * @property {SettingsData} [settings]
+     * @property {ReadiumSDK.Views.ReaderView.SettingsData} [settings]
      * @property {ReadiumSDK.Collections.StyleCollection} styles: [cssStyles]
      * @todo Define missing types
      */
@@ -340,7 +340,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     /**
      * Triggers the process of opening the book and requesting resources specified in the packageData
      *
-     * @param {OpenBookData} openBookData - object with open book data
+     * @param {ReadiumSDK.Views.ReaderView.OpenBookData} openBookData - object with open book data
      */
     this.openBook = function(openBookData) {
 
@@ -470,7 +470,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     /**
      * Zoom options
      *
-     * @typedef {object} ZoomOptions
+     * @typedef {object} ReadiumSDK.Views.ReaderView.ZoomOptions
      * @property {string} style - "user"|"fit-screen"|"fit-width"
      * @property {number} scale - 0.0 to 1.0
      */
@@ -478,7 +478,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     /**
      * Set the zoom options.
      *
-     * @param {ZoomOptions} zoom Zoom options
+     * @param {ReadiumSDK.Views.ReaderView.ZoomOptions} zoom Zoom options
      */
     this.setZoom = function(zoom) {
         // zoom only handled by fixed layout views 
@@ -504,7 +504,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     /**
      * Settings Data
      *
-     * @typedef {object} SettingsData
+     * @typedef {object} ReadiumSDK.Views.ReaderView.SettingsData
      * @property {number} fontSize - Font size as percentage
      * @property {(string|boolean)} syntheticSpread - "auto"|true|false
      * @property {(string|boolean)} scroll - "auto"|true|false
@@ -515,7 +515,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     /**
      * Updates reader view based on the settings specified in settingsData object
      *
-     * @param {SettingsData} settingsData Settings data
+     * @param {ReadiumSDK.Views.ReaderView.SettingsData} settingsData Settings data
      * @fires ReadiumSDK.Events.SETTINGS_APPLIED
      */
     this.updateSettings = function(settingsData) {
@@ -1224,24 +1224,10 @@ ReadiumSDK.Views.ReaderView = function(options) {
     }; 
 
     /**
-     * Lets user to subscribe to iframe's window events
-     * Iframe event bind options
-     *
-     * @typedef {object} IframeEventOptions
-     * @property {bool} jqueryEvent  Whether to use a jquery or a native event binding.
-     * @property {bool} onWindow     bind the event on the window.
-     * @property {bool} onDocument   bind the event on the contentDocument.
-     * @property {bool} onBody       bind the event on the body inside the iframe
-     * @property {string} onSelector if specified, bind the event on a selector
-     *                               matching an element inside the iframe.
-     */
-
-    /**
      *
      * @param {string} eventName              Event name.
      * @param {function} callback             Callback function.
      * @param {object} context                User specified data passed to the callback function.
-     * @param {IframeEventOptions} [options]  Specify additional options
      * @returns {undefined}
      */
     this.addIFrameEventListener = function(eventName, callback, context) {
@@ -1535,7 +1521,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
 /**
  * View Type
- * @typedef {object} ReaderView.ViewType
+ * @typedef {object} ReadiumSDK.Views.ReaderView.ViewType
  * @property {number} VIEW_TYPE_COLUMNIZED          Reflowable document view
  * @property {number} VIEW_TYPE_FIXED               Fixed layout document view
  * @property {number} VIEW_TYPE_SCROLLED_DOC        Scrollable document view
