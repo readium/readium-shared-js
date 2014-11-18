@@ -644,6 +644,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
         initViewForItem(pageRequest.spineItem, function(isViewChanged){
 
             if(!isViewChanged) {
+                _viewerSettings.doNotTriggerPagination = true;
                 _currentView.setViewSettings(_viewerSettings);
             }
 

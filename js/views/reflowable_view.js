@@ -143,7 +143,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         updateColumnGap();
         
         updateViewportSize();
-        updatePagination();
+        updatePagination(_viewSettings.doNotTriggerPagination);
     };
 
     function renderIframe() {
@@ -310,10 +310,10 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         updateColumnGap();
 
 
-        self.applyStyles();
+        self.applyStyles(true);
     }
 
-    this.applyStyles = function() {
+    this.applyStyles = function(doNotTriggerPagination) {
 
         ReadiumSDK.Helpers.setStyles(_userStyles.getStyles(), _$el.parent());
 
@@ -324,7 +324,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
 
 
         updateViewportSize();
-        updatePagination();
+        updatePagination(doNotTriggerPagination);
     };
 
     this.applyBookStyles = function() {
@@ -438,11 +438,14 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
     }
 
     function onPaginationChanged(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
-
+        console.log('onPaginationChanged!');
         _paginationInfo.pageOffset = (_paginationInfo.columnWidth + _paginationInfo.columnGap) * _paginationInfo.visibleColumnCount * _paginationInfo.currentSpreadIndex;
         
         redraw();
-        self.trigger(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
+
+        //if (initiator !== _deferredPageRequest) {
+            self.trigger(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId });
+        //}
     }
 
     this.openPagePrev = function (initiator) {
@@ -490,7 +493,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
     };
 
 
-    function updatePagination() {
+    function updatePagination(doNotTriggerPagination) {
         
         // At 100% font-size = 16px (on HTML, not body or descendant markup!)
         var MAXW = 550; //TODO user/vendor-configurable?
@@ -652,12 +655,17 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
             _paginationInfo.currentSpreadIndex = _paginationInfo.spreadCount - 1;
         }
 
+
         if(_deferredPageRequest) {
+
+            if (!doNotTriggerPagination) {
+                onPaginationChanged(_deferredPageRequest);
+            }
 
             //if there is a request for specific page we get here
             openDeferredElement();
         }
-        else {
+        else if (!doNotTriggerPagination) {
 
             //we get here on resizing the viewport
             
