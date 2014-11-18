@@ -311,6 +311,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
 
 
         self.applyStyles(true);
+        updatePagination();
     }
 
     this.applyStyles = function(doNotTriggerPagination) {
@@ -403,7 +404,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         }
     };
 
-    function redraw() {
+    function redraw(doNotShowBook) {
 
         var offsetVal =  -_paginationInfo.pageOffset + "px";
 
@@ -418,8 +419,10 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
             _$epubHtml.css("left", ltr ? offsetVal : "");
             _$epubHtml.css("right", !ltr ? offsetVal : "");
         }
+        if(!doNotShowBook){
+            showBook(); // as it's no longer hidden by shifting the position
+        }
 
-        showBook(); // as it's no longer hidden by shifting the position
     }
 
     function updateViewportSize() {
@@ -438,14 +441,16 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
     }
 
     function onPaginationChanged(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
-        console.log('onPaginationChanged!');
+        console.log('onPaginationChanged called..');
         _paginationInfo.pageOffset = (_paginationInfo.columnWidth + _paginationInfo.columnGap) * _paginationInfo.visibleColumnCount * _paginationInfo.currentSpreadIndex;
-        
-        redraw();
 
-        //if (initiator !== _deferredPageRequest) {
+        if (!initiator || initiator !== _deferredPageRequest) {
+            redraw();
+            console.log('onPaginationChanged!');
             self.trigger(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId });
-        //}
+        } else {
+            redraw(true);
+        }
     }
 
     this.openPagePrev = function (initiator) {
@@ -656,14 +661,14 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         }
 
 
-        if(_deferredPageRequest) {
+        if(_deferredPageRequest && !doNotTriggerPagination) {
 
-            if (!doNotTriggerPagination) {
-                onPaginationChanged(_deferredPageRequest);
-            }
+            onPaginationChanged(_deferredPageRequest);
 
             //if there is a request for specific page we get here
-            openDeferredElement();
+            _.defer(function () {
+                openDeferredElement();
+            });
         }
         else if (!doNotTriggerPagination) {
 
@@ -696,7 +701,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
     function hideBook()
     {
         if (_currentOpacity != -1) return; // already hidden
-        
+
         _currentOpacity = _$epubHtml.css('opacity');
         _$epubHtml.css('opacity', "0");
     }
