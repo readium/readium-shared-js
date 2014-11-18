@@ -483,12 +483,8 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
      * @returns {number|null}
      */
     function findPageBySingleRectangle(clientRectangle) {
-        var visibleContentOffsets = getVisibleContentOffsets() || {};
-        var leftContentOffset = visibleContentOffsets.left || 0;
-        var topContentOffset = visibleContentOffsets.top || 0;
-
         var normalizedRectangle = normalizeRectangle(
-            clientRectangle, leftContentOffset, topContentOffset);
+            clientRectangle, 0, 0);
 
         return calculatePageIndexByRectangles([normalizedRectangle]);
     }
