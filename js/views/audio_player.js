@@ -120,6 +120,15 @@
         );
     }
 
+    /**
+     *
+     * @param onStatusChanged
+     * @param onPositionChanged
+     * @param onAudioEnded
+     * @param onAudioPlay
+     * @param onAudioPause
+     * @constructor
+     */
     ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAudioEnded, onAudioPlay, onAudioPause)
     {
         var self = this;

@@ -25,7 +25,7 @@
 
 
 /**
- @class ReadiumSDK.Models.BookmarkData
+ * @class ReadiumSDK.Models.BookmarkData
  */
 ReadiumSDK.Models.BookmarkData = function(idref, contentCFI) {
 

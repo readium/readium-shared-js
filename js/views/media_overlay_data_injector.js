@@ -1,3 +1,9 @@
+/**
+ *
+ * @param mediaOverlay
+ * @param mediaOverlayPlayer
+ * @constructor
+ */
 ReadiumSDK.Views.MediaOverlayDataInjector = function (mediaOverlay, mediaOverlayPlayer) {
 
     this.attachMediaOverlayData = function ($iframe, spineItem, mediaOverlaySettings) {

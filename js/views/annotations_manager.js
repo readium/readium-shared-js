@@ -108,7 +108,12 @@ Then when the user clicks on the highlight the following will show up in the con
 
 */
 
-
+/**
+ *
+ * @param proxyObj
+ * @param options
+ * @constructor
+ */
 ReadiumSDK.Views.AnnotationsManager = function (proxyObj, options) {
 
     var self = this;

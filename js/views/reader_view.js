@@ -25,12 +25,19 @@
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /**
+ * Options passed on the reader from the readium loader/initializer
  *
+ * @typedef {object} ReadiumSDK.Views.ReaderView.ReaderOptions
+ * @property {jQueryElement|string} el   The element the reader view should create itself in. Can be a jquery wrapped element or a query selector.
+ * @property {ReadiumSDK.Views.IFrameLoader} iframeLoader   An instance of an iframe loader or one expanding it.
+ * @property {boolean} needsFixedLayoutScalerWorkAround
+ */
+
+/**
  * Top level View object. Interface for view manipulation public APIs
- *
- * @class ReadiumSDK.Views.ReaderView
- *
- * */
+ * @param {ReadiumSDK.Views.ReaderView.ReaderOptions} options
+ * @constructor
+ */
 ReadiumSDK.Views.ReaderView = function(options) {
 
     _.extend(this, Backbone.Events);
@@ -76,8 +83,17 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
 
     _needsFixedLayoutScalerWorkAround = options.needsFixedLayoutScalerWorkAround;
+    /**
+     * @returns {boolean}
+     */
     this.needsFixedLayoutScalerWorkAround = function() { return _needsFixedLayoutScalerWorkAround; }
 
+    /**
+     * Create a view based on the given view type.
+     * @param {ReadiumSDK.Views.ReaderView.ViewType} viewType
+     * @param {ReadiumSDK.Views.ReaderView.ViewCreationOptions} options
+     * @returns {*}
+     */
     this.createViewForType = function(viewType, options) {
         var createdView;
 
@@ -105,6 +121,10 @@ ReadiumSDK.Views.ReaderView = function(options) {
         return createdView;
     };
 
+    /**
+     * Returns the current view type of the reader view
+     * @returns {ReaderView.ViewType}
+     */
     this.getCurrentViewType = function() {
 
         if(!_currentView) {
@@ -175,6 +195,15 @@ ReadiumSDK.Views.ReaderView = function(options) {
             resetCurrentView();
         }
 
+        /**
+         * View creation options
+         * @typedef {object} ReadiumSDK.Views.ReaderView.ViewCreationOptions
+         * @property {jQueryElement} $viewport  The view port element the reader view has created.
+         * @property {ReadiumSDK.Models.Spine} spine The spine item collection object
+         * @property {ReadiumSDK.Collections.StyleCollection} userStyles User styles
+         * @property {ReadiumSDK.Collections.StyleCollection} bookStyles Book styles
+         * @property {ReadiumSDK.Views.IFrameLoader} iframeLoader   An instance of an iframe loader or one expanding it.
+         */
         var viewCreationParams = {
             $viewport: _$el,
             spine: _spine,
@@ -234,6 +263,11 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
     }
 
+    /**
+     * Returns a list of the currently active spine items
+     *
+     * @returns {ReadiumSDK.Models.SpineItem[]}
+     */
     this.getLoadedSpineItems = function() {
 
         if(_currentView) {
@@ -256,34 +290,57 @@ ReadiumSDK.Views.ReaderView = function(options) {
         _currentView = undefined;
     }
 
+    /**
+     * Returns the currently instanced viewer settings
+     *
+     * @returns {ReadiumSDK.Models.ViewerSettings}
+     */
     this.viewerSettings = function() {
         return _viewerSettings;
     };
 
+    /**
+     * Returns a data object based on the package document
+     *
+     * @returns {ReadiumSDK.Models.Package}
+     */
     this.package = function() {
         return _package;
     };
 
+    /**
+     * Returns a representation of the spine as a data object, also acts as list of spine items
+     *
+     * @returns {ReadiumSDK.Models.Spine}
+     */
     this.spine = function() {
         return _spine;
     };
 
+    /**
+     * Returns the user CSS styles collection
+     *
+     * @returns {ReadiumSDK.Collections.StyleCollection}
+     */
     this.userStyles = function() {
         return _userStyles;
     };
 
     /**
+     * Open Book Data
+     *
+     * @typedef {object} ReadiumSDK.Views.ReaderView.OpenBookData
+     * @property {ReadiumSDK.Models.Package} package - packageData (required)
+     * @property {ReadiumSDK.Models.PageOpenRequest} openPageRequest - openPageRequestData, (optional) data related to open page request
+     * @property {ReadiumSDK.Views.ReaderView.SettingsData} [settings]
+     * @property {ReadiumSDK.Collections.StyleCollection} styles: [cssStyles]
+     * @todo Define missing types
+     */
+
+    /**
      * Triggers the process of opening the book and requesting resources specified in the packageData
      *
-     * @method openBook
-     * @param openBookData object with open book data:
-     *
-     *     openBookData.package: packageData, (required)
-     *     openBookData.openPageRequest: openPageRequestData, (optional) data related to open page request
-     *     openBookData.settings: readerSettings, (optional)
-     *     openBookData.styles: cssStyles (optional)
-     *
-     *
+     * @param {ReadiumSDK.Views.ReaderView.OpenBookData} openBookData - object with open book data
      */
     this.openBook = function(openBookData) {
 
@@ -373,8 +430,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
     }
 
     /**
-     * Flips the page from left to right. Takes to account the page progression direction to decide to flip to prev or next page.
-     * @method openPageLeft
+     * Flips the page from left to right.
+     * Takes to account the page progression direction to decide to flip to prev or next page.
      */
     this.openPageLeft = function() {
 
@@ -387,8 +444,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
     };
 
     /**
-     * Flips the page from right to left. Takes to account the page progression direction to decide to flip to prev or next page.
-     * @method openPageRight
+     * Flips the page from right to left.
+     * Takes to account the page progression direction to decide to flip to prev or next page.
      */
     this.openPageRight = function() {
 
@@ -401,10 +458,28 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
     };
 
+    /**
+     * Returns if the current child view is an instance of a fixed page view
+     *
+     * @returns {boolean}
+     */
     this.isCurrentViewFixedLayout = function() {
         return _currentView instanceof ReadiumSDK.Views.FixedView;
     };
 
+    /**
+     * Zoom options
+     *
+     * @typedef {object} ReadiumSDK.Views.ReaderView.ZoomOptions
+     * @property {string} style - "user"|"fit-screen"|"fit-width"
+     * @property {number} scale - 0.0 to 1.0
+     */
+
+    /**
+     * Set the zoom options.
+     *
+     * @param {ReadiumSDK.Views.ReaderView.ZoomOptions} zoom Zoom options
+     */
     this.setZoom = function(zoom) {
         // zoom only handled by fixed layout views 
         if (self.isCurrentViewFixedLayout()) {
@@ -412,6 +487,11 @@ ReadiumSDK.Views.ReaderView = function(options) {
         }
     };
 
+    /**
+     * Returns the current view scale as a percentage
+     *
+     * @returns {number}
+     */
     this.getViewScale = function() {
         if (self.isCurrentViewFixedLayout()) {
             return 100 * _currentView.getViewScale();
@@ -422,8 +502,21 @@ ReadiumSDK.Views.ReaderView = function(options) {
     };
 
     /**
+     * Settings Data
+     *
+     * @typedef {object} ReadiumSDK.Views.ReaderView.SettingsData
+     * @property {number} fontSize - Font size as percentage
+     * @property {(string|boolean)} syntheticSpread - "auto"|true|false
+     * @property {(string|boolean)} scroll - "auto"|true|false
+     * @property {boolean} doNotUpdateView - Indicates whether the view should be updated after the settings are applied
+     * @property {boolean} mediaOverlaysEnableClick - Indicates whether media overlays are interactive on mouse clicks
+     */
+
+    /**
      * Updates reader view based on the settings specified in settingsData object
-     * @param settingsData
+     *
+     * @param {ReadiumSDK.Views.ReaderView.SettingsData} settingsData Settings data
+     * @fires ReadiumSDK.Events.SETTINGS_APPLIED
      */
     this.updateSettings = function(settingsData) {
 
@@ -517,7 +610,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     };
 
     /**
-     * Opens the previews page.
+     * Opens the previous page.
      */
     this.openPagePrev = function() {
 
@@ -574,8 +667,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
     /**
      * Opens the page of the spine item with element with provided cfi
      *
-     * @method openSpineItemElementCfi
-     *
      * @param {string} idref Id of the spine item
      * @param {string} elementCfi CFI of the element to be shown
      * @param {object} initiator optional
@@ -599,10 +690,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     };
 
     /**
-     *
      * Opens specified page index of the current spine item
-     *
-     * @method openPageIndex
      *
      * @param {number} pageIndex Zero based index of the page in the current spine item
      * @param {object} initiator optional
@@ -653,7 +741,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
 
     /**
-     *
      * Opens page index of the spine item with idref provided
      *
      * @param {string} idref Id of the spine item
@@ -681,9 +768,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
     /**
      * Set CSS Styles to the reader container
      *
-     * @method setStyles
-     *
-     * @param styles {object} style object contains selector property and declarations object
+     * @param {ReadiumSDK.Collections.StyleCollection} styles   Style collection containing selector property and declarations object
+     * @param {boolean} doNotUpdateView                         Whether to update the view after the styles are applied.
      */
     this.setStyles = function(styles, doNotUpdateView) {
 
@@ -707,9 +793,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     /**
      * Set CSS Styles to the content documents
      *
-     * @method setBookStyles
-     *
-     * @param styles {object} style object contains selector property and declarations object
+     * @param {ReadiumSDK.Collections.StyleCollection} styles    Style collection containing selector property and declarations object
      */
     this.setBookStyles = function(styles) {
 
@@ -725,6 +809,13 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
     };
 
+    /**
+     * Gets an element from active content documents based on a query selector.
+     *
+     * @param {ReadiumSDK.Models.SpineItem} spineItem       The spine item object associated with an active content document
+     * @param {string} selector                      The query selector
+     * @returns {HTMLElement|undefined}
+     */
     this.getElement = function(spineItem, selector) {
 
         if(_currentView) {
@@ -734,6 +825,13 @@ ReadiumSDK.Views.ReaderView = function(options) {
         return undefined;
     };
 
+    /**
+     * Gets an element from active content documents based on an element id.
+     *
+     * @param {ReadiumSDK.Models.SpineItem} spineItem      The spine item object associated with an active content document
+     * @param {string} id                                  The element id
+     * @returns {HTMLElement|undefined}
+     */
     this.getElementById = function(spineItem, id) {
 
         if(_currentView) {
@@ -742,7 +840,17 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
         return undefined;
     };
-    
+
+    /**
+     * Gets an element from active content documents based on a content CFI.
+     *
+     * @param {ReadiumSDK.Models.SpineItem} spineItem     The spine item idref associated with an active content document
+     * @param {string} cfi                                The partial content CFI
+     * @param {string[]} [classBlacklist]
+     * @param {string[]} [elementBlacklist]
+     * @param {string[]} [idBlacklist]
+     * @returns {HTMLElement|undefined}
+     */
     this.getElementByCfi = function(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
         if(_currentView) {
@@ -767,16 +875,21 @@ ReadiumSDK.Views.ReaderView = function(options) {
         }
     }
 
-    //TODO: this is public function - should be JS Doc-ed
+    /**
+     * Opens a content url from a media player context
+     *
+     * @param {string} contentRefUrl
+     * @param {string} sourceFileHref
+     * @param offset
+     */
     this.mediaOverlaysOpenContentUrl = function(contentRefUrl, sourceFileHref, offset) {
         _mediaOverlayPlayer.mediaOverlaysOpenContentUrl(contentRefUrl, sourceFileHref, offset);
     };
 
 
+   
     /**
      * Opens the content document specified by the url
-     *
-     * @method openContentUrl
      *
      * @param {string} contentRefUrl Url of the content document
      * @param {string | undefined} sourceFileHref Url to the file that contentRefUrl is relative to. If contentRefUrl is
@@ -787,7 +900,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
     this.openContentUrl = function(contentRefUrl, sourceFileHref, initiator) {
 
         var combinedPath = ReadiumSDK.Helpers.ResolveContentRef(contentRefUrl, sourceFileHref);
-
 
         var hashIndex = combinedPath.indexOf("#");
         var hrefPart;
@@ -821,8 +933,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
     /**
      * Opens the page of the spine item with element with provided cfi
      *
-     * @method openSpineItemElementId
-     *
      * @param {string} idref Id of the spine item
      * @param {string} elementId id of the element to be shown
      * @param {object} initiator optional
@@ -847,12 +957,9 @@ ReadiumSDK.Views.ReaderView = function(options) {
     };
 
     /**
-     *
      * Returns the bookmark associated with currently opened page.
      *
-     * @method bookmarkCurrentPage
-     *
-     * @returns {string} Stringified ReadiumSDK.Models.BookmarkData object.
+     * @returns {string} Serialized ReadiumSDK.Models.BookmarkData object as JSON string.
      */
     this.bookmarkCurrentPage = function() {
         return JSON.stringify(_currentView.bookmarkCurrentPage());
@@ -860,8 +967,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
     /**
      * Resets all the custom styles set by setStyle callers at runtime
-     *
-     * @method clearStyles
      */
     this.clearStyles = function() {
 
@@ -872,8 +977,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
     /**
      * Resets all the custom styles set by setBookStyle callers at runtime
-     *
-     * @method clearBookStyles
      */
     this.clearBookStyles = function() {
 
@@ -887,10 +990,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     };
 
     /**
-     *
      * Returns true if media overlay available for one of the open pages.
-     *
-     * @method isMediaOverlayAvailable
      *
      * @returns {boolean}
      */
@@ -915,7 +1015,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
     /**
      * Starts/Stop playing media overlay on current page
-     *
      */
     this.toggleMediaOverlay = function() {
 
@@ -925,7 +1024,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
     /**
     * Plays next fragment media overlay
-    *
     */
    this.nextMediaOverlay = function() {
 
@@ -935,7 +1033,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
     /**
      * Plays previous fragment media overlay
-     *
      */
     this.previousMediaOverlay = function() {
 
@@ -945,28 +1042,41 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
     /**
      * Plays next available fragment media overlay that is outside of the current escapable scope
-     *
      */
     this.escapeMediaOverlay = function() {
 
         _mediaOverlayPlayer.escape();
     };
 
+    /**
+     * End media overlay TTS
+     * @todo Clarify what this does with Daniel.
+     */
     this.ttsEndedMediaOverlay = function() {
 
         _mediaOverlayPlayer.onTTSEnd();
     };
 
+    /**
+     * Pause currently playing media overlays.
+     */
     this.pauseMediaOverlay = function() {
 
         _mediaOverlayPlayer.pause();
     };
 
+    /**
+     * Start/Resume playback of media overlays.
+     */
     this.playMediaOverlay = function() {
 
         _mediaOverlayPlayer.play();
     };
 
+    /**
+     * Determine if media overlays are currently playing.
+     * @returns {boolean}
+     */
     this.isPlayingMediaOverlay = function() {
 
         return _mediaOverlayPlayer.isPlaying();
@@ -983,7 +1093,10 @@ ReadiumSDK.Views.ReaderView = function(options) {
 //        _mediaOverlayPlayer.setVolume(volume);
 //    };
 
-
+    /**
+     * Get the first visible media overlay element from the currently active content document(s)
+     * @returns {HTMLElement|undefined}
+     */
     this.getFirstVisibleMediaOverlayElement = function() {
 
         if(_currentView) {
@@ -993,6 +1106,12 @@ ReadiumSDK.Views.ReaderView = function(options) {
         return undefined;
     };
 
+    /**
+     * Used to jump to an element to make sure it is visible when a content document is paginated
+     * @param {string}      spineItemId   The spine item idref associated with an active content document
+     * @param {HTMLElement} element       The element to make visible
+     * @param [initiator]
+     */
     this.insureElementVisibility = function(spineItemId, element, initiator) {
 
         if(_currentView) {
@@ -1054,16 +1173,13 @@ ReadiumSDK.Views.ReaderView = function(options) {
         {
             _currentView.onViewportResize();
         }
-    }
+    };
 
     /**
      * Returns current selection partial Cfi, useful for workflows that need to check whether the user has selected something.
      *
-     * @method getCurrentSelectionCfi 
      * @returns {object | undefined} partial cfi object or undefined if nothing is selected
-    *
      */
-
     this.getCurrentSelectionCfi =  function() {
         return _annotationsManager.getCurrentSelectionCfi();
     };
@@ -1071,58 +1187,47 @@ ReadiumSDK.Views.ReaderView = function(options) {
     /**
      * Creates a higlight based on given parameters
      *
-     * @method addHighlight 
-     * @param {string} spineIdRef spine idref that defines the partial Cfi
-     * @param {string} CFI partial CFI (withouth the indirection step) relative to the spine index
-     * @param {string} id id of the highlight. must be unique
-     * @param {string} type currently "highlight" only
+     * @param {string} spineIdRef    spine idref that defines the partial Cfi
+     * @param {string} cfi           partial CFI (withouth the indirection step) relative to the spine index
+     * @param {string} id            id of the highlight. must be unique
+     * @param {string} type          currently "highlight" only
      *
      * @returns {object | undefined} partial cfi object of the created highlight
-    *
      */
-
     this.addHighlight = function(spineIdRef, Cfi, id, type, styles) {
         return _annotationsManager.addHighlight(spineIdRef, Cfi, id, type, styles) ;
     };
     
 
     /**
-     * Creates a higlight based on current selection
+     * Creates a higlight based on the current selection
      *
-     * @method addSelectionHighlight
      * @param {string} id id of the highlight. must be unique
      * @param {string} type currently "highlight" only
      *
      * @returns {object | undefined} partial cfi object of the created highlight
-    *
      */
-
     this.addSelectionHighlight =  function(id, type) {
         return _annotationsManager.addSelectionHighlight(id,type);
     };
 
     /**
-     * Removes given highlight
+     * Removes A given highlight
      *
-     * @method removeHighlight
-     * @param {string} id id of the highlight.
+     * @param {string} id  The id associated with the highlight.
      *
      * @returns {undefined} 
     *
      */
-
     this.removeHighlight = function(id) {
         return _annotationsManager.removeHighlight(id);
     }; 
 
     /**
-     * Lets user to subscribe to iframe's window events
      *
-     * @method addIFrameEventsListener
-     * @param {string} eventName event name.
-     * @param {string} callback callback function.
-     * @param {string} context user specified data passed to the callback function.
-     *
+     * @param {string} eventName              Event name.
+     * @param {function} callback             Callback function.
+     * @param {object} context                User specified data passed to the callback function.
      * @returns {undefined}
      */
     this.addIFrameEventListener = function(eventName, callback, context) {
@@ -1208,7 +1313,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
             _wasPlaying = wasPlaying;
         };
         
-    
         self.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function ($iframe, spineItem)
         {
             try
@@ -1415,6 +1519,14 @@ ReadiumSDK.Views.ReaderView = function(options) {
     this.backgroundAudioTrackManager = new BackgroundAudioTrackManager();
 };
 
+/**
+ * View Type
+ * @typedef {object} ReadiumSDK.Views.ReaderView.ViewType
+ * @property {number} VIEW_TYPE_COLUMNIZED          Reflowable document view
+ * @property {number} VIEW_TYPE_FIXED               Fixed layout document view
+ * @property {number} VIEW_TYPE_SCROLLED_DOC        Scrollable document view
+ * @property {number} VIEW_TYPE_SCROLLED_CONTINUOUS Continuous scrollable document view
+ */
 ReadiumSDK.Views.ReaderView.VIEW_TYPE_COLUMNIZED = 1;
 ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED = 2;
 ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_DOC = 3;

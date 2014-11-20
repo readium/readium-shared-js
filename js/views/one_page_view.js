@@ -24,12 +24,15 @@
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-/*
- * Renders one page of fixed layout spread
- * @class ReadiumSDK.Views.OnePageView
- */
 
-//Representation of one fixed page
+/**
+ * Renders one page of fixed layout spread
+ *
+ * @param options
+ * @param classes
+ * @param enableBookStyleOverrides
+ * @constructor
+ */
 ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrides, reader){
 
     _.extend(this, Backbone.Events);
