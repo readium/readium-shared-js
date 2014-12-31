@@ -23,11 +23,12 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-/*
+/**
  * View for rendering fixed layout page spread
- * @class ReadiumSDK.Views.FixedView
+ * @param options
+ * @param reader
+ * @constructor
  */
-
 ReadiumSDK.Views.FixedView = function(options, reader){
 
     _.extend(this, Backbone.Events);
@@ -63,7 +64,9 @@ ReadiumSDK.Views.FixedView = function(options, reader){
 
         var pageView = new ReadiumSDK.Views.OnePageView(options,
         [elementClass],
-        false); //enableBookStyleOverrides
+        false, //enableBookStyleOverrides
+        reader
+        );
 
         pageView.on(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPEN_START, function($iframe, spineItem) {
 
@@ -88,12 +91,23 @@ ReadiumSDK.Views.FixedView = function(options, reader){
         var template = ReadiumSDK.Helpers.loadTemplate("fixed_book_frame", {});
 
         _$el = $(template);
-        
-        _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
-            _$el.css(prefix + "transition", "all 0 ease 0");
-        });
+
+        ReadiumSDK.Helpers.CSSTransition(_$el, "all 0 ease 0");
         
         _$el.css("overflow", "hidden");
+        
+        // Removed, see one_page_view@render()
+        // var settings = reader.viewerSettings();
+        // if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefined")
+        // {
+        //     //defaults
+        //     settings = new ReadiumSDK.Models.ViewerSettings({});
+        // }
+        // if (settings.enableGPUHardwareAccelerationCSS3D) {
+        //
+        //     // This fixes rendering issues with WebView (native apps), which crops content embedded in iframes unless GPU hardware acceleration is enabled for CSS rendering.
+        //     _$el.css("transform", "translateZ(0)");
+        // }
         
         _$viewport.append(_$el);
 
@@ -221,7 +235,7 @@ ReadiumSDK.Views.FixedView = function(options, reader){
 
         updateContentMetaSize();
         resizeBook();
-
+        
         self.trigger(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
     }
 
@@ -300,7 +314,9 @@ ReadiumSDK.Views.FixedView = function(options, reader){
 
         var horScale = potentialContentSize.width / _contentMetaSize.width;
         var verScale = potentialContentSize.height / _contentMetaSize.height;
-
+        
+        _$viewport.css("overflow", "auto");
+            
         var scale;
         if (_zoom.style == 'fit-width'){
             scale = horScale;
@@ -313,7 +329,11 @@ ReadiumSDK.Views.FixedView = function(options, reader){
         }
         else{
             scale = Math.min(horScale, verScale);
+
+            // no need for pan during "viewport fit" zoom
+            _$viewport.css("overflow", "hidden");
         }
+
         _currentScale = scale;
 
         var contentSize = { width: _contentMetaSize.width * scale,
@@ -362,6 +382,7 @@ ReadiumSDK.Views.FixedView = function(options, reader){
 
             _centerPageView[transFunc](scale, left, top);
         }
+        
         self.trigger(ReadiumSDK.Events.FXL_VIEW_RESIZED);
     }
 
