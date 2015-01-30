@@ -768,16 +768,21 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         var $elem;
         var height;
         var width;
+        var $body = $('body', _$epubHtml);
+        //maxHeight is (html el height) - (body el padding+margin+border)
+        //we add 3 to the maxHeight as a buffer, this fixes a strange scaling issue on IE11
+        // if we set max-width/max-height to 100% columnizing engine chops images embedded in the text
+        // (but not if we set it to 99-98%) go figure. (the magic +/-3 helps to do this)
+        var maxDimensions = {
+            maxHeight:_$epubHtml.height() - ($body.outerHeight(true) - $body.height() + 3),
+            maxWidth: $body[0].getClientRects()[0].width - 3
+        };
 
         $('img, svg', _$epubHtml).each(function(){
 
             $elem = $(this);
 
-            // if we set max-width/max-height to 100% columnizing engine chops images embedded in the text
-            // (but not if we set it to 99-98%) go figure.
-            // TODO: CSS min-w/h is content-box, not border-box (does not take into account padding + border)? => images may still overrun?
-            $elem.css('max-width', '98%');
-            $elem.css('max-height', '98%');
+            $elem.css(maxDimensions);
 
             if(!$elem.css('height')) {
                 $elem.css('height', 'auto');
