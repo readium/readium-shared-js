@@ -26,12 +26,11 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-/*
+/**
  * Renders reflowable content using CSS columns
- *
- * @class ReadiumSDK.Views.ReflowableView
+ * @param options
+ * @constructor
  */
-
 ReadiumSDK.Views.ReflowableView = function(options, reader){
 
     _.extend(this, Backbone.Events);
@@ -228,6 +227,14 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         var epubContentDocument = _$iframe[0].contentDocument;
         _$epubHtml = $("html", epubContentDocument);
         _$htmlBody = $("body", _$epubHtml);
+
+        // Video surface sometimes (depends on the video codec) disappears from CSS column (i.e. reflow page) during playback (audio continues to play normally, but video canvas is invisible).
+        // Enabling CSS3D fixes this Chrome-specific rendering bug.
+        if(window.chrome
+            && window.navigator.vendor === "Google Inc.") // TODO: Opera (WebKit) sometimes suffers from this rendering bug too (depends on the video codec), but unfortunately GPU-accelerated rendering makes the video controls unresponsive!!
+        {
+            $("video", _$htmlBody).css("transform", "translateZ(0)");
+        }
         
         _htmlBodyIsVerticalWritingMode = false;
         _htmlBodyIsLTRDirection = true;

@@ -27,9 +27,11 @@
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-
-/////////////////////////
-//SmilNode
+/**
+ *
+ * @param parent
+ * @constructor
+ */
 
 ReadiumSDK.Models.Smil.SmilNode = function(parent) {
 
