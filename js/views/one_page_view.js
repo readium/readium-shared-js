@@ -35,7 +35,7 @@
  */
 ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrides, reader){
 
-    _.extend(this, Backbone.Events);
+    _.extend(this, new EventEmitter());
 
     var self = this;
 

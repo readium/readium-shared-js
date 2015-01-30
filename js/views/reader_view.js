@@ -40,7 +40,7 @@
  */
 ReadiumSDK.Views.ReaderView = function(options) {
 
-    _.extend(this, Backbone.Events);
+    _.extend(this, new EventEmitter());
 
     var self = this;
     var _currentView = undefined;

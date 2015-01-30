@@ -23,15 +23,13 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
+define(function() {
 /**
- *
- *
  *
  * @param {ReadiumSDK.Models.Spine} spine
  * @constructor
  */
-
-ReadiumSDK.Models.Spread = function(spine, isSyntheticSpread) {
+var Spread = function(spine, isSyntheticSpread) {
 
     var self = this;
 
@@ -201,6 +199,9 @@ ReadiumSDK.Models.Spread = function(spine, isSyntheticSpread) {
 
 };
 
-ReadiumSDK.Models.Spread.POSITION_LEFT = "left";
-ReadiumSDK.Models.Spread.POSITION_RIGHT = "right";
-ReadiumSDK.Models.Spread.POSITION_CENTER = "center";
+Spread.POSITION_LEFT = "left";
+Spread.POSITION_RIGHT = "right";
+Spread.POSITION_CENTER = "center";
+
+return Spread;
+});

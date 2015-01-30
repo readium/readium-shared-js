@@ -739,113 +739,13 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
         return visibilityCheckerFunc($element, visibleContentOffsets, true);
     };
 
-    // /**
-    //  * @deprecated
-    //  */
-    // this.getVisibleMediaOverlayElements = function(visibleContentOffsets) {
-    // 
-    //     var $elements = this.getMediaOverlayElements($("body", this.getRootElement()));
-    //     return this.getVisibleElements($elements, visibleContentOffsets);
-    // 
-    // };
+
 
     this.isElementVisible = visibilityCheckerFunc;
 
-    this.getAllVisibleElementsWithSelector = function(selector, visibleContentOffset) {
-        var elements = $(selector,this.getRootElement()).filter(function(e) { return true; });
-        var $newElements = [];
-        $.each(elements, function() {
-            $newElements.push($(this));
-        });
-        var visibleDivs = this.getVisibleElements($newElements, visibleContentOffset);
-        return visibleDivs;
 
-    };
 
-    this.getVisibleElements = function($elements, visibleContentOffsets) {
 
-        var visibleElements = [];
-
-        // Find the first visible text node
-        $.each($elements, function() {
-            var $element = this;
-            var visibilityPercentage = visibilityCheckerFunc(
-                    $element, visibleContentOffsets, true);
-
-            if (visibilityPercentage) {
-                var $visibleElement = $element;
-                visibleElements.push({
-                    element: $visibleElement[0], // DOM Element is pushed
-                    percentVisible: visibilityPercentage
-                });
-                return true;
-            }
-
-            // if element's position cannot be determined, just go to next one
-            if (visibilityPercentage === null) {
-                return true;
-            }
-
-            // continue if no visibleElements have been found yet,
-            // stop otherwise
-            return visibleElements.length === 0;
-        });
-
-        return visibleElements;
-    };
-
-    this.getVisibleTextElements = function(visibleContentOffsets) {
-
-        var $elements = this.getTextElements($("body", this.getRootElement()));
-
-        return this.getVisibleElements($elements, visibleContentOffsets);
-    };
-
-    /**
-     * @deprecated
-     */
-    this.getMediaOverlayElements = function($root) {
-
-        var $elements = [];
-
-        function traverseCollection(elements) {
-
-            if (elements == undefined) return;
-
-            for(var i = 0, count = elements.length; i < count; i++) {
-
-                var $element = $(elements[i]);
-
-                if( $element.data("mediaOverlayData") ) {
-                    $elements.push($element);
-                }
-                else {
-                    traverseCollection($element[0].children);
-                }
-
-            }
-        }
-
-        traverseCollection([$root[0]]);
-
-        return $elements;
-    };
-
-    this.getTextElements = function($root) {
-
-        var $textElements = [];
-
-        $root.find(":not(iframe)").contents().each(function () {
-
-            if( isValidTextNode(this) ) {
-                $textElements.push($(this).parent());
-            }
-
-        });
-
-        return $textElements;
-
-    };
 
     function isValidTextNode(node) {
 

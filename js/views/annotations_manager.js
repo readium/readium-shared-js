@@ -107,14 +107,14 @@ Then when the user clicks on the highlight the following will show up in the con
 	
 
 */
-
+define(['underscore', 'annotations_module'], function(_, EpubAnnotationsModule) {
 /**
  *
  * @param proxyObj
  * @param options
  * @constructor
  */
-ReadiumSDK.Views.AnnotationsManager = function (proxyObj, options) {
+var AnnotationsManager = function (proxyObj, options) {
 
     var self = this;
     var liveAnnotations = {};
@@ -126,7 +126,7 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj, options) {
         console.warn("WARNING! Annotations CSS not supplied. Highlighting is not going to work.");
     }
 
-    _.extend(self, Backbone.Events);
+    _.extend(this, new EventEmitter());
 
     // we want to bubble up all of the events that annotations module may trigger up.
     this.on("all", function(eventName) {
@@ -224,3 +224,6 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj, options) {
 
 
 };
+
+return AnnotationsManager;
+});

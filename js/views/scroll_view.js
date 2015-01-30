@@ -35,7 +35,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
 
     var _DEBUG = false;
 
-    _.extend(this, Backbone.Events);
+    _.extend(this, new EventEmitter());
 
     var SCROLL_MARGIN_TO_SHOW_LAST_VISBLE_LINE = 5;
     var ITEM_LOAD_SCROLL_BUFFER = 2000;

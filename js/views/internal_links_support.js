@@ -22,12 +22,13 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
+define(['../helpers'], function(Helpers) {
 /**
  *
  * @param reader
  * @constructor
  */
-ReadiumSDK.Views.InternalLinksSupport = function(reader) {
+var InternalLinksSupport = function(reader) {
 
     var self = this;
 
@@ -74,7 +75,7 @@ ReadiumSDK.Views.InternalLinksSupport = function(reader) {
 
         var absPath = absoluteOpfUri.toString();
 
-        absPath = ReadiumSDK.Helpers.RemoveFromString(absPath, "#" +  fullCfi);
+        absPath = Helpers.RemoveFromString(absPath, "#" +  fullCfi);
 
         readOpfFile(absPath, function(opfText) {
 
@@ -141,7 +142,7 @@ ReadiumSDK.Views.InternalLinksSupport = function(reader) {
     function isDeepLikHref(uri) {
 
         var fileName = uri.filename();
-        return fileName && ReadiumSDK.Helpers.EndsWith(fileName, ".opf");
+        return fileName && Helpers.EndsWith(fileName, ".opf");
     }
 
     function processLinkWithHash(hrefUri, spineItem) {
@@ -220,3 +221,6 @@ ReadiumSDK.Views.InternalLinksSupport = function(reader) {
     }
 
 };
+
+return InternalLinksSupport;
+});

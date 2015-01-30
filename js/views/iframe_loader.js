@@ -26,12 +26,12 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
+define(function() {
 /**
  *
  * @constructor
  */
-ReadiumSDK.Views.IFrameLoader = function() {
+var IFrameLoader = function() {
 
     var self = this;
     var eventListeners = {};
@@ -99,6 +99,7 @@ ReadiumSDK.Views.IFrameLoader = function() {
         
     };
 
-    
-
 };
+
+return IFrameLoader;
+});

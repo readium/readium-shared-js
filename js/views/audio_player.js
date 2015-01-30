@@ -27,7 +27,7 @@
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-(function(){
+define(['jquery'],function($) {
 
     var _iOS = navigator.userAgent.match(/(iPad|iPhone|iPod)/g) ? true : false;
     var _Android = navigator.userAgent.toLowerCase().indexOf('android') > -1;
@@ -129,7 +129,7 @@
      * @param onAudioPause
      * @constructor
      */
-    ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAudioEnded, onAudioPlay, onAudioPause)
+    var AudioPlayer = function(onStatusChanged, onPositionChanged, onAudioEnded, onAudioPlay, onAudioPause)
     {
         var self = this;
      
@@ -699,4 +699,5 @@
         }
     };
 
-})()
+    return AudioPlayer;
+});

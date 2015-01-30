@@ -22,14 +22,13 @@
 //  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
-
+define(['../helpers.js','./spine_item','./spine','./media_overlay'], function (Helpers, SpineItem, Spine, MediaOverlay) {
 /**
  *
- * @class ReadiumSDK.Models.Package
+ * @class Package
  * @constructor
  */
-
-ReadiumSDK.Models.Package = function(packageData){
+var Package = function(packageData){
 
     var self = this;
 
@@ -56,7 +55,7 @@ ReadiumSDK.Models.Package = function(packageData){
 
         if(self.rootUrlMO && self.rootUrlMO.length > 0) {
 
-            if(ReadiumSDK.Helpers.EndsWith(self.rootUrlMO, "/")){
+            if(Helpers.EndsWith(self.rootUrlMO, "/")){
                 return self.rootUrlMO + relativeUrl;
             }
             else {
@@ -71,7 +70,7 @@ ReadiumSDK.Models.Package = function(packageData){
 
         if(self.rootUrl) {
 
-            if(ReadiumSDK.Helpers.EndsWith(self.rootUrl, "/")){
+            if(Helpers.EndsWith(self.rootUrl, "/")){
                 return self.rootUrl + relativeUrl;
             }
             else {
@@ -83,7 +82,7 @@ ReadiumSDK.Models.Package = function(packageData){
     };
 
     this.isFixedLayout = function() {
-        return self.rendition_layout === ReadiumSDK.Models.SpineItem.RENDITION_LAYOUT_PREPAGINATED;
+        return self.rendition_layout === SpineItem.RENDITION_LAYOUT_PREPAGINATED;
     };
 
     this.isReflowable = function() {
@@ -104,8 +103,12 @@ ReadiumSDK.Models.Package = function(packageData){
         this.rendition_orientation = packageData.rendition_orientation;
         this.rendition_spread = packageData.rendition_spread;
         
-        this.spine = new ReadiumSDK.Models.Spine(this, packageData.spine);
+        this.spine = new Spine(this, packageData.spine);
 
-        this.media_overlay = ReadiumSDK.Models.MediaOverlay.fromDTO(packageData.media_overlay, this);
+        this.media_overlay = MediaOverlay.fromDTO(packageData.media_overlay, this);
     }
 };
+
+return Package;
+});
+
