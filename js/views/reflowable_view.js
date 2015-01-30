@@ -425,8 +425,6 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
             _$epubHtml.css("left", ltr ? offsetVal : "");
             _$epubHtml.css("right", !ltr ? offsetVal : "");
         }
-
-        showBook(); // as it's no longer hidden by shifting the position
     }
 
     function updateViewportSize() {
@@ -449,10 +447,8 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         _paginationInfo.pageOffset = (_paginationInfo.columnWidth + _paginationInfo.columnGap) * _paginationInfo.visibleColumnCount * _paginationInfo.currentSpreadIndex;
         
         redraw();
-
-        //if (initiator !== _deferredPageRequest) {
-            self.trigger(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId });
-        //}
+        showBook();
+        self.trigger(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId });
     }
 
     this.openPagePrev = function (initiator) {
@@ -637,7 +633,9 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         _$epubHtml.css("column-width", _paginationInfo.columnWidth + "px");
 
         _$epubHtml.css({left: "0", right: "0", top: "0"});
-        
+
+        redraw();
+        resizeImages();
         ReadiumSDK.Helpers.triggerLayout(_$iframe);
 
         _paginationInfo.columnCount = ((_htmlBodyIsVerticalWritingMode ? _$epubHtml[0].scrollHeight : _$epubHtml[0].scrollWidth) + _paginationInfo.columnGap) / (_paginationInfo.columnWidth + _paginationInfo.columnGap);
@@ -670,7 +668,10 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
             }
 
             //if there is a request for specific page we get here
-            openDeferredElement();
+            setTimeout(function () {
+                openDeferredElement();
+            },50);
+
         }
         else if (!doNotTriggerPagination) {
 
