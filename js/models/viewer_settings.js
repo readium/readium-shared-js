@@ -23,12 +23,13 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
+define([], function() {
 /**
  *
  * @param settingsData
  * @constructor
  */
-ReadiumSDK.Models.ViewerSettings = function(settingsData) {
+var ViewerSettings = function(settingsData) {
 
     var self = this;
 
@@ -111,3 +112,5 @@ ReadiumSDK.Models.ViewerSettings = function(settingsData) {
 
     this.update(settingsData);
 };
+    return ViewerSettings;
+});

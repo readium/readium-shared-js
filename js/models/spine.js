@@ -23,13 +23,14 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
+define(["./spine_item"], function(SpineItem) {
 /**
  *  Wrapper of the spine object received from hosting application
  *
  *  @class  ReadiumSDK.Models.Spine
  */
 
-ReadiumSDK.Models.Spine = function(epubPackage, spineDTO) {
+var Spine = function(epubPackage, spineDTO) {
 
     var self = this;
 
@@ -196,14 +197,14 @@ ReadiumSDK.Models.Spine = function(epubPackage, spineDTO) {
         var len = self.items.length;
 
         var isFirstPageInSpread = false;
-        var baseSide = self.isLeftToRight() ? ReadiumSDK.Models.SpineItem.SPREAD_LEFT : ReadiumSDK.Models.SpineItem.SPREAD_RIGHT;
+        var baseSide = self.isLeftToRight() ? SpineItem.SPREAD_LEFT : SpineItem.SPREAD_RIGHT;
 
         for(var i = 0; i < len; i++) {
 
             var spineItem = self.items[i];
             if( !spineItem.page_spread) {
 
-                var spread = spineItem.isRenditionSpreadAllowed() ? (isFirstPageInSpread ? baseSide : ReadiumSDK.Models.SpineItem.alternateSpread(baseSide)) : ReadiumSDK.Models.SpineItem.SPREAD_CENTER;
+                var spread = spineItem.isRenditionSpreadAllowed() ? (isFirstPageInSpread ? baseSide : SpineItem.alternateSpread(baseSide)) : SpineItem.SPREAD_CENTER;
                 spineItem.setSpread(spread);
             }
 
@@ -219,7 +220,7 @@ ReadiumSDK.Models.Spine = function(epubPackage, spineDTO) {
 
         var length = spineDTO.items.length;
         for(var i = 0; i < length; i++) {
-            var item = new ReadiumSDK.Models.SpineItem(spineDTO.items[i], i, this);
+            var item = new SpineItem(spineDTO.items[i], i, this);
             this.items.push(item);
         }
 
@@ -227,3 +228,5 @@ ReadiumSDK.Models.Spine = function(epubPackage, spineDTO) {
     }
 
 };
+    return Spine;
+});

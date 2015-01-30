@@ -24,18 +24,18 @@
 //  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
-
+define([], function() {
 /**
  *
  * @constructor
  */
-ReadiumSDK.Models.Switches = function() {
+var Switches = function() {
 
 };
 
 // Description: Parse the epub "switch" tags and hide
 // cases that are not supported
-ReadiumSDK.Models.Switches.apply = function(dom) {
+Switches.apply = function(dom) {
 
 
     // helper method, returns true if a given case node
@@ -78,3 +78,5 @@ ReadiumSDK.Models.Switches.apply = function(dom) {
         }
     })
 };
+    return Switches;
+});

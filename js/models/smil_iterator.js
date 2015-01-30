@@ -25,14 +25,13 @@
 //  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
-
+define (["../helpers"], function(Helpers) {
 /**
  *
  * @param smil
  * @constructor
  */
-
-ReadiumSDK.Models.SmilIterator = function(smil) {
+var SmilIterator = function(smil) {
 
     this.smil = smil;
     this.currentPar = undefined;
@@ -99,7 +98,7 @@ ReadiumSDK.Models.SmilIterator = function(smil) {
 
                 // INNER match
                 //var inside = this.currentPar.element.ownerDocument.getElementById(id);
-                var inside = $("#" + ReadiumSDK.Helpers.escapeJQuerySelector(id), this.currentPar.element);
+                var inside = $("#" + Helpers.escapeJQuerySelector(id), this.currentPar.element);
                 if (inside && inside.length && inside[0])
                 {
                     return true;
@@ -186,3 +185,6 @@ ReadiumSDK.Models.SmilIterator = function(smil) {
 
     this.reset();
 };
+
+return SmilIterator;
+});

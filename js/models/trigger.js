@@ -25,6 +25,7 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
+define(["../helpers"], function(Helpers) {
 /**
  * Setter fot epub Triggers
  *
@@ -32,7 +33,7 @@
  * @param domNode
  */
 
-ReadiumSDK.Models.Trigger = function(domNode) {
+var Trigger = function(domNode) {
     var $el = $(domNode);
     this.action 	= $el.attr("action");
     this.ref 		= $el.attr("ref");
@@ -41,14 +42,14 @@ ReadiumSDK.Models.Trigger = function(domNode) {
     this.ref 		= $el.attr("ref");
 };
 
-ReadiumSDK.Models.Trigger.register = function(dom) {
+Trigger.register = function(dom) {
     $('trigger', dom).each(function() {
-        var trigger = new ReadiumSDK.Models.Trigger(this);
+        var trigger = new Trigger(this);
         trigger.subscribe(dom);
     });
 };
 
-ReadiumSDK.Models.Trigger.prototype.subscribe = function(dom) {
+Trigger.prototype.subscribe = function(dom) {
     var selector = "#" + this.observer;
     var that = this;
     $(selector, dom).on(this.event, function() {
@@ -56,8 +57,8 @@ ReadiumSDK.Models.Trigger.prototype.subscribe = function(dom) {
     });
 };
 
-ReadiumSDK.Models.Trigger.prototype.execute = function(dom) {
-    var $target = $( "#" + ReadiumSDK.Helpers.escapeJQuerySelector(this.ref), dom);
+Trigger.prototype.execute = function(dom) {
+    var $target = $( "#" + Helpers.escapeJQuerySelector(this.ref), dom);
     switch(this.action)
     {
         case "show":
@@ -86,3 +87,5 @@ ReadiumSDK.Models.Trigger.prototype.execute = function(dom) {
             console.log("do not no how to handle trigger " + this.action);
     }
 };
+    return Trigger;
+});

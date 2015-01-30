@@ -26,18 +26,19 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
+define(["../helpers", "../readium_sdk", "../models/smil_iterator"], function(Helpers, ReadiumSDK, SmilIterator) {
 /**
  *
  * @param reader
  * @param onStatusChanged
  * @constructor
  */
-ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
+var MediaOverlayPlayer = function(reader, onStatusChanged) {
 
 
     var _smilIterator = undefined;
 
-    var _audioPlayer = new ReadiumSDK.Views.AudioPlayer(onStatusChanged, onAudioPositionChanged, onAudioEnded, onPlay, onPause);
+    var _audioPlayer = new AudioPlayer(onStatusChanged, onAudioPositionChanged, onAudioEnded, onPlay, onPause);
 
     var _ttsIsPlaying = false;
     var _currentTTS = undefined;
@@ -60,7 +61,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
     var _package = reader.package();
     var _settings = reader.viewerSettings();
     var self = this;
-    var _elementHighlighter = new ReadiumSDK.Views.MediaOverlayElementHighlighter(reader);
+    var _elementHighlighter = new MediaOverlayElementHighlighter(reader);
 
     reader.on(ReadiumSDK.Events.READER_VIEW_DESTROYED, function(){
 
@@ -395,7 +396,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         var parSmil = par.getSmil();
         if(!_smilIterator || _smilIterator.smil != parSmil)
         {
-            _smilIterator = new ReadiumSDK.Models.SmilIterator(parSmil);
+            _smilIterator = new SmilIterator(parSmil);
         }
         else {
             _smilIterator.reset();
@@ -604,7 +605,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 //console.debug("### MO PAR OFFSET: " + clipBeginOffset);
             }
 
-            var audioContentRef = ReadiumSDK.Helpers.ResolveContentRef(_smilIterator.currentPar.audio.src, _smilIterator.smil.href);
+            var audioContentRef = Helpers.ResolveContentRef(_smilIterator.currentPar.audio.src, _smilIterator.smil.href);
 
             var audioSource = _package.resolveRelativeUrlMO(audioContentRef);
 
@@ -631,7 +632,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
 //console.debug("nextSmil: " + nextSmil.href + " /// " + nextSmil.id);
 
-            _smilIterator = new ReadiumSDK.Models.SmilIterator(nextSmil);
+            _smilIterator = new SmilIterator(nextSmil);
             if(_smilIterator.currentPar) {
                 if (!goNext)
                 {
@@ -1441,7 +1442,7 @@ console.debug("TTS resume");
 
             var smilIndex = smil.mo.smil_models.indexOf(smil);
 
-            var smilIterator = new ReadiumSDK.Models.SmilIterator(smil);
+            var smilIterator = new SmilIterator(smil);
             var parIndex = -1;
             while (smilIterator.currentPar)
             {
@@ -1938,7 +1939,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         var wasPlaying = self.isPlaying();
         if(wasPlaying && _smilIterator)
         {
-            var isScrollView = paginationData.initiator && paginationData.initiator instanceof ReadiumSDK.Views.ScrollView;
+            var isScrollView = paginationData.initiator && paginationData.initiator instanceof ScrollView;
             if (isScrollView && _settings.mediaOverlaysPreservePlaybackWhenScroll)
             {
                 _wasPlayingScrolling = true;
@@ -2081,7 +2082,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         var parSmil = zPar.getSmil();
         if(!_smilIterator || _smilIterator.smil != parSmil)
         {
-            _smilIterator = new ReadiumSDK.Models.SmilIterator(parSmil);
+            _smilIterator = new SmilIterator(parSmil);
         }
         else
         {
@@ -2125,3 +2126,5 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         _autoNextSmil = autoNext;
     };
 };
+    return MediaOverlayPlayer;
+});

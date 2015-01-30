@@ -1,10 +1,11 @@
+define (["../helpers", "../models/smil_iterator"], function(Helpers, SmilIterator) {
 /**
  *
  * @param mediaOverlay
  * @param mediaOverlayPlayer
  * @constructor
  */
-ReadiumSDK.Views.MediaOverlayDataInjector = function (mediaOverlay, mediaOverlayPlayer) {
+var MediaOverlayDataInjector = function (mediaOverlay, mediaOverlayPlayer) {
 
     this.attachMediaOverlayData = function ($iframe, spineItem, mediaOverlaySettings) {
 
@@ -285,7 +286,7 @@ console.debug("MO readaloud attr: " + readaloud);
 
                    if (file && fragmentId)
                    {
-                       var textRelativeRef = ReadiumSDK.Helpers.ResolveContentRef(file, smil.href);
+                       var textRelativeRef = Helpers.ResolveContentRef(file, smil.href);
                        var same = textRelativeRef === spineItem.href;
                        if (same)
                        {                       
@@ -320,7 +321,7 @@ console.debug("MO readaloud attr: " + readaloud);
 
 //console.debug("[[MO ATTACH]] " + spineItem.idref + " /// " + spineItem.media_overlay_id + " === " + smil.id);
 
-        var iter = new ReadiumSDK.Models.SmilIterator(smil);
+        var iter = new SmilIterator(smil);
         
         var fakeOpfRoot = "/99!";
         var epubCfiPrefix = "epubcfi";
@@ -331,7 +332,7 @@ console.debug("MO readaloud attr: " + readaloud);
 
             if (true) { //iter.currentPar.text.srcFragmentId (includes empty frag ID)
 
-                var textRelativeRef = ReadiumSDK.Helpers.ResolveContentRef(iter.currentPar.text.srcFile, iter.smil.href);
+                var textRelativeRef = Helpers.ResolveContentRef(iter.currentPar.text.srcFile, iter.smil.href);
 
                 var same = textRelativeRef === spineItem.href;
                 if (same) {
@@ -521,3 +522,6 @@ console.debug("MO readaloud attr: " + readaloud);
         }
     }
 };
+
+return MediaOverlayDataInjector;
+});
