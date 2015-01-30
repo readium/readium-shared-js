@@ -651,6 +651,11 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
             offsetRectangle(rect, -columnFullWidth, frameDimensions.height);
         }
 
+        // Do not adjust if the element is close to being 100% in one column
+        if (rect.left < 0 && (rect.left * -1) >= rect.width) {
+            return;
+        }
+
         // ... then, if necessary (for visibility offset checks),
         // each column is tried again (now in reverse order)
         // the loop will be stopped when the column is aligned with a viewport
