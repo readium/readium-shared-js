@@ -227,10 +227,34 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
                 console.error("Error! No visible textnode fragment found!");
             }
         }
-        //create an optimized range to return based on the fragment results
-        var resultRangeData = {start: found.end > 3 ? (found.end - 2) : 0, end: found.end};
-        var resultRangeRect = getNodeRangeClientRect(textNode, resultRangeData.start, textNode, resultRangeData.end);
-        return {start: resultRangeData.start, end: resultRangeData.end, rect: resultRangeRect};
+
+        //if the found fragment is small enough return it outright
+        if (found.end > 3) {
+            //create an optimized range to return based on the fragment results
+
+            //find the last printable character of the textnode fragment:
+            var lastPrintableIndex = found.start;
+            for (var i = found.end - 1; i < found.end && i >= found.start; i--) {
+                /* <- debug
+                console.log(i + " :: " + textNode.nodeValue.charAt(i) + " :: " + textNode.nodeValue.charCodeAt(i));
+                //debug -> */
+                if (textNode.nodeValue.charCodeAt(i) > 32) {
+                    lastPrintableIndex = i;
+                    break;
+                }
+            }
+            var resultRangeData = {start: lastPrintableIndex, end: lastPrintableIndex + 1};
+            var resultRangeRect = getNodeRangeClientRect(textNode, resultRangeData.start, textNode, resultRangeData.end);
+            if (isNodeClientRectVisible(resultRangeRect)) {
+                return {start: resultRangeData.start, end: resultRangeData.end, rect: resultRangeRect};
+            } else {
+                return found;
+            }
+        } else {
+            return found;
+        }
+
+
     }
 
 
