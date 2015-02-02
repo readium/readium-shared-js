@@ -792,6 +792,25 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
 
 
     this.getFirstVisibleElementCfi = function (topOffset) {
+        var foundElement = this.findFirstVisibleElement(topOffset);
+
+        if(!foundElement.$element) {
+            console.log("Could not generate CFI no visible element on page");
+            return undefined;
+        }
+
+        //noinspection JSUnresolvedVariable
+        var cfi = EPUBcfi.Generator.generateElementCFIComponent(foundElement.$element[0]);
+
+        if(cfi[0] == "!") {
+            cfi = cfi.substring(1);
+        }
+
+        return cfi + "@0:" + foundElement.percentY;
+    };
+
+    //experimental replacement for above function
+    this.getFirstVisibleElementCfiX = function (topOffset) {
         var cfi;
         var foundElement = this.findFirstVisibleElement(topOffset);
         var $element = foundElement.$element;
