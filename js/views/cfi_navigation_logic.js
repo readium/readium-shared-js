@@ -1168,6 +1168,9 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
     this.isElementVisible = visibilityCheckerFunc;
 
     this.isElementCfiVisible = function (partialCfi) {
+        if (this.isRangeCfi(partialCfi)) {
+            return this.isNodeFromRangeCfiVisible(partialCfi);
+        }
         var pageIndex = this.getPageForElementCfi(partialCfi,
             ["cfi-marker", "mo-cfi-highlight"],
             [],
@@ -1181,6 +1184,15 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
             return _.contains(openPages, pageIndex);
         }
         return undefined;
+    };
+
+    this.isNodeFromRangeCfiVisible = function (cfi) {
+        var nodeRangeInfo = this.getNodeRangeInfoFromCfi(cfi);
+        if (nodeRangeInfo) {
+            return isNodeClientRectVisible(nodeRangeInfo.clientRect);
+        } else {
+            return undefined;
+        }
     };
 
     this.getAllVisibleElementsWithSelector = function(selector, visibleContentOffset) {
