@@ -1148,6 +1148,22 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
 
     this.isElementVisible = visibilityCheckerFunc;
 
+    this.isElementCfiVisible = function (partialCfi) {
+        var pageIndex = this.getPageForElementCfi(partialCfi,
+            ["cfi-marker", "mo-cfi-highlight"],
+            [],
+            ["MathJax_Message"]);
+        var paginationInfo = options.paginationInfo || null;
+        if (paginationInfo) {
+            var openPages = [paginationInfo.currentSpreadIndex * paginationInfo.visibleColumnCount];
+            if (paginationInfo.visibleColumnCount == 2) {
+                openPages.push(openPages[0] + 1);
+            }
+            return _.contains(openPages, pageIndex);
+        }
+        return undefined;
+    };
+
     this.getAllVisibleElementsWithSelector = function(selector, visibleContentOffset) {
         var elements = $(selector,this.getRootElement()).filter(function(e) { return true; });
         var $newElements = [];
