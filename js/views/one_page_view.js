@@ -607,6 +607,10 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         _meta_size.height = 0;
 
         var size = undefined;
+        
+        var isFallbackDimension = false;
+        var widthPercent = undefined;
+        var heightPercent = undefined;
 
         var contentDocument = _$iframe[0].contentDocument;
 
@@ -623,16 +627,16 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         }
         
         if (!size) {
-            // TODO: the picked SVG element may be the root...may be deep inside the markup!
-            var $svg = $(contentDocument).find('svg');
-            //var $svg = $(contentDocument.documentElement);
-            // contentDocument.documentElement.nodeName == "svg"
-            if($svg.length > 0) {
+            
+            //var $svg = $(contentDocument).find('svg');
+            // if($svg.length > 0) {
+            if (contentDocument && contentDocument.documentElement && contentDocument.documentElement.nodeName && contentDocument.documentElement.nodeName.toLowerCase() == "svg") {
 
                 var width = undefined;
                 var height = undefined;
                 
-                var wAttr = $svg[0].getAttribute("width");
+                var wAttr = contentDocument.documentElement.getAttribute("width");
+                var isWidthPercent = wAttr && wAttr.length >= 1 && wAttr[wAttr.length-1] == '%';
                 if (wAttr) {
                     try {
                         width = parseInt(wAttr, 10);
@@ -640,13 +644,23 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
                     catch (err)
                     {}
                 }
-                var hAttr = $svg[0].getAttribute("height");
+                if (width && isWidthPercent) {
+                    widthPercent = width;
+                    width = undefined;
+                }
+                     
+                var hAttr = contentDocument.documentElement.getAttribute("height");
+                var isHeightPercent = hAttr && hAttr.length >= 1 && hAttr[hAttr.length-1] == '%';
                 if (hAttr) {
                     try {
                         height = parseInt(hAttr, 10);
                     }
                     catch (err)
                     {}
+                }
+                if (height && isHeightPercent) {
+                    heightPercent = height;
+                    height = undefined;
                 }
 
                 if (width && height)
@@ -690,10 +704,6 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
                     width: $img.width(),
                     height: $img.height()
                 }
-                // if (contentDocument && contentDocument.documentElement && contentDocument.documentElement.nodeName && contentDocument.documentElement.nodeName.toLowerCase() == "svg") {
-                //     contentDocument.documentElement.setAttribute("width", size.width);
-                //     contentDocument.documentElement.setAttribute("height", size.height);
-                // }
 
                 var isImage = _currentSpineItem && _currentSpineItem.media_type && _currentSpineItem.media_type.length && _currentSpineItem.media_type.indexOf("image/") == 0;
                 if (!isImage) {
@@ -730,10 +740,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
                             height: height
                         }
 
-                        // if (contentDocument && contentDocument.documentElement && contentDocument.documentElement.nodeName && contentDocument.documentElement.nodeName.toLowerCase() == "svg") {
-                        //     contentDocument.documentElement.setAttribute("width", size.width);
-                        //     contentDocument.documentElement.setAttribute("height", size.height);
-                        // }
+                        isFallbackDimension = true;
 
                         console.warn("Viewport: using image dimensions!");
                     }
@@ -745,17 +752,38 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             // Not a great fallback, as it has the aspect ratio of the full window, but it is better than no display at all.
             width = _$viewport.width();
             height = _$viewport.height();
+            
+            // hacky method to determine the actual available horizontal space (half the two-page spread is a reasonable approximation, this means that whatever the size of the other iframe / one_page_view, the aspect ratio of this one exactly corresponds to half the viewport rendering surface)
+            var isTwoPageSyntheticSpread = $("iframe.iframe-fixed", _$viewport).length > 1;
+            if (isTwoPageSyntheticSpread) width *= 0.5;
+            
+            // the original SVG width/height might have been specified as a percentage of the containing viewport
+            if (widthPercent) {
+                width *= (widthPercent / 100);
+            }
+            if (heightPercent) {
+                height *= (heightPercent / 100);
+            }
+            
             size = {
                 width: width,
                 height: height
             }
 
+            isFallbackDimension = true;
+            
             console.warn("Viewport: using browser / e-reader viewport dimensions!");
         }
         
-        if(size) {
+        if (size) {
             _meta_size.width = size.width;
             _meta_size.height = size.height;
+            
+            // Not strictly necessary, let's preserve the percentage values
+            // if (isFallbackDimension && contentDocument && contentDocument.documentElement && contentDocument.documentElement.nodeName && contentDocument.documentElement.nodeName.toLowerCase() == "svg") {
+            //     contentDocument.documentElement.setAttribute("width", size.width + "px");
+            //     contentDocument.documentElement.setAttribute("height", size.height + "px");
+            // }
         }
     }
 
