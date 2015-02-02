@@ -881,6 +881,13 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         }
 
         self.openPage(openPageRequest);
-    }
+    };
+
+    this.isElementCfiVisible = function(spineIdRef, contentCfi) {
+        if (spineIdRef != _currentSpineItem.idref) {
+            return false;
+        }
+        return _navigationLogic.isElementCfiVisible(contentCfi);
+    };
 
 };

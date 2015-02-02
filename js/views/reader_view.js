@@ -1234,6 +1234,13 @@ ReadiumSDK.Views.ReaderView = function(options) {
         _iframeLoader.addIFrameEventListener(eventName, callback, context);
     };
 
+    this.isElementCfiVisible = function (spineIdRef, contentCfi) {
+        if (!_currentView) {
+            return false;
+        }
+        return _currentView.isElementCfiVisible(spineIdRef, contentCfi);
+    };
+
     var BackgroundAudioTrackManager = function()
     {
         var _spineItemIframeMap = {};
