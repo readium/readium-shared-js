@@ -26,7 +26,7 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define(["../models/bookmark_data", "./cfi_navigation_logic", "../models/current_pages_info", "../helpers", "../models/page_open_request", "../readium_sdk", "../models/viewer_settings"], function(BookmarkData, CfiNavigationLogic, CurrentPagesInfo, Helpers, PageOpenRequest, ReadiumSDK, ViewerSettings) {
+define(["jquery", "underscore", "eventEmitter", "../models/bookmark_data", "./cfi_navigation_logic", "../models/current_pages_info", "../helpers", "../models/page_open_request", "../readium_sdk", "../models/viewer_settings"], function($, _, EventEmitter, BookmarkData, CfiNavigationLogic, CurrentPagesInfo, Helpers, PageOpenRequest, ReadiumSDK, ViewerSettings) {
 /**
  * Renders reflowable content using CSS columns
  * @param options

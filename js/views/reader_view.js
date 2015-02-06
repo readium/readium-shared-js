@@ -24,7 +24,7 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define(["./annotations_manager", "./fixed_view", "../helpers","./iframe_loader",  "./internal_links_support", "./media_overlay_data_injector", "./media_overlay_player", "../models/package", "../models/page_open_request", "./reflowable_view", "./scroll_view", "../models/switches", "../models/trigger", "../models/viewer_settings", "../readium_sdk"], function(AnnotationsManager, FixedView, Helpers, IFrameLoader, InternalLinksSupport, MediaOverlayDataInjector, MediaOverlayPlayer, Package, PageOpenRequest, ReflowableView, ScrollView, Switches, Trigger, ViewerSettings, ReadiumSDK) {
+define(["jquery", "underscore", "eventEmitter", "./annotations_manager", "./fixed_view", "../helpers","./iframe_loader",  "./internal_links_support", "./media_overlay_data_injector", "./media_overlay_player", "../models/package", "../models/page_open_request", "./reflowable_view", "./scroll_view", "../models/style_collection", "../models/switches", "../models/trigger", "../models/viewer_settings", "../readium_sdk"], function($, _, EventEmitter, AnnotationsManager, FixedView, Helpers, IFrameLoader, InternalLinksSupport, MediaOverlayDataInjector, MediaOverlayPlayer, Package, PageOpenRequest, ReflowableView, ScrollView, StyleCollection, Switches, Trigger, ViewerSettings, ReadiumSDK) {
     /**
      * Options passed on the reader from the readium loader/initializer
      *
@@ -49,9 +49,9 @@ define(["./annotations_manager", "./fixed_view", "../helpers","./iframe_loader",
         var _spine = undefined;
         var _viewerSettings = new ViewerSettings({});
         //styles applied to the container divs
-        var _userStyles = new ReadiumSDK.Collections.StyleCollection();
+        var _userStyles = new StyleCollection();
         //styles applied to the content documents
-        var _bookStyles = new ReadiumSDK.Collections.StyleCollection();
+        var _bookStyles = new StyleCollection();
         var _internalLinksSupport = new InternalLinksSupport(this);
         var _mediaOverlayPlayer;
         var _mediaOverlayDataInjector;

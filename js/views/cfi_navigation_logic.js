@@ -35,8 +35,9 @@
  *      - paginationInfo    Layout details, used by clientRect-based geometry
  * @constructor
  */
+define(["jquery", "underscore", "../helpers"], function($, _, Helpers) {
 
-ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
+var CfiNavigationLogic = function($viewport, $iframe, options){
 
     options = options || {};
 
@@ -128,10 +129,10 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
     function checkVisibilityByVerticalOffsets(
             $element, visibleContentOffsets, shouldCalculateVisibilityOffset) {
 
-        var elementRect = ReadiumSDK.Helpers.Rect.fromElement($element);
+        var elementRect = Helpers.Rect.fromElement($element);
         if (_.isNaN(elementRect.left)) {
             // this is actually a point element, doesnt have a bounding rectangle
-            elementRect = new ReadiumSDK.Helpers.Rect(
+            elementRect = new Helpers.Rect(
                     $element.position().top, $element.position().left, 0, 0);
         }
         var topOffset = visibleContentOffsets.top || 0;
@@ -623,7 +624,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
 
     this.getVerticalOffsetForPointOnElement = function($element, x, y) {
 
-        var elementRect = ReadiumSDK.Helpers.Rect.fromElement($element);
+        var elementRect = Helpers.Rect.fromElement($element);
         return Math.ceil(elementRect.top + y * elementRect.height / 100);
     };
 
@@ -632,7 +633,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
         var contentDoc = $iframe[0].contentDocument;
 
         var $element = $(contentDoc.getElementById(id));
-        //$("#" + ReadiumSDK.Helpers.escapeJQuerySelector(id), contentDoc);
+        //$("#" + Helpers.escapeJQuerySelector(id), contentDoc);
         
         if($element.length == 0) {
             return undefined;
@@ -774,3 +775,5 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
     };
 
 };
+    return CfiNavigationLogic;
+});

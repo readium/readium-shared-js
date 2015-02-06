@@ -1,4 +1,4 @@
-define (["../helpers", "../models/smil_iterator"], function(Helpers, SmilIterator) {
+define (["jquery", "../helpers", "../models/smil_iterator"], function($, Helpers, SmilIterator) {
 /**
  *
  * @param mediaOverlay

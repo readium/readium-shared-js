@@ -23,7 +23,7 @@
 //  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
-define(["../models/bookmark_data", "../models/current_pages_info", "../helpers", "./one_page_view", "../models/page_open_request", "../readium_sdk", "../models/viewer_settings"], function(BookmarkData, CurrentPagesInfo, Helpers, OnePageView, PageOpenRequest, ReadiumSDK, ViewerSettings) {
+define(["jquery", "underscore", "eventEmitter", "../models/bookmark_data", "../models/current_pages_info", "../helpers", "./one_page_view", "../models/page_open_request", "../readium_sdk", "../models/viewer_settings"], function($, _, EventEmitter, BookmarkData, CurrentPagesInfo, Helpers, OnePageView, PageOpenRequest, ReadiumSDK, ViewerSettings) {
 /**
  * Renders content inside a scrollable view port
  * @param options

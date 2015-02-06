@@ -24,7 +24,7 @@
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-define(["./cfi_navigation_logic", "../helpers", "../models/viewer_settings"], function(CfiNavigationLogic, Helpers, ViewerSettings) {
+define(["jquery", "underscore", "eventEmitter", "./cfi_navigation_logic", "../helpers", "../models/viewer_settings"], function($, _, EventEmitter, CfiNavigationLogic, Helpers, ViewerSettings) {
     /**
      * Renders one page of fixed layout spread
      *

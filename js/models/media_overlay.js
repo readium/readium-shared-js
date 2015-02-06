@@ -26,7 +26,7 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define(function() {
+define(["./smil_model"], function(SmilModel) {
 /**
  *
  * @param package
@@ -275,7 +275,7 @@ MediaOverlay.fromDTO = function(moDTO, package) {
         console.debug("Media Overlay SMIL count: " + count);
 
     for(var i = 0; i < count; i++) {
-        var smilModel = ReadiumSDK.Models.SmilModel.fromSmilDTO(moDTO.smil_models[i], mo);
+        var smilModel = SmilModel.fromSmilDTO(moDTO.smil_models[i], mo);
         mo.smil_models.push(smilModel);
 
         if (mo.DEBUG)

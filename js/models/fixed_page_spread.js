@@ -76,12 +76,12 @@ var Spread = function(spine, isSyntheticSpread) {
         var position = getItemPosition(item);
         setItemToPosition(item, position);
 
-        if(position != ReadiumSDK.Models.Spread.POSITION_CENTER && this.spine.isValidLinearItem(item.index)) { // && item.isRenditionSpreadAllowed() not necessary, see getItemPosition() below
+        if(position != Spread.POSITION_CENTER && this.spine.isValidLinearItem(item.index)) { // && item.isRenditionSpreadAllowed() not necessary, see getItemPosition() below
             var neighbour = getNeighbourItem(item);
             if(neighbour) {
                 var neighbourPos = getItemPosition(neighbour);
                 if(neighbourPos != position
-                    && neighbourPos != ReadiumSDK.Models.Spread.POSITION_CENTER
+                    && neighbourPos != Spread.POSITION_CENTER
                     && !neighbour.isReflowable()
                     && neighbour.isRenditionSpreadAllowed())  {
                     setItemToPosition(neighbour, neighbourPos);
@@ -99,15 +99,15 @@ var Spread = function(spine, isSyntheticSpread) {
 
     function setItemToPosition(item, position) {
 
-        if(position == ReadiumSDK.Models.Spread.POSITION_LEFT) {
+        if(position == Spread.POSITION_LEFT) {
             self.leftItem = item;
         }
-        else if (position == ReadiumSDK.Models.Spread.POSITION_RIGHT) {
+        else if (position == Spread.POSITION_RIGHT) {
             self.rightItem = item;
         }
         else {
 
-            if(position != ReadiumSDK.Models.Spread.POSITION_CENTER) {
+            if(position != Spread.POSITION_CENTER) {
                 console.error("Unrecognized position value");
             }
 
@@ -119,18 +119,18 @@ var Spread = function(spine, isSyntheticSpread) {
         
         // includes !item.isRenditionSpreadAllowed() ("rendition:spread-none") ==> force center position
         if(!_isSyntheticSpread) {
-            return ReadiumSDK.Models.Spread.POSITION_CENTER;
+            return Spread.POSITION_CENTER;
         }
 
         if(item.isLeftPage()) {
-            return ReadiumSDK.Models.Spread.POSITION_LEFT;
+            return Spread.POSITION_LEFT;
         }
 
         if (item.isRightPage()) {
-            return ReadiumSDK.Models.Spread.POSITION_RIGHT;
+            return Spread.POSITION_RIGHT;
         }
 
-        return ReadiumSDK.Models.Spread.POSITION_CENTER;
+        return Spread.POSITION_CENTER;
     }
 
     this.openNext = function() {

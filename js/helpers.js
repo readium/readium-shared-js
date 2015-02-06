@@ -24,7 +24,7 @@
 //  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
-define(['underscore'], function(_) {
+define(['underscore', "jquerySizes", "./models/spine_item", "./readium_sdk"], function(_, JQuerySizes, SpineItem, ReadiumSDK) {
 
 var Helpers = {};
 
@@ -319,7 +319,7 @@ Helpers.deduceSyntheticSpread = function ($viewport, spineItem, settings) {
 
     var rendition_spread = spineItem ? spineItem.getRenditionSpread() : undefined;
 
-    if (rendition_spread === ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_NONE) {
+    if (rendition_spread === SpineItem.RENDITION_SPREAD_NONE) {
         return false; // forced
 
         //"Reading Systems must not incorporate this spine item in a synthetic spread."
@@ -336,7 +336,7 @@ Helpers.deduceSyntheticSpread = function ($viewport, spineItem, settings) {
         return 0; // non-forced
     }
 
-    if (rendition_spread === ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_BOTH) {
+    if (rendition_spread === SpineItem.RENDITION_SPREAD_BOTH) {
         return true; // forced
 
         //"Reading Systems should incorporate this spine item in a synthetic spread regardless of device orientation."
@@ -344,19 +344,19 @@ Helpers.deduceSyntheticSpread = function ($viewport, spineItem, settings) {
 
     var orientation = Helpers.getOrientation($viewport);
 
-    if (rendition_spread === ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_LANDSCAPE) {
+    if (rendition_spread === SpineItem.RENDITION_SPREAD_LANDSCAPE) {
         return orientation === ReadiumSDK.Views.ORIENTATION_LANDSCAPE; // forced
 
         //"Reading Systems should incorporate this spine item in a synthetic spread only when the device is in landscape orientation."
     }
 
-    if (rendition_spread === ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_PORTRAIT) {
+    if (rendition_spread === SpineItem.RENDITION_SPREAD_PORTRAIT) {
         return orientation === ReadiumSDK.Views.ORIENTATION_PORTRAIT; // forced
 
         //"Reading Systems should incorporate this spine item in a synthetic spread only when the device is in portrait orientation."
     }
 
-    if (!rendition_spread || rendition_spread === ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_AUTO) {
+    if (!rendition_spread || rendition_spread === SpineItem.RENDITION_SPREAD_AUTO) {
         // if no spread set in document and user didn't set in in setting we will do double for landscape
         var landscape = orientation === ReadiumSDK.Views.ORIENTATION_LANDSCAPE;
         return landscape ? 1 : 0; // non-forced
@@ -489,11 +489,11 @@ Helpers.isRenditionSpreadPermittedForItem = function (item, orientation) {
     var rendition_spread = item.getRenditionSpread();
 
     return !rendition_spread
-        || rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_BOTH
-        || rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_AUTO
-        || (rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_LANDSCAPE
+        || rendition_spread == SpineItem.RENDITION_SPREAD_BOTH
+        || rendition_spread == SpineItem.RENDITION_SPREAD_AUTO
+        || (rendition_spread == SpineItem.RENDITION_SPREAD_LANDSCAPE
         && orientation == ReadiumSDK.Views.ORIENTATION_LANDSCAPE)
-        || (rendition_spread == ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_PORTRAIT
+        || (rendition_spread == SpineItem.RENDITION_SPREAD_PORTRAIT
         && orientation == ReadiumSDK.Views.ORIENTATION_PORTRAIT );
 };
 
