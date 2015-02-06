@@ -751,7 +751,7 @@ var ScrollView = function(options, isContinuousScroll, reader){
     function onPageViewLoaded(pageView, success, $iframe, spineItem, isNewlyLoaded, context) {
 
         if(success && isNewlyLoaded) {
-            self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
+            self.emit(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
         }
 
     }
@@ -976,7 +976,7 @@ var ScrollView = function(options, isContinuousScroll, reader){
     }
 
     function onPaginationChanged(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
-        self.trigger(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
+        self.emit(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
     }
 
     function scrollTop() {

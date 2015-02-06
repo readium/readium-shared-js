@@ -1106,7 +1106,7 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
 
         if (!_enableHTMLSpeech)
         {
-            reader.trigger(ReadiumSDK.Events.MEDIA_OVERLAY_TTS_SPEAK, {tts: txt}); // resume if txt == undefined
+            reader.emit(ReadiumSDK.Events.MEDIA_OVERLAY_TTS_SPEAK, {tts: txt}); // resume if txt == undefined
             return;
         }
 
@@ -1403,7 +1403,7 @@ console.debug("TTS resume");
 
         if (!_enableHTMLSpeech)
         {
-            reader.trigger(ReadiumSDK.Events.MEDIA_OVERLAY_TTS_STOP, undefined);
+            reader.emit(ReadiumSDK.Events.MEDIA_OVERLAY_TTS_STOP, undefined);
             return;
         }
 

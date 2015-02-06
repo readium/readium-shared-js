@@ -142,7 +142,6 @@ var ReadiumSDK = {
     }
 
 };
-    EventEmitter.prototype.trigger = EventEmitter.prototype.emit;
 _.extend(ReadiumSDK, new EventEmitter());
 
 return ReadiumSDK;

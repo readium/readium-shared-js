@@ -184,7 +184,7 @@ var ReflowableView = function(options, reader){
             _isWaitingFrameRender = true;
 
             var src = _spine.package.resolveRelativeUrl(spineItem.href);
-            self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START, _$iframe, spineItem);
+            self.emit(ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START, _$iframe, spineItem);
 
             _$iframe.css("opacity", "0.01");
             
@@ -223,7 +223,7 @@ var ReflowableView = function(options, reader){
             return;
         }
 
-        self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, _$iframe, _currentSpineItem);
+        self.emit(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, _$iframe, _currentSpineItem);
 
         var epubContentDocument = _$iframe[0].contentDocument;
         _$epubHtml = $("html", epubContentDocument);
@@ -450,7 +450,7 @@ var ReflowableView = function(options, reader){
         _paginationInfo.pageOffset = (_paginationInfo.columnWidth + _paginationInfo.columnGap) * _paginationInfo.visibleColumnCount * _paginationInfo.currentSpreadIndex;
         
         redraw();
-        self.trigger(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
+        self.emit(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
     }
 
     this.openPagePrev = function (initiator) {

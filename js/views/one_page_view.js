@@ -739,7 +739,7 @@ define(["jquery", "underscore", "eventEmitter", "./cfi_navigation_logic", "../he
                     self.hideIFrame();
                 }
 
-                self.trigger(OnePageView.SPINE_ITEM_OPEN_START, _$iframe, _currentSpineItem);
+                self.emit(OnePageView.SPINE_ITEM_OPEN_START, _$iframe, _currentSpineItem);
                 _iframeLoader.loadIframe(_$iframe[0], src, function (success) {
 
                     if (success && callback) {

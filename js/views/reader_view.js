@@ -217,7 +217,7 @@ define(["jquery", "underscore", "eventEmitter", "./annotations_manager", "./fixe
 
 
             _currentView = self.createViewForType(desiredViewType, viewCreationParams);
-            self.trigger(ReadiumSDK.Events.READER_VIEW_CREATED, desiredViewType);
+            self.emit(ReadiumSDK.Events.READER_VIEW_CREATED, desiredViewType);
 
             _currentView.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function ($iframe, spineItem) {
 
@@ -233,11 +233,11 @@ define(["jquery", "underscore", "eventEmitter", "./annotations_manager", "./fixe
                 Trigger.register(contentDoc);
                 Switches.apply(contentDoc);
 
-                self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
+                self.emit(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
             });
 
             _currentView.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START, function ($iframe, spineItem) {
-                self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
+                self.emit(ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
             });
 
             _currentView.on(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, function (pageChangeData) {
@@ -247,11 +247,11 @@ define(["jquery", "underscore", "eventEmitter", "./annotations_manager", "./fixe
                 //application will be notified by the same ReadiumSDK.Events.PAGINATION_CHANGED event
                 _mediaOverlayPlayer.onPageChanged(pageChangeData);
 
-                self.trigger(ReadiumSDK.Events.PAGINATION_CHANGED, pageChangeData);
+                self.emit(ReadiumSDK.Events.PAGINATION_CHANGED, pageChangeData);
             });
 
             _currentView.on(ReadiumSDK.Events.FXL_VIEW_RESIZED, function () {
-                self.trigger(ReadiumSDK.Events.FXL_VIEW_RESIZED);
+                self.emit(ReadiumSDK.Events.FXL_VIEW_RESIZED);
             })
 
             _currentView.render();
@@ -286,7 +286,7 @@ define(["jquery", "underscore", "eventEmitter", "./annotations_manager", "./fixe
                 return;
             }
 
-            self.trigger(ReadiumSDK.Events.READER_VIEW_DESTROYED);
+            self.emit(ReadiumSDK.Events.READER_VIEW_DESTROYED);
 
             _currentView.off(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED);
             _currentView.remove();
@@ -431,7 +431,7 @@ define(["jquery", "underscore", "eventEmitter", "./annotations_manager", "./fixe
         };
 
         function onMediaPlayerStatusChanged(status) {
-            self.trigger(ReadiumSDK.Events.MEDIA_OVERLAY_STATUS_CHANGED, status);
+            self.emit(ReadiumSDK.Events.MEDIA_OVERLAY_STATUS_CHANGED, status);
         }
 
         /**
@@ -564,13 +564,13 @@ define(["jquery", "underscore", "eventEmitter", "./annotations_manager", "./fixe
                             // }, 60);
                         }
 
-                        self.trigger(ReadiumSDK.Events.SETTINGS_APPLIED);
+                        self.emit(ReadiumSDK.Events.SETTINGS_APPLIED);
                         return;
                     });
                 }
             }
 
-            self.trigger(ReadiumSDK.Events.SETTINGS_APPLIED);
+            self.emit(ReadiumSDK.Events.SETTINGS_APPLIED);
         };
 
         /**

@@ -71,7 +71,7 @@ var FixedView = function(options, reader){
 
         pageView.on(OnePageView.SPINE_ITEM_OPEN_START, function($iframe, spineItem) {
 
-            self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
+            self.emit(ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
         });   
     
         return pageView;
@@ -237,7 +237,7 @@ var FixedView = function(options, reader){
         updateContentMetaSize();
         resizeBook();
         
-        self.trigger(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
+        self.emit(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
     }
 
     this.onViewportResize = function() {
@@ -384,7 +384,7 @@ var FixedView = function(options, reader){
             _centerPageView[transFunc](scale, left, top);
         }
         
-        self.trigger(ReadiumSDK.Events.FXL_VIEW_RESIZED);
+        self.emit(ReadiumSDK.Events.FXL_VIEW_RESIZED);
     }
 
     function getMaxPageMargins(leftPageMargins, rightPageMargins, centerPageMargins) {
@@ -528,7 +528,7 @@ var FixedView = function(options, reader){
                         console.error("Invalid document " + spineItem.href + ": viewport is not specified!");
                     }
 
-                    self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
+                    self.emit(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
                 }
 
                 dfd.resolve();
