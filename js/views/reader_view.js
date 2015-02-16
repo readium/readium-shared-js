@@ -325,7 +325,16 @@ ReadiumSDK.Views.ReaderView = function(options) {
     this.userStyles = function() {
         return _userStyles;
     };
-
+	
+    /**
+     * Returns the EPUB3 Multiple Renditions data for the currently-opened ebook (initialised in this.openBook())
+     *
+     * @returns {ReadiumSDK.Models.MultipleRenditions} can be undefined
+     */
+	this.getMultipleRenditions() {
+		return _multipleRenditions;
+	}
+	
     /**
      * Open Book Data
      *
@@ -334,6 +343,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
      * @property {ReadiumSDK.Models.PageOpenRequest} openPageRequest - openPageRequestData, (optional) data related to open page request
      * @property {ReadiumSDK.Views.ReaderView.SettingsData} [settings]
      * @property {ReadiumSDK.Collections.StyleCollection} styles: [cssStyles]
+     * @property {ReadiumSDK.Collections.MultipleRenditions} multipleRenditions
      * @todo Define missing types
      */
 
@@ -371,8 +381,22 @@ ReadiumSDK.Views.ReaderView = function(options) {
             self.setStyles(openBookData.styles);
         }
 
+
+        if (openBookData.multipleRenditions) {
+			_multipleRenditions = new ReadiumSDK.Models.MultipleRenditions(openBookData.multipleRenditions);
+        } else {
+			_multipleRenditions = undefined;
+		}
+		
         var pageRequestData = undefined;
 
+        if(openBookData.openPageRequest) {
+			
+			if (_multipleRenditions) {
+				openBookData.openPageRequest = _multipleRenditions.adjustPageRequestRenditionMapping(openBookData.openPageRequest);
+			}
+		}
+		
         if(openBookData.openPageRequest) {
 
             if(openBookData.openPageRequest.idref || (openBookData.openPageRequest.contentRefUrl && openBookData.openPageRequest.sourceFileHref)) {
