@@ -381,7 +381,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
             self.setStyles(openBookData.styles);
         }
 
-
         if (openBookData.multipleRenditions) {
 			_multipleRenditions = new ReadiumSDK.Models.MultipleRenditions(openBookData.multipleRenditions);
         } else {

@@ -118,6 +118,7 @@ ReadiumSDK.Models.MultipleRenditions = function(multipleRenditions) {
 	 * @returns The unmodified openPageRequest parameter if the rendition OPF is the same, or the modified openPageRequest parameter if the rendition OPF was mapped succesfully, or undefined if the OPF could not be mapped.
 	 */
 	this.adjustPageRequestRenditionMapping = function(openPageRequest) {
+		
 		if (!openPageRequest) return undefined;
 		if (!multipleRenditions || !openPageRequest.opfPath) return openPageRequest;
 	
