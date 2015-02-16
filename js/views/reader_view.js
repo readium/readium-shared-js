@@ -331,9 +331,9 @@ ReadiumSDK.Views.ReaderView = function(options) {
      *
      * @returns {ReadiumSDK.Models.MultipleRenditions} can be undefined
      */
-	this.getMultipleRenditions() {
+	this.getMultipleRenditions = function() {
 		return _multipleRenditions;
-	}
+	};
 	
     /**
      * Open Book Data
