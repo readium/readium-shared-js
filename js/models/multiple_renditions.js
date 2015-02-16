@@ -57,7 +57,7 @@
  */
 
 /**
- *
+ * EPUB3 Multiple Renditions, see http://www.idpf.org/epub/renditions/multiple
  * @class ReadiumSDK.Models.MultipleRenditions
  * @param {ReadiumSDK.Models.MultipleRenditionsData} multipleRenditions
  * @constructor
@@ -65,10 +65,15 @@
 ReadiumSDK.Models.MultipleRenditions = function(multipleRenditions) {
 
     var self = this;
-	selectedIndex
 	
-	this.multipleRenditions = multipleRenditions;
+	/**
+	 * @see {ReadiumSDK.Models.MultipleRenditionsData}
+	 */
+	this.renditions = multipleRenditions ? multipleRenditions.renditions : undefined;
+	this.selectedIndex = multipleRenditions ? multipleRenditions.selectedIndex : -1;
+	this.mappings = multipleRenditions ? multipleRenditions.mappings : undefined;
 
+	
 	var cfiTokenise = function(cfi) {
 //console.log(cfi);
 		var arrayOfIndices = [];
@@ -114,13 +119,13 @@ ReadiumSDK.Models.MultipleRenditions = function(multipleRenditions) {
 	 */
 	this.adjustPageRequestRenditionMapping = function(openPageRequest) {
 		if (!openPageRequest) return undefined;
-		if (!this.multipleRenditions || !openPageRequest.opfPath) return openPageRequest;
+		if (!multipleRenditions || !openPageRequest.opfPath) return openPageRequest;
 	
-		var rendition = this.multipleRenditions.renditions[this.multipleRenditions.selectedIndex];
+		var rendition = multipleRenditions.renditions[multipleRenditions.selectedIndex];
 		
 		if (rendition.opfPath == openPageRequest.opfPath) return openPageRequest;
 
-		if (!this.multipleRenditions.mappings) return undefined;
+		if (!multipleRenditions.mappings) return undefined;
 		
 		var nearestMapping = undefined;
 		
@@ -129,8 +134,8 @@ ReadiumSDK.Models.MultipleRenditions = function(multipleRenditions) {
 		
 		var cfi2 = cfiTokenise(openPageRequest.elementCfi);
 
-		for (var i = 0; i < this.multipleRenditions.mappings.length; i++) {
-			var mappingUL = this.multipleRenditions.mappings[i];
+		for (var i = 0; i < multipleRenditions.mappings.length; i++) {
+			var mappingUL = multipleRenditions.mappings[i];
 			
 			for (var j = 0; j < mappingUL.length; j++) {
 				var mapping = mappingUL[j];
@@ -199,12 +204,13 @@ console.debug("ODD: "+elCfi);
 			openPageRequest.opfPath = nearestMapping.opf;
 			openPageRequest.idref = nearestMapping.idref;
 			openPageRequest.elementCfi = elCfi;
+		
+console.debug(JSON.stringify(openPageRequest));
 		} else {
+console.log("RENDITION MAPPING NOT FOUND!");
 			openPageRequest = undefined;
 		}
-	}
-
-	console.debug(JSON.stringify(openPageRequest));
-	return openPageRequest;
-	//openBookData.openPageRequest = openPageRequest;
+		
+		return openPageRequest;
+	};
 };
