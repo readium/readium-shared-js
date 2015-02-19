@@ -88,7 +88,7 @@ ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
             self.page_spread != ReadiumSDK.Models.SpineItem.SPREAD_RIGHT &&
             self.page_spread != ReadiumSDK.Models.SpineItem.SPREAD_CENTER ) {
 
-            console.error(self.page_spread + " is not a recognized spread type");
+            webkit.messageHandlers.consoleerror.postMessage(self.page_spread + " is not a recognized spread type");
         }
 
     }

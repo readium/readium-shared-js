@@ -387,7 +387,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
             catch (e)
             {
                 pageIndex = 0;
-                console.error(e);
+                webkit.messageHandlers.consoleerror.postMessage(e);
             }
         }
         else if(pageRequest.firstPage) {
@@ -397,7 +397,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
             pageIndex = _paginationInfo.columnCount - 1;
         }
         else {
-            console.debug("No criteria in pageRequest");
+            webkit.messageHandlers.consoledebug.postMessage("No criteria in pageRequest");
             pageIndex = 0;
         }
 
@@ -406,7 +406,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
             onPaginationChanged(pageRequest.initiator, pageRequest.spineItem, pageRequest.elementId);
         }
         else {
-            console.log('Illegal pageIndex value: ', pageIndex, 'column count is ', _paginationInfo.columnCount);
+            webkit.messageHandlers.consolelog.postMessage('Illegal pageIndex value: ', pageIndex, 'column count is ', _paginationInfo.columnCount);
         }
     };
 
@@ -500,21 +500,21 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
     function updatePagination() {
         
         // At 100% font-size = 16px (on HTML, not body or descendant markup!)
-        var MAXW = 550; //TODO user/vendor-configurable?
-        var MINW = 400;
+        var MAXW = Number.MAX_VALUE; //TODO user/vendor-configurable?
+        var MINW = 0;
         
         var isDoublePageSyntheticSpread = ReadiumSDK.Helpers.deduceSyntheticSpread(_$viewport, _currentSpineItem, _viewSettings);
         
         var forced = (isDoublePageSyntheticSpread === false) || (isDoublePageSyntheticSpread === true);
         // excludes 0 and 1 falsy/truthy values which denote non-forced result
         
-// console.debug("isDoublePageSyntheticSpread: " + isDoublePageSyntheticSpread);
-// console.debug("forced: " + forced);
+// webkit.messageHandlers.consoledebug.postMessage("isDoublePageSyntheticSpread: " + isDoublePageSyntheticSpread);
+// webkit.messageHandlers.consoledebug.postMessage("forced: " + forced);
 //
         if (isDoublePageSyntheticSpread === 0)
         {
             isDoublePageSyntheticSpread = 1; // try double page, will shrink if doesn't fit
-// console.debug("TRYING SPREAD INSTEAD OF SINGLE...");
+// webkit.messageHandlers.consoledebug.postMessage("TRYING SPREAD INSTEAD OF SINGLE...");
         }
         
         _paginationInfo.visibleColumnCount = isDoublePageSyntheticSpread ? 2 : 1;
@@ -525,7 +525,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
             isDoublePageSyntheticSpread = false;
             forced = true;
             _paginationInfo.visibleColumnCount = 1;
-// console.debug("Vertical Writing Mode => single CSS column, but behaves as if two-page spread");
+// webkit.messageHandlers.consoledebug.postMessage("Vertical Writing Mode => single CSS column, but behaves as if two-page spread");
         }
 
         if(!_$epubHtml) {
@@ -556,7 +556,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
 //             {
 //                 fontSize = htmlBodyComputedStyle.fontSize;
 //             }
-// console.debug(fontSize);
+// webkit.messageHandlers.consoledebug.postMessage(fontSize);
 //         }
         
         if (_viewSettings.fontSize)
@@ -575,12 +575,12 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         
         if (textWidth > MAXW)
         {
-// console.debug("LIMITING WIDTH");
+// webkit.messageHandlers.consoledebug.postMessage("LIMITING WIDTH");
             filler = Math.floor((textWidth - MAXW) * (isDoublePageSyntheticSpread ? 1 : 0.5));
         }
         else if (!forced && textWidth < MINW && isDoublePageSyntheticSpread)
         {
-//console.debug("REDUCING SPREAD TO SINGLE");
+//webkit.messageHandlers.consoledebug.postMessage("REDUCING SPREAD TO SINGLE");
             isDoublePageSyntheticSpread = false;
             _paginationInfo.visibleColumnCount = 1;
             
@@ -646,9 +646,9 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
 
         if (colWidthCheck > _paginationInfo.columnWidth)
         {
-            console.debug("ADJUST COLUMN");
-            console.log(_paginationInfo.columnWidth);
-            console.log(colWidthCheck);
+            webkit.messageHandlers.consoledebug.postMessage("ADJUST COLUMN");
+            webkit.messageHandlers.consolelog.postMessage(_paginationInfo.columnWidth);
+            webkit.messageHandlers.consolelog.postMessage(colWidthCheck);
             
             _paginationInfo.columnWidth = colWidthCheck;
         }
@@ -809,7 +809,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
     this.getElementByCfi = function(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
         if(spineItem != _currentSpineItem) {
-            console.error("spine item is not loaded");
+            webkit.messageHandlers.consoleerror.postMessage("spine item is not loaded");
             return undefined;
         }
 
@@ -819,7 +819,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
     this.getElementById = function(spineItem, id) {
 
         if(spineItem != _currentSpineItem) {
-            console.error("spine item is not loaded");
+            webkit.messageHandlers.consoleerror.postMessage("spine item is not loaded");
             return undefined;
         }
 
@@ -829,7 +829,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
     this.getElement = function(spineItem, selector) {
 
         if(spineItem != _currentSpineItem) {
-            console.error("spine item is not loaded");
+            webkit.messageHandlers.consoleerror.postMessage("spine item is not loaded");
             return undefined;
         }
 

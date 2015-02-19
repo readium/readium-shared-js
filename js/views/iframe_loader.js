@@ -66,7 +66,7 @@ ReadiumSDK.Views.IFrameLoader = function() {
         self._loadIframeWithUri(iframe, attachedData, loadedDocumentUri, function () {
             var doc = iframe.contentDocument || iframe.contentWindow.document;
             $('svg', doc).load(function(){
-                console.log('loaded');
+                webkit.messageHandlers.consolelog.postMessage('loaded');
             });
             callback.call(context, true, attachedData);
         });
@@ -85,7 +85,7 @@ ReadiumSDK.Views.IFrameLoader = function() {
                 try {
                     mathJax.Hub.Queue(mathJaxCallback);
                 } catch (err) {
-                    console.error("MathJax fail!");
+                    webkit.messageHandlers.consoleerror.postMessage("MathJax fail!");
                     callback();
                 }
                 // Or at an 8 second timeout, which ever comes first

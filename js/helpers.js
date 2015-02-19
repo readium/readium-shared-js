@@ -278,7 +278,7 @@ ReadiumSDK.Helpers.triggerLayout = function($iframe) {
     }
     catch (ex)
     {
-        console.error(ex);
+        webkit.messageHandlers.consoleerror.postMessage(ex);
     }
     
     try
@@ -293,7 +293,7 @@ ReadiumSDK.Helpers.triggerLayout = function($iframe) {
     }
     catch (ex)
     {
-        console.error(ex);
+        webkit.messageHandlers.consoleerror.postMessage(ex);
     }
 
     if(doc.body) {
@@ -368,7 +368,7 @@ ReadiumSDK.Helpers.deduceSyntheticSpread = function($viewport, spineItem, settin
         //"Reading Systems may use synthetic spreads in specific or all device orientations as part of a display area utilization optimization process."
     }
 
-    console.warn("ReadiumSDK.Helpers.deduceSyntheticSpread: spread properties?!");
+    webkit.messageHandlers.consolewarn.postMessage("ReadiumSDK.Helpers.deduceSyntheticSpread: spread properties?!");
     return 0; // non-forced
 };
 
@@ -456,7 +456,7 @@ ReadiumSDK.Helpers.isIframeAlive = function(iframe)
     }
     catch (ex)
     {
-        console.error(ex);
+        webkit.messageHandlers.consoleerror.postMessage(ex);
         return false;
     }
     
@@ -601,13 +601,13 @@ ReadiumSDK.Helpers.escapeJQuerySelector = function(sel) {
         
         // if (selector !== sel)
         // {
-        //     console.debug("---- SELECTOR ESCAPED");
-        //     console.debug("1: " + sel);
-        //     console.debug("2: " + selector);
+        //     webkit.messageHandlers.consoledebug.postMessage("---- SELECTOR ESCAPED");
+        //     webkit.messageHandlers.consoledebug.postMessage("1: " + sel);
+        //     webkit.messageHandlers.consoledebug.postMessage("2: " + selector);
         // }
         // else
         // {
-        //     console.debug("---- SELECTOR OKAY: " + sel);
+        //     webkit.messageHandlers.consoledebug.postMessage("---- SELECTOR OKAY: " + sel);
         // }
         
         return selector;

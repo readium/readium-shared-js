@@ -98,7 +98,7 @@ When a user clicks on a highlight `annotationClicked` event is dispatched with t
 - annotationdId
 
 
-	> RReader.on('annotationClicked', function(type, idref, cfi, annotationId) { console.log (type, idref, cfi, annotationId)});
+	> RReader.on('annotationClicked', function(type, idref, cfi, annotationId) { webkit.messageHandlers.consolelog .postMessage(type, idref, cfi, annotationId)});
 	ReadiumSDK.Views.ReaderView {on: function, once: function, off: function, trigger: function, listenTo: function???}
 	
 Then when the user clicks on the highlight the following will show up in the console:
@@ -123,7 +123,7 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj, options) {
     var annotationCSSUrl = options.annotationCSSUrl;
 
     if (!annotationCSSUrl) {
-        console.warn("WARNING! Annotations CSS not supplied. Highlighting is not going to work.");
+        webkit.messageHandlers.consolewarn.postMessage("WARNING! Annotations CSS not supplied. Highlighting is not going to work.");
     }
 
     _.extend(self, Backbone.Events);

@@ -218,7 +218,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
                 var diff = scrollPosAfter - scrollPosBefore;
                 if (Math.abs(diff) > 1)
                 {
-                    console.debug("@@@@@@@@@@@@@@@ SCROLL ADJUST (" + msg + ") " + diff + " -- " + pageView.currentSpineItem().href);
+                    webkit.messageHandlers.consoledebug.postMessage("@@@@@@@@@@@@@@@ SCROLL ADJUST (" + msg + ") " + diff + " -- " + pageView.currentSpineItem().href);
                     //_$contentFrame[0].scrollTop = _$contentFrame[0].scrollTop + diff;
                 }
             }
@@ -303,7 +303,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
         {
             if (_DEBUG)
             {
-                console.debug("IMMEDIATE SCROLL ADJUST: " + pageView.currentSpineItem().href + " == " + delta);
+                webkit.messageHandlers.consoledebug.postMessage("IMMEDIATE SCROLL ADJUST: " + pageView.currentSpineItem().href + " == " + delta);
             }
             scrollTo(scrollPos + delta);
         }
@@ -315,7 +315,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
         {
             if (_DEBUG)
             {
-                console.log("reachStableContentHeight ! win && doc (iFrame disposed?)");
+                webkit.messageHandlers.consolelog.postMessage("reachStableContentHeight ! win && doc (iFrame disposed?)");
             }
 
             if (callback) callback(false);
@@ -345,7 +345,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
         {
             if (_DEBUG && tryAgain !== MAX_ATTEMPTS)
             {
-                console.log("tryAgainFunc - " + tryAgain + ": " + href + "  <" + initialContentHeight +" -- "+ previousPolledContentHeight + ">");
+                webkit.messageHandlers.consolelog.postMessage("tryAgainFunc - " + tryAgain + ": " + href + "  <" + initialContentHeight +" -- "+ previousPolledContentHeight + ">");
             }
             
             tryAgain--;
@@ -353,7 +353,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
             {
                 if (_DEBUG)
                 {
-                    console.error("tryAgainFunc abort: " + href);
+                    webkit.messageHandlers.consoleerror.postMessage("tryAgainFunc abort: " + href);
                 }
 
                 if (callback) callback(true);
@@ -388,8 +388,8 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
                         {
                             if (_DEBUG)
                             {
-                                console.log("$$$ IFRAME HEIGHT ADJUST: " + href + "  [" + diff +"]<" + initialContentHeight +" -- "+ previousPolledContentHeight + ">");
-                                console.log(msg);
+                                webkit.messageHandlers.consolelog.postMessage("$$$ IFRAME HEIGHT ADJUST: " + href + "  [" + diff +"]<" + initialContentHeight +" -- "+ previousPolledContentHeight + ">");
+                                webkit.messageHandlers.consolelog.postMessage(msg);
                             }
 
                             if (updateScroll === 0)
@@ -414,8 +414,8 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
                                 {
                                     if (_DEBUG)
                                     {
-                                        console.error("## IFRAME HEIGHT ADJUST: " + href + "  [" + newdiff +"]<" + initialContentHeight +" -- "+ previousPolledContentHeight + ">");
-                                        console.log(msg);
+                                        webkit.messageHandlers.consoleerror.postMessage("## IFRAME HEIGHT ADJUST: " + href + "  [" + newdiff +"]<" + initialContentHeight +" -- "+ previousPolledContentHeight + ">");
+                                        webkit.messageHandlers.consolelog.postMessage(msg);
                                     }
                                     
                                     tryAgainFunc(tryAgain);
@@ -425,8 +425,8 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
                                 {
                                     if (_DEBUG)
                                     {
-                                        console.log(">> IFRAME HEIGHT ADJUSTED OKAY: " + href + "  ["+diff+"]<" + initialContentHeight +" -- "+ previousPolledContentHeight + ">");
-                                        // console.log(msg);
+                                        webkit.messageHandlers.consolelog.postMessage(">> IFRAME HEIGHT ADJUSTED OKAY: " + href + "  ["+diff+"]<" + initialContentHeight +" -- "+ previousPolledContentHeight + ">");
+                                        // webkit.messageHandlers.consolelog.postMessage(msg);
                                     }
                                 }
                             }
@@ -434,7 +434,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
                             {
                                 if (_DEBUG)
                                 {
-                                    console.log("tryAgainFunc ! win && doc (iFrame disposed?)");
+                                    webkit.messageHandlers.consolelog.postMessage("tryAgainFunc ! win && doc (iFrame disposed?)");
                                 }
                 
                                 if (callback) callback(false);
@@ -444,15 +444,15 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
                         else
                         {
                             //if (_DEBUG)
-                            // console.debug("IFRAME HEIGHT NO NEED ADJUST: " + href);
-                            // console.log(msg);
+                            // webkit.messageHandlers.consoledebug.postMessage("IFRAME HEIGHT NO NEED ADJUST: " + href);
+                            // webkit.messageHandlers.consolelog.postMessage(msg);
                         }
                     }
                     else
                     {
                         if (_DEBUG)
                         {
-                            console.log("tryAgainFunc ! win && doc (iFrame disposed?)");
+                            webkit.messageHandlers.consolelog.postMessage("tryAgainFunc ! win && doc (iFrame disposed?)");
                         }
                 
                         if (callback) callback(false);
@@ -461,7 +461,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
                 }
                 catch(ex)
                 {
-                    console.error(ex);
+                    webkit.messageHandlers.consoleerror.postMessage(ex);
                 
                     if (callback) callback(false);
                     return;
@@ -529,7 +529,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
                         reachStableContentHeight(0, newView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToTopOf", continueCallback); // //onIFrameLoad called before this callback, so okay.
                     }
                     else {
-                        console.error("Unable to open 2 " + prevSpineItem.href);
+                        webkit.messageHandlers.consoleerror.postMessage("Unable to open 2 " + prevSpineItem.href);
                         removePageView(newView);
                         callback(false);
                     }
@@ -537,7 +537,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
                 });
             }
             else {
-                console.error("Unable to open 1 " + prevSpineItem.href);
+                webkit.messageHandlers.consoleerror.postMessage("Unable to open 1 " + prevSpineItem.href);
                 removePageView(tmpView);
                 callback(false);
             }
@@ -581,7 +581,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
                 reachStableContentHeight(2, newView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToBottomOf", continueCallback); // //onIFrameLoad called before this callback, so okay.
             }
             else {
-                console.error("Unable to load " + nexSpineItem.href);
+                webkit.messageHandlers.consoleerror.postMessage("Unable to load " + nexSpineItem.href);
                 callback(false);
             }
 
@@ -782,7 +782,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
                 reachStableContentHeight(1, loadedView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? loadedView.meta_width() : 0, "openPage", continueCallback); // //onIFrameLoad called before this callback, so okay.
             }
             else {
-                console.error("Unable to load " + spineItem.href);
+                webkit.messageHandlers.consoleerror.postMessage("Unable to load " + spineItem.href);
                 
                 removePageView(loadedView);
                 loadedView = undefined;
@@ -898,7 +898,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
             $element = sfiNav.getElementById(pageRequest.elementId);
 
             if(!$element || !$element.length) {
-                console.warn("Element id=" + pageRequest.elementId + " not found!");
+                webkit.messageHandlers.consolewarn.postMessage("Element id=" + pageRequest.elementId + " not found!");
                 return;
             }
 
@@ -919,7 +919,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
             $element = sfiNav.getElementByCfi(pageRequest.elementCfi);
 
             if(!$element || !$element.length) {
-                console.warn("Element cfi=" + pageRequest.elementCfi + " not found!");
+                webkit.messageHandlers.consolewarn.postMessage("Element cfi=" + pageRequest.elementCfi + " not found!");
                 return;
             }
 
@@ -1172,7 +1172,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
         }, false);
 
         if(!found) {
-            console.error("spine item is not loaded");
+            webkit.messageHandlers.consoleerror.postMessage("spine item is not loaded");
             return undefined;
         }
 
@@ -1195,7 +1195,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
         }, false);
 
         if(!found) {
-            console.error("spine item is not loaded");
+            webkit.messageHandlers.consoleerror.postMessage("spine item is not loaded");
             return undefined;
         }
 
@@ -1349,7 +1349,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
         }, false);
 
         if(!pageView) {
-            console.warn("Page for element " + element + " not found");
+            webkit.messageHandlers.consolewarn.postMessage("Page for element " + element + " not found");
             return;
         }
 

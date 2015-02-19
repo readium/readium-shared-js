@@ -426,7 +426,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
     //this is called by scroll_view for reflowable spine item
     this.resizeIFrameToContent = function() {
         var contHeight = getContentDocHeight();
-        //console.log("resizeIFrameToContent: " + contHeight);
+        //webkit.messageHandlers.consolelog.postMessage("resizeIFrameToContent: " + contHeight);
 
         self.setHeight(contHeight);
 
@@ -517,7 +517,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         }
         else if (_$epubHtml)
         {
-            console.error("getContentDocHeight ??");
+            webkit.messageHandlers.consoleerror.postMessage("getContentDocHeight ??");
             
             var jqueryHeight = _$epubHtml.height();
             return jqueryHeight;
@@ -665,7 +665,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
                     // }
                     //
                     // if (size) {
-                    //     console.warn("Viewport SVG: using viewbox!");
+                    //     webkit.messageHandlers.consolewarn.postMessage("Viewport SVG: using viewbox!");
                     // }
                 }
             }
@@ -677,7 +677,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             if(content) {
                 size = parseMetaSize(content);
                 if (size) {
-                    console.log("Viewport: using rendition:viewport dimensions");
+                    webkit.messageHandlers.consolelog.postMessage("Viewport: using rendition:viewport dimensions");
                 }
             }
         }
@@ -697,7 +697,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
 
                 var isImage = _currentSpineItem && _currentSpineItem.media_type && _currentSpineItem.media_type.length && _currentSpineItem.media_type.indexOf("image/") == 0;
                 if (!isImage) {
-                    console.warn("Viewport: using img dimensions!");
+                    webkit.messageHandlers.consolewarn.postMessage("Viewport: using img dimensions!");
                 }
             }
             else {
@@ -735,7 +735,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
                         //     contentDocument.documentElement.setAttribute("height", size.height);
                         // }
 
-                        console.warn("Viewport: using image dimensions!");
+                        webkit.messageHandlers.consolewarn.postMessage("Viewport: using image dimensions!");
                     }
                 }
             }
@@ -750,7 +750,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
                 height: height
             }
 
-            console.warn("Viewport: using browser / e-reader viewport dimensions!");
+            webkit.messageHandlers.consolewarn.postMessage("Viewport: using browser / e-reader viewport dimensions!");
         }
         
         if(size) {
@@ -791,8 +791,8 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
                     }
                     else
                     {
-                        console.error("onIFrameLoad !! doc && win + TIMEOUT");
-                        console.debug(spineItem.href);
+                        webkit.messageHandlers.consoleerror.postMessage("onIFrameLoad !! doc && win + TIMEOUT");
+                        webkit.messageHandlers.consoledebug.postMessage(spineItem.href);
                         
                         onIFrameLoad(success);
                         
@@ -880,7 +880,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
     this.getElementByCfi = function(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
         if(spineItem != _currentSpineItem) {
-            console.error("spine item is not loaded");
+            webkit.messageHandlers.consoleerror.postMessage("spine item is not loaded");
             return undefined;
         }
 
@@ -891,7 +891,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
     this.getElementById = function(spineItem, id) {
 
         if(spineItem != _currentSpineItem) {
-            console.error("spine item is not loaded");
+            webkit.messageHandlers.consoleerror.postMessage("spine item is not loaded");
             return undefined;
         }
 
@@ -902,7 +902,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
     this.getElement = function(spineItem, selector) {
 
         if(spineItem != _currentSpineItem) {
-            console.error("spine item is not loaded");
+            webkit.messageHandlers.consoleerror.postMessage("spine item is not loaded");
             return undefined;
         }
 

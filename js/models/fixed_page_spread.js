@@ -110,7 +110,7 @@ ReadiumSDK.Models.Spread = function(spine, isSyntheticSpread) {
         else {
 
             if(position != ReadiumSDK.Models.Spread.POSITION_CENTER) {
-                console.error("Unrecognized position value");
+                webkit.messageHandlers.consoleerror.postMessage("Unrecognized position value");
             }
 
             self.centerItem = item;

@@ -40,12 +40,12 @@ ReadiumSDK.Views.MediaOverlayDataInjector = function (mediaOverlay, mediaOverlay
 
         var $body = $("body", contentDocElement);
         if ($body.length == 0) {
-            console.error("! BODY ???");
+            webkit.messageHandlers.consoleerror.postMessage("! BODY ???");
         }
         else {
             var click = $body.data("mediaOverlayClick");
             if (click) {
-                console.error("[WARN] already mediaOverlayClick");
+                webkit.messageHandlers.consoleerror.postMessage("[WARN] already mediaOverlayClick");
             }
             else {
                 $body.data("mediaOverlayClick", {ping: "pong"});
@@ -62,7 +62,7 @@ ReadiumSDK.Views.MediaOverlayDataInjector = function (mediaOverlay, mediaOverlay
                         return true;
                     }
 
-//console.debug("MO CLICK: " + elem.id);
+//webkit.messageHandlers.consoledebug.postMessage("MO CLICK: " + elem.id);
 
                     var data = undefined;
                     var el = elem;
@@ -90,19 +90,19 @@ ReadiumSDK.Views.MediaOverlayDataInjector = function (mediaOverlay, mediaOverlay
                     {
                         if (el !== elem)
                         {
-//console.log("MO CLICK REDIRECT: " + el.id);
+//webkit.messageHandlers.consolelog.postMessage("MO CLICK REDIRECT: " + el.id);
                         }
 
                         if (!mediaOverlaySettings.mediaOverlaysEnableClick)
                         {
-console.log("MO CLICK DISABLED");
+webkit.messageHandlers.consolelog.postMessage("MO CLICK DISABLED");
                             mediaOverlayPlayer.touchInit();
                             return true;
                         }
 
                         if (inLink)
                         {
-console.log("MO CLICKED LINK");
+webkit.messageHandlers.consolelog.postMessage("MO CLICKED LINK");
                             mediaOverlayPlayer.touchInit();
                             return true;
                         }
@@ -160,19 +160,19 @@ console.log("MO CLICKED LINK");
 //                                     range.setStart(event.rangeParent, event.rangeOffset);
 //                                 }
 //                                 
-// console.log("------ 1");
-// console.log(elem.ownerDocument);
-// console.log(event.pageX);
-// console.log(event.pageY);
-// console.log(r.startContainer);
-// console.log(r.startOffset);
-// console.log("------");
+// webkit.messageHandlers.consolelog.postMessage("------ 1");
+// webkit.messageHandlers.consolelog.postMessage(elem.ownerDocument);
+// webkit.messageHandlers.consolelog.postMessage(event.pageX);
+// webkit.messageHandlers.consolelog.postMessage(event.pageY);
+// webkit.messageHandlers.consolelog.postMessage(r.startContainer);
+// webkit.messageHandlers.consolelog.postMessage(r.startOffset);
+// webkit.messageHandlers.consolelog.postMessage("------");
 
                                 var pos = rangy.positionFromPoint(event.pageX, event.pageY, elem.ownerDocument);
-// console.log("------ 2");
-// console.log(pos.node.textContent);
-// console.log(pos.offset);
-// console.log("------");
+// webkit.messageHandlers.consolelog.postMessage("------ 2");
+// webkit.messageHandlers.consolelog.postMessage(pos.node.textContent);
+// webkit.messageHandlers.consolelog.postMessage(pos.offset);
+// webkit.messageHandlers.consolelog.postMessage("------");
 
                                 par = undefined;
                                 
@@ -185,14 +185,14 @@ console.log("MO CLICKED LINK");
                 ["cfi-marker", "mo-cfi-highlight"],
                 [],
                 ["MathJax_Message"]);
-//console.log(infoStart);
+//webkit.messageHandlers.consolelog.postMessage(infoStart);
 
                                     var endCFI = "epubcfi(" + p.cfi.partialEndCfi + ")";
                                     var infoEnd = EPUBcfi.getTextTerminusInfoWithPartialCFI(endCFI, elem.ownerDocument,
                 ["cfi-marker", "mo-cfi-highlight"],
                 [],
                 ["MathJax_Message"]);
-//console.log(infoEnd);
+//webkit.messageHandlers.consolelog.postMessage(infoEnd);
 
                                     var range = rangy.createRange(elem.ownerDocument); //createNativeRange
                                     range.setStartAndEnd(
@@ -202,8 +202,8 @@ console.log("MO CLICKED LINK");
         
                                     if (range.isPointInRange(pos.node, pos.offset))
                                     {
-// console.log(p.cfi.partialStartCfi);
-// console.log(p.cfi.partialEndCfi);
+// webkit.messageHandlers.consolelog.postMessage(p.cfi.partialStartCfi);
+// webkit.messageHandlers.consolelog.postMessage(p.cfi.partialEndCfi);
                                         // DOUBLE CHECK WITH getClientRects ??
                                         
                                         par = p;
@@ -213,7 +213,7 @@ console.log("MO CLICKED LINK");
                             }
                             catch (e)
                             {
-                                console.error(e);
+                                webkit.messageHandlers.consoleerror.postMessage(e);
                             }
                             
                             if (!par)
@@ -229,7 +229,7 @@ console.log("MO CLICKED LINK");
 
                         if (el && el != elem && el.nodeName.toLowerCase() === "body" && par && !par.getSmil().id)
                         {
-//console.debug("MO CLICKED BLANK BODY");
+//webkit.messageHandlers.consoledebug.postMessage("MO CLICKED BLANK BODY");
                             mediaOverlayPlayer.touchInit();
                             return true;
                         }
@@ -246,7 +246,7 @@ console.log("MO CLICKED LINK");
                         }
                         if (readaloud)
                         {
-console.debug("MO readaloud attr: " + readaloud);
+webkit.messageHandlers.consoledebug.postMessage("MO readaloud attr: " + readaloud);
 
                             var isPlaying = mediaOverlayPlayer.isPlaying();
                             if (readaloud === "start" && !isPlaying ||
@@ -268,7 +268,7 @@ console.debug("MO readaloud attr: " + readaloud);
         var smil = mediaOverlay.getSmilBySpineItem(spineItem);
         if (!smil)
         {
-            console.error("NO SMIL?? " + spineItem.idref + " /// " + spineItem.media_overlay_id);
+            webkit.messageHandlers.consoleerror.postMessage("NO SMIL?? " + spineItem.idref + " /// " + spineItem.media_overlay_id);
             return;
         }
 
@@ -280,7 +280,7 @@ console.debug("MO readaloud attr: " + readaloud);
             {
                // if (root.element)
                // {
-               //     console.error("WARN: seq.element already set: " + root.textref);
+               //     webkit.messageHandlers.consoleerror.postMessage("WARN: seq.element already set: " + root.textref);
                // }
                    
                if (root.textref)
@@ -289,21 +289,21 @@ console.debug("MO readaloud attr: " + readaloud);
                    var file = parts[0];
                    var fragmentId = (parts.length === 2) ? parts[1] : "";
                    // 
-                   // console.debug(root.textref);
-                   // console.debug(fragmentId);
-                   // console.log("---- SHOULD BE EQUAL:");
-                   // console.debug(file);
-                   // console.debug(par.text.srcFile);
+                   // webkit.messageHandlers.consoledebug.postMessage(root.textref);
+                   // webkit.messageHandlers.consoledebug.postMessage(fragmentId);
+                   // webkit.messageHandlers.consolelog.postMessage("---- SHOULD BE EQUAL:");
+                   // webkit.messageHandlers.consoledebug.postMessage(file);
+                   // webkit.messageHandlers.consoledebug.postMessage(par.text.srcFile);
                    // 
                    // if (file !== par.text.srcFile)
                    // {
-                   //     console.error("adjustParToSeqSyncGranularity textref.file !== par.text.srcFile ???");
+                   //     webkit.messageHandlers.consoleerror.postMessage("adjustParToSeqSyncGranularity textref.file !== par.text.srcFile ???");
                    //     return par;
                    // }
                    // 
                    // if (!fragmentId)
                    // {
-                   //     console.error("adjustParToSeqSyncGranularity !fragmentId ???");
+                   //     webkit.messageHandlers.consoleerror.postMessage("adjustParToSeqSyncGranularity !fragmentId ???");
                    //     return par;
                    // }
 
@@ -317,7 +317,7 @@ console.debug("MO readaloud attr: " + readaloud);
                    
                            if (!root.element)
                            {
-                               console.error("seq.textref !element? " + root.textref);
+                               webkit.messageHandlers.consoleerror.postMessage("seq.textref !element? " + root.textref);
                            }
 
                            // var selector = "#" + ReadiumSDK.Helpers.escapeJQuerySelector(fragmentId);
@@ -342,7 +342,7 @@ console.debug("MO readaloud attr: " + readaloud);
         };
         traverseSmilSeqs(smil);
 
-//console.debug("[[MO ATTACH]] " + spineItem.idref + " /// " + spineItem.media_overlay_id + " === " + smil.id);
+//webkit.messageHandlers.consoledebug.postMessage("[[MO ATTACH]] " + spineItem.idref + " /// " + spineItem.media_overlay_id + " === " + smil.id);
 
         var iter = new ReadiumSDK.Models.SmilIterator(smil);
         
@@ -374,7 +374,7 @@ console.debug("MO readaloud attr: " + readaloud);
                             {
                                 partial = partial.substr(fakeOpfRoot.length, partial.length - fakeOpfRoot.length);
                             }
-//console.log(partial);
+//webkit.messageHandlers.consolelog.postMessage(partial);
                             var parts = partial.split(",");
                             if (parts && parts.length === 3)
                             {
@@ -386,7 +386,7 @@ console.debug("MO readaloud attr: " + readaloud);
                 ["cfi-marker", "mo-cfi-highlight"],
                 [],
                 ["MathJax_Message"]);
-//console.log(infoStart);
+//webkit.messageHandlers.consolelog.postMessage(infoStart);
 
                                     var partialEndCfi = parts[0] + parts[2];
                                     var endCFI = "epubcfi(" + partialEndCfi + ")";
@@ -394,7 +394,7 @@ console.debug("MO readaloud attr: " + readaloud);
                 ["cfi-marker", "mo-cfi-highlight"],
                 [],
                 ["MathJax_Message"]);
-//console.log(infoEnd);
+//webkit.messageHandlers.consolelog.postMessage(infoEnd);
 
                                     var cfiTextParent = infoStart.textNode[0].parentNode;
 
@@ -426,7 +426,7 @@ console.debug("MO readaloud attr: " + readaloud);
                                     {
                                         if (modata.par)
                                         {
-                                            console.error("[WARN] non-CFI MO DATA already exists!");
+                                            webkit.messageHandlers.consoleerror.postMessage("[WARN] non-CFI MO DATA already exists!");
                                             modata.par = undefined;
                                         }
 
@@ -440,7 +440,7 @@ console.debug("MO readaloud attr: " + readaloud);
                                                 if (par === iter.currentPar)
                                                 {
                                                     found = true;
-                                                    console.error("[WARN] mediaOverlayData CFI PAR already registered!");
+                                                    webkit.messageHandlers.consoleerror.postMessage("[WARN] mediaOverlayData CFI PAR already registered!");
                                                 }
                                             }
                                         }
@@ -458,7 +458,7 @@ console.debug("MO readaloud attr: " + readaloud);
                                 }
                                 catch (error)
                                 {
-                                    console.error(error);
+                                    webkit.messageHandlers.consoleerror.postMessage(error);
                                 }
                             }
                             else
@@ -473,13 +473,13 @@ console.debug("MO readaloud attr: " + readaloud);
                                 }
                                 catch (error)
                                 {
-                                    console.error(error);
+                                    webkit.messageHandlers.consoleerror.postMessage(error);
                                 }
                             }
                         }
                         else 
                         {
-                            console.error("SMIL text@src CFI fragment identifier scheme not supported: " + iter.currentPar.text.srcFragmentId);
+                            webkit.messageHandlers.consoleerror.postMessage("SMIL text@src CFI fragment identifier scheme not supported: " + iter.currentPar.text.srcFragmentId);
                         }
                     }
                     else
@@ -500,7 +500,7 @@ console.debug("MO readaloud attr: " + readaloud);
                         if (!isCfiTextRange)
                         {
                             if (iter.currentPar.element && iter.currentPar.element !== $element[0]) {
-                                console.error("DIFFERENT ELEMENTS??! " + iter.currentPar.text.srcFragmentId + " /// " + iter.currentPar.element.id);
+                                webkit.messageHandlers.consoleerror.postMessage("DIFFERENT ELEMENTS??! " + iter.currentPar.text.srcFragmentId + " /// " + iter.currentPar.element.id);
                             }
 
                             var name = $element[0].nodeName ? $element[0].nodeName.toLowerCase() : undefined;
@@ -512,10 +512,10 @@ console.debug("MO readaloud attr: " + readaloud);
 
                             var modata = $element.data("mediaOverlayData");
                             if (modata) {
-                                console.error("[WARN] MO DATA already exists.");
+                                webkit.messageHandlers.consoleerror.postMessage("[WARN] MO DATA already exists.");
 
                                 if (modata.par && modata.par !== iter.currentPar) {
-                                    console.error("DIFFERENT PARS??!");
+                                    webkit.messageHandlers.consoleerror.postMessage("DIFFERENT PARS??!");
                                 }
                             }
 
@@ -524,7 +524,7 @@ console.debug("MO readaloud attr: " + readaloud);
                             /*
                              $element.click(function() {
                              var elem = $(this)[0];
-                             console.debug("MO CLICK (ELEM): " + elem.id);
+                             webkit.messageHandlers.consoledebug.postMessage("MO CLICK (ELEM): " + elem.id);
 
                              var par = $(this).data("mediaOverlayData").par;
                              mediaOverlayPlayer.playUserPar(par);
@@ -533,11 +533,11 @@ console.debug("MO readaloud attr: " + readaloud);
                         }
                     }
                     else {
-                        console.error("!! CANNOT FIND ELEMENT: " + iter.currentPar.text.srcFragmentId + " == " + iter.currentPar.text.srcFile + " /// " + spineItem.href);
+                        webkit.messageHandlers.consoleerror.postMessage("!! CANNOT FIND ELEMENT: " + iter.currentPar.text.srcFragmentId + " == " + iter.currentPar.text.srcFile + " /// " + spineItem.href);
                     }
                 }
                 else {
-//console.debug("[INFO] " + spineItem.href + " != " + textRelativeRef + " # " + iter.currentPar.text.srcFragmentId);
+//webkit.messageHandlers.consoledebug.postMessage("[INFO] " + spineItem.href + " != " + textRelativeRef + " # " + iter.currentPar.text.srcFragmentId);
                 }
             }
 

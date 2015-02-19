@@ -46,7 +46,7 @@ ReadiumSDK.Models.Switches.apply = function(dom) {
         if(!ns) {
             // the namespace was not specified, that should
             // never happen, we don't support it then
-            console.log("Encountered a case statement with no required-namespace");
+            webkit.messageHandlers.consolelog.postMessage("Encountered a case statement with no required-namespace");
             return false;
         }
         // all the xmlns that readium is known to support

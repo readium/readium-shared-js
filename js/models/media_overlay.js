@@ -122,11 +122,11 @@ ReadiumSDK.Models.MediaOverlay = function(package) {
     
     this.positionToPercent = function(smilIndex, parIndex, milliseconds)
     {
-// console.log(">>>>>>>>>>");
-// console.log(milliseconds);
-// console.log(smilIndex);
-// console.log(parIndex);
-// console.log("-------");
+// webkit.messageHandlers.consolelog.postMessage(">>>>>>>>>>");
+// webkit.messageHandlers.consolelog.postMessage(milliseconds);
+// webkit.messageHandlers.consolelog.postMessage(smilIndex);
+// webkit.messageHandlers.consolelog.postMessage(parIndex);
+// webkit.messageHandlers.consolelog.postMessage("-------");
                 
         if (smilIndex >= this.smil_models.length)
         {
@@ -140,7 +140,7 @@ ReadiumSDK.Models.MediaOverlay = function(package) {
             smilDataOffset += sd.durationMilliseconds_Calculated();
         }
 
-//console.log(smilDataOffset);
+//webkit.messageHandlers.consolelog.postMessage(smilDataOffset);
         
         var smilData = this.smil_models[smilIndex];
 
@@ -152,15 +152,15 @@ ReadiumSDK.Models.MediaOverlay = function(package) {
 
         var offset = smilDataOffset + smilData.clipOffset(par) + milliseconds;
 
-//console.log(offset);
+//webkit.messageHandlers.consolelog.postMessage(offset);
         
         var total = this.durationMilliseconds_Calculated();
 
-///console.log(total);
+///webkit.messageHandlers.consolelog.postMessage(total);
 
         var percent = (offset / total) * 100;
 
-//console.log("<<<<<<<<<<< " + percent);
+//webkit.messageHandlers.consolelog.postMessage("<<<<<<<<<<< " + percent);
         
         return percent;
       };
@@ -189,7 +189,7 @@ ReadiumSDK.Models.MediaOverlay = function(package) {
             if(smil.spineItemId === spineItem.idref) {
                 if (spineItem.media_overlay_id !== smil.id)
                 {
-                    console.error("SMIL INCORRECT ID?? " + spineItem.media_overlay_id + " /// " + smil.id);
+                    webkit.messageHandlers.consoleerror.postMessage("SMIL INCORRECT ID?? " + spineItem.media_overlay_id + " /// " + smil.id);
                 }
                 return smil;
             }
@@ -239,68 +239,68 @@ ReadiumSDK.Models.MediaOverlay.fromDTO = function(moDTO, package) {
     var mo = new ReadiumSDK.Models.MediaOverlay(package);
 
     if(!moDTO) {
-        console.debug("No Media Overlay.");
+        webkit.messageHandlers.consoledebug.postMessage("No Media Overlay.");
         return mo;
     }
 
-    console.debug("Media Overlay INIT...");
+    webkit.messageHandlers.consoledebug.postMessage("Media Overlay INIT...");
 
     // if (mo.DEBUG)
-    //     console.debug(JSON.stringify(moDTO));
+    //     webkit.messageHandlers.consoledebug.postMessage(JSON.stringify(moDTO));
         
     mo.duration = moDTO.duration;
     if (mo.duration && mo.duration.length && mo.duration.length > 0)
     {
-        console.error("SMIL total duration is string, parsing float... (" + mo.duration + ")");
+        webkit.messageHandlers.consoleerror.postMessage("SMIL total duration is string, parsing float... (" + mo.duration + ")");
         mo.duration = parseFloat(mo.duration);
     }
     if (mo.DEBUG)
-        console.debug("Media Overlay Duration (TOTAL): " + mo.duration);
+        webkit.messageHandlers.consoledebug.postMessage("Media Overlay Duration (TOTAL): " + mo.duration);
 
     mo.narrator = moDTO.narrator;
     if (mo.DEBUG)
-        console.debug("Media Overlay Narrator: " + mo.narrator);
+        webkit.messageHandlers.consoledebug.postMessage("Media Overlay Narrator: " + mo.narrator);
 
     mo.activeClass = moDTO.activeClass;
     if (mo.DEBUG)
-        console.debug("Media Overlay Active-Class: " + mo.activeClass);
+        webkit.messageHandlers.consoledebug.postMessage("Media Overlay Active-Class: " + mo.activeClass);
 
     mo.playbackActiveClass = moDTO.playbackActiveClass;
     if (mo.DEBUG)
-        console.debug("Media Overlay Playback-Active-Class: " + mo.playbackActiveClass);
+        webkit.messageHandlers.consoledebug.postMessage("Media Overlay Playback-Active-Class: " + mo.playbackActiveClass);
 
     var count = moDTO.smil_models.length;
     if (mo.DEBUG)
-        console.debug("Media Overlay SMIL count: " + count);
+        webkit.messageHandlers.consoledebug.postMessage("Media Overlay SMIL count: " + count);
 
     for(var i = 0; i < count; i++) {
         var smilModel = ReadiumSDK.Models.SmilModel.fromSmilDTO(moDTO.smil_models[i], mo);
         mo.smil_models.push(smilModel);
 
         if (mo.DEBUG)
-            console.debug("Media Overlay Duration (SPINE ITEM): " + smilModel.duration);
+            webkit.messageHandlers.consoledebug.postMessage("Media Overlay Duration (SPINE ITEM): " + smilModel.duration);
     }
 
     count = moDTO.skippables.length;
     if (mo.DEBUG)
-        console.debug("Media Overlay SKIPPABLES count: " + count);
+        webkit.messageHandlers.consoledebug.postMessage("Media Overlay SKIPPABLES count: " + count);
 
     for(var i = 0; i < count; i++) {
         mo.skippables.push(moDTO.skippables[i]);
 
         //if (mo.DEBUG)
-        //    console.debug("Media Overlay SKIPPABLE: " + mo.skippables[i]);
+        //    webkit.messageHandlers.consoledebug.postMessage("Media Overlay SKIPPABLE: " + mo.skippables[i]);
     }
 
     count = moDTO.escapables.length;
     if (mo.DEBUG)
-        console.debug("Media Overlay ESCAPABLES count: " + count);
+        webkit.messageHandlers.consoledebug.postMessage("Media Overlay ESCAPABLES count: " + count);
 
     for(var i = 0; i < count; i++) {
         mo.escapables.push(moDTO.escapables[i]);
 
         //if (mo.DEBUG)
-        //    console.debug("Media Overlay ESCAPABLE: " + mo.escapables[i]);
+        //    webkit.messageHandlers.consoledebug.postMessage("Media Overlay ESCAPABLE: " + mo.escapables[i]);
     }
 
     return mo;

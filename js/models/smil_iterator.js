@@ -53,7 +53,7 @@ ReadiumSDK.Models.SmilIterator = function(smil) {
 //    {
 //        if (!this.currentPar)
 //        {
-//            console.debug("Par iterator is out of range");
+//            webkit.messageHandlers.consoledebug.postMessage("Par iterator is out of range");
 //            return;
 //        }
 //
@@ -67,7 +67,7 @@ ReadiumSDK.Models.SmilIterator = function(smil) {
     {
         if (!this.currentPar)
         {
-            console.debug("Par iterator is out of range");
+            webkit.messageHandlers.consoledebug.postMessage("Par iterator is out of range");
             return;
         }
 
@@ -115,7 +115,7 @@ ReadiumSDK.Models.SmilIterator = function(smil) {
     this.next = function() {
 
         if(!this.currentPar) {
-            console.debug("Par iterator is out of range");
+            webkit.messageHandlers.consoledebug.postMessage("Par iterator is out of range");
             return;
         }
 
@@ -125,7 +125,7 @@ ReadiumSDK.Models.SmilIterator = function(smil) {
     this.previous = function() {
 
         if(!this.currentPar) {
-            console.debug("Par iterator is out of range");
+            webkit.messageHandlers.consoledebug.postMessage("Par iterator is out of range");
             return;
         }
 
@@ -135,7 +135,7 @@ ReadiumSDK.Models.SmilIterator = function(smil) {
     this.isLast = function() {
 
         if(!this.currentPar) {
-            console.debug("Par iterator is out of range");
+            webkit.messageHandlers.consoledebug.postMessage("Par iterator is out of range");
             return;
         }
 

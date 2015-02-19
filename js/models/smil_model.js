@@ -179,8 +179,8 @@ ReadiumSDK.Models.Smil.SeqNode = function(parent) {
                 }
                 if (container.text && (!container.text.manifestItemId || container.text.manifestItemId != smilData.spineItemId))
                 {
-// console.log(container.text);
-// console.log(smilData.spineItemId);
+// webkit.messageHandlers.consolelog.postMessage(container.text);
+// webkit.messageHandlers.consolelog.postMessage(smilData.spineItemId);
                     continue;
                 }
                 
@@ -377,28 +377,28 @@ ReadiumSDK.Models.Smil.TextNode = function(parent) {
 //         item.srcFragmentId = (srcParts.length === 2) ? srcParts[1] : "";
         
         var src = this.srcFile ? this.srcFile : this.src;
-// console.log("src: " + src);
-// console.log("smilData.href: " + smilData.href);
+// webkit.messageHandlers.consolelog.postMessage("src: " + src);
+// webkit.messageHandlers.consolelog.postMessage("smilData.href: " + smilData.href);
         var ref = ReadiumSDK.Helpers.ResolveContentRef(src, smilData.href);
-//console.log("ref: " + ref);
+//webkit.messageHandlers.consolelog.postMessage("ref: " + ref);
         var full = smilData.mo.package.resolveRelativeUrlMO(ref);
-// console.log("full: " + full);
-// console.log("---");
+// webkit.messageHandlers.consolelog.postMessage("full: " + full);
+// webkit.messageHandlers.consolelog.postMessage("---");
         for (var j = 0; j < smilData.mo.package.spine.items.length; j++)
         {
             var item = smilData.mo.package.spine.items[j];
-//console.log("item.href: " + item.href);
+//webkit.messageHandlers.consolelog.postMessage("item.href: " + item.href);
             var url = smilData.mo.package.resolveRelativeUrl(item.href);
-//console.log("url: " + url);
+//webkit.messageHandlers.consolelog.postMessage("url: " + url);
             if (url === full)
             {
-//console.error("FOUND: " + item.idref);
+//webkit.messageHandlers.consoleerror.postMessage("FOUND: " + item.idref);
                 this.manifestItemId = item.idref;
                 return;
             }
         }
         
-        console.error("Cannot set the Media ManifestItemId? " + this.src + " && " + smilData.href);
+        webkit.messageHandlers.consoleerror.postMessage("Cannot set the Media ManifestItemId? " + this.src + " && " + smilData.href);
         
 //        throw "BREAK";
     };
@@ -494,12 +494,12 @@ ReadiumSDK.Models.SmilModel = function() {
         {
             if (_epubtypeSyncs[i] === epubtype)
             {
-//console.debug("hasSync OK: ["+epubtype+"]");
+//webkit.messageHandlers.consoledebug.postMessage("hasSync OK: ["+epubtype+"]");
                 return true;
             }
         }
         
-//console.debug("hasSync??: ["+epubtype+"] " + _epubtypeSyncs);
+//webkit.messageHandlers.consoledebug.postMessage("hasSync??: ["+epubtype+"] " + _epubtypeSyncs);
         return false;
     };
     
@@ -507,7 +507,7 @@ ReadiumSDK.Models.SmilModel = function() {
     {
         if (!epubtypes) return;
         
-//console.debug("addSyncs: "+epubtypes);
+//webkit.messageHandlers.consoledebug.postMessage("addSyncs: "+epubtypes);
 
         var parts = epubtypes.split(' ');
         for (var i = 0; i < parts.length; i++)
@@ -518,7 +518,7 @@ ReadiumSDK.Models.SmilModel = function() {
             {
                 _epubtypeSyncs.push(epubtype);
 
-//console.debug("addSync: "+epubtype);
+//webkit.messageHandlers.consoledebug.postMessage("addSync: "+epubtype);
             }
         }
     };
@@ -529,7 +529,7 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
 
     if (mo.DEBUG)
     {
-        console.debug("Media Overlay DTO import...");
+        webkit.messageHandlers.consoledebug.postMessage("Media Overlay DTO import...");
     }
 
     var indent = 0;
@@ -553,7 +553,7 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
     smilModel.duration = smilDTO.duration;
     if (smilModel.duration && smilModel.duration.length && smilModel.duration.length > 0)
     {
-        console.error("SMIL duration is string, parsing float... (" + smilModel.duration + ")");
+        webkit.messageHandlers.consoleerror.postMessage("SMIL duration is string, parsing float... (" + smilModel.duration + ")");
         smilModel.duration = parseFloat(smilModel.duration);
     }
     
@@ -561,11 +561,11 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
 
     if (smilModel.mo.DEBUG)
     {
-        console.log("JS MO smilVersion=" + smilModel.smilVersion);
-        console.log("JS MO id=" + smilModel.id);
-        console.log("JS MO spineItemId=" + smilModel.spineItemId);
-        console.log("JS MO href=" + smilModel.href);
-        console.log("JS MO duration=" + smilModel.duration);
+        webkit.messageHandlers.consolelog.postMessage("JS MO smilVersion=" + smilModel.smilVersion);
+        webkit.messageHandlers.consolelog.postMessage("JS MO id=" + smilModel.id);
+        webkit.messageHandlers.consolelog.postMessage("JS MO spineItemId=" + smilModel.spineItemId);
+        webkit.messageHandlers.consolelog.postMessage("JS MO href=" + smilModel.href);
+        webkit.messageHandlers.consolelog.postMessage("JS MO duration=" + smilModel.duration);
     }
 
     var safeCopyProperty = function(property, from, to, isRequired) {
@@ -574,18 +574,18 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
         { // && from[property] !== ""
 
             if( !(property in to) ) {
-                console.debug("property " + property + " not declared in smil node " + to.nodeType);
+                webkit.messageHandlers.consoledebug.postMessage("property " + property + " not declared in smil node " + to.nodeType);
             }
 
             to[property] = from[property];
 
             if (smilModel.mo.DEBUG)
             {
-            console.log(getIndent() + "JS MO: [" + property + "=" + to[property] + "]");
+            webkit.messageHandlers.consolelog.postMessage(getIndent() + "JS MO: [" + property + "=" + to[property] + "]");
             }
         }
         else if(isRequired) {
-            console.log("Required property " + property + " not found in smil node " + from.nodeType);
+            webkit.messageHandlers.consolelog.postMessage("Required property " + property + " not found in smil node " + from.nodeType);
         }
     };
 
@@ -597,7 +597,7 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
 
             if (smilModel.mo.DEBUG)
             {
-            console.log(getIndent() + "JS MO seq");
+            webkit.messageHandlers.consolelog.postMessage(getIndent() + "JS MO seq");
             }
 
             node = new ReadiumSDK.Models.Smil.SeqNode(parent);
@@ -619,7 +619,7 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
 
             if (smilModel.mo.DEBUG)
             {
-            console.log(getIndent() + "JS MO par");
+            webkit.messageHandlers.consolelog.postMessage(getIndent() + "JS MO par");
             }
 
             node = new ReadiumSDK.Models.Smil.ParNode(parent);
@@ -646,7 +646,7 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
                     node.audio = child;
                 }
                 else {
-                    console.error("Unexpected smil node type: " + child.nodeType);
+                    webkit.messageHandlers.consoleerror.postMessage("Unexpected smil node type: " + child.nodeType);
                 }
             }
 
@@ -670,7 +670,7 @@ var forceTTS = false; // for testing only!
 
             if (smilModel.mo.DEBUG)
             {
-            console.log(getIndent() + "JS MO text");
+            webkit.messageHandlers.consolelog.postMessage(getIndent() + "JS MO text");
             }
 
             node = new ReadiumSDK.Models.Smil.TextNode(parent);
@@ -686,7 +686,7 @@ var forceTTS = false; // for testing only!
 
             if (smilModel.mo.DEBUG)
             {
-            console.log(getIndent() + "JS MO audio");
+            webkit.messageHandlers.consolelog.postMessage(getIndent() + "JS MO audio");
             }
 
             node = new ReadiumSDK.Models.Smil.AudioNode(parent);
@@ -697,14 +697,14 @@ var forceTTS = false; // for testing only!
             safeCopyProperty("clipBegin", nodeDTO, node);
             if (node.clipBegin && node.clipBegin.length && node.clipBegin.length > 0)
             {
-                console.error("SMIL clipBegin is string, parsing float... (" + node.clipBegin + ")");
+                webkit.messageHandlers.consoleerror.postMessage("SMIL clipBegin is string, parsing float... (" + node.clipBegin + ")");
                 node.clipBegin = parseFloat(node.clipBegin);
             }
             if (node.clipBegin < 0)
             {
                 if (smilModel.mo.DEBUG)
                 {
-                    console.log(getIndent() + "JS MO clipBegin adjusted to ZERO");
+                    webkit.messageHandlers.consolelog.postMessage(getIndent() + "JS MO clipBegin adjusted to ZERO");
                 }
                 node.clipBegin = 0;
             }
@@ -712,14 +712,14 @@ var forceTTS = false; // for testing only!
             safeCopyProperty("clipEnd", nodeDTO, node);
             if (node.clipEnd && node.clipEnd.length && node.clipEnd.length > 0)
             {
-                console.error("SMIL clipEnd is string, parsing float... (" + node.clipEnd + ")");
+                webkit.messageHandlers.consoleerror.postMessage("SMIL clipEnd is string, parsing float... (" + node.clipEnd + ")");
                 node.clipEnd = parseFloat(node.clipEnd);
             }
             if (node.clipEnd <= node.clipBegin)
             {
                 if (smilModel.mo.DEBUG)
                 {
-                    console.log(getIndent() + "JS MO clipEnd adjusted to MAX");
+                    webkit.messageHandlers.consolelog.postMessage(getIndent() + "JS MO clipEnd adjusted to MAX");
                 }
                 node.clipEnd = node.MAX;
             }
@@ -727,7 +727,7 @@ var forceTTS = false; // for testing only!
             //node.updateMediaManifestItemId(); ONLY XHTML SPINE ITEMS 
         }
         else {
-            console.error("Unexpected smil node type: " + nodeDTO.nodeType);
+            webkit.messageHandlers.consoleerror.postMessage("Unexpected smil node type: " + nodeDTO.nodeType);
             return undefined;
         }
 

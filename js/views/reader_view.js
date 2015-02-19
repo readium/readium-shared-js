@@ -68,10 +68,10 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
     if (options.el instanceof $) {
         _$el = options.el;
-        console.log("** EL is a jQuery selector:" + options.el.attr('id'));
+        webkit.messageHandlers.consolelog.postMessage("** EL is a jQuery selector:" + options.el.attr('id'));
     } else {
         _$el = $(options.el);
-        console.log("** EL is a string:" + _$el.attr('id'));
+        webkit.messageHandlers.consolelog.postMessage("** EL is a string:" + _$el.attr('id'));
     }
 
     if(options.iframeLoader) {
@@ -147,7 +147,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
             return ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_DOC;
         }
 
-        console.error("Unrecognized view type");
+        webkit.messageHandlers.consoleerror.postMessage("Unrecognized view type");
         return undefined;
     };
 
@@ -379,7 +379,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
                 pageRequestData = openBookData.openPageRequest;
             }
             else {
-                console.log("Invalid page request data: idref required!");
+                webkit.messageHandlers.consolelog.postMessage("Invalid page request data: idref required!");
             }
         }
 
@@ -406,7 +406,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
                 }
             } catch (err) {
                 console.error("openPageRequest fail: fallback to first page!")
-                console.log(err);
+                webkit.messageHandlers.consolelog.postMessage(err);
                 fallback = true;
             }
         }
@@ -520,7 +520,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
      */
     this.updateSettings = function(settingsData) {
 
-//console.debug("UpdateSettings: " + JSON.stringify(settingsData));
+//webkit.messageHandlers.consoledebug.postMessage("UpdateSettings: " + JSON.stringify(settingsData));
 
         _viewerSettings.update(settingsData);
         
@@ -650,13 +650,13 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
         if(!idref) {
 
-            console.log("idref parameter value missing!");
+            webkit.messageHandlers.consolelog.postMessage("idref parameter value missing!");
             return undefined;
         }
 
         var spineItem = _spine.getItemById(idref);
         if(!spineItem) {
-            console.log("Spine item with id " + idref + " not found!");
+            webkit.messageHandlers.consolelog.postMessage("Spine item with id " + idref + " not found!");
             return undefined;
         }
 
@@ -915,14 +915,14 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
         var spineItem = _spine.getItemByHref(hrefPart);
         if(!spineItem) {
-            console.warn('spineItem ' + hrefPart + ' not found');
+            webkit.messageHandlers.consolewarn.postMessage('spineItem ' + hrefPart + ' not found');
             // sometimes that happens because spine item's URI gets encoded,
             // yet it's compared with raw strings by `getItemByHref()` -
             // so we try to search with decoded link as well
             var decodedHrefPart = decodeURIComponent(hrefPart);
             spineItem = _spine.getItemByHref(decodedHrefPart);
             if (!spineItem) {
-                console.warn('decoded spineItem ' + decodedHrefPart + ' missing as well');
+                webkit.messageHandlers.consolewarn.postMessage('decoded spineItem ' + decodedHrefPart + ' missing as well');
                 return false;
             }
         }
@@ -1274,7 +1274,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
                     var data = _spineItemIframeMap[prop];
                     if (!data || !data.active) continue;
 
-                    if ($iframe) console.error("More than one active iframe?? (pagination)");
+                    if ($iframe) webkit.messageHandlers.consoleerror.postMessage("More than one active iframe?? (pagination)");
                     
                     $iframe = data["$iframe"];
                     if (!$iframe) continue;
@@ -1304,7 +1304,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
             }
             catch (err)
             {
-                console.error(err);
+                webkit.messageHandlers.consoleerror.postMessage(err);
             }
         };
         
@@ -1319,39 +1319,39 @@ ReadiumSDK.Views.ReaderView = function(options) {
             {
                 if (spineItem && spineItem.idref && $iframe && $iframe[0])
                 {
-                    // console.log("CONTENT_DOCUMENT_LOADED");
-                    // console.debug(spineItem.href);
-                    // console.debug(spineItem.idref);
+                    // webkit.messageHandlers.consolelog.postMessage("CONTENT_DOCUMENT_LOADED");
+                    // webkit.messageHandlers.consoledebug.postMessage(spineItem.href);
+                    // webkit.messageHandlers.consoledebug.postMessage(spineItem.idref);
                     
                     _spineItemIframeMap[spineItem.idref] = {"$iframe": $iframe, href: spineItem.href};
                 }
             }
             catch (err)
             {
-                console.error(err);
+                webkit.messageHandlers.consoleerror.postMessage(err);
             }
         });
         
         self.on(ReadiumSDK.Events.PAGINATION_CHANGED, function (pageChangeData)
         {
-            // console.log("PAGINATION_CHANGED");
-            // console.debug(pageChangeData);
+            // webkit.messageHandlers.consolelog.postMessage("PAGINATION_CHANGED");
+            // webkit.messageHandlers.consoledebug.postMessage(pageChangeData);
             // 
             // if (pageChangeData.spineItem)
             // {
-            //     console.debug(pageChangeData.spineItem.href);
-            //     console.debug(pageChangeData.spineItem.idref);
+            //     webkit.messageHandlers.consoledebug.postMessage(pageChangeData.spineItem.href);
+            //     webkit.messageHandlers.consoledebug.postMessage(pageChangeData.spineItem.idref);
             // }
             // else
             // {
-            //     //console.error(pageChangeData);
+            //     //webkit.messageHandlers.consoleerror.postMessage(pageChangeData);
             // }
             // 
             // if (pageChangeData.paginationInfo && pageChangeData.paginationInfo.openPages && pageChangeData.paginationInfo.openPages.length)
             // {
             //     for (var i = 0; i < pageChangeData.paginationInfo.openPages.length; i++)
             //     {
-            //         console.log(pageChangeData.paginationInfo.openPages[i].idref);
+            //         webkit.messageHandlers.consolelog.postMessage(pageChangeData.paginationInfo.openPages[i].idref);
             //     }
             // }
 
@@ -1440,7 +1440,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
             }
             catch (err)
             {
-                console.error(err);
+                webkit.messageHandlers.consoleerror.postMessage(err);
             }
 
             if (_callback_isAvailable)

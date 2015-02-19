@@ -156,7 +156,7 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
         
         $userStyle.appendTo($head);
 
-//console.debug($userStyle[0].textContent);
+//webkit.messageHandlers.consoledebug.postMessage($userStyle[0].textContent);
     };
     
     this.highlightElement = function(par, activeClass, playbackActiveClass) {
@@ -178,9 +178,9 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
         
         if (_playbackActiveClass && _playbackActiveClass !== "")
         {
-            //console.debug("MO playbackActiveClass: " + _playbackActiveClass);
+            //webkit.messageHandlers.consoledebug.postMessage("MO playbackActiveClass: " + _playbackActiveClass);
             $(element.ownerDocument.documentElement).addClass(_playbackActiveClass);
-            //console.debug("MO playbackActiveClass 2: " + element.ownerDocument.documentElement.classList);
+            //webkit.messageHandlers.consoledebug.postMessage("MO playbackActiveClass 2: " + element.ownerDocument.documentElement.classList);
         }
 
         var $hel = $(element);
@@ -192,7 +192,7 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
                 
         if (overrideWithUserStyle || !hasAuthorStyle)
         {
-            //console.debug("MO active NO CLASS: " + _activeClass);
+            //webkit.messageHandlers.consoledebug.postMessage("MO active NO CLASS: " + _activeClass);
 
             if (hasAuthorStyle)
             {
@@ -205,7 +205,7 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
         }
         else
         {
-            //console.debug("MO activeClass: " + _activeClass);
+            //webkit.messageHandlers.consoledebug.postMessage("MO activeClass: " + _activeClass);
             $hel.addClass(_activeClass);
         }
         
@@ -223,15 +223,15 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
 //             //     cfi = cfi.substring(1);
 //             // }
 // 
-// //console.log(element);
+// //webkit.messageHandlers.consolelog.postMessage(element);
 //         
 //             var firstTextNode = getFirstTextNode(element);
 //             var txtFirst = firstTextNode.textContent;
-// //console.log(txtFirst);
+// //webkit.messageHandlers.consolelog.postMessage(txtFirst);
 // 
 //             var lastTextNode = getLastTextNode(element);
 //             var txtLast = lastTextNode.textContent;
-// //console.log(txtLast);
+// //webkit.messageHandlers.consolelog.postMessage(txtLast);
 //         
 //             var cfi = EPUBcfi.Generator.generateCharOffsetRangeComponent(
 //                     firstTextNode, 
@@ -251,7 +251,7 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
 //         }
 //         catch(error)
 //         {
-//             console.error(error);
+//             webkit.messageHandlers.consoleerror.postMessage(error);
 //         
 //             removeHighlight();
 //         }
@@ -291,14 +291,14 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
                 ["cfi-marker", "mo-cfi-highlight"],
                 [],
                 ["MathJax_Message"]);
-//console.log(infoStart);
+//webkit.messageHandlers.consolelog.postMessage(infoStart);
 
             var endCFI = "epubcfi(" + _highlightedCfiPar.cfi.partialEndCfi + ")";
             var infoEnd = EPUBcfi.getTextTerminusInfoWithPartialCFI(endCFI, doc,
                 ["cfi-marker", "mo-cfi-highlight"],
                 [],
                 ["MathJax_Message"]);
-//console.log(infoEnd);
+//webkit.messageHandlers.consolelog.postMessage(infoEnd);
             
             _rangyRange.setStartAndEnd(
                 infoStart.textNode[0], infoStart.textOffset,
@@ -350,7 +350,7 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
             }
             catch(error)
             {
-                console.error(error);
+                webkit.messageHandlers.consoleerror.postMessage(error);
             }
         }
     };
@@ -436,20 +436,20 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
                     var toRemove = undefined;
                     while ((toRemove = doc.getElementById("start-" + HIGHLIGHT_ID)) !== null)
                     {
-            console.log("toRemove START");
-            console.log(toRemove);
+            webkit.messageHandlers.consolelog.postMessage("toRemove START");
+            webkit.messageHandlers.consolelog.postMessage(toRemove);
                         toRemove.parentNode.removeChild(toRemove);
                     }
                     while ((toRemove = doc.getElementById("end-" + HIGHLIGHT_ID)) !== null)
                     {
-            console.log("toRemove END");
-            console.log(toRemove);
+            webkit.messageHandlers.consolelog.postMessage("toRemove END");
+            webkit.messageHandlers.consolelog.postMessage(toRemove);
                         toRemove.parentNode.removeChild(toRemove);
                     }
                 }
                 catch(error)
                 {
-                    console.error(error);
+                    webkit.messageHandlers.consoleerror.postMessage(error);
                 }
             }
             
@@ -470,18 +470,18 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
             
             if (_playbackActiveClass && _playbackActiveClass !== "")
             {
-                //console.debug("MO RESET playbackActiveClass: " + _playbackActiveClass);
+                //webkit.messageHandlers.consoledebug.postMessage("MO RESET playbackActiveClass: " + _playbackActiveClass);
                 $(element.ownerDocument.documentElement).removeClass(_playbackActiveClass);
             }
 
             if (_activeClass && _activeClass !== "")
             {
-                //console.debug("MO RESET activeClass: " + _activeClass);
+                //webkit.messageHandlers.consoledebug.postMessage("MO RESET activeClass: " + _activeClass);
                 $(element).removeClass(_activeClass);
             }
             //else
             //{
-                //console.debug("MO RESET active NO CLASS: " + _activeClass);
+                //webkit.messageHandlers.consoledebug.postMessage("MO RESET active NO CLASS: " + _activeClass);
                 $(element).removeClass(DEFAULT_MO_ACTIVE_CLASS);
                 //$(element).css("background", '');
             //}
@@ -503,7 +503,7 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
             var element = par.element || (par.cfi ? par.cfi.cfiTextParent : undefined);
             if (!element)
             {
-                console.error("adjustParToSeqSyncGranularity !element ???");
+                webkit.messageHandlers.consoleerror.postMessage("adjustParToSeqSyncGranularity !element ???");
                 return par; // should never happen!
             }
 

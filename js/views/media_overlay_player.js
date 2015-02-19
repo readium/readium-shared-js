@@ -85,7 +85,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
 
     this.onSettingsApplied = function() {
-//console.debug(_settings);
+//webkit.messageHandlers.consoledebug.postMessage(_settings);
         _audioPlayer.setRate(_settings.mediaOverlaysRate);
         _audioPlayer.setVolume(_settings.mediaOverlaysVolume / 100.0);
     };
@@ -179,7 +179,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                     {
                         partial = partial.substr(fakeOpfRoot.length, partial.length - fakeOpfRoot.length);
                     }
-//console.log(partial);
+//webkit.messageHandlers.consolelog.postMessage(partial);
                     var parts = partial.split(",");
                     if (parts && parts.length === 3)
                     {
@@ -203,7 +203,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                         }
                         catch (error)
                         {
-                            console.error(error);
+                            webkit.messageHandlers.consoleerror.postMessage(error);
                         }
                     }
                     else
@@ -229,7 +229,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                         }
                         catch (error)
                         {
-                            console.error(error);
+                            webkit.messageHandlers.consoleerror.postMessage(error);
                         }
                     }
                 }
@@ -251,7 +251,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                     if (element)
                     {
                         /*
-                        console.error("GREEN: " + paginationData.elementId);
+                        webkit.messageHandlers.consoleerror.postMessage("GREEN: " + paginationData.elementId);
                         lastElement = element;
                         lastElementColor = $(element).css("background-color");
                         $(element).css("background-color", "green");
@@ -263,7 +263,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
             if (!element)
             {
-                console.error("paginationData.elementId BUT !element: " + paginationData.elementId);
+                webkit.messageHandlers.consoleerror.postMessage("paginationData.elementId BUT !element: " + paginationData.elementId);
             }
         }
 
@@ -293,21 +293,21 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 //
 //            if (!paginationData.elementId)
 //            {
-//                console.error("!paginationData.elementId");
+//                webkit.messageHandlers.consoleerror.postMessage("!paginationData.elementId");
 //                clipBeginOffset = 0.0;
 //                return;
 //            }
 
             if(!element)
             {
-                console.error("!element: " + paginationData.elementId);
+                webkit.messageHandlers.consoleerror.postMessage("!element: " + paginationData.elementId);
                 clipBeginOffset = 0.0;
                 return;
             }
 
             var moData = $(element).data("mediaOverlayData");
             if(!moData) {
-                console.error("!moData: " + paginationData.elementId);
+                webkit.messageHandlers.consoleerror.postMessage("!moData: " + paginationData.elementId);
                 clipBeginOffset = 0.0;
                 return;
             }
@@ -334,7 +334,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
         var noReverseData = !_smilIterator.currentPar.element && !_smilIterator.currentPar.cfi;
         if(noReverseData) {
-            console.error("!! _smilIterator.currentPar.element ??");
+            webkit.messageHandlers.consoleerror.postMessage("!! _smilIterator.currentPar.element ??");
         }
 
 //console.debug("+++> paginationData.elementId: " + paginationData.elementId + " /// " + _smilIterator.currentPar.text.srcFile + " # " + _smilIterator.currentPar.text.srcFragmentId); //PageOpenRequest.elementId
@@ -345,7 +345,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             var notSameTargetID = paginationData.elementId && paginationData.elementId !== _smilIterator.currentPar.text.srcFragmentId;
 
             if(notSameTargetID) {
-                console.error("!! paginationData.elementId !== _smilIterator.currentPar.text.srcFragmentId");
+                webkit.messageHandlers.consoleerror.postMessage("!! paginationData.elementId !== _smilIterator.currentPar.text.srcFragmentId");
             }
 
             if(notSameTargetID || noReverseData) {
@@ -404,7 +404,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         _smilIterator.goToPar(par);
 
         if(!_smilIterator.currentPar) {
-            console.error("playPar !_smilIterator.currentPar");
+            webkit.messageHandlers.consoleerror.postMessage("playPar !_smilIterator.currentPar");
             return;
         }
 
@@ -435,7 +435,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             }
 
             audioCurrentTime = 0.0;
-//console.log("BLANK END.");
+//webkit.messageHandlers.consolelog.postMessage("BLANK END.");
             //nextSmil(true);
             onAudioPositionChanged(_smilIterator.currentPar.audio.clipEnd + 0.1, 2);
 
@@ -449,7 +449,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         
         if (!_smilIterator || !_smilIterator.currentPar)
         {
-            console.error("playCurrentPar !_smilIterator || !_smilIterator.currentPar ???");
+            webkit.messageHandlers.consoleerror.postMessage("playCurrentPar !_smilIterator || !_smilIterator.currentPar ???");
             return;
         }
 
@@ -553,14 +553,14 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                 ["cfi-marker", "mo-cfi-highlight"],
                 [],
                 ["MathJax_Message"]);
-//console.log(infoStart);
+//webkit.messageHandlers.consolelog.postMessage(infoStart);
 
                 var endCFI = "epubcfi(" + cfi.partialEndCfi + ")";
                 var infoEnd = EPUBcfi.getTextTerminusInfoWithPartialCFI(endCFI, doc,
                 ["cfi-marker", "mo-cfi-highlight"],
                 [],
                 ["MathJax_Message"]);
-//console.log(infoEnd);
+//webkit.messageHandlers.consolelog.postMessage(infoEnd);
 
                 if (rangy)
                 {
@@ -596,12 +596,12 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             var dur = _smilIterator.currentPar.audio.clipEnd - _smilIterator.currentPar.audio.clipBegin;
             if (dur <= 0 || clipBeginOffset > dur)
             {
-                console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
+                webkit.messageHandlers.consoleerror.postMessage("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
                 clipBeginOffset = 0.0;
             }
             else
             {
-//console.debug("### MO PAR OFFSET: " + clipBeginOffset);
+//webkit.messageHandlers.consoledebug.postMessage("### MO PAR OFFSET: " + clipBeginOffset);
             }
 
             var audioContentRef = ReadiumSDK.Helpers.ResolveContentRef(_smilIterator.currentPar.audio.src, _smilIterator.smil.href);
@@ -610,7 +610,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
             var startTime = _smilIterator.currentPar.audio.clipBegin + clipBeginOffset;
 
-//console.debug("PLAY START TIME: " + startTime + "("+_smilIterator.currentPar.audio.clipBegin+" + "+clipBeginOffset+")");
+//webkit.messageHandlers.consoledebug.postMessage("PLAY START TIME: " + startTime + "("+_smilIterator.currentPar.audio.clipBegin+" + "+clipBeginOffset+")");
 
             _audioPlayer.playFile(_smilIterator.currentPar.audio.src, audioSource, startTime); //_smilIterator.currentPar.element ? _smilIterator.currentPar.element : _smilIterator.currentPar.cfi.cfiTextParent
         }
@@ -624,12 +624,12 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
     {
         self.pause();
 
-//console.debug("current Smil: " + _smilIterator.smil.href + " /// " + _smilIterator.smil.id);
+//webkit.messageHandlers.consoledebug.postMessage("current Smil: " + _smilIterator.smil.href + " /// " + _smilIterator.smil.id);
 
         var nextSmil = goNext ? _package.media_overlay.getNextSmil(_smilIterator.smil) : _package.media_overlay.getPreviousSmil(_smilIterator.smil);
         if(nextSmil) {
 
-//console.debug("nextSmil: " + nextSmil.href + " /// " + nextSmil.id);
+//webkit.messageHandlers.consoledebug.postMessage("nextSmil: " + nextSmil.href + " /// " + nextSmil.id);
 
             _smilIterator = new ReadiumSDK.Models.SmilIterator(nextSmil);
             if(_smilIterator.currentPar) {
@@ -641,14 +641,14 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                     }
                 }
 
-//console.debug("openContentUrl (nextSmil): " + _smilIterator.currentPar.text.src + " -- " + _smilIterator.smil.href);
+//webkit.messageHandlers.consoledebug.postMessage("openContentUrl (nextSmil): " + _smilIterator.currentPar.text.src + " -- " + _smilIterator.smil.href);
 
                 reader.openContentUrl(_smilIterator.currentPar.text.src, _smilIterator.smil.href, self);
             }
         }
         else
         {
-            console.log("No more SMIL");
+            webkit.messageHandlers.consolelog.postMessage("No more SMIL");
             self.reset();
         }
     }
@@ -697,19 +697,19 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         position > DIRECTION_MARK &&
             position <= audio.clipEnd) {
 
-//console.debug("onAudioPositionChanged: " + position);
+//webkit.messageHandlers.consoledebug.postMessage("onAudioPositionChanged: " + position);
             return;
         }
 
         _skipAudioEnded = true;
 
-//console.debug("PLAY NEXT: " + "(" + audio.clipBegin + " -- " + audio.clipEnd + ") [" + from + "] " +  position);
-//console.debug(_smilIterator.currentPar.text.srcFragmentId);
+//webkit.messageHandlers.consoledebug.postMessage("PLAY NEXT: " + "(" + audio.clipBegin + " -- " + audio.clipEnd + ") [" + from + "] " +  position);
+//webkit.messageHandlers.consoledebug.postMessage(_smilIterator.currentPar.text.srcFragmentId);
 
         var isPlaying = _audioPlayer.isPlaying();
         if (isPlaying && from === 6)
         {
-            console.debug("from userNav _audioPlayer.isPlaying() ???");
+            webkit.messageHandlers.consoledebug.postMessage("from userNav _audioPlayer.isPlaying() ???");
         }
 
         var goNext = position > audio.clipEnd;
@@ -755,7 +755,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             //            nextSmil(goNext);
             //        }
 
-//console.debug("NEXT SMIL ON AUDIO POS");
+//webkit.messageHandlers.consoledebug.postMessage("NEXT SMIL ON AUDIO POS");
         
             if (doNotNextSmil)
             {
@@ -770,7 +770,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             return;
         }
 
-//console.debug("ITER: " + _smilIterator.currentPar.text.srcFragmentId);
+//webkit.messageHandlers.consoledebug.postMessage("ITER: " + _smilIterator.currentPar.text.srcFragmentId);
 
         if(!_smilIterator.currentPar.audio) {
             self.pause();
@@ -793,7 +793,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
             if (skip)
             {
-                console.log("MO SKIP: " + parent.epubtype);
+                webkit.messageHandlers.consolelog.postMessage("MO SKIP: " + parent.epubtype);
 
                 self.pause();
 
@@ -823,7 +823,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
                         if (!_smilIterator.currentPar)
                         {
-    //console.debug("adjustParToSeqSyncGranularity nextSmil(goNext)");
+    //webkit.messageHandlers.consoledebug.postMessage("adjustParToSeqSyncGranularity nextSmil(goNext)");
 
                             if (doNotNextSmil)
                             {
@@ -840,7 +840,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                         }
                     }
                     
-//console.debug("ADJUSTED: " + _smilIterator.currentPar.text.srcFragmentId);
+//webkit.messageHandlers.consoledebug.postMessage("ADJUSTED: " + _smilIterator.currentPar.text.srcFragmentId);
                     if (!goNext)
                     {
                         var landed = _elementHighlighter.adjustParToSeqSyncGranularity(_smilIterator.currentPar);
@@ -862,29 +862,29 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                                 
                                 if (!_smilIterator.currentPar.hasAncestor(landed))
                                 {
-                                    console.error("adjustParToSeqSyncGranularity !_smilIterator.currentPar.hasAncestor(landed) ???");
+                                    webkit.messageHandlers.consoleerror.postMessage("adjustParToSeqSyncGranularity !_smilIterator.currentPar.hasAncestor(landed) ???");
                                 }
                                 //assert 
                             }
                             else
                             {
-//console.debug("adjustParToSeqSyncGranularity reached begin");
+//webkit.messageHandlers.consoledebug.postMessage("adjustParToSeqSyncGranularity reached begin");
 
                                 _smilIterator.reset();
                                 
                                 if (_smilIterator.currentPar !== innerPar)
                                 {
-                                    console.error("adjustParToSeqSyncGranularity _smilIterator.currentPar !=== innerPar???");
+                                    webkit.messageHandlers.consoleerror.postMessage("adjustParToSeqSyncGranularity _smilIterator.currentPar !=== innerPar???");
                                 }
                             }
 
                             if (!_smilIterator.currentPar)
                             {
-                                console.error("adjustParToSeqSyncGranularity !_smilIterator.currentPar ?????");
+                                webkit.messageHandlers.consoleerror.postMessage("adjustParToSeqSyncGranularity !_smilIterator.currentPar ?????");
                                 _smilIterator.goToPar(backup);
                             }
                             
-//console.debug("ADJUSTED PREV: " + _smilIterator.currentPar.text.srcFragmentId);
+//webkit.messageHandlers.consoledebug.postMessage("ADJUSTED PREV: " + _smilIterator.currentPar.text.srcFragmentId);
                         }
                     }
                 }
@@ -897,7 +897,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                 && position >= _smilIterator.currentPar.audio.clipBegin
                 && position <= _smilIterator.currentPar.audio.clipEnd)
         {
-//console.debug("ONLY highlightCurrentElement");
+//webkit.messageHandlers.consoledebug.postMessage("ONLY highlightCurrentElement");
             highlightCurrentElement();
             return;
         }
@@ -1044,9 +1044,9 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             i++;
         }
 //
-//console.debug(t.text);
-//        console.debug("----");
-//console.debug(t.markup);
+//webkit.messageHandlers.consoledebug.postMessage(t.text);
+//        webkit.messageHandlers.consoledebug.postMessage("----");
+//webkit.messageHandlers.consoledebug.postMessage(t.markup);
 
         r.text = t.text;
         r.innerHTML_tts = t.markup;
@@ -1111,7 +1111,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 
         if (!txt && window.speechSynthesis.paused)
         {
-//console.debug("TTS resume");
+//webkit.messageHandlers.consoledebug.postMessage("TTS resume");
             window.speechSynthesis.resume();
 
             return;
@@ -1123,7 +1123,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         {
             if (_SpeechSynthesisUtterance)
             {
-//console.debug("_SpeechSynthesisUtterance nullify");
+//webkit.messageHandlers.consoledebug.postMessage("_SpeechSynthesisUtterance nullify");
 
                 if (TOKENIZE_TTS)
                 {
@@ -1137,7 +1137,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                     _SpeechSynthesisUtterance.onboundary = undefined;
     //                 _SpeechSynthesisUtterance.onboundary = function(event)
     //                 {
-    // console.debug("OLD TTS boundary");
+    // webkit.messageHandlers.consoledebug.postMessage("OLD TTS boundary");
     //                 
     //                         event.target.tokenData = undefined;
     //  
@@ -1147,7 +1147,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                 _SpeechSynthesisUtterance.onend = undefined;
 //                 _SpeechSynthesisUtterance.onend = function(event)
 //                 {
-// console.debug("OLD TTS ended");
+// webkit.messageHandlers.consoledebug.postMessage("OLD TTS ended");
 //                     if (TOKENIZE_TTS)
 //                     {
 //                         event.target.tokenData = undefined;
@@ -1157,8 +1157,8 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                 _SpeechSynthesisUtterance.onerror = undefined;
 //                 _SpeechSynthesisUtterance.onerror = function(event)
 //                 {
-// console.debug("OLD TTS error");
-// //console.debug(event);
+// webkit.messageHandlers.consoledebug.postMessage("OLD TTS error");
+// //webkit.messageHandlers.consoledebug.postMessage(event);
 //                     if (TOKENIZE_TTS)
 //                     {
 //                         event.target.tokenData = undefined;
@@ -1174,13 +1174,13 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
 //                _skipTTSEndEvent = true;
 //            }
             
-console.debug("paused: "+window.speechSynthesis.paused);
-console.debug("speaking: "+window.speechSynthesis.speaking);
-console.debug("pending: "+window.speechSynthesis.pending);
+webkit.messageHandlers.consoledebug.postMessage("paused: "+window.speechSynthesis.paused);
+webkit.messageHandlers.consoledebug.postMessage("speaking: "+window.speechSynthesis.speaking);
+webkit.messageHandlers.consoledebug.postMessage("pending: "+window.speechSynthesis.pending);
 
 //             if (!window.speechSynthesis.paused)
 //             {
-// console.debug("TTS pause before speak");
+// webkit.messageHandlers.consoledebug.postMessage("TTS pause before speak");
 //                 window.speechSynthesis.pause();
 //             }
             
@@ -1188,7 +1188,7 @@ console.debug("pending: "+window.speechSynthesis.pending);
             {
                 if (first || window.speechSynthesis.pending)
                 {
-    console.debug("TTS cancel before speak");
+    webkit.messageHandlers.consoledebug.postMessage("TTS cancel before speak");
                     window.speechSynthesis.cancel();
 
                     setTimeout(function()
@@ -1222,8 +1222,8 @@ console.debug("pending: "+window.speechSynthesis.pending);
                             return;
                         }
 
-        console.debug("TTS boundary: " + event.name + " / " + event.charIndex);
-        //console.debug(event);
+        webkit.messageHandlers.consoledebug.postMessage("TTS boundary: " + event.name + " / " + event.charIndex);
+        //webkit.messageHandlers.consoledebug.postMessage(event);
 
                         var tokenised = event.target.tokenData;
                         if (!tokenised || !tokenised.spanMap.hasOwnProperty(event.charIndex))
@@ -1233,13 +1233,13 @@ console.debug("pending: "+window.speechSynthesis.pending);
 
                         if (false && tokenised.lastCharIndex)
                         {
-        //console.debug("TTS lastCharIndex: " + tokenised.lastCharIndex);
+        //webkit.messageHandlers.consoledebug.postMessage("TTS lastCharIndex: " + tokenised.lastCharIndex);
                             var id = 'tts_' + tokenised.spanMap[tokenised.lastCharIndex];
-        //console.debug("TTS lastCharIndex ID: " + id);
+        //webkit.messageHandlers.consoledebug.postMessage("TTS lastCharIndex ID: " + id);
                             var spanPrevious = tokenised.element.querySelector("#"+id);
                             if (spanPrevious)
                             {
-        //console.debug("TTS OFF");
+        //webkit.messageHandlers.consoledebug.postMessage("TTS OFF");
                                 spanPrevious.className = 'tts_off';
                                 //spanPrevious.style.backgroundColor = "white";
                             }
@@ -1250,18 +1250,18 @@ console.debug("pending: "+window.speechSynthesis.pending);
                                 tokenised.element.querySelectorAll(".tts_on"),
                                 function(el)
                                 {
-        console.debug("TTS OFF " + el.id);
+        webkit.messageHandlers.consoledebug.postMessage("TTS OFF " + el.id);
                                     el.className = 'tts_off';
                                 }
                             );
                         }
 
                         var id = 'tts_' + tokenised.spanMap[event.charIndex];
-        console.debug("TTS charIndex ID: " + id);
+        webkit.messageHandlers.consoledebug.postMessage("TTS charIndex ID: " + id);
                         var spanNew = tokenised.element.querySelector("#"+id);
                         if (spanNew)
                         {
-        console.debug("TTS ON");
+        webkit.messageHandlers.consoledebug.postMessage("TTS ON");
                             spanNew.className = 'tts_on';
                             //spanNew.style.backgroundColor = "transparent";
                         }
@@ -1285,8 +1285,8 @@ console.debug("pending: "+window.speechSynthesis.pending);
     //                    return;
     //                }
 
-console.debug("TTS ended");
-    //console.debug(event);
+webkit.messageHandlers.consoledebug.postMessage("TTS ended");
+    //webkit.messageHandlers.consoledebug.postMessage(event);
 
                     if (TOKENIZE_TTS)
                     {
@@ -1306,7 +1306,7 @@ console.debug("TTS ended");
                                     tokenised.element.querySelectorAll(".tts_on"),
                                     function(el)
                                     {
-        console.debug("TTS OFF (end)" + el.id);
+        webkit.messageHandlers.consoledebug.postMessage("TTS OFF (end)" + el.id);
                                         el.className = 'tts_off';
                                     }
                                 );
@@ -1322,7 +1322,7 @@ console.debug("TTS ended");
                         }
                         else
                         {
-    console.debug("TTS end SKIPPED");
+    webkit.messageHandlers.consoledebug.postMessage("TTS end SKIPPED");
                         }
                     }
                     else
@@ -1339,12 +1339,12 @@ console.debug("TTS ended");
                         return;
                     }
 
-console.error("TTS error");
-//console.debug(event);
-console.debug(_SpeechSynthesisUtterance.text);
-console.debug(window.speechSynthesis.paused);
-console.debug(window.speechSynthesis.pending);
-console.debug(window.speechSynthesis.speaking);
+webkit.messageHandlers.consoleerror.postMessage("TTS error");
+//webkit.messageHandlers.consoledebug.postMessage(event);
+webkit.messageHandlers.consoledebug.postMessage(_SpeechSynthesisUtterance.text);
+webkit.messageHandlers.consoledebug.postMessage(window.speechSynthesis.paused);
+webkit.messageHandlers.consoledebug.postMessage(window.speechSynthesis.pending);
+webkit.messageHandlers.consoledebug.postMessage(window.speechSynthesis.speaking);
 
                     if (TOKENIZE_TTS)
                     {
@@ -1361,7 +1361,7 @@ console.debug(window.speechSynthesis.speaking);
                                     tokenised.element.ownerDocument.querySelectorAll(".tts_on"),
                                     function(el)
                                     {
-        console.debug("TTS OFF (error)" + el.id);
+        webkit.messageHandlers.consoledebug.postMessage("TTS OFF (error)" + el.id);
                                         el.className = 'tts_off';
                                     }
                                 );
@@ -1381,12 +1381,12 @@ console.debug(window.speechSynthesis.speaking);
 
                 _SpeechSynthesisUtterance.text = text;
 
-    //console.debug("TTS speak: " + text);
+    //webkit.messageHandlers.consoledebug.postMessage("TTS speak: " + text);
                 window.speechSynthesis.speak(_SpeechSynthesisUtterance);
 
                 if (window.speechSynthesis.paused)
                 {
-console.debug("TTS resume");
+webkit.messageHandlers.consoledebug.postMessage("TTS resume");
                     window.speechSynthesis.resume();
                 }
 
@@ -1406,7 +1406,7 @@ console.debug("TTS resume");
             return;
         }
 
-//console.debug("TTS pause");
+//webkit.messageHandlers.consoledebug.postMessage("TTS pause");
         window.speechSynthesis.pause();
     };
 
@@ -1547,7 +1547,7 @@ console.debug("TTS resume");
         if (_smilIterator.currentPar.text.srcFragmentId && _smilIterator.currentPar.text.srcFragmentId.length > 0)
         {
             if (_smilIterator.currentPar.element) {
-    //console.error(_smilIterator.currentPar.element.id + ": " + _smilIterator.currentPar.audio.clipBegin + " / " + _smilIterator.currentPar.audio.clipEnd);
+    //webkit.messageHandlers.consoleerror.postMessage(_smilIterator.currentPar.element.id + ": " + _smilIterator.currentPar.audio.clipBegin + " / " + _smilIterator.currentPar.audio.clipEnd);
 
                 if (!_elementHighlighter.isElementHighlighted(_smilIterator.currentPar))
                 {
@@ -1586,11 +1586,11 @@ console.debug("TTS resume");
         
         /*
         var textRelativeRef = ReadiumSDK.Helpers.ResolveContentRef(_smilIterator.currentPar.text.srcFile, _smilIterator.smil.href);
-console.debug("textRelativeRef: " + textRelativeRef);
+webkit.messageHandlers.consoledebug.postMessage("textRelativeRef: " + textRelativeRef);
         if (textRelativeRef)
         {
             var textAbsoluteRef = _package.resolveRelativeUrl(textRelativeRef);
-console.debug("textAbsoluteRef: " + textAbsoluteRef);
+webkit.messageHandlers.consoledebug.postMessage("textAbsoluteRef: " + textAbsoluteRef);
         }
         */
 
@@ -1743,7 +1743,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         {
             if (!_audioPlayer.play())
             {
-                console.log("Audio player was dead, reactivating...");
+                webkit.messageHandlers.consolelog.postMessage("Audio player was dead, reactivating...");
 
                 this.reset();
                 this.toggleMediaOverlay();
@@ -1785,25 +1785,25 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
     this.isMediaOverlayAvailable = function() {
 
-//        console.debug("isMediaOverlayAvailable()");
+//        webkit.messageHandlers.consoledebug.postMessage("isMediaOverlayAvailable()");
 //
 //        var now1 = window.performance && window.performance.now ? window.performance.now() : Date.now();
 //
-//        if (console.time)
+//        if (webkit.messageHandlers.consoletime)
 //        {
-//            console.time("MO");
+//            console.time.postMessage("MO");
 //        }
 
         var visibleMediaElement = reader.getFirstVisibleMediaOverlayElement();
 
-//        if (console.timeEnd)
+//        if (webkit.messageHandlers.consoletimeEnd)
 //        {
-//            console.timeEnd("MO");
+//            console.timeEnd.postMessage("MO");
 //        }
 //
 //        var now2 = window.performance && window.performance.now ? window.performance.now() : Date.now();
 //
-//        console.debug(now2 - now1);
+//        webkit.messageHandlers.consoledebug.postMessage(now2 - now1);
 
         return typeof visibleMediaElement !== "undefined";
     };
@@ -1923,7 +1923,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
     this.toggleMediaOverlayRefresh = function(paginationData)
     {
-//console.debug("moData SMIL: " + moData.par.getSmil().href + " // " + + moData.par.getSmil().id);
+//webkit.messageHandlers.consoledebug.postMessage("moData SMIL: " + moData.par.getSmil().href + " // " + + moData.par.getSmil().id);
 
         var spineItems = reader.getLoadedSpineItems();
 
@@ -1964,7 +1964,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         {
             if (id)
             {
-                console.error("[WARN] id did not resolve to element?");
+                webkit.messageHandlers.consoleerror.postMessage("[WARN] id did not resolve to element?");
             }
             
             for(var i = (rtl ? (spineItems.length - 1) : 0); (rtl && i >=0) || (!rtl && i < spineItems.length); i += (rtl ? -1: 1))
@@ -1972,7 +1972,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
                 var spineItem = spineItems[i];
                 if (!spineItem)
                 {
-                    console.error("spineItems[i] is undefined??");
+                    webkit.messageHandlers.consoleerror.postMessage("spineItems[i] is undefined??");
                     continue;
                 }
             

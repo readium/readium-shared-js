@@ -83,6 +83,6 @@ ReadiumSDK.Models.Trigger.prototype.execute = function(dom) {
             $target[0].muted = false;
             break;
         default:
-            console.log("do not no how to handle trigger " + this.action);
+            webkit.messageHandlers.consolelog.postMessage("do not no how to handle trigger " + this.action);
     }
 };

@@ -87,7 +87,7 @@ ReadiumSDK.Views.InternalLinksSupport = function(reader) {
             var cfi = splitCfi(fullCfi);
 
             if(!cfi) {
-                console.warn("Unable to split cfi:" + fullCfi);
+                webkit.messageHandlers.consolewarn.postMessage("Unable to split cfi:" + fullCfi);
                 return;
             }
 
@@ -101,12 +101,12 @@ ReadiumSDK.Views.InternalLinksSupport = function(reader) {
                     reader.openSpineItemElementCfi(newSpineItem.idref, cfi.elementCfi, self);
                 }
                 else {
-                    console.warn("Unable to find spineItem with href=" + contentDocRef);
+                    webkit.messageHandlers.consolewarn.postMessage("Unable to find spineItem with href=" + contentDocRef);
                 }
 
             }
             else {
-                console.warn("Unable to find document ref from " +  fullCfi +" cfi");
+                webkit.messageHandlers.consolewarn.postMessage("Unable to find document ref from " +  fullCfi +" cfi");
             }
 
         });
@@ -129,9 +129,9 @@ ReadiumSDK.Views.InternalLinksSupport = function(reader) {
                 callback(result);
             },
             error: function (xhr, status, errorThrown) {
-                console.error('Error when AJAX fetching ' + path);
-                console.error(status);
-                console.error(errorThrown);
+                webkit.messageHandlers.consoleerror.postMessage('Error when AJAX fetching ' + path);
+                webkit.messageHandlers.consoleerror.postMessage(status);
+                webkit.messageHandlers.consoleerror.postMessage(errorThrown);
                 callback();
             }
         });
@@ -159,7 +159,7 @@ ReadiumSDK.Views.InternalLinksSupport = function(reader) {
             var newSpineItem = reader.spine().getItemByHref(pathname);
 
             if(!newSpineItem) {
-                console.error("spine item with href=" + pathname + " not found");
+                webkit.messageHandlers.consoleerror.postMessage("spine item with href=" + pathname + " not found");
                 return;
             }
 

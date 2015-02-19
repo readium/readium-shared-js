@@ -524,7 +524,7 @@ ReadiumSDK.Views.FixedView = function(options, reader){
 
                     //if we a re loading fixed view meta size should be defined
                     if(!pageView.meta_height() || !pageView.meta_width()) {
-                        console.error("Invalid document " + spineItem.href + ": viewport is not specified!");
+                        webkit.messageHandlers.consoleerror.postMessage("Invalid document " + spineItem.href + ": viewport is not specified!");
                     }
 
                     self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
@@ -614,7 +614,7 @@ ReadiumSDK.Views.FixedView = function(options, reader){
             }
         }
 
-        console.error("spine item is not loaded");
+        webkit.messageHandlers.consoleerror.postMessage("spine item is not loaded");
         return undefined;
     };
 
@@ -630,7 +630,7 @@ ReadiumSDK.Views.FixedView = function(options, reader){
             }
         }
 
-        console.error("spine item is not loaded");
+        webkit.messageHandlers.consoleerror.postMessage("spine item is not loaded");
         return undefined;
     };
 
@@ -646,7 +646,7 @@ ReadiumSDK.Views.FixedView = function(options, reader){
             }
         }
 
-        console.error("spine item is not loaded");
+        webkit.messageHandlers.consoleerror.postMessage("spine item is not loaded");
         return undefined;
     };
 

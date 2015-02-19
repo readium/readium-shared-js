@@ -546,7 +546,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
         var foundElement = this.findFirstVisibleElement(topOffset);
 
         if(!foundElement.$element) {
-            console.log("Could not generate CFI no visible element on page");
+            webkit.messageHandlers.consolelog.postMessage("Could not generate CFI no visible element on page");
             return undefined;
         }
 
@@ -582,7 +582,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
         var $element = EPUBcfi.getTargetElementWithPartialCFI(wrappedCfi, contentDoc, classBlacklist, elementBlacklist, idBlacklist);
 
         if(!$element || $element.length == 0) {
-            console.log("Can't find element for CFI: " + cfi);
+            webkit.messageHandlers.consolelog.postMessage("Can't find element for CFI: " + cfi);
             return undefined;
         }
 
@@ -606,7 +606,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
         if (options.rectangleBased) {
             pageIndex = findPageByRectangles($element, y);
             if (pageIndex === null) {
-                console.warn('Impossible to locate a hidden element: ', $element);
+                webkit.messageHandlers.consolewarn.postMessage('Impossible to locate a hidden element: ', $element);
                 return 0;
             }
             return pageIndex;
@@ -670,7 +670,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
                 ret.y = parseInt(terminus.substr(colIx + 1));
             }
             else {
-                console.log("Unexpected terminating step format");
+                webkit.messageHandlers.consolelog.postMessage("Unexpected terminating step format");
             }
 
             ret.cfi = cfi.substring(0, ix);
