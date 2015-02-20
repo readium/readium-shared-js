@@ -48,6 +48,7 @@ var ReflowableView = function(options, reader){
     var _userStyles = options.userStyles;
     var _bookStyles = options.bookStyles;
     var _iframeLoader = options.iframeLoader;
+    var _cachedView = options.cachedView;
     
     var _currentSpineItem;
     var _isWaitingFrameRender = false;    
@@ -328,6 +329,7 @@ var ReflowableView = function(options, reader){
 
         updateHtmlFontSize();
         updateColumnGap();
+        self.applyStyles();
 
 
         self.applyStyles();
@@ -370,14 +372,14 @@ var ReflowableView = function(options, reader){
 
         if(_isWaitingFrameRender) {
             _deferredPageRequest = pageRequest;
-            return;
+            return false;
         }
 
         // if no spine item specified we are talking about current spine item
         if(pageRequest.spineItem && pageRequest.spineItem != _currentSpineItem) {
             _deferredPageRequest = pageRequest;
             loadSpineItem(pageRequest.spineItem);
-            return;
+            return true;
         }
 
         var pageIndex = undefined;
@@ -417,10 +419,13 @@ var ReflowableView = function(options, reader){
         if(pageIndex >= 0 && pageIndex < _paginationInfo.columnCount) {
             _paginationInfo.currentSpreadIndex = Math.floor(pageIndex / _paginationInfo.visibleColumnCount) ;
             onPaginationChanged(pageRequest.initiator, pageRequest.spineItem, pageRequest.elementId);
+            return true;
         }
         else {
             console.log('Illegal pageIndex value: ', pageIndex, 'column count is ', _paginationInfo.columnCount);
         }
+        
+        return false;
     };
 
     function redraw() {
@@ -439,12 +444,19 @@ var ReflowableView = function(options, reader){
             _$epubHtml.css("right", !ltr ? offsetVal : "");
         }
 
-        showBook(); // as it's no longer hidden by shifting the position
+        if (!_cachedView) {
+            showBook(); // as it's no longer hidden by shifting the position
+        }
     }
 
     function updateViewportSize() {
 
         var newWidth = _$contentFrame.width();
+
+        // Ensure that the new viewport width is always even numbered
+        // this is to prevent a rendering inconsistency between browsers when odd-numbered bounds are used for CSS columns
+        newWidth -= newWidth % 2;
+
         var newHeight = _$contentFrame.height();
 
         if(_lastViewPortSize.width !== newWidth || _lastViewPortSize.height !== newHeight){
@@ -458,7 +470,6 @@ var ReflowableView = function(options, reader){
     }
 
     function onPaginationChanged(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
-
         _paginationInfo.pageOffset = (_paginationInfo.columnWidth + _paginationInfo.columnGap) * _paginationInfo.visibleColumnCount * _paginationInfo.currentSpreadIndex;
         
         redraw();
@@ -888,6 +899,26 @@ var ReflowableView = function(options, reader){
 
         self.openPage(openPageRequest);
     }
+
+    this.getLoadedContentFrames = function () {
+        return [{spineItem: _currentSpineItem, $iframe: _$iframe}];
+    };
+
+    this.hide = function() {
+        _$el.hide();
+    };
+
+    this.show = function() {
+        _$el.show();
+        showBook();
+    };
+
+    this.setCached = function(isCached) {
+        _cachedView = isCached;
+    };
+
+
+
 
 };
     return ReflowableView;

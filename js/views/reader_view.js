@@ -54,6 +54,7 @@ var ReaderView = function (options) {
     var _currentView = undefined;
     var _package = undefined;
     var _spine = undefined;
+    var _cachedViews = [];
     var _viewerSettings = new ViewerSettings({});
     //styles applied to the container divs
     var _userStyles = new StyleCollection();
@@ -134,22 +135,26 @@ var ReaderView = function (options) {
      * Returns the current view type of the reader view
      * @returns {ReaderView.ViewType}
      */
-    this.getCurrentViewType = function () {
+    this.getCurrentViewType = function() {
+        return this.viewTypeForView(_currentView);
+    };
 
-        if (!_currentView) {
+    this.viewTypeForView = function(view) {
+
+        if(!view) {
             return undefined;
         }
 
-        if (_currentView instanceof ReflowableView) {
+        if (view instanceof ReflowableView) {
             return ReaderView.VIEW_TYPE_COLUMNIZED;
         }
 
-        if (_currentView instanceof FixedView) {
+        if (ciew instanceof FixedView) {
             return ReaderView.VIEW_TYPE_FIXED;
         }
 
-        if (_currentView instanceof ScrollView) {
-            if (_currentView.isContinuousScroll()) {
+        if (view instanceof ScrollView) {
+            if (view.isContinuousScroll()) {
                 return ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
             }
 
@@ -189,20 +194,10 @@ var ReaderView = function (options) {
         return ReaderView.VIEW_TYPE_COLUMNIZED;
     }
 
-    // returns true is view changed
-    function initViewForItem(spineItem, callback) {
 
+    function createViewForItem(spineItem) {
+        var view = undefined;
         var desiredViewType = deduceDesiredViewType(spineItem);
-
-        if (_currentView) {
-
-            if (self.getCurrentViewType() == desiredViewType) {
-                callback(false);
-                return;
-            }
-
-            resetCurrentView();
-        }
 
         /**
          * View creation options
@@ -222,10 +217,74 @@ var ReaderView = function (options) {
         };
 
 
-        _currentView = self.createViewForType(desiredViewType, viewCreationParams);
-        self.emit(Globals.Events.READER_VIEW_CREATED, desiredViewType);
+        view = self.createViewForType(desiredViewType, viewCreationParams);
+        return view;
+    }
 
-        _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOADED, function ($iframe, spineItem) {
+
+    function getCachedViewForSpineItem(spineItem) {
+        var cached = _.filter(_cachedViews, 
+            function(view) { 
+                return view.getLoadedContentFrames()[0].spineItem.index === spineItem.index;
+            });
+        return cached[0];
+    };
+
+
+    function createPrefetchedViewForSpineItemIndex(spineItemIndex) {
+        var spineItem = _spine.items[spineItemIndex];
+        var cachedView = getCachedViewForSpineItem(spineItem);
+        if (cachedView === undefined) {
+                var desiredViewType = deduceDesiredViewType(spineItem);
+
+                var viewCreationParams = {
+                    $viewport: _$el,
+                    spine: _spine,
+                    userStyles: _userStyles,
+                    bookStyles: _bookStyles,
+                    iframeLoader: _iframeLoader,
+                    cachedView: true
+                };
+
+                cachedView = self.createViewForType(desiredViewType, viewCreationParams);
+                var openPageRequest = new PageOpenRequest(spineItem, self);
+                openPageRequest.setFirstPage();
+
+                cachedView.render();
+                cachedView.openPage(openPageRequest,2);
+                cachedView.setViewSettings(_viewerSettings);
+        }
+        return cachedView;
+    };
+
+    // returns true is view changed
+    function initViewForItem(spineItem, callback) {
+        var cachedView = getCachedViewForSpineItem(spineItem);
+
+
+        _cachedViews.push(createPrefetchedViewForSpineItemIndex(spineItem.index+1));
+
+
+        // there's a cached view!
+        var newCurrentViewIsCached = false;
+        if (!(cachedView === undefined)) {
+            _currentView.hide();
+            _currentView.setCached(true);
+            cachedView.show();
+            cachedView.setCached(false);
+            newCurrentViewIsCached = true;
+            _currentView = cachedView;
+        }
+
+
+
+        if (!newCurrentViewIsCached) {
+            _currentView = createViewForItem(spineItem);
+        }
+
+        self.emit(Globals.Events.READER_VIEW_CREATED, self.viewTypeForView(_currentView));
+
+        _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOADED, function($iframe, spineItem) {
 
             if (!Helpers.isIframeAlive($iframe[0])) return;
 
@@ -259,8 +318,19 @@ var ReaderView = function (options) {
             self.emit(Globals.Events.FXL_VIEW_RESIZED);
         })
 
-        _currentView.render();
-        _currentView.setViewSettings(_viewerSettings);
+        _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOAD_START, function($iframe, spineItem) {
+            self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
+        });
+
+        if (!newCurrentViewIsCached) {
+            _currentView.render(); 
+            _currentView.setViewSettings(_viewerSettings);
+
+        } else {
+            _currentView.setViewSettings(_viewerSettings);
+            var spineAndIframe = _currentView.getLoadedContentFrames()[0];
+            _currentView.emit(Globals.Events.CONTENT_DOCUMENT_LOADED,spineAndIframe.$iframe, spineAndIframe.spineItem);
+        }
 
         // we do this to wait until elements are rendered otherwise book is not able to determine view size.
         setTimeout(function () {
@@ -735,7 +805,12 @@ var ReaderView = function (options) {
     // dir: 0 => new or same page, 1 => previous, 2 => next
     function openPage(pageRequest, dir) {
 
-        initViewForItem(pageRequest.spineItem, function (isViewChanged) {
+        // 1. check if a spine item is already cached, if so, set the current view to it
+        //    and cache around it.
+        // 2. if the spine item is not cached, do the normal thing.
+
+
+        initViewForItem(pageRequest.spineItem, function(isViewChanged){
 
             if (!isViewChanged) {
                 _currentView.setViewSettings(_viewerSettings);
