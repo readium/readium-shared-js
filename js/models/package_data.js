@@ -30,7 +30,7 @@
  *
  * Provided for reference only
  *
- *@class ReadiumSDK.Models.PackageData
+ * @class ReadiumSDK.Models.PackageData
  */
 
 ReadiumSDK.Models.PackageData = {

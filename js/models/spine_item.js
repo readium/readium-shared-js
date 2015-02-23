@@ -23,7 +23,7 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-/*
+/**
  * Wrapper of the SpineItem object received from the host application
  *
  * @class ReadiumSDK.Models.SpineItem
@@ -33,7 +33,6 @@
  * @param {ReadiumSDK.Models.Spine} spine
  *
  */
-
 ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
 
     var self = this;
