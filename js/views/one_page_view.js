@@ -819,7 +819,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
     //     var parts = viewBoxString.split(' ');
     //
     //     if(parts.length < 4) {
-    //         console.warn(viewBoxString + " value is not valid viewBox size")
+    //          webkit.messageHandlers.consolewarn.postMessage(viewBoxString + " value is not valid viewBox size")
     //         return undefined;
     //     }
     //

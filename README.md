@@ -1,5 +1,7 @@
 This fork was created to support WKWebview by replacing calls to console with message handlers.
 
+**** NOTE: This still does not catch all cases... do an additional Find for "console." ****
+
 XCode Find/Replace Regex
 	console.([^(]*)\((.*)\);$
 	webkit.messageHandlers.console$1.postMessage($2);

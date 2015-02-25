@@ -66,7 +66,7 @@ ReadiumSDK.Views.InternalLinksSupport = function(reader) {
         var absoluteOpfUri = getAbsoluteUriRelativeToSpineItem(hrefUri, spineItem);
 
         if(!absoluteOpfUri) {
-            console.error("Unable to resolve " + hrefUri.href())
+            webkit.messageHandlers.consoleerror.postMessage("Unable to resolve " + hrefUri.href())
             return;
         }
 

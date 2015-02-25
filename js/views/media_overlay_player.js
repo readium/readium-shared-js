@@ -337,7 +337,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
             webkit.messageHandlers.consoleerror.postMessage("!! _smilIterator.currentPar.element ??");
         }
 
-//console.debug("+++> paginationData.elementId: " + paginationData.elementId + " /// " + _smilIterator.currentPar.text.srcFile + " # " + _smilIterator.currentPar.text.srcFragmentId); //PageOpenRequest.elementId
+// webkit.messageHandlers.consoledebug.postMessage("+++> paginationData.elementId: " + paginationData.elementId + " /// " + _smilIterator.currentPar.text.srcFile + " # " + _smilIterator.currentPar.text.srcFragmentId); //PageOpenRequest.elementId
 
 
         if(paginationData.initiator == self)

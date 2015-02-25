@@ -405,7 +405,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
                     fallback = !self.openContentUrl(pageRequestData.contentRefUrl, pageRequestData.sourceFileHref, self);
                 }
             } catch (err) {
-                console.error("openPageRequest fail: fallback to first page!")
+                webkit.messageHandlers.consoleerror.postMessage("openPageRequest fail: fallback to first page!")
                 webkit.messageHandlers.consolelog.postMessage(err);
                 fallback = true;
             }
