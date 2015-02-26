@@ -668,13 +668,4 @@ ReadiumSDK.Views.FixedView = function(options, reader){
 
     };
 
-    this.isElementCfiVisible = function (spineIdRef, contentCfi) {
-        var spineItemFound = _.findWhere(this.getLoadedSpineItems(), {idref: spineIdRef});
-
-        // it is assumed that if the whole spine item page is visible then any element cfi is visible
-        //TODO: during zoom+pan, element cfi might not actually be visible
-        return !!spineItemFound;
-
-    };
-
 };

@@ -452,10 +452,11 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
     }
 
     function onPaginationChanged(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
+
         _paginationInfo.pageOffset = (_paginationInfo.columnWidth + _paginationInfo.columnGap) * _paginationInfo.visibleColumnCount * _paginationInfo.currentSpreadIndex;
         
         redraw();
-        self.trigger(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId });
+        self.trigger(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
     }
 
     this.openPagePrev = function (initiator) {
@@ -503,7 +504,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
     };
 
 
-    function updatePagination(doNotTriggerPagination) {
+    function updatePagination() {
         
         // At 100% font-size = 16px (on HTML, not body or descendant markup!)
         var MAXW = 550; //TODO user/vendor-configurable?
@@ -665,12 +666,10 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
             _paginationInfo.currentSpreadIndex = _paginationInfo.spreadCount - 1;
         }
 
-
         if(_deferredPageRequest) {
 
             //if there is a request for specific page we get here
             openDeferredElement();
-
         }
         else {
 

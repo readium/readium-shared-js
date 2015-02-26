@@ -1234,7 +1234,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
         _iframeLoader.addIFrameEventListener(eventName, callback, context);
     };
 
-
     var BackgroundAudioTrackManager = function()
     {
         var _spineItemIframeMap = {};
