@@ -142,7 +142,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         updateColumnGap();
         
         updateViewportSize();
-        updatePagination(_viewSettings.doNotTriggerPagination);
+        updatePagination();
     };
 
     function renderIframe() {
@@ -324,10 +324,10 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         updateColumnGap();
 
 
-        self.applyStyles(true);
+        self.applyStyles();
     }
 
-    this.applyStyles = function(doNotTriggerPagination) {
+    this.applyStyles = function() {
 
         ReadiumSDK.Helpers.setStyles(_userStyles.getStyles(), _$el.parent());
 
@@ -338,7 +338,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
 
 
         updateViewportSize();
-        updatePagination(doNotTriggerPagination);
+        updatePagination();
     };
 
     this.applyBookStyles = function() {
@@ -432,6 +432,8 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
             _$epubHtml.css("left", ltr ? offsetVal : "");
             _$epubHtml.css("right", !ltr ? offsetVal : "");
         }
+
+        showBook(); // as it's no longer hidden by shifting the position
     }
 
     function updateViewportSize() {
@@ -450,11 +452,9 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
     }
 
     function onPaginationChanged(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
-        console.log('onPaginationChanged!');
         _paginationInfo.pageOffset = (_paginationInfo.columnWidth + _paginationInfo.columnGap) * _paginationInfo.visibleColumnCount * _paginationInfo.currentSpreadIndex;
         
         redraw();
-        showBook();
         self.trigger(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId });
     }
 
@@ -641,8 +641,6 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
 
         _$epubHtml.css({left: "0", right: "0", top: "0"});
 
-        redraw();
-        resizeImages();
         ReadiumSDK.Helpers.triggerLayout(_$iframe);
 
         _paginationInfo.columnCount = ((_htmlBodyIsVerticalWritingMode ? _$epubHtml[0].scrollHeight : _$epubHtml[0].scrollWidth) + _paginationInfo.columnGap) / (_paginationInfo.columnWidth + _paginationInfo.columnGap);
@@ -670,17 +668,11 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
 
         if(_deferredPageRequest) {
 
-            if (!doNotTriggerPagination) {
-                onPaginationChanged(_deferredPageRequest);
-            }
-
             //if there is a request for specific page we get here
-            setTimeout(function () {
-                openDeferredElement();
-            },50);
+            openDeferredElement();
 
         }
-        else if (!doNotTriggerPagination) {
+        else {
 
             //we get here on resizing the viewport
             
@@ -897,13 +889,6 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         }
 
         self.openPage(openPageRequest);
-    };
-
-    this.isElementCfiVisible = function(spineIdRef, contentCfi) {
-        if (spineIdRef != _currentSpineItem.idref) {
-            return false;
-        }
-        return _navigationLogic.isElementCfiVisible(contentCfi);
     };
 
 };

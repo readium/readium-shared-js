@@ -1368,11 +1368,6 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
 
     };
 
-    this.isElementCfiVisible = function (spineIdRef, contentCfi) {
-        // TODO: implement this for scrollable views
-        return false;
-    };
-
 };
 
 
