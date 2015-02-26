@@ -49,6 +49,8 @@ var FixedView = function(options, reader){
     var _iframeLoader = options.iframeLoader;
     var _viewSettings = undefined;
 
+    var _cached = options.cachedView || false;
+
     var _leftPageView = createOnePageView("fixed-page-frame-left");
     var _rightPageView = createOnePageView("fixed-page-frame-right");
     var _centerPageView = createOnePageView("fixed-page-frame-center");
@@ -69,7 +71,8 @@ var FixedView = function(options, reader){
         var pageView = new OnePageView(options,
         [elementClass],
         false, //enableBookStyleOverrides
-        reader
+        reader,
+        _cached
         );
 
         pageView.on(OnePageView.SPINE_ITEM_OPEN_START, function($iframe, spineItem) {
@@ -671,6 +674,34 @@ var FixedView = function(options, reader){
         //TODO: during zoom+pan, playing element might not actualy be visible
 
     }
+
+    this.getLoadedContentFrames = function () {
+        // TODODM this needs to be fixed properly. Most likely, the cacheman needs to track what spines are attached to what views?
+        try {
+            return [{spineItem: getDisplayingViews()[0].currentSpineItem(), $iframe: getDisplayingViews()[0].iframe()}];
+        } catch (err) {
+            return undefined;
+        }
+    };
+
+
+    this.hide = function() {
+        _.forEach(getDisplayingViews(), function(one_page_view) {
+            one_page_view.hideIFrame();
+        });
+    };
+
+    this.show = function() {
+        _.forEach(getDisplayingViews(), function(one_page_view) {
+            one_page_view.showIFrame();
+        });
+    };
+
+    this.setCached = function(isCached) {
+        _.forEach(getDisplayingViews(), function(one_page_view) {
+            one_page_view.setCached(isCached);
+        });
+    };
 
 };
     return FixedView;

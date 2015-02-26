@@ -35,7 +35,7 @@ define(["jquery", "underscore", "eventEmitter", "./cfi_navigation_logic", "../he
  * @param enableBookStyleOverrides
  * @constructor
  */
-var OnePageView = function (options, classes, enableBookStyleOverrides, reader) {
+var OnePageView = function (options, classes, enableBookStyleOverrides, reader, cached) {
 
     _.extend(this, new EventEmitter());
 
@@ -48,7 +48,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
     var _spine = options.spine;
     var _iframeLoader = options.iframeLoader;
     var _bookStyles = options.bookStyles;
-
+    var _cached = cached;
     var _$viewport = options.$viewport;
 
     var _isIframeLoaded = false;
@@ -430,6 +430,10 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
     var _useCSSTransformToHideIframe = true;
 
     this.showIFrame = function () {
+
+        if (_cached) {
+            return;
+        }
 
         _$iframe.css("visibility", "visible");
 
@@ -909,6 +913,16 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         }
         return undefined;
     }
+
+    this.iframe = function () {
+        return _$iframe;
+    }
+
+
+    this.setCached = function(isCached) {
+        _cached = isCached;
+    };
+
 };
 
 OnePageView.SPINE_ITEM_OPEN_START = "SpineItemOpenStart";

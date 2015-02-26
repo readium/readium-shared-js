@@ -225,7 +225,11 @@ var ReaderView = function (options) {
     function getCachedViewForSpineItem(spineItem) {
         var cached = _.filter(_cachedViews, 
             function(view) { 
-                return view.getLoadedContentFrames()[0].spineItem.index === spineItem.index;
+                var loadedspines = view.getLoadedContentFrames();
+                if (loadedspines !== undefined) {
+                    return loadedspines[0].spineItem.index === spineItem.index;
+                } 
+                return false;
             });
         return cached[0];
     };
@@ -253,21 +257,25 @@ var ReaderView = function (options) {
                 cachedView.render();
                 cachedView.openPage(openPageRequest,2);
                 cachedView.setViewSettings(_viewerSettings);
+                cachedView.setCached(true);
         }
         return cachedView;
     };
 
     // returns true is view changed
     function initViewForItem(spineItem, callback) {
+        if (_currentView) {
+            _currentView.hide();
+        }
         var cachedView = getCachedViewForSpineItem(spineItem);
-
 
         _cachedViews.push(createPrefetchedViewForSpineItemIndex(spineItem.index+1));
 
+        _cachedViews.push(createPrefetchedViewForSpineItemIndex(spineItem.index+2));
 
         // there's a cached view!
         var newCurrentViewIsCached = false;
-        if (!(cachedView === undefined)) {
+        if (cachedView !== undefined) {
             _currentView.hide();
             _currentView.setCached(true);
             cachedView.show();
