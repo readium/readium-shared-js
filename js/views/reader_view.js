@@ -1172,6 +1172,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
         else
         {
             _currentView.onViewportResize();
+            _annotationsManager.redrawHighlights();
         }
     };
 
