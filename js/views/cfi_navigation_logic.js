@@ -109,8 +109,12 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
 
     function getNodeRangeClientRect(startNode, startOffset, endNode, endOffset) {
         var range = createRange();
-        range.setStart(startNode, startOffset);
-        range.setEnd(endNode, endOffset);
+        range.setStart(startNode, startOffset ? startOffset : 0);
+        if (endNode.nodeType === Node.ELEMENT_NODE) {
+            range.setEnd(endNode, endOffset ? endOffset : endNode.childNodes.length);
+        } else if (endNode.nodeType === Node.TEXT_NODE) {
+            range.setEnd(endNode, endOffset ? endOffset : 0);
+        }
         return normalizeRectangle(range.getBoundingClientRect(),0,0);
     }
 
@@ -154,11 +158,9 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
                     found = fragment;
 
                     if (debugMode) {
-                        ///* <- debug
                         console.log("visible textnode fragment found:");
                         console.log(fragment);
                         console.log("------------");
-                        //debug -> */
                     }
                 }
             }
@@ -183,9 +185,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
             var lastPrintableIndex = found.start;
             for (var i = found.end - 1; i < found.end && i >= found.start; i--) {
                 if (debugMode) {
-                    ///* <- debug
                      console.log(i + " :: " + textNode.nodeValue.charAt(i) + " :: " + textNode.nodeValue.charCodeAt(i));
-                     //debug -> */
                 }
 
                 if (textNode.nodeValue.charCodeAt(i) > 32) {
@@ -777,7 +777,6 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
             startRange = nodeRange.start;
             endRange = nodeRange.end;
             if (debugMode) {
-                ///* <- debug
                 var rect = nodeRange.rect;
                 var leftOffset = -getPaginationLeftOffset();
                 addOverlayRect({
@@ -786,7 +785,6 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
                     width: rect.width,
                     height: rect.height
                 }, true, self.getRootDocument());
-                // debug -> */
             }
             cfi = EPUBcfi.Generator.generateCharOffsetRangeComponent(node, startRange, node, endRange,
                 ["cfi-marker"],
@@ -876,7 +874,6 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
         return $element;
     }
 
-    //TODO JC: refactor this
     this.getNodeRangeInfoFromCfi = function (cfi) {
         var contentDoc = self.getRootDocument();
         if (self.isRangeCfi(cfi)) {
@@ -890,9 +887,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
                     ["MathJax_Message"]);
 
                 if (debugMode) {
-                    ///* <- debug
                     console.log(nodeResult);
-                    //*/
                 }
             } catch (ex) {
                 //EPUBcfi.Interpreter can throw a SyntaxError
@@ -903,22 +898,18 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
                 return undefined;
             }
 
-            var startRangeInfo = getRangeInfoFromNodeList([nodeResult.startElement], nodeResult.startOffset);
-            var endRangeInfo = getRangeInfoFromNodeList([nodeResult.endElement], nodeResult.endOffset);
+            var startRangeInfo = {node: nodeResult.startElement, offset: nodeResult.startOffset};
+            var endRangeInfo = {node: nodeResult.startElement, offset: nodeResult.startElement};
             var nodeRangeClientRect =
-                    startRangeInfo && endRangeInfo ?
                 getNodeRangeClientRect(
-                    startRangeInfo.node,
-                    startRangeInfo.offset,
-                    endRangeInfo.node,
-                    endRangeInfo.offset)
-                : null;
+                    nodeResult.startElement,
+                    nodeResult.startOffset,
+                    nodeResult.startElement,
+                    nodeResult.endOffset);
 
             if (debugMode) {
-                ///* <- debug
                 console.log(nodeRangeClientRect);
-                addOverlayRect(nodeRangeClientRect,'purple',contentDoc);
-                //*/
+                addOverlayRect(nodeRangeClientRect, 'purple', contentDoc);
             }
 
             return {startInfo: startRangeInfo, endInfo: endRangeInfo, clientRect: nodeRangeClientRect}
@@ -932,35 +923,6 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
             return {startInfo: null, endInfo: null, clientRect: normRects.wrapperRectangle }
         }
     };
-
-    function getRangeInfoFromNodeList($textNodeList, textOffset) {
-
-        var nodeNum;
-
-        var currTextPosition = 0;
-        var nodeOffset;
-
-        for (nodeNum = 0; nodeNum < $textNodeList.length; nodeNum++) {
-
-            if ($textNodeList[nodeNum].nodeType === Node.TEXT_NODE) {
-
-                currNodeMaxIndex = $textNodeList[nodeNum].nodeValue.length + currTextPosition;
-                nodeOffset = textOffset - currTextPosition;
-
-                if (currNodeMaxIndex > textOffset) {
-                    return {node: $textNodeList[nodeNum], offset: nodeOffset};
-                } else if (currNodeMaxIndex == textOffset) {
-                    return {node: $textNodeList[nodeNum], offset: $textNodeList[nodeNum].length};
-                }
-                else {
-
-                    currTextPosition = currNodeMaxIndex;
-                }
-            }
-        }
-
-        return undefined;
-    }
 
     this.getElementByCfi = function(cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
@@ -1275,7 +1237,6 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
     };
 
     if (debugMode) {
-        ///* <-debug
         //used for visual debug atm
         function getRandomColor() {
             var letters = '0123456789ABCDEF'.split('');
@@ -1333,7 +1294,6 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
             return offsetLeft;
         }
 
-        //debug -> */
     }
 
 };
