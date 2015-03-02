@@ -26,7 +26,8 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define(["../helpers", "./audio_player", "./media_overlay_element_highlighter", "../readium_sdk", "../models/smil_iterator"], function(Helpers, AudioPlayer, MediaOverlayElementHighlighter, ReadiumSDK, SmilIterator) {
+define(["../helpers", "./audio_player", "./media_overlay_element_highlighter", "../readium_sdk", "../models/smil_iterator"],
+    function(Helpers, AudioPlayer, MediaOverlayElementHighlighter, ReadiumSDK, SmilIterator) {
 /**
  *
  * @param reader

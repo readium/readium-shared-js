@@ -23,7 +23,10 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define (["jquery", "underscore", "eventEmitter", "../models/bookmark_data", "../models/current_pages_info", "../models/fixed_page_spread", "./one_page_view", "../models/page_open_request", "../helpers", "../readium_sdk"], function($, _, EventEmitter, BookmarkData, CurrentPagesInfo, Spread, OnePageView, PageOpenRequest, Helpers, ReadiumSDK) {
+define (["jquery", "underscore", "eventEmitter", "../models/bookmark_data", "../models/current_pages_info",
+    "../models/fixed_page_spread", "./one_page_view", "../models/page_open_request", "../helpers", "../readium_sdk"],
+    function($, _, EventEmitter, BookmarkData, CurrentPagesInfo,
+             Spread, OnePageView, PageOpenRequest, Helpers, ReadiumSDK) {
 /**
  * View for rendering fixed layout page spread
  * @param options
