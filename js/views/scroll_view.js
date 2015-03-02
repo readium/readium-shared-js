@@ -23,7 +23,7 @@
 //  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
-
+define(["jquery", "underscore", "eventEmitter", "../models/bookmark_data", "../models/current_pages_info", "../helpers", "./one_page_view", "../models/page_open_request", "../readium_sdk", "../models/viewer_settings"], function($, _, EventEmitter, BookmarkData, CurrentPagesInfo, Helpers, OnePageView, PageOpenRequest, ReadiumSDK, ViewerSettings) {
 /**
  * Renders content inside a scrollable view port
  * @param options
@@ -31,11 +31,11 @@
  * @param reader
  * @constructor
  */
-ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
+var ScrollView = function(options, isContinuousScroll, reader){
 
     var _DEBUG = false;
 
-    _.extend(this, Backbone.Events);
+    _.extend(this, new EventEmitter());
 
     var SCROLL_MARGIN_TO_SHOW_LAST_VISBLE_LINE = 5;
     var ITEM_LOAD_SCROLL_BUFFER = 2000;
@@ -66,7 +66,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
 
     this.render = function(){
 
-        var template = ReadiumSDK.Helpers.loadTemplate("scrolled_book_frame", {});
+        var template = Helpers.loadTemplate("scrolled_book_frame", {});
 
         _$el = $(template);
         _$viewport.append(_$el);
@@ -84,7 +84,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
         if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefined")
         {
             //defaults
-            settings = new ReadiumSDK.Models.ViewerSettings({});
+            settings = new ViewerSettings({});
         }
         if (settings.enableGPUHardwareAccelerationCSS3D) {
             // This is a necessary counterpart for the same CSS GPU hardware acceleration trick in one_page_view.js
@@ -311,7 +311,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
     
     function reachStableContentHeight(updateScroll, pageView, iframe, href, fixedLayout, metaWidth, msg, callback)
     {
-        if (!ReadiumSDK.Helpers.isIframeAlive(iframe))
+        if (!Helpers.isIframeAlive(iframe))
         {
             if (_DEBUG)
             {
@@ -364,7 +364,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
             {
                 try
                 {
-                    if (ReadiumSDK.Helpers.isIframeAlive(iframe))
+                    if (Helpers.isIframeAlive(iframe))
                     {
                         var win = iframe.contentWindow;
                         var doc = iframe.contentDocument;
@@ -401,7 +401,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
                                 updatePageViewSize(pageView);
                             }
                     
-                            if (ReadiumSDK.Helpers.isIframeAlive(iframe))
+                            if (Helpers.isIframeAlive(iframe))
                             {
                                 var win = iframe.contentWindow;
                                 var doc = iframe.contentDocument;
@@ -653,7 +653,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
 
         options.disablePageTransitions = true; // force
 
-        var pageView = new ReadiumSDK.Views.OnePageView(
+        var pageView = new OnePageView(
             options,
             ["content-doc-frame"],
             true, //enableBookStyleOverrides
@@ -751,7 +751,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
     function onPageViewLoaded(pageView, success, $iframe, spineItem, isNewlyLoaded, context) {
 
         if(success && isNewlyLoaded) {
-            self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
+            self.emit(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
         }
 
     }
@@ -796,11 +796,11 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
 
     this.applyStyles = function() {
 
-        ReadiumSDK.Helpers.setStyles(_userStyles.getStyles(), _$el.parent());
+        Helpers.setStyles(_userStyles.getStyles(), _$el.parent());
 
         //because left, top, bottom, right setting ignores padding of parent container
         //we have to take it to account manually
-        var elementMargins = ReadiumSDK.Helpers.Margins.fromElement(_$el);
+        var elementMargins = Helpers.Margins.fromElement(_$el);
 
         setFrameSizesToRectangle(elementMargins.padding);
 
@@ -976,7 +976,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
     }
 
     function onPaginationChanged(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
-        self.trigger(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
+        self.emit(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
     }
 
     function scrollTop() {
@@ -1001,7 +1001,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
 
         if(scrollBottom() > 0) {
 
-            pageRequest = new ReadiumSDK.Models.PageOpenRequest(undefined, initiator);
+            pageRequest = new PageOpenRequest(undefined, initiator);
             pageRequest.scrollTop = scrollTop() + Math.min(scrollBottom(), viewHeight() - SCROLL_MARGIN_TO_SHOW_LAST_VISBLE_LINE);
             openPageViewElement(undefined, pageRequest);
         }
@@ -1014,7 +1014,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
 
         if(scrollTop() > 0) {
 
-            pageRequest = new ReadiumSDK.Models.PageOpenRequest(undefined, initiator);
+            pageRequest = new PageOpenRequest(undefined, initiator);
             pageRequest.scrollTop = scrollTop() - (viewHeight() - SCROLL_MARGIN_TO_SHOW_LAST_VISBLE_LINE);
             if(pageRequest.scrollTop < 0) {
                 pageRequest.scrollTop = 0;
@@ -1093,7 +1093,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
         var viewPortRange = getVisibleRange();
         var viewPortHeight = viewPortRange.bottom - viewPortRange.top;
 
-        var paginationInfo = new ReadiumSDK.Models.CurrentPagesInfo(_spine, false);
+        var paginationInfo = new CurrentPagesInfo(_spine, false);
 
         var visibleViews = getVisiblePageViews();
 
@@ -1121,10 +1121,10 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
 
         if(!pageView) {
 
-            return new ReadiumSDK.Models.BookmarkData("", "");
+            return new BookmarkData("", "");
         }
 
-        return new ReadiumSDK.Models.BookmarkData(pageView.currentSpineItem().idref, self.getFirstVisibleElementCfi());
+        return new BookmarkData(pageView.currentSpineItem().idref, self.getFirstVisibleElementCfi());
     };
 
 
@@ -1360,7 +1360,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
         if(!isRangeIsVisibleOnScreen(elementRange, 60)) {
 
             var spineItem = _spine.getItemById(spineItemId);
-            var openPageRequest = new ReadiumSDK.Models.PageOpenRequest(spineItem, initiator);
+            var openPageRequest = new PageOpenRequest(spineItem, initiator);
             openPageRequest.scrollTop = elementRange.top;
 
             self.openPage(openPageRequest);
@@ -1369,5 +1369,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
     }
 
 };
+    return ScrollView;
+});
 
 

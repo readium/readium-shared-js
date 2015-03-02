@@ -26,12 +26,13 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
+define(['jquery'], function($) {
 /**
  *
  * @param reader
  * @constructor
  */
-ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
+var MediaOverlayElementHighlighter = function(reader) {
 
     this.includeParWhenAdjustingToSeqSyncGranularity = true;
 
@@ -517,3 +518,5 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
         return par;
     };
 };
+    return MediaOverlayElementHighlighter;
+});

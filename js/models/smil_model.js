@@ -25,15 +25,16 @@
 //  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
-
+define (["../helpers"], function(Helpers) {
 
 /**
  *
  * @param parent
  * @constructor
  */
+    var Smil = {};
 
-ReadiumSDK.Models.Smil.SmilNode = function(parent) {
+    Smil.SmilNode = function(parent) {
 
     this.parent = parent;
     
@@ -67,7 +68,7 @@ ReadiumSDK.Models.Smil.SmilNode = function(parent) {
     };
 };
 
-ReadiumSDK.Models.Smil.TimeContainerNode = function(parent) {
+Smil.TimeContainerNode = function(parent) {
 
     this.parent = parent;
     
@@ -137,24 +138,24 @@ ReadiumSDK.Models.Smil.TimeContainerNode = function(parent) {
     };
 };
 
-ReadiumSDK.Models.Smil.TimeContainerNode.prototype = new ReadiumSDK.Models.Smil.SmilNode();
+Smil.TimeContainerNode.prototype = new Smil.SmilNode();
 
 //////////////////////////
 //MediaNode
 
-ReadiumSDK.Models.Smil.MediaNode = function(parent) {
+Smil.MediaNode = function(parent) {
 
     this.parent = parent;
     
     this.src = "";
 };
 
-ReadiumSDK.Models.Smil.MediaNode.prototype = new ReadiumSDK.Models.Smil.SmilNode();
+Smil.MediaNode.prototype = new Smil.SmilNode();
 
 ////////////////////////////
 //SeqNode
 
-ReadiumSDK.Models.Smil.SeqNode = function(parent) {
+Smil.SeqNode = function(parent) {
 
     this.parent = parent;
     
@@ -314,12 +315,12 @@ ReadiumSDK.Models.Smil.SeqNode = function(parent) {
     
 };
 
-ReadiumSDK.Models.Smil.SeqNode.prototype = new ReadiumSDK.Models.Smil.TimeContainerNode();
+Smil.SeqNode.prototype = new Smil.TimeContainerNode();
 
 //////////////////////////
 //ParNode
 
-ReadiumSDK.Models.Smil.ParNode = function(parent) {
+Smil.ParNode = function(parent) {
 
     this.parent = parent;
     
@@ -348,12 +349,12 @@ ReadiumSDK.Models.Smil.ParNode = function(parent) {
     };
 };
 
-ReadiumSDK.Models.Smil.ParNode.prototype = new ReadiumSDK.Models.Smil.TimeContainerNode();
+Smil.ParNode.prototype = new Smil.TimeContainerNode();
 
 //////////////////////////
 //TextNode
 
-ReadiumSDK.Models.Smil.TextNode = function(parent) {
+Smil.TextNode = function(parent) {
 
     this.parent = parent;
 
@@ -379,7 +380,7 @@ ReadiumSDK.Models.Smil.TextNode = function(parent) {
         var src = this.srcFile ? this.srcFile : this.src;
 // console.log("src: " + src);
 // console.log("smilData.href: " + smilData.href);
-        var ref = ReadiumSDK.Helpers.ResolveContentRef(src, smilData.href);
+        var ref = Helpers.ResolveContentRef(src, smilData.href);
 //console.log("ref: " + ref);
         var full = smilData.mo.package.resolveRelativeUrlMO(ref);
 // console.log("full: " + full);
@@ -405,12 +406,12 @@ ReadiumSDK.Models.Smil.TextNode = function(parent) {
     
 };
 
-ReadiumSDK.Models.Smil.TextNode.prototype = new ReadiumSDK.Models.Smil.MediaNode();
+Smil.TextNode.prototype = new Smil.MediaNode();
 
 ///////////////////////////
 //AudioNode
 
-ReadiumSDK.Models.Smil.AudioNode = function(parent) {
+Smil.AudioNode = function(parent) {
 
     this.parent = parent;
 
@@ -436,12 +437,12 @@ ReadiumSDK.Models.Smil.AudioNode = function(parent) {
     };  
 };
 
-ReadiumSDK.Models.Smil.AudioNode.prototype = new ReadiumSDK.Models.Smil.MediaNode();
+Smil.AudioNode.prototype = new Smil.MediaNode();
 
 //////////////////////////////
 //SmilModel
 
-ReadiumSDK.Models.SmilModel = function() {
+var SmilModel = function() {
 
     this.parent = undefined;
     
@@ -525,7 +526,7 @@ ReadiumSDK.Models.SmilModel = function() {
     
 };
 
-ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
+SmilModel.fromSmilDTO = function(smilDTO, mo) {
 
     if (mo.DEBUG)
     {
@@ -543,7 +544,7 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
         return str;
     }
 
-    var smilModel = new ReadiumSDK.Models.SmilModel();
+    var smilModel = new SmilModel();
     smilModel.id = smilDTO.id;
     smilModel.spineItemId = smilDTO.spineItemId;
     smilModel.href = smilDTO.href;
@@ -600,7 +601,7 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
             console.log(getIndent() + "JS MO seq");
             }
 
-            node = new ReadiumSDK.Models.Smil.SeqNode(parent);
+            node = new Smil.SeqNode(parent);
 
             safeCopyProperty("textref", nodeDTO, node, ((parent && parent.parent) ? true : false));
             safeCopyProperty("id", nodeDTO, node);
@@ -622,7 +623,7 @@ ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
             console.log(getIndent() + "JS MO par");
             }
 
-            node = new ReadiumSDK.Models.Smil.ParNode(parent);
+            node = new Smil.ParNode(parent);
 
             safeCopyProperty("id", nodeDTO, node);
             safeCopyProperty("epubtype", nodeDTO, node);
@@ -657,7 +658,7 @@ var forceTTS = false; // for testing only!
             if (forceTTS || !node.audio)
             {
                 // synthetic speech (playback using TTS engine), or embedded media, or blank page
-                var fakeAudio = new ReadiumSDK.Models.Smil.AudioNode(node);
+                var fakeAudio = new Smil.AudioNode(node);
 
                 fakeAudio.clipBegin = 0;
                 fakeAudio.clipEnd = fakeAudio.MAX;
@@ -673,7 +674,7 @@ var forceTTS = false; // for testing only!
             console.log(getIndent() + "JS MO text");
             }
 
-            node = new ReadiumSDK.Models.Smil.TextNode(parent);
+            node = new Smil.TextNode(parent);
 
             safeCopyProperty("src", nodeDTO, node, true);
             safeCopyProperty("srcFile", nodeDTO, node, true);
@@ -689,7 +690,7 @@ var forceTTS = false; // for testing only!
             console.log(getIndent() + "JS MO audio");
             }
 
-            node = new ReadiumSDK.Models.Smil.AudioNode(parent);
+            node = new Smil.AudioNode(parent);
 
             safeCopyProperty("src", nodeDTO, node, true);
             safeCopyProperty("id", nodeDTO, node);
@@ -752,3 +753,6 @@ var forceTTS = false; // for testing only!
     return smilModel;
 
 };
+
+return SmilModel;
+});

@@ -25,12 +25,12 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
+define(['underscore','eventEmitter'], function(_, EventEmitter) {
 /**
  * Top level ReadiumSDK namespace
  * @namespace
  */
-ReadiumSDK = {
+var ReadiumSDK = {
 
     /**
      * Current version of the JS SDK
@@ -146,7 +146,11 @@ ReadiumSDK = {
     }
 
 };
+_.extend(ReadiumSDK, new EventEmitter());
 
+return ReadiumSDK;
+
+});
 
 //This is default implementation of reading system object that will be available for the publication's javascript to analyze at runtime
 //To extend/modify/replace this object reading system should subscribe ReadiumSDK.Events.READER_INITIALIZED and apply changes in reaction to this event
@@ -191,8 +195,3 @@ navigator.epubReadingSystem = {
         return false;
     }
 };
-
-
-_.extend(ReadiumSDK, Backbone.Events);
-
-

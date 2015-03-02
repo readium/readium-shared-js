@@ -23,6 +23,8 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
+define([], function() {
+
 /**
  * Wrapper of the SpineItem object received from the host application
  *
@@ -33,7 +35,7 @@
  * @param {ReadiumSDK.Models.Spine} spine
  *
  */
-ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
+var SpineItem = function(itemData, index, spine){
 
     var self = this;
 
@@ -75,7 +77,7 @@ ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
     this.isRenditionSpreadAllowed = function() {
         
         var rendition_spread = self.getRenditionSpread();
-        return !rendition_spread || rendition_spread != ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_NONE;
+        return !rendition_spread || rendition_spread != SpineItem.RENDITION_SPREAD_NONE;
     };
 
     function validateSpread() {
@@ -84,9 +86,9 @@ ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
             return;
         }
 
-        if( self.page_spread != ReadiumSDK.Models.SpineItem.SPREAD_LEFT &&
-            self.page_spread != ReadiumSDK.Models.SpineItem.SPREAD_RIGHT &&
-            self.page_spread != ReadiumSDK.Models.SpineItem.SPREAD_CENTER ) {
+        if( self.page_spread != SpineItem.SPREAD_LEFT &&
+            self.page_spread != SpineItem.SPREAD_RIGHT &&
+            self.page_spread != SpineItem.SPREAD_CENTER ) {
 
             console.error(self.page_spread + " is not a recognized spread type");
         }
@@ -94,15 +96,15 @@ ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
     }
 
     this.isLeftPage = function() {
-        return self.page_spread == ReadiumSDK.Models.SpineItem.SPREAD_LEFT;
+        return self.page_spread == SpineItem.SPREAD_LEFT;
     };
 
     this.isRightPage = function() {
-        return self.page_spread == ReadiumSDK.Models.SpineItem.SPREAD_RIGHT;
+        return self.page_spread == SpineItem.SPREAD_RIGHT;
     };
 
     this.isCenterPage = function() {
-        return self.page_spread == ReadiumSDK.Models.SpineItem.SPREAD_CENTER;
+        return self.page_spread == SpineItem.SPREAD_CENTER;
     };
 
     this.isReflowable = function() {
@@ -119,8 +121,8 @@ ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
 
             if (self.rendition_layout)
             {
-                if (self.rendition_layout === ReadiumSDK.Models.SpineItem.RENDITION_LAYOUT_PREPAGINATED) return true;
-                if (self.rendition_layout === ReadiumSDK.Models.SpineItem.RENDITION_LAYOUT_REFLOWABLE) return false;
+                if (self.rendition_layout === SpineItem.RENDITION_LAYOUT_PREPAGINATED) return true;
+                if (self.rendition_layout === SpineItem.RENDITION_LAYOUT_REFLOWABLE) return false;
             }
 
             return self.spine.package.isFixedLayout();
@@ -191,48 +193,51 @@ ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
 
     this.isFlowScrolledContinuous = function() {
 
-        return isPropertyValueSetForItemOrPackage("rendition_flow", ReadiumSDK.Models.SpineItem.RENDITION_FLOW_SCROLLED_CONTINUOUS);
+        return isPropertyValueSetForItemOrPackage("rendition_flow", SpineItem.RENDITION_FLOW_SCROLLED_CONTINUOUS);
     };
 
     this.isFlowScrolledDoc = function() {
 
-        return isPropertyValueSetForItemOrPackage("rendition_flow", ReadiumSDK.Models.SpineItem.RENDITION_FLOW_SCROLLED_DOC);
+        return isPropertyValueSetForItemOrPackage("rendition_flow", SpineItem.RENDITION_FLOW_SCROLLED_DOC);
     };
 };
 
-ReadiumSDK.Models.SpineItem.RENDITION_LAYOUT_REFLOWABLE = "reflowable";
-ReadiumSDK.Models.SpineItem.RENDITION_LAYOUT_PREPAGINATED = "pre-paginated";
+SpineItem.RENDITION_LAYOUT_REFLOWABLE = "reflowable";
+SpineItem.RENDITION_LAYOUT_PREPAGINATED = "pre-paginated";
 
-ReadiumSDK.Models.SpineItem.RENDITION_ORIENTATION_LANDSCAPE = "landscape";
-ReadiumSDK.Models.SpineItem.RENDITION_ORIENTATION_PORTRAIT = "portrait";
-ReadiumSDK.Models.SpineItem.RENDITION_ORIENTATION_AUTO = "auto";
+SpineItem.RENDITION_ORIENTATION_LANDSCAPE = "landscape";
+SpineItem.RENDITION_ORIENTATION_PORTRAIT = "portrait";
+SpineItem.RENDITION_ORIENTATION_AUTO = "auto";
 
-ReadiumSDK.Models.SpineItem.SPREAD_LEFT = "page-spread-left";
-ReadiumSDK.Models.SpineItem.SPREAD_RIGHT = "page-spread-right";
-ReadiumSDK.Models.SpineItem.SPREAD_CENTER = "page-spread-center";
+SpineItem.SPREAD_LEFT = "page-spread-left";
+SpineItem.SPREAD_RIGHT = "page-spread-right";
+SpineItem.SPREAD_CENTER = "page-spread-center";
 
-ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_NONE = "none";
-ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_LANDSCAPE = "landscape";
-ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_PORTRAIT = "portrait";
-ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_BOTH = "both";
-ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_AUTO = "auto";
+SpineItem.RENDITION_SPREAD_NONE = "none";
+SpineItem.RENDITION_SPREAD_LANDSCAPE = "landscape";
+SpineItem.RENDITION_SPREAD_PORTRAIT = "portrait";
+SpineItem.RENDITION_SPREAD_BOTH = "both";
+SpineItem.RENDITION_SPREAD_AUTO = "auto";
 
-ReadiumSDK.Models.SpineItem.RENDITION_FLOW_PAGINATED = "paginated";
-ReadiumSDK.Models.SpineItem.RENDITION_FLOW_SCROLLED_CONTINUOUS = "scrolled-continuous";
-ReadiumSDK.Models.SpineItem.RENDITION_FLOW_SCROLLED_DOC = "scrolled-doc";
-ReadiumSDK.Models.SpineItem.RENDITION_FLOW_AUTO = "auto";
+SpineItem.RENDITION_FLOW_PAGINATED = "paginated";
+SpineItem.RENDITION_FLOW_SCROLLED_CONTINUOUS = "scrolled-continuous";
+SpineItem.RENDITION_FLOW_SCROLLED_DOC = "scrolled-doc";
+SpineItem.RENDITION_FLOW_AUTO = "auto";
 
-ReadiumSDK.Models.SpineItem.alternateSpread = function(spread) {
+SpineItem.alternateSpread = function(spread) {
 
-    if(spread === ReadiumSDK.Models.SpineItem.SPREAD_LEFT) {
-        return ReadiumSDK.Models.SpineItem.SPREAD_RIGHT;
+    if(spread === SpineItem.SPREAD_LEFT) {
+        return SpineItem.SPREAD_RIGHT;
     }
 
-    if(spread === ReadiumSDK.Models.SpineItem.SPREAD_RIGHT) {
-        return ReadiumSDK.Models.SpineItem.SPREAD_LEFT;
+    if(spread === SpineItem.SPREAD_RIGHT) {
+        return SpineItem.SPREAD_LEFT;
     }
 
     return spread;
 
 };
+    return SpineItem;
+});
+
 
