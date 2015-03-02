@@ -229,13 +229,20 @@ var ReflowableView = function(options, reader){
         _$epubHtml = $("html", epubContentDocument);
         _$htmlBody = $("body", _$epubHtml);
 
-        // Video surface sometimes (depends on the video codec) disappears from CSS column (i.e. reflow page) during playback (audio continues to play normally, but video canvas is invisible).
-        // Enabling CSS3D fixes this Chrome-specific rendering bug.
+        // TODO: how to address this correctly across all the affected platforms?!
+        // Video surface sometimes (depends on the video codec) disappears from CSS column (i.e. reflow page) during playback
+        // (audio continues to play normally, but video canvas is invisible).
+        // https://github.com/readium/readium-js-viewer/issues/265#issuecomment-73018762
+        // ...Meanwhile, reverting https://github.com/readium/readium-js-viewer/issues/239
+        // by commenting the code below (which unfortunately only works with some GPU / codec configurations,
+        // but actually fails on several other machines!!)
+        /*
         if(window.chrome
             && window.navigator.vendor === "Google Inc.") // TODO: Opera (WebKit) sometimes suffers from this rendering bug too (depends on the video codec), but unfortunately GPU-accelerated rendering makes the video controls unresponsive!!
         {
             $("video", _$htmlBody).css("transform", "translateZ(0)");
         }
+        */
         
         _htmlBodyIsVerticalWritingMode = false;
         _htmlBodyIsLTRDirection = true;

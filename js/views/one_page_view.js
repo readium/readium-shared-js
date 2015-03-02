@@ -569,7 +569,11 @@ define(["jquery", "underscore", "eventEmitter", "./cfi_navigation_logic", "../he
 
         this.transformContent = _.bind(_.debounce(this.transformContentImmediate, 50), self);
 
-        function updateMetaSize() {
+        var size = undefined;
+        
+        var isFallbackDimension = false;
+        var widthPercent = undefined;
+        var heightPercent = undefined;
 
             _meta_size.width = 0;
             _meta_size.height = 0;
@@ -578,17 +582,81 @@ define(["jquery", "underscore", "eventEmitter", "./cfi_navigation_logic", "../he
 
             var contentDocument = _$iframe[0].contentDocument;
 
-            // first try to read viewport size
-            var content = $('meta[name=viewport]', contentDocument).attr("content");
+        if(content) {
+            size = parseMetaSize(content);
+        }
+        
+        if (!size) {
+            
+            //var $svg = $(contentDocument).find('svg');
+            // if($svg.length > 0) {
+            if (contentDocument && contentDocument.documentElement && contentDocument.documentElement.nodeName && contentDocument.documentElement.nodeName.toLowerCase() == "svg") {
 
-            // if not found try viewbox (used for SVG)
-            if (!content) {
-                content = $('meta[name=viewbox]', contentDocument).attr("content");
+                var width = undefined;
+                var height = undefined;
+                
+                var wAttr = contentDocument.documentElement.getAttribute("width");
+                var isWidthPercent = wAttr && wAttr.length >= 1 && wAttr[wAttr.length-1] == '%';
+                if (wAttr) {
+                    try {
+                        width = parseInt(wAttr, 10);
+                    }
+                    catch (err)
+                    {}
+                }
+                if (width && isWidthPercent) {
+                    widthPercent = width;
+                    width = undefined;
+                }
+                     
+                var hAttr = contentDocument.documentElement.getAttribute("height");
+                var isHeightPercent = hAttr && hAttr.length >= 1 && hAttr[hAttr.length-1] == '%';
+                if (hAttr) {
+                    try {
+                        height = parseInt(hAttr, 10);
+                    }
+                    catch (err)
+                    {}
+                }
+                if (height && isHeightPercent) {
+                    heightPercent = height;
+                    height = undefined;
+                }
+
+                if (width && height)
+                {
+                    size = {
+                        width: width,
+                        height: height
+                    }
+                }
+                else
+                {
+                    /// DISABLED (not a satisfactory fallback)
+                    // content = $svg.attr('viewBox');
+                    // if(content) {
+                    //     size = parseViewBoxSize(content);
+                    // }
+                    //
+                    // if (size) {
+                    //     console.warn("Viewport SVG: using viewbox!");
+                    // }
+                }
             }
 
             if (content) {
                 size = parseMetaSize(content);
             }
+        }
+        
+        if (!size) {
+            // Image fallback (auto-generated HTML template when WebView / iFrame is fed with image media type)
+            var $img = $(contentDocument).find('img');
+            if($img.length > 0) {
+                size = {
+                    width: $img.width(),
+                    height: $img.height()
+                }
 
             if (!size) {
                 // TODO: the picked SVG element may be the root...may be deep inside the markup!
@@ -622,20 +690,8 @@ define(["jquery", "underscore", "eventEmitter", "./cfi_navigation_logic", "../he
                             width: width,
                             height: height
                         }
-                    }
-                    else {
-                        /// DISABLED (not a satisfactory fallback)
-                        // content = $svg.attr('viewBox');
-                        // if(content) {
-                        //     size = parseViewBoxSize(content);
-                        // }
-                        //
-                        // if (size) {
-                        //     console.warn("Viewport SVG: using viewbox!");
-                        // }
-                    }
-                }
-            }
+
+                        isFallbackDimension = true;
 
             if (!size && _currentSpineItem) {
                 content = _currentSpineItem.getRenditionViewport();
@@ -647,19 +703,46 @@ define(["jquery", "underscore", "eventEmitter", "./cfi_navigation_logic", "../he
                     }
                 }
             }
+        }
+        
+        if (!size) {
+            // Not a great fallback, as it has the aspect ratio of the full window, but it is better than no display at all.
+            width = _$viewport.width();
+            height = _$viewport.height();
+            
+            // hacky method to determine the actual available horizontal space (half the two-page spread is a reasonable approximation, this means that whatever the size of the other iframe / one_page_view, the aspect ratio of this one exactly corresponds to half the viewport rendering surface)
+            var isTwoPageSyntheticSpread = $("iframe.iframe-fixed", _$viewport).length > 1;
+            if (isTwoPageSyntheticSpread) width *= 0.5;
+            
+            // the original SVG width/height might have been specified as a percentage of the containing viewport
+            if (widthPercent) {
+                width *= (widthPercent / 100);
+            }
+            if (heightPercent) {
+                height *= (heightPercent / 100);
+            }
+            
+            size = {
+                width: width,
+                height: height
+            }
 
-            if (!size) {
-                // Image fallback (auto-generated HTML template when WebView / iFrame is fed with image media type)
-                var $img = $(contentDocument).find('img');
-                if ($img.length > 0) {
-                    size = {
-                        width: $img.width(),
-                        height: $img.height()
-                    }
-                    // if (contentDocument && contentDocument.documentElement && contentDocument.documentElement.nodeName && contentDocument.documentElement.nodeName.toLowerCase() == "svg") {
-                    //     contentDocument.documentElement.setAttribute("width", size.width);
-                    //     contentDocument.documentElement.setAttribute("height", size.height);
-                    // }
+            isFallbackDimension = true;
+            
+            console.warn("Viewport: using browser / e-reader viewport dimensions!");
+        }
+        
+        if (size) {
+            _meta_size.width = size.width;
+            _meta_size.height = size.height;
+            
+            // Not strictly necessary, let's preserve the percentage values
+            // if (isFallbackDimension && contentDocument && contentDocument.documentElement && contentDocument.documentElement.nodeName && contentDocument.documentElement.nodeName.toLowerCase() == "svg") {
+            //     contentDocument.documentElement.setAttribute("width", size.width + "px");
+            //     contentDocument.documentElement.setAttribute("height", size.height + "px");
+            // }
+        }
+    }
 
                     var isImage = _currentSpineItem && _currentSpineItem.media_type && _currentSpineItem.media_type.length && _currentSpineItem.media_type.indexOf("image/") == 0;
                     if (!isImage) {
