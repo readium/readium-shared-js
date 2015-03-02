@@ -26,8 +26,8 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define(["../helpers", "./audio_player", "./media_overlay_element_highlighter", "../readium_sdk", "../models/smil_iterator"],
-    function(Helpers, AudioPlayer, MediaOverlayElementHighlighter, ReadiumSDK, SmilIterator) {
+define(["../helpers", "./audio_player", "./media_overlay_element_highlighter", "../globals", "../models/smil_iterator"],
+    function(Helpers, AudioPlayer, MediaOverlayElementHighlighter, Globals, SmilIterator) {
 /**
  *
  * @param reader
@@ -64,7 +64,7 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
     var self = this;
     var _elementHighlighter = new MediaOverlayElementHighlighter(reader);
 
-    reader.on(ReadiumSDK.Events.READER_VIEW_DESTROYED, function(){
+    reader.on(Globals.Events.READER_VIEW_DESTROYED, function(){
 
         self.reset();
 
@@ -92,8 +92,8 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
         _audioPlayer.setVolume(_settings.mediaOverlaysVolume / 100.0);
     };
     self.onSettingsApplied();
-    //ReadiumSDK.
-    reader.on(ReadiumSDK.Events.SETTINGS_APPLIED, this.onSettingsApplied, this);
+    //Globals.
+    reader.on(Globals.Events.SETTINGS_APPLIED, this.onSettingsApplied, this);
 
     /*
     var lastElement = undefined;
@@ -102,15 +102,15 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
 
     var _wasPlayingAtDocLoadStart = false;
     this.onDocLoadStart = function() {
-        // 1) ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START
+        // 1) Globals.Events.CONTENT_DOCUMENT_LOAD_START
         // (maybe 2-page fixed-layout or reflowable spread == 2 documents == 2x events)
         // MOPLayer.onDocLoad()
         
-        // 2) ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED
+        // 2) Globals.Events.CONTENT_DOCUMENT_LOADED
         // (maybe 2-page fixed-layout or reflowable spread == 2 documents == 2x events)
         //_mediaOverlayDataInjector.attachMediaOverlayData($iframe, spineItem, _viewerSettings);
         
-        // 3) ReadiumSDK.Events.PAGINATION_CHANGED (layout finished, notified before rest of app, just once)
+        // 3) Globals.Events.PAGINATION_CHANGED (layout finished, notified before rest of app, just once)
         // MOPLayer.onPageChanged()
 
         var wasPlaying = self.isPlaying();
@@ -247,7 +247,7 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
                     {
                         var $element = reader.getElementById(spineItem, paginationData.elementId);
                         element = ($element && $element.length > 0) ? $element[0] : undefined;
-                        //("#" + ReadiumSDK.Helpers.escapeJQuerySelector(paginationData.elementId))
+                        //("#" + Globals.Helpers.escapeJQuerySelector(paginationData.elementId))
                     }
                     
                     if (element)
@@ -1107,7 +1107,7 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
 
         if (!_enableHTMLSpeech)
         {
-            reader.emit(ReadiumSDK.Events.MEDIA_OVERLAY_TTS_SPEAK, {tts: txt}); // resume if txt == undefined
+            reader.emit(Globals.Events.MEDIA_OVERLAY_TTS_SPEAK, {tts: txt}); // resume if txt == undefined
             return;
         }
 
@@ -1404,7 +1404,7 @@ console.debug("TTS resume");
 
         if (!_enableHTMLSpeech)
         {
-            reader.emit(ReadiumSDK.Events.MEDIA_OVERLAY_TTS_STOP, undefined);
+            reader.emit(Globals.Events.MEDIA_OVERLAY_TTS_STOP, undefined);
             return;
         }
 
@@ -1587,7 +1587,7 @@ console.debug("TTS resume");
         //else: single SMIL per multiple XHTML? ==> open new spine item
         
         /*
-        var textRelativeRef = ReadiumSDK.Helpers.ResolveContentRef(_smilIterator.currentPar.text.srcFile, _smilIterator.smil.href);
+        var textRelativeRef = Globals.Helpers.ResolveContentRef(_smilIterator.currentPar.text.srcFile, _smilIterator.smil.href);
 console.debug("textRelativeRef: " + textRelativeRef);
         if (textRelativeRef)
         {
@@ -1873,7 +1873,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         /*
         if (_currentPagination && _currentPagination.isFixedLayout && _currentPagination.openPages && _currentPagination.openPages.length > 0)
         {
-            var combinedPath = ReadiumSDK.Helpers.ResolveContentRef(contentRefUrl, sourceFileHref);
+            var combinedPath = Globals.Helpers.ResolveContentRef(contentRefUrl, sourceFileHref);
 
             var hashIndex = combinedPath.indexOf("#");
             var hrefPart;
@@ -1986,7 +1986,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
                 if (id)
                 {
                     var $element = reader.getElementById(spineItem, id);
-                    //var $element = reader.getElement(spineItem, "#" + ReadiumSDK.Helpers.escapeJQuerySelector(id));
+                    //var $element = reader.getElement(spineItem, "#" + Globals.Helpers.escapeJQuerySelector(id));
                     element = ($element && $element.length > 0) ? $element[0] : undefined;
                 }
                 else if (spineItem.isFixedLayout())

@@ -33,7 +33,7 @@ define(function() {
  *  firstPage {bool},
  *  lastPage {bool}
  *
- * @param {ReadiumSDK.Models.SpineItem} spineItem
+ * @param {Models.SpineItem} spineItem
  * @param {object} [initiator]
  *
  * @constructor

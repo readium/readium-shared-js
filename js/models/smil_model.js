@@ -558,7 +558,7 @@ SmilModel.fromSmilDTO = function(smilDTO, mo) {
         smilModel.duration = parseFloat(smilModel.duration);
     }
     
-    smilModel.mo = mo; //ReadiumSDK.Models.MediaOverlay
+    smilModel.mo = mo; //Models.MediaOverlay
 
     if (smilModel.mo.DEBUG)
     {

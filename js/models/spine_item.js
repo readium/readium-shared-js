@@ -28,11 +28,11 @@ define([], function() {
 /**
  * Wrapper of the SpineItem object received from the host application
  *
- * @class ReadiumSDK.Models.SpineItem
+ * @class Models.SpineItem
  *
  * @param itemData spine item properties container
  * @param {Number} index
- * @param {ReadiumSDK.Models.Spine} spine
+ * @param {Models.Spine} spine
  *
  */
 var SpineItem = function(itemData, index, spine){

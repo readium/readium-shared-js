@@ -28,11 +28,11 @@ define(function() {
 /**
  * Used to report pagination state back to the host application
  *
- * @class ReadiumSDK.Models.CurrentPagesInfo
+ * @class Models.CurrentPagesInfo
  *
  * @constructor
  *
- * @param {ReadiumSDK.Models.Spine} spine
+ * @param {Models.Spine} spine
  * @param {boolean} isFixedLayout is fixed or reflowable spine item
 */
 var CurrentPagesInfo = function(spine, isFixedLayout) {

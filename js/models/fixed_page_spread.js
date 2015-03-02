@@ -26,7 +26,7 @@
 define(function() {
 /**
  *
- * @param {ReadiumSDK.Models.Spine} spine
+ * @param {Models.Spine} spine
  * @constructor
  */
 var Spread = function(spine, isSyntheticSpread) {

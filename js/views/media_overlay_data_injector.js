@@ -321,7 +321,7 @@ console.debug("MO readaloud attr: " + readaloud);
                                console.error("seq.textref !element? " + root.textref);
                            }
 
-                           // var selector = "#" + ReadiumSDK.Helpers.escapeJQuerySelector(fragmentId);
+                           // var selector = "#" + Helpers.escapeJQuerySelector(fragmentId);
                            // var $element = $(selector, element.ownerDocument.documentElement);
                            // if ($element)
                            // {
@@ -492,7 +492,7 @@ console.debug("MO readaloud attr: " + readaloud);
                         else
                         {
                             $element = $($iframe[0].contentDocument.getElementById(selectId));
-                            //$element = $("#" + ReadiumSDK.Helpers.escapeJQuerySelector(iter.currentPar.text.srcFragmentId), contentDocElement);
+                            //$element = $("#" + Helpers.escapeJQuerySelector(iter.currentPar.text.srcFragmentId), contentDocElement);
                         }
                     }
 

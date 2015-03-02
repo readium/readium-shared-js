@@ -24,7 +24,7 @@
 //  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
-define(['underscore', "jquerySizes", "./models/spine_item", "./readium_sdk"], function(_, JQuerySizes, SpineItem, ReadiumSDK) {
+define(['underscore', "jquerySizes", "./models/spine_item", "./globals"], function(_, JQuerySizes, SpineItem, Globals) {
 
 var Helpers = {};
 
@@ -345,20 +345,20 @@ Helpers.deduceSyntheticSpread = function ($viewport, spineItem, settings) {
     var orientation = Helpers.getOrientation($viewport);
 
     if (rendition_spread === SpineItem.RENDITION_SPREAD_LANDSCAPE) {
-        return orientation === ReadiumSDK.Views.ORIENTATION_LANDSCAPE; // forced
+        return orientation === Globals.Views.ORIENTATION_LANDSCAPE; // forced
 
         //"Reading Systems should incorporate this spine item in a synthetic spread only when the device is in landscape orientation."
     }
 
     if (rendition_spread === SpineItem.RENDITION_SPREAD_PORTRAIT) {
-        return orientation === ReadiumSDK.Views.ORIENTATION_PORTRAIT; // forced
+        return orientation === Globals.Views.ORIENTATION_PORTRAIT; // forced
 
         //"Reading Systems should incorporate this spine item in a synthetic spread only when the device is in portrait orientation."
     }
 
     if (!rendition_spread || rendition_spread === SpineItem.RENDITION_SPREAD_AUTO) {
         // if no spread set in document and user didn't set in in setting we will do double for landscape
-        var landscape = orientation === ReadiumSDK.Views.ORIENTATION_LANDSCAPE;
+        var landscape = orientation === Globals.Views.ORIENTATION_LANDSCAPE;
         return landscape ? 1 : 0; // non-forced
 
         //"Reading Systems may use synthetic spreads in specific or all device orientations as part of a display area utilization optimization process."
@@ -464,7 +464,7 @@ Helpers.isIframeAlive = function (iframe) {
 /**
  *
  * @param $viewport
- * @returns {ReadiumSDK.Views.ORIENTATION_LANDSCAPE|ReadiumSDK.Views.ORIENTATION_PORTRAIT}
+ * @returns {Globals.Views.ORIENTATION_LANDSCAPE|Globals.Views.ORIENTATION_PORTRAIT}
  */
 Helpers.getOrientation = function ($viewport) {
 
@@ -475,7 +475,7 @@ Helpers.getOrientation = function ($viewport) {
         return undefined;
     }
 
-    return viewportWidth >= viewportHeight ? ReadiumSDK.Views.ORIENTATION_LANDSCAPE : ReadiumSDK.Views.ORIENTATION_PORTRAIT;
+    return viewportWidth >= viewportHeight ? Globals.Views.ORIENTATION_LANDSCAPE : Globals.Views.ORIENTATION_PORTRAIT;
 };
 
 /**
@@ -492,9 +492,9 @@ Helpers.isRenditionSpreadPermittedForItem = function (item, orientation) {
         || rendition_spread == SpineItem.RENDITION_SPREAD_BOTH
         || rendition_spread == SpineItem.RENDITION_SPREAD_AUTO
         || (rendition_spread == SpineItem.RENDITION_SPREAD_LANDSCAPE
-        && orientation == ReadiumSDK.Views.ORIENTATION_LANDSCAPE)
+        && orientation == Globals.Views.ORIENTATION_LANDSCAPE)
         || (rendition_spread == SpineItem.RENDITION_SPREAD_PORTRAIT
-        && orientation == ReadiumSDK.Views.ORIENTATION_PORTRAIT );
+        && orientation == Globals.Views.ORIENTATION_PORTRAIT );
 };
 
 Helpers.CSSTransition = function ($el, trans) {

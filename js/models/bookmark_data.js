@@ -25,7 +25,7 @@
 
 define(function() {
 /**
- * @class ReadiumSDK.Models.BookmarkData
+ * @class Models.BookmarkData
  */
 var BookmarkData = function(idref, contentCFI) {
 

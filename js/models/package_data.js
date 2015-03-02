@@ -27,11 +27,11 @@
 define(function() {
 /**
  * This object is not instantiated directly but provided by the host application to the DOMAccess layer in the
- * ReadiumSDK.Views.ReaderView.openBook function
+ * Views.ReaderView.openBook function
  *
  * Provided for reference only
  *
- * @class ReadiumSDK.Models.PackageData
+ * @class Models.PackageData
  */
 var PackageData = {
 

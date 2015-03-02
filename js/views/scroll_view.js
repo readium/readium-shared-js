@@ -24,9 +24,9 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 define(["jquery", "underscore", "eventEmitter", "../models/bookmark_data", "../models/current_pages_info", "../helpers",
-        "./one_page_view", "../models/page_open_request", "../readium_sdk", "../models/viewer_settings"],
+        "./one_page_view", "../models/page_open_request", "../globals", "../models/viewer_settings"],
     function ($, _, EventEmitter, BookmarkData, CurrentPagesInfo, Helpers,
-              OnePageView, PageOpenRequest, ReadiumSDK, ViewerSettings) {
+              OnePageView, PageOpenRequest, Globals, ViewerSettings) {
         /**
          * Renders content inside a scrollable view port
          * @param options
@@ -754,7 +754,7 @@ define(["jquery", "underscore", "eventEmitter", "../models/bookmark_data", "../m
             function onPageViewLoaded(pageView, success, $iframe, spineItem, isNewlyLoaded, context) {
 
                 if (success && isNewlyLoaded) {
-                    self.emit(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
+                    self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
                 }
 
             }
@@ -979,7 +979,7 @@ define(["jquery", "underscore", "eventEmitter", "../models/bookmark_data", "../m
             }
 
             function onPaginationChanged(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
-                self.emit(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, {
+                self.emit(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, {
                     paginationInfo: self.getPaginationInfo(),
                     initiator: initiator,
                     spineItem: paginationRequest_spineItem,

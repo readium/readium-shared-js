@@ -24,9 +24,9 @@
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 define (["jquery", "underscore", "eventEmitter", "../models/bookmark_data", "../models/current_pages_info",
-    "../models/fixed_page_spread", "./one_page_view", "../models/page_open_request", "../helpers", "../readium_sdk"],
+    "../models/fixed_page_spread", "./one_page_view", "../models/page_open_request", "../helpers", "../globals"],
     function($, _, EventEmitter, BookmarkData, CurrentPagesInfo,
-             Spread, OnePageView, PageOpenRequest, Helpers, ReadiumSDK) {
+             Spread, OnePageView, PageOpenRequest, Helpers, Globals) {
 /**
  * View for rendering fixed layout page spread
  * @param options
@@ -74,7 +74,7 @@ var FixedView = function(options, reader){
 
         pageView.on(OnePageView.SPINE_ITEM_OPEN_START, function($iframe, spineItem) {
 
-            self.emit(ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
+            self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
         });   
     
         return pageView;
@@ -105,7 +105,7 @@ var FixedView = function(options, reader){
         // if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefined")
         // {
         //     //defaults
-        //     settings = new ReadiumSDK.Models.ViewerSettings({});
+        //     settings = new Globals.Models.ViewerSettings({});
         // }
         // if (settings.enableGPUHardwareAccelerationCSS3D) {
         //
@@ -240,7 +240,7 @@ var FixedView = function(options, reader){
         updateContentMetaSize();
         resizeBook();
         
-        self.emit(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
+        self.emit(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
     }
 
     this.onViewportResize = function() {
@@ -387,7 +387,7 @@ var FixedView = function(options, reader){
             _centerPageView[transFunc](scale, left, top);
         }
         
-        self.emit(ReadiumSDK.Events.FXL_VIEW_RESIZED);
+        self.emit(Globals.Events.FXL_VIEW_RESIZED);
     }
 
     function getMaxPageMargins(leftPageMargins, rightPageMargins, centerPageMargins) {
@@ -531,7 +531,7 @@ var FixedView = function(options, reader){
                         console.error("Invalid document " + spineItem.href + ": viewport is not specified!");
                     }
 
-                    self.emit(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
+                    self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
                 }
 
                 dfd.resolve();

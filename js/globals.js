@@ -30,7 +30,7 @@ define(['underscore','eventEmitter'], function(_, EventEmitter) {
  * Top level ReadiumSDK namespace
  * @namespace
  */
-var ReadiumSDK = {
+var Globals = {
 
     /**
      * Current version of the JS SDK
@@ -39,15 +39,6 @@ var ReadiumSDK = {
      */
     version: function () {
         return "0.8.0";
-    },
-    /**
-     * @namespace
-     */
-    Models: {
-        /**
-         * @type {object}
-         */
-        Smil: {}
     },
     /**
      * @namespace
@@ -62,22 +53,6 @@ var ReadiumSDK = {
          */
         ORIENTATION_PORTRAIT: "orientation_portrait"
     },
-    /**
-     * @namespace
-     */
-    Collections: {},
-    /**
-     * @namespace
-     */
-    Routers: {},
-    /**
-     * @namespace
-     */
-    Helpers: {},
-    /**
-     * @namespace
-     */
-    Overrides: {},
     /**
      * @namespace
      */
@@ -135,7 +110,7 @@ var ReadiumSDK = {
     /**
      * Internal Events
      *
-     * @desc Should not be triggered outside of {@link ReadiumSDK.Views.ReaderView}.
+     * @desc Should not be triggered outside of {@link Views.ReaderView}.
      * @namespace
      */
     InternalEvents: {
@@ -146,14 +121,14 @@ var ReadiumSDK = {
     }
 
 };
-_.extend(ReadiumSDK, new EventEmitter());
+_.extend(Globals, new EventEmitter());
 
-return ReadiumSDK;
+return Globals;
 
 });
 
 //This is default implementation of reading system object that will be available for the publication's javascript to analyze at runtime
-//To extend/modify/replace this object reading system should subscribe ReadiumSDK.Events.READER_INITIALIZED and apply changes in reaction to this event
+//To extend/modify/replace this object reading system should subscribe Globals.Events.READER_INITIALIZED and apply changes in reaction to this event
 navigator.epubReadingSystem = {
     name: "",
     version: "0.0.0",

@@ -27,7 +27,7 @@ define(["./spine_item"], function(SpineItem) {
 /**
  *  Wrapper of the spine object received from hosting application
  *
- *  @class  ReadiumSDK.Models.Spine
+ *  @class  Models.Spine
  */
 
 var Spine = function(epubPackage, spineDTO) {
@@ -50,7 +50,7 @@ var Spine = function(epubPackage, spineDTO) {
 
     /*
      * @property package
-     * @type {ReadiumSDK.Models.Package}
+     * @type {Models.Package}
      *
      */
     this.package = epubPackage;

@@ -27,23 +27,23 @@
 define(["jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", "./iframe_loader", "./internal_links_support",
         "./media_overlay_data_injector", "./media_overlay_player", "../models/package", "../models/page_open_request",
         "./reflowable_view", "./scroll_view", "../models/style_collection", "../models/switches", "../models/trigger",
-        "../models/viewer_settings", "../readium_sdk"],
+        "../models/viewer_settings", "../globals"],
     function ($, _, EventEmitter, FixedView, Helpers, IFrameLoader, InternalLinksSupport,
               MediaOverlayDataInjector, MediaOverlayPlayer, Package, PageOpenRequest,
               ReflowableView, ScrollView, StyleCollection, Switches, Trigger,
-              ViewerSettings, ReadiumSDK) {
+              ViewerSettings, Globals) {
         /**
          * Options passed on the reader from the readium loader/initializer
          *
-         * @typedef {object} ReadiumSDK.Views.ReaderView.ReaderOptions
+         * @typedef {object} Globals.Views.ReaderView.ReaderOptions
          * @property {jQueryElement|string} el   The element the reader view should create itself in. Can be a jquery wrapped element or a query selector.
-         * @property {ReadiumSDK.Views.IFrameLoader} iframeLoader   An instance of an iframe loader or one expanding it.
+         * @property {Globals.Views.IFrameLoader} iframeLoader   An instance of an iframe loader or one expanding it.
          * @property {boolean} needsFixedLayoutScalerWorkAround
          */
 
         /**
          * Top level View object. Interface for view manipulation public APIs
-         * @param {ReadiumSDK.Views.ReaderView.ReaderOptions} options
+         * @param {Views.ReaderView.ReaderOptions} options
          * @constructor
          */
         var ReaderView = function (options) {
@@ -99,8 +99,8 @@ define(["jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", ".
 
             /**
              * Create a view based on the given view type.
-             * @param {ReadiumSDK.Views.ReaderView.ViewType} viewType
-             * @param {ReadiumSDK.Views.ReaderView.ViewCreationOptions} options
+             * @param {Views.ReaderView.ViewType} viewType
+             * @param {Views.ReaderView.ViewCreationOptions} options
              * @returns {*}
              */
             this.createViewForType = function (viewType, options) {
@@ -206,12 +206,12 @@ define(["jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", ".
 
                 /**
                  * View creation options
-                 * @typedef {object} ReadiumSDK.Views.ReaderView.ViewCreationOptions
+                 * @typedef {object} Globals.Views.ReaderView.ViewCreationOptions
                  * @property {jQueryElement} $viewport  The view port element the reader view has created.
-                 * @property {ReadiumSDK.Models.Spine} spine The spine item collection object
-                 * @property {ReadiumSDK.Collections.StyleCollection} userStyles User styles
-                 * @property {ReadiumSDK.Collections.StyleCollection} bookStyles Book styles
-                 * @property {ReadiumSDK.Views.IFrameLoader} iframeLoader   An instance of an iframe loader or one expanding it.
+                 * @property {Globals.Models.Spine} spine The spine item collection object
+                 * @property {Globals.Collections.StyleCollection} userStyles User styles
+                 * @property {Globals.Collections.StyleCollection} bookStyles Book styles
+                 * @property {Globals.Views.IFrameLoader} iframeLoader   An instance of an iframe loader or one expanding it.
                  */
                 var viewCreationParams = {
                     $viewport: _$el,
@@ -223,9 +223,9 @@ define(["jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", ".
 
 
                 _currentView = self.createViewForType(desiredViewType, viewCreationParams);
-                self.emit(ReadiumSDK.Events.READER_VIEW_CREATED, desiredViewType);
+                self.emit(Globals.Events.READER_VIEW_CREATED, desiredViewType);
 
-                _currentView.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function ($iframe, spineItem) {
+                _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOADED, function ($iframe, spineItem) {
 
                     if (!Helpers.isIframeAlive($iframe[0])) return;
 
@@ -239,25 +239,25 @@ define(["jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", ".
                     Trigger.register(contentDoc);
                     Switches.apply(contentDoc);
 
-                    self.emit(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
+                    self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
                 });
 
-                _currentView.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START, function ($iframe, spineItem) {
-                    self.emit(ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
+                _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOAD_START, function ($iframe, spineItem) {
+                    self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
                 });
 
-                _currentView.on(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, function (pageChangeData) {
+                _currentView.on(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, function (pageChangeData) {
 
-                    //we call on onPageChanged explicitly instead of subscribing to the ReadiumSDK.Events.PAGINATION_CHANGED by
+                    //we call on onPageChanged explicitly instead of subscribing to the Globals.Events.PAGINATION_CHANGED by
                     //mediaOverlayPlayer because we hve to guarantee that mediaOverlayPlayer will be updated before the host
-                    //application will be notified by the same ReadiumSDK.Events.PAGINATION_CHANGED event
+                    //application will be notified by the same Globals.Events.PAGINATION_CHANGED event
                     _mediaOverlayPlayer.onPageChanged(pageChangeData);
 
-                    self.emit(ReadiumSDK.Events.PAGINATION_CHANGED, pageChangeData);
+                    self.emit(Globals.Events.PAGINATION_CHANGED, pageChangeData);
                 });
 
-                _currentView.on(ReadiumSDK.Events.FXL_VIEW_RESIZED, function () {
-                    self.emit(ReadiumSDK.Events.FXL_VIEW_RESIZED);
+                _currentView.on(Globals.Events.FXL_VIEW_RESIZED, function () {
+                    self.emit(Globals.Events.FXL_VIEW_RESIZED);
                 })
 
                 _currentView.render();
@@ -275,7 +275,7 @@ define(["jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", ".
             /**
              * Returns a list of the currently active spine items
              *
-             * @returns {ReadiumSDK.Models.SpineItem[]}
+             * @returns {Models.SpineItem[]}
              */
             this.getLoadedSpineItems = function () {
 
@@ -292,9 +292,9 @@ define(["jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", ".
                     return;
                 }
 
-                self.emit(ReadiumSDK.Events.READER_VIEW_DESTROYED);
+                self.emit(Globals.Events.READER_VIEW_DESTROYED);
 
-                _currentView.off(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED);
+                _currentView.off(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED);
                 _currentView.remove();
                 _currentView = undefined;
             }
@@ -302,7 +302,7 @@ define(["jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", ".
             /**
              * Returns the currently instanced viewer settings
              *
-             * @returns {ReadiumSDK.Models.ViewerSettings}
+             * @returns {Models.ViewerSettings}
              */
             this.viewerSettings = function () {
                 return _viewerSettings;
@@ -311,7 +311,7 @@ define(["jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", ".
             /**
              * Returns a data object based on the package document
              *
-             * @returns {ReadiumSDK.Models.Package}
+             * @returns {Models.Package}
              */
             this.package = function () {
                 return _package;
@@ -320,7 +320,7 @@ define(["jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", ".
             /**
              * Returns a representation of the spine as a data object, also acts as list of spine items
              *
-             * @returns {ReadiumSDK.Models.Spine}
+             * @returns {Models.Spine}
              */
             this.spine = function () {
                 return _spine;
@@ -329,7 +329,7 @@ define(["jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", ".
             /**
              * Returns the user CSS styles collection
              *
-             * @returns {ReadiumSDK.Collections.StyleCollection}
+             * @returns {Collections.StyleCollection}
              */
             this.userStyles = function () {
                 return _userStyles;
@@ -338,18 +338,18 @@ define(["jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", ".
             /**
              * Open Book Data
              *
-             * @typedef {object} ReadiumSDK.Views.ReaderView.OpenBookData
-             * @property {ReadiumSDK.Models.Package} package - packageData (required)
-             * @property {ReadiumSDK.Models.PageOpenRequest} openPageRequest - openPageRequestData, (optional) data related to open page request
-             * @property {ReadiumSDK.Views.ReaderView.SettingsData} [settings]
-             * @property {ReadiumSDK.Collections.StyleCollection} styles: [cssStyles]
+             * @typedef {object} Globals.Views.ReaderView.OpenBookData
+             * @property {Globals.Models.Package} package - packageData (required)
+             * @property {Globals.Models.PageOpenRequest} openPageRequest - openPageRequestData, (optional) data related to open page request
+             * @property {Globals.Views.ReaderView.SettingsData} [settings]
+             * @property {Globals.Collections.StyleCollection} styles: [cssStyles]
              * @todo Define missing types
              */
 
             /**
              * Triggers the process of opening the book and requesting resources specified in the packageData
              *
-             * @param {ReadiumSDK.Views.ReaderView.OpenBookData} openBookData - object with open book data
+             * @param {Views.ReaderView.OpenBookData} openBookData - object with open book data
              */
             this.openBook = function (openBookData) {
 
@@ -437,7 +437,7 @@ define(["jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", ".
             };
 
             function onMediaPlayerStatusChanged(status) {
-                self.emit(ReadiumSDK.Events.MEDIA_OVERLAY_STATUS_CHANGED, status);
+                self.emit(Globals.Events.MEDIA_OVERLAY_STATUS_CHANGED, status);
             }
 
             /**
@@ -481,7 +481,7 @@ define(["jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", ".
             /**
              * Zoom options
              *
-             * @typedef {object} ReadiumSDK.Views.ReaderView.ZoomOptions
+             * @typedef {object} Globals.Views.ReaderView.ZoomOptions
              * @property {string} style - "user"|"fit-screen"|"fit-width"
              * @property {number} scale - 0.0 to 1.0
              */
@@ -489,7 +489,7 @@ define(["jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", ".
             /**
              * Set the zoom options.
              *
-             * @param {ReadiumSDK.Views.ReaderView.ZoomOptions} zoom Zoom options
+             * @param {Views.ReaderView.ZoomOptions} zoom Zoom options
              */
             this.setZoom = function (zoom) {
                 // zoom only handled by fixed layout views
@@ -515,7 +515,7 @@ define(["jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", ".
             /**
              * Settings Data
              *
-             * @typedef {object} ReadiumSDK.Views.ReaderView.SettingsData
+             * @typedef {object} Globals.Views.ReaderView.SettingsData
              * @property {number} fontSize - Font size as percentage
              * @property {(string|boolean)} syntheticSpread - "auto"|true|false
              * @property {(string|boolean)} scroll - "auto"|true|false
@@ -526,8 +526,8 @@ define(["jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", ".
             /**
              * Updates reader view based on the settings specified in settingsData object
              *
-             * @param {ReadiumSDK.Views.ReaderView.SettingsData} settingsData Settings data
-             * @fires ReadiumSDK.Events.SETTINGS_APPLIED
+             * @param {Globals.Views.ReaderView.SettingsData} settingsData Settings data
+             * @fires Globals.Events.SETTINGS_APPLIED
              */
             this.updateSettings = function (settingsData) {
 
@@ -570,13 +570,13 @@ define(["jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", ".
                                 // }, 60);
                             }
 
-                            self.emit(ReadiumSDK.Events.SETTINGS_APPLIED);
+                            self.emit(Globals.Events.SETTINGS_APPLIED);
                             return;
                         });
                     }
                 }
 
-                self.emit(ReadiumSDK.Events.SETTINGS_APPLIED);
+                self.emit(Globals.Events.SETTINGS_APPLIED);
             };
 
             /**
@@ -775,7 +775,7 @@ define(["jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", ".
             /**
              * Set CSS Styles to the reader container
              *
-             * @param {ReadiumSDK.Collections.StyleCollection} styles   Style collection containing selector property and declarations object
+             * @param {Collections.StyleCollection} styles   Style collection containing selector property and declarations object
              * @param {boolean} doNotUpdateView                         Whether to update the view after the styles are applied.
              */
             this.setStyles = function (styles, doNotUpdateView) {
@@ -798,7 +798,7 @@ define(["jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", ".
             /**
              * Set CSS Styles to the content documents
              *
-             * @param {ReadiumSDK.Collections.StyleCollection} styles    Style collection containing selector property and declarations object
+             * @param {Collections.StyleCollection} styles    Style collection containing selector property and declarations object
              */
             this.setBookStyles = function (styles) {
 
@@ -817,7 +817,7 @@ define(["jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", ".
             /**
              * Gets an element from active content documents based on a query selector.
              *
-             * @param {ReadiumSDK.Models.SpineItem} spineItem       The spine item object associated with an active content document
+             * @param {Models.SpineItem} spineItem       The spine item object associated with an active content document
              * @param {string} selector                      The query selector
              * @returns {HTMLElement|undefined}
              */
@@ -833,7 +833,7 @@ define(["jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", ".
             /**
              * Gets an element from active content documents based on an element id.
              *
-             * @param {ReadiumSDK.Models.SpineItem} spineItem      The spine item object associated with an active content document
+             * @param {Models.SpineItem} spineItem      The spine item object associated with an active content document
              * @param {string} id                                  The element id
              * @returns {HTMLElement|undefined}
              */
@@ -849,7 +849,7 @@ define(["jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", ".
             /**
              * Gets an element from active content documents based on a content CFI.
              *
-             * @param {ReadiumSDK.Models.SpineItem} spineItem     The spine item idref associated with an active content document
+             * @param {Models.SpineItem} spineItem     The spine item idref associated with an active content document
              * @param {string} cfi                                The partial content CFI
              * @param {string[]} [classBlacklist]
              * @param {string[]} [elementBlacklist]
@@ -963,7 +963,7 @@ define(["jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", ".
             /**
              * Returns the bookmark associated with currently opened page.
              *
-             * @returns {string} Serialized ReadiumSDK.Models.BookmarkData object as JSON string.
+             * @returns {string} Serialized Globals.Models.BookmarkData object as JSON string.
              */
             this.bookmarkCurrentPage = function () {
                 return JSON.stringify(_currentView.bookmarkCurrentPage());
@@ -1087,7 +1087,7 @@ define(["jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", ".
             };
 
 //
-// should use ReadiumSDK.Events.SETTINGS_APPLIED instead!
+// should use Globals.Events.SETTINGS_APPLIED instead!
 //    this.setRateMediaOverlay = function(rate) {
 //
 //        _mediaOverlayPlayer.setRate(rate);
@@ -1258,7 +1258,7 @@ define(["jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", ".
                     _wasPlaying = wasPlaying;
                 };
 
-                self.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function ($iframe, spineItem) {
+                self.on(Globals.Events.CONTENT_DOCUMENT_LOADED, function ($iframe, spineItem) {
                     try {
                         if (spineItem && spineItem.idref && $iframe && $iframe[0]) {
                             // console.log("CONTENT_DOCUMENT_LOADED");
@@ -1273,7 +1273,7 @@ define(["jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", ".
                     }
                 });
 
-                self.on(ReadiumSDK.Events.PAGINATION_CHANGED, function (pageChangeData) {
+                self.on(Globals.Events.PAGINATION_CHANGED, function (pageChangeData) {
                     // console.log("PAGINATION_CHANGED");
                     // console.debug(pageChangeData);
                     //
@@ -1389,7 +1389,7 @@ define(["jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", ".
                     }
                 });
 
-                self.on(ReadiumSDK.Events.MEDIA_OVERLAY_STATUS_CHANGED, function (value) {
+                self.on(Globals.Events.MEDIA_OVERLAY_STATUS_CHANGED, function (value) {
                     if (!value.smilIndex) return;
                     var package = self.package();
                     var smil = package.media_overlay.smilAt(value.smilIndex);
@@ -1436,7 +1436,7 @@ define(["jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", ".
 
         /**
          * View Type
-         * @typedef {object} ReadiumSDK.Views.ReaderView.ViewType
+         * @typedef {object} Globals.Views.ReaderView.ViewType
          * @property {number} VIEW_TYPE_COLUMNIZED          Reflowable document view
          * @property {number} VIEW_TYPE_FIXED               Fixed layout document view
          * @property {number} VIEW_TYPE_SCROLLED_DOC        Scrollable document view
