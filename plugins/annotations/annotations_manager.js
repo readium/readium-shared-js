@@ -99,7 +99,7 @@ When a user clicks on a highlight `annotationClicked` event is dispatched with t
 
 
 	> RReader.on('annotationClicked', function(type, idref, cfi, annotationId) { console.log (type, idref, cfi, annotationId)});
-	ReadiumSDK.Views.ReaderView {on: function, once: function, off: function, trigger: function, listenTo: function???}
+	Views.ReaderView {on: function, once: function, off: function, trigger: function, listenTo: function???}
 	
 Then when the user clicks on the highlight the following will show up in the console:
 

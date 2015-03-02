@@ -1,1 +1,0 @@
-/* This is a dummy file that exists in order to simplify plugin loading with requirejs */
