@@ -24,6 +24,13 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
+/**
+ * Renders content inside a scrollable view port
+ * @param options
+ * @param isContinuousScroll
+ * @param reader
+ * @constructor
+ */
 ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
 
     var _DEBUG = false;
@@ -73,8 +80,8 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
         _$contentFrame.css("height", "100%");
         _$contentFrame.css("position", "relative");
 
-        var settings = _viewSettings;
-        if (!settings)
+        var settings = reader.viewerSettings();
+        if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefined")
         {
             //defaults
             settings = new ReadiumSDK.Models.ViewerSettings({});
@@ -649,7 +656,8 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
         var pageView = new ReadiumSDK.Views.OnePageView(
             options,
             ["content-doc-frame"],
-            true); //enableBookStyleOverrides
+            true, //enableBookStyleOverrides
+            reader);
             
         pageView.render();
         if (_viewSettings) pageView.setViewSettings(_viewSettings);

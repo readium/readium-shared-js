@@ -23,7 +23,11 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
+/**
+ *
+ * @param settingsData
+ * @constructor
+ */
 ReadiumSDK.Models.ViewerSettings = function(settingsData) {
 
     var self = this;
@@ -48,7 +52,7 @@ ReadiumSDK.Models.ViewerSettings = function(settingsData) {
 
     this.mediaOverlaysAutomaticPageTurn = true;
 
-    this.enableGPUHardwareAccelerationCSS3D = true;
+    this.enableGPUHardwareAccelerationCSS3D = false;
 
     // -1 ==> disable
     // [0...n] ==> index of transition in pre-defined array

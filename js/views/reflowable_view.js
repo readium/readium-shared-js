@@ -26,12 +26,11 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-/*
+/**
  * Renders reflowable content using CSS columns
- *
- * @class ReadiumSDK.Views.ReflowableView
+ * @param options
+ * @constructor
  */
-
 ReadiumSDK.Views.ReflowableView = function(options, reader){
 
     _.extend(this, Backbone.Events);
@@ -86,8 +85,8 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         _$el = $(template);
         _$viewport.append(_$el);
 
-        var settings = _viewSettings;
-        if (!settings)
+        var settings = reader.viewerSettings();
+        if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefined")
         {
             //defaults
             settings = new ReadiumSDK.Models.ViewerSettings({});
@@ -202,10 +201,8 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
     function updateColumnGap() {
 
         if(_$epubHtml) {
-        
-            _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
-                _$epubHtml.css(prefix + "column-gap", _paginationInfo.columnGap + "px");
-            });
+
+            _$epubHtml.css("column-gap", _paginationInfo.columnGap + "px");
         }
     }
 
@@ -230,6 +227,21 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         var epubContentDocument = _$iframe[0].contentDocument;
         _$epubHtml = $("html", epubContentDocument);
         _$htmlBody = $("body", _$epubHtml);
+
+        // TODO: how to address this correctly across all the affected platforms?!
+        // Video surface sometimes (depends on the video codec) disappears from CSS column (i.e. reflow page) during playback
+        // (audio continues to play normally, but video canvas is invisible).
+        // https://github.com/readium/readium-js-viewer/issues/265#issuecomment-73018762
+        // ...Meanwhile, reverting https://github.com/readium/readium-js-viewer/issues/239
+        // by commenting the code below (which unfortunately only works with some GPU / codec configurations,
+        // but actually fails on several other machines!!)
+        /*
+        if(window.chrome
+            && window.navigator.vendor === "Google Inc.") // TODO: Opera (WebKit) sometimes suffers from this rendering bug too (depends on the video codec), but unfortunately GPU-accelerated rendering makes the video controls unresponsive!!
+        {
+            $("video", _$htmlBody).css("transform", "translateZ(0)");
+        }
+        */
         
         _htmlBodyIsVerticalWritingMode = false;
         _htmlBodyIsLTRDirection = true;
@@ -292,19 +304,15 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         _$epubHtml.css("margin", "0");
         _$epubHtml.css("padding", "0");
 
-        _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
-            _$epubHtml.css(prefix + "column-axis", (_htmlBodyIsVerticalWritingMode ? "vertical" : "horizontal"));
-        });
+        _$epubHtml.css("column-axis", (_htmlBodyIsVerticalWritingMode ? "vertical" : "horizontal"));
 
         //
         // /////////
         // //Columns Debugging
         //
-        // _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
-        //     _$epubHtml.css(prefix + "column-rule-color", "red");
-        //     _$epubHtml.css(prefix + "column-rule-style", "dashed");
-        //     _$epubHtml.css(prefix + "column-rule-width", "1px");
-        // });
+        //     _$epubHtml.css("column-rule-color", "red");
+        //     _$epubHtml.css("column-rule-style", "dashed");
+        //     _$epubHtml.css("column-rule-width", "1px");
         // _$epubHtml.css("background-color", '#b0c4de');
         //
         // ////
@@ -630,9 +638,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
 
         _$epubHtml.css("width", (_htmlBodyIsVerticalWritingMode ? _lastViewPortSize.width : _paginationInfo.columnWidth) + "px");
 
-        _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
-            _$epubHtml.css(prefix + "column-width", _paginationInfo.columnWidth + "px");
-        });
+        _$epubHtml.css("column-width", _paginationInfo.columnWidth + "px");
 
         _$epubHtml.css({left: "0", right: "0", top: "0"});
         

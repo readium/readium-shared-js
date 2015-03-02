@@ -118,8 +118,23 @@
                 console.debug("Y) timeupdate");
             }
         );
+
+        _audioElement.addEventListener("seeking", function()
+            {
+                console.debug("Z) seeking");
+            }
+        );
     }
 
+    /**
+     *
+     * @param onStatusChanged
+     * @param onPositionChanged
+     * @param onAudioEnded
+     * @param onAudioPlay
+     * @param onAudioPause
+     * @constructor
+     */
     ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAudioEnded, onAudioPlay, onAudioPause)
     {
         var self = this;
@@ -260,7 +275,7 @@
                     {
                         if (DEBUG)
                         {
-                            console.debug("interval timer skipped (still seeking...)");
+//console.debug("interval timer skipped (still seeking...)");
                         }
                                          
                         _intervalTimerSkips++;
@@ -271,15 +286,26 @@
                         }
                         return;
                     }
-    
-                    var currentTime = _audioElement.currentTime;
+                    
+                    var currentTime = undefined;
+                    try
+                    {
+                        currentTime = _audioElement.currentTime;
+                    }
+                    catch (ex)
+                    {
+                        console.error(ex.message);
+                    }
     
     //                if (DEBUG)
     //                {
     //                    console.debug("currentTime: " + currentTime);
     //                }
     
-                    onPositionChanged(currentTime, 1);
+                    if (currentTime)
+                    {
+                        onPositionChanged(currentTime, 1);
+                    }
                 }, 20);
         }
     
@@ -487,15 +513,36 @@
         };
     
         var _readyEvent = _Android ? "canplaythrough" : "canplay";
-        function onReadyToSeek(event)
+        function onReadyToSeek_(event)
         {
-            $(_audioElement).off(_readyEvent, onReadyToSeek);
-            
             if (DEBUG)
             {
                 console.debug("onReadyToSeek #" + event.data.playId);
             }
             playSeekCurrentTime(event.data.seekBegin, event.data.playId, true);
+        }
+        function onReadyToSeek(event)
+        {
+            $(_audioElement).off(_readyEvent, onReadyToSeek);
+            
+            if (!_Android)
+            {
+                onReadyToSeek_(event);
+            }
+            else
+            {
+                if (DEBUG)
+                {
+                    console.debug("onReadyToSeek ANDROID ... waiting a bit ... #" + event.data.playId);
+                }
+                
+                //self.play();
+                playToForcePreload();
+                
+                setTimeout(function() {
+                    onReadyToSeek_(event);
+                }, 1000);
+            }
         }
     
         function playSeekCurrentTime(newCurrentTime, playId, isNewSrc)
@@ -554,7 +601,7 @@
                 }, 5);
             }
         }
-    
+        
         var MAX_SEEK_RETRIES = 10;
         var _seekedEvent1 = _iOS ? "canplaythrough" : "seeked"; //"progress"
         var _seekedEvent2 = _iOS ? "timeupdate" : "seeked";
@@ -610,18 +657,15 @@
                     setTimeout(function()
                     {
                         onSeeked(event);
-                    }, 50);
+                    }, _Android ? 1000 : 200);
                 }
     
                 setTimeout(function()
                 {
+                    _audioElement.pause();
                     try
                     {
-                        _audioElement.pause();
-                        setTimeout(function()
-                        {
-                            _audioElement.currentTime = event.data.newCurrentTime;
-                        }, 0);
+                        _audioElement.currentTime = event.data.newCurrentTime;
                     }
                     catch (ex)
                     {
@@ -631,11 +675,7 @@
                         {
                             try
                             {
-                                _audioElement.pause();
-                                setTimeout(function()
-                                {
-                                    _audioElement.currentTime = event.data.newCurrentTime;
-                                }, 0);
+                                _audioElement.currentTime = event.data.newCurrentTime;
                             }
                             catch (ex)
                             {

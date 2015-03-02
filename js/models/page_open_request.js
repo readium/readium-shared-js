@@ -23,7 +23,7 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-/*
+/**
  * Representation of opening page request
  * Provides the spine item to be opened and one of the following properties:
  *  spineItemPageIndex {Number},
@@ -33,6 +33,7 @@
  *  lastPage {bool}
  *
  * @param {ReadiumSDK.Models.SpineItem} spineItem
+ * @param {object} [initiator]
  *
  * @constructor
  */

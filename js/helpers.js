@@ -25,7 +25,14 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
+/**
+ *
+ * @param left
+ * @param top
+ * @param width
+ * @param height
+ * @constructor
+ */
 ReadiumSDK.Helpers.Rect = function(left, top, width, height) {
 
     this.left = left;
@@ -54,7 +61,11 @@ ReadiumSDK.Helpers.Rect = function(left, top, width, height) {
     }
 };
 
-
+/**
+ *
+ * @param $element
+ * @returns {ReadiumSDK.Helpers.Rect}
+ */
 //This method treats multicolumn view as one long column and finds the rectangle of the element in this "long" column
 //we are not using jQuery Offset() and width()/height() function because for multicolumn rendition_layout it produces rectangle as a bounding box of element that
 // reflows between columns this is inconstant and difficult to analyze .
@@ -125,6 +136,9 @@ ReadiumSDK.Helpers.UpdateHtmlFontSize = function($epubHtml, fontSize){
         if (lineHeightAttr){
             originalLineHeight = Number(lineHeightAttr);
         }
+        else{
+            originalLineHeight = 0;
+        }
 
         ele.style.fontSize = (originalFontSize * factor) + 'px';
         if (originalLineHeight){
@@ -137,7 +151,11 @@ ReadiumSDK.Helpers.UpdateHtmlFontSize = function($epubHtml, fontSize){
 
 
 /**
- * @return {string}
+ *
+ * @param contentRef
+ * @param sourceFileHref
+ * @returns {string}
+ * @constructor
  */
 ReadiumSDK.Helpers.ResolveContentRef = function(contentRef, sourceFileHref) {
 
@@ -162,18 +180,37 @@ ReadiumSDK.Helpers.ResolveContentRef = function(contentRef, sourceFileHref) {
 
 };
 
+
 /**
- * @return {boolean}
+ *
+ * @param str
+ * @param suffix
+ * @returns {boolean}
+ * @static
  */
 ReadiumSDK.Helpers.EndsWith = function (str, suffix) {
     return str.indexOf(suffix, str.length - suffix.length) !== -1;
 };
 
+/**
+ *
+ * @param str
+ * @param suffix
+ * @returns {boolean}
+ * @static
+ */
 ReadiumSDK.Helpers.BeginsWith = function (str, suffix) {
 
     return str.indexOf(suffix) === 0;
 };
 
+/**
+ *
+ * @param str
+ * @param toRemove
+ * @returns {string}
+ * @static
+ */
 ReadiumSDK.Helpers.RemoveFromString = function(str, toRemove) {
 
     var startIx = str.indexOf(toRemove);
@@ -185,6 +222,13 @@ ReadiumSDK.Helpers.RemoveFromString = function(str, toRemove) {
     return str.substring(0, startIx) + str.substring(startIx + toRemove.length);
 };
 
+/**
+ *
+ * @param margin
+ * @param border
+ * @param padding
+ * @constructor
+ */
 ReadiumSDK.Helpers.Margins = function(margin, border, padding) {
 
     this.margin = margin;
@@ -205,6 +249,10 @@ ReadiumSDK.Helpers.Margins = function(margin, border, padding) {
     }
 };
 
+/**
+ *
+ * @param $iframe
+ */
 ReadiumSDK.Helpers.triggerLayout = function($iframe) {
 
     var doc = $iframe[0].contentDocument;
@@ -254,6 +302,13 @@ ReadiumSDK.Helpers.triggerLayout = function($iframe) {
 
 };
 
+/**
+ *
+ * @param $viewport
+ * @param spineItem
+ * @param settings
+ * @returns {boolean}
+ */
 //Based on https://docs.google.com/spreadsheet/ccc?key=0AoPMUkQhc4wcdDI0anFvWm96N0xRT184ZE96MXFRdFE&usp=drive_web#gid=0 doc
 // Returns falsy and truthy
 // true and false mean that the synthetic-spread or single-page is "forced" (to be respected whatever the external conditions)
@@ -317,28 +372,54 @@ ReadiumSDK.Helpers.deduceSyntheticSpread = function($viewport, spineItem, settin
     return 0; // non-forced
 };
 
+/**
+ *
+ * @param $element
+ * @returns {ReadiumSDK.Helpers.Rect}
+ */
 ReadiumSDK.Helpers.Margins.fromElement = function($element) {
     return new this($element.margin(), $element.border(), $element.padding());
 };
 
+/**
+ * @returns {ReadiumSDK.Helpers.Rect}
+ */
 ReadiumSDK.Helpers.Margins.empty = function() {
 
     return new this({left:0, right:0, top:0, bottom: 0}, {left:0, right:0, top:0, bottom: 0}, {left:0, right:0, top:0, bottom: 0});
 
 };
 
+/**
+ *
+ * @param name
+ * @param params
+ * @returns {ReadiumSDK.Helpers.loadTemplate.cache}
+ */
 ReadiumSDK.Helpers.loadTemplate = function(name, params) {
     return ReadiumSDK.Helpers.loadTemplate.cache[name];
 };
 
+/**
+ *
+ * @type {{fixed_book_frame: string, single_page_frame: string, scrolled_book_frame: string, reflowable_book_frame: string, reflowable_book_page_frame: string}}
+ */
 ReadiumSDK.Helpers.loadTemplate.cache = {
     "fixed_book_frame" : '<div id="fixed-book-frame" class="clearfix book-frame fixed-book-frame"></div>',
+    
     "single_page_frame" : '<div><div id="scaler"><iframe scrolling="no" class="iframe-fixed"></iframe></div></div>',
+    //"single_page_frame" : '<div><iframe scrolling="no" class="iframe-fixed" id="scaler"></iframe></div>',
+    
     "scrolled_book_frame" : '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"><div id="scrolled-content-frame"></div></div>',
     "reflowable_book_frame" : '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"></div>',
     "reflowable_book_page_frame": '<div id="reflowable-content-frame" class="reflowable-content-frame"><iframe scrolling="no" id="epubContentIframe"></iframe></div>'
 };
 
+/**
+ *
+ * @param styles
+ * @param $element
+ */
 ReadiumSDK.Helpers.setStyles = function(styles, $element) {
 
     var count = styles.length;
@@ -359,6 +440,11 @@ ReadiumSDK.Helpers.setStyles = function(styles, $element) {
 
 };
 
+/**
+ *
+ * @param iframe
+ * @returns {boolean}
+ */
 ReadiumSDK.Helpers.isIframeAlive = function(iframe)
 {
     var w = undefined;
@@ -377,7 +463,11 @@ ReadiumSDK.Helpers.isIframeAlive = function(iframe)
     return w && d;
 }
 
-
+/**
+ *
+ * @param $viewport
+ * @returns {ReadiumSDK.Views.ORIENTATION_LANDSCAPE|ReadiumSDK.Views.ORIENTATION_PORTRAIT}
+ */
 ReadiumSDK.Helpers.getOrientation = function($viewport) {
 
     var viewportWidth = $viewport.width();
@@ -390,6 +480,12 @@ ReadiumSDK.Helpers.getOrientation = function($viewport) {
     return viewportWidth >= viewportHeight ? ReadiumSDK.Views.ORIENTATION_LANDSCAPE : ReadiumSDK.Views.ORIENTATION_PORTRAIT;
 };
 
+/**
+ *
+ * @param item
+ * @param orientation
+ * @returns {boolean}
+ */
 ReadiumSDK.Helpers.isRenditionSpreadPermittedForItem = function(item, orientation) {
 
     var rendition_spread = item.getRenditionSpread();
@@ -403,8 +499,23 @@ ReadiumSDK.Helpers.isRenditionSpreadPermittedForItem = function(item, orientatio
         && orientation == ReadiumSDK.Views.ORIENTATION_PORTRAIT );
 };
 
+ReadiumSDK.Helpers.CSSTransition = function($el, trans) {
+    
+    // does not work!
+    //$el.css('transition', trans);
+    
+    var css={};
+    // empty '' prefix FIRST!
+    _.each(['', '-webkit-', '-moz-', '-ms-'], function(prefix) {
+        css[prefix + 'transition'] = prefix + trans;
+    });
+    $el.css(css);
+}
+
 //scale, left, top, angle, origin
 ReadiumSDK.Helpers.CSSTransformString = function(options) {
+    var enable3D = options.enable3D ? true : false;
+    
     var translate, scale, rotation,
         origin = options.origin;
 
@@ -412,13 +523,13 @@ ReadiumSDK.Helpers.CSSTransformString = function(options) {
         var left = options.left || 0, 
             top = options.top || 0;
 
-        translate = "translate(" + left + "px, " + top + "px)";
+        translate = enable3D ? ("translate3D(" + left + "px, " + top + "px, 0)") : ("translate(" + left + "px, " + top + "px)");
     }
     if (options.scale){
-        scale = "scale(" + options.scale + ")";
+        scale = enable3D ? ("scale3D(" + options.scale + ", " + options.scale + ", 0)") : ("scale(" + options.scale + ")");
     }
     if (options.angle){
-        rotation =  "rotate(" + options.angle + "deg)";
+        rotation =  enable3D ? ("rotate3D(0,0," + options.angle + "deg)") : ("rotate(" + options.angle + "deg)");
     }
     
     if (!(translate || scale || rotation)){
@@ -432,13 +543,9 @@ ReadiumSDK.Helpers.CSSTransformString = function(options) {
         //transformString = rotation + " " + transformString;
     }
 
-    //TODO modernizer library can be used to get browser independent transform attributes names (implemented in readium-web fixed_layout_book_zoomer.js)
     var css = {};
-    _.each(['-webkit-', '-moz-', '-ms-', ''], function(prefix) {
-        css[prefix + 'transform'] = transformString;
-        css[prefix + 'transform-origin'] = origin ? origin : '0 0';
-    });
-
+    css['transform'] = transformString;
+    css['transform-origin'] = origin ? origin : (enable3D ? '0 0 0' : '0 0');
     return css;
 };
 
@@ -478,6 +585,11 @@ ReadiumSDK.Helpers.extendedThrottle = function (startCb, tickCb, endCb, tickRate
 //TODO: consider using CSSOM escape() or polyfill
 //https://github.com/mathiasbynens/CSS.escape/blob/master/css.escape.js
 //http://mathiasbynens.be/notes/css-escapes
+/**
+ *
+ * @param sel
+ * @returns {string}
+ */
 ReadiumSDK.Helpers.escapeJQuerySelector = function(sel) {
         //http://api.jquery.com/category/selectors/
         //!"#$%&'()*+,./:;<=>?@[\]^`{|}~
