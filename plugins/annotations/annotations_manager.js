@@ -107,7 +107,7 @@ Then when the user clicks on the highlight the following will show up in the con
 	
 
 */
-define(['jquery', 'underscore', 'eventEmitter', 'annotations_module'], function($, _, EventEmitter, EpubAnnotationsModule) {
+define(['jquery', 'underscore', 'eventEmitter', './annotations_module'], function($, _, EventEmitter, EpubAnnotationsModule) {
 /**
  *
  * @param proxyObj

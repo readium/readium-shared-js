@@ -1,3 +1,4 @@
+define(['./lib/backbone-min'], function(Backbone) {
 var EpubAnnotationsModule = function (contentDocumentDOM, bbPageSetView, annotationCSSUrl) {
     
     var EpubAnnotations = {};
@@ -1666,3 +1667,6 @@ EpubAnnotations.ImageAnnotation = Backbone.Model.extend({
         }
     };
 };
+
+    return EpubAnnotationsModule;
+});
