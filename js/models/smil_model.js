@@ -32,9 +32,9 @@ define (["../helpers"], function(Helpers) {
  * @param parent
  * @constructor
  */
-    var Smil = {};
+var Smil = {};
 
-    Smil.SmilNode = function(parent) {
+Smil.SmilNode = function(parent) {
 
     this.parent = parent;
     

@@ -25,351 +25,337 @@
 
 
 define(["jquery", "underscore", "eventEmitter", "./cfi_navigation_logic", "../helpers", "../models/viewer_settings"],
-    function($, _, EventEmitter, CfiNavigationLogic, Helpers, ViewerSettings) {
-    /**
-     * Renders one page of fixed layout spread
-     *
-     * @param options
-     * @param classes
-     * @param enableBookStyleOverrides
-     * @constructor
-     */
-    var OnePageView = function (options, classes, enableBookStyleOverrides, reader) {
+    function ($, _, EventEmitter, CfiNavigationLogic, Helpers, ViewerSettings) {
 
-        _.extend(this, new EventEmitter());
+/**
+ * Renders one page of fixed layout spread
+ *
+ * @param options
+ * @param classes
+ * @param enableBookStyleOverrides
+ * @constructor
+ */
+var OnePageView = function (options, classes, enableBookStyleOverrides, reader) {
 
-        var self = this;
+    _.extend(this, new EventEmitter());
 
-        var _$epubHtml;
-        var _$el;
-        var _$iframe;
-        var _currentSpineItem;
-        var _spine = options.spine;
-        var _iframeLoader = options.iframeLoader;
-        var _bookStyles = options.bookStyles;
+    var self = this;
 
-        var _$viewport = options.$viewport;
+    var _$epubHtml;
+    var _$el;
+    var _$iframe;
+    var _currentSpineItem;
+    var _spine = options.spine;
+    var _iframeLoader = options.iframeLoader;
+    var _bookStyles = options.bookStyles;
 
-        var _isIframeLoaded = false;
+    var _$viewport = options.$viewport;
 
-        var _$scaler;
+    var _isIframeLoaded = false;
 
-        var PageTransitionHandler = function (opts) {
-            var PageTransition = function (begin, end) {
-                this.begin = begin;
-                this.end = end;
-            };
+    var _$scaler;
 
-            var _pageTransition_OPACITY = new PageTransition(
-                function (scale, left, top, $el, meta_width, meta_height, pageSwitchDir) {
-                    $el.css("opacity", "0");
-                },
-                function (scale, left, top, $el, meta_width, meta_height, pageSwitchDir) {
-                    $el.css("transform", "none");
+    var PageTransitionHandler = function (opts) {
+        var PageTransition = function (begin, end) {
+            this.begin = begin;
+            this.end = end;
+        };
 
-                    Helpers.CSSTransition($el, "opacity 150ms ease-out");
+        var _pageTransition_OPACITY = new PageTransition(
+            function (scale, left, top, $el, meta_width, meta_height, pageSwitchDir) {
+                $el.css("opacity", "0");
+            },
+            function (scale, left, top, $el, meta_width, meta_height, pageSwitchDir) {
+                $el.css("transform", "none");
 
-                    $el.css("opacity", "1");
-                }
-            );
+                Helpers.CSSTransition($el, "opacity 150ms ease-out");
 
-            var _pageTransition_TRANSLATE = new PageTransition(
-                function (scale, left, top, $el, meta_width, meta_height, pageSwitchDir) {
-                    $el.css("opacity", "0");
+                $el.css("opacity", "1");
+            }
+        );
 
-                    var elWidth = Math.ceil(meta_width * scale);
+        var _pageTransition_TRANSLATE = new PageTransition(
+            function (scale, left, top, $el, meta_width, meta_height, pageSwitchDir) {
+                $el.css("opacity", "0");
 
-                    var initialLeft = elWidth * 0.8 * (pageSwitchDir === 2 ? 1 : -1);
-                    var move = Helpers.CSSTransformString({
-                        left: Math.round(initialLeft),
-                        origin: "50% 50% 0",
-                        enable3D: _enable3D
-                    });
-                    $el.css(move);
-                },
-                function (scale, left, top, $el, meta_width, meta_height, pageSwitchDir) {
-                    $el.css("opacity", "1");
+                var elWidth = Math.ceil(meta_width * scale);
 
-                    Helpers.CSSTransition($el, "transform 150ms ease-out");
+                var initialLeft = elWidth * 0.8 * (pageSwitchDir === 2 ? 1 : -1);
+                var move = Helpers.CSSTransformString({
+                    left: Math.round(initialLeft),
+                    origin: "50% 50% 0",
+                    enable3D: _enable3D
+                });
+                $el.css(move);
+            },
+            function (scale, left, top, $el, meta_width, meta_height, pageSwitchDir) {
+                $el.css("opacity", "1");
 
-                    $el.css("transform", "none");
-                }
-            );
+                Helpers.CSSTransition($el, "transform 150ms ease-out");
 
-            var _pageTransition_ROTATE = new PageTransition(
-                function (scale, left, top, $el, meta_width, meta_height, pageSwitchDir) {
-                    $el.css("opacity", "0");
+                $el.css("transform", "none");
+            }
+        );
 
-                    var elWidth = Math.ceil(meta_width * scale);
+        var _pageTransition_ROTATE = new PageTransition(
+            function (scale, left, top, $el, meta_width, meta_height, pageSwitchDir) {
+                $el.css("opacity", "0");
 
-                    var initialLeft = elWidth * 1.7 * (pageSwitchDir === 2 ? 1 : -1);
-                    var trans = Helpers.CSSTransformString({
-                        left: Math.round(initialLeft),
-                        angle: (pageSwitchDir === 2 ? -1 : 1) * 30,
-                        origin: "50% 50% 0",
-                        enable3D: _enable3D
-                    }); //(pageSwitchDir === 2 ? '0% 0%' : '100% 0%')
-                    $el.css(trans);
-                },
-                function (scale, left, top, $el, meta_width, meta_height, pageSwitchDir) {
-                    $el.css("opacity", "1");
+                var elWidth = Math.ceil(meta_width * scale);
 
-                    Helpers.CSSTransition($el, "transform 300ms ease-in-out");
+                var initialLeft = elWidth * 1.7 * (pageSwitchDir === 2 ? 1 : -1);
+                var trans = Helpers.CSSTransformString({
+                    left: Math.round(initialLeft),
+                    angle: (pageSwitchDir === 2 ? -1 : 1) * 30,
+                    origin: "50% 50% 0",
+                    enable3D: _enable3D
+                }); //(pageSwitchDir === 2 ? '0% 0%' : '100% 0%')
+                $el.css(trans);
+            },
+            function (scale, left, top, $el, meta_width, meta_height, pageSwitchDir) {
+                $el.css("opacity", "1");
 
-                    $el.css("transform", "none");
-                }
-            );
+                Helpers.CSSTransition($el, "transform 300ms ease-in-out");
 
-            var _pageTransition_SWING = new PageTransition(
-                function (scale, left, top, $el, meta_width, meta_height, pageSwitchDir) {
-                    $el.css("opacity", "0");
+                $el.css("transform", "none");
+            }
+        );
 
-                    // SUPER HACKY!! (just for demo)
-                    var isLeft = false;
-                    var isCenter = false;
-                    var isRight = false;
-                    for (var i = 0; i < classes.length; i++) {
-                        var c = classes[i].toLowerCase();
-                        if (c.indexOf("left") >= 0) {
-                            isLeft = true;
-                            break;
-                        }
-                        if (c.indexOf("right") >= 0) {
-                            isRight = true;
-                            break;
-                        }
-                        if (c.indexOf("center") >= 0) {
-                            isCenter = true;
-                            break;
-                        }
+        var _pageTransition_SWING = new PageTransition(
+            function (scale, left, top, $el, meta_width, meta_height, pageSwitchDir) {
+                $el.css("opacity", "0");
+
+                // SUPER HACKY!! (just for demo)
+                var isLeft = false;
+                var isCenter = false;
+                var isRight = false;
+                for (var i = 0; i < classes.length; i++) {
+                    var c = classes[i].toLowerCase();
+                    if (c.indexOf("left") >= 0) {
+                        isLeft = true;
+                        break;
                     }
-
-                    var elWidth = Math.ceil(meta_width * scale);
-
-                    var initialLeft = elWidth * 0.5 * ((isLeft || isCenter && pageSwitchDir === 1) ? 1 : -1);
-                    var trans = Helpers.CSSTransformString({
-                        scale: 0.2,
-                        left: Math.round(initialLeft),
-                        angle: ((isLeft || isCenter && pageSwitchDir === 1) ? 1 : -1) * 30,
-                        origin: '50% 50% 0',
-                        enable3D: _enable3D
-                    });
-                    $el.css(trans);
-                },
-                function (scale, left, top, $el, meta_width, meta_height, pageSwitchDir) {
-                    $el.css("opacity", "1");
-
-                    Helpers.CSSTransition($el, "transform 400ms ease-out");
-
-                    $el.css("transform", "none");
-                }
-            );
-
-            var _pageTransitions = [];
-            _pageTransitions.push(_pageTransition_OPACITY); // 0
-            _pageTransitions.push(_pageTransition_TRANSLATE); // 1
-            _pageTransitions.push(_pageTransition_ROTATE); // 2
-            _pageTransitions.push(_pageTransition_SWING); // 3
-
-            var _disablePageTransitions = opts.disablePageTransitions || false;
-
-            var _pageTransition = -1;
-
-            var _enable3D = new ViewerSettings({}).enableGPUHardwareAccelerationCSS3D;
-
-            var _viewerSettings = undefined;
-            this.updateOptions = function (o) {
-                _viewerSettings = o;
-
-                var settings = _viewerSettings;
-                if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefined") {
-                    //defaults
-                    settings = new ViewerSettings({});
-                }
-                if (settings.enableGPUHardwareAccelerationCSS3D) {
-                    _enable3D = true;
-                }
-
-                if (o.pageTransition !== null && typeof o.pageTransition !== "undefined") {
-                    _pageTransition = o.pageTransition;
-                }
-            };
-            this.updateOptions(opts);
-
-            var _pageSwitchDir = 0;
-            var _pageSwitchActuallyChanged = false;
-            var _pageSwitchActuallyChanged_IFRAME_LOAD = false;
-
-            // dir: 0 => new or same page, 1 => previous, 2 => next
-            this.updatePageSwitchDir = function (dir, hasChanged) {
-                if (_pageSwitchActuallyChanged_IFRAME_LOAD) {
-                    return;
-                }
-
-                _pageSwitchDir = dir;
-                _pageSwitchActuallyChanged = hasChanged;
-            };
-
-            this.onIFrameLoad = function () {
-                _pageSwitchActuallyChanged_IFRAME_LOAD = true; // second pass, but initial display for transition
-            };
-
-            this.transformContentImmediate_BEGIN = function ($el, scale, left, top) {
-                var pageSwitchActuallyChanged = _pageSwitchActuallyChanged || _pageSwitchActuallyChanged_IFRAME_LOAD;
-                _pageSwitchActuallyChanged_IFRAME_LOAD = false;
-
-                if (_disablePageTransitions || _pageTransition === -1) return;
-
-                Helpers.CSSTransition($el, "all 0 ease 0");
-
-                if (!pageSwitchActuallyChanged) return;
-
-                var pageTransition = (_pageTransition >= 0 && _pageTransition < _pageTransitions.length) ? _pageTransitions[_pageTransition] : undefined;
-
-                if (_pageSwitchDir === 0 || !pageTransition) {
-                    $el.css("opacity", "0");
-                }
-                else {
-                    pageTransition.begin(scale, left, top, $el, self.meta_width(), self.meta_height(), _pageSwitchDir);
-                }
-            };
-
-            this.transformContentImmediate_END = function ($el, scale, left, top) {
-                if (_disablePageTransitions || _pageTransition === -1) {
-                    $el.css("transform", "none");
-                    return;
-                }
-
-                setTimeout(function () {
-                    var pageTransition = (_pageTransition >= 0 && _pageTransition < _pageTransitions.length) ? _pageTransitions[_pageTransition] : undefined;
-
-                    if (_pageSwitchDir === 0 || !pageTransition) {
-                        $el.css("transform", "none");
-
-                        Helpers.CSSTransition($el, "opacity 250ms linear");
-
-                        $el.css("opacity", "1");
+                    if (c.indexOf("right") >= 0) {
+                        isRight = true;
+                        break;
                     }
-                    else {
-                        pageTransition.end(scale, left, top, $el, self.meta_width(), self.meta_height(), _pageSwitchDir);
+                    if (c.indexOf("center") >= 0) {
+                        isCenter = true;
+                        break;
                     }
+                }
 
-                }, 10);
-            };
-        };
-        var _pageTransitionHandler = new PageTransitionHandler(options);
+                var elWidth = Math.ceil(meta_width * scale);
 
+                var initialLeft = elWidth * 0.5 * ((isLeft || isCenter && pageSwitchDir === 1) ? 1 : -1);
+                var trans = Helpers.CSSTransformString({
+                    scale: 0.2,
+                    left: Math.round(initialLeft),
+                    angle: ((isLeft || isCenter && pageSwitchDir === 1) ? 1 : -1) * 30,
+                    origin: '50% 50% 0',
+                    enable3D: _enable3D
+                });
+                $el.css(trans);
+            },
+            function (scale, left, top, $el, meta_width, meta_height, pageSwitchDir) {
+                $el.css("opacity", "1");
 
-        // fixed layout does not apply user styles to publisher content, but reflowable scroll view does
-        var _enableBookStyleOverrides = enableBookStyleOverrides || false;
+                Helpers.CSSTransition($el, "transform 400ms ease-out");
 
-        var _meta_size = {
-            width: 0,
-            height: 0
-        };
+                $el.css("transform", "none");
+            }
+        );
 
-        this.element = function () {
-            return _$el;
-        };
+        var _pageTransitions = [];
+        _pageTransitions.push(_pageTransition_OPACITY); // 0
+        _pageTransitions.push(_pageTransition_TRANSLATE); // 1
+        _pageTransitions.push(_pageTransition_ROTATE); // 2
+        _pageTransitions.push(_pageTransition_SWING); // 3
 
-        this.meta_height = function () {
-            return _meta_size.height;
-        };
+        var _disablePageTransitions = opts.disablePageTransitions || false;
 
-        this.meta_width = function () {
-            return _meta_size.width;
-        };
+        var _pageTransition = -1;
 
-        this.isDisplaying = function () {
+        var _enable3D = new ViewerSettings({}).enableGPUHardwareAccelerationCSS3D;
 
-            return _isIframeLoaded;
-        };
+        var _viewerSettings = undefined;
+        this.updateOptions = function (o) {
+            _viewerSettings = o;
 
-        this.render = function () {
-
-            var template = Helpers.loadTemplate("single_page_frame", {});
-
-            _$el = $(template);
-
-            _$scaler = $("#scaler", _$el);
-
-            Helpers.CSSTransition(_$el, "all 0 ease 0");
-
-            _$el.css("transform", "none");
-
-            var settings = reader.viewerSettings();
+            var settings = _viewerSettings;
             if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefined") {
                 //defaults
                 settings = new ViewerSettings({});
             }
             if (settings.enableGPUHardwareAccelerationCSS3D) {
-
-                // This fixes rendering issues with WebView (native apps), which crops content embedded in iframes unless GPU hardware acceleration is enabled for CSS rendering.
-                _$el.css("transform", "translateZ(0)");
+                _enable3D = true;
             }
 
-            _$el.css("height", "100%");
-            _$el.css("width", "100%");
+            if (o.pageTransition !== null && typeof o.pageTransition !== "undefined") {
+                _pageTransition = o.pageTransition;
+            }
+        };
+        this.updateOptions(opts);
 
-            for (var i = 0, count = classes.length; i < count; i++) {
-                _$el.addClass(classes[i]);
+        var _pageSwitchDir = 0;
+        var _pageSwitchActuallyChanged = false;
+        var _pageSwitchActuallyChanged_IFRAME_LOAD = false;
+
+        // dir: 0 => new or same page, 1 => previous, 2 => next
+        this.updatePageSwitchDir = function (dir, hasChanged) {
+            if (_pageSwitchActuallyChanged_IFRAME_LOAD) {
+                return;
             }
 
-            _$iframe = $("iframe", _$el);
-
-            return this;
+            _pageSwitchDir = dir;
+            _pageSwitchActuallyChanged = hasChanged;
         };
 
-
-        this.decorateIframe = function () {
-            if (!_$iframe || !_$iframe.length) return;
-
-            _$iframe.css("border-bottom", "1px dashed silver");
-            _$iframe.css("border-top", "1px dashed silver");
-        }
-
-        this.remove = function () {
-            _isIframeLoaded = false;
-            _currentSpineItem = undefined;
-            _$el.remove();
+        this.onIFrameLoad = function () {
+            _pageSwitchActuallyChanged_IFRAME_LOAD = true; // second pass, but initial display for transition
         };
 
-        this.clear = function () {
-            _isIframeLoaded = false;
-            _$iframe[0].src = "";
+        this.transformContentImmediate_BEGIN = function ($el, scale, left, top) {
+            var pageSwitchActuallyChanged = _pageSwitchActuallyChanged || _pageSwitchActuallyChanged_IFRAME_LOAD;
+            _pageSwitchActuallyChanged_IFRAME_LOAD = false;
+
+            if (_disablePageTransitions || _pageTransition === -1) return;
+
+            Helpers.CSSTransition($el, "all 0 ease 0");
+
+            if (!pageSwitchActuallyChanged) return;
+
+            var pageTransition = (_pageTransition >= 0 && _pageTransition < _pageTransitions.length) ? _pageTransitions[_pageTransition] : undefined;
+
+            if (_pageSwitchDir === 0 || !pageTransition) {
+                $el.css("opacity", "0");
+            }
+            else {
+                pageTransition.begin(scale, left, top, $el, self.meta_width(), self.meta_height(), _pageSwitchDir);
+            }
         };
 
-        this.currentSpineItem = function () {
+        this.transformContentImmediate_END = function ($el, scale, left, top) {
+            if (_disablePageTransitions || _pageTransition === -1) {
+                $el.css("transform", "none");
+                return;
+            }
 
-            return _currentSpineItem;
-        };
+            setTimeout(function () {
+                var pageTransition = (_pageTransition >= 0 && _pageTransition < _pageTransitions.length) ? _pageTransitions[_pageTransition] : undefined;
 
-        function onIFrameLoad(success) {
+                if (_pageSwitchDir === 0 || !pageTransition) {
+                    $el.css("transform", "none");
 
-            if (success) {
-                _isIframeLoaded = true;
-                var epubContentDocument = _$iframe[0].contentDocument;
-                _$epubHtml = $("html", epubContentDocument);
-                if (!_$epubHtml || _$epubHtml.length == 0) {
-                    _$epubHtml = $("svg", epubContentDocument);
+                    Helpers.CSSTransition($el, "opacity 250ms linear");
+
+                    $el.css("opacity", "1");
+                }
+                else {
+                    pageTransition.end(scale, left, top, $el, self.meta_width(), self.meta_height(), _pageSwitchDir);
                 }
 
-                //_$epubHtml.css("overflow", "hidden");
+            }, 10);
+        };
+    };
+    var _pageTransitionHandler = new PageTransitionHandler(options);
 
-                if (_enableBookStyleOverrides) {
-                    self.applyBookStyles();
-                }
 
-                updateMetaSize();
+    // fixed layout does not apply user styles to publisher content, but reflowable scroll view does
+    var _enableBookStyleOverrides = enableBookStyleOverrides || false;
 
-                _pageTransitionHandler.onIFrameLoad();
-            }
+    var _meta_size = {
+        width: 0,
+        height: 0
+    };
+
+    this.element = function () {
+        return _$el;
+    };
+
+    this.meta_height = function () {
+        return _meta_size.height;
+    };
+
+    this.meta_width = function () {
+        return _meta_size.width;
+    };
+
+    this.isDisplaying = function () {
+
+        return _isIframeLoaded;
+    };
+
+    this.render = function () {
+
+        var template = Helpers.loadTemplate("single_page_frame", {});
+
+        _$el = $(template);
+
+        _$scaler = $("#scaler", _$el);
+
+        Helpers.CSSTransition(_$el, "all 0 ease 0");
+
+        _$el.css("transform", "none");
+
+        var settings = reader.viewerSettings();
+        if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefined") {
+            //defaults
+            settings = new ViewerSettings({});
+        }
+        if (settings.enableGPUHardwareAccelerationCSS3D) {
+
+            // This fixes rendering issues with WebView (native apps), which crops content embedded in iframes unless GPU hardware acceleration is enabled for CSS rendering.
+            _$el.css("transform", "translateZ(0)");
         }
 
-        var _viewSettings = undefined;
-        this.setViewSettings = function (settings) {
+        _$el.css("height", "100%");
+        _$el.css("width", "100%");
 
-            _viewSettings = settings;
+        for (var i = 0, count = classes.length; i < count; i++) {
+            _$el.addClass(classes[i]);
+        }
+
+        _$iframe = $("iframe", _$el);
+
+        return this;
+    };
+
+
+    this.decorateIframe = function () {
+        if (!_$iframe || !_$iframe.length) return;
+
+        _$iframe.css("border-bottom", "1px dashed silver");
+        _$iframe.css("border-top", "1px dashed silver");
+    };
+
+    this.remove = function () {
+        _isIframeLoaded = false;
+        _currentSpineItem = undefined;
+        _$el.remove();
+    };
+
+    this.clear = function () {
+        _isIframeLoaded = false;
+        _$iframe[0].src = "";
+    };
+
+    this.currentSpineItem = function () {
+
+        return _currentSpineItem;
+    };
+
+    function onIFrameLoad(success) {
+
+        if (success) {
+            _isIframeLoaded = true;
+            var epubContentDocument = _$iframe[0].contentDocument;
+            _$epubHtml = $("html", epubContentDocument);
+            if (!_$epubHtml || _$epubHtml.length == 0) {
+                _$epubHtml = $("svg", epubContentDocument);
+            }
+
+            //_$epubHtml.css("overflow", "hidden");
 
             if (_enableBookStyleOverrides) {
                 self.applyBookStyles();
@@ -377,153 +363,104 @@ define(["jquery", "underscore", "eventEmitter", "./cfi_navigation_logic", "../he
 
             updateMetaSize();
 
-            _pageTransitionHandler.updateOptions(settings);
-        };
+            _pageTransitionHandler.onIFrameLoad();
+        }
+    }
 
-        function updateHtmlFontSize() {
+    var _viewSettings = undefined;
+    this.setViewSettings = function (settings) {
 
-            if (!_enableBookStyleOverrides) return;
+        _viewSettings = settings;
 
-            if (_$epubHtml && _viewSettings) {
-                Helpers.UpdateHtmlFontSize(_$epubHtml, _viewSettings.fontSize);
-            }
+        if (_enableBookStyleOverrides) {
+            self.applyBookStyles();
         }
 
-        this.applyBookStyles = function () {
+        updateMetaSize();
 
-            if (!_enableBookStyleOverrides) return;
+        _pageTransitionHandler.updateOptions(settings);
+    };
 
-            if (_$epubHtml) {
-                Helpers.setStyles(_bookStyles.getStyles(), _$epubHtml);
-                updateHtmlFontSize();
-            }
-        };
+    function updateHtmlFontSize() {
 
-        //this is called by scroll_view for fixed spine item
-        this.scaleToWidth = function (width) {
+        if (!_enableBookStyleOverrides) return;
 
-            if (_meta_size.width <= 0) return; // resize event too early!
+        if (_$epubHtml && _viewSettings) {
+            Helpers.UpdateHtmlFontSize(_$epubHtml, _viewSettings.fontSize);
+        }
+    }
 
-            var scale = width / _meta_size.width;
-            self.transformContentImmediate(scale, 0, 0);
-        };
+    this.applyBookStyles = function () {
 
-        //this is called by scroll_view for reflowable spine item
-        this.resizeIFrameToContent = function () {
-            var contHeight = getContentDocHeight();
-            //console.log("resizeIFrameToContent: " + contHeight);
+        if (!_enableBookStyleOverrides) return;
 
-            self.setHeight(contHeight);
+        if (_$epubHtml) {
+            Helpers.setStyles(_bookStyles.getStyles(), _$epubHtml);
+            updateHtmlFontSize();
+        }
+    };
 
-            self.showIFrame();
-        };
+    //this is called by scroll_view for fixed spine item
+    this.scaleToWidth = function (width) {
 
-        this.setHeight = function (height) {
+        if (_meta_size.width <= 0) return; // resize event too early!
 
-            _$scaler.css("height", height + "px");
-            _$el.css("height", height + "px");
+        var scale = width / _meta_size.width;
+        self.transformContentImmediate(scale, 0, 0);
+    };
+
+    //this is called by scroll_view for reflowable spine item
+    this.resizeIFrameToContent = function () {
+        var contHeight = getContentDocHeight();
+        //console.log("resizeIFrameToContent: " + contHeight);
+
+        self.setHeight(contHeight);
+
+        self.showIFrame();
+    };
+
+    this.setHeight = function (height) {
+
+        _$scaler.css("height", height + "px");
+        _$el.css("height", height + "px");
 
 //        _$iframe.css("height", height + "px");
-        };
+    };
 
-        var _useCSSTransformToHideIframe = true;
+    var _useCSSTransformToHideIframe = true;
 
-        this.showIFrame = function () {
+    this.showIFrame = function () {
 
-            _$iframe.css("visibility", "visible");
+        _$iframe.css("visibility", "visible");
 
-            if (_useCSSTransformToHideIframe) {
-                _$iframe.css("transform", "none");
+        if (_useCSSTransformToHideIframe) {
+            _$iframe.css("transform", "none");
 
-                var enable3D = false;
-                var settings = _viewSettings;
-                if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefined") {
-                    //defaults
-                    settings = new ViewerSettings({});
-                }
-                if (settings.enableGPUHardwareAccelerationCSS3D) {
-                    enable3D = true;
-                    _$iframe.css("transform", "translateZ(0)");
-                }
+            var enable3D = false;
+            var settings = _viewSettings;
+            if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefined") {
+                //defaults
+                settings = new ViewerSettings({});
             }
-            else {
-                _$iframe.css({left: "0px", top: "0px"});
+            if (settings.enableGPUHardwareAccelerationCSS3D) {
+                enable3D = true;
+                _$iframe.css("transform", "translateZ(0)");
             }
-        };
-
-        this.hideIFrame = function () {
-
-            _$iframe.css("visibility", "hidden");
-
-            // With some books, despite the iframe and its containing div wrapper being hidden,
-            // the iframe's contentWindow / contentDocument is still visible!
-            // Thus why we translate the iframe out of view instead.
-
-            if (_useCSSTransformToHideIframe) {
-                var enable3D = false;
-                var settings = _viewSettings;
-                if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefined") {
-                    //defaults
-                    settings = new ViewerSettings({});
-                }
-                if (settings.enableGPUHardwareAccelerationCSS3D) {
-                    enable3D = true;
-                }
-
-                var css = Helpers.CSSTransformString({left: "10000", top: "10000", enable3D: enable3D});
-                _$iframe.css(css);
-            }
-            else {
-                _$iframe.css({left: "10000px", top: "10000px"});
-            }
-        };
-
-        function getContentDocHeight() {
-
-            if (!_$iframe || !_$iframe.length) {
-                return 0;
-            }
-
-            if (Helpers.isIframeAlive(_$iframe[0])) {
-                var win = _$iframe[0].contentWindow;
-                var doc = _$iframe[0].contentDocument;
-
-                var height = Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height)); //body can be shorter!
-                return height;
-            }
-            else if (_$epubHtml) {
-                console.error("getContentDocHeight ??");
-
-                var jqueryHeight = _$epubHtml.height();
-                return jqueryHeight;
-            }
-
-            return 0;
         }
+        else {
+            _$iframe.css({left: "0px", top: "0px"});
+        }
+    };
 
-        // dir: 0 => new or same page, 1 => previous, 2 => next
-        this.updatePageSwitchDir = function (dir, hasChanged) {
-            _pageTransitionHandler.updatePageSwitchDir(dir, hasChanged);
-        };
+    this.hideIFrame = function () {
 
+        _$iframe.css("visibility", "hidden");
 
-        this.transformContentImmediate = function (scale, left, top) {
+        // With some books, despite the iframe and its containing div wrapper being hidden,
+        // the iframe's contentWindow / contentDocument is still visible!
+        // Thus why we translate the iframe out of view instead.
 
-            var elWidth = Math.ceil(_meta_size.width * scale);
-            var elHeight = Math.floor(_meta_size.height * scale);
-
-            _pageTransitionHandler.transformContentImmediate_BEGIN(_$el, scale, left, top);
-
-            _$el.css("left", left + "px");
-            _$el.css("top", top + "px");
-            _$el.css("width", elWidth + "px");
-            _$el.css("height", elHeight + "px");
-
-            if (!_$epubHtml) {
-//            debugger;
-                return;
-            }
-
+        if (_useCSSTransformToHideIframe) {
             var enable3D = false;
             var settings = _viewSettings;
             if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefined") {
@@ -534,105 +471,173 @@ define(["jquery", "underscore", "eventEmitter", "./cfi_navigation_logic", "../he
                 enable3D = true;
             }
 
-            if (reader.needsFixedLayoutScalerWorkAround()) {
-                var css1 = Helpers.CSSTransformString({scale: scale, enable3D: enable3D});
-                _$epubHtml.css(css1);
+            var css = Helpers.CSSTransformString({left: "10000", top: "10000", enable3D: enable3D});
+            _$iframe.css(css);
+        }
+        else {
+            _$iframe.css({left: "10000px", top: "10000px"});
+        }
+    };
 
-                var css2 = Helpers.CSSTransformString({scale: 1, enable3D: enable3D});
-                css2["width"] = _meta_size.width;
-                css2["height"] = _meta_size.height;
-                _$scaler.css(css2);
-            }
-            else {
-                var css = Helpers.CSSTransformString({scale: scale, enable3D: enable3D});
-                css["width"] = _meta_size.width;
-                css["height"] = _meta_size.height;
-                _$scaler.css(css);
-            }
+    function getContentDocHeight() {
 
-            // Chrome workaround: otherwise text is sometimes invisible (probably a rendering glitch due to the 3D transform graphics backend?)
-            //_$epubHtml.css("visibility", "hidden"); // "flashing" in two-page spread mode is annoying :(
-            _$epubHtml.css("opacity", "0.999");
+        if (!_$iframe || !_$iframe.length) {
+            return 0;
+        }
 
-            self.showIFrame();
+        if (Helpers.isIframeAlive(_$iframe[0])) {
+            var win = _$iframe[0].contentWindow;
+            var doc = _$iframe[0].contentDocument;
 
-            setTimeout(function () {
-                //_$epubHtml.css("visibility", "visible");
-                _$epubHtml.css("opacity", "1");
-            }, 0);
+            var height = Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height)); //body can be shorter!
+            return height;
+        }
+        else if (_$epubHtml) {
+            console.error("getContentDocHeight ??");
 
-            _pageTransitionHandler.transformContentImmediate_END(_$el, scale, left, top);
-        };
+            var jqueryHeight = _$epubHtml.height();
+            return jqueryHeight;
+        }
 
-        this.getCalculatedPageHeight = function () {
-            return _$el.height();
-        };
+        return 0;
+    }
 
-        this.transformContent = _.bind(_.debounce(this.transformContentImmediate, 50), self);
+    // dir: 0 => new or same page, 1 => previous, 2 => next
+    this.updatePageSwitchDir = function (dir, hasChanged) {
+        _pageTransitionHandler.updatePageSwitchDir(dir, hasChanged);
+    };
+
+
+    this.transformContentImmediate = function (scale, left, top) {
+
+        var elWidth = Math.ceil(_meta_size.width * scale);
+        var elHeight = Math.floor(_meta_size.height * scale);
+
+        _pageTransitionHandler.transformContentImmediate_BEGIN(_$el, scale, left, top);
+
+        _$el.css("left", left + "px");
+        _$el.css("top", top + "px");
+        _$el.css("width", elWidth + "px");
+        _$el.css("height", elHeight + "px");
+
+        if (!_$epubHtml) {
+//                  debugger;
+            return;
+        }
+
+        var enable3D = false;
+        var settings = _viewSettings;
+        if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefined") {
+            //defaults
+            settings = new ViewerSettings({});
+        }
+        if (settings.enableGPUHardwareAccelerationCSS3D) {
+            enable3D = true;
+        }
+
+        if (reader.needsFixedLayoutScalerWorkAround()) {
+            var css1 = Helpers.CSSTransformString({scale: scale, enable3D: enable3D});
+            _$epubHtml.css(css1);
+
+            var css2 = Helpers.CSSTransformString({scale: 1, enable3D: enable3D});
+            css2["width"] = _meta_size.width;
+            css2["height"] = _meta_size.height;
+            _$scaler.css(css2);
+        }
+        else {
+            var css = Helpers.CSSTransformString({scale: scale, enable3D: enable3D});
+            css["width"] = _meta_size.width;
+            css["height"] = _meta_size.height;
+            _$scaler.css(css);
+        }
+
+        // Chrome workaround: otherwise text is sometimes invisible (probably a rendering glitch due to the 3D transform graphics backend?)
+        //_$epubHtml.css("visibility", "hidden"); // "flashing" in two-page spread mode is annoying :(
+        _$epubHtml.css("opacity", "0.999");
+
+        self.showIFrame();
+
+        setTimeout(function () {
+            //_$epubHtml.css("visibility", "visible");
+            _$epubHtml.css("opacity", "1");
+        }, 0);
+
+        _pageTransitionHandler.transformContentImmediate_END(_$el, scale, left, top);
+    };
+
+    this.getCalculatedPageHeight = function () {
+        return _$el.height();
+    };
+
+    this.transformContent = _.bind(_.debounce(this.transformContentImmediate, 50), self);
+
+    function updateMetaSize() {
+
+        _meta_size.width = 0;
+        _meta_size.height = 0;
 
         var size = undefined;
-        
+
         var isFallbackDimension = false;
         var widthPercent = undefined;
         var heightPercent = undefined;
 
-            _meta_size.width = 0;
-            _meta_size.height = 0;
+        var contentDocument = _$iframe[0].contentDocument;
 
-            var size = undefined;
+        // first try to read viewport size
+        var content = $('meta[name=viewport]', contentDocument).attr("content");
 
-            var contentDocument = _$iframe[0].contentDocument;
+        // if not found try viewbox (used for SVG)
+        if (!content) {
+            content = $('meta[name=viewbox]', contentDocument).attr("content");
+        }
 
-        if(content) {
+        if (content) {
             size = parseMetaSize(content);
         }
-        
+
         if (!size) {
-            
+
             //var $svg = $(contentDocument).find('svg');
             // if($svg.length > 0) {
             if (contentDocument && contentDocument.documentElement && contentDocument.documentElement.nodeName && contentDocument.documentElement.nodeName.toLowerCase() == "svg") {
 
                 var width = undefined;
                 var height = undefined;
-                
+
                 var wAttr = contentDocument.documentElement.getAttribute("width");
-                var isWidthPercent = wAttr && wAttr.length >= 1 && wAttr[wAttr.length-1] == '%';
+                var isWidthPercent = wAttr && wAttr.length >= 1 && wAttr[wAttr.length - 1] == '%';
                 if (wAttr) {
                     try {
                         width = parseInt(wAttr, 10);
                     }
-                    catch (err)
-                    {}
+                    catch (err) {}
                 }
                 if (width && isWidthPercent) {
                     widthPercent = width;
                     width = undefined;
                 }
-                     
+
                 var hAttr = contentDocument.documentElement.getAttribute("height");
-                var isHeightPercent = hAttr && hAttr.length >= 1 && hAttr[hAttr.length-1] == '%';
+                var isHeightPercent = hAttr && hAttr.length >= 1 && hAttr[hAttr.length - 1] == '%';
                 if (hAttr) {
                     try {
                         height = parseInt(hAttr, 10);
                     }
-                    catch (err)
-                    {}
+                    catch (err) {}
                 }
                 if (height && isHeightPercent) {
                     heightPercent = height;
                     height = undefined;
                 }
 
-                if (width && height)
-                {
+                if (width && height) {
                     size = {
                         width: width,
                         height: height
                     }
                 }
-                else
-                {
+                else {
                     /// DISABLED (not a satisfactory fallback)
                     // content = $svg.attr('viewBox');
                     // if(content) {
@@ -644,77 +649,78 @@ define(["jquery", "underscore", "eventEmitter", "./cfi_navigation_logic", "../he
                     // }
                 }
             }
+        }
+
+        if (!size && _currentSpineItem) {
+            content = _currentSpineItem.getRenditionViewport();
 
             if (content) {
                 size = parseMetaSize(content);
+                if (size) {
+                    console.log("Viewport: using rendition:viewport dimensions");
+                }
             }
         }
-        
+
         if (!size) {
             // Image fallback (auto-generated HTML template when WebView / iFrame is fed with image media type)
             var $img = $(contentDocument).find('img');
-            if($img.length > 0) {
+            if ($img.length > 0) {
                 size = {
                     width: $img.width(),
                     height: $img.height()
+                };
+
+                var isImage = _currentSpineItem && _currentSpineItem.media_type && _currentSpineItem.media_type.length && _currentSpineItem.media_type.indexOf("image/") == 0;
+                if (!isImage) {
+                    console.warn("Viewport: using img dimensions!");
                 }
-
-            if (!size) {
-                // TODO: the picked SVG element may be the root...may be deep inside the markup!
-                var $svg = $(contentDocument).find('svg');
-                //var $svg = $(contentDocument.documentElement);
-                // contentDocument.documentElement.nodeName == "svg"
-                if ($svg.length > 0) {
-
+            }
+            else {
+                $img = $(contentDocument).find('image');
+                if ($img.length > 0) {
                     var width = undefined;
                     var height = undefined;
 
-                    var wAttr = $svg[0].getAttribute("width");
+                    var wAttr = $img[0].getAttribute("width");
                     if (wAttr) {
                         try {
                             width = parseInt(wAttr, 10);
                         }
-                        catch (err) {
-                        }
+                        catch (err) {}
                     }
-                    var hAttr = $svg[0].getAttribute("height");
+                    var hAttr = $img[0].getAttribute("height");
                     if (hAttr) {
                         try {
                             height = parseInt(hAttr, 10);
                         }
-                        catch (err) {
-                        }
+                        catch (err) {}
                     }
+
 
                     if (width && height) {
                         size = {
                             width: width,
                             height: height
-                        }
+                        };
 
                         isFallbackDimension = true;
 
-            if (!size && _currentSpineItem) {
-                content = _currentSpineItem.getRenditionViewport();
-
-                if (content) {
-                    size = parseMetaSize(content);
-                    if (size) {
-                        console.log("Viewport: using rendition:viewport dimensions");
+                        console.warn("Viewport: using image dimensions!");
                     }
                 }
             }
         }
-        
+
         if (!size) {
             // Not a great fallback, as it has the aspect ratio of the full window, but it is better than no display at all.
             width = _$viewport.width();
             height = _$viewport.height();
-            
+
             // hacky method to determine the actual available horizontal space (half the two-page spread is a reasonable approximation, this means that whatever the size of the other iframe / one_page_view, the aspect ratio of this one exactly corresponds to half the viewport rendering surface)
             var isTwoPageSyntheticSpread = $("iframe.iframe-fixed", _$viewport).length > 1;
             if (isTwoPageSyntheticSpread) width *= 0.5;
-            
+
             // the original SVG width/height might have been specified as a percentage of the containing viewport
             if (widthPercent) {
                 width *= (widthPercent / 100);
@@ -722,21 +728,21 @@ define(["jquery", "underscore", "eventEmitter", "./cfi_navigation_logic", "../he
             if (heightPercent) {
                 height *= (heightPercent / 100);
             }
-            
+
             size = {
                 width: width,
                 height: height
-            }
+            };
 
             isFallbackDimension = true;
-            
+
             console.warn("Viewport: using browser / e-reader viewport dimensions!");
         }
-        
+
         if (size) {
             _meta_size.width = size.width;
             _meta_size.height = size.height;
-            
+
             // Not strictly necessary, let's preserve the percentage values
             // if (isFallbackDimension && contentDocument && contentDocument.documentElement && contentDocument.documentElement.nodeName && contentDocument.documentElement.nodeName.toLowerCase() == "svg") {
             //     contentDocument.documentElement.setAttribute("width", size.width + "px");
@@ -745,228 +751,165 @@ define(["jquery", "underscore", "eventEmitter", "./cfi_navigation_logic", "../he
         }
     }
 
-                    var isImage = _currentSpineItem && _currentSpineItem.media_type && _currentSpineItem.media_type.length && _currentSpineItem.media_type.indexOf("image/") == 0;
-                    if (!isImage) {
-                        console.warn("Viewport: using img dimensions!");
+    //expected callback signature: function(success, $iframe, spineItem, isNewlyLoaded, context)
+    this.loadSpineItem = function (spineItem, callback, context) {
+
+        if (_currentSpineItem != spineItem) {
+
+            _currentSpineItem = spineItem;
+            var src = _spine.package.resolveRelativeUrl(spineItem.href);
+
+            //if (spineItem && spineItem.isFixedLayout())
+            if (true) // both fixed layout and reflowable documents need hiding due to flashing during layout/rendering
+            {
+                //hide iframe until content is scaled
+                self.hideIFrame();
+            }
+
+            self.emit(OnePageView.SPINE_ITEM_OPEN_START, _$iframe, _currentSpineItem);
+            _iframeLoader.loadIframe(_$iframe[0], src, function (success) {
+
+                if (success && callback) {
+                    var func = function () {
+                        callback(success, _$iframe, _currentSpineItem, true, context);
+                    };
+
+                    if (Helpers.isIframeAlive(_$iframe[0])) {
+                        onIFrameLoad(success); // applies styles
+
+                        func();
+                    }
+                    else {
+                        console.error("onIFrameLoad !! doc && win + TIMEOUT");
+                        console.debug(spineItem.href);
+
+                        onIFrameLoad(success);
+
+                        setTimeout(func, 500);
                     }
                 }
                 else {
-                    $img = $(contentDocument).find('image');
-                    if ($img.length > 0) {
-                        var width = undefined;
-                        var height = undefined;
-
-                        var wAttr = $img[0].getAttribute("width");
-                        if (wAttr) {
-                            try {
-                                width = parseInt(wAttr, 10);
-                            }
-                            catch (err) {
-                            }
-                        }
-                        var hAttr = $img[0].getAttribute("height");
-                        if (hAttr) {
-                            try {
-                                height = parseInt(hAttr, 10);
-                            }
-                            catch (err) {
-                            }
-                        }
-
-                        if (width && height) {
-                            size = {
-                                width: width,
-                                height: height
-                            }
-
-                            // if (contentDocument && contentDocument.documentElement && contentDocument.documentElement.nodeName && contentDocument.documentElement.nodeName.toLowerCase() == "svg") {
-                            //     contentDocument.documentElement.setAttribute("width", size.width);
-                            //     contentDocument.documentElement.setAttribute("height", size.height);
-                            // }
-
-                            console.warn("Viewport: using image dimensions!");
-                        }
-                    }
-                }
-            }
-
-            if (!size) {
-                // Not a great fallback, as it has the aspect ratio of the full window, but it is better than no display at all.
-                width = _$viewport.width();
-                height = _$viewport.height();
-                size = {
-                    width: width,
-                    height: height
+                    onIFrameLoad(success);
                 }
 
-                console.warn("Viewport: using browser / e-reader viewport dimensions!");
-            }
-
-            if (size) {
-                _meta_size.width = size.width;
-                _meta_size.height = size.height;
-            }
+            }, self, {spineItem: _currentSpineItem});
         }
-
-        //expected callback signature: function(success, $iframe, spineItem, isNewlyLoaded, context)
-        this.loadSpineItem = function (spineItem, callback, context) {
-
-            if (_currentSpineItem != spineItem) {
-
-                _currentSpineItem = spineItem;
-                var src = _spine.package.resolveRelativeUrl(spineItem.href);
-
-                //if (spineItem && spineItem.isFixedLayout())
-                if (true) // both fixed layout and reflowable documents need hiding due to flashing during layout/rendering
-                {
-                    //hide iframe until content is scaled
-                    self.hideIFrame();
-                }
-
-                self.emit(OnePageView.SPINE_ITEM_OPEN_START, _$iframe, _currentSpineItem);
-                _iframeLoader.loadIframe(_$iframe[0], src, function (success) {
-
-                    if (success && callback) {
-                        var func = function () {
-                            callback(success, _$iframe, _currentSpineItem, true, context);
-                        };
-
-                        if (Helpers.isIframeAlive(_$iframe[0])) {
-                            onIFrameLoad(success); // applies styles
-
-                            func();
-                        }
-                        else {
-                            console.error("onIFrameLoad !! doc && win + TIMEOUT");
-                            console.debug(spineItem.href);
-
-                            onIFrameLoad(success);
-
-                            setTimeout(func, 500);
-                        }
-                    }
-                    else {
-                        onIFrameLoad(success);
-                    }
-
-                }, self, {spineItem: _currentSpineItem});
+        else {
+            if (callback) {
+                callback(true, _$iframe, _currentSpineItem, false, context);
             }
-            else {
-                if (callback) {
-                    callback(true, _$iframe, _currentSpineItem, false, context);
-                }
-            }
-        };
-        //
-        // function parseViewBoxSize(viewBoxString) {
-        //
-        //     var parts = viewBoxString.split(' ');
-        //
-        //     if(parts.length < 4) {
-        //         console.warn(viewBoxString + " value is not valid viewBox size")
-        //         return undefined;
-        //     }
-        //
-        //     var width = parseInt(parts[2]);
-        //     var height = parseInt(parts[3]);
-        //
-        //     if(!isNaN(width) && !isNaN(height)) {
-        //         return { width: width, height: height} ;
-        //     }
-        //
-        //     return undefined;
-        // }
-
-        function parseMetaSize(content) {
-
-            var pairs = content.replace(/\s/g, '').split(",");
-
-            var dict = {};
-
-            for (var i = 0; i < pairs.length; i++) {
-                var nameVal = pairs[i].split("=");
-                if (nameVal.length == 2) {
-
-                    dict[nameVal[0]] = nameVal[1];
-                }
-            }
-
-            var width = Number.NaN;
-            var height = Number.NaN;
-
-            if (dict["width"]) {
-                width = parseInt(dict["width"]);
-            }
-
-            if (dict["height"]) {
-                height = parseInt(dict["height"]);
-            }
-
-            if (!isNaN(width) && !isNaN(height)) {
-                return {width: width, height: height};
-            }
-
-            return undefined;
-        }
-
-        this.getFirstVisibleElementCfi = function () {
-
-            var navigation = new CfiNavigationLogic(_$el, _$iframe);
-            return navigation.getFirstVisibleElementCfi(0);
-
-        };
-
-        this.getNavigator = function () {
-
-            return new CfiNavigationLogic(_$el, _$iframe);
-        };
-
-        this.getElementByCfi = function (spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
-
-            if (spineItem != _currentSpineItem) {
-                console.error("spine item is not loaded");
-                return undefined;
-            }
-
-            var navigation = new CfiNavigationLogic(_$el, _$iframe);
-            return navigation.getElementByCfi(cfi, classBlacklist, elementBlacklist, idBlacklist);
-        };
-
-        this.getElementById = function (spineItem, id) {
-
-            if (spineItem != _currentSpineItem) {
-                console.error("spine item is not loaded");
-                return undefined;
-            }
-
-            var navigation = new CfiNavigationLogic(_$el, _$iframe);
-            return navigation.getElementById(id);
-        };
-
-        this.getElement = function (spineItem, selector) {
-
-            if (spineItem != _currentSpineItem) {
-                console.error("spine item is not loaded");
-                return undefined;
-            }
-
-            var navigation = new CfiNavigationLogic(_$el, _$iframe);
-            return navigation.getElement(selector);
-        };
-
-        this.getFirstVisibleMediaOverlayElement = function () {
-            var navigation = new CfiNavigationLogic(_$el, _$iframe);
-            return navigation.getFirstVisibleMediaOverlayElement({top: 0, bottom: _$iframe.height()});
-        };
-
-        this.offset = function () {
-            if (_$iframe) {
-                return _$iframe.offset();
-            }
-            return undefined;
         }
     };
+    //
+    // function parseViewBoxSize(viewBoxString) {
+    //
+    //     var parts = viewBoxString.split(' ');
+    //
+    //     if(parts.length < 4) {
+    //         console.warn(viewBoxString + " value is not valid viewBox size")
+    //         return undefined;
+    //     }
+    //
+    //     var width = parseInt(parts[2]);
+    //     var height = parseInt(parts[3]);
+    //
+    //     if(!isNaN(width) && !isNaN(height)) {
+    //         return { width: width, height: height} ;
+    //     }
+    //
+    //     return undefined;
+    // }
 
-    OnePageView.SPINE_ITEM_OPEN_START = "SpineItemOpenStart";
-    return OnePageView;
+    function parseMetaSize(content) {
+
+        var pairs = content.replace(/\s/g, '').split(",");
+
+        var dict = {};
+
+        for (var i = 0; i < pairs.length; i++) {
+            var nameVal = pairs[i].split("=");
+            if (nameVal.length == 2) {
+
+                dict[nameVal[0]] = nameVal[1];
+            }
+        }
+
+        var width = Number.NaN;
+        var height = Number.NaN;
+
+        if (dict["width"]) {
+            width = parseInt(dict["width"]);
+        }
+
+        if (dict["height"]) {
+            height = parseInt(dict["height"]);
+        }
+
+        if (!isNaN(width) && !isNaN(height)) {
+            return {width: width, height: height};
+        }
+
+        return undefined;
+    }
+
+    this.getFirstVisibleElementCfi = function () {
+
+        var navigation = new CfiNavigationLogic(_$el, _$iframe);
+        return navigation.getFirstVisibleElementCfi(0);
+
+    };
+
+    this.getNavigator = function () {
+
+        return new CfiNavigationLogic(_$el, _$iframe);
+    };
+
+    this.getElementByCfi = function (spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
+
+        if (spineItem != _currentSpineItem) {
+            console.error("spine item is not loaded");
+            return undefined;
+        }
+
+        var navigation = new CfiNavigationLogic(_$el, _$iframe);
+        return navigation.getElementByCfi(cfi, classBlacklist, elementBlacklist, idBlacklist);
+    };
+
+    this.getElementById = function (spineItem, id) {
+
+        if (spineItem != _currentSpineItem) {
+            console.error("spine item is not loaded");
+            return undefined;
+        }
+
+        var navigation = new CfiNavigationLogic(_$el, _$iframe);
+        return navigation.getElementById(id);
+    };
+
+    this.getElement = function (spineItem, selector) {
+
+        if (spineItem != _currentSpineItem) {
+            console.error("spine item is not loaded");
+            return undefined;
+        }
+
+        var navigation = new CfiNavigationLogic(_$el, _$iframe);
+        return navigation.getElement(selector);
+    };
+
+    this.getFirstVisibleMediaOverlayElement = function () {
+        var navigation = new CfiNavigationLogic(_$el, _$iframe);
+        return navigation.getFirstVisibleMediaOverlayElement({top: 0, bottom: _$iframe.height()});
+    };
+
+    this.offset = function () {
+        if (_$iframe) {
+            return _$iframe.offset();
+        }
+        return undefined;
+    }
+};
+
+OnePageView.SPINE_ITEM_OPEN_START = "SpineItemOpenStart";
+return OnePageView;
 });

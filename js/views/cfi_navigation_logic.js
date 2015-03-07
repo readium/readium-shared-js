@@ -775,5 +775,5 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
     };
 
 };
-    return CfiNavigationLogic;
+return CfiNavigationLogic;
 });
