@@ -116,9 +116,9 @@ define(["jquery", "underscore", "eventEmitter", "epub-renderer/globals", "readiu
         this.extendReader = function (extendWith) {
             if (reader.plugins) {
                 var obj = {};
-                obj[plugin.name] = extendWith;
+                obj[plugin.name] = _.extend(extendWith, new EventEmitter());
 
-                _(reader.plugins).extend(_.extend(obj, new EventEmitter()));
+                _(reader.plugins).extend(obj);
             }
         };
     }
