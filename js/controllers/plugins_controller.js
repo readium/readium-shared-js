@@ -27,31 +27,20 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define(["jquery", "underscore", "eventEmitter", "epub-renderer/globals", "readium-plugins/_loader"], function ($, _, EventEmitter, Globals, PluginsLoader) {
-    //
-    // A lightweight plugins controller used to easily add plugins from the host
-    // app, eg.
-    //
-    //   Globals.plugins.load(FootnotePlugin, true);
-    //
-    // The controller will create a new instance of the plugin, forwarding any given
-    // arguments. Then, on several useful common Readium notifications, the
-    // controller will call predefined callbacks if implemented in the plug-in.
-    //
-    // Supported callbacks are:
-    //      onReaderInitialized()
-    //      onDocumentLoadStart($iframe, spineItem)
-    //      onDocumentLoadedBeforeInjection($iframe, $document, spineItem);
-    //      onDocumentLoaded($iframe, $document, spineItem);
-    //
+define(["jquery", "underscore", "eventEmitter", "epub-renderer/globals"], function ($, _, EventEmitter, Globals) {
+    /**
+     * A  plugins controller used to easily add plugins from the host app, eg.
+     * ReadiumSDK.Plugins.register("footnotes", function(api){ ... });
+     *
+     * @constructor
+     */
     var PluginsController = function () {
         var self = this;
 
-        var _plugins = [];
+        var _pluginConstructors = {};
 
         function _initializePlugins(reader) {
-            var plugin,
-                apiFactory = new PluginApiFactory(reader);
+            var apiFactory = new PluginApiFactory(reader);
 
             if (!reader.plugins) {
                 //attach an object to the reader that will be
@@ -60,12 +49,9 @@ define(["jquery", "underscore", "eventEmitter", "epub-renderer/globals", "readiu
             } else {
                 throw new Error("Already initialized on reader!");
             }
-
-            for (var pluginName in _plugins) {
-                if ((plugin = _plugins[pluginName]) instanceof Plugin) {
-                    plugin.init(apiFactory);
-                }
-            }
+            _.each(_pluginConstructors, function (plugin) {
+                plugin().init(apiFactory);
+            });
         }
 
         function _getExceptionMessage(ex) {
@@ -75,24 +61,30 @@ define(["jquery", "underscore", "eventEmitter", "epub-renderer/globals", "readiu
         // Creates a new instance of the given plugin constructor.
         this.register = function (name, optDependencies, initFunc) {
 
-            var dependencies;
-            if (typeof optDependencies === 'function') {
-                initFunc = optDependencies;
-            } else {
-                dependencies = optDependencies;
+            if (_pluginConstructors[name]) {
+                throw new Error("Duplicate registration for plugin with name: " + name);
             }
 
-            _plugins[name] = new Plugin(name, dependencies, function (plugin, api) {
-                if (!plugin.initialized) {
-                    plugin.initialized = true;
-                    try {
-                        initFunc.call({}, api);
-                        plugin.supported = true;
-                    } catch (ex) {
-                        plugin.fail(_getExceptionMessage(ex));
-                    }
+            _pluginConstructors[name] = function () {
+                var dependencies;
+                if (typeof optDependencies === 'function') {
+                    initFunc = optDependencies;
+                } else {
+                    dependencies = optDependencies;
                 }
-            });
+
+                return new Plugin(name, dependencies, function (plugin, api) {
+                    if (!plugin.initialized) {
+                        plugin.initialized = true;
+                        try {
+                            initFunc.call({}, api);
+                            plugin.supported = true;
+                        } catch (ex) {
+                            plugin.fail(_getExceptionMessage(ex));
+                        }
+                    }
+                });
+            };
         };
 
         Globals.on(Globals.Events.READER_INITIALIZED, function (reader) {
@@ -203,5 +195,7 @@ define(["jquery", "underscore", "eventEmitter", "epub-renderer/globals", "readiu
         }
     };
 
-    return PluginsController;
+    var instance = new PluginsController();
+    Globals.Plugins = instance;
+    return instance;
 });
