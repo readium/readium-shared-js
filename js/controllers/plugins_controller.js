@@ -27,7 +27,7 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define(["jquery", "underscore", "epub-renderer/globals", "readium-plugins/_loader"], function ($, _, Globals, PluginsLoader) {
+define(["jquery", "underscore", "eventEmitter", "epub-renderer/globals", "readium-plugins/_loader"], function ($, _, EventEmitter, Globals, PluginsLoader) {
     //
     // A lightweight plugins controller used to easily add plugins from the host
     // app, eg.
@@ -73,7 +73,7 @@ define(["jquery", "underscore", "epub-renderer/globals", "readium-plugins/_loade
         }
 
         // Creates a new instance of the given plugin constructor.
-        this.loadPlugin = function (name, optDependencies, initFunc) {
+        this.register = function (name, optDependencies, initFunc) {
 
             var dependencies;
             if (typeof optDependencies === 'function') {
@@ -118,7 +118,7 @@ define(["jquery", "underscore", "epub-renderer/globals", "readium-plugins/_loade
                 var obj = {};
                 obj[plugin.name] = extendWith;
 
-                _(reader.plugins).extend(obj);
+                _(reader.plugins).extend(_.extend(obj, new EventEmitter()));
             }
         };
     }
