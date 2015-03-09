@@ -7,4 +7,7 @@ define(['epub-renderer/controllers/plugins_controller'], function (PluginsContro
 
 require(['readium-plugins/annotations/main']);
 
-require(['readium-plugins/example']);
+require(['readium-plugins/example'], function (config) {
+    config.borderColor = "blue";
+    config.backgroundColor = "cyan";
+});
