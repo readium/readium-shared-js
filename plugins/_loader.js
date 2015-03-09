@@ -4,5 +4,8 @@ define(['epub-renderer/controllers/plugins_controller'],
         return new PluginsController();
     });
 
-/* Import/configure your plugins here. */
-require(['readium-plugins/annotations']);
+/* Import/configure your plugins here on. */
+
+require(['readium-plugins/annotations/main']);
+
+require(['readium-plugins/example']);

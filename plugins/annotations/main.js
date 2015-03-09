@@ -1,11 +1,11 @@
-define(['readium-plugins', './annotations/annotations_manager'], function (Plugins, AnnotationsManager) {
+define(['readium-plugins', './annotations_manager'], function (Plugins, AnnotationsManager) {
+    var config = {};
 
-    Plugins.loadPlugin("annotations", function (api) {
+    Plugins.register("annotations", function (api) {
         var _annotationsManager, _annotationsApi, _initialized = false, _initializedLate = false;
 
         _annotationsApi = function () {
             var self = this;
-            _.extend(self, Backbone.Events);
 
             function isInitialized() {
                 if (!_initialized) {
@@ -116,4 +116,5 @@ define(['readium-plugins', './annotations/annotations_manager'], function (Plugi
         api.extendReader(new _annotationsApi());
     });
 
+    return config;
 });
