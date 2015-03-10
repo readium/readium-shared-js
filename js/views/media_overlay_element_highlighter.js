@@ -344,7 +344,7 @@ var MediaOverlayElementHighlighter = function(reader) {
             {
                 //var id = $hel.data("mediaOverlayData").par.getSmil().spineItemId;
                 var id = par.getSmil().spineItemId;
-                _reader.addHighlight(id, par.cfi.partialRangeCfi, HIGHLIGHT_ID,
+                _reader.plugins.annotations.addHighlight(id, par.cfi.partialRangeCfi, HIGHLIGHT_ID,
                 "highlight", //"underline"
                 undefined // styles
                             );
@@ -432,7 +432,7 @@ var MediaOverlayElementHighlighter = function(reader) {
             {
                 try
                 {
-                    _reader.removeHighlight(HIGHLIGHT_ID);
+                    _reader.plugins.annotations.removeHighlight(HIGHLIGHT_ID);
         
                     var toRemove = undefined;
                     while ((toRemove = doc.getElementById("start-" + HIGHLIGHT_ID)) !== null)
