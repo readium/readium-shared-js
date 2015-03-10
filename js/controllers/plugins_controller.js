@@ -1,6 +1,6 @@
 //
-//  Created by Mickaël Menu.
-//  Modified by Juan Corona.
+//  Created by Juan Corona
+//  Based on original proposal by Mickaël Menu
 //  Portions adapted from Rangy's Module system: Copyright (c) 2014 Tim Down
 //
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
