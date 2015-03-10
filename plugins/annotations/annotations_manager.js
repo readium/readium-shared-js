@@ -129,8 +129,18 @@ var AnnotationsManager = function (proxyObj, options) {
     _.extend(this, new EventEmitter());
 
     // we want to bubble up all of the events that annotations module may trigger up.
-    this.on("all", function(eventName) {
+    // this.on("all", function() {
+    // });
+    //TODO: EventEmitter3 does not support "all" or "*" (catch-all event sink)
+    //https://github.com/primus/eventemitter3/blob/master/index.js#L61
+    //...so instead we patch trigger() and emit() (which are synonymous, see Bootstrapper.js EventEmitter.prototype.trigger = EventEmitter.prototype.emit;)
+        
+    var originalEmit = self['emit'];
+    
+    var triggerEmitPatch = function() {
         var args = Array.prototype.slice.call(arguments);
+console.debug(args);
+
         // mangle annotationClicked event. What really needs to happen is, the annotation_module needs to return a 
         // bare Cfi, and this class should append the idref.
         var annotationClickedEvent = 'annotationClicked';
@@ -145,11 +155,19 @@ var AnnotationsManager = function (proxyObj, options) {
                     var idref = spines[spineIndex].idref;
                     var partialCfi = getPartialCfi(fullFakeCfi);
                     args = [annotationClickedEvent, type, idref, partialCfi, annotationId, jQueryEvent];
+                    
+console.debug("Corrected CFI:");
+console.debug(args);
                 }
             }
         }
-        self['trigger'].apply(proxy, args);
-    });
+        
+        originalEmit.apply(this, args);
+        originalEmit.apply(proxy, args);
+    };
+
+    this.trigger = triggerEmitPatch;
+    this.emit = triggerEmitPatch;
 
     this.attachAnnotations = function($iframe, spineItem) {
         var epubDocument = $iframe[0].contentDocument;
