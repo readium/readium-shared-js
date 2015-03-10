@@ -26,8 +26,8 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define(["../helpers", "./audio_player", "./media_overlay_element_highlighter", "../globals", "../models/smil_iterator"],
-    function(Helpers, AudioPlayer, MediaOverlayElementHighlighter, Globals, SmilIterator) {
+define(["../helpers", "./audio_player", "./media_overlay_element_highlighter", "../globals", "../models/smil_iterator", "rangy"],
+    function(Helpers, AudioPlayer, MediaOverlayElementHighlighter, Globals, SmilIterator, rangy) {
 /**
  *
  * @param reader

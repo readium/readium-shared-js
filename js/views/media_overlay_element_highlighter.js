@@ -26,7 +26,7 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define(['jquery'], function($) {
+define(['jquery', 'rangy'], function($, rangy) {
 /**
  *
  * @param reader
