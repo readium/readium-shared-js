@@ -51,9 +51,10 @@ var MediaOverlayDataInjector = function (mediaOverlay, mediaOverlayPlayer) {
             else {
                 $body.data("mediaOverlayClick", {ping: "pong"});
 
-                var clickEvent = 'ontouchstart' in document.documentElement ? 'touchstart' : 'click';
-                $body.bind(clickEvent, function (event)
+                var touchClickMOEventHandler = function (event)
                 {
+                    //console.debug("MO TOUCH-DOWN: "+event.type);
+                    
                     var elem = $(this)[0]; // body
                     elem = event.target; // body descendant
 
@@ -262,7 +263,18 @@ console.debug("MO readaloud attr: " + readaloud);
 
                     mediaOverlayPlayer.touchInit();
                     return true;
-                });
+                };
+
+                var touchClickMOEventHandler_ = _.debounce(touchClickMOEventHandler, 200);
+                
+                if ('ontouchstart' in document.documentElement)
+                {
+                  $body[0].addEventListener("touchstart", touchClickMOEventHandler_, false);
+                }
+                $body[0].addEventListener("mousedown", touchClickMOEventHandler_, false);
+
+                //var clickEvent = 'ontouchstart' in document.documentElement ? 'touchstart' : 'click';
+                //$body.bind(clickEvent, touchClickMOEventHandler);
             }
         }
 
