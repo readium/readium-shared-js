@@ -1,0 +1,12 @@
+{
+    "name": "Readium SDK DOM Access Layer API",
+    "description": "Public API for JavaScript layer of Readium SDK project",
+    "version": "0.16",
+    "themedir": "readium_theme",
+    "url": "https://github.com/readium",
+        "options": {
+        "linkNatives": "true",
+        "outdir": "../api",
+        "paths": ".."
+    }
+}

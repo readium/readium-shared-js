@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Build file for the Shared JS API Doc -->
+<project name="org.readium.shared-js.api-docs" default="generate.docs" basedir=".">
+
+	<property name="config.file" value="yuidoc.json" /> 
+	<property name="out.dir" value="./js-api-docs" /> 
+	
+	<!-- this generates the API docs -->
+	<target name ="generate.docs" depends="clean" description="Invoke xcodebuild to do a full build" >
+         <exec executable="yuidoc" spawn="false">
+  		 </exec>
+    </target>
+	
+	<!-- This simply cleans out the output directory -->
+	<target name="clean" description="Clean the output folder">
+         <delete dir="${out.dir}"/>
+	</target>
+
+</project>
