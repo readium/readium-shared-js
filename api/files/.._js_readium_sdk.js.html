@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>../js/readium_sdk.js - Readium SDK DOM Access Layer API</title>
+    <link rel="stylesheet" href="http://yui.yahooapis.com/3.9.1/build/cssgrids/cssgrids-min.css">
+    <link rel="stylesheet" href="../assets/vendor/prettify/prettify-min.css">
+    <link rel="stylesheet" href="../assets/css/main.css" id="site_styles">
+    <link rel="shortcut icon" type="image/png" href="../assets/favicon.png">
+    <script src="http://yui.yahooapis.com/combo?3.9.1/build/yui/yui-min.js"></script>
+</head>
+<body class="yui3-skin-sam">
+
+<div id="doc">
+    <div id="page-top-wrapper" >
+        </br> </br>
+    </div>
+    <div class="yui3-g header">
+        <div class="yui3-u-3-4" >
+              
+                 <h1 id="logo" style="vertical-align:center"><img src="../assets/css/logo.png" title="Readium SDK DOM Access Layer API">Readium SDK DOM Access Layer API</h1>
+              
+        </div>
+        <div class="yui3-u-1-4 version" >
+            <div id="version">
+            <em>API Docs for: 0.16</em>
+        </div>
+        </div>
+    </div>
+    <div id="bd" class="yui3-g">
+        <div class="yui3-u-1-4">
+            <div id="docs-sidebar" class="sidebar apidocs">
+                <div id="api-list">
+    <h2 class="off-left">APIs</h2>
+    <div id="api-tabview" class="tabview">
+        <ul class="tabs">
+            <li><a href="#api-classes">Classes</a></li>
+            <li><a href="#api-modules">Modules</a></li>
+        </ul>
+
+        <div id="api-tabview-filter">
+            <input type="search" id="api-filter" placeholder="Type to filter APIs">
+        </div>
+
+        <div id="api-tabview-panel">
+            <ul id="api-classes" class="apis classes">
+            
+                <li><a href="../classes/ReadiumSDK.Models.BookmarkData.html">ReadiumSDK.Models.BookmarkData</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.CurrentPagesInfo.html">ReadiumSDK.Models.CurrentPagesInfo</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.Package.html">ReadiumSDK.Models.Package</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.PackageData.html">ReadiumSDK.Models.PackageData</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.Spine.html">ReadiumSDK.Models.Spine</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.SpineItem.html">ReadiumSDK.Models.SpineItem</a></li>
+            
+            </ul>
+
+            <ul id="api-modules" class="apis modules">
+            
+            </ul>
+        </div>
+    </div>
+</div>
+
+            </div>
+        </div>
+        <div class="yui3-u-3-4">
+                <div id="api-options">
+        Show:
+        <label for="api-show-inherited">
+            <input type="checkbox" id="api-show-inherited" checked>
+            Inherited
+        </label>
+
+        <label for="api-show-protected">
+            <input type="checkbox" id="api-show-protected">
+            Protected
+        </label>
+
+        <label for="api-show-private">
+            <input type="checkbox" id="api-show-private">
+            Private
+        </label>
+        <label for="api-show-deprecated">
+            <input type="checkbox" id="api-show-deprecated">
+            Deprecated
+        </label>
+
+    </div>
+
+
+            <div class="apidocs">
+                <div id="docs-main">
+                    <div class="content">
+                        <h1 class="file-heading">File: ../js/readium_sdk.js</h1>
+
+<div class="file">
+    <pre class="code prettyprint linenums">
+//  LauncherOSX
+//
+//  Created by Boris Schneiderman.
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  
+//  Redistribution and use in source and binary forms, with or without modification, 
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this 
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice, 
+//  this list of conditions and the following disclaimer in the documentation and/or 
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be 
+//  used to endorse or promote products derived from this software without specific 
+//  prior written permission.
+//  
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND 
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+/**
+ * Top level ReadiumSDK namespace
+ * @namespace
+ */
+ReadiumSDK = {
+
+    /**
+     * Current version of the JS SDK
+     * @static
+     * @return {string} version
+     */
+    version: function () {
+        return &quot;0.8.0&quot;;
+    },
+    /**
+     * @namespace
+     */
+    Models: {
+        /**
+         * @type {object}
+         */
+        Smil: {}
+    },
+    /**
+     * @namespace
+     */
+    Views: {
+        /**
+         * Landscape Orientation
+         */
+        ORIENTATION_LANDSCAPE: &quot;orientation_landscape&quot;,
+        /**
+         * Portrait Orientation
+         */
+        ORIENTATION_PORTRAIT: &quot;orientation_portrait&quot;
+    },
+    /**
+     * @namespace
+     */
+    Collections: {},
+    /**
+     * @namespace
+     */
+    Routers: {},
+    /**
+     * @namespace
+     */
+    Helpers: {},
+    /**
+     * @namespace
+     */
+    Overrides: {},
+    /**
+     * @namespace
+     */
+    Events: {
+        /**
+         * @event
+         */
+        READER_INITIALIZED: &quot;ReaderInitialized&quot;,
+        /**
+         * This gets triggered on every page turnover. It includes spine information and such.
+         * @event
+         */
+        PAGINATION_CHANGED: &quot;PaginationChanged&quot;,
+        /**
+         * @event
+         */
+        SETTINGS_APPLIED: &quot;SettingsApplied&quot;,
+        /**
+         * @event
+         */
+        FXL_VIEW_RESIZED: &quot;FXLViewResized&quot;,
+        /**
+         * @event
+         */
+        READER_VIEW_CREATED: &quot;ReaderViewCreated&quot;,
+        /**
+         * @event
+         */
+        READER_VIEW_DESTROYED: &quot;ReaderViewDestroyed&quot;,
+        /**
+         * @event
+         */
+        CONTENT_DOCUMENT_LOAD_START: &quot;ContentDocumentLoadStart&quot;,
+        /**
+         * @event
+         */
+        CONTENT_DOCUMENT_LOADED: &quot;ContentDocumentLoaded&quot;,
+        /**
+         * @event
+         */
+        MEDIA_OVERLAY_STATUS_CHANGED: &quot;MediaOverlayStatusChanged&quot;,
+        /**
+         * @event
+         */
+        MEDIA_OVERLAY_TTS_SPEAK: &quot;MediaOverlayTTSSpeak&quot;,
+        /**
+         * @event
+         */
+        MEDIA_OVERLAY_TTS_STOP: &quot;MediaOverlayTTSStop&quot;
+    },
+    /**
+     * Internal Events
+     *
+     * @desc Should not be triggered outside of {@link ReadiumSDK.Views.ReaderView}.
+     * @namespace
+     */
+    InternalEvents: {
+        /**
+         * @event
+         */
+        CURRENT_VIEW_PAGINATION_CHANGED: &quot;CurrentViewPaginationChanged&quot;,
+    }
+
+};
+
+
+//This is default implementation of reading system object that will be available for the publication&#x27;s javascript to analyze at runtime
+//To extend/modify/replace this object reading system should subscribe ReadiumSDK.Events.READER_INITIALIZED and apply changes in reaction to this event
+navigator.epubReadingSystem = {
+    name: &quot;&quot;,
+    version: &quot;0.0.0&quot;,
+    layoutStyle: &quot;paginated&quot;,
+
+    hasFeature: function (feature, version) {
+
+        // for now all features must be version 1.0 so fail fast if the user has asked for something else
+        if (version &amp;&amp; version !== &quot;1.0&quot;) {
+            return false;
+        }
+
+        if (feature === &quot;dom-manipulation&quot;) {
+            // Scripts may make structural changes to the document???s DOM (applies to spine-level scripting only).
+            return true;
+        }
+        if (feature === &quot;layout-changes&quot;) {
+            // Scripts may modify attributes and CSS styles that affect content layout (applies to spine-level scripting only).
+            return true;
+        }
+        if (feature === &quot;touch-events&quot;) {
+            // The device supports touch events and the Reading System passes touch events to the content.
+            return false;
+        }
+        if (feature === &quot;mouse-events&quot;) {
+            // The device supports mouse events and the Reading System passes mouse events to the content.
+            return true;
+        }
+        if (feature === &quot;keyboard-events&quot;) {
+            // The device supports keyboard events and the Reading System passes keyboard events to the content.
+            return true;
+        }
+
+        if (feature === &quot;spine-scripting&quot;) {
+            //Spine-level scripting is supported.
+            return true;
+        }
+
+        return false;
+    }
+};
+
+
+_.extend(ReadiumSDK, Backbone.Events);
+
+
+
+    </pre>
+</div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="../assets/vendor/prettify/prettify-min.js"></script>
+<script>prettyPrint();</script>
+<script src="../assets/js/yui-prettify.js"></script>
+<script src="../assets/../api.js"></script>
+<script src="../assets/js/api-filter.js"></script>
+<script src="../assets/js/api-list.js"></script>
+<script src="../assets/js/api-search.js"></script>
+<script src="../assets/js/apidocs.js"></script>
+</body>
+</html>

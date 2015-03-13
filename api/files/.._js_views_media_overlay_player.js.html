@@ -1,0 +1,2249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>../js/views/media_overlay_player.js - Readium SDK DOM Access Layer API</title>
+    <link rel="stylesheet" href="http://yui.yahooapis.com/3.9.1/build/cssgrids/cssgrids-min.css">
+    <link rel="stylesheet" href="../assets/vendor/prettify/prettify-min.css">
+    <link rel="stylesheet" href="../assets/css/main.css" id="site_styles">
+    <link rel="shortcut icon" type="image/png" href="../assets/favicon.png">
+    <script src="http://yui.yahooapis.com/combo?3.9.1/build/yui/yui-min.js"></script>
+</head>
+<body class="yui3-skin-sam">
+
+<div id="doc">
+    <div id="page-top-wrapper" >
+        </br> </br>
+    </div>
+    <div class="yui3-g header">
+        <div class="yui3-u-3-4" >
+              
+                 <h1 id="logo" style="vertical-align:center"><img src="../assets/css/logo.png" title="Readium SDK DOM Access Layer API">Readium SDK DOM Access Layer API</h1>
+              
+        </div>
+        <div class="yui3-u-1-4 version" >
+            <div id="version">
+            <em>API Docs for: 0.16</em>
+        </div>
+        </div>
+    </div>
+    <div id="bd" class="yui3-g">
+        <div class="yui3-u-1-4">
+            <div id="docs-sidebar" class="sidebar apidocs">
+                <div id="api-list">
+    <h2 class="off-left">APIs</h2>
+    <div id="api-tabview" class="tabview">
+        <ul class="tabs">
+            <li><a href="#api-classes">Classes</a></li>
+            <li><a href="#api-modules">Modules</a></li>
+        </ul>
+
+        <div id="api-tabview-filter">
+            <input type="search" id="api-filter" placeholder="Type to filter APIs">
+        </div>
+
+        <div id="api-tabview-panel">
+            <ul id="api-classes" class="apis classes">
+            
+                <li><a href="../classes/ReadiumSDK.Models.BookmarkData.html">ReadiumSDK.Models.BookmarkData</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.CurrentPagesInfo.html">ReadiumSDK.Models.CurrentPagesInfo</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.Package.html">ReadiumSDK.Models.Package</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.PackageData.html">ReadiumSDK.Models.PackageData</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.Spine.html">ReadiumSDK.Models.Spine</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.SpineItem.html">ReadiumSDK.Models.SpineItem</a></li>
+            
+            </ul>
+
+            <ul id="api-modules" class="apis modules">
+            
+            </ul>
+        </div>
+    </div>
+</div>
+
+            </div>
+        </div>
+        <div class="yui3-u-3-4">
+                <div id="api-options">
+        Show:
+        <label for="api-show-inherited">
+            <input type="checkbox" id="api-show-inherited" checked>
+            Inherited
+        </label>
+
+        <label for="api-show-protected">
+            <input type="checkbox" id="api-show-protected">
+            Protected
+        </label>
+
+        <label for="api-show-private">
+            <input type="checkbox" id="api-show-private">
+            Private
+        </label>
+        <label for="api-show-deprecated">
+            <input type="checkbox" id="api-show-deprecated">
+            Deprecated
+        </label>
+
+    </div>
+
+
+            <div class="apidocs">
+                <div id="docs-main">
+                    <div class="content">
+                        <h1 class="file-heading">File: ../js/views/media_overlay_player.js</h1>
+
+<div class="file">
+    <pre class="code prettyprint linenums">
+//  LauncherOSX
+//
+//  Created by Boris Schneiderman.
+// Modified by Daniel Weck
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  
+//  Redistribution and use in source and binary forms, with or without modification, 
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this 
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice, 
+//  this list of conditions and the following disclaimer in the documentation and/or 
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be 
+//  used to endorse or promote products derived from this software without specific 
+//  prior written permission.
+//  
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND 
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
+
+/**
+ *
+ * @param reader
+ * @param onStatusChanged
+ * @constructor
+ */
+ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
+
+
+    var _smilIterator = undefined;
+
+    var _audioPlayer = new ReadiumSDK.Views.AudioPlayer(onStatusChanged, onAudioPositionChanged, onAudioEnded, onPlay, onPause);
+
+    var _ttsIsPlaying = false;
+    var _currentTTS = undefined;
+    var _enableHTMLSpeech = true &amp;&amp; typeof window.speechSynthesis !== &quot;undefined&quot; &amp;&amp; speechSynthesis != null; // set to false to force &quot;native&quot; platform TTS engine, rather than HTML Speech API
+    
+    var _SpeechSynthesisUtterance = undefined;
+    //var _skipTTSEndEvent = false;
+    var TOKENIZE_TTS = false;
+
+    var _embeddedIsPlaying = false;
+    var _currentEmbedded = undefined;
+
+
+    this.isPlaying = function()
+    {
+        return _audioPlayer.isPlaying() || _ttsIsPlaying || _embeddedIsPlaying || _blankPagePlayer;
+    }
+
+    //var _currentPagination = undefined;
+    var _package = reader.package();
+    var _settings = reader.viewerSettings();
+    var self = this;
+    var _elementHighlighter = new ReadiumSDK.Views.MediaOverlayElementHighlighter(reader);
+
+    reader.on(ReadiumSDK.Events.READER_VIEW_DESTROYED, function(){
+
+        self.reset();
+
+    });
+
+
+    this.applyStyles = function()
+    {
+        _elementHighlighter.reDo();
+    };
+
+//
+// should use this.onSettingsApplied() instead!
+//    this.setRate = function(rate) {
+//        _audioPlayer.setRate(rate);
+//    };
+//    this.setVolume = function(volume) {
+//        _audioPlayer.setVolume(volume);
+//    };
+
+
+    this.onSettingsApplied = function() {
+//console.debug(_settings);
+        _audioPlayer.setRate(_settings.mediaOverlaysRate);
+        _audioPlayer.setVolume(_settings.mediaOverlaysVolume / 100.0);
+    };
+    self.onSettingsApplied();
+    //ReadiumSDK.
+    reader.on(ReadiumSDK.Events.SETTINGS_APPLIED, this.onSettingsApplied, this);
+
+    /*
+    var lastElement = undefined;
+    var lastElementColor = &quot;&quot;;
+    */
+
+    var _wasPlayingAtDocLoadStart = false;
+    this.onDocLoadStart = function() {
+        // 1) ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START
+        // (maybe 2-page fixed-layout or reflowable spread == 2 documents == 2x events)
+        // MOPLayer.onDocLoad()
+        
+        // 2) ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED
+        // (maybe 2-page fixed-layout or reflowable spread == 2 documents == 2x events)
+        //_mediaOverlayDataInjector.attachMediaOverlayData($iframe, spineItem, _viewerSettings);
+        
+        // 3) ReadiumSDK.Events.PAGINATION_CHANGED (layout finished, notified before rest of app, just once)
+        // MOPLayer.onPageChanged()
+
+        var wasPlaying = self.isPlaying();
+        if (wasPlaying)
+        {
+            _wasPlayingAtDocLoadStart = true;
+            self.pause();
+        }
+    };
+    
+    var _lastPaginationData = undefined;
+    
+    this.onPageChanged = function(paginationData) {
+        
+        _lastPaginationData = paginationData;
+        
+        var wasPausedBecauseNoAutoNextSmil = _wasPausedBecauseNoAutoNextSmil;
+        _wasPausedBecauseNoAutoNextSmil = false;
+        
+        var wasPlayingAtDocLoadStart = _wasPlayingAtDocLoadStart;
+        _wasPlayingAtDocLoadStart = false;
+
+        if(!paginationData) {
+            self.reset();
+            return;
+        }
+
+//        if (paginationData.paginationInfo)
+//        {
+//            _currentPagination = paginationData.paginationInfo;
+//        }
+
+        /*
+        if (lastElement)
+        {
+            $(lastElement).css(&quot;background-color&quot;, lastElementColor);
+            lastElement = undefined;
+        }
+        */
+
+        var element = undefined;
+        var isCfiTextRange = false;
+        
+        var fakeOpfRoot = &quot;/99!&quot;;
+        var epubCfiPrefix = &quot;epubcfi&quot;;
+        
+        if (paginationData.elementId || paginationData.initiator == self)
+        {
+            var spineItems = reader.getLoadedSpineItems();
+
+            var rtl = reader.spine().isRightToLeft();
+
+            for(var i = (rtl ? (spineItems.length - 1) : 0); rtl &amp;&amp; i &gt;=0 || !rtl &amp;&amp; i &lt; spineItems.length; i += (rtl ? -1: 1))
+            {
+                var spineItem = spineItems[i];
+                if (paginationData.spineItem &amp;&amp; paginationData.spineItem != spineItem)
+                {
+                    continue;
+                }
+                
+                if (paginationData.elementId &amp;&amp; paginationData.elementId.indexOf(epubCfiPrefix) === 0)
+                {
+                    _elementHighlighter.reset(); // ensure clean DOM (no CFI span markers)
+                    
+                    var partial = paginationData.elementId.substr(epubCfiPrefix.length + 1, paginationData.elementId.length - epubCfiPrefix.length - 2);
+                    
+                    if (partial.indexOf(fakeOpfRoot) === 0)
+                    {
+                        partial = partial.substr(fakeOpfRoot.length, partial.length - fakeOpfRoot.length);
+                    }
+//console.log(partial);
+                    var parts = partial.split(&quot;,&quot;);
+                    if (parts &amp;&amp; parts.length === 3)
+                    {
+                        try
+                        {
+                            var cfi = parts[0] + parts[1];
+                            var $element = reader.getElementByCfi(spineItem, cfi,
+                [&quot;cfi-marker&quot;, &quot;mo-cfi-highlight&quot;],
+                [],
+                [&quot;MathJax_Message&quot;]);
+
+                            element = ($element &amp;&amp; $element.length &gt; 0) ? $element[0] : undefined;
+                            if (element)
+                            {
+                                if (element.nodeType === Node.TEXT_NODE)
+                                {
+                                    element = element.parentNode;
+                                }
+                                break;
+                            }
+                        }
+                        catch (error)
+                        {
+                            console.error(error);
+                        }
+                    }
+                    else
+                    {
+                        try
+                        {
+                            //var cfi = &quot;epubcfi(&quot; + partial + &quot;)&quot;;
+                            //var $element = EPUBcfi.getTargetElementWithPartialCFI(cfi, DOC);
+                            var $element = reader.getElementByCfi(spineItem, partial,
+                [&quot;cfi-marker&quot;, &quot;mo-cfi-highlight&quot;],
+                [],
+                [&quot;MathJax_Message&quot;]);
+                                
+                            element = ($element &amp;&amp; $element.length &gt; 0) ? $element[0] : undefined;
+                            if (element)
+                            {
+                                if (element.nodeType === Node.TEXT_NODE)
+                                {
+                                    element = element.parentNode;
+                                }
+                                break;
+                            }
+                        }
+                        catch (error)
+                        {
+                            console.error(error);
+                        }
+                    }
+                }
+
+                if (!element)
+                {
+                    if (paginationData.initiator == self &amp;&amp; !paginationData.elementId)
+                    {
+                        var $element = reader.getElement(spineItem, &quot;body&quot;);
+                        element = ($element &amp;&amp; $element.length &gt; 0) ? $element[0] : undefined;
+                    }
+                    else
+                    {
+                        var $element = reader.getElementById(spineItem, paginationData.elementId);
+                        element = ($element &amp;&amp; $element.length &gt; 0) ? $element[0] : undefined;
+                        //(&quot;#&quot; + ReadiumSDK.Helpers.escapeJQuerySelector(paginationData.elementId))
+                    }
+                    
+                    if (element)
+                    {
+                        /*
+                        console.error(&quot;GREEN: &quot; + paginationData.elementId);
+                        lastElement = element;
+                        lastElementColor = $(element).css(&quot;background-color&quot;);
+                        $(element).css(&quot;background-color&quot;, &quot;green&quot;);
+                         */
+                        break;
+                    }
+                }
+            }
+
+            if (!element)
+            {
+                console.error(&quot;paginationData.elementId BUT !element: &quot; + paginationData.elementId);
+            }
+        }
+
+        var wasPlaying = self.isPlaying() || wasPlayingAtDocLoadStart;
+
+        if(!_smilIterator || !_smilIterator.currentPar) {
+            if(paginationData.initiator !== self) {
+                clipBeginOffset = 0.0;
+                self.reset();
+
+                if (paginationData.elementId &amp;&amp; element)
+                {
+                    if (wasPlaying || wasPausedBecauseNoAutoNextSmil)
+                    {
+                        paginationData.elementIdResolved = element;
+                        self.toggleMediaOverlayRefresh(paginationData);
+                    }
+                }
+                else if (wasPlaying || wasPausedBecauseNoAutoNextSmil)
+                {
+                    self.toggleMediaOverlay();
+                }
+                return;
+            }
+
+            //paginationData.initiator === self
+//
+//            if (!paginationData.elementId)
+//            {
+//                console.error(&quot;!paginationData.elementId&quot;);
+//                clipBeginOffset = 0.0;
+//                return;
+//            }
+
+            if(!element)
+            {
+                console.error(&quot;!element: &quot; + paginationData.elementId);
+                clipBeginOffset = 0.0;
+                return;
+            }
+
+            var moData = $(element).data(&quot;mediaOverlayData&quot;);
+            if(!moData) {
+                console.error(&quot;!moData: &quot; + paginationData.elementId);
+                clipBeginOffset = 0.0;
+                return;
+            }
+
+            var parToPlay = moData.par ? moData.par : moData.pars[0];
+
+            if (moData.pars)
+            {
+                for (var iPar = 0; iPar &lt; moData.pars.length; iPar++)
+                {
+                    var p = moData.pars[iPar];
+                    
+                    if (paginationData.elementId === p.cfi.smilTextSrcCfi)
+                    {
+                        parToPlay = p;
+                        break;
+                    }
+                }
+            }
+            
+            playPar(parToPlay);
+            return;
+        }
+
+        var noReverseData = !_smilIterator.currentPar.element &amp;&amp; !_smilIterator.currentPar.cfi;
+        if(noReverseData) {
+            console.error(&quot;!! _smilIterator.currentPar.element ??&quot;);
+        }
+
+//console.debug(&quot;+++&gt; paginationData.elementId: &quot; + paginationData.elementId + &quot; /// &quot; + _smilIterator.currentPar.text.srcFile + &quot; # &quot; + _smilIterator.currentPar.text.srcFragmentId); //PageOpenRequest.elementId
+
+
+        if(paginationData.initiator == self)
+        {
+            var notSameTargetID = paginationData.elementId &amp;&amp; paginationData.elementId !== _smilIterator.currentPar.text.srcFragmentId;
+
+            if(notSameTargetID) {
+                console.error(&quot;!! paginationData.elementId !== _smilIterator.currentPar.text.srcFragmentId&quot;);
+            }
+
+            if(notSameTargetID || noReverseData) {
+                clipBeginOffset = 0.0;
+                return;
+            }
+
+            if(wasPlaying)
+            {
+                highlightCurrentElement();
+            }
+            else
+            {
+                playCurrentPar();
+            }
+        }
+        else
+        {
+            if(!wasPlaying &amp;&amp; !wasPausedBecauseNoAutoNextSmil)
+            {
+                self.reset();
+                return;
+            }
+
+            if(!paginationData.elementId)
+            {
+                //self.reset();
+            }
+
+            if(paginationData.elementId &amp;&amp; !element)
+            {
+                //self.reset();
+                return;
+            }
+
+            if(paginationData.elementId)
+            {
+                paginationData.elementIdResolved = element;
+            }
+            
+            self.toggleMediaOverlayRefresh(paginationData);
+        }
+    };
+
+    function playPar(par) {
+
+        var parSmil = par.getSmil();
+        if(!_smilIterator || _smilIterator.smil != parSmil)
+        {
+            _smilIterator = new ReadiumSDK.Models.SmilIterator(parSmil);
+        }
+        else {
+            _smilIterator.reset();
+        }
+
+        _smilIterator.goToPar(par);
+
+        if(!_smilIterator.currentPar) {
+            console.error(&quot;playPar !_smilIterator.currentPar&quot;);
+            return;
+        }
+
+        playCurrentPar();
+    }
+
+    var clipBeginOffset = 0.0;
+
+    var _blankPagePlayer = undefined;
+
+    function initBlankPagePlayer()
+    {
+        self.resetBlankPage();
+
+        _blankPagePlayer = setTimeout(function() {
+
+            if (!_blankPagePlayer)
+            {
+                return;
+            }
+
+            self.resetBlankPage();
+
+            if (!_smilIterator || !_smilIterator.currentPar)
+            {
+                self.reset();
+                return;
+            }
+
+            audioCurrentTime = 0.0;
+//console.log(&quot;BLANK END.&quot;);
+            //nextSmil(true);
+            onAudioPositionChanged(_smilIterator.currentPar.audio.clipEnd + 0.1, 2);
+
+        }, 2000);
+
+        onStatusChanged({isPlaying: true});
+    }
+
+    function playCurrentPar() {
+        _wasPlayingScrolling = false;
+        
+        if (!_smilIterator || !_smilIterator.currentPar)
+        {
+            console.error(&quot;playCurrentPar !_smilIterator || !_smilIterator.currentPar ???&quot;);
+            return;
+        }
+
+        if (!_smilIterator.smil.id)
+        {
+            _audioPlayer.reset();
+
+            self.resetTTS();
+            self.resetEmbedded();
+
+            setTimeout(function()
+            {
+                initBlankPagePlayer();
+            }, 100);
+
+            return;
+        }
+        else if (!_smilIterator.currentPar.audio.src)
+        {
+            clipBeginOffset = 0.0;
+
+//            if (_currentTTS)
+//            {
+//                _skipTTSEnded = true;
+//            }
+
+            _audioPlayer.reset();
+
+            var element = _smilIterator.currentPar.element;
+            if (element)
+            {
+                audioCurrentTime = 0.0;
+
+                var name = element.nodeName ? element.nodeName.toLowerCase() : undefined;
+
+                if (name === &quot;audio&quot; || name === &quot;video&quot;)
+                {
+                    self.resetTTS();
+                    self.resetBlankPage();
+
+                    if (_currentEmbedded)
+                    {
+                        self.resetEmbedded();
+                    }
+
+                    _currentEmbedded = element;
+
+                    _currentEmbedded.pause();
+
+                    // DONE at reader_view.attachMO()
+                    //$(_currentEmbedded).attr(&quot;preload&quot;, &quot;auto&quot;);
+
+                    _currentEmbedded.currentTime = 0;
+
+                    _currentEmbedded.play();
+
+                    $(_currentEmbedded).on(&quot;ended&quot;, self.onEmbeddedEnd);
+
+                    _embeddedIsPlaying = true;
+                    
+                    // gives the audio player some dispatcher time to raise the onPause event
+                    setTimeout(function(){
+                        onStatusChanged({isPlaying: true});
+                    }, 80);
+
+//                    $(element).on(&quot;seeked&quot;, function()
+//                    {
+//                        $(element).off(&quot;seeked&quot;, onSeeked);
+//                    });
+                }
+                else
+                {
+                    self.resetEmbedded();
+                    self.resetBlankPage();
+
+                    _currentTTS = element.textContent; //.innerText (CSS display sensitive + script + style tags)
+                    if (!_currentTTS || _currentTTS == &quot;&quot;)
+                    {
+                        _currentTTS = undefined;
+                    }
+                    else
+                    {
+                        speakStart(_currentTTS);
+                    }
+                }
+            }
+            
+            var cfi = _smilIterator.currentPar.cfi;
+            if (cfi)
+            {
+                audioCurrentTime = 0.0;
+                self.resetEmbedded();
+                self.resetBlankPage();
+
+                _elementHighlighter.reset(); // ensure clean DOM (no CFI span markers)
+                
+                var doc = cfi.cfiTextParent.ownerDocument;
+
+                var startCFI = &quot;epubcfi(&quot; + cfi.partialStartCfi + &quot;)&quot;;
+                var infoStart = EPUBcfi.getTextTerminusInfoWithPartialCFI(startCFI, doc,
+                [&quot;cfi-marker&quot;, &quot;mo-cfi-highlight&quot;],
+                [],
+                [&quot;MathJax_Message&quot;]);
+//console.log(infoStart);
+
+                var endCFI = &quot;epubcfi(&quot; + cfi.partialEndCfi + &quot;)&quot;;
+                var infoEnd = EPUBcfi.getTextTerminusInfoWithPartialCFI(endCFI, doc,
+                [&quot;cfi-marker&quot;, &quot;mo-cfi-highlight&quot;],
+                [],
+                [&quot;MathJax_Message&quot;]);
+//console.log(infoEnd);
+
+                if (rangy)
+                {
+                    //infoStart.textNode[0].parentNode.ownerDocument
+                    var range = rangy.createRange(doc); //createNativeRange
+                    range.setStartAndEnd(
+                        infoStart.textNode[0], infoStart.textOffset,
+                        infoEnd.textNode[0], infoEnd.textOffset
+                    );
+                    _currentTTS = range.toString(); //.text()
+                }
+                else
+                {
+                    _currentTTS = undefined;
+                }
+
+                if (!_currentTTS || _currentTTS == &quot;&quot;)
+                {
+                    _currentTTS = undefined;
+                }
+                else
+                {
+                    speakStart(_currentTTS);
+                }
+            }
+        }
+        else
+        {
+            self.resetTTS();
+            self.resetEmbedded();
+            self.resetBlankPage();
+
+            var dur = _smilIterator.currentPar.audio.clipEnd - _smilIterator.currentPar.audio.clipBegin;
+            if (dur &lt;= 0 || clipBeginOffset &gt; dur)
+            {
+                console.error(&quot;### MO XXX PAR OFFSET: &quot; + clipBeginOffset + &quot; / &quot; + dur);
+                clipBeginOffset = 0.0;
+            }
+            else
+            {
+//console.debug(&quot;### MO PAR OFFSET: &quot; + clipBeginOffset);
+            }
+
+            var audioContentRef = ReadiumSDK.Helpers.ResolveContentRef(_smilIterator.currentPar.audio.src, _smilIterator.smil.href);
+
+            var audioSource = _package.resolveRelativeUrlMO(audioContentRef);
+
+            var startTime = _smilIterator.currentPar.audio.clipBegin + clipBeginOffset;
+
+//console.debug(&quot;PLAY START TIME: &quot; + startTime + &quot;(&quot;+_smilIterator.currentPar.audio.clipBegin+&quot; + &quot;+clipBeginOffset+&quot;)&quot;);
+
+            _audioPlayer.playFile(_smilIterator.currentPar.audio.src, audioSource, startTime); //_smilIterator.currentPar.element ? _smilIterator.currentPar.element : _smilIterator.currentPar.cfi.cfiTextParent
+        }
+
+        clipBeginOffset = 0.0;
+
+        highlightCurrentElement();
+    }
+
+    function nextSmil(goNext)
+    {
+        self.pause();
+
+//console.debug(&quot;current Smil: &quot; + _smilIterator.smil.href + &quot; /// &quot; + _smilIterator.smil.id);
+
+        var nextSmil = goNext ? _package.media_overlay.getNextSmil(_smilIterator.smil) : _package.media_overlay.getPreviousSmil(_smilIterator.smil);
+        if(nextSmil) {
+
+//console.debug(&quot;nextSmil: &quot; + nextSmil.href + &quot; /// &quot; + nextSmil.id);
+
+            _smilIterator = new ReadiumSDK.Models.SmilIterator(nextSmil);
+            if(_smilIterator.currentPar) {
+                if (!goNext)
+                {
+                    while (!_smilIterator.isLast())
+                    {
+                        _smilIterator.next();
+                    }
+                }
+
+//console.debug(&quot;openContentUrl (nextSmil): &quot; + _smilIterator.currentPar.text.src + &quot; -- &quot; + _smilIterator.smil.href);
+
+                reader.openContentUrl(_smilIterator.currentPar.text.src, _smilIterator.smil.href, self);
+            }
+        }
+        else
+        {
+            console.log(&quot;No more SMIL&quot;);
+            self.reset();
+        }
+    }
+
+
+    var _skipAudioEnded = false;
+//    var _skipTTSEnded = false;
+
+    var audioCurrentTime = 0.0;
+
+    var DIRECTION_MARK = -999;
+
+//    var _letPlay = false;
+
+//from
+//1 = audio player
+//2 = blank page
+//3 = video/audio embbeded
+//4 = TTS
+//5 = audio end
+//6 = user previous/next/escape
+    function onAudioPositionChanged(position, from, skipping) { //noLetPlay
+
+        audioCurrentTime = position;
+
+//        if (_letPlay)
+//        {
+//            return;
+//        }
+
+        _skipAudioEnded = false;
+//        _skipTTSEnded = false;
+
+        if (!_smilIterator || !_smilIterator.currentPar)
+        {
+            return;
+        }
+
+        var parFrom = _smilIterator.currentPar;
+        
+        var audio = _smilIterator.currentPar.audio;
+
+        //var TOLERANCE = 0.05;
+        if(
+            //position &gt;= (audio.clipBegin - TOLERANCE) &amp;&amp;
+        position &gt; DIRECTION_MARK &amp;&amp;
+            position &lt;= audio.clipEnd) {
+
+//console.debug(&quot;onAudioPositionChanged: &quot; + position);
+            return;
+        }
+
+        _skipAudioEnded = true;
+
+//console.debug(&quot;PLAY NEXT: &quot; + &quot;(&quot; + audio.clipBegin + &quot; -- &quot; + audio.clipEnd + &quot;) [&quot; + from + &quot;] &quot; +  position);
+//console.debug(_smilIterator.currentPar.text.srcFragmentId);
+
+        var isPlaying = _audioPlayer.isPlaying();
+        if (isPlaying &amp;&amp; from === 6)
+        {
+            console.debug(&quot;from userNav _audioPlayer.isPlaying() ???&quot;);
+        }
+
+        var goNext = position &gt; audio.clipEnd;
+
+        var doNotNextSmil = !_autoNextSmil &amp;&amp; from !== 6 &amp;&amp; goNext;
+
+        var spineItemIdRef = (_smilIterator &amp;&amp; _smilIterator.smil &amp;&amp; _smilIterator.smil.spineItemId) ? _smilIterator.smil.spineItemId : ((_lastPaginationData &amp;&amp; _lastPaginationData.spineItem &amp;&amp; _lastPaginationData.spineItem.idref) ? _lastPaginationData.spineItem.idref : undefined);
+        if (doNotNextSmil &amp;&amp; spineItemIdRef &amp;&amp; _lastPaginationData &amp;&amp; _lastPaginationData.paginationInfo &amp;&amp; _lastPaginationData.paginationInfo.openPages &amp;&amp; _lastPaginationData.paginationInfo.openPages.length &gt; 1)
+        {
+            //var iPage = _lastPaginationData.paginationInfo.isRightToLeft ? _lastPaginationData.paginationInfo.openPages.length - 1 : 0;
+            var iPage = 0;
+            
+            var openPage = _lastPaginationData.paginationInfo.openPages[iPage];
+            if (spineItemIdRef === openPage.idref)
+            {
+                doNotNextSmil = false;
+            }
+        }
+        
+        if (goNext)
+        {
+            _smilIterator.next();
+        }
+        else //position &lt;= DIRECTION_MARK
+        {
+            _smilIterator.previous();
+        }
+
+        if(!_smilIterator.currentPar)
+        {
+            //
+            //        if (!noLetPlay)
+            //        {
+            //            _letPlay = true;
+            //            setTimeout(function()
+            //            {
+            //                _letPlay = false;
+            //                nextSmil(goNext);
+            //            }, 200);
+            //        }
+            //        else
+            //        {
+            //            nextSmil(goNext);
+            //        }
+
+//console.debug(&quot;NEXT SMIL ON AUDIO POS&quot;);
+        
+            if (doNotNextSmil)
+            {
+                _wasPausedBecauseNoAutoNextSmil = true;
+                self.reset();
+                //self.pause();
+            }
+            else
+            {
+                nextSmil(goNext);
+            }
+            return;
+        }
+
+//console.debug(&quot;ITER: &quot; + _smilIterator.currentPar.text.srcFragmentId);
+
+        if(!_smilIterator.currentPar.audio) {
+            self.pause();
+            return;
+        }
+        
+        if(_settings.mediaOverlaysSkipSkippables)
+        {
+            var skip = false;
+            var parent = _smilIterator.currentPar;
+            while (parent)
+            {
+                if (parent.isSkippable &amp;&amp; parent.isSkippable(_settings.mediaOverlaysSkippables))
+                {
+                    skip = true;
+                    break;
+                }
+                parent = parent.parent;
+            }
+
+            if (skip)
+            {
+                console.log(&quot;MO SKIP: &quot; + parent.epubtype);
+
+                self.pause();
+
+                var pos = goNext ? _smilIterator.currentPar.audio.clipEnd + 0.1 : DIRECTION_MARK - 1;
+
+                onAudioPositionChanged(pos, from, true); //noLetPlay
+                return;
+            }
+        }
+
+        // _settings.mediaOverlaysSynchronizationGranularity
+        if (!isPlaying &amp;&amp; (_smilIterator.currentPar.element || _smilIterator.currentPar.cfi &amp;&amp; _smilIterator.currentPar.cfi.cfiTextParent))
+        {
+            var scopeTo = _elementHighlighter.adjustParToSeqSyncGranularity(_smilIterator.currentPar);
+            if (scopeTo &amp;&amp; scopeTo !== _smilIterator.currentPar)
+            {
+                var scopeFrom = _elementHighlighter.adjustParToSeqSyncGranularity(parFrom);
+                if (scopeFrom &amp;&amp; (scopeFrom === scopeTo || !goNext))
+                {
+                    if (scopeFrom === scopeTo)
+                    {
+                        do
+                        {
+                            if (goNext) _smilIterator.next();
+                            else  _smilIterator.previous();
+                        } while (_smilIterator.currentPar &amp;&amp; _smilIterator.currentPar.hasAncestor(scopeFrom));
+
+                        if (!_smilIterator.currentPar)
+                        {
+    //console.debug(&quot;adjustParToSeqSyncGranularity nextSmil(goNext)&quot;);
+
+                            if (doNotNextSmil)
+                            {
+                                _wasPausedBecauseNoAutoNextSmil = true;
+                                self.reset();
+                                //self.pause();
+                            }
+                            else
+                            {
+                                nextSmil(goNext);
+                            }
+                            
+                            return;
+                        }
+                    }
+                    
+//console.debug(&quot;ADJUSTED: &quot; + _smilIterator.currentPar.text.srcFragmentId);
+                    if (!goNext)
+                    {
+                        var landed = _elementHighlighter.adjustParToSeqSyncGranularity(_smilIterator.currentPar);
+                        if (landed &amp;&amp; landed !== _smilIterator.currentPar)
+                        {
+                            var backup = _smilIterator.currentPar;
+                    
+                            var innerPar = undefined;
+                            do
+                            {
+                                innerPar = _smilIterator.currentPar;
+                                _smilIterator.previous();
+                            }
+                            while (_smilIterator.currentPar &amp;&amp; _smilIterator.currentPar.hasAncestor(landed));
+                        
+                            if (_smilIterator.currentPar)
+                            {
+                                _smilIterator.next();
+                                
+                                if (!_smilIterator.currentPar.hasAncestor(landed))
+                                {
+                                    console.error(&quot;adjustParToSeqSyncGranularity !_smilIterator.currentPar.hasAncestor(landed) ???&quot;);
+                                }
+                                //assert 
+                            }
+                            else
+                            {
+//console.debug(&quot;adjustParToSeqSyncGranularity reached begin&quot;);
+
+                                _smilIterator.reset();
+                                
+                                if (_smilIterator.currentPar !== innerPar)
+                                {
+                                    console.error(&quot;adjustParToSeqSyncGranularity _smilIterator.currentPar !=== innerPar???&quot;);
+                                }
+                            }
+
+                            if (!_smilIterator.currentPar)
+                            {
+                                console.error(&quot;adjustParToSeqSyncGranularity !_smilIterator.currentPar ?????&quot;);
+                                _smilIterator.goToPar(backup);
+                            }
+                            
+//console.debug(&quot;ADJUSTED PREV: &quot; + _smilIterator.currentPar.text.srcFragmentId);
+                        }
+                    }
+                }
+            }
+        }
+        
+        if(_audioPlayer.isPlaying()
+            &amp;&amp; _smilIterator.currentPar.audio.src
+            &amp;&amp; _smilIterator.currentPar.audio.src == _audioPlayer.currentSmilSrc()
+                &amp;&amp; position &gt;= _smilIterator.currentPar.audio.clipBegin
+                &amp;&amp; position &lt;= _smilIterator.currentPar.audio.clipEnd)
+        {
+//console.debug(&quot;ONLY highlightCurrentElement&quot;);
+            highlightCurrentElement();
+            return;
+        }
+
+        //position &lt;= DIRECTION_MARK goes here (goto previous):
+
+//            if (!noLetPlay &amp;&amp; position &gt; DIRECTION_MARK
+//                &amp;&amp; _audioPlayer.isPlaying() &amp;&amp; _audioPlayer.srcRef() != _smilIterator.currentPar.audio.src)
+//            {
+//                _letPlay = true;
+//                setTimeout(function()
+//                {
+//                    _letPlay = false;
+//                    playCurrentPar();
+//                }, 100);
+//
+//                playCurrentPar();
+//
+//                return;
+//            }
+
+        playCurrentPar();
+    }
+
+    this.touchInit = function()
+    {
+        var todo = _audioPlayer.touchInit();
+        if (todo)
+        {
+            if (_enableHTMLSpeech)
+            {
+                speakStart(&quot;o&quot;, 0);
+            }
+        }
+    };
+
+    var tokeniseTTS = function(element)
+    {
+        var BLOCK_DELIMITERS = [&#x27;p&#x27;, &#x27;div&#x27;, &#x27;pagenum&#x27;, &#x27;td&#x27;, &#x27;table&#x27;, &#x27;li&#x27;, &#x27;ul&#x27;, &#x27;ol&#x27;];
+        var BOUNDARY_PUNCTUATION = [&#x27;,&#x27;, &#x27;;&#x27;, &#x27;.&#x27;, &#x27;-&#x27;, &#x27;??&#x27;, &#x27;??&#x27;, &#x27;?&#x27;, &#x27;!&#x27;];
+        var IGNORABLE_PUNCTUATION = [&#x27;&quot;&#x27;, &#x27;\&#x27;&#x27;, &#x27;??&#x27;, &#x27;??&#x27;, &#x27;??&#x27;, &#x27;??&#x27;];
+
+        var flush = function(t, r)
+        {
+            if (t.word.length &lt;= 0)
+            {
+                return;
+            }
+
+            var pos = t.text.length;
+            r.spanMap[pos] = t.counter;
+            t.text += t.word;
+            t.markup += t.html.substring(0, t.wordStart) +
+                &#x27;&lt;span class=&quot;tts_off&quot; id=&quot;tts_&#x27; + t.counter + &#x27;&quot;&gt;&#x27; +
+                t.html.substring(t.wordStart, t.wordEnd) +
+                &#x27;&lt;/span&gt;&#x27; + t.html.substring(t.wordEnd, t.html.length);
+            t.word = &quot;&quot;;
+            t.html = &quot;&quot;;
+            t.wordStart = -1;
+            t.wordEnd = -1;
+            t.counter++;
+        };
+
+        var r =
+        {
+            element : element,
+            innerHTML_tts : &quot;&quot;,
+            spanMap : {},
+            text : &quot;&quot;,
+            lastCharIndex : undefined
+        };
+        r.element.innerHTML_original = element.innerHTML;
+
+        var t =
+        {
+            inTag : false,
+            counter : 0,
+            wordStart : -1,
+            wordEnd : -1,
+            text : &#x27;&#x27;,
+            markup : &#x27;&#x27;,
+            word : &#x27;&#x27;,
+            html : &#x27;&#x27;
+        };
+
+        var limit = r.element.innerHTML_original.length;
+        var i = 0;
+        while (i &lt;= limit)
+        {
+            if (t.inTag)
+            {
+                t.html += r.element.innerHTML_original[i];
+                if (r.element.innerHTML_original[i] == &quot;&gt;&quot;) {
+                    t.inTag = false;
+                    // if it&#x27;s a block element delimiter, flush
+                    var blockCheck = t.html.match(/&lt;\/(.*?)&gt;$/);
+                    if (blockCheck &amp;&amp; BLOCK_DELIMITERS.indexOf(blockCheck[1]) &gt; -1)
+                    {
+                        flush(t, r);
+                        t.text += &#x27; &#x27;;
+                    }
+                }
+            }
+            else
+            {
+                if (i == limit || r.element.innerHTML_original[i].match(/\s/))
+                {
+                    flush(t, r);
+
+                    // append the captured whitespace
+                    if (i &lt; limit)
+                    {
+                        t.text += r.element.innerHTML_original[i];
+                        t.markup += r.element.innerHTML_original[i];
+                    }
+                }
+                else if (BOUNDARY_PUNCTUATION.indexOf(r.element.innerHTML_original[i]) &gt; -1)
+                {
+                    flush(t, r);
+
+                    t.wordStart = t.html.length;
+                    t.wordEnd = t.html.length + 1;
+                    t.word += r.element.innerHTML_original[i];
+                    t.html += r.element.innerHTML_original[i];
+
+                    flush(t, r);
+                }
+                else if (r.element.innerHTML_original[i] == &quot;&lt;&quot;)
+                {
+                    t.inTag = true;
+                    t.html += r.element.innerHTML_original[i];
+                }
+                else
+                {
+                    if (t.word.length == 0)
+                    {
+                        t.wordStart = t.html.length;
+                    }
+                    t.wordEnd = t.html.length + 1;
+                    t.word += r.element.innerHTML_original[i];
+                    t.html += r.element.innerHTML_original[i];
+                }
+            }
+            i++;
+        }
+//
+//console.debug(t.text);
+//        console.debug(&quot;----&quot;);
+//console.debug(t.markup);
+
+        r.text = t.text;
+        r.innerHTML_tts = t.markup;
+        r.element.innerHTML = r.innerHTML_tts;
+
+        return r;
+    };
+
+    var $ttsStyle = undefined;
+    function ensureTTSStyle($element)
+    {
+        if ($ttsStyle &amp;&amp; $ttsStyle[0].ownerDocument === $element[0].ownerDocument)
+        {
+            return;
+        }
+
+        var style = &quot;.tts_on{background-color:red;color:white;} .tts_off{}&quot;;
+
+        $head = $(&quot;head&quot;, $element[0].ownerDocument.documentElement);
+
+        $ttsStyle = $(&quot;&lt;style type=&#x27;text/css&#x27;&gt; &lt;/style&gt;&quot;).appendTo($head);
+
+        $ttsStyle.append(style);
+    }
+
+    var speakStart = function(txt, volume)
+    {
+        var tokenData = undefined;
+        var curPar = (_smilIterator &amp;&amp; _smilIterator.currentPar) ? _smilIterator.currentPar : undefined;
+        var element = curPar ? curPar.element : undefined;
+        var cfi = curPar ? curPar.cfi : undefined;
+
+        if (!volume || volume &gt; 0)
+        {
+            // gives the audio player some dispatcher time to raise the onPause event
+            setTimeout(function(){
+                onStatusChanged({isPlaying: true});
+            }, 80);
+            
+            _ttsIsPlaying = true;
+
+            if (TOKENIZE_TTS &amp;&amp; element)
+            {
+                var $el = $(element);
+                ensureTTSStyle($el);
+
+
+                if (element.innerHTML_original)
+                {
+                    element.innerHTML = element.innerHTML_original;
+                    element.innerHTML_original = undefined;
+                }
+                tokenData = tokeniseTTS(element);
+            }
+        }
+
+        if (!_enableHTMLSpeech)
+        {
+            reader.trigger(ReadiumSDK.Events.MEDIA_OVERLAY_TTS_SPEAK, {tts: txt}); // resume if txt == undefined
+            return;
+        }
+
+        if (!txt &amp;&amp; window.speechSynthesis.paused)
+        {
+//console.debug(&quot;TTS resume&quot;);
+            window.speechSynthesis.resume();
+
+            return;
+        }
+
+        var text = txt || _currentTTS;
+
+        if (text)
+        {
+            if (_SpeechSynthesisUtterance)
+            {
+//console.debug(&quot;_SpeechSynthesisUtterance nullify&quot;);
+
+                if (TOKENIZE_TTS)
+                {
+                    if (_SpeechSynthesisUtterance.onend)
+                    {
+                        _SpeechSynthesisUtterance.onend({forceSkipEnd: true, target: _SpeechSynthesisUtterance});
+                    }
+                    
+                    _SpeechSynthesisUtterance.tokenData = undefined;
+                    
+                    _SpeechSynthesisUtterance.onboundary = undefined;
+    //                 _SpeechSynthesisUtterance.onboundary = function(event)
+    //                 {
+    // console.debug(&quot;OLD TTS boundary&quot;);
+    //                 
+    //                         event.target.tokenData = undefined;
+    //  
+    //                 };
+                }
+
+                _SpeechSynthesisUtterance.onend = undefined;
+//                 _SpeechSynthesisUtterance.onend = function(event)
+//                 {
+// console.debug(&quot;OLD TTS ended&quot;);
+//                     if (TOKENIZE_TTS)
+//                     {
+//                         event.target.tokenData = undefined;
+//                     }
+//                 };
+                
+                _SpeechSynthesisUtterance.onerror = undefined;
+//                 _SpeechSynthesisUtterance.onerror = function(event)
+//                 {
+// console.debug(&quot;OLD TTS error&quot;);
+// //console.debug(event);
+//                     if (TOKENIZE_TTS)
+//                     {
+//                         event.target.tokenData = undefined;
+//                     }
+//                 };
+
+                _SpeechSynthesisUtterance = undefined;
+            }
+//
+//            if (window.speechSynthesis.pending ||
+//                window.speechSynthesis.speaking)
+//            {
+//                _skipTTSEndEvent = true;
+//            }
+            
+console.debug(&quot;paused: &quot;+window.speechSynthesis.paused);
+console.debug(&quot;speaking: &quot;+window.speechSynthesis.speaking);
+console.debug(&quot;pending: &quot;+window.speechSynthesis.pending);
+
+//             if (!window.speechSynthesis.paused)
+//             {
+// console.debug(&quot;TTS pause before speak&quot;);
+//                 window.speechSynthesis.pause();
+//             }
+            
+            function cancelTTS(first)
+            {
+                if (first || window.speechSynthesis.pending)
+                {
+    console.debug(&quot;TTS cancel before speak&quot;);
+                    window.speechSynthesis.cancel();
+
+                    setTimeout(function()
+                    {
+                        cancelTTS(false);
+                    }, 5);
+                }
+                else
+                {
+                    updateTTS();
+                }
+            }
+            cancelTTS(true);
+            
+            function updateTTS()
+            {
+            // setTimeout(function()
+            // {
+
+                _SpeechSynthesisUtterance = new SpeechSynthesisUtterance();
+
+                if (TOKENIZE_TTS &amp;&amp; tokenData)
+                {
+                    _SpeechSynthesisUtterance.tokenData = tokenData;
+                
+                    _SpeechSynthesisUtterance.onboundary = function(event)
+                    //_SpeechSynthesisUtterance.addEventListener(&quot;boundary&quot;, function(event)
+                    {
+                        if (!_SpeechSynthesisUtterance)
+                        {
+                            return;
+                        }
+
+        console.debug(&quot;TTS boundary: &quot; + event.name + &quot; / &quot; + event.charIndex);
+        //console.debug(event);
+
+                        var tokenised = event.target.tokenData;
+                        if (!tokenised || !tokenised.spanMap.hasOwnProperty(event.charIndex))
+                        {
+                            return;
+                        }
+
+                        if (false &amp;&amp; tokenised.lastCharIndex)
+                        {
+        //console.debug(&quot;TTS lastCharIndex: &quot; + tokenised.lastCharIndex);
+                            var id = &#x27;tts_&#x27; + tokenised.spanMap[tokenised.lastCharIndex];
+        //console.debug(&quot;TTS lastCharIndex ID: &quot; + id);
+                            var spanPrevious = tokenised.element.querySelector(&quot;#&quot;+id);
+                            if (spanPrevious)
+                            {
+        //console.debug(&quot;TTS OFF&quot;);
+                                spanPrevious.className = &#x27;tts_off&#x27;;
+                                //spanPrevious.style.backgroundColor = &quot;white&quot;;
+                            }
+                        }
+                        else
+                        {
+                            [].forEach.call(
+                                tokenised.element.querySelectorAll(&quot;.tts_on&quot;),
+                                function(el)
+                                {
+        console.debug(&quot;TTS OFF &quot; + el.id);
+                                    el.className = &#x27;tts_off&#x27;;
+                                }
+                            );
+                        }
+
+                        var id = &#x27;tts_&#x27; + tokenised.spanMap[event.charIndex];
+        console.debug(&quot;TTS charIndex ID: &quot; + id);
+                        var spanNew = tokenised.element.querySelector(&quot;#&quot;+id);
+                        if (spanNew)
+                        {
+        console.debug(&quot;TTS ON&quot;);
+                            spanNew.className = &#x27;tts_on&#x27;;
+                            //spanNew.style.backgroundColor = &quot;transparent&quot;;
+                        }
+
+                        tokenised.lastCharIndex = event.charIndex;
+                    };
+                }
+
+                _SpeechSynthesisUtterance.onend = function(event)
+                //_SpeechSynthesisUtterance.addEventListener(&quot;end&quot;, function(event)
+                {
+                    if (!_SpeechSynthesisUtterance)
+                    {
+                        //_skipTTSEndEvent = false;
+                        return;
+                    }
+    //
+    //                if (_skipTTSEndEvent)
+    //                {
+    //                    _skipTTSEndEvent = false;
+    //                    return;
+    //                }
+
+console.debug(&quot;TTS ended&quot;);
+    //console.debug(event);
+
+                    if (TOKENIZE_TTS)
+                    {
+                        var tokenised = event.target.tokenData;
+
+                        var doEnd = !event.forceSkipEnd &amp;&amp; (_SpeechSynthesisUtterance === event.target) &amp;&amp; (!tokenised || tokenised.element.innerHTML_original);
+
+                        if (tokenised)
+                        {
+                            if (tokenised.element.innerHTML_original)
+                            {
+                                tokenised.element.innerHTML = tokenised.element.innerHTML_original;
+                            }
+                            else
+                            {
+                                [].forEach.call(
+                                    tokenised.element.querySelectorAll(&quot;.tts_on&quot;),
+                                    function(el)
+                                    {
+        console.debug(&quot;TTS OFF (end)&quot; + el.id);
+                                        el.className = &#x27;tts_off&#x27;;
+                                    }
+                                );
+                            }
+
+                            tokenised.element.innerHTML_original = undefined;
+                        }
+
+
+                        if (doEnd)
+                        {
+                            self.onTTSEnd();
+                        }
+                        else
+                        {
+    console.debug(&quot;TTS end SKIPPED&quot;);
+                        }
+                    }
+                    else
+                    {
+                        self.onTTSEnd();
+                    }
+                };
+
+                _SpeechSynthesisUtterance.onerror = function(event)
+                //_SpeechSynthesisUtterance.addEventListener(&quot;error&quot;, function(event)
+                {
+                    if (!_SpeechSynthesisUtterance)
+                    {
+                        return;
+                    }
+
+console.error(&quot;TTS error&quot;);
+//console.debug(event);
+console.debug(_SpeechSynthesisUtterance.text);
+console.debug(window.speechSynthesis.paused);
+console.debug(window.speechSynthesis.pending);
+console.debug(window.speechSynthesis.speaking);
+
+                    if (TOKENIZE_TTS)
+                    {
+                        var tokenised = event.target.tokenData;
+                        if (tokenised)
+                        {
+                            if (tokenised.element.innerHTML_original)
+                            {
+                                tokenised.element.innerHTML = tokenised.element.innerHTML_original;
+                            }
+                            else
+                            {
+                                [].forEach.call(
+                                    tokenised.element.ownerDocument.querySelectorAll(&quot;.tts_on&quot;),
+                                    function(el)
+                                    {
+        console.debug(&quot;TTS OFF (error)&quot; + el.id);
+                                        el.className = &#x27;tts_off&#x27;;
+                                    }
+                                );
+                            }
+                            tokenised.element.innerHTML_original = undefined;
+                        }
+                    }
+                };
+
+                var vol = volume || _audioPlayer.getVolume();
+                _SpeechSynthesisUtterance.volume = vol;
+
+                _SpeechSynthesisUtterance.rate = _audioPlayer.getRate();
+                _SpeechSynthesisUtterance.pitch = 1;
+
+                //_SpeechSynthesisUtterance.lang = &quot;en-US&quot;;
+
+                _SpeechSynthesisUtterance.text = text;
+
+    //console.debug(&quot;TTS speak: &quot; + text);
+                window.speechSynthesis.speak(_SpeechSynthesisUtterance);
+
+                if (window.speechSynthesis.paused)
+                {
+console.debug(&quot;TTS resume&quot;);
+                    window.speechSynthesis.resume();
+                }
+
+           //}, 5);
+           }
+        }
+    };
+
+    var speakStop = function()
+    {
+        onStatusChanged({isPlaying: false});
+        _ttsIsPlaying = false;
+
+        if (!_enableHTMLSpeech)
+        {
+            reader.trigger(ReadiumSDK.Events.MEDIA_OVERLAY_TTS_STOP, undefined);
+            return;
+        }
+
+//console.debug(&quot;TTS pause&quot;);
+        window.speechSynthesis.pause();
+    };
+
+    var _timerTick = undefined;
+
+    function onPlay() {
+        onPause();
+
+        var func = function() {
+
+            if (!_smilIterator || !_smilIterator.currentPar)
+            {
+                return;
+            }
+
+            var smil = _smilIterator.smil; //currentPar.getSmil();
+            if (!smil.mo)
+            {
+                return;
+            }
+
+//            if (!_smilIterator.currentPar.audio.src)
+//            {
+//                return;
+//            }
+
+            var playPosition = audioCurrentTime - _smilIterator.currentPar.audio.clipBegin;
+            if (playPosition &lt;= 0)
+            {
+                return;
+            }
+
+            var smilIndex = smil.mo.smil_models.indexOf(smil);
+
+            var smilIterator = new ReadiumSDK.Models.SmilIterator(smil);
+            var parIndex = -1;
+            while (smilIterator.currentPar)
+            {
+                parIndex++;
+                if (smilIterator.currentPar == _smilIterator.currentPar)
+                {
+                    break;
+                }
+                smilIterator.next();
+            }
+
+            onStatusChanged({playPosition: playPosition, smilIndex: smilIndex, parIndex: parIndex});
+        };
+
+        setTimeout(func, 500);
+
+        _timerTick = setInterval(func, 1500);
+    }
+
+    function onPause() {
+
+        audioCurrentTime = 0.0;
+        if (_timerTick !== undefined)
+        {
+            clearInterval(_timerTick);
+        }
+        _timerTick = undefined;
+    }
+
+
+    this.onEmbeddedEnd = function()
+    {
+        audioCurrentTime = 0.0;
+
+        _embeddedIsPlaying = false;
+        //_currentEmbedded = undefined;
+
+        if (!_smilIterator || !_smilIterator.currentPar)
+        {
+            self.reset();
+            return;
+        }
+
+        onAudioPositionChanged(_smilIterator.currentPar.audio.clipEnd + 0.1, 3);
+    };
+
+    this.onTTSEnd = function()
+    {
+        audioCurrentTime = 0.0;
+
+        _ttsIsPlaying = false;
+        //_currentTTS = undefined;
+
+//        if(_skipTTSEnded)
+//        {
+//            _skipTTSEnded = false;
+//            return;
+//        }
+
+        if (!_smilIterator || !_smilIterator.currentPar)
+        {
+            self.reset();
+            return;
+        }
+
+        onAudioPositionChanged(_smilIterator.currentPar.audio.clipEnd + 0.1, 4);
+    };
+
+    function onAudioEnded() {
+
+        onPause();
+//
+//        if (_letPlay)
+//        {
+//            return;
+//        }
+
+        if(_skipAudioEnded)
+        {
+            _skipAudioEnded = false;
+            return;
+        }
+
+        if (!_smilIterator || !_smilIterator.currentPar)
+        {
+            self.reset();
+            return;
+        }
+
+        onAudioPositionChanged(_smilIterator.currentPar.audio.clipEnd + 0.1, 5);
+    }
+
+    function highlightCurrentElement() {
+
+        if(!_smilIterator) {
+            return;
+        }
+
+        if(!_smilIterator.currentPar) {
+            return;
+        }
+
+        if (_smilIterator.currentPar.text.srcFragmentId &amp;&amp; _smilIterator.currentPar.text.srcFragmentId.length &gt; 0)
+        {
+            if (_smilIterator.currentPar.element) {
+    //console.error(_smilIterator.currentPar.element.id + &quot;: &quot; + _smilIterator.currentPar.audio.clipBegin + &quot; / &quot; + _smilIterator.currentPar.audio.clipEnd);
+
+                if (!_elementHighlighter.isElementHighlighted(_smilIterator.currentPar))
+                {
+                    _elementHighlighter.highlightElement(_smilIterator.currentPar, _package.media_overlay.activeClass, _package.media_overlay.playbackActiveClass);
+
+                    if (!_wasPlayingScrolling)
+                    {
+                        reader.insureElementVisibility(_smilIterator.currentPar.getSmil().spineItemId, _smilIterator.currentPar.element, self);
+                    }
+                }
+            
+                return;
+            
+            } else if (_smilIterator.currentPar.cfi) {
+
+                if (!_elementHighlighter.isCfiHighlighted(_smilIterator.currentPar))
+                {
+                    _elementHighlighter.highlightCfi(_smilIterator.currentPar, _package.media_overlay.activeClass, _package.media_overlay.playbackActiveClass);
+
+                    if (!_wasPlayingScrolling)
+                    {
+                        reader.insureElementVisibility(_smilIterator.currentPar.getSmil().spineItemId, _smilIterator.currentPar.cfi.cfiTextParent, self);
+                    }
+                }
+                
+                return;
+            }
+        }
+        
+        // body (not FRAG ID)
+        if (_smilIterator.currentPar.element) {
+            return;
+        }
+        
+        //else: single SMIL per multiple XHTML? ==&gt; open new spine item
+        
+        /*
+        var textRelativeRef = ReadiumSDK.Helpers.ResolveContentRef(_smilIterator.currentPar.text.srcFile, _smilIterator.smil.href);
+console.debug(&quot;textRelativeRef: &quot; + textRelativeRef);
+        if (textRelativeRef)
+        {
+            var textAbsoluteRef = _package.resolveRelativeUrl(textRelativeRef);
+console.debug(&quot;textAbsoluteRef: &quot; + textAbsoluteRef);
+        }
+        */
+
+        var src = _smilIterator.currentPar.text.src;
+        var base = _smilIterator.smil.href;
+
+        //self.pause();
+        //self.reset();
+        _smilIterator = undefined;
+
+        reader.openContentUrl(src, base, self);
+    }
+
+    this.escape = function() {
+        
+        if(!_smilIterator || !_smilIterator.currentPar) {
+
+            this.toggleMediaOverlay();
+            return;
+        }
+
+        if(!self.isPlaying())
+        {
+            //playCurrentPar();
+            self.play();
+            return;
+        }
+
+        if(_settings.mediaOverlaysEscapeEscapables)
+        {
+            var parent = _smilIterator.currentPar;
+            while (parent)
+            {
+                if (parent.isEscapable &amp;&amp; parent.isEscapable(_settings.mediaOverlaysEscapables))
+                {
+                    do
+                    {
+                        _smilIterator.next();
+                    } while (_smilIterator.currentPar &amp;&amp; _smilIterator.currentPar.hasAncestor(parent));
+
+                    if (!_smilIterator.currentPar)
+                    {
+                        nextSmil(true);
+                        return;
+                    }
+
+                    //_smilIterator.goToPar(_smilIterator.currentPar);
+                    playCurrentPar();
+                    return;
+                }
+
+                parent = parent.parent;
+            }
+        }
+
+        this.nextMediaOverlay(true);
+    };
+
+
+    this.playUserPar = function(par) {
+        if(self.isPlaying())
+        {
+            self.pause();
+        }
+
+        if (par.element || par.cfi &amp;&amp; par.cfi.cfiTextParent)
+        {
+            var seq = _elementHighlighter.adjustParToSeqSyncGranularity(par);
+            if (seq &amp;&amp; seq !== par)
+            {
+                var findFirstPar = function(smilNode)
+                {
+                    if (smilNode.nodeType &amp;&amp; smilNode.nodeType === &quot;par&quot;) return smilNode;
+                    
+                    if (!smilNode.children || smilNode.children.length &lt;= 0) return undefined;
+                    
+                    for (var i = 0; i &lt; smilNode.children.length; i++)
+                    {
+                        var child = smilNode.children[i];
+                        var inPar = findFirstPar(child);
+                        if (inPar) return inPar;
+                    }
+                };
+                var firstPar = findFirstPar(seq);
+                if (firstPar) par = firstPar;
+            }
+        }
+
+        playPar(par);
+    };
+
+    this.resetTTS = function() {
+        _currentTTS = undefined;
+//        _skipTTSEnded = false;
+        speakStop();
+    };
+
+    this.resetBlankPage = function() {
+        if (_blankPagePlayer)
+        {
+            var timer = _blankPagePlayer;
+            _blankPagePlayer = undefined;
+            clearTimeout(timer);
+        }
+        _blankPagePlayer = undefined;
+
+        onStatusChanged({isPlaying: false});
+    };
+
+    this.resetEmbedded = function() {
+        if (_currentEmbedded)
+        {
+            $(_currentEmbedded).off(&quot;ended&quot;, self.onEmbeddedEnd);
+            _currentEmbedded.pause();
+        }
+        _currentEmbedded = undefined;
+        onStatusChanged({isPlaying: false});
+        _embeddedIsPlaying = false;
+    };
+
+    this.reset = function() {
+        clipBeginOffset = 0.0;
+        _audioPlayer.reset();
+        self.resetTTS();
+        self.resetEmbedded();
+        self.resetBlankPage();
+        _elementHighlighter.reset();
+        _smilIterator = undefined;
+        _skipAudioEnded = false;
+    };
+
+    this.play = function ()
+    {
+        if (_smilIterator &amp;&amp; _smilIterator.smil &amp;&amp; !_smilIterator.smil.id)
+        {
+            initBlankPagePlayer();
+            return;
+        }
+        else if (_currentEmbedded)
+        {
+            _embeddedIsPlaying = true;
+            _currentEmbedded.play();
+            onStatusChanged({isPlaying: true});
+        }
+        else if (_currentTTS)
+        {
+            speakStart(undefined);
+        }
+        else
+        {
+            if (!_audioPlayer.play())
+            {
+                console.log(&quot;Audio player was dead, reactivating...&quot;);
+
+                this.reset();
+                this.toggleMediaOverlay();
+                return;
+            }
+        }
+
+        highlightCurrentElement();
+    }
+
+    this.pause = function()
+    {
+        _wasPlayingScrolling = false;
+        
+        if (_blankPagePlayer)
+        {
+            this.resetBlankPage();
+        }
+        else if (_embeddedIsPlaying)
+        {
+            _embeddedIsPlaying = false;
+            if (_currentEmbedded)
+            {
+                _currentEmbedded.pause();
+            }
+            onStatusChanged({isPlaying: false});
+        }
+        else if (_ttsIsPlaying)
+        {
+            speakStop();
+        }
+        else
+        {
+            _audioPlayer.pause();
+        }
+
+        _elementHighlighter.reset();
+    }
+
+    this.isMediaOverlayAvailable = function() {
+
+//        console.debug(&quot;isMediaOverlayAvailable()&quot;);
+//
+//        var now1 = window.performance &amp;&amp; window.performance.now ? window.performance.now() : Date.now();
+//
+//        if (console.time)
+//        {
+//            console.time(&quot;MO&quot;);
+//        }
+
+        var visibleMediaElement = reader.getFirstVisibleMediaOverlayElement();
+
+//        if (console.timeEnd)
+//        {
+//            console.timeEnd(&quot;MO&quot;);
+//        }
+//
+//        var now2 = window.performance &amp;&amp; window.performance.now ? window.performance.now() : Date.now();
+//
+//        console.debug(now2 - now1);
+
+        return typeof visibleMediaElement !== &quot;undefined&quot;;
+    };
+
+    this.nextOrPreviousMediaOverlay = function(previous) {
+        if(self.isPlaying())
+        {
+            self.pause();
+        }
+        else
+        {
+            if (_smilIterator &amp;&amp; _smilIterator.currentPar)
+            {
+                //playCurrentPar();
+                self.play();
+                return;
+            }
+        }
+
+        if(!_smilIterator)
+        {
+            this.toggleMediaOverlay();
+            return;
+        }
+
+        var position = previous ? DIRECTION_MARK - 1 : _smilIterator.currentPar.audio.clipEnd + 0.1;
+
+        onAudioPositionChanged(position, 6);
+        // setTimeout(function(){
+        //     
+        // }, 1);
+
+        //self.play();
+        //playCurrentPar();
+    };
+
+    this.nextMediaOverlay = function() {
+        this.nextOrPreviousMediaOverlay(false);
+    };
+
+    this.previousMediaOverlay = function() {
+        this.nextOrPreviousMediaOverlay(true);
+    };
+
+    /*
+    this.setMediaOverlaySkippables = function(items) {
+
+    };
+
+    this.setMediaOverlayEscapables = function(items) {
+
+    };
+    */
+
+    this.mediaOverlaysOpenContentUrl = function(contentRefUrl, sourceFileHref, offset)
+    {
+        clipBeginOffset = offset;
+
+        //self.pause();
+        //self.reset();
+        _smilIterator = undefined;
+
+        reader.openContentUrl(contentRefUrl, sourceFileHref, self);
+
+        /*
+        if (_currentPagination &amp;&amp; _currentPagination.isFixedLayout &amp;&amp; _currentPagination.openPages &amp;&amp; _currentPagination.openPages.length &gt; 0)
+        {
+            var combinedPath = ReadiumSDK.Helpers.ResolveContentRef(contentRefUrl, sourceFileHref);
+
+            var hashIndex = combinedPath.indexOf(&quot;#&quot;);
+            var hrefPart;
+            var elementId;
+            if(hashIndex &gt;= 0) {
+                hrefPart = combinedPath.substr(0, hashIndex);
+                elementId = combinedPath.substr(hashIndex + 1);
+            }
+            else {
+                hrefPart = combinedPath;
+                elementId = undefined;
+            }
+
+            var spineItem = reader.spine.getItemByHref(hrefPart);
+            var spineItemIndex = _currentPagination.openPages[0].spineItemIndex;
+
+            //var idref = _currentPagination.openPages[0].idref;
+            //spineItem.idref === idref
+            //var currentSpineItem = reader.spine.getItemById(idref);
+            //currentSpineItem == spineItem
+            if (spineItem.index === spineItemIndex)
+            {
+                self.onPageChanged({
+                    paginationInfo: _currentPagination,
+                    elementId: elementId,
+                    initiator: self
+                });
+            }
+        }
+        */
+    };
+
+    this.toggleMediaOverlay = function() {
+        if(self.isPlaying()) {
+            self.pause();
+            return;
+        }
+
+        //if we have position to continue from (reset wasn&#x27;t called)
+        if(_smilIterator) {
+            self.play();
+            return;
+        }
+
+        this.toggleMediaOverlayRefresh(undefined);
+    };
+
+    var _wasPlayingScrolling = false;
+
+    this.toggleMediaOverlayRefresh = function(paginationData)
+    {
+//console.debug(&quot;moData SMIL: &quot; + moData.par.getSmil().href + &quot; // &quot; + + moData.par.getSmil().id);
+
+        var spineItems = reader.getLoadedSpineItems();
+
+        //paginationData.isRightToLeft
+        var rtl = reader.spine().isRightToLeft();
+
+        //paginationData.spineItemCount
+        //paginationData.openPages
+        //{spineItemPageIndex: , spineItemPageCount: , idref: , spineItemIndex: }
+
+        var playingPar = undefined;
+        var wasPlaying = self.isPlaying();
+        if(wasPlaying &amp;&amp; _smilIterator)
+        {
+            var isScrollView = paginationData.initiator &amp;&amp; paginationData.initiator instanceof ReadiumSDK.Views.ScrollView;
+            if (isScrollView &amp;&amp; _settings.mediaOverlaysPreservePlaybackWhenScroll)
+            {
+                _wasPlayingScrolling = true;
+                return;
+            }
+            
+            playingPar = _smilIterator.currentPar;
+            self.pause();
+        }
+        
+        _wasPlayingScrolling = false;
+
+        //paginationData &amp;&amp; paginationData.elementId
+        //paginationData.initiator != self
+
+        //_package.isFixedLayout()
+
+        var element = (paginationData &amp;&amp; paginationData.elementIdResolved) ? paginationData.elementIdResolved : undefined;
+
+        var id = (paginationData &amp;&amp; paginationData.elementId) ? paginationData.elementId : undefined;
+
+        if (!element)
+        {
+            if (id)
+            {
+                console.error(&quot;[WARN] id did not resolve to element?&quot;);
+            }
+            
+            for(var i = (rtl ? (spineItems.length - 1) : 0); (rtl &amp;&amp; i &gt;=0) || (!rtl &amp;&amp; i &lt; spineItems.length); i += (rtl ? -1: 1))
+            {
+                var spineItem = spineItems[i];
+                if (!spineItem)
+                {
+                    console.error(&quot;spineItems[i] is undefined??&quot;);
+                    continue;
+                }
+            
+                if (paginationData &amp;&amp; paginationData.spineItem &amp;&amp; paginationData.spineItem != spineItem)
+                {
+                    continue;
+                }
+
+                if (id)
+                {
+                    var $element = reader.getElementById(spineItem, id);
+                    //var $element = reader.getElement(spineItem, &quot;#&quot; + ReadiumSDK.Helpers.escapeJQuerySelector(id));
+                    element = ($element &amp;&amp; $element.length &gt; 0) ? $element[0] : undefined;
+                }
+                else if (spineItem.isFixedLayout())
+                {
+                    if (paginationData &amp;&amp; paginationData.paginationInfo &amp;&amp; paginationData.paginationInfo.openPages)
+                    {
+                        // openPages are sorted by spineItem index, so the smallest index on display is the one we need to play (page on the left in LTR, or page on the right in RTL progression)
+                        var index = 0; // !paginationData.paginationInfo.isRightToLeft ? 0 : paginationData.paginationInfo.openPages.length - 1;
+                    
+                        if (paginationData.paginationInfo.openPages[index] &amp;&amp; paginationData.paginationInfo.openPages[index].idref &amp;&amp; paginationData.paginationInfo.openPages[index].idref === spineItem.idref)
+                        {
+                            var $element = reader.getElement(spineItem, &quot;body&quot;);
+                            element = ($element &amp;&amp; $element.length &gt; 0) ? $element[0] : undefined;
+                        }
+                    }
+                }
+
+                if (element)
+                {
+                    break;
+                }
+            }
+        }
+
+        if (!element)
+        {
+            element = reader.getFirstVisibleMediaOverlayElement();
+        }
+
+        if (!element)
+        {
+            self.reset();
+            return;
+        }
+
+        var moData = $(element).data(&quot;mediaOverlayData&quot;);
+
+        if (!moData)
+        {
+            var foundMe = false;
+            var depthFirstTraversal = function(elements)
+            {
+                if (!elements)
+                {
+                    return false;
+                }
+
+                for (var i = 0; i &lt; elements.length; i++)
+                {
+                    if (element === elements[i]) foundMe = true;
+                    
+                    if (foundMe)
+                    {
+                        var d = $(elements[i]).data(&quot;mediaOverlayData&quot;);
+                        if (d)
+                        {
+                            moData = d;
+                            return true;
+                        }
+                    }
+
+                    var found = depthFirstTraversal(elements[i].children);
+                    if (found)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            var root = element;
+            while (root &amp;&amp; root.nodeName.toLowerCase() !== &quot;body&quot;)
+            {
+                root = root.parentNode;
+            }
+
+            if (!root)
+            {
+                self.reset();
+                return;
+            }
+
+            depthFirstTraversal([root]);
+        }
+
+        if (!moData)
+        {
+            self.reset();
+            return;
+        }
+
+        var zPar = moData.par ? moData.par : moData.pars[0];
+        var parSmil = zPar.getSmil();
+        if(!_smilIterator || _smilIterator.smil != parSmil)
+        {
+            _smilIterator = new ReadiumSDK.Models.SmilIterator(parSmil);
+        }
+        else
+        {
+            _smilIterator.reset();
+        }
+        
+        _smilIterator.goToPar(zPar);
+        
+        if (!_smilIterator.currentPar &amp;&amp; id)
+        {
+            _smilIterator.reset();
+            _smilIterator.findTextId(id);
+        }
+        
+        if (!_smilIterator.currentPar)
+        {
+            self.reset();
+            return;
+        }
+
+        if (wasPlaying &amp;&amp; playingPar &amp;&amp; playingPar === _smilIterator.currentPar)
+        {
+            self.play();
+        }
+        else
+        {
+            playCurrentPar();
+            //playPar(zPar);
+        }
+    };
+
+    this.isPlayingCfi = function()
+    {
+        return _smilIterator &amp;&amp; _smilIterator.currentPar &amp;&amp; _smilIterator.currentPar.cfi;
+    };
+    
+    var _wasPausedBecauseNoAutoNextSmil = false;
+    var _autoNextSmil = true;
+    this.setAutomaticNextSmil = function(autoNext)
+    {
+        _autoNextSmil = autoNext;
+    };
+};
+
+    </pre>
+</div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="../assets/vendor/prettify/prettify-min.js"></script>
+<script>prettyPrint();</script>
+<script src="../assets/js/yui-prettify.js"></script>
+<script src="../assets/../api.js"></script>
+<script src="../assets/js/api-filter.js"></script>
+<script src="../assets/js/api-list.js"></script>
+<script src="../assets/js/api-search.js"></script>
+<script src="../assets/js/apidocs.js"></script>
+</body>
+</html>

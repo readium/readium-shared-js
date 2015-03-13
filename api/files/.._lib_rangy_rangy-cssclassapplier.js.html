@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>../lib/rangy/rangy-cssclassapplier.js - Readium SDK DOM Access Layer API</title>
+    <link rel="stylesheet" href="http://yui.yahooapis.com/3.9.1/build/cssgrids/cssgrids-min.css">
+    <link rel="stylesheet" href="../assets/vendor/prettify/prettify-min.css">
+    <link rel="stylesheet" href="../assets/css/main.css" id="site_styles">
+    <link rel="shortcut icon" type="image/png" href="../assets/favicon.png">
+    <script src="http://yui.yahooapis.com/combo?3.9.1/build/yui/yui-min.js"></script>
+</head>
+<body class="yui3-skin-sam">
+
+<div id="doc">
+    <div id="page-top-wrapper" >
+        </br> </br>
+    </div>
+    <div class="yui3-g header">
+        <div class="yui3-u-3-4" >
+              
+                 <h1 id="logo" style="vertical-align:center"><img src="../assets/css/logo.png" title="Readium SDK DOM Access Layer API">Readium SDK DOM Access Layer API</h1>
+              
+        </div>
+        <div class="yui3-u-1-4 version" >
+            <div id="version">
+            <em>API Docs for: 0.16</em>
+        </div>
+        </div>
+    </div>
+    <div id="bd" class="yui3-g">
+        <div class="yui3-u-1-4">
+            <div id="docs-sidebar" class="sidebar apidocs">
+                <div id="api-list">
+    <h2 class="off-left">APIs</h2>
+    <div id="api-tabview" class="tabview">
+        <ul class="tabs">
+            <li><a href="#api-classes">Classes</a></li>
+            <li><a href="#api-modules">Modules</a></li>
+        </ul>
+
+        <div id="api-tabview-filter">
+            <input type="search" id="api-filter" placeholder="Type to filter APIs">
+        </div>
+
+        <div id="api-tabview-panel">
+            <ul id="api-classes" class="apis classes">
+            
+                <li><a href="../classes/ReadiumSDK.Models.BookmarkData.html">ReadiumSDK.Models.BookmarkData</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.CurrentPagesInfo.html">ReadiumSDK.Models.CurrentPagesInfo</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.Package.html">ReadiumSDK.Models.Package</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.PackageData.html">ReadiumSDK.Models.PackageData</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.Spine.html">ReadiumSDK.Models.Spine</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.SpineItem.html">ReadiumSDK.Models.SpineItem</a></li>
+            
+            </ul>
+
+            <ul id="api-modules" class="apis modules">
+            
+            </ul>
+        </div>
+    </div>
+</div>
+
+            </div>
+        </div>
+        <div class="yui3-u-3-4">
+                <div id="api-options">
+        Show:
+        <label for="api-show-inherited">
+            <input type="checkbox" id="api-show-inherited" checked>
+            Inherited
+        </label>
+
+        <label for="api-show-protected">
+            <input type="checkbox" id="api-show-protected">
+            Protected
+        </label>
+
+        <label for="api-show-private">
+            <input type="checkbox" id="api-show-private">
+            Private
+        </label>
+        <label for="api-show-deprecated">
+            <input type="checkbox" id="api-show-deprecated">
+            Deprecated
+        </label>
+
+    </div>
+
+
+            <div class="apidocs">
+                <div id="docs-main">
+                    <div class="content">
+                        <h1 class="file-heading">File: ../lib/rangy/rangy-cssclassapplier.js</h1>
+
+<div class="file">
+    <pre class="code prettyprint linenums">
+/**
+ * Class Applier module for Rangy.
+ * Adds, removes and toggles classes on Ranges and Selections
+ *
+ * Part of Rangy, a cross-browser JavaScript range and selection library
+ * http://code.google.com/p/rangy/
+ *
+ * Depends on Rangy core.
+ *
+ * Copyright 2013, Tim Down
+ * Licensed under the MIT license.
+ * Version: 1.3alpha.804
+ * Build date: 8 December 2013
+ */
+rangy.createModule(&quot;ClassApplier&quot;, [&quot;WrappedSelection&quot;], function(api, module) {
+    var dom = api.dom;
+    var DomPosition = dom.DomPosition;
+    var contains = dom.arrayContains;
+
+    var defaultTagName = &quot;span&quot;;
+
+    function each(obj, func) {
+        for (var i in obj) {
+            if (obj.hasOwnProperty(i)) {
+                if (func(i, obj[i]) === false) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    
+    function trim(str) {
+        return str.replace(/^\s\s*/, &quot;&quot;).replace(/\s\s*$/, &quot;&quot;);
+    }
+
+    function hasClass(el, cssClass) {
+        return el.className &amp;&amp; new RegExp(&quot;(?:^|\\s)&quot; + cssClass + &quot;(?:\\s|$)&quot;).test(el.className);
+    }
+
+    function addClass(el, cssClass) {
+        if (el.className) {
+            if (!hasClass(el, cssClass)) {
+                el.className += &quot; &quot; + cssClass;
+            }
+        } else {
+            el.className = cssClass;
+        }
+    }
+
+    var removeClass = (function() {
+        function replacer(matched, whiteSpaceBefore, whiteSpaceAfter) {
+            return (whiteSpaceBefore &amp;&amp; whiteSpaceAfter) ? &quot; &quot; : &quot;&quot;;
+        }
+
+        return function(el, cssClass) {
+            if (el.className) {
+                el.className = el.className.replace(new RegExp(&quot;(^|\\s)&quot; + cssClass + &quot;(\\s|$)&quot;), replacer);
+            }
+        };
+    })();
+
+    function sortClassName(className) {
+        return className.split(/\s+/).sort().join(&quot; &quot;);
+    }
+
+    function getSortedClassName(el) {
+        return sortClassName(el.className);
+    }
+
+    function haveSameClasses(el1, el2) {
+        return getSortedClassName(el1) == getSortedClassName(el2);
+    }
+
+    function movePosition(position, oldParent, oldIndex, newParent, newIndex) {
+        var node = position.node, offset = position.offset;
+        var newNode = node, newOffset = offset;
+
+        if (node == newParent &amp;&amp; offset &gt; newIndex) {
+            ++newOffset;
+        }
+
+        if (node == oldParent &amp;&amp; (offset == oldIndex  || offset == oldIndex + 1)) {
+            newNode = newParent;
+            newOffset += newIndex - oldIndex;
+        }
+
+        if (node == oldParent &amp;&amp; offset &gt; oldIndex + 1) {
+            --newOffset;
+        }
+
+        position.node = newNode;
+        position.offset = newOffset;
+    }
+    
+    function movePositionWhenRemovingNode(position, parentNode, index) {
+        if (position.node == parentNode &amp;&amp; position.offset &gt; index) {
+            --position.offset;
+        }
+    }
+
+    function movePreservingPositions(node, newParent, newIndex, positionsToPreserve) {
+        // For convenience, allow newIndex to be -1 to mean &quot;insert at the end&quot;.
+        if (newIndex == -1) {
+            newIndex = newParent.childNodes.length;
+        }
+
+        var oldParent = node.parentNode;
+        var oldIndex = dom.getNodeIndex(node);
+
+        for (var i = 0, position; position = positionsToPreserve[i++]; ) {
+            movePosition(position, oldParent, oldIndex, newParent, newIndex);
+        }
+
+        // Now actually move the node.
+        if (newParent.childNodes.length == newIndex) {
+            newParent.appendChild(node);
+        } else {
+            newParent.insertBefore(node, newParent.childNodes[newIndex]);
+        }
+    }
+    
+    function removePreservingPositions(node, positionsToPreserve) {
+
+        var oldParent = node.parentNode;
+        var oldIndex = dom.getNodeIndex(node);
+
+        for (var i = 0, position; position = positionsToPreserve[i++]; ) {
+            movePositionWhenRemovingNode(position, oldParent, oldIndex);
+        }
+
+        node.parentNode.removeChild(node);
+    }
+
+    function moveChildrenPreservingPositions(node, newParent, newIndex, removeNode, positionsToPreserve) {
+        var child, children = [];
+        while ( (child = node.firstChild) ) {
+            movePreservingPositions(child, newParent, newIndex++, positionsToPreserve);
+            children.push(child);
+        }
+        if (removeNode) {
+            node.parentNode.removeChild(node);
+        }
+        return children;
+    }
+
+    function replaceWithOwnChildrenPreservingPositions(element, positionsToPreserve) {
+        return moveChildrenPreservingPositions(element, element.parentNode, dom.getNodeIndex(element), true, positionsToPreserve);
+    }
+
+    function rangeSelectsAnyText(range, textNode) {
+        var textNodeRange = range.cloneRange();
+        textNodeRange.selectNodeContents(textNode);
+
+        var intersectionRange = textNodeRange.intersection(range);
+        var text = intersectionRange ? intersectionRange.toString() : &quot;&quot;;
+        textNodeRange.detach();
+
+        return text != &quot;&quot;;
+    }
+
+    function getEffectiveTextNodes(range) {
+        var nodes = range.getNodes([3]);
+        
+        // Optimization as per issue 145
+        
+        // Remove non-intersecting text nodes from the start of the range
+        var start = 0, node;
+        while ( (node = nodes[start]) &amp;&amp; !rangeSelectsAnyText(range, node) ) {
+            ++start;
+        }
+
+        // Remove non-intersecting text nodes from the start of the range
+        var end = nodes.length - 1;
+        while ( (node = nodes[end]) &amp;&amp; !rangeSelectsAnyText(range, node) ) {
+            --end;
+        }
+        
+        return nodes.slice(start, end + 1);
+    }
+
+    function elementsHaveSameNonClassAttributes(el1, el2) {
+        if (el1.attributes.length != el2.attributes.length) return false;
+        for (var i = 0, len = el1.attributes.length, attr1, attr2, name; i &lt; len; ++i) {
+            attr1 = el1.attributes[i];
+            name = attr1.name;
+            if (name != &quot;class&quot;) {
+                attr2 = el2.attributes.getNamedItem(name);
+                if ( (attr1 === null) != (attr2 === null) ) return false;
+                if (attr1.specified != attr2.specified) return false;
+                if (attr1.specified &amp;&amp; attr1.nodeValue !== attr2.nodeValue) return false;
+            }
+        }
+        return true;
+    }
+
+    function elementHasNonClassAttributes(el, exceptions) {
+        for (var i = 0, len = el.attributes.length, attrName; i &lt; len; ++i) {
+            attrName = el.attributes[i].name;
+            if ( !(exceptions &amp;&amp; contains(exceptions, attrName)) &amp;&amp; el.attributes[i].specified &amp;&amp; attrName != &quot;class&quot;) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function elementHasProperties(el, props) {
+        each(props, function(p, propValue) {
+            if (typeof propValue == &quot;object&quot;) {
+                if (!elementHasProperties(el[p], propValue)) {
+                    return false;
+                }
+            } else if (el[p] !== propValue) {
+                return false;
+            }
+        });
+        return true;
+    }
+
+    var getComputedStyleProperty = dom.getComputedStyleProperty;
+    var isEditableElement = (function() {
+        var testEl = document.createElementNS(&quot;http://www.w3.org/1999/xhtml&quot;,&quot;div&quot;);
+        return typeof testEl.isContentEditable == &quot;boolean&quot; ?
+            function (node) {
+                return node &amp;&amp; node.nodeType == 1 &amp;&amp; node.isContentEditable;
+            } :
+            function (node) {
+                if (!node || node.nodeType != 1 || node.contentEditable == &quot;false&quot;) {
+                    return false;
+                }
+                return node.contentEditable == &quot;true&quot; || isEditableElement(node.parentNode);
+            };
+    })();
+
+    function isEditingHost(node) {
+        var parent;
+        return node &amp;&amp; node.nodeType == 1
+            &amp;&amp; (( (parent = node.parentNode) &amp;&amp; parent.nodeType == 9 &amp;&amp; parent.designMode == &quot;on&quot;)
+            || (isEditableElement(node) &amp;&amp; !isEditableElement(node.parentNode)));
+    }
+
+    function isEditable(node) {
+        return (isEditableElement(node) || (node.nodeType != 1 &amp;&amp; isEditableElement(node.parentNode))) &amp;&amp; !isEditingHost(node);
+    }
+
+    var inlineDisplayRegex = /^inline(-block|-table)?$/i;
+
+    function isNonInlineElement(node) {
+        return node &amp;&amp; node.nodeType == 1 &amp;&amp; !inlineDisplayRegex.test(getComputedStyleProperty(node, &quot;display&quot;));
+    }
+
+    // White space characters as defined by HTML 4 (http://www.w3.org/TR/html401/struct/text.html)
+    var htmlNonWhiteSpaceRegex = /[^\r\n\t\f \u200B]/;
+
+    function isUnrenderedWhiteSpaceNode(node) {
+        if (node.data.length == 0) {
+            return true;
+        }
+        if (htmlNonWhiteSpaceRegex.test(node.data)) {
+            return false;
+        }
+        var cssWhiteSpace = getComputedStyleProperty(node.parentNode, &quot;whiteSpace&quot;);
+        switch (cssWhiteSpace) {
+            case &quot;pre&quot;:
+            case &quot;pre-wrap&quot;:
+            case &quot;-moz-pre-wrap&quot;:
+                return false;
+            case &quot;pre-line&quot;:
+                if (/[\r\n]/.test(node.data)) {
+                    return false;
+                }
+        }
+
+        // We now have a whitespace-only text node that may be rendered depending on its context. If it is adjacent to a
+        // non-inline element, it will not be rendered. This seems to be a good enough definition.
+        return isNonInlineElement(node.previousSibling) || isNonInlineElement(node.nextSibling);
+    }
+
+    function getRangeBoundaries(ranges) {
+        var positions = [], i, range;
+        for (i = 0; range = ranges[i++]; ) {
+            positions.push(
+                new DomPosition(range.startContainer, range.startOffset),
+                new DomPosition(range.endContainer, range.endOffset)
+            );
+        }
+        return positions;
+    }
+
+    function updateRangesFromBoundaries(ranges, positions) {
+        for (var i = 0, range, start, end, len = ranges.length; i &lt; len; ++i) {
+            range = ranges[i];
+            start = positions[i * 2];
+            end = positions[i * 2 + 1];
+            range.setStartAndEnd(start.node, start.offset, end.node, end.offset);
+        }
+    }
+
+    function isSplitPoint(node, offset) {
+        if (dom.isCharacterDataNode(node)) {
+            if (offset == 0) {
+                return !!node.previousSibling;
+            } else if (offset == node.length) {
+                return !!node.nextSibling;
+            } else {
+                return true;
+            }
+        }
+
+        return offset &gt; 0 &amp;&amp; offset &lt; node.childNodes.length;
+    }
+
+    function splitNodeAt(node, descendantNode, descendantOffset, positionsToPreserve) {
+        var newNode, parentNode;
+        var splitAtStart = (descendantOffset == 0);
+
+        if (dom.isAncestorOf(descendantNode, node)) {
+            return node;
+        }
+
+        if (dom.isCharacterDataNode(descendantNode)) {
+            var descendantIndex = dom.getNodeIndex(descendantNode);
+            if (descendantOffset == 0) {
+                descendantOffset = descendantIndex;
+            } else if (descendantOffset == descendantNode.length) {
+                descendantOffset = descendantIndex + 1;
+            } else {
+                throw module.createError(&quot;splitNodeAt() should not be called with offset in the middle of a data node (&quot;
+                    + descendantOffset + &quot; in &quot; + descendantNode.data);
+            }
+            descendantNode = descendantNode.parentNode;
+        }
+
+        if (isSplitPoint(descendantNode, descendantOffset)) {
+            // descendantNode is now guaranteed not to be a text or other character node
+            newNode = descendantNode.cloneNode(false);
+            parentNode = descendantNode.parentNode;
+            if (newNode.id) {
+                newNode.removeAttribute(&quot;id&quot;);
+            }
+            var child, newChildIndex = 0;
+
+            while ( (child = descendantNode.childNodes[descendantOffset]) ) {
+                movePreservingPositions(child, newNode, newChildIndex++, positionsToPreserve);
+            }
+            movePreservingPositions(newNode, parentNode, dom.getNodeIndex(descendantNode) + 1, positionsToPreserve);
+            return (descendantNode == node) ? newNode : splitNodeAt(node, parentNode, dom.getNodeIndex(newNode), positionsToPreserve);
+        } else if (node != descendantNode) {
+            newNode = descendantNode.parentNode;
+
+            // Work out a new split point in the parent node
+            var newNodeIndex = dom.getNodeIndex(descendantNode);
+
+            if (!splitAtStart) {
+                newNodeIndex++;
+            }
+            return splitNodeAt(node, newNode, newNodeIndex, positionsToPreserve);
+        }
+        return node;
+    }
+
+    function areElementsMergeable(el1, el2) {
+        return el1.tagName == el2.tagName
+            &amp;&amp; haveSameClasses(el1, el2)
+            &amp;&amp; elementsHaveSameNonClassAttributes(el1, el2)
+            &amp;&amp; getComputedStyleProperty(el1, &quot;display&quot;) == &quot;inline&quot;
+            &amp;&amp; getComputedStyleProperty(el2, &quot;display&quot;) == &quot;inline&quot;;
+    }
+
+    function createAdjacentMergeableTextNodeGetter(forward) {
+        var siblingPropName = forward ? &quot;nextSibling&quot; : &quot;previousSibling&quot;;
+
+        return function(textNode, checkParentElement) {
+            var el = textNode.parentNode;
+            var adjacentNode = textNode[siblingPropName];
+            if (adjacentNode) {
+                // Can merge if the node&#x27;s previous/next sibling is a text node
+                if (adjacentNode &amp;&amp; adjacentNode.nodeType == 3) {
+                    return adjacentNode;
+                }
+            } else if (checkParentElement) {
+                // Compare text node parent element with its sibling
+                adjacentNode = el[siblingPropName];
+                if (adjacentNode &amp;&amp; adjacentNode.nodeType == 1 &amp;&amp; areElementsMergeable(el, adjacentNode)) {
+                    var adjacentNodeChild = adjacentNode[forward ? &quot;firstChild&quot; : &quot;lastChild&quot;];
+                    if (adjacentNodeChild &amp;&amp; adjacentNodeChild.nodeType == 3) {
+                        return adjacentNodeChild;
+                    }
+                }
+            }
+            return null;
+        };
+    }
+
+    var getPreviousMergeableTextNode = createAdjacentMergeableTextNodeGetter(false),
+        getNextMergeableTextNode = createAdjacentMergeableTextNodeGetter(true);
+
+
+    function Merge(firstNode) {
+        this.isElementMerge = (firstNode.nodeType == 1);
+        this.textNodes = [];
+        var firstTextNode = this.isElementMerge ? firstNode.lastChild : firstNode;
+        if (firstTextNode) {
+            this.textNodes[0] = firstTextNode;
+        }
+    }
+
+    Merge.prototype = {
+        doMerge: function(positionsToPreserve) {
+            var textNodes = this.textNodes;
+            var firstTextNode = textNodes[0];
+            if (textNodes.length &gt; 1) {
+                var textParts = [], combinedTextLength = 0, textNode, parent;
+                for (var i = 0, len = textNodes.length, j, position; i &lt; len; ++i) {
+                    textNode = textNodes[i];
+                    parent = textNode.parentNode;
+                    if (i &gt; 0) {
+                        parent.removeChild(textNode);
+                        if (!parent.hasChildNodes()) {
+                            parent.parentNode.removeChild(parent);
+                        }
+                        if (positionsToPreserve) {
+                            for (j = 0; position = positionsToPreserve[j++]; ) {
+                                // Handle case where position is inside the text node being merged into a preceding node
+                                if (position.node == textNode) {
+                                    position.node = firstTextNode;
+                                    position.offset += combinedTextLength;
+                                }
+                            }
+                        }
+                    }
+                    textParts[i] = textNode.data;
+                    combinedTextLength += textNode.data.length;
+                }
+                firstTextNode.data = textParts.join(&quot;&quot;);
+            }
+            return firstTextNode.data;
+        },
+
+        getLength: function() {
+            var i = this.textNodes.length, len = 0;
+            while (i--) {
+                len += this.textNodes[i].length;
+            }
+            return len;
+        },
+
+        toString: function() {
+            var textParts = [];
+            for (var i = 0, len = this.textNodes.length; i &lt; len; ++i) {
+                textParts[i] = &quot;&#x27;&quot; + this.textNodes[i].data + &quot;&#x27;&quot;;
+            }
+            return &quot;[Merge(&quot; + textParts.join(&quot;,&quot;) + &quot;)]&quot;;
+        }
+    };
+
+    var optionProperties = [&quot;elementTagName&quot;, &quot;ignoreWhiteSpace&quot;, &quot;applyToEditableOnly&quot;, &quot;useExistingElements&quot;,
+        &quot;removeEmptyElements&quot;, &quot;onElementCreate&quot;];
+
+    // TODO: Populate this with every attribute name that corresponds to a property with a different name. Really??
+    var attrNamesForProperties = {};
+
+    function ClassApplier(cssClass, options, tagNames) {
+        var normalize, i, len, propName, applier = this;
+        applier.cssClass = cssClass;
+
+        var elementPropertiesFromOptions = null, elementAttributes = {};
+
+        // Initialize from options object
+        if (typeof options == &quot;object&quot; &amp;&amp; options !== null) {
+            tagNames = options.tagNames;
+            elementPropertiesFromOptions = options.elementProperties;
+            elementAttributes = options.elementAttributes;
+
+            for (i = 0; propName = optionProperties[i++]; ) {
+                if (options.hasOwnProperty(propName)) {
+                    applier[propName] = options[propName];
+                }
+            }
+            normalize = options.normalize;
+        } else {
+            normalize = options;
+        }
+
+        // Backward compatibility: the second parameter can also be a Boolean indicating to normalize after unapplying
+        applier.normalize = (typeof normalize == &quot;undefined&quot;) ? true : normalize;
+
+        // Initialize element properties and attribute exceptions
+        applier.attrExceptions = [];
+        var el = document.createElementNS(&quot;http://www.w3.org/1999/xhtml&quot;,applier.elementTagName);
+        applier.elementProperties = applier.copyPropertiesToElement(elementPropertiesFromOptions, el, true);
+        each(elementAttributes, function(attrName) {
+            applier.attrExceptions.push(attrName);
+        });
+        applier.elementAttributes = elementAttributes;
+
+        applier.elementSortedClassName = applier.elementProperties.hasOwnProperty(&quot;className&quot;) ?
+            applier.elementProperties.className : cssClass;
+
+        // Initialize tag names
+        applier.applyToAnyTagName = false;
+        var type = typeof tagNames;
+        if (type == &quot;string&quot;) {
+            if (tagNames == &quot;*&quot;) {
+                applier.applyToAnyTagName = true;
+            } else {
+                applier.tagNames = trim(tagNames.toLowerCase()).split(/\s*,\s*/);
+            }
+        } else if (type == &quot;object&quot; &amp;&amp; typeof tagNames.length == &quot;number&quot;) {
+            applier.tagNames = [];
+            for (i = 0, len = tagNames.length; i &lt; len; ++i) {
+                if (tagNames[i] == &quot;*&quot;) {
+                    applier.applyToAnyTagName = true;
+                } else {
+                    applier.tagNames.push(tagNames[i].toLowerCase());
+                }
+            }
+        } else {
+            applier.tagNames = [applier.elementTagName];
+        }
+    }
+
+    ClassApplier.prototype = {
+        elementTagName: defaultTagName,
+        elementProperties: {},
+        elementAttributes: {},
+        ignoreWhiteSpace: true,
+        applyToEditableOnly: false,
+        useExistingElements: true,
+        removeEmptyElements: true,
+        onElementCreate: null,
+
+        copyPropertiesToElement: function(props, el, createCopy) {
+            var s, elStyle, elProps = {}, elPropsStyle, propValue, elPropValue, attrName;
+
+            for (var p in props) {
+                if (props.hasOwnProperty(p)) {
+                    propValue = props[p];
+                    elPropValue = el[p];
+
+                    // Special case for class. The copied properties object has the applier&#x27;s CSS class as well as its
+                    // own to simplify checks when removing styling elements
+                    if (p == &quot;className&quot;) {
+                        addClass(el, propValue);
+                        addClass(el, this.cssClass);
+                        el[p] = sortClassName(el[p]);
+                        if (createCopy) {
+                            elProps[p] = el[p];
+                        }
+                    }
+
+                    // Special case for style
+                    else if (p == &quot;style&quot;) {
+                        elStyle = elPropValue;
+                        if (createCopy) {
+                            elProps[p] = elPropsStyle = {};
+                        }
+                        for (s in props[p]) {
+                            elStyle[s] = propValue[s];
+                            if (createCopy) {
+                                elPropsStyle[s] = elStyle[s];
+                            }
+                        }
+                        this.attrExceptions.push(p);
+                    } else {
+                        el[p] = propValue;
+                        // Copy the property back from the dummy element so that later comparisons to check whether
+                        // elements may be removed are checking against the right value. For example, the href property
+                        // of an element returns a fully qualified URL even if it was previously assigned a relative
+                        // URL.
+                        if (createCopy) {
+                            elProps[p] = el[p];
+
+                            // Not all properties map to identically-named attributes
+                            attrName = attrNamesForProperties.hasOwnProperty(p) ? attrNamesForProperties[p] : p;
+                            this.attrExceptions.push(attrName);
+                        }
+                    }
+                }
+            }
+
+            return createCopy ? elProps : &quot;&quot;;
+        },
+        
+        copyAttributesToElement: function(attrs, el) {
+            for (var attrName in attrs) {
+                if (attrs.hasOwnProperty(attrName)) {
+                    el.setAttribute(attrName, attrs[attrName]);
+                }
+            }
+        },
+
+        hasClass: function(node) {
+            return node.nodeType == 1 &amp;&amp;
+                contains(this.tagNames, node.tagName.toLowerCase()) &amp;&amp;
+                hasClass(node, this.cssClass);
+        },
+
+        getSelfOrAncestorWithClass: function(node) {
+            while (node) {
+                if (this.hasClass(node)) {
+                    return node;
+                }
+                node = node.parentNode;
+            }
+            return null;
+        },
+
+        isModifiable: function(node) {
+            return !this.applyToEditableOnly || isEditable(node);
+        },
+
+        // White space adjacent to an unwrappable node can be ignored for wrapping
+        isIgnorableWhiteSpaceNode: function(node) {
+            return this.ignoreWhiteSpace &amp;&amp; node &amp;&amp; node.nodeType == 3 &amp;&amp; isUnrenderedWhiteSpaceNode(node);
+        },
+
+        // Normalizes nodes after applying a CSS class to a Range.
+        postApply: function(textNodes, range, positionsToPreserve, isUndo) {
+            var firstNode = textNodes[0], lastNode = textNodes[textNodes.length - 1];
+
+            var merges = [], currentMerge;
+
+            var rangeStartNode = firstNode, rangeEndNode = lastNode;
+            var rangeStartOffset = 0, rangeEndOffset = lastNode.length;
+
+            var textNode, precedingTextNode;
+
+            // Check for every required merge and create a Merge object for each
+            for (var i = 0, len = textNodes.length; i &lt; len; ++i) {
+                textNode = textNodes[i];
+                precedingTextNode = getPreviousMergeableTextNode(textNode, !isUndo);
+                if (precedingTextNode) {
+                    if (!currentMerge) {
+                        currentMerge = new Merge(precedingTextNode);
+                        merges.push(currentMerge);
+                    }
+                    currentMerge.textNodes.push(textNode);
+                    if (textNode === firstNode) {
+                        rangeStartNode = currentMerge.textNodes[0];
+                        rangeStartOffset = rangeStartNode.length;
+                    }
+                    if (textNode === lastNode) {
+                        rangeEndNode = currentMerge.textNodes[0];
+                        rangeEndOffset = currentMerge.getLength();
+                    }
+                } else {
+                    currentMerge = null;
+                }
+            }
+
+            // Test whether the first node after the range needs merging
+            var nextTextNode = getNextMergeableTextNode(lastNode, !isUndo);
+
+            if (nextTextNode) {
+                if (!currentMerge) {
+                    currentMerge = new Merge(lastNode);
+                    merges.push(currentMerge);
+                }
+                currentMerge.textNodes.push(nextTextNode);
+            }
+
+            // Apply the merges
+            if (merges.length) {
+                for (i = 0, len = merges.length; i &lt; len; ++i) {
+                    merges[i].doMerge(positionsToPreserve);
+                }
+
+                // Set the range boundaries
+                range.setStartAndEnd(rangeStartNode, rangeStartOffset, rangeEndNode, rangeEndOffset);
+            }
+        },
+
+        createContainer: function(doc) {
+            var el = doc.createElementNS(&quot;http://www.w3.org/1999/xhtml&quot;,this.elementTagName);
+            this.copyPropertiesToElement(this.elementProperties, el, false);
+            this.copyAttributesToElement(this.elementAttributes, el);
+            addClass(el, this.cssClass);
+            if (this.onElementCreate) {
+                this.onElementCreate(el, this);
+            }
+            return el;
+        },
+
+        applyToTextNode: function(textNode, positionsToPreserve) {
+            var parent = textNode.parentNode;
+            if (parent.childNodes.length == 1 &amp;&amp;
+                    this.useExistingElements &amp;&amp;
+                    contains(this.tagNames, parent.tagName.toLowerCase()) &amp;&amp;
+                    elementHasProperties(parent, this.elementProperties)) {
+
+                addClass(parent, this.cssClass);
+            } else {
+                var el = this.createContainer(dom.getDocument(textNode));
+                textNode.parentNode.insertBefore(el, textNode);
+                el.appendChild(textNode);
+            }
+        },
+
+        isRemovable: function(el) {
+            return el.tagName.toLowerCase() == this.elementTagName
+                &amp;&amp; getSortedClassName(el) == this.elementSortedClassName
+                &amp;&amp; elementHasProperties(el, this.elementProperties)
+                &amp;&amp; !elementHasNonClassAttributes(el, this.attrExceptions)
+                &amp;&amp; this.isModifiable(el);
+        },
+
+        isEmptyContainer: function(el) {
+            var childNodeCount = el.childNodes.length;
+            return el.nodeType == 1
+                &amp;&amp; this.isRemovable(el)
+                &amp;&amp; (childNodeCount == 0 || (childNodeCount == 1 &amp;&amp; this.isEmptyContainer(el.firstChild)));
+        },
+        
+        removeEmptyContainers: function(range) {
+            var applier = this;
+            var nodesToRemove = range.getNodes([1], function(el) {
+                return applier.isEmptyContainer(el);
+            });
+            
+            var rangesToPreserve = [range]
+            var positionsToPreserve = getRangeBoundaries(rangesToPreserve);
+            
+            for (var i = 0, node; node = nodesToRemove[i++]; ) {
+                removePreservingPositions(node, positionsToPreserve);
+            }
+
+            // Update the range from the preserved boundary positions
+            updateRangesFromBoundaries(rangesToPreserve, positionsToPreserve);
+        },
+
+        undoToTextNode: function(textNode, range, ancestorWithClass, positionsToPreserve) {
+            if (!range.containsNode(ancestorWithClass)) {
+                // Split out the portion of the ancestor from which we can remove the CSS class
+                //var parent = ancestorWithClass.parentNode, index = dom.getNodeIndex(ancestorWithClass);
+                var ancestorRange = range.cloneRange();
+                ancestorRange.selectNode(ancestorWithClass);
+                if (ancestorRange.isPointInRange(range.endContainer, range.endOffset)) {
+                    splitNodeAt(ancestorWithClass, range.endContainer, range.endOffset, positionsToPreserve);
+                    range.setEndAfter(ancestorWithClass);
+                }
+                if (ancestorRange.isPointInRange(range.startContainer, range.startOffset)) {
+                    ancestorWithClass = splitNodeAt(ancestorWithClass, range.startContainer, range.startOffset, positionsToPreserve);
+                }
+            }
+            if (this.isRemovable(ancestorWithClass)) {
+                replaceWithOwnChildrenPreservingPositions(ancestorWithClass, positionsToPreserve);
+            } else {
+                removeClass(ancestorWithClass, this.cssClass);
+            }
+        },
+
+        applyToRange: function(range, rangesToPreserve) {
+            rangesToPreserve = rangesToPreserve || [];
+
+            // Create an array of range boundaries to preserve
+            var positionsToPreserve = getRangeBoundaries(rangesToPreserve || []);
+            
+            range.splitBoundariesPreservingPositions(positionsToPreserve);
+
+            // Tidy up the DOM by removing empty containers 
+            if (this.removeEmptyElements) {
+                this.removeEmptyContainers(range);
+            }
+
+            var textNodes = getEffectiveTextNodes(range);
+
+            if (textNodes.length) {
+                for (var i = 0, textNode; textNode = textNodes[i++]; ) {
+                    if (!this.isIgnorableWhiteSpaceNode(textNode) &amp;&amp; !this.getSelfOrAncestorWithClass(textNode)
+                            &amp;&amp; this.isModifiable(textNode)) {
+                        this.applyToTextNode(textNode, positionsToPreserve);
+                    }
+                }
+                textNode = textNodes[textNodes.length - 1];
+                range.setStartAndEnd(textNodes[0], 0, textNode, textNode.length);
+                if (this.normalize) {
+                    this.postApply(textNodes, range, positionsToPreserve, false);
+                }
+
+                // Update the ranges from the preserved boundary positions
+                updateRangesFromBoundaries(rangesToPreserve, positionsToPreserve);
+            }
+        },
+
+        applyToRanges: function(ranges) {
+
+            var i = ranges.length;
+            while (i--) {
+                this.applyToRange(ranges[i], ranges);
+            }
+
+
+            return ranges;
+        },
+
+        applyToSelection: function(win) {
+            var sel = api.getSelection(win);
+            sel.setRanges( this.applyToRanges(sel.getAllRanges()) );
+        },
+
+        undoToRange: function(range, rangesToPreserve) {
+            // Create an array of range boundaries to preserve
+            rangesToPreserve = rangesToPreserve || [];
+            var positionsToPreserve = getRangeBoundaries(rangesToPreserve);
+
+
+            range.splitBoundariesPreservingPositions(positionsToPreserve);
+
+            // Tidy up the DOM by removing empty containers 
+            if (this.removeEmptyElements) {
+                this.removeEmptyContainers(range, positionsToPreserve);
+            }
+
+            var textNodes = getEffectiveTextNodes(range);
+            var textNode, ancestorWithClass;
+            var lastTextNode = textNodes[textNodes.length - 1];
+
+            if (textNodes.length) {
+                for (var i = 0, len = textNodes.length; i &lt; len; ++i) {
+                    textNode = textNodes[i];
+                    ancestorWithClass = this.getSelfOrAncestorWithClass(textNode);
+                    if (ancestorWithClass &amp;&amp; this.isModifiable(textNode)) {
+                        this.undoToTextNode(textNode, range, ancestorWithClass, positionsToPreserve);
+                    }
+
+                    // Ensure the range is still valid
+                    range.setStartAndEnd(textNodes[0], 0, lastTextNode, lastTextNode.length);
+                }
+
+
+                if (this.normalize) {
+                    this.postApply(textNodes, range, positionsToPreserve, true);
+                }
+
+                // Update the ranges from the preserved boundary positions
+                updateRangesFromBoundaries(rangesToPreserve, positionsToPreserve);
+            }
+        },
+
+        undoToRanges: function(ranges) {
+            // Get ranges returned in document order
+            var i = ranges.length;
+
+            while (i--) {
+                this.undoToRange(ranges[i], ranges);
+            }
+
+            return ranges;
+        },
+
+        undoToSelection: function(win) {
+            var sel = api.getSelection(win);
+            var ranges = api.getSelection(win).getAllRanges();
+            this.undoToRanges(ranges);
+            sel.setRanges(ranges);
+        },
+
+/*
+        getTextSelectedByRange: function(textNode, range) {
+            var textRange = range.cloneRange();
+            textRange.selectNodeContents(textNode);
+
+            var intersectionRange = textRange.intersection(range);
+            var text = intersectionRange ? intersectionRange.toString() : &quot;&quot;;
+            textRange.detach();
+
+            return text;
+        },
+*/
+
+        isAppliedToRange: function(range) {
+            if (range.collapsed || range.toString() == &quot;&quot;) {
+                return !!this.getSelfOrAncestorWithClass(range.commonAncestorContainer);
+            } else {
+                var textNodes = range.getNodes( [3] );
+                if (textNodes.length)
+                for (var i = 0, textNode; textNode = textNodes[i++]; ) {
+                    if (!this.isIgnorableWhiteSpaceNode(textNode) &amp;&amp; rangeSelectsAnyText(range, textNode)
+                            &amp;&amp; this.isModifiable(textNode) &amp;&amp; !this.getSelfOrAncestorWithClass(textNode)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        },
+
+        isAppliedToRanges: function(ranges) {
+            var i = ranges.length;
+            if (i == 0) {
+                return false;
+            }
+            while (i--) {
+                if (!this.isAppliedToRange(ranges[i])) {
+                    return false;
+                }
+            }
+            return true;
+        },
+
+        isAppliedToSelection: function(win) {
+            var sel = api.getSelection(win);
+            return this.isAppliedToRanges(sel.getAllRanges());
+        },
+
+        toggleRange: function(range) {
+            if (this.isAppliedToRange(range)) {
+                this.undoToRange(range);
+            } else {
+                this.applyToRange(range);
+            }
+        },
+
+/*
+        toggleRanges: function(ranges) {
+            if (this.isAppliedToRanges(ranges)) {
+                this.undoToRanges(ranges);
+            } else {
+                this.applyToRanges(ranges);
+            }
+        },
+*/
+
+        toggleSelection: function(win) {
+            if (this.isAppliedToSelection(win)) {
+                this.undoToSelection(win);
+            } else {
+                this.applyToSelection(win);
+            }
+        },
+        
+        getElementsWithClassIntersectingRange: function(range) {
+            var elements = [];
+            var applier = this;
+            range.getNodes([3], function(textNode) {
+                var el = applier.getSelfOrAncestorWithClass(textNode);
+                if (el &amp;&amp; !contains(elements, el)) {
+                    elements.push(el);
+                }
+            });
+            return elements;
+        },
+
+/*
+        getElementsWithClassIntersectingSelection: function(win) {
+            var sel = api.getSelection(win);
+            var elements = [];
+            var applier = this;
+            sel.eachRange(function(range) {
+                var rangeElements = applier.getElementsWithClassIntersectingRange(range);
+                for (var i = 0, el; el = rangeElements[i++]; ) {
+                    if (!contains(elements, el)) {
+                        elements.push(el);
+                    }
+                }
+            });
+            return elements;
+        },
+*/
+
+        detach: function() {}
+    };
+
+    function createClassApplier(cssClass, options, tagNames) {
+        return new ClassApplier(cssClass, options, tagNames);
+    }
+
+    ClassApplier.util = {
+        hasClass: hasClass,
+        addClass: addClass,
+        removeClass: removeClass,
+        hasSameClasses: haveSameClasses,
+        replaceWithOwnChildren: replaceWithOwnChildrenPreservingPositions,
+        elementsHaveSameNonClassAttributes: elementsHaveSameNonClassAttributes,
+        elementHasNonClassAttributes: elementHasNonClassAttributes,
+        splitNodeAt: splitNodeAt,
+        isEditableElement: isEditableElement,
+        isEditingHost: isEditingHost,
+        isEditable: isEditable
+    };
+
+    api.CssClassApplier = api.ClassApplier = ClassApplier;
+    api.createCssClassApplier = api.createClassApplier = createClassApplier;
+});
+
+    </pre>
+</div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="../assets/vendor/prettify/prettify-min.js"></script>
+<script>prettyPrint();</script>
+<script src="../assets/js/yui-prettify.js"></script>
+<script src="../assets/../api.js"></script>
+<script src="../assets/js/api-filter.js"></script>
+<script src="../assets/js/api-list.js"></script>
+<script src="../assets/js/api-search.js"></script>
+<script src="../assets/js/apidocs.js"></script>
+</body>
+</html>

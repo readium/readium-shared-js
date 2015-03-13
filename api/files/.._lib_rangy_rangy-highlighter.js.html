@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>../lib/rangy/rangy-highlighter.js - Readium SDK DOM Access Layer API</title>
+    <link rel="stylesheet" href="http://yui.yahooapis.com/3.9.1/build/cssgrids/cssgrids-min.css">
+    <link rel="stylesheet" href="../assets/vendor/prettify/prettify-min.css">
+    <link rel="stylesheet" href="../assets/css/main.css" id="site_styles">
+    <link rel="shortcut icon" type="image/png" href="../assets/favicon.png">
+    <script src="http://yui.yahooapis.com/combo?3.9.1/build/yui/yui-min.js"></script>
+</head>
+<body class="yui3-skin-sam">
+
+<div id="doc">
+    <div id="page-top-wrapper" >
+        </br> </br>
+    </div>
+    <div class="yui3-g header">
+        <div class="yui3-u-3-4" >
+              
+                 <h1 id="logo" style="vertical-align:center"><img src="../assets/css/logo.png" title="Readium SDK DOM Access Layer API">Readium SDK DOM Access Layer API</h1>
+              
+        </div>
+        <div class="yui3-u-1-4 version" >
+            <div id="version">
+            <em>API Docs for: 0.16</em>
+        </div>
+        </div>
+    </div>
+    <div id="bd" class="yui3-g">
+        <div class="yui3-u-1-4">
+            <div id="docs-sidebar" class="sidebar apidocs">
+                <div id="api-list">
+    <h2 class="off-left">APIs</h2>
+    <div id="api-tabview" class="tabview">
+        <ul class="tabs">
+            <li><a href="#api-classes">Classes</a></li>
+            <li><a href="#api-modules">Modules</a></li>
+        </ul>
+
+        <div id="api-tabview-filter">
+            <input type="search" id="api-filter" placeholder="Type to filter APIs">
+        </div>
+
+        <div id="api-tabview-panel">
+            <ul id="api-classes" class="apis classes">
+            
+                <li><a href="../classes/ReadiumSDK.Models.BookmarkData.html">ReadiumSDK.Models.BookmarkData</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.CurrentPagesInfo.html">ReadiumSDK.Models.CurrentPagesInfo</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.Package.html">ReadiumSDK.Models.Package</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.PackageData.html">ReadiumSDK.Models.PackageData</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.Spine.html">ReadiumSDK.Models.Spine</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.SpineItem.html">ReadiumSDK.Models.SpineItem</a></li>
+            
+            </ul>
+
+            <ul id="api-modules" class="apis modules">
+            
+            </ul>
+        </div>
+    </div>
+</div>
+
+            </div>
+        </div>
+        <div class="yui3-u-3-4">
+                <div id="api-options">
+        Show:
+        <label for="api-show-inherited">
+            <input type="checkbox" id="api-show-inherited" checked>
+            Inherited
+        </label>
+
+        <label for="api-show-protected">
+            <input type="checkbox" id="api-show-protected">
+            Protected
+        </label>
+
+        <label for="api-show-private">
+            <input type="checkbox" id="api-show-private">
+            Private
+        </label>
+        <label for="api-show-deprecated">
+            <input type="checkbox" id="api-show-deprecated">
+            Deprecated
+        </label>
+
+    </div>
+
+
+            <div class="apidocs">
+                <div id="docs-main">
+                    <div class="content">
+                        <h1 class="file-heading">File: ../lib/rangy/rangy-highlighter.js</h1>
+
+<div class="file">
+    <pre class="code prettyprint linenums">
+/**
+ * Highlighter module for Rangy, a cross-browser JavaScript range and selection library
+ * http://code.google.com/p/rangy/
+ *
+ * Depends on Rangy core, TextRange and CssClassApplier modules.
+ *
+ * Copyright 2013, Tim Down
+ * Licensed under the MIT license.
+ * Version: 1.3alpha.804
+ * Build date: 8 December 2013
+ */
+rangy.createModule(&quot;Highlighter&quot;, [&quot;ClassApplier&quot;], function(api, module) {
+    var dom = api.dom;
+    var contains = dom.arrayContains;
+    var getBody = dom.getBody;
+
+    // Puts highlights in order, last in document first.
+    function compareHighlights(h1, h2) {
+        return h1.characterRange.start - h2.characterRange.start;
+    }
+
+    var forEach = [].forEach ?
+        function(arr, func) {
+            arr.forEach(func);
+        } :
+        function(arr, func) {
+            for (var i = 0, len = arr.length; i &lt; len; ++i) {
+                func( arr[i] );
+            }
+        };
+
+    var nextHighlightId = 1;
+
+    /*----------------------------------------------------------------------------------------------------------------*/
+
+    var highlighterTypes = {};
+
+    function HighlighterType(type, converterCreator) {
+        this.type = type;
+        this.converterCreator = converterCreator;
+    }
+
+    HighlighterType.prototype.create = function() {
+        var converter = this.converterCreator();
+        converter.type = this.type;
+        return converter;
+    };
+
+    function registerHighlighterType(type, converterCreator) {
+        highlighterTypes[type] = new HighlighterType(type, converterCreator);
+    }
+
+    function getConverter(type) {
+        var highlighterType = highlighterTypes[type];
+        if (highlighterType instanceof HighlighterType) {
+            return highlighterType.create();
+        } else {
+            throw new Error(&quot;Highlighter type &#x27;&quot; + type + &quot;&#x27; is not valid&quot;);
+        }
+    }
+
+    api.registerHighlighterType = registerHighlighterType;
+
+    /*----------------------------------------------------------------------------------------------------------------*/
+
+    function CharacterRange(start, end) {
+        this.start = start;
+        this.end = end;
+    }
+
+    CharacterRange.prototype = {
+        intersects: function(charRange) {
+            return this.start &lt; charRange.end &amp;&amp; this.end &gt; charRange.start;
+        },
+
+        union: function(charRange) {
+            return new CharacterRange(Math.min(this.start, charRange.start), Math.max(this.end, charRange.end));
+        },
+        
+        intersection: function(charRange) {
+            return new CharacterRange(Math.max(this.start, charRange.start), Math.min(this.end, charRange.end));
+        },
+
+        toString: function() {
+            return &quot;[CharacterRange(&quot; + this.start + &quot;, &quot; + this.end + &quot;)]&quot;;
+        }
+    };
+
+    CharacterRange.fromCharacterRange = function(charRange) {
+        return new CharacterRange(charRange.start, charRange.end);
+    };
+
+    /*----------------------------------------------------------------------------------------------------------------*/
+
+    var textContentConverter = {
+        rangeToCharacterRange: function(range, containerNode) {
+            var bookmark = range.getBookmark(containerNode);
+            return new CharacterRange(bookmark.start, bookmark.end);
+        },
+
+        characterRangeToRange: function(doc, characterRange, containerNode) {
+            var range = api.createRange(doc);
+            range.moveToBookmark({
+                start: characterRange.start,
+                end: characterRange.end,
+                containerNode: containerNode
+            });
+
+            return range;
+        },
+
+        serializeSelection: function(selection, containerNode) {
+            var ranges = selection.getAllRanges(), rangeCount = ranges.length;
+            var rangeInfos = [];
+
+            var backward = rangeCount == 1 &amp;&amp; selection.isBackward();
+
+            for (var i = 0, len = ranges.length; i &lt; len; ++i) {
+                rangeInfos[i] = {
+                    characterRange: this.rangeToCharacterRange(ranges[i], containerNode),
+                    backward: backward
+                };
+            }
+
+            return rangeInfos;
+        },
+
+        restoreSelection: function(selection, savedSelection, containerNode) {
+            selection.removeAllRanges();
+            var doc = selection.win.document;
+            for (var i = 0, len = savedSelection.length, range, rangeInfo, characterRange; i &lt; len; ++i) {
+                rangeInfo = savedSelection[i];
+                characterRange = rangeInfo.characterRange;
+                range = this.characterRangeToRange(doc, rangeInfo.characterRange, containerNode);
+                selection.addRange(range, rangeInfo.backward);
+            }
+        }
+    };
+
+    registerHighlighterType(&quot;textContent&quot;, function() {
+        return textContentConverter;
+    });
+
+    /*----------------------------------------------------------------------------------------------------------------*/
+
+    // Lazily load the TextRange-based converter so that the dependency is only checked when required.
+    registerHighlighterType(&quot;TextRange&quot;, (function() {
+        var converter;
+
+        return function() {
+            if (!converter) {
+                // Test that textRangeModule exists and is supported
+                var textRangeModule = api.modules.TextRange;
+                if (!textRangeModule) {
+                    throw new Error(&quot;TextRange module is missing.&quot;);
+                } else if (!textRangeModule.supported) {
+                    throw new Error(&quot;TextRange module is present but not supported.&quot;);
+                }
+
+                converter = {
+                    rangeToCharacterRange: function(range, containerNode) {
+                        return CharacterRange.fromCharacterRange( range.toCharacterRange(containerNode) );
+                    },
+
+                    characterRangeToRange: function(doc, characterRange, containerNode) {
+                        var range = api.createRange(doc);
+                        range.selectCharacters(containerNode, characterRange.start, characterRange.end);
+                        return range;
+                    },
+
+                    serializeSelection: function(selection, containerNode) {
+                        return selection.saveCharacterRanges(containerNode);
+                    },
+
+                    restoreSelection: function(selection, savedSelection, containerNode) {
+                        selection.restoreCharacterRanges(containerNode, savedSelection);
+                    }
+                };
+            }
+
+            return converter;
+        };
+    })());
+
+    /*----------------------------------------------------------------------------------------------------------------*/
+
+    function Highlight(doc, characterRange, classApplier, converter, id, containerElementId) {
+        if (id) {
+            this.id = id;
+            nextHighlightId = Math.max(nextHighlightId, id + 1);
+        } else {
+            this.id = nextHighlightId++;
+        }
+        this.characterRange = characterRange;
+        this.doc = doc;
+        this.classApplier = classApplier;
+        this.converter = converter;
+        this.containerElementId = containerElementId || null;
+        this.applied = false;
+    }
+
+    Highlight.prototype = {
+        getContainerElement: function() {
+            return this.containerElementId ? this.doc.getElementById(this.containerElementId) : getBody(this.doc);
+        },
+        
+        getRange: function() {
+            return this.converter.characterRangeToRange(this.doc, this.characterRange, this.getContainerElement());
+        },
+
+        fromRange: function(range) {
+            this.characterRange = this.converter.rangeToCharacterRange(range, this.getContainerElement());
+        },
+        
+        getText: function() {
+            return this.getRange().toString();
+        },
+
+        containsElement: function(el) {
+            return this.getRange().containsNodeContents(el.firstChild);
+        },
+
+        unapply: function() {
+            this.classApplier.undoToRange(this.getRange());
+            this.applied = false;
+        },
+
+        apply: function() {
+            this.classApplier.applyToRange(this.getRange());
+            this.applied = true;
+        },
+        
+        getHighlightElements: function() {
+            return this.classApplier.getElementsWithClassIntersectingRange(this.getRange());
+        },
+
+        toString: function() {
+            return &quot;[Highlight(ID: &quot; + this.id + &quot;, class: &quot; + this.classApplier.cssClass + &quot;, character range: &quot; +
+                this.characterRange.start + &quot; - &quot; + this.characterRange.end + &quot;)]&quot;;
+        }
+    };
+
+    /*----------------------------------------------------------------------------------------------------------------*/
+
+    function Highlighter(doc, type) {
+        type = type || &quot;textContent&quot;;
+        this.doc = doc || document;
+        this.classAppliers = {};
+        this.highlights = [];
+        this.converter = getConverter(type);
+    }
+
+    Highlighter.prototype = {
+        addClassApplier: function(classApplier) {
+            this.classAppliers[classApplier.cssClass] = classApplier;
+        },
+
+        getHighlightForElement: function(el) {
+            var highlights = this.highlights;
+            for (var i = 0, len = highlights.length; i &lt; len; ++i) {
+                if (highlights[i].containsElement(el)) {
+                    return highlights[i];
+                }
+            }
+            return null;
+        },
+
+        removeHighlights: function(highlights) {
+            for (var i = 0, len = this.highlights.length, highlight; i &lt; len; ++i) {
+                highlight = this.highlights[i];
+                if (contains(highlights, highlight)) {
+                    highlight.unapply();
+                    this.highlights.splice(i--, 1);
+                }
+            }
+        },
+
+        removeAllHighlights: function() {
+            this.removeHighlights(this.highlights);
+        },
+
+        getIntersectingHighlights: function(ranges) {
+            // Test each range against each of the highlighted ranges to see whether they overlap
+            var intersectingHighlights = [], highlights = this.highlights, converter = this.converter;
+            forEach(ranges, function(range) {
+                //var selCharRange = converter.rangeToCharacterRange(range);
+                forEach(highlights, function(highlight) {
+                    if (range.intersectsRange( highlight.getRange() ) &amp;&amp; !contains(intersectingHighlights, highlight)) {
+                        intersectingHighlights.push(highlight);
+                    }
+                });
+            });
+
+            return intersectingHighlights;
+        },
+        
+        highlightCharacterRanges: function(className, charRanges, containerElementId) {
+            var i, len, j;
+            var highlights = this.highlights;
+            var converter = this.converter;
+            var doc = this.doc;
+            var highlightsToRemove = [];
+            var classApplier = this.classAppliers[className];
+            containerElementId = containerElementId || null;
+
+            var containerElement, containerElementRange, containerElementCharRange;
+            if (containerElementId) {
+                containerElement = this.doc.getElementById(containerElementId);
+                if (containerElement) {
+                    containerElementRange = api.createRange(this.doc);
+                    containerElementRange.selectNodeContents(containerElement);
+                    containerElementCharRange = new CharacterRange(0, containerElementRange.toString().length);
+                    containerElementRange.detach();
+                }
+            }
+
+            var charRange, highlightCharRange, merged;
+            for (i = 0, len = charRanges.length; i &lt; len; ++i) {
+                charRange = charRanges[i];
+                merged = false;
+
+                // Restrict character range to container element, if it exists
+                if (containerElementCharRange) {
+                    charRange = charRange.intersection(containerElementCharRange);
+                }
+
+                // Check for intersection with existing highlights. For each intersection, create a new highlight
+                // which is the union of the highlight range and the selected range
+                for (j = 0; j &lt; highlights.length; ++j) {
+                    if (containerElementId == highlights[j].containerElementId) {
+                        highlightCharRange = highlights[j].characterRange;
+
+                        if (highlightCharRange.intersects(charRange)) {
+                            // Replace the existing highlight in the list of current highlights and add it to the list for
+                            // removal
+                            highlightsToRemove.push(highlights[j]);
+                            highlights[j] = new Highlight(doc, highlightCharRange.union(charRange), classApplier, converter, null, containerElementId);
+                        }
+                    }
+                }
+
+                if (!merged) {
+                    highlights.push( new Highlight(doc, charRange, classApplier, converter, null, containerElementId) );
+                }
+            }
+            
+            // Remove the old highlights
+            forEach(highlightsToRemove, function(highlightToRemove) {
+                highlightToRemove.unapply();
+            });
+
+            // Apply new highlights
+            var newHighlights = [];
+            forEach(highlights, function(highlight) {
+                if (!highlight.applied) {
+                    highlight.apply();
+                    newHighlights.push(highlight);
+                }
+            });
+            
+            return newHighlights;
+        },
+
+        highlightRanges: function(className, ranges, containerElement) {
+            var selCharRanges = [];
+            var converter = this.converter;
+            var containerElementId = containerElement ? containerElement.id : null;
+            var containerElementRange;
+            if (containerElement) {
+                containerElementRange = api.createRange(containerElement);
+                containerElementRange.selectNodeContents(containerElement);
+            } 
+
+            forEach(ranges, function(range) {
+                var scopedRange = containerElement ? containerElementRange.intersection(range) : range;
+                selCharRanges.push( converter.rangeToCharacterRange(scopedRange, containerElement || getBody(range.getDocument())) );
+            });
+            
+            return this.highlightCharacterRanges(selCharRanges, ranges, containerElementId);
+        },
+
+        highlightSelection: function(className, selection, containerElementId) {
+            var converter = this.converter;
+            selection = selection || api.getSelection();
+            var classApplier = this.classAppliers[className];
+            var doc = selection.win.document;
+            var containerElement = containerElementId ? doc.getElementById(containerElementId) : getBody(doc);
+
+            if (!classApplier) {
+                throw new Error(&quot;No class applier found for class &#x27;&quot; + className + &quot;&#x27;&quot;);
+            }
+
+            // Store the existing selection as character ranges
+            var serializedSelection = converter.serializeSelection(selection, containerElement);
+
+            // Create an array of selected character ranges
+            var selCharRanges = [];
+            forEach(serializedSelection, function(rangeInfo) {
+                selCharRanges.push( CharacterRange.fromCharacterRange(rangeInfo.characterRange) );
+            });
+            
+            var newHighlights = this.highlightCharacterRanges(className, selCharRanges, containerElementId);
+
+            // Restore selection
+            converter.restoreSelection(selection, serializedSelection, containerElement);
+
+            return newHighlights;
+        },
+
+        unhighlightSelection: function(selection) {
+            selection = selection || api.getSelection();
+            var intersectingHighlights = this.getIntersectingHighlights( selection.getAllRanges() );
+            this.removeHighlights(intersectingHighlights);
+            selection.removeAllRanges();
+            return intersectingHighlights;
+        },
+
+        getHighlightsInSelection: function(selection) {
+            selection = selection || api.getSelection();
+            return this.getIntersectingHighlights(selection.getAllRanges());
+        },
+
+        selectionOverlapsHighlight: function(selection) {
+            return this.getHighlightsInSelection(selection).length &gt; 0;
+        },
+
+        serialize: function(options) {
+            var highlights = this.highlights;
+            highlights.sort(compareHighlights);
+            var serializedHighlights = [&quot;type:&quot; + this.converter.type];
+
+            forEach(highlights, function(highlight) {
+                var characterRange = highlight.characterRange;
+                var parts = [
+                    characterRange.start,
+                    characterRange.end,
+                    highlight.id,
+                    highlight.classApplier.cssClass,
+                    highlight.containerElementId
+                ];
+                if (options &amp;&amp; options.serializeHighlightText) {
+                    parts.push(highlight.getText());
+                }
+                serializedHighlights.push( parts.join(&quot;$&quot;) );
+            });
+
+            return serializedHighlights.join(&quot;|&quot;);
+        },
+
+        deserialize: function(serialized) {
+            var serializedHighlights = serialized.split(&quot;|&quot;);
+            var highlights = [];
+
+            var firstHighlight = serializedHighlights[0];
+            var regexResult;
+            var serializationType, serializationConverter, convertType = false;
+            if ( firstHighlight &amp;&amp; (regexResult = /^type:(\w+)$/.exec(firstHighlight)) ) {
+                serializationType = regexResult[1];
+                if (serializationType != this.converter.type) {
+                    serializationConverter = getConverter(serializationType);
+                    convertType = true;
+                }
+                serializedHighlights.shift();
+            } else {
+                throw new Error(&quot;Serialized highlights are invalid.&quot;);
+            }
+            
+            var classApplier, highlight, characterRange, containerElementId, containerElement;
+
+            for (var i = serializedHighlights.length, parts; i-- &gt; 0; ) {
+                parts = serializedHighlights[i].split(&quot;$&quot;);
+                characterRange = new CharacterRange(+parts[0], +parts[1]);
+                containerElementId = parts[4] || null;
+                containerElement = containerElementId ? this.doc.getElementById(containerElementId) : getBody(this.doc);
+
+                // Convert to the current Highlighter&#x27;s type, if different from the serialization type
+                if (convertType) {
+                    characterRange = this.converter.rangeToCharacterRange(
+                        serializationConverter.characterRangeToRange(this.doc, characterRange, containerElement),
+                        containerElement
+                    );
+                }
+
+                classApplier = this.classAppliers[parts[3]];
+                highlight = new Highlight(this.doc, characterRange, classApplier, this.converter, parseInt(parts[2]), containerElementId);
+                highlight.apply();
+                highlights.push(highlight);
+            }
+            this.highlights = highlights;
+        }
+    };
+
+    api.Highlighter = Highlighter;
+
+    api.createHighlighter = function(doc, rangeCharacterOffsetConverterType) {
+        return new Highlighter(doc, rangeCharacterOffsetConverterType);
+    };
+});
+
+    </pre>
+</div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="../assets/vendor/prettify/prettify-min.js"></script>
+<script>prettyPrint();</script>
+<script src="../assets/js/yui-prettify.js"></script>
+<script src="../assets/../api.js"></script>
+<script src="../assets/js/api-filter.js"></script>
+<script src="../assets/js/api-list.js"></script>
+<script src="../assets/js/api-search.js"></script>
+<script src="../assets/js/apidocs.js"></script>
+</body>
+</html>

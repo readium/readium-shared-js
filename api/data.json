@@ -1,0 +1,3426 @@
+{
+    "project": {
+        "name": "Readium SDK DOM Access Layer API",
+        "description": "Public API for JavaScript layer of Readium SDK project",
+        "version": "0.16",
+        "themedir": "readium_theme",
+        "url": "https://github.com/readium"
+    },
+    "files": {
+        "../js/models/bookmark_data.js": {
+            "name": "../js/models/bookmark_data.js",
+            "modules": {},
+            "classes": {
+                "ReadiumSDK.Models.BookmarkData": 1
+            },
+            "fors": {},
+            "namespaces": {}
+        },
+        "../js/models/current_pages_info.js": {
+            "name": "../js/models/current_pages_info.js",
+            "modules": {},
+            "classes": {
+                "ReadiumSDK.Models.CurrentPagesInfo": 1
+            },
+            "fors": {},
+            "namespaces": {}
+        },
+        "../js/models/fixed_page_spread.js": {
+            "name": "../js/models/fixed_page_spread.js",
+            "modules": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        },
+        "../js/models/media_overlay.js": {
+            "name": "../js/models/media_overlay.js",
+            "modules": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        },
+        "../js/models/package.js": {
+            "name": "../js/models/package.js",
+            "modules": {},
+            "classes": {
+                "ReadiumSDK.Models.Package": 1
+            },
+            "fors": {},
+            "namespaces": {}
+        },
+        "../js/models/package_data.js": {
+            "name": "../js/models/package_data.js",
+            "modules": {},
+            "classes": {
+                "ReadiumSDK.Models.PackageData": 1
+            },
+            "fors": {},
+            "namespaces": {}
+        },
+        "../js/models/page_open_request.js": {
+            "name": "../js/models/page_open_request.js",
+            "modules": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        },
+        "../js/models/smil_iterator.js": {
+            "name": "../js/models/smil_iterator.js",
+            "modules": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        },
+        "../js/models/smil_model.js": {
+            "name": "../js/models/smil_model.js",
+            "modules": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        },
+        "../js/models/spine.js": {
+            "name": "../js/models/spine.js",
+            "modules": {},
+            "classes": {
+                "ReadiumSDK.Models.Spine": 1
+            },
+            "fors": {},
+            "namespaces": {}
+        },
+        "../js/models/spine_item.js": {
+            "name": "../js/models/spine_item.js",
+            "modules": {},
+            "classes": {
+                "ReadiumSDK.Models.SpineItem": 1
+            },
+            "fors": {},
+            "namespaces": {}
+        },
+        "../js/models/style.js": {
+            "name": "../js/models/style.js",
+            "modules": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        },
+        "../js/models/style_collection.js": {
+            "name": "../js/models/style_collection.js",
+            "modules": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        },
+        "../js/models/switches.js": {
+            "name": "../js/models/switches.js",
+            "modules": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        },
+        "../js/models/trigger.js": {
+            "name": "../js/models/trigger.js",
+            "modules": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        },
+        "../js/models/viewer_settings.js": {
+            "name": "../js/models/viewer_settings.js",
+            "modules": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        },
+        "../js/views/annotations_manager.js": {
+            "name": "../js/views/annotations_manager.js",
+            "modules": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        },
+        "../js/views/audio_player.js": {
+            "name": "../js/views/audio_player.js",
+            "modules": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        },
+        "../js/views/cfi_navigation_logic.js": {
+            "name": "../js/views/cfi_navigation_logic.js",
+            "modules": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        },
+        "../js/views/fixed_view.js": {
+            "name": "../js/views/fixed_view.js",
+            "modules": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        },
+        "../js/views/iframe_loader.js": {
+            "name": "../js/views/iframe_loader.js",
+            "modules": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        },
+        "../js/views/internal_links_support.js": {
+            "name": "../js/views/internal_links_support.js",
+            "modules": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        },
+        "../js/views/media_overlay_data_injector.js": {
+            "name": "../js/views/media_overlay_data_injector.js",
+            "modules": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        },
+        "../js/views/media_overlay_element_highlighter.js": {
+            "name": "../js/views/media_overlay_element_highlighter.js",
+            "modules": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        },
+        "../js/views/media_overlay_player.js": {
+            "name": "../js/views/media_overlay_player.js",
+            "modules": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        },
+        "../js/views/one_page_view.js": {
+            "name": "../js/views/one_page_view.js",
+            "modules": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        },
+        "../js/views/reader_view.js": {
+            "name": "../js/views/reader_view.js",
+            "modules": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        },
+        "../js/views/reflowable_view.js": {
+            "name": "../js/views/reflowable_view.js",
+            "modules": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        },
+        "../js/views/scroll_view.js": {
+            "name": "../js/views/scroll_view.js",
+            "modules": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        },
+        "../js/helpers.js": {
+            "name": "../js/helpers.js",
+            "modules": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        },
+        "../js/readium_sdk.js": {
+            "name": "../js/readium_sdk.js",
+            "modules": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        },
+        "../lib/rangy/rangy-core.js": {
+            "name": "../lib/rangy/rangy-core.js",
+            "modules": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        },
+        "../lib/rangy/rangy-cssclassapplier.js": {
+            "name": "../lib/rangy/rangy-cssclassapplier.js",
+            "modules": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        },
+        "../lib/rangy/rangy-highlighter.js": {
+            "name": "../lib/rangy/rangy-highlighter.js",
+            "modules": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        },
+        "../lib/rangy/rangy-position.js": {
+            "name": "../lib/rangy/rangy-position.js",
+            "modules": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        },
+        "../lib/rangy/rangy-selectionsaverestore.js": {
+            "name": "../lib/rangy/rangy-selectionsaverestore.js",
+            "modules": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        },
+        "../lib/rangy/rangy-serializer.js": {
+            "name": "../lib/rangy/rangy-serializer.js",
+            "modules": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        },
+        "../lib/rangy/rangy-textrange.js": {
+            "name": "../lib/rangy/rangy-textrange.js",
+            "modules": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        },
+        "../lib/jquery-1.11.0.js": {
+            "name": "../lib/jquery-1.11.0.js",
+            "modules": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        },
+        "../lib/jquery.sizes.js": {
+            "name": "../lib/jquery.sizes.js",
+            "modules": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        }
+    },
+    "modules": {},
+    "classes": {
+        "ReadiumSDK.Models.BookmarkData": {
+            "name": "ReadiumSDK.Models.BookmarkData",
+            "shortname": "ReadiumSDK.Models.BookmarkData",
+            "classitems": [],
+            "plugins": [],
+            "extensions": [],
+            "plugin_for": [],
+            "extension_for": [],
+            "file": "../js/models/bookmark_data.js",
+            "line": 27
+        },
+        "ReadiumSDK.Models.CurrentPagesInfo": {
+            "name": "ReadiumSDK.Models.CurrentPagesInfo",
+            "shortname": "ReadiumSDK.Models.CurrentPagesInfo",
+            "classitems": [],
+            "plugins": [],
+            "extensions": [],
+            "plugin_for": [],
+            "extension_for": [],
+            "file": "../js/models/current_pages_info.js",
+            "line": 26,
+            "description": "Used to report pagination state back to the host application",
+            "is_constructor": 1,
+            "params": [
+                {
+                    "name": "spine",
+                    "description": "",
+                    "type": "ReadiumSDK.Models.Spine"
+                },
+                {
+                    "name": "isFixedLayout",
+                    "description": "is fixed or reflowable spine item",
+                    "type": "Boolean"
+                }
+            ]
+        },
+        "ReadiumSDK.Models.Package": {
+            "name": "ReadiumSDK.Models.Package",
+            "shortname": "ReadiumSDK.Models.Package",
+            "classitems": [],
+            "plugins": [],
+            "extensions": [],
+            "plugin_for": [],
+            "extension_for": [],
+            "file": "../js/models/package.js",
+            "line": 26,
+            "is_constructor": 1
+        },
+        "ReadiumSDK.Models.PackageData": {
+            "name": "ReadiumSDK.Models.PackageData",
+            "shortname": "ReadiumSDK.Models.PackageData",
+            "classitems": [],
+            "plugins": [],
+            "extensions": [],
+            "plugin_for": [],
+            "extension_for": [],
+            "file": "../js/models/package_data.js",
+            "line": 27,
+            "description": "This object is not instantiated directly but provided by the host application to the DOMAccess layer in the\nReadiumSDK.Views.ReaderView.openBook function\n\nProvided for reference only"
+        },
+        "ReadiumSDK.Models.Spine": {
+            "name": "ReadiumSDK.Models.Spine",
+            "shortname": "ReadiumSDK.Models.Spine",
+            "classitems": [],
+            "plugins": [],
+            "extensions": [],
+            "plugin_for": [],
+            "extension_for": [],
+            "file": "../js/models/spine.js",
+            "line": 26,
+            "description": "Wrapper of the spine object received from hosting application"
+        },
+        "ReadiumSDK.Models.SpineItem": {
+            "name": "ReadiumSDK.Models.SpineItem",
+            "shortname": "ReadiumSDK.Models.SpineItem",
+            "classitems": [],
+            "plugins": [],
+            "extensions": [],
+            "plugin_for": [],
+            "extension_for": [],
+            "file": "../js/models/spine_item.js",
+            "line": 26,
+            "description": "Wrapper of the SpineItem object received from the host application",
+            "params": [
+                {
+                    "name": "itemData",
+                    "description": "spine item properties container"
+                },
+                {
+                    "name": "index",
+                    "description": "",
+                    "type": "Number"
+                },
+                {
+                    "name": "spine",
+                    "description": "",
+                    "type": "ReadiumSDK.Models.Spine"
+                }
+            ]
+        }
+    },
+    "classitems": [
+        {
+            "file": "../js/models/bookmark_data.js",
+            "line": 32,
+            "description": "spine item idref",
+            "itemtype": "property",
+            "name": "idref",
+            "type": "{string}",
+            "class": "ReadiumSDK.Models.BookmarkData"
+        },
+        {
+            "file": "../js/models/bookmark_data.js",
+            "line": 39,
+            "description": "cfi of the first visible element",
+            "itemtype": "property",
+            "name": "contentCFI",
+            "type": "{string}",
+            "class": "ReadiumSDK.Models.BookmarkData"
+        },
+        {
+            "file": "../js/models/fixed_page_spread.js",
+            "line": 26,
+            "params": [
+                {
+                    "name": "spine",
+                    "description": "",
+                    "type": "ReadiumSDK.Models.Spine"
+                }
+            ],
+            "is_constructor": 1,
+            "class": "ReadiumSDK.Models.Package"
+        },
+        {
+            "file": "../js/models/media_overlay.js",
+            "line": 29,
+            "params": [
+                {
+                    "name": "package",
+                    "description": ""
+                }
+            ],
+            "is_constructor": 1,
+            "class": "ReadiumSDK.Models.Package"
+        },
+        {
+            "file": "../js/models/package_data.js",
+            "line": 38,
+            "itemtype": "property",
+            "name": "rootUrl Url of the package file",
+            "type": "{string}",
+            "class": "ReadiumSDK.Models.PackageData"
+        },
+        {
+            "file": "../js/models/package_data.js",
+            "line": 44,
+            "itemtype": "property",
+            "name": "rootUrl Url of the package file, to prefix Media Overlays SMIL audio references",
+            "type": "{string}",
+            "class": "ReadiumSDK.Models.PackageData"
+        },
+        {
+            "file": "../js/models/package_data.js",
+            "line": 50,
+            "itemtype": "property",
+            "name": "rendering_layout expected values \"reflowable\"|rendering_layout=\"pre-paginated\"",
+            "type": "{string}",
+            "class": "ReadiumSDK.Models.PackageData"
+        },
+        {
+            "file": "../js/models/page_open_request.js",
+            "line": 26,
+            "description": "Representation of opening page request\nProvides the spine item to be opened and one of the following properties:\n spineItemPageIndex {Number},\n elementId {String},\n elementCfi {String},\n firstPage {bool},\n lastPage {bool}",
+            "params": [
+                {
+                    "name": "spineItem",
+                    "description": "",
+                    "type": "ReadiumSDK.Models.SpineItem"
+                },
+                {
+                    "name": "initiator",
+                    "description": "",
+                    "type": "Object",
+                    "optional": true
+                }
+            ],
+            "is_constructor": 1,
+            "class": "ReadiumSDK.Models.Spine"
+        },
+        {
+            "file": "../js/models/smil_iterator.js",
+            "line": 29,
+            "params": [
+                {
+                    "name": "smil",
+                    "description": ""
+                }
+            ],
+            "is_constructor": 1,
+            "class": "ReadiumSDK.Models.Spine"
+        },
+        {
+            "file": "../js/models/smil_model.js",
+            "line": 30,
+            "params": [
+                {
+                    "name": "parent",
+                    "description": ""
+                }
+            ],
+            "is_constructor": 1,
+            "class": "ReadiumSDK.Models.Spine"
+        },
+        {
+            "file": "../js/models/style.js",
+            "line": 26,
+            "params": [
+                {
+                    "name": "selector",
+                    "description": ""
+                },
+                {
+                    "name": "declarations",
+                    "description": ""
+                }
+            ],
+            "is_constructor": 1,
+            "class": ""
+        },
+        {
+            "file": "../js/models/style_collection.js",
+            "line": 26,
+            "is_constructor": 1,
+            "class": ""
+        },
+        {
+            "file": "../js/models/switches.js",
+            "line": 28,
+            "is_constructor": 1,
+            "class": ""
+        },
+        {
+            "file": "../js/models/trigger.js",
+            "line": 28,
+            "description": "Setter fot epub Triggers",
+            "params": [
+                {
+                    "name": "domNode",
+                    "description": ""
+                }
+            ],
+            "class": ""
+        },
+        {
+            "file": "../js/models/viewer_settings.js",
+            "line": 26,
+            "params": [
+                {
+                    "name": "settingsData",
+                    "description": ""
+                }
+            ],
+            "is_constructor": 1,
+            "class": ""
+        },
+        {
+            "file": "../js/views/annotations_manager.js",
+            "line": 111,
+            "params": [
+                {
+                    "name": "proxyObj",
+                    "description": ""
+                },
+                {
+                    "name": "options",
+                    "description": ""
+                }
+            ],
+            "is_constructor": 1,
+            "class": ""
+        },
+        {
+            "file": "../js/views/audio_player.js",
+            "line": 129,
+            "params": [
+                {
+                    "name": "onStatusChanged",
+                    "description": ""
+                },
+                {
+                    "name": "onPositionChanged",
+                    "description": ""
+                },
+                {
+                    "name": "onAudioEnded",
+                    "description": ""
+                },
+                {
+                    "name": "onAudioPlay",
+                    "description": ""
+                },
+                {
+                    "name": "onAudioPause",
+                    "description": ""
+                }
+            ],
+            "is_constructor": 1,
+            "class": ""
+        },
+        {
+            "file": "../js/views/cfi_navigation_logic.js",
+            "line": 28,
+            "description": "CFI navigation helper class",
+            "params": [
+                {
+                    "name": "$viewport",
+                    "description": ""
+                },
+                {
+                    "name": "$iframe",
+                    "description": ""
+                },
+                {
+                    "name": "options",
+                    "description": "Additional settings for NavigationLogic object\n     - rectangleBased    If truthy, clientRect-based geometry will be used\n     - paginationInfo    Layout details, used by clientRect-based geometry"
+                }
+            ],
+            "is_constructor": 1,
+            "class": ""
+        },
+        {
+            "file": "../js/views/cfi_navigation_logic.js",
+            "line": 54,
+            "access": "private",
+            "tagname": "Checks whether or not pages are rendered right-to-left",
+            "return": {
+                "description": "",
+                "type": "Boolean"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/views/cfi_navigation_logic.js",
+            "line": 64,
+            "access": "private",
+            "tagname": "Checks whether or not pages are rendered with vertical writing mode",
+            "return": {
+                "description": "",
+                "type": "Boolean"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/views/cfi_navigation_logic.js",
+            "line": 75,
+            "access": "private",
+            "tagname": "Checks whether or not a (fully adjusted) rectangle is at least partly visible",
+            "params": [
+                {
+                    "name": "rect",
+                    "description": "",
+                    "type": "Object"
+                },
+                {
+                    "name": "frameDimensions",
+                    "description": "",
+                    "type": "Object"
+                },
+                {
+                    "name": "isVwm",
+                    "description": "isVerticalWritingMode",
+                    "type": "Boolean",
+                    "optional": true
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "Boolean"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/views/cfi_navigation_logic.js",
+            "line": 91,
+            "access": "private",
+            "tagname": "Retrieves _current_ full width of a column (including its gap)",
+            "return": {
+                "description": "Full width of a column in pixels",
+                "type": "Number"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/views/cfi_navigation_logic.js",
+            "line": 107,
+            "access": "private",
+            "tagname": "Retrieves _current_ offset of a viewport\n(related to the beginning of the chapter)",
+            "return": {
+                "description": "",
+                "type": "Object"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/views/cfi_navigation_logic.js",
+            "line": 167,
+            "description": "New (rectangle-based) algorithm, useful in multi-column layouts\n\nNote: the second param (props) is ignored intentionally\n(no need to use those in normalization)",
+            "params": [
+                {
+                    "name": "$element",
+                    "description": "",
+                    "type": "JQuery"
+                },
+                {
+                    "name": "_props",
+                    "description": "",
+                    "type": "Object"
+                },
+                {
+                    "name": "shouldCalculateVisibilityPercentage",
+                    "description": "",
+                    "type": "Boolean"
+                }
+            ],
+            "return": {
+                "description": "\n     0 for non-visible elements,\n     0 < n <= 100 for visible elements\n     (will just give 100, if `shouldCalculateVisibilityPercentage` => false)\n     null for elements with display:none",
+                "type": "Number|null"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/views/cfi_navigation_logic.js",
+            "line": 221,
+            "description": "Finds a page index (0-based) for a specific element.\nCalculations are based on rectangles retrieved with getClientRects() method.",
+            "params": [
+                {
+                    "name": "$element",
+                    "description": "",
+                    "type": "JQuery"
+                },
+                {
+                    "name": "spatialVerticalOffset",
+                    "description": "",
+                    "type": "Number"
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "Number|null"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/views/cfi_navigation_logic.js",
+            "line": 279,
+            "access": "private",
+            "tagname": "Calculates the visibility offset percentage based on ClientRect dimensions",
+            "params": [
+                {
+                    "name": "clientRectangles",
+                    "description": "(should already be normalized)",
+                    "type": "Array"
+                },
+                {
+                    "name": "firstVisibleRectIndex",
+                    "description": "",
+                    "type": "Number"
+                }
+            ],
+            "return": {
+                "description": "- visibility percentage (0 < n <= 100)",
+                "type": "Number"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/views/cfi_navigation_logic.js",
+            "line": 314,
+            "access": "private",
+            "tagname": "Retrieves the position of $element in multi-column layout",
+            "params": [
+                {
+                    "name": "$el",
+                    "description": "",
+                    "type": "JQuery"
+                },
+                {
+                    "name": "visibleContentOffsets",
+                    "description": "",
+                    "type": "Object",
+                    "optional": true
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "Object"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/views/cfi_navigation_logic.js",
+            "line": 362,
+            "access": "private",
+            "tagname": "Converts TextRectangle object into a plain object,\ntaking content offsets (=scrolls, position shifts etc.) into account",
+            "params": [
+                {
+                    "name": "textRect",
+                    "description": "",
+                    "type": "TextRectangle"
+                },
+                {
+                    "name": "leftOffset",
+                    "description": "",
+                    "type": "Number"
+                },
+                {
+                    "name": "topOffset",
+                    "description": "",
+                    "type": "Number"
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "Object"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/views/cfi_navigation_logic.js",
+            "line": 386,
+            "access": "private",
+            "tagname": "Offsets plain object (which represents a TextRectangle).",
+            "params": [
+                {
+                    "name": "rect",
+                    "description": "",
+                    "type": "Object"
+                },
+                {
+                    "name": "leftOffset",
+                    "description": "",
+                    "type": "Number"
+                },
+                {
+                    "name": "topOffset",
+                    "description": "",
+                    "type": "Number"
+                }
+            ],
+            "class": ""
+        },
+        {
+            "file": "../js/views/cfi_navigation_logic.js",
+            "line": 402,
+            "access": "private",
+            "tagname": "When element is spilled over two or more columns,\nmost of the time Webkit-based browsers\nstill assign a single clientRectangle to it, setting its `top` property to negative value\n(so it looks like it's rendered based on the second column)\nAlas, sometimes they decide to continue the leftmost column - from _below_ its real height.\nIn this case, `bottom` property is actually greater than element's height and had to be adjusted accordingly.\n\nUgh.",
+            "params": [
+                {
+                    "name": "rect",
+                    "description": "",
+                    "type": "Object"
+                },
+                {
+                    "name": "frameDimensions",
+                    "description": "",
+                    "type": "Object"
+                },
+                {
+                    "name": "columnFullWidth",
+                    "description": "",
+                    "type": "Number"
+                },
+                {
+                    "name": "isRtl",
+                    "description": "",
+                    "type": "Boolean"
+                },
+                {
+                    "name": "isVwm",
+                    "description": "isVerticalWritingMode",
+                    "type": "Boolean"
+                },
+                {
+                    "name": "shouldLookForFirstVisibleColumn!~YUIDOC_LINE~!",
+                    "description": "If set, there'll be two-phase adjustment\n     (to align a rectangle with a viewport)",
+                    "type": "Boolean"
+                }
+            ],
+            "class": ""
+        },
+        {
+            "file": "../js/views/cfi_navigation_logic.js",
+            "line": 455,
+            "access": "private",
+            "tagname": "Trims the rectangle(s) representing the given element.",
+            "params": [
+                {
+                    "name": "rects",
+                    "description": "",
+                    "type": "Array"
+                },
+                {
+                    "name": "verticalOffset",
+                    "description": "",
+                    "type": "Number"
+                },
+                {
+                    "name": "frameHeight",
+                    "description": "",
+                    "type": "Number"
+                },
+                {
+                    "name": "columnFullWidth",
+                    "description": "",
+                    "type": "Number"
+                },
+                {
+                    "name": "isRtl",
+                    "description": "",
+                    "type": "Boolean"
+                },
+                {
+                    "name": "isVwm",
+                    "description": "isVerticalWritingMode",
+                    "type": "Boolean"
+                }
+            ],
+            "class": ""
+        },
+        {
+            "file": "../js/views/cfi_navigation_logic.js",
+            "line": 804,
+            "deprecated": true,
+            "class": ""
+        },
+        {
+            "file": "../js/views/fixed_view.js",
+            "line": 26,
+            "description": "View for rendering fixed layout page spread",
+            "params": [
+                {
+                    "name": "options",
+                    "description": ""
+                },
+                {
+                    "name": "reader",
+                    "description": ""
+                }
+            ],
+            "is_constructor": 1,
+            "class": ""
+        },
+        {
+            "file": "../js/views/iframe_loader.js",
+            "line": 30,
+            "is_constructor": 1,
+            "class": ""
+        },
+        {
+            "file": "../js/views/internal_links_support.js",
+            "line": 25,
+            "params": [
+                {
+                    "name": "reader",
+                    "description": ""
+                }
+            ],
+            "is_constructor": 1,
+            "class": ""
+        },
+        {
+            "file": "../js/views/media_overlay_data_injector.js",
+            "line": 25,
+            "params": [
+                {
+                    "name": "mediaOverlay",
+                    "description": ""
+                },
+                {
+                    "name": "mediaOverlayPlayer",
+                    "description": ""
+                }
+            ],
+            "is_constructor": 1,
+            "class": ""
+        },
+        {
+            "file": "../js/views/media_overlay_element_highlighter.js",
+            "line": 29,
+            "params": [
+                {
+                    "name": "reader",
+                    "description": ""
+                }
+            ],
+            "is_constructor": 1,
+            "class": ""
+        },
+        {
+            "file": "../js/views/media_overlay_player.js",
+            "line": 29,
+            "params": [
+                {
+                    "name": "reader",
+                    "description": ""
+                },
+                {
+                    "name": "onStatusChanged",
+                    "description": ""
+                }
+            ],
+            "is_constructor": 1,
+            "class": ""
+        },
+        {
+            "file": "../js/views/one_page_view.js",
+            "line": 28,
+            "description": "Renders one page of fixed layout spread",
+            "params": [
+                {
+                    "name": "options",
+                    "description": ""
+                },
+                {
+                    "name": "classes",
+                    "description": ""
+                },
+                {
+                    "name": "enableBookStyleOverrides",
+                    "description": ""
+                }
+            ],
+            "is_constructor": 1,
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 27,
+            "description": "Options passed on the reader from the readium loader/initializer",
+            "typedef": "{object} ReadiumSDK.Views.ReaderView.ReaderOptions",
+            "itemtype": "property",
+            "name": "{boolean} needsFixedLayoutScalerWorkAround",
+            "type": "JQueryElement|string",
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 36,
+            "description": "Top level View object. Interface for view manipulation public APIs",
+            "params": [
+                {
+                    "name": "options",
+                    "description": "",
+                    "type": "ReadiumSDK.Views.ReaderView.ReaderOptions"
+                }
+            ],
+            "is_constructor": 1,
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 86,
+            "return": {
+                "description": "",
+                "type": "Boolean"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 91,
+            "description": "Create a view based on the given view type.",
+            "params": [
+                {
+                    "name": "viewType",
+                    "description": "",
+                    "type": "ReadiumSDK.Views.ReaderView.ViewType"
+                },
+                {
+                    "name": "options",
+                    "description": "",
+                    "type": "ReadiumSDK.Views.ReaderView.ViewCreationOptions"
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "*"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 124,
+            "description": "Returns the current view type of the reader view",
+            "return": {
+                "description": "",
+                "type": "ReaderView.ViewType"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 198,
+            "description": "View creation options",
+            "typedef": "{object} ReadiumSDK.Views.ReaderView.ViewCreationOptions",
+            "itemtype": "property",
+            "name": "{ReadiumSDK.Views.IFrameLoader} iframeLoader   An instance of an iframe loader or one expanding it.",
+            "type": "JQueryElement",
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 266,
+            "description": "Returns a list of the currently active spine items",
+            "return": {
+                "description": "",
+                "type": "ReadiumSDK.Models.SpineItem[]"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 293,
+            "description": "Returns the currently instanced viewer settings",
+            "return": {
+                "description": "",
+                "type": "ReadiumSDK.Models.ViewerSettings"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 302,
+            "description": "Returns a data object based on the package document",
+            "return": {
+                "description": "",
+                "type": "ReadiumSDK.Models.Package"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 311,
+            "description": "Returns a representation of the spine as a data object, also acts as list of spine items",
+            "return": {
+                "description": "",
+                "type": "ReadiumSDK.Models.Spine"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 320,
+            "description": "Returns the user CSS styles collection",
+            "return": {
+                "description": "",
+                "type": "ReadiumSDK.Collections.StyleCollection"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 329,
+            "description": "Open Book Data",
+            "typedef": "{object} ReadiumSDK.Views.ReaderView.OpenBookData",
+            "itemtype": "property",
+            "name": "{ReadiumSDK.Collections.StyleCollection} styles: [cssStyles]",
+            "type": "ReadiumSDK.Models.Package",
+            "todo": [
+                "Define missing types"
+            ],
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 340,
+            "description": "Triggers the process of opening the book and requesting resources specified in the packageData",
+            "params": [
+                {
+                    "name": "openBookData",
+                    "description": "- object with open book data",
+                    "type": "ReadiumSDK.Views.ReaderView.OpenBookData"
+                }
+            ],
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 432,
+            "description": "Flips the page from left to right.\nTakes to account the page progression direction to decide to flip to prev or next page.",
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 446,
+            "description": "Flips the page from right to left.\nTakes to account the page progression direction to decide to flip to prev or next page.",
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 461,
+            "description": "Returns if the current child view is an instance of a fixed page view",
+            "return": {
+                "description": "",
+                "type": "Boolean"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 470,
+            "description": "Zoom options",
+            "typedef": "{object} ReadiumSDK.Views.ReaderView.ZoomOptions",
+            "itemtype": "property",
+            "name": "{number} scale - 0.0 to 1.0",
+            "type": "String",
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 478,
+            "description": "Set the zoom options.",
+            "params": [
+                {
+                    "name": "zoom",
+                    "description": "Zoom options",
+                    "type": "ReadiumSDK.Views.ReaderView.ZoomOptions"
+                }
+            ],
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 490,
+            "description": "Returns the current view scale as a percentage",
+            "return": {
+                "description": "",
+                "type": "Number"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 504,
+            "description": "Settings Data",
+            "typedef": "{object} ReadiumSDK.Views.ReaderView.SettingsData",
+            "itemtype": "property",
+            "name": "{boolean} mediaOverlaysEnableClick - Indicates whether media overlays are interactive on mouse clicks",
+            "type": "Number",
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 515,
+            "description": "Updates reader view based on the settings specified in settingsData object",
+            "params": [
+                {
+                    "name": "settingsData",
+                    "description": "Settings data",
+                    "type": "ReadiumSDK.Views.ReaderView.SettingsData"
+                }
+            ],
+            "fires": "ReadiumSDK.Events.SETTINGS_APPLIED",
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 575,
+            "description": "Opens the next page.",
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 612,
+            "description": "Opens the previous page.",
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 667,
+            "description": "Opens the page of the spine item with element with provided cfi",
+            "params": [
+                {
+                    "name": "idref",
+                    "description": "Id of the spine item",
+                    "type": "String"
+                },
+                {
+                    "name": "elementCfi",
+                    "description": "CFI of the element to be shown",
+                    "type": "String"
+                },
+                {
+                    "name": "initiator",
+                    "description": "optional",
+                    "type": "Object"
+                }
+            ],
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 692,
+            "description": "Opens specified page index of the current spine item",
+            "params": [
+                {
+                    "name": "pageIndex",
+                    "description": "Zero based index of the page in the current spine item",
+                    "type": "Number"
+                },
+                {
+                    "name": "initiator",
+                    "description": "optional",
+                    "type": "Object"
+                }
+            ],
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 743,
+            "description": "Opens page index of the spine item with idref provided",
+            "params": [
+                {
+                    "name": "idref",
+                    "description": "Id of the spine item",
+                    "type": "String"
+                },
+                {
+                    "name": "pageIndex",
+                    "description": "Zero based index of the page in the spine item",
+                    "type": "Number"
+                },
+                {
+                    "name": "initiator",
+                    "description": "optional",
+                    "type": "Object"
+                }
+            ],
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 768,
+            "description": "Set CSS Styles to the reader container",
+            "params": [
+                {
+                    "name": "styles",
+                    "description": "Style collection containing selector property and declarations object",
+                    "type": "ReadiumSDK.Collections.StyleCollection"
+                },
+                {
+                    "name": "doNotUpdateView",
+                    "description": "Whether to update the view after the styles are applied.",
+                    "type": "Boolean"
+                }
+            ],
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 793,
+            "description": "Set CSS Styles to the content documents",
+            "params": [
+                {
+                    "name": "styles",
+                    "description": "Style collection containing selector property and declarations object",
+                    "type": "ReadiumSDK.Collections.StyleCollection"
+                }
+            ],
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 812,
+            "description": "Gets an element from active content documents based on a query selector.",
+            "params": [
+                {
+                    "name": "spineItem",
+                    "description": "The spine item object associated with an active content document",
+                    "type": "ReadiumSDK.Models.SpineItem"
+                },
+                {
+                    "name": "selector",
+                    "description": "The query selector",
+                    "type": "String"
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "HTMLElement|undefined"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 828,
+            "description": "Gets an element from active content documents based on an element id.",
+            "params": [
+                {
+                    "name": "spineItem",
+                    "description": "The spine item object associated with an active content document",
+                    "type": "ReadiumSDK.Models.SpineItem"
+                },
+                {
+                    "name": "id",
+                    "description": "The element id",
+                    "type": "String"
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "HTMLElement|undefined"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 844,
+            "description": "Gets an element from active content documents based on a content CFI.",
+            "params": [
+                {
+                    "name": "spineItem",
+                    "description": "The spine item idref associated with an active content document",
+                    "type": "ReadiumSDK.Models.SpineItem"
+                },
+                {
+                    "name": "cfi",
+                    "description": "The partial content CFI",
+                    "type": "String"
+                },
+                {
+                    "name": "classBlacklist",
+                    "description": "",
+                    "type": "String[]",
+                    "optional": true
+                },
+                {
+                    "name": "elementBlacklist",
+                    "description": "",
+                    "type": "String[]",
+                    "optional": true
+                },
+                {
+                    "name": "idBlacklist",
+                    "description": "",
+                    "type": "String[]",
+                    "optional": true
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "HTMLElement|undefined"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 878,
+            "description": "Opens a content url from a media player context",
+            "params": [
+                {
+                    "name": "contentRefUrl",
+                    "description": "",
+                    "type": "String"
+                },
+                {
+                    "name": "sourceFileHref",
+                    "description": "",
+                    "type": "String"
+                },
+                {
+                    "name": "offset",
+                    "description": ""
+                }
+            ],
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 891,
+            "description": "Opens the content document specified by the url",
+            "params": [
+                {
+                    "name": "contentRefUrl",
+                    "description": "Url of the content document",
+                    "type": "String"
+                },
+                {
+                    "name": "sourceFileHref",
+                    "description": "Url to the file that contentRefUrl is relative to. If contentRefUrl is\nrelative ot the source file that contains it instead of the package file (ex. TOC file) We have to know the\nsourceFileHref to resolve contentUrl relative to the package file.",
+                    "type": "String | undefined"
+                },
+                {
+                    "name": "initiator",
+                    "description": "optional",
+                    "type": "Object"
+                }
+            ],
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 933,
+            "description": "Opens the page of the spine item with element with provided cfi",
+            "params": [
+                {
+                    "name": "idref",
+                    "description": "Id of the spine item",
+                    "type": "String"
+                },
+                {
+                    "name": "elementId",
+                    "description": "id of the element to be shown",
+                    "type": "String"
+                },
+                {
+                    "name": "initiator",
+                    "description": "optional",
+                    "type": "Object"
+                }
+            ],
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 959,
+            "description": "Returns the bookmark associated with currently opened page.",
+            "return": {
+                "description": "Serialized ReadiumSDK.Models.BookmarkData object as JSON string.",
+                "type": "String"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 968,
+            "description": "Resets all the custom styles set by setStyle callers at runtime",
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 978,
+            "description": "Resets all the custom styles set by setBookStyle callers at runtime",
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 992,
+            "description": "Returns true if media overlay available for one of the open pages.",
+            "return": {
+                "description": "",
+                "type": "Boolean"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 1016,
+            "description": "Starts/Stop playing media overlay on current page",
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 1025,
+            "description": "Plays next fragment media overlay",
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 1034,
+            "description": "Plays previous fragment media overlay",
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 1043,
+            "description": "Plays next available fragment media overlay that is outside of the current escapable scope",
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 1051,
+            "description": "End media overlay TTS",
+            "todo": [
+                "Clarify what this does with Daniel."
+            ],
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 1060,
+            "description": "Pause currently playing media overlays.",
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 1068,
+            "description": "Start/Resume playback of media overlays.",
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 1076,
+            "description": "Determine if media overlays are currently playing.",
+            "return": {
+                "description": "",
+                "type": "Boolean"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 1096,
+            "description": "Get the first visible media overlay element from the currently active content document(s)",
+            "return": {
+                "description": "",
+                "type": "HTMLElement|undefined"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 1109,
+            "description": "Used to jump to an element to make sure it is visible when a content document is paginated",
+            "params": [
+                {
+                    "name": "spineItemId",
+                    "description": "The spine item idref associated with an active content document",
+                    "type": "String"
+                },
+                {
+                    "name": "element",
+                    "description": "The element to make visible",
+                    "type": "HTMLElement"
+                },
+                {
+                    "name": "initiator",
+                    "description": "",
+                    "optional": true
+                }
+            ],
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 1178,
+            "description": "Returns current selection partial Cfi, useful for workflows that need to check whether the user has selected something.",
+            "return": {
+                "description": "partial cfi object or undefined if nothing is selected",
+                "type": "Object | undefined"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 1187,
+            "description": "Creates a higlight based on given parameters",
+            "params": [
+                {
+                    "name": "spineIdRef",
+                    "description": "spine idref that defines the partial Cfi",
+                    "type": "String"
+                },
+                {
+                    "name": "cfi",
+                    "description": "partial CFI (withouth the indirection step) relative to the spine index",
+                    "type": "String"
+                },
+                {
+                    "name": "id",
+                    "description": "id of the highlight. must be unique",
+                    "type": "String"
+                },
+                {
+                    "name": "type",
+                    "description": "currently \"highlight\" only",
+                    "type": "String"
+                }
+            ],
+            "return": {
+                "description": "partial cfi object of the created highlight",
+                "type": "Object | undefined"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 1202,
+            "description": "Creates a higlight based on the current selection",
+            "params": [
+                {
+                    "name": "id",
+                    "description": "id of the highlight. must be unique",
+                    "type": "String"
+                },
+                {
+                    "name": "type",
+                    "description": "currently \"highlight\" only",
+                    "type": "String"
+                }
+            ],
+            "return": {
+                "description": "partial cfi object of the created highlight",
+                "type": "Object | undefined"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 1214,
+            "description": "Removes A given highlight",
+            "params": [
+                {
+                    "name": "id",
+                    "description": "The id associated with the highlight.",
+                    "type": "String"
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "Undefined"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 1226,
+            "params": [
+                {
+                    "name": "eventName",
+                    "description": "Event name.",
+                    "type": "String"
+                },
+                {
+                    "name": "callback",
+                    "description": "Callback function.",
+                    "type": "Function"
+                },
+                {
+                    "name": "context",
+                    "description": "User specified data passed to the callback function.",
+                    "type": "Object"
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "Undefined"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/views/reader_view.js",
+            "line": 1522,
+            "description": "View Type",
+            "typedef": "{object} ReadiumSDK.Views.ReaderView.ViewType",
+            "itemtype": "property",
+            "name": "{number} VIEW_TYPE_SCROLLED_CONTINUOUS Continuous scrollable document view",
+            "type": "Number",
+            "class": ""
+        },
+        {
+            "file": "../js/views/reflowable_view.js",
+            "line": 29,
+            "description": "Renders reflowable content using CSS columns",
+            "params": [
+                {
+                    "name": "options",
+                    "description": ""
+                }
+            ],
+            "is_constructor": 1,
+            "class": ""
+        },
+        {
+            "file": "../js/views/scroll_view.js",
+            "line": 27,
+            "description": "Renders content inside a scrollable view port",
+            "params": [
+                {
+                    "name": "options",
+                    "description": ""
+                },
+                {
+                    "name": "isContinuousScroll",
+                    "description": ""
+                },
+                {
+                    "name": "reader",
+                    "description": ""
+                }
+            ],
+            "is_constructor": 1,
+            "class": ""
+        },
+        {
+            "file": "../js/helpers.js",
+            "line": 28,
+            "params": [
+                {
+                    "name": "left",
+                    "description": ""
+                },
+                {
+                    "name": "top",
+                    "description": ""
+                },
+                {
+                    "name": "width",
+                    "description": ""
+                },
+                {
+                    "name": "height",
+                    "description": ""
+                }
+            ],
+            "is_constructor": 1,
+            "class": ""
+        },
+        {
+            "file": "../js/helpers.js",
+            "line": 64,
+            "params": [
+                {
+                    "name": "$element",
+                    "description": ""
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "ReadiumSDK.Helpers.Rect"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/helpers.js",
+            "line": 153,
+            "params": [
+                {
+                    "name": "contentRef",
+                    "description": ""
+                },
+                {
+                    "name": "sourceFileHref",
+                    "description": ""
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "String"
+            },
+            "is_constructor": 1,
+            "class": ""
+        },
+        {
+            "file": "../js/helpers.js",
+            "line": 184,
+            "params": [
+                {
+                    "name": "str",
+                    "description": ""
+                },
+                {
+                    "name": "suffix",
+                    "description": ""
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "Boolean"
+            },
+            "static": 1,
+            "class": ""
+        },
+        {
+            "file": "../js/helpers.js",
+            "line": 195,
+            "params": [
+                {
+                    "name": "str",
+                    "description": ""
+                },
+                {
+                    "name": "suffix",
+                    "description": ""
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "Boolean"
+            },
+            "static": 1,
+            "class": ""
+        },
+        {
+            "file": "../js/helpers.js",
+            "line": 207,
+            "params": [
+                {
+                    "name": "str",
+                    "description": ""
+                },
+                {
+                    "name": "toRemove",
+                    "description": ""
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "String"
+            },
+            "static": 1,
+            "class": ""
+        },
+        {
+            "file": "../js/helpers.js",
+            "line": 225,
+            "params": [
+                {
+                    "name": "margin",
+                    "description": ""
+                },
+                {
+                    "name": "border",
+                    "description": ""
+                },
+                {
+                    "name": "padding",
+                    "description": ""
+                }
+            ],
+            "is_constructor": 1,
+            "class": ""
+        },
+        {
+            "file": "../js/helpers.js",
+            "line": 252,
+            "params": [
+                {
+                    "name": "$iframe",
+                    "description": ""
+                }
+            ],
+            "class": ""
+        },
+        {
+            "file": "../js/helpers.js",
+            "line": 305,
+            "params": [
+                {
+                    "name": "$viewport",
+                    "description": ""
+                },
+                {
+                    "name": "spineItem",
+                    "description": ""
+                },
+                {
+                    "name": "settings",
+                    "description": ""
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "Boolean"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/helpers.js",
+            "line": 375,
+            "params": [
+                {
+                    "name": "$element",
+                    "description": ""
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "ReadiumSDK.Helpers.Rect"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/helpers.js",
+            "line": 384,
+            "return": {
+                "description": "",
+                "type": "ReadiumSDK.Helpers.Rect"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/helpers.js",
+            "line": 393,
+            "params": [
+                {
+                    "name": "name",
+                    "description": ""
+                },
+                {
+                    "name": "params",
+                    "description": ""
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "ReadiumSDK.Helpers.loadTemplate.cache"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/helpers.js",
+            "line": 403,
+            "type": "{{fixed_book_frame: string, single_page_frame: string, scrolled_book_frame: string, reflowable_book_frame: string, reflowable_book_page_frame: string}}",
+            "class": ""
+        },
+        {
+            "file": "../js/helpers.js",
+            "line": 418,
+            "params": [
+                {
+                    "name": "styles",
+                    "description": ""
+                },
+                {
+                    "name": "$element",
+                    "description": ""
+                }
+            ],
+            "class": ""
+        },
+        {
+            "file": "../js/helpers.js",
+            "line": 443,
+            "params": [
+                {
+                    "name": "iframe",
+                    "description": ""
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "Boolean"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/helpers.js",
+            "line": 466,
+            "params": [
+                {
+                    "name": "$viewport",
+                    "description": ""
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "ReadiumSDK.Views.ORIENTATION_LANDSCAPE|ReadiumSDK.Views.ORIENTATION_PORTRAIT"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/helpers.js",
+            "line": 483,
+            "params": [
+                {
+                    "name": "item",
+                    "description": ""
+                },
+                {
+                    "name": "orientation",
+                    "description": ""
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "Boolean"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/helpers.js",
+            "line": 588,
+            "params": [
+                {
+                    "name": "sel",
+                    "description": ""
+                }
+            ],
+            "return": {
+                "description": "",
+                "type": "String"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/readium_sdk.js",
+            "line": 29,
+            "description": "Top level ReadiumSDK namespace",
+            "class": ""
+        },
+        {
+            "file": "../js/readium_sdk.js",
+            "line": 35,
+            "description": "Current version of the JS SDK",
+            "static": 1,
+            "return": {
+                "description": "version",
+                "type": "String"
+            },
+            "class": ""
+        },
+        {
+            "file": "../js/readium_sdk.js",
+            "line": 43,
+            "class": ""
+        },
+        {
+            "file": "../js/readium_sdk.js",
+            "line": 47,
+            "type": "{object}",
+            "class": ""
+        },
+        {
+            "file": "../js/readium_sdk.js",
+            "line": 52,
+            "class": ""
+        },
+        {
+            "file": "../js/readium_sdk.js",
+            "line": 56,
+            "description": "Landscape Orientation",
+            "class": ""
+        },
+        {
+            "file": "../js/readium_sdk.js",
+            "line": 60,
+            "description": "Portrait Orientation",
+            "class": ""
+        },
+        {
+            "file": "../js/readium_sdk.js",
+            "line": 65,
+            "class": ""
+        },
+        {
+            "file": "../js/readium_sdk.js",
+            "line": 69,
+            "class": ""
+        },
+        {
+            "file": "../js/readium_sdk.js",
+            "line": 73,
+            "class": ""
+        },
+        {
+            "file": "../js/readium_sdk.js",
+            "line": 77,
+            "class": ""
+        },
+        {
+            "file": "../js/readium_sdk.js",
+            "line": 81,
+            "class": ""
+        },
+        {
+            "file": "../js/readium_sdk.js",
+            "line": 85,
+            "itemtype": "event",
+            "name": "",
+            "class": ""
+        },
+        {
+            "file": "../js/readium_sdk.js",
+            "line": 89,
+            "description": "This gets triggered on every page turnover. It includes spine information and such.",
+            "itemtype": "event",
+            "name": "",
+            "class": ""
+        },
+        {
+            "file": "../js/readium_sdk.js",
+            "line": 94,
+            "itemtype": "event",
+            "name": "",
+            "class": ""
+        },
+        {
+            "file": "../js/readium_sdk.js",
+            "line": 98,
+            "itemtype": "event",
+            "name": "",
+            "class": ""
+        },
+        {
+            "file": "../js/readium_sdk.js",
+            "line": 102,
+            "itemtype": "event",
+            "name": "",
+            "class": ""
+        },
+        {
+            "file": "../js/readium_sdk.js",
+            "line": 106,
+            "itemtype": "event",
+            "name": "",
+            "class": ""
+        },
+        {
+            "file": "../js/readium_sdk.js",
+            "line": 110,
+            "itemtype": "event",
+            "name": "",
+            "class": ""
+        },
+        {
+            "file": "../js/readium_sdk.js",
+            "line": 114,
+            "itemtype": "event",
+            "name": "",
+            "class": ""
+        },
+        {
+            "file": "../js/readium_sdk.js",
+            "line": 118,
+            "itemtype": "event",
+            "name": "",
+            "class": ""
+        },
+        {
+            "file": "../js/readium_sdk.js",
+            "line": 122,
+            "itemtype": "event",
+            "name": "",
+            "class": ""
+        },
+        {
+            "file": "../js/readium_sdk.js",
+            "line": 126,
+            "itemtype": "event",
+            "name": "",
+            "class": ""
+        },
+        {
+            "file": "../js/readium_sdk.js",
+            "line": 131,
+            "description": "Internal Events",
+            "desc": "Should not be triggered outside of {@link ReadiumSDK.Views.ReaderView}.",
+            "class": ""
+        },
+        {
+            "file": "../js/readium_sdk.js",
+            "line": 138,
+            "itemtype": "event",
+            "name": "",
+            "class": ""
+        },
+        {
+            "file": "../lib/rangy/rangy-core.js",
+            "line": 1,
+            "description": "Rangy, a cross-browser JavaScript range and selection library\nhttp://code.google.com/p/rangy/\n\nCopyright 2013, Tim Down\nLicensed under the MIT license.\nVersion: 1.3alpha.804\nBuild date: 8 December 2013",
+            "class": ""
+        },
+        {
+            "file": "../lib/rangy/rangy-core.js",
+            "line": 1925,
+            "description": "Convenience method to set a range's start and end boundaries. Overloaded as follows:\n- Two parameters (node, offset) creates a collapsed range at that position\n- Three parameters (node, startOffset, endOffset) creates a range contained with node starting at\n  startOffset and ending at endOffset\n- Four parameters (startNode, startOffset, endNode, endOffset) creates a range starting at startOffset in\n  startNode and ending at endOffset in endNode",
+            "class": ""
+        },
+        {
+            "file": "../lib/rangy/rangy-cssclassapplier.js",
+            "line": 1,
+            "description": "Class Applier module for Rangy.\nAdds, removes and toggles classes on Ranges and Selections\n\nPart of Rangy, a cross-browser JavaScript range and selection library\nhttp://code.google.com/p/rangy/\n\nDepends on Rangy core.\n\nCopyright 2013, Tim Down\nLicensed under the MIT license.\nVersion: 1.3alpha.804\nBuild date: 8 December 2013",
+            "class": ""
+        },
+        {
+            "file": "../lib/rangy/rangy-highlighter.js",
+            "line": 1,
+            "description": "Highlighter module for Rangy, a cross-browser JavaScript range and selection library\nhttp://code.google.com/p/rangy/\n\nDepends on Rangy core, TextRange and CssClassApplier modules.\n\nCopyright 2013, Tim Down\nLicensed under the MIT license.\nVersion: 1.3alpha.804\nBuild date: 8 December 2013",
+            "class": ""
+        },
+        {
+            "file": "../lib/rangy/rangy-position.js",
+            "line": 1,
+            "description": "Position module for Rangy.\nExtensions to Range and Selection objects to provide access to pixel positions relative to the viewport or document.\n\nPart of Rangy, a cross-browser JavaScript range and selection library\nhttp://code.google.com/p/rangy/\n\nDepends on Rangy core.\n\nCopyright %%build:year%%, Tim Down\nLicensed under the MIT license.\nVersion: %%build:version%%\nBuild date: %%build:date%%",
+            "class": ""
+        },
+        {
+            "file": "../lib/rangy/rangy-selectionsaverestore.js",
+            "line": 1,
+            "description": "Selection save and restore module for Rangy.\nSaves and restores user selections using marker invisible elements in the DOM.\n\nPart of Rangy, a cross-browser JavaScript range and selection library\nhttp://code.google.com/p/rangy/\n\nDepends on Rangy core.\n\nCopyright 2013, Tim Down\nLicensed under the MIT license.\nVersion: 1.3alpha.804\nBuild date: 8 December 2013",
+            "class": ""
+        },
+        {
+            "file": "../lib/rangy/rangy-serializer.js",
+            "line": 1,
+            "description": "Serializer module for Rangy.\nSerializes Ranges and Selections. An example use would be to store a user's selection on a particular page in a\ncookie or local storage and restore it on the user's next visit to the same page.\n\nPart of Rangy, a cross-browser JavaScript range and selection library\nhttp://code.google.com/p/rangy/\n\nDepends on Rangy core.\n\nCopyright 2013, Tim Down\nLicensed under the MIT license.\nVersion: 1.3alpha.804\nBuild date: 8 December 2013",
+            "class": ""
+        },
+        {
+            "file": "../lib/rangy/rangy-textrange.js",
+            "line": 1,
+            "description": "Text range module for Rangy.\nText-based manipulation and searching of ranges and selections.\n\nFeatures\n\n- Ability to move range boundaries by character or word offsets\n- Customizable word tokenizer\n- Ignores text nodes inside <script> or <style> elements or those hidden by CSS display and visibility properties\n- Range findText method to search for text or regex within the page or within a range. Flags for whole words and case\n  sensitivity\n- Selection and range save/restore as text offsets within a node\n- Methods to return visible text within a range or selection\n- innerText method for elements\n\nReferences\n\nhttps://www.w3.org/Bugs/Public/show_bug.cgi?id=13145\nhttp://aryeh.name/spec/innertext/innertext.html\nhttp://dvcs.w3.org/hg/editing/raw-file/tip/editing.html\n\nPart of Rangy, a cross-browser JavaScript range and selection library\nhttp://code.google.com/p/rangy/\n\nDepends on Rangy core.\n\nCopyright 2013, Tim Down\nLicensed under the MIT license.\nVersion: 1.3alpha.804\nBuild date: 8 December 2013",
+            "class": ""
+        },
+        {
+            "file": "../lib/rangy/rangy-textrange.js",
+            "line": 33,
+            "description": "Problem: handling of trailing spaces before line breaks is handled inconsistently between browsers.\n\nFirst, a <br>: this is relatively simple. For the following HTML:\n\n1 <br>2\n\n- IE and WebKit render the space, include it in the selection (i.e. when the content is selected and pasted into a\n  textarea, the space is present) and allow the caret to be placed after it.\n- Firefox does not acknowledge the space in the selection but it is possible to place the caret after it.\n- Opera does not render the space but has two separate caret positions on either side of the space (left and right\n  arrow keys show this) and includes the space in the selection.\n\nThe other case is the line break or breaks implied by block elements. For the following HTML:\n\n<p>1 </p><p>2<p>\n\n- WebKit does not acknowledge the space in any way\n- Firefox, IE and Opera as per <br>\n\nOne more case is trailing spaces before line breaks in elements with white-space: pre-line. For the following HTML:\n\n<p style=\"white-space: pre-line\">1\n2</p>\n\n- Firefox and WebKit include the space in caret positions\n- IE does not support pre-line up to and including version 9\n- Opera ignores the space\n- Trailing space only renders if there is a non-collapsed character in the line\n\nProblem is whether Rangy should ever acknowledge the space and if so, when. Another problem is whether this can be\nfeature-tested",
+            "class": ""
+        },
+        {
+            "file": "../lib/jquery-1.11.0.js",
+            "line": 883,
+            "description": "Create key-value caches of limited size",
+            "return": {
+                "description": "Returns the Object data after storing it on itself with\n\tproperty name the (space-suffixed) string and (if the cache is larger than Expr.cacheLength)\n\tdeleting the oldest entry",
+                "type": "Function(string, Object)"
+            },
+            "class": ""
+        },
+        {
+            "file": "../lib/jquery-1.11.0.js",
+            "line": 903,
+            "description": "Mark a function for special use by Sizzle",
+            "params": [
+                {
+                    "name": "fn",
+                    "description": "The function to mark",
+                    "type": "Function"
+                }
+            ],
+            "class": ""
+        },
+        {
+            "file": "../lib/jquery-1.11.0.js",
+            "line": 912,
+            "description": "Support testing using an element",
+            "params": [
+                {
+                    "name": "fn",
+                    "description": "Passed the created div and expects a boolean result",
+                    "type": "Function"
+                }
+            ],
+            "class": ""
+        },
+        {
+            "file": "../lib/jquery-1.11.0.js",
+            "line": 933,
+            "description": "Adds the same handler for all of the specified attrs",
+            "params": [
+                {
+                    "name": "attrs",
+                    "description": "Pipe-separated list of attributes",
+                    "type": "String"
+                },
+                {
+                    "name": "handler",
+                    "description": "The method that will be applied",
+                    "type": "Function"
+                }
+            ],
+            "class": ""
+        },
+        {
+            "file": "../lib/jquery-1.11.0.js",
+            "line": 947,
+            "description": "Checks document order of two siblings",
+            "params": [
+                {
+                    "name": "a",
+                    "description": "",
+                    "type": "Element"
+                },
+                {
+                    "name": "b",
+                    "description": "",
+                    "type": "Element"
+                }
+            ],
+            "return": {
+                "description": "Returns less than 0 if a precedes b, greater than 0 if a follows b",
+                "type": "Number"
+            },
+            "class": ""
+        },
+        {
+            "file": "../lib/jquery-1.11.0.js",
+            "line": 976,
+            "description": "Returns a function to use in pseudos for input types",
+            "params": [
+                {
+                    "name": "type",
+                    "description": "",
+                    "type": "String"
+                }
+            ],
+            "class": ""
+        },
+        {
+            "file": "../lib/jquery-1.11.0.js",
+            "line": 987,
+            "description": "Returns a function to use in pseudos for buttons",
+            "params": [
+                {
+                    "name": "type",
+                    "description": "",
+                    "type": "String"
+                }
+            ],
+            "class": ""
+        },
+        {
+            "file": "../lib/jquery-1.11.0.js",
+            "line": 998,
+            "description": "Returns a function to use in pseudos for positionals",
+            "params": [
+                {
+                    "name": "fn",
+                    "description": "",
+                    "type": "Function"
+                }
+            ],
+            "class": ""
+        },
+        {
+            "file": "../lib/jquery-1.11.0.js",
+            "line": 1020,
+            "description": "Checks a node for validity as a Sizzle context",
+            "params": [
+                {
+                    "name": "context",
+                    "description": "",
+                    "type": "Element|Object="
+                }
+            ],
+            "return": {
+                "description": "The input node if acceptable, otherwise a falsy value",
+                "type": "Element|Object|Boolean"
+            },
+            "class": ""
+        },
+        {
+            "file": "../lib/jquery-1.11.0.js",
+            "line": 1032,
+            "description": "Detects XML nodes",
+            "params": [
+                {
+                    "name": "elem",
+                    "description": "An element or a document",
+                    "type": "Element|Object"
+                }
+            ],
+            "return": {
+                "description": "True iff elem is a non-HTML XML node",
+                "type": "Boolean"
+            },
+            "class": ""
+        },
+        {
+            "file": "../lib/jquery-1.11.0.js",
+            "line": 1044,
+            "description": "Sets document-related variables once based on the current document",
+            "params": [
+                {
+                    "name": "doc",
+                    "description": "An element or document object to use to set the document",
+                    "type": "Element|Object",
+                    "optional": true
+                }
+            ],
+            "return": {
+                "description": "Returns the current document",
+                "type": "Object"
+            },
+            "class": ""
+        },
+        {
+            "file": "../lib/jquery-1.11.0.js",
+            "line": 1474,
+            "description": "Document sorting and removing duplicates",
+            "params": [
+                {
+                    "name": "results",
+                    "description": "",
+                    "type": "ArrayLike"
+                }
+            ],
+            "class": ""
+        },
+        {
+            "file": "../lib/jquery-1.11.0.js",
+            "line": 1507,
+            "description": "Utility function for retrieving the text value of an array of DOM nodes",
+            "params": [
+                {
+                    "name": "elem",
+                    "description": "",
+                    "type": "Array|Element"
+                }
+            ],
+            "class": ""
+        },
+        {
+            "file": "../lib/jquery-1.11.0.js",
+            "line": 3432,
+            "description": "Clean-up method for dom ready events",
+            "class": ""
+        },
+        {
+            "file": "../lib/jquery-1.11.0.js",
+            "line": 3446,
+            "description": "The ready event handler and self cleanup method",
+            "class": ""
+        },
+        {
+            "file": "../lib/jquery-1.11.0.js",
+            "line": 3597,
+            "description": "Determines whether an object can have data",
+            "class": ""
+        },
+        {
+            "file": "../lib/jquery-1.11.0.js",
+            "line": 5976,
+            "description": "Retrieve the actual display of a element",
+            "params": [
+                {
+                    "name": "name",
+                    "description": "nodeName of the element",
+                    "type": "String"
+                },
+                {
+                    "name": "doc",
+                    "description": "Document object",
+                    "type": "Object"
+                }
+            ],
+            "class": ""
+        },
+        {
+            "file": "../lib/jquery-1.11.0.js",
+            "line": 5999,
+            "description": "Try to determine the default display value of an element",
+            "params": [
+                {
+                    "name": "nodeName",
+                    "description": "",
+                    "type": "String"
+                }
+            ],
+            "class": ""
+        },
+        {
+            "file": "../lib/jquery-1.11.0.js",
+            "line": 9971,
+            "description": "Load a url into a page",
+            "class": ""
+        },
+        {
+            "file": "../lib/jquery-1.11.0.js",
+            "line": 10046,
+            "description": "Gets a window from an element",
+            "class": ""
+        },
+        {
+            "file": "../lib/jquery.sizes.js",
+            "line": 1,
+            "preserve": "JSizes - JQuery plugin v0.33\n\nLicensed under the revised BSD License.\nCopyright 2008-2010 Bram Stein\nAll rights reserved.",
+            "class": ""
+        },
+        {
+            "file": "../lib/jquery.sizes.js",
+            "line": 14,
+            "description": "Sets or gets the values for min-width, min-height, max-width\nand max-height.",
+            "class": ""
+        },
+        {
+            "file": "../lib/jquery.sizes.js",
+            "line": 42,
+            "description": "Returns whether or not an element is visible.",
+            "class": ""
+        },
+        {
+            "file": "../lib/jquery.sizes.js",
+            "line": 49,
+            "description": "Sets or gets the values for border, margin and padding.",
+            "class": ""
+        }
+    ],
+    "warnings": [
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/views/cfi_navigation_logic.js:54"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/views/cfi_navigation_logic.js:64"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/views/cfi_navigation_logic.js:75"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/views/cfi_navigation_logic.js:91"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/views/cfi_navigation_logic.js:107"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/views/cfi_navigation_logic.js:167"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/views/cfi_navigation_logic.js:221"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/views/cfi_navigation_logic.js:279"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/views/cfi_navigation_logic.js:314"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/views/cfi_navigation_logic.js:362"
+        },
+        {
+            "message": "unknown tag: typedef",
+            "line": " ../js/views/reader_view.js:27"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/views/reader_view.js:86"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/views/reader_view.js:91"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/views/reader_view.js:124"
+        },
+        {
+            "message": "unknown tag: typedef",
+            "line": " ../js/views/reader_view.js:198"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/views/reader_view.js:266"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/views/reader_view.js:293"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/views/reader_view.js:302"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/views/reader_view.js:311"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/views/reader_view.js:320"
+        },
+        {
+            "message": "unknown tag: typedef",
+            "line": " ../js/views/reader_view.js:329"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/views/reader_view.js:461"
+        },
+        {
+            "message": "unknown tag: typedef",
+            "line": " ../js/views/reader_view.js:470"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/views/reader_view.js:490"
+        },
+        {
+            "message": "unknown tag: typedef",
+            "line": " ../js/views/reader_view.js:504"
+        },
+        {
+            "message": "unknown tag: fires",
+            "line": " ../js/views/reader_view.js:515"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/views/reader_view.js:812"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/views/reader_view.js:828"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/views/reader_view.js:844"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/views/reader_view.js:959"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/views/reader_view.js:992"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/views/reader_view.js:1076"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/views/reader_view.js:1096"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/views/reader_view.js:1178"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/views/reader_view.js:1187"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/views/reader_view.js:1202"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/views/reader_view.js:1214"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/views/reader_view.js:1226"
+        },
+        {
+            "message": "unknown tag: typedef",
+            "line": " ../js/views/reader_view.js:1522"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/helpers.js:64"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/helpers.js:153"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/helpers.js:184"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/helpers.js:195"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/helpers.js:207"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/helpers.js:305"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/helpers.js:375"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/helpers.js:384"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/helpers.js:393"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/helpers.js:443"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/helpers.js:466"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/helpers.js:483"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../js/helpers.js:588"
+        },
+        {
+            "message": "unknown tag: desc",
+            "line": " ../js/readium_sdk.js:131"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../lib/jquery-1.11.0.js:883"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../lib/jquery-1.11.0.js:947"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../lib/jquery-1.11.0.js:1020"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../lib/jquery-1.11.0.js:1032"
+        },
+        {
+            "message": "replacing incorrect tag: returns with return",
+            "line": " ../lib/jquery-1.11.0.js:1044"
+        },
+        {
+            "message": "unknown tag: preserve",
+            "line": " ../lib/jquery.sizes.js:1"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/models/fixed_page_spread.js:26"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/models/media_overlay.js:29"
+        },
+        {
+            "message": "Missing item type\nRepresentation of opening page request\nProvides the spine item to be opened and one of the following properties:\n spineItemPageIndex {Number},\n elementId {String},\n elementCfi {String},\n firstPage {bool},\n lastPage {bool}",
+            "line": " ../js/models/page_open_request.js:26"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/models/smil_iterator.js:29"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/models/smil_model.js:30"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/models/style.js:26"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/models/style_collection.js:26"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/models/switches.js:28"
+        },
+        {
+            "message": "Missing item type\nSetter fot epub Triggers",
+            "line": " ../js/models/trigger.js:28"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/models/viewer_settings.js:26"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/views/annotations_manager.js:111"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/views/audio_player.js:129"
+        },
+        {
+            "message": "Missing item type\nCFI navigation helper class",
+            "line": " ../js/views/cfi_navigation_logic.js:28"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/views/cfi_navigation_logic.js:54"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/views/cfi_navigation_logic.js:64"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/views/cfi_navigation_logic.js:75"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/views/cfi_navigation_logic.js:91"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/views/cfi_navigation_logic.js:107"
+        },
+        {
+            "message": "Missing item type\nNew (rectangle-based) algorithm, useful in multi-column layouts\n\nNote: the second param (props) is ignored intentionally\n(no need to use those in normalization)",
+            "line": " ../js/views/cfi_navigation_logic.js:167"
+        },
+        {
+            "message": "Missing item type\nFinds a page index (0-based) for a specific element.\nCalculations are based on rectangles retrieved with getClientRects() method.",
+            "line": " ../js/views/cfi_navigation_logic.js:221"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/views/cfi_navigation_logic.js:279"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/views/cfi_navigation_logic.js:314"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/views/cfi_navigation_logic.js:362"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/views/cfi_navigation_logic.js:386"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/views/cfi_navigation_logic.js:402"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/views/cfi_navigation_logic.js:455"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/views/cfi_navigation_logic.js:804"
+        },
+        {
+            "message": "Missing item type\nView for rendering fixed layout page spread",
+            "line": " ../js/views/fixed_view.js:26"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/views/iframe_loader.js:30"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/views/internal_links_support.js:25"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/views/media_overlay_data_injector.js:25"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/views/media_overlay_element_highlighter.js:29"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/views/media_overlay_player.js:29"
+        },
+        {
+            "message": "Missing item type\nRenders one page of fixed layout spread",
+            "line": " ../js/views/one_page_view.js:28"
+        },
+        {
+            "message": "Missing item type\nTop level View object. Interface for view manipulation public APIs",
+            "line": " ../js/views/reader_view.js:36"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/views/reader_view.js:86"
+        },
+        {
+            "message": "Missing item type\nCreate a view based on the given view type.",
+            "line": " ../js/views/reader_view.js:91"
+        },
+        {
+            "message": "Missing item type\nReturns the current view type of the reader view",
+            "line": " ../js/views/reader_view.js:124"
+        },
+        {
+            "message": "Missing item type\nReturns a list of the currently active spine items",
+            "line": " ../js/views/reader_view.js:266"
+        },
+        {
+            "message": "Missing item type\nReturns the currently instanced viewer settings",
+            "line": " ../js/views/reader_view.js:293"
+        },
+        {
+            "message": "Missing item type\nReturns a data object based on the package document",
+            "line": " ../js/views/reader_view.js:302"
+        },
+        {
+            "message": "Missing item type\nReturns a representation of the spine as a data object, also acts as list of spine items",
+            "line": " ../js/views/reader_view.js:311"
+        },
+        {
+            "message": "Missing item type\nReturns the user CSS styles collection",
+            "line": " ../js/views/reader_view.js:320"
+        },
+        {
+            "message": "Missing item type\nTriggers the process of opening the book and requesting resources specified in the packageData",
+            "line": " ../js/views/reader_view.js:340"
+        },
+        {
+            "message": "Missing item type\nFlips the page from left to right.\nTakes to account the page progression direction to decide to flip to prev or next page.",
+            "line": " ../js/views/reader_view.js:432"
+        },
+        {
+            "message": "Missing item type\nFlips the page from right to left.\nTakes to account the page progression direction to decide to flip to prev or next page.",
+            "line": " ../js/views/reader_view.js:446"
+        },
+        {
+            "message": "Missing item type\nReturns if the current child view is an instance of a fixed page view",
+            "line": " ../js/views/reader_view.js:461"
+        },
+        {
+            "message": "Missing item type\nSet the zoom options.",
+            "line": " ../js/views/reader_view.js:478"
+        },
+        {
+            "message": "Missing item type\nReturns the current view scale as a percentage",
+            "line": " ../js/views/reader_view.js:490"
+        },
+        {
+            "message": "Missing item type\nUpdates reader view based on the settings specified in settingsData object",
+            "line": " ../js/views/reader_view.js:515"
+        },
+        {
+            "message": "Missing item type\nOpens the next page.",
+            "line": " ../js/views/reader_view.js:575"
+        },
+        {
+            "message": "Missing item type\nOpens the previous page.",
+            "line": " ../js/views/reader_view.js:612"
+        },
+        {
+            "message": "Missing item type\nOpens the page of the spine item with element with provided cfi",
+            "line": " ../js/views/reader_view.js:667"
+        },
+        {
+            "message": "Missing item type\nOpens specified page index of the current spine item",
+            "line": " ../js/views/reader_view.js:692"
+        },
+        {
+            "message": "Missing item type\nOpens page index of the spine item with idref provided",
+            "line": " ../js/views/reader_view.js:743"
+        },
+        {
+            "message": "Missing item type\nSet CSS Styles to the reader container",
+            "line": " ../js/views/reader_view.js:768"
+        },
+        {
+            "message": "Missing item type\nSet CSS Styles to the content documents",
+            "line": " ../js/views/reader_view.js:793"
+        },
+        {
+            "message": "Missing item type\nGets an element from active content documents based on a query selector.",
+            "line": " ../js/views/reader_view.js:812"
+        },
+        {
+            "message": "Missing item type\nGets an element from active content documents based on an element id.",
+            "line": " ../js/views/reader_view.js:828"
+        },
+        {
+            "message": "Missing item type\nGets an element from active content documents based on a content CFI.",
+            "line": " ../js/views/reader_view.js:844"
+        },
+        {
+            "message": "Missing item type\nOpens a content url from a media player context",
+            "line": " ../js/views/reader_view.js:878"
+        },
+        {
+            "message": "Missing item type\nOpens the content document specified by the url",
+            "line": " ../js/views/reader_view.js:891"
+        },
+        {
+            "message": "Missing item type\nOpens the page of the spine item with element with provided cfi",
+            "line": " ../js/views/reader_view.js:933"
+        },
+        {
+            "message": "Missing item type\nReturns the bookmark associated with currently opened page.",
+            "line": " ../js/views/reader_view.js:959"
+        },
+        {
+            "message": "Missing item type\nResets all the custom styles set by setStyle callers at runtime",
+            "line": " ../js/views/reader_view.js:968"
+        },
+        {
+            "message": "Missing item type\nResets all the custom styles set by setBookStyle callers at runtime",
+            "line": " ../js/views/reader_view.js:978"
+        },
+        {
+            "message": "Missing item type\nReturns true if media overlay available for one of the open pages.",
+            "line": " ../js/views/reader_view.js:992"
+        },
+        {
+            "message": "Missing item type\nStarts/Stop playing media overlay on current page",
+            "line": " ../js/views/reader_view.js:1016"
+        },
+        {
+            "message": "Missing item type\nPlays next fragment media overlay",
+            "line": " ../js/views/reader_view.js:1025"
+        },
+        {
+            "message": "Missing item type\nPlays previous fragment media overlay",
+            "line": " ../js/views/reader_view.js:1034"
+        },
+        {
+            "message": "Missing item type\nPlays next available fragment media overlay that is outside of the current escapable scope",
+            "line": " ../js/views/reader_view.js:1043"
+        },
+        {
+            "message": "Missing item type\nEnd media overlay TTS",
+            "line": " ../js/views/reader_view.js:1051"
+        },
+        {
+            "message": "Missing item type\nPause currently playing media overlays.",
+            "line": " ../js/views/reader_view.js:1060"
+        },
+        {
+            "message": "Missing item type\nStart/Resume playback of media overlays.",
+            "line": " ../js/views/reader_view.js:1068"
+        },
+        {
+            "message": "Missing item type\nDetermine if media overlays are currently playing.",
+            "line": " ../js/views/reader_view.js:1076"
+        },
+        {
+            "message": "Missing item type\nGet the first visible media overlay element from the currently active content document(s)",
+            "line": " ../js/views/reader_view.js:1096"
+        },
+        {
+            "message": "Missing item type\nUsed to jump to an element to make sure it is visible when a content document is paginated",
+            "line": " ../js/views/reader_view.js:1109"
+        },
+        {
+            "message": "Missing item type\nReturns current selection partial Cfi, useful for workflows that need to check whether the user has selected something.",
+            "line": " ../js/views/reader_view.js:1178"
+        },
+        {
+            "message": "Missing item type\nCreates a higlight based on given parameters",
+            "line": " ../js/views/reader_view.js:1187"
+        },
+        {
+            "message": "Missing item type\nCreates a higlight based on the current selection",
+            "line": " ../js/views/reader_view.js:1202"
+        },
+        {
+            "message": "Missing item type\nRemoves A given highlight",
+            "line": " ../js/views/reader_view.js:1214"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/views/reader_view.js:1226"
+        },
+        {
+            "message": "Missing item type\nRenders reflowable content using CSS columns",
+            "line": " ../js/views/reflowable_view.js:29"
+        },
+        {
+            "message": "Missing item type\nRenders content inside a scrollable view port",
+            "line": " ../js/views/scroll_view.js:27"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/helpers.js:28"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/helpers.js:64"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/helpers.js:153"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/helpers.js:184"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/helpers.js:195"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/helpers.js:207"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/helpers.js:225"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/helpers.js:252"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/helpers.js:305"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/helpers.js:375"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/helpers.js:384"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/helpers.js:393"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/helpers.js:403"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/helpers.js:418"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/helpers.js:443"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/helpers.js:466"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/helpers.js:483"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/helpers.js:588"
+        },
+        {
+            "message": "Missing item type\nTop level ReadiumSDK namespace",
+            "line": " ../js/readium_sdk.js:29"
+        },
+        {
+            "message": "Missing item type\nCurrent version of the JS SDK",
+            "line": " ../js/readium_sdk.js:35"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/readium_sdk.js:43"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/readium_sdk.js:47"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/readium_sdk.js:52"
+        },
+        {
+            "message": "Missing item type\nLandscape Orientation",
+            "line": " ../js/readium_sdk.js:56"
+        },
+        {
+            "message": "Missing item type\nPortrait Orientation",
+            "line": " ../js/readium_sdk.js:60"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/readium_sdk.js:65"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/readium_sdk.js:69"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/readium_sdk.js:73"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/readium_sdk.js:77"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../js/readium_sdk.js:81"
+        },
+        {
+            "message": "Missing item type\nInternal Events",
+            "line": " ../js/readium_sdk.js:131"
+        },
+        {
+            "message": "Missing item type\nRangy, a cross-browser JavaScript range and selection library\nhttp://code.google.com/p/rangy/\n\nCopyright 2013, Tim Down\nLicensed under the MIT license.\nVersion: 1.3alpha.804\nBuild date: 8 December 2013",
+            "line": " ../lib/rangy/rangy-core.js:1"
+        },
+        {
+            "message": "Missing item type\nConvenience method to set a range's start and end boundaries. Overloaded as follows:\n- Two parameters (node, offset) creates a collapsed range at that position\n- Three parameters (node, startOffset, endOffset) creates a range contained with node starting at\n  startOffset and ending at endOffset\n- Four parameters (startNode, startOffset, endNode, endOffset) creates a range starting at startOffset in\n  startNode and ending at endOffset in endNode",
+            "line": " ../lib/rangy/rangy-core.js:1925"
+        },
+        {
+            "message": "Missing item type\nClass Applier module for Rangy.\nAdds, removes and toggles classes on Ranges and Selections\n\nPart of Rangy, a cross-browser JavaScript range and selection library\nhttp://code.google.com/p/rangy/\n\nDepends on Rangy core.\n\nCopyright 2013, Tim Down\nLicensed under the MIT license.\nVersion: 1.3alpha.804\nBuild date: 8 December 2013",
+            "line": " ../lib/rangy/rangy-cssclassapplier.js:1"
+        },
+        {
+            "message": "Missing item type\nHighlighter module for Rangy, a cross-browser JavaScript range and selection library\nhttp://code.google.com/p/rangy/\n\nDepends on Rangy core, TextRange and CssClassApplier modules.\n\nCopyright 2013, Tim Down\nLicensed under the MIT license.\nVersion: 1.3alpha.804\nBuild date: 8 December 2013",
+            "line": " ../lib/rangy/rangy-highlighter.js:1"
+        },
+        {
+            "message": "Missing item type\nPosition module for Rangy.\nExtensions to Range and Selection objects to provide access to pixel positions relative to the viewport or document.\n\nPart of Rangy, a cross-browser JavaScript range and selection library\nhttp://code.google.com/p/rangy/\n\nDepends on Rangy core.\n\nCopyright %%build:year%%, Tim Down\nLicensed under the MIT license.\nVersion: %%build:version%%\nBuild date: %%build:date%%",
+            "line": " ../lib/rangy/rangy-position.js:1"
+        },
+        {
+            "message": "Missing item type\nSelection save and restore module for Rangy.\nSaves and restores user selections using marker invisible elements in the DOM.\n\nPart of Rangy, a cross-browser JavaScript range and selection library\nhttp://code.google.com/p/rangy/\n\nDepends on Rangy core.\n\nCopyright 2013, Tim Down\nLicensed under the MIT license.\nVersion: 1.3alpha.804\nBuild date: 8 December 2013",
+            "line": " ../lib/rangy/rangy-selectionsaverestore.js:1"
+        },
+        {
+            "message": "Missing item type\nSerializer module for Rangy.\nSerializes Ranges and Selections. An example use would be to store a user's selection on a particular page in a\ncookie or local storage and restore it on the user's next visit to the same page.\n\nPart of Rangy, a cross-browser JavaScript range and selection library\nhttp://code.google.com/p/rangy/\n\nDepends on Rangy core.\n\nCopyright 2013, Tim Down\nLicensed under the MIT license.\nVersion: 1.3alpha.804\nBuild date: 8 December 2013",
+            "line": " ../lib/rangy/rangy-serializer.js:1"
+        },
+        {
+            "message": "Missing item type\nText range module for Rangy.\nText-based manipulation and searching of ranges and selections.\n\nFeatures\n\n- Ability to move range boundaries by character or word offsets\n- Customizable word tokenizer\n- Ignores text nodes inside <script> or <style> elements or those hidden by CSS display and visibility properties\n- Range findText method to search for text or regex within the page or within a range. Flags for whole words and case\n  sensitivity\n- Selection and range save/restore as text offsets within a node\n- Methods to return visible text within a range or selection\n- innerText method for elements\n\nReferences\n\nhttps://www.w3.org/Bugs/Public/show_bug.cgi?id=13145\nhttp://aryeh.name/spec/innertext/innertext.html\nhttp://dvcs.w3.org/hg/editing/raw-file/tip/editing.html\n\nPart of Rangy, a cross-browser JavaScript range and selection library\nhttp://code.google.com/p/rangy/\n\nDepends on Rangy core.\n\nCopyright 2013, Tim Down\nLicensed under the MIT license.\nVersion: 1.3alpha.804\nBuild date: 8 December 2013",
+            "line": " ../lib/rangy/rangy-textrange.js:1"
+        },
+        {
+            "message": "Missing item type\nProblem: handling of trailing spaces before line breaks is handled inconsistently between browsers.\n\nFirst, a <br>: this is relatively simple. For the following HTML:\n\n1 <br>2\n\n- IE and WebKit render the space, include it in the selection (i.e. when the content is selected and pasted into a\n  textarea, the space is present) and allow the caret to be placed after it.\n- Firefox does not acknowledge the space in the selection but it is possible to place the caret after it.\n- Opera does not render the space but has two separate caret positions on either side of the space (left and right\n  arrow keys show this) and includes the space in the selection.\n\nThe other case is the line break or breaks implied by block elements. For the following HTML:\n\n<p>1 </p><p>2<p>\n\n- WebKit does not acknowledge the space in any way\n- Firefox, IE and Opera as per <br>\n\nOne more case is trailing spaces before line breaks in elements with white-space: pre-line. For the following HTML:\n\n<p style=\"white-space: pre-line\">1\n2</p>\n\n- Firefox and WebKit include the space in caret positions\n- IE does not support pre-line up to and including version 9\n- Opera ignores the space\n- Trailing space only renders if there is a non-collapsed character in the line\n\nProblem is whether Rangy should ever acknowledge the space and if so, when. Another problem is whether this can be\nfeature-tested",
+            "line": " ../lib/rangy/rangy-textrange.js:33"
+        },
+        {
+            "message": "Missing item type\nCreate key-value caches of limited size",
+            "line": " ../lib/jquery-1.11.0.js:883"
+        },
+        {
+            "message": "Missing item type\nMark a function for special use by Sizzle",
+            "line": " ../lib/jquery-1.11.0.js:903"
+        },
+        {
+            "message": "Missing item type\nSupport testing using an element",
+            "line": " ../lib/jquery-1.11.0.js:912"
+        },
+        {
+            "message": "Missing item type\nAdds the same handler for all of the specified attrs",
+            "line": " ../lib/jquery-1.11.0.js:933"
+        },
+        {
+            "message": "Missing item type\nChecks document order of two siblings",
+            "line": " ../lib/jquery-1.11.0.js:947"
+        },
+        {
+            "message": "Missing item type\nReturns a function to use in pseudos for input types",
+            "line": " ../lib/jquery-1.11.0.js:976"
+        },
+        {
+            "message": "Missing item type\nReturns a function to use in pseudos for buttons",
+            "line": " ../lib/jquery-1.11.0.js:987"
+        },
+        {
+            "message": "Missing item type\nReturns a function to use in pseudos for positionals",
+            "line": " ../lib/jquery-1.11.0.js:998"
+        },
+        {
+            "message": "Missing item type\nChecks a node for validity as a Sizzle context",
+            "line": " ../lib/jquery-1.11.0.js:1020"
+        },
+        {
+            "message": "Missing item type\nDetects XML nodes",
+            "line": " ../lib/jquery-1.11.0.js:1032"
+        },
+        {
+            "message": "Missing item type\nSets document-related variables once based on the current document",
+            "line": " ../lib/jquery-1.11.0.js:1044"
+        },
+        {
+            "message": "Missing item type\nDocument sorting and removing duplicates",
+            "line": " ../lib/jquery-1.11.0.js:1474"
+        },
+        {
+            "message": "Missing item type\nUtility function for retrieving the text value of an array of DOM nodes",
+            "line": " ../lib/jquery-1.11.0.js:1507"
+        },
+        {
+            "message": "Missing item type\nClean-up method for dom ready events",
+            "line": " ../lib/jquery-1.11.0.js:3432"
+        },
+        {
+            "message": "Missing item type\nThe ready event handler and self cleanup method",
+            "line": " ../lib/jquery-1.11.0.js:3446"
+        },
+        {
+            "message": "Missing item type\nDetermines whether an object can have data",
+            "line": " ../lib/jquery-1.11.0.js:3597"
+        },
+        {
+            "message": "Missing item type\nRetrieve the actual display of a element",
+            "line": " ../lib/jquery-1.11.0.js:5976"
+        },
+        {
+            "message": "Missing item type\nTry to determine the default display value of an element",
+            "line": " ../lib/jquery-1.11.0.js:5999"
+        },
+        {
+            "message": "Missing item type\nLoad a url into a page",
+            "line": " ../lib/jquery-1.11.0.js:9971"
+        },
+        {
+            "message": "Missing item type\nGets a window from an element",
+            "line": " ../lib/jquery-1.11.0.js:10046"
+        },
+        {
+            "message": "Missing item type",
+            "line": " ../lib/jquery.sizes.js:1"
+        },
+        {
+            "message": "Missing item type\nSets or gets the values for min-width, min-height, max-width\nand max-height.",
+            "line": " ../lib/jquery.sizes.js:14"
+        },
+        {
+            "message": "Missing item type\nReturns whether or not an element is visible.",
+            "line": " ../lib/jquery.sizes.js:42"
+        },
+        {
+            "message": "Missing item type\nSets or gets the values for border, margin and padding.",
+            "line": " ../lib/jquery.sizes.js:49"
+        }
+    ]
+}

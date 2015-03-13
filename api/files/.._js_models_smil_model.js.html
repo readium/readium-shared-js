@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>../js/models/smil_model.js - Readium SDK DOM Access Layer API</title>
+    <link rel="stylesheet" href="http://yui.yahooapis.com/3.9.1/build/cssgrids/cssgrids-min.css">
+    <link rel="stylesheet" href="../assets/vendor/prettify/prettify-min.css">
+    <link rel="stylesheet" href="../assets/css/main.css" id="site_styles">
+    <link rel="shortcut icon" type="image/png" href="../assets/favicon.png">
+    <script src="http://yui.yahooapis.com/combo?3.9.1/build/yui/yui-min.js"></script>
+</head>
+<body class="yui3-skin-sam">
+
+<div id="doc">
+    <div id="page-top-wrapper" >
+        </br> </br>
+    </div>
+    <div class="yui3-g header">
+        <div class="yui3-u-3-4" >
+              
+                 <h1 id="logo" style="vertical-align:center"><img src="../assets/css/logo.png" title="Readium SDK DOM Access Layer API">Readium SDK DOM Access Layer API</h1>
+              
+        </div>
+        <div class="yui3-u-1-4 version" >
+            <div id="version">
+            <em>API Docs for: 0.16</em>
+        </div>
+        </div>
+    </div>
+    <div id="bd" class="yui3-g">
+        <div class="yui3-u-1-4">
+            <div id="docs-sidebar" class="sidebar apidocs">
+                <div id="api-list">
+    <h2 class="off-left">APIs</h2>
+    <div id="api-tabview" class="tabview">
+        <ul class="tabs">
+            <li><a href="#api-classes">Classes</a></li>
+            <li><a href="#api-modules">Modules</a></li>
+        </ul>
+
+        <div id="api-tabview-filter">
+            <input type="search" id="api-filter" placeholder="Type to filter APIs">
+        </div>
+
+        <div id="api-tabview-panel">
+            <ul id="api-classes" class="apis classes">
+            
+                <li><a href="../classes/ReadiumSDK.Models.BookmarkData.html">ReadiumSDK.Models.BookmarkData</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.CurrentPagesInfo.html">ReadiumSDK.Models.CurrentPagesInfo</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.Package.html">ReadiumSDK.Models.Package</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.PackageData.html">ReadiumSDK.Models.PackageData</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.Spine.html">ReadiumSDK.Models.Spine</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.SpineItem.html">ReadiumSDK.Models.SpineItem</a></li>
+            
+            </ul>
+
+            <ul id="api-modules" class="apis modules">
+            
+            </ul>
+        </div>
+    </div>
+</div>
+
+            </div>
+        </div>
+        <div class="yui3-u-3-4">
+                <div id="api-options">
+        Show:
+        <label for="api-show-inherited">
+            <input type="checkbox" id="api-show-inherited" checked>
+            Inherited
+        </label>
+
+        <label for="api-show-protected">
+            <input type="checkbox" id="api-show-protected">
+            Protected
+        </label>
+
+        <label for="api-show-private">
+            <input type="checkbox" id="api-show-private">
+            Private
+        </label>
+        <label for="api-show-deprecated">
+            <input type="checkbox" id="api-show-deprecated">
+            Deprecated
+        </label>
+
+    </div>
+
+
+            <div class="apidocs">
+                <div id="docs-main">
+                    <div class="content">
+                        <h1 class="file-heading">File: ../js/models/smil_model.js</h1>
+
+<div class="file">
+    <pre class="code prettyprint linenums">
+//  LauncherOSX
+//
+//  Created by Boris Schneiderman.
+// Modified by Daniel Weck
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  
+//  Redistribution and use in source and binary forms, with or without modification, 
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this 
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice, 
+//  this list of conditions and the following disclaimer in the documentation and/or 
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be 
+//  used to endorse or promote products derived from this software without specific 
+//  prior written permission.
+//  
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND 
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+/**
+ *
+ * @param parent
+ * @constructor
+ */
+
+ReadiumSDK.Models.Smil.SmilNode = function(parent) {
+
+    this.parent = parent;
+    
+    this.id = &quot;&quot;;
+    
+    //root node is a smil model
+    this.getSmil = function() {
+
+        var node = this;
+        while(node.parent) {
+            node = node.parent;
+        }
+
+        return node;
+    };
+    
+    this.hasAncestor = function(node)
+    {
+        var parent = this.parent;
+        while(parent)
+        {
+            if (parent == node)
+            {
+                return true;
+            }
+
+            parent = parent.parent;
+        }
+
+        return false;
+    };
+};
+
+ReadiumSDK.Models.Smil.TimeContainerNode = function(parent) {
+
+    this.parent = parent;
+    
+    this.children = undefined;
+    this.index = undefined;
+    
+    this.epubtype = &quot;&quot;;
+
+    this.isEscapable = function(userEscapables)
+    {
+        if (this.epubtype === &quot;&quot;)
+        {
+            return false;
+        }
+
+        var smilModel = this.getSmil();
+        if (!smilModel.mo)
+        {
+            return false;
+        }
+
+        var arr = smilModel.mo.escapables;
+        if (userEscapables.length &gt; 0)
+        {
+            arr = userEscapables;
+        }
+
+        for (var i = 0; i &lt; arr.length; i++)
+        {
+            if (this.epubtype.indexOf(arr[i]) &gt;= 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    };
+
+    this.isSkippable = function(userSkippables)
+    {
+        if (this.epubtype === &quot;&quot;)
+        {
+            return false;
+        }
+        
+        var smilModel = this.getSmil();
+        if (!smilModel.mo)
+        {
+            return false;
+        }
+
+        var arr = smilModel.mo.skippables;
+        if (userSkippables.length &gt; 0)
+        {
+            arr = userSkippables;
+        }
+
+        for (var i = 0; i &lt; arr.length; i++)
+        {
+            if (this.epubtype.indexOf(arr[i]) &gt;= 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    };
+};
+
+ReadiumSDK.Models.Smil.TimeContainerNode.prototype = new ReadiumSDK.Models.Smil.SmilNode();
+
+//////////////////////////
+//MediaNode
+
+ReadiumSDK.Models.Smil.MediaNode = function(parent) {
+
+    this.parent = parent;
+    
+    this.src = &quot;&quot;;
+};
+
+ReadiumSDK.Models.Smil.MediaNode.prototype = new ReadiumSDK.Models.Smil.SmilNode();
+
+////////////////////////////
+//SeqNode
+
+ReadiumSDK.Models.Smil.SeqNode = function(parent) {
+
+    this.parent = parent;
+    
+    this.children = [];
+    this.nodeType = &quot;seq&quot;;
+    this.textref = &quot;&quot;;
+    
+    this.durationMilliseconds = function()
+    {
+        var smilData = this.getSmil();
+            
+        var total = 0;
+        
+        for (var i = 0; i &lt; this.children.length; i++)
+        {
+            var container = this.children[i];
+            if (container.nodeType === &quot;par&quot;)
+            {
+                if (!container.audio)
+                {
+                    continue;
+                }
+                if (container.text &amp;&amp; (!container.text.manifestItemId || container.text.manifestItemId != smilData.spineItemId))
+                {
+// console.log(container.text);
+// console.log(smilData.spineItemId);
+                    continue;
+                }
+                
+                var clipDur = container.audio.clipDurationMilliseconds();
+                total += clipDur;
+            }
+            else if (container.nodeType === &quot;seq&quot;)
+            {
+                total += container.durationMilliseconds();
+            }
+        }
+
+        return total;
+    };
+    
+    this.clipOffset = function(offset, par)
+    {
+        var smilData = this.getSmil();
+        
+        for (var i = 0; i &lt; this.children.length; i++)
+        {
+            var container = this.children[i];
+            if (container.nodeType === &quot;par&quot;)
+            {
+                if (container == par)
+                {
+                    return true;
+                }
+
+                if (!container.audio)
+                {
+                    continue;
+                }
+
+                if (container.text &amp;&amp; (!container.text.manifestItemId || container.text.manifestItemId != smilData.spineItemId))
+                {
+                    continue;
+                }
+
+                var clipDur = container.audio.clipDurationMilliseconds();
+                offset.offset += clipDur;
+            }
+            else if (container.nodeType === &quot;seq&quot;)
+            {
+                var found = container.clipOffset(offset, par);
+                if (found)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    };
+
+    this.parallelAt = function(timeMilliseconds)
+    {
+        var smilData = this.getSmil();
+        
+        var offset = 0;
+
+        for (var i = 0; i &lt; this.children.length; i++)
+        {
+            var timeAdjusted = timeMilliseconds - offset;
+
+            var container = this.children[i];
+            
+            if (container.nodeType === &quot;par&quot;)
+            {
+                if (!container.audio)
+                {
+                    continue;
+                }
+
+                if (container.text &amp;&amp; (!container.text.manifestItemId || container.text.manifestItemId != smilData.spineItemId))
+                {
+                    continue;
+                }
+
+                var clipDur = container.audio.clipDurationMilliseconds();
+
+                if (clipDur &gt; 0 &amp;&amp; timeAdjusted &lt;= clipDur)
+                {
+                    return container;
+                }
+
+                offset += clipDur;
+            }
+            else if (container.nodeType === &quot;seq&quot;)
+            {
+                var para = container.parallelAt(timeAdjusted);
+                if (para)
+                {
+                    return para;
+                }
+
+                offset += container.durationMilliseconds();
+            }
+        }
+
+        return undefined;
+    };
+
+    this.nthParallel = function(index, count)
+    {
+        for (var i = 0; i &lt; this.children.length; i++)
+        {
+            var container = this.children[i];
+            
+            if (container.nodeType === &quot;par&quot;)
+            {
+                count.count++;
+
+                if (count.count == index)
+                {
+                    return container;
+                }
+            }
+            else if (container.nodeType === &quot;seq&quot;)
+            {
+                var para = container.nthParallel(index, count);
+                if (para)
+                {
+                    return para;
+                }
+            }
+        }
+
+        return undefined;
+    };
+    
+};
+
+ReadiumSDK.Models.Smil.SeqNode.prototype = new ReadiumSDK.Models.Smil.TimeContainerNode();
+
+//////////////////////////
+//ParNode
+
+ReadiumSDK.Models.Smil.ParNode = function(parent) {
+
+    this.parent = parent;
+    
+    this.children = [];
+    this.nodeType = &quot;par&quot;;
+    this.text = undefined;
+    this.audio = undefined;
+    this.element = undefined;
+    
+
+    this.getFirstSeqAncestorWithEpubType = function(epubtype, includeSelf) {
+        if (!epubtype) return undefined;
+        
+        var parent = includeSelf ? this : this.parent;
+        while (parent)
+        {
+            if (parent.epubtype &amp;&amp; parent.epubtype.indexOf(epubtype) &gt;= 0)
+            {
+                return parent; // assert(parent.nodeType === &quot;seq&quot;)
+            }
+            
+            parent = parent.parent;
+        }
+        
+        return undefined;
+    };
+};
+
+ReadiumSDK.Models.Smil.ParNode.prototype = new ReadiumSDK.Models.Smil.TimeContainerNode();
+
+//////////////////////////
+//TextNode
+
+ReadiumSDK.Models.Smil.TextNode = function(parent) {
+
+    this.parent = parent;
+
+    this.nodeType = &quot;text&quot;;
+    this.srcFile = &quot;&quot;;
+    this.srcFragmentId = &quot;&quot;;
+    
+    
+    this.manifestItemId = undefined;
+    this.updateMediaManifestItemId = function()
+    {
+        var smilData = this.getSmil();
+        
+        if (!smilData.href || !smilData.href.length)
+        {
+            return; // Blank MO page placeholder, no real SMIL
+        }
+        
+        // var srcParts = item.src.split(&#x27;#&#x27;);
+//         item.srcFile = srcParts[0];
+//         item.srcFragmentId = (srcParts.length === 2) ? srcParts[1] : &quot;&quot;;
+        
+        var src = this.srcFile ? this.srcFile : this.src;
+// console.log(&quot;src: &quot; + src);
+// console.log(&quot;smilData.href: &quot; + smilData.href);
+        var ref = ReadiumSDK.Helpers.ResolveContentRef(src, smilData.href);
+//console.log(&quot;ref: &quot; + ref);
+        var full = smilData.mo.package.resolveRelativeUrlMO(ref);
+// console.log(&quot;full: &quot; + full);
+// console.log(&quot;---&quot;);
+        for (var j = 0; j &lt; smilData.mo.package.spine.items.length; j++)
+        {
+            var item = smilData.mo.package.spine.items[j];
+//console.log(&quot;item.href: &quot; + item.href);
+            var url = smilData.mo.package.resolveRelativeUrl(item.href);
+//console.log(&quot;url: &quot; + url);
+            if (url === full)
+            {
+//console.error(&quot;FOUND: &quot; + item.idref);
+                this.manifestItemId = item.idref;
+                return;
+            }
+        }
+        
+        console.error(&quot;Cannot set the Media ManifestItemId? &quot; + this.src + &quot; &amp;&amp; &quot; + smilData.href);
+        
+//        throw &quot;BREAK&quot;;
+    };
+    
+};
+
+ReadiumSDK.Models.Smil.TextNode.prototype = new ReadiumSDK.Models.Smil.MediaNode();
+
+///////////////////////////
+//AudioNode
+
+ReadiumSDK.Models.Smil.AudioNode = function(parent) {
+
+    this.parent = parent;
+
+    this.nodeType = &quot;audio&quot;;
+
+    this.clipBegin = 0;
+
+    this.MAX = 1234567890.1; //Number.MAX_VALUE - 0.1; //Infinity;
+    this.clipEnd = this.MAX;
+    
+
+    this.clipDurationMilliseconds = function()
+    {
+        var _clipBeginMilliseconds = this.clipBegin * 1000;
+        var _clipEndMilliseconds = this.clipEnd * 1000;
+        
+        if (this.clipEnd &gt;= this.MAX || _clipEndMilliseconds &lt;= _clipBeginMilliseconds)
+        {
+            return 0;
+        }
+
+        return _clipEndMilliseconds - _clipBeginMilliseconds;
+    };  
+};
+
+ReadiumSDK.Models.Smil.AudioNode.prototype = new ReadiumSDK.Models.Smil.MediaNode();
+
+//////////////////////////////
+//SmilModel
+
+ReadiumSDK.Models.SmilModel = function() {
+
+    this.parent = undefined;
+    
+    
+    
+    this.children = []; //collection of seq or par smil nodes
+    this.id = undefined; //manifest item id
+    this.href = undefined; //href of the .smil source file
+    this.duration = undefined;
+    this.mo = undefined;
+    
+    this.parallelAt = function(timeMilliseconds)
+    {
+        return this.children[0].parallelAt(timeMilliseconds);
+    };
+
+    this.nthParallel = function(index)
+    {
+        var count = {count: -1};
+        return this.children[0].nthParallel(index, count);
+    };
+
+    this.clipOffset = function(par)
+    {
+        var offset = {offset: 0};
+        if (this.children[0].clipOffset(offset, par))
+        {
+            return offset.offset;
+        }
+
+        return 0;
+    };
+    
+    this.durationMilliseconds_Calculated = function()
+    {
+        return this.children[0].durationMilliseconds();
+    };
+    
+
+    var _epubtypeSyncs = [];
+    // 
+    // this.clearSyncs = function()
+    // {
+    //     _epubtypeSyncs = [];
+    // };
+
+    this.hasSync = function(epubtype)
+    {
+        for (var i = 0; i &lt; _epubtypeSyncs.length; i++)
+        {
+            if (_epubtypeSyncs[i] === epubtype)
+            {
+//console.debug(&quot;hasSync OK: [&quot;+epubtype+&quot;]&quot;);
+                return true;
+            }
+        }
+        
+//console.debug(&quot;hasSync??: [&quot;+epubtype+&quot;] &quot; + _epubtypeSyncs);
+        return false;
+    };
+    
+    this.addSync = function(epubtypes)
+    {
+        if (!epubtypes) return;
+        
+//console.debug(&quot;addSyncs: &quot;+epubtypes);
+
+        var parts = epubtypes.split(&#x27; &#x27;);
+        for (var i = 0; i &lt; parts.length; i++)
+        {
+            var epubtype = parts[i].trim();
+
+            if (epubtype.length &gt; 0 &amp;&amp; !this.hasSync(epubtype))
+            {
+                _epubtypeSyncs.push(epubtype);
+
+//console.debug(&quot;addSync: &quot;+epubtype);
+            }
+        }
+    };
+    
+};
+
+ReadiumSDK.Models.SmilModel.fromSmilDTO = function(smilDTO, mo) {
+
+    if (mo.DEBUG)
+    {
+        console.debug(&quot;Media Overlay DTO import...&quot;);
+    }
+
+    var indent = 0;
+    var getIndent = function()
+    {
+        var str = &quot;&quot;;
+        for (var i = 0; i &lt; indent; i++)
+        {
+            str += &quot;   &quot;;
+        }
+        return str;
+    }
+
+    var smilModel = new ReadiumSDK.Models.SmilModel();
+    smilModel.id = smilDTO.id;
+    smilModel.spineItemId = smilDTO.spineItemId;
+    smilModel.href = smilDTO.href;
+    
+    smilModel.smilVersion = smilDTO.smilVersion;
+    
+    smilModel.duration = smilDTO.duration;
+    if (smilModel.duration &amp;&amp; smilModel.duration.length &amp;&amp; smilModel.duration.length &gt; 0)
+    {
+        console.error(&quot;SMIL duration is string, parsing float... (&quot; + smilModel.duration + &quot;)&quot;);
+        smilModel.duration = parseFloat(smilModel.duration);
+    }
+    
+    smilModel.mo = mo; //ReadiumSDK.Models.MediaOverlay
+
+    if (smilModel.mo.DEBUG)
+    {
+        console.log(&quot;JS MO smilVersion=&quot; + smilModel.smilVersion);
+        console.log(&quot;JS MO id=&quot; + smilModel.id);
+        console.log(&quot;JS MO spineItemId=&quot; + smilModel.spineItemId);
+        console.log(&quot;JS MO href=&quot; + smilModel.href);
+        console.log(&quot;JS MO duration=&quot; + smilModel.duration);
+    }
+
+    var safeCopyProperty = function(property, from, to, isRequired) {
+
+        if((property in from))
+        { // &amp;&amp; from[property] !== &quot;&quot;
+
+            if( !(property in to) ) {
+                console.debug(&quot;property &quot; + property + &quot; not declared in smil node &quot; + to.nodeType);
+            }
+
+            to[property] = from[property];
+
+            if (smilModel.mo.DEBUG)
+            {
+            console.log(getIndent() + &quot;JS MO: [&quot; + property + &quot;=&quot; + to[property] + &quot;]&quot;);
+            }
+        }
+        else if(isRequired) {
+            console.log(&quot;Required property &quot; + property + &quot; not found in smil node &quot; + from.nodeType);
+        }
+    };
+
+    var createNodeFromDTO = function(nodeDTO, parent) {
+
+        var node;
+
+        if(nodeDTO.nodeType == &quot;seq&quot;) {
+
+            if (smilModel.mo.DEBUG)
+            {
+            console.log(getIndent() + &quot;JS MO seq&quot;);
+            }
+
+            node = new ReadiumSDK.Models.Smil.SeqNode(parent);
+
+            safeCopyProperty(&quot;textref&quot;, nodeDTO, node, ((parent &amp;&amp; parent.parent) ? true : false));
+            safeCopyProperty(&quot;id&quot;, nodeDTO, node);
+            safeCopyProperty(&quot;epubtype&quot;, nodeDTO, node);
+
+            if (node.epubtype)
+            {
+                node.getSmil().addSync(node.epubtype);
+            }
+            
+            indent++;
+            copyChildren(nodeDTO, node);
+            indent--;
+        }
+        else if (nodeDTO.nodeType == &quot;par&quot;) {
+
+            if (smilModel.mo.DEBUG)
+            {
+            console.log(getIndent() + &quot;JS MO par&quot;);
+            }
+
+            node = new ReadiumSDK.Models.Smil.ParNode(parent);
+
+            safeCopyProperty(&quot;id&quot;, nodeDTO, node);
+            safeCopyProperty(&quot;epubtype&quot;, nodeDTO, node);
+
+            if (node.epubtype)
+            {
+                node.getSmil().addSync(node.epubtype);
+            }
+
+            indent++;
+            copyChildren(nodeDTO, node);
+            indent--;
+			
+            for(var i = 0, count = node.children.length; i &lt; count; i++) {
+                var child = node.children[i];
+
+                if(child.nodeType == &quot;text&quot;) {
+                    node.text = child;
+                }
+                else if(child.nodeType == &quot;audio&quot;) {
+                    node.audio = child;
+                }
+                else {
+                    console.error(&quot;Unexpected smil node type: &quot; + child.nodeType);
+                }
+            }
+
+////////////////
+var forceTTS = false; // for testing only!
+////////////////
+
+            if (forceTTS || !node.audio)
+            {
+                // synthetic speech (playback using TTS engine), or embedded media, or blank page
+                var fakeAudio = new ReadiumSDK.Models.Smil.AudioNode(node);
+
+                fakeAudio.clipBegin = 0;
+                fakeAudio.clipEnd = fakeAudio.MAX;
+                fakeAudio.src = undefined;
+
+                node.audio = fakeAudio;
+            }
+        }
+        else if (nodeDTO.nodeType == &quot;text&quot;) {
+
+            if (smilModel.mo.DEBUG)
+            {
+            console.log(getIndent() + &quot;JS MO text&quot;);
+            }
+
+            node = new ReadiumSDK.Models.Smil.TextNode(parent);
+
+            safeCopyProperty(&quot;src&quot;, nodeDTO, node, true);
+            safeCopyProperty(&quot;srcFile&quot;, nodeDTO, node, true);
+            safeCopyProperty(&quot;srcFragmentId&quot;, nodeDTO, node, false);
+            safeCopyProperty(&quot;id&quot;, nodeDTO, node);
+            
+            node.updateMediaManifestItemId();
+        }
+        else if (nodeDTO.nodeType == &quot;audio&quot;) {
+
+            if (smilModel.mo.DEBUG)
+            {
+            console.log(getIndent() + &quot;JS MO audio&quot;);
+            }
+
+            node = new ReadiumSDK.Models.Smil.AudioNode(parent);
+
+            safeCopyProperty(&quot;src&quot;, nodeDTO, node, true);
+            safeCopyProperty(&quot;id&quot;, nodeDTO, node);
+
+            safeCopyProperty(&quot;clipBegin&quot;, nodeDTO, node);
+            if (node.clipBegin &amp;&amp; node.clipBegin.length &amp;&amp; node.clipBegin.length &gt; 0)
+            {
+                console.error(&quot;SMIL clipBegin is string, parsing float... (&quot; + node.clipBegin + &quot;)&quot;);
+                node.clipBegin = parseFloat(node.clipBegin);
+            }
+            if (node.clipBegin &lt; 0)
+            {
+                if (smilModel.mo.DEBUG)
+                {
+                    console.log(getIndent() + &quot;JS MO clipBegin adjusted to ZERO&quot;);
+                }
+                node.clipBegin = 0;
+            }
+
+            safeCopyProperty(&quot;clipEnd&quot;, nodeDTO, node);
+            if (node.clipEnd &amp;&amp; node.clipEnd.length &amp;&amp; node.clipEnd.length &gt; 0)
+            {
+                console.error(&quot;SMIL clipEnd is string, parsing float... (&quot; + node.clipEnd + &quot;)&quot;);
+                node.clipEnd = parseFloat(node.clipEnd);
+            }
+            if (node.clipEnd &lt;= node.clipBegin)
+            {
+                if (smilModel.mo.DEBUG)
+                {
+                    console.log(getIndent() + &quot;JS MO clipEnd adjusted to MAX&quot;);
+                }
+                node.clipEnd = node.MAX;
+            }
+            
+            //node.updateMediaManifestItemId(); ONLY XHTML SPINE ITEMS 
+        }
+        else {
+            console.error(&quot;Unexpected smil node type: &quot; + nodeDTO.nodeType);
+            return undefined;
+        }
+
+        return node;
+
+    };
+
+    var copyChildren = function(from, to) {
+
+        var count = from.children.length;
+
+        for(var i = 0; i &lt; count; i++) {
+            var node = createNodeFromDTO(from.children[i], to);
+            node.index = i;
+            to.children.push(node);
+        }
+
+    };
+
+    copyChildren(smilDTO, smilModel);
+
+    return smilModel;
+
+};
+
+    </pre>
+</div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="../assets/vendor/prettify/prettify-min.js"></script>
+<script>prettyPrint();</script>
+<script src="../assets/js/yui-prettify.js"></script>
+<script src="../assets/../api.js"></script>
+<script src="../assets/js/api-filter.js"></script>
+<script src="../assets/js/api-list.js"></script>
+<script src="../assets/js/api-search.js"></script>
+<script src="../assets/js/apidocs.js"></script>
+</body>
+</html>

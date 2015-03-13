@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>../js/views/annotations_manager.js - Readium SDK DOM Access Layer API</title>
+    <link rel="stylesheet" href="http://yui.yahooapis.com/3.9.1/build/cssgrids/cssgrids-min.css">
+    <link rel="stylesheet" href="../assets/vendor/prettify/prettify-min.css">
+    <link rel="stylesheet" href="../assets/css/main.css" id="site_styles">
+    <link rel="shortcut icon" type="image/png" href="../assets/favicon.png">
+    <script src="http://yui.yahooapis.com/combo?3.9.1/build/yui/yui-min.js"></script>
+</head>
+<body class="yui3-skin-sam">
+
+<div id="doc">
+    <div id="page-top-wrapper" >
+        </br> </br>
+    </div>
+    <div class="yui3-g header">
+        <div class="yui3-u-3-4" >
+              
+                 <h1 id="logo" style="vertical-align:center"><img src="../assets/css/logo.png" title="Readium SDK DOM Access Layer API">Readium SDK DOM Access Layer API</h1>
+              
+        </div>
+        <div class="yui3-u-1-4 version" >
+            <div id="version">
+            <em>API Docs for: 0.16</em>
+        </div>
+        </div>
+    </div>
+    <div id="bd" class="yui3-g">
+        <div class="yui3-u-1-4">
+            <div id="docs-sidebar" class="sidebar apidocs">
+                <div id="api-list">
+    <h2 class="off-left">APIs</h2>
+    <div id="api-tabview" class="tabview">
+        <ul class="tabs">
+            <li><a href="#api-classes">Classes</a></li>
+            <li><a href="#api-modules">Modules</a></li>
+        </ul>
+
+        <div id="api-tabview-filter">
+            <input type="search" id="api-filter" placeholder="Type to filter APIs">
+        </div>
+
+        <div id="api-tabview-panel">
+            <ul id="api-classes" class="apis classes">
+            
+                <li><a href="../classes/ReadiumSDK.Models.BookmarkData.html">ReadiumSDK.Models.BookmarkData</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.CurrentPagesInfo.html">ReadiumSDK.Models.CurrentPagesInfo</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.Package.html">ReadiumSDK.Models.Package</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.PackageData.html">ReadiumSDK.Models.PackageData</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.Spine.html">ReadiumSDK.Models.Spine</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.SpineItem.html">ReadiumSDK.Models.SpineItem</a></li>
+            
+            </ul>
+
+            <ul id="api-modules" class="apis modules">
+            
+            </ul>
+        </div>
+    </div>
+</div>
+
+            </div>
+        </div>
+        <div class="yui3-u-3-4">
+                <div id="api-options">
+        Show:
+        <label for="api-show-inherited">
+            <input type="checkbox" id="api-show-inherited" checked>
+            Inherited
+        </label>
+
+        <label for="api-show-protected">
+            <input type="checkbox" id="api-show-protected">
+            Protected
+        </label>
+
+        <label for="api-show-private">
+            <input type="checkbox" id="api-show-private">
+            Private
+        </label>
+        <label for="api-show-deprecated">
+            <input type="checkbox" id="api-show-deprecated">
+            Deprecated
+        </label>
+
+    </div>
+
+
+            <div class="apidocs">
+                <div id="docs-main">
+                    <div class="content">
+                        <h1 class="file-heading">File: ../js/views/annotations_manager.js</h1>
+
+<div class="file">
+    <pre class="code prettyprint linenums">
+//  Created by Dmitry Markushevich (dmitrym@evidentpoint.com)
+// 
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  
+//  Redistribution and use in source and binary forms, with or without modification, 
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this 
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice, 
+//  this list of conditions and the following disclaimer in the documentation and/or 
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be 
+//  used to endorse or promote products derived from this software without specific 
+//  prior written permission.
+//  
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND 
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
+
+/*
+
+
+
+# Highlighting in Readium - A primer
+
+Please note:
+
+- only simple text highlighting is currently supported
+- it&#x27;s the job of the reading system to keep track of annotations. readium-js simply displays your annotations.
+- full CFIs for annotations are not currently available. We use so called &quot;partial CFI&quot;s, a tuple containing idref of the spine item and the CFI definition relative to the root of the spine item.
+
+Currently, the API exposed via &#x60;ReaderView&#x60; exposes 4 functions and 1 even which should be sufficient for a simple highlighting workflow.
+
+
+# API
+
+For the purposes of the examples below, &#x60;RReader&#x60; is a previously instantiated &#x60;ReaderView&#x60; instance.
+
+
+## Is anything selected (getCurrentSelectionCfi())
+
+Before proceeding with the highlighting workflow it is sometimes necessary to determine whether the user has in fact selected anything. This can be accomplished with the following:
+
+
+	&gt; RReader.getCurrentSelectionCfi()
+	Object {idref: &quot;id-id2604743&quot;, cfi: &quot;/4/2/6,/1:74,/1:129&quot;}
+
+The response contains a partial CFI that is sufficient to create a highlight based on selection. If nothing is selected *undefined* is returned. 
+
+You can also use partial Cfi with &#x60;openSpineItemElementCfi()&#x60; to navigate to where this selection is later.
+
+## Highlighting (addHighlight and addSelectionHighlight)
+
+Once we&#x27;ve determined what needs to be highlighted (by generating a partial CFI from a selection, or having an existing partial CFI stored externally) we can add it to the reader by calling &#x60;addHighlight()&#x60;:
+
+	&gt; RReader.addHighlight(&#x27;id-id2604743&#x27;, &quot;/4/2/6,/1:74,/1:129&quot;, 123, &quot;highlight&quot;)
+	Object {CFI: &quot;/4/2/6,/1:74,/1:129&quot;, selectedElements: Array[1], idref: &quot;id-id2604743&quot;}
+
+*addHighligh*t takes the following parameters:
+
+- *id-id2604743* - &#x60;idref&#x60; is the idref value from &#x60;getCurrentSelectionCfi()
+- * /4/2/6,/1:74,/1:129* - &#x60;cfi&#x60; is the cfi value from &#x60;getCurrentSelectionCfi()
+- *123* - &#x60;id&#x60; is the unique id that defines this annotation
+- *highlight* - &#x27;type&#x27; of annotation. only &#x27;highlight&#x27; is currently supported.
+
+### addSelectioHighlight
+
+Alternatively, you can call addSelectionHighlight(). It combines both getCurrentSelectionCfi() and addHighlight into one call:
+
+	&gt; RReader.addSelectionHighlight(124, &quot;highlight&quot;)
+	Object {CFI: &quot;/4/2/4,/1:437,/1:503&quot;, selectedElements: Array[1], idref: &quot;id-id2604743&quot;}
+
+Note that it provides no validation. If nothing is selected, &#x60;undefined&#x60; is returned.
+
+
+## Removing highlights 
+
+To remove the highlight, call &#x60;removeHighlight&#x60;:
+
+	&gt; RReader.removeHighlight(123)
+	undefined
+
+
+# Handling annotation click events
+
+When a user clicks on a highlight &#x60;annotationClicked&#x60; event is dispatched with the following arguments:
+
+- type of annotation
+- idref of the spine item
+- partial Cfi of the annotation
+- annotationdId
+
+
+	&gt; RReader.on(&#x27;annotationClicked&#x27;, function(type, idref, cfi, annotationId) { console.log (type, idref, cfi, annotationId)});
+	ReadiumSDK.Views.ReaderView {on: function, once: function, off: function, trigger: function, listenTo: function???}
+	
+Then when the user clicks on the highlight the following will show up in the console:
+
+	highlight id-id2604743 /4/2/6,/1:74,/1:129 123 
+	
+
+*/
+
+/**
+ *
+ * @param proxyObj
+ * @param options
+ * @constructor
+ */
+ReadiumSDK.Views.AnnotationsManager = function (proxyObj, options) {
+
+    var self = this;
+    var liveAnnotations = {};
+    var spines = {};
+    var proxy = proxyObj; 
+    var annotationCSSUrl = options.annotationCSSUrl;
+
+    if (!annotationCSSUrl) {
+        console.warn(&quot;WARNING! Annotations CSS not supplied. Highlighting is not going to work.&quot;);
+    }
+
+    _.extend(self, Backbone.Events);
+
+    // we want to bubble up all of the events that annotations module may trigger up.
+    this.on(&quot;all&quot;, function(eventName) {
+        var args = Array.prototype.slice.call(arguments);
+        // mangle annotationClicked event. What really needs to happen is, the annotation_module needs to return a 
+        // bare Cfi, and this class should append the idref.
+        var annotationClickedEvent = &#x27;annotationClicked&#x27;;
+        if (args.length &amp;&amp; args[0] === annotationClickedEvent) {
+            for (var spineIndex in liveAnnotations)
+            {
+                var jQueryEvent = args[4];
+                var annotationId = args[3];
+                var fullFakeCfi = args[2];
+                var type = args[1];
+                if (liveAnnotations[spineIndex].getHighlight(annotationId)) {
+                    var idref = spines[spineIndex].idref;
+                    var partialCfi = getPartialCfi(fullFakeCfi);
+                    args = [annotationClickedEvent, type, idref, partialCfi, annotationId, jQueryEvent];
+                }
+            }
+        }
+        self[&#x27;trigger&#x27;].apply(proxy, args);
+    });
+
+    this.attachAnnotations = function($iframe, spineItem) {
+        var epubDocument = $iframe[0].contentDocument;
+        liveAnnotations[spineItem.index] = new EpubAnnotationsModule(epubDocument, self, annotationCSSUrl);
+        spines[spineItem.index] = spineItem;
+
+        // check to see which spine indecies can be culled depending on the distance from current spine item
+        for(var spineIndex in liveAnnotations) {
+            if (Math.abs(spineIndex - spineIndex.index) &gt; 3) {
+                delete liveAnnotations[spineIndex];
+            }
+        }
+    };
+
+
+    this.getCurrentSelectionCfi = function() {
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine]; 
+            var partialCfi = annotationsForView.getCurrentSelectionCFI();
+            if (partialCfi) {
+                return {&quot;idref&quot;:spines[spine].idref, &quot;cfi&quot;:partialCfi};
+            }
+        }
+        return undefined;
+    };
+
+    this.addSelectionHighlight = function(id, type) {
+        for(spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine]; 
+            if (annotationsForView.getCurrentSelectionCFI()) {
+                var annotation = annotationsForView.addSelectionHighlight(id, type);
+                annotation.idref = spines[spine].idref;
+                return annotation;
+            }
+        }
+        return undefined;
+    };
+
+    this.addHighlight = function(spineIdRef, partialCfi, id, type, styles) {
+        for(var spine in liveAnnotations) {
+            if (spines[spine].idref === spineIdRef) {
+                var fakeCfi = &quot;epubcfi(/99!&quot; + partialCfi + &quot;)&quot;;
+                var annotationsForView = liveAnnotations[spine]; 
+                var annotation = annotationsForView.addHighlight(fakeCfi, id, type, styles);
+                annotation.idref = spineIdRef;
+                annotation.CFI = getPartialCfi(annotation.CFI);
+                return annotation;
+            }
+        }
+        return undefined;
+    };
+
+    this.removeHighlight = function(id) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine]; 
+            result  = annotationsForView.removeHighlight(id);
+        }
+        return result;
+    };
+
+
+
+    function getPartialCfi(CFI) {
+        var cfiWrapperPattern = new RegExp(&quot;^.*!&quot;)
+        // remove epubcfi( and indirection step
+        var partiallyNakedCfi = CFI.replace(cfiWrapperPattern, &quot;&quot;);
+        // remove last paren
+        var nakedCfi = partiallyNakedCfi.substring(0, partiallyNakedCfi.length -1);
+        return nakedCfi;
+    }
+
+
+};
+
+    </pre>
+</div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="../assets/vendor/prettify/prettify-min.js"></script>
+<script>prettyPrint();</script>
+<script src="../assets/js/yui-prettify.js"></script>
+<script src="../assets/../api.js"></script>
+<script src="../assets/js/api-filter.js"></script>
+<script src="../assets/js/api-list.js"></script>
+<script src="../assets/js/api-search.js"></script>
+<script src="../assets/js/apidocs.js"></script>
+</body>
+</html>

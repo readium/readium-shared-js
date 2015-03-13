@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>../js/models/spine.js - Readium SDK DOM Access Layer API</title>
+    <link rel="stylesheet" href="http://yui.yahooapis.com/3.9.1/build/cssgrids/cssgrids-min.css">
+    <link rel="stylesheet" href="../assets/vendor/prettify/prettify-min.css">
+    <link rel="stylesheet" href="../assets/css/main.css" id="site_styles">
+    <link rel="shortcut icon" type="image/png" href="../assets/favicon.png">
+    <script src="http://yui.yahooapis.com/combo?3.9.1/build/yui/yui-min.js"></script>
+</head>
+<body class="yui3-skin-sam">
+
+<div id="doc">
+    <div id="page-top-wrapper" >
+        </br> </br>
+    </div>
+    <div class="yui3-g header">
+        <div class="yui3-u-3-4" >
+              
+                 <h1 id="logo" style="vertical-align:center"><img src="../assets/css/logo.png" title="Readium SDK DOM Access Layer API">Readium SDK DOM Access Layer API</h1>
+              
+        </div>
+        <div class="yui3-u-1-4 version" >
+            <div id="version">
+            <em>API Docs for: 0.16</em>
+        </div>
+        </div>
+    </div>
+    <div id="bd" class="yui3-g">
+        <div class="yui3-u-1-4">
+            <div id="docs-sidebar" class="sidebar apidocs">
+                <div id="api-list">
+    <h2 class="off-left">APIs</h2>
+    <div id="api-tabview" class="tabview">
+        <ul class="tabs">
+            <li><a href="#api-classes">Classes</a></li>
+            <li><a href="#api-modules">Modules</a></li>
+        </ul>
+
+        <div id="api-tabview-filter">
+            <input type="search" id="api-filter" placeholder="Type to filter APIs">
+        </div>
+
+        <div id="api-tabview-panel">
+            <ul id="api-classes" class="apis classes">
+            
+                <li><a href="../classes/ReadiumSDK.Models.BookmarkData.html">ReadiumSDK.Models.BookmarkData</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.CurrentPagesInfo.html">ReadiumSDK.Models.CurrentPagesInfo</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.Package.html">ReadiumSDK.Models.Package</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.PackageData.html">ReadiumSDK.Models.PackageData</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.Spine.html">ReadiumSDK.Models.Spine</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.SpineItem.html">ReadiumSDK.Models.SpineItem</a></li>
+            
+            </ul>
+
+            <ul id="api-modules" class="apis modules">
+            
+            </ul>
+        </div>
+    </div>
+</div>
+
+            </div>
+        </div>
+        <div class="yui3-u-3-4">
+                <div id="api-options">
+        Show:
+        <label for="api-show-inherited">
+            <input type="checkbox" id="api-show-inherited" checked>
+            Inherited
+        </label>
+
+        <label for="api-show-protected">
+            <input type="checkbox" id="api-show-protected">
+            Protected
+        </label>
+
+        <label for="api-show-private">
+            <input type="checkbox" id="api-show-private">
+            Private
+        </label>
+        <label for="api-show-deprecated">
+            <input type="checkbox" id="api-show-deprecated">
+            Deprecated
+        </label>
+
+    </div>
+
+
+            <div class="apidocs">
+                <div id="docs-main">
+                    <div class="content">
+                        <h1 class="file-heading">File: ../js/models/spine.js</h1>
+
+<div class="file">
+    <pre class="code prettyprint linenums">
+//  Created by Boris Schneiderman.
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  
+//  Redistribution and use in source and binary forms, with or without modification, 
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this 
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice, 
+//  this list of conditions and the following disclaimer in the documentation and/or 
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be 
+//  used to endorse or promote products derived from this software without specific 
+//  prior written permission.
+//  
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND 
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
+
+/**
+ *  Wrapper of the spine object received from hosting application
+ *
+ *  @class  ReadiumSDK.Models.Spine
+ */
+
+ReadiumSDK.Models.Spine = function(epubPackage, spineDTO) {
+
+    var self = this;
+
+    /*
+     * Collection of spine items
+     * @property items
+     * @type {Array}
+     */
+    this.items = [];
+
+    /*
+     * Page progression direction ltr|rtl|default
+     * @property direction
+     * @type {string}
+     */
+    this.direction = &quot;ltr&quot;;
+
+    /*
+     * @property package
+     * @type {ReadiumSDK.Models.Package}
+     *
+     */
+    this.package = epubPackage;
+
+    var _handleLinear = false;
+
+    this.handleLinear = function(handleLinear) {
+        _handleLinear = handleLinear;
+    };
+
+    function isValidLinearItem(item) {
+        return !_handleLinear || item.linear !== &quot;no&quot;;
+    }
+
+
+    this.isValidLinearItem = function(index) {
+        
+        if(!isValidIndex(index)) {
+            return undefined;
+        }
+
+        return isValidLinearItem(this.item(index));
+    };
+
+    this.prevItem = function(item) {
+
+        return lookForPrevValidItem(item.index - 1);
+    };
+
+    function lookForNextValidItem(ix) {
+
+        if(!isValidIndex(ix)) {
+            return undefined;
+        }
+
+        var item = self.items[ix];
+
+        if(isValidLinearItem(item)) {
+            return item;
+        }
+
+        return lookForNextValidItem(item.index + 1);
+    }
+
+    function lookForPrevValidItem(ix) {
+
+        if(!isValidIndex(ix)) {
+            return undefined;
+        }
+
+        var item = self.items[ix];
+
+        if(isValidLinearItem(item)) {
+            return item;
+        }
+
+        return lookForPrevValidItem(item.index - 1);
+    }
+
+    this.nextItem = function(item){
+
+        return lookForNextValidItem(item.index + 1);
+    };
+
+    this.getItemUrl = function(item) {
+
+        return self.package.resolveRelativeUrl(item.href);
+
+    };
+
+    function isValidIndex(index) {
+
+        return index &gt;= 0 &amp;&amp; index &lt; self.items.length;
+    }
+
+    this.first = function() {
+
+        return lookForNextValidItem(0);
+    };
+
+    this.last = function() {
+
+        return lookForPrevValidItem(this.items.length - 1);
+    };
+
+    this.isFirstItem = function(item) {
+
+        return self.first() === item;
+    };
+
+    this.isLastItem = function(item) {
+
+        return self.last() === item;
+    };
+
+    this.item = function(index) {
+		
+		if (isValidIndex(index))
+        	return self.items[index];
+			
+		return undefined;
+    };
+
+    this.isRightToLeft = function() {
+
+        return self.direction == &quot;rtl&quot;;
+    };
+
+    this.isLeftToRight = function() {
+
+        return !self.isRightToLeft();
+    };
+
+    this.getItemById = function(idref) {
+
+        var length = self.items.length;
+
+        for(var i = 0; i &lt; length; i++) {
+            if(self.items[i].idref == idref) {
+
+                return self.items[i];
+            }
+        }
+
+        return undefined;
+    };
+
+    this.getItemByHref = function(href) {
+
+        var length = self.items.length;
+
+        for(var i = 0; i &lt; length; i++) {
+            if(self.items[i].href == href) {
+
+                return self.items[i];
+            }
+        }
+
+        return undefined;
+    };
+
+    function updateSpineItemsSpread() {
+
+        var len = self.items.length;
+
+        var isFirstPageInSpread = false;
+        var baseSide = self.isLeftToRight() ? ReadiumSDK.Models.SpineItem.SPREAD_LEFT : ReadiumSDK.Models.SpineItem.SPREAD_RIGHT;
+
+        for(var i = 0; i &lt; len; i++) {
+
+            var spineItem = self.items[i];
+            if( !spineItem.page_spread) {
+
+                var spread = spineItem.isRenditionSpreadAllowed() ? (isFirstPageInSpread ? baseSide : ReadiumSDK.Models.SpineItem.alternateSpread(baseSide)) : ReadiumSDK.Models.SpineItem.SPREAD_CENTER;
+                spineItem.setSpread(spread);
+            }
+
+            isFirstPageInSpread = !spineItem.isRenditionSpreadAllowed() || spineItem.page_spread != baseSide;
+        }
+    }
+
+    if(spineDTO) {
+
+        if(spineDTO.direction) {
+            this.direction = spineDTO.direction;
+        }
+
+        var length = spineDTO.items.length;
+        for(var i = 0; i &lt; length; i++) {
+            var item = new ReadiumSDK.Models.SpineItem(spineDTO.items[i], i, this);
+            this.items.push(item);
+        }
+
+        updateSpineItemsSpread();
+    }
+
+};
+
+    </pre>
+</div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="../assets/vendor/prettify/prettify-min.js"></script>
+<script>prettyPrint();</script>
+<script src="../assets/js/yui-prettify.js"></script>
+<script src="../assets/../api.js"></script>
+<script src="../assets/js/api-filter.js"></script>
+<script src="../assets/js/api-list.js"></script>
+<script src="../assets/js/api-search.js"></script>
+<script src="../assets/js/apidocs.js"></script>
+</body>
+</html>

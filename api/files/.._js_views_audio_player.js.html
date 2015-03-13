@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>../js/views/audio_player.js - Readium SDK DOM Access Layer API</title>
+    <link rel="stylesheet" href="http://yui.yahooapis.com/3.9.1/build/cssgrids/cssgrids-min.css">
+    <link rel="stylesheet" href="../assets/vendor/prettify/prettify-min.css">
+    <link rel="stylesheet" href="../assets/css/main.css" id="site_styles">
+    <link rel="shortcut icon" type="image/png" href="../assets/favicon.png">
+    <script src="http://yui.yahooapis.com/combo?3.9.1/build/yui/yui-min.js"></script>
+</head>
+<body class="yui3-skin-sam">
+
+<div id="doc">
+    <div id="page-top-wrapper" >
+        </br> </br>
+    </div>
+    <div class="yui3-g header">
+        <div class="yui3-u-3-4" >
+              
+                 <h1 id="logo" style="vertical-align:center"><img src="../assets/css/logo.png" title="Readium SDK DOM Access Layer API">Readium SDK DOM Access Layer API</h1>
+              
+        </div>
+        <div class="yui3-u-1-4 version" >
+            <div id="version">
+            <em>API Docs for: 0.16</em>
+        </div>
+        </div>
+    </div>
+    <div id="bd" class="yui3-g">
+        <div class="yui3-u-1-4">
+            <div id="docs-sidebar" class="sidebar apidocs">
+                <div id="api-list">
+    <h2 class="off-left">APIs</h2>
+    <div id="api-tabview" class="tabview">
+        <ul class="tabs">
+            <li><a href="#api-classes">Classes</a></li>
+            <li><a href="#api-modules">Modules</a></li>
+        </ul>
+
+        <div id="api-tabview-filter">
+            <input type="search" id="api-filter" placeholder="Type to filter APIs">
+        </div>
+
+        <div id="api-tabview-panel">
+            <ul id="api-classes" class="apis classes">
+            
+                <li><a href="../classes/ReadiumSDK.Models.BookmarkData.html">ReadiumSDK.Models.BookmarkData</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.CurrentPagesInfo.html">ReadiumSDK.Models.CurrentPagesInfo</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.Package.html">ReadiumSDK.Models.Package</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.PackageData.html">ReadiumSDK.Models.PackageData</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.Spine.html">ReadiumSDK.Models.Spine</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.SpineItem.html">ReadiumSDK.Models.SpineItem</a></li>
+            
+            </ul>
+
+            <ul id="api-modules" class="apis modules">
+            
+            </ul>
+        </div>
+    </div>
+</div>
+
+            </div>
+        </div>
+        <div class="yui3-u-3-4">
+                <div id="api-options">
+        Show:
+        <label for="api-show-inherited">
+            <input type="checkbox" id="api-show-inherited" checked>
+            Inherited
+        </label>
+
+        <label for="api-show-protected">
+            <input type="checkbox" id="api-show-protected">
+            Protected
+        </label>
+
+        <label for="api-show-private">
+            <input type="checkbox" id="api-show-private">
+            Private
+        </label>
+        <label for="api-show-deprecated">
+            <input type="checkbox" id="api-show-deprecated">
+            Deprecated
+        </label>
+
+    </div>
+
+
+            <div class="apidocs">
+                <div id="docs-main">
+                    <div class="content">
+                        <h1 class="file-heading">File: ../js/views/audio_player.js</h1>
+
+<div class="file">
+    <pre class="code prettyprint linenums">
+//  LauncherOSX
+//
+//  Created by Boris Schneiderman.
+// Modified by Daniel Weck, Andrey Kavarma
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  
+//  Redistribution and use in source and binary forms, with or without modification, 
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this 
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice, 
+//  this list of conditions and the following disclaimer in the documentation and/or 
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be 
+//  used to endorse or promote products derived from this software without specific 
+//  prior written permission.
+//  
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND 
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+(function(){
+
+    var _iOS = navigator.userAgent.match(/(iPad|iPhone|iPod)/g) ? true : false;
+    var _Android = navigator.userAgent.toLowerCase().indexOf(&#x27;android&#x27;) &gt; -1;
+    var _isMobile = _iOS || _Android;
+
+    //var _isReadiumJS = typeof window.requirejs !== &quot;undefined&quot;;
+
+    var DEBUG = false;
+
+    var _audioElement = new Audio();
+    
+    if (DEBUG)
+    {
+        _audioElement.addEventListener(&quot;load&quot;, function()
+            {
+                console.debug(&quot;0) load&quot;);
+            }
+        );
+
+        _audioElement.addEventListener(&quot;loadstart&quot;, function()
+            {
+                console.debug(&quot;1) loadstart&quot;);
+            }
+        );
+
+        _audioElement.addEventListener(&quot;durationchange&quot;, function()
+            {
+                console.debug(&quot;2) durationchange&quot;);
+            }
+        );
+
+        _audioElement.addEventListener(&quot;loadedmetadata&quot;, function()
+            {
+                console.debug(&quot;3) loadedmetadata&quot;);
+            }
+        );
+
+        _audioElement.addEventListener(&quot;loadeddata&quot;, function()
+            {
+                console.debug(&quot;4) loadeddata&quot;);
+            }
+        );
+
+        _audioElement.addEventListener(&quot;progress&quot;, function()
+            {
+                console.debug(&quot;5) progress&quot;);
+            }
+        );
+
+        _audioElement.addEventListener(&quot;canplay&quot;, function()
+            {
+                console.debug(&quot;6) canplay&quot;);
+            }
+        );
+
+        _audioElement.addEventListener(&quot;canplaythrough&quot;, function()
+            {
+                console.debug(&quot;7) canplaythrough&quot;);
+            }
+        );
+
+        _audioElement.addEventListener(&quot;play&quot;, function()
+            {
+                console.debug(&quot;8) play&quot;);
+            }
+        );
+
+        _audioElement.addEventListener(&quot;pause&quot;, function()
+            {
+                console.debug(&quot;9) pause&quot;);
+            }
+        );
+
+        _audioElement.addEventListener(&quot;ended&quot;, function()
+            {
+                console.debug(&quot;10) ended&quot;);
+            }
+        );
+
+        _audioElement.addEventListener(&quot;seeked&quot;, function()
+            {
+                console.debug(&quot;X) seeked&quot;);
+            }
+        );
+
+        _audioElement.addEventListener(&quot;timeupdate&quot;, function()
+            {
+                console.debug(&quot;Y) timeupdate&quot;);
+            }
+        );
+
+        _audioElement.addEventListener(&quot;seeking&quot;, function()
+            {
+                console.debug(&quot;Z) seeking&quot;);
+            }
+        );
+    }
+
+    /**
+     *
+     * @param onStatusChanged
+     * @param onPositionChanged
+     * @param onAudioEnded
+     * @param onAudioPlay
+     * @param onAudioPause
+     * @constructor
+     */
+    ReadiumSDK.Views.AudioPlayer = function(onStatusChanged, onPositionChanged, onAudioEnded, onAudioPlay, onAudioPause)
+    {
+        var self = this;
+     
+        //_audioElement.setAttribute(&quot;preload&quot;, &quot;auto&quot;);
+    
+        var _currentEpubSrc = undefined;
+    
+        var _currentSmilSrc = undefined;
+        this.currentSmilSrc = function() {
+            return _currentSmilSrc;
+        };
+
+        var _rate = 1.0;
+        this.setRate = function(rate)
+        {
+            _rate = rate;
+            if (_rate &lt; 0.5)
+            {
+                _rate = 0.5;
+            }
+            if (_rate &gt; 4.0)
+            {
+                _rate = 4.0;
+            }
+    
+            _audioElement.playbackRate = _rate;
+        }
+        self.setRate(_rate);
+        this.getRate = function()
+        {
+            return _rate;
+        }
+    
+    
+        var _volume = 100.0;
+        this.setVolume = function(volume)
+        {
+            _volume = volume;
+            if (_volume &lt; 0.0)
+            {
+                _volume = 0.0;
+            }
+            if (_volume &gt; 1.0)
+            {
+                _volume = 1.0;
+            }
+            _audioElement.volume = _volume;
+        }
+        self.setVolume(_volume);
+        this.getVolume = function()
+        {
+            return _volume;
+        }
+    
+        this.play = function()
+        {
+            if (DEBUG)
+            {
+                console.error(&quot;this.play()&quot;);
+            }
+    
+            if(!_currentEpubSrc)
+            {
+                return false;
+            }
+    
+            startTimer();
+    
+            self.setVolume(_volume);
+            self.setRate(_rate);
+    
+            _audioElement.play();
+    
+            return true;
+        };
+    
+        this.pause = function()
+        {
+            if (DEBUG)
+            {
+                console.error(&quot;this.pause()&quot;);
+            }
+    
+            stopTimer();
+    
+            _audioElement.pause();
+        };
+    
+        _audioElement.addEventListener(&#x27;play&#x27;, onPlay, false);
+        _audioElement.addEventListener(&#x27;pause&#x27;, onPause, false);
+        _audioElement.addEventListener(&#x27;ended&#x27;, onEnded, false);
+    
+        function onPlay()
+        {
+            onStatusChanged({isPlaying: true});
+            onAudioPlay();
+        }
+    
+        function onPause()
+        {
+            onAudioPause();
+            onStatusChanged({isPlaying: false});
+        }
+    
+        function onEnded()
+        {
+            if (_audioElement.moSeeking)
+            {
+                if (DEBUG)
+                {
+                    console.debug(&quot;onEnded() skipped (still seeking...)&quot;);
+                }
+    
+                return;
+            }
+    
+            stopTimer();
+    
+            onAudioEnded();
+            onStatusChanged({isPlaying: false});
+        }
+        
+        var _intervalTimerSkips = 0;
+        
+        var _intervalTimer = undefined;
+        function startTimer()
+        {
+            if(_intervalTimer)
+            {
+                return;
+            }
+    
+            _intervalTimer = setInterval(
+                function()
+                {
+                    if (_audioElement.moSeeking)
+                    {
+                        if (DEBUG)
+                        {
+//console.debug(&quot;interval timer skipped (still seeking...)&quot;);
+                        }
+                                         
+                        _intervalTimerSkips++;
+                        if (_intervalTimerSkips &gt; 1000)
+                        {
+                            _intervalTimerSkips = 0;
+                            stopTimer();
+                        }
+                        return;
+                    }
+                    
+                    var currentTime = undefined;
+                    try
+                    {
+                        currentTime = _audioElement.currentTime;
+                    }
+                    catch (ex)
+                    {
+                        console.error(ex.message);
+                    }
+    
+    //                if (DEBUG)
+    //                {
+    //                    console.debug(&quot;currentTime: &quot; + currentTime);
+    //                }
+    
+                    if (currentTime)
+                    {
+                        onPositionChanged(currentTime, 1);
+                    }
+                }, 20);
+        }
+    
+        function stopTimer()
+        {
+            if (_intervalTimer)
+            {
+                clearInterval(_intervalTimer);
+            }
+            _intervalTimer = undefined;
+        }
+    
+        this.isPlaying = function()
+        {
+            return _intervalTimer !== undefined;
+        };
+    
+        this.reset = function()
+        {
+            if (DEBUG)
+            {
+                console.error(&quot;this.reset()&quot;);
+            }
+    
+            this.pause();
+    
+            _audioElement.moSeeking = undefined;
+    
+            _currentSmilSrc = undefined;
+            _currentEpubSrc = undefined;
+    
+            setTimeout(function()
+            {
+                _audioElement.setAttribute(&quot;src&quot;, &quot;&quot;);
+            }, 1);
+        };
+    
+
+        _audioElement.addEventListener(&quot;loadstart&quot;, function()
+            {
+                _touchInited = true;
+            }
+        );
+        var _touchInited = false;
+        this.touchInit = function()
+        {
+            if (!_iOS)
+            {
+                return false;
+            }
+    
+            if (_touchInited)
+            {
+                return false;
+            }
+    
+            _touchInited = true;
+    
+            _audioElement.setAttribute(&quot;src&quot;, &quot;touch/init/html5/audio.mp3&quot;);
+            _audioElement.load();
+    
+            return true;
+        }
+    
+        var _playId = 0;
+    
+        var _seekQueuing = 0;
+        
+        this.playFile = function(smilSrc, epubSrc, seekBegin) //element
+        {
+            _playId++;
+            if (_playId &gt; 99999)
+            {
+                _playId = 0;
+            }
+    
+            var playId = _playId;
+    
+            if (_audioElement.moSeeking)
+            {
+                _seekQueuing++;
+                if (_seekQueuing &gt; MAX_SEEK_RETRIES)
+                {
+                    _seekQueuing = 0;
+                    return;
+                }
+                
+                if (DEBUG)
+                {
+                    console.debug(&quot;this.playFile(&quot; + epubSrc + &quot;)&quot; + &quot; @&quot; + seekBegin + &quot; (POSTPONE, SEEKING...)&quot;);
+                }
+    
+                setTimeout(function()
+                {
+                    self.playFile(smilSrc, epubSrc, seekBegin);
+                }, 20);
+                
+                return;
+            }
+    
+            _audioElement.moSeeking = {};
+    
+            if (DEBUG)
+            {
+                console.debug(&quot;this.playFile(&quot; + epubSrc + &quot;)&quot; + &quot; @&quot; + seekBegin + &quot; #&quot; + playId);
+            }
+    
+            var audioNeedsNewSrc = !_currentEpubSrc || _currentEpubSrc !== epubSrc;
+    
+            if (!audioNeedsNewSrc)
+            {
+                if (DEBUG)
+                {
+                    console.debug(&quot;this.playFile() SAME SRC&quot;);
+                }
+    
+                this.pause();
+    
+                _currentSmilSrc = smilSrc;
+                _currentEpubSrc = epubSrc;
+    
+                playSeekCurrentTime(seekBegin, playId, false);
+    
+                return;
+            }
+    
+            if (DEBUG)
+            {
+                console.debug(&quot;this.playFile() NEW SRC&quot;);
+                console.debug(&quot;_currentEpubSrc: &quot; + _currentEpubSrc);
+                console.debug(&quot;epubSrc: &quot; + epubSrc);
+            }
+    
+            this.reset();
+            _audioElement.moSeeking = {};
+    
+            _currentSmilSrc = smilSrc;
+            _currentEpubSrc = epubSrc;
+    
+            //element.parentNode.insertBefore(_audioElement, element); //element.parentNode.childNodes[0]);
+            
+            if (!_Android)
+            {
+                _audioElement.addEventListener(&#x27;play&#x27;, onPlayToForcePreload, false);
+            }
+    
+            $(_audioElement).on(_readyEvent, {seekBegin: seekBegin, playId: playId}, onReadyToSeek);
+            
+            setTimeout(function()
+            {
+                   _audioElement.setAttribute(&quot;src&quot;, _currentEpubSrc);
+                   // _audioElement.src = _currentEpubSrc;
+                   // $(_audioElement).attr(&quot;src&quot;, _currentEpubSrc);
+    
+                   // if (_Android)
+                   // {
+                   //     _audioElement.addEventListener(&#x27;loadstart&#x27;, onReadyToPlayToForcePreload, false);
+                   // }
+                   
+                   _audioElement.load();
+    
+                   if (!_Android)
+                   {
+                       playToForcePreload();
+                   }
+            }, 1);
+        };
+    
+        // var onReadyToPlayToForcePreload = function ()
+        // {
+        //     _audioElement.removeEventListener(&#x27;loadstart&#x27;, onReadyToPlayToForcePreload, false);
+        //     
+        //     if (DEBUG)
+        //     {
+        //         console.debug(&quot;onReadyToPlayToForcePreload&quot;);
+        //     }
+        //     
+        //     playToForcePreload();
+        // };
+        
+        var playToForcePreload = function()
+        {
+            if (DEBUG)
+            {
+                console.debug(&quot;playToForcePreload&quot;);
+            }
+            
+            //_audioElement.volume = 0;
+            //_audioElement.play();
+            var vol = _volume;
+            _volume = 0;
+            self.play();
+            _volume = vol;
+        };
+    
+        var onPlayToForcePreload = function ()
+        {
+            _audioElement.removeEventListener(&#x27;play&#x27;, onPlayToForcePreload, false);
+            
+            if (DEBUG)
+            {
+                console.debug(&quot;onPlayToForcePreload&quot;);
+            }
+            _audioElement.pause(); // note: interval timer continues (immediately follows self.play())
+        };
+    
+        var _readyEvent = _Android ? &quot;canplaythrough&quot; : &quot;canplay&quot;;
+        function onReadyToSeek_(event)
+        {
+            if (DEBUG)
+            {
+                console.debug(&quot;onReadyToSeek #&quot; + event.data.playId);
+            }
+            playSeekCurrentTime(event.data.seekBegin, event.data.playId, true);
+        }
+        function onReadyToSeek(event)
+        {
+            $(_audioElement).off(_readyEvent, onReadyToSeek);
+            
+            if (!_Android)
+            {
+                onReadyToSeek_(event);
+            }
+            else
+            {
+                if (DEBUG)
+                {
+                    console.debug(&quot;onReadyToSeek ANDROID ... waiting a bit ... #&quot; + event.data.playId);
+                }
+                
+                //self.play();
+                playToForcePreload();
+                
+                setTimeout(function() {
+                    onReadyToSeek_(event);
+                }, 1000);
+            }
+        }
+    
+        function playSeekCurrentTime(newCurrentTime, playId, isNewSrc)
+        {
+            if (DEBUG)
+            {
+                console.debug(&quot;playSeekCurrentTime() #&quot; + playId);
+            }
+    
+            if (newCurrentTime == 0)
+            {
+                newCurrentTime = 0.01;
+            }
+    
+            if(Math.abs(newCurrentTime - _audioElement.currentTime) &lt; 0.3)
+            {
+                if (DEBUG)
+                {
+                    console.debug(&quot;playSeekCurrentTime() CONTINUE&quot;);
+                }
+    
+                _audioElement.moSeeking = undefined;
+                self.play();
+                return;
+            }
+    
+            var ev = isNewSrc ? _seekedEvent1 : _seekedEvent2;
+    
+            if (DEBUG)
+            {
+                console.debug(&quot;playSeekCurrentTime() NEED SEEK, EV: &quot; + ev);
+            }
+    
+            self.pause();
+    
+            $(_audioElement).on(ev, {newCurrentTime: newCurrentTime, playId: playId, isNewSrc: isNewSrc}, onSeeked);
+    
+            try
+            {
+                _audioElement.currentTime = newCurrentTime;
+            }
+            catch (ex)
+            {
+                console.error(ex.message);
+    
+                setTimeout(function()
+                {
+                    try
+                    {
+                        _audioElement.currentTime = newCurrentTime;
+                    }
+                    catch (ex)
+                    {
+                        console.error(ex.message);
+                    }
+                }, 5);
+            }
+        }
+        
+        var MAX_SEEK_RETRIES = 10;
+        var _seekedEvent1 = _iOS ? &quot;canplaythrough&quot; : &quot;seeked&quot;; //&quot;progress&quot;
+        var _seekedEvent2 = _iOS ? &quot;timeupdate&quot; : &quot;seeked&quot;;
+        function onSeeked(event)
+        {
+            var ev = event.data.isNewSrc ? _seekedEvent1 : _seekedEvent2;
+    
+            var notRetry = event.data.seekRetries == undefined;
+    
+            if (notRetry || event.data.seekRetries == MAX_SEEK_RETRIES) // first retry
+            {
+                $(_audioElement).off(ev, onSeeked);
+            }
+    
+            if (DEBUG)
+            {
+                console.debug(&quot;onSeeked() #&quot; + event.data.playId + &quot; FIRST? &quot; + notRetry + &quot; EV: &quot; + ev);
+            }
+    
+            var curTime = _audioElement.currentTime;
+            var diff = Math.abs(event.data.newCurrentTime - curTime);
+    
+            if((notRetry || event.data.seekRetries &gt;= 0) &amp;&amp;
+                diff &gt;= 1)
+            {
+                if (DEBUG)
+                {
+                    console.debug(&quot;onSeeked() time diff: &quot; + event.data.newCurrentTime + &quot; vs. &quot; + curTime + &quot; (&quot;+diff+&quot;)&quot;);
+                }
+                
+                if (notRetry)
+                {
+                    event.data.seekRetries = MAX_SEEK_RETRIES;
+    
+                    // if (DEBUG)
+                    // {
+                    //     console.debug(&quot;onSeeked() fail =&gt; first retry, EV: &quot; + _seekedEvent2);
+                    // }
+    
+                    event.data.isNewSrc = false;
+                    //$(_audioElement).on(_seekedEvent2, event.data, onSeeked);
+                }
+                
+                //else
+                {
+                    event.data.seekRetries--;
+    
+                    if (DEBUG)
+                    {
+                        console.debug(&quot;onSeeked() FAIL =&gt; retry again (timeout)&quot;);
+                    }
+    
+                    setTimeout(function()
+                    {
+                        onSeeked(event);
+                    }, _Android ? 1000 : 200);
+                }
+    
+                setTimeout(function()
+                {
+                    _audioElement.pause();
+                    try
+                    {
+                        _audioElement.currentTime = event.data.newCurrentTime;
+                    }
+                    catch (ex)
+                    {
+                        console.error(ex.message);
+    
+                        setTimeout(function()
+                        {
+                            try
+                            {
+                                _audioElement.currentTime = event.data.newCurrentTime;
+                            }
+                            catch (ex)
+                            {
+                                console.error(ex.message);
+                            }
+                        }, 4);
+                    }
+                }, 5);
+            }
+            else
+            {
+                if (DEBUG)
+                {
+                    console.debug(&quot;onSeeked() STATE:&quot;);
+                    console.debug(notRetry);
+                    console.debug(event.data.seekRetries);
+                    console.debug(diff);
+                }
+    
+                if (diff &gt;= 1)
+                {
+                    if (DEBUG)
+                    {
+                        console.debug(&quot;onSeeked() ABORT, TRY AGAIN FROM SCRATCH!&quot;);
+                    }
+                    
+                    var smilSrc = _currentSmilSrc;
+                    var epubSrc = _currentEpubSrc;
+                    var seekBegin = event.data.newCurrentTime;
+                    
+                    self.reset();
+                    
+                    setTimeout(function()
+                    {
+                        self.playFile(smilSrc, epubSrc, seekBegin);
+                    }, 10);
+                    
+                    return;
+                }
+
+                if (DEBUG)
+                {
+                    console.debug(&quot;onSeeked() OKAY =&gt; play!&quot;);
+                }
+                
+                event.data.seekRetries = undefined;
+    
+                self.play();
+    
+                _audioElement.moSeeking = undefined;
+            }
+        }
+    };
+
+})()
+
+    </pre>
+</div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="../assets/vendor/prettify/prettify-min.js"></script>
+<script>prettyPrint();</script>
+<script src="../assets/js/yui-prettify.js"></script>
+<script src="../assets/../api.js"></script>
+<script src="../assets/js/api-filter.js"></script>
+<script src="../assets/js/api-list.js"></script>
+<script src="../assets/js/api-search.js"></script>
+<script src="../assets/js/apidocs.js"></script>
+</body>
+</html>

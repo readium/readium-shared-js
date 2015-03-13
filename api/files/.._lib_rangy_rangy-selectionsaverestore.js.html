@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>../lib/rangy/rangy-selectionsaverestore.js - Readium SDK DOM Access Layer API</title>
+    <link rel="stylesheet" href="http://yui.yahooapis.com/3.9.1/build/cssgrids/cssgrids-min.css">
+    <link rel="stylesheet" href="../assets/vendor/prettify/prettify-min.css">
+    <link rel="stylesheet" href="../assets/css/main.css" id="site_styles">
+    <link rel="shortcut icon" type="image/png" href="../assets/favicon.png">
+    <script src="http://yui.yahooapis.com/combo?3.9.1/build/yui/yui-min.js"></script>
+</head>
+<body class="yui3-skin-sam">
+
+<div id="doc">
+    <div id="page-top-wrapper" >
+        </br> </br>
+    </div>
+    <div class="yui3-g header">
+        <div class="yui3-u-3-4" >
+              
+                 <h1 id="logo" style="vertical-align:center"><img src="../assets/css/logo.png" title="Readium SDK DOM Access Layer API">Readium SDK DOM Access Layer API</h1>
+              
+        </div>
+        <div class="yui3-u-1-4 version" >
+            <div id="version">
+            <em>API Docs for: 0.16</em>
+        </div>
+        </div>
+    </div>
+    <div id="bd" class="yui3-g">
+        <div class="yui3-u-1-4">
+            <div id="docs-sidebar" class="sidebar apidocs">
+                <div id="api-list">
+    <h2 class="off-left">APIs</h2>
+    <div id="api-tabview" class="tabview">
+        <ul class="tabs">
+            <li><a href="#api-classes">Classes</a></li>
+            <li><a href="#api-modules">Modules</a></li>
+        </ul>
+
+        <div id="api-tabview-filter">
+            <input type="search" id="api-filter" placeholder="Type to filter APIs">
+        </div>
+
+        <div id="api-tabview-panel">
+            <ul id="api-classes" class="apis classes">
+            
+                <li><a href="../classes/ReadiumSDK.Models.BookmarkData.html">ReadiumSDK.Models.BookmarkData</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.CurrentPagesInfo.html">ReadiumSDK.Models.CurrentPagesInfo</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.Package.html">ReadiumSDK.Models.Package</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.PackageData.html">ReadiumSDK.Models.PackageData</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.Spine.html">ReadiumSDK.Models.Spine</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.SpineItem.html">ReadiumSDK.Models.SpineItem</a></li>
+            
+            </ul>
+
+            <ul id="api-modules" class="apis modules">
+            
+            </ul>
+        </div>
+    </div>
+</div>
+
+            </div>
+        </div>
+        <div class="yui3-u-3-4">
+                <div id="api-options">
+        Show:
+        <label for="api-show-inherited">
+            <input type="checkbox" id="api-show-inherited" checked>
+            Inherited
+        </label>
+
+        <label for="api-show-protected">
+            <input type="checkbox" id="api-show-protected">
+            Protected
+        </label>
+
+        <label for="api-show-private">
+            <input type="checkbox" id="api-show-private">
+            Private
+        </label>
+        <label for="api-show-deprecated">
+            <input type="checkbox" id="api-show-deprecated">
+            Deprecated
+        </label>
+
+    </div>
+
+
+            <div class="apidocs">
+                <div id="docs-main">
+                    <div class="content">
+                        <h1 class="file-heading">File: ../lib/rangy/rangy-selectionsaverestore.js</h1>
+
+<div class="file">
+    <pre class="code prettyprint linenums">
+/**
+ * Selection save and restore module for Rangy.
+ * Saves and restores user selections using marker invisible elements in the DOM.
+ *
+ * Part of Rangy, a cross-browser JavaScript range and selection library
+ * http://code.google.com/p/rangy/
+ *
+ * Depends on Rangy core.
+ *
+ * Copyright 2013, Tim Down
+ * Licensed under the MIT license.
+ * Version: 1.3alpha.804
+ * Build date: 8 December 2013
+ */
+rangy.createModule(&quot;SaveRestore&quot;, [&quot;WrappedRange&quot;], function(api, module) {
+    var dom = api.dom;
+
+    var markerTextChar = &quot;\ufeff&quot;;
+
+    function gEBI(id, doc) {
+        return (doc || document).getElementById(id);
+    }
+
+    function insertRangeBoundaryMarker(range, atStart) {
+        var markerId = &quot;selectionBoundary_&quot; + (+new Date()) + &quot;_&quot; + (&quot;&quot; + Math.random()).slice(2);
+        var markerEl;
+        var doc = dom.getDocument(range.startContainer);
+
+        // Clone the Range and collapse to the appropriate boundary point
+        var boundaryRange = range.cloneRange();
+        boundaryRange.collapse(atStart);
+
+        // Create the marker element containing a single invisible character using DOM methods and insert it
+        markerEl = doc.createElementNS(&quot;http://www.w3.org/1999/xhtml&quot;, &quot;span&quot;);
+        markerEl.id = markerId;
+        markerEl.style.lineHeight = &quot;0&quot;;
+        markerEl.style.display = &quot;none&quot;;
+        markerEl.className = &quot;rangySelectionBoundary&quot;;
+        markerEl.appendChild(doc.createTextNode(markerTextChar));
+
+        boundaryRange.insertNode(markerEl);
+        boundaryRange.detach();
+        return markerEl;
+    }
+
+    function setRangeBoundary(doc, range, markerId, atStart) {
+        var markerEl = gEBI(markerId, doc);
+        if (markerEl) {
+            range[atStart ? &quot;setStartBefore&quot; : &quot;setEndBefore&quot;](markerEl);
+            markerEl.parentNode.removeChild(markerEl);
+        } else {
+            module.warn(&quot;Marker element has been removed. Cannot restore selection.&quot;);
+        }
+    }
+
+    function compareRanges(r1, r2) {
+        return r2.compareBoundaryPoints(r1.START_TO_START, r1);
+    }
+
+    function saveRange(range, backward) {
+        var startEl, endEl, doc = api.DomRange.getRangeDocument(range), text = range.toString();
+
+        if (range.collapsed) {
+            endEl = insertRangeBoundaryMarker(range, false);
+            return {
+                document: doc,
+                markerId: endEl.id,
+                collapsed: true
+            };
+        } else {
+            endEl = insertRangeBoundaryMarker(range, false);
+            startEl = insertRangeBoundaryMarker(range, true);
+
+            return {
+                document: doc,
+                startMarkerId: startEl.id,
+                endMarkerId: endEl.id,
+                collapsed: false,
+                backward: backward,
+                toString: function() {
+                    return &quot;original text: &#x27;&quot; + text + &quot;&#x27;, new text: &#x27;&quot; + range.toString() + &quot;&#x27;&quot;;
+                }
+            };
+        }
+    }
+
+    function restoreRange(rangeInfo, normalize) {
+        var doc = rangeInfo.document;
+        if (typeof normalize == &quot;undefined&quot;) {
+            normalize = true;
+        }
+        var range = api.createRange(doc);
+        if (rangeInfo.collapsed) {
+            var markerEl = gEBI(rangeInfo.markerId, doc);
+            if (markerEl) {
+                markerEl.style.display = &quot;inline&quot;;
+                var previousNode = markerEl.previousSibling;
+
+                // Workaround for issue 17
+                if (previousNode &amp;&amp; previousNode.nodeType == 3) {
+                    markerEl.parentNode.removeChild(markerEl);
+                    range.collapseToPoint(previousNode, previousNode.length);
+                } else {
+                    range.collapseBefore(markerEl);
+                    markerEl.parentNode.removeChild(markerEl);
+                }
+            } else {
+                module.warn(&quot;Marker element has been removed. Cannot restore selection.&quot;);
+            }
+        } else {
+            setRangeBoundary(doc, range, rangeInfo.startMarkerId, true);
+            setRangeBoundary(doc, range, rangeInfo.endMarkerId, false);
+        }
+
+        if (normalize) {
+            range.normalizeBoundaries();
+        }
+
+        return range;
+    }
+
+    function saveRanges(ranges, backward) {
+        var rangeInfos = [], range, doc;
+
+        // Order the ranges by position within the DOM, latest first, cloning the array to leave the original untouched
+        ranges = ranges.slice(0);
+        ranges.sort(compareRanges);
+
+        for (var i = 0, len = ranges.length; i &lt; len; ++i) {
+            rangeInfos[i] = saveRange(ranges[i], backward);
+        }
+
+        // Now that all the markers are in place and DOM manipulation over, adjust each range&#x27;s boundaries to lie
+        // between its markers
+        for (i = len - 1; i &gt;= 0; --i) {
+            range = ranges[i];
+            doc = api.DomRange.getRangeDocument(range);
+            if (range.collapsed) {
+                range.collapseAfter(gEBI(rangeInfos[i].markerId, doc));
+            } else {
+                range.setEndBefore(gEBI(rangeInfos[i].endMarkerId, doc));
+                range.setStartAfter(gEBI(rangeInfos[i].startMarkerId, doc));
+            }
+        }
+
+        return rangeInfos;
+    }
+
+    function saveSelection(win) {
+        if (!api.isSelectionValid(win)) {
+            module.warn(&quot;Cannot save selection. This usually happens when the selection is collapsed and the selection document has lost focus.&quot;);
+            return null;
+        }
+        var sel = api.getSelection(win);
+        var ranges = sel.getAllRanges();
+        var backward = (ranges.length == 1 &amp;&amp; sel.isBackward());
+
+        var rangeInfos = saveRanges(ranges, backward);
+
+        // Ensure current selection is unaffected
+        if (backward) {
+            sel.setSingleRange(ranges[0], &quot;backward&quot;);
+        } else {
+            sel.setRanges(ranges);
+        }
+
+        return {
+            win: win,
+            rangeInfos: rangeInfos,
+            restored: false
+        };
+    }
+
+    function restoreRanges(rangeInfos) {
+        var ranges = [];
+
+        // Ranges are in reverse order of appearance in the DOM. We want to restore earliest first to avoid
+        // normalization affecting previously restored ranges.
+        var rangeCount = rangeInfos.length;
+
+        for (var i = rangeCount - 1; i &gt;= 0; i--) {
+            ranges[i] = restoreRange(rangeInfos[i], true);
+        }
+
+        return ranges;
+    }
+
+    function restoreSelection(savedSelection, preserveDirection) {
+        if (!savedSelection.restored) {
+            var rangeInfos = savedSelection.rangeInfos;
+            var sel = api.getSelection(savedSelection.win);
+            var ranges = restoreRanges(rangeInfos), rangeCount = rangeInfos.length;
+
+            if (rangeCount == 1 &amp;&amp; preserveDirection &amp;&amp; api.features.selectionHasExtend &amp;&amp; rangeInfos[0].backward) {
+                sel.removeAllRanges();
+                sel.addRange(ranges[0], true);
+            } else {
+                sel.setRanges(ranges);
+            }
+
+            savedSelection.restored = true;
+        }
+    }
+
+    function removeMarkerElement(doc, markerId) {
+        var markerEl = gEBI(markerId, doc);
+        if (markerEl) {
+            markerEl.parentNode.removeChild(markerEl);
+        }
+    }
+
+    function removeMarkers(savedSelection) {
+        var rangeInfos = savedSelection.rangeInfos;
+        for (var i = 0, len = rangeInfos.length, rangeInfo; i &lt; len; ++i) {
+            rangeInfo = rangeInfos[i];
+            if (rangeInfo.collapsed) {
+                removeMarkerElement(savedSelection.doc, rangeInfo.markerId);
+            } else {
+                removeMarkerElement(savedSelection.doc, rangeInfo.startMarkerId);
+                removeMarkerElement(savedSelection.doc, rangeInfo.endMarkerId);
+            }
+        }
+    }
+
+    api.util.extend(api, {
+        saveRange: saveRange,
+        restoreRange: restoreRange,
+        saveRanges: saveRanges,
+        restoreRanges: restoreRanges,
+        saveSelection: saveSelection,
+        restoreSelection: restoreSelection,
+        removeMarkerElement: removeMarkerElement,
+        removeMarkers: removeMarkers
+    });
+});
+
+    </pre>
+</div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="../assets/vendor/prettify/prettify-min.js"></script>
+<script>prettyPrint();</script>
+<script src="../assets/js/yui-prettify.js"></script>
+<script src="../assets/../api.js"></script>
+<script src="../assets/js/api-filter.js"></script>
+<script src="../assets/js/api-list.js"></script>
+<script src="../assets/js/api-search.js"></script>
+<script src="../assets/js/apidocs.js"></script>
+</body>
+</html>

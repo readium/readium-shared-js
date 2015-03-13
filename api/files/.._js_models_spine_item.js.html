@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>../js/models/spine_item.js - Readium SDK DOM Access Layer API</title>
+    <link rel="stylesheet" href="http://yui.yahooapis.com/3.9.1/build/cssgrids/cssgrids-min.css">
+    <link rel="stylesheet" href="../assets/vendor/prettify/prettify-min.css">
+    <link rel="stylesheet" href="../assets/css/main.css" id="site_styles">
+    <link rel="shortcut icon" type="image/png" href="../assets/favicon.png">
+    <script src="http://yui.yahooapis.com/combo?3.9.1/build/yui/yui-min.js"></script>
+</head>
+<body class="yui3-skin-sam">
+
+<div id="doc">
+    <div id="page-top-wrapper" >
+        </br> </br>
+    </div>
+    <div class="yui3-g header">
+        <div class="yui3-u-3-4" >
+              
+                 <h1 id="logo" style="vertical-align:center"><img src="../assets/css/logo.png" title="Readium SDK DOM Access Layer API">Readium SDK DOM Access Layer API</h1>
+              
+        </div>
+        <div class="yui3-u-1-4 version" >
+            <div id="version">
+            <em>API Docs for: 0.16</em>
+        </div>
+        </div>
+    </div>
+    <div id="bd" class="yui3-g">
+        <div class="yui3-u-1-4">
+            <div id="docs-sidebar" class="sidebar apidocs">
+                <div id="api-list">
+    <h2 class="off-left">APIs</h2>
+    <div id="api-tabview" class="tabview">
+        <ul class="tabs">
+            <li><a href="#api-classes">Classes</a></li>
+            <li><a href="#api-modules">Modules</a></li>
+        </ul>
+
+        <div id="api-tabview-filter">
+            <input type="search" id="api-filter" placeholder="Type to filter APIs">
+        </div>
+
+        <div id="api-tabview-panel">
+            <ul id="api-classes" class="apis classes">
+            
+                <li><a href="../classes/ReadiumSDK.Models.BookmarkData.html">ReadiumSDK.Models.BookmarkData</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.CurrentPagesInfo.html">ReadiumSDK.Models.CurrentPagesInfo</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.Package.html">ReadiumSDK.Models.Package</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.PackageData.html">ReadiumSDK.Models.PackageData</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.Spine.html">ReadiumSDK.Models.Spine</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.SpineItem.html">ReadiumSDK.Models.SpineItem</a></li>
+            
+            </ul>
+
+            <ul id="api-modules" class="apis modules">
+            
+            </ul>
+        </div>
+    </div>
+</div>
+
+            </div>
+        </div>
+        <div class="yui3-u-3-4">
+                <div id="api-options">
+        Show:
+        <label for="api-show-inherited">
+            <input type="checkbox" id="api-show-inherited" checked>
+            Inherited
+        </label>
+
+        <label for="api-show-protected">
+            <input type="checkbox" id="api-show-protected">
+            Protected
+        </label>
+
+        <label for="api-show-private">
+            <input type="checkbox" id="api-show-private">
+            Private
+        </label>
+        <label for="api-show-deprecated">
+            <input type="checkbox" id="api-show-deprecated">
+            Deprecated
+        </label>
+
+    </div>
+
+
+            <div class="apidocs">
+                <div id="docs-main">
+                    <div class="content">
+                        <h1 class="file-heading">File: ../js/models/spine_item.js</h1>
+
+<div class="file">
+    <pre class="code prettyprint linenums">
+//  Created by Boris Schneiderman.
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  
+//  Redistribution and use in source and binary forms, with or without modification, 
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this 
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice, 
+//  this list of conditions and the following disclaimer in the documentation and/or 
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be 
+//  used to endorse or promote products derived from this software without specific 
+//  prior written permission.
+//  
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND 
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
+
+/**
+ * Wrapper of the SpineItem object received from the host application
+ *
+ * @class ReadiumSDK.Models.SpineItem
+ *
+ * @param itemData spine item properties container
+ * @param {Number} index
+ * @param {ReadiumSDK.Models.Spine} spine
+ *
+ */
+ReadiumSDK.Models.SpineItem = function(itemData, index, spine){
+
+    var self = this;
+
+    this.idref = itemData.idref;
+    this.href = itemData.href;
+
+    this.linear = itemData.linear ? itemData.linear.toLowerCase() : itemData.linear;
+
+    this.page_spread = itemData.page_spread;
+    
+    this.rendition_viewport = itemData.rendition_viewport;
+    
+    this.rendition_spread = itemData.rendition_spread;
+    
+    //TODO: unused yet!
+    this.rendition_orientation = itemData.rendition_orientation;
+
+    this.rendition_layout = itemData.rendition_layout;
+    
+    this.rendition_flow = itemData.rendition_flow;
+    
+    
+    
+    this.media_overlay_id = itemData.media_overlay_id;
+
+    this.media_type = itemData.media_type;
+
+    this.index = index;
+    this.spine = spine;
+
+    validateSpread();
+
+    this.setSpread = function(spread) {
+        this.page_spread = spread;
+
+        validateSpread();
+    };
+
+    this.isRenditionSpreadAllowed = function() {
+        
+        var rendition_spread = self.getRenditionSpread();
+        return !rendition_spread || rendition_spread != ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_NONE;
+    };
+
+    function validateSpread() {
+
+        if(!self.page_spread) {
+            return;
+        }
+
+        if( self.page_spread != ReadiumSDK.Models.SpineItem.SPREAD_LEFT &amp;&amp;
+            self.page_spread != ReadiumSDK.Models.SpineItem.SPREAD_RIGHT &amp;&amp;
+            self.page_spread != ReadiumSDK.Models.SpineItem.SPREAD_CENTER ) {
+
+            console.error(self.page_spread + &quot; is not a recognized spread type&quot;);
+        }
+
+    }
+
+    this.isLeftPage = function() {
+        return self.page_spread == ReadiumSDK.Models.SpineItem.SPREAD_LEFT;
+    };
+
+    this.isRightPage = function() {
+        return self.page_spread == ReadiumSDK.Models.SpineItem.SPREAD_RIGHT;
+    };
+
+    this.isCenterPage = function() {
+        return self.page_spread == ReadiumSDK.Models.SpineItem.SPREAD_CENTER;
+    };
+
+    this.isReflowable = function() {
+        return !self.isFixedLayout();
+    };
+
+    this.isFixedLayout = function() {
+        
+        // cannot use isPropertyValueSetForItemOrPackage() here!
+
+        var isLayoutExplicitlyDefined = self.getRenditionLayout();
+
+        if(isLayoutExplicitlyDefined) {
+
+            if (self.rendition_layout)
+            {
+                if (self.rendition_layout === ReadiumSDK.Models.SpineItem.RENDITION_LAYOUT_PREPAGINATED) return true;
+                if (self.rendition_layout === ReadiumSDK.Models.SpineItem.RENDITION_LAYOUT_REFLOWABLE) return false;
+            }
+
+            return self.spine.package.isFixedLayout();
+        }
+
+        // if image or svg use fixed layout
+        return self.media_type.indexOf(&quot;image/&quot;) &gt;= 0;
+
+    };
+
+    this.getRenditionFlow = function() {
+
+        if(self.rendition_flow) {
+            return self.rendition_flow;
+        }
+
+        return self.spine.package.rendition_flow;
+    };
+    
+    this.getRenditionViewport = function() {
+
+        if(self.rendition_viewport) {
+            return self.rendition_viewport;
+        }
+
+        return self.spine.package.rendition_viewport;
+    };
+
+    this.getRenditionSpread = function() {
+
+        if(self.rendition_spread) {
+            return self.rendition_spread;
+        }
+
+        return self.spine.package.rendition_spread;
+    };
+
+    this.getRenditionOrientation = function() {
+
+        if(self.rendition_orientation) {
+            return self.rendition_orientation;
+        }
+
+        return self.spine.package.rendition_orientation;
+    };
+
+    this.getRenditionLayout = function() {
+
+        if(self.rendition_layout) {
+            return self.rendition_layout;
+        }
+
+        return self.spine.package.rendition_layout;
+    };
+
+    function isPropertyValueSetForItemOrPackage(propName, propValue) {
+
+        if(self[propName]) {
+            return self[propName] === propValue;
+        }
+
+        if(self.spine.package[propName]) {
+            return self.spine.package[propName] === propValue;
+        }
+
+        return false;
+    }
+
+    this.isFlowScrolledContinuous = function() {
+
+        return isPropertyValueSetForItemOrPackage(&quot;rendition_flow&quot;, ReadiumSDK.Models.SpineItem.RENDITION_FLOW_SCROLLED_CONTINUOUS);
+    };
+
+    this.isFlowScrolledDoc = function() {
+
+        return isPropertyValueSetForItemOrPackage(&quot;rendition_flow&quot;, ReadiumSDK.Models.SpineItem.RENDITION_FLOW_SCROLLED_DOC);
+    };
+};
+
+ReadiumSDK.Models.SpineItem.RENDITION_LAYOUT_REFLOWABLE = &quot;reflowable&quot;;
+ReadiumSDK.Models.SpineItem.RENDITION_LAYOUT_PREPAGINATED = &quot;pre-paginated&quot;;
+
+ReadiumSDK.Models.SpineItem.RENDITION_ORIENTATION_LANDSCAPE = &quot;landscape&quot;;
+ReadiumSDK.Models.SpineItem.RENDITION_ORIENTATION_PORTRAIT = &quot;portrait&quot;;
+ReadiumSDK.Models.SpineItem.RENDITION_ORIENTATION_AUTO = &quot;auto&quot;;
+
+ReadiumSDK.Models.SpineItem.SPREAD_LEFT = &quot;page-spread-left&quot;;
+ReadiumSDK.Models.SpineItem.SPREAD_RIGHT = &quot;page-spread-right&quot;;
+ReadiumSDK.Models.SpineItem.SPREAD_CENTER = &quot;page-spread-center&quot;;
+
+ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_NONE = &quot;none&quot;;
+ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_LANDSCAPE = &quot;landscape&quot;;
+ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_PORTRAIT = &quot;portrait&quot;;
+ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_BOTH = &quot;both&quot;;
+ReadiumSDK.Models.SpineItem.RENDITION_SPREAD_AUTO = &quot;auto&quot;;
+
+ReadiumSDK.Models.SpineItem.RENDITION_FLOW_PAGINATED = &quot;paginated&quot;;
+ReadiumSDK.Models.SpineItem.RENDITION_FLOW_SCROLLED_CONTINUOUS = &quot;scrolled-continuous&quot;;
+ReadiumSDK.Models.SpineItem.RENDITION_FLOW_SCROLLED_DOC = &quot;scrolled-doc&quot;;
+ReadiumSDK.Models.SpineItem.RENDITION_FLOW_AUTO = &quot;auto&quot;;
+
+ReadiumSDK.Models.SpineItem.alternateSpread = function(spread) {
+
+    if(spread === ReadiumSDK.Models.SpineItem.SPREAD_LEFT) {
+        return ReadiumSDK.Models.SpineItem.SPREAD_RIGHT;
+    }
+
+    if(spread === ReadiumSDK.Models.SpineItem.SPREAD_RIGHT) {
+        return ReadiumSDK.Models.SpineItem.SPREAD_LEFT;
+    }
+
+    return spread;
+
+};
+
+
+    </pre>
+</div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="../assets/vendor/prettify/prettify-min.js"></script>
+<script>prettyPrint();</script>
+<script src="../assets/js/yui-prettify.js"></script>
+<script src="../assets/../api.js"></script>
+<script src="../assets/js/api-filter.js"></script>
+<script src="../assets/js/api-list.js"></script>
+<script src="../assets/js/api-search.js"></script>
+<script src="../assets/js/apidocs.js"></script>
+</body>
+</html>

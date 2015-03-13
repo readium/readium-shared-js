@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>../lib/jquery.sizes.js - Readium SDK DOM Access Layer API</title>
+    <link rel="stylesheet" href="http://yui.yahooapis.com/3.9.1/build/cssgrids/cssgrids-min.css">
+    <link rel="stylesheet" href="../assets/vendor/prettify/prettify-min.css">
+    <link rel="stylesheet" href="../assets/css/main.css" id="site_styles">
+    <link rel="shortcut icon" type="image/png" href="../assets/favicon.png">
+    <script src="http://yui.yahooapis.com/combo?3.9.1/build/yui/yui-min.js"></script>
+</head>
+<body class="yui3-skin-sam">
+
+<div id="doc">
+    <div id="page-top-wrapper" >
+        </br> </br>
+    </div>
+    <div class="yui3-g header">
+        <div class="yui3-u-3-4" >
+              
+                 <h1 id="logo" style="vertical-align:center"><img src="../assets/css/logo.png" title="Readium SDK DOM Access Layer API">Readium SDK DOM Access Layer API</h1>
+              
+        </div>
+        <div class="yui3-u-1-4 version" >
+            <div id="version">
+            <em>API Docs for: 0.16</em>
+        </div>
+        </div>
+    </div>
+    <div id="bd" class="yui3-g">
+        <div class="yui3-u-1-4">
+            <div id="docs-sidebar" class="sidebar apidocs">
+                <div id="api-list">
+    <h2 class="off-left">APIs</h2>
+    <div id="api-tabview" class="tabview">
+        <ul class="tabs">
+            <li><a href="#api-classes">Classes</a></li>
+            <li><a href="#api-modules">Modules</a></li>
+        </ul>
+
+        <div id="api-tabview-filter">
+            <input type="search" id="api-filter" placeholder="Type to filter APIs">
+        </div>
+
+        <div id="api-tabview-panel">
+            <ul id="api-classes" class="apis classes">
+            
+                <li><a href="../classes/ReadiumSDK.Models.BookmarkData.html">ReadiumSDK.Models.BookmarkData</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.CurrentPagesInfo.html">ReadiumSDK.Models.CurrentPagesInfo</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.Package.html">ReadiumSDK.Models.Package</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.PackageData.html">ReadiumSDK.Models.PackageData</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.Spine.html">ReadiumSDK.Models.Spine</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.SpineItem.html">ReadiumSDK.Models.SpineItem</a></li>
+            
+            </ul>
+
+            <ul id="api-modules" class="apis modules">
+            
+            </ul>
+        </div>
+    </div>
+</div>
+
+            </div>
+        </div>
+        <div class="yui3-u-3-4">
+                <div id="api-options">
+        Show:
+        <label for="api-show-inherited">
+            <input type="checkbox" id="api-show-inherited" checked>
+            Inherited
+        </label>
+
+        <label for="api-show-protected">
+            <input type="checkbox" id="api-show-protected">
+            Protected
+        </label>
+
+        <label for="api-show-private">
+            <input type="checkbox" id="api-show-private">
+            Private
+        </label>
+        <label for="api-show-deprecated">
+            <input type="checkbox" id="api-show-deprecated">
+            Deprecated
+        </label>
+
+    </div>
+
+
+            <div class="apidocs">
+                <div id="docs-main">
+                    <div class="content">
+                        <h1 class="file-heading">File: ../lib/jquery.sizes.js</h1>
+
+<div class="file">
+    <pre class="code prettyprint linenums">
+/**
+ * @preserve JSizes - JQuery plugin v0.33
+ *
+ * Licensed under the revised BSD License.
+ * Copyright 2008-2010 Bram Stein
+ * All rights reserved.
+ */
+/*global jQuery*/
+(function ($) {
+	var num = function (value) {
+			return parseInt(value, 10) || 0;
+		};
+
+	/**
+	 * Sets or gets the values for min-width, min-height, max-width
+	 * and max-height.
+	 */
+	$.each([&#x27;min&#x27;, &#x27;max&#x27;], function (i, name) {
+		$.fn[name + &#x27;Size&#x27;] = function (value) {
+			var width, height;
+			if (value) {
+				if (value.width !== undefined) {
+					this.css(name + &#x27;-width&#x27;, value.width);
+				}
+				if (value.height !== undefined) {
+					this.css(name + &#x27;-height&#x27;, value.height);
+				}
+				return this;
+			}
+			else {
+				width = this.css(name + &#x27;-width&#x27;);
+				height = this.css(name + &#x27;-height&#x27;);
+				// Apparently:
+				//  * Opera returns -1px instead of none
+				//  * IE6 returns undefined instead of none
+				return {&#x27;width&#x27;: (name === &#x27;max&#x27; &amp;&amp; (width === undefined || width === &#x27;none&#x27; || num(width) === -1) &amp;&amp; Number.MAX_VALUE) || num(width), 
+						&#x27;height&#x27;: (name === &#x27;max&#x27; &amp;&amp; (height === undefined || height === &#x27;none&#x27; || num(height) === -1) &amp;&amp; Number.MAX_VALUE) || num(height)};
+			}
+		};
+	});
+
+	/**
+	 * Returns whether or not an element is visible.
+	 */
+	$.fn.isVisible = function () {
+		return this.is(&#x27;:visible&#x27;);
+	};
+
+	/**
+	 * Sets or gets the values for border, margin and padding.
+	 */
+	$.each([&#x27;border&#x27;, &#x27;margin&#x27;, &#x27;padding&#x27;], function (i, name) {
+		$.fn[name] = function (value) {
+			if (value) {
+				if (value.top !== undefined) {
+					this.css(name + &#x27;-top&#x27; + (name === &#x27;border&#x27; ? &#x27;-width&#x27; : &#x27;&#x27;), value.top);
+				}
+				if (value.bottom !== undefined) {
+					this.css(name + &#x27;-bottom&#x27; + (name === &#x27;border&#x27; ? &#x27;-width&#x27; : &#x27;&#x27;), value.bottom);
+				}
+				if (value.left !== undefined) {
+					this.css(name + &#x27;-left&#x27; + (name === &#x27;border&#x27; ? &#x27;-width&#x27; : &#x27;&#x27;), value.left);
+				}
+				if (value.right !== undefined) {
+					this.css(name + &#x27;-right&#x27; + (name === &#x27;border&#x27; ? &#x27;-width&#x27; : &#x27;&#x27;), value.right);
+				}
+				return this;
+			}
+			else {
+				return {top: num(this.css(name + &#x27;-top&#x27; + (name === &#x27;border&#x27; ? &#x27;-width&#x27; : &#x27;&#x27;))),
+						bottom: num(this.css(name + &#x27;-bottom&#x27; + (name === &#x27;border&#x27; ? &#x27;-width&#x27; : &#x27;&#x27;))),
+						left: num(this.css(name + &#x27;-left&#x27; + (name === &#x27;border&#x27; ? &#x27;-width&#x27; : &#x27;&#x27;))),
+						right: num(this.css(name + &#x27;-right&#x27; + (name === &#x27;border&#x27; ? &#x27;-width&#x27; : &#x27;&#x27;)))};
+			}
+		};
+	});
+}(jQuery));
+
+    </pre>
+</div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="../assets/vendor/prettify/prettify-min.js"></script>
+<script>prettyPrint();</script>
+<script src="../assets/js/yui-prettify.js"></script>
+<script src="../assets/../api.js"></script>
+<script src="../assets/js/api-filter.js"></script>
+<script src="../assets/js/api-list.js"></script>
+<script src="../assets/js/api-search.js"></script>
+<script src="../assets/js/apidocs.js"></script>
+</body>
+</html>

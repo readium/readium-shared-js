@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>../js/views/media_overlay_data_injector.js - Readium SDK DOM Access Layer API</title>
+    <link rel="stylesheet" href="http://yui.yahooapis.com/3.9.1/build/cssgrids/cssgrids-min.css">
+    <link rel="stylesheet" href="../assets/vendor/prettify/prettify-min.css">
+    <link rel="stylesheet" href="../assets/css/main.css" id="site_styles">
+    <link rel="shortcut icon" type="image/png" href="../assets/favicon.png">
+    <script src="http://yui.yahooapis.com/combo?3.9.1/build/yui/yui-min.js"></script>
+</head>
+<body class="yui3-skin-sam">
+
+<div id="doc">
+    <div id="page-top-wrapper" >
+        </br> </br>
+    </div>
+    <div class="yui3-g header">
+        <div class="yui3-u-3-4" >
+              
+                 <h1 id="logo" style="vertical-align:center"><img src="../assets/css/logo.png" title="Readium SDK DOM Access Layer API">Readium SDK DOM Access Layer API</h1>
+              
+        </div>
+        <div class="yui3-u-1-4 version" >
+            <div id="version">
+            <em>API Docs for: 0.16</em>
+        </div>
+        </div>
+    </div>
+    <div id="bd" class="yui3-g">
+        <div class="yui3-u-1-4">
+            <div id="docs-sidebar" class="sidebar apidocs">
+                <div id="api-list">
+    <h2 class="off-left">APIs</h2>
+    <div id="api-tabview" class="tabview">
+        <ul class="tabs">
+            <li><a href="#api-classes">Classes</a></li>
+            <li><a href="#api-modules">Modules</a></li>
+        </ul>
+
+        <div id="api-tabview-filter">
+            <input type="search" id="api-filter" placeholder="Type to filter APIs">
+        </div>
+
+        <div id="api-tabview-panel">
+            <ul id="api-classes" class="apis classes">
+            
+                <li><a href="../classes/ReadiumSDK.Models.BookmarkData.html">ReadiumSDK.Models.BookmarkData</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.CurrentPagesInfo.html">ReadiumSDK.Models.CurrentPagesInfo</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.Package.html">ReadiumSDK.Models.Package</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.PackageData.html">ReadiumSDK.Models.PackageData</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.Spine.html">ReadiumSDK.Models.Spine</a></li>
+            
+                <li><a href="../classes/ReadiumSDK.Models.SpineItem.html">ReadiumSDK.Models.SpineItem</a></li>
+            
+            </ul>
+
+            <ul id="api-modules" class="apis modules">
+            
+            </ul>
+        </div>
+    </div>
+</div>
+
+            </div>
+        </div>
+        <div class="yui3-u-3-4">
+                <div id="api-options">
+        Show:
+        <label for="api-show-inherited">
+            <input type="checkbox" id="api-show-inherited" checked>
+            Inherited
+        </label>
+
+        <label for="api-show-protected">
+            <input type="checkbox" id="api-show-protected">
+            Protected
+        </label>
+
+        <label for="api-show-private">
+            <input type="checkbox" id="api-show-private">
+            Private
+        </label>
+        <label for="api-show-deprecated">
+            <input type="checkbox" id="api-show-deprecated">
+            Deprecated
+        </label>
+
+    </div>
+
+
+            <div class="apidocs">
+                <div id="docs-main">
+                    <div class="content">
+                        <h1 class="file-heading">File: ../js/views/media_overlay_data_injector.js</h1>
+
+<div class="file">
+    <pre class="code prettyprint linenums">
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  
+//  Redistribution and use in source and binary forms, with or without modification, 
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this 
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice, 
+//  this list of conditions and the following disclaimer in the documentation and/or 
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be 
+//  used to endorse or promote products derived from this software without specific 
+//  prior written permission.
+//  
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot; AND 
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
+
+/**
+ *
+ * @param mediaOverlay
+ * @param mediaOverlayPlayer
+ * @constructor
+ */
+ReadiumSDK.Views.MediaOverlayDataInjector = function (mediaOverlay, mediaOverlayPlayer) {
+
+    this.attachMediaOverlayData = function ($iframe, spineItem, mediaOverlaySettings) {
+
+        var contentDocElement = $iframe[0].contentDocument.documentElement;
+
+        if (!spineItem.media_overlay_id &amp;&amp; mediaOverlay.smil_models.length === 0) {
+            return;
+        }
+
+        var $body = $(&quot;body&quot;, contentDocElement);
+        if ($body.length == 0) {
+            console.error(&quot;! BODY ???&quot;);
+        }
+        else {
+            var click = $body.data(&quot;mediaOverlayClick&quot;);
+            if (click) {
+                console.error(&quot;[WARN] already mediaOverlayClick&quot;);
+            }
+            else {
+                $body.data(&quot;mediaOverlayClick&quot;, {ping: &quot;pong&quot;});
+
+                var clickEvent = &#x27;ontouchstart&#x27; in document.documentElement ? &#x27;touchstart&#x27; : &#x27;click&#x27;;
+                $body.bind(clickEvent, function (event)
+                {
+                    var elem = $(this)[0]; // body
+                    elem = event.target; // body descendant
+
+                    if (!elem)
+                    {
+                        mediaOverlayPlayer.touchInit();
+                        return true;
+                    }
+
+//console.debug(&quot;MO CLICK: &quot; + elem.id);
+
+                    var data = undefined;
+                    var el = elem;
+
+                    var inLink = false;
+                    if (el.nodeName.toLowerCase() === &quot;a&quot;)
+                    {
+                        inLink = true;
+                    }
+
+                    while (!(data = $(el).data(&quot;mediaOverlayData&quot;)))
+                    {
+                        if (el.nodeName.toLowerCase() === &quot;a&quot;)
+                        {
+                            inLink = true;
+                        }
+                        el = el.parentNode;
+                        if (!el)
+                        {
+                            break;
+                        }
+                    }
+                    
+                    if (data &amp;&amp; (data.par || data.pars))
+                    {
+                        if (el !== elem)
+                        {
+//console.log(&quot;MO CLICK REDIRECT: &quot; + el.id);
+                        }
+
+                        if (!mediaOverlaySettings.mediaOverlaysEnableClick)
+                        {
+console.log(&quot;MO CLICK DISABLED&quot;);
+                            mediaOverlayPlayer.touchInit();
+                            return true;
+                        }
+
+                        if (inLink)
+                        {
+console.log(&quot;MO CLICKED LINK&quot;);
+                            mediaOverlayPlayer.touchInit();
+                            return true;
+                        }
+
+                        var par = data.par ? data.par : data.pars[0];
+
+                        if (data.pars &amp;&amp; (typeof rangy !== &quot;undefined&quot;))
+                        {
+                            var wasPaused = false;
+                            
+                            // To remove highlight which may have altered DOM (and break CFI expressions)
+                            if (mediaOverlayPlayer.isPlayingCfi())
+                            {
+                                wasPaused = true;
+                                mediaOverlayPlayer.pause();
+                            }
+                         
+                            // /////////////////////
+                            // 
+                            // var p = {x: event.pageX, y: event.pageY};
+                            // if (webkitConvertPointFromPageToNode)
+                            // {
+                            //     p = webkitConvertPointFromPageToNode(elem.ownerDocument.body, new WebKitPoint(event.pageX, event.pageY));
+                            // }
+                            // 
+                            // var div = elem.ownerDocument.getElementById(&quot;CLICKED&quot;);
+                            // if (div)
+                            // {
+                            //     div.parentNode.removeChild(div);
+                            // }
+                            // 
+                            // div = elem.ownerDocument.createElementNS(&quot;http://www.w3.org/1999/xhtml&quot;, &#x27;div&#x27;);
+                            // div.setAttribute(&quot;style&quot;, &quot;background-color: red; position: absolute; z-index: 999; width: 50px; height: 50px; left: &quot; + p.x + &quot;px; top: &quot; + p.y + &quot;px;&quot;);
+                            // div.id = &quot;CLICKED&quot;;
+                            // div.setAttribute(&quot;id&quot;, div.id);
+                            // var divTxt = elem.ownerDocument.createTextNode(&quot; &quot;);
+                            // div.appendChild(divTxt);
+                            // elem.ownerDocument.body.appendChild(div);
+                            //                          
+                            // /////////////////////
+
+
+                            //rangy.init();
+                            try
+                            {
+// THIS WORKS (same as Rangy&#x27;s method below)
+//                                 var r;
+//                                 if (elem.ownerDocument.caretRangeFromPoint)
+//                                 {
+//                                     r = elem.ownerDocument.caretRangeFromPoint(event.pageX, event.pageY);
+//                                 }
+//                                 else if (event.rangeParent)
+//                                 {
+//                                     r = elem.ownerDocument.createRange();
+//                                     range.setStart(event.rangeParent, event.rangeOffset);
+//                                 }
+//                                 
+// console.log(&quot;------ 1&quot;);
+// console.log(elem.ownerDocument);
+// console.log(event.pageX);
+// console.log(event.pageY);
+// console.log(r.startContainer);
+// console.log(r.startOffset);
+// console.log(&quot;------&quot;);
+
+                                var pos = rangy.positionFromPoint(event.pageX, event.pageY, elem.ownerDocument);
+// console.log(&quot;------ 2&quot;);
+// console.log(pos.node.textContent);
+// console.log(pos.offset);
+// console.log(&quot;------&quot;);
+
+                                par = undefined;
+                                
+                                for (var iPar = 0; iPar &lt; data.pars.length; iPar++)
+                                {
+                                    var p = data.pars[iPar];
+
+                                    var startCFI = &quot;epubcfi(&quot; + p.cfi.partialStartCfi + &quot;)&quot;;
+                                    var infoStart = EPUBcfi.getTextTerminusInfoWithPartialCFI(startCFI, elem.ownerDocument,
+                [&quot;cfi-marker&quot;, &quot;mo-cfi-highlight&quot;],
+                [],
+                [&quot;MathJax_Message&quot;]);
+//console.log(infoStart);
+
+                                    var endCFI = &quot;epubcfi(&quot; + p.cfi.partialEndCfi + &quot;)&quot;;
+                                    var infoEnd = EPUBcfi.getTextTerminusInfoWithPartialCFI(endCFI, elem.ownerDocument,
+                [&quot;cfi-marker&quot;, &quot;mo-cfi-highlight&quot;],
+                [],
+                [&quot;MathJax_Message&quot;]);
+//console.log(infoEnd);
+
+                                    var range = rangy.createRange(elem.ownerDocument); //createNativeRange
+                                    range.setStartAndEnd(
+                                        infoStart.textNode[0], infoStart.textOffset,
+                                        infoEnd.textNode[0], infoEnd.textOffset
+                                    );
+        
+                                    if (range.isPointInRange(pos.node, pos.offset))
+                                    {
+// console.log(p.cfi.partialStartCfi);
+// console.log(p.cfi.partialEndCfi);
+                                        // DOUBLE CHECK WITH getClientRects ??
+                                        
+                                        par = p;
+                                        break;
+                                    }
+                                }
+                            }
+                            catch (e)
+                            {
+                                console.error(e);
+                            }
+                            
+                            if (!par)
+                            {
+                                if (wasPaused)
+                                {
+                                    mediaOverlayPlayer.toggleMediaOverlay();
+                                }
+                                return true;
+                            }
+                        }
+
+
+                        if (el &amp;&amp; el != elem &amp;&amp; el.nodeName.toLowerCase() === &quot;body&quot; &amp;&amp; par &amp;&amp; !par.getSmil().id)
+                        {
+//console.debug(&quot;MO CLICKED BLANK BODY&quot;);
+                            mediaOverlayPlayer.touchInit();
+                            return true;
+                        }
+
+                        mediaOverlayPlayer.playUserPar(par);
+                        return true;
+                    }
+                    else
+                    {
+                        var readaloud = $(elem).attr(&quot;ibooks:readaloud&quot;);
+                        if (!readaloud)
+                        {
+                            readaloud = $(elem).attr(&quot;epub:readaloud&quot;);
+                        }
+                        if (readaloud)
+                        {
+console.debug(&quot;MO readaloud attr: &quot; + readaloud);
+
+                            var isPlaying = mediaOverlayPlayer.isPlaying();
+                            if (readaloud === &quot;start&quot; &amp;&amp; !isPlaying ||
+                                readaloud === &quot;stop&quot; &amp;&amp; isPlaying ||
+                                readaloud === &quot;startstop&quot;)
+                            {
+                                mediaOverlayPlayer.toggleMediaOverlay();
+                                return true;
+                            }
+                        }
+                    }
+
+                    mediaOverlayPlayer.touchInit();
+                    return true;
+                });
+            }
+        }
+
+        var smil = mediaOverlay.getSmilBySpineItem(spineItem);
+        if (!smil)
+        {
+            console.error(&quot;NO SMIL?? &quot; + spineItem.idref + &quot; /// &quot; + spineItem.media_overlay_id);
+            return;
+        }
+
+        var traverseSmilSeqs = function(root)
+        {
+            if (!root) return;
+            
+            if (root.nodeType &amp;&amp; root.nodeType === &quot;seq&quot;)
+            {
+               // if (root.element)
+               // {
+               //     console.error(&quot;WARN: seq.element already set: &quot; + root.textref);
+               // }
+                   
+               if (root.textref)
+               {
+                   var parts = root.textref.split(&#x27;#&#x27;);
+                   var file = parts[0];
+                   var fragmentId = (parts.length === 2) ? parts[1] : &quot;&quot;;
+                   // 
+                   // console.debug(root.textref);
+                   // console.debug(fragmentId);
+                   // console.log(&quot;---- SHOULD BE EQUAL:&quot;);
+                   // console.debug(file);
+                   // console.debug(par.text.srcFile);
+                   // 
+                   // if (file !== par.text.srcFile)
+                   // {
+                   //     console.error(&quot;adjustParToSeqSyncGranularity textref.file !== par.text.srcFile ???&quot;);
+                   //     return par;
+                   // }
+                   // 
+                   // if (!fragmentId)
+                   // {
+                   //     console.error(&quot;adjustParToSeqSyncGranularity !fragmentId ???&quot;);
+                   //     return par;
+                   // }
+
+                   if (file &amp;&amp; fragmentId)
+                   {
+                       var textRelativeRef = ReadiumSDK.Helpers.ResolveContentRef(file, smil.href);
+                       var same = textRelativeRef === spineItem.href;
+                       if (same)
+                       {                       
+                           root.element = $iframe[0].contentDocument.getElementById(fragmentId);
+                   
+                           if (!root.element)
+                           {
+                               console.error(&quot;seq.textref !element? &quot; + root.textref);
+                           }
+
+                           // var selector = &quot;#&quot; + ReadiumSDK.Helpers.escapeJQuerySelector(fragmentId);
+                           // var $element = $(selector, element.ownerDocument.documentElement);
+                           // if ($element)
+                           // {
+                           //     seq.element = $element[0];
+                           // }
+                       }
+                   }
+               }
+            }
+            
+            if (root.children &amp;&amp; root.children.length)
+            {
+                for (var i = 0; i &lt; root.children.length; i++)
+                {
+                    var child = root.children[i];
+                    traverseSmilSeqs(child);
+                }
+            }
+        };
+        traverseSmilSeqs(smil);
+
+//console.debug(&quot;[[MO ATTACH]] &quot; + spineItem.idref + &quot; /// &quot; + spineItem.media_overlay_id + &quot; === &quot; + smil.id);
+
+        var iter = new ReadiumSDK.Models.SmilIterator(smil);
+        
+        var fakeOpfRoot = &quot;/99!&quot;;
+        var epubCfiPrefix = &quot;epubcfi&quot;;
+        
+        while (iter.currentPar) {
+            iter.currentPar.element = undefined;
+            iter.currentPar.cfi = undefined;
+
+            if (true) { //iter.currentPar.text.srcFragmentId (includes empty frag ID)
+
+                var textRelativeRef = ReadiumSDK.Helpers.ResolveContentRef(iter.currentPar.text.srcFile, iter.smil.href);
+
+                var same = textRelativeRef === spineItem.href;
+                if (same) {
+                    var selectBody = !iter.currentPar.text.srcFragmentId || iter.currentPar.text.srcFragmentId.length == 0;
+                    var selectId = iter.currentPar.text.srcFragmentId.indexOf(epubCfiPrefix) == 0 ? undefined : iter.currentPar.text.srcFragmentId;
+
+                    var $element = undefined;
+                    var isCfiTextRange = false;
+                    if (!selectBody &amp;&amp; !selectId)
+                    {
+                        if (iter.currentPar.text.srcFragmentId.indexOf(epubCfiPrefix) === 0)
+                        {
+                            var partial = iter.currentPar.text.srcFragmentId.substr(epubCfiPrefix.length + 1, iter.currentPar.text.srcFragmentId.length - epubCfiPrefix.length - 2);
+                            
+                            if (partial.indexOf(fakeOpfRoot) === 0)
+                            {
+                                partial = partial.substr(fakeOpfRoot.length, partial.length - fakeOpfRoot.length);
+                            }
+//console.log(partial);
+                            var parts = partial.split(&quot;,&quot;);
+                            if (parts &amp;&amp; parts.length === 3)
+                            {
+                                try
+                                {
+                                    var partialStartCfi = parts[0] + parts[1];
+                                    var startCFI = &quot;epubcfi(&quot; + partialStartCfi + &quot;)&quot;;
+                                    var infoStart = EPUBcfi.getTextTerminusInfoWithPartialCFI(startCFI, $iframe[0].contentDocument,
+                [&quot;cfi-marker&quot;, &quot;mo-cfi-highlight&quot;],
+                [],
+                [&quot;MathJax_Message&quot;]);
+//console.log(infoStart);
+
+                                    var partialEndCfi = parts[0] + parts[2];
+                                    var endCFI = &quot;epubcfi(&quot; + partialEndCfi + &quot;)&quot;;
+                                    var infoEnd = EPUBcfi.getTextTerminusInfoWithPartialCFI(endCFI, $iframe[0].contentDocument,
+                [&quot;cfi-marker&quot;, &quot;mo-cfi-highlight&quot;],
+                [],
+                [&quot;MathJax_Message&quot;]);
+//console.log(infoEnd);
+
+                                    var cfiTextParent = infoStart.textNode[0].parentNode;
+
+                                    iter.currentPar.cfi = {
+                                        smilTextSrcCfi: iter.currentPar.text.srcFragmentId,
+                                        partialRangeCfi: partial,
+                                        partialStartCfi: partialStartCfi,
+                                        partialEndCfi: partialEndCfi,
+                                        
+                                        cfiTextParent: cfiTextParent
+                                        
+                                        // textNode becomes invalid after highlighting! (dynamic span insertion/removal changes DOM)
+                                        // cfiRangeStart: infoStart,
+                                        // cfiRangeEnd: infoEnd
+                                    };
+                                    
+                                    // TODO: not just start textNode, but all of them between start and end...
+                                    // ...that being said, CFI text ranges likely to be used only within a single common parent,
+                                    // so this is an acceptable implementation shortcut for this CFI experimentation (word-level text/audio synchronisation).
+                                    isCfiTextRange = true;
+                                    $element = $(cfiTextParent);
+                                    var modata = $element.data(&quot;mediaOverlayData&quot;);
+                                    if (!modata)
+                                    {
+                                        modata = {pars: [iter.currentPar]};
+                                        $element.data(&quot;mediaOverlayData&quot;, modata);
+                                    }
+                                    else
+                                    {
+                                        if (modata.par)
+                                        {
+                                            console.error(&quot;[WARN] non-CFI MO DATA already exists!&quot;);
+                                            modata.par = undefined;
+                                        }
+
+                                        var found = false;
+                                        if (modata.pars)
+                                        {
+                                            for (var iPars = 0; iPars &lt; modata.pars.length; iPars++)
+                                            {
+                                                var par = modata.pars[iPars];
+
+                                                if (par === iter.currentPar)
+                                                {
+                                                    found = true;
+                                                    console.error(&quot;[WARN] mediaOverlayData CFI PAR already registered!&quot;);
+                                                }
+                                            }
+                                        }
+                                        else
+                                        {
+                                            modata.pars = [];
+                                        }
+
+                                        if (!found)
+                                        {
+                                            modata.pars.push(iter.currentPar);
+                                        }
+                                    }
+
+                                }
+                                catch (error)
+                                {
+                                    console.error(error);
+                                }
+                            }
+                            else
+                            {
+                                try
+                                {
+                                    var cfi = &quot;epubcfi(&quot; + partial + &quot;)&quot;;
+                                    $element = EPUBcfi.getTargetElementWithPartialCFI(cfi, $iframe[0].contentDocument,
+                [&quot;cfi-marker&quot;, &quot;mo-cfi-highlight&quot;],
+                [],
+                [&quot;MathJax_Message&quot;]);
+                                }
+                                catch (error)
+                                {
+                                    console.error(error);
+                                }
+                            }
+                        }
+                        else 
+                        {
+                            console.error(&quot;SMIL text@src CFI fragment identifier scheme not supported: &quot; + iter.currentPar.text.srcFragmentId);
+                        }
+                    }
+                    else
+                    {
+                        if (selectBody)
+                        {
+                            $element = $body; //$(&quot;body&quot;, contentDocElement);
+                        }
+                        else
+                        {
+                            $element = $($iframe[0].contentDocument.getElementById(selectId));
+                            //$element = $(&quot;#&quot; + ReadiumSDK.Helpers.escapeJQuerySelector(iter.currentPar.text.srcFragmentId), contentDocElement);
+                        }
+                    }
+
+                    if ($element &amp;&amp; $element.length &gt; 0) {
+
+                        if (!isCfiTextRange)
+                        {
+                            if (iter.currentPar.element &amp;&amp; iter.currentPar.element !== $element[0]) {
+                                console.error(&quot;DIFFERENT ELEMENTS??! &quot; + iter.currentPar.text.srcFragmentId + &quot; /// &quot; + iter.currentPar.element.id);
+                            }
+
+                            var name = $element[0].nodeName ? $element[0].nodeName.toLowerCase() : undefined;
+                            if (name === &quot;audio&quot; || name === &quot;video&quot;) {
+                                $element.attr(&quot;preload&quot;, &quot;auto&quot;);
+                            }
+
+                            iter.currentPar.element = $element[0];
+
+                            var modata = $element.data(&quot;mediaOverlayData&quot;);
+                            if (modata) {
+                                console.error(&quot;[WARN] MO DATA already exists.&quot;);
+
+                                if (modata.par &amp;&amp; modata.par !== iter.currentPar) {
+                                    console.error(&quot;DIFFERENT PARS??!&quot;);
+                                }
+                            }
+
+                            $element.data(&quot;mediaOverlayData&quot;, {par: iter.currentPar});
+
+                            /*
+                             $element.click(function() {
+                             var elem = $(this)[0];
+                             console.debug(&quot;MO CLICK (ELEM): &quot; + elem.id);
+
+                             var par = $(this).data(&quot;mediaOverlayData&quot;).par;
+                             mediaOverlayPlayer.playUserPar(par);
+                             });
+                             */
+                        }
+                    }
+                    else {
+                        console.error(&quot;!! CANNOT FIND ELEMENT: &quot; + iter.currentPar.text.srcFragmentId + &quot; == &quot; + iter.currentPar.text.srcFile + &quot; /// &quot; + spineItem.href);
+                    }
+                }
+                else {
+//console.debug(&quot;[INFO] &quot; + spineItem.href + &quot; != &quot; + textRelativeRef + &quot; # &quot; + iter.currentPar.text.srcFragmentId);
+                }
+            }
+
+            iter.next();
+        }
+    }
+};
+
+    </pre>
+</div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="../assets/vendor/prettify/prettify-min.js"></script>
+<script>prettyPrint();</script>
+<script src="../assets/js/yui-prettify.js"></script>
+<script src="../assets/../api.js"></script>
+<script src="../assets/js/api-filter.js"></script>
+<script src="../assets/js/api-list.js"></script>
+<script src="../assets/js/api-search.js"></script>
+<script src="../assets/js/apidocs.js"></script>
+</body>
+</html>
