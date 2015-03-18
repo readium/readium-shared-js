@@ -15,6 +15,11 @@
 {
     mainConfigFile: "RequireJS_config_common.js",
     
+    optimize: "none",
+    generateSourceMaps: true,
+    preserveLicenseComments: true,
+    
+    /*
     optimize: "uglify2",
     generateSourceMaps: true,
     preserveLicenseComments: false,
@@ -31,6 +36,7 @@
     //     semicolons: false
     //   }
     // },
+    */
 
     name: "almond",
     include: ["readium-shared-js", "readium-plugin-example", "readium-plugin-annotations"],

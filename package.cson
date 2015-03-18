@@ -126,7 +126,7 @@ scripts:
         rimraf
             node_modules/eventemitter3/_rjs/**
         &&
-        r.js -convert
+        node node_modules/requirejs/bin/r.js -convert
             node_modules/eventemitter3/
             node_modules/eventemitter3/_rjs/
     '
@@ -171,11 +171,11 @@ scripts:
 #=====================
     'build:scripts': '
     
-        r.js
+        node node_modules/requirejs/bin/r.js
              -o
              build-config/RequireJS_config_multiple-bundles.js
         &&
-        r.js
+        node node_modules/requirejs/bin/r.js
              -o
              build-config/RequireJS_config_single-bundle.js
     '
