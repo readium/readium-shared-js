@@ -36,8 +36,6 @@ readium-shared-js.js
 ----------------
 epubCfi.js
 globals.js
-text.js
-text!empty:
 globalsSetup.js
 controllers/plugins_controller.js
 models/bookmark_data.js
@@ -56,6 +54,7 @@ models/smil_iterator.js
 views/media_overlay_data_injector.js
 views/audio_player.js
 views/media_overlay_element_highlighter.js
+views/scroll_view.js
 views/media_overlay_player.js
 models/spine.js
 models/smil_model.js
@@ -63,7 +62,6 @@ models/media_overlay.js
 models/package_data.js
 models/package.js
 views/reflowable_view.js
-views/scroll_view.js
 models/style.js
 models/style_collection.js
 models/switches.js

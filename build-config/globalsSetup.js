@@ -11,19 +11,26 @@
 //  used to endorse or promote products derived from this software without specific 
 //  prior written permission.
 
-define(['console_shim', 'eventEmitter', 'URIjs', 'epubCfi', 'globals', 'text!empty:'], function (console_shim, EventEmitter, URI, epubCfi, Globals, txt) {
+//'text!empty:'
+define(['console_shim', 'eventEmitter', 'URIjs', 'epubCfi', 'globals'], function (console_shim, EventEmitter, URI, epubCfi, Globals) {
 
-    console.log("setting globals...");
+    console.log("Globals...");
 
+    if (window["ReadiumSDK"]) {
+        console.log("ReadiumSDK extend.");
+        _.extend(window.ReadiumSDK, Globals);
+    } else {
+        console.log("ReadiumSDK set.");
+        window.ReadiumSDK = Globals;
+    }
+    
+    
     // TODO: refactor client code to use emit instead of trigger?
     EventEmitter.prototype.trigger = EventEmitter.prototype.emit;
 
     // TODO pass as dependency injection define() function parameter, not window global!
     window.EventEmitter = EventEmitter;
 
-    // MUST come AFTER window.EventEmitter is set (see line above)
-    window.ReadiumSDK = Globals;
-    
     // TODO pass as dependency injection define() function parameter, not window global!
     window.URI = URI;
 

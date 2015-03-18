@@ -26,7 +26,7 @@ require.config({
     wrap: false,
     
     inlineText: true,
-    stubModules: ['text'],
+    stubModules: [], //['text'],
     
     paths:
     {
@@ -43,7 +43,9 @@ require.config({
         
         // ------ NPM MODULEs
         
-        text: '../node_modules/requirejs-text/text',
+        RequireJS: '../node_modules/requirejs/require',
+        
+        //text: '../node_modules/requirejs-text/text',
         
         jquery: '../node_modules/jquery/dist/jquery.min',
         
