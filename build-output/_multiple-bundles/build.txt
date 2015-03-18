@@ -36,6 +36,8 @@ readium-shared-js.js
 ----------------
 epubCfi.js
 globals.js
+text.js
+text!empty:
 globalsSetup.js
 controllers/plugins_controller.js
 models/bookmark_data.js

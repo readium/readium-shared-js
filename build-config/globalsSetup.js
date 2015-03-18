@@ -11,7 +11,7 @@
 //  used to endorse or promote products derived from this software without specific 
 //  prior written permission.
 
-define(['console_shim', 'eventEmitter', 'URIjs', 'epubCfi', 'globals'], function (console_shim, EventEmitter, URI, epubCfi, Globals) {
+define(['console_shim', 'eventEmitter', 'URIjs', 'epubCfi', 'globals', 'text!empty:'], function (console_shim, EventEmitter, URI, epubCfi, Globals, txt) {
 
     console.log("setting globals...");
 

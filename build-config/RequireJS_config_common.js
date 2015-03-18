@@ -25,6 +25,9 @@ require.config({
             
     wrap: false,
     
+    inlineText: true,
+    stubModules: ['text'],
+    
     paths:
     {
         globalsSetup: '../build-config/globalsSetup',
@@ -40,7 +43,7 @@ require.config({
         
         // ------ NPM MODULEs
         
-        //text: '../node_modules/requirejs-text/text',
+        text: '../node_modules/requirejs-text/text',
         
         jquery: '../node_modules/jquery/dist/jquery.min',
         

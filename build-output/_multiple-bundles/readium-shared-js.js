@@ -2897,6 +2897,8 @@ navigator.epubReadingSystem = {
         return false;
     }
 };
+define('text',{load: function(id){throw new Error("Dynamic load not allowed: " + id);}});
+
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
 //  
 //  Redistribution and use in source and binary forms, with or without modification, 
@@ -2910,7 +2912,7 @@ navigator.epubReadingSystem = {
 //  used to endorse or promote products derived from this software without specific 
 //  prior written permission.
 
-define('globalsSetup',['console_shim', 'eventEmitter', 'URIjs', 'epubCfi', 'globals'], function (console_shim, EventEmitter, URI, epubCfi, Globals) {
+define('globalsSetup',['console_shim', 'eventEmitter', 'URIjs', 'epubCfi', 'globals', 'text!empty:'], function (console_shim, EventEmitter, URI, epubCfi, Globals, txt) {
 
     console.log("setting globals...");
 
@@ -2966,6 +2968,7 @@ define('globalsSetup',['console_shim', 'eventEmitter', 'URIjs', 'epubCfi', 'glob
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 define('plugins-controller',["jquery", "underscore", "eventEmitter", "globals"], function ($, _, EventEmitter, Globals) {
+    
     /**
      * A  plugins controller used to easily add plugins from the host app, eg.
      * ReadiumSDK.Plugins.register("footnotes", function(api){ ... });
