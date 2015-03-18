@@ -338,7 +338,7 @@ var MediaOverlayElementHighlighter = function(reader) {
                 _rangyCSS.applyToRange(_rangyRange);
             }
         }
-        else
+        else if (_reader.plugins.annotations)
         {
             try
             {
@@ -428,7 +428,7 @@ var MediaOverlayElementHighlighter = function(reader) {
                 //_rangyCSS = undefined;
                 _rangyRange = undefined;
             }
-            else
+            else if (_reader.plugins.annotations)
             {
                 try
                 {
