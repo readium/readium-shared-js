@@ -26,29 +26,34 @@
         },
         
         {
-            name: "readium-plugins",
-            exclude: ['readium-external-libs', 'globals', 'plugins-controller'],
-            insertRequire: ["readium-plugins"]
+            name: "readium-plugin-example",
+            exclude: ['globals', 'plugins-controller', 'readium-external-libs', 'readium-shared-js']
+        },
+        
+        {
+            name: "readium-plugin-annotations",
+            exclude: ['globals', 'plugins-controller', 'readium-external-libs', 'readium-shared-js'],
+            insertRequire: ["readium-plugin-annotations"]
         },
         
         {
             name: "readium-shared-js",
-            exclude: ['readium-external-libs', 'readium-plugins'],
+            exclude: ['readium-external-libs'],
             include: ['globals', 'plugins-controller'],
             insertRequire: ["globalsSetup"]
-        },
-        
-        {
-            name: "plugin-example",
-            exclude: ['readium-external-libs', 'readium-shared-js']
         }
     ],
     
     packages: [
         {
-            name: "plugin-framework",
-            main: "_loader",
-            location: "../../plugins"
+            name: "plugin-annotations",
+            location: "../../plugins/annotations",
+            main: "main"
+        },
+        {
+            name: "plugin-example",
+            location: "../../plugins",
+            main: "example"
         }
     ]
 }

@@ -11,10 +11,6 @@
 //  used to endorse or promote products derived from this software without specific 
 //  prior written permission.
 
-define(['jquery', 'underscore',
-'URIjs', 'punycode', 'SecondLevelDomains', 'IPv6',
-'jquerySizes', 'domReady', 'eventEmitter', 'console_shim',
-'rangy', 'rangy-core', 'rangy-textrange', 'rangy-highlighter', 'rangy-cssclassapplier', 'rangy-position'
-], function () {
-//noop
+define(['plugin-example'], function (pluginExampleConfig) {
+return pluginExampleConfig;
 });

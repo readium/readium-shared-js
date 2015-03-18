@@ -20,19 +20,25 @@
     preserveLicenseComments: false,
     
     name: "almond",
-    include: ["readium-shared-js", "readium-plugins", "plugin-example"],
+    include: ["readium-shared-js", "readium-plugin-example", "readium-plugin-annotations"],
     out: "../build-output/_single-bundle/readium-shared-js_all.js",
     exclude: [],
     modules: undefined,
     
-    insertRequire: ["globalsSetup", "readium-plugins"],
+    insertRequire: ["globalsSetup", "readium-plugin-annotations"],
     
     
     packages: [
+        
         {
-            name: "plugin-framework",
+            name: "plugin-annotations",
+            location: "../plugins/annotations",
+            main: "main"
+        },
+        {
+            name: "plugin-example",
             location: "../plugins",
-            main: "_loader"
+            main: "example"
         },
         {
             name: "almond",

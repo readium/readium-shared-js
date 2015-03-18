@@ -27,13 +27,13 @@ require.config({
     
     paths:
     {
-        "plugin-example":"../plugins/example",
-        
         globalsSetup: '../build-config/globalsSetup',
         
         "readium-shared-js": '../build-config/readium-shared-js',
         'readium-external-libs': '../build-config/readium-external-libs',
-        "readium-plugins": '../build-config/readium-plugins',
+        
+        "readium-plugin-example": '../build-config/readium-plugin-example',
+        "readium-plugin-annotations": '../build-config/readium-plugin-annotations',
         
         'plugins-controller': "controllers/plugins_controller",
         

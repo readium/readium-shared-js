@@ -1,15 +1,15 @@
 
-require(['views/reader_view', 'plugin-example'], function (ReaderView, examplePluginConfig) {
+require(['views/reader_view', 'readium-plugin-example'], function (ReaderView, examplePluginConfig) {
 
     examplePluginConfig.borderColor = "blue";
     examplePluginConfig.backgroundColor = "cyan";
 
     ReadiumSDK.on(ReadiumSDK.Events.PLUGINS_LOADED, function() {
     
-        // readium built-in
+        // readium built-in (should have been require()'d outside this scope)
         console.log(ReadiumSDK.reader.plugins.annotations);
         
-        // external
+        // external (require()'d via Dependency Injection, see examplePluginConfig function parameter passed above)
         console.log(ReadiumSDK.reader.plugins.example);
     });
     

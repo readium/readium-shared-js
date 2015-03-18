@@ -11,6 +11,6 @@
 //  used to endorse or promote products derived from this software without specific 
 //  prior written permission.
 
-define(['plugin-framework'], function (pluginFramework) {
-//noop
+define(['plugin-annotations'], function (pluginAnnotationsConfig) {
+return pluginAnnotationsConfig;
 });
