@@ -20,14 +20,16 @@ require.config({
     baseUrl: "../js",
     
     removeCombined: true,
-	
+    
     //findNestedDependencies: true,
             
-	wrap: false,
-	
+    wrap: false,
+    
     paths:
     {
-        Bootstrapper: '../build-config/Bootstrapper',
+        "plugin-example":"../plugins/example",
+        
+        globalsSetup: '../build-config/globalsSetup',
         
         "readium-shared-js": '../build-config/readium-shared-js',
         'readium-external-libs': '../build-config/readium-external-libs',
@@ -40,7 +42,7 @@ require.config({
         
         //text: '../node_modules/requirejs-text/text',
         
-		jquery: '../node_modules/jquery/dist/jquery.min',
+        jquery: '../node_modules/jquery/dist/jquery.min',
         
         backbone: "../node_modules/backbone/backbone-min",
         

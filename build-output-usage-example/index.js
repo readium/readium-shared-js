@@ -1,6 +1,18 @@
 
-require(['views/reader_view'], function (ReaderView) {
+require(['views/reader_view', 'plugin-example'], function (ReaderView, examplePluginConfig) {
 
+    examplePluginConfig.borderColor = "blue";
+    examplePluginConfig.backgroundColor = "cyan";
+
+    ReadiumSDK.on(ReadiumSDK.Events.PLUGINS_LOADED, function() {
+    
+        // readium built-in
+        console.log(ReadiumSDK.reader.plugins.annotations);
+        
+        // external
+        console.log(ReadiumSDK.reader.plugins.example);
+    });
+    
     $(document).ready(function () {
         
 
@@ -11,11 +23,6 @@ require(['views/reader_view'], function (ReaderView) {
             annotationCSSUrl: undefined
         });
 
-        ReadiumSDK.on(ReadiumSDK.Events.PLUGINS_LOADED, function() {
-        
-            console.log(ReadiumSDK.reader.plugins.annotations);
-        });
-        
         //Globals.emit(Globals.Events.READER_INITIALIZED, ReadiumSDK.reader);
         ReadiumSDK.emit(ReadiumSDK.Events.READER_INITIALIZED, ReadiumSDK.reader);
     });

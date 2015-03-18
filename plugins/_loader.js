@@ -2,10 +2,7 @@
 /* Import + configure your plugins here */
 // -------------------------------------------
 
-define(['./annotations/main', './example'], function (annotationsPlugin, examplePlugin) {
-
-examplePlugin.borderColor = "blue";
-examplePlugin.backgroundColor = "cyan";
+define(['./annotations/main'], function (annotationsPluginConfig) {
 
     
 // below is an alternative method with require() instead of define(), but must use requirejs.config({ findNestedDependencies:true }) !
@@ -13,7 +10,5 @@ examplePlugin.backgroundColor = "cyan";
 // require(['./annotations/main'], function (annotationsPlugin) {
 // });
 
-// require(['./example'], function (examplePlugin) {
-// });
     
 });

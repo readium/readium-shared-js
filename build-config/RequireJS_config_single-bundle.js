@@ -15,17 +15,17 @@
 {
     mainConfigFile: "RequireJS_config_common.js",
     
-	optimize: "uglify2",
-	generateSourceMaps: true,
-	preserveLicenseComments: false,
-	
+    optimize: "uglify2",
+    generateSourceMaps: true,
+    preserveLicenseComments: false,
+    
     name: "almond",
-    include: ["readium-shared-js", "readium-plugins"],
+    include: ["readium-shared-js", "readium-plugins", "plugin-example"],
     out: "../build-output/_single-bundle/readium-shared-js_all.js",
     exclude: [],   
     modules: undefined,
     
-	insertRequire: ["readium-shared-js", "readium-plugins"],
+    insertRequire: ["readium-shared-js", "readium-plugins"],
     
     
     packages: [

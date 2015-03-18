@@ -11,6 +11,6 @@
 //  used to endorse or promote products derived from this software without specific 
 //  prior written permission.
 
-define(['Bootstrapper', 'plugins-controller', 'views/reader_view'], function (Bootstrapper, PluginsController, ReaderView) {
+define(['globalsSetup', 'plugins-controller', 'views/reader_view'], function (globalsSetup, PluginsController, ReaderView) {
 //noop
 });

@@ -15,6 +15,8 @@ define(['plugins-controller', 'jquery'], function (Plugins, $) {
                 self.emit("exampleEvent", api.reader.bookmarkCurrentPage());
             });
         });
+        
+        $("body").css({border: '10px solid red'});
 
         api.extendReader(self);
     });

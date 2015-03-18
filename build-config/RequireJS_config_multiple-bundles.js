@@ -14,10 +14,10 @@
 {
     mainConfigFile: "RequireJS_config_common.js",
     
-	optimize: "none",
-	generateSourceMaps: true,
-	preserveLicenseComments: true,
-	
+    optimize: "none",
+    generateSourceMaps: true,
+    preserveLicenseComments: true,
+    
     dir: "../build-output/_multiple-bundles",
     modules:
     [
@@ -37,6 +37,12 @@
             exclude: ['readium-external-libs', 'readium-plugins'],
             include: ['globals', 'plugins-controller'],
             insertRequire: ["readium-shared-js"]
+        },
+        
+        {
+            name: "plugin-example",
+            exclude: ['readium-external-libs', 'readium-shared-js'],
+            insertRequire: ["plugin-example"]
         }
     ],
     
