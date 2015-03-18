@@ -1,8 +1,11 @@
 
-require(['views/reader_view', 'readium-plugin-example'], function (ReaderView, examplePluginConfig) {
+require(['views/reader_view'], function (ReaderView) {
 
-    examplePluginConfig.borderColor = "blue";
-    examplePluginConfig.backgroundColor = "cyan";
+// ------- Comment above and uncomment below to demonstrate on-demand init/registration of plugin
+// require(['views/reader_view', 'readium-plugin-example'], function (ReaderView, examplePluginConfig) {
+    // examplePluginConfig.borderColor = "blue";
+    // examplePluginConfig.backgroundColor = "cyan";
+// ------- 
 
     ReadiumSDK.on(ReadiumSDK.Events.PLUGINS_LOADED, function() {
     
