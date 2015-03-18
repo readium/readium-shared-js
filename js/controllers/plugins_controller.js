@@ -27,7 +27,7 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define(["jquery", "underscore", "eventEmitter", "epub-renderer/globals"], function ($, _, EventEmitter, Globals) {
+define(["jquery", "underscore", "eventEmitter", "globals"], function ($, _, EventEmitter, Globals) {
     /**
      * A  plugins controller used to easily add plugins from the host app, eg.
      * ReadiumSDK.Plugins.register("footnotes", function(api){ ... });

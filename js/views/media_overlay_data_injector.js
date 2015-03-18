@@ -22,7 +22,7 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define (["jquery", "../helpers", "../models/smil_iterator", "rangy"], function($, Helpers, SmilIterator, rangy) {
+define (["jquery", "underscore", "../helpers", "../models/smil_iterator", "rangy", 'epubCfi'], function($, _, Helpers, SmilIterator, rangy, epubCfi) {
 /**
  *
  * @param mediaOverlay

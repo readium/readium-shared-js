@@ -22,7 +22,7 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define(['jquery', '../helpers'], function($, Helpers) {
+define(['jquery', '../helpers', 'epubCfi'], function($, Helpers, epubCfi) {
 /**
  *
  * @param reader

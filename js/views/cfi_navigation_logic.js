@@ -35,7 +35,7 @@
  *      - paginationInfo    Layout details, used by clientRect-based geometry
  * @constructor
  */
-define(["jquery", "underscore", "../helpers"], function($, _, Helpers) {
+define(["jquery", "underscore", "../helpers", 'epubCfi'], function($, _, Helpers, epubCfi) {
 
 var CfiNavigationLogic = function($viewport, $iframe, options){
 

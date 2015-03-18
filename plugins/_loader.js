@@ -1,13 +1,19 @@
-/* Do not edit this 'define' block */
-define(['epub-renderer/controllers/plugins_controller'], function (PluginsController) {
-    return PluginsController;
-});
+// -------------------------------------------    
+/* Import + configure your plugins here */
+// -------------------------------------------
 
-/* Import/configure your plugins here on. */
+define(['./annotations/main', './example'], function (annotationsPlugin, examplePlugin) {
 
-require(['readium-plugins/annotations/main']);
+examplePlugin.borderColor = "blue";
+examplePlugin.backgroundColor = "cyan";
 
-require(['readium-plugins/example'], function (config) {
-    config.borderColor = "blue";
-    config.backgroundColor = "cyan";
+    
+// below is an alternative method with require() instead of define(), but must use requirejs.config({ findNestedDependencies:true }) !
+    
+// require(['./annotations/main'], function (annotationsPlugin) {
+// });
+
+// require(['./example'], function (examplePlugin) {
+// });
+    
 });
