@@ -123,20 +123,17 @@ scripts:
 #=====================
     'prepare': '
         
-        node
-            build-tools/rimraf_glob.js
+        rimraf
             node_modules/eventemitter3/_rjs/**
         &&
-        node node_modules/requirejs/bin/r.js -convert
+        r.js -convert
             node_modules/eventemitter3/
             node_modules/eventemitter3/_rjs/
     '
     
 #=====================
     clean: '
-    
-        node
-            build-tools/rimraf_glob.js
+        rimraf
             build-output/*
     '
 
@@ -174,11 +171,11 @@ scripts:
 #=====================
     'build:scripts': '
     
-        node node_modules/requirejs/bin/r.js
+        r.js
              -o
              build-config/RequireJS_config_multiple-bundles.js
         &&
-        node node_modules/requirejs/bin/r.js
+        r.js
              -o
              build-config/RequireJS_config_single-bundle.js
     '
@@ -186,7 +183,7 @@ scripts:
 #=====================
     'prebuild:styles': '
     
-        node node_modules/mkdirp/bin/cmd.js ./build-output/css/
+        mkdirp ./build-output/css/
     '
     
 #=====================
