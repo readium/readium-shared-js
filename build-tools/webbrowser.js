@@ -8,13 +8,13 @@ function(exists) {
     } else {
         console.log('web browser opening...');
         
-        var i = 0;
-        var MAX = 10;
-        while (i < MAX && !fs.existsSync(process.cwd() + '/dist/index.html')) {
-            i++;
-            console.log('.');
-        }
+        // var i = 0;
+        // var MAX = 10;
+        // while (i < MAX && !fs.existsSync(process.cwd() + '/dist/index.html')) {
+            // i++;
+            // console.log('.');
+        // }
         
-        console.log('./dist/index.html is ready.');
+        // console.log('./dist/index.html is ready.');
     }
 });

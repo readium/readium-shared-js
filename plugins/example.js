@@ -16,7 +16,7 @@ define(['plugins-controller', 'jquery'], function (Plugins, $) {
             });
         });
         
-        $("body").css({border: '10px solid red'});
+        $("body").css({border: '10px solid ' + config.borderColor});
 
         api.extendReader(self);
     });

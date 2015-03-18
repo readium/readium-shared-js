@@ -47,7 +47,12 @@
     "jshint": "latest",
     "glob": "latest",
     "rimraf": "latest",
-    "mkdirp": "latest"
+    "mkdirp": "latest",
+    "watch": "latest",
+    "http-server": "latest",
+    "live-reload": "latest",
+    "opener": "latest",
+    "parallelshell": "latest"
   },
   "scripts": {
     "env": "env",
@@ -60,6 +65,12 @@
     "lint": "node build-tools/jshint_glob.js js/**.js",
     "build:scripts": "node node_modules/requirejs/bin/r.js -o build-config/RequireJS_config_multiple-bundles.js && node node_modules/requirejs/bin/r.js -o build-config/RequireJS_config_single-bundle.js",
     "prebuild:styles": "node node_modules/mkdirp/bin/cmd.js ./build-output/css/",
-    "build:styles": "cp ./static/sdk.css ./build-output/css/"
+    "build:styles": "cp ./static/sdk.css ./build-output/css/",
+    "example": "npm run clean && echo > open_webbrowser.js && parallelshell \"npm run live-reload\" \"npm run watch\" \"npm run http\"",
+    "watch": "parallelshell \"npm run watch:build\"",
+    "watch:build": "watch \"npm run build && node build-tools/webbrowser.js && npm run webbrowser && rimraf open_webbrowser.js\" build-output-usage-example/",
+    "http": "http-server -p 9090 ./",
+    "live-reload": "live-reload --port 9091 --delay 1000 build-output/",
+    "webbrowser": "opener http://localhost:9090/build-output-usage-example/"
   }
 }
