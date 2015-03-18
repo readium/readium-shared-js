@@ -13,6 +13,8 @@
 
 define(['console_shim', 'eventEmitter', 'URIjs', 'epubCfi', 'globals'], function (console_shim, EventEmitter, URI, epubCfi, Globals) {
 
+    console.log("setting globals...");
+
     // TODO: refactor client code to use emit instead of trigger?
     EventEmitter.prototype.trigger = EventEmitter.prototype.emit;
 

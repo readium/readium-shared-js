@@ -22,8 +22,7 @@
     modules:
     [
         {
-            name: "readium-external-libs",
-            insertRequire: ["readium-external-libs"]
+            name: "readium-external-libs"
         },
         
         {
@@ -36,13 +35,12 @@
             name: "readium-shared-js",
             exclude: ['readium-external-libs', 'readium-plugins'],
             include: ['globals', 'plugins-controller'],
-            insertRequire: ["readium-shared-js"]
+            insertRequire: ["globalsSetup"]
         },
         
         {
             name: "plugin-example",
-            exclude: ['readium-external-libs', 'readium-shared-js'],
-            insertRequire: ["plugin-example"]
+            exclude: ['readium-external-libs', 'readium-shared-js']
         }
     ],
     

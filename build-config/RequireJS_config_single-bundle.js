@@ -22,10 +22,10 @@
     name: "almond",
     include: ["readium-shared-js", "readium-plugins", "plugin-example"],
     out: "../build-output/_single-bundle/readium-shared-js_all.js",
-    exclude: [],   
+    exclude: [],
     modules: undefined,
     
-    insertRequire: ["readium-shared-js", "readium-plugins"],
+    insertRequire: ["globalsSetup", "readium-plugins"],
     
     
     packages: [
@@ -39,10 +39,5 @@
             location: '../node_modules/almond',
             main: 'almond'
         }
-    ],
-    
-    // paths:
-    // {
-        // almond: '../node_modules/almond/almond'
-    // }
+    ]
 }
