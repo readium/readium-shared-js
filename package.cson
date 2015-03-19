@@ -9,6 +9,12 @@
 # ALTERNATIVE METHOD (if package.json is corrupted):
 # npm install cson
 # node ./node_modules/cson/bin/cson2json package.cson > package.json
+# Note that on some Windows terminals (e.g. GitShell),
+# unfortunately the package.json file might need its encoding
+# converted to UTF-no-BOM :(
+# This is somehow due to the piped stdout-stdin result being UCS2-little-endian
+# (yet this works just fine when the same command is invoked from
+# "npm run cson2json" instead of from Node!)
 
 #####################################################################
 #####################################################################
@@ -115,9 +121,9 @@ scripts:
 #=====================
     cson2json: '
     
-        cson2json package.cson
+        node node_modules/cson/bin/cson2json package.cson
         &&
-        cson2json package.cson > package.json
+        node node_modules/cson/bin/cson2json package.cson > package.json
     '
 
 #=====================
@@ -167,14 +173,28 @@ scripts:
 #        npm run
 #            lint
 #    '
-    
+
 #=====================
     'build:scripts': '
+    
+        npm run
+            build:scripts:multiple
+        &&
+        npm run
+            build:scripts:single
+    '
+
+#=====================
+    'build:scripts:multiple': '
     
         node node_modules/requirejs/bin/r.js
              -o
              build-config/RequireJS_config_multiple-bundles.js
-        &&
+    '
+    
+#=====================
+    'build:scripts:single': '
+    
         node node_modules/requirejs/bin/r.js
              -o
              build-config/RequireJS_config_single-bundle.js
@@ -187,6 +207,7 @@ scripts:
     '
     
 #=====================
+# TODO use cssminify
     'build:styles': '
     
         cp ./static/sdk.css ./build-output/css/

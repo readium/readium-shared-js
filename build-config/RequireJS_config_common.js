@@ -30,8 +30,6 @@ require.config({
     
     paths:
     {
-        globalsSetup: '../build-config/globalsSetup',
-        
         "readium-shared-js": '../build-config/readium-shared-js',
         'readium-external-libs': '../build-config/readium-external-libs',
         
