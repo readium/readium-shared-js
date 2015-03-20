@@ -1,11 +1,17 @@
 # readium-shared-js
 
-EPUB rendering engine written in HTML, CSS and Javascript.
-This software component is shared between the Readium Chrome extension and "cloud reader" ( https://github.com/readium/readium-js-viewer ),
+**EPUB rendering engine written in HTML, CSS and Javascript.**
+
+This is a software component commonly-shared between the Readium Chrome extension and "cloud reader" ( https://github.com/readium/readium-js-viewer ),
 as well as various native application "launchers" such as iOS ( https://github.com/readium/SDKLauncher-iOS ),
 OSX ( https://github.com/readium/SDKLauncher-OSX ),
 Android ( https://github.com/readium/SDKLauncher-Android ),
 Windows ( https://github.com/readium/SDKLauncher-Windows ), etc.
+
+You can try Readium here:
+
+* Chrome extension: https://chrome.google.com/webstore/detail/readium/fepbnnnkkadjhjahcafoaglimekefifl
+* "cloud reader" demo (supports multiple web browsers): http://readium-cloudreader.divshot.io
 
 
 ## License
