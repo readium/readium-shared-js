@@ -26,24 +26,8 @@ See license.txt ( https://github.com/readium/readium-shared-js/blob/develop/lice
 * A decent terminal. On Windows, GitShell works great ( http://git-scm.com ), GitBash works too ( https://msysgit.github.io ), and Cygwin adds useful commands ( https://www.cygwin.com ).
 * NodeJS ( https://nodejs.org )
 
-## How to use with NPM (Node Package Manager)
 
-All packages "owned" and maintained by the Readium Foundation are listed here: https://www.npmjs.com/~readium
-
-Note that although Node and NPM natively use the CommonJS format, Readium modules are currently only defined as AMD (RequireJS).
-This explains why Browserify ( http://browserify.org ) is not used by this Readium project.
-More information at http://requirejs.org/docs/commonjs.html and http://requirejs.org/docs/node.html
-
-* Make sure `npm install readium-shared-js` completes successfully ( https://www.npmjs.com/package/readium-shared-js )
-* Execute `npm run example`, which opens a web browser to a basic RequireJS bootstrapper located in the `build-output-usage-example` folder (this is *not* a fully-functioning application!)
-* To see an actual application that uses this "readium-shared-js" component, try "readium-js-viewer" ( https://www.npmjs.com/package/readium-js-viewer )
-
-Note: the `--dev` option after `npm install readium-shared-js` can be used to force the download of development dependencies,
-but this is kind of pointless as the code source and RequireJS build configuration files are missing.
-See below if you need to hack the code.
-
-
-## How to develop
+## Development
 
 **Initial setup:**
 
@@ -62,27 +46,24 @@ Optionally:
 * `npm install -g grunt-cli` (to enable Grunt globally) Note that at this point in time, the "readium-shared-js" build process is Grunt-free, entirely driven from NPM scripts defined in `package.cson` (Why CSON? Read below)
 
 
-## CSON vs. JSON (package.json)
+## NPM (Node Package Manager)
 
-CSON = CoffeeScript-Object-Notation ( https://github.com/bevry/cson )
+All packages "owned" and maintained by the Readium Foundation are listed here: https://www.npmjs.com/~readium
 
-Running the command `npm run cson2json` will re-generate the `package.json` JSON file.
-For more information, see comments in the master `package.cson` CSON file.
+Note that although Node and NPM natively use the CommonJS format, Readium modules are currently only defined as AMD (RequireJS).
+This explains why Browserify ( http://browserify.org ) is not used by this Readium project.
+More information at http://requirejs.org/docs/commonjs.html and http://requirejs.org/docs/node.html
 
-Why CSON? Because it is a lot more readable than JSON, and therefore easier to maintain.
-The syntax is not only less verbose (separators, etc.), more importantly it allows *comments* and *line breaking*!
+* Make sure `npm install readium-shared-js` completes successfully ( https://www.npmjs.com/package/readium-shared-js )
+* Execute `npm run example`, which opens a web browser to a basic RequireJS bootstrapper located in the `build-output-usage-example` folder (this is *not* a fully-functioning application!)
+* To see an actual application that uses this "readium-shared-js" component, try "readium-js-viewer" ( https://www.npmjs.com/package/readium-js-viewer )
 
-Although these benefits are not so critical for basic "package" definitions,
-here `package.cson/json` declares relatively intricate `script` tasks that are used in the development workflow.
-`npm run SCRIPT_NAME` offers a lightweight technique to handle most build tasks,
-as NPM CLI utilities are available to perform cross-platform operations (agnostic to the actual command line interface / shell).
-For more complex build processes, Grunt / Gulp can be used, but these build systems do not necessarily offer the most readable / maintainable options.
-
-Downside: DO NOT invoke `npm init` or `npm install --save` `--save-dev` `--save-optional`,
-as this would overwrite / update the JSON, not the master CSON!
+Note: the `--dev` option after `npm install readium-shared-js` can be used to force the download of development dependencies,
+but this is kind of pointless as the code source and RequireJS build configuration files are missing.
+See below if you need to hack the code.
 
 
-## Build output (AMD bundles)
+## How to use (RequireJS bundles / AMD modules)
 
 The `build-output` directory contains common CSS styles, as well as two distinct folders:
 
@@ -188,3 +169,26 @@ requirejs.config({
 });
 </script>
 ```
+
+
+
+
+## CSON vs. JSON (package.json)
+
+CSON = CoffeeScript-Object-Notation ( https://github.com/bevry/cson )
+
+Running the command `npm run cson2json` will re-generate the `package.json` JSON file.
+For more information, see comments in the master `package.cson` CSON file.
+
+Why CSON? Because it is a lot more readable than JSON, and therefore easier to maintain.
+The syntax is not only less verbose (separators, etc.), more importantly it allows *comments* and *line breaking*!
+
+Although these benefits are not so critical for basic "package" definitions,
+here `package.cson/json` declares relatively intricate `script` tasks that are used in the development workflow.
+`npm run SCRIPT_NAME` offers a lightweight technique to handle most build tasks,
+as NPM CLI utilities are available to perform cross-platform operations (agnostic to the actual command line interface / shell).
+For more complex build processes, Grunt / Gulp can be used, but these build systems do not necessarily offer the most readable / maintainable options.
+
+Downside: DO NOT invoke `npm init` or `npm install --save` `--save-dev` `--save-optional`,
+as this would overwrite / update the JSON, not the master CSON!
+
