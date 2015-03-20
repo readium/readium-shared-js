@@ -70,10 +70,10 @@ The `build-output` directory contains common CSS styles, as well as two distinct
 ### Single bundle
 
 The `_single-bundle` folder contains `readium-shared-js_all.js` (and its associated source-map file),
-which aggregates all the required code (library dependencies included),
+which aggregates all the required code (external library dependencies included, such as Underscore, jQuery, etc.),
 as well as the "Almond" lightweight AMD loader ( https://github.com/jrburke/almond ).
 
-This means that the full RequireJS library ( http://requirejs.org ) is not actually needed to bootstrap the runtime,
+This means that the full RequireJS library ( http://requirejs.org ) is not actually needed to bootstrap the AMD modules at runtime,
 as demonstrated by the HTML file in the `build-output-usage-example` folder (trimmed for brevity):
 
 ```html
@@ -116,15 +116,21 @@ Usage is demonstrated by the HTML file in the `build-output-usage-example` folde
 <script type="text/javascript" src="../build-output/_multiple-bundles/RequireJS.js"> </script>
 
 
-<!-- individual bundles -->
 
+<!-- individual bundles: -->
+
+<!-- external libraries -->
 <script type="text/javascript" src="../build-output/_multiple-bundles/readium-external-libs.js"> </script>
 
+<!-- readium itself -->
 <script type="text/javascript" src="../build-output/_multiple-bundles/readium-shared-js.js"> </script>
 
+<!-- simple example plugin -->
 <script type="text/javascript" src="../build-output/_multiple-bundles/readium-plugin-example.js"> </script>
 
+<!-- annotations plugin -->
 <script type="text/javascript" src="../build-output/_multiple-bundles/readium-plugin-annotations.js"> </script>
+
 
 
 <!-- index.js calls into the above libraries -->
@@ -138,8 +144,8 @@ Usage is demonstrated by the HTML file in the `build-output-usage-example` folde
 ```
 
 
-Note how the "external libs" RequireJS bundle can be explicitly described using the `bundles` RequireJS configuration directive
-(this eliminates the apparent opacity of such as large set of library dependencies):
+Note how the "external libs" set of AMD modules can be explicitly described using the `bundles` RequireJS configuration directive
+(this eliminates the apparent opacity of such as large container of library dependencies):
 
 
 ```html
