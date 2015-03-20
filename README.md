@@ -10,8 +10,8 @@ Windows ( https://github.com/readium/SDKLauncher-Windows ), etc.
 
 You can try Readium here:
 
-* Chrome extension: https://chrome.google.com/webstore/detail/readium/fepbnnnkkadjhjahcafoaglimekefifl
-* "cloud reader" demo (supports multiple web browsers): http://readium-cloudreader.divshot.io
+* Online "cloud reader" demo: http://readium-cloudreader.divshot.io
+* Chrome extension (can be used offline): https://chrome.google.com/webstore/detail/readium/fepbnnnkkadjhjahcafoaglimekefifl
 
 
 ## License
@@ -29,7 +29,7 @@ See license.txt ( https://github.com/readium/readium-shared-js/blob/develop/lice
 ## How to use with NPM (Node Package Manager)
 
 * Make sure `npm install readium-shared-js` completes successfully ( https://www.npmjs.com/package/readium-shared-js )
-* Execute `npm run example`, which opens the web browser with a basic RequireJS bootstrapper located in the `build-output-usage-example` folder (this is *not* a fully-functioning application!)
+* Execute `npm run example`, which opens a web browser to a basic RequireJS bootstrapper located in the `build-output-usage-example` folder (this is *not* a fully-functioning application!)
 * To see an actual application that uses this "readium-shared-js" component, try "readium-js-viewer" ( https://www.npmjs.com/package/readium-js-viewer )
 
 Note: the `--dev` option after `npm install readium-shared-js` can be used to force the download of development dependencies,
@@ -39,13 +39,13 @@ See below if you need to hack the code.
 
 ## How to develop
 
-Initial setup:
+**Initial setup:**
 
 * `npm install` (to download dependencies defined in `package.json`)
 * `npm update` (to make sure that the dependency tree is up to date)
 * `npm run prepare` (to perform required preliminary tasks)
 
-Typical workflow:
+**Typical workflow:**
 
 * Hack away! (mostly the source code in the `js` and `plugins` folders)
 * `npm run build` (to update the RequireJS bundles in the build output folder)
@@ -54,5 +54,5 @@ Typical workflow:
 Optionally:
 
 * `npm run cson2json` (to re-generate the `package.json` JSON file, for more information see comments in the master `package.cson` CSON file)
-* `npm install -g grunt-cli` (to enable Grunt) Note that at this point in time, the "readium-shared-js" build process is entirely driven from NPM scripts defined in `package.cson` (CSON because it's more readable than JSON), so Grunt is actually not needed!
+* `npm install -g grunt-cli` (to enable Grunt) Note that at this point in time, the "readium-shared-js" build process is Grunt-free, entirely driven from NPM scripts defined in `package.cson` (because CSON is more readable than JSON)
 
