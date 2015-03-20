@@ -1,5 +1,6 @@
 
-# See https://docs.npmjs.com/files/package.json
+# NPM package file, see https://docs.npmjs.com/files/package.json
+# Oh, this is CSON, not JSON ( see CoffeeScript-Object-Notation https://github.com/bevry/cson )
 
 #####################################################################
 #####################################################################

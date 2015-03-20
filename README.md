@@ -64,6 +64,8 @@ Optionally:
 
 ## CSON vs. JSON (package.json)
 
+CSON = CoffeeScript-Object-Notation ( https://github.com/bevry/cson )
+
 Running the command `npm run cson2json` will re-generate the `package.json` JSON file.
 For more information, see comments in the master `package.cson` CSON file.
 
