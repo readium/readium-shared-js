@@ -24,6 +24,8 @@
 
 '/*': '----------------------------------------------------------------------------'
 '..': 'This package.json (JSON) is automatically generated from package.cson (CSON)'
+'.-': 'DO NOT invoke "npm init" or "npm install --save / --save-dev / --save-optional"'
+'._': 'as this would overwrite / update the JSON, not the master CSON!'
 '*/': '----------------------------------------------------------------------------'
 
 #####################################################################

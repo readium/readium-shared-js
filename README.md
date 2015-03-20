@@ -47,7 +47,7 @@ See below if you need to hack the code.
 
 **Initial setup:**
 
-* `npm install` (to download dependencies defined in `package.json`)
+* `npm install` (to download dependencies defined in `package.json` ... note that the `--production` option can be used to avoid downloading development dependencies, for example when testing only the pre-built `build-output` folder contents)
 * `npm update` (to make sure that the dependency tree is up to date)
 * `npm run prepare` (to perform required preliminary tasks)
 
@@ -59,9 +59,8 @@ See below if you need to hack the code.
 
 Optionally:
 
-* `npm run cson2json` (to re-generate the `package.json` JSON file, for more information see comments in the master `package.cson` CSON file)
 * `npm install -g grunt-cli` (to enable Grunt) Note that at this point in time, the "readium-shared-js" build process is Grunt-free, entirely driven from NPM scripts defined in `package.cson` (because CSON is more readable than JSON)
-
+* `npm run cson2json` (to re-generate the `package.json` JSON file, for more information see comments in the master `package.cson` CSON file) DO NOT invoke `npm init` or `npm install --save` `--save-dev` `--save-optional`, as this would overwrite / update the JSON, not the master CSON!
 
 ## Build output (AMD bundles)
 
