@@ -23,6 +23,8 @@
 '..': 'This package.json (JSON) is automatically generated from package.cson (CSON)'
 '*/': '----------------------------------------------------------------------------'
 
+# See https://docs.npmjs.com/files/package.json
+
 #####################################################################
 
 name: "readium-shared-js"
@@ -58,7 +60,26 @@ repository:
     url: "git://github.com/readium/readium-shared-js.git"
 
 #####################################################################
+files: [
+    "build-output/",
+    "build-output-usage-example/",
+    "license.txt",
+    "README.md"
+]
+
+# "main" is designed for Node/CommonJS modules, not RequireJS ones.
+# See http://requirejs.org/docs/commonjs.html
+# See http://requirejs.org/docs/node.html
+#
+#main: "build-output/_multiple-bundles/readium-shared-js.js"
+
+#####################################################################
 dependencies:
+
+### See remark below about *runtime* dependencies
+
+#####################################################################
+devDependencies:
 
     requirejs: "latest"
 
@@ -80,9 +101,11 @@ dependencies:
     
     domReady: "requirejs/domReady"
 
-#####################################################################
-devDependencies:
-
+### Above: they are in fact *runtime* dependencies,
+### but because they are already bundled in the "build-output" folder that ships with the NPM package,
+### we declare them in "devDependencies" to avoid unnecessary downloads.
+### The download can be forced by using the "--dev" option after "npm install readium-shared-js".
+    
     cson: "latest"
 
     jshint: "latest"
