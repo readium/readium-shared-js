@@ -59,8 +59,26 @@ See below if you need to hack the code.
 
 Optionally:
 
-* `npm install -g grunt-cli` (to enable Grunt) Note that at this point in time, the "readium-shared-js" build process is Grunt-free, entirely driven from NPM scripts defined in `package.cson` (because CSON is more readable than JSON)
-* `npm run cson2json` (to re-generate the `package.json` JSON file, for more information see comments in the master `package.cson` CSON file) DO NOT invoke `npm init` or `npm install --save` `--save-dev` `--save-optional`, as this would overwrite / update the JSON, not the master CSON!
+* `npm install -g grunt-cli` (to enable Grunt globally) Note that at this point in time, the "readium-shared-js" build process is Grunt-free, entirely driven from NPM scripts defined in `package.cson` (Why CSON? Read below)
+
+
+## CSON vs. JSON (package.json)
+
+Running the command `npm run cson2json` will re-generate the `package.json` JSON file.
+For more information, see comments in the master `package.cson` CSON file.
+
+Why CSON? Because it is a lot more readable than JSON, and therefore easier to maintain.
+The syntax is not only less verbose (separators, etc.), more importantly it allows *comments* and *line breaking*!
+
+Although these benefits are not so critical for basic "package" definitions,
+here `package.cson/json` declares relatively intricate `script` tasks that are used in the development workflow.
+`npm run SCRIPT_NAME` offers a lightweight technique to handle most build tasks,
+as NPM CLI utilities are available to perform cross-platform operations (agnostic to the actual command line interface / shell).
+For more complex build processes, Grunt / Gulp can be used, but these build systems do not necessarily offer the most readable / maintainable options.
+
+Downside: DO NOT invoke `npm init` or `npm install --save` `--save-dev` `--save-optional`,
+as this would overwrite / update the JSON, not the master CSON!
+
 
 ## Build output (AMD bundles)
 
