@@ -30,7 +30,18 @@
     "type": "git",
     "url": "git://github.com/readium/readium-shared-js.git"
   },
+  "files": [
+    "build-output/",
+    "build-output-usage-example/",
+    "license.txt",
+    "README.md"
+  ],
   "dependencies": {
+    "parallelshell": "latest",
+    "http-server": "latest",
+    "opener": "latest"
+  },
+  "devDependencies": {
     "requirejs": "latest",
     "requirejs-text": "latest",
     "almond": "latest",
@@ -40,26 +51,21 @@
     "URIjs": "latest",
     "jquerySizes": "danielweck/jsizes",
     "eventemitter3": "latest",
-    "domReady": "requirejs/domReady"
-  },
-  "devDependencies": {
+    "domReady": "requirejs/domReady",
     "cson": "latest",
     "jshint": "latest",
     "glob": "latest",
     "rimraf": "latest",
     "mkdirp": "latest",
     "watch": "latest",
-    "http-server": "latest",
-    "live-reload": "latest",
-    "opener": "latest",
-    "parallelshell": "latest"
+    "live-reload": "latest"
   },
   "scripts": {
     "env": "env",
     "echo": "echo \"\"",
     "cson2json": "node node_modules/cson/bin/cson2json package.cson && node node_modules/cson/bin/cson2json package.cson > package.json",
     "prepare": "rimraf node_modules/eventemitter3/_rjs/** && node node_modules/requirejs/bin/r.js -convert node_modules/eventemitter3/ node_modules/eventemitter3/_rjs/",
-    "clean": "rimraf build-output/*",
+    "clean": "node --version && npm --version && rimraf build-output/*",
     "prebuild": "npm run clean",
     "build": "npm run build:styles && npm run build:scripts",
     "lint": "node build-tools/jshint_glob.js js/**.js",
@@ -68,7 +74,8 @@
     "build:scripts:single": "node node_modules/requirejs/bin/r.js -o build-config/RequireJS_config_single-bundle.js",
     "prebuild:styles": "mkdirp ./build-output/css/",
     "build:styles": "cp ./static/sdk.css ./build-output/css/",
-    "example": "npm run clean && echo > open_webbrowser.js && parallelshell \"npm run live-reload\" \"npm run watch\" \"npm run http\"",
+    "example:dev": "npm run clean && echo > open_webbrowser.js && parallelshell \"npm run live-reload\" \"npm run watch\" \"npm run http\"",
+    "example": "parallelshell \"npm run http\" \"npm run webbrowser\"",
     "watch": "parallelshell \"npm run watch:build\"",
     "watch:build": "watch \"npm run build && node build-tools/webbrowser.js && npm run webbrowser && rimraf open_webbrowser.js\" build-output-usage-example/",
     "http": "http-server -p 9090 ./",

@@ -1,3 +1,6 @@
+
+# See https://docs.npmjs.com/files/package.json
+
 #####################################################################
 #####################################################################
 
@@ -22,8 +25,6 @@
 '/*': '----------------------------------------------------------------------------'
 '..': 'This package.json (JSON) is automatically generated from package.cson (CSON)'
 '*/': '----------------------------------------------------------------------------'
-
-# See https://docs.npmjs.com/files/package.json
 
 #####################################################################
 
@@ -61,9 +62,13 @@ repository:
 
 #####################################################################
 files: [
-    "build-output/",
-    "build-output-usage-example/",
-    "license.txt",
+    
+    "build-output/"
+    
+    "build-output-usage-example/"
+    
+    "license.txt"
+    
     "README.md"
 ]
 
@@ -76,7 +81,13 @@ files: [
 #####################################################################
 dependencies:
 
-### See remark below about *runtime* dependencies
+    parallelshell: 'latest'
+    
+    'http-server': 'latest'
+    
+    opener: 'latest'
+
+# See remark below about *runtime* dependencies
 
 #####################################################################
 devDependencies:
@@ -101,11 +112,11 @@ devDependencies:
     
     domReady: "requirejs/domReady"
 
-### Above: they are in fact *runtime* dependencies,
-### but because they are already bundled in the "build-output" folder that ships with the NPM package,
-### we declare them in "devDependencies" to avoid unnecessary downloads.
-### The download can be forced by using the "--dev" option after "npm install readium-shared-js".
-    
+# Above items are in fact runtime dependencies,
+# but because they are already bundled in the "build-output" folder that ships with the NPM package,
+# we declare them in "devDependencies" to avoid unnecessary downloads.
+# The download can be forced by using the "--dev" option after "npm install readium-shared-js".
+   
     cson: "latest"
 
     jshint: "latest"
@@ -118,13 +129,7 @@ devDependencies:
 
     watch: 'latest'
     
-    'http-server': 'latest'
-    
     'live-reload': 'latest'
-
-    opener: 'latest'
-
-    parallelshell: 'latest'
 
 #####################################################################
 scripts:
@@ -162,6 +167,10 @@ scripts:
     
 #=====================
     clean: '
+        node --version
+        &&
+        npm --version
+        &&
         rimraf
             build-output/*
     '
@@ -238,7 +247,7 @@ scripts:
 
 #=====================
 #### BLOCKING! (CTRL-C) [watch][live-reload][http]
-    example: '
+    'example:dev': '
         npm run
             clean
         &&
@@ -248,6 +257,14 @@ scripts:
             \"npm run live-reload\"
             \"npm run watch\"
             \"npm run http\"
+    '
+
+#=====================
+#### BLOCKING! (CTRL-C) [http]
+    'example': '
+        parallelshell
+            \"npm run http\"
+            \"npm run webbrowser\"
     '
 
 #=====================
