@@ -94,9 +94,9 @@ The `_multiple-bundles` folder contains several Javascript bundles (and their re
 
 
 * `readium-external-libs.js`: aggregated library dependencies (e.g. Underscore, jQuery, etc.)
-* `readium-shared-js.js`: Readium-specific code
+* `readium-shared-js.js`: Readium-specific code (basically, equivalent to the `js` folder)
 * `readium-plugin-example.js`: simple plugin demo
-* `readium-plugin-annotations.js`: the selection/highlight/annotation plugin bundle, which contains the "Backbone" library as this dependency is not already included in the "external libs" bundle.
+* `readium-plugin-annotations.js`: the annotation plugin (DOM selection + highlight), which bundle actually contains the "Backbone" library, as this dependency is not already included in the "external libs" bundle.
 
 In addition, the folder contains the full `RequireJS.js` library ( http://requirejs.org ), as the above bundles do no include the lightweight "Almond" AMD loader ( https://github.com/jrburke/almond ).
 
@@ -132,8 +132,8 @@ Usage is demonstrated by the HTML file in the `build-output-usage-example` folde
 ```
 
 
-Note how the "external libs" RequireJS bundle can be explicitly described using the `bundles` RequireJS configuration directive:
-(this eliminates the apparent opacity of such as large library bundle)
+Note how the "external libs" RequireJS bundle can be explicitly described using the `bundles` RequireJS configuration directive
+(this eliminates the apparent opacity of such as large set of library dependencies):
 
 
 ```html
