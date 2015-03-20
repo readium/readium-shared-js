@@ -12,6 +12,11 @@ BSD-3-Clause ( http://opensource.org/licenses/BSD-3-Clause )
 See license.txt ( https://github.com/readium/readium-shared-js/blob/develop/license.txt )
 
 
+## Prerequisites
+
+* A decent terminal. On Windows, GitShell works great ( http://git-scm.com ), GitBash works too ( https://msysgit.github.io ), and Cygwin adds useful commands ( https://www.cygwin.com ).
+* Node ( https://nodejs.org )
+
 ## How to use with NPM (Node Package Manager)
 
 Once `npm install readium-shared-js` has completed, run `npm run example`
@@ -25,11 +30,6 @@ See below if you need to hack the code.
 
 
 ## How to develop
-
-Prerequisites
-
-* Git ( http://git-scm.com )
-* Node ( https://nodejs.org )
 
 Initial setup:
 
@@ -46,3 +46,4 @@ Typical workflow:
 Optionally:
 
 * `npm run cson2json` (to re-generate the `package.json` JSON file, for more information see comments in the master `package.cson` CSON file)
+* `npm install -g grunt-cli` (to enable Grunt) Note that at this point in time, the "readium-shared-js" build process is entirely driven from NPM scripts defined in `package.cson` (CSON because it's more readable than JSON), so Grunt is actually not needed!
