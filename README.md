@@ -28,6 +28,12 @@ See license.txt ( https://github.com/readium/readium-shared-js/blob/develop/lice
 
 ## How to use with NPM (Node Package Manager)
 
+All packages "owned" and maintained by the Readium Foundation are listed here: https://www.npmjs.com/~readium
+
+Note that although Node and NPM natively use the CommonJS format, Readium modules are currently only defined as AMD (RequireJS).
+This explains why Browserify ( http://browserify.org ) is not used by this Readium project.
+More information at http://requirejs.org/docs/commonjs.html and http://requirejs.org/docs/node.html
+
 * Make sure `npm install readium-shared-js` completes successfully ( https://www.npmjs.com/package/readium-shared-js )
 * Execute `npm run example`, which opens a web browser to a basic RequireJS bootstrapper located in the `build-output-usage-example` folder (this is *not* a fully-functioning application!)
 * To see an actual application that uses this "readium-shared-js" component, try "readium-js-viewer" ( https://www.npmjs.com/package/readium-js-viewer )
@@ -57,7 +63,7 @@ Optionally:
 * `npm install -g grunt-cli` (to enable Grunt) Note that at this point in time, the "readium-shared-js" build process is Grunt-free, entirely driven from NPM scripts defined in `package.cson` (because CSON is more readable than JSON)
 
 
-## Build output (RequireJS bundles)
+## Build output (AMD bundles)
 
 The `build-output` directory contains common CSS styles, as well as two distinct folders:
 

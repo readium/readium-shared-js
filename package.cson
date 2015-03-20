@@ -72,7 +72,7 @@ files: [
     "README.md"
 ]
 
-# "main" is designed for Node/CommonJS modules, not RequireJS ones.
+# "main" is designed for Node/CommonJS modules, not RequireJS/AMD ones.
 # See http://requirejs.org/docs/commonjs.html
 # See http://requirejs.org/docs/node.html
 #
