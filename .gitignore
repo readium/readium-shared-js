@@ -1,9 +1,3 @@
-### vim ###
-.*.s[a-w][a-z]
-*.un~
-Session.vim
-.netrwhist
-*~
 node_modules
 
 readium-shared-js.sublime-project
