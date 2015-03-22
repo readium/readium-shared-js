@@ -109,6 +109,7 @@ devDependencies:
 
     URIjs: "latest"
 
+#    jquerySizes: "bramstein/jsizes"
     jquerySizes: "danielweck/jsizes"
     
     eventemitter3: "latest"
@@ -256,14 +257,14 @@ scripts:
 #=====================
     'prebuild:styles': '
     
-        mkdirp ./build-output/css/
+        mkdirp build-output/css/
     '
     
 #=====================
 # TODO use cssminify
     'build:styles': '
     
-        cp ./static/sdk.css ./build-output/css/
+        cp static/sdk.css build-output/css/
     '
 
 #=====================
