@@ -160,6 +160,24 @@ scripts:
 #=====================
     'prepare': '
         
+        npm run
+            prepare:patch
+    '
+#        &&
+#        npm run
+#            prepare:dependencies
+
+#=====================
+    'prepare:dependencies': '
+        
+        npm install
+        &&
+        npm update
+    '
+
+#=====================
+    'prepare:patch': '
+        
         rimraf
             node_modules/eventemitter3/_rjs/**
         &&

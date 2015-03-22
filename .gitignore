@@ -5,3 +5,6 @@ Session.vim
 .netrwhist
 *~
 node_modules
+
+readium-shared-js.sublime-project
+readium-shared-js.sublime-workspace
