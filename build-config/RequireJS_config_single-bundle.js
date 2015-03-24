@@ -22,6 +22,8 @@ function(thiz){
     // Path is relative to mainConfigFile[0]
     process._readium.buildOutputPath = "../";
     
+    process._readium.targetName = "readium-shared-js";
+    
     return true;
 }(this)
 ?
