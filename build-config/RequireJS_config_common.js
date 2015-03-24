@@ -26,8 +26,8 @@ require.config({
     inlineText: true,
     stubModules: [], //['text'],
     
-    // Path is relative to the root config file
-    baseUrl: process._readium.sharedJsPath + "js",
+    // Path is relative to this config file
+    baseUrl: "../js",
     
     // Paths are relative to the above baseUrl
     paths:

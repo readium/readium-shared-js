@@ -39,7 +39,7 @@ require.config({
     
     include: ["readium-shared-js", "readium-plugin-example", "readium-plugin-annotations"],
     
-    // Path is relative to the baseUrl (defined in the common config file)
+    // Path is relative to this config file
     out: process._readium.buildOutputPath + "build-output/_single-bundle/readium-shared-js_all.js",
     
     insertRequire: ["globalsSetup", "readium-plugin-annotations"],

@@ -19,11 +19,11 @@ function(thiz){
     
     process._readium = {};
     
-    // Path is relative to this root config file
-    process._readium.sharedJsPath = "../";
-    
-    // Path is relative to this root config file
+    // Path is relative to mainConfigFile[0]
     process._readium.buildOutputPath = "../";
+    
+    // Path is relative to mainConfigFile[0].dir
+    process._readium.sharedJsPath = "../../";
     
     return true;
 }(this)
@@ -31,7 +31,10 @@ function(thiz){
 {
     // The order is IMPORTANT!
     // Paths are relative to this file (they are intentionally convoluted, to test the parameterized RequireJS build workflow from readium-js)
-    mainConfigFile: ["../build-config/RequireJS_config_multiple-bundles_.js", "./RequireJS_config_common.js"],
+    mainConfigFile: [
+    "../build-config/RequireJS_config_multiple-bundles_.js",
+    "./RequireJS_config_common.js"
+    ],
     
     // MUST be in root config file because of access to context-dependent 'config'
     onModuleBundleComplete: function(data) {

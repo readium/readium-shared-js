@@ -21,15 +21,15 @@ readium-external-libs.js
 
 readium-plugin-example.js
 ----------------
-../../build-config/../plugins/example.js
+../../plugins/example.js
 readium-plugin-example.js
 
 readium-plugin-annotations.js
 ----------------
 backbone.js
-../../build-config/../plugins/annotations/annotations_module.js
-../../build-config/../plugins/annotations/annotations_manager.js
-../../build-config/../plugins/annotations/main.js
+../../plugins/annotations/annotations_module.js
+../../plugins/annotations/annotations_manager.js
+../../plugins/annotations/main.js
 readium-plugin-annotations.js
 
 readium-shared-js.js

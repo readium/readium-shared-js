@@ -16,19 +16,19 @@ require.config({
     generateSourceMaps: true,
     preserveLicenseComments: true,
     
-    // Path is relative to the baseUrl (defined in the common config file)
+    // Path is relative to this config file
     dir: process._readium.buildOutputPath + "build-output/_multiple-bundles",
     
     // Paths are relative to the above dir
     packages: [
         {
             name: "plugin-annotations",
-            location: "../../build-config/" + process._readium.sharedJsPath + "plugins/annotations",
+            location: process._readium.sharedJsPath + "plugins/annotations",
             main: "main"
         },
         {
             name: "plugin-example",
-            location: "../../build-config/" + process._readium.sharedJsPath + "plugins",
+            location: process._readium.sharedJsPath + "plugins",
             main: "example"
         }
     ],
