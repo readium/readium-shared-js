@@ -1,1 +1,1 @@
-require.config({paths: {"readium-plugin-example":"./readium-plugin-example.js"}, bundles: {"readium-plugin-example":["plugin-example/example"]}});
+require.config({bundles: {"readium-plugin-example":["plugin-example/example"]}});

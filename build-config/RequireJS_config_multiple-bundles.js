@@ -53,11 +53,11 @@ function(thiz){
             var path = config.modules[i].layer.buildPathMap[config.modules[i].name];
             console.log(path);
             
-            var shortpath = path.replace(rootPath, './');
-            console.log(shortpath);
+            // var shortpath = path.replace(rootPath, './');
+            // console.log(shortpath);
             
-            var pathConfig = {};
-            pathConfig[config.modules[i].name] = shortpath;
+            // var pathConfig = {};
+            // pathConfig[config.modules[i].name] = shortpath;
             
             data.includedModuleNames = [];
             
@@ -89,7 +89,9 @@ function(thiz){
 
             fs.writeFile(
                 path + ".bundles.js",
-                "require.config({paths: " + JSON.stringify(pathConfig) + ", bundles: " + JSON.stringify(bundleConfig) + "});",
+                "require.config({" +
+                    //"paths: " + JSON.stringify(pathConfig) + ", " +
+                    "bundles: " + JSON.stringify(bundleConfig) + "});",
                 function(error) {
                     if (error) throw error;
                 }
