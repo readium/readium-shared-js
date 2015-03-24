@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "file": "C:/Users/Daniel/GitHub/readium-js-viewer_PLUGINS/readium-js/readium-shared-js/build-output/_single-bundle/readium-shared-js_all.js",
+  "file": "C:/Users/Daniel/GitHub/readium-js-viewer/readium-js/readium-shared-js/build-output/_single-bundle/readium-shared-js_all.js",
   "sources": [
     "../node_modules/almond/almond.js",
     "../lib/console_shim.js",
