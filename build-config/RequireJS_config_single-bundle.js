@@ -11,87 +11,72 @@
 //  used to endorse or promote products derived from this software without specific 
 //  prior written permission.
 
-
+(
+function(thiz){
+    
+    //console.log(thiz);
+    console.log(process.cwd());
+    
+    process._readium = {};
+    
+    // Path is relative to this root config file
+    process._readium.sharedJsPath = "../";
+    
+    // Path is relative to this root config file
+    process._readium.buildOutputPath = "../";
+    
+    return true;
+}(this)
+?
 {
-    mainConfigFile: "RequireJS_config_common.js",
+    // The order is IMPORTANT!
+    // Paths are relative to this file (they are intentionally convoluted, to test the parameterized RequireJS build workflow from readium-js)
+    mainConfigFile: ["../build-config/RequireJS_config_single-bundle_.js", "./RequireJS_config_common.js"],
     
-    optimize: "none",
-    generateSourceMaps: true,
-    preserveLicenseComments: true,
-    
-    /*
-    optimize: "uglify2",
-    generateSourceMaps: true,
-    preserveLicenseComments: false,
+    onModuleBundleComplete: function(data) {
+        console.log("========> onModuleBundleComplete");
+        console.log(data.name);
 
-    // uglify2: {
-    //   mangle: true,
-    //   except: [
-    //         'zzzzz'
-    //   ],
-    //   output: {
-    //     beautify: true,
-    //   },
-    //   beautify: {
-    //     semicolons: false
-    //   }
-    // },
-    */
+        var fs = nodeRequire("fs");
+    
+        for (var i = 0; i < config.modules.length; i++) {
 
-    name: "almond",
-    include: ["readium-shared-js", "readium-plugin-example", "readium-plugin-annotations"],
-    out: "../build-output/_single-bundle/readium-shared-js_all.js",
-    
-    insertRequire: ["globalsSetup", "readium-plugin-annotations"],
-    
-    
-    packages: [
-        
-        {
-            name: "plugin-annotations",
-            location: "../plugins/annotations",
-            main: "main"
-        },
-        {
-            name: "plugin-example",
-            location: "../plugins",
-            main: "example"
-        },
-        {
-            name: "almond",
-            location: '../node_modules/almond',
-            main: 'almond'
+            if (config.modules[i].name !== data.name)
+                continue;
+
+            //__dirname is RequireJS node_modules bin folder
+            var rootPath = process.cwd() + "/build-output/_single-bundle/";
+            rootPath = rootPath.replace(/\\/g, '/');
+            console.log(rootPath);
+
+            var path = config.modules[i].out; //config.modules[i].layer.buildPathMap[config.modules[i].name];
+            console.log(path);
+            
+            var bundleConfig = {};
+            bundleConfig[config.modules[i].name] = [];
+            
+            for (var moduleName in config.modules[i].layer.modulesWithNames) {
+                bundleConfig[config.modules[i].name].push(moduleName);
+                console.log(">> " + moduleName);
+            }
+            for (var moduleName in config.modules[i].layer.needsDefine) {
+                bundleConfig[config.modules[i].name].push(moduleName);
+                console.log(">> " + moduleName);
+            }
+            
+            var pathConfig = {};
+            pathConfig[config.modules[i].name] = path;
+            
+            fs.writeFile(
+                config.modules[i].out + ".bundles.js",
+                "require.config({paths: " + JSON.stringify(pathConfig) + ", bundles: " + JSON.stringify(bundleConfig) + "});",
+                function(error) {
+                    if (error) throw error;
+                }
+            );
         }
-    ]
-    
-/*
-    
-    dir: "../build-output/_single-bundle",
-    modules:
-    [
-        {
-            name: "readium-shared-js_all",
-            include: ["readium-shared-js", "readium-plugin-example", "readium-plugin-annotations"],
-            insertRequire: ["globalsSetup", "readium-plugin-annotations"]
-        }
-    ],
-    
-    packages: [
-        {
-            name: "plugin-annotations",
-            location: "../../plugins/annotations",
-            main: "main"
-        },
-        {
-            name: "plugin-example",
-            location: "../../plugins",
-            main: "example"
-        },
-        {
-            name: "readium-shared-js_all",
-            location: '../node_modules/almond',
-            main: 'almond'
-        }
-    ]
-*/
+    }
 }
+:
+function(){console.log("NOOP");return {};}()
+)

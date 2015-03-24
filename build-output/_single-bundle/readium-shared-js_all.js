@@ -429,9 +429,9 @@ var requirejs, require, define;
     };
 }());
 
-define('almond', ['almond/almond'], function (main) { return main; });
+define('readium-shared-js_all', ['readium-shared-js_all/almond'], function (main) { return main; });
 
-define("almond/almond", function(){});
+define("readium-shared-js_all/almond", function(){});
 
 /*
 This code is required to IE for console shim

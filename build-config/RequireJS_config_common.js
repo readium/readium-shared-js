@@ -17,8 +17,6 @@ require.config({
     /* http://requirejs.org/docs/api.html#config-waitSeconds */
     waitSeconds: 0,
     
-    baseUrl: "../js",
-    
     removeCombined: true,
     
     //findNestedDependencies: true,
@@ -28,6 +26,10 @@ require.config({
     inlineText: true,
     stubModules: [], //['text'],
     
+    // Path is relative to the root config file
+    baseUrl: process._readium.sharedJsPath + "js",
+    
+    // Paths are relative to the above baseUrl
     paths:
     {
         "readium-shared-js": '../build-config/readium-shared-js',

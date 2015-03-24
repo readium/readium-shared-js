@@ -11,49 +11,89 @@
 //  used to endorse or promote products derived from this software without specific 
 //  prior written permission.
 
+(
+function(thiz){
+    
+    //console.log(thiz);
+    console.log(process.cwd());
+    
+    process._readium = {};
+    
+    // Path is relative to this root config file
+    process._readium.sharedJsPath = "../";
+    
+    // Path is relative to this root config file
+    process._readium.buildOutputPath = "../";
+    
+    return true;
+}(this)
+?
 {
-    mainConfigFile: "RequireJS_config_common.js",
+    // The order is IMPORTANT!
+    // Paths are relative to this file (they are intentionally convoluted, to test the parameterized RequireJS build workflow from readium-js)
+    mainConfigFile: ["../build-config/RequireJS_config_multiple-bundles_.js", "./RequireJS_config_common.js"],
     
-    optimize: "none",
-    generateSourceMaps: true,
-    preserveLicenseComments: true,
+    // MUST be in root config file because of access to context-dependent 'config'
+    onModuleBundleComplete: function(data) {
+        console.log("========> onModuleBundleComplete");
+        console.log(data.name);
+
+        var fs = nodeRequire("fs");
     
-    dir: "../build-output/_multiple-bundles",
-    modules:
-    [
-        {
-            name: "readium-external-libs"
-        },
-        
-        {
-            name: "readium-plugin-example",
-            exclude: ['globals', 'plugins-controller', 'readium-external-libs', 'readium-shared-js']
-        },
-        
-        {
-            name: "readium-plugin-annotations",
-            exclude: ['globals', 'plugins-controller', 'readium-external-libs', 'readium-shared-js'],
-            insertRequire: ["readium-plugin-annotations"]
-        },
-        
-        {
-            name: "readium-shared-js",
-            exclude: ['readium-external-libs'],
-            include: ['globals', 'plugins-controller'],
-            insertRequire: ["globalsSetup"]
+        for (var i = 0; i < config.modules.length; i++) {
+
+            if (config.modules[i].name !== data.name)
+                continue;
+
+            //__dirname is RequireJS node_modules bin folder
+            var rootPath = process.cwd() + "/build-output/_multiple-bundles/";
+            rootPath = rootPath.replace(/\\/g, '/');
+            console.log(rootPath);
+
+            var path = config.modules[i].layer.buildPathMap[config.modules[i].name];
+            console.log(path);
+            
+            data.includedModuleNames = [];
+            
+            for (var j = 0; j < data.included.length; j++) {
+                
+                var fullPath = rootPath + data.included[j];
+                
+                for (var modulePath in config.modules[i].layer.buildFileToModule) {
+                    if (fullPath === modulePath) {
+                        data.includedModuleNames.push(config.modules[i].layer.buildFileToModule[modulePath]);
+                        break;
+                    }
+                }
+            }
+            
+            var bundleConfig = {};
+            bundleConfig[config.modules[i].name] = [];
+            
+            //for (var moduleName in config.modules[i].layer.modulesWithNames) {
+            for (var j = 0; j < data.includedModuleNames.length; j++) {
+                var moduleName = data.includedModuleNames[j];
+                
+                if (moduleName === config.modules[i].name)
+                    continue;
+                
+                bundleConfig[config.modules[i].name].push(moduleName);
+                console.log(">> " + moduleName);
+            }
+
+            var pathConfig = {};
+            pathConfig[config.modules[i].name] = path;
+            
+            fs.writeFile(
+                path + ".bundles.js",
+                "require.config({paths: " + JSON.stringify(pathConfig) + ", bundles: " + JSON.stringify(bundleConfig) + "});",
+                function(error) {
+                    if (error) throw error;
+                }
+            );
         }
-    ],
-    
-    packages: [
-        {
-            name: "plugin-annotations",
-            location: "../../plugins/annotations",
-            main: "main"
-        },
-        {
-            name: "plugin-example",
-            location: "../../plugins",
-            main: "example"
-        }
-    ]
+    }
 }
+:
+function(){console.log("NOOP");return {};}()
+)
