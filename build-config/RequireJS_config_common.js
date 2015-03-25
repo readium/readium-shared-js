@@ -24,7 +24,6 @@ require.config({
     wrap: false,
     
     inlineText: true,
-    stubModules: [], //['text'],
     
     // Path is relative to this config file
     baseUrl: "../js",
