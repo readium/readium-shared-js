@@ -97,7 +97,7 @@ define(["jquery", "underscore", "eventEmitter", "globals"], function ($, _, Even
             }
 
             _.defer(function () {
-                Globals.emit(Globals.Events.PLUGINS_LOADED);
+                Globals.emit(Globals.Events.PLUGINS_LOADED, reader);
             });
         });
     };

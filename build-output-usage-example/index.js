@@ -9,13 +9,13 @@ require(["globalsSetup", "readium-plugin-annotations"], function () {
         // examplePluginConfig.backgroundColor = "cyan";
     // ------- 
 
-        ReadiumSDK.on(ReadiumSDK.Events.PLUGINS_LOADED, function() {
+        ReadiumSDK.on(ReadiumSDK.Events.PLUGINS_LOADED, function(reader) {
         
             // readium built-in (should have been require()'d outside this scope)
-            console.log(ReadiumSDK.reader.plugins.annotations);
+            console.log(reader.plugins.annotations);
             
             // external (require()'d via Dependency Injection, see examplePluginConfig function parameter passed above)
-            console.log(ReadiumSDK.reader.plugins.example);
+            console.log(reader.plugins.example);
         });
         
         $(document).ready(function () {
