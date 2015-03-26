@@ -46,6 +46,7 @@ ReadiumSDK.Models.PageOpenRequest = function(spineItem, initiator) {
     this.firstPage = false;
     this.lastPage = false;
     this.initiator = initiator;
+    this.gotoSpreedIndex = -1;
 
     this.reset = function() {
         this.spineItemPageIndex = undefined;

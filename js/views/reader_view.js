@@ -1516,6 +1516,73 @@ ReadiumSDK.Views.ReaderView = function(options) {
             }
         });
     };
+
+    /**
+     * Request to open SpineItemPage
+     * @param {number} index the spine item
+     */
+    this.requestSpineItemPage = function(arg) {
+        var spineItem = _spine.items[arg.spineIndex];
+        var openPageRequest = new ReadiumSDK.Models.PageOpenRequest(spineItem, self);
+        openPageRequest.setFirstPage();
+        openPage(openPageRequest, 2);
+    };
+
+    this.goToPage = function(arg) {
+        var spineItem = _spine.getItemById(arg.idref);
+        var spreedIndex = arg.spreedIndex;
+        var desiredViewType = deduceDesiredViewType(spineItem);
+
+        var openPageRequest = new ReadiumSDK.Models.PageOpenRequest(spineItem, self);
+        if (desiredViewType != ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED) {
+            openPageRequest.gotoSpreedIndex = spreedIndex;
+        }
+
+        openPageRequest.setFirstPage();
+        openPage(openPageRequest, 2);
+    };
+
+    this.getPageInfo = function() {
+        var paginationInfo = _currentView.getPaginationInfo();
+        if(paginationInfo.openPages.length == 0) {
+            return "";
+        }
+
+        var lastOpenPage = paginationInfo.openPages[paginationInfo.openPages.length - 1];
+        var currentSpineItem = _spine.getItemById(lastOpenPage.idref);
+        var desiredViewType = deduceDesiredViewType(currentSpineItem);
+
+        var index = 0;
+        if (desiredViewType == ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED) {
+            index = lastOpenPage.spineItemIndex;
+        } else {
+            index = _currentView.getCurrentIndex();
+        }
+
+        return JSON.stringify({idref: currentSpineItem.idref, index: index.toString()});
+    };
+
+    this.getXHTMLFileInfo = function() {
+        var fileInfo = [];
+
+        var paginationInfo = _currentView.getPaginationInfo();
+        if(paginationInfo.openPages.length == 0) {
+            return "";
+        }
+
+        var lastOpenPage = paginationInfo.openPages[paginationInfo.openPages.length - 1];
+        var currentSpineItem = _spine.getItemById(lastOpenPage.idref);
+        var desiredViewType = deduceDesiredViewType(currentSpineItem);
+
+        if (desiredViewType == ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED) {
+            fileInfo.push(JSON.stringify({idref: currentSpineItem.idref, spreedIndex: 0, top: 0, bottom: 0}));
+        } else {
+            _currentView.getXHTMLFileInfo(fileInfo);
+        }
+
+        return JSON.stringify(fileInfo);
+    };
+
     this.backgroundAudioTrackManager = new BackgroundAudioTrackManager();
 };
 
