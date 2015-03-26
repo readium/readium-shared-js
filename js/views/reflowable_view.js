@@ -409,7 +409,11 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         }
 
         if(pageIndex >= 0 && pageIndex < _paginationInfo.columnCount) {
-            _paginationInfo.currentSpreadIndex = Math.floor(pageIndex / _paginationInfo.visibleColumnCount) ;
+            if (pageRequest.gotoSpreedIndex != -1) {
+                _paginationInfo.currentSpreadIndex = pageRequest.gotoSpreedIndex;
+            } else {
+                _paginationInfo.currentSpreadIndex = Math.floor(pageIndex / _paginationInfo.visibleColumnCount) ;
+            }
             onPaginationChanged(pageRequest.initiator, pageRequest.spineItem, pageRequest.elementId);
         }
         else {
@@ -889,5 +893,24 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
 
         self.openPage(openPageRequest);
     }
+
+    this.getCurrentIndex = function() {
+        return _paginationInfo.currentSpreadIndex;
+    }
+
+    this.getXHTMLFileInfo = function(filePageInfo) {
+        var count = _paginationInfo.columnCount/_paginationInfo.visibleColumnCount;
+        for (var i = 0; i < count; i++) {
+            _paginationInfo.currentSpreadIndex = i;
+            _paginationInfo.pageOffset = (_paginationInfo.columnWidth + _paginationInfo.columnGap) * _paginationInfo.visibleColumnCount * _paginationInfo.currentSpreadIndex;
+
+            var columnsLeftOfViewport = Math.round(_paginationInfo.pageOffset / (_paginationInfo.columnWidth + _paginationInfo.columnGap));
+            var topOffset =  columnsLeftOfViewport * _$contentFrame.height();
+            var bottomOffset = topOffset + _paginationInfo.visibleColumnCount * _$contentFrame.height();
+            var contentOffsets = {top: topOffset, bottom: bottomOffset};
+
+            filePageInfo.push(JSON.stringify({idref: _currentSpineItem.idref, spreedIndex: _paginationInfo.currentSpreadIndex, top: topOffset, bottom: bottomOffset}));
+        }
+    };
 
 };
