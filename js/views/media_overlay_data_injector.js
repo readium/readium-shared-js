@@ -213,7 +213,7 @@ webkit.messageHandlers.consolelog.postMessage("MO CLICKED LINK");
                             }
                             catch (e)
                             {
-                                webkit.messageHandlers.consoleerror.postMessage(e);
+                                webkit.messageHandlers.consoleerror.postMessage(e.toString());
                             }
                             
                             if (!par)
@@ -458,7 +458,7 @@ webkit.messageHandlers.consoledebug.postMessage("MO readaloud attr: " + readalou
                                 }
                                 catch (error)
                                 {
-                                    webkit.messageHandlers.consoleerror.postMessage(error);
+                                    webkit.messageHandlers.consoleerror.postMessage(error.toString());
                                 }
                             }
                             else
@@ -473,7 +473,7 @@ webkit.messageHandlers.consoledebug.postMessage("MO readaloud attr: " + readalou
                                 }
                                 catch (error)
                                 {
-                                    webkit.messageHandlers.consoleerror.postMessage(error);
+                                    webkit.messageHandlers.consoleerror.postMessage(error.toString());
                                 }
                             }
                         }

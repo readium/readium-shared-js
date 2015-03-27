@@ -461,7 +461,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
                 }
                 catch(ex)
                 {
-                    webkit.messageHandlers.consoleerror.postMessage(ex);
+                    webkit.messageHandlers.consoleerror.postMessage(ex.toString());
                 
                     if (callback) callback(false);
                     return;

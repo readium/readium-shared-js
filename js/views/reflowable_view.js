@@ -352,7 +352,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         self.openPage(deferredData);
 
     }
-
+	
     this.openPage = function(pageRequest) {
 
         if(_isWaitingFrameRender) {
@@ -383,11 +383,14 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
                     ["cfi-marker", "mo-cfi-highlight"],
                     [],
                     ["MathJax_Message"]);
+				
+				// This is producing an undefined TypeError when a bookmark is loaded, not sure why
+//				webkit.messageHandlers.cfi.postMessage({idref: pageRequest.spineItem.idref, cfi: pageRequest.elementCfi, pageIndex: pageIndex});
             }
             catch (e)
             {
                 pageIndex = 0;
-                webkit.messageHandlers.consoleerror.postMessage(e);
+                webkit.messageHandlers.consoleerror.postMessage(e.toString());
             }
         }
         else if(pageRequest.firstPage) {
@@ -709,6 +712,27 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         _currentOpacity = -1;
     }
 
+	this.getPageIndexForElementCfi = function(spineIdRef, elementCfi) {
+		if (_currentSpineItem.idref != spineIdRef)
+			return undefined;
+		
+		var pageIndex;
+		try
+		{
+			pageIndex = _navigationLogic.getPageForElementCfi(elementCfi,
+															  ["cfi-marker", "mo-cfi-highlight"],
+															  [],
+															  ["MathJax_Message"]);
+		}
+		catch (e)
+		{
+			pageIndex = 0;
+			webkit.messageHandlers.consoleerror.postMessage(e.toString());
+		}
+		
+		return pageIndex;
+	}
+	
     this.getFirstVisibleElementCfi = function() {
 
         var contentOffsets = getVisibleContentOffsets();

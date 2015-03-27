@@ -203,7 +203,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                         }
                         catch (error)
                         {
-                            webkit.messageHandlers.consoleerror.postMessage(error);
+                            webkit.messageHandlers.consoleerror.postMessage(error.toString());
                         }
                     }
                     else
@@ -229,7 +229,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                         }
                         catch (error)
                         {
-                            webkit.messageHandlers.consoleerror.postMessage(error);
+                            webkit.messageHandlers.consoleerror.postMessage(error.toString());
                         }
                     }
                 }

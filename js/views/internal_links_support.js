@@ -131,7 +131,7 @@ ReadiumSDK.Views.InternalLinksSupport = function(reader) {
             error: function (xhr, status, errorThrown) {
                 webkit.messageHandlers.consoleerror.postMessage('Error when AJAX fetching ' + path);
                 webkit.messageHandlers.consoleerror.postMessage(status);
-                webkit.messageHandlers.consoleerror.postMessage(errorThrown);
+                webkit.messageHandlers.consoleerror.postMessage(errorThrown.toString());
                 callback();
             }
         });

@@ -278,7 +278,7 @@ ReadiumSDK.Helpers.triggerLayout = function($iframe) {
     }
     catch (ex)
     {
-        webkit.messageHandlers.consoleerror.postMessage(ex);
+        webkit.messageHandlers.consoleerror.postMessage(ex.toString());
     }
     
     try
@@ -293,7 +293,7 @@ ReadiumSDK.Helpers.triggerLayout = function($iframe) {
     }
     catch (ex)
     {
-        webkit.messageHandlers.consoleerror.postMessage(ex);
+        webkit.messageHandlers.consoleerror.postMessage(ex.toString());
     }
 
     if(doc.body) {
@@ -456,7 +456,7 @@ ReadiumSDK.Helpers.isIframeAlive = function(iframe)
     }
     catch (ex)
     {
-        webkit.messageHandlers.consoleerror.postMessage(ex);
+        webkit.messageHandlers.consoleerror.postMessage(ex.toString());
         return false;
     }
     

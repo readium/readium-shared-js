@@ -251,7 +251,7 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
 //         }
 //         catch(error)
 //         {
-//             webkit.messageHandlers.consoleerror.postMessage(error);
+//             webkit.messageHandlers.consoleerror.postMessage(error.toString());
 //         
 //             removeHighlight();
 //         }
@@ -350,7 +350,7 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
             }
             catch(error)
             {
-                webkit.messageHandlers.consoleerror.postMessage(error);
+                webkit.messageHandlers.consoleerror.postMessage(error.toString());
             }
         }
     };
@@ -449,7 +449,7 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
                 }
                 catch(error)
                 {
-                    webkit.messageHandlers.consoleerror.postMessage(error);
+                    webkit.messageHandlers.consoleerror.postMessage(error.toString());
                 }
             }
             

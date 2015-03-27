@@ -1233,7 +1233,17 @@ ReadiumSDK.Views.ReaderView = function(options) {
     this.addIFrameEventListener = function(eventName, callback, context) {
         _iframeLoader.addIFrameEventListener(eventName, callback, context);
     };
-
+	
+	/**
+	 * Spine item must be open
+	 */
+	this.getPageIndexForElementCfi = function(spineIdRef, elementCfi) {
+		if (!_currentView) {
+			return false;
+		}
+		return _currentView.getPageIndexForElementCfi(spineIdRef, elementCfi);
+	}
+	
     this.isElementCfiVisible = function (spineIdRef, contentCfi) {
         if (!_currentView) {
             return false;
@@ -1311,7 +1321,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
             }
             catch (err)
             {
-                webkit.messageHandlers.consoleerror.postMessage(err);
+                webkit.messageHandlers.consoleerror.postMessage(err.toString());
             }
         };
         
@@ -1335,7 +1345,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
             }
             catch (err)
             {
-                webkit.messageHandlers.consoleerror.postMessage(err);
+                webkit.messageHandlers.consoleerror.postMessage(err.toString());
             }
         });
         
@@ -1447,7 +1457,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
             }
             catch (err)
             {
-                webkit.messageHandlers.consoleerror.postMessage(err);
+                webkit.messageHandlers.consoleerror.postMessage(err.toString());
             }
 
             if (_callback_isAvailable)

@@ -294,7 +294,7 @@
                     }
                     catch (ex)
                     {
-                        webkit.messageHandlers.consoleerror.postMessage(ex.message);
+                        webkit.messageHandlers.consoleerror.postMessage(ex.toString());
                     }
     
     //                if (DEBUG)
@@ -586,7 +586,7 @@
             }
             catch (ex)
             {
-                webkit.messageHandlers.consoleerror.postMessage(ex.message);
+                webkit.messageHandlers.consoleerror.postMessage(ex.toString());
     
                 setTimeout(function()
                 {
@@ -596,7 +596,7 @@
                     }
                     catch (ex)
                     {
-                        webkit.messageHandlers.consoleerror.postMessage(ex.message);
+                        webkit.messageHandlers.consoleerror.postMessage(ex.toString());
                     }
                 }, 5);
             }
@@ -669,7 +669,7 @@
                     }
                     catch (ex)
                     {
-                        webkit.messageHandlers.consoleerror.postMessage(ex.message);
+                        webkit.messageHandlers.consoleerror.postMessage(ex.toString());
     
                         setTimeout(function()
                         {
@@ -679,7 +679,7 @@
                             }
                             catch (ex)
                             {
-                                webkit.messageHandlers.consoleerror.postMessage(ex.message);
+                                webkit.messageHandlers.consoleerror.postMessage(ex.toString());
                             }
                         }, 4);
                     }
