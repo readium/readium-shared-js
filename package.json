@@ -51,7 +51,7 @@
     "underscore": "latest",
     "jquery": "latest",
     "URIjs": "latest",
-    "jquerySizes": "danielweck/jsizes",
+    "jquerySizes": "bramstein/jsizes",
     "eventemitter3": "latest",
     "domReady": "requirejs/domReady",
     "cson": "latest",

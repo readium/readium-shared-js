@@ -109,8 +109,7 @@ devDependencies:
 
     URIjs: "latest"
 
-#    jquerySizes: "bramstein/jsizes"
-    jquerySizes: "danielweck/jsizes"
+    jquerySizes: "bramstein/jsizes"
     
     eventemitter3: "latest"
     
