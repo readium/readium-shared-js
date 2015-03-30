@@ -409,11 +409,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         }
 
         if(pageIndex >= 0 && pageIndex < _paginationInfo.columnCount) {
-            if (pageRequest.gotoSpreedIndex != -1) {
-                _paginationInfo.currentSpreadIndex = pageRequest.gotoSpreedIndex;
-            } else {
-                _paginationInfo.currentSpreadIndex = Math.floor(pageIndex / _paginationInfo.visibleColumnCount) ;
-            }
+            _paginationInfo.currentSpreadIndex = Math.floor(pageIndex / _paginationInfo.visibleColumnCount);
             onPaginationChanged(pageRequest.initiator, pageRequest.spineItem, pageRequest.elementId);
         }
         else {

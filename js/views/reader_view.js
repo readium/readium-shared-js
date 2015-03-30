@@ -1518,30 +1518,9 @@ ReadiumSDK.Views.ReaderView = function(options) {
     };
 
     /**
-     * Request to open SpineItemPage
-     * @param {number} index the spine item
-     */
-    this.requestSpineItemPage = function(arg) {
-        var spineItem = _spine.items[arg.spineIndex];
-        var openPageRequest = new ReadiumSDK.Models.PageOpenRequest(spineItem, self);
-        openPageRequest.setFirstPage();
-        openPage(openPageRequest, 2);
-    };
-
-    this.goToPage = function(arg) {
-        var spineItem = _spine.getItemById(arg.idref);
-        var spreedIndex = arg.spreedIndex;
-        var desiredViewType = deduceDesiredViewType(spineItem);
-
-        var openPageRequest = new ReadiumSDK.Models.PageOpenRequest(spineItem, self);
-        if (desiredViewType != ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED) {
-            openPageRequest.gotoSpreedIndex = spreedIndex;
-        }
-
-        openPageRequest.setFirstPage();
-        openPage(openPageRequest, 2);
-    };
-
+    * get idref and spreedIndex of current spine item
+    * @return {object} idref, index
+    */
     this.getPageInfo = function() {
         var paginationInfo = _currentView.getPaginationInfo();
         if(paginationInfo.openPages.length == 0) {
@@ -1554,7 +1533,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
         var index = 0;
         if (desiredViewType == ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED) {
-            index = lastOpenPage.spineItemIndex;
+            index = 0;
         } else {
             index = _currentView.getCurrentIndex();
         }
@@ -1562,10 +1541,14 @@ ReadiumSDK.Views.ReaderView = function(options) {
         return JSON.stringify({idref: currentSpineItem.idref, index: index.toString()});
     };
 
-    this.getXHTMLFileInfo = function() {
-        var fileInfo = [];
-
+    /**
+    * get spreed page count of current spine item.
+    * @return {object} spreedPageCount
+    */
+    this.getSpreedPageCount = function() {
+        var count = 0;
         var paginationInfo = _currentView.getPaginationInfo();
+
         if(paginationInfo.openPages.length == 0) {
             return "";
         }
@@ -1575,12 +1558,12 @@ ReadiumSDK.Views.ReaderView = function(options) {
         var desiredViewType = deduceDesiredViewType(currentSpineItem);
 
         if (desiredViewType == ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED) {
-            fileInfo.push(JSON.stringify({idref: currentSpineItem.idref, spreedIndex: 0, top: 0, bottom: 0}));
+            count = 1;
         } else {
-            _currentView.getXHTMLFileInfo(fileInfo);
+            count = _currentView.getSpreedPageCount();
         }
 
-        return JSON.stringify(fileInfo);
+        return JSON.stringify({spreedPageCount: count});
     };
 
     this.backgroundAudioTrackManager = new BackgroundAudioTrackManager();
