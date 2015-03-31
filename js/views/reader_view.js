@@ -1516,6 +1516,56 @@ ReadiumSDK.Views.ReaderView = function(options) {
             }
         });
     };
+
+    /**
+    * get idref and spreedIndex of current spine item
+    * @return {object} idref, index
+    */
+    this.getPageInfo = function() {
+        var paginationInfo = _currentView.getPaginationInfo();
+        if(paginationInfo.openPages.length == 0) {
+            return "";
+        }
+
+        var lastOpenPage = paginationInfo.openPages[paginationInfo.openPages.length - 1];
+        var currentSpineItem = _spine.getItemById(lastOpenPage.idref);
+        var desiredViewType = deduceDesiredViewType(currentSpineItem);
+
+        var index = 0;
+        if (desiredViewType == ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED) {
+            index = 0;
+        } else {
+            index = _currentView.getCurrentIndex();
+        }
+
+        return JSON.stringify({idref: currentSpineItem.idref, index: index.toString()});
+    };
+
+    /**
+    * get spreed page count of current spine item.
+    * @return {object} spreedPageCount
+    */
+    this.getSpreedPageCount = function() {
+        var count = 0;
+        var paginationInfo = _currentView.getPaginationInfo();
+
+        if(paginationInfo.openPages.length == 0) {
+            return "";
+        }
+
+        var lastOpenPage = paginationInfo.openPages[paginationInfo.openPages.length - 1];
+        var currentSpineItem = _spine.getItemById(lastOpenPage.idref);
+        var desiredViewType = deduceDesiredViewType(currentSpineItem);
+
+        if (desiredViewType == ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED) {
+            count = 1;
+        } else {
+            count = _currentView.getSpreedPageCount();
+        }
+
+        return JSON.stringify({spreedPageCount: count});
+    };
+
     this.backgroundAudioTrackManager = new BackgroundAudioTrackManager();
 };
 
