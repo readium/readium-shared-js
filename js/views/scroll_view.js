@@ -750,6 +750,8 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
 
     function onPageViewLoaded(pageView, success, $iframe, spineItem, isNewlyLoaded, context) {
 
+        fitImages(pageView);
+
         if(success && isNewlyLoaded) {
             self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
         }
@@ -976,6 +978,10 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
     }
 
     function onPaginationChanged(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
+        var visibleViews = getVisiblePageViews();
+        _.each(visibleViews, function (view) {
+            fitImages(view);
+        });
         self.trigger(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
     }
 
@@ -1366,6 +1372,10 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
             self.openPage(openPageRequest);
         }
 
+    };
+
+    function fitImages(pageView) {
+        pageView._fitImages({doNotChangeHeight: true});
     }
 
 };

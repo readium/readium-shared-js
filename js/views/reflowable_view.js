@@ -318,7 +318,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         // ////
         
         self.applyBookStyles();
-        resizeImages();
+        fitImages();
 
         updateHtmlFontSize();
         updateColumnGap();
@@ -456,6 +456,9 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         _paginationInfo.pageOffset = (_paginationInfo.columnWidth + _paginationInfo.columnGap) * _paginationInfo.visibleColumnCount * _paginationInfo.currentSpreadIndex;
         
         redraw();
+        ReadiumSDK.Helpers.triggerLayout(_$iframe);
+        fitImages();
+
         self.trigger(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
     }
 
@@ -750,35 +753,8 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
     }
 
     //we need this styles for css columnizer not to chop big images
-    function resizeImages() {
-
-        if(!_$epubHtml) {
-            return;
-        }
-
-        var $elem;
-        var height;
-        var width;
-
-        $('img, svg', _$epubHtml).each(function(){
-
-            $elem = $(this);
-
-            // if we set max-width/max-height to 100% columnizing engine chops images embedded in the text
-            // (but not if we set it to 99-98%) go figure.
-            // TODO: CSS min-w/h is content-box, not border-box (does not take into account padding + border)? => images may still overrun?
-            $elem.css('max-width', '98%');
-            $elem.css('max-height', '98%');
-
-            if(!$elem.css('height')) {
-                $elem.css('height', 'auto');
-            }
-
-            if(!$elem.css('width')) {
-                $elem.css('width', 'auto');
-            }
-
-        });
+    function fitImages() {
+        return ReadiumSDK.Helpers.fitImages(_$epubHtml);
     }
 
     this.bookmarkCurrentPage = function() {

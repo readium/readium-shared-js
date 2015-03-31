@@ -950,6 +950,13 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             return _$iframe.offset();
         }
         return undefined;
+    };
+
+    /**
+     * @private
+     */
+    this._fitImages = function (options) {
+        return ReadiumSDK.Helpers.fitImages(_$epubHtml, options);
     }
 };
 
