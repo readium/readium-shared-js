@@ -12,6 +12,9 @@
 //  prior written permission.
 
 require.config({
+    
+    baseUrl: process._readium.baseUrl__readium_shared_js,
+    
     stubModules: ['text'],
     
     optimize: "none",
@@ -37,30 +40,37 @@ require.config({
     // },
     */
 
-    name: process._readium.targetName + "_all",
+    name: "readium-shared-js_all",
     
     include: ["readium-shared-js", "readium-plugin-example", "readium-plugin-annotations"],
     
-    // Path is relative to this config file
-    out: process._readium.buildOutputPath + "build-output/_single-bundle/" + process._readium.targetName + "_all.js",
+    out: "../build-output/_single-bundle/readium-shared-js_all.js",
     
     insertRequire: ["globalsSetup", "readium-plugin-annotations"],
     
-    // Paths are relative to the baseUrl (defined in the common config file)
     packages: [
         {
             name: "plugin-annotations",
-            location: "../plugins/annotations",
+            location:
+                process._readium.path__readium_shared_js + "/build-config/" + process._readium.baseUrl__readium_shared_js + "/"
+                + "../plugins/annotations",
+                
             main: "main"
         },
         {
             name: "plugin-example",
-            location: "../plugins",
+            location:
+                process._readium.path__readium_shared_js + "/build-config/" + process._readium.baseUrl__readium_shared_js + "/"
+                + "../plugins",
+                
             main: "example"
         },
         {
-            name: process._readium.targetName + "_all",
-            location: '../node_modules/almond',
+            name: "readium-shared-js_all",
+            location:
+                process._readium.path__readium_shared_js + "/build-config/" + process._readium.baseUrl__readium_shared_js + "/"
+                + '../node_modules/almond',
+                
             main: 'almond'
         }
     ]

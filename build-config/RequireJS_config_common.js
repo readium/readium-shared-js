@@ -25,74 +25,131 @@ require.config({
     
     inlineText: true,
     
-    // Path is relative to this config file
-    baseUrl: "../js",
+    baseUrl: process._readium.baseUrl__readium_shared_js,
     
-    // Paths are relative to the above baseUrl
     paths:
     {
-        "readium-shared-js": '../build-config/readium-shared-js',
-        'readium-external-libs': '../build-config/readium-external-libs',
+        "readium-shared-js":
+            process._readium.path__readium_shared_js + "/build-config/" + process._readium.baseUrl__readium_shared_js + "/"
+            + '../build-config/readium-shared-js',
+            
+        'readium-external-libs':
+            process._readium.path__readium_shared_js + "/build-config/" + process._readium.baseUrl__readium_shared_js + "/"
+            + '../build-config/readium-external-libs',
         
-        "readium-plugin-example": '../build-config/readium-plugin-example',
-        "readium-plugin-annotations": '../build-config/readium-plugin-annotations',
+        "readium-plugin-example":
+            process._readium.path__readium_shared_js + "/build-config/" + process._readium.baseUrl__readium_shared_js + "/"
+            + '../build-config/readium-plugin-example',
+            
+        "readium-plugin-annotations":
+            process._readium.path__readium_shared_js + "/build-config/" + process._readium.baseUrl__readium_shared_js + "/"
+            + '../build-config/readium-plugin-annotations',
         
-        'plugins-controller': "controllers/plugins_controller",
+        'plugins-controller':
+            process._readium.path__readium_shared_js + "/build-config/" + process._readium.baseUrl__readium_shared_js + "/"
+            + "controllers/plugins_controller",
         
         
         // ------ NPM MODULEs
         
-        RequireJS: '../node_modules/requirejs/require',
+        RequireJS:
+            process._readium.path__readium_shared_js + "/build-config/" + process._readium.baseUrl__readium_shared_js + "/"
+            + '../node_modules/requirejs/require',
         
         //text: '../node_modules/requirejs-text/text',
         
-        jquery: '../node_modules/jquery/dist/jquery',
+        jquery:
+            process._readium.path__readium_shared_js + "/build-config/" + process._readium.baseUrl__readium_shared_js + "/"
+            + '../node_modules/jquery/dist/jquery',
         
-        backbone: "../node_modules/backbone/backbone",
+        backbone:
+            process._readium.path__readium_shared_js + "/build-config/" + process._readium.baseUrl__readium_shared_js + "/"
+            + "../node_modules/backbone/backbone",
         
-        underscore: '../node_modules/underscore/underscore',
+        underscore:
+            process._readium.path__readium_shared_js + "/build-config/" + process._readium.baseUrl__readium_shared_js + "/"
+            + '../node_modules/underscore/underscore',
 
-        URIjs: '../node_modules/URIjs/src/URI',
-        punycode: '../node_modules/URIjs/src/punycode',
-        SecondLevelDomains: '../node_modules/URIjs/src/SecondLevelDomains',
-        IPv6: '../node_modules/URIjs/src/IPv6',
-        
-        jquerySizes: '../node_modules/jquery-sizes/lib/jquery.sizes',
+        URIjs:
+            process._readium.path__readium_shared_js + "/build-config/" + process._readium.baseUrl__readium_shared_js + "/"
+            + '../node_modules/URIjs/src/URI',
+            
+        punycode:
+            process._readium.path__readium_shared_js + "/build-config/" + process._readium.baseUrl__readium_shared_js + "/"
+            + '../node_modules/URIjs/src/punycode',
+            
+        SecondLevelDomains:
+            process._readium.path__readium_shared_js + "/build-config/" + process._readium.baseUrl__readium_shared_js + "/"
+            + '../node_modules/URIjs/src/SecondLevelDomains',
+            
+        IPv6:
+            process._readium.path__readium_shared_js + "/build-config/" + process._readium.baseUrl__readium_shared_js + "/"
+            + '../node_modules/URIjs/src/IPv6',
+            
+        jquerySizes:
+            process._readium.path__readium_shared_js + "/build-config/" + process._readium.baseUrl__readium_shared_js + "/"
+            + '../node_modules/jquery-sizes/lib/jquery.sizes',
 
-        domReady : '../node_modules/domReady/domReady',
+        domReady:
+            process._readium.path__readium_shared_js + "/build-config/" + process._readium.baseUrl__readium_shared_js + "/"
+            + '../node_modules/domReady/domReady',
 
         //eventEmitter: '../node_modules/eventemitter3/index',
-        eventEmitter: '../node_modules/eventemitter3/_rjs/index',
+        eventEmitter:
+            process._readium.path__readium_shared_js + "/build-config/" + process._readium.baseUrl__readium_shared_js + "/"
+            + '../node_modules/eventemitter3/_rjs/index',
         //see pre-build npm task to wrap CommonJS into AMD: define(function(require, exports, module) { .... });
 
         
         
         // ------ LIBs
         
-        'console_shim': '../lib/console_shim',
+        'console_shim':
+            process._readium.path__readium_shared_js + "/build-config/" + process._readium.baseUrl__readium_shared_js + "/"
+            + '../lib/console_shim',
         
-        rangy : '../lib/rangy/rangy',
-        "rangy-core" : '../lib/rangy/rangy-core',
-        "rangy-textrange" : '../lib/rangy/rangy-textrange',
-        "rangy-highlighter" : '../lib/rangy/rangy-highlighter',
-        "rangy-cssclassapplier" : '../lib/rangy/rangy-cssclassapplier',
-        "rangy-position" : '../lib/rangy/rangy-position',
-        
-        
-        // TODO: move to an NPM package dependency (fetched directly from readium-cfi-js repository)
-        epubCfi: '../lib/epub_cfi'
-        
+        rangy:
+            process._readium.path__readium_shared_js + "/build-config/" + process._readium.baseUrl__readium_shared_js + "/"
+            + '../lib/rangy/rangy',
+            
+        "rangy-core":
+            process._readium.path__readium_shared_js + "/build-config/" + process._readium.baseUrl__readium_shared_js + "/"
+            + '../lib/rangy/rangy-core',
+            
+        "rangy-textrange":
+            process._readium.path__readium_shared_js + "/build-config/" + process._readium.baseUrl__readium_shared_js + "/"
+            + '../lib/rangy/rangy-textrange',
+            
+        "rangy-highlighter":
+            process._readium.path__readium_shared_js + "/build-config/" + process._readium.baseUrl__readium_shared_js + "/"
+            + '../lib/rangy/rangy-highlighter',
+            
+        "rangy-cssclassapplier":
+            process._readium.path__readium_shared_js + "/build-config/" + process._readium.baseUrl__readium_shared_js + "/"
+            + '../lib/rangy/rangy-cssclassapplier',
+            
+        "rangy-position":
+            process._readium.path__readium_shared_js + "/build-config/" + process._readium.baseUrl__readium_shared_js + "/"
+            + '../lib/rangy/rangy-position'
     },
+
+    // map:
+    // {
+    //     '*':
+    //     {
+    //         'epubCfi': 'readium-cfi-js'
+    //     }
+    // },
     
     wrapShim: false,
 
     shim:
     {
-        epubCfi:
-        {
-            deps: ['jquery'],
-            exports: 'EPUBcfi'
-        },
+        // epubCfi:
+        // {
+        //     deps: ['jquery'],
+        //     exports: 'EPUBcfi'
+        // },
 
         jquerySizes:
         {

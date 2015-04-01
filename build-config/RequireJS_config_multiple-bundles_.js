@@ -12,23 +12,29 @@
 //  prior written permission.
 
 require.config({
+    baseUrl: process._readium.baseUrl__readium_shared_js,
+    
     optimize: "none",
     generateSourceMaps: true,
     preserveLicenseComments: true,
     
-    // Path is relative to this config file
-    dir: process._readium.buildOutputPath + "build-output/_multiple-bundles",
+    dir: "../build-output/_multiple-bundles",
     
-    // Paths are relative to the above dir
     packages: [
         {
             name: "plugin-annotations",
-            location: process._readium.sharedJsPath + "plugins/annotations",
+            location: "../" +
+                process._readium.path__readium_shared_js + "/build-config/" + process._readium.baseUrl__readium_shared_js + "/"
+                + "../plugins/annotations",
+                
             main: "main"
         },
         {
             name: "plugin-example",
-            location: process._readium.sharedJsPath + "plugins",
+            location: "../" +
+                process._readium.path__readium_shared_js + "/build-config/" + process._readium.baseUrl__readium_shared_js + "/"
+                + "../plugins",
+                
             main: "example"
         }
     ],
@@ -52,7 +58,7 @@ require.config({
         
         {
             name: "readium-shared-js",
-            exclude: ['readium-external-libs'],
+            exclude: ['readium-external-libs', 'readium-cfi-js'],
             include: ['globals', 'plugins-controller'],
             insertRequire: ["globalsSetup"]
         }
