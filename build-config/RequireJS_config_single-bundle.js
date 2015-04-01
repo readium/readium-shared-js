@@ -24,8 +24,6 @@ function(thiz){
     
     process._readium.path__readium_shared_js = "..";
     
-    process._readium.path__readium_shared_js_PACKAGE_PREFIX = "../";
-    
     
     process._readium.baseUrl__readium_cfi_js = "../js";
     

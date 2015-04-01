@@ -23,7 +23,7 @@ require.config({
     packages: [
         {
             name: "plugin-annotations",
-            location: process._readium.path__readium_shared_js_PACKAGE_PREFIX +
+            location: "../" +
                 process._readium.path__readium_shared_js + "/build-config/" + process._readium.baseUrl__readium_shared_js + "/"
                 + "../plugins/annotations",
                 
@@ -31,7 +31,7 @@ require.config({
         },
         {
             name: "plugin-example",
-            location: process._readium.path__readium_shared_js_PACKAGE_PREFIX +
+            location: "../" +
                 process._readium.path__readium_shared_js + "/build-config/" + process._readium.baseUrl__readium_shared_js + "/"
                 + "../plugins",
                 
@@ -39,7 +39,7 @@ require.config({
         },
         {
             name: "readium-cfi-js_baseUrl",
-            location: process._readium.path__readium_shared_js_PACKAGE_PREFIX +
+            location: "../" +
                 process._readium.path__readium_shared_js + "/build-config/" + process._readium.baseUrl__readium_shared_js + "/"
                 + "../readium-cfi-js/js"
         }
