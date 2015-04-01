@@ -25,7 +25,7 @@ function(thiz){
     process._readium.path__readium_shared_js = "..";
     
     
-    process._readium.baseUrl__readium_cfi_js = "../js";
+    process._readium.baseUrl__readium_cfi_js = "../gen";
     
     process._readium.path__readium_cfi_js = "../readium-cfi-js";
     

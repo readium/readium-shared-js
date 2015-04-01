@@ -1,1 +1,1 @@
-require.config({bundles: {"readium-cfi-js":["cfi-parser","cfi-runtime-errors","cfi-instructions","cfi-interpreter","cfi-generator","epubCfi"]}});
+require.config({bundles: {"readium-cfi-js":["cfi_parser_gen","cfi-js/cfi_parser","cfi-js/cfi_runtime_errors","cfi-js/cfi_instructions","cfi-js/cfi_interpreter","cfi-js/cfi_generator","cfi-js/cfi_API","epubCfi"]}});

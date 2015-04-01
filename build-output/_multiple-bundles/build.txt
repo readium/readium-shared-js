@@ -1,11 +1,13 @@
 
 readium-cfi-js.js
 ----------------
-cfi-parser.js
-cfi-runtime-errors.js
-cfi-instructions.js
-cfi-interpreter.js
-cfi-generator.js
+cfi_parser_gen.js
+../../readium-cfi-js/build-config/../js//cfi_parser.js
+../../readium-cfi-js/build-config/../js//cfi_runtime_errors.js
+../../readium-cfi-js/build-config/../js//cfi_instructions.js
+../../readium-cfi-js/build-config/../js//cfi_interpreter.js
+../../readium-cfi-js/build-config/../js//cfi_generator.js
+../../readium-cfi-js/build-config/../js//cfi_API.js
 readium-cfi-js.js
 epubCfi.js
 

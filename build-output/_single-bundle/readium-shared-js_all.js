@@ -1875,12 +1875,29 @@ EPUBcfiParser = (function() {
   };
 })();
 
-define("cfi-parser", (function (global) {
+define("cfi_parser_gen", (function (global) {
     return function () {
         var ret, fn;
         return ret || global.EPUBcfiParser;
     };
 }(this)));
+
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  
+//  Redistribution and use in source and binary forms, with or without modification, 
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this 
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice, 
+//  this list of conditions and the following disclaimer in the documentation and/or 
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be 
+//  used to endorse or promote products derived from this software without specific 
+//  prior written permission.
+
+define('cfi-js/cfi_parser',["cfi_parser_gen"], function (cfi_parser_gen) {
+return cfi_parser_gen;
+});
 
 /*!
  * jQuery JavaScript Library v2.1.3
@@ -11186,7 +11203,7 @@ CFIAssertionError: function (expectedAssertion, targetElementAssertion, message)
 if (typeof define == 'function' && typeof define.amd == 'object') {
     console.log("RequireJS ... cfi_errors");
     
-    define('cfi-runtime-errors',[],
+    define('cfi-js/cfi_runtime_errors',[],
     function () {
         return obj;
     });
@@ -11573,7 +11590,7 @@ return obj;
 if (typeof define == 'function' && typeof define.amd == 'object') {
     console.log("RequireJS ... cfi_instructions");
     
-    define('cfi-instructions',['jquery', 'cfi-runtime-errors'],
+    define('cfi-js/cfi_instructions',['jquery', './cfi_runtime_errors'],
     function ($, cfiRuntimeErrors) {
         return init($, cfiRuntimeErrors);
     });
@@ -11998,7 +12015,7 @@ return obj;
 if (typeof define == 'function' && typeof define.amd == 'object') {
     console.log("RequireJS ... cfi_interpreter");
     
-    define('cfi-interpreter',['jquery', 'cfi-parser', 'cfi-instructions', 'cfi-runtime-errors'],
+    define('cfi-js/cfi_interpreter',['jquery', './cfi_parser', './cfi_instructions', './cfi_runtime_errors'],
     function ($, cfiParser, cfiInstructions, cfiRuntimeErrors) {
         return init($, cfiParser, cfiInstructions, cfiRuntimeErrors);
     });
@@ -12473,7 +12490,7 @@ return obj;
 if (typeof define == 'function' && typeof define.amd == 'object') {
     console.log("RequireJS ... cfi_generator");
     
-    define('cfi-generator',['jquery', 'cfi-instructions', 'cfi-runtime-errors'],
+    define('cfi-js/cfi_generator',['jquery', './cfi_instructions', './cfi_runtime_errors'],
     function ($, cfiInstructions, cfiRuntimeErrors) {
         return init($, cfiInstructions, cfiRuntimeErrors);
     });
@@ -12598,15 +12615,15 @@ var init = function(cfiParser, cfiInterpreter, cfiInstructions, cfiRuntimeErrors
 
 
 if (typeof define == 'function' && typeof define.amd == 'object') {
-    console.log("RequireJS ... readium-cfi-js");
+    console.log("RequireJS ... cfi_API");
     
-    define('readium-cfi-js',['cfi-parser', 'cfi-interpreter', 'cfi-instructions', 'cfi-runtime-errors', 'cfi-generator'],
+    define('cfi-js/cfi_API',['./cfi_parser', './cfi_interpreter', './cfi_instructions', './cfi_runtime_errors', './cfi_generator'],
     function (cfiParser, cfiInterpreter, cfiInstructions, cfiRuntimeErrors, cfiGenerator) {
         
         return init(cfiParser, cfiInterpreter, cfiInstructions, cfiRuntimeErrors, cfiGenerator);
     });
 } else {
-    console.log("!RequireJS ... readium-cfi-js");
+    console.log("!RequireJS ... cfi_API");
     
     if (!global["EPUBcfi"]) {
         throw new Error("EPUBcfi not initialised on global object?! (window or this context)");
@@ -12627,7 +12644,25 @@ if (typeof define == 'function' && typeof define.amd == 'object') {
 })(typeof window !== "undefined" ? window : this);
 
 
-console.log("readium-cfi-js ...");
+define('cfi-js', ['cfi-js/cfi_API'], function (main) { return main; });
+
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  
+//  Redistribution and use in source and binary forms, with or without modification, 
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this 
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice, 
+//  this list of conditions and the following disclaimer in the documentation and/or 
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be 
+//  used to endorse or promote products derived from this software without specific 
+//  prior written permission.
+
+define('readium-cfi-js',['cfi-js'], function (cfi) {
+return cfi;
+});
+
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
 //  
 //  Redistribution and use in source and binary forms, with or without modification, 

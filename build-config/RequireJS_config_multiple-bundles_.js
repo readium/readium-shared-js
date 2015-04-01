@@ -36,12 +36,6 @@ require.config({
                 + "../plugins",
                 
             main: "example"
-        },
-        {
-            name: "readium-cfi-js_baseUrl",
-            location: "../" +
-                process._readium.path__readium_shared_js + "/build-config/" + process._readium.baseUrl__readium_shared_js + "/"
-                + "../readium-cfi-js/js"
         }
     ],
     
