@@ -44,12 +44,8 @@
     "opener": "latest"
   },
   "devDependencies": {
-    "requirejs": "latest",
-    "requirejs-text": "latest",
-    "almond": "latest",
     "backbone": "latest",
     "underscore": "latest",
-    "jquery": "latest",
     "URIjs": "latest",
     "jquerySizes": "bramstein/jsizes",
     "eventemitter3": "latest",

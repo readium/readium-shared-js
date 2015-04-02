@@ -53,9 +53,6 @@ require.config({
         
         // ------ NPM MODULEs
         
-        // jquery:
-        //     process._RJS_rootDir(1) + '/node_modules/jquery/dist/jquery',
-        
         backbone:
             process._RJS_rootDir(1) + '/node_modules/backbone/backbone',
         

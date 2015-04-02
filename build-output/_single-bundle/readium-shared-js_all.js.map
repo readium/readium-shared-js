@@ -2,7 +2,7 @@
   "version": 3,
   "file": "C:/Users/Daniel/GitHub/readium-js-viewer/readium-js/readium-shared-js/build-output/_single-bundle/readium-shared-js_all.js",
   "sources": [
-    "../../node_modules/almond/almond.js",
+    "../../readium-cfi-js/node_modules/almond/almond.js",
     "cfi_parser_gen.js",
     "cfi_parser.js",
     "../../readium-cfi-js/node_modules/jquery/dist/jquery.js",

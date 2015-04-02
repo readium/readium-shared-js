@@ -95,17 +95,17 @@ dependencies:
 #####################################################################
 devDependencies:
 
-    requirejs: "latest"
+#    requirejs: "latest"
 
-    "requirejs-text": "latest"
+#    almond: "latest"
     
-    almond: "latest"
+#    "requirejs-text": "latest"
     
+#    jquery: "latest"
+
     backbone: "latest"
 
     underscore: "latest"
-
-    jquery: "latest"
 
     URIjs: "latest"
 

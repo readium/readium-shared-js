@@ -18,12 +18,6 @@ require.config({
     // relative to this config file (not baseUrl)
     dir: "../build-output/_multiple-bundles",
     
-    // paths:
-    // {
-    //     RequireJS:
-    //        process._RJS_rootDir(1) + '/node_modules/requirejs/require'
-    // },
-    
     modules:
     [
         {
