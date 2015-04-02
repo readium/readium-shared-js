@@ -31,9 +31,13 @@ See license.txt ( https://github.com/readium/readium-shared-js/blob/develop/lice
 
 **Initial setup:**
 
+* `git submodule update --init --recursive` to ensure that the readium-cfi-js dependency is initialised
+* `npm run prepare` (to perform required preliminary tasks, like patching code before building)
+
+Note that the above command executes the following:
+
 * `npm install` (to download dependencies defined in `package.json` ... note that the `--production` option can be used to avoid downloading development dependencies, for example when testing only the pre-built `build-output` folder contents)
 * `npm update` (to make sure that the dependency tree is up to date)
-* `npm run prepare` (to perform required preliminary tasks, like patching code before building)
 
 **Typical workflow:**
 
