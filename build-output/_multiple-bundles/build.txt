@@ -2,12 +2,12 @@
 readium-cfi-js.js
 ----------------
 cfi_parser_gen.js
-../../readium-cfi-js/build-config/../js//cfi_parser.js
-../../readium-cfi-js/build-config/../js//cfi_runtime_errors.js
-../../readium-cfi-js/build-config/../js//cfi_instructions.js
-../../readium-cfi-js/build-config/../js//cfi_interpreter.js
-../../readium-cfi-js/build-config/../js//cfi_generator.js
-../../readium-cfi-js/build-config/../js//cfi_API.js
+cfi_parser.js
+cfi_runtime_errors.js
+cfi_instructions.js
+cfi_interpreter.js
+cfi_generator.js
+cfi_API.js
 readium-cfi-js.js
 epubCfi.js
 
@@ -33,15 +33,15 @@ readium-external-libs.js
 
 readium-plugin-example.js
 ----------------
-../../build-config/../js/../plugins/example.js
+../../plugins/example.js
 readium-plugin-example.js
 
 readium-plugin-annotations.js
 ----------------
 backbone.js
-../../build-config/../js/../plugins/annotations/annotations_module.js
-../../build-config/../js/../plugins/annotations/annotations_manager.js
-../../build-config/../js/../plugins/annotations/main.js
+../../plugins/annotations/annotations_module.js
+../../plugins/annotations/annotations_manager.js
+../../plugins/annotations/main.js
 readium-plugin-annotations.js
 
 readium-shared-js.js

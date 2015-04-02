@@ -11,60 +11,55 @@
 //  used to endorse or promote products derived from this software without specific 
 //  prior written permission.
 
-(
-function(thiz){
+require.config({
     
-    //console.log(thiz);
-    console.log(process.cwd());
+    baseUrl: process._RJS_baseUrl(1),
     
-    process._readium = {};
+    // relative to this config file (not baseUrl)
+    dir: "../build-output/_multiple-bundles",
     
+    // paths:
+    // {
+    //     RequireJS: '../../node_modules/requirejs/require'
+    // },
     
-    process._readium.baseUrl__readium_shared_js = "../js";
-    
-    process._readium.path__readium_shared_js = "..";
-    
-    
-    process._readium.baseUrl__readium_cfi_js = "../gen";
-    
-    process._readium.path__readium_cfi_js = process._readium.path__readium_shared_js + "/readium-cfi-js";
-    
-    
-    return true;
-}(this)
-?
-{
-    baseUrl: process._readium.baseUrl__readium_shared_js,
-    
-    mainConfigFile: [
-    "../readium-cfi-js/build-config/RequireJS_config_multiple-bundles_.js",
-    "../readium-cfi-js/build-config/RequireJS_config_common.js",
-    
-    "RequireJS_config_multiple-bundles_.js",
-    "RequireJS_config_common.js"
+    packages: [
+        {
+            name: "plugin-annotations",
+            location: "../../plugins/annotations",
+                
+            main: "main"
+        },
+        {
+            name: "plugin-example",
+            location: "../../plugins",
+                
+            main: "example"
+        }
     ],
     
-    // MUST be in root config file because of access to context-dependent 'config'
-    onModuleBundleComplete: function(data) {
+    modules:
+    [
+        {
+            name: "readium-external-libs"
+        },
         
-        //console.log(process.cwd());
-        var filePath = process.cwd() + "/build-config/RequireJS_config_multiple-bundles_onModuleBundleComplete.js";
+        {
+            name: "readium-plugin-example",
+            exclude: ['globals', 'plugins-controller', 'readium-external-libs', 'readium-shared-js']
+        },
         
-        var fs = nodeRequire("fs");
-        fs.readFile(
-            filePath,
-            {encoding: 'utf-8'},
-            function(err, fileContents) {
-                if (!err) {
-                    var func = eval("("+fileContents+")");
-                    return func(data);
-                } else {
-                    console.log(err);
-                }
-            }
-        );
-    }
-}
-:
-function(){console.log("NOOP");return {};}()
-)
+        {
+            name: "readium-plugin-annotations",
+            exclude: ['globals', 'plugins-controller', 'readium-external-libs', 'readium-shared-js'],
+            insertRequire: ["readium-plugin-annotations"]
+        },
+        
+        {
+            name: "readium-shared-js",
+            exclude: ['readium-external-libs', 'readium-cfi-js'],
+            include: ['globals', 'plugins-controller'],
+            insertRequire: ["globalsSetup"]
+        }
+    ]
+});

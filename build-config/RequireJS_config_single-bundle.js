@@ -11,60 +11,36 @@
 //  used to endorse or promote products derived from this software without specific 
 //  prior written permission.
 
-(
-function(thiz){
+require.config({
     
-    //console.log(thiz);
-    console.log(process.cwd());
+    baseUrl: process._RJS_baseUrl(1),
     
-    process._readium = {};
+    name: "readium-shared-js_all",
     
+    include: ["readium-shared-js", "readium-plugin-example", "readium-plugin-annotations"],
     
-    process._readium.baseUrl__readium_shared_js = "../js";
+    // relative to this config file (not baseUrl)
+    out: "../build-output/_single-bundle/readium-shared-js_all.js",
     
-    process._readium.path__readium_shared_js = "..";
+    insertRequire: ["globalsSetup", "readium-plugin-annotations"],
     
+    paths:
+    {
+        "readium-shared-js_all": '../../node_modules/almond/almond'
+    },
     
-    process._readium.baseUrl__readium_cfi_js = "../gen";
-    
-    process._readium.path__readium_cfi_js = "../readium-cfi-js";
-    
-    
-    return true;
-}(this)
-?
-{
-    baseUrl: process._readium.baseUrl__readium_shared_js,
-    
-    mainConfigFile: [
-    "../readium-cfi-js/build-config/RequireJS_config_single-bundle_.js",
-    "../readium-cfi-js/build-config/RequireJS_config_common.js",
-    
-    "RequireJS_config_single-bundle_.js",
-    "RequireJS_config_common.js"
-    ],
-    
-    // MUST be in root config file because of access to context-dependent 'config'
-    onModuleBundleComplete: function(data) {
-        
-        //console.log(process.cwd());
-        var filePath = process.cwd() + "/build-config/RequireJS_config_single-bundle_onModuleBundleComplete.js";
-        
-        var fs = nodeRequire("fs");
-        fs.readFile(
-            filePath,
-            {encoding: 'utf-8'},
-            function(err, fileContents) {
-                if (!err) {
-                    var func = eval("("+fileContents+")");
-                    return func(data);
-                } else {
-                    console.log(err);
-                }
-            }
-        );
-    }
-}
-:
-function(){console.log("NOOP");return {};}()
-)
+    packages: [
+        {
+            name: "plugin-annotations",
+            location: "../../plugins/annotations",
+                
+            main: "main"
+        },
+        {
+            name: "plugin-example",
+            location: "../../plugins",
+                
+            main: "example"
+        }
+    ]
+});

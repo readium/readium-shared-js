@@ -161,11 +161,14 @@ scripts:
     'prepare': '
         
         npm run
+            prepare:submodule
+        &&
+        npm run
+            prepare:dependencies
+        &&
+        npm run
             prepare:patch
     '
-#        &&
-#        npm run
-#            prepare:dependencies
 
 #=====================
     'prepare:dependencies': '
@@ -175,6 +178,18 @@ scripts:
         npm update
     '
 
+#=====================
+    'prepare:submodule': '
+        
+        cd readium-cfi-js
+        &&
+        npm run prepare
+        &&
+        cd ..
+        &&
+        ls
+    '
+    
 #=====================
     'prepare:patch': '
         
@@ -228,6 +243,12 @@ scripts:
 #    '
 
 #=====================
+    'postbuild:scripts': '
+    
+        rimraf build-output/_SOURCES
+    '
+
+#=====================
     'build:scripts': '
     
         npm run
@@ -239,18 +260,22 @@ scripts:
 
 #=====================
     'build:scripts:multiple': '
-    
         node node_modules/requirejs/bin/r.js
              -o
-             build-config/RequireJS_config_multiple-bundles.js
+             readium-cfi-js/build-config/RequireJS_config.js
+             --rjs_bundle=multiple
+             \"--rjs_mainConfigFile=RequireJS_config_multiple-bundles.js,RequireJS_config_common.js,../../build-config/RequireJS_config_multiple-bundles.js,../../build-config/RequireJS_config_common.js\"
+             \"--rjs_sources=/js,/readium-cfi-js/js,/readium-cfi-js/gen\"
     '
-    
+
 #=====================
     'build:scripts:single': '
-    
         node node_modules/requirejs/bin/r.js
              -o
-             build-config/RequireJS_config_single-bundle.js
+             readium-cfi-js/build-config/RequireJS_config.js
+             --rjs_bundle=single
+             \"--rjs_mainConfigFile=RequireJS_config_single-bundle.js,RequireJS_config_common.js,../../build-config/RequireJS_config_single-bundle.js,../../build-config/RequireJS_config_common.js\"
+             \"--rjs_sources=/js,/readium-cfi-js/js,/readium-cfi-js/gen\"
     '
 
 #=====================
