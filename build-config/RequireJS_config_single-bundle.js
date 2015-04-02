@@ -26,21 +26,7 @@ require.config({
     
     paths:
     {
-        "readium-shared-js_all": '../../node_modules/almond/almond'
-    },
-    
-    packages: [
-        {
-            name: "plugin-annotations",
-            location: "../../plugins/annotations",
-                
-            main: "main"
-        },
-        {
-            name: "plugin-example",
-            location: "../../plugins",
-                
-            main: "example"
-        }
-    ]
+        "readium-shared-js_all":
+            process._RJS_rootDir(1) + '/node_modules/almond/almond'
+    }
 });

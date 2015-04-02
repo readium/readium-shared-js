@@ -15,19 +15,36 @@ require.config({
     
     baseUrl: process._RJS_baseUrl(1),
     
+    packages: [
+        {
+            name: "plugin-annotations",
+            location:
+                process._RJS_rootDir(1) + '/plugins/annotations',
+                
+            main: "main"
+        },
+        {
+            name: "plugin-example",
+            location:
+                process._RJS_rootDir(1) + '/plugins',
+                
+            main: "example"
+        }
+    ],
+    
     paths:
     {
         "readium-shared-js":
-            '../../build-config/readium-shared-js',
+            process._RJS_rootDir(1) + '/build-config/readium-shared-js',
             
         'readium-external-libs':
-            '../../build-config/readium-external-libs',
+            process._RJS_rootDir(1) + '/build-config/readium-external-libs',
         
         "readium-plugin-example":
-            '../../build-config/readium-plugin-example',
+            process._RJS_rootDir(1) + '/build-config/readium-plugin-example',
             
         "readium-plugin-annotations":
-            '../../build-config/readium-plugin-annotations',
+            process._RJS_rootDir(1) + '/build-config/readium-plugin-annotations',
         
         
         
@@ -37,36 +54,35 @@ require.config({
         // ------ NPM MODULEs
         
         // jquery:
-        //     process._RJS_Path_RelBaseUrl__readium_cfi_js_RootDir
-        //     + '/node_modules/jquery/dist/jquery',
+        //     process._RJS_rootDir(1) + '/node_modules/jquery/dist/jquery',
         
         backbone:
-            '../../node_modules/backbone/backbone',
+            process._RJS_rootDir(1) + '/node_modules/backbone/backbone',
         
         underscore:
-            '../../node_modules/underscore/underscore',
+            process._RJS_rootDir(1) + '/node_modules/underscore/underscore',
 
         URIjs:
-            '../../node_modules/URIjs/src/URI',
+            process._RJS_rootDir(1) + '/node_modules/URIjs/src/URI',
             
         punycode:
-            '../../node_modules/URIjs/src/punycode',
+            process._RJS_rootDir(1) + '/node_modules/URIjs/src/punycode',
             
         SecondLevelDomains:
-            '../../node_modules/URIjs/src/SecondLevelDomains',
+            process._RJS_rootDir(1) + '/node_modules/URIjs/src/SecondLevelDomains',
             
         IPv6:
-            '../../node_modules/URIjs/src/IPv6',
+            process._RJS_rootDir(1) + '/node_modules/URIjs/src/IPv6',
             
         jquerySizes:
-            '../../node_modules/jquery-sizes/lib/jquery.sizes',
+            process._RJS_rootDir(1) + '/node_modules/jquery-sizes/lib/jquery.sizes',
 
         domReady:
-            '../../node_modules/domReady/domReady',
+            process._RJS_rootDir(1) + '/node_modules/domReady/domReady',
 
         //eventEmitter: '../node_modules/eventemitter3/index',
         eventEmitter:
-            '../../node_modules/eventemitter3/_rjs/index',
+            process._RJS_rootDir(1) + '/node_modules/eventemitter3/_rjs/index',
         //see pre-build npm task to wrap CommonJS into AMD: define(function(require, exports, module) { .... });
 
         
@@ -74,25 +90,25 @@ require.config({
         // ------ LIBs
         
         'console_shim':
-            '../../lib/console_shim',
+            process._RJS_rootDir(1) + '/lib/console_shim',
         
         rangy:
-            '../../lib/rangy/rangy',
+            process._RJS_rootDir(1) + '/lib/rangy/rangy',
             
         "rangy-core":
-            '../../lib/rangy/rangy-core',
+            process._RJS_rootDir(1) + '/lib/rangy/rangy-core',
             
         "rangy-textrange":
-            '../../lib/rangy/rangy-textrange',
+            process._RJS_rootDir(1) + '/lib/rangy/rangy-textrange',
             
         "rangy-highlighter":
-            '../../lib/rangy/rangy-highlighter',
+            process._RJS_rootDir(1) + '/lib/rangy/rangy-highlighter',
             
         "rangy-cssclassapplier":
-            '../../lib/rangy/rangy-cssclassapplier',
+            process._RJS_rootDir(1) + '/lib/rangy/rangy-cssclassapplier',
             
         "rangy-position":
-            '../../lib/rangy/rangy-position'
+            process._RJS_rootDir(1) + '/lib/rangy/rangy-position'
     },
 
     shim:

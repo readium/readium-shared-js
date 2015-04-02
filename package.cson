@@ -260,7 +260,7 @@ scripts:
 
 #=====================
     'build:scripts:multiple': '
-        node node_modules/requirejs/bin/r.js
+        node readium-cfi-js/node_modules/requirejs/bin/r.js
              -o
              readium-cfi-js/build-config/RequireJS_config.js
              --rjs_bundle=multiple
@@ -270,7 +270,7 @@ scripts:
 
 #=====================
     'build:scripts:single': '
-        node node_modules/requirejs/bin/r.js
+        node readium-cfi-js/node_modules/requirejs/bin/r.js
              -o
              readium-cfi-js/build-config/RequireJS_config.js
              --rjs_bundle=single

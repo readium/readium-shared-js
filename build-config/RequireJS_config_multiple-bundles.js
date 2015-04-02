@@ -20,23 +20,9 @@ require.config({
     
     // paths:
     // {
-    //     RequireJS: '../../node_modules/requirejs/require'
+    //     RequireJS:
+    //        process._RJS_rootDir(1) + '/node_modules/requirejs/require'
     // },
-    
-    packages: [
-        {
-            name: "plugin-annotations",
-            location: "../../plugins/annotations",
-                
-            main: "main"
-        },
-        {
-            name: "plugin-example",
-            location: "../../plugins",
-                
-            main: "example"
-        }
-    ],
     
     modules:
     [
