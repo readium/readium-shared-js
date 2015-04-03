@@ -31,7 +31,8 @@ See license.txt ( https://github.com/readium/readium-shared-js/blob/develop/lice
 
 **Initial setup:**
 
-* `git submodule update --init --recursive` to ensure that the readium-cfi-js dependency is initialised
+
+* `git submodule update --init --recursive` to ensure that the readium-shared-js chain of dependencies is initialised (readium-cfi-js)
 * `npm run prepare` (to perform required preliminary tasks, like patching code before building)
 
 Note that the above command executes the following:
@@ -105,6 +106,7 @@ The `_multiple-bundles` folder contains several Javascript bundles (and their re
 
 
 * `readium-external-libs.js`: aggregated library dependencies (e.g. Underscore, jQuery, etc.)
+* `readium-cfi-js.js`: Readium CFI library (basically, equivalent to the `js` folder of the readium-cfi-js submodule)
 * `readium-shared-js.js`: Readium-specific code (basically, equivalent to the `js` folder)
 * `readium-plugin-example.js`: simple plugin demo
 * `readium-plugin-annotations.js`: the annotation plugin (DOM selection + highlight), which bundle actually contains the "Backbone" library, as this dependency is not already included in the "external libs" bundle.
@@ -123,6 +125,9 @@ Usage is demonstrated by the HTML file in the `build-output-usage-example` folde
 
 
 <!-- individual bundles: -->
+
+<!-- readium CFI library -->
+<script type="text/javascript" src="../build-output/_multiple-bundles/readium-cfi-js.js"> </script>
 
 <!-- external libraries -->
 <script type="text/javascript" src="../build-output/_multiple-bundles/readium-external-libs.js"> </script>
@@ -160,6 +165,8 @@ requirejs.config({
     baseUrl: '../build-output/_multiple-bundles'
 });
 </script>
+
+<script type="text/javascript" src="../build-output/_multiple-bundles/readium-cfi-js.js.bundles.js"> </script>
 
 <script type="text/javascript" src="../build-output/_multiple-bundles/readium-external-libs.js.bundles.js"> </script>
 
