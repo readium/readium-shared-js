@@ -33,7 +33,7 @@
 
 name: "readium-shared-js"
 
-version: "0.0.0"
+version: "0.17.0"
 
 description: "Readium - shared javascript module"
 
