@@ -264,7 +264,6 @@ scripts:
              -o
              readium-cfi-js/build-config/RequireJS_config.js
              --rjs_bundle=multiple
-             \"--rjs_sources=/js,/readium-cfi-js/js,/readium-cfi-js/gen\"
     '
 
 #=====================
@@ -273,7 +272,6 @@ scripts:
              -o
              readium-cfi-js/build-config/RequireJS_config.js
              --rjs_bundle=single
-             \"--rjs_sources=/js,/readium-cfi-js/js,/readium-cfi-js/gen\"
     '
 
 #=====================
