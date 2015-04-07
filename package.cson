@@ -264,7 +264,6 @@ scripts:
              -o
              readium-cfi-js/build-config/RequireJS_config.js
              --rjs_bundle=multiple
-             \"--rjs_mainConfigFile=RequireJS_config_multiple-bundles.js,RequireJS_config_common.js,../../build-config/RequireJS_config_multiple-bundles.js,../../build-config/RequireJS_config_common.js\"
              \"--rjs_sources=/js,/readium-cfi-js/js,/readium-cfi-js/gen\"
     '
 
@@ -274,7 +273,6 @@ scripts:
              -o
              readium-cfi-js/build-config/RequireJS_config.js
              --rjs_bundle=single
-             \"--rjs_mainConfigFile=RequireJS_config_single-bundle.js,RequireJS_config_common.js,../../build-config/RequireJS_config_single-bundle.js,../../build-config/RequireJS_config_common.js\"
              \"--rjs_sources=/js,/readium-cfi-js/js,/readium-cfi-js/gen\"
     '
 
