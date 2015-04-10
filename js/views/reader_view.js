@@ -1153,6 +1153,12 @@ ReadiumSDK.Views.ReaderView = function(options) {
         if (_resizeMOWasPlaying) self.playMediaOverlay();
     }
 
+    
+    /**
+     * Updates reader view based on the viewport resized
+     *
+     * @fires ReadiumSDK.Events.VIEWPORT_RESIZED
+     */
     this.handleViewportResize = function(bookmarkToRestore)
     {
         if (!_currentView) return;
@@ -1173,6 +1179,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
         {
             _currentView.onViewportResize();
         }
+        
+        self.trigger(ReadiumSDK.Events.VIEWPORT_RESIZED);
     };
 
     /**

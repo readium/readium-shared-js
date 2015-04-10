@@ -126,7 +126,11 @@ ReadiumSDK = {
         /**
          * @event
          */
-        MEDIA_OVERLAY_TTS_STOP: "MediaOverlayTTSStop"
+        MEDIA_OVERLAY_TTS_STOP: "MediaOverlayTTSStop",
+        /**
+         * @event
+         */
+        VIEWPORT_RESIZED: "ViewportResized"
     },
     /**
      * Internal Events
