@@ -547,11 +547,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
                 var spineItem = _spine.getItemById(bookMark.idref);
                 
-                initViewForItem(spineItem, function(isViewChanged){
-
-                    if(!isViewChanged) {
-                        _currentView.setViewSettings(_viewerSettings);
-                    }
+                initViewForItem(spineItem, function(isViewChanged) {
 
                     self.openSpineItemElementCfi(bookMark.idref, bookMark.contentCFI, self);
 
@@ -730,11 +726,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
     function openPage(pageRequest, dir) {
 
         initViewForItem(pageRequest.spineItem, function(isViewChanged){
-
-            if(!isViewChanged) {
-                _currentView.setViewSettings(_viewerSettings);
-            }
-
             _currentView.openPage(pageRequest, dir);
         });
     }
@@ -1166,7 +1157,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
             initViewForItem(spineItem, function(isViewChanged)
             {
                 self.openSpineItemElementCfi(bookMark.idref, bookMark.contentCFI, self);
-                return;
+                _currentView.onViewportResize();
             });
         }
         else
