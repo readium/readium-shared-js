@@ -792,16 +792,18 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
 
         if(_currentSpineItem != spineItem) {
 
+            var prevSpineItem = _currentSpineItem;
             _currentSpineItem = spineItem;
             var src = _spine.package.resolveRelativeUrl(spineItem.href);
 
-            //if (spineItem && spineItem.isFixedLayout())
-            if (true) // both fixed layout and reflowable documents need hiding due to flashing during layout/rendering
-            {
-                //hide iframe until content is scaled
-                self.hideIFrame();
+            // both fixed layout and reflowable documents need hiding due to flashing during layout/rendering
+            //hide iframe until content is scaled
+            self.hideIFrame();
+
+            if (prevSpineItem) {
+                self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_UNLOADED, _$iframe, prevSpineItem);
             }
-            
+
             self.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPEN_START, _$iframe, _currentSpineItem);
             _iframeLoader.loadIframe(_$iframe[0], src, function(success){
 
