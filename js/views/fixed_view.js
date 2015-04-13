@@ -235,8 +235,16 @@ ReadiumSDK.Views.FixedView = function(options, reader){
 
         updateContentMetaSize();
         resizeBook();
-        
-        self.trigger(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
+        window.setTimeout(function () {
+            self.trigger(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, {
+                paginationInfo: self.getPaginationInfo(),
+                initiator: initiator,
+                spineItem: paginationRequest_spineItem,
+                elementId: paginationRequest_elementId
+            });
+        }, 60);
+        //this delay of 60ms is to ensure that it triggers
+        // after any other 10-50ms timers that defer the pagination process in OnePageView
     }
 
     this.onViewportResize = function() {
