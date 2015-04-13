@@ -71,8 +71,13 @@ ReadiumSDK.Views.FixedView = function(options, reader){
         pageView.on(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPEN_START, function($iframe, spineItem) {
 
             self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
-        });   
-    
+        });
+
+        pageView.on(ReadiumSDK.Events.CONTENT_DOCUMENT_UNLOADED, function($iframe, spineItem) {
+
+            self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_UNLOADED, $iframe, spineItem);
+        });
+
         return pageView;
     }
 

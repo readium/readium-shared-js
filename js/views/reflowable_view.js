@@ -142,7 +142,6 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         updateColumnGap();
         
         updateViewportSize();
-        updatePagination();
     };
 
     function renderIframe() {
@@ -176,6 +175,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
 
             //create & append iframe to container frame
             renderIframe();
+            self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_UNLOADED, _$iframe, _currentSpineItem );
 
             _paginationInfo.pageOffset = 0;
             _paginationInfo.currentSpreadIndex = 0;
@@ -316,36 +316,44 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         // _$epubHtml.css("background-color", '#b0c4de');
         //
         // ////
-        
-        self.applyBookStyles();
+
+        applyStyles();
+        applyBookStyles();
+
         resizeImages();
 
         updateHtmlFontSize();
         updateColumnGap();
 
-
-        self.applyStyles();
+        updateViewportSize();
+        updatePagination();
     }
 
-    this.applyStyles = function() {
-
+    function applyStyles() {
         ReadiumSDK.Helpers.setStyles(_userStyles.getStyles(), _$el.parent());
 
         //because left, top, bottom, right setting ignores padding of parent container
         //we have to take it to account manually
         var elementMargins = ReadiumSDK.Helpers.Margins.fromElement(_$el);
         setFrameSizesToRectangle(elementMargins.padding);
+    }
 
-
+    this.applyStyles = function() {
+        applyStyles();
         updateViewportSize();
         updatePagination();
     };
 
-    this.applyBookStyles = function() {
-
+    function applyBookStyles() {
         if(_$epubHtml) {
             ReadiumSDK.Helpers.setStyles(_bookStyles.getStyles(), _$epubHtml);
         }
+    }
+
+    this.applyBookStyles = function() {
+        applyBookStyles();
+        updateViewportSize();
+        updatePagination();
     };
 
     function openDeferredElement() {
@@ -618,28 +626,21 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         _$htmlBody.css('margin', 0);
         _$htmlBody.css('padding', 0);
 
-        var spacing = 0;
-        try
-        {
-            spacing = parseInt(_$htmlBody.css('padding-top')) + parseInt(_$htmlBody.css('border-top-width')) + parseInt(_$htmlBody.css('border-bottom-width'));
-        }
-        catch(err)
-        {
-            
-        }
-        // Needed for Firefox, otherwise content shrinks vertically, resulting in scrollWidth accomodating more columns than necessary
-        //_$htmlBody.css("min-height", _lastViewPortSize.height-spacing-9 + "px");
-        _$htmlBody.css("min-height", "50%");
-        _$htmlBody.css("max-height", _lastViewPortSize.height-spacing + "px");
-
         _paginationInfo.rightToLeft = _spine.isRightToLeft();
 
         _paginationInfo.columnWidth = Math.round(((_htmlBodyIsVerticalWritingMode ? _lastViewPortSize.height : _lastViewPortSize.width) - _paginationInfo.columnGap * (_paginationInfo.visibleColumnCount - 1)) / _paginationInfo.visibleColumnCount);
 
-        _$epubHtml.css("width", (_htmlBodyIsVerticalWritingMode ? _lastViewPortSize.width : _paginationInfo.columnWidth) + "px");
+        var useColumnCountNotWidth = _paginationInfo.visibleColumnCount > 1; // column-count == 1 does not work in Chrome, and is not needed anyway (HTML width is full viewport width, no Firefox video flickering)
+        if (useColumnCountNotWidth) {
+            _$epubHtml.css("width", _lastViewPortSize.width + "px");
+            _$epubHtml.css("column-count", _paginationInfo.visibleColumnCount);
+        } else {
+            _$epubHtml.css("width", (_htmlBodyIsVerticalWritingMode ? _lastViewPortSize.width : _paginationInfo.columnWidth) + "px");
+            _$epubHtml.css("column-width", _paginationInfo.columnWidth + "px");
+        }
 
-        _$epubHtml.css("column-width", _paginationInfo.columnWidth + "px");
-
+        _$epubHtml.css("column-fill", "auto");
+        
         _$epubHtml.css({left: "0", right: "0", top: "0"});
         
         ReadiumSDK.Helpers.triggerLayout(_$iframe);

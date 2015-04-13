@@ -237,6 +237,10 @@ ReadiumSDK.Views.ReaderView = function(options) {
             self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
         });
 
+        _currentView.on(ReadiumSDK.Events.CONTENT_DOCUMENT_UNLOADED, function ($iframe, spineItem) {
+            self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_UNLOADED, $iframe, spineItem);
+        });
+
         _currentView.on(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, function( pageChangeData ){
 
             //we call on onPageChanged explicitly instead of subscribing to the ReadiumSDK.Events.PAGINATION_CHANGED by
@@ -547,11 +551,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
                 var spineItem = _spine.getItemById(bookMark.idref);
                 
-                initViewForItem(spineItem, function(isViewChanged){
-
-                    if(!isViewChanged) {
-                        _currentView.setViewSettings(_viewerSettings);
-                    }
+                initViewForItem(spineItem, function(isViewChanged) {
 
                     self.openSpineItemElementCfi(bookMark.idref, bookMark.contentCFI, self);
 
@@ -730,11 +730,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
     function openPage(pageRequest, dir) {
 
         initViewForItem(pageRequest.spineItem, function(isViewChanged){
-
-            if(!isViewChanged) {
-                _currentView.setViewSettings(_viewerSettings);
-            }
-
             _currentView.openPage(pageRequest, dir);
         });
     }
@@ -1166,7 +1161,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
             initViewForItem(spineItem, function(isViewChanged)
             {
                 self.openSpineItemElementCfi(bookMark.idref, bookMark.contentCFI, self);
-                return;
+                _currentView.onViewportResize();
             });
         }
         else
