@@ -787,6 +787,16 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
         }
     }
 
+    function onUnload(spineItem) {
+        if (spineItem) {
+            self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_UNLOADED, _$iframe, spineItem);
+        }
+    }
+
+    this.onUnload = function () {
+        onUnload(_currentSpineItem);
+    };
+
     //expected callback signature: function(success, $iframe, spineItem, isNewlyLoaded, context)
     this.loadSpineItem = function(spineItem, callback, context) {
 
@@ -800,9 +810,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             //hide iframe until content is scaled
             self.hideIFrame();
 
-            if (prevSpineItem) {
-                self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_UNLOADED, _$iframe, prevSpineItem);
-            }
+            onUnload(prevSpineItem);
 
             self.trigger(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPEN_START, _$iframe, _currentSpineItem);
             _iframeLoader.loadIframe(_$iframe[0], src, function(success){

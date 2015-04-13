@@ -603,6 +603,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
 
     function removePageView(pageView) {
 
+        pageView.onUnload();
         pageView.element().remove();
 
     }
