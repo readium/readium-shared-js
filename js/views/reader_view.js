@@ -237,6 +237,10 @@ ReadiumSDK.Views.ReaderView = function(options) {
             self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
         });
 
+        _currentView.on(ReadiumSDK.Events.CONTENT_DOCUMENT_UNLOADED, function ($iframe, spineItem) {
+            self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_UNLOADED, $iframe, spineItem);
+        });
+
         _currentView.on(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, function( pageChangeData ){
 
             //we call on onPageChanged explicitly instead of subscribing to the ReadiumSDK.Events.PAGINATION_CHANGED by

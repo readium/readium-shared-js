@@ -176,6 +176,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
 
             //create & append iframe to container frame
             renderIframe();
+            self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_UNLOADED, _$iframe, _currentSpineItem );
 
             _paginationInfo.pageOffset = 0;
             _paginationInfo.currentSpreadIndex = 0;
