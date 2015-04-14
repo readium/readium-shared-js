@@ -890,11 +890,19 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         self.openPage(openPageRequest);
     }
 
+    /**
+    * get spread index of current page
+    * @return {int} currentSpreadIndex
+    */
     this.getCurrentIndex = function() {
         return _paginationInfo.currentSpreadIndex;
     }
 
-    this.getSpreedPageCount = function() {
+    /**
+    * get spread page count of current page
+    * @return {int} currentSpreadIndex
+    */
+    this.getSpreadPageCount = function() {
         var count = _paginationInfo.columnCount/_paginationInfo.visibleColumnCount;
         return Math.ceil(count);
     };
