@@ -207,6 +207,17 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
     }
 
     function onIFrameLoad(success) {
+        if (!success) {
+            applyIFrameLoad(success);
+            return;
+        }
+        var fontLoader = new ReadiumSDK.Views.FontLoader(_$iframe);
+        fontLoader.waitForFonts(function () {
+            applyIFrameLoad(success);
+        });
+    }
+
+    function applyIFrameLoad(success) {
 
         _isWaitingFrameRender = false;
 
