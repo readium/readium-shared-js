@@ -35,10 +35,13 @@ ReadiumSDK.Views.FontLoader = function ($iframe, options) {
     var fontFamilyRules = [];
     _.each(styleSheets, function (styleSheet) {
         _.each(styleSheet.cssRules || styleSheet.rules, function (rule) {
-            var fontFamily = rule.style ? rule.style.fontFamily : null;
+            var fontFamily = null;
+            if (rule.style && (rule.style.getPropertyValue || rule.style.fontFamily)) {
+                fontFamily = rule.style.getPropertyValue("font-family") || rule.style.fontFamily;
+            }
             if (fontFamily) {
                 if (rule.type === CSSRule.FONT_FACE_RULE) {
-                    fontFamilies.push([fontFamily.replace(/(^\'|\'$)/g, '').replace(/\\(['"])/g, '$1'), fontFamily]);
+                    fontFamilies.push([fontFamily.replace(/(^['"]|['"]$)/g, '').replace(/\\(['"])/g, '$1'), fontFamily]);
                 } else {
                     fontFamilyRules.push(rule);
                 }
