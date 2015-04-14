@@ -1527,7 +1527,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     };
 
     /**
-    * get idref and spreedIndex of current spine item
+    * get idref and spreadIndex of current spine item
     * @return {object} idref, index
     */
     this.getPageInfo = function() {
@@ -1548,16 +1548,16 @@ ReadiumSDK.Views.ReaderView = function(options) {
     };
 
     /**
-    * get spreed page count of current spine item.
-    * @return {object} spreedPageCount
+    * get spread page count of current spine item.
+    * @return {object} spreadPageCount
     */
-    this.getSpreedPageCount = function() {
+    this.getSpreadPageCount = function() {
         var count = 1;
         if (!self.isCurrentViewFixedLayout()) {
-            count = _currentView.getSpreedPageCount();
+            count = _currentView.getSpreadPageCount();
         }
 
-        return JSON.stringify({spreedPageCount: count});
+        return JSON.stringify({spreadPageCount: count});
     };
 
     /**
@@ -1656,7 +1656,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
         var iframeTop = 0;
         var iframeLeft = 0;
         var scale = windowWidth / w;  // to fit the size of window
-        var currentViewScale = 1;     // the value is always 1 in case of reflowable
+        var currentViewScale = 1;     // if the layout is reflowable, the value is always 1
 
         if (self.isCurrentViewFixedLayout()) {
             currentViewScale = _currentView.getViewScale();

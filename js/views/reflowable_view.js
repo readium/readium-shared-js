@@ -902,7 +902,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
     * get spread page count of current page
     * @return {int} currentSpreadIndex
     */
-    this.getSpreedPageCount = function() {
+    this.getSpreadPageCount = function() {
         var count = _paginationInfo.columnCount/_paginationInfo.visibleColumnCount;
         return Math.ceil(count);
     };
