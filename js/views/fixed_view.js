@@ -666,6 +666,14 @@ ReadiumSDK.Views.FixedView = function(options, reader){
 
         //TODO: during zoom+pan, playing element might not actualy be visible
 
-    }
+    };
+
+    /**
+    * get meta size of current videw
+    * @return {object} meta_width, meta_height
+    */
+    this.getMetaSize = function() {
+        return {meta_width: _centerPageView.meta_width(), meta_height: _centerPageView.meta_height()}
+    };
 
 };

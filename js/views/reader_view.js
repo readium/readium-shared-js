@@ -57,6 +57,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     var _iframeLoader;
     var _$el;
     var _annotationsManager = new ReadiumSDK.Views.AnnotationsManager(self, options);
+    var _epubIframeMap = {};
     
     //We will call onViewportResize after user stopped resizing window
     var lazyResize = ReadiumSDK.Helpers.extendedThrottle(
@@ -1242,9 +1243,9 @@ ReadiumSDK.Views.ReaderView = function(options) {
         _iframeLoader.addIFrameEventListener(eventName, callback, context);
     };
 
-    var BackgroundAudioTrackManager = function()
+    var BackgroundAudioTrackManager = function(_epubIframeMap)
     {
-        var _spineItemIframeMap = {};
+        var _spineItemIframeMap = _epubIframeMap;
         var _wasPlaying = false;
     
         var _callback_playPause = undefined;
@@ -1537,12 +1538,9 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
         var lastOpenPage = paginationInfo.openPages[paginationInfo.openPages.length - 1];
         var currentSpineItem = _spine.getItemById(lastOpenPage.idref);
-        var desiredViewType = deduceDesiredViewType(currentSpineItem);
 
         var index = 0;
-        if (desiredViewType == ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED) {
-            index = 0;
-        } else {
+        if (!self.isCurrentViewFixedLayout()) {
             index = _currentView.getCurrentIndex();
         }
 
@@ -1554,27 +1552,245 @@ ReadiumSDK.Views.ReaderView = function(options) {
     * @return {object} spreedPageCount
     */
     this.getSpreedPageCount = function() {
-        var count = 0;
-        var paginationInfo = _currentView.getPaginationInfo();
-
-        if(paginationInfo.openPages.length == 0) {
-            return "";
-        }
-
-        var lastOpenPage = paginationInfo.openPages[paginationInfo.openPages.length - 1];
-        var currentSpineItem = _spine.getItemById(lastOpenPage.idref);
-        var desiredViewType = deduceDesiredViewType(currentSpineItem);
-
-        if (desiredViewType == ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED) {
-            count = 1;
-        } else {
+        var count = 1;
+        if (!self.isCurrentViewFixedLayout()) {
             count = _currentView.getSpreedPageCount();
         }
 
         return JSON.stringify({spreedPageCount: count});
     };
 
-    this.backgroundAudioTrackManager = new BackgroundAudioTrackManager();
+    /**
+    * check whether the element has event : button, input, select, textarea, midalOverlayData
+    * @param {int} x    touched point x
+    * @param {int} y    touched point y
+    * @param {int} w    uiview frame width
+    * @param {int} h    uiview frame height
+    * @return {bool}    has event : true, hasn't event false
+    */
+    this.hasEventsOnNearPoint = function(x, y, w, h) {
+        return checkElementsOnNearPoint(x, y, w, h, hasEventsOnPoint);
+    };
+
+    /**
+    * check whether the element has event : canvas, video, audio
+    * @param {int} x    touched point x
+    * @param {int} y    touched point y
+    * @param {int} w    uiview frame height
+    * @param {int} h    uiview frame height
+    * @return {bool}    has event : true, hasn't event false
+    */
+    this.hasEventElementsOnNearPoint = function(x, y, w, h) {
+        return checkElementsOnNearPoint(x, y, w, h, hasEventElementsOnPoint);
+    };
+
+    /**
+    * find the element that is located in touched positions and check whether the element has event.
+    */
+    function checkElementsOnNearPoint(x, y, w, h, callback) {
+        var paginationInfo = _currentView.getPaginationInfo();
+        if(paginationInfo.openPages.length == 0) {
+            return false;
+        }
+
+        var openPageIndex = 0;
+        var orientation = ReadiumSDK.Helpers.getOrientation(_$el);
+        if (self.isCurrentViewFixedLayout() && orientation === ReadiumSDK.Views.ORIENTATION_LANDSCAPE && (x > w/2)) {
+            // two spines are displayed if the layout is fixed in landscape mode.
+            openPageIndex = paginationInfo.openPages.length - 1;
+        } 
+
+        var openPage = paginationInfo.openPages[openPageIndex];
+        var currentSpineItem = _spine.getItemById(openPage.idref);
+        if (self.isCurrentViewFixedLayout() && orientation === ReadiumSDK.Views.ORIENTATION_LANDSCAPE && 
+            (x < w/2 && currentSpineItem.isRightPage()) || (x > w/2 && currentSpineItem.isLeftPage())) {
+            return false;
+        }
+
+        var data = _epubIframeMap[currentSpineItem.idref];
+        if (!data) {
+            return false;
+        }
+
+        var $iframe = data["$iframe"];
+        if (!$iframe) {
+            return false;
+        }
+
+        var np = calculateCoordinates(x, y, w, h);
+        var px = np.x;
+        var py = np.y;
+        var positions = ["at", "leftTop", "top", "rightTop", "left", "right", "leftBottom", ,"bottom", "rightBottom"];
+        // VerticalWritingMode : ["at", "rightTop", "right", "rightBottom", "top", "bottom", "leftTop",  "left", "leftBottom"];
+        var point = getNearPoint(px, py, positions[0], 0);
+        var hasEvents = callback.call(this, $iframe[0].contentDocument, point.x, point.y);
+        if (hasEvents) {
+            return true;
+        }
+
+        for (var layer = 1; layer <= 3; layer++) {
+            for (var i = 1; i < positions.length; i++) {
+                point = getNearPoint(px, py, positions[i], layer);
+                hasEvents = callback.call(this, $iframe[0].contentDocument, point.x, point.y);
+                if (hasEvents) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+    * calculate coordinates : from uiview coordinates to web coordinates
+    * @param {int} x          touched point x
+    * @param {int} y          touched point y
+    * @param {int} w          frame width
+    * @param {int} h          frame height
+    * @return {object} x, y   calculated coordinates
+    */
+    function calculateCoordinates(x, y, w, h) {
+        var windowWidth = $(window).width();
+        var bodyMargins = ReadiumSDK.Helpers.Margins.fromElement($('body'));
+        var leftMargin = 0;
+        var topMargin = 0;
+        var iframeTop = 0;
+        var iframeLeft = 0;
+        var scale = windowWidth / w;  // to fit the size of window
+        var currentViewScale = 1;     // the value is always 1 in case of reflowable
+
+        if (self.isCurrentViewFixedLayout()) {
+            currentViewScale = _currentView.getViewScale();
+            iframeTop = $('#fixed-book-frame').position().top;
+            iframeLeft = $('#fixed-book-frame').position().left;
+        } else {
+            iframeTop = $('#reflowable-book-frame').position().top;
+            iframeLeft = $('#reflowable-book-frame').position().left;
+        }
+
+        var orientation = ReadiumSDK.Helpers.getOrientation(_$el);
+        if (self.isCurrentViewFixedLayout() && orientation === ReadiumSDK.Views.ORIENTATION_LANDSCAPE && (x > w/2)) {
+            // two spines are displayed if the layout is fixed in landscape mode.
+            leftMargin = windowWidth / 2;
+        } else {
+            leftMargin = bodyMargins.left + iframeLeft;
+        }
+        topMargin = bodyMargins.top + iframeTop;
+
+        // A. x * scale : to fit the size of window
+        // B. A - margin : margin is not included in width
+        // C. B / currentViewScale : divide currentViewScale if current view has scaled
+        var px = (x * scale - leftMargin) / currentViewScale;
+        var py = (y * scale - topMargin) / currentViewScale;
+
+        return {x: px, y: py};
+    }
+
+    /**
+    * has event elements on point
+    */
+    function hasEventElementsOnPoint(epubContentDocument, x, y, position, layer) {
+        var hasEventElements = ["canvas", "video", "audio"];
+        var element = getElementOnPoint(epubContentDocument, x, y);
+        var elementName = element.nodeName.toLowerCase();
+        for (var i = 0; i < hasEventElements.length; i++) {
+            if (elementName === hasEventElements[i]) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+    * has events on point
+    */
+    function hasEventsOnPoint(epubContentDocument, x, y) {
+        var linkElement = getLinkElementOnPoint(epubContentDocument, x, y);
+        if (linkElement) {
+            return false;
+        }
+
+        var hasEventElements = [/*"a", "area", */"button", "input", "select", "textarea"];
+        var element = getElementOnPoint(epubContentDocument, x, y);
+        var elementName = element.nodeName.toLowerCase();
+
+        if ($(element).data("mediaOverlayData")) {
+            return true;
+        }
+
+        for (var i = 0; i < hasEventElements.length; i++) {
+            if (elementName === hasEventElements[i] ||
+                $(element).parents(hasEventElements[i]).length > 0) {
+                return true;
+            }
+        }
+    }
+
+    /**
+    * get link element on point
+    */
+    function getLinkElementOnPoint(epubContentDocument, x, y) {
+        var element = getElementOnPoint(epubContentDocument, x, y);
+        while (element) {
+            if (element.nodeName.toLowerCase() == "a") {
+                return element;
+            }
+            if (element.nodeName.toLowerCase() == "area") {
+                return element;
+            }
+            element = element.parentNode;
+        }
+    }
+
+    /**
+    * get element on point
+    */
+    function getElementOnPoint(epubContentDocument, x, y) {
+        var element = epubContentDocument.elementFromPoint(x,y);
+        return element;
+    }
+
+    function getNearPoint(x, y, position, layer) {
+        var nearPositionThreshold = 5;
+        var threshold = nearPositionThreshold * layer;
+        switch (position) {
+            case "leftTop":
+                x -= threshold;
+                y -= threshold;
+                break;
+            case "rightTop":
+                x += threshold;
+                y -= threshold;
+                break;
+            case "leftBottom":
+                x -= threshold;
+                y += threshold;
+                break;
+            case "rightBottom":
+                x += threshold;
+                y += threshold;
+                break;
+            case "top":
+                y -= threshold;
+                break;
+            case "bottom":
+                y += threshold;
+                break;
+            case "left":
+                x -= threshold;
+                break;
+            case "right":
+                x += threshold;
+                break;
+            case "at":
+                // fall through
+            default:
+                break;
+        }
+        return {"x":x, "y":y};
+    }
+
+    this.backgroundAudioTrackManager = new BackgroundAudioTrackManager(_epubIframeMap);
 };
 
 /**
