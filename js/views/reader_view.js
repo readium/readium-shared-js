@@ -1603,7 +1603,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
         var openPage = paginationInfo.openPages[openPageIndex];
         var currentSpineItem = _spine.getItemById(openPage.idref);
         if (self.isCurrentViewFixedLayout() && orientation === ReadiumSDK.Views.ORIENTATION_LANDSCAPE && 
-            (x < w/2 && currentSpineItem.isRightPage()) || (x > w/2 && currentSpineItem.isLeftPage())) {
+            ((x < w/2 && currentSpineItem.isRightPage()) || (x > w/2 && currentSpineItem.isLeftPage()))) {
             return false;
         }
 
