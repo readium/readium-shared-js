@@ -140,12 +140,10 @@ ReadiumSDK.Helpers.UpdateHtmlFontSize = function($epubHtml, fontSize){
             originalLineHeight = 0;
         }
 
-        if (ele.style) {
-            ele.style.fontSize = (originalFontSize * factor) + 'px';
-            if (originalLineHeight){
-                ele.style.lineHeight = (originalLineHeight * factor) + 'px';
-            }   
-        }
+		$(ele).css("font-size", (originalFontSize * factor) + 'px');
+		if (originalLineHeight){
+			 $(ele).css("line-height", (originalLineHeight * factor) + 'px');
+		}
 
     }
     $epubHtml.css("font-size", fontSize + "%");
