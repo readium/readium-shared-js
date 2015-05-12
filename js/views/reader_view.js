@@ -1536,8 +1536,8 @@ ReadiumSDK.Views.ReaderView = function(options) {
             return "";
         }
 
-        var openPage = paginationInfo.openPages[0];
-        var currentSpineItem = _spine.getItemById(openPage.idref);
+        var firstOpenPage = paginationInfo.openPages[0];
+        var currentSpineItem = _spine.getItemById(firstOpenPage.idref);
 
         var index = 0;
         if (!self.isCurrentViewFixedLayout()) {
