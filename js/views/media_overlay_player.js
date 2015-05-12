@@ -759,9 +759,15 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
         
             if (doNotNextSmil)
             {
-                _wasPausedBecauseNoAutoNextSmil = true;
+                // _wasPausedBecauseNoAutoNextSmil = true;
+
+                // stop playing media overlay at the end of page.
+                // and notify it to client.
                 self.reset();
-                //self.pause();
+                setTimeout(function(){
+                    onStatusChanged({isPlaying: true, autoNext: true});
+                }, 80);
+                // self.pause();
             }
             else
             {

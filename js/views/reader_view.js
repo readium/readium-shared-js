@@ -1083,6 +1083,14 @@ ReadiumSDK.Views.ReaderView = function(options) {
         return _mediaOverlayPlayer.isPlaying();
     };
 
+    /**
+     * Reset playback of media overlays.
+     */
+    this.resetMediaOverlay = function() {
+
+        _mediaOverlayPlayer.reset();
+    };
+
 //
 // should use ReadiumSDK.Events.SETTINGS_APPLIED instead!
 //    this.setRateMediaOverlay = function(rate) {
