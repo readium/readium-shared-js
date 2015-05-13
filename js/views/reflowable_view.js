@@ -891,6 +891,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
     }
 
     /**
+    * AS Comment :
     * get spread index of current page
     * @return {int} currentSpreadIndex
     */
@@ -899,6 +900,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
     }
 
     /**
+    * AS Comment :
     * get spread page count of current page
     * @return {int} currentSpreadIndex
     */
