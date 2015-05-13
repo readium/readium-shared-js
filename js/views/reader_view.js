@@ -222,17 +222,17 @@ var ReaderView = function (options) {
         return view;
     }
 
-
+    // we need to find whether we've already cached a particular spine item. 
+    // lets ask all of the existing views for the spine items that they are 
+    // holding (remember, each view may hold more than one)
     function getCachedViewForSpineItem(spineItem) {
-        var cached = _.filter(_cachedViews, 
-            function(view) { 
-                var loadedspines = view.getLoadedContentFrames();
-                if (loadedspines !== undefined) {
-                    return loadedspines[0].spineItem.index === spineItem.index;
-                } 
-                return false;
+        return _.find(_cachedViews, function(view){
+            var loadedspines = view.getLoadedSpineItems();
+            var foundView = _.find(loadedspines, function(spine) {
+                 return spine.index === spineItem.index;
             });
-        return cached[0];
+            return foundView;
+        });
     };
 
 
@@ -284,8 +284,6 @@ var ReaderView = function (options) {
 
         // there's a cached view, lets reset the _currentView then.
         if (cachedView !== undefined) {
-            // _currentView.hide();
-            // _currentView.setCached(true);
             cachedView.setCached(false);
             cachedView.show();
             _currentView = cachedView;
