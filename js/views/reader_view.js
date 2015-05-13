@@ -65,7 +65,8 @@ var ReaderView = function (options) {
     var _mediaOverlayDataInjector;
     var _iframeLoader;
     var _$el;
-
+    var _prefetchingEnabled = true;
+    
     //We will call onViewportResize after user stopped resizing window
     var lazyResize = Helpers.extendedThrottle(
         handleViewportResizeStart,
@@ -255,8 +256,8 @@ var ReaderView = function (options) {
                 openPageRequest.setFirstPage();
 
                 cachedView.render();
-                cachedView.openPage(openPageRequest,2);
                 cachedView.setViewSettings(_viewerSettings);
+                cachedView.openPage(openPageRequest,2);
                 cachedView.setCached(true);
         }
         return cachedView;
@@ -266,28 +267,36 @@ var ReaderView = function (options) {
     function initViewForItem(spineItem, callback) {
         if (_currentView) {
             _currentView.hide();
+            _currentView.setCached(true);
+
         }
+
         var cachedView = getCachedViewForSpineItem(spineItem);
 
-        _cachedViews.push(createPrefetchedViewForSpineItemIndex(spineItem.index+1));
-
-        _cachedViews.push(createPrefetchedViewForSpineItemIndex(spineItem.index+2));
-
-        // there's a cached view!
-        var newCurrentViewIsCached = false;
-        if (cachedView !== undefined) {
-            _currentView.hide();
-            _currentView.setCached(true);
-            cachedView.show();
-            cachedView.setCached(false);
-            newCurrentViewIsCached = true;
-            _currentView = cachedView;
+        // note that this is not going to work for fixed layout views. we need to ask the newly created view
+        // what the next possible spine item index is after it's been rendered... in the case of a synthetic 
+        // spread it will be current spine item + 2, but otherwise it's most likely +1. The point is, this 
+        // information neeeds to be encapsulated inside the views themselves, so that the reader has no idea
+        // what's going.
+        if (_prefetchingEnabled) {
+            _cachedViews.push(createPrefetchedViewForSpineItemIndex(spineItem.index+2));
         }
 
-
-
-        if (!newCurrentViewIsCached) {
+        // there's a cached view, lets reset the _currentView then.
+        if (cachedView !== undefined) {
+            // _currentView.hide();
+            // _currentView.setCached(true);
+            cachedView.setCached(false);
+            cachedView.show();
+            _currentView = cachedView;
+            _currentView.setViewSettings(_viewerSettings);
+            var spineAndIframe = _currentView.getLoadedContentFrames()[0];
+            _currentView.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED,spineAndIframe.$iframe, spineAndIframe.spineItem);
+        } else {
             _currentView = createViewForItem(spineItem);
+            _currentView.render(); 
+            _currentView.setViewSettings(_viewerSettings);
+
         }
 
         self.emit(Globals.Events.READER_VIEW_CREATED, self.viewTypeForView(_currentView));
@@ -329,16 +338,6 @@ var ReaderView = function (options) {
         _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOAD_START, function($iframe, spineItem) {
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
         });
-
-        if (!newCurrentViewIsCached) {
-            _currentView.render(); 
-            _currentView.setViewSettings(_viewerSettings);
-
-        } else {
-            _currentView.setViewSettings(_viewerSettings);
-            var spineAndIframe = _currentView.getLoadedContentFrames()[0];
-            _currentView.emit(Globals.Events.CONTENT_DOCUMENT_LOADED,spineAndIframe.$iframe, spineAndIframe.spineItem);
-        }
 
         // we do this to wait until elements are rendered otherwise book is not able to determine view size.
         setTimeout(function () {
