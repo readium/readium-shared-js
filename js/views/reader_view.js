@@ -196,7 +196,13 @@ var ReaderView = function (options) {
     }
 
 
-    function createViewForItem(spineItem) {
+    function createViewForItem(spineItem, callback) {
+        console.debug("-----");
+        _.each(_cachedViews, function(view) {
+            _.each(view.getLoadedSpineItems(), function(spine){
+                console.debug("Cached:", spine.index, ' href:', spine.href);
+            });
+        });
         var view = undefined;
         var desiredViewType = deduceDesiredViewType(spineItem);
 
@@ -273,13 +279,23 @@ var ReaderView = function (options) {
 
         var cachedView = getCachedViewForSpineItem(spineItem);
 
-        // note that this is not going to work for fixed layout views. we need to ask the newly created view
-        // what the next possible spine item index is after it's been rendered... in the case of a synthetic 
-        // spread it will be current spine item + 2, but otherwise it's most likely +1. The point is, this 
-        // information neeeds to be encapsulated inside the views themselves, so that the reader has no idea
-        // what's going.
         if (_prefetchingEnabled) {
-            _cachedViews.push(createPrefetchedViewForSpineItemIndex(spineItem.index+2));
+            // the next spine item to cache might be either +1 or +2. For a reflowable view it'll be +1,
+            // for a synthetic spread it's going to be 2. In any case, this information is encapsulated 
+            // in the number of currently loaded spines within the current view.
+            var spinesWithinTheCurrentView = _.isUndefined(_currentView)  ? 1 : _currentView.getLoadedSpineItems().length; 
+
+
+            var rightSpineItemToPrefetch = spineItem.index + spinesWithinTheCurrentView;
+            var leftSpineItemToPrefetch = spineItem.index - spinesWithinTheCurrentView;
+
+            if (rightSpineItemToPrefetch < _spine.items.length) {
+                _cachedViews.push(createPrefetchedViewForSpineItemIndex(rightSpineItemToPrefetch));
+            }
+
+            if (leftSpineItemToPrefetch > 0) {
+                _cachedViews.push(createPrefetchedViewForSpineItemIndex(leftSpineItemToPrefetch));
+            }
         }
 
         // there's a cached view, lets reset the _currentView then.
