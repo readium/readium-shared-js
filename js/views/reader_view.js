@@ -242,33 +242,34 @@ var ReaderView = function (options) {
     };
 
 
+    // TODODM: this needs to take spine item as a parameter, not an index. maybe.
     function createPrefetchedViewForSpineItemIndex(spineItemIndex, setToPage) {
         var spineItem = _spine.items[spineItemIndex];
         var cachedView = getCachedViewForSpineItem(spineItem);
         if (cachedView === undefined) {
-                var desiredViewType = deduceDesiredViewType(spineItem);
+            var desiredViewType = deduceDesiredViewType(spineItem);
 
-                var viewCreationParams = {
-                    $viewport: _$el,
-                    spine: _spine,
-                    userStyles: _userStyles,
-                    bookStyles: _bookStyles,
-                    iframeLoader: _iframeLoader,
-                    cachedView: true
-                };
+            var viewCreationParams = {
+                $viewport: _$el,
+                spine: _spine,
+                userStyles: _userStyles,
+                bookStyles: _bookStyles,
+                iframeLoader: _iframeLoader,
+                cachedView: true
+            };
 
-                cachedView = self.createViewForType(desiredViewType, viewCreationParams);
-                var openPageRequest = new PageOpenRequest(spineItem, self);
-                if (setToPage === "last") {
-                    openPageRequest.setLastPage();
-                } else {
-                    openPageRequest.setFirstPage();
-                }
+            cachedView = self.createViewForType(desiredViewType, viewCreationParams);
+            var openPageRequest = new PageOpenRequest(spineItem, self);
+            if (setToPage === "last") {
+                openPageRequest.setLastPage();
+            } else {
+                openPageRequest.setFirstPage();
+            }
 
-                cachedView.render();
-                cachedView.setViewSettings(_viewerSettings);
-                cachedView.openPage(openPageRequest,2);
-                cachedView.setCached(true);
+            cachedView.render();
+            cachedView.setViewSettings(_viewerSettings);
+            cachedView.openPage(openPageRequest,2);
+            cachedView.setCached(true);
         }
         return cachedView;
     };

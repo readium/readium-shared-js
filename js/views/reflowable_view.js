@@ -330,9 +330,6 @@ var ReflowableView = function(options, reader){
         updateHtmlFontSize();
         updateColumnGap();
         self.applyStyles();
-
-
-        self.applyStyles();
     }
 
     this.applyStyles = function() {
