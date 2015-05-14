@@ -1083,6 +1083,15 @@ ReadiumSDK.Views.ReaderView = function(options) {
         return _mediaOverlayPlayer.isPlaying();
     };
 
+    /**
+     * AS Comment :
+     * Reset playback of media overlays.
+     */
+    this.resetMediaOverlay = function() {
+
+        _mediaOverlayPlayer.reset();
+    };
+
 //
 // should use ReadiumSDK.Events.SETTINGS_APPLIED instead!
 //    this.setRateMediaOverlay = function(rate) {
@@ -1527,6 +1536,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     };
 
     /**
+    * AS Comment :
     * get idref and spreadIndex of current spine item
     * @return {object} idref, index
     */
@@ -1548,6 +1558,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     };
 
     /**
+    * AS Comment :
     * get spread page count of current spine item.
     * @return {object} spreadPageCount
     */
@@ -1561,6 +1572,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     };
 
     /**
+    * AS Comment :
     * check whether the element has event : button, input, select, textarea, midalOverlayData
     * @param {int} x    touched point x
     * @param {int} y    touched point y
@@ -1573,6 +1585,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     };
 
     /**
+    * AS Comment :
     * check whether the element has event : canvas, video, audio
     * @param {int} x    touched point x
     * @param {int} y    touched point y
@@ -1585,6 +1598,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     };
 
     /**
+    * AS Comment :
     * find the element that is located in touched positions and check whether the element has event.
     */
     function checkElementsOnNearPoint(x, y, w, h, callback) {
@@ -1641,6 +1655,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     }
 
     /**
+    * AS Comment :
     * calculate coordinates : from uiview coordinates to web coordinates
     * @param {int} x          touched point x
     * @param {int} y          touched point y
@@ -1686,6 +1701,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     }
 
     /**
+    * AS Comment :
     * has event elements on point
     */
     function hasEventElementsOnPoint(epubContentDocument, x, y, position, layer) {
@@ -1702,6 +1718,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     }
 
     /**
+    * AS Comment :
     * has events on point
     */
     function hasEventsOnPoint(epubContentDocument, x, y) {
@@ -1727,6 +1744,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     }
 
     /**
+    * AS Comment :
     * get link element on point
     */
     function getLinkElementOnPoint(epubContentDocument, x, y) {
@@ -1743,6 +1761,7 @@ ReadiumSDK.Views.ReaderView = function(options) {
     }
 
     /**
+    * AS Comment :
     * get element on point
     */
     function getElementOnPoint(epubContentDocument, x, y) {
@@ -1750,6 +1769,10 @@ ReadiumSDK.Views.ReaderView = function(options) {
         return element;
     }
 
+    /**
+    * AS Comment :
+    * getNearPoint
+    */
     function getNearPoint(x, y, position, layer) {
         var nearPositionThreshold = 5;
         var threshold = nearPositionThreshold * layer;

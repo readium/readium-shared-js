@@ -721,7 +721,11 @@ var forceTTS = false; // for testing only!
                 {
                     console.log(getIndent() + "JS MO clipEnd adjusted to MAX");
                 }
-                node.clipEnd = node.MAX;
+                // node.clipEnd = node.MAX;
+
+                // # AS Comment :
+                // to avoid misoperation
+                node.clipEnd = node.clipBegin;
             }
             
             //node.updateMediaManifestItemId(); ONLY XHTML SPINE ITEMS 
