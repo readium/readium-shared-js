@@ -766,7 +766,7 @@ ReadiumSDK.Views.MediaOverlayPlayer = function(reader, onStatusChanged) {
                 // and notify it to client.
                 self.reset();
                 setTimeout(function(){
-                    onStatusChanged({isPlaying: true, autoNext: true});
+                    onStatusChanged({isPlaying: true, isEndPage: true});
                 }, 80);
                 // self.pause();
             }
