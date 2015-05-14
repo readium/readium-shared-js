@@ -242,7 +242,7 @@ var ReaderView = function (options) {
     };
 
 
-    function createPrefetchedViewForSpineItemIndex(spineItemIndex) {
+    function createPrefetchedViewForSpineItemIndex(spineItemIndex, setToPage) {
         var spineItem = _spine.items[spineItemIndex];
         var cachedView = getCachedViewForSpineItem(spineItem);
         if (cachedView === undefined) {
@@ -259,7 +259,11 @@ var ReaderView = function (options) {
 
                 cachedView = self.createViewForType(desiredViewType, viewCreationParams);
                 var openPageRequest = new PageOpenRequest(spineItem, self);
-                openPageRequest.setFirstPage();
+                if (setToPage === "last") {
+                    openPageRequest.setLastPage();
+                } else {
+                    openPageRequest.setFirstPage();
+                }
 
                 cachedView.render();
                 cachedView.setViewSettings(_viewerSettings);
@@ -285,16 +289,29 @@ var ReaderView = function (options) {
             // in the number of currently loaded spines within the current view.
             var spinesWithinTheCurrentView = _.isUndefined(_currentView)  ? 1 : _currentView.getLoadedSpineItems().length; 
 
+            // dont actually add the view to the cached array until it's been fully loaded and ready to show. this is 
+            // so that if the users exceeds the cache we can just show them the regular spinner.
+            var saveViewOnceLoaded = function(view) {
+                if (_.isUndefined(view)) {
+                    return;
+                }
+                view.once(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function() {
+                    console.log('%c View loaded in the background...%d cached views', 'background: grey; color: blue', _cachedViews.length);
+                    _cachedViews.push(view);    
+                })
+            };
 
-            var rightSpineItemToPrefetch = spineItem.index + spinesWithinTheCurrentView;
-            var leftSpineItemToPrefetch = spineItem.index - spinesWithinTheCurrentView;
+            var rightSpineItemToPrefetch = _spine.items[spineItem.index + spinesWithinTheCurrentView];
+            var leftSpineItemToPrefetch = _spine.items[spineItem.index - spinesWithinTheCurrentView];
 
-            if (rightSpineItemToPrefetch < _spine.items.length) {
-                _cachedViews.push(createPrefetchedViewForSpineItemIndex(rightSpineItemToPrefetch));
+            if (rightSpineItemToPrefetch.index < _spine.items.length && _.isUndefined(getCachedViewForSpineItem(rightSpineItemToPrefetch))) {
+                var rightView = createPrefetchedViewForSpineItemIndex(rightSpineItemToPrefetch.index);
+                saveViewOnceLoaded(rightView);
             }
 
-            if (leftSpineItemToPrefetch > 0) {
-                _cachedViews.push(createPrefetchedViewForSpineItemIndex(leftSpineItemToPrefetch));
+            if (leftSpineItemToPrefetch.index > 0 && _.isUndefined(getCachedViewForSpineItem(leftSpineItemToPrefetch))) {
+                 var leftView = createPrefetchedViewForSpineItemIndex(leftSpineItemToPrefetch.index, "last");
+                 saveViewOnceLoaded(leftView);
             }
         }
 
@@ -304,6 +321,13 @@ var ReaderView = function (options) {
             cachedView.show();
             _currentView = cachedView;
             _currentView.setViewSettings(_viewerSettings);
+            // 
+            if (_.isUndefined(_currentView.getLoadedContentFrames())) {
+                console.error("Current view content cna't be undefined!");
+                // self.openSpineItemPage(_currentView.getLoadedSpineItems()[0].idref, 0);
+                return;
+            }
+            // this is questionable as hell.. exposing the internals of the reader view to trigger the event. there's gotta be a better way.
             var spineAndIframe = _currentView.getLoadedContentFrames()[0];
             _currentView.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED,spineAndIframe.$iframe, spineAndIframe.spineItem);
         } else {
@@ -329,6 +353,10 @@ var ReaderView = function (options) {
             Switches.apply(contentDoc);
 
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
+
+            if (_.isUndefined(getCachedViewForSpineItem(_currentView.getLoadedSpineItems()[0]))) {
+                _cachedViews.push(_currentView);
+            }
         });
 
         _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOAD_START, function ($iframe, spineItem) {
