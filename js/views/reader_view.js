@@ -297,8 +297,14 @@ var ReaderView = function (options) {
                     return;
                 }
                 view.once(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function() {
-                    console.log('%c View loaded in the background...%d cached views', 'background: grey; color: blue', _cachedViews.length);
-                    _cachedViews.push(view);    
+                    // try to make sure that we don't load duplicate views.
+                    var spineItemForView = view.getLoadedSpineItems()[0];
+                    if (_.isUndefined(getCachedViewForSpineItem(spineItemForView))) {
+                        console.log('%c View loaded in the background...%d cached views', 'background: grey; color: blue', _cachedViews.length);
+                        _cachedViews.push(view);    
+                    } else {
+                        console.debug('%c Prevented from loading duplicate view...%d cached views', 'background: grey; color: red', _cachedViews.length);                        
+                    }
                 })
             };
 
