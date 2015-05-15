@@ -65,13 +65,13 @@ repository:
 
 #####################################################################
 files: [
-    
+
     "build-output/"
-    
+
     "build-output-usage-example/"
-    
+
     "license.txt"
-    
+
     "README.md"
 ]
 
@@ -85,9 +85,9 @@ files: [
 dependencies:
 
     parallelshell: 'latest'
-    
+
     'http-server': 'latest'
-    
+
     opener: 'latest'
 
 # See remark below about *runtime* dependencies
@@ -98,9 +98,9 @@ devDependencies:
 #    requirejs: "latest"
 
 #    almond: "latest"
-    
+
 #    "requirejs-text": "latest"
-    
+
 #    jquery: "latest"
 
     backbone: "latest"
@@ -110,16 +110,16 @@ devDependencies:
     URIjs: "latest"
 
     jquerySizes: "bramstein/jsizes"
-    
+
     eventemitter3: "latest"
-    
+
     domReady: "requirejs/domReady"
 
 # Above items are in fact runtime dependencies,
 # but because they are already bundled in the "build-output" folder that ships with the NPM package,
 # we declare them in "devDependencies" to avoid unnecessary downloads.
 # The download can be forced by using the "--dev" option after "npm install readium-shared-js".
-   
+
     cson: "latest"
 
     jshint: "latest"
@@ -131,7 +131,7 @@ devDependencies:
     mkdirp: 'latest'
 
     watch: 'latest'
-    
+
     'live-reload': 'latest'
 
 #####################################################################
@@ -139,19 +139,19 @@ scripts:
 
 #=====================
     env: '
-    
+
         env
     '
-    
+
 #=====================
     echo: '
-    
+
         echo ""
     '
 
 #=====================
     cson2json: '
-    
+
         node node_modules/cson/bin/cson2json package.cson
         &&
         node node_modules/cson/bin/cson2json package.cson > package.json
@@ -159,7 +159,7 @@ scripts:
 
 #=====================
     'prepare': '
-        
+
         npm run
             prepare:submodule
         &&
@@ -172,7 +172,7 @@ scripts:
 
 #=====================
     'prepare:dependencies': '
-        
+
         npm install
         &&
         npm update
@@ -180,7 +180,7 @@ scripts:
 
 #=====================
     'prepare:submodule': '
-        
+
         cd readium-cfi-js
         &&
         npm run prepare
@@ -189,10 +189,10 @@ scripts:
         &&
         ls
     '
-    
+
 #=====================
     'prepare:patch': '
-        
+
         rimraf
             node_modules/eventemitter3/_rjs/**
         &&
@@ -200,7 +200,7 @@ scripts:
             node_modules/eventemitter3/
             node_modules/eventemitter3/_rjs/
     '
-    
+
 #=====================
     clean: '
         node --version
@@ -213,23 +213,23 @@ scripts:
 
 #=====================
     'prebuild': '
-    
+
         npm run clean
     '
-    
+
 #=====================
     build: '
-    
+
         npm run
             build:styles
         &&
         npm run
             build:scripts
     '
-    
+
 #=====================
     lint: '
-    
+
         node
             build-tools/jshint_glob.js
             js/**.js
@@ -237,20 +237,20 @@ scripts:
 
 #=====================
 #    'prebuild:scripts': '
-#    
+#
 #        npm run
 #            lint
 #    '
 
 #=====================
-    'postbuild:scripts': '
-    
-        rimraf build-output/_SOURCES
-    '
+#    'postbuild:scripts': '
+#
+#        rimraf build-output/_SOURCES
+#    '
 
 #=====================
     'build:scripts': '
-    
+
         npm run
             build:scripts:multiple
         &&
@@ -276,14 +276,14 @@ scripts:
 
 #=====================
     'prebuild:styles': '
-    
+
         mkdirp build-output/css/
     '
-    
+
 #=====================
 # TODO use cssminify
     'build:styles': '
-    
+
         cp static/sdk.css build-output/css/
     '
 
@@ -312,7 +312,7 @@ scripts:
 #=====================
 #### BLOCKING! (CTRL-C) [watch:build]
     watch: '
-    
+
         parallelshell
             \"npm run watch:build\"
     '
@@ -338,24 +338,24 @@ scripts:
     #    -w build-output-usage-example/
     #    --ext \".\"
     #    --exec \"npm run build
-    #            && node build-tools/webbrowser.js 
+    #            && node build-tools/webbrowser.js
     #            && npm run webbrowser
     #            && rimraf open_webbrowser.js\"
-    
+
 #=====================
     'http': '
-    
+
         http-server -p 9090 ./
     '
 
 #=====================
     'live-reload': '
-    
+
         live-reload --port 9091 --delay 1000 build-output/
     '
 
 #=====================
     'webbrowser': '
-    
+
         opener http://localhost:9090/build-output-usage-example/
     '
