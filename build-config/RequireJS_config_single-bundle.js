@@ -22,7 +22,7 @@ require.config({
     // relative to this config file (not baseUrl)
     out: "../build-output/_single-bundle/readium-shared-js_all.js",
     
-    insertRequire: ["globalsSetup", "readium-plugin-annotations"],
+    insertRequire: ["readium_shared_js/globalsSetup", "readium-plugin-annotations"],
     
     paths:
     {

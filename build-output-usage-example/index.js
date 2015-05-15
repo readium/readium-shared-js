@@ -1,22 +1,22 @@
 
-require(["globalsSetup", "readium-plugin-annotations"], function () {
+require(["readium_shared_js/globalsSetup", "readium-plugin-annotations"], function () {
 
-    require(['views/reader_view', 'readium-plugin-example'], function (ReaderView, examplePluginConfig) {
-        
+    require(['readium_shared_js/views/reader_view', 'readium-plugin-example'], function (ReaderView, examplePluginConfig) {
+
         examplePluginConfig.borderColor = "blue";
         examplePluginConfig.backgroundColor = "cyan";
-    
+
         ReadiumSDK.on(ReadiumSDK.Events.PLUGINS_LOADED, function(reader) {
-        
+
             // readium built-in (should have been require()'d outside this scope)
             console.log(reader.plugins.annotations);
-            
+
             // external (require()'d via Dependency Injection, see examplePluginConfig function parameter passed above)
             console.log(reader.plugins.example);
         });
-        
+
         $(document).ready(function () {
-            
+
 
             ReadiumSDK.reader = new ReaderView(
             {

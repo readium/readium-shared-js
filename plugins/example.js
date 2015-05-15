@@ -1,4 +1,4 @@
-define(['plugins-controller', 'jquery'], function (Plugins, $) {
+define(['readium_shared_js/plugins_controller', 'jquery'], function (Plugins, $) {
     var config = {
         backgroundColor: "yellow",
         borderColor: "red"
@@ -15,7 +15,7 @@ define(['plugins-controller', 'jquery'], function (Plugins, $) {
                 self.emit("exampleEvent", api.reader.bookmarkCurrentPage());
             });
         });
-        
+
         $("body").css({border: '10px solid ' + config.borderColor});
 
         api.extendReader(self);

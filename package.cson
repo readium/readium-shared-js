@@ -196,7 +196,7 @@ scripts:
         rimraf
             node_modules/eventemitter3/_rjs/**
         &&
-        node node_modules/requirejs/bin/r.js -convert
+        node readium-cfi-js/node_modules/requirejs/bin/r.js -convert
             node_modules/eventemitter3/
             node_modules/eventemitter3/_rjs/
     '

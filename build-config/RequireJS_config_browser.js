@@ -13,13 +13,15 @@
 
 require.config({
 
-    baseUrl: process._RJS_baseUrl(1),
+    /* http://requirejs.org/docs/api.html#config-waitSeconds */
+    waitSeconds: 1,
+
+    baseUrl: '..',
 
     packages: [
         {
             name: "readium_shared_js",
-            location:
-                process._RJS_rootDir(1) + '/js',
+            location: readium_shared_js_PATH_PREFIX + "js",
 
             main: "globalsSetup"
         },
@@ -27,63 +29,68 @@ require.config({
         {
             name: "plugin_annotations",
             location:
-                process._RJS_rootDir(1) + '/plugins/annotations',
+                readium_shared_js_PATH_PREFIX + 'plugins/annotations',
 
             main: "main"
         },
+
         {
             name: "plugin_example",
             location:
-                process._RJS_rootDir(1) + '/plugins',
+                readium_shared_js_PATH_PREFIX + 'plugins',
 
             main: "example"
         }
     ],
 
+//    map:
+//    {
+//        '*': {
+//            "readium_shared_js":
+//                '../js'
+//        }
+//    },
+
     paths:
     {
         "readium-shared-js":
-            process._RJS_rootDir(1) + '/build-config/readium-shared-js',
-
-        'readium-external-libs':
-            process._RJS_rootDir(1) + '/build-config/readium-external-libs',
+            readium_shared_js_PATH_PREFIX + 'build-config/readium-shared-js',
 
         "readium-plugin-example":
-            process._RJS_rootDir(1) + '/build-config/readium-plugin-example',
+            readium_shared_js_PATH_PREFIX + 'build-config/readium-plugin-example',
 
         "readium-plugin-annotations":
-            process._RJS_rootDir(1) + '/build-config/readium-plugin-annotations',
-
+            readium_shared_js_PATH_PREFIX + 'build-config/readium-plugin-annotations',
 
         // ------ NPM MODULEs
 
         backbone:
-            process._RJS_rootDir(1) + '/node_modules/backbone/backbone',
+            readium_shared_js_PATH_PREFIX + 'node_modules/backbone/backbone',
 
         underscore:
-            process._RJS_rootDir(1) + '/node_modules/underscore/underscore',
+            readium_shared_js_PATH_PREFIX + 'node_modules/underscore/underscore',
 
         URIjs:
-            process._RJS_rootDir(1) + '/node_modules/URIjs/src/URI',
+            readium_shared_js_PATH_PREFIX + 'node_modules/URIjs/src/URI',
 
         punycode:
-            process._RJS_rootDir(1) + '/node_modules/URIjs/src/punycode',
+            readium_shared_js_PATH_PREFIX + 'node_modules/URIjs/src/punycode',
 
         SecondLevelDomains:
-            process._RJS_rootDir(1) + '/node_modules/URIjs/src/SecondLevelDomains',
+            readium_shared_js_PATH_PREFIX + 'node_modules/URIjs/src/SecondLevelDomains',
 
         IPv6:
-            process._RJS_rootDir(1) + '/node_modules/URIjs/src/IPv6',
+            readium_shared_js_PATH_PREFIX + 'node_modules/URIjs/src/IPv6',
 
         jquerySizes:
-            process._RJS_rootDir(1) + '/node_modules/jquery-sizes/lib/jquery.sizes',
+            readium_shared_js_PATH_PREFIX + 'node_modules/jquery-sizes/lib/jquery.sizes',
 
         domReady:
-            process._RJS_rootDir(1) + '/node_modules/domReady/domReady',
+            readium_shared_js_PATH_PREFIX + 'node_modules/domReady/domReady',
 
         //eventEmitter: '../node_modules/eventemitter3/index',
         eventEmitter:
-            process._RJS_rootDir(1) + '/node_modules/eventemitter3/_rjs/index',
+            readium_shared_js_PATH_PREFIX + 'node_modules/eventemitter3/_rjs/index',
         //see pre-build npm task to wrap CommonJS into AMD: define(function(require, exports, module) { .... });
 
 
@@ -91,25 +98,25 @@ require.config({
         // ------ LIBs
 
         'console_shim':
-            process._RJS_rootDir(1) + '/lib/console_shim',
+            readium_shared_js_PATH_PREFIX + 'lib/console_shim',
 
         rangy:
-            process._RJS_rootDir(1) + '/lib/rangy/rangy',
+            readium_shared_js_PATH_PREFIX + 'lib/rangy/rangy',
 
         "rangy-core":
-            process._RJS_rootDir(1) + '/lib/rangy/rangy-core',
+            readium_shared_js_PATH_PREFIX + 'lib/rangy/rangy-core',
 
         "rangy-textrange":
-            process._RJS_rootDir(1) + '/lib/rangy/rangy-textrange',
+            readium_shared_js_PATH_PREFIX + 'lib/rangy/rangy-textrange',
 
         "rangy-highlighter":
-            process._RJS_rootDir(1) + '/lib/rangy/rangy-highlighter',
+            readium_shared_js_PATH_PREFIX + 'lib/rangy/rangy-highlighter',
 
         "rangy-cssclassapplier":
-            process._RJS_rootDir(1) + '/lib/rangy/rangy-cssclassapplier',
+            readium_shared_js_PATH_PREFIX + 'lib/rangy/rangy-cssclassapplier',
 
         "rangy-position":
-            process._RJS_rootDir(1) + '/lib/rangy/rangy-position'
+            readium_shared_js_PATH_PREFIX + 'lib/rangy/rangy-position'
     },
 
     shim:

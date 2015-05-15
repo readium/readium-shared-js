@@ -65,7 +65,7 @@
     "prepare": "npm run prepare:submodule && npm run prepare:dependencies && npm run prepare:patch",
     "prepare:dependencies": "npm install && npm update",
     "prepare:submodule": "cd readium-cfi-js && npm run prepare && cd .. && ls",
-    "prepare:patch": "rimraf node_modules/eventemitter3/_rjs/** && node node_modules/requirejs/bin/r.js -convert node_modules/eventemitter3/ node_modules/eventemitter3/_rjs/",
+    "prepare:patch": "rimraf node_modules/eventemitter3/_rjs/** && node readium-cfi-js/node_modules/requirejs/bin/r.js -convert node_modules/eventemitter3/ node_modules/eventemitter3/_rjs/",
     "clean": "node --version && npm --version && rimraf build-output/*",
     "prebuild": "npm run clean",
     "build": "npm run build:styles && npm run build:scripts",
