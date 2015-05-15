@@ -231,7 +231,7 @@ scripts:
     lint: '
 
         node
-            build-tools/jshint_glob.js
+            readium-cfi-js/readium-build-tools/jshint_glob.js
             js/**.js
     '
 
@@ -262,7 +262,7 @@ scripts:
     'build:scripts:multiple': '
         node readium-cfi-js/node_modules/requirejs/bin/r.js
              -o
-             readium-cfi-js/build-config/RequireJS_config.js
+             readium-cfi-js/readium-build-tools/RequireJS_config.js
              --rjs_bundle=multiple
     '
 
@@ -270,7 +270,7 @@ scripts:
     'build:scripts:single': '
         node readium-cfi-js/node_modules/requirejs/bin/r.js
              -o
-             readium-cfi-js/build-config/RequireJS_config.js
+             readium-cfi-js/readium-build-tools/RequireJS_config.js
              --rjs_bundle=single
     '
 
@@ -329,7 +329,7 @@ scripts:
     'watch:build': '
         watch
             \"npm run build
-                && node build-tools/webbrowser.js
+                && node readium-cfi-js/readium-build-tools/webbrowser.js
                 && npm run webbrowser
                 && rimraf open_webbrowser.js\"
             build-output-usage-example/
@@ -338,7 +338,7 @@ scripts:
     #    -w build-output-usage-example/
     #    --ext \".\"
     #    --exec \"npm run build
-    #            && node build-tools/webbrowser.js
+    #            && node readium-cfi-js/readium-build-tools/webbrowser.js
     #            && npm run webbrowser
     #            && rimraf open_webbrowser.js\"
 
