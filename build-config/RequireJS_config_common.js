@@ -42,13 +42,6 @@ require.config({
 
     paths:
     {
-        "readium-shared-js":
-            process._RJS_rootDir(1) + '/build-config/readium-shared-js',
-
-        'readium-external-libs':
-            process._RJS_rootDir(1) + '/build-config/readium-external-libs',
-
-
         // ------ NPM MODULEs
 
         backbone:

@@ -21,29 +21,35 @@ require.config({
     modules:
     [
         {
-            name: "readium-external-libs"
+            name: "readium-external-libs",
+            create: true,
+            include: ['jquery', 'underscore',
+            'URIjs', 'punycode', 'SecondLevelDomains', 'IPv6',
+            'jquerySizes', 'domReady', 'eventEmitter', 'console_shim',
+            'rangy', 'rangy-core', 'rangy-textrange', 'rangy-highlighter', 'rangy-cssclassapplier', 'rangy-position'],
+        },
+
+        {
+            name: "readium-shared-js",
+            create: true,
+            include: ['readium_shared_js/globalsSetup', 'readium_shared_js/plugins_controller', 'readium_shared_js/views/reader_view'],
+            exclude: ["readium-external-libs", "readium-cfi-js"],
+            insertRequire: ["readium_shared_js/globalsSetup"]
         },
 
         {
             name: "readium-plugin-example",
             create: true,
             include: ["readium_plugin_example"],
-            exclude: ['readium_shared_js/globals', 'readium_shared_js/plugins_controller', 'readium-external-libs', 'readium-shared-js']
+            exclude: ["readium-external-libs", "readium-cfi-js", "readium-shared-js"]
         },
 
         {
             name: "readium-plugin-annotations",
             create: true,
             include: ["readium_plugin_annotations"],
-            exclude: ['readium_shared_js/globals', 'readium_shared_js/plugins_controller', 'readium-external-libs', 'readium-shared-js'],
+            exclude: ["readium-external-libs", "readium-cfi-js", "readium-shared-js"],
             insertRequire: ["readium_plugin_annotations"]
-        },
-
-        {
-            name: "readium-shared-js",
-            exclude: ['readium-external-libs', 'readium-cfi-js'],
-            include: ['readium_shared_js/globals', 'readium_shared_js/plugins_controller'],
-            insertRequire: ["readium_shared_js/globalsSetup"]
         }
     ]
 });
