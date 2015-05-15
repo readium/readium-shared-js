@@ -25,14 +25,14 @@ require.config({
         },
 
         {
-            name: "plugin_annotations",
+            name: "readium_plugin_annotations",
             location:
                 process._RJS_rootDir(1) + '/plugins/annotations',
 
             main: "main"
         },
         {
-            name: "plugin_example",
+            name: "readium_plugin_example",
             location:
                 process._RJS_rootDir(1) + '/plugins',
 
@@ -47,12 +47,6 @@ require.config({
 
         'readium-external-libs':
             process._RJS_rootDir(1) + '/build-config/readium-external-libs',
-
-        "readium-plugin-example":
-            process._RJS_rootDir(1) + '/build-config/readium-plugin-example',
-
-        "readium-plugin-annotations":
-            process._RJS_rootDir(1) + '/build-config/readium-plugin-annotations',
 
 
         // ------ NPM MODULEs

@@ -1,7 +1,7 @@
 
-require(["readium_shared_js/globalsSetup", "readium-plugin-annotations"], function () {
+require(["readium_shared_js/globalsSetup", "readium_plugin_annotations"], function () {
 
-    require(['readium_shared_js/views/reader_view', 'readium-plugin-example'], function (ReaderView, examplePluginConfig) {
+    require(['readium_shared_js/views/reader_view', 'readium_plugin_example'], function (ReaderView, examplePluginConfig) {
 
         examplePluginConfig.borderColor = "blue";
         examplePluginConfig.backgroundColor = "cyan";

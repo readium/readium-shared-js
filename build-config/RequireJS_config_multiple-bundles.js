@@ -26,13 +26,17 @@ require.config({
 
         {
             name: "readium-plugin-example",
+            create: true,
+            include: ["readium_plugin_example"],
             exclude: ['readium_shared_js/globals', 'readium_shared_js/plugins_controller', 'readium-external-libs', 'readium-shared-js']
         },
 
         {
             name: "readium-plugin-annotations",
+            create: true,
+            include: ["readium_plugin_annotations"],
             exclude: ['readium_shared_js/globals', 'readium_shared_js/plugins_controller', 'readium-external-libs', 'readium-shared-js'],
-            insertRequire: ["readium-plugin-annotations"]
+            insertRequire: ["readium_plugin_annotations"]
         },
 
         {
