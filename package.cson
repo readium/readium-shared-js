@@ -265,7 +265,8 @@ scripts:
     'build:styles': '
 
         node readium-cfi-js/node_modules/cpy/cli.js
-            static/sdk.css build-output/css/
+            static/sdk.css
+            build-output/css/
     '
 
 #=====================
