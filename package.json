@@ -65,7 +65,7 @@
     "build:scripts:multiple": "node readium-cfi-js/node_modules/requirejs/bin/r.js -o readium-cfi-js/readium-build-tools/RequireJS_config.js --rjs_bundle=multiple",
     "build:scripts:single": "node readium-cfi-js/node_modules/requirejs/bin/r.js -o readium-cfi-js/readium-build-tools/RequireJS_config.js --rjs_bundle=single",
     "prebuild:styles": "node readium-cfi-js/node_modules/mkdirp/bin/cmd.js build-output/css/",
-    "build:styles": "cp static/sdk.css build-output/css/",
+    "build:styles": "node readium-cfi-js/node_modules/cpy/cli.js static/sdk.css build-output/css/",
     "example:watch": "echo > open_webbrowser.js && parallelshell \"npm run watch\" \"npm run http\"",
     "example": "parallelshell \"npm run http\" \"npm run webbrowser\"",
     "watch": "node readium-cfi-js/node_modules/watch/cli.js \"npm run build && node readium-cfi-js/readium-build-tools/webbrowser.js && npm run webbrowser && node readium-cfi-js/node_modules/rimraf/bin.js open_webbrowser.js\" build-output-usage-example/ js/ plugins/ readium-cfi-js/js/",

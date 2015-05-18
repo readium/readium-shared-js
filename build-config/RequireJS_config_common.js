@@ -68,10 +68,9 @@ require.config({
         domReady:
             process._RJS_rootDir(1) + '/node_modules/domReady/domReady',
 
-        //eventEmitter: '../node_modules/eventemitter3/index',
         eventEmitter:
             process._RJS_rootDir(1) + '/node_modules/eventemitter3/_rjs/index',
-        //see pre-build npm task to wrap CommonJS into AMD: define(function(require, exports, module) { .... });
+        //see prepare:patch npm build task (converts CommonJS to AMD => define(function(require, exports, module) { .... });)
 
 
 

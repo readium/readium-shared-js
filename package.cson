@@ -264,7 +264,8 @@ scripts:
 # TODO use cssminify
     'build:styles': '
 
-        cp static/sdk.css build-output/css/
+        node readium-cfi-js/node_modules/cpy/cli.js
+            static/sdk.css build-output/css/
     '
 
 #=====================
