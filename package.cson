@@ -33,7 +33,7 @@
 
 name: "readium-shared-js"
 
-version: "0.19.0-alpha"
+version: "0.20.0-alpha"
 
 description: "Readium - shared javascript module"
 
@@ -84,78 +84,55 @@ files: [
 #####################################################################
 dependencies:
 
-    parallelshell: 'latest'
+    "parallelshell": 'latest'
 
-    'http-server': 'latest'
+    "opener": 'latest'
 
-    opener: 'latest'
+    #"http-server": 'latest'
+    "http-server": 'danielweck/http-server'
+    # SEE: https://github.com/indexzero/http-server/issues/154
 
-# See remark below about *runtime* dependencies
 
 #####################################################################
+# These dependencies can be fetched by using the "--dev" option
+# in "npm install --dev readium-shared-js".
 devDependencies:
 
-#    requirejs: "latest"
+# see readium-cfi-js:
+# "requirejs", "almond", "jquery"
 
-#    almond: "latest"
 
-#    "requirejs-text": "latest"
+    "jquerySizes": 'bramstein/jsizes'
 
-#    jquery: "latest"
+    "domReady": 'requirejs/domReady'
 
-    backbone: "latest"
+    "backbone": 'latest'
 
-    underscore: "latest"
+    "underscore": 'latest'
 
-    URIjs: "latest"
+    "URIjs": 'latest'
 
-    jquerySizes: "bramstein/jsizes"
+    "eventemitter3": 'latest'
 
-    eventemitter3: "latest"
 
-    domReady: "requirejs/domReady"
+# Below dependencies are only used for building tasks (above are runtime deps):
 
-# Above items are in fact runtime dependencies,
-# but because they are already bundled in the "build-output" folder that ships with the NPM package,
-# we declare them in "devDependencies" to avoid unnecessary downloads.
-# The download can be forced by using the "--dev" option after "npm install readium-shared-js".
+# see readium-cfi-js:
+# "cson", "jshint", "glob", "rimraf", "mkdirp", "watch", "live-reload"
 
-    cson: "latest"
-
-    jshint: "latest"
-
-    glob: 'latest'
-
-    rimraf: 'latest'
-
-    mkdirp: 'latest'
-
-    watch: 'latest'
-
-    'live-reload': 'latest'
 
 #####################################################################
 scripts:
 
-#=====================
-    env: '
-
-        env
-    '
-
-#=====================
-    echo: '
-
-        echo ""
-    '
 
 #=====================
     cson2json: '
 
-        node node_modules/cson/bin/cson2json package.cson
+        node readium-cfi-js/node_modules/cson/bin/cson2json package.cson
         &&
-        node node_modules/cson/bin/cson2json package.cson > package.json
+        node readium-cfi-js/node_modules/cson/bin/cson2json package.cson > package.json
     '
+
 
 #=====================
     'prepare': '
@@ -193,7 +170,7 @@ scripts:
 #=====================
     'prepare:patch': '
 
-        rimraf
+        node readium-cfi-js/node_modules/rimraf/bin.js
             node_modules/eventemitter3/_rjs/**
         &&
         node readium-cfi-js/node_modules/requirejs/bin/r.js -convert
@@ -207,9 +184,10 @@ scripts:
         &&
         npm --version
         &&
-        rimraf
+        node readium-cfi-js/node_modules/rimraf/bin.js
             build-output/*
     '
+
 
 #=====================
     'prebuild': '
@@ -245,7 +223,8 @@ scripts:
 #=====================
 #    'postbuild:scripts': '
 #
-#        rimraf build-output/_SOURCES
+#        node readium-cfi-js/node_modules/rimraf/bin.js
+#                build-output/_SOURCES
 #    '
 
 #=====================
@@ -277,7 +256,8 @@ scripts:
 #=====================
     'prebuild:styles': '
 
-        mkdirp build-output/css/
+        node readium-cfi-js/node_modules/mkdirp/bin/cmd.js
+            build-output/css/
     '
 
 #=====================
@@ -289,17 +269,14 @@ scripts:
 
 #=====================
 #### BLOCKING! (CTRL-C) [watch][live-reload][http]
-    'example:dev': '
-        npm run
-            clean
-        &&
+    'example:watch': '
         echo > open_webbrowser.js
         &&
         parallelshell
-            \"npm run live-reload\"
             \"npm run watch\"
             \"npm run http\"
     '
+# \"npm run live-reload\"
 
 #=====================
 #### BLOCKING! (CTRL-C) [http]
@@ -310,29 +287,15 @@ scripts:
     '
 
 #=====================
-#### BLOCKING! (CTRL-C) [watch:build]
-    watch: '
-
-        parallelshell
-            \"npm run watch:build\"
-    '
-    #   \"npm run watch:test\
-
-#=====================
-#   'watch:test': 'karma start'
-
-#=====================
-#   test: 'karma start --singleRun'
-
-#=====================
 #### BLOCKING! (CTRL-C) [watch or nodemon]
-    'watch:build': '
-        watch
+    'watch': '
+        node readium-cfi-js/node_modules/watch/cli.js
             \"npm run build
                 && node readium-cfi-js/readium-build-tools/webbrowser.js
                 && npm run webbrowser
-                && rimraf open_webbrowser.js\"
-            build-output-usage-example/
+                && node readium-cfi-js/node_modules/rimraf/bin.js
+                      open_webbrowser.js\"
+            build-output-usage-example/ js/ plugins/ readium-cfi-js/js/
     '
     #    nodemon -q
     #    -w build-output-usage-example/
@@ -340,22 +303,22 @@ scripts:
     #    --exec \"npm run build
     #            && node readium-cfi-js/readium-build-tools/webbrowser.js
     #            && npm run webbrowser
-    #            && rimraf open_webbrowser.js\"
+    #            && node readium-cfi-js/node_modules/rimraf/bin.js
+    #                  open_webbrowser.js\"
 
 #=====================
     'http': '
-
-        http-server -p 9090 ./
+        http-server -p 9090 --cors ./
     '
 
 #=====================
-    'live-reload': '
-
-        live-reload --port 9091 --delay 1000 build-output/
-    '
+#    'live-reload': '
+#
+#        live-reload --port 9091 --delay 1000 build-output/
+#    '
 
 #=====================
     'webbrowser': '
 
-        opener http://localhost:9090/build-output-usage-example/
+        opener http://127.0.0.1:9090/build-output-usage-example/
     '

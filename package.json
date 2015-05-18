@@ -5,7 +5,7 @@
   "._": "as this would overwrite / update the JSON, not the master CSON!",
   "*/": "----------------------------------------------------------------------------",
   "name": "readium-shared-js",
-  "version": "0.19.0-alpha",
+  "version": "0.20.0-alpha",
   "description": "Readium - shared javascript module",
   "keywords": [
     "readium",
@@ -40,47 +40,36 @@
   ],
   "dependencies": {
     "parallelshell": "latest",
-    "http-server": "latest",
-    "opener": "latest"
+    "opener": "latest",
+    "http-server": "danielweck/http-server"
   },
   "devDependencies": {
+    "jquerySizes": "bramstein/jsizes",
+    "domReady": "requirejs/domReady",
     "backbone": "latest",
     "underscore": "latest",
     "URIjs": "latest",
-    "jquerySizes": "bramstein/jsizes",
-    "eventemitter3": "latest",
-    "domReady": "requirejs/domReady",
-    "cson": "latest",
-    "jshint": "latest",
-    "glob": "latest",
-    "rimraf": "latest",
-    "mkdirp": "latest",
-    "watch": "latest",
-    "live-reload": "latest"
+    "eventemitter3": "latest"
   },
   "scripts": {
-    "env": "env",
-    "echo": "echo \"\"",
-    "cson2json": "node node_modules/cson/bin/cson2json package.cson && node node_modules/cson/bin/cson2json package.cson > package.json",
+    "cson2json": "node readium-cfi-js/node_modules/cson/bin/cson2json package.cson && node readium-cfi-js/node_modules/cson/bin/cson2json package.cson > package.json",
     "prepare": "npm run prepare:submodule && npm run prepare:dependencies && npm run prepare:patch",
     "prepare:dependencies": "npm install && npm update",
     "prepare:submodule": "cd readium-cfi-js && npm run prepare && cd .. && ls",
-    "prepare:patch": "rimraf node_modules/eventemitter3/_rjs/** && node readium-cfi-js/node_modules/requirejs/bin/r.js -convert node_modules/eventemitter3/ node_modules/eventemitter3/_rjs/",
-    "clean": "node --version && npm --version && rimraf build-output/*",
+    "prepare:patch": "node readium-cfi-js/node_modules/rimraf/bin.js node_modules/eventemitter3/_rjs/** && node readium-cfi-js/node_modules/requirejs/bin/r.js -convert node_modules/eventemitter3/ node_modules/eventemitter3/_rjs/",
+    "clean": "node --version && npm --version && node readium-cfi-js/node_modules/rimraf/bin.js build-output/*",
     "prebuild": "npm run clean",
     "build": "npm run build:styles && npm run build:scripts",
     "lint": "node readium-cfi-js/readium-build-tools/jshint_glob.js js/**.js",
     "build:scripts": "npm run build:scripts:multiple && npm run build:scripts:single",
     "build:scripts:multiple": "node readium-cfi-js/node_modules/requirejs/bin/r.js -o readium-cfi-js/readium-build-tools/RequireJS_config.js --rjs_bundle=multiple",
     "build:scripts:single": "node readium-cfi-js/node_modules/requirejs/bin/r.js -o readium-cfi-js/readium-build-tools/RequireJS_config.js --rjs_bundle=single",
-    "prebuild:styles": "mkdirp build-output/css/",
+    "prebuild:styles": "node readium-cfi-js/node_modules/mkdirp/bin/cmd.js build-output/css/",
     "build:styles": "cp static/sdk.css build-output/css/",
-    "example:dev": "npm run clean && echo > open_webbrowser.js && parallelshell \"npm run live-reload\" \"npm run watch\" \"npm run http\"",
+    "example:watch": "echo > open_webbrowser.js && parallelshell \"npm run watch\" \"npm run http\"",
     "example": "parallelshell \"npm run http\" \"npm run webbrowser\"",
-    "watch": "parallelshell \"npm run watch:build\"",
-    "watch:build": "watch \"npm run build && node readium-cfi-js/readium-build-tools/webbrowser.js && npm run webbrowser && rimraf open_webbrowser.js\" build-output-usage-example/",
-    "http": "http-server -p 9090 ./",
-    "live-reload": "live-reload --port 9091 --delay 1000 build-output/",
-    "webbrowser": "opener http://localhost:9090/build-output-usage-example/"
+    "watch": "node readium-cfi-js/node_modules/watch/cli.js \"npm run build && node readium-cfi-js/readium-build-tools/webbrowser.js && npm run webbrowser && node readium-cfi-js/node_modules/rimraf/bin.js open_webbrowser.js\" build-output-usage-example/ js/ plugins/ readium-cfi-js/js/",
+    "http": "http-server -p 9090 --cors ./",
+    "webbrowser": "opener http://127.0.0.1:9090/build-output-usage-example/"
   }
 }
