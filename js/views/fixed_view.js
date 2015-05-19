@@ -664,8 +664,8 @@ ReadiumSDK.Views.FixedView = function(options, reader){
 
     this.insureElementVisibility = function(spineItemId, element, initiator) {
 
-        //TODO: during zoom+pan, playing element might not actualy be visible
+        //TODO: during zoom+pan, playing element might not actually be visible
 
-    }
+    };
 
 };

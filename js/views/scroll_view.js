@@ -1366,7 +1366,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
             self.openPage(openPageRequest);
         }
 
-    }
+    };
 
 };
 

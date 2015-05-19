@@ -634,7 +634,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         _$epubHtml.css("column-fill", "auto");
         
         _$epubHtml.css({left: "0", right: "0", top: "0"});
-        
+
         ReadiumSDK.Helpers.triggerLayout(_$iframe);
 
         _paginationInfo.columnCount = ((_htmlBodyIsVerticalWritingMode ? _$epubHtml[0].scrollHeight : _$epubHtml[0].scrollWidth) + _paginationInfo.columnGap) / (_paginationInfo.columnWidth + _paginationInfo.columnGap);
@@ -881,6 +881,6 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         }
 
         self.openPage(openPageRequest);
-    }
+    };
 
 };
