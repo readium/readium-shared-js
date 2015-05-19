@@ -275,8 +275,30 @@ var ReaderView = function (options) {
         return cachedView;
     };
 
+
+    function expireCachedItems(currentSpineItem) {
+        var currentSpineItemIndex = currentSpineItem.index;
+        // get all views that have an spine index more than 3 removed. it's simplistic but should work
+        // for both single and double fixed page layouts..
+        var cachedViewsToRemove = _.filter(_cachedViews, function(cachedView){
+            var spineItemForCachedView = cachedView.getLoadedSpineItems()[0];
+            return (Math.abs(spineItemForCachedView.index - currentSpineItemIndex) > 3); 
+        });
+
+        console.log("Pruning cached views, removing %d from the cached views list.", cachedViewsToRemove.length);
+
+        // remove views from the dom.
+        _.each(cachedViewsToRemove, function(viewToRemove) {
+            viewToRemove.remove();
+        });
+
+        // remove cached views from our local table.
+        _cachedViews = _.difference(_cachedViews, cachedViewsToRemove);
+    }
+
     // returns true is view changed
     function initViewForItem(spineItem, callback) {
+        expireCachedItems(spineItem);
         console.log('%c Init view for item', 'background: black; color: red');
         if (_currentView) {
             _currentView.hide();
