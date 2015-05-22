@@ -68,7 +68,7 @@ files: [
 
     "build-output/"
 
-    "build-output-usage-example/"
+    "dev/"
 
     "license.txt"
 
@@ -271,21 +271,21 @@ scripts:
 
 #=====================
 #### BLOCKING! (CTRL-C) [watch][live-reload][http]
-    'example:watch': '
+    'http:watch': '
         echo > open_webbrowser.js
         &&
         parallelshell
             \"npm run watch\"
-            \"npm run http\"
+            \"npm run httpServe\"
     '
 # \"npm run live-reload\"
 
 #=====================
 #### BLOCKING! (CTRL-C) [http]
-    'example': '
+    'http': '
         parallelshell
-            \"npm run http\"
-            \"npm run webbrowser\"
+            \"npm run httpServe\"
+            \"npm run webBrowser\"
     '
 
 #=====================
@@ -294,13 +294,13 @@ scripts:
         node readium-cfi-js/node_modules/watch/cli.js
             \"npm run build
                 && node readium-cfi-js/readium-build-tools/webbrowser.js
-                && npm run webbrowser
+                && npm run webBrowser
                 && node readium-cfi-js/node_modules/rimraf/bin.js
                       open_webbrowser.js\"
-            build-output-usage-example/ js/ plugins/ readium-cfi-js/js/
+            dev/ js/ plugins/ readium-cfi-js/js/
     '
     #    nodemon -q
-    #    -w build-output-usage-example/
+    #    -w dev/
     #    --ext \".\"
     #    --exec \"npm run build
     #            && node readium-cfi-js/readium-build-tools/webbrowser.js
@@ -309,7 +309,7 @@ scripts:
     #                  open_webbrowser.js\"
 
 #=====================
-    'http': '
+    'httpServe': '
         http-server -p 9090 --cors ./
     '
 
@@ -320,7 +320,7 @@ scripts:
 #    '
 
 #=====================
-    'webbrowser': '
+    'webBrowser': '
 
-        opener http://127.0.0.1:9090/build-output-usage-example/
+        opener http://127.0.0.1:9090/dev/
     '
