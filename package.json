@@ -48,7 +48,7 @@
     "domReady": "requirejs/domReady",
     "backbone": "latest",
     "underscore": "latest",
-    "URIjs": "latest",
+    "URIjs": "danielweck/URI.js",
     "eventemitter3": "latest"
   },
   "scripts": {
