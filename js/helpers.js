@@ -274,7 +274,7 @@ ReadiumSDK.Helpers.triggerLayout = function($iframe) {
         }
     
         if (ss)
-            ss.insertRule('body:first-child::before {content:\'READIUM\';color: red;font-weight: bold;}', ss.cssRules.length);
+            ss.insertRule('body:first-child::before {content:\'READIUM\';color: red;font-weight: bold;}', (ss.cssRules) ? ss.cssRules.length : 0);
     }
     catch (ex)
     {
@@ -289,7 +289,7 @@ ReadiumSDK.Helpers.triggerLayout = function($iframe) {
         doc.body.removeChild(el);
 
         if (ss)
-            ss.deleteRule(ss.cssRules.length-1);
+            ss.deleteRule((ss.cssRules) ? ss.cssRules.length-1 : 0);
     }
     catch (ex)
     {
