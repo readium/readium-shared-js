@@ -10,9 +10,6 @@ ReadiumSDK.Models.CacheManager = function(spine, createViewForItem) {
 
     var _iframeRereferences = [];
 
-
-
-
     this.getViewForSpineItem = function(spineItem, currentView, viewerSettings, viewCreationParams) {
         if (currentView) {
             currentView.hide();
@@ -20,11 +17,9 @@ ReadiumSDK.Models.CacheManager = function(spine, createViewForItem) {
             currentView.off();
         }
 
-
-        // should be viewManager getView
         var cachedView = self.getCachedViewForSpineItem(spineItem);
-        self.cacheNeighboursForSpineItem(spineItem, currentView, viewCreationParams);
-        self.expireCachedItems(spineItem);
+        //self.cacheNeighboursForSpineItem(spineItem, currentView, viewCreationParams);
+        //self.expireCachedItems(spineItem);
 
         // there's a cached view, lets reset the _currentView then.
         if (cachedView !== undefined) {
@@ -39,11 +34,14 @@ ReadiumSDK.Models.CacheManager = function(spine, createViewForItem) {
             currentView = createViewForItem(spineItem, viewCreationParams);
             currentView.render(); 
             currentView.setViewSettings(viewerSettings);
-
-
-            setTimeout(function(){
-                currentView.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED,spineAndIframe.$iframe, spineAndIframe.spineItem);
-            }, 150);
+            currentView.once(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function($iframe, spineItem) {
+                // proxy this event through to the reader
+                _.defer(function() {
+                    setTimeout(function(){
+                            currentView.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
+                        }, 150);
+                });
+            });
 
 
 
@@ -71,6 +69,8 @@ ReadiumSDK.Models.CacheManager = function(spine, createViewForItem) {
         // for a synthetic spread it's going to be 2. In any case, this information is encapsulated 
         // in the number of currently loaded spines within the current view.
         var spinesWithinTheCurrentView = _.isUndefined(currentView)  ? 1 : currentView.getLoadedSpineItems().length; 
+
+        viewCreationParams.cachedView = true;
 
         // dont actually add the view to the cached array until it's been fully loaded and ready to show. this is 
         // so that if the users exceeds the cache we can just show them the regular spinner.
