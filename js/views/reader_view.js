@@ -119,7 +119,7 @@ var ReaderView = function (options) {
             bookStyles: _bookStyles,
             iframeLoader: _iframeLoader,
         };
-        _currentView = _viewManager.getViewForSpineItem(spineItem, _currentView, _viewerSettings, viewCreationParams);
+        _currentView = _viewManager.getViewForSpineItem(spineItem, _currentView, _viewerSettings, viewCreationParams, callback);
 
         self.emit(Globals.Events.READER_VIEW_CREATED, _viewManager.viewTypeForView(_currentView));
 
@@ -137,10 +137,6 @@ var ReaderView = function (options) {
             Switches.apply(contentDoc);
 
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
-
-            // if (_.isUndefined(getCachedViewForSpineItem(_currentView.getLoadedSpineItems()[0]))) {
-            //     _cachedViews.push(_currentView);
-            // }
         });
 
         _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOAD_START, function ($iframe, spineItem) {

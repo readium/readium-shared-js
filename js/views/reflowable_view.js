@@ -92,7 +92,8 @@ var ReflowableView = function(options, reader){
         _$el = $(template);
         _$viewport.append(_$el);
 
-        var settings = reader.viewerSettings();
+        // var settings = reader.viewerSettings();
+        var settings;
         if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefined")
         {
             //defaults

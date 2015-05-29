@@ -10,7 +10,7 @@ ReadiumSDK.Models.CacheManager = function(spine, createViewForItem) {
 
     var _iframeRereferences = [];
 
-    this.getViewForSpineItem = function(spineItem, currentView, viewerSettings, viewCreationParams) {
+    this.getViewForSpineItem = function(spineItem, currentView, viewerSettings, viewCreationParams, callback) {
         if (currentView) {
             currentView.hide();
             currentView.setCached(true);
@@ -18,7 +18,7 @@ ReadiumSDK.Models.CacheManager = function(spine, createViewForItem) {
         }
 
         var cachedView = self.getCachedViewForSpineItem(spineItem);
-        //self.cacheNeighboursForSpineItem(spineItem, currentView, viewCreationParams);
+        self.cacheNeighboursForSpineItem(spineItem, currentView, viewCreationParams);
         //self.expireCachedItems(spineItem);
 
         // there's a cached view, lets reset the _currentView then.
@@ -30,15 +30,16 @@ ReadiumSDK.Models.CacheManager = function(spine, createViewForItem) {
             // this is questionable as hell.. exposing the internals of the reader view to trigger the event. there's gotta be a better way.
             var spineAndIframe = currentView.getLoadedContentFrames()[0];
             currentView.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED,spineAndIframe.$iframe, spineAndIframe.spineItem);
+            callback(true);
         } else {
             currentView = createViewForItem(spineItem, viewCreationParams);
+            saveViewOnceLoaded(currentView);
             currentView.render(); 
-            currentView.setViewSettings(viewerSettings);
             currentView.once(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function($iframe, spineItem) {
                 // proxy this event through to the reader
                 _.defer(function() {
                     setTimeout(function(){
-                            currentView.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
+                            callback(true);
                         }, 150);
                 });
             });
@@ -70,40 +71,21 @@ ReadiumSDK.Models.CacheManager = function(spine, createViewForItem) {
         // in the number of currently loaded spines within the current view.
         var spinesWithinTheCurrentView = _.isUndefined(currentView)  ? 1 : currentView.getLoadedSpineItems().length; 
 
-        viewCreationParams.cachedView = true;
 
-        // dont actually add the view to the cached array until it's been fully loaded and ready to show. this is 
-        // so that if the users exceeds the cache we can just show them the regular spinner.
-        var saveViewOnceLoaded = function(view) {
-            if (_.isUndefined(view)) {
-                return;
-            }
-            view.once(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function() {
-                // try to make sure that we don't load duplicate views.
-                var spineItemForView = view.getLoadedSpineItems()[0];
-                if (_.isUndefined(self.getCachedViewForSpineItem(spineItemForView))) {
-                    console.log('%c View loaded in the background...%d cached views', 'background: grey; color: blue', _cachedViews.length);
-                    _cachedViews.push(view);    
-                } else {
-                    console.debug('%c Prevented from loading duplicate view...%d cached views', 'background: grey; color: red', _cachedViews.length);
-                    // console.debug("fixed-book-frame:", $('.fixed-book-frame', _$el).length);
-                    view.hide();
-                    view.remove();
-                    delete view;
-                }
-            })
-        };
+        // make a copy of the viewCreationParams so that we can apply the current settings to the cached views.
+        var localViewCreationParams = _.extend({}, viewCreationParams);
+        localViewCreationParams.cachedView = true;
 
         var rightSpineItemToPrefetch = _spine.items[spineItem.index + spinesWithinTheCurrentView];
         var leftSpineItemToPrefetch = _spine.items[spineItem.index - spinesWithinTheCurrentView];
 
         if (rightSpineItemToPrefetch && _.isUndefined(self.getCachedViewForSpineItem(rightSpineItemToPrefetch))) {
-            var rightView = createPrefetchedViewForSpineItem(rightSpineItemToPrefetch, "first", viewCreationParams);
+            var rightView = createPrefetchedViewForSpineItem(rightSpineItemToPrefetch, "first", localViewCreationParams);
             saveViewOnceLoaded(rightView);
         }
 
         if (leftSpineItemToPrefetch && _.isUndefined(self.getCachedViewForSpineItem(leftSpineItemToPrefetch))) {
-             var leftView = createPrefetchedViewForSpineItem(leftSpineItemToPrefetch, "last", viewCreationParams);
+             var leftView = createPrefetchedViewForSpineItem(leftSpineItemToPrefetch, "last", localViewCreationParams);
              saveViewOnceLoaded(leftView);
         }
     }
@@ -131,6 +113,25 @@ ReadiumSDK.Models.CacheManager = function(spine, createViewForItem) {
 
     //////////////////
     // private helpers
+
+    // dont actually add the view to the cached array until it's been fully loaded and ready to show. this is 
+    // so that if the users exceeds the cache we can just show them the regular spinner.
+    function saveViewOnceLoaded (view) {
+        if (_.isUndefined(view)) {
+            return;
+        }
+        view.once(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function() {
+            // try to make sure that we don't load duplicate views.
+            var spineItemForView = view.getLoadedSpineItems()[0];
+            if (_.isUndefined(self.getCachedViewForSpineItem(spineItemForView))) {
+                console.log('%c View loaded in the background...%d cached views', 'background: grey; color: blue', _cachedViews.length);
+                _cachedViews.push(view);    
+            } 
+        })
+    };
+
+
+
     // TODODM: this needs to take spine item as a parameter, not an index. maybe.
     function createPrefetchedViewForSpineItem(spineItem, setToPage, viewCreationParams) {
         var cachedView = self.getCachedViewForSpineItem(spineItem);
@@ -158,7 +159,7 @@ ReadiumSDK.Models.CacheManager = function(spine, createViewForItem) {
             // cachedView.setViewSettings(_viewerSettings);
             cachedView.openPage(openPageRequest,2);
             cachedView.setCached(true);
-            cachedView.hide();
+            // cachedView.hide();
         }
         return cachedView;
     };
