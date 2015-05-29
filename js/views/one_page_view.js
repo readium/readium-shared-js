@@ -297,18 +297,19 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader, 
         Helpers.CSSTransition(_$el, "all 0 ease 0");
 
         _$el.css("transform", "none");
+    
+        // var settings = reader.viewerSettings();
+        // if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefined")
+        // {
+        //     //defaults
+        //     settings = new ViewerSettings({});
+        // }
+        // if (settings.enableGPUHardwareAccelerationCSS3D) {
 
-        var settings = reader.viewerSettings();
-        if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefined") {
-            //defaults
-            settings = new ViewerSettings({});
-        }
-        if (settings.enableGPUHardwareAccelerationCSS3D) {
-
-            // This fixes rendering issues with WebView (native apps), which crops content embedded in iframes unless GPU hardware acceleration is enabled for CSS rendering.
-            _$el.css("transform", "translateZ(0)");
-        }
-
+        //     // This fixes rendering issues with WebView (native apps), which crops content embedded in iframes unless GPU hardware acceleration is enabled for CSS rendering.
+        //     _$el.css("transform", "translateZ(0)");
+        // }
+    
         _$el.css("height", "100%");
         _$el.css("width", "100%");
 
@@ -539,8 +540,10 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader, 
             enable3D = true;
         }
 
-        if (reader.needsFixedLayoutScalerWorkAround()) {
-            var css1 = Helpers.CSSTransformString({scale: scale, enable3D: enable3D});
+        // if (reader.needsFixedLayoutScalerWorkAround())
+        if(false)
+        {
+            var css1 = Helpers.CSSTransformString({scale : scale, enable3D: enable3D});
             _$epubHtml.css(css1);
 
             var css2 = Helpers.CSSTransformString({scale : 1, enable3D: enable3D});

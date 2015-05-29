@@ -54,7 +54,6 @@ var ReaderView = function (options) {
     var _currentView = undefined;
     var _package = undefined;
     var _spine = undefined;
-    var _cachedViews = [];
     var _viewerSettings = new ViewerSettings({});
     //styles applied to the container divs
     var _userStyles = new StyleCollection();
@@ -66,7 +65,7 @@ var ReaderView = function (options) {
     var _iframeLoader;
     var _$el;
     var _prefetchingEnabled = true;
-    var _cacheManager = new ReadiumSDK.Models.CacheManager();
+    var _viewManager; // in openbook.
     
     //We will call onViewportResize after user stopped resizing window
     var lazyResize = Helpers.extendedThrottle(
@@ -100,206 +99,29 @@ var ReaderView = function (options) {
         return _needsFixedLayoutScalerWorkAround;
     };
 
-    /**
-     * Create a view based on the given view type.
-     * @param {Views.ReaderView.ViewType} viewType
-     * @param {Views.ReaderView.ViewCreationOptions} options
-     * @returns {*}
-     */
-    this.createViewForType = function (viewType, options) {
-        var createdView;
-
-        // NOTE: _$el == options.$viewport
-        _$el.css("overflow", "hidden");
-
-        switch (viewType) {
-            case ReaderView.VIEW_TYPE_FIXED:
-
-                _$el.css("overflow", "auto"); // for content pan, see self.setZoom()
-
-                createdView = new FixedView(options, self);
-                break;
-            case ReaderView.VIEW_TYPE_SCROLLED_DOC:
-                createdView = new ScrollView(options, false, self);
-                break;
-            case ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS:
-                createdView = new ScrollView(options, true, self);
-                break;
-            default:
-                createdView = new ReflowableView(options, self);
-                break;
-        }
-
-        return createdView;
-    };
-
+ 
     /**
      * Returns the current view type of the reader view
      * @returns {ReaderView.ViewType}
      */
     this.getCurrentViewType = function() {
-        return this.viewTypeForView(_currentView);
+        return _viewManager.viewTypeForView(_currentView);
     };
 
-    this.viewTypeForView = function(view) {
 
-        if(!view) {
-            return undefined;
-        }
-
-        if (view instanceof ReflowableView) {
-            return ReaderView.VIEW_TYPE_COLUMNIZED;
-        }
-
-        if (ciew instanceof FixedView) {
-            return ReaderView.VIEW_TYPE_FIXED;
-        }
-
-        if (view instanceof ScrollView) {
-            if (view.isContinuousScroll()) {
-                return ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
-            }
-
-            return ReaderView.VIEW_TYPE_SCROLLED_DOC;
-        }
-
-        console.error("Unrecognized view type");
-        return undefined;
-    };
-
-    //based on https://docs.google.com/spreadsheet/ccc?key=0AoPMUkQhc4wcdDI0anFvWm96N0xRT184ZE96MXFRdFE&usp=drive_web#gid=0 document
-    function deduceDesiredViewType(spineItem) {
-
-        //check settings
-        if (_viewerSettings.scroll == "scroll-doc") {
-            return ReaderView.VIEW_TYPE_SCROLLED_DOC;
-        }
-
-        if (_viewerSettings.scroll == "scroll-continuous") {
-            return ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
-        }
-
-        //is fixed layout ignore flow
-        if (spineItem.isFixedLayout()) {
-            return ReaderView.VIEW_TYPE_FIXED;
-        }
-
-        //flow
-        if (spineItem.isFlowScrolledDoc()) {
-            return ReaderView.VIEW_TYPE_SCROLLED_DOC;
-        }
-
-        if (spineItem.isFlowScrolledContinuous()) {
-            return ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
-        }
-
-        return ReaderView.VIEW_TYPE_COLUMNIZED;
-    }
-
-
-    function createViewForItem(spineItem, callback) {
-
-        var view = undefined;
-        var desiredViewType = deduceDesiredViewType(spineItem);
-
-        /**
-         * View creation options
-         * @typedef {object} Globals.Views.ReaderView.ViewCreationOptions
-         * @property {jQueryElement} $viewport  The view port element the reader view has created.
-         * @property {Globals.Models.Spine} spine The spine item collection object
-         * @property {Globals.Collections.StyleCollection} userStyles User styles
-         * @property {Globals.Collections.StyleCollection} bookStyles Book styles
-         * @property {Globals.Views.IFrameLoader} iframeLoader   An instance of an iframe loader or one expanding it.
-         */
+    // returns true is view changed
+    function initViewForItem(spineItem, callback) {
+        console.log('%c Init view for item', 'background: black; color: red');
         var viewCreationParams = {
             $viewport: _$el,
             spine: _spine,
             userStyles: _userStyles,
             bookStyles: _bookStyles,
-            iframeLoader: _iframeLoader
+            iframeLoader: _iframeLoader,
         };
+        _currentView = _viewManager.getViewForSpineItem(spineItem, _currentView, _viewerSettings, viewCreationParams);
 
-
-        view = self.createViewForType(desiredViewType, viewCreationParams);
-        return view;
-    }
-
-    // returns true is view changed
-    function initViewForItem(spineItem, callback) {
-        console.log('%c Init view for item', 'background: black; color: red');
-        if (_currentView) {
-            _currentView.hide();
-            _currentView.setCached(true);
-            _currentView.off();
-        }
-
-        var cachedView = getCachedViewForSpineItem(spineItem);
-
-        if (_prefetchingEnabled) {
-            // the next spine item to cache might be either +1 or +2. For a reflowable view it'll be +1,
-            // for a synthetic spread it's going to be 2. In any case, this information is encapsulated 
-            // in the number of currently loaded spines within the current view.
-            var spinesWithinTheCurrentView = _.isUndefined(_currentView)  ? 1 : _currentView.getLoadedSpineItems().length; 
-
-            // dont actually add the view to the cached array until it's been fully loaded and ready to show. this is 
-            // so that if the users exceeds the cache we can just show them the regular spinner.
-            var saveViewOnceLoaded = function(view) {
-                if (_.isUndefined(view)) {
-                    return;
-                }
-                view.once(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function() {
-                    // try to make sure that we don't load duplicate views.
-                    var spineItemForView = view.getLoadedSpineItems()[0];
-                    if (_.isUndefined(getCachedViewForSpineItem(spineItemForView))) {
-                        console.log('%c View loaded in the background...%d cached views', 'background: grey; color: blue', _cachedViews.length);
-                        _cachedViews.push(view);    
-                    } else {
-                        console.debug('%c Prevented from loading duplicate view...%d cached views', 'background: grey; color: red', _cachedViews.length);
-                        console.debug("fixed-book-frame:", $('.fixed-book-frame', _$el).length);
-                        view.hide();
-                        view.remove();
-                        delete view;
-                    }
-                })
-            };
-
-            var rightSpineItemToPrefetch = _spine.items[spineItem.index + spinesWithinTheCurrentView];
-            var leftSpineItemToPrefetch = _spine.items[spineItem.index - spinesWithinTheCurrentView];
-
-            if (rightSpineItemToPrefetch && _.isUndefined(getCachedViewForSpineItem(rightSpineItemToPrefetch))) {
-                var rightView = createPrefetchedViewForSpineItemIndex(rightSpineItemToPrefetch.index);
-                saveViewOnceLoaded(rightView);
-            }
-
-            if (leftSpineItemToPrefetch && _.isUndefined(getCachedViewForSpineItem(leftSpineItemToPrefetch))) {
-                 var leftView = createPrefetchedViewForSpineItemIndex(leftSpineItemToPrefetch.index, "last");
-                 saveViewOnceLoaded(leftView);
-            }
-        }
-
-        // there's a cached view, lets reset the _currentView then.
-        if (cachedView !== undefined) {
-            cachedView.setCached(false);
-            cachedView.show();
-            _currentView = cachedView;
-            _currentView.setViewSettings(_viewerSettings);
-            // 
-            if (_.isUndefined(_currentView.getLoadedContentFrames())) {
-                console.error("Current view content cna't be undefined!");
-                // self.openSpineItemPage(_currentView.getLoadedSpineItems()[0].idref, 0);
-                return;
-            }
-            // this is questionable as hell.. exposing the internals of the reader view to trigger the event. there's gotta be a better way.
-            var spineAndIframe = _currentView.getLoadedContentFrames()[0];
-            _currentView.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED,spineAndIframe.$iframe, spineAndIframe.spineItem);
-        } else {
-            _currentView = createViewForItem(spineItem);
-            _currentView.render(); 
-            _currentView.setViewSettings(_viewerSettings);
-
-        }
-
-        self.emit(Globals.Events.READER_VIEW_CREATED, self.viewTypeForView(_currentView));
+        self.emit(Globals.Events.READER_VIEW_CREATED, _viewManager.viewTypeForView(_currentView));
 
         _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOADED, function($iframe, spineItem) {
 
@@ -316,9 +138,9 @@ var ReaderView = function (options) {
 
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
 
-            if (_.isUndefined(getCachedViewForSpineItem(_currentView.getLoadedSpineItems()[0]))) {
-                _cachedViews.push(_currentView);
-            }
+            // if (_.isUndefined(getCachedViewForSpineItem(_currentView.getLoadedSpineItems()[0]))) {
+            //     _cachedViews.push(_currentView);
+            // }
         });
 
         _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOAD_START, function ($iframe, spineItem) {
@@ -344,15 +166,8 @@ var ReaderView = function (options) {
         });
 
         // we do this to wait until elements are rendered otherwise book is not able to determine view size.
-        setTimeout(function () {
-
+        setTimeout(function(){
             callback(true);
-            _.each(_cachedViews, function(view) {
-                if (view !== _currentView) {
-                    view.hide();
-                }
-            });
-
         }, 50);
 
     }
@@ -453,6 +268,8 @@ var ReaderView = function (options) {
         _mediaOverlayPlayer.setAutomaticNextSmil(_viewerSettings.mediaOverlaysAutomaticPageTurn ? true : false); // just to ensure the internal var is set to the default settings (user settings are applied below at self.updateSettings(openBookData.settings);)
 
         _mediaOverlayDataInjector = new MediaOverlayDataInjector(_package.media_overlay, _mediaOverlayPlayer);
+
+        _viewManager = new CacheManager(_spine);
 
 
         resetCurrentView();
