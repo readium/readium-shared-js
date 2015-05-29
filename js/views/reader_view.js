@@ -265,7 +265,7 @@ var ReaderView = function (options) {
 
         _mediaOverlayDataInjector = new MediaOverlayDataInjector(_package.media_overlay, _mediaOverlayPlayer);
 
-        _viewManager = new CacheManager(_spine);
+        _viewManager = new ViewManager(_spine);
 
 
         resetCurrentView();

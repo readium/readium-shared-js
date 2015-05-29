@@ -1,7 +1,7 @@
 /**
  * @class 
  */
-ReadiumSDK.Models.CacheManager = function(spine, createViewForItem) {
+ReadiumSDK.Models.ViewManager = function(spine, createViewForItem) {
     var self = this;
 
     var _cachedViews = [];
