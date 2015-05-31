@@ -156,6 +156,9 @@ scripts:
         npm install
         &&
         npm update
+        &&
+        node
+            readium-cfi-js/readium-build-tools/gitHubForksUpdater.js
     '
 
 #=====================
