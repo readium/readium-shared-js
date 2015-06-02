@@ -252,6 +252,13 @@ scripts:
     '
 
 #=====================
+    'postbuild:scripts:multiple': '
+
+        node readium-cfi-js/node_modules/rimraf/bin.js
+            build-output/_multiple-bundles/RequireJS.js.src.js
+    '
+
+#=====================
     'build:scripts:single': '
         node readium-cfi-js/node_modules/requirejs/bin/r.js
              -o
