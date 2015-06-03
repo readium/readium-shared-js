@@ -1172,7 +1172,6 @@ ReadiumSDK.Views.ReaderView = function(options) {
         else
         {
             _currentView.onViewportResize();
-            _annotationsManager.redrawHighlights();
         }
     };
 
@@ -1223,6 +1222,17 @@ ReadiumSDK.Views.ReaderView = function(options) {
     this.removeHighlight = function(id) {
         return _annotationsManager.removeHighlight(id);
     }; 
+
+    /**
+     * Redraws all highlights. Calling this function from a
+     * PAGINATION_CHANGED event callback should cover all cases
+     * when annotations should be redrawn.
+     *
+     * @returns {undefined}
+     */
+    this.redrawHighlights = function () {
+	_annotationsManager.redrawHighlights();
+    };
 
     /**
      *
