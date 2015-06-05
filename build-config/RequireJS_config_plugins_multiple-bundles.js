@@ -13,19 +13,22 @@
 
 require.config({
 
-    baseUrl: process._RJS_baseUrl(1),
-
-    // relative to this config file (not baseUrl)
-    dir: "../build-output/_multiple-bundles",
-
     modules:
     [
         {
-            name: "readium-shared-js",
+            name: "readium-plugin-example",
             create: true,
-            include: ['readium_shared_js/globalsSetup', 'readium_shared_js/plugins_controller', 'readium_shared_js/views/reader_view'],
-            exclude: ["readium-external-libs", "readium-cfi-js"],
-            insertRequire: ["readium_shared_js/globalsSetup"]
+            include: ["readium_plugin_example"],
+            exclude: ["readium-external-libs", "readium-cfi-js", "readium-shared-js"],
+            insertRequire: ["readium_plugin_example"]
+        },
+
+        {
+            name: "readium-plugin-annotations",
+            create: true,
+            include: ["readium_plugin_annotations"],
+            exclude: ["readium-external-libs", "readium-cfi-js", "readium-shared-js"],
+            insertRequire: ["readium_plugin_annotations"]
         }
     ]
 });

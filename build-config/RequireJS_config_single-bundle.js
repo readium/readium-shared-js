@@ -17,13 +17,12 @@ require.config({
 
     name: "readium-shared-js_all",
 
-    include: ['readium_shared_js/globalsSetup', 'readium_shared_js/plugins_controller', 'readium_shared_js/views/reader_view',
-        "readium_plugin_example", "readium_plugin_annotations"],
+    include: ['readium_shared_js/globalsSetup', 'readium_shared_js/plugins_controller', 'readium_shared_js/views/reader_view'],
 
     // relative to this config file (not baseUrl)
     out: "../build-output/_single-bundle/readium-shared-js_all.js",
 
-    insertRequire: ["readium_shared_js/globalsSetup", "readium_plugin_annotations"],
+    insertRequire: ["readium_shared_js/globalsSetup"],
 
     paths:
     {
