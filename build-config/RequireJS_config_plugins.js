@@ -2,13 +2,6 @@
 require.config({
   packages: [
     {
-      name: "readium_shared_js",
-      location: process._RJS_rootDir(1) + '/js',
-
-      main: "globalsSetup"
-    },
-
-    {
       name: "readium_plugin_annotations",
       location: process._RJS_rootDir(1) + '/plugins/annotations',
 
