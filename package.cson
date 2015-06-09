@@ -220,11 +220,19 @@ scripts:
     '
 
 #=====================
+    'prebuild:scripts': '
+
+        npm run genPluginsConfig
+    '
+
+#=====================
 #    'prebuild:scripts': '
 #
 #        npm run
 #            lint
 #    '
+
+
 
 #=====================
 #    'postbuild:scripts': '
@@ -320,6 +328,11 @@ scripts:
     #            && npm run webbrowser
     #            && node readium-cfi-js/node_modules/rimraf/bin.js
     #                  open_webbrowser.js\"
+
+#=====================
+    'genPluginsConfig': '
+        node readium-cfi-js/readium-build-tools/pluginsConfigMaker.js
+    '
 
 #=====================
     'httpServe': '

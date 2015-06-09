@@ -62,6 +62,7 @@
     "prebuild": "npm run clean",
     "build": "npm run build:styles && npm run build:scripts",
     "lint": "node readium-cfi-js/readium-build-tools/jshint_glob.js js/**.js",
+    "prebuild:scripts": "npm run genPluginsConfig",
     "build:scripts": "npm run build:scripts:multiple && npm run build:scripts:single",
     "build:scripts:multiple": "node readium-cfi-js/node_modules/requirejs/bin/r.js -o readium-cfi-js/readium-build-tools/RequireJS_config.js --rjs_bundle=multiple",
     "postbuild:scripts:multiple": "node readium-cfi-js/node_modules/rimraf/bin.js build-output/_multiple-bundles/RequireJS.js.src.js",
@@ -71,6 +72,7 @@
     "http:watch": "echo > open_webbrowser.js && parallelshell \"npm run watch\" \"npm run httpServe\"",
     "http": "parallelshell \"npm run httpServe\" \"npm run webBrowser\"",
     "watch": "node readium-cfi-js/node_modules/watch/cli.js \"npm run build && node readium-cfi-js/readium-build-tools/webbrowser.js && npm run webBrowser && node readium-cfi-js/node_modules/rimraf/bin.js open_webbrowser.js\" dev/ js/ plugins/ readium-cfi-js/js/",
+    "genPluginsConfig": "node readium-cfi-js/readium-build-tools/pluginsConfigMaker.js",
     "httpServe": "http-server -p 9090 --cors ./",
     "webBrowser": "opener http://127.0.0.1:9090/dev/"
   }
