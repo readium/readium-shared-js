@@ -8,7 +8,13 @@ ReadiumSDK.Models.ViewManager = function(spine, createViewForItem) {
     
     var _spine = spine;
 
-    var _iframeRereferences = [];
+    var _iframeRereferences = {};
+
+
+    ReadiumSDK.cacheStats = function () {
+        console.log(_cachedViews);
+        console.log(_iframeRereferences);
+    };
 
     this.getViewForSpineItem = function(spineItem, currentView, viewerSettings, viewCreationParams, callback) {
         if (currentView) {
@@ -27,19 +33,18 @@ ReadiumSDK.Models.ViewManager = function(spine, createViewForItem) {
             cachedView.show();
             currentView = cachedView;
             currentView.setViewSettings(viewerSettings);
-            // this is questionable as hell.. exposing the internals of the reader view to trigger the event. there's gotta be a better way.
-            var spineAndIframe = currentView.getLoadedContentFrames()[0];
-            currentView.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED,spineAndIframe.$iframe, spineAndIframe.spineItem);
-            callback(true);
+            currentView.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED,_iframeRereferences[spineItem.index], spineItem);
+            callback(false, currentView); // view doesn't change!
         } else {
             currentView = createViewForItem(spineItem, viewCreationParams);
             saveViewOnceLoaded(currentView);
-            currentView.render(); 
+            currentView.render();
+            currentView.openPage(new ReadiumSDK.Models.PageOpenRequest(spineItem),1); 
             currentView.once(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function($iframe, spineItem) {
                 // proxy this event through to the reader
                 _.defer(function() {
                     setTimeout(function(){
-                            callback(true);
+                            callback(true, currentView);
                         }, 150);
                 });
             });
@@ -120,12 +125,13 @@ ReadiumSDK.Models.ViewManager = function(spine, createViewForItem) {
         if (_.isUndefined(view)) {
             return;
         }
-        view.once(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function() {
+        view.once(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function ($iframe, spineItem) {
             // try to make sure that we don't load duplicate views.
             var spineItemForView = view.getLoadedSpineItems()[0];
             if (_.isUndefined(self.getCachedViewForSpineItem(spineItemForView))) {
                 console.log('%c View loaded in the background...%d cached views', 'background: grey; color: blue', _cachedViews.length);
-                _cachedViews.push(view);    
+                _cachedViews.push(view);
+                _iframeRereferences[spineItem.index] = $iframe;
             } 
         })
     };
@@ -149,15 +155,18 @@ ReadiumSDK.Models.ViewManager = function(spine, createViewForItem) {
 
             cachedView = createViewForItem(spineItem, viewCreationParams);
             var openPageRequest = new ReadiumSDK.Models.PageOpenRequest(spineItem, self);
+            var direction  = 0;
             if (setToPage === "last") {
                 openPageRequest.setLastPage();
+                direction = 1;
             } else {
                 openPageRequest.setFirstPage();
+                direction = 2;
             }
 
             cachedView.render();
             // cachedView.setViewSettings(_viewerSettings);
-            cachedView.openPage(openPageRequest,2);
+            cachedView.openPage(openPageRequest,direction);
             cachedView.setCached(true);
             // cachedView.hide();
         }
