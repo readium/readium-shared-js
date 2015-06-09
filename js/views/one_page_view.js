@@ -35,7 +35,7 @@ define(["jquery", "underscore", "eventEmitter", "./cfi_navigation_logic", "../he
  * @param enableBookStyleOverrides
  * @constructor
  */
-var OnePageView = function (options, classes, enableBookStyleOverrides, reader, cached) {
+var OnePageView = function (options, classes, enableBookStyleOverrides, settings, cached) {
 
     _.extend(this, new EventEmitter());
 
@@ -298,17 +298,16 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader, 
 
         _$el.css("transform", "none");
     
-        // var settings = reader.viewerSettings();
-        // if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefined")
-        // {
-        //     //defaults
-        //     settings = new ViewerSettings({});
-        // }
-        // if (settings.enableGPUHardwareAccelerationCSS3D) {
+        if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefined")
+        {
+            //defaults
+            settings = new ViewerSettings({});
+        }
+        if (settings.enableGPUHardwareAccelerationCSS3D) {
 
-        //     // This fixes rendering issues with WebView (native apps), which crops content embedded in iframes unless GPU hardware acceleration is enabled for CSS rendering.
-        //     _$el.css("transform", "translateZ(0)");
-        // }
+            // This fixes rendering issues with WebView (native apps), which crops content embedded in iframes unless GPU hardware acceleration is enabled for CSS rendering.
+            _$el.css("transform", "translateZ(0)");
+        }
     
         _$el.css("height", "100%");
         _$el.css("width", "100%");

@@ -37,7 +37,7 @@ define(["jquery", "underscore", "eventEmitter", "../models/bookmark_data", "./cf
  * @param options
  * @constructor
  */
-var ReflowableView = function(options, reader){
+var ReflowableView = function(options) {
 
     _.extend(this, new EventEmitter());
 
@@ -92,8 +92,7 @@ var ReflowableView = function(options, reader){
         _$el = $(template);
         _$viewport.append(_$el);
 
-        // var settings = reader.viewerSettings();
-        var settings;
+        var settings = options.settings;
         if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefined")
         {
             //defaults

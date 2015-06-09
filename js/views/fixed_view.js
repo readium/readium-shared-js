@@ -30,10 +30,9 @@ define (["jquery", "underscore", "eventEmitter", "../models/bookmark_data", "../
 /**
  * View for rendering fixed layout page spread
  * @param options
- * @param reader
  * @constructor
  */
-var FixedView = function(options, reader){
+var FixedView = function(options){
 
     _.extend(this, new EventEmitter());
 
@@ -71,7 +70,7 @@ var FixedView = function(options, reader){
         var pageView = new OnePageView(options,
         [elementClass],
         false, //enableBookStyleOverrides
-        reader,
+        options.settings,
         _cached
         );
 

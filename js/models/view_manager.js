@@ -10,6 +10,8 @@ ReadiumSDK.Models.ViewManager = function(spine, createViewForItem) {
 
     var _iframeRereferences = {};
 
+    var _viewerSettings;
+
 
     ReadiumSDK.cacheStats = function () {
         console.log(_cachedViews);
@@ -17,6 +19,8 @@ ReadiumSDK.Models.ViewManager = function(spine, createViewForItem) {
     };
 
     this.getViewForSpineItem = function(spineItem, currentView, viewerSettings, viewCreationParams, callback) {
+        _viewerSettings = viewerSettings;
+
         if (currentView) {
             currentView.hide();
             currentView.setCached(true);
@@ -39,7 +43,7 @@ ReadiumSDK.Models.ViewManager = function(spine, createViewForItem) {
             currentView = createViewForItem(spineItem, viewCreationParams);
             saveViewOnceLoaded(currentView);
             currentView.render();
-            currentView.openPage(new ReadiumSDK.Models.PageOpenRequest(spineItem),1); 
+            currentView.openPage(new ReadiumSDK.Models.PageOpenRequest(spineItem),0); 
             currentView.once(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function($iframe, spineItem) {
                 // proxy this event through to the reader
                 _.defer(function() {
@@ -260,6 +264,7 @@ ReadiumSDK.Models.ViewManager = function(spine, createViewForItem) {
         // NOTE: _$el == options.$viewport
         //_$el.css("overflow", "hidden");
         options.$viewport.css("overflow", "hidden"); 
+        options.settings = _viewerSettings;
         
         switch(viewType) {
             case ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED:
