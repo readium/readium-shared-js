@@ -568,8 +568,8 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             _$epubHtml.css(css1);
 
             var css2 = ReadiumSDK.Helpers.CSSTransformString({scale : 1, enable3D: enable3D});
-            css2["width"] = _meta_size.width;
-            css2["height"] = _meta_size.height;
+            css2["width"] = _meta_size.width * scale;
+            css2["height"] = _meta_size.height * scale;
             _$scaler.css(css2);
         }
         else
