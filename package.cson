@@ -131,9 +131,9 @@ scripts:
 #=====================
     cson2json: '
 
-        node readium-cfi-js/node_modules/cson/bin/cson2json package.cson
+        npm run cson2json package.cson > package.json
         &&
-        node readium-cfi-js/node_modules/cson/bin/cson2json package.cson > package.json
+        node readium-cfi-js/readium-build-tools/optimizePackageJsonScripts.js
     '
 
 
@@ -176,7 +176,7 @@ scripts:
 #=====================
     'prepare:patch': '
 
-        node readium-cfi-js/node_modules/rimraf/bin.js
+        npm run rimraf
             node_modules/eventemitter3/_rjs/**
         &&
         node readium-cfi-js/node_modules/requirejs/bin/r.js -convert
@@ -186,11 +186,12 @@ scripts:
 
 #=====================
     clean: '
+
         node --version
         &&
         npm --version
         &&
-        node readium-cfi-js/node_modules/rimraf/bin.js
+        npm run rimraf
             build-output/*
     '
 
@@ -214,8 +215,7 @@ scripts:
 #=====================
     lint: '
 
-        node
-            readium-cfi-js/readium-build-tools/jshint_glob.js
+        npm run jshint
             js/**.js
     '
 
@@ -229,7 +229,7 @@ scripts:
 #=====================
 #    'postbuild:scripts': '
 #
-#        node readium-cfi-js/node_modules/rimraf/bin.js
+#        npm run rimraf
 #                build-output/_SOURCES
 #    '
 
@@ -245,31 +245,29 @@ scripts:
 
 #=====================
     'build:scripts:multiple': '
-        node readium-cfi-js/node_modules/requirejs/bin/r.js
-             -o
-             readium-cfi-js/readium-build-tools/RequireJS_config.js
+
+        npm run rjs
              --rjs_bundle=multiple
     '
 
 #=====================
     'postbuild:scripts:multiple': '
 
-        node readium-cfi-js/node_modules/rimraf/bin.js
+        npm run rimraf
             build-output/_multiple-bundles/RequireJS.js.src.js
     '
 
 #=====================
     'build:scripts:single': '
-        node readium-cfi-js/node_modules/requirejs/bin/r.js
-             -o
-             readium-cfi-js/readium-build-tools/RequireJS_config.js
+
+        npm run rjs
              --rjs_bundle=single
     '
 
 #=====================
     'prebuild:styles': '
 
-        node readium-cfi-js/node_modules/mkdirp/bin/cmd.js
+        npm run mkdirp
             build-output/css/
     '
 
@@ -277,7 +275,7 @@ scripts:
 # TODO use cssminify
     'build:styles': '
 
-        node readium-cfi-js/node_modules/cpy/cli.js
+        npm run cpy
             static/sdk.css
             build-output/css/
     '
@@ -285,10 +283,11 @@ scripts:
 #=====================
 #### BLOCKING! (CTRL-C) [watch][live-reload][http]
     'http:watch': '
+
         echo > open_webbrowser.js
         &&
         parallelshell
-            \"npm run watch\"
+            \"npm run watcher\"
             \"npm run httpServe\"
     '
 # \"npm run live-reload\"
@@ -296,6 +295,7 @@ scripts:
 #=====================
 #### BLOCKING! (CTRL-C) [http]
     'http': '
+
         parallelshell
             \"npm run httpServe\"
             \"npm run webBrowser\"
@@ -303,12 +303,13 @@ scripts:
 
 #=====================
 #### BLOCKING! (CTRL-C) [watch or nodemon]
-    'watch': '
-        node readium-cfi-js/node_modules/watch/cli.js
+    'watcher': '
+
+        npm run watch
             \"npm run build
                 && node readium-cfi-js/readium-build-tools/webbrowser.js
                 && npm run webBrowser
-                && node readium-cfi-js/node_modules/rimraf/bin.js
+                && npm run rimraf
                       open_webbrowser.js\"
             dev/ js/ plugins/ readium-cfi-js/js/
     '
@@ -318,11 +319,12 @@ scripts:
     #    --exec \"npm run build
     #            && node readium-cfi-js/readium-build-tools/webbrowser.js
     #            && npm run webbrowser
-    #            && node readium-cfi-js/node_modules/rimraf/bin.js
+    #            && npm run rimraf
     #                  open_webbrowser.js\"
 
 #=====================
     'httpServe': '
+
         http-server -p 9090 --cors ./
     '
 
