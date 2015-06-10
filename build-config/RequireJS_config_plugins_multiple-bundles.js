@@ -7,11 +7,4 @@ include: ["readium_plugin_annotations"],
 exclude: ["readium-external-libs", "readium-cfi-js", "readium-shared-js"],
 insertRequire: ["readium_plugin_annotations"]
 },
-{
-name: "readium-plugin-example",
-create: true,
-include: ["readium_plugin_example"],
-exclude: ["readium-external-libs", "readium-cfi-js", "readium-shared-js"],
-insertRequire: ["readium_plugin_example"]
-},
 ]});
