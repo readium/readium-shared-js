@@ -55,6 +55,8 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, settings
 
     var _$scaler;
 
+    var _needsFixedLayoutScalerWorkAround = options.needsFixedLayoutScalerWorkAround || false;
+
     var PageTransitionHandler = function (opts) {
         var PageTransition = function (begin, end) {
             this.begin = begin;
@@ -539,8 +541,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, settings
             enable3D = true;
         }
 
-        // if (reader.needsFixedLayoutScalerWorkAround())
-        if(false)
+        if(_needsFixedLayoutScalerWorkAround)
         {
             var css1 = Helpers.CSSTransformString({scale : scale, enable3D: enable3D});
             _$epubHtml.css(css1);

@@ -580,12 +580,12 @@ var ReflowableView = function(options) {
 // console.debug(fontSize);
 //         }
         
-        // // if (_viewSettings.fontSize)
-        // {
-        //     var fontSizeAdjust = (_viewSettings.fontSize*0.8)/100;
-        //     MAXW = Math.floor(MAXW * fontSizeAdjust);
-        //     MINW = Math.floor(MINW * fontSizeAdjust);
-        // }
+        // if (_viewSettings.fontSize)
+        {
+            var fontSizeAdjust = (_viewSettings.fontSize*0.8)/100;
+            MAXW = Math.floor(MAXW * fontSizeAdjust);
+            MINW = Math.floor(MINW * fontSizeAdjust);
+        }
         
         var availableWidth = _$viewport.width();
         var textWidth = availableWidth - borderLeft - borderRight - adjustedGapLeft - adjustedGapRight;

@@ -118,6 +118,7 @@ var ReaderView = function (options) {
             userStyles: _userStyles,
             bookStyles: _bookStyles,
             iframeLoader: _iframeLoader,
+            needsFixedLayoutScalerWorkAround: self.needsFixedLayoutScalerWorkAround()
         };
         _currentView = _viewManager.getViewForSpineItem(spineItem, _currentView, _viewerSettings, viewCreationParams, callback);
 
