@@ -12,7 +12,7 @@
 #
 # ALTERNATIVE METHOD (if package.json is corrupted):
 # npm install cson
-# node ./node_modules/cson/bin/cson2json package.cson > package.json
+# node ./readium-cfi-js/node_modules/cson/bin/cson2json package.cson > package.json
 # Note that on some Windows terminals (e.g. GitShell),
 # unfortunately the package.json file might need its encoding
 # converted to UTF-no-BOM :(
@@ -131,7 +131,7 @@ scripts:
 #=====================
     cson2json: '
 
-        npm run cson2json package.cson > package.json
+        node ./readium-cfi-js/node_modules/cson/bin/cson2json package.cson > package.json
         &&
         node readium-cfi-js/readium-build-tools/optimizePackageJsonScripts.js
     '
@@ -220,11 +220,25 @@ scripts:
     '
 
 #=====================
+    'genPluginsConfig': '
+
+        node readium-cfi-js/readium-build-tools/pluginsConfigMaker.js
+    '
+
+#=====================
+    'prebuild:scripts': '
+
+        npm run genPluginsConfig
+    '
+
+#=====================
 #    'prebuild:scripts': '
 #
 #        npm run
 #            lint
 #    '
+
+
 
 #=====================
 #    'postbuild:scripts': '

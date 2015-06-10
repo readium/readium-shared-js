@@ -1,0 +1,8 @@
+{
+  "include": [
+    "annotations"
+  ],
+  "exclude": [
+    "example"
+  ]
+}
