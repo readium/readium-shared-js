@@ -452,9 +452,8 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
     }
 
     function onPaginationChanged(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
+        _paginationInfo.pageOffset = Math.round((_paginationInfo.columnWidth + _paginationInfo.columnGap) * _paginationInfo.visibleColumnCount * _paginationInfo.currentSpreadIndex);
 
-        _paginationInfo.pageOffset = (_paginationInfo.columnWidth + _paginationInfo.columnGap) * _paginationInfo.visibleColumnCount * _paginationInfo.currentSpreadIndex;
-        
         redraw();
         self.trigger(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
     }
@@ -620,7 +619,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
 
         _paginationInfo.rightToLeft = _spine.isRightToLeft();
 
-        _paginationInfo.columnWidth = Math.round(((_htmlBodyIsVerticalWritingMode ? _lastViewPortSize.height : _lastViewPortSize.width) - _paginationInfo.columnGap * (_paginationInfo.visibleColumnCount - 1)) / _paginationInfo.visibleColumnCount);
+        _paginationInfo.columnWidth = ((_htmlBodyIsVerticalWritingMode ? _lastViewPortSize.height : _lastViewPortSize.width) - _paginationInfo.columnGap * (_paginationInfo.visibleColumnCount - 1)) / _paginationInfo.visibleColumnCount;
 
         var useColumnCountNotWidth = _paginationInfo.visibleColumnCount > 1; // column-count == 1 does not work in Chrome, and is not needed anyway (HTML width is full viewport width, no Firefox video flickering)
         if (useColumnCountNotWidth) {
@@ -642,14 +641,13 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
 
         var totalGaps = (_paginationInfo.columnCount-1) * _paginationInfo.columnGap;
         var colWidthCheck = ((_htmlBodyIsVerticalWritingMode ? _$epubHtml[0].scrollHeight : _$epubHtml[0].scrollWidth) - totalGaps) / _paginationInfo.columnCount;
-        colWidthCheck = Math.round(colWidthCheck);
 
         if (colWidthCheck > _paginationInfo.columnWidth)
         {
             console.debug("ADJUST COLUMN");
             console.log(_paginationInfo.columnWidth);
             console.log(colWidthCheck);
-            
+
             _paginationInfo.columnWidth = colWidthCheck;
         }
 
