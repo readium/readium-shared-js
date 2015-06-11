@@ -11,21 +11,23 @@
 //  used to endorse or promote products derived from this software without specific
 //  prior written permission.
 
+window.process = {};
+
+window.process._RJS_baseUrl = function(n)
+{
+    return "..";
+};
+
+window.process._RJS_rootDir = function(n)
+{
+    if (n == 1) return ".";
+    if (n == 0) return "readium-cfi-js";
+};
+
+window.process._RJS_isBrowser = true;
+
 require.config({
 
-    baseUrl: process._RJS_baseUrl(1),
-
-    // relative to this config file (not baseUrl)
-    dir: "../build-output/_multiple-bundles",
-
-    modules:
-    [
-        {
-            name: "readium-shared-js",
-            create: true,
-            include: ['readium_shared_js/globalsSetup', 'readium_shared_js/plugins_controller', 'readium_shared_js/views/reader_view'],
-            exclude: ["readium-external-libs", "readium-cfi-js"],
-            insertRequire: ["readium_shared_js/globalsSetup"]
-        }
-    ]
+    /* http://requirejs.org/docs/api.html#config-waitSeconds */
+    waitSeconds: 1
 });

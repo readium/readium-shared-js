@@ -1,61 +1,32 @@
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
-//  
-//  Redistribution and use in source and binary forms, with or without modification, 
+//
+//  Redistribution and use in source and binary forms, with or without modification,
 //  are permitted provided that the following conditions are met:
-//  1. Redistributions of source code must retain the above copyright notice, this 
+//  1. Redistributions of source code must retain the above copyright notice, this
 //  list of conditions and the following disclaimer.
-//  2. Redistributions in binary form must reproduce the above copyright notice, 
-//  this list of conditions and the following disclaimer in the documentation and/or 
+//  2. Redistributions in binary form must reproduce the above copyright notice,
+//  this list of conditions and the following disclaimer in the documentation and/or
 //  other materials provided with the distribution.
-//  3. Neither the name of the organization nor the names of its contributors may be 
-//  used to endorse or promote products derived from this software without specific 
+//  3. Neither the name of the organization nor the names of its contributors may be
+//  used to endorse or promote products derived from this software without specific
 //  prior written permission.
 
-(
-function(thiz){
-    
-    //console.log(thiz);
-    console.log(process.cwd());
-    
-    process._readium = {};
-    
-    // Path is relative to mainConfigFile[0]
-    process._readium.buildOutputPath = "../";
-    
-    process._readium.targetName = "readium-shared-js";
-    
-    return true;
-}(this)
-?
-{
-    // The order is IMPORTANT!
-    // Paths are relative to this file (they are intentionally convoluted, to test the parameterized RequireJS build workflow from readium-js)
-    mainConfigFile: [
-    "../build-config/RequireJS_config_single-bundle_.js",
-    "./RequireJS_config_common.js"
-    ],
-    
-    // MUST be in root config file because of access to context-dependent 'config'
-    onModuleBundleComplete: function(data) {
-        
-        //console.log(process.cwd());
-        var filePath = process.cwd() + "/build-config/RequireJS_config_single-bundle_onModuleBundleComplete.js";
-        
-        var fs = nodeRequire("fs");
-        fs.readFile(
-            filePath,
-            {encoding: 'utf-8'},
-            function(err, fileContents) {
-                if (!err) {
-                    var func = eval("("+fileContents+")");
-                    return func(data);
-                } else {
-                    console.log(err);
-                }
-            }
-        );
+require.config({
+
+    baseUrl: process._RJS_baseUrl(1),
+
+    name: "readium-shared-js_all",
+
+    include: ['readium_shared_js/globalsSetup', 'readium_shared_js/plugins_controller', 'readium_shared_js/views/reader_view'],
+
+    // relative to this config file (not baseUrl)
+    out: "../build-output/_single-bundle/readium-shared-js_all.js",
+
+    insertRequire: ["readium_shared_js/globalsSetup"],
+
+    paths:
+    {
+        "readium-shared-js_all":
+            process._RJS_rootDir(1) + '/readium-cfi-js/node_modules/almond/almond'
     }
-}
-:
-function(){console.log("NOOP");return {};}()
-)
+});

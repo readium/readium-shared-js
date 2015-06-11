@@ -21,11 +21,12 @@ require.config({
     modules:
     [
         {
-            name: "readium-shared-js",
+            name: "readium-external-libs",
             create: true,
-            include: ['readium_shared_js/globalsSetup', 'readium_shared_js/plugins_controller', 'readium_shared_js/views/reader_view'],
-            exclude: ["readium-external-libs", "readium-cfi-js"],
-            insertRequire: ["readium_shared_js/globalsSetup"]
+            include: ['jquery', 'underscore',
+            'URIjs', 'punycode', 'SecondLevelDomains', 'IPv6',
+            'jquerySizes', 'domReady', 'eventEmitter', 'console_shim',
+            'rangy', 'rangy-core', 'rangy-textrange', 'rangy-highlighter', 'rangy-cssclassapplier', 'rangy-position'],
         }
     ]
 });

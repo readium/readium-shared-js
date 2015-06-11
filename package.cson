@@ -12,7 +12,7 @@
 #
 # ALTERNATIVE METHOD (if package.json is corrupted):
 # npm install cson
-# node ./node_modules/cson/bin/cson2json package.cson > package.json
+# node ./readium-cfi-js/node_modules/cson/bin/cson2json package.cson > package.json
 # Note that on some Windows terminals (e.g. GitShell),
 # unfortunately the package.json file might need its encoding
 # converted to UTF-no-BOM :(
@@ -33,7 +33,7 @@
 
 name: "readium-shared-js"
 
-version: "0.0.0"
+version: "0.20.0-alpha"
 
 description: "Readium - shared javascript module"
 
@@ -47,6 +47,8 @@ author:
     name: "Readium (Daniel Weck)"
     email: "daniel.weck@gmail.com"
     url: "http://github.com/readium"
+
+license: "BSD-3-Clause"
 
 licenses: [
     type: "BSD-3-Clause"
@@ -65,13 +67,13 @@ repository:
 
 #####################################################################
 files: [
-    
+
     "build-output/"
-    
-    "build-output-usage-example/"
-    
+
+    "dev/"
+
     "license.txt"
-    
+
     "README.md"
 ]
 
@@ -84,152 +86,170 @@ files: [
 #####################################################################
 dependencies:
 
-    parallelshell: 'latest'
-    
-    'http-server': 'latest'
-    
-    opener: 'latest'
+    "parallelshell": 'latest'
 
-# See remark below about *runtime* dependencies
+    "opener": 'latest'
+
+    #"http-server": 'latest'
+    "http-server": 'danielweck/http-server'
+    # SEE: https://github.com/indexzero/http-server/issues/154
+
 
 #####################################################################
+# These dependencies can be fetched by using the "--dev" option
+# in "npm install --dev readium-shared-js".
 devDependencies:
 
-    requirejs: "latest"
+# see readium-cfi-js:
+# "requirejs", "almond", "jquery"
 
-    "requirejs-text": "latest"
-    
-    almond: "latest"
-    
-    backbone: "latest"
 
-    underscore: "latest"
+    "jquerySizes": 'bramstein/jsizes'
 
-    jquery: "latest"
+    "domReady": 'requirejs/domReady'
 
-    URIjs: "latest"
+    "backbone": 'latest'
 
-    jquerySizes: "bramstein/jsizes"
-    
-    eventemitter3: "latest"
-    
-    domReady: "requirejs/domReady"
+    "underscore": 'latest'
 
-# Above items are in fact runtime dependencies,
-# but because they are already bundled in the "build-output" folder that ships with the NPM package,
-# we declare them in "devDependencies" to avoid unnecessary downloads.
-# The download can be forced by using the "--dev" option after "npm install readium-shared-js".
-   
-    cson: "latest"
+    "URIjs": 'danielweck/URI.js'
+    #"URIjs": 'latest'
 
-    jshint: "latest"
+    "eventemitter3": 'latest'
 
-    glob: 'latest'
 
-    rimraf: 'latest'
+# Below dependencies are only used for building tasks (above are runtime deps):
 
-    mkdirp: 'latest'
+# see readium-cfi-js:
+# "cson", "jshint", "glob", "rimraf", "mkdirp", "watch", "live-reload"
 
-    watch: 'latest'
-    
-    'live-reload': 'latest'
 
 #####################################################################
 scripts:
 
-#=====================
-    env: '
-    
-        env
-    '
-    
-#=====================
-    echo: '
-    
-        echo ""
-    '
 
 #=====================
     cson2json: '
-    
-        node node_modules/cson/bin/cson2json package.cson
+
+        node ./readium-cfi-js/node_modules/cson/bin/cson2json package.cson > package.json
         &&
-        node node_modules/cson/bin/cson2json package.cson > package.json
+        node readium-cfi-js/readium-build-tools/optimizePackageJsonScripts.js
     '
+
 
 #=====================
     'prepare': '
-        
+
+        npm run
+            prepare:submodule
+        &&
+        npm run
+            prepare:dependencies
+        &&
         npm run
             prepare:patch
     '
-#        &&
-#        npm run
-#            prepare:dependencies
 
 #=====================
     'prepare:dependencies': '
-        
+
         npm install
         &&
         npm update
+        &&
+        node
+            readium-cfi-js/readium-build-tools/gitHubForksUpdater.js
+    '
+
+#=====================
+    'prepare:submodule': '
+
+        cd readium-cfi-js
+        &&
+        npm run prepare
+        &&
+        cd ..
+        &&
+        ls
     '
 
 #=====================
     'prepare:patch': '
-        
-        rimraf
+
+        npm run rimraf
             node_modules/eventemitter3/_rjs/**
         &&
-        node node_modules/requirejs/bin/r.js -convert
+        node readium-cfi-js/node_modules/requirejs/bin/r.js -convert
             node_modules/eventemitter3/
             node_modules/eventemitter3/_rjs/
     '
-    
+
 #=====================
     clean: '
+
         node --version
         &&
         npm --version
         &&
-        rimraf
+        npm run rimraf
             build-output/*
     '
 
+
 #=====================
     'prebuild': '
-    
+
         npm run clean
     '
-    
+
 #=====================
     build: '
-    
+
         npm run
             build:styles
         &&
         npm run
             build:scripts
     '
-    
+
 #=====================
     lint: '
-    
-        node
-            build-tools/jshint_glob.js
+
+        npm run jshint
             js/**.js
     '
 
 #=====================
+    'genPluginsConfig': '
+
+        node readium-cfi-js/readium-build-tools/pluginsConfigMaker.js
+    '
+
+#=====================
+    'prebuild:scripts': '
+
+        npm run genPluginsConfig
+    '
+
+#=====================
 #    'prebuild:scripts': '
-#    
+#
 #        npm run
 #            lint
 #    '
 
+
+
+#=====================
+#    'postbuild:scripts': '
+#
+#        npm run rimraf
+#                build-output/_SOURCES
+#    '
+
 #=====================
     'build:scripts': '
-    
+
         npm run
             build:scripts:multiple
         &&
@@ -239,102 +259,97 @@ scripts:
 
 #=====================
     'build:scripts:multiple': '
-    
-        node node_modules/requirejs/bin/r.js
-             -o
-             build-config/RequireJS_config_multiple-bundles.js
+
+        npm run rjs
+             --rjs_bundle=multiple
     '
-    
+
+#=====================
+    'postbuild:scripts:multiple': '
+
+        npm run rimraf
+            build-output/_multiple-bundles/RequireJS.js.src.js
+    '
+
 #=====================
     'build:scripts:single': '
-    
-        node node_modules/requirejs/bin/r.js
-             -o
-             build-config/RequireJS_config_single-bundle.js
+
+        npm run rjs
+             --rjs_bundle=single
     '
 
 #=====================
     'prebuild:styles': '
-    
-        mkdirp build-output/css/
+
+        npm run mkdirp
+            build-output/css/
     '
-    
+
 #=====================
 # TODO use cssminify
     'build:styles': '
-    
-        cp static/sdk.css build-output/css/
+
+        npm run cpy
+            static/sdk.css
+            build-output/css/
     '
 
 #=====================
 #### BLOCKING! (CTRL-C) [watch][live-reload][http]
-    'example:dev': '
-        npm run
-            clean
-        &&
+    'http:watch': '
+
         echo > open_webbrowser.js
         &&
         parallelshell
-            \"npm run live-reload\"
-            \"npm run watch\"
-            \"npm run http\"
+            \"npm run watcher\"
+            \"npm run httpServe\"
     '
+# \"npm run live-reload\"
 
 #=====================
 #### BLOCKING! (CTRL-C) [http]
-    'example': '
+    'http': '
+
         parallelshell
-            \"npm run http\"
-            \"npm run webbrowser\"
+            \"npm run httpServe\"
+            \"npm run webBrowser\"
     '
-
-#=====================
-#### BLOCKING! (CTRL-C) [watch:build]
-    watch: '
-    
-        parallelshell
-            \"npm run watch:build\"
-    '
-    #   \"npm run watch:test\
-
-#=====================
-#   'watch:test': 'karma start'
-
-#=====================
-#   test: 'karma start --singleRun'
 
 #=====================
 #### BLOCKING! (CTRL-C) [watch or nodemon]
-    'watch:build': '
-        watch
+    'watcher': '
+
+        npm run watch
             \"npm run build
-                && node build-tools/webbrowser.js
-                && npm run webbrowser
-                && rimraf open_webbrowser.js\"
-            build-output-usage-example/
+                && node readium-cfi-js/readium-build-tools/webbrowser.js
+                && npm run webBrowser
+                && npm run rimraf
+                      open_webbrowser.js\"
+            dev/ js/ plugins/ readium-cfi-js/js/
     '
     #    nodemon -q
-    #    -w build-output-usage-example/
+    #    -w dev/
     #    --ext \".\"
     #    --exec \"npm run build
-    #            && node build-tools/webbrowser.js 
+    #            && node readium-cfi-js/readium-build-tools/webbrowser.js
     #            && npm run webbrowser
-    #            && rimraf open_webbrowser.js\"
-    
+    #            && npm run rimraf
+    #                  open_webbrowser.js\"
+
 #=====================
-    'http': '
-    
-        http-server -p 9090 ./
+    'httpServe': '
+
+        http-server -p 9090 --cors ./
     '
 
 #=====================
-    'live-reload': '
-    
-        live-reload --port 9091 --delay 1000 build-output/
-    '
+#    'live-reload': '
+#
+#        live-reload --port 9091 --delay 1000 build-output/
+#    '
 
 #=====================
-    'webbrowser': '
-    
-        opener http://localhost:9090/build-output-usage-example/
+    'webBrowser': '
+
+        opener http://127.0.0.1:9090/dev/
     '

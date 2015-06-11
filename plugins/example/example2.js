@@ -1,5 +1,5 @@
-define(['readium-plugins', 'jquery'], function (Plugins, $) {
-  
+define(['readium_shared_js/plugins_controller', 'jquery'], function (Plugins, $) {
+
     Plugins.register("pluginIdentifierHere", function (api) {
         var self = this;
 
