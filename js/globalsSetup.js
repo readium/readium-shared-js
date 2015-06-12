@@ -18,12 +18,12 @@ define(['console_shim', 'eventEmitter', 'URIjs', 'readium_cfi_js', './globals'],
 
     if (window["ReadiumSDK"]) {
         console.log("ReadiumSDK extend.");
-        _.extend(window.ReadiumSDK, Globals);
+        _.extend(Globals, window.ReadiumSDK);
     } else {
         console.log("ReadiumSDK set.");
-        window.ReadiumSDK = Globals;
     }
-
+    
+        window.ReadiumSDK = Globals;
 
     // TODO: refactor client code to use emit instead of trigger?
     EventEmitter.prototype.trigger = EventEmitter.prototype.emit;
