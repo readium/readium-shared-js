@@ -62,19 +62,21 @@ var IFrameLoader = function() {
             if (typeof location !== 'undefined') {
                 iframe.baseURI = location.href + "";
             }
-            console.log("!iframe.baseURI => " + iframe.baseURI);
+            console.error("!iframe.baseURI => " + iframe.baseURI);
         }
     
+        console.log("EPUB doc iframe src:");
+        console.log(src);
+        console.log("EPUB doc iframe base URI:");
+        console.log(iframe.baseURI);
+        
         iframe.setAttribute("data-baseUri", iframe.baseURI);
         iframe.setAttribute("data-src", src);
 
         var loadedDocumentUri = new URI(src).absoluteTo(iframe.baseURI).search('').hash('').toString();
 
         self._loadIframeWithUri(iframe, attachedData, loadedDocumentUri, function () {
-            var doc = iframe.contentDocument || iframe.contentWindow.document;
-            $('svg', doc).load(function(){
-                console.log('loaded');
-            });
+            
             callback.call(context, true, attachedData);
         });
     };
@@ -83,6 +85,11 @@ var IFrameLoader = function() {
 
         iframe.onload = function () {
 
+            var doc = iframe.contentDocument || iframe.contentWindow.document;
+            $('svg', doc).load(function(){
+                console.log('SVG loaded');
+            });
+            
             self.updateIframeEvents(iframe);
 
             var mathJax = iframe.contentWindow.MathJax;
@@ -103,7 +110,6 @@ var IFrameLoader = function() {
         };
 
         iframe.setAttribute("src", contentUri);
-        
     };
 
 };
