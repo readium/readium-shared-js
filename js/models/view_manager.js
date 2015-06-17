@@ -29,7 +29,7 @@ ReadiumSDK.Models.ViewManager = function(spine, createViewForItem) {
 
         var cachedView = self.getCachedViewForSpineItem(spineItem);
         self.cacheNeighboursForSpineItem(spineItem, currentView, viewCreationParams);
-        //self.expireCachedItems(spineItem);
+        self.expireCachedItems(spineItem);
 
         // there's a cached view, lets reset the _currentView then.
         if (cachedView !== undefined) {
