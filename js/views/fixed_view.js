@@ -162,6 +162,7 @@ var FixedView = function(options){
                                                               {pageView: _centerPageView, spineItem: _spread.centerItem, context: context}]);
 
         $.when.apply($, pageLoadDeferrals).done(function(){
+            self.setCached(_cached);
             _isRedrowing = false;
 
             if(_redrawRequest) {
@@ -697,6 +698,7 @@ var FixedView = function(options){
     };
 
     this.setCached = function(isCached) {
+        _cached = isCached;
         _.forEach(getDisplayingViews(), function(one_page_view) {
             one_page_view.setCached(isCached);
         });
