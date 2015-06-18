@@ -2,7 +2,7 @@
 
 #### Minimal template
 ```js
-define(['readium_plugins'], function (Plugins) {
+define(["readium_plugins"], function (Plugins) {
 
     Plugins.register("pluginIdentifierHere", function (api) {
         // Your plugin implementation here
@@ -12,18 +12,18 @@ define(['readium_plugins'], function (Plugins) {
 
 #### Relay a message to the plugin host
 ```js
-define(['readium_plugins'], function (Plugins) {
+define(["readium_plugins"], function (Plugins) {
 
     Plugins.register("pluginIdentifierHere", function (api) {
-        api.plugin.warn('Something weird happened.');
-        api.plugin.error('Something bad happened!'); // This is fatal and will cause an exception
+        api.plugin.warn("Something weird happened.");
+        api.plugin.error("Something bad happened!"); // This is fatal and will cause an exception
     });
 });
 ```
 
 #### Add handlers to Reader events
 ```js
-define(['readium_plugins'], function (Plugins) {
+define(["readium_plugins"], function (Plugins) {
 
     Plugins.register("pluginIdentifierHere", function (api) {
 
@@ -37,11 +37,11 @@ define(['readium_plugins'], function (Plugins) {
 
 #### Expose your own API to the Reader
 ```js
-define(['readium_plugins'], function(Plugins) {
+define(["readium_plugins"], function(Plugins) {
 
     Plugins.register("pluginIdentifierHere", function(api) {
         this.sayHello = function() {
-            alert('Hello world!');
+            alert("Hello world!");
         };
 
         // Any member you add to `this` will be accessible with
@@ -52,14 +52,15 @@ define(['readium_plugins'], function(Plugins) {
 
 #### Emit your own events
 ```js
-define(['readium_plugins'], function(Plugins) {
+define(["readium_plugins"], function(Plugins) {
 
     Plugins.register("pluginIdentifierHere", function(api) {
         this.sayHello = function() {
-            this.emit('hello', 'Hello world!');
+            this.emit("hello", "Hello world!");
         };
 
-        // Your plugin instance is mixed in with an Event Emitter
+        // Your plugin instance is mixed in with an Event Emitter.
+        // This event can be bound to using `reader.plugins.pluginIdentifierHere.on(...)`
     });
 });
 ```
@@ -89,7 +90,7 @@ Your plugin should now be included next time you invoke the Readium build proces
 #### Configuration values
 You can include default and overridable configuration options in your plugins using this technique:
 ```js
-define(['readium_plugins'], function(Plugins) {
+define(["readium_plugins"], function(Plugins) {
     var config = {
         backgroundColor: "yellow"
     };
@@ -111,12 +112,12 @@ Your plugin's main module can be identified in RequireJS under this name:
 So to bootstrap your plugin's configuration you can require it at certain points in your reading system's initialization:
 Typically before the Readium.reader object is initialized.
 ```js
-require(['readium_plugin-changeBackground'], function (config) {
+require(["readium_plugin_changeBackground"], function (config) {
     config.backgroundColor = "red";
 });
 ```
 
-In this example if the plugin was not configured in the require call (`require(['readium_plugin_changeBackground']);`) the background color used will be `yellow` but if the value was set when the plugin was required it will be `red`.
+In this example if the plugin was not configured in the require call (`require(["readium_plugin_changeBackground"]);`) the background color used will be `yellow` but if the value was set when the plugin was required it will be `red`.
 
 #### Including your own libraries
 
