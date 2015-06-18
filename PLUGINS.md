@@ -1,17 +1,17 @@
 ## Creating a plugin
 
 #### Minimal template
-```
+```js
 define(['readium_plugins'], function (Plugins) {
 
     Plugins.register("pluginIdentifierHere", function (api) {
-        //plugin implementation here
+        // Your plugin implementation here
     });
 });
 ```
 
 #### Relay a message to the plugin host
-```
+```js
 define(['readium_plugins'], function (Plugins) {
 
     Plugins.register("pluginIdentifierHere", function (api) {
@@ -22,7 +22,7 @@ define(['readium_plugins'], function (Plugins) {
 ```
 
 #### Add handlers to Reader events
-```
+```js
 define(['readium_plugins'], function (Plugins) {
 
     Plugins.register("pluginIdentifierHere", function (api) {
@@ -36,7 +36,7 @@ define(['readium_plugins'], function (Plugins) {
 ```
 
 #### Expose your own API to the Reader
-```
+```js
 define(['readium_plugins'], function(Plugins) {
 
     Plugins.register("pluginIdentifierHere", function(api) {
@@ -51,7 +51,7 @@ define(['readium_plugins'], function(Plugins) {
 ```
 
 #### Emit your own events
-```
+```js
 define(['readium_plugins'], function(Plugins) {
 
     Plugins.register("pluginIdentifierHere", function(api) {
@@ -66,16 +66,29 @@ define(['readium_plugins'], function(Plugins) {
 
 ## Including your plugin in Readium
 
-1. Add your plugin.js file inside the `readium-shared-js/plugins` folder
-2. Open up `_loader.js` and include your plugin's require call: `require(['readium_plugins/myPlugin']);`
-3. Depending on how you are using Readium, you may need to invoke the grunt task to rebuild the aggregated Readium.js library file to include your plugin during "compile time"
+1. Under `readium-shared-js/plugins`, make a folder named with your plugin's identifier and have your plugin's entry point in a `main.js` file inside that folder. For example: `readium-shared-js/plugins/pluginIdentifierHere/main.js`
+2. Open up `plugins.cson` that's in `readium-shared-js/plugins` in an editor and add your plugin's identifier to the `plugins:` list.
+3. If you are using git then you might notice that `plugins.cson` is tracked. If you would like to include your plugin without having to commit or edit this file you can create a new file in the `plugins` directory named `plugins-override.cson`. You can base it on this template:
+
+```coffee
+plugins:
+  include: [
+   # Plugins to include in addition to the ones listed in `plugins.cson`
+  ]
+  exclude: [
+   # Plugins to exclude from the ones listen in `plugins.cson`
+  ]
+
+```
+
+Depending on how you are using Readium, you may need to invoke an NPM script to rebuild the aggregated Readium.js library file to include your plugin during "compile time"
 
 
 ## Advanced uses
 
 #### Configuration values
-You can include default and overridable configuration options in your plugins using this method:
-```
+You can include default and overridable configuration options in your plugins using this technique:
+```js
 define(['readium_plugins'], function(Plugins) {
     var config = {
         backgroundColor: "yellow"
@@ -93,7 +106,7 @@ define(['readium_plugins'], function(Plugins) {
 ```
 
 In `_loader.js`:
-```
+```js
 require(['readium_plugins/changeBackground'], function (config) {
     config.backgroundColor = "red";
 });
