@@ -81,7 +81,7 @@ plugins:
 
 ```
 
-Depending on how you are using Readium, you may need to invoke an NPM script to rebuild the aggregated Readium.js library file to include your plugin during "compile time"
+Your plugin should now be included next time you invoke the Readium build process or go through the development workflow.
 
 
 ## Advanced uses
@@ -109,7 +109,7 @@ Your plugin's main module can be identified in RequireJS under this name:
 `readium_plugin_pluginIdentifierHere`
 
 So to bootstrap your plugin's configuration you can require it at certain points in your reading system's initialization:
-Typically slightly before Readium.reader is initialized.
+Typically before the Readium.reader object is initialized.
 ```js
 require(['readium_plugin-changeBackground'], function (config) {
     config.backgroundColor = "red";
