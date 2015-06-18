@@ -105,15 +105,18 @@ define(['readium_plugins'], function(Plugins) {
 });
 ```
 
-In `_loader.js`:
+Your plugin's main module can be identified in RequireJS under this name:
+`readium_plugin_pluginIdentifierHere`
+
+So to bootstrap your plugin's configuration you can require it at certain points in your reading system's initialization:
+Typically slightly before Readium.reader is initialized.
 ```js
-require(['readium_plugins/changeBackground'], function (config) {
+require(['readium_plugin-changeBackground'], function (config) {
     config.backgroundColor = "red";
 });
 ```
 
-By default if the plugin is not configured in `_loader.js` (`require(['readium_plugins/changeBackground']);`) the background color used will be `yellow`
-if the value is set in `_loader.js` like shown above it will be `red`.
+In this example if the plugin was not configured in the require call (`require(['readium_plugin_changeBackground']);`) the background color used will be `yellow` but if the value was set when the plugin was required it will be `red`.
 
 #### Including your own libraries
 
