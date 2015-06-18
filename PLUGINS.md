@@ -1,4 +1,3 @@
-Note: This feature is not yet in `master`, it is available as a work in progress branch `feature/pluginsX`
 ## Creating a plugin
 
 #### Minimal template
@@ -11,18 +10,18 @@ define(['readium_plugins'], function (Plugins) {
 });
 ```
 
-#### Talking back to the plugin loader
+#### Relay a message to the plugin host
 ```
 define(['readium_plugins'], function (Plugins) {
 
     Plugins.register("pluginIdentifierHere", function (api) {
-        api.plugin.warn('Something weird happened.')
-        api.plugin.error('Something bad happened! This will be fatal.')
+        api.plugin.warn('Something weird happened.');
+        api.plugin.error('Something bad happened!'); // This is fatal and will cause an exception
     });
 });
 ```
 
-#### Hook on to Reader events
+#### Add handlers to Reader events
 ```
 define(['readium_plugins'], function (Plugins) {
 
@@ -36,7 +35,7 @@ define(['readium_plugins'], function (Plugins) {
 });
 ```
 
-#### Provide your own API
+#### Expose your own API to the Reader
 ```
 define(['readium_plugins'], function(Plugins) {
 
@@ -45,11 +44,11 @@ define(['readium_plugins'], function(Plugins) {
             alert('Hello world!');
         };
 
-        api.extendReader(this);
+        // Any member you add to `this` will be accessible with
+        // `reader.plugins.pluginIdentifierHere`
     });
 });
 ```
-Your plugin interface can be accessed using `reader.plugins.pluginIdentifierHere`
 
 #### Emit your own events
 ```
@@ -60,9 +59,7 @@ define(['readium_plugins'], function(Plugins) {
             this.emit('hello', 'Hello world!');
         };
 
-        // This is required to set up your event emitter on the reader,
-        // even if you do not provide an API.
-        api.extendReader(this);
+        // Your plugin instance is mixed in with an Event Emitter
     });
 });
 ```
