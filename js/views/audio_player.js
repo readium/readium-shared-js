@@ -537,11 +537,15 @@
                 }
                 
                 //self.play();
-                playToForcePreload();
                 
-                setTimeout(function() {
-                    onReadyToSeek_(event);
-                }, 1000);
+                /*ACCESS COMMENT for Android only*/
+//                playToForcePreload();
+                
+//                setTimeout(function() {
+//                    onReadyToSeek_(event);
+//                }, 1000);
+                onReadyToSeek_(event);
+                
             }
         }
     
@@ -557,7 +561,7 @@
                 newCurrentTime = 0.01;
             }
     
-            if(Math.abs(newCurrentTime - _audioElement.currentTime) < 0.3)
+            if(Math.abs(newCurrentTime - _audioElement.currentTime) < (_Android ? 1.5 : 0.3)) /*ACCESS COMMENT for Android only*/
             {
                 if (DEBUG)
                 {
