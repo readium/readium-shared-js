@@ -119,8 +119,27 @@ require(["readium_plugin_changeBackground"], function (config) {
 
 In this example if the plugin was not configured in the require call (`require(["readium_plugin_changeBackground"]);`) the background color used will be `yellow` but if the value was set when the plugin was required it will be `red`.
 
-#### Including your own libraries
+#### Including libraries / other dependencies
 
-Since we can take advantage of RequireJS it is easy to include and use your own set of third party libraries:
-...Todo: finish this section...
-It is best that you include all your libraries in a folder along with your main plugin source file.
+Plugins have access to RequireJS and can load modules in AMD format.
+Simply include your other `.js` scripts in your plugin's folder and add references to them in your `require` or `define` calls.
+
+For example,
+given this file tree:
+```
+plugins/
+├── myPlugin
+│   ├── my_library.js
+│   └── main.js
+└── plugins.cson
+```
+
+Your `main.js` script could look like this:
+```js
+define(["readium_plugins", "./my_library"], function (Plugins, MyLibrary) {
+
+    Plugins.register("myPlugin", function (api) {
+        MyLibrary.doSomething();
+    });
+});
+```
