@@ -60,7 +60,7 @@ define(["readium_plugins"], function(Plugins) {
         };
 
         // Your plugin instance is mixed in with an Event Emitter.
-        // This event can be bound to using `reader.plugins.pluginIdentifierHere.on(...)`
+        // Bind event handlers using `reader.plugins.pluginIdentifierHere.on(...)`
     });
 });
 ```
@@ -122,7 +122,7 @@ In this example if the plugin was not configured in the require call (`require([
 #### Including libraries / other dependencies
 
 Plugins have access to RequireJS and can load modules in AMD format.
-Simply include your other `.js` scripts in your plugin's folder and add references to them in your `require` or `define` calls.
+Simply include other `.js` scripts in your plugin's folder and add references to them in your `require` or `define` calls.
 
 For example,
 given this file tree:
