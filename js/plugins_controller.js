@@ -78,8 +78,13 @@ define(["jquery", "underscore", "eventEmitter", "readium_shared_js/globals"], fu
                     if (!plugin.initialized) {
                         plugin.initialized = true;
                         try {
-                            initFunc.call({}, api);
+                            var pluginContext = {};
+                            _.extend(pluginContext, new EventEmitter());
+
+                            initFunc.call(pluginContext, api.instance);
                             plugin.supported = true;
+
+                            api.host.plugins[plugin.name] = pluginContext;
                         } catch (ex) {
                             plugin.fail(_getExceptionMessage(ex));
                         }
@@ -105,20 +110,14 @@ define(["jquery", "underscore", "eventEmitter", "readium_shared_js/globals"], fu
     function PluginApi(reader, plugin) {
         this.reader = reader;
         this.plugin = plugin;
-
-        this.extendReader = function (extendWith) {
-            if (reader.plugins) {
-                var obj = {};
-                obj[plugin.name] = _.extend(extendWith, new EventEmitter());
-
-                _(reader.plugins).extend(obj);
-            }
-        };
     }
 
     function PluginApiFactory(reader) {
         this.create = function (plugin) {
-            return new PluginApi(reader, plugin);
+            return {
+                host: reader,
+                instance: new PluginApi(reader, plugin)
+            };
         };
     }
 
