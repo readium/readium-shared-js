@@ -143,3 +143,16 @@ define(["readium_plugins", "./my_library"], function (Plugins, MyLibrary) {
     });
 });
 ```
+
+#### Depending on other plugins
+
+To make sure that plugins you depend on load before your own, you can pass in an array of the identifiers as an optional parameter of `Plugins.register`
+
+```js
+define(["readium_plugins"], function (Plugins) {
+
+    Plugins.register("pluginIdentifierHere", ["pluginDependencyHere", "anotherPluginYouRelyOn"], function (api) {
+        // Your plugin implementation here
+    });
+});
+```
