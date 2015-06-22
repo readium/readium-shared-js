@@ -1224,6 +1224,17 @@ ReadiumSDK.Views.ReaderView = function(options) {
     }; 
 
     /**
+     * Redraws all highlights. Calling this function from a
+     * PAGINATION_CHANGED event callback should cover all cases
+     * when annotations should be redrawn.
+     *
+     * @returns {undefined}
+     */
+    this.redrawHighlights = function () {
+	_annotationsManager.redrawHighlights();
+    };
+
+    /**
      *
      * @param {string} eventName              Event name.
      * @param {function} callback             Callback function.

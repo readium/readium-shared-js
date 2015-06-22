@@ -211,6 +211,12 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj, options) {
         return result;
     };
 
+    this.redrawHighlights = function() {
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            annotationsForView.redraw();
+        }
+    };
 
 
     function getPartialCfi(CFI) {
