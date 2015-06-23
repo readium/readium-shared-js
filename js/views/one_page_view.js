@@ -512,7 +512,7 @@ ReadiumSDK.Views.OnePageView = function(options, classes, enableBookStyleOverrid
             var win = _$iframe[0].contentWindow;
             var doc = _$iframe[0].contentDocument;
             
-            var height = Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height)); //body can be shorter!
+            var height = Math.round($(doc).outerHeight()); //body can be shorter!
             return height;
         }
         else if (_$epubHtml)

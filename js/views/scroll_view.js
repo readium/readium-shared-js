@@ -371,7 +371,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
                         
                         var iframeHeight = parseInt(Math.round(parseFloat(window.getComputedStyle(iframe).height)));
                     
-                        var docHeight = parseInt(Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height))); //body can be shorter!
+                        var docHeight = Math.round($(doc).outerHeight()); //body can be shorter!
                         
                         if (previousPolledContentHeight !== docHeight)
                         {
@@ -406,7 +406,7 @@ ReadiumSDK.Views.ScrollView = function(options, isContinuousScroll, reader){
                                 var win = iframe.contentWindow;
                                 var doc = iframe.contentDocument;
                                 
-                                var docHeightAfter = parseInt(Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height))); //body can be shorter!
+                                var docHeightAfter = Math.round($(doc).outerHeight()); //body can be shorter!
                                 var iframeHeightAfter = parseInt(Math.round(parseFloat(window.getComputedStyle(iframe).height)));
 
                                 var newdiff = iframeHeightAfter-docHeightAfter;
