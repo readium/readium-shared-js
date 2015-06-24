@@ -63,7 +63,7 @@
     "build": "npm run build:styles && npm run build:scripts",
     "lint": "node ./readium-cfi-js/readium-build-tools/jshint_glob.js js/**.js",
     "genPluginsConfig": "node readium-cfi-js/readium-build-tools/pluginsConfigMaker.js",
-    "prebuild:scripts": "npm run genPluginsConfig",
+    "prebuild:scripts": "npm run genPluginsConfig --readium-shared-js:RJS_PLUGINS_OVERRIDE=no",
     "build:scripts": "npm run build:scripts:multiple && npm run build:scripts:single",
     "build:scripts:multiple": "node ./readium-cfi-js/node_modules/requirejs/bin/r.js -o ./readium-cfi-js/readium-build-tools/RequireJS_config.js --rjs_bundle=multiple",
     "postbuild:scripts:multiple": "node ./readium-cfi-js/node_modules/rimraf/bin.js build-output/_multiple-bundles/RequireJS.js.src.js",

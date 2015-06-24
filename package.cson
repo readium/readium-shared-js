@@ -228,8 +228,14 @@ scripts:
 #=====================
     'prebuild:scripts': '
 
-        npm run genPluginsConfig
+        npm run genPluginsConfig --readium-shared-js:RJS_PLUGINS_OVERRIDE=no
     '
+# RJS_PLUGINS_OVERRIDE can be overridden, via an ENV shell variable:
+# e.g. PowerShell:
+# Set-Item Env:RJS_PLUGINS_OVERRIDE no
+# e.g. OSX terminal:
+# RJS_PLUGINS_OVERRIDE=no npm run build
+# (temporary, process-specific ENV variable)
 
 #=====================
 #    'prebuild:scripts': '
