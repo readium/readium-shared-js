@@ -122,6 +122,37 @@ ReadiumSDK.Models.ViewManager = function(spine, createViewForItem) {
         _cachedViews = _.difference(_cachedViews, cachedViewsToRemove);
     };
 
+    // given a view returns it's type
+    this.viewTypeForView = function(view) {
+
+        if(!view) {
+            return undefined;
+        }
+
+        if(view instanceof ReadiumSDK.Views.ReflowableView) {
+            return ReadiumSDK.Views.ReaderView.VIEW_TYPE_COLUMNIZED;
+        }
+
+        if(view instanceof ReadiumSDK.Views.FixedView) {
+            return ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED;
+        }
+
+        if(view instanceof ReadiumSDK.Views.ScrollView) {
+            if(view.isContinuousScroll()) {
+                return ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
+            }
+
+            return ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_DOC;
+        }
+
+        if(view instanceof ReadiumSDK.Views.FallbackScrollView) {
+            // fake a columnized view because it's a fallback of it
+            return ReadiumSDK.Views.ReaderView.VIEW_TYPE_COLUMNIZED;
+        }
+
+        console.error("Unrecognized view type");
+        return undefined;
+    };
 
     //////////////////
     // private helpers
@@ -218,41 +249,9 @@ ReadiumSDK.Models.ViewManager = function(spine, createViewForItem) {
         var desiredViewType = deduceDesiredViewType(spineItem, viewCreationParams);
         console.assert(!_.isUndefined(viewCreationParams, "View creation params must be passed in!"));
 
-        view = self.createViewForType(desiredViewType, viewCreationParams);
+        view = createViewForType(desiredViewType, viewCreationParams);
         return view;
     }
-
-
-    this.viewTypeForView = function(view) {
-
-        if(!view) {
-            return undefined;
-        }
-
-        if(view instanceof ReadiumSDK.Views.ReflowableView) {
-            return ReadiumSDK.Views.ReaderView.VIEW_TYPE_COLUMNIZED;
-        }
-
-        if(view instanceof ReadiumSDK.Views.FixedView) {
-            return ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED;
-        }
-
-        if(view instanceof ReadiumSDK.Views.ScrollView) {
-            if(view.isContinuousScroll()) {
-                return ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
-            }
-
-            return ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_DOC;
-        }
-
-        if(view instanceof ReadiumSDK.Views.FallbackScrollView) {
-            // fake a columnized view because it's a fallback of it
-            return ReadiumSDK.Views.ReaderView.VIEW_TYPE_COLUMNIZED;
-        }
-
-        console.error("Unrecognized view type");
-        return undefined;
-    };
 
 
        /**
@@ -261,7 +260,7 @@ ReadiumSDK.Models.ViewManager = function(spine, createViewForItem) {
      * @param {ReadiumSDK.Views.ReaderView.ViewCreationOptions} options
      * @returns {*}
      */
-    this.createViewForType = function(viewType, options) {
+    function createViewForType(viewType, options) {
         var createdView;
 
         // NOTE: _$el == options.$viewport
