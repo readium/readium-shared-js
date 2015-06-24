@@ -12,12 +12,14 @@ ReadiumSDK.Models.ViewManager = function(spine, createViewForItem) {
 
     var _viewerSettings;
 
-
+    // debugging
     ReadiumSDK.cacheStats = function () {
         console.log(_cachedViews);
         console.log(_iframeRereferences);
     };
 
+
+    // given a spine item and current view, will return a new or cached view for spine item and hide the "old" current view.
     this.getViewForSpineItem = function(spineItem, currentView, viewerSettings, viewCreationParams, callback) {
         _viewerSettings = viewerSettings;
 
@@ -74,12 +76,12 @@ ReadiumSDK.Models.ViewManager = function(spine, createViewForItem) {
     };
 
 
+    // given a spine item, cache it's neigbhours. It's assumed that the spine item is currently visible on screen.
     this.cacheNeighboursForSpineItem = function(spineItem, currentView, viewCreationParams) {        
         // the next spine item to cache might be either +1 or +2. For a reflowable view it'll be +1,
         // for a synthetic spread it's going to be 2. In any case, this information is encapsulated 
         // in the number of currently loaded spines within the current view.
         var spinesWithinTheCurrentView = _.isUndefined(currentView)  ? 1 : currentView.getLoadedSpineItems().length; 
-
 
         // make a copy of the viewCreationParams so that we can apply the current settings to the cached views.
         var localViewCreationParams = _.extend({}, viewCreationParams);
@@ -99,6 +101,7 @@ ReadiumSDK.Models.ViewManager = function(spine, createViewForItem) {
         }
     }
 
+    // given current spine item (the one that's on screen), prune cached items.
     this.expireCachedItems = function(currentSpineItem) {
         var currentSpineItemIndex = currentSpineItem.index;
         // get all views that have an spine index more than 3 removed. it's simplistic but should work
@@ -142,7 +145,7 @@ ReadiumSDK.Models.ViewManager = function(spine, createViewForItem) {
 
 
 
-    // TODODM: this needs to take spine item as a parameter, not an index. maybe.
+    // create a cached view for a given spine item.
     function createPrefetchedViewForSpineItem(spineItem, setToPage, viewCreationParams) {
         var cachedView = self.getCachedViewForSpineItem(spineItem);
         if (cachedView === undefined) {
