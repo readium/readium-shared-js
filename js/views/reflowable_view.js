@@ -49,6 +49,7 @@ var ReflowableView = function(options) {
     var _bookStyles = options.bookStyles;
     var _iframeLoader = options.iframeLoader;
     var _cachedView = options.cachedView;
+    var _viewSettings = options.viewSettings;
     
     var _currentSpineItem;
     var _isWaitingFrameRender = false;    
@@ -137,7 +138,6 @@ var ReflowableView = function(options) {
         }
     };
 
-    var _viewSettings = undefined;
     this.setViewSettings = function(settings) {
         
         _viewSettings = settings;
