@@ -264,7 +264,7 @@ ReadiumSDK.Models.ViewManager = function(spine, createViewForItem) {
         // NOTE: _$el == options.$viewport
         //_$el.css("overflow", "hidden");
         options.$viewport.css("overflow", "hidden"); 
-        options.settings = _viewerSettings;
+        options.viewSettings = _viewerSettings;
         
         switch(viewType) {
             case ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED:

@@ -92,7 +92,7 @@ var ReflowableView = function(options) {
         _$el = $(template);
         _$viewport.append(_$el);
 
-        var settings = options.settings;
+        var settings = options.viewSettings;
         if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefined")
         {
             //defaults
