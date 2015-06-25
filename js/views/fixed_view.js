@@ -675,16 +675,6 @@ var FixedView = function(options){
 
     }
 
-    this.getLoadedContentFrames = function () {
-        // TODODM this needs to be fixed properly. Most likely, the cacheman needs to track what spines are attached to what views?
-        try {
-            return [{spineItem: getDisplayingViews()[0].currentSpineItem(), $iframe: getDisplayingViews()[0].iframe()}];
-        } catch (err) {
-            return undefined;
-        }
-    };
-
-
     this.hide = function() {
         _.forEach(getDisplayingViews(), function(one_page_view) {
             one_page_view.hideIFrame();
