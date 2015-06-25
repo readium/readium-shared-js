@@ -70,7 +70,7 @@ var FixedView = function(options){
         var pageView = new OnePageView(options,
         [elementClass],
         false, //enableBookStyleOverrides
-        options.settings,
+        _viewSettings,
         _cached
         );
 
