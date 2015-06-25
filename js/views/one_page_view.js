@@ -917,11 +917,6 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, settings
         return undefined;
     }
 
-    this.iframe = function () {
-        return _$iframe;
-    }
-
-
     this.setCached = function(isCached) {
         _cached = isCached;
     };
