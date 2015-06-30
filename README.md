@@ -47,6 +47,10 @@ Note that the above command executes the following:
 * `npm run http:watch` (to launch an http server with live-reload, automatically opens a web browser instance to the HTML files in the `dev` folder)
 * `npm run http` (same as above, but without watching for file changes (no automatic rebuild))
 
+**Plugins integration:**
+
+When invoking the `npm run build` command, the `build-output` folder contains RequireJS module bundles that include the default plugins specified in `plugins/plugins.cson` (see the `PLUGINS.md` documentation). Normally, developers can override the default plugins configuration by using an additional file called `plugins-override.cson`. This file is git-ignored (not persistent in the Git repository), which means that Readium's default configuration is never at risk of being mistakenly overridden by developers, whilst given developers the possibility of creating custom builds. However, unlike other Readium repositories, the `readium-shared-js` Git repository includes the `build-output` folder, so that Readium's native application "launchers" can be built directly with those pre-built libraries (no Javascript-specific build process required, i.e. Node, NPM, etc.). So, in the specific case of `readium-shared-js`, developers must set the `RJS_PLUGINS_OVERRIDE` environment variable to "yes" (or "true"), in order for `plugins-override.cson` to be taken into account.
+
 ## NPM (Node Package Manager)
 
 All packages "owned" and maintained by the Readium Foundation are listed here: https://www.npmjs.com/~readium
