@@ -95,11 +95,10 @@ var ReaderView = function (options) {
     /**
      * @returns {boolean}
      */
-    this.needsFixedLayoutScalerWorkAround = function () {
-        return _needsFixedLayoutScalerWorkAround;
+    this.needsFixedLayoutScalerWorkAround = function() {
+      return _needsFixedLayoutScalerWorkAround;
     };
 
- 
     /**
      * Returns the current view type of the reader view
      * @returns {ReaderView.ViewType}
@@ -154,9 +153,9 @@ var ReaderView = function (options) {
             self.emit(Globals.Events.PAGINATION_CHANGED, pageChangeData);
         });
 
-        _currentView.on(Globals.Events.FXL_VIEW_RESIZED, function () {
+        _currentView.on(Globals.Events.FXL_VIEW_RESIZED, function() {
             self.emit(Globals.Events.FXL_VIEW_RESIZED);
-        })
+        });
 
         _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOAD_START, function($iframe, spineItem) {
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
@@ -490,7 +489,7 @@ var ReaderView = function (options) {
 
         var paginationInfo = _currentView.getPaginationInfo();
 
-        if (paginationInfo.openPages.length == 0) {
+        if (paginationInfo.openPages.length === 0) {
             return;
         }
 
@@ -527,7 +526,7 @@ var ReaderView = function (options) {
 
         var paginationInfo = _currentView.getPaginationInfo();
 
-        if (paginationInfo.openPages.length == 0) {
+        if (paginationInfo.openPages.length === 0) {
             return;
         }
 
