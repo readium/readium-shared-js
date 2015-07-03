@@ -434,26 +434,28 @@ Helpers.Margins.empty = function () {
  *
  * @param name
  * @param params
- * @returns {Helpers.loadTemplate.cache}
+ * @returns {Helpers.loadTemplate}
  */
-Helpers.loadTemplate = function (name, params) {
-    return Helpers.loadTemplate.cache[name];
+Helpers.loadTemplate = function(name, params) {
+    var uniqueIframeId = _.uniqueId("-uid-");
+   /**
+     *
+     * @type {{fixed_book_frame: string, single_page_frame: string, scrolled_book_frame: string, reflowable_book_frame: string, reflowable_book_page_frame: string}}
+     */
+    var template =  {
+        "fixed_book_frame" : '<div id="fixed-book-frame' + uniqueIframeId + '" class="clearfix book-frame fixed-book-frame"></div>',
+        
+        "single_page_frame" : '<div><div id="scaler"><iframe scrolling="no" class="iframe-fixed"></iframe></div></div>',
+        //"single_page_frame" : '<div><iframe scrolling="no" class="iframe-fixed" id="scaler"></iframe></div>',
+        
+        "scrolled_book_frame" : '<div id="reflowable-book-frame' + uniqueIframeId + '" class="clearfix book-frame reflowable-book-frame"><div id="scrolled-content-frame"></div></div>',
+        "reflowable_book_frame" : '<div id="reflowable-book-frame' + uniqueIframeId + '" class="clearfix book-frame reflowable-book-frame"></div>',
+        "reflowable_book_page_frame": '<div id="reflowable-content-frame" class="reflowable-content-frame"><iframe scrolling="no" id="epubContentIframe"></iframe></div>'
+    };
+    return template[name];
 };
 
-/**
- *
- * @type {{fixed_book_frame: string, single_page_frame: string, scrolled_book_frame: string, reflowable_book_frame: string, reflowable_book_page_frame: string}}
- */
-Helpers.loadTemplate.cache = {
-    "fixed_book_frame": '<div id="fixed-book-frame" class="clearfix book-frame fixed-book-frame"></div>',
 
-    "single_page_frame": '<div><div id="scaler"><iframe scrolling="no" class="iframe-fixed"></iframe></div></div>',
-    //"single_page_frame" : '<div><iframe scrolling="no" class="iframe-fixed" id="scaler"></iframe></div>',
-
-    "scrolled_book_frame": '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"><div id="scrolled-content-frame"></div></div>',
-    "reflowable_book_frame": '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"></div>',
-    "reflowable_book_page_frame": '<div id="reflowable-content-frame" class="reflowable-content-frame"><iframe scrolling="no" id="epubContentIframe"></iframe></div>'
-};
 
 /**
  *
