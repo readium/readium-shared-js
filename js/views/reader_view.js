@@ -555,12 +555,11 @@ ReadiumSDK.Views.ReaderView = function(options) {
 
                      self.trigger(ReadiumSDK.Events.SETTINGS_APPLIED);
                  });
-             } else {
-               self.trigger(ReadiumSDK.Events.SETTINGS_APPLIED);
+                 return;
              }
-         } else {
-           self.trigger(ReadiumSDK.Events.SETTINGS_APPLIED);
          }
+         
+         self.trigger(ReadiumSDK.Events.SETTINGS_APPLIED);
      };
 
     /**
