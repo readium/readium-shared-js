@@ -6,4 +6,8 @@ name: "readium_plugin_annotations",
 location: process._RJS_rootDir(1) + "/plugins/annotations",
 main: "main"
 },
-]});
+],
+'paths': {
+'backbone': process._RJS_rootDir(1) + '/node_modules/backbone/backbone'
+}
+});
