@@ -519,58 +519,49 @@ ReadiumSDK.Views.ReaderView = function(options) {
      * @fires ReadiumSDK.Events.SETTINGS_APPLIED
      */
     this.updateSettings = function(settingsData) {
+ //console.debug("UpdateSettings: " + JSON.stringify(settingsData));
 
-//console.debug("UpdateSettings: " + JSON.stringify(settingsData));
+         _viewerSettings.update(settingsData);
 
-        _viewerSettings.update(settingsData);
-        
-        if (_mediaOverlayPlayer)
-        {
-            _mediaOverlayPlayer.setAutomaticNextSmil(_viewerSettings.mediaOverlaysAutomaticPageTurn ? true : false);
-        }
-        
-        if(_currentView && !settingsData.doNotUpdateView) {
+         if (_mediaOverlayPlayer) {
+             _mediaOverlayPlayer.setAutomaticNextSmil(_viewerSettings.mediaOverlaysAutomaticPageTurn ? true : false);
+         }
 
-            var bookMark = _currentView.bookmarkCurrentPage();
+         if (_currentView && !settingsData.doNotUpdateView) {
+             var bookMark = _currentView.bookmarkCurrentPage();
+             if (bookMark && bookMark.idref) {
+                 var wasPlaying = false;
+                 if (_currentView.isReflowable && _currentView.isReflowable()) {
+                     wasPlaying = self.isPlayingMediaOverlay();
+                     if (wasPlaying) {
+                         self.pauseMediaOverlay();
+                     }
+                 }
 
-            if(bookMark && bookMark.idref) {
-     
-                var wasPlaying = false;
-                if (_currentView.isReflowable && _currentView.isReflowable())
-                {
-                    wasPlaying = self.isPlayingMediaOverlay();
-                    if (wasPlaying)
-                    {
-                        self.pauseMediaOverlay();
-                    }
-                }
+                 var spineItem = _spine.getItemById(bookMark.idref);
+                 initViewForItem(spineItem, function(isViewChanged) {
+                     if (!isViewChanged) {
+                         _currentView.setViewSettings(_viewerSettings);
+                     }
 
-                var spineItem = _spine.getItemById(bookMark.idref);
-                
-                initViewForItem(spineItem, function(isViewChanged){
+                     self.openSpineItemElementCfi(bookMark.idref, bookMark.contentCFI, self);
 
-                    if(!isViewChanged) {
-                        _currentView.setViewSettings(_viewerSettings);
-                    }
+                     if (wasPlaying) {
+                         self.playMediaOverlay();
+                         // setTimeout(function()
+                         // {
+                         // }, 60);
+                     }
 
-                    self.openSpineItemElementCfi(bookMark.idref, bookMark.contentCFI, self);
-
-                    if (wasPlaying)
-                    {
-                        self.playMediaOverlay();
-                        // setTimeout(function()
-                        // {
-                        // }, 60);
-                    }
-
-                    self.trigger(ReadiumSDK.Events.SETTINGS_APPLIED);
-                    return;
-                });
-            }
-        }
-
-        self.trigger(ReadiumSDK.Events.SETTINGS_APPLIED);
-    };
+                     self.trigger(ReadiumSDK.Events.SETTINGS_APPLIED);
+                 });
+             } else {
+               self.trigger(ReadiumSDK.Events.SETTINGS_APPLIED);
+             }
+         } else {
+           self.trigger(ReadiumSDK.Events.SETTINGS_APPLIED);
+         }
+     };
 
     /**
      * Opens the next page.
