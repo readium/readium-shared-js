@@ -36,9 +36,6 @@ require.config({
     {
         // ------ NPM MODULEs
 
-        backbone:
-            process._RJS_rootDir(1) + '/node_modules/backbone/backbone',
-
         underscore:
             process._RJS_rootDir(1) + '/node_modules/underscore/underscore',
 
