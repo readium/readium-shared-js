@@ -144,6 +144,17 @@ define(["readium_plugins", "./my_library"], function (Plugins, MyLibrary) {
 });
 ```
 
+You can also include additional RequireJS declarations by creating a `rjs-config.js` file in the root of your plugins folder:
+```js
+require.config({
+  paths: {
+    "myLibrary": "lib/my_library"
+  }
+});
+```
+Any path you define will be relative to your plugin's folder.
+
+
 #### Depending on other plugins
 
 To make sure that plugins you depend on load before your own, you can pass in an array of the identifiers as an optional parameter of `Plugins.register`
