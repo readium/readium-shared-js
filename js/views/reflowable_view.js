@@ -205,23 +205,37 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
             _$epubHtml.css("column-gap", _paginationInfo.columnGap + "px");
         }
     }
-
+    
     function onIFrameLoad(success) {
-
         _isWaitingFrameRender = false;
 
         //while we where loading frame new request came
         if(_deferredPageRequest && _deferredPageRequest.spineItem != _currentSpineItem) {
+            webkit.messageHandlers.consoledebug.postMessage("onIFrameLoad deferred request");
+            
             loadSpineItem(_deferredPageRequest.spineItem);
             return;
         }
-
+        
         if(!success) {
             _$iframe.css("opacity", "1");
             _deferredPageRequest = undefined;
             return;
         }
+        
+        // Add .1 second delay to fix a bug where page count is short by 1
+        setTimeout(onIFrameLoadDelayed, 100)
+        
+        // Reproduce Bug by using the below timeout instead
+        // - iPhone 6 Simulator
+        // - View Chapter 2 of "Pale Gray for Guilt"
+        // - Swipe back to Chapter 1
+        // - Observe the last page of Chapter 1 is cut-off (21 instead of 22 pages).
+        // - Swiping forward goes to Chapter 2.
+//        setTimeout(onIFrameLoadDelayed, 0)
+    }
 
+    function onIFrameLoadDelayed() {
         self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, _$iframe, _currentSpineItem);
 
         var epubContentDocument = _$iframe[0].contentDocument;
