@@ -23,13 +23,14 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
+define([], function() {
 /**
  *
  * @param selector
  * @param declarations
  * @constructor
  */
-ReadiumSDK.Models.Style = function(selector, declarations) {
+var Style = function(selector, declarations) {
 
     this.selector = selector;
     this.declarations = declarations;
@@ -44,3 +45,5 @@ ReadiumSDK.Models.Style = function(selector, declarations) {
 
     }
 };
+    return Style;
+});
