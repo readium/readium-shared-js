@@ -31,9 +31,8 @@ See license.txt ( https://github.com/readium/readium-shared-js/blob/develop/lice
 
 **Initial setup:**
 
-
 * `git submodule update --init --recursive` to ensure that the readium-shared-js chain of dependencies is initialised (readium-cfi-js)
-* `git submodule foreach --recursive 'git checkout BRANCH_NAME'` to switch to the desired BRANCH_NAME
+* `git checkout BRANCH_NAME && git submodule foreach --recursive 'git checkout BRANCH_NAME'` to switch to the desired BRANCH_NAME
 * `npm run prepare` (to perform required preliminary tasks, like patching code before building)
 
 Note that the above command executes the following:
