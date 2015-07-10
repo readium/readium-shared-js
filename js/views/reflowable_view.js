@@ -223,8 +223,8 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
             return;
         }
         
-        // Add .1 second delay to fix a bug where page count is short by 1
-        setTimeout(onIFrameLoadDelayed, 100)
+        // Add .2 second delay to fix a bug where page count is short by 1
+        setTimeout(onIFrameLoadDelayed, 200)
         
         // Reproduce Bug by using the below timeout instead
         // - iPhone 6 Simulator
