@@ -99,7 +99,7 @@ When a user clicks on a highlight `annotationClicked` event is dispatched with t
 
 
 	> RReader.on('annotationClicked', function(type, idref, cfi, annotationId) { console.log (type, idref, cfi, annotationId)});
-	ReadiumSDK.Views.ReaderView {on: function, once: function, off: function, trigger: function, listenTo: function???}
+	Views.ReaderView {on: function, once: function, off: function, trigger: function, listenTo: function???}
 	
 Then when the user clicks on the highlight the following will show up in the console:
 
@@ -107,14 +107,14 @@ Then when the user clicks on the highlight the following will show up in the con
 	
 
 */
-
+define(['jquery', 'underscore', 'eventEmitter', './annotations_module'], function($, _, EventEmitter, EpubAnnotationsModule) {
 /**
  *
  * @param proxyObj
  * @param options
  * @constructor
  */
-ReadiumSDK.Views.AnnotationsManager = function (proxyObj, options) {
+var AnnotationsManager = function (proxyObj, options) {
 
     var self = this;
     var liveAnnotations = {};
@@ -126,11 +126,21 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj, options) {
         console.warn("WARNING! Annotations CSS not supplied. Highlighting is not going to work.");
     }
 
-    _.extend(self, Backbone.Events);
+    _.extend(this, new EventEmitter());
 
     // we want to bubble up all of the events that annotations module may trigger up.
-    this.on("all", function(eventName) {
+    // this.on("all", function() {
+    // });
+    //TODO: EventEmitter3 does not support "all" or "*" (catch-all event sink)
+    //https://github.com/primus/eventemitter3/blob/master/index.js#L61
+    //...so instead we patch trigger() and emit() (which are synonymous, see Bootstrapper.js EventEmitter.prototype.trigger = EventEmitter.prototype.emit;)
+        
+    var originalEmit = self['emit'];
+    
+    var triggerEmitPatch = function() {
         var args = Array.prototype.slice.call(arguments);
+console.debug(args);
+
         // mangle annotationClicked event. What really needs to happen is, the annotation_module needs to return a 
         // bare Cfi, and this class should append the idref.
         var annotationClickedEvent = 'annotationClicked';
@@ -145,11 +155,19 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj, options) {
                     var idref = spines[spineIndex].idref;
                     var partialCfi = getPartialCfi(fullFakeCfi);
                     args = [annotationClickedEvent, type, idref, partialCfi, annotationId, jQueryEvent];
+                    
+console.debug("Corrected CFI:");
+console.debug(args);
                 }
             }
         }
-        self['trigger'].apply(proxy, args);
-    });
+        
+        originalEmit.apply(this, args);
+        originalEmit.apply(proxy, args);
+    };
+
+    this.trigger = triggerEmitPatch;
+    this.emit = triggerEmitPatch;
 
     this.attachAnnotations = function($iframe, spineItem) {
         var epubDocument = $iframe[0].contentDocument;
@@ -224,3 +242,6 @@ ReadiumSDK.Views.AnnotationsManager = function (proxyObj, options) {
 
 
 };
+
+return AnnotationsManager;
+});

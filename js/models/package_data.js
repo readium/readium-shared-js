@@ -24,16 +24,16 @@
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
+define(function() {
 /**
  * This object is not instantiated directly but provided by the host application to the DOMAccess layer in the
- * ReadiumSDK.Views.ReaderView.openBook function
+ * Views.ReaderView.openBook function
  *
  * Provided for reference only
  *
- * @class ReadiumSDK.Models.PackageData
+ * @class Models.PackageData
  */
-
-ReadiumSDK.Models.PackageData = {
+var PackageData = {
 
     /**
      * @property rootUrl Url of the package file
@@ -67,3 +67,6 @@ ReadiumSDK.Models.PackageData = {
         ]
     }
 };
+
+return PackageData;
+});
