@@ -56,13 +56,15 @@
  * @property [[{ReadiumSDK.Models.MappingData}]] mappings - array of arrays of mapping objects (top array stores each UL list container present in nav@epub:type=resource-map, and sub-arrays store actual list items (equivalent locations in different OPF renditions)) see http://www.idpf.org/epub/renditions/multiple/#h.o54dzjuwr54c
  */
 
+define([], function() {
+
 /**
  * EPUB3 Multiple Renditions, see http://www.idpf.org/epub/renditions/multiple
  * @class ReadiumSDK.Models.MultipleRenditions
  * @param {ReadiumSDK.Models.MultipleRenditionsData} multipleRenditions
  * @constructor
  */
-ReadiumSDK.Models.MultipleRenditions = function(multipleRenditions) {
+var MultipleRenditions = function(multipleRenditions) {
 
     var self = this;
 	
@@ -215,3 +217,8 @@ console.log("RENDITION MAPPING NOT FOUND!");
 		return openPageRequest;
 	};
 };
+
+return MultipleRenditions;
+});
+
+
