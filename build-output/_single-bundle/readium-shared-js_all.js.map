@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "file": "build-output/_single-bundle/readium-shared-js_all.js",
+  "file": "readium-shared-js_all.js",
   "sources": [
     "readium-cfi-js/node_modules/almond/almond.js",
     "readium-cfi-js/gen/cfi_parser_gen.js",
