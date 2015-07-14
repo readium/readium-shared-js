@@ -26,7 +26,7 @@ require.config({
         {
             name: "readium_plugins",
             location:
-                process._RJS_rootDir(1) + '/js/',
+                process._RJS_rootDir(1) + '/js',
 
             main: "plugins_controller"
         }
