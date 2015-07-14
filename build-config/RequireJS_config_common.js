@@ -22,14 +22,15 @@ require.config({
                 process._RJS_rootDir(1) + '/js',
 
             main: "globalsSetup"
-        },
-        {
-            name: "readium_plugins",
-            location:
-                process._RJS_rootDir(1) + '/js',
-
-            main: "plugins_controller"
         }
+        // ,
+        // {
+        //     name: "readium_plugins",
+        //     location:
+        //         process._RJS_rootDir(1) + '/js',
+
+        //     main: "plugins_controller"
+        // }
     ],
 
     paths:

@@ -14709,7 +14709,7 @@ navigator.epubReadingSystem = {
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define('readium_plugins/plugins_controller',["jquery", "underscore", "eventEmitter", "readium_shared_js/globals"], function ($, _, EventEmitter, Globals) {
+define('readium_shared_js/plugins_controller',["jquery", "underscore", "eventEmitter", "readium_shared_js/globals"], function ($, _, EventEmitter, Globals) {
 
     /**
      * A  plugins controller used to easily add plugins from the host app, eg.
@@ -14881,8 +14881,6 @@ define('readium_plugins/plugins_controller',["jquery", "underscore", "eventEmitt
     Globals.Plugins = instance;
     return instance;
 });
-
-define('readium_plugins', ['readium_plugins/plugins_controller'], function (main) { return main; });
 
 //     Backbone.js 1.2.1
 
@@ -18677,7 +18675,7 @@ console.debug(args);
 
 return AnnotationsManager;
 });
-define('readium_plugin_annotations/main',['readium_plugins', './annotations_manager'], function (Plugins, AnnotationsManager) {
+define('readium_plugin_annotations/main',['readium_shared_js/plugins_controller', './annotations_manager'], function (Plugins, AnnotationsManager) {
     var config = {};
 
     Plugins.register("annotations", function (api) {

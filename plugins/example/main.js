@@ -1,4 +1,4 @@
-define(['readium_plugins', 'jquery'], function (Plugins, $) {
+define(['readium_shared_js/plugins_controller', 'jquery'], function (Plugins, $) {
     var config = {
         backgroundColor: "yellow",
         borderColor: "red"
