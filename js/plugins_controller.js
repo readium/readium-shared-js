@@ -27,7 +27,9 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define(["jquery", "underscore", "eventEmitter", "readium_shared_js/globals"], function ($, _, EventEmitter, Globals) {
+define(["jquery", "underscore", "eventEmitter"], function ($, _, EventEmitter) {
+
+    var _registeredPlugins = {};
 
     /**
      * A  plugins controller used to easily add plugins from the host app, eg.
@@ -38,9 +40,8 @@ define(["jquery", "underscore", "eventEmitter", "readium_shared_js/globals"], fu
     var PluginsController = function () {
         var self = this;
 
-        var _pluginConstructors = {};
 
-        function _initializePlugins(reader) {
+        this.initialize = function (reader) {
             var apiFactory = new PluginApiFactory(reader);
 
             if (!reader.plugins) {
@@ -50,61 +51,46 @@ define(["jquery", "underscore", "eventEmitter", "readium_shared_js/globals"], fu
             } else {
                 throw new Error("Already initialized on reader!");
             }
-            _.each(_pluginConstructors, function (plugin) {
-                plugin().init(apiFactory);
+            _.each(_registeredPlugins, function (plugin) {
+                plugin.init(apiFactory);
             });
-        }
+        };
 
-        function _getExceptionMessage(ex) {
-            return ex.message || ex.description || String(ex);
-        }
+        this.getLoadedPlugins = function() {
+            return _registeredPlugins;
+        };
 
         // Creates a new instance of the given plugin constructor.
         this.register = function (name, optDependencies, initFunc) {
 
-            if (_pluginConstructors[name]) {
+            if (_registeredPlugins[name]) {
                 throw new Error("Duplicate registration for plugin with name: " + name);
             }
 
-            _pluginConstructors[name] = function () {
-                var dependencies;
-                if (typeof optDependencies === 'function') {
-                    initFunc = optDependencies;
-                } else {
-                    dependencies = optDependencies;
-                }
-
-                return new Plugin(name, dependencies, function (plugin, api) {
-                    if (!plugin.initialized) {
-                        plugin.initialized = true;
-                        try {
-                            var pluginContext = {};
-                            _.extend(pluginContext, new EventEmitter());
-
-                            initFunc.call(pluginContext, api.instance);
-                            plugin.supported = true;
-
-                            api.host.plugins[plugin.name] = pluginContext;
-                        } catch (ex) {
-                            plugin.fail(_getExceptionMessage(ex));
-                        }
-                    }
-                });
-            };
-        };
-
-        Globals.on(Globals.Events.READER_INITIALIZED, function (reader) {
-
-            try {
-                _initializePlugins(reader);
-            } catch (ex) {
-                console.error("Plugins failed to initialize:" + _getExceptionMessage(ex));
+            var dependencies;
+            if (typeof optDependencies === 'function') {
+                initFunc = optDependencies;
+            } else {
+                dependencies = optDependencies;
             }
 
-            _.defer(function () {
-                Globals.emit(Globals.Events.PLUGINS_LOADED, reader);
+            _registeredPlugins[name] = new Plugin(name, dependencies, function(plugin, api) {
+                if (!plugin.initialized) {
+                    plugin.initialized = true;
+                    try {
+                        var pluginContext = {};
+                        _.extend(pluginContext, new EventEmitter());
+
+                        initFunc.call(pluginContext, api.instance);
+                        plugin.supported = true;
+
+                        api.host.plugins[plugin.name] = pluginContext;
+                    } catch (ex) {
+                        plugin.fail(ex);
+                    }
+                }
             });
-        });
+        };
     };
 
     function PluginApi(reader, plugin) {
@@ -159,7 +145,7 @@ define(["jquery", "underscore", "eventEmitter", "readium_shared_js/globals"], fu
             for (var i = 0, len = requiredPluginNames.length, requiredPlugin, PluginName; i < len; ++i) {
                 PluginName = requiredPluginNames[i];
 
-                requiredPlugin = Plugins[PluginName];
+                requiredPlugin = _registeredPlugins[PluginName];
                 if (!requiredPlugin || !(requiredPlugin instanceof Plugin)) {
                     throw new Error("required Plugin '" + PluginName + "' not found");
                 }
@@ -196,6 +182,5 @@ define(["jquery", "underscore", "eventEmitter", "readium_shared_js/globals"], fu
     };
 
     var instance = new PluginsController();
-    Globals.Plugins = instance;
     return instance;
 });
