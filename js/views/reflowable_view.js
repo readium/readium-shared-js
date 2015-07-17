@@ -224,7 +224,7 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         }
         
         // Add .2 second delay to fix a bug where page count is short by 1
-        setTimeout(onIFrameLoadDelayed, 200)
+        // setTimeout(onIFrameLoadDelayed, 200)
         
         // Reproduce Bug by using the below timeout instead
         // - iPhone 6 Simulator
@@ -232,7 +232,103 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         // - Swipe back to Chapter 1
         // - Observe the last page of Chapter 1 is cut-off (21 instead of 22 pages).
         // - Swiping forward goes to Chapter 2.
-//        setTimeout(onIFrameLoadDelayed, 0)
+        self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, _$iframe, _currentSpineItem);
+        
+        var epubContentDocument = _$iframe[0].contentDocument;
+        _$epubHtml = $("html", epubContentDocument);
+        _$htmlBody = $("body", _$epubHtml);
+        
+        // Video surface sometimes (depends on the video codec) disappears from CSS column (i.e. reflow page) during playback (audio continues to play normally, but video canvas is invisible).
+        // Enabling CSS3D fixes this Chrome-specific rendering bug.
+        if(window.chrome
+           && window.navigator.vendor === "Google Inc.") // TODO: Opera (WebKit) sometimes suffers from this rendering bug too (depends on the video codec), but unfortunately GPU-accelerated rendering makes the video controls unresponsive!!
+        {
+            $("video", _$htmlBody).css("transform", "translateZ(0)");
+        }
+        
+        _htmlBodyIsVerticalWritingMode = false;
+        _htmlBodyIsLTRDirection = true;
+        _htmlBodyIsLTRWritingMode = undefined;
+        
+        var win = _$iframe[0].contentDocument.defaultView || _$iframe[0].contentWindow;
+        
+        //Helpers.isIframeAlive
+        var htmlBodyComputedStyle = win.getComputedStyle(_$htmlBody[0], null);
+        if (htmlBodyComputedStyle)
+        {
+            _htmlBodyIsLTRDirection = htmlBodyComputedStyle.direction === "ltr";
+            
+            var writingMode = undefined;
+            if (htmlBodyComputedStyle.getPropertyValue)
+            {
+                writingMode = htmlBodyComputedStyle.getPropertyValue("-webkit-writing-mode") || htmlBodyComputedStyle.getPropertyValue("-moz-writing-mode") || htmlBodyComputedStyle.getPropertyValue("-ms-writing-mode") || htmlBodyComputedStyle.getPropertyValue("-o-writing-mode") || htmlBodyComputedStyle.getPropertyValue("-epub-writing-mode") || htmlBodyComputedStyle.getPropertyValue("writing-mode");
+            }
+            else
+            {
+                writingMode = htmlBodyComputedStyle.webkitWritingMode || htmlBodyComputedStyle.mozWritingMode || htmlBodyComputedStyle.msWritingMode || htmlBodyComputedStyle.oWritingMode || htmlBodyComputedStyle.epubWritingMode || htmlBodyComputedStyle.writingMode;
+            }
+            
+            if (writingMode)
+            {
+                _htmlBodyIsLTRWritingMode = writingMode.indexOf("-lr") >= 0; // || writingMode.indexOf("horizontal-") >= 0; we need explicit!
+                
+                if (writingMode.indexOf("vertical") >= 0 || writingMode.indexOf("tb-") >= 0 || writingMode.indexOf("bt-") >= 0)
+                {
+                    _htmlBodyIsVerticalWritingMode = true;
+                }
+            }
+        }
+        
+        if (_htmlBodyIsLTRDirection)
+        {
+            if (_$htmlBody[0].getAttribute("dir") === "rtl" || _$epubHtml[0].getAttribute("dir") === "rtl")
+            {
+                _htmlBodyIsLTRDirection = false;
+            }
+        }
+        
+        // Some EPUBs may not have explicit RTL content direction (via CSS "direction" property or @dir attribute) despite having a RTL page progression direction. Readium consequently tweaks the HTML in order to restore the correct block flow in the browser renderer, resulting in the appropriate CSS columnisation (which is used to emulate pagination).
+        if (!_spine.isLeftToRight() && _htmlBodyIsLTRDirection && !_htmlBodyIsVerticalWritingMode)
+        {
+            _$htmlBody[0].setAttribute("dir", "rtl");
+            _htmlBodyIsLTRDirection = false;
+            _htmlBodyIsLTRWritingMode = false;
+        }
+        
+        _paginationInfo.isVerticalWritingMode = _htmlBodyIsVerticalWritingMode;
+        
+        hideBook();
+        _$iframe.css("opacity", "1");
+        
+        updateViewportSize();
+        _$epubHtml.css("height", _lastViewPortSize.height + "px");
+        
+        _$epubHtml.css("position", "relative");
+        _$epubHtml.css("margin", "0");
+        _$epubHtml.css("padding", "0");
+        
+        _$epubHtml.css("column-axis", (_htmlBodyIsVerticalWritingMode ? "vertical" : "horizontal"));
+        
+        //
+        // /////////
+        // //Columns Debugging
+        //
+        //     _$epubHtml.css("column-rule-color", "red");
+        //     _$epubHtml.css("column-rule-style", "dashed");
+        //     _$epubHtml.css("column-rule-width", "1px");
+        // _$epubHtml.css("background-color", '#b0c4de');
+        //
+        // ////
+        
+        self.applyBookStyles();
+        resizeImages();
+        
+        updateHtmlFontSize();
+        updateColumnGap();
+        
+        
+        self.applyStyles();
+
     }
 
     function onIFrameLoadDelayed() {
@@ -653,9 +749,10 @@ ReadiumSDK.Views.ReflowableView = function(options, reader){
         _$epubHtml.css({left: "0", right: "0", top: "0"});
         
         ReadiumSDK.Helpers.triggerLayout(_$iframe);
-
+        
         _paginationInfo.columnCount = ((_htmlBodyIsVerticalWritingMode ? _$epubHtml[0].scrollHeight : _$epubHtml[0].scrollWidth) + _paginationInfo.columnGap) / (_paginationInfo.columnWidth + _paginationInfo.columnGap);
-        _paginationInfo.columnCount = Math.round(_paginationInfo.columnCount);
+        // BPY stupid fix to make sure that most of the chapters don't get get off due to the font-face bug.
+        _paginationInfo.columnCount = Math.round(_paginationInfo.columnCount) + 1;
 
         var totalGaps = (_paginationInfo.columnCount-1) * _paginationInfo.columnGap;
         var colWidthCheck = ((_htmlBodyIsVerticalWritingMode ? _$epubHtml[0].scrollHeight : _$epubHtml[0].scrollWidth) - totalGaps) / _paginationInfo.columnCount;
