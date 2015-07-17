@@ -12,7 +12,7 @@
 //  prior written permission.
 
 //'text!empty:'
-define(['console_shim', 'eventEmitter', 'URIjs', 'readium_cfi_js', './globals'], function (console_shim, EventEmitter, URI, epubCfi, Globals) {
+define(['console_shim', 'eventEmitter', 'URIjs', 'readium_cfi_js', './plugins_controller', './globals'], function (console_shim, EventEmitter, URI, epubCfi, PluginsController, Globals) {
 
     console.log("Globals...");
 
@@ -22,8 +22,8 @@ define(['console_shim', 'eventEmitter', 'URIjs', 'readium_cfi_js', './globals'],
     } else {
         console.log("ReadiumSDK set.");
     }
-    
-        window.ReadiumSDK = Globals;
+
+    window.ReadiumSDK = Globals;
 
     // TODO: refactor client code to use emit instead of trigger?
     EventEmitter.prototype.trigger = EventEmitter.prototype.emit;
@@ -42,4 +42,18 @@ define(['console_shim', 'eventEmitter', 'URIjs', 'readium_cfi_js', './globals'],
 
         window.URL = window.webkitURL;
     }
+    // Plugins setup
+    Globals.Plugins = PluginsController;
+    Globals.on(Globals.Events.READER_INITIALIZED, function(reader) {
+        try {
+            PluginsController.initialize(reader);
+        } catch (ex) {
+            console.error("Plugins failed to initialize:", ex);
+        }
+
+        _.defer(function() {
+            console.log("Plugins loaded.");
+            Globals.emit(Globals.Events.PLUGINS_LOADED, reader);
+        });
+    });
 });
