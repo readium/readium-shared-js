@@ -42,7 +42,7 @@ define(['console_shim', 'eventEmitter', 'URIjs', 'readium_cfi_js', './plugins_co
 
         window.URL = window.webkitURL;
     }
-    // Plugins setup
+    // Plugins bootstrapping begins
     Globals.Plugins = PluginsController;
     Globals.on(Globals.Events.READER_INITIALIZED, function(reader) {
         try {
@@ -56,4 +56,23 @@ define(['console_shim', 'eventEmitter', 'URIjs', 'readium_cfi_js', './plugins_co
             Globals.emit(Globals.Events.PLUGINS_LOADED, reader);
         });
     });
+
+    if (window._RJS_isBrowser) {
+        // If under a browser env and using RequireJS, dynamically require all plugins
+        var pluginsList = window._RJS_pluginsList;
+        console.log("Plugins included: ", pluginsList.map(function(v) {
+            // To stay consistent with bundled output
+            return v.replace('readium_plugin_', '');
+        }));
+
+        require(pluginsList);
+    } else {
+        // Else list which plugins were included when using almond and bundle(s)
+        setTimeout(function() {
+            // Assume that in the next callback all the plugins have been registered
+            var pluginsList = Object.keys(PluginsController.getLoadedPlugins());
+            console.log("Plugins included: ", pluginsList);
+        }, 0);
+    }
+    // Plugins bootstrapping ends
 });
