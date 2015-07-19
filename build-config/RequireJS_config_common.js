@@ -23,19 +23,14 @@ require.config({
 
             main: "globalsSetup"
         }
-        // ,
-        // {
-        //     name: "readium_plugins",
-        //     location:
-        //         process._RJS_rootDir(1) + '/js',
-
-        //     main: "plugins_controller"
-        // }
     ],
 
     paths:
     {
         // ------ NPM MODULEs
+
+        "readium_plugins":
+            process._RJS_rootDir(1) + '/js/plugins_controller',
 
         underscore:
             process._RJS_rootDir(1) + '/node_modules/underscore/underscore',
