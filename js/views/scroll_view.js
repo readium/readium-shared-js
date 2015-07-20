@@ -662,6 +662,11 @@ var ScrollView = function (options, isContinuousScroll, reader) {
             true, //enableBookStyleOverrides
             reader);
 
+        pageView.on(OnePageView.SPINE_ITEM_OPEN_START, function($iframe, spineItem) {
+
+            self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
+        });
+
         pageView.render();
         if (_viewSettings) pageView.setViewSettings(_viewSettings);
 
