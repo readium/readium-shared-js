@@ -14508,178 +14508,6 @@ if ('undefined' !== typeof module) {
 
 });
 
-//  LauncherOSX
-//
-//  Created by Boris Schneiderman.
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
-//  
-//  Redistribution and use in source and binary forms, with or without modification, 
-//  are permitted provided that the following conditions are met:
-//  1. Redistributions of source code must retain the above copyright notice, this 
-//  list of conditions and the following disclaimer.
-//  2. Redistributions in binary form must reproduce the above copyright notice, 
-//  this list of conditions and the following disclaimer in the documentation and/or 
-//  other materials provided with the distribution.
-//  3. Neither the name of the organization nor the names of its contributors may be 
-//  used to endorse or promote products derived from this software without specific 
-//  prior written permission.
-//  
-//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
-//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
-//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
-//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
-//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
-//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
-//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
-//  OF THE POSSIBILITY OF SUCH DAMAGE.
-
-define('readium_shared_js/globals',['underscore','eventEmitter'], function(_, EventEmitter) {
-/**
- * Top level ReadiumSDK namespace
- * @namespace
- */
-var Globals = {
-
-    /**
-     * Current version of the JS SDK
-     * @static
-     * @return {string} version
-     */
-    version: function () {
-        return "0.8.0";
-    },
-    /**
-     * @namespace
-     */
-    Views: {
-        /**
-         * Landscape Orientation
-         */
-        ORIENTATION_LANDSCAPE: "orientation_landscape",
-        /**
-         * Portrait Orientation
-         */
-        ORIENTATION_PORTRAIT: "orientation_portrait"
-    },
-    /**
-     * @namespace
-     */
-    Events: {
-        /**
-         * @event
-         */
-        READER_INITIALIZED: "ReaderInitialized",
-        /**
-         * This gets triggered on every page turnover. It includes spine information and such.
-         * @event
-         */
-        PAGINATION_CHANGED: "PaginationChanged",
-        /**
-         * @event
-         */
-        SETTINGS_APPLIED: "SettingsApplied",
-        /**
-         * @event
-         */
-        FXL_VIEW_RESIZED: "FXLViewResized",
-        /**
-         * @event
-         */
-        READER_VIEW_CREATED: "ReaderViewCreated",
-        /**
-         * @event
-         */
-        READER_VIEW_DESTROYED: "ReaderViewDestroyed",
-        /**
-         * @event
-         */
-        CONTENT_DOCUMENT_LOAD_START: "ContentDocumentLoadStart",
-        /**
-         * @event
-         */
-        CONTENT_DOCUMENT_LOADED: "ContentDocumentLoaded",
-        /**
-         * @event
-         */
-        MEDIA_OVERLAY_STATUS_CHANGED: "MediaOverlayStatusChanged",
-        /**
-         * @event
-         */
-        MEDIA_OVERLAY_TTS_SPEAK: "MediaOverlayTTSSpeak",
-        /**
-         * @event
-         */
-        MEDIA_OVERLAY_TTS_STOP: "MediaOverlayTTSStop",
-        /**
-         * @event
-         */
-        PLUGINS_LOADED: "PluginsLoaded"
-    },
-    /**
-     * Internal Events
-     *
-     * @desc Should not be triggered outside of {@link Views.ReaderView}.
-     * @namespace
-     */
-    InternalEvents: {
-        /**
-         * @event
-         */
-        CURRENT_VIEW_PAGINATION_CHANGED: "CurrentViewPaginationChanged",
-    }
-
-};
-_.extend(Globals, new EventEmitter());
-
-return Globals;
-
-});
-
-//This is default implementation of reading system object that will be available for the publication's javascript to analyze at runtime
-//To extend/modify/replace this object reading system should subscribe Globals.Events.READER_INITIALIZED and apply changes in reaction to this event
-navigator.epubReadingSystem = {
-    name: "",
-    version: "0.0.0",
-    layoutStyle: "paginated",
-
-    hasFeature: function (feature, version) {
-
-        // for now all features must be version 1.0 so fail fast if the user has asked for something else
-        if (version && version !== "1.0") {
-            return false;
-        }
-
-        if (feature === "dom-manipulation") {
-            // Scripts may make structural changes to the document???s DOM (applies to spine-level scripting only).
-            return true;
-        }
-        if (feature === "layout-changes") {
-            // Scripts may modify attributes and CSS styles that affect content layout (applies to spine-level scripting only).
-            return true;
-        }
-        if (feature === "touch-events") {
-            // The device supports touch events and the Reading System passes touch events to the content.
-            return false;
-        }
-        if (feature === "mouse-events") {
-            // The device supports mouse events and the Reading System passes mouse events to the content.
-            return true;
-        }
-        if (feature === "keyboard-events") {
-            // The device supports keyboard events and the Reading System passes keyboard events to the content.
-            return true;
-        }
-
-        if (feature === "spine-scripting") {
-            //Spine-level scripting is supported.
-            return true;
-        }
-
-        return false;
-    }
-};
 //
 //  Created by Juan Corona
 //  Based on original proposal by Mickaël Menu
@@ -14709,7 +14537,9 @@ navigator.epubReadingSystem = {
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define('readium_shared_js/plugins_controller',["jquery", "underscore", "eventEmitter", "readium_shared_js/globals"], function ($, _, EventEmitter, Globals) {
+define('readium_js_plugins',["jquery", "underscore", "eventEmitter"], function ($, _, EventEmitter) {
+
+    var _registeredPlugins = {};
 
     /**
      * A  plugins controller used to easily add plugins from the host app, eg.
@@ -14720,9 +14550,8 @@ define('readium_shared_js/plugins_controller',["jquery", "underscore", "eventEmi
     var PluginsController = function () {
         var self = this;
 
-        var _pluginConstructors = {};
 
-        function _initializePlugins(reader) {
+        this.initialize = function (reader) {
             var apiFactory = new PluginApiFactory(reader);
 
             if (!reader.plugins) {
@@ -14732,61 +14561,46 @@ define('readium_shared_js/plugins_controller',["jquery", "underscore", "eventEmi
             } else {
                 throw new Error("Already initialized on reader!");
             }
-            _.each(_pluginConstructors, function (plugin) {
-                plugin().init(apiFactory);
+            _.each(_registeredPlugins, function (plugin) {
+                plugin.init(apiFactory);
             });
-        }
+        };
 
-        function _getExceptionMessage(ex) {
-            return ex.message || ex.description || String(ex);
-        }
+        this.getLoadedPlugins = function() {
+            return _registeredPlugins;
+        };
 
         // Creates a new instance of the given plugin constructor.
         this.register = function (name, optDependencies, initFunc) {
 
-            if (_pluginConstructors[name]) {
+            if (_registeredPlugins[name]) {
                 throw new Error("Duplicate registration for plugin with name: " + name);
             }
 
-            _pluginConstructors[name] = function () {
-                var dependencies;
-                if (typeof optDependencies === 'function') {
-                    initFunc = optDependencies;
-                } else {
-                    dependencies = optDependencies;
-                }
-
-                return new Plugin(name, dependencies, function (plugin, api) {
-                    if (!plugin.initialized) {
-                        plugin.initialized = true;
-                        try {
-                            var pluginContext = {};
-                            _.extend(pluginContext, new EventEmitter());
-
-                            initFunc.call(pluginContext, api.instance);
-                            plugin.supported = true;
-
-                            api.host.plugins[plugin.name] = pluginContext;
-                        } catch (ex) {
-                            plugin.fail(_getExceptionMessage(ex));
-                        }
-                    }
-                });
-            };
-        };
-
-        Globals.on(Globals.Events.READER_INITIALIZED, function (reader) {
-
-            try {
-                _initializePlugins(reader);
-            } catch (ex) {
-                console.error("Plugins failed to initialize:" + _getExceptionMessage(ex));
+            var dependencies;
+            if (typeof optDependencies === 'function') {
+                initFunc = optDependencies;
+            } else {
+                dependencies = optDependencies;
             }
 
-            _.defer(function () {
-                Globals.emit(Globals.Events.PLUGINS_LOADED, reader);
+            _registeredPlugins[name] = new Plugin(name, dependencies, function(plugin, api) {
+                if (!plugin.initialized) {
+                    plugin.initialized = true;
+                    try {
+                        var pluginContext = {};
+                        _.extend(pluginContext, new EventEmitter());
+
+                        initFunc.call(pluginContext, api.instance);
+                        plugin.supported = true;
+
+                        api.host.plugins[plugin.name] = pluginContext;
+                    } catch (ex) {
+                        plugin.fail(ex);
+                    }
+                }
             });
-        });
+        };
     };
 
     function PluginApi(reader, plugin) {
@@ -14841,7 +14655,7 @@ define('readium_shared_js/plugins_controller',["jquery", "underscore", "eventEmi
             for (var i = 0, len = requiredPluginNames.length, requiredPlugin, PluginName; i < len; ++i) {
                 PluginName = requiredPluginNames[i];
 
-                requiredPlugin = Plugins[PluginName];
+                requiredPlugin = _registeredPlugins[PluginName];
                 if (!requiredPlugin || !(requiredPlugin instanceof Plugin)) {
                     throw new Error("required Plugin '" + PluginName + "' not found");
                 }
@@ -14878,7 +14692,6 @@ define('readium_shared_js/plugins_controller',["jquery", "underscore", "eventEmi
     };
 
     var instance = new PluginsController();
-    Globals.Plugins = instance;
     return instance;
 });
 
@@ -18675,7 +18488,7 @@ console.debug(args);
 
 return AnnotationsManager;
 });
-define('readium_plugin_annotations/main',['readium_shared_js/plugins_controller', './annotations_manager'], function (Plugins, AnnotationsManager) {
+define('readium_plugin_annotations/main',['readium_js_plugins', './annotations_manager'], function (Plugins, AnnotationsManager) {
     var config = {};
 
     Plugins.register("annotations", function (api) {
@@ -21880,6 +21693,178 @@ define("console_shim", function(){});
   return URI;
 }));
 
+//  LauncherOSX
+//
+//  Created by Boris Schneiderman.
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  
+//  Redistribution and use in source and binary forms, with or without modification, 
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this 
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice, 
+//  this list of conditions and the following disclaimer in the documentation and/or 
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be 
+//  used to endorse or promote products derived from this software without specific 
+//  prior written permission.
+//  
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
+
+define('readium_shared_js/globals',['underscore','eventEmitter'], function(_, EventEmitter) {
+/**
+ * Top level ReadiumSDK namespace
+ * @namespace
+ */
+var Globals = {
+
+    /**
+     * Current version of the JS SDK
+     * @static
+     * @return {string} version
+     */
+    version: function () {
+        return "0.8.0";
+    },
+    /**
+     * @namespace
+     */
+    Views: {
+        /**
+         * Landscape Orientation
+         */
+        ORIENTATION_LANDSCAPE: "orientation_landscape",
+        /**
+         * Portrait Orientation
+         */
+        ORIENTATION_PORTRAIT: "orientation_portrait"
+    },
+    /**
+     * @namespace
+     */
+    Events: {
+        /**
+         * @event
+         */
+        READER_INITIALIZED: "ReaderInitialized",
+        /**
+         * This gets triggered on every page turnover. It includes spine information and such.
+         * @event
+         */
+        PAGINATION_CHANGED: "PaginationChanged",
+        /**
+         * @event
+         */
+        SETTINGS_APPLIED: "SettingsApplied",
+        /**
+         * @event
+         */
+        FXL_VIEW_RESIZED: "FXLViewResized",
+        /**
+         * @event
+         */
+        READER_VIEW_CREATED: "ReaderViewCreated",
+        /**
+         * @event
+         */
+        READER_VIEW_DESTROYED: "ReaderViewDestroyed",
+        /**
+         * @event
+         */
+        CONTENT_DOCUMENT_LOAD_START: "ContentDocumentLoadStart",
+        /**
+         * @event
+         */
+        CONTENT_DOCUMENT_LOADED: "ContentDocumentLoaded",
+        /**
+         * @event
+         */
+        MEDIA_OVERLAY_STATUS_CHANGED: "MediaOverlayStatusChanged",
+        /**
+         * @event
+         */
+        MEDIA_OVERLAY_TTS_SPEAK: "MediaOverlayTTSSpeak",
+        /**
+         * @event
+         */
+        MEDIA_OVERLAY_TTS_STOP: "MediaOverlayTTSStop",
+        /**
+         * @event
+         */
+        PLUGINS_LOADED: "PluginsLoaded"
+    },
+    /**
+     * Internal Events
+     *
+     * @desc Should not be triggered outside of {@link Views.ReaderView}.
+     * @namespace
+     */
+    InternalEvents: {
+        /**
+         * @event
+         */
+        CURRENT_VIEW_PAGINATION_CHANGED: "CurrentViewPaginationChanged",
+    }
+
+};
+_.extend(Globals, new EventEmitter());
+
+return Globals;
+
+});
+
+//This is default implementation of reading system object that will be available for the publication's javascript to analyze at runtime
+//To extend/modify/replace this object reading system should subscribe Globals.Events.READER_INITIALIZED and apply changes in reaction to this event
+navigator.epubReadingSystem = {
+    name: "",
+    version: "0.0.0",
+    layoutStyle: "paginated",
+
+    hasFeature: function (feature, version) {
+
+        // for now all features must be version 1.0 so fail fast if the user has asked for something else
+        if (version && version !== "1.0") {
+            return false;
+        }
+
+        if (feature === "dom-manipulation") {
+            // Scripts may make structural changes to the document???s DOM (applies to spine-level scripting only).
+            return true;
+        }
+        if (feature === "layout-changes") {
+            // Scripts may modify attributes and CSS styles that affect content layout (applies to spine-level scripting only).
+            return true;
+        }
+        if (feature === "touch-events") {
+            // The device supports touch events and the Reading System passes touch events to the content.
+            return false;
+        }
+        if (feature === "mouse-events") {
+            // The device supports mouse events and the Reading System passes mouse events to the content.
+            return true;
+        }
+        if (feature === "keyboard-events") {
+            // The device supports keyboard events and the Reading System passes keyboard events to the content.
+            return true;
+        }
+
+        if (feature === "spine-scripting") {
+            //Spine-level scripting is supported.
+            return true;
+        }
+
+        return false;
+    }
+};
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
 //
 //  Redistribution and use in source and binary forms, with or without modification,
@@ -21894,7 +21879,7 @@ define("console_shim", function(){});
 //  prior written permission.
 
 //'text!empty:'
-define('readium_shared_js/globalsSetup',['console_shim', 'eventEmitter', 'URIjs', 'readium_cfi_js', './globals'], function (console_shim, EventEmitter, URI, epubCfi, Globals) {
+define('readium_shared_js/globalsSetup',['console_shim', 'eventEmitter', 'URIjs', 'readium_cfi_js', 'readium_js_plugins', './globals'], function (console_shim, EventEmitter, URI, epubCfi, PluginsController, Globals) {
 
     console.log("Globals...");
 
@@ -21904,8 +21889,8 @@ define('readium_shared_js/globalsSetup',['console_shim', 'eventEmitter', 'URIjs'
     } else {
         console.log("ReadiumSDK set.");
     }
-    
-        window.ReadiumSDK = Globals;
+
+    window.ReadiumSDK = Globals;
 
     // TODO: refactor client code to use emit instead of trigger?
     EventEmitter.prototype.trigger = EventEmitter.prototype.emit;
@@ -21924,6 +21909,39 @@ define('readium_shared_js/globalsSetup',['console_shim', 'eventEmitter', 'URIjs'
 
         window.URL = window.webkitURL;
     }
+    // Plugins bootstrapping begins
+    Globals.Plugins = PluginsController;
+    Globals.on(Globals.Events.READER_INITIALIZED, function(reader) {
+        try {
+            PluginsController.initialize(reader);
+        } catch (ex) {
+            console.error("Plugins failed to initialize:", ex);
+        }
+
+        _.defer(function() {
+            console.log("Plugins loaded.");
+            Globals.emit(Globals.Events.PLUGINS_LOADED, reader);
+        });
+    });
+
+    if (window._RJS_isBrowser) {
+        // If under a browser env and using RequireJS, dynamically require all plugins
+        var pluginsList = window._RJS_pluginsList;
+        console.log("Plugins included: ", pluginsList.map(function(v) {
+            // To stay consistent with bundled output
+            return v.replace('readium_plugin_', '');
+        }));
+
+        require(pluginsList);
+    } else {
+        // Else list which plugins were included when using almond and bundle(s)
+        setTimeout(function() {
+            // Assume that in the next callback all the plugins have been registered
+            var pluginsList = Object.keys(PluginsController.getLoadedPlugins());
+            console.log("Plugins included: ", pluginsList);
+        }, 0);
+    }
+    // Plugins bootstrapping ends
 });
 
 define('readium_shared_js', ['readium_shared_js/globalsSetup'], function (main) { return main; });
