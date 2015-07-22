@@ -3791,7 +3791,7 @@ console.debug(args);
 
 return AnnotationsManager;
 });
-define('readium_plugin_annotations/main',['readium_plugins', './annotations_manager'], function (Plugins, AnnotationsManager) {
+define('readium_plugin_annotations/main',['readium_js_plugins', './annotations_manager'], function (Plugins, AnnotationsManager) {
     var config = {};
 
     Plugins.register("annotations", function (api) {

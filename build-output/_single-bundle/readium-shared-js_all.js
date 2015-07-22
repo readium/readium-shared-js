@@ -14537,7 +14537,7 @@ if ('undefined' !== typeof module) {
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define('readium_plugins',["jquery", "underscore", "eventEmitter"], function ($, _, EventEmitter) {
+define('readium_js_plugins',["jquery", "underscore", "eventEmitter"], function ($, _, EventEmitter) {
 
     var _registeredPlugins = {};
 
@@ -18488,7 +18488,7 @@ console.debug(args);
 
 return AnnotationsManager;
 });
-define('readium_plugin_annotations/main',['readium_plugins', './annotations_manager'], function (Plugins, AnnotationsManager) {
+define('readium_plugin_annotations/main',['readium_js_plugins', './annotations_manager'], function (Plugins, AnnotationsManager) {
     var config = {};
 
     Plugins.register("annotations", function (api) {
@@ -21879,7 +21879,7 @@ navigator.epubReadingSystem = {
 //  prior written permission.
 
 //'text!empty:'
-define('readium_shared_js/globalsSetup',['console_shim', 'eventEmitter', 'URIjs', 'readium_cfi_js', 'readium_plugins', './globals'], function (console_shim, EventEmitter, URI, epubCfi, PluginsController, Globals) {
+define('readium_shared_js/globalsSetup',['console_shim', 'eventEmitter', 'URIjs', 'readium_cfi_js', 'readium_js_plugins', './globals'], function (console_shim, EventEmitter, URI, epubCfi, PluginsController, Globals) {
 
     console.log("Globals...");
 
