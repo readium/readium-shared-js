@@ -12,7 +12,7 @@
 //  prior written permission.
 
 //'text!empty:'
-define(['console_shim', 'eventEmitter', 'URIjs', 'readium_cfi_js', 'readium_plugins', './globals'], function (console_shim, EventEmitter, URI, epubCfi, PluginsController, Globals) {
+define(['console_shim', 'eventEmitter', 'URIjs', 'readium_cfi_js', 'readium_js_plugins', './globals'], function (console_shim, EventEmitter, URI, epubCfi, PluginsController, Globals) {
 
     console.log("Globals...");
 

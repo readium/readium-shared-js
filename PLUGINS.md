@@ -2,7 +2,7 @@
 
 #### Minimal template
 ```js
-define(["readium_plugins"], function (Plugins) {
+define(["readium_js_plugins"], function (Plugins) {
 
     Plugins.register("pluginIdentifierHere", function (api) {
         // Your plugin implementation here
@@ -12,7 +12,7 @@ define(["readium_plugins"], function (Plugins) {
 
 #### Relay a message to the plugin host
 ```js
-define(["readium_plugins"], function (Plugins) {
+define(["readium_js_plugins"], function (Plugins) {
 
     Plugins.register("pluginIdentifierHere", function (api) {
         api.plugin.warn("Something weird happened.");
@@ -23,7 +23,7 @@ define(["readium_plugins"], function (Plugins) {
 
 #### Add handlers to Reader events
 ```js
-define(["readium_plugins"], function (Plugins) {
+define(["readium_js_plugins"], function (Plugins) {
 
     Plugins.register("pluginIdentifierHere", function (api) {
 
@@ -37,7 +37,7 @@ define(["readium_plugins"], function (Plugins) {
 
 #### Expose your own API to the Reader
 ```js
-define(["readium_plugins"], function(Plugins) {
+define(["readium_js_plugins"], function(Plugins) {
 
     Plugins.register("pluginIdentifierHere", function(api) {
         this.sayHello = function() {
@@ -52,7 +52,7 @@ define(["readium_plugins"], function(Plugins) {
 
 #### Emit your own events
 ```js
-define(["readium_plugins"], function(Plugins) {
+define(["readium_js_plugins"], function(Plugins) {
 
     Plugins.register("pluginIdentifierHere", function(api) {
         this.sayHello = function() {
@@ -90,7 +90,7 @@ Your plugin should now be included next time you invoke the Readium build proces
 #### Configuration values
 You can include default and overridable configuration options in your plugins using this technique:
 ```js
-define(["readium_plugins"], function(Plugins) {
+define(["readium_js_plugins"], function(Plugins) {
     var config = {
         backgroundColor: "yellow"
     };
@@ -136,7 +136,7 @@ plugins/
 
 Your `main.js` script could look like this:
 ```js
-define(["readium_plugins", "./my_library"], function (Plugins, MyLibrary) {
+define(["readium_js_plugins", "./my_library"], function (Plugins, MyLibrary) {
 
     Plugins.register("myPlugin", function (api) {
         MyLibrary.doSomething();
@@ -160,7 +160,7 @@ Any path you define will be relative to your plugin's folder.
 To make sure that plugins you depend on load before your own, you can pass in an array of the identifiers as an optional parameter of `Plugins.register`
 
 ```js
-define(["readium_plugins"], function (Plugins) {
+define(["readium_js_plugins"], function (Plugins) {
 
     Plugins.register("pluginIdentifierHere", ["pluginDependencyHere", "anotherPluginYouRelyOn"], function (api) {
         // Your plugin implementation here

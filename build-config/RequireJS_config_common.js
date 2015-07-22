@@ -29,7 +29,7 @@ require.config({
     {
         // ------ NPM MODULEs
 
-        "readium_plugins":
+        "readium_js_plugins":
             process._RJS_rootDir(1) + '/js/plugins_controller',
 
         underscore:
