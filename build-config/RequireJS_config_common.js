@@ -60,7 +60,9 @@ require.config({
 
 
         // ------ LIBs
-
+        'FontLoader':
+            process._RJS_rootDir(1) + '/lib/FontLoader',
+            
         'console_shim':
             process._RJS_rootDir(1) + '/lib/console_shim',
 

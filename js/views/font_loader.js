@@ -24,7 +24,9 @@
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //TODO: This could be made into a plugin in the future.
-ReadiumSDK.Views.FontLoader = function ($iframe, options) {
+define (["jquery", "underscore", "FontLoader"], function($, _, FontLoader) {
+
+var FontLoaderWrapper = function ($iframe, options) {
     options = options || {};
 
     var debug = options.debug || false;
@@ -73,9 +75,6 @@ ReadiumSDK.Views.FontLoader = function ($iframe, options) {
     }
 
     this.waitForFonts = function (callback) {
-        if (!window.FontLoader) {
-            return;
-        }
         callback = _.once(callback);
         var loadCount = 0;
 
@@ -110,3 +109,7 @@ ReadiumSDK.Views.FontLoader = function ($iframe, options) {
         fontLoader.loadFonts();
     };
 };
+
+return FontLoaderWrapper;
+
+});
