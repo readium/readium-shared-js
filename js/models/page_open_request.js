@@ -23,6 +23,7 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
+define(function() {
 /**
  * Representation of opening page request
  * Provides the spine item to be opened and one of the following properties:
@@ -32,12 +33,12 @@
  *  firstPage {bool},
  *  lastPage {bool}
  *
- * @param {ReadiumSDK.Models.SpineItem} spineItem
+ * @param {Models.SpineItem} spineItem
  * @param {object} [initiator]
  *
  * @constructor
  */
-ReadiumSDK.Models.PageOpenRequest = function(spineItem, initiator) {
+var PageOpenRequest = function(spineItem, initiator) {
 
     this.spineItem = spineItem;
     this.spineItemPageIndex = undefined;
@@ -83,3 +84,6 @@ ReadiumSDK.Models.PageOpenRequest = function(spineItem, initiator) {
 
 
 };
+
+return PageOpenRequest;
+});

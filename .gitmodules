@@ -1,0 +1,3 @@
+[submodule "readium-cfi-js"]
+	path = readium-cfi-js
+	url = https://github.com/readium/readium-cfi-js.git
