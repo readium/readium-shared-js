@@ -26,12 +26,12 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
+define(["jquery", "underscore"], function($, _) {
 /**
  *
  * @constructor
  */
-ReadiumSDK.Views.IFrameLoader = function() {
+var IFrameLoader = function() {
 
     var self = this;
     var eventListeners = {};
@@ -58,16 +58,25 @@ ReadiumSDK.Views.IFrameLoader = function() {
 
     this.loadIframe = function (iframe, src, callback, context, attachedData) {
 
+        if (!iframe.baseURI) {
+            if (typeof location !== 'undefined') {
+                iframe.baseURI = location.href + "";
+            }
+            console.error("!iframe.baseURI => " + iframe.baseURI);
+        }
+    
+        console.log("EPUB doc iframe src:");
+        console.log(src);
+        console.log("EPUB doc iframe base URI:");
+        console.log(iframe.baseURI);
+        
         iframe.setAttribute("data-baseUri", iframe.baseURI);
         iframe.setAttribute("data-src", src);
 
-        var loadedDocumentUri = new URI(src).absoluteTo(iframe.baseURI).toString();
+        var loadedDocumentUri = new URI(src).absoluteTo(iframe.baseURI).search('').hash('').toString();
 
         self._loadIframeWithUri(iframe, attachedData, loadedDocumentUri, function () {
-            var doc = iframe.contentDocument || iframe.contentWindow.document;
-            $('svg', doc).load(function(){
-                console.log('loaded');
-            });
+            
             callback.call(context, true, attachedData);
         });
     };
@@ -76,6 +85,11 @@ ReadiumSDK.Views.IFrameLoader = function() {
 
         iframe.onload = function () {
 
+            var doc = iframe.contentDocument || iframe.contentWindow.document;
+            $('svg', doc).load(function(){
+                console.log('SVG loaded');
+            });
+            
             self.updateIframeEvents(iframe);
 
             var mathJax = iframe.contentWindow.MathJax;
@@ -96,9 +110,9 @@ ReadiumSDK.Views.IFrameLoader = function() {
         };
 
         iframe.setAttribute("src", contentUri);
-        
     };
 
-    
-
 };
+
+return IFrameLoader;
+});

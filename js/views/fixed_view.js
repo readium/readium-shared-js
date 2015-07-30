@@ -23,15 +23,19 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
+define (["jquery", "underscore", "eventEmitter", "../models/bookmark_data", "../models/current_pages_info",
+    "../models/fixed_page_spread", "./one_page_view", "../models/page_open_request", "../helpers", "../globals"],
+    function($, _, EventEmitter, BookmarkData, CurrentPagesInfo,
+             Spread, OnePageView, PageOpenRequest, Helpers, Globals) {
 /**
  * View for rendering fixed layout page spread
  * @param options
  * @param reader
  * @constructor
  */
-ReadiumSDK.Views.FixedView = function(options, reader){
+var FixedView = function(options, reader){
 
-    _.extend(this, Backbone.Events);
+    _.extend(this, new EventEmitter());
 
     var self = this;
 
@@ -54,7 +58,7 @@ ReadiumSDK.Views.FixedView = function(options, reader){
     _pageViews.push(_rightPageView);
     _pageViews.push(_centerPageView);
 
-    var _spread = new ReadiumSDK.Models.Spread(_spine, false);
+    var _spread = new Spread(_spine, false);
     var _bookMargins;
     var _contentMetaSize;
     var _isRedrowing = false;
@@ -62,15 +66,15 @@ ReadiumSDK.Views.FixedView = function(options, reader){
 
     function createOnePageView(elementClass) {
 
-        var pageView = new ReadiumSDK.Views.OnePageView(options,
+        var pageView = new OnePageView(options,
         [elementClass],
         false, //enableBookStyleOverrides
         reader
         );
 
-        pageView.on(ReadiumSDK.Views.OnePageView.SPINE_ITEM_OPEN_START, function($iframe, spineItem) {
+        pageView.on(OnePageView.SPINE_ITEM_OPEN_START, function($iframe, spineItem) {
 
-            self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
+            self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
         });   
     
         return pageView;
@@ -88,11 +92,11 @@ ReadiumSDK.Views.FixedView = function(options, reader){
 
     this.render = function(){
 
-        var template = ReadiumSDK.Helpers.loadTemplate("fixed_book_frame", {});
+        var template = Helpers.loadTemplate("fixed_book_frame", {});
 
         _$el = $(template);
 
-        ReadiumSDK.Helpers.CSSTransition(_$el, "all 0 ease 0");
+        Helpers.CSSTransition(_$el, "all 0 ease 0");
         
         _$el.css("overflow", "hidden");
         
@@ -101,7 +105,7 @@ ReadiumSDK.Views.FixedView = function(options, reader){
         // if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefined")
         // {
         //     //defaults
-        //     settings = new ReadiumSDK.Models.ViewerSettings({});
+        //     settings = new Globals.Models.ViewerSettings({});
         // }
         // if (settings.enableGPUHardwareAccelerationCSS3D) {
         //
@@ -126,7 +130,7 @@ ReadiumSDK.Views.FixedView = function(options, reader){
         
         _viewSettings = settings;
         
-        _spread.setSyntheticSpread(ReadiumSDK.Helpers.deduceSyntheticSpread(_$viewport, getFirstVisibleItem(), _viewSettings) == true); // force boolean value (from truthy/falsey return value)
+        _spread.setSyntheticSpread(Helpers.deduceSyntheticSpread(_$viewport, getFirstVisibleItem(), _viewSettings) == true); // force boolean value (from truthy/falsey return value)
 
         var views = getDisplayingViews();
         for(var i = 0, count = views.length; i < count; i++) {
@@ -200,7 +204,7 @@ ReadiumSDK.Views.FixedView = function(options, reader){
 
     this.applyStyles = function() {
 
-        ReadiumSDK.Helpers.setStyles(_userStyles.getStyles(), _$el.parent());
+        Helpers.setStyles(_userStyles.getStyles(), _$el.parent());
 
         updateBookMargins();
         updateContentMetaSize();
@@ -236,7 +240,7 @@ ReadiumSDK.Views.FixedView = function(options, reader){
         updateContentMetaSize();
         resizeBook();
         window.setTimeout(function () {
-            self.trigger(ReadiumSDK.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, {
+            self.trigger(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, {
                 paginationInfo: self.getPaginationInfo(),
                 initiator: initiator,
                 spineItem: paginationRequest_spineItem,
@@ -257,11 +261,11 @@ ReadiumSDK.Views.FixedView = function(options, reader){
             return;
         }
 
-        var isSyntheticSpread = ReadiumSDK.Helpers.deduceSyntheticSpread(_$viewport, firstVisibleItem, _viewSettings) == true; // force boolean value (from truthy/falsey return value)
+        var isSyntheticSpread = Helpers.deduceSyntheticSpread(_$viewport, firstVisibleItem, _viewSettings) == true; // force boolean value (from truthy/falsey return value)
 
         if(isSpreadChanged(firstVisibleItem, isSyntheticSpread)) {
             _spread.setSyntheticSpread(isSyntheticSpread);
-            var paginationRequest = new ReadiumSDK.Models.PageOpenRequest(firstVisibleItem, self);
+            var paginationRequest = new PageOpenRequest(firstVisibleItem, self);
             self.openPage(paginationRequest);
         }
         else {
@@ -271,7 +275,7 @@ ReadiumSDK.Views.FixedView = function(options, reader){
 
     function isSpreadChanged(firstVisibleItem, isSyntheticSpread) {
 
-        var tmpSpread = new ReadiumSDK.Models.Spread(_spine, isSyntheticSpread);
+        var tmpSpread = new Spread(_spine, isSyntheticSpread);
         tmpSpread.openItem(firstVisibleItem);
 
         return _spread.leftItem != tmpSpread.leftItem || _spread.rightItem != tmpSpread.rightItem || _spread.centerItem != tmpSpread.centerItem;
@@ -304,9 +308,9 @@ ReadiumSDK.Views.FixedView = function(options, reader){
         var viewportWidth = _$viewport.width();
         var viewportHeight = _$viewport.height();
 
-        var leftPageMargins = _leftPageView.isDisplaying() ? ReadiumSDK.Helpers.Margins.fromElement(_leftPageView.element()) : ReadiumSDK.Helpers.Margins.empty();
-        var rightPageMargins = _rightPageView.isDisplaying() ? ReadiumSDK.Helpers.Margins.fromElement(_rightPageView.element()) : ReadiumSDK.Helpers.Margins.empty();
-        var centerPageMargins = _centerPageView.isDisplaying() ? ReadiumSDK.Helpers.Margins.fromElement(_centerPageView.element()) : ReadiumSDK.Helpers.Margins.empty();
+        var leftPageMargins = _leftPageView.isDisplaying() ? Helpers.Margins.fromElement(_leftPageView.element()) : Helpers.Margins.empty();
+        var rightPageMargins = _rightPageView.isDisplaying() ? Helpers.Margins.fromElement(_rightPageView.element()) : Helpers.Margins.empty();
+        var centerPageMargins = _centerPageView.isDisplaying() ? Helpers.Margins.fromElement(_centerPageView.element()) : Helpers.Margins.empty();
 
         var pageMargins = getMaxPageMargins(leftPageMargins, rightPageMargins, centerPageMargins);
 
@@ -391,7 +395,7 @@ ReadiumSDK.Views.FixedView = function(options, reader){
             _centerPageView[transFunc](scale, left, top);
         }
         
-        self.trigger(ReadiumSDK.Events.FXL_VIEW_RESIZED);
+        self.emit(Globals.Events.FXL_VIEW_RESIZED);
     }
 
     function getMaxPageMargins(leftPageMargins, rightPageMargins, centerPageMargins) {
@@ -417,7 +421,7 @@ ReadiumSDK.Views.FixedView = function(options, reader){
             bottom: Math.max(leftPageMargins.padding.bottom, rightPageMargins.padding.bottom, centerPageMargins.padding.bottom)
         };
 
-        return new ReadiumSDK.Helpers.Margins(sumMargin, sumBorder, sumPAdding);
+        return new Helpers.Margins(sumMargin, sumBorder, sumPAdding);
 
     }
 
@@ -460,7 +464,7 @@ ReadiumSDK.Views.FixedView = function(options, reader){
     }
 
     function updateBookMargins() {
-        _bookMargins = ReadiumSDK.Helpers.Margins.fromElement(_$el);
+        _bookMargins = Helpers.Margins.fromElement(_$el);
     }
 
     // dir: 0 => new or same page, 1 => previous, 2 => next
@@ -474,7 +478,7 @@ ReadiumSDK.Views.FixedView = function(options, reader){
         var rightItem = _spread.rightItem;
         var centerItem = _spread.centerItem;
 
-        var isSyntheticSpread = ReadiumSDK.Helpers.deduceSyntheticSpread(_$viewport, paginationRequest.spineItem, _viewSettings) == true; // force boolean value (from truthy/falsey return value)
+        var isSyntheticSpread = Helpers.deduceSyntheticSpread(_$viewport, paginationRequest.spineItem, _viewSettings) == true; // force boolean value (from truthy/falsey return value)
         _spread.setSyntheticSpread(isSyntheticSpread);
         _spread.openItem(paginationRequest.spineItem);
         
@@ -535,7 +539,7 @@ ReadiumSDK.Views.FixedView = function(options, reader){
                         console.error("Invalid document " + spineItem.href + ": viewport is not specified!");
                     }
 
-                    self.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
+                    self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
                 }
 
                 dfd.resolve();
@@ -548,7 +552,7 @@ ReadiumSDK.Views.FixedView = function(options, reader){
 
     this.getPaginationInfo = function() {
 
-        var paginationInfo = new ReadiumSDK.Models.CurrentPagesInfo(_spine, true);
+        var paginationInfo = new CurrentPagesInfo(_spine, true);
 
         var spreadItems = [_spread.leftItem, _spread.rightItem, _spread.centerItem];
 
@@ -577,10 +581,10 @@ ReadiumSDK.Views.FixedView = function(options, reader){
                 cfi = "";
             }
 
-            return new ReadiumSDK.Models.BookmarkData(idref, cfi);
+            return new BookmarkData(idref, cfi);
         }
 
-        return new ReadiumSDK.Models.BookmarkData("", "");
+        return new BookmarkData("", "");
     };
 
     function getDisplayingViews() {
@@ -677,3 +681,5 @@ ReadiumSDK.Views.FixedView = function(options, reader){
     }
 
 };
+    return FixedView;
+});
