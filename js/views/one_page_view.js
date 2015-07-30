@@ -754,7 +754,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
     function onUnload (spineItem) {
         if (spineItem) {
-            self.trigger(Globals.Events.CONTENT_DOCUMENT_UNLOADED, _$iframe, spineItem);
+            self.emit(Globals.Events.CONTENT_DOCUMENT_UNLOADED, _$iframe, spineItem);
         }
     }
 
