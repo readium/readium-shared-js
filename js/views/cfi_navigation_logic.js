@@ -35,8 +35,9 @@
  *      - paginationInfo    Layout details, used by clientRect-based geometry
  * @constructor
  */
+define(["jquery", "underscore", "../helpers", 'readium_cfi_js'], function($, _, Helpers, epubCfi) {
 
-ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
+var CfiNavigationLogic = function($viewport, $iframe, options){
 
     options = options || {};
 
@@ -128,10 +129,10 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
     function checkVisibilityByVerticalOffsets(
             $element, visibleContentOffsets, shouldCalculateVisibilityOffset) {
 
-        var elementRect = ReadiumSDK.Helpers.Rect.fromElement($element);
+        var elementRect = Helpers.Rect.fromElement($element);
         if (_.isNaN(elementRect.left)) {
             // this is actually a point element, doesnt have a bounding rectangle
-            elementRect = new ReadiumSDK.Helpers.Rect(
+            elementRect = new Helpers.Rect(
                     $element.position().top, $element.position().left, 0, 0);
         }
         var topOffset = visibleContentOffsets.top || 0;
@@ -623,7 +624,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
 
     this.getVerticalOffsetForPointOnElement = function($element, x, y) {
 
-        var elementRect = ReadiumSDK.Helpers.Rect.fromElement($element);
+        var elementRect = Helpers.Rect.fromElement($element);
         return Math.ceil(elementRect.top + y * elementRect.height / 100);
     };
 
@@ -632,7 +633,7 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
         var contentDoc = $iframe[0].contentDocument;
 
         var $element = $(contentDoc.getElementById(id));
-        //$("#" + ReadiumSDK.Helpers.escapeJQuerySelector(id), contentDoc);
+        //$("#" + Helpers.escapeJQuerySelector(id), contentDoc);
         
         if($element.length == 0) {
             return undefined;
@@ -739,113 +740,13 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
         return visibilityCheckerFunc($element, visibleContentOffsets, true);
     };
 
-    // /**
-    //  * @deprecated
-    //  */
-    // this.getVisibleMediaOverlayElements = function(visibleContentOffsets) {
-    // 
-    //     var $elements = this.getMediaOverlayElements($("body", this.getRootElement()));
-    //     return this.getVisibleElements($elements, visibleContentOffsets);
-    // 
-    // };
+
 
     this.isElementVisible = visibilityCheckerFunc;
 
-    this.getAllVisibleElementsWithSelector = function(selector, visibleContentOffset) {
-        var elements = $(selector,this.getRootElement()).filter(function(e) { return true; });
-        var $newElements = [];
-        $.each(elements, function() {
-            $newElements.push($(this));
-        });
-        var visibleDivs = this.getVisibleElements($newElements, visibleContentOffset);
-        return visibleDivs;
 
-    };
 
-    this.getVisibleElements = function($elements, visibleContentOffsets) {
 
-        var visibleElements = [];
-
-        // Find the first visible text node
-        $.each($elements, function() {
-            var $element = this;
-            var visibilityPercentage = visibilityCheckerFunc(
-                    $element, visibleContentOffsets, true);
-
-            if (visibilityPercentage) {
-                var $visibleElement = $element;
-                visibleElements.push({
-                    element: $visibleElement[0], // DOM Element is pushed
-                    percentVisible: visibilityPercentage
-                });
-                return true;
-            }
-
-            // if element's position cannot be determined, just go to next one
-            if (visibilityPercentage === null) {
-                return true;
-            }
-
-            // continue if no visibleElements have been found yet,
-            // stop otherwise
-            return visibleElements.length === 0;
-        });
-
-        return visibleElements;
-    };
-
-    this.getVisibleTextElements = function(visibleContentOffsets) {
-
-        var $elements = this.getTextElements($("body", this.getRootElement()));
-
-        return this.getVisibleElements($elements, visibleContentOffsets);
-    };
-
-    /**
-     * @deprecated
-     */
-    this.getMediaOverlayElements = function($root) {
-
-        var $elements = [];
-
-        function traverseCollection(elements) {
-
-            if (elements == undefined) return;
-
-            for(var i = 0, count = elements.length; i < count; i++) {
-
-                var $element = $(elements[i]);
-
-                if( $element.data("mediaOverlayData") ) {
-                    $elements.push($element);
-                }
-                else {
-                    traverseCollection($element[0].children);
-                }
-
-            }
-        }
-
-        traverseCollection([$root[0]]);
-
-        return $elements;
-    };
-
-    this.getTextElements = function($root) {
-
-        var $textElements = [];
-
-        $root.find(":not(iframe)").contents().each(function () {
-
-            if( isValidTextNode(this) ) {
-                $textElements.push($(this).parent());
-            }
-
-        });
-
-        return $textElements;
-
-    };
 
     function isValidTextNode(node) {
 
@@ -874,3 +775,5 @@ ReadiumSDK.Views.CfiNavigationLogic = function($viewport, $iframe, options){
     };
 
 };
+return CfiNavigationLogic;
+});

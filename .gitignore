@@ -1,6 +1,6 @@
-### vim ###
-.*.s[a-w][a-z]
-*.un~
-Session.vim
-.netrwhist
-*~
+node_modules
+build.txt
+plugins-override.cson
+RequireJS_config_plugins.js
+RequireJS_config_plugins_multiple-bundles.js
+RequireJS_config_plugins_single-bundle.js

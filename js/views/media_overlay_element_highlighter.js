@@ -26,12 +26,13 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
+define(['jquery', 'rangy', 'readium_cfi_js'], function($, rangy, epubCfi) {
 /**
  *
  * @param reader
  * @constructor
  */
-ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
+var MediaOverlayElementHighlighter = function(reader) {
 
     this.includeParWhenAdjustingToSeqSyncGranularity = true;
 
@@ -337,13 +338,13 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
                 _rangyCSS.applyToRange(_rangyRange);
             }
         }
-        else
+        else if (_reader.plugins.annotations)
         {
             try
             {
                 //var id = $hel.data("mediaOverlayData").par.getSmil().spineItemId;
                 var id = par.getSmil().spineItemId;
-                _reader.addHighlight(id, par.cfi.partialRangeCfi, HIGHLIGHT_ID,
+                _reader.plugins.annotations.addHighlight(id, par.cfi.partialRangeCfi, HIGHLIGHT_ID,
                 "highlight", //"underline"
                 undefined // styles
                             );
@@ -427,11 +428,11 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
                 //_rangyCSS = undefined;
                 _rangyRange = undefined;
             }
-            else
+            else if (_reader.plugins.annotations)
             {
                 try
                 {
-                    _reader.removeHighlight(HIGHLIGHT_ID);
+                    _reader.plugins.annotations.removeHighlight(HIGHLIGHT_ID);
         
                     var toRemove = undefined;
                     while ((toRemove = doc.getElementById("start-" + HIGHLIGHT_ID)) !== null)
@@ -517,3 +518,5 @@ ReadiumSDK.Views.MediaOverlayElementHighlighter = function(reader) {
         return par;
     };
 };
+    return MediaOverlayElementHighlighter;
+});
