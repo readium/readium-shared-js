@@ -758,6 +758,8 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
     function onPageViewLoaded(pageView, success, $iframe, spineItem, isNewlyLoaded, context) {
 
+        fitImages(pageView);
+
         if (success && isNewlyLoaded) {
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
         }
@@ -984,6 +986,11 @@ var ScrollView = function (options, isContinuousScroll, reader) {
     }
 
     function onPaginationChanged(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
+        var visibleViews = getVisiblePageViews();
+        _.each(visibleViews, function (view) {
+            fitImages(view);
+        });
+
         self.emit(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, {
             paginationInfo: self.getPaginationInfo(),
             initiator: initiator,
@@ -1379,6 +1386,10 @@ var ScrollView = function (options, isContinuousScroll, reader) {
             self.openPage(openPageRequest);
         }
 
+    };
+
+    function fitImages(pageView) {
+        pageView._fitImages({doNotChangeHeight: true});
     }
 
 };
