@@ -614,7 +614,7 @@ Helpers.extendedThrottle = function (startCb, tickCb, endCb, tickRate, waitThres
 };
 
 
-ReadiumSDK.Helpers.fitImages = function ($html, options) {
+Helpers.fitImages = function ($html, options) {
     if(!$html) {
         return;
     }
@@ -630,8 +630,10 @@ ReadiumSDK.Helpers.fitImages = function ($html, options) {
     // if we set max-width/max-height to 100% columnizing engine chops images embedded in the text
     // (but not if we set it to 99-98%) go figure.
     var maxDimensions = {
-        maxHeight: $html.height() - ($body.outerHeight(true) - $body.height() + Math.floor($html.height() * 0.02)),
-        maxWidth: ($body[0].getClientRects()[0] ? $body[0].getClientRects()[0].width : $html.width()) - Math.floor($html.width() * 0.02)
+        maxHeight: $html.height() - ($body.outerHeight(true) - $body.height()
+            + Math.floor($html.height() * 0.02)),
+        maxWidth: ($body[0].getClientRects()[0] ? $body[0].getClientRects()[0].width : $html.width())
+            - Math.floor($html.width() * 0.02)
     };
 
     $('img, svg', $html).each(function(){
