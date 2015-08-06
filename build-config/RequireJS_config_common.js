@@ -57,12 +57,10 @@ require.config({
             process._RJS_rootDir(1) + '/node_modules/eventemitter3/_rjs/index',
         //see prepare:patch npm build task (converts CommonJS to AMD => define(function(require, exports, module) { .... });)
 
-
+        'FontLoader':
+            process._RJS_rootDir(1) + '/node_modules/FontLoader/FontLoader',
 
         // ------ LIBs
-        'FontLoader':
-            process._RJS_rootDir(1) + '/lib/FontLoader',
-            
         'console_shim':
             process._RJS_rootDir(1) + '/lib/console_shim',
 

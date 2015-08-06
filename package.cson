@@ -117,6 +117,7 @@ devDependencies:
 
     "eventemitter3": 'latest'
 
+    "FontLoader": 'smnh/FontLoader'
 
 # Below dependencies are only used for building tasks (above are runtime deps):
 
