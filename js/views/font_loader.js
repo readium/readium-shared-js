@@ -24,90 +24,194 @@
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //TODO: This could be made into a plugin in the future.
-define (["jquery", "underscore", "FontLoader"], function($, _, FontLoader) {
+// A plugin would be ideal because we can make a light-weight alternative that doesn't need the FontLoader shim and the CSSOM parser.
+define(["jquery", "underscore", "FontLoader", "cssom"], function($, _, FontLoader, CSSOM) {
 
-var FontLoaderWrapper = function ($iframe, options) {
-    options = options || {};
+var FontLoaderFallback = function(document, options) {
+    var debug = options.debug;
 
-    var debug = options.debug || false;
+    var getRestrictedCssRules = function (styleSheet, callback) {
+        $.get(styleSheet.href).done(function(data) {
+            callback(CSSOM.parse(data).cssRules);
+        }).fail(function() {
+            callback(null);
+        });
+    };
 
-    var document = $iframe[0].contentDocument;
-    var styleSheets = $iframe[0].contentDocument.styleSheets;
-    var fontFamilies = [];
-    var fontFamilyRules = [];
-    _.each(styleSheets, function (styleSheet) {
-        _.each(styleSheet.cssRules || styleSheet.rules, function (rule) {
-            var fontFamily = null;
+    var getUsedFonts = function(callback) {
+        var styleSheets = document.styleSheets;
+        var fontFamilies = [];
+        var fontFamilyRules = [];
+
+        var getFontFamilyFromRule = function(rule) {
             if (rule.style && (rule.style.getPropertyValue || rule.style.fontFamily)) {
-                fontFamily = rule.style.getPropertyValue("font-family") || rule.style.fontFamily;
+                return rule.style.getPropertyValue("font-family") || rule.style.fontFamily;
             }
-            if (fontFamily) {
-                if (rule.type === CSSRule.FONT_FACE_RULE) {
-                    fontFamilies.push([fontFamily.replace(/(^['"]|['"]$)/g, '').replace(/\\(['"])/g, '$1'), fontFamily]);
-                } else {
-                    fontFamilyRules.push(rule);
-                }
-            }
-        });
-    });
-    if (debug) {
-        console.log(fontFamilies);
-    }
-    var usedFontFamilies = [];
-    _.each(fontFamilyRules, function (rule) {
-        var usedFontFamily = _.find(fontFamilies, function (family) {
-            if (rule.style.fontFamily && ~rule.style.fontFamily.indexOf(family[1])) {
-                return true;
-            }
-        });
-
-        if (usedFontFamily
-            && rule.selectorText
-            && !_.contains(usedFontFamilies, usedFontFamily[0])
-            && document.querySelector(rule.selectorText)) {
-
-            usedFontFamilies.push(usedFontFamily[0]);
         }
-    });
 
-    if (debug) {
-        console.log(usedFontFamilies);
-    }
+        var returnUsedFonts = function() {
+            if (debug) {
+                console.log(fontFamilies);
+            }
+            var usedFontFamilies = [];
+            _.each(fontFamilyRules, function(rule) {
+                var usedFontFamily = _.find(fontFamilies, function(family) {
+                    var fontFamily = getFontFamilyFromRule(rule);
+                    if (fontFamily && ~fontFamily.indexOf(family[1])) {
+                        return true;
+                    }
+                });
 
-    this.waitForFonts = function (callback) {
+                if (usedFontFamily && rule.selectorText && !_.contains(usedFontFamilies, usedFontFamily[0]) && document.querySelector(rule.selectorText)) {
+                    usedFontFamilies.push(usedFontFamily[0]);
+                }
+            });
+
+            if (debug) {
+                console.log(usedFontFamilies);
+            }
+
+            callback(usedFontFamilies);
+        };
+
+        var processedCount = 0;
+        var processCssRules = function(cssRules) {
+            _.each(cssRules, function(rule) {
+                var fontFamily = getFontFamilyFromRule(rule);
+                if (fontFamily) {
+                    if (rule.type === CSSRule.FONT_FACE_RULE) {
+                        fontFamilies.push([fontFamily.replace(/(^['"]|['"]$)/g, '').replace(/\\(['"])/g, '$1'), fontFamily]);
+                    } else {
+                        fontFamilyRules.push(rule);
+                    }
+                }
+            });
+
+            processedCount++;
+
+            if (processedCount >= styleSheets.length) {
+                returnUsedFonts();
+            }
+        };
+
+        _.each(styleSheets, function(styleSheet) {
+            var cssRules;
+            // Firefox (and possibly IE as well) throw a security exception if the CSS was loaded from a different domain.
+            // Other browsers just have null as the value of cssRules for that case.
+            try {
+                cssRules = styleSheet.cssRules || styleSheet.rules;
+            } catch (ignored) {}
+
+            if (!cssRules) {
+                getRestrictedCssRules(styleSheet, processCssRules);
+            } else {
+                processCssRules(cssRules);
+            }
+        });
+    };
+
+    return function(callback) {
         callback = _.once(callback);
         var loadCount = 0;
 
-        var fontLoader = new FontLoader(usedFontFamilies, {
-            "fontsLoaded": function(error) {
-                if (debug) {
-                    if (error !== null) {
-                        // Reached the timeout but not all fonts were loaded
-                        console.log(error.message);
-                        console.log(error.notLoadedFontFamilies);
-                    } else {
-                        // All fonts were loaded
-                        console.log("all fonts were loaded");
-                    }
-                }
-                callback();
-            },
-            "fontLoaded": function(fontFamily) {
-                loadCount++;
-                if (debug) {
-                    console.log("font loaded: " + fontFamily);
-                }
-                if (usedFontFamilies.length > 3 && (loadCount / usedFontFamilies.length) >= 0.75) {
+        getUsedFonts(function(usedFontFamilies){
+            var fontLoader = new FontLoader(usedFontFamilies, {
+                "fontsLoaded": function(error) {
                     if (debug) {
-                        console.log('font loader: early callback');
+                        if (error !== null) {
+                            // Reached the timeout but not all fonts were loaded
+                            console.log("font loader: " + error.message, error.notLoadedFonts);
+                        } else {
+                            // All fonts were loaded
+                            console.log("font loader: all fonts were loaded");
+                        }
                     }
                     callback();
-                }
-            }
-        }, 1500, document);
+                },
+                "fontLoaded": function(font) {
+                    loadCount++;
+                    if (debug) {
+                        console.log("font loaded: " + font.family);
+                    }
+                    if (usedFontFamilies.length > options.minLoadCount && (loadCount / usedFontFamilies.length) >= options.minLoadRatio) {
 
-        fontLoader.loadFonts();
+                        if (debug) {
+                            console.log('font loader: early callback');
+                        }
+                        callback();
+                    }
+                }
+            }, options.timeout, document);
+
+            fontLoader.loadFonts();
+        });
     };
+};
+
+var FontLoaderNative = function(document, options) {
+    var debug = options.debug;
+
+    return function(callback) {
+        callback = _.once(callback);
+        var loadCount = 0;
+
+        var fontFaceCount = document.fonts.size;
+        var fontLoaded = function(font) {
+            loadCount++;
+            if (debug) {
+                console.log("(native) font loaded: " + font.family);
+            }
+            if (fontFaceCount > options.minLoadCount && (loadCount / fontFaceCount) >= options.minLoadRatio) {
+
+                if (debug) {
+                    console.log('(native) font loader: early callback');
+                }
+                callback();
+            }
+        }
+
+        document.fonts.ready.then(function() {
+            // All fonts were loaded
+            console.log("(native) font loader: all fonts were loaded");
+            callback();
+        });
+
+        // For some reason (at this time) Chrome's implementation has a .forEach
+        // but it is not Array-like. This is opposite with Firefox's though.
+        var iterateOverFonts = document.fonts.forEach || _(document.fonts).each
+        iterateOverFonts(function(font) {
+            font.loaded.then(function() {
+                fontLoaded(font);
+            });
+        });
+
+        window.setTimeout(function() {
+            if (debug && loadCount !== fontFaceCount) {
+                console.log('(native) font loader: timeout, not all fonts loaded/required');
+            } else if (debug) {
+                console.log('(native) font loader: timeout');
+            }
+            callback();
+        }, options.timeout);
+    }
+}
+
+var FontLoaderWrapper = function($iframe, options) {
+    options = options || {};
+
+    options.debug = options.debug || false;
+    options.timeout = options.timeout || 1500;
+    options.minLoadCount = options.minLoadCount || 3;
+    options.minLoadRatio = options.minLoadRatio || 0.75;
+
+    var document = $iframe[0].contentDocument;
+
+    // For browsers without CSS Font Loading Module
+    var fallbackNeeded = !document.fonts;
+
+    var fontLoader = fallbackNeeded ? FontLoaderFallback : FontLoaderNative;
+
+    this.waitForFonts = fontLoader(document, options);
 };
 
 return FontLoaderWrapper;

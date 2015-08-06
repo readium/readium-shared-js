@@ -61,6 +61,10 @@ require.config({
             process._RJS_rootDir(1) + '/node_modules/FontLoader/FontLoader',
 
         // ------ LIBs
+
+        'cssom':
+            process._RJS_rootDir(1) + '/lib/CSSOM',
+
         'console_shim':
             process._RJS_rootDir(1) + '/lib/console_shim',
 
@@ -85,6 +89,10 @@ require.config({
 
     shim:
     {
+        cssom: {
+            exports: 'CSSOM'
+        },
+
         jquerySizes:
         {
             deps: ['jquery'],
