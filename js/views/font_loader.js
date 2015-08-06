@@ -170,20 +170,28 @@ var FontLoaderNative = function(document, options) {
             }
         }
 
-        document.fonts.ready.then(function() {
-            // All fonts were loaded
-            console.log("(native) font loader: all fonts were loaded");
-            callback();
-        });
-
-        // For some reason (at this time) Chrome's implementation has a .forEach
-        // but it is not Array-like. This is opposite with Firefox's though.
-        var iterateOverFonts = document.fonts.forEach || _(document.fonts).each
-        iterateOverFonts(function(font) {
+        var fontIterator = function(font) {
             font.loaded.then(function() {
                 fontLoaded(font);
             });
+        };
+
+        // For some reason (at this time) Chrome's implementation has a .forEach
+        // but it is not Array-like. This is opposite with Firefox's though.
+        if (document.fonts.forEach) {
+            document.fonts.forEach(fontIterator);
+        } else {
+            _.each(document.fonts, fontIterator);
+        }
+
+        document.fonts.ready.then(function() {
+            if (debug) {
+                // All fonts were loaded
+                console.log("(native) font loader: all fonts were loaded");
+            }
+            callback();
         });
+
 
         window.setTimeout(function() {
             if (debug && loadCount !== fontFaceCount) {
