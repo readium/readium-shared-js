@@ -450,10 +450,6 @@ var ReflowableView = function(options) {
 
         var newWidth = _$contentFrame.width();
 
-        // Ensure that the new viewport width is always even numbered
-        // this is to prevent a rendering inconsistency between browsers when odd-numbered bounds are used for CSS columns
-        newWidth -= newWidth % 2;
-
         var newHeight = _$contentFrame.height();
 
         if(_lastViewPortSize.width !== newWidth || _lastViewPortSize.height !== newHeight){
