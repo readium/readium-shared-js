@@ -1,11 +1,40 @@
+//  Created by Dmitry Markushevich (dmitrym@evidentpoint.com)
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//
+//  Redistribution and use in source and binary forms, with or without modification,
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice,
+//  this list of conditions and the following disclaimer in the documentation and/or
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be
+//  used to endorse or promote products derived from this software without specific
+//  prior written permission.
+//
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
+
+define(["jquery", "underscore", "../globals", "./page_open_request", "../views/fixed_view",
+        "../views/scroll_view", "../views/reflowable_view", "../views/reader_view"],
+    function($, _, Globals, PageOpenRequest, FixedView, ScrollView, ReflowableView, ReaderView) {
+
 /**
- * @class 
+ * @class
  */
-ReadiumSDK.Models.ViewManager = function(spine, createViewForItem) {
+var ViewManager = function(spine, createViewForItem) {
     var self = this;
 
     var _cachedViews = [];
-    
+
     var _spine = spine;
 
     var _iframeRereferences = {};
@@ -39,14 +68,14 @@ ReadiumSDK.Models.ViewManager = function(spine, createViewForItem) {
             cachedView.show();
             currentView = cachedView;
             currentView.setViewSettings(viewerSettings);
-            currentView.trigger(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED,_iframeRereferences[spineItem.index], spineItem);
+            currentView.emit(Globals.Events.CONTENT_DOCUMENT_LOADED,_iframeRereferences[spineItem.index], spineItem);
             callback(false, currentView); // view doesn't change!
         } else {
             currentView = createViewForItem(spineItem, viewCreationParams);
             saveViewOnceLoaded(currentView);
             currentView.render();
-            currentView.openPage(new ReadiumSDK.Models.PageOpenRequest(spineItem),0); 
-            currentView.once(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function($iframe, spineItem) {
+            currentView.openPage(new PageOpenRequest(spineItem),0);
+            currentView.once(Globals.Events.CONTENT_DOCUMENT_LOADED, function($iframe, spineItem) {
                 // proxy this event through to the reader
                 _.defer(function() {
                     setTimeout(function(){
@@ -62,8 +91,8 @@ ReadiumSDK.Models.ViewManager = function(spine, createViewForItem) {
     };
 
 
-    // we need to find whether we've already cached a particular spine item. 
-    // lets ask all of the existing views for the spine items that they are 
+    // we need to find whether we've already cached a particular spine item.
+    // lets ask all of the existing views for the spine items that they are
     // holding (remember, each view may hold more than one)
     this.getCachedViewForSpineItem = function (spineItem) {
         return _.find(_cachedViews, function(view){
@@ -77,11 +106,11 @@ ReadiumSDK.Models.ViewManager = function(spine, createViewForItem) {
 
 
     // given a spine item, cache it's neigbhours. It's assumed that the spine item is currently visible on screen.
-    this.cacheNeighboursForSpineItem = function(spineItem, currentView, viewCreationParams) {        
+    this.cacheNeighboursForSpineItem = function(spineItem, currentView, viewCreationParams) {
         // the next spine item to cache might be either +1 or +2. For a reflowable view it'll be +1,
-        // for a synthetic spread it's going to be 2. In any case, this information is encapsulated 
+        // for a synthetic spread it's going to be 2. In any case, this information is encapsulated
         // in the number of currently loaded spines within the current view.
-        var spinesWithinTheCurrentView = _.isUndefined(currentView)  ? 1 : currentView.getLoadedSpineItems().length; 
+        var spinesWithinTheCurrentView = _.isUndefined(currentView)  ? 1 : currentView.getLoadedSpineItems().length;
 
         // make a copy of the viewCreationParams so that we can apply the current settings to the cached views.
         var localViewCreationParams = _.extend({}, viewCreationParams);
@@ -108,7 +137,7 @@ ReadiumSDK.Models.ViewManager = function(spine, createViewForItem) {
         // for both single and double fixed page layouts..
         var cachedViewsToRemove = _.filter(_cachedViews, function(cachedView){
             var spineItemForCachedView = cachedView.getLoadedSpineItems()[0];
-            return (Math.abs(spineItemForCachedView.index - currentSpineItemIndex) > 3); 
+            return (Math.abs(spineItemForCachedView.index - currentSpineItemIndex) > 3);
         });
 
         console.log("Pruning cached views, removing %d from the cached views list.", cachedViewsToRemove.length);
@@ -125,29 +154,24 @@ ReadiumSDK.Models.ViewManager = function(spine, createViewForItem) {
     // given a view returns it's type
     this.viewTypeForView = function(view) {
 
-        if(!view) {
+        if (!view) {
             return undefined;
         }
 
-        if(view instanceof ReadiumSDK.Views.ReflowableView) {
-            return ReadiumSDK.Views.ReaderView.VIEW_TYPE_COLUMNIZED;
+        if (view instanceof ReflowableView) {
+            return ReaderView.VIEW_TYPE_COLUMNIZED;
         }
 
-        if(view instanceof ReadiumSDK.Views.FixedView) {
-            return ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED;
+        if (view instanceof FixedView) {
+            return ReaderView.VIEW_TYPE_FIXED;
         }
 
-        if(view instanceof ReadiumSDK.Views.ScrollView) {
-            if(view.isContinuousScroll()) {
-                return ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
+        if (view instanceof ScrollView) {
+            if (view.isContinuousScroll()) {
+                return ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
             }
 
-            return ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_DOC;
-        }
-
-        if(view instanceof ReadiumSDK.Views.FallbackScrollView) {
-            // fake a columnized view because it's a fallback of it
-            return ReadiumSDK.Views.ReaderView.VIEW_TYPE_COLUMNIZED;
+            return ReaderView.VIEW_TYPE_SCROLLED_DOC;
         }
 
         console.error("Unrecognized view type");
@@ -157,20 +181,20 @@ ReadiumSDK.Models.ViewManager = function(spine, createViewForItem) {
     //////////////////
     // private helpers
 
-    // dont actually add the view to the cached array until it's been fully loaded and ready to show. this is 
+    // dont actually add the view to the cached array until it's been fully loaded and ready to show. this is
     // so that if the users exceeds the cache we can just show them the regular spinner.
     function saveViewOnceLoaded (view) {
         if (_.isUndefined(view)) {
             return;
         }
-        view.once(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function ($iframe, spineItem) {
+        view.once(Globals.Events.CONTENT_DOCUMENT_LOADED, function ($iframe, spineItem) {
             // try to make sure that we don't load duplicate views.
             var spineItemForView = view.getLoadedSpineItems()[0];
             if (_.isUndefined(self.getCachedViewForSpineItem(spineItemForView))) {
                 console.log('%c View loaded in the background...%d cached views', 'background: grey; color: blue', _cachedViews.length);
                 _cachedViews.push(view);
                 _iframeRereferences[spineItem.index] = $iframe;
-            } 
+            }
         })
     };
 
@@ -192,7 +216,7 @@ ReadiumSDK.Models.ViewManager = function(spine, createViewForItem) {
             // };
 
             cachedView = createViewForItem(spineItem, viewCreationParams);
-            var openPageRequest = new ReadiumSDK.Models.PageOpenRequest(spineItem, self);
+            var openPageRequest = new PageOpenRequest(spineItem, self);
             var direction  = 0;
             if (setToPage === "last") {
                 openPageRequest.setLastPage();
@@ -217,28 +241,28 @@ ReadiumSDK.Models.ViewManager = function(spine, createViewForItem) {
         console.assert(!_.isUndefined(viewerSettings, "View creation params must be passed in!"));
         //check settings
         if(viewerSettings.scroll == "scroll-doc") {
-            return ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_DOC;
+            return ReaderView.VIEW_TYPE_SCROLLED_DOC;
         }
 
         if(viewerSettings.scroll == "scroll-continuous") {
-            return ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
+            return ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
         }
 
         //is fixed layout ignore flow
         if(spineItem.isFixedLayout()) {
-            return ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED;
+            return ReaderView.VIEW_TYPE_FIXED;
         }
 
         //flow
         if(spineItem.isFlowScrolledDoc()) {
-            return ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_DOC;
+            return ReaderView.VIEW_TYPE_SCROLLED_DOC;
         }
 
         if(spineItem.isFlowScrolledContinuous()) {
-            return ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
+            return ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
         }
 
-        return ReadiumSDK.Views.ReaderView.VIEW_TYPE_COLUMNIZED;
+        return ReaderView.VIEW_TYPE_COLUMNIZED;
     }
 
 
@@ -256,8 +280,8 @@ ReadiumSDK.Models.ViewManager = function(spine, createViewForItem) {
 
        /**
      * Create a view based on the given view type.
-     * @param {ReadiumSDK.Views.ReaderView.ViewType} viewType
-     * @param {ReadiumSDK.Views.ReaderView.ViewCreationOptions} options
+     * @param {ReaderView.ViewType} viewType
+     * @param {ReaderView.ViewCreationOptions} options
      * @returns {*}
      */
     function createViewForType(viewType, options) {
@@ -265,24 +289,24 @@ ReadiumSDK.Models.ViewManager = function(spine, createViewForItem) {
 
         // NOTE: _$el == options.$viewport
         //_$el.css("overflow", "hidden");
-        options.$viewport.css("overflow", "hidden"); 
+        options.$viewport.css("overflow", "hidden");
         options.viewSettings = _viewerSettings;
-        
+
         switch(viewType) {
-            case ReadiumSDK.Views.ReaderView.VIEW_TYPE_FIXED:
+            case ReaderView.VIEW_TYPE_FIXED:
 
                 options.$viewport.css("overflow", "auto"); // for content pan, see self.setZoom()
-                
-                createdView = new ReadiumSDK.Views.FixedView(options, self);
+
+                createdView = new FixedView(options, self);
                 break;
-            case ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_DOC:
-                createdView = new ReadiumSDK.Views.ScrollView(options, false, self);
+            case ReaderView.VIEW_TYPE_SCROLLED_DOC:
+                createdView = new ScrollView(options, false, self);
                 break;
-            case ReadiumSDK.Views.ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS:
-                createdView = new ReadiumSDK.Views.ScrollView(options, true, self);
+            case ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS:
+                createdView = new ScrollView(options, true, self);
                 break;
             default:
-                createdView = new ReadiumSDK.Views.ReflowableView(options, self);
+                createdView = new ReflowableView(options, self);
                 break;
         }
 
@@ -290,3 +314,7 @@ ReadiumSDK.Models.ViewManager = function(spine, createViewForItem) {
     };
 
 };
+
+return ViewManager;
+
+});
