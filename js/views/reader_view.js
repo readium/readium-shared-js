@@ -111,6 +111,15 @@ var ReaderView = function (options) {
     // returns true is view changed
     function initViewForItem(spineItem, callback) {
         console.log('%c Init view for item', 'background: black; color: red');
+        /**
+         * View creation options
+         * @typedef {object} ReaderView.ViewCreationOptions
+         * @property {jQueryElement} $viewport  The view port element the reader view has created.
+         * @property {Models.Spine} spine The spine item collection object
+         * @property {Collections.StyleCollection} userStyles User styles
+         * @property {Collections.StyleCollection} bookStyles Book styles
+         * @property {IFrameLoader} iframeLoader   An instance of an iframe loader or one expanding it.
+         */
         var viewCreationParams = {
             $viewport: _$el,
             spine: _spine,
@@ -1327,17 +1336,5 @@ var ReaderView = function (options) {
     this.backgroundAudioTrackManager = new BackgroundAudioTrackManager();
 };
 
-/**
- * View Type
- * @typedef {object} Globals.Views.ReaderView.ViewType
- * @property {number} VIEW_TYPE_COLUMNIZED          Reflowable document view
- * @property {number} VIEW_TYPE_FIXED               Fixed layout document view
- * @property {number} VIEW_TYPE_SCROLLED_DOC        Scrollable document view
- * @property {number} VIEW_TYPE_SCROLLED_CONTINUOUS Continuous scrollable document view
- */
-ReaderView.VIEW_TYPE_COLUMNIZED = 1;
-ReaderView.VIEW_TYPE_FIXED = 2;
-ReaderView.VIEW_TYPE_SCROLLED_DOC = 3;
-ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS = 4;
 return ReaderView;
 });

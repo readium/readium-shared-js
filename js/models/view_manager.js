@@ -24,8 +24,8 @@
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 define(["jquery", "underscore", "../globals", "./page_open_request", "../views/fixed_view",
-        "../views/scroll_view", "../views/reflowable_view", "../views/reader_view"],
-    function($, _, Globals, PageOpenRequest, FixedView, ScrollView, ReflowableView, ReaderView) {
+        "../views/scroll_view", "../views/reflowable_view"],
+    function($, _, Globals, PageOpenRequest, FixedView, ScrollView, ReflowableView) {
 
 /**
  * @class
@@ -159,19 +159,19 @@ var ViewManager = function(spine, createViewForItem) {
         }
 
         if (view instanceof ReflowableView) {
-            return ReaderView.VIEW_TYPE_COLUMNIZED;
+            return ViewManager.VIEW_TYPE_COLUMNIZED;
         }
 
         if (view instanceof FixedView) {
-            return ReaderView.VIEW_TYPE_FIXED;
+            return ViewManager.VIEW_TYPE_FIXED;
         }
 
         if (view instanceof ScrollView) {
             if (view.isContinuousScroll()) {
-                return ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
+                return ViewManager.VIEW_TYPE_SCROLLED_CONTINUOUS;
             }
 
-            return ReaderView.VIEW_TYPE_SCROLLED_DOC;
+            return ViewManager.VIEW_TYPE_SCROLLED_DOC;
         }
 
         console.error("Unrecognized view type");
@@ -240,29 +240,29 @@ var ViewManager = function(spine, createViewForItem) {
     function deduceDesiredViewType(spineItem, viewerSettings) {
         console.assert(!_.isUndefined(viewerSettings, "View creation params must be passed in!"));
         //check settings
-        if(viewerSettings.scroll == "scroll-doc") {
-            return ReaderView.VIEW_TYPE_SCROLLED_DOC;
+        if (viewerSettings.scroll == "scroll-doc") {
+            return ViewManager.VIEW_TYPE_SCROLLED_DOC;
         }
 
-        if(viewerSettings.scroll == "scroll-continuous") {
-            return ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
+        if (viewerSettings.scroll == "scroll-continuous") {
+            return ViewManager.VIEW_TYPE_SCROLLED_CONTINUOUS;
         }
 
         //is fixed layout ignore flow
-        if(spineItem.isFixedLayout()) {
-            return ReaderView.VIEW_TYPE_FIXED;
+        if (spineItem.isFixedLayout()) {
+            return ViewManager.VIEW_TYPE_FIXED;
         }
 
         //flow
-        if(spineItem.isFlowScrolledDoc()) {
-            return ReaderView.VIEW_TYPE_SCROLLED_DOC;
+        if (spineItem.isFlowScrolledDoc()) {
+            return ViewManager.VIEW_TYPE_SCROLLED_DOC;
         }
 
-        if(spineItem.isFlowScrolledContinuous()) {
-            return ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
+        if (spineItem.isFlowScrolledContinuous()) {
+            return ViewManager.VIEW_TYPE_SCROLLED_CONTINUOUS;
         }
 
-        return ReaderView.VIEW_TYPE_COLUMNIZED;
+        return ViewManager.VIEW_TYPE_COLUMNIZED;
     }
 
 
@@ -280,7 +280,7 @@ var ViewManager = function(spine, createViewForItem) {
 
        /**
      * Create a view based on the given view type.
-     * @param {ReaderView.ViewType} viewType
+     * @param {ViewManager.ViewType} viewType
      * @param {ReaderView.ViewCreationOptions} options
      * @returns {*}
      */
@@ -293,16 +293,16 @@ var ViewManager = function(spine, createViewForItem) {
         options.viewSettings = _viewerSettings;
 
         switch(viewType) {
-            case ReaderView.VIEW_TYPE_FIXED:
+            case ViewManager.VIEW_TYPE_FIXED:
 
                 options.$viewport.css("overflow", "auto"); // for content pan, see self.setZoom()
 
                 createdView = new FixedView(options, self);
                 break;
-            case ReaderView.VIEW_TYPE_SCROLLED_DOC:
+            case ViewManager.VIEW_TYPE_SCROLLED_DOC:
                 createdView = new ScrollView(options, false, self);
                 break;
-            case ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS:
+            case ViewManager.VIEW_TYPE_SCROLLED_CONTINUOUS:
                 createdView = new ScrollView(options, true, self);
                 break;
             default:
@@ -314,6 +314,19 @@ var ViewManager = function(spine, createViewForItem) {
     };
 
 };
+
+/**
+ * View Type
+ * @typedef {object} ViewManager.ViewType
+ * @property {number} VIEW_TYPE_COLUMNIZED          Reflowable document view
+ * @property {number} VIEW_TYPE_FIXED               Fixed layout document view
+ * @property {number} VIEW_TYPE_SCROLLED_DOC        Scrollable document view
+ * @property {number} VIEW_TYPE_SCROLLED_CONTINUOUS Continuous scrollable document view
+ */
+ViewManager.VIEW_TYPE_COLUMNIZED = 1;
+ViewManager.VIEW_TYPE_FIXED = 2;
+ViewManager.VIEW_TYPE_SCROLLED_DOC = 3;
+ViewManager.VIEW_TYPE_SCROLLED_CONTINUOUS = 4;
 
 return ViewManager;
 
