@@ -123,7 +123,17 @@ var FixedView = function(options){
     };
 
     this.remove = function() {
+        _leftPageView.remove();
+        _leftPageView = null;
 
+        _centerPageView.remove();
+        _centerPageView = null;
+
+        _rightPageView.remove();
+        _rightPageView = null;
+
+        _pageViews = null;
+        
         _$el.remove();
     };
 

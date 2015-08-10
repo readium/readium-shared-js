@@ -68,6 +68,9 @@ var ViewManager = function(spine, reader) {
 
             callback(false, currentView); // view doesn't change!
         } else {
+            if (cachedView) {
+                self.destroyView(cachedView);
+            }
             currentView = createViewForItem(spineItem, viewCreationParams);
             saveViewOnceLoaded(currentView);
             currentView.render();
@@ -146,6 +149,12 @@ var ViewManager = function(spine, reader) {
 
         // remove cached views from our local table.
         _cachedViews = _.difference(_cachedViews, cachedViewsToRemove);
+    };
+
+    this.destroyView = function(cachedView) {
+        cachedView.remove();
+
+        _cachedViews = _.without(_cachedViews, cachedView);
     };
 
     // given a view returns it's type

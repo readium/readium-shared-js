@@ -608,7 +608,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
     function removePageView(pageView) {
 
-        pageView.element().remove();
+        pageView.remove();
 
     }
 
@@ -623,7 +623,13 @@ var ScrollView = function (options, isContinuousScroll, reader) {
     }
 
     this.remove = function () {
+        removeLoadedItems();
+
+        _$contentFrame.remove();
+        _$contentFrame = null;
+
         _$el.remove();
+        _$el = null;
     };
 
     this.onViewportResize = function () {

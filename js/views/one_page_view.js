@@ -336,9 +336,19 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, settings
     };
 
     this.remove = function () {
+        _$epubHtml.remove();
+        _$epubHtml = null;
+
+        _$iframe.remove();
+        _$iframe = null;
+
+        _$scaler.remove();
+        _$scaler = null;
+        
         _isIframeLoaded = false;
         _currentSpineItem = undefined;
         _$el.remove();
+        _$el = null;
     };
 
     this.clear = function () {

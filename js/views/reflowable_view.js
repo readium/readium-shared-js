@@ -125,7 +125,20 @@ var ReflowableView = function(options) {
     this.remove = function() {
 
         //$(window).off("resize.ReadiumSDK.reflowableView");
+        _$htmlBody.remove();
+        _$htmlBody = null;
+
+        _$epubHtml.remove();
+        _$epubHtml = null;
+
+        _$iframe.remove();
+        _$iframe = null;
+
+        _$contentFrame.remove();
+        _$contentFrame = null;
+
         _$el.remove();
+        _$el = null;
 
     };
 
