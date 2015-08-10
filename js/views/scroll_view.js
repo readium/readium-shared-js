@@ -53,6 +53,8 @@ var ScrollView = function (options, isContinuousScroll, reader) {
     var _$contentFrame;
     var _$el;
 
+    var _cached = options.cachedView || false;
+
     var _stopTransientViewUpdate = false;
 
     //this flags used to prevent onScroll event triggering pagination changed when internal layout modifications happens
@@ -664,7 +666,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
         pageView.on(OnePageView.SPINE_ITEM_OPEN_START, function($iframe, spineItem) {
 
-            self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
+            self.onContentDocumentLoadStart(spineItem, pageView);
         });
 
         pageView.render();
@@ -759,7 +761,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
     function onPageViewLoaded(pageView, success, $iframe, spineItem, isNewlyLoaded, context) {
 
         if (success && isNewlyLoaded) {
-            self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
+            self.onContentDocumentLoaded(spineItem, pageView);
         }
 
     }
@@ -984,12 +986,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
     }
 
     function onPaginationChanged(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
-        self.emit(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, {
-            paginationInfo: self.getPaginationInfo(),
-            initiator: initiator,
-            spineItem: paginationRequest_spineItem,
-            elementId: paginationRequest_elementId
-        });
+        self.onCurrentViewPaginationChanged(initiator, paginationRequest_spineItem, paginationRequest_elementId);
     }
 
     function scrollTop() {
@@ -1379,7 +1376,44 @@ var ScrollView = function (options, isContinuousScroll, reader) {
             self.openPage(openPageRequest);
         }
 
-    }
+    };
+
+    this.hide = function() {
+        forEachItemView(function (pageView) {
+            pageView.hideIFrame();
+        });
+    };
+
+    this.show = function() {
+        forEachItemView(function (pageView) {
+            pageView.showIFrame();
+        });
+    };
+
+    this.setCached = function(isCached) {
+        _cached = isCached;
+        forEachItemView(function (pageView) {
+            pageView.setCached(isCached);
+        });
+    };
+    this.onContentDocumentLoadStart = function(spineItem, pageView) {
+        pageView = pageView || findPageViewForSpineItem(spineItem);
+        self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, pageView.iframe, spineItem);
+    };
+
+    this.onContentDocumentLoaded = function(spineItem, pageView) {
+        pageView = pageView || findPageViewForSpineItem(spineItem);
+        self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, pageView.iframe, spineItem);
+    };
+
+    this.onCurrentViewPaginationChanged = function(initiator, spineItem, elementId) {
+        self.emit(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, {
+            paginationInfo: self.getPaginationInfo(),
+            initiator: initiator,
+            spineItem: spineItem,
+            elementId: elementId
+        });
+    };
 
 };
 return ScrollView;

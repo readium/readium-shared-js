@@ -37,14 +37,12 @@ var ViewManager = function(spine, createViewForItem) {
 
     var _spine = spine;
 
-    var _iframeRereferences = {};
 
     var _viewerSettings;
 
     // debugging
     ReadiumSDK.cacheStats = function () {
         console.log(_cachedViews);
-        console.log(_iframeRereferences);
     };
 
 
@@ -68,7 +66,10 @@ var ViewManager = function(spine, createViewForItem) {
             cachedView.show();
             currentView = cachedView;
             currentView.setViewSettings(viewerSettings);
-            currentView.emit(Globals.Events.CONTENT_DOCUMENT_LOADED,_iframeRereferences[spineItem.index], spineItem);
+
+            currentView.onContentDocumentLoadStart(spineItem);
+            currentView.onContentDocumentLoaded(spineItem);
+
             callback(false, currentView); // view doesn't change!
         } else {
             currentView = createViewForItem(spineItem, viewCreationParams);
@@ -193,7 +194,6 @@ var ViewManager = function(spine, createViewForItem) {
             if (_.isUndefined(self.getCachedViewForSpineItem(spineItemForView))) {
                 console.log('%c View loaded in the background...%d cached views', 'background: grey; color: blue', _cachedViews.length);
                 _cachedViews.push(view);
-                _iframeRereferences[spineItem.index] = $iframe;
             }
         })
     };

@@ -275,6 +275,10 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, settings
         return _$el;
     };
 
+    this.iframe = function() {
+        return _$iframe;
+    };
+
     this.meta_height = function () {
         return _meta_size.height;
     };

@@ -190,7 +190,7 @@ var ReflowableView = function(options) {
             _isWaitingFrameRender = true;
 
             var src = _spine.package.resolveRelativeUrl(spineItem.href);
-            self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, _$iframe, spineItem);
+            self.onContentDocumentLoadStart(spineItem);
 
             _$iframe.css("opacity", "0.01");
             
@@ -229,7 +229,7 @@ var ReflowableView = function(options) {
             return;
         }
 
-        self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, _$iframe, _currentSpineItem);
+        self.onContentDocumentLoaded(_currentSpineItem);
 
         var epubContentDocument = _$iframe[0].contentDocument;
         _$epubHtml = $("html", epubContentDocument);
@@ -466,7 +466,8 @@ var ReflowableView = function(options) {
         _paginationInfo.pageOffset = (_paginationInfo.columnWidth + _paginationInfo.columnGap) * _paginationInfo.visibleColumnCount * _paginationInfo.currentSpreadIndex;
         
         redraw();
-        self.emit(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
+
+        self.onCurrentViewPaginationChanged(initiator, paginationRequest_spineItem, paginationRequest_elementId);
     }
 
     this.openPagePrev = function (initiator) {
@@ -906,8 +907,22 @@ var ReflowableView = function(options) {
         _cachedView = isCached;
     };
 
+    this.onContentDocumentLoadStart = function(spineItem) {
+        self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, _$iframe, spineItem);
+    };
 
+    this.onContentDocumentLoaded = function(spineItem) {
+        self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, _$iframe, spineItem);
+    };
 
+    this.onCurrentViewPaginationChanged = function(initiator, spineItem, elementId) {
+        self.emit(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, {
+            paginationInfo: self.getPaginationInfo(),
+            initiator: initiator,
+            spineItem: spineItem,
+            elementId: elementId
+        });
+    };
 
 };
     return ReflowableView;

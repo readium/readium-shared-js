@@ -76,9 +76,9 @@ var FixedView = function(options){
 
         pageView.on(OnePageView.SPINE_ITEM_OPEN_START, function($iframe, spineItem) {
 
-            self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
-        });   
-    
+            self.onContentDocumentLoadStart(spineItem);
+        });
+
         return pageView;
     }
 
@@ -242,8 +242,7 @@ var FixedView = function(options){
 
         updateContentMetaSize();
         resizeBook();
-        
-        self.emit(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
+        self.onCurrentViewPaginationChanged(initiator, paginationRequest_spineItem, paginationRequest_elementId);
     }
 
     this.onViewportResize = function() {
@@ -534,7 +533,7 @@ var FixedView = function(options){
                         console.error("Invalid document " + spineItem.href + ": viewport is not specified!");
                     }
 
-                    self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
+                    self.onContentDocumentLoaded(spineItem);
                 }
 
                 dfd.resolve();
@@ -602,6 +601,12 @@ var FixedView = function(options){
         }
 
         return views;
+    }
+
+    function findPageViewForSpineItem(spineItem) {
+        return _.find(_pageViews, function(pageView) {
+            return pageView.currentSpineItem() === spineItem;
+        });
     }
 
     this.getLoadedSpineItems = function() {
@@ -694,6 +699,24 @@ var FixedView = function(options){
         });
     };
 
+    this.onContentDocumentLoadStart = function(spineItem, pageView) {
+        pageView = pageView || findPageViewForSpineItem(spineItem);
+        self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, pageView.iframe, spineItem);
+    };
+
+    this.onContentDocumentLoaded = function(spineItem, pageView) {
+        pageView = pageView || findPageViewForSpineItem(spineItem);
+        self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, pageView.iframe, spineItem);
+    };
+
+    this.onCurrentViewPaginationChanged = function(initiator, spineItem, elementId) {
+        self.emit(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, {
+            paginationInfo: self.getPaginationInfo(),
+            initiator: initiator,
+            spineItem: spineItem,
+            elementId: elementId
+        });
+    };
 };
     return FixedView;
 });
