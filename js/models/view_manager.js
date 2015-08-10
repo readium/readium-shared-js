@@ -30,15 +30,12 @@ define(["jquery", "underscore", "../globals", "./page_open_request", "../views/f
 /**
  * @class
  */
-var ViewManager = function(spine, createViewForItem) {
+var ViewManager = function(spine, reader) {
     var self = this;
 
     var _cachedViews = [];
 
     var _spine = spine;
-
-
-    var _viewerSettings;
 
     // debugging
     ReadiumSDK.cacheStats = function () {
@@ -48,12 +45,10 @@ var ViewManager = function(spine, createViewForItem) {
 
     // given a spine item and current view, will return a new or cached view for spine item and hide the "old" current view.
     this.getViewForSpineItem = function(spineItem, currentView, viewerSettings, viewCreationParams, callback) {
-        _viewerSettings = viewerSettings;
 
         if (currentView) {
             currentView.hide();
             currentView.setCached(true);
-            currentView.off();
         }
 
         var cachedView = self.getCachedViewForSpineItem(spineItem);
@@ -61,7 +56,8 @@ var ViewManager = function(spine, createViewForItem) {
         self.expireCachedItems(spineItem);
 
         // there's a cached view, lets reset the _currentView then.
-        if (cachedView !== undefined) {
+        var desiredViewType = deduceDesiredViewType(spineItem, viewerSettings);
+        if (cachedView && self.viewTypeForView(cachedView) === desiredViewType) {
             cachedView.setCached(false);
             cachedView.show();
             currentView = cachedView;
@@ -238,7 +234,7 @@ var ViewManager = function(spine, createViewForItem) {
 
     //based on https://docs.google.com/spreadsheet/ccc?key=0AoPMUkQhc4wcdDI0anFvWm96N0xRT184ZE96MXFRdFE&usp=drive_web#gid=0 document
     function deduceDesiredViewType(spineItem, viewerSettings) {
-        console.assert(!_.isUndefined(viewerSettings, "View creation params must be passed in!"));
+        console.assert(!_.isUndefined(viewerSettings, "Viewer settings must be passed in!"));
         //check settings
         if (viewerSettings.scroll == "scroll-doc") {
             return ViewManager.VIEW_TYPE_SCROLLED_DOC;
@@ -270,7 +266,7 @@ var ViewManager = function(spine, createViewForItem) {
     function createViewForItem(spineItem, viewCreationParams) {
 
         var view = undefined;
-        var desiredViewType = deduceDesiredViewType(spineItem, viewCreationParams);
+        var desiredViewType = deduceDesiredViewType(spineItem, viewCreationParams.viewSettings);
         console.assert(!_.isUndefined(viewCreationParams, "View creation params must be passed in!"));
 
         view = createViewForType(desiredViewType, viewCreationParams);
@@ -290,7 +286,6 @@ var ViewManager = function(spine, createViewForItem) {
         // NOTE: _$el == options.$viewport
         //_$el.css("overflow", "hidden");
         options.$viewport.css("overflow", "hidden");
-        options.viewSettings = _viewerSettings;
 
         switch(viewType) {
             case ViewManager.VIEW_TYPE_FIXED:
@@ -300,10 +295,10 @@ var ViewManager = function(spine, createViewForItem) {
                 createdView = new FixedView(options, self);
                 break;
             case ViewManager.VIEW_TYPE_SCROLLED_DOC:
-                createdView = new ScrollView(options, false, self);
+                createdView = new ScrollView(options, false, reader);
                 break;
             case ViewManager.VIEW_TYPE_SCROLLED_CONTINUOUS:
-                createdView = new ScrollView(options, true, self);
+                createdView = new ScrollView(options, true, reader);
                 break;
             default:
                 createdView = new ReflowableView(options, self);

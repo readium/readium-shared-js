@@ -126,7 +126,8 @@ var ReaderView = function (options) {
             userStyles: _userStyles,
             bookStyles: _bookStyles,
             iframeLoader: _iframeLoader,
-            needsFixedLayoutScalerWorkAround: self.needsFixedLayoutScalerWorkAround()
+            needsFixedLayoutScalerWorkAround: self.needsFixedLayoutScalerWorkAround(),
+            viewSettings: _viewerSettings
         };
         _currentView = _viewManager.getViewForSpineItem(spineItem, _currentView, _viewerSettings, viewCreationParams, callback);
 
@@ -274,7 +275,7 @@ var ReaderView = function (options) {
 
         _mediaOverlayDataInjector = new MediaOverlayDataInjector(_package.media_overlay, _mediaOverlayPlayer);
 
-        _viewManager = new ViewManager(_spine);
+        _viewManager = new ViewManager(_spine, self);
 
 
         resetCurrentView();
