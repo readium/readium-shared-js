@@ -230,7 +230,7 @@ var ViewManager = function(spine, createViewForItem) {
             // cachedView.setViewSettings(_viewerSettings);
             cachedView.openPage(openPageRequest,direction);
             cachedView.setCached(true);
-            // cachedView.hide();
+            cachedView.hide();
         }
         return cachedView;
     };

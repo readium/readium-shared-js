@@ -109,6 +109,8 @@ var ReflowableView = function(options) {
         // $(window).on("resize.ReadiumSDK.reflowableView", _.bind(lazyResize, self));
         renderIframe();
 
+        self.hide();
+
         return self;
     };
 
@@ -224,7 +226,6 @@ var ReflowableView = function(options) {
         }
 
         if(!success) {
-            _$iframe.css("opacity", "1");
             _deferredPageRequest = undefined;
             return;
         }
@@ -300,10 +301,7 @@ var ReflowableView = function(options) {
         }
         
         _paginationInfo.isVerticalWritingMode = _htmlBodyIsVerticalWritingMode;
-        
-        hideBook();
-        _$iframe.css("opacity", "1");
-        
+
         updateViewportSize();
         _$epubHtml.css("height", _lastViewPortSize.height + "px");
         
@@ -441,8 +439,10 @@ var ReflowableView = function(options) {
             _$epubHtml.css("right", !ltr ? offsetVal : "");
         }
 
+        showBook(); // as it's no longer hidden by shifting the position
+
         if (!_cachedView) {
-            showBook(); // as it's no longer hidden by shifting the position
+            self.show();
         }
     }
 
@@ -705,6 +705,7 @@ var ReflowableView = function(options) {
 
     function hideBook()
     {
+        if (!_$epubHtml) return;
         if (_currentOpacity != -1) return; // already hidden
         
         _currentOpacity = _$epubHtml.css('opacity');
@@ -713,6 +714,8 @@ var ReflowableView = function(options) {
 
     function showBook()
     {
+        if (!_$epubHtml) return;
+
         if (_currentOpacity != -1)
         {
             _$epubHtml.css('opacity', _currentOpacity);
@@ -895,12 +898,15 @@ var ReflowableView = function(options) {
     }
 
     this.hide = function() {
-        _$el.hide();
+        _$iframe.css('opacity', '0.01');
+        _$iframe.hide();
+        _$contentFrame.css('visibility', 'hidden');
     };
 
     this.show = function() {
-        _$el.show();
-        showBook();
+        _$iframe.show();
+        _$iframe.css('opacity', '1');
+        _$contentFrame.css('visibility', 'visible');
     };
 
     this.setCached = function(isCached) {
