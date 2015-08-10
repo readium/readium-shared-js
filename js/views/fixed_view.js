@@ -1,26 +1,26 @@
 //  Created by Boris Schneiderman.
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
-//  
-//  Redistribution and use in source and binary forms, with or without modification, 
+//
+//  Redistribution and use in source and binary forms, with or without modification,
 //  are permitted provided that the following conditions are met:
-//  1. Redistributions of source code must retain the above copyright notice, this 
+//  1. Redistributions of source code must retain the above copyright notice, this
 //  list of conditions and the following disclaimer.
-//  2. Redistributions in binary form must reproduce the above copyright notice, 
-//  this list of conditions and the following disclaimer in the documentation and/or 
+//  2. Redistributions in binary form must reproduce the above copyright notice,
+//  this list of conditions and the following disclaimer in the documentation and/or
 //  other materials provided with the distribution.
-//  3. Neither the name of the organization nor the names of its contributors may be 
-//  used to endorse or promote products derived from this software without specific 
+//  3. Neither the name of the organization nor the names of its contributors may be
+//  used to endorse or promote products derived from this software without specific
 //  prior written permission.
-//  
-//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
-//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
-//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
-//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
-//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
-//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
-//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
+//
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 define (["jquery", "underscore", "eventEmitter", "../models/bookmark_data", "../models/current_pages_info",
@@ -89,7 +89,7 @@ var FixedView = function(options){
     this.setZoom = function(zoom){
         _zoom = zoom;
 
-        resizeBook(false); 
+        resizeBook(false);
     }
 
     this.render = function(){
@@ -99,9 +99,9 @@ var FixedView = function(options){
         _$el = $(template);
 
         Helpers.CSSTransition(_$el, "all 0 ease 0");
-        
+
         _$el.css("overflow", "hidden");
-        
+
         // Removed, see one_page_view@render()
         // var settings = reader.viewerSettings();
         // if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefined")
@@ -114,7 +114,7 @@ var FixedView = function(options){
         //     // This fixes rendering issues with WebView (native apps), which crops content embedded in iframes unless GPU hardware acceleration is enabled for CSS rendering.
         //     _$el.css("transform", "translateZ(0)");
         // }
-        
+
         _$viewport.append(_$el);
 
         self.applyStyles();
@@ -129,9 +129,9 @@ var FixedView = function(options){
 
 
     this.setViewSettings = function(settings) {
-        
+
         _viewSettings = settings;
-        
+
         _spread.setSyntheticSpread(Helpers.deduceSyntheticSpread(_$viewport, getFirstVisibleItem(), _viewSettings) == true); // force boolean value (from truthy/falsey return value)
 
         var views = getDisplayingViews();
@@ -203,7 +203,7 @@ var FixedView = function(options){
         //     views[i].updatePageSwitchDir(dir, hasChanged);
         // }
     };
-    
+
 
     this.applyStyles = function() {
 
@@ -294,7 +294,7 @@ var FixedView = function(options){
     function resizeBook(viewportIsResizing) {
 
         updatePageSwitchDir(0, false);
-        
+
         if(!isContentRendered()) {
             return;
         }
@@ -320,9 +320,9 @@ var FixedView = function(options){
 
         var horScale = potentialContentSize.width / _contentMetaSize.width;
         var verScale = potentialContentSize.height / _contentMetaSize.height;
-        
+
         _$viewport.css("overflow", "auto");
-            
+
         var scale;
         if (_zoom.style == 'fit-width'){
             scale = horScale;
@@ -357,7 +357,7 @@ var FixedView = function(options){
 
         if(bookLeft < 0) bookLeft = 0;
         if(bookTop < 0) bookTop = 0;
-        
+
         _$el.css("left", bookLeft + "px");
         _$el.css("top", bookTop + "px");
         _$el.css("width", targetElementSize.width + "px");
@@ -388,7 +388,7 @@ var FixedView = function(options){
 
             _centerPageView[transFunc](scale, left, top);
         }
-        
+
         self.emit(Globals.Events.FXL_VIEW_RESIZED);
     }
 
@@ -475,13 +475,13 @@ var FixedView = function(options){
         var isSyntheticSpread = Helpers.deduceSyntheticSpread(_$viewport, paginationRequest.spineItem, _viewSettings) == true; // force boolean value (from truthy/falsey return value)
         _spread.setSyntheticSpread(isSyntheticSpread);
         _spread.openItem(paginationRequest.spineItem);
-        
+
         var hasChanged = leftItem !== _spread.leftItem || rightItem !== _spread.rightItem || centerItem !== _spread.centerItem;
-        
+
         if (dir === null || typeof dir === "undefined") dir = 0;
-        
+
         updatePageSwitchDir(dir === 0 ? 0 : (_spread.spine.isRightToLeft() ? (dir === 1 ? 2 : 1) : dir), hasChanged);
-        
+
         redraw(paginationRequest.initiator, paginationRequest);
     };
 
@@ -489,18 +489,18 @@ var FixedView = function(options){
     this.openPagePrev = function(initiator) {
 
         _spread.openPrev();
-        
+
         updatePageSwitchDir(_spread.spine.isRightToLeft() ? 2 : 1, true);
-        
+
         redraw(initiator, undefined);
     };
 
     this.openPageNext = function(initiator) {
 
         _spread.openNext();
-        
+
         updatePageSwitchDir(_spread.spine.isRightToLeft() ? 1 : 2, true);
-        
+
         redraw(initiator, undefined);
     };
 
