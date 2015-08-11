@@ -36116,27 +36116,27 @@ var MediaOverlayElementHighlighter = function(reader) {
 //  Created by Boris Schneiderman.
 // Modified by Daniel Weck
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
-//  
-//  Redistribution and use in source and binary forms, with or without modification, 
+//
+//  Redistribution and use in source and binary forms, with or without modification,
 //  are permitted provided that the following conditions are met:
-//  1. Redistributions of source code must retain the above copyright notice, this 
+//  1. Redistributions of source code must retain the above copyright notice, this
 //  list of conditions and the following disclaimer.
-//  2. Redistributions in binary form must reproduce the above copyright notice, 
-//  this list of conditions and the following disclaimer in the documentation and/or 
+//  2. Redistributions in binary form must reproduce the above copyright notice,
+//  this list of conditions and the following disclaimer in the documentation and/or
 //  other materials provided with the distribution.
-//  3. Neither the name of the organization nor the names of its contributors may be 
-//  used to endorse or promote products derived from this software without specific 
+//  3. Neither the name of the organization nor the names of its contributors may be
+//  used to endorse or promote products derived from this software without specific
 //  prior written permission.
-//  
-//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
-//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
-//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
-//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
-//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
-//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
-//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
+//
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 define('readium_shared_js/views/scroll_view',["jquery", "underscore", "eventEmitter", "../models/bookmark_data", "../models/current_pages_info", "../helpers",
         "./one_page_view", "../models/page_open_request", "../globals", "../models/viewer_settings"],
@@ -36199,8 +36199,8 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         _$contentFrame.css("position", "relative");
 
         var settings = reader.viewerSettings();
-if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefined")
-{
+        if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefined")
+        {
             //defaults
             settings = new ViewerSettings({});
         }
@@ -36310,10 +36310,10 @@ if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefin
         }
 
         var scrollPosBefore = undefined;
-if (_DEBUG)
-{
-    if (pageView)
-{
+        if (_DEBUG)
+        {
+            if (pageView)
+            {
                 var offset = pageView.offset();
                 if (offset) scrollPosBefore = offset.top;
             }
@@ -36321,10 +36321,10 @@ if (_DEBUG)
 
         // This function double-checks whether the browser has shifted the scroll position because of unforeseen rendering issues.
         // (this should never happen because we handle scroll adjustments during iframe height resizes explicitely in this code)
-var assertScrollPosition = function(msg)
-{
-    if (_DEBUG)
-    {
+        var assertScrollPosition = function(msg)
+        {
+            if (_DEBUG)
+            {
                 if (!scrollPosBefore) return;
                 var scrollPosAfter = undefined;
 
@@ -36334,8 +36334,8 @@ var assertScrollPosition = function(msg)
                 if (!scrollPosAfter) return;
 
                 var diff = scrollPosAfter - scrollPosBefore;
-        if (Math.abs(diff) > 1)
-        {
+                if (Math.abs(diff) > 1)
+                {
                     console.debug("@@@@@@@@@@@@@@@ SCROLL ADJUST (" + msg + ") " + diff + " -- " + pageView.currentSpineItem().href);
                     //_$contentFrame[0].scrollTop = _$contentFrame[0].scrollTop + diff;
                 }
@@ -36354,25 +36354,25 @@ var assertScrollPosition = function(msg)
 
     var _mediaOverlaysWasPlayingLastTimeScrollStarted = false;
 
-function onScrollDirect(e)
-{
-        var settings = reader.viewerSettings();
-if (!settings.mediaOverlaysPreservePlaybackWhenScroll)
-{
-    if (!_mediaOverlaysWasPlayingLastTimeScrollStarted && reader.isMediaOverlayAvailable())
+    function onScrollDirect(e)
     {
-                _mediaOverlaysWasPlayingLastTimeScrollStarted = reader.isPlayingMediaOverlay();
-        if (_mediaOverlaysWasPlayingLastTimeScrollStarted)
+        var settings = reader.viewerSettings();
+        if (!settings.mediaOverlaysPreservePlaybackWhenScroll)
         {
+            if (!_mediaOverlaysWasPlayingLastTimeScrollStarted && reader.isMediaOverlayAvailable())
+            {
+                _mediaOverlaysWasPlayingLastTimeScrollStarted = reader.isPlayingMediaOverlay();
+                if (_mediaOverlaysWasPlayingLastTimeScrollStarted)
+                {
                     reader.pauseMediaOverlay();
                 }
             }
         }
     }
 
-function onScroll(e)
-{
-        if (!_isPerformingLayoutModifications
+    function onScroll(e)
+    {
+        if (   !_isPerformingLayoutModifications
             && !_isSettingScrollPosition
             && !_isLoadingNewSpineItemOnPageRequest) {
 
@@ -36380,12 +36380,12 @@ function onScroll(e)
             onPaginationChanged(self);
 
             var settings = reader.viewerSettings();
-    if (!settings.mediaOverlaysPreservePlaybackWhenScroll)
-    {
-        if (_mediaOverlaysWasPlayingLastTimeScrollStarted)
-        {
-            setTimeout(function()
+            if (!settings.mediaOverlaysPreservePlaybackWhenScroll)
             {
+                if (_mediaOverlaysWasPlayingLastTimeScrollStarted)
+                {
+                    setTimeout(function()
+                    {
                         reader.playMediaOverlay();
                         _mediaOverlaysWasPlayingLastTimeScrollStarted = false;
                     }, 100);
@@ -36403,8 +36403,8 @@ function onScroll(e)
         }
     }
 
-function updatePageViewSizeAndAdjustScroll(pageView)
-{
+    function updatePageViewSizeAndAdjustScroll(pageView)
+    {
         var scrollPos = scrollTop();
         var rangeBeforeResize = getPageViewRange(pageView);
 
@@ -36417,22 +36417,22 @@ function updatePageViewSizeAndAdjustScroll(pageView)
 
         var delta = heightAfter - heightBefore;
 
-if (Math.abs(delta) > 0)
-{
-    if (_DEBUG)
-    {
+        if (Math.abs(delta) > 0)
+        {
+            if (_DEBUG)
+            {
                 console.debug("IMMEDIATE SCROLL ADJUST: " + pageView.currentSpineItem().href + " == " + delta);
             }
             scrollTo(scrollPos + delta);
         }
     }
 
-function reachStableContentHeight(updateScroll, pageView, iframe, href, fixedLayout, metaWidth, msg, callback)
-{
-if (!Helpers.isIframeAlive(iframe))
-{
-    if (_DEBUG)
+    function reachStableContentHeight(updateScroll, pageView, iframe, href, fixedLayout, metaWidth, msg, callback)
     {
+        if (!Helpers.isIframeAlive(iframe))
+        {
+            if (_DEBUG)
+            {
                 console.log("reachStableContentHeight ! win && doc (iFrame disposed?)");
             }
 
@@ -36450,27 +36450,27 @@ if (!Helpers.isIframeAlive(iframe))
 
         var initialContentHeight = previousPolledContentHeight;
 
-if (updateScroll === 0)
-{
+        if (updateScroll === 0)
+        {
             updatePageViewSizeAndAdjustScroll(pageView);
         }
-else
-{
+        else
+        {
             updatePageViewSize(pageView);
         }
 
-var tryAgainFunc = function(tryAgain)
-{
-    if (_DEBUG && tryAgain !== MAX_ATTEMPTS)
-    {
-                console.log("tryAgainFunc - " + tryAgain + ": " + href + "  <" + initialContentHeight + " -- " + previousPolledContentHeight + ">");
+        var tryAgainFunc = function(tryAgain)
+        {
+            if (_DEBUG && tryAgain !== MAX_ATTEMPTS)
+            {
+                console.log("tryAgainFunc - " + tryAgain + ": " + href + "  <" + initialContentHeight +" -- "+ previousPolledContentHeight + ">");
             }
 
             tryAgain--;
-    if (tryAgain < 0)
-    {
-        if (_DEBUG)
-        {
+            if (tryAgain < 0)
+            {
+                if (_DEBUG)
+                {
                     console.error("tryAgainFunc abort: " + href);
                 }
 
@@ -36478,12 +36478,12 @@ var tryAgainFunc = function(tryAgain)
                 return;
             }
 
-    setTimeout(function()
-    {
-        try
-        {
-            if (Helpers.isIframeAlive(iframe))
+            setTimeout(function()
             {
+                try
+                {
+                    if (Helpers.isIframeAlive(iframe))
+                    {
                         var win = iframe.contentWindow;
                         var doc = iframe.contentDocument;
 
@@ -36491,8 +36491,8 @@ var tryAgainFunc = function(tryAgain)
 
                         var docHeight = parseInt(Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height))); //body can be shorter!
 
-                if (previousPolledContentHeight !== docHeight)
-                {
+                        if (previousPolledContentHeight !== docHeight)
+                        {
                             previousPolledContentHeight = docHeight;
 
                             tryAgainFunc(tryAgain);
@@ -36502,25 +36502,25 @@ var tryAgainFunc = function(tryAgain)
                         // CONTENT HEIGHT IS NOW STABILISED
 
                         var diff = iframeHeight - docHeight;
-                if (Math.abs(diff) > 4)
-                {
-                    if (_DEBUG)
-                    {
+                        if (Math.abs(diff) > 4)
+                        {
+                            if (_DEBUG)
+                            {
                                 console.log("$$$ IFRAME HEIGHT ADJUST: " + href + "  [" + diff + "]<" + initialContentHeight + " -- " + previousPolledContentHeight + ">");
                                 console.log(msg);
                             }
 
-                    if (updateScroll === 0)
-                    {
+                            if (updateScroll === 0)
+                            {
                                 updatePageViewSizeAndAdjustScroll(pageView);
                             }
-                    else
-                    {
+                            else
+                            {
                                 updatePageViewSize(pageView);
                             }
 
-                    if (Helpers.isIframeAlive(iframe))
-                    {
+                            if (Helpers.isIframeAlive(iframe))
+                            {
                                 var win = iframe.contentWindow;
                                 var doc = iframe.contentDocument;
 
@@ -36528,30 +36528,30 @@ var tryAgainFunc = function(tryAgain)
                                 var iframeHeightAfter = parseInt(Math.round(parseFloat(window.getComputedStyle(iframe).height)));
 
                                 var newdiff = iframeHeightAfter - docHeightAfter;
-                        if (Math.abs(newdiff) > 4)
-                        {
-                            if (_DEBUG)
-                            {
-                                        console.error("## IFRAME HEIGHT ADJUST: " + href + "  [" + newdiff + "]<" + initialContentHeight + " -- " + previousPolledContentHeight + ">");
+                                if (Math.abs(newdiff) > 4)
+                                {
+                                    if (_DEBUG)
+                                    {
+                                        console.error("## IFRAME HEIGHT ADJUST: " + href + "  [" + newdiff + "]<" + initialContentHeight + " -- "+ previousPolledContentHeight + ">");
                                         console.log(msg);
                                     }
 
                                     tryAgainFunc(tryAgain);
                                     return;
                                 }
-                        else
-                        {
-                            if (_DEBUG)
-                            {
-                                        console.log(">> IFRAME HEIGHT ADJUSTED OKAY: " + href + "  [" + diff + "]<" + initialContentHeight + " -- " + previousPolledContentHeight + ">");
+                                else
+                                {
+                                    if (_DEBUG)
+                                    {
+                                        console.log(">> IFRAME HEIGHT ADJUSTED OKAY: " + href + "  ["+diff+"]<" + initialContentHeight + " -- " + previousPolledContentHeight + ">");
                                         // console.log(msg);
                                     }
                                 }
                             }
-                    else
-                    {
-                        if (_DEBUG)
-                        {
+                            else
+                            {
+                                if (_DEBUG)
+                                {
                                     console.log("tryAgainFunc ! win && doc (iFrame disposed?)");
                                 }
 
@@ -36559,17 +36559,17 @@ var tryAgainFunc = function(tryAgain)
                                 return;
                             }
                         }
-                else
-                {
+                        else
+                        {
                             //if (_DEBUG)
                             // console.debug("IFRAME HEIGHT NO NEED ADJUST: " + href);
                             // console.log(msg);
                         }
                     }
-            else
-            {
-                if (_DEBUG)
-                {
+                    else
+                    {
+                        if (_DEBUG)
+                        {
                             console.log("tryAgainFunc ! win && doc (iFrame disposed?)");
                         }
 
@@ -36577,8 +36577,8 @@ var tryAgainFunc = function(tryAgain)
                         return;
                     }
                 }
-        catch(ex)
-        {
+                catch(ex)
+                {
                     console.error(ex);
 
                     if (callback) callback(false);
@@ -36637,14 +36637,14 @@ var tryAgainFunc = function(tryAgain)
                 newView.loadSpineItem(prevSpineItem, function (success, $iframe, spineItem, isNewlyLoaded, context) {
                     if (success) {
 
-                var continueCallback = function(successFlag)
-                {
+                        var continueCallback = function (successFlag)
+                        {
                             onPageViewLoaded(newView, success, $iframe, spineItem, isNewlyLoaded, context);
 
                             callback(successFlag);
                         };
 
-                reachStableContentHeight(0, newView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToTopOf", continueCallback); // //onIFrameLoad called before this callback, so okay.
+                        reachStableContentHeight(0, newView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToTopOf", continueCallback); // //onIFrameLoad called before this callback, so okay.
                     }
                     else {
                         console.error("Unable to open 2 " + prevSpineItem.href);
@@ -36689,14 +36689,14 @@ var tryAgainFunc = function(tryAgain)
         newView.loadSpineItem(nexSpineItem, function (success, $iframe, spineItem, isNewlyLoaded, context) {
             if (success) {
 
-        var continueCallback = function(successFlag)
-        {
+                var continueCallback = function (successFlag)
+                {
                     onPageViewLoaded(newView, success, $iframe, spineItem, isNewlyLoaded, context);
 
                     callback(successFlag);
                 };
 
-        reachStableContentHeight(2, newView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToBottomOf", continueCallback); // //onIFrameLoad called before this callback, so okay.
+                reachStableContentHeight(2, newView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToBottomOf", continueCallback); // //onIFrameLoad called before this callback, so okay.
             }
             else {
                 console.error("Unable to load " + nexSpineItem.href);
@@ -36777,6 +36777,11 @@ var tryAgainFunc = function(tryAgain)
             true, //enableBookStyleOverrides
             reader);
 
+        pageView.on(OnePageView.SPINE_ITEM_OPEN_START, function($iframe, spineItem) {
+
+            self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
+        });
+
         pageView.render();
         if (_viewSettings) pageView.setViewSettings(_viewSettings);
 
@@ -36785,8 +36790,8 @@ var tryAgainFunc = function(tryAgain)
         }
 
 
-if (isContinuousScroll)
-{
+        if (isContinuousScroll)
+        {
             pageView.decorateIframe();
         }
 
@@ -36817,11 +36822,11 @@ if (isContinuousScroll)
         var pageNodes = _$contentFrame.children();
 
         var count = pageNodes.length;
-var iter = reverse ? function(ix) { return ix - 1}
-                   : function(ix) { return ix + 1};
+        var iter = reverse ? function(ix) { return ix - 1}
+                           : function(ix) { return ix + 1};
 
-var compare = reverse ? function(ix) { return ix >= 0}
-                      : function(ix) { return ix < count };
+        var compare = reverse ? function(ix) { return ix >= 0}
+                              : function(ix) { return ix < count };
 
         var start = reverse ? count - 1 : 0;
 
@@ -36888,8 +36893,8 @@ var compare = reverse ? function(ix) { return ix >= 0}
 
             if (success) {
 
-        var continueCallback = function(successFlag)
-        {
+                var continueCallback = function(successFlag)
+                {
                     onPageViewLoaded(loadedView, success, $iframe, spineItem, isNewlyLoaded, context);
 
                     callback(loadedView);
@@ -36897,7 +36902,7 @@ var compare = reverse ? function(ix) { return ix >= 0}
                     //successFlag should always be true as loadedView iFrame cannot be dead at this stage.
                 };
 
-        reachStableContentHeight(1, loadedView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? loadedView.meta_width() : 0, "openPage", continueCallback); // //onIFrameLoad called before this callback, so okay.
+                reachStableContentHeight(1, loadedView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? loadedView.meta_width() : 0, "openPage", continueCallback); // //onIFrameLoad called before this callback, so okay.
             }
             else {
                 console.error("Unable to load " + spineItem.href);
@@ -37494,6 +37499,7 @@ var compare = reverse ? function(ix) { return ix >= 0}
 };
 return ScrollView;
 });
+
 //  LauncherOSX
 //
 //  Created by Boris Schneiderman.
