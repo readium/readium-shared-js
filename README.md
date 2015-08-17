@@ -18,7 +18,7 @@ You can try Readium here:
 
 **BSD-3-Clause** ( http://opensource.org/licenses/BSD-3-Clause )
 
-See license.txt ( https://github.com/readium/readium-shared-js/blob/develop/license.txt )
+See [license.txt](./license.txt).
 
 
 ## Prerequisites
