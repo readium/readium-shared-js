@@ -17672,7 +17672,7 @@ define('readium_js_plugins',["jquery", "underscore", "eventEmitter"], function (
             }
 
             _registeredPlugins[name] = new Plugin(name, dependencies, function(plugin, api) {
-                if (!plugin.initialized) {
+                if (!plugin.initialized || !api.host.plugins[plugin.name]) {
                     plugin.initialized = true;
                     try {
                         var pluginContext = {};
