@@ -1,0 +1,79 @@
+{
+  "/*": "----------------------------------------------------------------------------",
+  "..": "This package.json (JSON) is automatically generated from package.cson (CSON)",
+  ".-": "DO NOT invoke 'npm init' or 'npm install --save' ('--save-dev' / '--save-optional')",
+  "._": "as this would overwrite / update the JSON, not the master CSON!",
+  "*/": "----------------------------------------------------------------------------",
+  "name": "readium-shared-js",
+  "version": "0.20.0-alpha",
+  "description": "Readium - shared javascript module",
+  "keywords": [
+    "readium",
+    "epub",
+    "epub3"
+  ],
+  "author": {
+    "name": "Readium (Daniel Weck)",
+    "email": "daniel.weck@gmail.com",
+    "url": "http://github.com/readium"
+  },
+  "license": "BSD-3-Clause",
+  "licenses": [
+    {
+      "type": "BSD-3-Clause",
+      "url": "http://opensource.org/licenses/BSD-3-Clause"
+    }
+  ],
+  "homepage": "http://github.com/readium/readium-shared-js",
+  "bugs": {
+    "url": "http://github.com/readium/readium-shared-js/issues",
+    "email": "daniel.weck@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/readium/readium-shared-js.git"
+  },
+  "files": [
+    "build-output/",
+    "dev/",
+    "license.txt",
+    "README.md"
+  ],
+  "dependencies": {
+    "parallelshell": "latest",
+    "opener": "latest",
+    "http-server": "danielweck/http-server"
+  },
+  "devDependencies": {
+    "jquerySizes": "bramstein/jsizes",
+    "domReady": "requirejs/domReady",
+    "backbone": "latest",
+    "underscore": "latest",
+    "URIjs": "danielweck/URI.js",
+    "eventemitter3": "latest"
+  },
+  "scripts": {
+    "cson2json": "node ./readium-cfi-js/node_modules/cson/bin/cson2json package.cson > package.json && node readium-cfi-js/readium-build-tools/optimizePackageJsonScripts.js",
+    "prepare": "npm run prepare:submodule && npm run prepare:dependencies && npm run prepare:patch",
+    "prepare:dependencies": "npm install && npm update && node readium-cfi-js/readium-build-tools/gitHubForksUpdater.js",
+    "prepare:submodule": "cd readium-cfi-js && npm run prepare && cd .. && ls",
+    "prepare:patch": "node ./readium-cfi-js/node_modules/rimraf/bin.js node_modules/eventemitter3/_rjs/** && node readium-cfi-js/node_modules/requirejs/bin/r.js -convert node_modules/eventemitter3/ node_modules/eventemitter3/_rjs/",
+    "clean": "node --version && npm --version && node ./readium-cfi-js/node_modules/rimraf/bin.js build-output/*",
+    "prebuild": "npm run clean",
+    "build": "npm run build:styles && npm run build:scripts",
+    "lint": "node ./readium-cfi-js/readium-build-tools/jshint_glob.js js/**.js",
+    "genPluginsConfig": "node readium-cfi-js/readium-build-tools/pluginsConfigMaker.js",
+    "prebuild:scripts": "npm run genPluginsConfig --readium-shared-js:RJS_PLUGINS_OVERRIDE=no",
+    "build:scripts": "npm run build:scripts:multiple --readium-shared-js:RJS_UGLY=no && npm run build:scripts:single --readium-shared-js:RJS_UGLY=no",
+    "build:scripts:multiple": "node ./readium-cfi-js/node_modules/requirejs/bin/r.js -o ./readium-cfi-js/readium-build-tools/RequireJS_config.js --rjs_bundle=multiple",
+    "postbuild:scripts:multiple": "node ./readium-cfi-js/node_modules/rimraf/bin.js build-output/_multiple-bundles/RequireJS.js.src.js",
+    "build:scripts:single": "node ./readium-cfi-js/node_modules/requirejs/bin/r.js -o ./readium-cfi-js/readium-build-tools/RequireJS_config.js --rjs_bundle=single",
+    "prebuild:styles": "node ./readium-cfi-js/node_modules/mkdirp/bin/cmd.js build-output/css/",
+    "build:styles": "node ./readium-cfi-js/node_modules/cpy/cli.js static/sdk.css build-output/css/",
+    "http:watch": "echo > open_webbrowser.js && parallelshell \"npm run dowatch\" \"npm run httpServe\"",
+    "http": "npm run genPluginsConfig && parallelshell \"npm run httpServe\" \"npm run webBrowser\"",
+    "dowatch": "node ./readium-cfi-js/node_modules/watch/cli.js \"npm run build && node readium-cfi-js/readium-build-tools/webbrowser.js && npm run webBrowser && node ./readium-cfi-js/node_modules/rimraf/bin.js open_webbrowser.js\" dev/ js/ plugins/ readium-cfi-js/js/",
+    "httpServe": "http-server -p 9090 --cors ./",
+    "webBrowser": "opener http://127.0.0.1:9090/dev/"
+  }
+}

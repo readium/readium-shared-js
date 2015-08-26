@@ -23,18 +23,19 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
+define(function() {
+
 /**
  * Used to report pagination state back to the host application
  *
- * @class ReadiumSDK.Models.CurrentPagesInfo
+ * @class Models.CurrentPagesInfo
  *
  * @constructor
  *
- * @param {ReadiumSDK.Models.Spine} spine
+ * @param {Models.Spine} spine
  * @param {boolean} isFixedLayout is fixed or reflowable spine item
 */
-
-ReadiumSDK.Models.CurrentPagesInfo = function(spine, isFixedLayout) {
+var CurrentPagesInfo = function(spine, isFixedLayout) {
 
 
     this.isRightToLeft = spine.isRightToLeft();
@@ -65,7 +66,7 @@ ReadiumSDK.Models.CurrentPagesInfo = function(spine, isFixedLayout) {
 
         // TODO: handling of non-linear spine items ("ancillary" documents), allowing page turn within the reflowable XHTML, but preventing previous/next access to sibling spine items. Also needs "go back" feature to navigate to source hyperlink location that led to the non-linear document.
         // See https://github.com/readium/readium-shared-js/issues/26
-        
+
         // Removed, needs to be implemented properly as per above.
         // See https://github.com/readium/readium-shared-js/issues/108
         // if(!spine.isValidLinearItem(lastOpenPage.spineItemIndex))
@@ -83,7 +84,7 @@ ReadiumSDK.Models.CurrentPagesInfo = function(spine, isFixedLayout) {
 
         // TODO: handling of non-linear spine items ("ancillary" documents), allowing page turn within the reflowable XHTML, but preventing previous/next access to sibling spine items. Also needs "go back" feature to navigate to source hyperlink location that led to the non-linear document.
         // See https://github.com/readium/readium-shared-js/issues/26
-        
+
         // Removed, needs to be implemented properly as per above.
         // //https://github.com/readium/readium-shared-js/issues/108
         // if(!spine.isValidLinearItem(firstOpenPage.spineItemIndex))
@@ -91,7 +92,7 @@ ReadiumSDK.Models.CurrentPagesInfo = function(spine, isFixedLayout) {
 
         return spine.first().index < firstOpenPage.spineItemIndex || 0 < firstOpenPage.spineItemPageIndex;
     };
-    
+
     this.sort = function() {
 
         this.openPages.sort(function(a, b) {
@@ -107,3 +108,6 @@ ReadiumSDK.Models.CurrentPagesInfo = function(spine, isFixedLayout) {
     };
 
 };
+
+return CurrentPagesInfo;
+});

@@ -22,13 +22,14 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
+define (["jquery", "underscore", "../helpers", "../models/smil_iterator", "rangy", 'readium_cfi_js'], function($, _, Helpers, SmilIterator, rangy, epubCfi) {
 /**
  *
  * @param mediaOverlay
  * @param mediaOverlayPlayer
  * @constructor
  */
-ReadiumSDK.Views.MediaOverlayDataInjector = function (mediaOverlay, mediaOverlayPlayer) {
+var MediaOverlayDataInjector = function (mediaOverlay, mediaOverlayPlayer) {
 
     this.attachMediaOverlayData = function ($iframe, spineItem, mediaOverlaySettings) {
 
@@ -321,7 +322,7 @@ console.debug("MO readaloud attr: " + readaloud);
 
                    if (file && fragmentId)
                    {
-                       var textRelativeRef = ReadiumSDK.Helpers.ResolveContentRef(file, smil.href);
+                       var textRelativeRef = Helpers.ResolveContentRef(file, smil.href);
                        var same = textRelativeRef === spineItem.href;
                        if (same)
                        {                       
@@ -332,7 +333,7 @@ console.debug("MO readaloud attr: " + readaloud);
                                console.error("seq.textref !element? " + root.textref);
                            }
 
-                           // var selector = "#" + ReadiumSDK.Helpers.escapeJQuerySelector(fragmentId);
+                           // var selector = "#" + Helpers.escapeJQuerySelector(fragmentId);
                            // var $element = $(selector, element.ownerDocument.documentElement);
                            // if ($element)
                            // {
@@ -356,7 +357,7 @@ console.debug("MO readaloud attr: " + readaloud);
 
 //console.debug("[[MO ATTACH]] " + spineItem.idref + " /// " + spineItem.media_overlay_id + " === " + smil.id);
 
-        var iter = new ReadiumSDK.Models.SmilIterator(smil);
+        var iter = new SmilIterator(smil);
         
         var fakeOpfRoot = "/99!";
         var epubCfiPrefix = "epubcfi";
@@ -367,7 +368,7 @@ console.debug("MO readaloud attr: " + readaloud);
 
             if (true) { //iter.currentPar.text.srcFragmentId (includes empty frag ID)
 
-                var textRelativeRef = ReadiumSDK.Helpers.ResolveContentRef(iter.currentPar.text.srcFile, iter.smil.href);
+                var textRelativeRef = Helpers.ResolveContentRef(iter.currentPar.text.srcFile, iter.smil.href);
 
                 var same = textRelativeRef === spineItem.href;
                 if (same) {
@@ -503,7 +504,7 @@ console.debug("MO readaloud attr: " + readaloud);
                         else
                         {
                             $element = $($iframe[0].contentDocument.getElementById(selectId));
-                            //$element = $("#" + ReadiumSDK.Helpers.escapeJQuerySelector(iter.currentPar.text.srcFragmentId), contentDocElement);
+                            //$element = $("#" + Helpers.escapeJQuerySelector(iter.currentPar.text.srcFragmentId), contentDocElement);
                         }
                     }
 
@@ -557,3 +558,6 @@ console.debug("MO readaloud attr: " + readaloud);
         }
     }
 };
+
+return MediaOverlayDataInjector;
+});

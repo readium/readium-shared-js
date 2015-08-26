@@ -1,0 +1,14 @@
+# You may add the plugins that should be included here.
+plugins: [
+ # 'annotations' NOW EXCLUDED, see https://github.com/readium/readium-js-viewer/issues/386
+ # 'example'
+]
+
+# you may override this configuration by creating a file called plugins-override.cson, e.g.:
+#plugins:
+#    include: [
+#        'example'
+#    ]
+#    exclude: [
+#      'annotations'
+#    ]
