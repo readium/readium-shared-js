@@ -52,7 +52,7 @@ ReadiumSDK.Models.Switches.apply = function(dom) {
         return _.include(supportedNamespaces, ns.value);
     }
 
-    var getQuery = window.navigator.userAgent.indexOf("Trident") > 0
+    var getQuery = ((window.navigator.userAgent.indexOf("Trident") > 0) || (window.navigator.userAgent.indexOf("Edge") > 0))
         ? function (elementName) { return 'epub\\:' + elementName; }
         : function (elementName) { return elementName; };
 
