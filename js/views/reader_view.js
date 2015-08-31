@@ -48,7 +48,7 @@ define(["jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", ".
  */
 var ReaderView = function (options) {
 
-    _.extend(this, new EventEmitter());
+    $.extend(this, new EventEmitter());
 
     var self = this;
     var _currentView = undefined;
