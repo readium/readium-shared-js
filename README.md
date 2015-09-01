@@ -217,7 +217,8 @@ To create a package:
 $ mvn clean package
 ```
 
-To reference the package from an Android application (in Maven
+After the package has been deployed to a repository with `mvn deploy`,
+the package can be referenced from an Android application with (in Maven
 dependency syntax):
 
 ```
