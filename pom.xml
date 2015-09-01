@@ -11,7 +11,7 @@
 
   <packaging>jar</packaging>
   <description>Readium SDK (Shared JavaScript components)</description>
-  <url>https://github.com/readium/readium-sdk</url>
+  <url>https://github.com/readium/readium-shared-js</url>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
