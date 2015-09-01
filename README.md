@@ -202,3 +202,29 @@ For more complex build processes, Grunt / Gulp can be used, but these build syst
 
 Downside: DO NOT invoke `npm init` or `npm install --save` `--save-dev` `--save-optional`,
 as this would overwrite / update the JSON, not the master CSON!
+
+## Maven Package
+
+Once the JS components have been bundled with the `npm build` commands
+shown above, a Maven package can be produced containing the relevant
+resources. This can then be referenced from Android applications as
+a standard library dependency, instead of having to import the sources
+directly into the project as a `git submodule`.
+
+To create a package:
+
+```bash
+$ mvn clean package
+```
+
+To reference the package from an Android application (in Maven
+dependency syntax):
+
+```
+<dependency>
+  <groupId>org.readium</groupId>
+  <artifactId>readium-shared-js</artifactId>
+  <version>0.20.0</version>
+</dependency>
+```
+
