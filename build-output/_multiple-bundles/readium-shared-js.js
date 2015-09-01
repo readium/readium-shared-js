@@ -2451,7 +2451,21 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
 
     this.isElementVisible = visibilityCheckerFunc;
 
-
+    this.isElementCfiVisible = function (partialCfi) {
+      var pageIndex = this.getPageForElementCfi(partialCfi,
+        ["cfi-marker", "mo-cfi-highlight"],
+        [],
+        ["MathJax_Message"]);
+      var paginationInfo = options.paginationInfo || null;
+      if (paginationInfo) {
+        var openPages = [paginationInfo.currentSpreadIndex * paginationInfo.visibleColumnCount];
+        if (paginationInfo.visibleColumnCount == 2) {
+          openPages.push(openPages[0] + 1);
+        }
+        return _.contains(openPages, pageIndex);
+      }
+      return undefined;
+    };
 
 
 
@@ -4289,6 +4303,13 @@ var FixedView = function(options, reader){
         //TODO: during zoom+pan, playing element might not actualy be visible
 
     }
+
+    this.isElementCfiVisible = function (spineIdRef, contentCfi) {
+      if (!_currentView) {
+        return false;
+      }
+      return _currentView.isElementCfiVisible(spineIdRef, contentCfi);
+    };
 
 };
     return FixedView;
@@ -8035,6 +8056,11 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
     }
 
+    this.isElementCfiVisible = function(spineIdRef, contentCfi) {
+      // TODO: implement this for scrollable views
+      return false;
+    };
+
 };
 return ScrollView;
 });
@@ -11750,7 +11776,7 @@ return Package;
 		this._document = contextDocument || document;
 	}
 
-	FontLoader.useAdobeBlank = false;//!isIE || ieVer >= 11.0;
+	FontLoader.useAdobeBlank = !isIE || ieVer >= 11.0;
 	FontLoader.useResizeEvent = isIE && ieVer < 11.0 && typeof document.attachEvent !== "undefined";
 	FontLoader.useIntervalChecking = window.opera || (isIE && ieVer < 11.0 && !FontLoader.useResizeEvent);
 	FontLoader.referenceText = " !\"\\#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~";
@@ -11840,11 +11866,10 @@ return Package;
             this._testContainer.appendChild(adobeBlankDiv);
             this._document.body.appendChild(this._testContainer);
 
-            adobeBlankDiv.style.fontFamily = adobeBlankFallbackFont;
-
             // When using AdobeBlank (all browsers except IE < 11) only interval checking and size watcher methods
             // are available for watching element size.
             if (FontLoader.useIntervalChecking) {
+                adobeBlankDiv.style.fontFamily = FontLoader.referenceFontFamilies[0] + ", " + adobeBlankFallbackFont;
                 this._testContainer.appendChild(adobeBlankDiv);
                 // Start polling element sizes but also do first synchronous check in case all fonts where already loaded.
                 this._intervalId = window.setInterval(function intervalFire() {
@@ -11852,6 +11877,7 @@ return Package;
                 }, this._intervalDelay);
                 this._checkAdobeBlankSize();
             } else {
+                adobeBlankDiv.style.fontFamily = adobeBlankFallbackFont;
                 this._adobeBlankSizeWatcher = new SizeWatcher(/** @type HTMLElement */adobeBlankDiv, {
                     container: this._testContainer,
                     delegate: this,
@@ -11862,9 +11888,8 @@ return Package;
                 });
                 this._adobeBlankSizeWatcher.prepareForWatch();
                 this._adobeBlankSizeWatcher.beginWatching();
+                adobeBlankDiv.style.fontFamily = FontLoader.referenceFontFamilies[0] + ", " + adobeBlankFallbackFont;
             }
-
-            adobeBlankDiv.style.fontFamily = FontLoader.referenceFontFamilies[0] + ", " + adobeBlankFallbackFont;
         },
         _getNewFontVariationsFromFonts: function(fonts) {
             var font, key, i,
@@ -15337,6 +15362,13 @@ var ReflowableView = function(options, reader){
 
         self.openPage(openPageRequest);
     }
+
+    this.isElementCfiVisible = function(spineIdRef, contentCfi) {
+      if (spineIdRef != _currentSpineItem.idref) {
+        return false;
+      }
+      return _navigationLogic.isElementCfiVisible(contentCfi);
+    };
 
 };
     return ReflowableView;
