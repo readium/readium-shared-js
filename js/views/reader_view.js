@@ -1,37 +1,37 @@
 //  Created by Boris Schneiderman.
 // Modified by Daniel Weck
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
-//  
-//  Redistribution and use in source and binary forms, with or without modification, 
+//
+//  Redistribution and use in source and binary forms, with or without modification,
 //  are permitted provided that the following conditions are met:
-//  1. Redistributions of source code must retain the above copyright notice, this 
+//  1. Redistributions of source code must retain the above copyright notice, this
 //  list of conditions and the following disclaimer.
-//  2. Redistributions in binary form must reproduce the above copyright notice, 
-//  this list of conditions and the following disclaimer in the documentation and/or 
+//  2. Redistributions in binary form must reproduce the above copyright notice,
+//  this list of conditions and the following disclaimer in the documentation and/or
 //  other materials provided with the distribution.
-//  3. Neither the name of the organization nor the names of its contributors may be 
-//  used to endorse or promote products derived from this software without specific 
+//  3. Neither the name of the organization nor the names of its contributors may be
+//  used to endorse or promote products derived from this software without specific
 //  prior written permission.
-//  
-//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
-//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
-//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
-//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
-//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
-//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
-//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
+//
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 define(["jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", "./iframe_loader", "./internal_links_support",
         "./media_overlay_data_injector", "./media_overlay_player", "../models/package", "../models/page_open_request",
         "./reflowable_view", "./scroll_view", "../models/style_collection", "../models/switches", "../models/trigger",
-        "../models/viewer_settings", "../globals"],
+        "../models/viewer_settings", "../globals", "../models/view_manager"],
     function ($, _, EventEmitter, FixedView, Helpers, IFrameLoader, InternalLinksSupport,
               MediaOverlayDataInjector, MediaOverlayPlayer, Package, PageOpenRequest,
               ReflowableView, ScrollView, StyleCollection, Switches, Trigger,
-              ViewerSettings, Globals) {
+              ViewerSettings, Globals, ViewManager) {
 /**
  * Options passed on the reader from the readium loader/initializer
  *
@@ -64,6 +64,8 @@ var ReaderView = function (options) {
     var _mediaOverlayDataInjector;
     var _iframeLoader;
     var _$el;
+    var _prefetchingEnabled = true;
+    var _viewManager; // in openbook.
 
     //We will call onViewportResize after user stopped resizing window
     var lazyResize = Helpers.extendedThrottle(
@@ -93,139 +95,45 @@ var ReaderView = function (options) {
     /**
      * @returns {boolean}
      */
-    this.needsFixedLayoutScalerWorkAround = function () {
-        return _needsFixedLayoutScalerWorkAround;
-    };
-
-    /**
-     * Create a view based on the given view type.
-     * @param {Views.ReaderView.ViewType} viewType
-     * @param {Views.ReaderView.ViewCreationOptions} options
-     * @returns {*}
-     */
-    this.createViewForType = function (viewType, options) {
-        var createdView;
-
-        // NOTE: _$el == options.$viewport
-        _$el.css("overflow", "hidden");
-
-        switch (viewType) {
-            case ReaderView.VIEW_TYPE_FIXED:
-
-                _$el.css("overflow", "auto"); // for content pan, see self.setZoom()
-
-                createdView = new FixedView(options, self);
-                break;
-            case ReaderView.VIEW_TYPE_SCROLLED_DOC:
-                createdView = new ScrollView(options, false, self);
-                break;
-            case ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS:
-                createdView = new ScrollView(options, true, self);
-                break;
-            default:
-                createdView = new ReflowableView(options, self);
-                break;
-        }
-
-        return createdView;
+    this.needsFixedLayoutScalerWorkAround = function() {
+      return _needsFixedLayoutScalerWorkAround;
     };
 
     /**
      * Returns the current view type of the reader view
      * @returns {ReaderView.ViewType}
      */
-    this.getCurrentViewType = function () {
-
-        if (!_currentView) {
-            return undefined;
-        }
-
-        if (_currentView instanceof ReflowableView) {
-            return ReaderView.VIEW_TYPE_COLUMNIZED;
-        }
-
-        if (_currentView instanceof FixedView) {
-            return ReaderView.VIEW_TYPE_FIXED;
-        }
-
-        if (_currentView instanceof ScrollView) {
-            if (_currentView.isContinuousScroll()) {
-                return ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
-            }
-
-            return ReaderView.VIEW_TYPE_SCROLLED_DOC;
-        }
-
-        console.error("Unrecognized view type");
-        return undefined;
+    this.getCurrentViewType = function() {
+        return _viewManager.viewTypeForView(_currentView);
     };
 
-    //based on https://docs.google.com/spreadsheet/ccc?key=0AoPMUkQhc4wcdDI0anFvWm96N0xRT184ZE96MXFRdFE&usp=drive_web#gid=0 document
-    function deduceDesiredViewType(spineItem) {
-
-        //check settings
-        if (_viewerSettings.scroll == "scroll-doc") {
-            return ReaderView.VIEW_TYPE_SCROLLED_DOC;
-        }
-
-        if (_viewerSettings.scroll == "scroll-continuous") {
-            return ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
-        }
-
-        //is fixed layout ignore flow
-        if (spineItem.isFixedLayout()) {
-            return ReaderView.VIEW_TYPE_FIXED;
-        }
-
-        //flow
-        if (spineItem.isFlowScrolledDoc()) {
-            return ReaderView.VIEW_TYPE_SCROLLED_DOC;
-        }
-
-        if (spineItem.isFlowScrolledContinuous()) {
-            return ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
-        }
-
-        return ReaderView.VIEW_TYPE_COLUMNIZED;
-    }
 
     // returns true is view changed
     function initViewForItem(spineItem, callback) {
-
-        var desiredViewType = deduceDesiredViewType(spineItem);
-
-        if (_currentView) {
-
-            if (self.getCurrentViewType() == desiredViewType) {
-                callback(false);
-                return;
-            }
-
-            resetCurrentView();
-        }
-
+        console.log('%c Init view for item', 'background: black; color: red');
         /**
          * View creation options
-         * @typedef {object} Globals.Views.ReaderView.ViewCreationOptions
+         * @typedef {object} ReaderView.ViewCreationOptions
          * @property {jQueryElement} $viewport  The view port element the reader view has created.
-         * @property {Globals.Models.Spine} spine The spine item collection object
-         * @property {Globals.Collections.StyleCollection} userStyles User styles
-         * @property {Globals.Collections.StyleCollection} bookStyles Book styles
-         * @property {Globals.Views.IFrameLoader} iframeLoader   An instance of an iframe loader or one expanding it.
+         * @property {Models.Spine} spine The spine item collection object
+         * @property {Collections.StyleCollection} userStyles User styles
+         * @property {Collections.StyleCollection} bookStyles Book styles
+         * @property {IFrameLoader} iframeLoader   An instance of an iframe loader or one expanding it.
          */
         var viewCreationParams = {
             $viewport: _$el,
             spine: _spine,
             userStyles: _userStyles,
             bookStyles: _bookStyles,
-            iframeLoader: _iframeLoader
+            iframeLoader: _iframeLoader,
+            needsFixedLayoutScalerWorkAround: self.needsFixedLayoutScalerWorkAround(),
+            viewSettings: _viewerSettings
         };
+        _currentView = _viewManager.getViewForSpineItem(spineItem, _currentView, _viewerSettings, viewCreationParams, callback);
 
+        self.emit(Globals.Events.READER_VIEW_CREATED, _viewManager.viewTypeForView(_currentView));
 
-        _currentView = self.createViewForType(desiredViewType, viewCreationParams);
-        self.emit(Globals.Events.READER_VIEW_CREATED, desiredViewType);
-
-        _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOADED, function ($iframe, spineItem) {
+        _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOADED, function($iframe, spineItem) {
 
             if (!Helpers.isIframeAlive($iframe[0])) return;
 
@@ -255,19 +163,18 @@ var ReaderView = function (options) {
             self.emit(Globals.Events.PAGINATION_CHANGED, pageChangeData);
         });
 
-        _currentView.on(Globals.Events.FXL_VIEW_RESIZED, function () {
+        _currentView.on(Globals.Events.FXL_VIEW_RESIZED, function() {
             self.emit(Globals.Events.FXL_VIEW_RESIZED);
-        })
+        });
 
-        _currentView.render();
-        _currentView.setViewSettings(_viewerSettings);
+        _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOAD_START, function($iframe, spineItem) {
+            self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
+        });
 
-        // we do this to wait until elements are rendered otherwise book is not able to determine view size.
-        setTimeout(function () {
-
-            callback(true);
-
-        }, 50);
+        // // we do this to wait until elements are rendered otherwise book is not able to determine view size.
+        // setTimeout(function(){
+        //     callback(true);
+        // }, 50);
 
     }
 
@@ -367,6 +274,8 @@ var ReaderView = function (options) {
         _mediaOverlayPlayer.setAutomaticNextSmil(_viewerSettings.mediaOverlaysAutomaticPageTurn ? true : false); // just to ensure the internal var is set to the default settings (user settings are applied below at self.updateSettings(openBookData.settings);)
 
         _mediaOverlayDataInjector = new MediaOverlayDataInjector(_package.media_overlay, _mediaOverlayPlayer);
+
+        _viewManager = new ViewManager(_spine, self);
 
 
         resetCurrentView();
@@ -590,7 +499,7 @@ var ReaderView = function (options) {
 
         var paginationInfo = _currentView.getPaginationInfo();
 
-        if (paginationInfo.openPages.length == 0) {
+        if (paginationInfo.openPages.length === 0) {
             return;
         }
 
@@ -627,7 +536,7 @@ var ReaderView = function (options) {
 
         var paginationInfo = _currentView.getPaginationInfo();
 
-        if (paginationInfo.openPages.length == 0) {
+        if (paginationInfo.openPages.length === 0) {
             return;
         }
 
@@ -734,14 +643,13 @@ var ReaderView = function (options) {
 
     // dir: 0 => new or same page, 1 => previous, 2 => next
     function openPage(pageRequest, dir) {
-
-        initViewForItem(pageRequest.spineItem, function (isViewChanged) {
+        initViewForItem(pageRequest.spineItem, function(isViewChanged, newView){
 
             if (!isViewChanged) {
                 _currentView.setViewSettings(_viewerSettings);
             }
 
-            _currentView.openPage(pageRequest, dir);
+            newView.openPage(pageRequest, dir);
         });
     }
 
@@ -1429,17 +1337,5 @@ var ReaderView = function (options) {
     this.backgroundAudioTrackManager = new BackgroundAudioTrackManager();
 };
 
-/**
- * View Type
- * @typedef {object} Globals.Views.ReaderView.ViewType
- * @property {number} VIEW_TYPE_COLUMNIZED          Reflowable document view
- * @property {number} VIEW_TYPE_FIXED               Fixed layout document view
- * @property {number} VIEW_TYPE_SCROLLED_DOC        Scrollable document view
- * @property {number} VIEW_TYPE_SCROLLED_CONTINUOUS Continuous scrollable document view
- */
-ReaderView.VIEW_TYPE_COLUMNIZED = 1;
-ReaderView.VIEW_TYPE_FIXED = 2;
-ReaderView.VIEW_TYPE_SCROLLED_DOC = 3;
-ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS = 4;
 return ReaderView;
 });

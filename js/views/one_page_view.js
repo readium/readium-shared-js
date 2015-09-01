@@ -35,7 +35,7 @@ define(["jquery", "underscore", "eventEmitter", "./cfi_navigation_logic", "../he
  * @param enableBookStyleOverrides
  * @constructor
  */
-var OnePageView = function (options, classes, enableBookStyleOverrides, reader) {
+var OnePageView = function (options, classes, enableBookStyleOverrides, settings, cached) {
 
     _.extend(this, new EventEmitter());
 
@@ -48,12 +48,14 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
     var _spine = options.spine;
     var _iframeLoader = options.iframeLoader;
     var _bookStyles = options.bookStyles;
-
+    var _cached = cached;
     var _$viewport = options.$viewport;
 
     var _isIframeLoaded = false;
 
     var _$scaler;
+
+    var _needsFixedLayoutScalerWorkAround = options.needsFixedLayoutScalerWorkAround || false;
 
     var PageTransitionHandler = function (opts) {
         var PageTransition = function (begin, end) {
@@ -273,6 +275,10 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         return _$el;
     };
 
+    this.iframe = function() {
+        return _$iframe;
+    };
+
     this.meta_height = function () {
         return _meta_size.height;
     };
@@ -298,8 +304,8 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
         _$el.css("transform", "none");
 
-        var settings = reader.viewerSettings();
-        if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefined") {
+        if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefined")
+        {
             //defaults
             settings = new ViewerSettings({});
         }
@@ -330,9 +336,19 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
     };
 
     this.remove = function () {
+        _$epubHtml.remove();
+        _$epubHtml = null;
+
+        _$iframe.remove();
+        _$iframe = null;
+
+        _$scaler.remove();
+        _$scaler = null;
+        
         _isIframeLoaded = false;
         _currentSpineItem = undefined;
         _$el.remove();
+        _$el = null;
     };
 
     this.clear = function () {
@@ -430,6 +446,10 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
     var _useCSSTransformToHideIframe = true;
 
     this.showIFrame = function () {
+
+        if (_cached) {
+            return;
+        }
 
         _$iframe.css("visibility", "visible");
 
@@ -535,8 +555,9 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             enable3D = true;
         }
 
-        if (reader.needsFixedLayoutScalerWorkAround()) {
-            var css1 = Helpers.CSSTransformString({scale: scale, enable3D: enable3D});
+        if(_needsFixedLayoutScalerWorkAround)
+        {
+            var css1 = Helpers.CSSTransformString({scale : scale, enable3D: enable3D});
             _$epubHtml.css(css1);
 
             var css2 = Helpers.CSSTransformString({scale : 1, enable3D: enable3D});
@@ -909,6 +930,11 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         }
         return undefined;
     }
+
+    this.setCached = function(isCached) {
+        _cached = isCached;
+    };
+
 };
 
 OnePageView.SPINE_ITEM_OPEN_START = "SpineItemOpenStart";
