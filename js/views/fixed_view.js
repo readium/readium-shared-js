@@ -680,6 +680,13 @@ var FixedView = function(options, reader){
 
     }
 
+    this.isElementCfiVisible = function (spineIdRef, contentCfi) {
+      if (!_currentView) {
+        return false;
+      }
+      return _currentView.isElementCfiVisible(spineIdRef, contentCfi);
+    };
+
 };
     return FixedView;
 });
