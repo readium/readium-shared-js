@@ -17672,7 +17672,7 @@ define('readium_js_plugins',["jquery", "underscore", "eventEmitter"], function (
             }
 
             _registeredPlugins[name] = new Plugin(name, dependencies, function(plugin, api) {
-                if (!plugin.initialized) {
+                if (!plugin.initialized || !api.host.plugins[plugin.name]) {
                     plugin.initialized = true;
                     try {
                         var pluginContext = {};
@@ -31116,7 +31116,7 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
         }
     
     
-        var _volume = 100.0;
+        var _volume = 1.0;
         this.setVolume = function(volume)
         {
             _volume = volume;
