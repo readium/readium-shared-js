@@ -126,7 +126,7 @@ var AnnotationsManager = function (proxyObj, options) {
         console.warn("WARNING! Annotations CSS not supplied. Highlighting is not going to work.");
     }
 
-    _.extend(this, new EventEmitter());
+    $.extend(this, new EventEmitter());
 
     // we want to bubble up all of the events that annotations module may trigger up.
     // this.on("all", function() {

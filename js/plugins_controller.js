@@ -79,7 +79,7 @@ define(["jquery", "underscore", "eventEmitter"], function ($, _, EventEmitter) {
                     plugin.initialized = true;
                     try {
                         var pluginContext = {};
-                        _.extend(pluginContext, new EventEmitter());
+                        $.extend(pluginContext, new EventEmitter());
 
                         initFunc.call(pluginContext, api.instance);
                         plugin.supported = true;
