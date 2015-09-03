@@ -79,7 +79,7 @@ define('readium_js_plugins',["jquery", "underscore", "eventEmitter"], function (
                     plugin.initialized = true;
                     try {
                         var pluginContext = {};
-                        _.extend(pluginContext, new EventEmitter());
+                        $.extend(pluginContext, new EventEmitter());
 
                         initFunc.call(pluginContext, api.instance);
                         plugin.supported = true;
@@ -212,7 +212,7 @@ define('readium_js_plugins',["jquery", "underscore", "eventEmitter"], function (
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define('readium_shared_js/globals',['underscore','eventEmitter'], function(_, EventEmitter) {
+define('readium_shared_js/globals',['jquery','eventEmitter'], function($, EventEmitter) {
 /**
  * Top level ReadiumSDK namespace
  * @namespace
@@ -308,7 +308,7 @@ var Globals = {
     }
 
 };
-_.extend(Globals, new EventEmitter());
+$.extend(Globals, new EventEmitter());
 
 return Globals;
 
@@ -371,13 +371,13 @@ navigator.epubReadingSystem = {
 //  prior written permission.
 
 //'text!empty:'
-define('readium_shared_js/globalsSetup',['console_shim', 'eventEmitter', 'URIjs', 'readium_cfi_js', 'readium_js_plugins', './globals'], function (console_shim, EventEmitter, URI, epubCfi, PluginsController, Globals) {
+define('readium_shared_js/globalsSetup',['jquery', 'console_shim', 'eventEmitter', 'URIjs', 'readium_cfi_js', 'readium_js_plugins', './globals'], function ($, console_shim, EventEmitter, URI, epubCfi, PluginsController, Globals) {
 
     console.log("Globals...");
 
     if (window["ReadiumSDK"]) {
         console.log("ReadiumSDK extend.");
-        _.extend(Globals, window.ReadiumSDK);
+        $.extend(Globals, window.ReadiumSDK);
     } else {
         console.log("ReadiumSDK set.");
     }
@@ -2451,8 +2451,21 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
 
     this.isElementVisible = visibilityCheckerFunc;
 
-
-
+    this.isElementCfiVisible = function (partialCfi) {
+        var pageIndex = this.getPageForElementCfi(partialCfi,
+            ["cfi-marker", "mo-cfi-highlight"],
+            [],
+            ["MathJax_Message"]);
+        var paginationInfo = options.paginationInfo || null;
+        if (paginationInfo) {
+            var openPages = [paginationInfo.currentSpreadIndex * paginationInfo.visibleColumnCount];
+            if (paginationInfo.visibleColumnCount == 2) {
+                openPages.push(openPages[0] + 1);
+            }
+            return _.contains(openPages, pageIndex);
+        }
+        return undefined;
+    };
 
 
     function isValidTextNode(node) {
@@ -2641,7 +2654,7 @@ define('readium_shared_js/views/one_page_view',["jquery", "underscore", "eventEm
  */
 var OnePageView = function (options, classes, enableBookStyleOverrides, reader) {
 
-    _.extend(this, new EventEmitter());
+    $.extend(this, new EventEmitter());
 
     var self = this;
 
@@ -3645,7 +3658,7 @@ define ('readium_shared_js/views/fixed_view',["jquery", "underscore", "eventEmit
  */
 var FixedView = function(options, reader){
 
-    _.extend(this, new EventEmitter());
+    $.extend(this, new EventEmitter());
 
     var self = this;
 
@@ -4278,9 +4291,18 @@ var FixedView = function(options, reader){
 
     this.insureElementVisibility = function(spineItemId, element, initiator) {
 
-        //TODO: during zoom+pan, playing element might not actualy be visible
+        //TODO: during zoom+pan, playing element might not actually be visible
 
-    }
+    };
+
+    this.isElementCfiVisible = function (spineIdRef, contentCfi) {
+        var spineItemFound = _.findWhere(this.getLoadedSpineItems(), {idref: spineIdRef});
+
+        // it is assumed that if the whole spine item page is visible then any element cfi is visible
+        //TODO: during zoom+pan, element cfi might not actually be visible
+        return !!spineItemFound;
+
+    };
 
 };
     return FixedView;
@@ -6684,7 +6706,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
     var _DEBUG = false;
 
-    _.extend(this, new EventEmitter());
+    $.extend(this, new EventEmitter());
 
     var SCROLL_MARGIN_TO_SHOW_LAST_VISBLE_LINE = 5;
     var ITEM_LOAD_SCROLL_BUFFER = 2000;
@@ -8025,7 +8047,12 @@ var ScrollView = function (options, isContinuousScroll, reader) {
             self.openPage(openPageRequest);
         }
 
-    }
+    };
+
+    this.isElementCfiVisible = function (spineIdRef, contentCfi) {
+        // TODO: implement this for scrollable views
+        return false;
+    };
 
 };
 return ScrollView;
@@ -11697,7 +11724,7 @@ define('readium_shared_js/views/reflowable_view',["jquery", "underscore", "event
  */
 var ReflowableView = function(options, reader){
 
-    _.extend(this, new EventEmitter());
+    $.extend(this, new EventEmitter());
 
     var self = this;
     
@@ -12545,7 +12572,14 @@ var ReflowableView = function(options, reader){
         }
 
         self.openPage(openPageRequest);
-    }
+    };
+
+    this.isElementCfiVisible = function(spineIdRef, contentCfi) {
+        if (spineIdRef != _currentSpineItem.idref) {
+            return false;
+        }
+        return _navigationLogic.isElementCfiVisible(contentCfi);
+    };
 
 };
     return ReflowableView;
@@ -12930,7 +12964,7 @@ define('readium_shared_js/views/reader_view',["jquery", "underscore", "eventEmit
  */
 var ReaderView = function (options) {
 
-    _.extend(this, new EventEmitter());
+    $.extend(this, new EventEmitter());
 
     var self = this;
     var _currentView = undefined;
@@ -14066,6 +14100,13 @@ var ReaderView = function (options) {
      */
     this.addIFrameEventListener = function (eventName, callback, context) {
         _iframeLoader.addIFrameEventListener(eventName, callback, context);
+    };
+
+    this.isElementCfiVisible = function (spineIdRef, contentCfi) {
+        if (!_currentView) {
+            return false;
+        }
+        return _currentView.isElementCfiVisible(spineIdRef, contentCfi);
     };
 
     var BackgroundAudioTrackManager = function () {
