@@ -37,7 +37,7 @@ define(["jquery", "underscore", "eventEmitter", "./cfi_navigation_logic", "../he
  */
 var OnePageView = function (options, classes, enableBookStyleOverrides, reader) {
 
-    _.extend(this, new EventEmitter());
+    $.extend(this, new EventEmitter());
 
     var self = this;
 

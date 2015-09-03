@@ -39,7 +39,7 @@ define(["jquery", "underscore", "eventEmitter", "../models/bookmark_data", "./cf
  */
 var ReflowableView = function(options, reader){
 
-    _.extend(this, new EventEmitter());
+    $.extend(this, new EventEmitter());
 
     var self = this;
     

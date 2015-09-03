@@ -12,13 +12,13 @@
 //  prior written permission.
 
 //'text!empty:'
-define(['console_shim', 'eventEmitter', 'URIjs', 'readium_cfi_js', 'readium_js_plugins', './globals'], function (console_shim, EventEmitter, URI, epubCfi, PluginsController, Globals) {
+define(['jquery', 'console_shim', 'eventEmitter', 'URIjs', 'readium_cfi_js', 'readium_js_plugins', './globals'], function ($, console_shim, EventEmitter, URI, epubCfi, PluginsController, Globals) {
 
     console.log("Globals...");
 
     if (window["ReadiumSDK"]) {
         console.log("ReadiumSDK extend.");
-        _.extend(Globals, window.ReadiumSDK);
+        $.extend(Globals, window.ReadiumSDK);
     } else {
         console.log("ReadiumSDK set.");
     }
