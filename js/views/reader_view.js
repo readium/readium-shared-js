@@ -48,7 +48,7 @@ define(["jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", ".
  */
 var ReaderView = function (options) {
 
-    _.extend(this, new EventEmitter());
+    $.extend(this, new EventEmitter());
 
     var self = this;
     var _currentView = undefined;
@@ -1205,6 +1205,13 @@ var ReaderView = function (options) {
      */
     this.addIFrameEventListener = function (eventName, callback, context) {
         _iframeLoader.addIFrameEventListener(eventName, callback, context);
+    };
+
+    this.isElementCfiVisible = function (spineIdRef, contentCfi) {
+        if (!_currentView) {
+            return false;
+        }
+        return _currentView.isElementCfiVisible(spineIdRef, contentCfi);
     };
 
     var BackgroundAudioTrackManager = function () {

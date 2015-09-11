@@ -39,7 +39,7 @@ define(["jquery", "underscore", "eventEmitter", "../models/bookmark_data", "./cf
  */
 var ReflowableView = function(options, reader){
 
-    _.extend(this, new EventEmitter());
+    $.extend(this, new EventEmitter());
 
     var self = this;
     
@@ -887,7 +887,14 @@ var ReflowableView = function(options, reader){
         }
 
         self.openPage(openPageRequest);
-    }
+    };
+
+    this.isElementCfiVisible = function(spineIdRef, contentCfi) {
+        if (spineIdRef != _currentSpineItem.idref) {
+            return false;
+        }
+        return _navigationLogic.isElementCfiVisible(contentCfi);
+    };
 
 };
     return ReflowableView;
