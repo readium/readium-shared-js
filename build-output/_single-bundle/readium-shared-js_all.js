@@ -13511,7 +13511,7 @@ if ('undefined' !== typeof module) {
  * URI.js - Mutating URLs
  * IPv6 Support
  *
- * Version: 1.15.1
+ * Version: 1.16.0
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -13700,7 +13700,7 @@ if ('undefined' !== typeof module) {
  * URI.js - Mutating URLs
  * Second Level Domain (SLD) Support
  *
- * Version: 1.15.1
+ * Version: 1.16.0
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -13941,7 +13941,7 @@ if ('undefined' !== typeof module) {
 /*!
  * URI.js - Mutating URLs
  *
- * Version: 1.15.1
+ * Version: 1.16.0
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -14012,7 +14012,7 @@ if ('undefined' !== typeof module) {
     return this;
   }
 
-  URI.version = '1.15.1';
+  URI.version = '1.16.0';
 
   var p = URI.prototype;
   var hasOwn = Object.prototype.hasOwnProperty;
@@ -14456,6 +14456,13 @@ if ('undefined' !== typeof module) {
     return parts;
   };
   URI.parseHost = function(string, parts) {
+    // Copy chrome, IE, opera backslash-handling behavior.
+    // Back slashes before the query string get converted to forward slashes
+    // See: https://github.com/joyent/node/blob/386fd24f49b0e9d1a8a076592a404168faeecc34/lib/url.js#L115-L124
+    // See: https://code.google.com/p/chromium/issues/detail?id=25916
+    // https://github.com/medialize/URI.js/pull/233
+    string = string.replace(/\\/g, '/');
+
     // extract host:port
     var pos = string.indexOf('/');
     var bracketPos;
@@ -14546,7 +14553,7 @@ if ('undefined' !== typeof module) {
       value = v.length ? URI.decodeQuery(v.join('='), escapeQuerySpace) : null;
 
       if (hasOwn.call(items, name)) {
-        if (typeof items[name] === 'string') {
+        if (typeof items[name] === 'string' || items[name] === null) {
           items[name] = [items[name]];
         }
 
@@ -15140,7 +15147,11 @@ if ('undefined' !== typeof module) {
 
     if (v !== undefined) {
       var x = {};
-      URI.parseHost(v, x);
+      var res = URI.parseHost(v, x);
+      if (res !== '/') {
+        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-]');
+      }
+
       v = x.hostname;
     }
     return _hostname.call(this, v, build);
@@ -15155,7 +15166,11 @@ if ('undefined' !== typeof module) {
     if (v === undefined) {
       return this._parts.hostname ? URI.buildHost(this._parts) : '';
     } else {
-      URI.parseHost(v, this._parts);
+      var res = URI.parseHost(v, this._parts);
+      if (res !== '/') {
+        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-]');
+      }
+
       this.build(!build);
       return this;
     }
@@ -15168,7 +15183,11 @@ if ('undefined' !== typeof module) {
     if (v === undefined) {
       return this._parts.hostname ? URI.buildAuthority(this._parts) : '';
     } else {
-      URI.parseAuthority(v, this._parts);
+      var res = URI.parseAuthority(v, this._parts);
+      if (res !== '/') {
+        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-]');
+      }
+
       this.build(!build);
       return this;
     }
@@ -15564,7 +15583,7 @@ if ('undefined' !== typeof module) {
       v = (typeof v === 'string' || v instanceof String) ? URI.encode(v) : v;
     } else {
       for (i = 0, l = v.length; i < l; i++) {
-        v[i] = URI.decode(v[i]);
+        v[i] = URI.encode(v[i]);
       }
     }
 
@@ -15719,6 +15738,11 @@ if ('undefined' !== typeof module) {
     if (_path.charAt(0) !== '/') {
       _was_relative = true;
       _path = '/' + _path;
+    }
+
+    // handle relative files (as opposed to directories)
+    if (_path.slice(-3) === '/..' || _path.slice(-2) === '/.') {
+      _path += '/';
     }
 
     // resolve simples
@@ -15980,7 +16004,7 @@ if ('undefined' !== typeof module) {
     }
 
     // determine common sub path
-    common = URI.commonPath(relative.path(), base.path());
+    common = URI.commonPath(relativePath, basePath);
 
     // If the paths have nothing in common, return a relative URL with the absolute path.
     if (!common) {
@@ -15992,7 +16016,7 @@ if ('undefined' !== typeof module) {
       .replace(/[^\/]*$/, '')
       .replace(/.*?\//g, '../');
 
-    relativeParts.path = parents + relativeParts.path.substring(common.length);
+    relativeParts.path = (parents + relativeParts.path.substring(common.length)) || './';
 
     return relative.build();
   };
