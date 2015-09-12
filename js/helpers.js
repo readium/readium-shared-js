@@ -35,6 +35,8 @@ var Helpers = {};
  */
 Helpers.getEbookUrlFilePath = function(ebookURL) {
     
+    if (!window.Blob || !window.File) return ebookURL;
+    
     var ebookURL_filepath = (ebookURL instanceof Blob) ? ((ebookURL instanceof File) ? ebookURL.name : "readium-ebook.epub") : ebookURL;
     return ebookURL_filepath;
 };
