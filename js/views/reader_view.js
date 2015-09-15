@@ -570,8 +570,9 @@ var ReaderView = function (options) {
                     }
 
                     self.emit(Globals.Events.SETTINGS_APPLIED);
-                    return;
                 });
+                
+                return;
             }
         }
 
