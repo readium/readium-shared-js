@@ -376,6 +376,24 @@ var ReflowableView = function(options, reader){
         self.openPage(deferredData);
 
     }
+       
+    this.getPageForElementCfi = function(cfi) {
+       var pageIndex = undefined;
+       try
+       {
+            pageIndex = _navigationLogic.getPageForElementCfi(cfi,
+                                                              ["cfi-marker", "mo-cfi-highlight"],
+                                                              [],
+                                                              ["MathJax_Message"]);
+       }
+       catch (e)
+       {
+            pageIndex = 0;
+            console.error(e);
+       }
+       
+       return pageIndex;
+    };
 
     this.openPage = function(pageRequest) {
 
