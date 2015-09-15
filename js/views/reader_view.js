@@ -252,7 +252,9 @@ var ReaderView = function (options) {
             //application will be notified by the same Globals.Events.PAGINATION_CHANGED event
             _mediaOverlayPlayer.onPageChanged(pageChangeData);
 
-            self.emit(Globals.Events.PAGINATION_CHANGED, pageChangeData);
+            _.defer(function () {
+                self.emit(Globals.Events.PAGINATION_CHANGED, pageChangeData);
+            });
         });
 
         _currentView.on(Globals.Events.FXL_VIEW_RESIZED, function () {
@@ -864,6 +866,22 @@ var ReaderView = function (options) {
         return undefined;
 
     };
+       
+   /**
+    * Gets an element from active content documents based on a content CFI.
+    *
+    * @param {string} cfi                                The partial content CFI
+    * @returns {int|undefined}
+    */
+   this.getPageForElementCfi = function (cfi) {
+   
+       if (_currentView) {
+            return _currentView.getPageForElementCfi(cfi);
+       }
+   
+       return undefined;
+   
+   };
 
     function applyStyles(doNotUpdateView) {
 
@@ -1184,6 +1202,13 @@ var ReaderView = function (options) {
      */
     this.addIFrameEventListener = function (eventName, callback, context) {
         _iframeLoader.addIFrameEventListener(eventName, callback, context);
+    };
+		
+		this.isElementCfiVisible = function (spineIdRef, contentCfi) {
+        if (!_currentView) {
+            return false;
+        }
+        return _currentView.isElementCfiVisible(spineIdRef, contentCfi);
     };
 
     var BackgroundAudioTrackManager = function () {

@@ -239,8 +239,16 @@ var FixedView = function(options, reader){
 
         updateContentMetaSize();
         resizeBook();
-        
-        self.emit(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
+        window.setTimeout(function () {
+            self.trigger(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, {
+                paginationInfo: self.getPaginationInfo(),
+                initiator: initiator,
+                spineItem: paginationRequest_spineItem,
+                elementId: paginationRequest_elementId
+            });
+        }, 60);
+        //this delay of 60ms is to ensure that it triggers
+        // after any other 10-50ms timers that defer the pagination process in OnePageView
     }
 
     this.onViewportResize = function() {
@@ -671,6 +679,13 @@ var FixedView = function(options, reader){
         //TODO: during zoom+pan, playing element might not actualy be visible
 
     }
+
+    this.isElementCfiVisible = function (spineIdRef, contentCfi) {
+      if (!_currentView) {
+        return false;
+      }
+      return _currentView.isElementCfiVisible(spineIdRef, contentCfi);
+    };
 
 };
     return FixedView;

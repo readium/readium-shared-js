@@ -50,7 +50,8 @@
     "backbone": "latest",
     "underscore": "latest",
     "URIjs": "danielweck/URI.js",
-    "eventemitter3": "latest"
+    "eventemitter3": "latest",
+    "FontLoader": "smnh/FontLoader"
   },
   "scripts": {
     "cson2json": "node ./readium-cfi-js/node_modules/cson/bin/cson2json package.cson > package.json && node readium-cfi-js/readium-build-tools/optimizePackageJsonScripts.js",
