@@ -55,7 +55,7 @@ var Spine = function(epubPackage, spineDTO) {
      */
     this.package = epubPackage;
 
-    var _handleLinear = false;
+    var _handleLinear = true;
 
     this.handleLinear = function(handleLinear) {
         _handleLinear = handleLinear;
