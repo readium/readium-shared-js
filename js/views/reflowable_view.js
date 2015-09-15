@@ -457,13 +457,15 @@ var ReflowableView = function(options, reader){
         return false;
     }
 
-    function onPaginationChanged(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
+    function onPaginationChanged_(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
 
         _paginationInfo.pageOffset = (_paginationInfo.columnWidth + _paginationInfo.columnGap) * _paginationInfo.visibleColumnCount * _paginationInfo.currentSpreadIndex;
         
         redraw();
+        
         self.emit(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
     }
+    var onPaginationChanged = _.debounce(onPaginationChanged_, 100);
 
     this.openPagePrev = function (initiator) {
 
