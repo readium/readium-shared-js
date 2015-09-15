@@ -575,8 +575,7 @@ var ReaderView = function (options) {
 
                     self.emit(Globals.Events.SETTINGS_APPLIED);
                 });
-                
-                // Otherwise, twice SETTINGS_APPLIED event trigger! 
+               
                 return;
             }
         }
