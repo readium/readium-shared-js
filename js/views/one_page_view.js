@@ -47,6 +47,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
     var _currentSpineItem;
     var _spine = options.spine;
     var _iframeLoader = options.iframeLoader;
+    var _navigationLogic = undefined;
     var _bookStyles = options.bookStyles;
 
     var _$viewport = options.$viewport;
@@ -855,7 +856,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
     this.getFirstVisibleElementCfi = function () {
 
-        var navigation = new CfiNavigationLogic(_$el, _$iframe);
+        var navigation = self.getNavigator();
         return navigation.getFirstVisibleElementCfi(0);
 
     };
@@ -865,42 +866,42 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         return new CfiNavigationLogic(_$el, _$iframe);
     };
 
-    this.getElementByCfi = function (spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
+    this.getElementByCfi = function (spineItemIdref, cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
-        if (spineItem != _currentSpineItem) {
+        if (spineItemIdref != _currentSpineItem.idref) {
             console.error("spine item is not loaded");
             return undefined;
         }
 
-        var navigation = new CfiNavigationLogic(_$el, _$iframe);
+        var navigation = self.getNavigator();
         return navigation.getElementByCfi(cfi, classBlacklist, elementBlacklist, idBlacklist);
     };
 
-    this.getElementById = function (spineItem, id) {
+    this.getElementById = function (spineItemIdref, id) {
 
-        if (spineItem != _currentSpineItem) {
+        if (spineItemIdref != _currentSpineItem.idref) {
             console.error("spine item is not loaded");
             return undefined;
         }
 
-        var navigation = new CfiNavigationLogic(_$el, _$iframe);
+        var navigation = self.getNavigator();
         return navigation.getElementById(id);
     };
 
-    this.getElement = function (spineItem, selector) {
+    this.getElement = function (spineItemIdref, selector) {
 
-        if (spineItem != _currentSpineItem) {
+        if(spineItemIdref != _currentSpineItem.idref) {
             console.error("spine item is not loaded");
             return undefined;
         }
 
-        var navigation = new CfiNavigationLogic(_$el, _$iframe);
+        var navigation = self.getNavigator();
         return navigation.getElement(selector);
     };
 
-    this.getFirstVisibleMediaOverlayElement = function () {
-        var navigation = new CfiNavigationLogic(_$el, _$iframe);
-        return navigation.getFirstVisibleMediaOverlayElement({top: 0, bottom: _$iframe.height()});
+    this.getFirstVisibleMediaOverlayElement = function() {
+        var navigation = self.getNavigator();
+        return navigation.getFirstVisibleMediaOverlayElement({top:0, bottom: _$iframe.height()});
     };
 
     this.offset = function () {
@@ -908,7 +909,91 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             return _$iframe.offset();
         }
         return undefined;
+    };
+
+    this.getVisibleElementsWithFilter = function (filterFunction) {
+        var navigation = self.getNavigator();
+        var visibleContentOffsets = {top: 0, bottom: _$iframe.height()};
+        var elements = navigation.getVisibleElementsWithFilter(visibleContentOffsets, filterFunction);
+        return elements;
+    };
+
+    this.getVisibleElements = function (selector) {
+
+        var navigation = self.getNavigator();
+        var visibleContentOffsets = {top: 0, bottom: _$iframe.height()};
+        var elements = navigation.getAllVisibleElementsWithSelector(selector, visibleContentOffsets);
+        return elements;
+    };
+
+    this.getAllElementsWithFilter = function (filterFunction, outsideBody) {
+        var navigation = self.getNavigator();
+        var elements = navigation.getAllElementsWithFilter(filterFunction, outsideBody);
+        return elements;
+    };
+
+    this.getElements = function(spineItemIdref, selector) {
+
+        if(spineItemIdref != _currentSpineItem.idref) {
+            console.error("spine item is not loaded");
+            return undefined;
+        }
+
+        var navigation = self.getNavigator();
+
+        return navigation.getElements(selector);
+    };
+
+    this.getNodeRangeInfoFromCfi = function (spineIdRef, partialCfi) {
+        if (spineIdRef != _currentSpineItem.idref) {
+            console.warn("spine item is not loaded");
+            return undefined;
+        }
+        var navigation = self.getNavigator();
+
+        return navigation.getNodeRangeInfoFromCfi(partialCfi);
+    };
+
+    function createBookmarkFromCfi(cfi){
+        return new ReadiumSDK.Models.BookmarkData(_currentSpineItem.idref, cfi);
     }
+
+    this.getLoadedContentFrames = function () {
+        return [{spineItem: _currentSpineItem, $iframe: _$iframe}];
+    };
+
+    this.getFirstVisibleCfi = function () {
+        return createBookmarkFromCfi(self.getNavigator().getFirstVisibleCfi());
+    };
+
+    this.getLastVisibleCfi = function () {
+        return createBookmarkFromCfi(self.getNavigator().getLastVisibleCfi());
+    };
+
+    this.getDomRangeFromRangeCfi = function (rangeCfi, rangeCfi2, inclusive) {
+        return self.getNavigator().getDomRangeFromRangeCfi(rangeCfi, rangeCfi2, inclusive);
+    };
+
+    this.getRangeCfiFromDomRange = function (domRange) {
+        return createBookmarkFromCfi(self.getNavigator().getRangeCfiFromDomRange(domRange));
+    };
+
+    this.getVisibleCfiFromPoint = function (x, y, precisePoint) {
+        return createBookmarkFromCfi(self.getNavigator().getVisibleCfiFromPoint(x, y, precisePoint));
+    };
+
+    this.getRangeCfiFromPoints = function(startX, startY, endX, endY) {
+        return createBookmarkFromCfi(self.getNavigator().getRangeCfiFromPoints(startX, startY, endX, endY));
+    };
+
+    this.getCfiForElement = function(x, y) {
+        return createBookmarkFromCfi(self.getNavigator().getCfiForElement(x, y));
+    };
+
+    this.getElementFromPoint = function (x, y) {
+        return self.getNavigator().getElementFromPoint(x, y);
+    };
+
 };
 
 OnePageView.SPINE_ITEM_OPEN_START = "SpineItemOpenStart";

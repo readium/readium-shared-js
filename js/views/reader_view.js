@@ -27,11 +27,11 @@
 define(["jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", "./iframe_loader", "./internal_links_support",
         "./media_overlay_data_injector", "./media_overlay_player", "../models/package", "../models/page_open_request",
         "./reflowable_view", "./scroll_view", "../models/style_collection", "../models/switches", "../models/trigger",
-        "../models/viewer_settings", "../globals"],
+        "../models/viewer_settings", "../models/bookmark_data", "../models/node_range_info",  "../globals"],
     function ($, _, EventEmitter, FixedView, Helpers, IFrameLoader, InternalLinksSupport,
               MediaOverlayDataInjector, MediaOverlayPlayer, Package, PageOpenRequest,
               ReflowableView, ScrollView, StyleCollection, Switches, Trigger,
-              ViewerSettings, Globals) {
+              ViewerSettings, BookmarkData, NodeRangeInfo, Globals) {
 /**
  * Options passed on the reader from the readium loader/initializer
  *
@@ -158,6 +158,10 @@ var ReaderView = function (options) {
 
         console.error("Unrecognized view type");
         return undefined;
+    };
+
+    this.getCurrentView = function () {
+        return _currentView;
     };
 
     //based on https://docs.google.com/spreadsheet/ccc?key=0AoPMUkQhc4wcdDI0anFvWm96N0xRT184ZE96MXFRdFE&usp=drive_web#gid=0 document
@@ -823,10 +827,10 @@ var ReaderView = function (options) {
      * @param {string} selector                      The query selector
      * @returns {HTMLElement|undefined}
      */
-    this.getElement = function (spineItem, selector) {
+    this.getElement = function (spineItemIdref, selector) {
 
         if (_currentView) {
-            return _currentView.getElement(spineItem, selector);
+            return _currentView.getElement(spineItemIdref, selector);
         }
 
         return undefined;
@@ -835,14 +839,14 @@ var ReaderView = function (options) {
     /**
      * Gets an element from active content documents based on an element id.
      *
-     * @param {Models.SpineItem} spineItem      The spine item object associated with an active content document
+     * @param {string} spineItemIdref      The spine item idref associated with an active content document
      * @param {string} id                                  The element id
      * @returns {HTMLElement|undefined}
      */
-    this.getElementById = function (spineItem, id) {
+    this.getElementById = function (spineItemIdref, id) {
 
         if (_currentView) {
-            return _currentView.getElementById(spineItem, id);
+            return _currentView.getElementById(spineItemIdref, id);
         }
 
         return undefined;
@@ -851,17 +855,17 @@ var ReaderView = function (options) {
     /**
      * Gets an element from active content documents based on a content CFI.
      *
-     * @param {Models.SpineItem} spineItem     The spine item idref associated with an active content document
+     * @param {string} spineItemIdref     The spine item idref associated with an active content document
      * @param {string} cfi                                The partial content CFI
      * @param {string[]} [classBlacklist]
      * @param {string[]} [elementBlacklist]
      * @param {string[]} [idBlacklist]
      * @returns {HTMLElement|undefined}
      */
-    this.getElementByCfi = function (spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
+    this.getElementByCfi = function (spineItemIdref, cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
         if (_currentView) {
-            return _currentView.getElementByCfi(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist);
+            return _currentView.getElementByCfi(spineItemIdref, cfi, classBlacklist, elementBlacklist, idBlacklist);
         }
 
         return undefined;
@@ -965,10 +969,12 @@ var ReaderView = function (options) {
     /**
      * Returns the bookmark associated with currently opened page.
      *
-     * @returns {string} Serialized Globals.Models.BookmarkData object as JSON string.
+     * @returns {string} Serialized ReadiumSDK.Models.BookmarkData object as JSON string.
+     *          {null} If a bookmark could not be created successfully.
      */
-    this.bookmarkCurrentPage = function () {
-        return JSON.stringify(_currentView.bookmarkCurrentPage());
+    this.bookmarkCurrentPage = function() {
+        var bookmark = _currentView.bookmarkCurrentPage();
+        return bookmark ? bookmark.toString() : null;
     };
 
     /**
@@ -1437,6 +1443,214 @@ var ReaderView = function (options) {
         });
     };
     this.backgroundAudioTrackManager = new BackgroundAudioTrackManager();
+
+    function getCfisForVisibleRegion() {
+        return {firstVisibleCfi: self.getFirstVisibleCfi(), lastVisibleCfi: self.getLastVisibleCfi()};
+    }
+
+
+    this.isVisibleSpineItemElementCfi = function(spineIdRef, partialCfi){
+        var spineItem = getSpineItem(spineIdRef);
+
+        if (!spineItem) {
+            return false;
+        }
+
+        if (_currentView) {
+
+            if(!partialCfi || (partialCfi && partialCfi === '')){
+                var spines = _currentView.getLoadedSpineItems();
+                for(var i = 0, count = spines.length; i < count; i++) {
+                    if(spines[i].idref == spineIdRef){
+                        return true;
+                    }
+                }
+            }
+            return _currentView.isVisibleSpineItemElementCfi(spineIdRef, partialCfi);
+
+        }
+        return false;
+    };
+
+    /**
+     * Gets all elements from active content documents based on a query selector.
+     *
+     * @param {string} spineItemIdref    The spine item idref associated with the content document
+     * @param {string} selector          The query selector
+     * @returns {HTMLElement[]}
+     */
+    this.getElements = function(spineItemIdref, selector) {
+
+        if(_currentView) {
+            return _currentView.getElements(spineItemIdref, selector);
+        }
+
+        return undefined;
+    };
+
+    /**
+     * Determine if an element is visible on the active content documents
+     *
+     * @param {HTMLElement} element The element.
+     * @returns {boolean}
+     */
+    this.isElementVisible = function (element) {
+        return _currentView.isElementVisible($(element));
+
+    };
+
+    /**
+     * Resolve a range CFI into an object containing info about it.
+     * @param {string} spineIdRef    The spine item idref associated with the content document
+     * @param {string} partialCfi    The partial CFI that is the range CFI to resolve
+     * @returns {ReadiumSDK.Models.NodeRangeInfo}
+     */
+    this.getNodeRangeInfoFromCfi = function (spineIdRef, partialCfi) {
+        if (_currentView && spineIdRef && partialCfi) {
+            var nodeRangeInfo = _currentView.getNodeRangeInfoFromCfi(spineIdRef, partialCfi);
+            if (nodeRangeInfo) {
+                return new NodeRangeInfo(nodeRangeInfo.clientRect)
+                    .setStartInfo(nodeRangeInfo.startInfo)
+                    .setEndInfo(nodeRangeInfo.endInfo);
+            }
+        }
+        return undefined;
+    };
+
+    /**
+     * Get the pagination info from the current view
+     *
+     * @returns {ReadiumSDK.Models.CurrentPagesInfo}
+     */
+    this.getPaginationInfo = function(){
+        return _currentView.getPaginationInfo();
+    };
+    /**
+     * Get CFI of the first element visible in the viewport
+     * @returns {ReadiumSDK.Models.BookmarkData}
+     */
+    this.getFirstVisibleCfi = function() {
+        if (_currentView) {
+            return _currentView.getFirstVisibleCfi();
+        }
+        return undefined;
+    };
+
+    /**
+     * Get CFI of the last element visible in the viewport
+     * @returns {ReadiumSDK.Models.BookmarkData}
+     */
+    this.getLastVisibleCfi = function() {
+        if (_currentView) {
+            return _currentView.getLastVisibleCfi();
+        }
+        return undefined;
+    };
+    /**
+     *
+     * @param {string} rangeCfi
+     * @param {string} [rangeCfi2]
+     * @param {boolean} [inclusive]
+     * @returns {array}
+     */
+    this.getDomRangesFromRangeCfi = function(rangeCfi, rangeCfi2, inclusive) {
+        if (_currentView) {
+            if (_currentView.getDomRangesFromRangeCfi) {
+                return _currentView.getDomRangesFromRangeCfi(rangeCfi, rangeCfi2, inclusive);
+            } else {
+                return [_currentView.getDomRangeFromRangeCfi(rangeCfi, rangeCfi2, inclusive)];
+            }
+        }
+        return undefined;
+    };
+
+    /**
+     *
+     * @param {ReadiumSDK.Models.BookmarkData} startCfi starting CFI
+     * @param {ReadiumSDK.Models.BookmarkData} [endCfi] ending CFI
+     * optional - may be omited if startCfi is a range CFI
+     * @param {boolean} [inclusive] optional indicating if the range should be inclusive
+     * @returns {array}
+     */
+    this.getDomRangesFromRangeCfi = function(rangeCfi, rangeCfi2, inclusive) {
+        if (_currentView) {
+            if (_currentView.getDomRangesFromRangeCfi) {
+                return _currentView.getDomRangesFromRangeCfi(rangeCfi, rangeCfi2, inclusive);
+            } else {
+                return [_currentView.getDomRangeFromRangeCfi(rangeCfi, rangeCfi2, inclusive)];
+            }
+        }
+        return undefined;
+    };
+
+    /**
+     *
+     * @param {ReadiumSDK.Models.BookmarkData} startCfi starting CFI
+     * @param {ReadiumSDK.Models.BookmarkData} [endCfi] ending CFI
+     * optional - may be omited if startCfi is a range CFI
+     * @param {boolean} [inclusive] optional indicating if the range should be inclusive
+     * @returns {DOM Range} https://developer.mozilla.org/en-US/docs/Web/API/Range
+     */
+    this.getDomRangeFromRangeCfi = function(startCfi, endCfi, inclusive) {
+        if (_currentView) {
+            return _currentView.getDomRangeFromRangeCfi(startCfi, endCfi, inclusive);
+        }
+        return undefined;
+    };
+
+    /**
+     * Generate range CFI from DOM range
+     * @param {DOM Range} https://developer.mozilla.org/en-US/docs/Web/API/Range
+     * @returns {string} - represents Range CFI for the DOM range
+     */
+    this.getRangeCfiFromDomRange = function(domRange) {
+        if (_currentView) {
+            return _currentView.getRangeCfiFromDomRange(domRange);
+        }
+        return undefined;
+    };
+
+    /**
+     * @param x
+     * @param y
+     * @param [precisePoint]
+     * @param [spineItemIdref] Required for fixed layout views
+     * @returns {string}
+     */
+    this.getVisibleCfiFromPoint = function (x, y, precisePoint, spineItemIdref) {
+        if (_currentView) {
+            return _currentView.getVisibleCfiFromPoint(x, y, precisePoint, spineItemIdref);
+        }
+        return undefined;
+    };
+
+    /**
+     *
+     * @param startX
+     * @param startY
+     * @param endX
+     * @param endY
+     * @param [spineItemIdref] Required for fixed layout views
+     * @returns {*}
+     */
+    this.getRangeCfiFromPoints = function(startX, startY, endX, endY, spineItemIdref) {
+        if (_currentView) {
+            return _currentView.getRangeCfiFromPoints(startX, startY, endX, endY, spineItemIdref);
+        }
+        return undefined;
+    };
+
+    /**
+     *
+     * @param {HTMLElement} element
+     * @returns {*}
+     */
+    this.getCfiForElement = function(element) {
+        if (_currentView) {
+            return _currentView.getCfiForElement(element);
+        }
+        return undefined;
+    };
 };
 
 /**

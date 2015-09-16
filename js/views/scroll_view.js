@@ -1151,11 +1151,11 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         return spineItems;
     };
 
-    this.getElement = function (spineItem, selector) {
+    this.getElement = function (spineItemIdref, selector) {
         var element = undefined;
 
         forEachItemView(function (pageView) {
-            if (pageView.currentSpineItem() == spineItem) {
+            if(pageView.currentSpineItem().idref == spineItemIdref) {
 
                 element = pageView.getNavigator().getElement(selector);
 
@@ -1169,35 +1169,11 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         return element;
     };
 
-    this.getElementByCfi = function (spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
-
+    this.getElementById = function(spineItemIdref, id) {
         var found = undefined;
 
         forEachItemView(function (pageView) {
-            if (pageView.currentSpineItem() == spineItem) {
-
-                found = pageView.getElementByCfi(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist);
-                return false;
-            }
-
-            return true;
-
-        }, false);
-
-        if (!found) {
-            console.error("spine item is not loaded");
-            return undefined;
-        }
-
-        return found;
-    };
-
-    this.getElementById = function (spineItem, id) {
-
-        var found = undefined;
-
-        forEachItemView(function (pageView) {
-            if (pageView.currentSpineItem() == spineItem) {
+            if (pageView.currentSpineItem().idref == spineItemIdref) {
 
                 found = pageView.getNavigator().getElementById(id);
                 return false;
@@ -1215,10 +1191,33 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         return found;
     };
 
-    this.getFirstVisibleMediaOverlayElement = function () {
+    this.getElementByCfi = function (spineItemIdref, cfi, classBlacklist, elementBlacklist, idBlacklist) {
+        var found = undefined;
+
+        forEachItemView(function (pageView) {
+            if (pageView.currentSpineItem().idref == spineItemIdref) {
+
+                found = pageView.getNavigator().getElementByCfi(spineItemIdref, cfi, classBlacklist, elementBlacklist, idBlacklist);
+                return false;
+            }
+
+            return true;
+
+        }, false);
+
+        if (!found) {
+            console.error("spine item is not loaded");
+            return undefined;
+        }
+
+        return found;
+
+    };
+
+    function callOnVisiblePageView(iterator) {
         var viewPortRange = getVisibleRange();
 
-        var moElement = undefined;
+        var result = undefined;
         var normalizedRange = {top: 0, bottom: 0};
         var pageViewRange;
 
@@ -1233,8 +1232,8 @@ var ScrollView = function (options, isContinuousScroll, reader) {
             if (rangeLength(normalizedRange) > 0) {
                 steppedToVisiblePage = true;
 
-                moElement = pageView.getNavigator().getFirstVisibleMediaOverlayElement(normalizedRange);
-                if (moElement) {
+                result = iterator(pageView, normalizedRange);
+                if (result) {
                     return false;
                 }
             }
@@ -1246,7 +1245,13 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
         }, false);
 
-        return moElement;
+        return result;
+    }
+
+    this.getFirstVisibleMediaOverlayElement = function () {
+        return callOnVisiblePageView(function (pageView, pageRange) {
+            return pageView.getNavigator().getFirstVisibleMediaOverlayElement(pageRange);
+        });
     };
 
     // /**
@@ -1381,11 +1386,111 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
     };
 
-    this.isElementCfiVisible = function (spineIdRef, contentCfi) {
-        // TODO: implement this for scrollable views
-        return false;
+    this.getVisibleElements = function(selector, includeSpineItem) {
+        var elements = [];
+        forEachItemView(function (pageView) {
+            if (includeSpineItem) {
+                elements.push({elements: pageView.getVisibleElements(selector), spineItem: pageView.currentSpineItem()});
+            } else {
+                elements = _.flatten([elements, pageView.getVisibleElements(selector)], true);
+            }
+        });
+        return elements;
     };
 
+    this.getVisibleElementsWithFilter = function(filterFunction) {
+
+        console.warn('getVisibleElementsWithFilter: Not implemented yet for scroll_view');
+    };
+
+    this.isElementVisible = function($element){
+
+        console.warn('isElementVisible: Not implemented yet for scroll_view');
+    };
+
+    this.getElements = function(spineItemIdref, selector) {
+        var pageView = findPageViewForSpineItem(spineItemIdref);
+        if (pageView) {
+            return pageView.getElements(spineItemIdref, selector);
+        }
+    };
+
+    this.isNodeFromRangeCfiVisible = function (spineIdref, partialCfi) {
+        var pageView = findPageViewForSpineItem(spineIdRef);
+        if (pageView) {
+            return pageView.isNodeFromRangeCfiVisible(spineIdRef, partialCfi);
+        }
+    };
+
+    this.isVisibleSpineItemElementCfi = function (spineIdRef, partialCfi) {
+        var pageView = findPageViewForSpineItem(spineIdRef);
+        if (pageView) {
+            return pageView.isVisibleSpineItemElementCfi(spineIdRef, partialCfi);
+        }
+    };
+
+    this.getNodeRangeInfoFromCfi = function(spineIdRef, partialCfi){
+        var pageView = findPageViewForSpineItem(spineIdRef);
+        if (pageView) {
+            return pageView.isVisibleSpineItemElementCfi(spineIdRef, partialCfi);
+        }
+    };
+    this.getFirstVisibleCfi = function () {
+        return callOnVisiblePageView(function (pageView) {
+            return pageView.getFirstVisibleCfi();
+        });
+    };
+
+    this.getLastVisibleCfi = function () {
+        return callOnVisiblePageView(function (pageView) {
+            return pageView.getLastVisibleCfi();
+        });
+    };
+
+    this.getDomRangeFromRangeCfi = function (rangeCfi, rangeCfi2, inclusive) {
+        if (rangeCfi2 && rangeCfi.idref !== rangeCfi2.idref) {
+            console.error("getDomRangeFromRangeCfi: both CFIs must be scoped under the same spineitem idref");
+            return undefined;
+        }
+
+        rangeCfi = rangeCfi || {};
+        rangeCfi2 = rangeCfi2 || {};
+
+        return callOnVisiblePageView(function (pageView) {
+            return pageView.getDomRangeFromRangeCfi(rangeCfi.contentCFI, rangeCfi2.contentCFI, inclusive);
+        });
+    };
+
+    this.getRangeCfiFromDomRange = function (domRange) {
+        return callOnVisiblePageView(function (pageView) {
+            return pageView.getRangeCfiFromDomRange(domRange);
+        });
+    };
+
+    this.getVisibleCfiFromPoint = function (x, y, precisePoint) {
+        return callOnVisiblePageView(function (pageView) {
+            return createBookmark(pageView.currentSpineItem(), pageView.getVisibleCfiFromPoint(x, y, precisePoint));
+        });
+    };
+
+    this.getRangeCfiFromPoints = function (startX, startY, endX, endY) {
+        return callOnVisiblePageView(function (pageView) {
+            return createBookmark(pageView.currentSpineItem(), pageView.getRangeCfiFromPoints(startX, startY, endX, endY));
+        });
+    };
+
+    this.getCfiForElement = function(x, y) {
+        return callOnVisiblePageView(function (pageView) {
+            return createBookmark(pageView.currentSpineItem(), pageView.getCfiForElement(x, y));
+        });
+    };
+
+    this.getElementFromPoint = function (x, y) {
+        return callOnVisiblePageView(function (pageView) {
+            return pageView.getElementFromPoint(x, y);
+        });
+    };
 };
+
 return ScrollView;
 });
