@@ -120,6 +120,8 @@ devDependencies:
     #"urijs": 'latest'
 
     "eventemitter3": 'latest'
+    
+    "es6-collections": 'latest'
 
     "FontLoader": 'smnh/FontLoader'
     

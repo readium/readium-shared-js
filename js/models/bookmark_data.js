@@ -29,6 +29,8 @@ define(function() {
  */
 var BookmarkData = function(idref, contentCFI) {
 
+    var self = this;
+
     /**
      * spine item idref
      * @property idref
@@ -43,10 +45,24 @@ var BookmarkData = function(idref, contentCFI) {
      */
     this.contentCFI = contentCFI;
 
-    this.toString = function () {
-        return JSON.stringify(this);
+    /**
+     * serialize to string
+     * @return JSON string representation
+     */
+    this.toString = function(){
+        return JSON.stringify(self);
     }
+
 };
 
+/**
+ * Deserialize from string
+ * @param str
+ * @returns {ReadiumSDK.Models.BookmarkData}
+ */
+BookmarkData.fromString = function(str) {
+    var obj = JSON.parse(str);
+    return new ReadiumSDK.Models.BookmarkData(obj.idref,obj.contentCFI);
+};
 return BookmarkData;
 });
