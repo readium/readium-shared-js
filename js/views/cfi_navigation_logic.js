@@ -1248,16 +1248,22 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
 
     this.getVisibleLeafNodes = function (visibleContentOffsets) {
 
-        var cacheKey = (options.paginationInfo || {}).currentSpreadIndex || 0;
-        var fromCache = _cache.visibleLeafNodes.get(cacheKey);
-        if (fromCache) {
-            return fromCache;
+        if (_cacheEnabled) {
+            var cacheKey = (options.paginationInfo || {}).currentSpreadIndex || 0;
+            var fromCache = _cache.visibleLeafNodes.get(cacheKey);
+            if (fromCache) {
+                return fromCache;
+            }
         }
 
         var $elements = this.getLeafNodeElements($("body", this.getRootElement()));
 
         var visibleElements = this.getVisibleElements($elements, visibleContentOffsets);
-        _cache.visibleLeafNodes.set(cacheKey, visibleElements);
+
+        if (_cacheEnabled) {
+            _cache.visibleLeafNodes.set(cacheKey, visibleElements);
+        }
+
         return visibleElements;
     };
 
@@ -1318,9 +1324,11 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
 
     this.getLeafNodeElements = function ($root) {
 
-        var fromCache = _cache.leafNodeElements.get($root);
-        if (fromCache) {
-            return fromCache;
+        if (_cacheEnabled) {
+            var fromCache = _cache.leafNodeElements.get($root);
+            if (fromCache) {
+                return fromCache;
+            }
         }
 
         var nodeIterator = document.createNodeIterator(
@@ -1347,7 +1355,10 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
             }
         }
 
-        _cache.leafNodeElements.set($root, $leafNodeElements);
+        if (_cacheEnabled) {
+            _cache.leafNodeElements.set($root, $leafNodeElements);
+        }
+        
         return $leafNodeElements;
     };
 
@@ -1411,6 +1422,8 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
     }
 
     var _cache = new Cache();
+
+    var _cacheEnabled = false;
 
     this.invalidateCache = function () {
         _cache._invalidate();
