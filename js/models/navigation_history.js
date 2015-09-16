@@ -115,6 +115,10 @@ var NavigationHistory = function (readerview) {
         
         return bookMark;
     };
+        
+    this.canPop = function() {
+        return _breadcrumb.length > 0;
+    };
     
     this.skipNext = function() {
         if (_DEBUG) {
