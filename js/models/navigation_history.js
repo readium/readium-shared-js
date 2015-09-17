@@ -53,6 +53,23 @@ var NavigationHistory = function (readerview) {
     };
     this.flush();
 
+    this.containsLinear = function() {
+        
+        for (var i = 0; i < _breadcrumb.length; i++) {
+            var bookMark = _breadcrumb[i];
+            if (bookMark && bookMark.idref) {
+                var spineItem = readerview.spine().getItemById(bookMark.idref);
+            
+                var isLinear = spineItem && readerview.spine().isValidLinearItem(spineItem.index);
+                if (isLinear) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    };
+
     this.push = function (bookMark) {
         
         if (_skipNext) {

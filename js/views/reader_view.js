@@ -764,6 +764,8 @@ var ReaderView = function (options) {
                 console.log("back nav: ");
                 console.debug(bookMark);
                 
+                _navigationHistory.skipNext();
+                
                 initViewForItem(spineItem, function (isViewChanged) {
                     
                     if (!isViewChanged) {
@@ -772,12 +774,26 @@ var ReaderView = function (options) {
 
                     self.openSpineItemElementCfi(bookMark.idref, bookMark.contentCFI, self);
                 });
+                
+                return;
             }
             
-            break;
+            console.error("no valid back history?");
+            return;
         }
     };
 
+    this.navigationHistoryCanBack = function(forceLinear) {
+        
+        if (!_navigationHistory.canPop()) return false;
+            
+        if (!forceLinear) {
+            return true;
+        }
+        
+        return _navigationHistory.containsLinear();
+    };
+    
     // dir: 0 => new or same page, 1 => previous, 2 => next
     function openPage(pageRequest, dir) {
 
