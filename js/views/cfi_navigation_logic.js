@@ -264,6 +264,7 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
 
 
         var visibleContentOffsets = getVisibleContentOffsets();
+        visibleContentOffsets = undefined; // TODO check this! https://github.com/readium/readium-js-viewer/issues/404#issuecomment-141372102
         var elementRectangles = getNormalizedRectangles($element, visibleContentOffsets);
         
         var clientRectangles = elementRectangles.clientRectangles;
@@ -319,8 +320,12 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
     function findPageByRectangles($element, spatialVerticalOffset) {
         
         var visibleContentOffsets = getVisibleContentOffsets();
-        var elementRectangles = getNormalizedRectangles($element, visibleContentOffsets);
+        //console.debug(visibleContentOffsets);
+        visibleContentOffsets = undefined; // TODO check this! https://github.com/readium/readium-js-viewer/issues/404#issuecomment-141372102
         
+        var elementRectangles = getNormalizedRectangles($element, visibleContentOffsets);
+        //console.debug(JSON.stringify(elementRectangles));
+
         var clientRectangles  = elementRectangles.clientRectangles;
         if (clientRectangles.length === 0) { // elements with display:none, etc.
             return null;
@@ -352,7 +357,8 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
         if (clientRectangles.length === 1) {
             adjustRectangle(firstRectangle, false, frameDimensions, columnFullWidth, isRtl, isVwm);
         }
-
+        //console.debug(JSON.stringify(firstRectangle));
+        
         var pageIndex;
 
         if (isVwm) {
@@ -384,6 +390,7 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
      * @returns {number|null}
      */
     function findPageBySingleRectangle(clientRectangle) {
+         // TODO check this! https://github.com/readium/readium-js-viewer/issues/404#issuecomment-141372102
         var visibleContentOffsets = getVisibleContentOffsets() || {};
         var leftContentOffset = visibleContentOffsets.left || 0;
         var topContentOffset = visibleContentOffsets.top || 0;
@@ -1046,6 +1053,7 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
                 ["MathJax_Message", "MathJax_SVG_Hidden"]);
 
             var visibleContentOffsets = getVisibleContentOffsets();
+            visibleContentOffsets = undefined; // TODO check this! https://github.com/readium/readium-js-viewer/issues/404#issuecomment-141372102
             var normRects = getNormalizedRectangles($element, visibleContentOffsets);
             
             return {startInfo: null, endInfo: null, clientRect: normRects.wrapperRectangle }
