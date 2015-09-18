@@ -43,7 +43,7 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
 
     this.getRootElement = function(){
 
-        return $iframe[0].contentDocument.documentElement;
+        return ($iframe[0].contentDocument != null) ? $iframe[0].contentDocument.documentElement : null;;
     };
     
     // FIXED LAYOUT if (!options.rectangleBased) alert("!!!options.rectangleBased");
