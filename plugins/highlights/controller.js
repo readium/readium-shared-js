@@ -66,7 +66,7 @@ function($, _, Class, HighlightHelpers, HighlightGroup) {
                     visibleCfiRange.lastVisibleCfi &&
                     visibleCfiRange.lastVisibleCfi.contentCFI) {
 
-                    visible = that.cfiIsBetweenTwoCfis(
+                    visible = that._cfiIsBetweenTwoCfis(
                         highlightGroup.CFI,
                         visibleCfiRange.firstVisibleCfi.contentCFI,
                         visibleCfiRange.lastVisibleCfi.contentCFI);
@@ -361,7 +361,7 @@ function($, _, Class, HighlightHelpers, HighlightGroup) {
                 visibleCfiRange.firstVisibleCfi.contentCFI &&
                 visibleCfiRange.lastVisibleCfi &&
                 visibleCfiRange.lastVisibleCfi.contentCFI) {
-                visible = this.cfiIsBetweenTwoCfis(CFI, visibleCfiRange.firstVisibleCfi.contentCFI, visibleCfiRange.lastVisibleCfi.contentCFI);
+                visible = this._cfiIsBetweenTwoCfis(CFI, visibleCfiRange.firstVisibleCfi.contentCFI, visibleCfiRange.lastVisibleCfi.contentCFI);
             } else {
                 visible = true;
             }
