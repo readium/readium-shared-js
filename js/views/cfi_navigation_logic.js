@@ -262,7 +262,10 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
     function checkVisibilityByRectangles($element, _props, shouldCalculateVisibilityPercentage, frameDimensions) {
         frameDimensions = frameDimensions || getFrameDimensions();
 
-        var elementRectangles = getNormalizedRectangles($element);
+
+        var visibleContentOffsets = getVisibleContentOffsets();
+        var elementRectangles = getNormalizedRectangles($element, visibleContentOffsets);
+        
         var clientRectangles = elementRectangles.clientRectangles;
         if (clientRectangles.length === 0) { // elements with display:none, etc.
             return null;
@@ -314,8 +317,10 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
      * @returns {number|null}
      */
     function findPageByRectangles($element, spatialVerticalOffset) {
+        
         var visibleContentOffsets = getVisibleContentOffsets();
         var elementRectangles = getNormalizedRectangles($element, visibleContentOffsets);
+        
         var clientRectangles  = elementRectangles.clientRectangles;
         if (clientRectangles.length === 0) { // elements with display:none, etc.
             return null;
@@ -1040,7 +1045,9 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
                 [],
                 ["MathJax_Message", "MathJax_SVG_Hidden"]);
 
-            var normRects = getNormalizedRectangles($element);
+            var visibleContentOffsets = getVisibleContentOffsets();
+            var normRects = getNormalizedRectangles($element, visibleContentOffsets);
+            
             return {startInfo: null, endInfo: null, clientRect: normRects.wrapperRectangle }
         }
     };
