@@ -340,7 +340,7 @@ var HighlightsManager = function (proxyObj, options) {
     };
 
     this.getAnnotationsElementSelector = function () {
-        return 'div.highlight, div.highlight-border';
+        return 'div.rd-highlight, div.rd-highlight-border';
     };
 
 };
