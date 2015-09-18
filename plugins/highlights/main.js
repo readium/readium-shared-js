@@ -14,12 +14,19 @@ define(['readium_js_plugins', 'readium_shared_js/globals', './manager'], functio
         }
 
         this.initialize = function (options) {
+            options = options || {};
 
             setTimeout(isInitialized, 1000);
 
             if (_initialized) {
                 api.plugin.warn('Already initialized!');
                 return;
+            }
+
+            if (reader.getFirstVisibleCfi && reader.getLastVisibleCfi && !options.getVisibleCfiRangeFn) {
+                options.getVisibleCfiRangeFn = function () {
+                    return {firstVisibleCfi: reader.getFirstVisibleCfi(), lastVisibleCfi: reader.getLastVisibleCfi()};
+                };
             }
 
             _highlightsManager = new HighlightsManager(self, options);
@@ -59,8 +66,7 @@ define(['readium_js_plugins', 'readium_shared_js/globals', './manager'], functio
          * @returns {object | undefined} partial cfi object of the created highlight
          */
         this.addHighlight = function(spineIdRef, cfi, id, type, styles) {
-            var options = reader.getCfisForVisibleRegion();
-            return _highlightsManager.addHighlight(spineIdRef, cfi, id, type, styles, options);
+            return _highlightsManager.addHighlight(spineIdRef, cfi, id, type, styles);
         };
 
         /**
@@ -76,8 +82,8 @@ define(['readium_js_plugins', 'readium_shared_js/globals', './manager'], functio
          *
          * @returns {object | undefined} partial cfi object of the created highlight
          */
-        this.addSelectionHighlight =  function(id, type, clearSelection, styles) {
-            return _highlightsManager.addSelectionHighlight(id, type, clearSelection, styles);
+        this.addSelectionHighlight =  function(id, type, styles, clearSelection) {
+            return _highlightsManager.addSelectionHighlight(id, type, styles, clearSelection);
         };
 
         /**
@@ -164,11 +170,8 @@ define(['readium_js_plugins', 'readium_shared_js/globals', './manager'], functio
         /**
          * Redraws all annotations
          */
-        this.redrawAnnotations = function(){
-            if (reader.getCurrentView()) {
-                var options = reader.getCfisForVisibleRegion();
-                _highlightsManager.redrawAnnotations(options);
-            }
+        this.redrawAnnotations = function() {
+            _highlightsManager.redrawAnnotations();
         };
 
         /**
@@ -208,15 +211,15 @@ define(['readium_js_plugins', 'readium_shared_js/globals', './manager'], functio
          * @returns {HTMLElement[]}
          */
         this.getVisibleAnnotationMidpoints = function () {
-            var _currentView = reader.getCurrentView();
-
-            if (_currentView) {
-                var $visibleElements = _currentView.getVisibleElements(_highlightsManager.getAnnotationsElementSelector(), true);
+            if (reader.getVisibleElements) {
+                var $visibleElements = reader.getVisibleElements(_highlightsManager.getAnnotationsElementSelector(), true);
 
                 var elementMidpoints = _highlightsManager.getAnnotationMidpoints($visibleElements);
                 return elementMidpoints || [];
+            } else {
+                // FIXME: Expose the getVisibleElements call from the reader's internal views.
+                console.warn('getAnnotationMidpoints won\'t work with this version of Readium');
             }
-            return [];
         };
 
         reader.on(Globals.Events.CONTENT_DOCUMENT_LOADED, function ($iframe, spineItem) {

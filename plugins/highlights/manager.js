@@ -52,7 +52,7 @@ var HighlightsManager = function (proxyObj, options) {
     var annotationCSSUrl = options.annotationCSSUrl;
 
     if (!annotationCSSUrl) {
-        console.warn("WARNING! Annotations CSS not supplied. Highlighting is not going to work.");
+        console.warn("WARNING! Annotations CSS not supplied. Highlighting might not work.");
     }
 
     _.extend(this, new EventEmitter());
@@ -149,11 +149,11 @@ var HighlightsManager = function (proxyObj, options) {
         return undefined;
     };
 
-    this.addHighlight = function(spineIdRef, partialCfi, id, type, styles, options) {
+    this.addHighlight = function(spineIdRef, partialCfi, id, type, styles) {
         for(var spine in liveAnnotations) {
             if (spines[spine].idref === spineIdRef) {
                 var annotationsForView = liveAnnotations[spine];
-                var annotation = annotationsForView.addHighlight(partialCfi, id, type, styles, options);
+                var annotation = annotationsForView.addHighlight(partialCfi, id, type, styles);
                 if (annotation) {
                     return new BookmarkData(spineIdRef, annotation.CFI);
                 }
@@ -216,9 +216,9 @@ var HighlightsManager = function (proxyObj, options) {
     };
 
     // redraw gets called on pagination change, so for progressive rendering we may have to add annotations that were previously not visible.
-    this.redrawAnnotations = function(options){
+    this.redrawAnnotations = function(){
         for(var spine in liveAnnotations) {
-            liveAnnotations[spine].redraw(options);
+            liveAnnotations[spine].redraw();
         }
     };
 

@@ -14,7 +14,7 @@ function($, _, Class, HighlightHelpers, HighlightGroup) {
 
             this.epubCFI = EPUBcfi;
             this.readerBoundElement = this.context.document.documentElement;
-            
+
             if (options.getVisibleCfiRangeFn) {
                 this.getVisibleCfiRange = options.getVisibleCfiRangeFn;
             }
@@ -43,29 +43,33 @@ function($, _, Class, HighlightHelpers, HighlightGroup) {
 
         getVisibleCfiRange: function() {
             // returns {firstVisibleCfi: <>, lastVisibleCfi: <>}
-            // implemented in ReaderView, passed in via options
+            // implemented in Readium.ReaderView, passed in via options
         },
 
         // ------------------------------------------------------------------------------------ //
         //  "PUBLIC" METHODS (THE API)                                                          //
         // ------------------------------------------------------------------------------------ //
 
-        redraw: function(options) {
-            var leftAddition = -this._getPaginationLeftOffset();
+        redraw: function() {
             var that = this;
+
+            var leftAddition = -this._getPaginationLeftOffset();
+            var visibleCfiRange = this.getVisibleCfiRange();
+
             // Highlights
             _.each(this.highlights, function(highlightGroup) {
                 var visible = true;
-                if (options &&
-                    options.firstVisibleCfi &&
-                    options.firstVisibleCfi.contentCFI &&
-                    options.lastVisibleCfi &&
-                    options.lastVisibleCfi.contentCFI) {
+
+                if (visibleCfiRange &&
+                    visibleCfiRange.firstVisibleCfi &&
+                    visibleCfiRange.firstVisibleCfi.contentCFI &&
+                    visibleCfiRange.lastVisibleCfi &&
+                    visibleCfiRange.lastVisibleCfi.contentCFI) {
 
                     visible = that.cfiIsBetweenTwoCfis(
                         highlightGroup.CFI,
-                        options.firstVisibleCfi.contentCFI,
-                        options.lastVisibleCfi.contentCFI);
+                        visibleCfiRange.firstVisibleCfi.contentCFI,
+                        visibleCfiRange.lastVisibleCfi.contentCFI);
                 }
                 highlightGroup.visible = visible;
                 highlightGroup.resetHighlights(that.readerBoundElement, 0, leftAddition);
@@ -138,7 +142,7 @@ function($, _, Class, HighlightHelpers, HighlightGroup) {
 
 
         // takes partial CFI as parameter
-        addHighlight: function(CFI, id, type, styles, options) {
+        addHighlight: function(CFI, id, type, styles) {
             var CFIRangeInfo;
             var range;
             var rangeStartNode;
@@ -202,7 +206,7 @@ function($, _, Class, HighlightHelpers, HighlightGroup) {
 
             this._addHighlightHelper(
                 CFI, id, type, styles, selectedElements, range,
-                startNode, endNode, 0, leftAddition, options);
+                startNode, endNode, 0, leftAddition);
 
             return {
                 selectedElements: selectedElements,
@@ -246,7 +250,7 @@ function($, _, Class, HighlightHelpers, HighlightGroup) {
                         currentSelection.collapseToStart();
                     }
                 }
-                return this.addHighlight(CFI, id, type, styles, this.getVisibleCfiRange());
+                return this.addHighlight(CFI, id, type, styles);
             } else {
                 throw new Error("Nothing selected");
             }
@@ -341,7 +345,7 @@ function($, _, Class, HighlightHelpers, HighlightGroup) {
         },
 
         _addHighlightHelper: function(CFI, annotationId, type, styles, highlightedNodes,
-            range, startNode, endNode, offsetTop, offsetLeft, options) {
+            range, startNode, endNode, offsetTop, offsetLeft) {
             if (!offsetTop) {
                 offsetTop = this.offsetTopAddition;
             }
@@ -351,12 +355,13 @@ function($, _, Class, HighlightHelpers, HighlightGroup) {
 
             var visible;
             // check if the options specify lastVisibleCfi/firstVisibleCfi. If they don't fall back to displaying the highlights anyway.
-            if (options &&
-                options.firstVisibleCfi &&
-                options.firstVisibleCfi.contentCFI &&
-                options.lastVisibleCfi &&
-                options.lastVisibleCfi.contentCFI) {
-                visible = this.cfiIsBetweenTwoCfis(CFI, options.firstVisibleCfi.contentCFI, options.lastVisibleCfi.contentCFI);
+            var visibleCfiRange = this.getVisibleCfiRange();
+            if (visibleCfiRange &&
+                visibleCfiRange.firstVisibleCfi &&
+                visibleCfiRange.firstVisibleCfi.contentCFI &&
+                visibleCfiRange.lastVisibleCfi &&
+                visibleCfiRange.lastVisibleCfi.contentCFI) {
+                visible = this.cfiIsBetweenTwoCfis(CFI, visibleCfiRange.firstVisibleCfi.contentCFI, visibleCfiRange.lastVisibleCfi.contentCFI);
             } else {
                 visible = true;
             }
