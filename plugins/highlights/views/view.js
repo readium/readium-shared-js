@@ -4,7 +4,7 @@ function($, _, Class, Length, TextLineInferrer, CopiedTextStyles) {
 
     var HighlightView = Class.extend({
         // this is an element that highlight will be associated with, it is not styled at this point
-        template: "<div></div>",
+        template: "<div class=\"rd-highlight\"></div>",
 
         init: function(context, options) {
             this.context = context;

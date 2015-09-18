@@ -4,7 +4,7 @@ define(["./view"], function(HighlightView) {
 
     var HighlightBorderView = HighlightView.extend({
 
-        template: "<div class=\"highlight-border\"></div>",
+        template: "<div class=\"rd-highlight-border\"></div>",
 
         setCSS: function() {
 
