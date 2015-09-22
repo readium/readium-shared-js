@@ -1345,28 +1345,27 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
                 return fromCache;
             }
         }
-
+        
         var nodeIterator = document.createNodeIterator(
             $root[0],
             NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
-            {
-                acceptNode: function (node) {
-                    //a "leaf node" here is an element with no child elements and no valid text nodes as children
-                    var isLeafNode = node.nodeType === Node.ELEMENT_NODE && !node.childElementCount && !isValidTextNodeContent(node.textContent);
-                    return (isValidTextNode(node) || isLeafNode) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
-                }
+            function() {
+                return NodeFilter.FILTER_ACCEPT
             },
             false
         );
-
+        
         var $leafNodeElements = [];
 
         var node;
         while ((node = nodeIterator.nextNode())) {
-            var $node = $(node);
-            var $element = (node.nodeType === Node.TEXT_NODE) ? $node.parent() : $node;
-            if (!isElementBlacklisted($element)) {
-                $leafNodeElements.push($node);
+            var isLeafNode = node.nodeType === Node.ELEMENT_NODE && !node.childElementCount && !isValidTextNodeContent(node.textContent);
+            if (isLeafNode || isValidTextNode(node)){
+                var $node = $(node);
+                var $element = (node.nodeType === Node.TEXT_NODE) ? $node.parent() : $node;
+                if (!isElementBlacklisted($element)) {
+                    $leafNodeElements.push($node);
+                }
             }
         }
 
