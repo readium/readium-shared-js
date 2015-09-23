@@ -1086,6 +1086,19 @@ var Helpers = {};
 
 /**
  *
+ * @param ebookURL URL string, or Blob (possibly File)
+ * @returns string representing the file path / name from which the asset referenced by this URL originates
+ */
+Helpers.getEbookUrlFilePath = function(ebookURL) {
+    
+    if (!window.Blob || !window.File) return ebookURL;
+    
+    var ebookURL_filepath = (ebookURL instanceof Blob) ? ((ebookURL instanceof File) ? ebookURL.name : "readium-ebook.epub") : ebookURL;
+    return ebookURL_filepath;
+};
+
+/**
+ *
  * @returns object (map between URL query parameter names and corresponding decoded / unescaped values)
  */
 Helpers.getURLQueryParams = function() {
@@ -12142,13 +12155,15 @@ var ReflowableView = function(options, reader){
         return false;
     }
 
-    function onPaginationChanged(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
+    function onPaginationChanged_(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
 
         _paginationInfo.pageOffset = (_paginationInfo.columnWidth + _paginationInfo.columnGap) * _paginationInfo.visibleColumnCount * _paginationInfo.currentSpreadIndex;
         
         redraw();
+        
         self.emit(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
     }
+    var onPaginationChanged = _.debounce(onPaginationChanged_, 100);
 
     this.openPagePrev = function (initiator) {
 
@@ -12316,9 +12331,11 @@ var ReflowableView = function(options, reader){
         var useColumnCountNotWidth = _paginationInfo.visibleColumnCount > 1; // column-count == 1 does not work in Chrome, and is not needed anyway (HTML width is full viewport width, no Firefox video flickering)
         if (useColumnCountNotWidth) {
             _$epubHtml.css("width", _lastViewPortSize.width + "px");
+            _$epubHtml.css("column-width", "auto");
             _$epubHtml.css("column-count", _paginationInfo.visibleColumnCount);
         } else {
             _$epubHtml.css("width", (_htmlBodyIsVerticalWritingMode ? _lastViewPortSize.width : _paginationInfo.columnWidth) + "px");
+            _$epubHtml.css("column-count", "auto");
             _$epubHtml.css("column-width", _paginationInfo.columnWidth + "px");
         }
 
@@ -13486,8 +13503,9 @@ var ReaderView = function (options) {
                     }
 
                     self.emit(Globals.Events.SETTINGS_APPLIED);
-                    return;
                 });
+                
+                return;
             }
         }
 
