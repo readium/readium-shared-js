@@ -36,16 +36,16 @@ require.config({
             process._RJS_rootDir(1) + '/node_modules/underscore/underscore',
 
         URIjs:
-            process._RJS_rootDir(1) + '/node_modules/URIjs/src/URI',
+            process._RJS_rootDir(1) + '/node_modules/urijs/src/URI',
 
         punycode:
-            process._RJS_rootDir(1) + '/node_modules/URIjs/src/punycode',
+            process._RJS_rootDir(1) + '/node_modules/urijs/src/punycode',
 
         SecondLevelDomains:
-            process._RJS_rootDir(1) + '/node_modules/URIjs/src/SecondLevelDomains',
+            process._RJS_rootDir(1) + '/node_modules/urijs/src/SecondLevelDomains',
 
         IPv6:
-            process._RJS_rootDir(1) + '/node_modules/URIjs/src/IPv6',
+            process._RJS_rootDir(1) + '/node_modules/urijs/src/IPv6',
 
         jquerySizes:
             process._RJS_rootDir(1) + '/node_modules/jquery-sizes/lib/jquery.sizes',
