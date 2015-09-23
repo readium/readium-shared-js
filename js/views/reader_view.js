@@ -194,10 +194,19 @@ var ReaderView = function (options) {
 
         var desiredViewType = deduceDesiredViewType(spineItem);
 
+        var invokeCallback = function(isViewChanged) {
+            _currentView.setViewSettings(_viewerSettings);
+
+            // we do this to wait until elements are rendered otherwise book is not able to determine view size.
+            setTimeout(function() {
+                callback(isViewChanged);
+            }, 50);
+        };
+
         if (_currentView) {
 
-            if (self.getCurrentViewType() == desiredViewType) {
-                callback(false);
+            if (self.getCurrentViewType() === desiredViewType) {
+                invokeCallback(false);
                 return;
             }
 
@@ -225,7 +234,7 @@ var ReaderView = function (options) {
         _currentView = self.createViewForType(desiredViewType, viewCreationParams);
         self.emit(Globals.Events.READER_VIEW_CREATED, desiredViewType);
 
-        _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOADED, function ($iframe, spineItem) {
+        _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOADED, function($iframe, spineItem) {
 
             if (!Helpers.isIframeAlive($iframe[0])) return;
 
@@ -241,11 +250,11 @@ var ReaderView = function (options) {
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
         });
 
-        _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOAD_START, function ($iframe, spineItem) {
+        _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOAD_START, function($iframe, spineItem) {
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
         });
 
-        _currentView.on(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, function (pageChangeData) {
+        _currentView.on(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, function(pageChangeData) {
 
             //we call on onPageChanged explicitly instead of subscribing to the Globals.Events.PAGINATION_CHANGED by
             //mediaOverlayPlayer because we hve to guarantee that mediaOverlayPlayer will be updated before the host
@@ -255,22 +264,13 @@ var ReaderView = function (options) {
             self.emit(Globals.Events.PAGINATION_CHANGED, pageChangeData);
         });
 
-        _currentView.on(Globals.Events.FXL_VIEW_RESIZED, function () {
+        _currentView.on(Globals.Events.FXL_VIEW_RESIZED, function() {
             self.emit(Globals.Events.FXL_VIEW_RESIZED);
         })
 
         _currentView.render();
-        _currentView.setViewSettings(_viewerSettings);
-
-        // we do this to wait until elements are rendered otherwise book is not able to determine view size.
-        setTimeout(function () {
-
-            callback(true);
-
-        }, 50);
-
+        invokeCallback(true);
     }
-
     /**
      * Returns a list of the currently active spine items
      *
@@ -554,11 +554,7 @@ var ReaderView = function (options) {
 
                 var spineItem = _spine.getItemById(bookMark.idref);
 
-                initViewForItem(spineItem, function (isViewChanged) {
-
-                    if (!isViewChanged) {
-                        _currentView.setViewSettings(_viewerSettings);
-                    }
+                initViewForItem(spineItem, function(isViewChanged) {
 
                     self.openSpineItemElementCfi(bookMark.idref, bookMark.contentCFI, self);
 
@@ -736,12 +732,7 @@ var ReaderView = function (options) {
     // dir: 0 => new or same page, 1 => previous, 2 => next
     function openPage(pageRequest, dir) {
 
-        initViewForItem(pageRequest.spineItem, function (isViewChanged) {
-
-            if (!isViewChanged) {
-                _currentView.setViewSettings(_viewerSettings);
-            }
-
+        initViewForItem(pageRequest.spineItem, function(isViewChanged){
             _currentView.openPage(pageRequest, dir);
         });
     }
@@ -1167,7 +1158,7 @@ var ReaderView = function (options) {
 
             initViewForItem(spineItem, function (isViewChanged) {
                 self.openSpineItemElementCfi(bookMark.idref, bookMark.contentCFI, self);
-                return;
+                _currentView.onViewportResize();
             });
         }
         else {

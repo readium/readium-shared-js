@@ -148,7 +148,6 @@ var ReflowableView = function(options, reader){
         updateColumnGap();
         
         updateViewportSize();
-        updatePagination();
     };
 
     function renderIframe() {
@@ -322,36 +321,45 @@ var ReflowableView = function(options, reader){
         // _$epubHtml.css("background-color", '#b0c4de');
         //
         // ////
-        
-        self.applyBookStyles();
+
+        applyStyles();
+        applyBookStyles();
+
         resizeImages();
 
         updateHtmlFontSize();
         updateColumnGap();
 
-
-        self.applyStyles();
+        updateViewportSize();
+        updatePagination();
     }
 
-    this.applyStyles = function() {
-
+    function applyStyles() {
+        
         Helpers.setStyles(_userStyles.getStyles(), _$el.parent());
 
         //because left, top, bottom, right setting ignores padding of parent container
         //we have to take it to account manually
         var elementMargins = Helpers.Margins.fromElement(_$el);
         setFrameSizesToRectangle(elementMargins.padding);
+    }
 
-
+    this.applyStyles = function() {
+        applyStyles();
         updateViewportSize();
         updatePagination();
     };
 
-    this.applyBookStyles = function() {
-
+    function applyBookStyles() {
         if(_$epubHtml) {
             Helpers.setStyles(_bookStyles.getStyles(), _$epubHtml);
         }
+    }
+
+    this.applyBookStyles = function() {
+        applyBookStyles();
+        updateViewportSize();
+        updatePagination();
     };
 
     function openDeferredElement() {
