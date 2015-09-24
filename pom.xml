@@ -133,6 +133,43 @@
         </includes>
       </resource>
     </resources>
+
+    <!-- Produce a jar of the JS output, and empty sources and javadoc jars. -->
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>default-jar</id>
+            <phase>package</phase>
+            <goals><goal>jar</goal></goals>
+          </execution>
+          <execution>
+            <id>source-jar</id>
+            <phase>package</phase>
+            <goals><goal>jar</goal></goals>
+            <configuration>
+              <excludes>
+                <exclude>**/**</exclude>
+              </excludes>
+              <classifier>sources</classifier>
+            </configuration>
+          </execution>
+          <execution>
+            <id>javadoc-jar</id>
+            <phase>package</phase>
+            <goals><goal>jar</goal></goals>
+            <configuration>
+              <excludes>
+                <exclude>**/**</exclude>
+              </excludes>
+              <classifier>javadoc</classifier>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
   </build>
 
   <!-- Optionally PGP sign artifacts. -->
