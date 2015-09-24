@@ -52,7 +52,7 @@
     "js/models/package_data.js",
     "js/models/package.js",
     "node_modules/FontLoader/FontLoader.js",
-    "lib/CSSOM.js",
+    "node_modules/CSSOM/build/CSSOM.js",
     "js/views/font_loader.js",
     "js/views/reflowable_view.js",
     "js/models/style.js",

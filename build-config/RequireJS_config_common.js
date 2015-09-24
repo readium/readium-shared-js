@@ -60,10 +60,10 @@ require.config({
         'FontLoader':
             process._RJS_rootDir(1) + '/node_modules/FontLoader/FontLoader',
 
-        // ------ LIBs
-
         'cssom':
-            process._RJS_rootDir(1) + '/lib/CSSOM',
+            process._RJS_rootDir(1) + '/node_modules/CSSOM/build/CSSOM',
+
+        // ------ LIBs
 
         'console_shim':
             process._RJS_rootDir(1) + '/lib/console_shim',

@@ -53,9 +53,10 @@
     "domReady": "requirejs/domReady",
     "backbone": "latest",
     "underscore": "latest",
-    "URIjs": "danielweck/URI.js",
+    "urijs": "danielweck/URI.js",
     "eventemitter3": "latest",
-    "FontLoader": "smnh/FontLoader"
+    "FontLoader": "smnh/FontLoader",
+    "CSSOM": "danielweck/CSSOM#gh-pages"
   },
   "scripts": {
     "cson2json": "node ./readium-cfi-js/node_modules/cson/bin/cson2json package.cson > package.json && node readium-cfi-js/readium-build-tools/optimizePackageJsonScripts.js",
