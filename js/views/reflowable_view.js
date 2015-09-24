@@ -39,7 +39,7 @@ define(["jquery", "underscore", "eventEmitter", "../models/bookmark_data", "./cf
  */
 var ReflowableView = function(options, reader){
 
-    _.extend(this, new EventEmitter());
+    $.extend(this, new EventEmitter());
 
     var self = this;
 
@@ -468,7 +468,7 @@ var ReflowableView = function(options, reader){
         return false;
     }
 
-    function onPaginationChanged(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
+    function onPaginationChanged_(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
 
         _paginationInfo.pageOffset = (_paginationInfo.columnWidth + _paginationInfo.columnGap) * _paginationInfo.visibleColumnCount * _paginationInfo.currentSpreadIndex;
 
@@ -483,6 +483,7 @@ var ReflowableView = function(options, reader){
             });
         });
     }
+    var onPaginationChanged = _.debounce(onPaginationChanged_, 100);
 
     this.openPagePrev = function (initiator) {
 
@@ -650,9 +651,11 @@ var ReflowableView = function(options, reader){
         var useColumnCountNotWidth = _paginationInfo.visibleColumnCount > 1; // column-count == 1 does not work in Chrome, and is not needed anyway (HTML width is full viewport width, no Firefox video flickering)
         if (useColumnCountNotWidth) {
             _$epubHtml.css("width", _lastViewPortSize.width + "px");
+            _$epubHtml.css("column-width", "auto");
             _$epubHtml.css("column-count", _paginationInfo.visibleColumnCount);
         } else {
             _$epubHtml.css("width", (_htmlBodyIsVerticalWritingMode ? _lastViewPortSize.width : _paginationInfo.columnWidth) + "px");
+            _$epubHtml.css("column-count", "auto");
             _$epubHtml.css("column-width", _paginationInfo.columnWidth + "px");
         }
 
@@ -906,7 +909,14 @@ var ReflowableView = function(options, reader){
         }
 
         self.openPage(openPageRequest);
-    }
+    };
+
+    this.isElementCfiVisible = function(spineIdRef, contentCfi) {
+        if (spineIdRef != _currentSpineItem.idref) {
+            return false;
+        }
+        return _navigationLogic.isElementCfiVisible(contentCfi);
+    };
 
 };
     return ReflowableView;

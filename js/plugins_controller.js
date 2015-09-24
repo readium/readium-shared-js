@@ -75,11 +75,11 @@ define(["jquery", "underscore", "eventEmitter"], function ($, _, EventEmitter) {
             }
 
             _registeredPlugins[name] = new Plugin(name, dependencies, function(plugin, api) {
-                if (!plugin.initialized) {
+                if (!plugin.initialized || !api.host.plugins[plugin.name]) {
                     plugin.initialized = true;
                     try {
                         var pluginContext = {};
-                        _.extend(pluginContext, new EventEmitter());
+                        $.extend(pluginContext, new EventEmitter());
 
                         initFunc.call(pluginContext, api.instance);
                         plugin.supported = true;

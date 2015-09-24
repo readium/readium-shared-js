@@ -33,7 +33,11 @@
 
 name: "readium-shared-js"
 
-version: "0.20.0-alpha"
+version: "0.22.0-alpha"
+
+engines:
+    node: ">=0.12"
+    npm: ">2.10"
 
 description: "Readium - shared javascript module"
 
@@ -112,8 +116,8 @@ devDependencies:
 
     "underscore": 'latest'
 
-    "URIjs": 'danielweck/URI.js'
-    #"URIjs": 'latest'
+    "urijs": 'danielweck/URI.js'
+    #"urijs": 'latest'
 
     "eventemitter3": 'latest'
 
@@ -316,10 +320,9 @@ scripts:
 #=====================
 #### BLOCKING! (CTRL-C) [http]
     'http': '
-
-        parallelshell
-            \"npm run httpServe\"
-            \"npm run webBrowser\"
+        npm run genPluginsConfig
+        &&
+        npm run httpServe
     '
 
 #=====================
@@ -329,7 +332,6 @@ scripts:
         npm run watch
             \"npm run build
                 && node readium-cfi-js/readium-build-tools/webbrowser.js
-                && npm run webBrowser
                 && npm run rimraf
                       open_webbrowser.js\"
             dev/ js/ plugins/ readium-cfi-js/js/
@@ -337,16 +339,24 @@ scripts:
     #    nodemon -q
     #    -w dev/
     #    --ext \".\"
-    #    --exec \"npm run build
-    #            && node readium-cfi-js/readium-build-tools/webbrowser.js
-    #            && npm run webbrowser
-    #            && npm run rimraf
-    #                  open_webbrowser.js\"
+    #    --exec \" ... \"
 
 #=====================
     'httpServe': '
 
-        http-server -p 9090 --cors ./
+        node
+            readium-cfi-js/readium-build-tools/http-server.js
+            
+            -LOGFILE
+            http.log
+            
+            -OPEN
+            /dev/
+            
+            -a 127.0.0.1
+            -p 9090
+            --cors
+            .
     '
 
 #=====================
@@ -354,9 +364,3 @@ scripts:
 #
 #        live-reload --port 9091 --delay 1000 build-output/
 #    '
-
-#=====================
-    'webBrowser': '
-
-        opener http://127.0.0.1:9090/dev/
-    '
