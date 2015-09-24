@@ -121,6 +121,11 @@ devDependencies:
 
     "eventemitter3": 'latest'
 
+    "FontLoader": 'smnh/FontLoader'
+    
+    "CSSOM": 'danielweck/CSSOM#gh-pages'
+    #"CSSOM": 'NV/CSSOM#gh-pages'
+    
 
 # Below dependencies are only used for building tasks (above are runtime deps):
 

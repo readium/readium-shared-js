@@ -57,7 +57,11 @@ require.config({
             process._RJS_rootDir(1) + '/node_modules/eventemitter3/_rjs/index',
         //see prepare:patch npm build task (converts CommonJS to AMD => define(function(require, exports, module) { .... });)
 
+        'FontLoader':
+            process._RJS_rootDir(1) + '/node_modules/FontLoader/FontLoader',
 
+        'cssom':
+            process._RJS_rootDir(1) + '/node_modules/CSSOM/build/CSSOM',
 
         // ------ LIBs
 
@@ -85,6 +89,10 @@ require.config({
 
     shim:
     {
+        cssom: {
+            exports: 'CSSOM'
+        },
+
         jquerySizes:
         {
             deps: ['jquery'],
