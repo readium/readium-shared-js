@@ -61,7 +61,7 @@ require.config({
             process._RJS_rootDir(1) + '/node_modules/FontLoader/FontLoader',
 
         'cssom':
-            process._RJS_rootDir(1) + '/node_modules/CSSOM/build/CSSOM',
+            process._RJS_rootDir(1) + '/node_modules/cssom/build/CSSOM',
 
         // ------ LIBs
 
