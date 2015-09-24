@@ -7,7 +7,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.readium</groupId>
   <artifactId>readium-shared-js</artifactId>
-  <version>0.20.0</version>
+  <version>0.20.0-alpha</version>
 
   <packaging>jar</packaging>
   <description>Readium SDK (Shared JavaScript components)</description>
@@ -17,6 +17,48 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
   </properties>
+
+  <scm>
+    <url>https://github.com/readium/readium-shared-js</url>
+    <connection>scm:https://github.com/readium/readium-shared-js</connection>
+    <developerConnection>scm:https://github.com/readium/readium-shared-js</developerConnection>
+  </scm>
+
+  <issueManagement>
+    <url>https://github.com/readium/readium-shared-js/issues</url>
+    <system>GitHub</system>
+  </issueManagement>
+
+  <distributionManagement>
+    <site>
+      <id>GitHub</id>
+      <name>GitHub</name>
+      <url>${project.url}</url>
+    </site>
+  </distributionManagement>
+
+  <licenses>
+    <license>
+      <name>3-Clause BSD License</name>
+      <url>http://opensource.org/licenses/BSD-3-Clause</url>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <name>Daniel Weck</name>
+      <email>daniel.weck@gmail.com</email>
+      <organization>Readium Foundation</organization>
+      <organizationUrl>http://readium.org/</organizationUrl>
+    </developer>
+    <developer>
+      <name>Mark Raynsford</name>
+      <email>code@io7m.com</email>
+      <roles>
+        <role>Maven operator</role>
+      </roles>
+    </developer>
+  </developers>
 
   <prerequisites>
     <maven>3.2.1</maven>
