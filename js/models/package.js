@@ -22,7 +22,7 @@
 //  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
-define(['../helpers','./spine_item','./spine','./media_overlay', './package_data'], function (Helpers, SpineItem, Spine, MediaOverlay, PackageData) {
+define(['../helpers','./spine_item','./spine','./media_overlay', './package_data', 'URIjs'], function (Helpers, SpineItem, Spine, MediaOverlay, PackageData, URI) {
 /**
  *
  * @class Package
@@ -55,11 +55,21 @@ var Package = function(packageData){
 
         if(self.rootUrlMO && self.rootUrlMO.length > 0) {
 
-            if(Helpers.EndsWith(self.rootUrlMO, "/")){
-                return self.rootUrlMO + relativeUrl;
+            var url = self.rootUrlMO;
+            
+            try {
+                //url = new URI(relativeUrl).absoluteTo(url).search('').hash('').toString();
+                url = new URI(url).search('').hash('').toString();
+            } catch(err) {
+                console.error(err);
+                console.log(url);
+            }
+            
+            if(Helpers.EndsWith(url, "/")){
+                return url + relativeUrl;
             }
             else {
-                return self.rootUrlMO + "/" + relativeUrl;
+                return url + "/" + relativeUrl;
             }
         }
 
@@ -68,13 +78,24 @@ var Package = function(packageData){
 
     this.resolveRelativeUrl = function(relativeUrl) {
 
+
         if(self.rootUrl) {
 
-            if(Helpers.EndsWith(self.rootUrl, "/")){
-                return self.rootUrl + relativeUrl;
+            var url = self.rootUrl;
+            
+            try {
+                //url = new URI(relativeUrl).absoluteTo(url).search('').hash('').toString();
+                url = new URI(url).search('').hash('').toString();
+            } catch(err) {
+                console.error(err);
+                console.log(url);
+            }
+            
+            if(Helpers.EndsWith(url, "/")){
+                return url + relativeUrl;
             }
             else {
-                return self.rootUrl + "/" + relativeUrl;
+                return url + "/" + relativeUrl;
             }
         }
 
