@@ -36,16 +36,16 @@ require.config({
             process._RJS_rootDir(1) + '/node_modules/underscore/underscore',
 
         URIjs:
-            process._RJS_rootDir(1) + '/node_modules/URIjs/src/URI',
+            process._RJS_rootDir(1) + '/node_modules/urijs/src/URI',
 
         punycode:
-            process._RJS_rootDir(1) + '/node_modules/URIjs/src/punycode',
+            process._RJS_rootDir(1) + '/node_modules/urijs/src/punycode',
 
         SecondLevelDomains:
-            process._RJS_rootDir(1) + '/node_modules/URIjs/src/SecondLevelDomains',
+            process._RJS_rootDir(1) + '/node_modules/urijs/src/SecondLevelDomains',
 
         IPv6:
-            process._RJS_rootDir(1) + '/node_modules/URIjs/src/IPv6',
+            process._RJS_rootDir(1) + '/node_modules/urijs/src/IPv6',
 
         jquerySizes:
             process._RJS_rootDir(1) + '/node_modules/jquery-sizes/lib/jquery.sizes',
@@ -57,7 +57,11 @@ require.config({
             process._RJS_rootDir(1) + '/node_modules/eventemitter3/_rjs/index',
         //see prepare:patch npm build task (converts CommonJS to AMD => define(function(require, exports, module) { .... });)
 
+        'FontLoader':
+            process._RJS_rootDir(1) + '/node_modules/FontLoader/FontLoader',
 
+        'cssom':
+            process._RJS_rootDir(1) + '/node_modules/cssom/build/CSSOM',
 
         // ------ LIBs
 
@@ -85,6 +89,10 @@ require.config({
 
     shim:
     {
+        cssom: {
+            exports: 'CSSOM'
+        },
+
         jquerySizes:
         {
             deps: ['jquery'],

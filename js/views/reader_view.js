@@ -252,7 +252,9 @@ var ReaderView = function (options) {
             //application will be notified by the same Globals.Events.PAGINATION_CHANGED event
             _mediaOverlayPlayer.onPageChanged(pageChangeData);
 
-            self.emit(Globals.Events.PAGINATION_CHANGED, pageChangeData);
+            _.defer(function () {
+                self.emit(Globals.Events.PAGINATION_CHANGED, pageChangeData);
+            });
         });
 
         _currentView.on(Globals.Events.FXL_VIEW_RESIZED, function () {
@@ -591,8 +593,9 @@ var ReaderView = function (options) {
                     }
 
                     self.emit(Globals.Events.SETTINGS_APPLIED);
-                    return;
                 });
+                
+                return;
             }
         }
 

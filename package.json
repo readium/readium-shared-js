@@ -6,6 +6,10 @@
   "*/": "----------------------------------------------------------------------------",
   "name": "readium-shared-js",
   "version": "0.22.0-alpha",
+  "engines": {
+    "node": ">=0.12",
+    "npm": ">2.10"
+  },
   "description": "Readium - shared javascript module",
   "keywords": [
     "readium",
@@ -49,8 +53,10 @@
     "domReady": "requirejs/domReady",
     "backbone": "latest",
     "underscore": "latest",
-    "URIjs": "danielweck/URI.js",
-    "eventemitter3": "latest"
+    "urijs": "danielweck/URI.js",
+    "eventemitter3": "latest",
+    "FontLoader": "smnh/FontLoader",
+    "CSSOM": "danielweck/CSSOM#gh-pages"
   },
   "scripts": {
     "cson2json": "node ./readium-cfi-js/node_modules/cson/bin/cson2json package.cson > package.json && node readium-cfi-js/readium-build-tools/optimizePackageJsonScripts.js",
