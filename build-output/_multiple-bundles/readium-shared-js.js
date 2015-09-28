@@ -556,15 +556,11 @@ var CurrentPagesInfo = function(spine, isFixedLayout) {
 
         var lastOpenPage = this.openPages[this.openPages.length - 1];
 
-        // TODO: handling of non-linear spine items ("ancillary" documents), allowing page turn within the reflowable XHTML, but preventing previous/next access to sibling spine items. Also needs "go back" feature to navigate to source hyperlink location that led to the non-linear document.
-        // See https://github.com/readium/readium-shared-js/issues/26
-
-        // Removed, needs to be implemented properly as per above.
-        // See https://github.com/readium/readium-shared-js/issues/108
-        // if(!spine.isValidLinearItem(lastOpenPage.spineItemIndex))
-        //     return false;
-
-        return lastOpenPage.spineItemIndex < spine.last().index || lastOpenPage.spineItemPageIndex < lastOpenPage.spineItemPageCount - 1;
+        if(spine.isValidLinearItem(lastOpenPage.spineItemIndex))
+            return lastOpenPage.spineItemIndex < spine.last().index || lastOpenPage.spineItemPageIndex < lastOpenPage.spineItemPageCount - 1;
+        else
+            return lastOpenPage.spineItemPageIndex < lastOpenPage.spineItemPageCount - 1;
+            
     };
 
     this.canGoPrev = function() {
@@ -574,15 +570,10 @@ var CurrentPagesInfo = function(spine, isFixedLayout) {
 
         var firstOpenPage = this.openPages[0];
 
-        // TODO: handling of non-linear spine items ("ancillary" documents), allowing page turn within the reflowable XHTML, but preventing previous/next access to sibling spine items. Also needs "go back" feature to navigate to source hyperlink location that led to the non-linear document.
-        // See https://github.com/readium/readium-shared-js/issues/26
-
-        // Removed, needs to be implemented properly as per above.
-        // //https://github.com/readium/readium-shared-js/issues/108
-        // if(!spine.isValidLinearItem(firstOpenPage.spineItemIndex))
-        //     return false;
-
-        return spine.first().index < firstOpenPage.spineItemIndex || 0 < firstOpenPage.spineItemPageIndex;
+        if(spine.isValidLinearItem(firstOpenPage.spineItemIndex))
+            return spine.first().index < firstOpenPage.spineItemIndex || 0 < firstOpenPage.spineItemPageIndex;
+        else
+            return 0 < firstOpenPage.spineItemPageIndex;
     };
 
     this.sort = function() {
@@ -1235,9 +1226,9 @@ Helpers.UpdateHtmlFontSize = function ($epubHtml, fontSize) {
             originalLineHeight = 0;
         }
 
-        ele.style.fontSize = (originalFontSize * factor) + 'px';
+        $(ele).css("font-size", (originalFontSize * factor) + 'px');
         if (originalLineHeight) {
-            ele.style.lineHeight = (originalLineHeight * factor) + 'px';
+            $(ele).css("line-height", (originalLineHeight * factor) + 'px');
         }
 
     }
@@ -10268,7 +10259,7 @@ var Spine = function(epubPackage, spineDTO) {
      */
     this.package = epubPackage;
 
-    var _handleLinear = false;
+    var _handleLinear = true;
 
     this.handleLinear = function(handleLinear) {
         _handleLinear = handleLinear;
@@ -13070,9 +13061,6 @@ var Switches = function() {
 // cases that are not supported
 Switches.apply = function(dom) {
 
-
-    // helper method, returns true if a given case node
-    // is supported, false otherwise
     function isSupported(caseNode) {
 
         var ns = caseNode.attributes["required-namespace"];
@@ -13085,31 +13073,39 @@ Switches.apply = function(dom) {
         // all the xmlns that readium is known to support
         // TODO this is going to require maintenance
         var supportedNamespaces = ["http://www.w3.org/1998/Math/MathML"];
-        return _.include(supportedNamespaces, ns);
+        return _.include(supportedNamespaces, ns.value);
     }
 
-    $('switch', dom).each( function() {
+    var getQuery = ((window.navigator.userAgent.indexOf("Trident") > 0) || (window.navigator.userAgent.indexOf("Edge") > 0))
+        ? function (elementName) { return 'epub\\:' + elementName; }
+        : function (elementName) { return elementName; };
+
+    _.each(dom.querySelectorAll(getQuery('switch')), function(switchNode) {
 
         // keep track of whether or now we found one
         var found = false;
 
-        $('case', this).each(function() {
+        _.each(switchNode.querySelectorAll(getQuery('case')), function(caseNode) {
 
-            if( !found && isSupported(this) ) {
+            if( !found && isSupported(caseNode) ) {
                 found = true; // we found the node, don't remove it
             }
             else {
-                $(this).remove(); // remove the node from the dom
-//                    $(this).prop("hidden", true);
+                $(caseNode).remove(); // remove the node from the dom
             }
+
         });
 
-        if(found) {
+        if (found) {
+
             // if we found a supported case, remove the default
-            $('default', this).remove();
-//                $('default', this).prop("hidden", true);
+            _.each(switchNode.querySelectorAll(getQuery('default')), function(defaultNode) {
+                $(defaultNode).remove();
+            });
+
         }
-    })
+
+    });
 };
     return Switches;
 });
@@ -13232,14 +13228,163 @@ Trigger.prototype.execute = function(dom) {
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
+define('readium_shared_js/models/navigation_history',[
+    //"jquery", "underscore"
+    ],
+    function (
+        //$, _
+        ) {
+
+
+var NavigationHistory = function (readerview) {
+
+    var _DEBUG = true;
+
+    var self = this;
+    
+    var _readerView = readerview;
+    
+    var _breadcrumb = [];
+    
+    var _skipNext = false;
+    
+    this.flush = function () {
+        if (_DEBUG) {
+            console.error("NavigationHistory FLUSH.");
+        }
+        
+        _breadcrumb = [];
+    };
+    this.flush();
+
+    this.containsLinear = function() {
+        
+        for (var i = 0; i < _breadcrumb.length; i++) {
+            var bookMark = _breadcrumb[i];
+            if (bookMark && bookMark.idref) {
+                var spineItem = readerview.spine().getItemById(bookMark.idref);
+            
+                var isLinear = spineItem && readerview.spine().isValidLinearItem(spineItem.index);
+                if (isLinear) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    };
+
+    this.push = function (bookMark) {
+        
+        if (_skipNext) {
+                
+            if (_DEBUG) {
+                console.error("NavigationHistory PUSH SKIP: ");
+                console.debug(bookMark);
+            }
+        
+            _skipNext = false;
+            return;
+        }
+        
+        if (_DEBUG) {
+            console.error("NavigationHistory PUSH: ");
+            console.debug(bookMark);
+        }
+        
+        if (_breadcrumb.length) {
+            var lastBookMark = _breadcrumb[_breadcrumb.length-1];
+            
+            var bookMark_contentCFI = bookMark.contentCFI;
+            // TODO bookmark spatial @x:y! (should be charcter offset)
+            // if (bookMark_contentCFI) {
+            //     var i = bookMark_contentCFI.lastIndexOf("@");
+            //     if (i > 1) {
+            //         bookMark_contentCFI = bookMark_contentCFI.substr(0, i);
+            //     }
+            // }
+            
+            var lastBookMark_contentCFI = lastBookMark.contentCFI;
+            // TODO bookmark spatial @x:y! (should be charcter offset)
+            // if (lastBookMark_contentCFI) {
+            //     i = lastBookMark_contentCFI.lastIndexOf("@");
+            //     if (i > 1) {
+            //         lastBookMark_contentCFI = lastBookMark_contentCFI.substr(0, i);
+            //     }
+            // }
+            
+            if (bookMark.idref == lastBookMark.idref
+                && bookMark_contentCFI == lastBookMark_contentCFI) {
+                
+                if (_DEBUG) {
+                    console.log("--- NavigationHistory skipping duplicate bookmark: " + bookMark.idref + " -- " + bookMark_contentCFI);
+                }
+                return;
+            }
+        }
+        
+        _breadcrumb.push(bookMark);
+    };
+    
+    this.pop = function () {
+        var bookMark = _breadcrumb.pop();
+        
+        if (_DEBUG) {
+            console.error("NavigationHistory POP: ");
+            console.debug(bookMark);
+        }
+        
+        return bookMark;
+    };
+        
+    this.canPop = function() {
+        return _breadcrumb.length > 0;
+    };
+    
+    this.skipNext = function() {
+        if (_DEBUG) {
+            console.error("NavigationHistory SKIP NEXT.");
+        }
+        _skipNext = true;
+    };
+};
+return NavigationHistory;
+
+});
+//  Created by Boris Schneiderman.
+// Modified by Daniel Weck
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  
+//  Redistribution and use in source and binary forms, with or without modification, 
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this 
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice, 
+//  this list of conditions and the following disclaimer in the documentation and/or 
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be 
+//  used to endorse or promote products derived from this software without specific 
+//  prior written permission.
+//  
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
+
 define('readium_shared_js/views/reader_view',["jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", "./iframe_loader", "./internal_links_support",
         "./media_overlay_data_injector", "./media_overlay_player", "../models/package", "../models/page_open_request",
         "./reflowable_view", "./scroll_view", "../models/style_collection", "../models/switches", "../models/trigger",
-        "../models/viewer_settings", "../globals"],
+        "../models/viewer_settings", "../globals", "../models/navigation_history"],
     function ($, _, EventEmitter, FixedView, Helpers, IFrameLoader, InternalLinksSupport,
               MediaOverlayDataInjector, MediaOverlayPlayer, Package, PageOpenRequest,
               ReflowableView, ScrollView, StyleCollection, Switches, Trigger,
-              ViewerSettings, Globals) {
+              ViewerSettings, Globals, NavigationHistory) {
 /**
  * Options passed on the reader from the readium loader/initializer
  *
@@ -13259,6 +13404,9 @@ var ReaderView = function (options) {
     $.extend(this, new EventEmitter());
 
     var self = this;
+    
+    var _navigationHistory = new NavigationHistory(self);
+    
     var _currentView = undefined;
     var _package = undefined;
     var _spine = undefined;
@@ -13397,7 +13545,7 @@ var ReaderView = function (options) {
         return ReaderView.VIEW_TYPE_COLUMNIZED;
     }
 
-    // returns true is view changed
+    // callback is passed true parameter is view changed
     function initViewForItem(spineItem, callback) {
 
         var desiredViewType = deduceDesiredViewType(spineItem);
@@ -13405,6 +13553,7 @@ var ReaderView = function (options) {
         if (_currentView) {
 
             if (self.getCurrentViewType() == desiredViewType) {
+            
                 callback(false);
                 return;
             }
@@ -13454,7 +13603,6 @@ var ReaderView = function (options) {
         });
 
         _currentView.on(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, function (pageChangeData) {
-
             //we call on onPageChanged explicitly instead of subscribing to the Globals.Events.PAGINATION_CHANGED by
             //mediaOverlayPlayer because we hve to guarantee that mediaOverlayPlayer will be updated before the host
             //application will be notified by the same Globals.Events.PAGINATION_CHANGED event
@@ -13476,7 +13624,6 @@ var ReaderView = function (options) {
         setTimeout(function () {
 
             callback(true);
-
         }, 50);
 
     }
@@ -13562,12 +13709,14 @@ var ReaderView = function (options) {
      */
     this.openBook = function (openBookData) {
 
+        _navigationHistory.flush();
+
         var packageData = openBookData.package ? openBookData.package : openBookData;
 
         _package = new Package(packageData);
 
         _spine = _package.spine;
-        _spine.handleLinear(true);
+        //_spine.handleLinear(false);
 
         if (_mediaOverlayPlayer) {
             _mediaOverlayPlayer.reset();
@@ -13640,9 +13789,7 @@ var ReaderView = function (options) {
                 pageOpenRequest.setFirstPage();
                 openPage(pageOpenRequest, 0);
             }
-
         }
-
     };
 
     function onMediaPlayerStatusChanged(status) {
@@ -13764,6 +13911,8 @@ var ReaderView = function (options) {
 
                 var spineItem = _spine.getItemById(bookMark.idref);
 
+                _navigationHistory.skipNext();
+
                 initViewForItem(spineItem, function (isViewChanged) {
 
                     if (!isViewChanged) {
@@ -13781,7 +13930,7 @@ var ReaderView = function (options) {
 
                     self.emit(Globals.Events.SETTINGS_APPLIED);
                 });
-                
+               
                 return;
             }
         }
@@ -13823,6 +13972,8 @@ var ReaderView = function (options) {
         var openPageRequest = new PageOpenRequest(nextSpineItem, self);
         openPageRequest.setFirstPage();
 
+        _navigationHistory.skipNext();
+        
         openPage(openPageRequest, 2);
     };
 
@@ -13860,6 +14011,8 @@ var ReaderView = function (options) {
         var openPageRequest = new PageOpenRequest(prevSpineItem, self);
         openPageRequest.setLastPage();
 
+        _navigationHistory.skipNext();
+        
         openPage(openPageRequest, 1);
     };
 
@@ -13943,8 +14096,63 @@ var ReaderView = function (options) {
         return true;
     };
 
+    // this.navigationHistoryForward = function() {
+    //     // Not implemented 
+    // };
+    this.navigationHistoryBack = function(forceLinear) {
+        
+        console.log("back nav request ...");
+        
+        while (true) {
+            var bookMark = _navigationHistory.pop();
+            if (bookMark && bookMark.idref) {
+                var spineItem = _spine.getItemById(bookMark.idref);
+                
+                if (forceLinear) {
+                    var isLinear = _spine.isValidLinearItem(spineItem.index);
+                    if (!isLinear) {
+                        console.log("back nav, skipping non-linear " + bookMark.idref);
+                        continue;
+                    }
+                }
+    
+                console.log("back nav: ");
+                console.debug(bookMark);
+                
+                _navigationHistory.skipNext();
+                
+                initViewForItem(spineItem, function (isViewChanged) {
+                    
+                    if (!isViewChanged) {
+                        _currentView.setViewSettings(_viewerSettings);
+                    }
+
+                    self.openSpineItemElementCfi(bookMark.idref, bookMark.contentCFI, self);
+                });
+                
+                return;
+            }
+            
+            console.error("no valid back history?");
+            return;
+        }
+    };
+
+    this.navigationHistoryCanBack = function(forceLinear) {
+        
+        if (!_navigationHistory.canPop()) return false;
+            
+        if (!forceLinear) {
+            return true;
+        }
+        
+        return _navigationHistory.containsLinear();
+    };
+    
     // dir: 0 => new or same page, 1 => previous, 2 => next
     function openPage(pageRequest, dir) {
+
+        if (_currentView) _navigationHistory.push(_currentView.bookmarkCurrentPage());
 
         initViewForItem(pageRequest.spineItem, function (isViewChanged) {
 
@@ -14139,6 +14347,11 @@ var ReaderView = function (options) {
                 console.warn('decoded spineItem ' + decodedHrefPart + ' missing as well');
                 return false;
             }
+        }
+        
+        if (initiator && initiator instanceof MediaOverlayPlayer)
+        {
+            _navigationHistory.skipNext();
         }
 
         return self.openSpineItemElementId(spineItem.idref, elementId, initiator);
@@ -14375,9 +14588,15 @@ var ReaderView = function (options) {
         if (_currentView.isReflowable && _currentView.isReflowable() && bookMark && bookMark.idref) {
             var spineItem = _spine.getItemById(bookMark.idref);
 
+            _navigationHistory.skipNext();
+                
             initViewForItem(spineItem, function (isViewChanged) {
+                    
+                // if (!isViewChanged) {
+                //     _currentView.setViewSettings(_viewerSettings);
+                // }
+
                 self.openSpineItemElementCfi(bookMark.idref, bookMark.contentCFI, self);
-                return;
             });
         }
         else {
