@@ -18967,9 +18967,9 @@ Helpers.UpdateHtmlFontSize = function ($epubHtml, fontSize) {
             originalLineHeight = 0;
         }
 
-        ele.style.fontSize = (originalFontSize * factor) + 'px';
+        $(ele).css("font-size", (originalFontSize * factor) + 'px');
         if (originalLineHeight) {
-            ele.style.lineHeight = (originalLineHeight * factor) + 'px';
+            $(ele).css("line-height", (originalLineHeight * factor) + 'px');
         }
 
     }
@@ -22297,6 +22297,7 @@ var InternalLinksSupport = function(reader) {
 
     function readOpfFile(path, callback) {
 
+        //TODO: this should use readium-js resource fetcher (file / URI access abstraction layer), as right now this fails with packed EPUBs  
         $.ajax({
             // encoding: "UTF-8",
             // mimeType: "text/plain; charset=UTF-8",
@@ -37049,16 +37050,14 @@ var MediaOverlay = function(package) {
     }
 };
 
-MediaOverlay.fromDTO = function(moDTO, package) {
+MediaOverlay.fromDTO = function(moDTO, pack) {
 
-    var mo = new MediaOverlay(package);
+    var mo = new MediaOverlay(pack);
 
     if(!moDTO) {
         console.debug("No Media Overlay.");
         return mo;
     }
-
-    console.debug("Media Overlay INIT...");
 
     // if (mo.DEBUG)
     //     console.debug(JSON.stringify(moDTO));
@@ -41214,9 +41213,6 @@ var Switches = function() {
 // cases that are not supported
 Switches.apply = function(dom) {
 
-
-    // helper method, returns true if a given case node
-    // is supported, false otherwise
     function isSupported(caseNode) {
 
         var ns = caseNode.attributes["required-namespace"];
@@ -41229,31 +41225,39 @@ Switches.apply = function(dom) {
         // all the xmlns that readium is known to support
         // TODO this is going to require maintenance
         var supportedNamespaces = ["http://www.w3.org/1998/Math/MathML"];
-        return _.include(supportedNamespaces, ns);
+        return _.include(supportedNamespaces, ns.value);
     }
 
-    $('switch', dom).each( function() {
+    var getQuery = ((window.navigator.userAgent.indexOf("Trident") > 0) || (window.navigator.userAgent.indexOf("Edge") > 0))
+        ? function (elementName) { return 'epub\\:' + elementName; }
+        : function (elementName) { return elementName; };
+
+    _.each(dom.querySelectorAll(getQuery('switch')), function(switchNode) {
 
         // keep track of whether or now we found one
         var found = false;
 
-        $('case', this).each(function() {
+        _.each(switchNode.querySelectorAll(getQuery('case')), function(caseNode) {
 
-            if( !found && isSupported(this) ) {
+            if( !found && isSupported(caseNode) ) {
                 found = true; // we found the node, don't remove it
             }
             else {
-                $(this).remove(); // remove the node from the dom
-//                    $(this).prop("hidden", true);
+                $(caseNode).remove(); // remove the node from the dom
             }
+
         });
 
-        if(found) {
+        if (found) {
+
             // if we found a supported case, remove the default
-            $('default', this).remove();
-//                $('default', this).prop("hidden", true);
+            _.each(switchNode.querySelectorAll(getQuery('default')), function(defaultNode) {
+                $(defaultNode).remove();
+            });
+
         }
-    })
+
+    });
 };
     return Switches;
 });
