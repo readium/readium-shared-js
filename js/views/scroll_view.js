@@ -100,15 +100,19 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
         self.applyStyles();
 
+        setupContentFrameScrollListener();
+
+        return self;
+    };
+
+    function setupContentFrameScrollListener() {
         var lazyScroll = _.debounce(onScroll, ON_SCROLL_TIME_DALAY);
 
         _$contentFrame.on('scroll', function (e) {
             lazyScroll(e);
             onScrollDirect();
         });
-
-        return self;
-    };
+    }
 
     function updateLoadedViewsTop(callback, assertScrollPosition) {
 
@@ -823,6 +827,9 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
 
     this.openPage = function (pageRequest) {
+        if (_$contentFrame) {
+            _$contentFrame.off('scroll');
+        }
 
         _stopTransientViewUpdate = true;
 
@@ -849,6 +856,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
                     setTimeout(function () {
                         _isLoadingNewSpineItemOnPageRequest = false;
+                        setupContentFrameScrollListener();
                     }, ON_SCROLL_TIME_DALAY + 100);
 
                     if (pageView && _deferredPageRequest) {
