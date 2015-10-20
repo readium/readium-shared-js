@@ -23,7 +23,7 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define(["./spine_item"], function(SpineItem) {
+define(["./spine_item", "../helpers", "URIjs"], function(SpineItem, Helpers, URI) {
 /**
  *  Wrapper of the spine object received from hosting application
  *
@@ -180,11 +180,21 @@ var Spine = function(epubPackage, spineDTO) {
 
     this.getItemByHref = function(href) {
 
+        // var href1 = Helpers.ResolveContentRef(self.items[i].href, self.package.rootUrl + "/pack.opf");
+        // var href1 = self.package.resolveRelativeUrl(href);
+        //var href1 = new URI(href).absoluteTo(self.package.rootUrl).pathname();
+        //var href1 = new URI(self.package.resolveRelativeUrl(href)).relativeTo(self.package.rootUrl).pathname();
+        
+        var href1 = new URI(self.package.resolveRelativeUrl(href)).normalizePathname().pathname();
+        
         var length = self.items.length;
 
         for(var i = 0; i < length; i++) {
-            if(self.items[i].href == href) {
-
+            
+            var href2 = new URI(self.package.resolveRelativeUrl(self.items[i].href)).normalizePathname().pathname();
+            
+            //if(self.items[i].href == href) {
+            if(href1 == href2) {
                 return self.items[i];
             }
         }
