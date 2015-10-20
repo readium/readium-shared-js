@@ -14115,6 +14115,11 @@ if ('undefined' !== typeof module) {
     return true;
   }
 
+  function trimSlashes(text) {
+    var trim_expression = /^\/+|\/+$/g;
+    return text.replace(trim_expression, '');
+  }
+
   URI._parts = function() {
     return {
       protocol: null,
@@ -14717,7 +14722,7 @@ if ('undefined' !== typeof module) {
           } else {
             data[name] = filterArrayValues(data[name], value);
           }
-        } else if (data[name] === String(value)) {
+        } else if (data[name] === String(value) && (!isArray(value) || value.length === 1)) {
           data[name] = undefined;
         } else if (isArray(data[name])) {
           data[name] = filterArrayValues(data[name], value);
@@ -15532,9 +15537,10 @@ if ('undefined' !== typeof module) {
             segments.pop();
           }
 
-          segments.push(v[i]);
+          segments.push(trimSlashes(v[i]));
         }
       } else if (v || typeof v === 'string') {
+        v = trimSlashes(v);
         if (segments[segments.length -1] === '') {
           // empty trailing elements have to be overwritten
           // to prevent results such as /foo//bar
@@ -15545,7 +15551,7 @@ if ('undefined' !== typeof module) {
       }
     } else {
       if (v) {
-        segments[segment] = v;
+        segments[segment] = trimSlashes(v);
       } else {
         segments.splice(segment, 1);
       }
@@ -15911,7 +15917,7 @@ if ('undefined' !== typeof module) {
 
       var uri = this.absoluteTo(base._parts.path);
 
-      if (base._parts.path.indexOf("chrome-extension:") !== -1) {
+      if (base._parts.path.indexOf("chrome-extension:") !== -1 || base._parts.path.indexOf("http:") !== -1 || base._parts.path.indexOf("https:") !== -1) {
 
         return new URI('filesystem:' + uri.toString());
       }
@@ -35846,7 +35852,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define('readium_shared_js/models/spine',["./spine_item"], function(SpineItem) {
+define('readium_shared_js/models/spine',["./spine_item", "../helpers", "URIjs"], function(SpineItem, Helpers, URI) {
 /**
  *  Wrapper of the spine object received from hosting application
  *
@@ -36003,11 +36009,21 @@ var Spine = function(epubPackage, spineDTO) {
 
     this.getItemByHref = function(href) {
 
+        // var href1 = Helpers.ResolveContentRef(self.items[i].href, self.package.rootUrl + "/pack.opf");
+        // var href1 = self.package.resolveRelativeUrl(href);
+        //var href1 = new URI(href).absoluteTo(self.package.rootUrl).pathname();
+        //var href1 = new URI(self.package.resolveRelativeUrl(href)).relativeTo(self.package.rootUrl).pathname();
+        
+        var href1 = new URI(self.package.resolveRelativeUrl(href)).normalizePathname().pathname();
+        
         var length = self.items.length;
 
         for(var i = 0; i < length; i++) {
-            if(self.items[i].href == href) {
-
+            
+            var href2 = new URI(self.package.resolveRelativeUrl(self.items[i].href)).normalizePathname().pathname();
+            
+            //if(self.items[i].href == href) {
+            if(href1 == href2) {
                 return self.items[i];
             }
         }
@@ -37252,6 +37268,19 @@ var Package = function(packageData){
 
     this.resolveRelativeUrlMO = function(relativeUrl) {
 
+        var urlScheme = undefined;
+        try{
+            urlScheme = (new URI(relativeUrl)).scheme();
+        } catch (err) {
+            console.error(err);
+            console.log(relativeUrl);
+        }  
+        // Check absolute URL
+        //if (relativeUrl.indexOf("http://") == 0 || relativeUrl.indexOf("https://") == 0) {
+        if (urlScheme) {
+            return relativeUrl;
+        }
+        
         if(self.rootUrlMO && self.rootUrlMO.length > 0) {
 
             var url = self.rootUrlMO;
@@ -37277,7 +37306,19 @@ var Package = function(packageData){
 
     this.resolveRelativeUrl = function(relativeUrl) {
 
-
+        var urlScheme = undefined;
+        try{
+            urlScheme = (new URI(relativeUrl)).scheme();
+        } catch (err) {
+            console.error(err);
+            console.log(relativeUrl);
+        }  
+        // Check absolute URL
+        //if (relativeUrl.indexOf("http://") == 0 || relativeUrl.indexOf("https://") == 0) {
+        if (urlScheme) {
+            return relativeUrl;
+        }
+        
         if(self.rootUrl) {
 
             var url = self.rootUrl;

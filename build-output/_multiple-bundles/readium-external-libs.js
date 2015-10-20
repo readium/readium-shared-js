@@ -11875,6 +11875,11 @@ return jQuery;
     return true;
   }
 
+  function trimSlashes(text) {
+    var trim_expression = /^\/+|\/+$/g;
+    return text.replace(trim_expression, '');
+  }
+
   URI._parts = function() {
     return {
       protocol: null,
@@ -12477,7 +12482,7 @@ return jQuery;
           } else {
             data[name] = filterArrayValues(data[name], value);
           }
-        } else if (data[name] === String(value)) {
+        } else if (data[name] === String(value) && (!isArray(value) || value.length === 1)) {
           data[name] = undefined;
         } else if (isArray(data[name])) {
           data[name] = filterArrayValues(data[name], value);
@@ -13292,9 +13297,10 @@ return jQuery;
             segments.pop();
           }
 
-          segments.push(v[i]);
+          segments.push(trimSlashes(v[i]));
         }
       } else if (v || typeof v === 'string') {
+        v = trimSlashes(v);
         if (segments[segments.length -1] === '') {
           // empty trailing elements have to be overwritten
           // to prevent results such as /foo//bar
@@ -13305,7 +13311,7 @@ return jQuery;
       }
     } else {
       if (v) {
-        segments[segment] = v;
+        segments[segment] = trimSlashes(v);
       } else {
         segments.splice(segment, 1);
       }
@@ -13671,7 +13677,7 @@ return jQuery;
 
       var uri = this.absoluteTo(base._parts.path);
 
-      if (base._parts.path.indexOf("chrome-extension:") !== -1) {
+      if (base._parts.path.indexOf("chrome-extension:") !== -1 || base._parts.path.indexOf("http:") !== -1 || base._parts.path.indexOf("https:") !== -1) {
 
         return new URI('filesystem:' + uri.toString());
       }
