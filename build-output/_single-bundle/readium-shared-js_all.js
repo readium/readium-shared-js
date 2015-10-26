@@ -37267,20 +37267,17 @@ var Package = function(packageData){
     this.rendition_orientation = undefined;
 
     this.resolveRelativeUrlMO = function(relativeUrl) {
-
-        var urlScheme = undefined;
-        try{
-            urlScheme = (new URI(relativeUrl)).scheme();
-        } catch (err) {
+        
+        var relativeUrlUri = undefined;
+        try {
+            relativeUrlUri = new URI(relativeUrl);
+        } catch(err) {
             console.error(err);
             console.log(relativeUrl);
-        }  
-        // Check absolute URL
-        //if (relativeUrl.indexOf("http://") == 0 || relativeUrl.indexOf("https://") == 0) {
-        if (urlScheme) {
-            return relativeUrl;
         }
-        
+        if (relativeUrlUri && relativeUrlUri.is("absolute")) return relativeUrl; //relativeUrlUri.scheme() == "http://", "https://", "data:", etc.
+
+
         if(self.rootUrlMO && self.rootUrlMO.length > 0) {
 
             var url = self.rootUrlMO;
@@ -37306,18 +37303,15 @@ var Package = function(packageData){
 
     this.resolveRelativeUrl = function(relativeUrl) {
 
-        var urlScheme = undefined;
-        try{
-            urlScheme = (new URI(relativeUrl)).scheme();
-        } catch (err) {
+        var relativeUrlUri = undefined;
+        try {
+            relativeUrlUri = new URI(relativeUrl);
+        } catch(err) {
             console.error(err);
             console.log(relativeUrl);
-        }  
-        // Check absolute URL
-        //if (relativeUrl.indexOf("http://") == 0 || relativeUrl.indexOf("https://") == 0) {
-        if (urlScheme) {
-            return relativeUrl;
         }
+        if (relativeUrlUri && relativeUrlUri.is("absolute")) return relativeUrl; //relativeUrlUri.scheme() == "http://", "https://", "data:", etc.
+
         
         if(self.rootUrl) {
 
