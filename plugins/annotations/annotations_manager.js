@@ -49,8 +49,8 @@ For the purposes of the examples below, `RReader` is a previously instantiated `
 Before proceeding with the highlighting workflow it is sometimes necessary to determine whether the user has in fact selected anything. This can be accomplished with the following:
 
 
-	> RReader.getCurrentSelectionCfi()
-	Object {idref: "id-id2604743", cfi: "/4/2/6,/1:74,/1:129"}
+    > RReader.getCurrentSelectionCfi()
+    Object {idref: "id-id2604743", cfi: "/4/2/6,/1:74,/1:129"}
 
 The response contains a partial CFI that is sufficient to create a highlight based on selection. If nothing is selected *undefined* is returned. 
 
@@ -60,8 +60,8 @@ You can also use partial Cfi with `openSpineItemElementCfi()` to navigate to whe
 
 Once we've determined what needs to be highlighted (by generating a partial CFI from a selection, or having an existing partial CFI stored externally) we can add it to the reader by calling `addHighlight()`:
 
-	> RReader.addHighlight('id-id2604743', "/4/2/6,/1:74,/1:129", 123, "highlight")
-	Object {CFI: "/4/2/6,/1:74,/1:129", selectedElements: Array[1], idref: "id-id2604743"}
+    > RReader.addHighlight('id-id2604743', "/4/2/6,/1:74,/1:129", 123, "highlight")
+    Object {CFI: "/4/2/6,/1:74,/1:129", selectedElements: Array[1], idref: "id-id2604743"}
 
 *addHighligh*t takes the following parameters:
 
@@ -74,8 +74,8 @@ Once we've determined what needs to be highlighted (by generating a partial CFI 
 
 Alternatively, you can call addSelectionHighlight(). It combines both getCurrentSelectionCfi() and addHighlight into one call:
 
-	> RReader.addSelectionHighlight(124, "highlight")
-	Object {CFI: "/4/2/4,/1:437,/1:503", selectedElements: Array[1], idref: "id-id2604743"}
+    > RReader.addSelectionHighlight(124, "highlight")
+    Object {CFI: "/4/2/4,/1:437,/1:503", selectedElements: Array[1], idref: "id-id2604743"}
 
 Note that it provides no validation. If nothing is selected, `undefined` is returned.
 
@@ -84,8 +84,8 @@ Note that it provides no validation. If nothing is selected, `undefined` is retu
 
 To remove the highlight, call `removeHighlight`:
 
-	> RReader.removeHighlight(123)
-	undefined
+    > RReader.removeHighlight(123)
+    undefined
 
 
 # Handling annotation click events
@@ -98,13 +98,13 @@ When a user clicks on a highlight `annotationClicked` event is dispatched with t
 - annotationdId
 
 
-	> RReader.on('annotationClicked', function(type, idref, cfi, annotationId) { console.log (type, idref, cfi, annotationId)});
-	Views.ReaderView {on: function, once: function, off: function, trigger: function, listenTo: function???}
-	
+    > RReader.on('annotationClicked', function(type, idref, cfi, annotationId) { console.log (type, idref, cfi, annotationId)});
+    Views.ReaderView {on: function, once: function, off: function, trigger: function, listenTo: function???}
+    
 Then when the user clicks on the highlight the following will show up in the console:
 
-	highlight id-id2604743 /4/2/6,/1:74,/1:129 123 
-	
+    highlight id-id2604743 /4/2/6,/1:74,/1:129 123 
+    
 
 */
 define(['jquery', 'underscore', 'eventEmitter', './annotations_module'], function($, _, EventEmitter, EpubAnnotationsModule) {
