@@ -10361,11 +10361,11 @@ var Spine = function(epubPackage, spineDTO) {
     };
 
     this.item = function(index) {
-		
-		if (isValidIndex(index))
-        	return self.items[index];
-			
-		return undefined;
+        
+        if (isValidIndex(index))
+            return self.items[index];
+            
+        return undefined;
     };
 
     this.isRightToLeft = function() {
@@ -11093,7 +11093,7 @@ SmilModel.fromSmilDTO = function(smilDTO, mo) {
             indent++;
             copyChildren(nodeDTO, node);
             indent--;
-			
+            
             for(var i = 0, count = node.children.length; i < count; i++) {
                 var child = node.children[i];
 
@@ -13184,11 +13184,11 @@ define('readium_shared_js/models/trigger',["jquery", "../helpers"], function($, 
 
 var Trigger = function(domNode) {
     var $el = $(domNode);
-    this.action 	= $el.attr("action");
-    this.ref 		= $el.attr("ref");
-    this.event 		= $el.attr("ev:event");
-    this.observer 	= $el.attr("ev:observer");
-    this.ref 		= $el.attr("ref");
+    this.action     = $el.attr("action");
+    this.ref         = $el.attr("ref");
+    this.event         = $el.attr("ev:event");
+    this.observer     = $el.attr("ev:observer");
+    this.ref         = $el.attr("ref");
 };
 
 Trigger.register = function(dom) {

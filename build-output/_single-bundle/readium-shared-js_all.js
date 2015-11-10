@@ -11258,145 +11258,145 @@ var obj = {
 //   Lexing and parsing a CFI produces a set of executable instructions for processing a CFI (represented in the AST). 
 //   This object contains a set of functions that implement each of the executable instructions in the AST. 
 
-	// ------------------------------------------------------------------------------------ //
-	//  "PUBLIC" METHODS (THE API)                                                          //
-	// ------------------------------------------------------------------------------------ //
+    // ------------------------------------------------------------------------------------ //
+    //  "PUBLIC" METHODS (THE API)                                                          //
+    // ------------------------------------------------------------------------------------ //
 
-	// Description: Follows a step
-	// Rationale: The use of children() is important here, as this jQuery method returns a tree of xml nodes, EXCLUDING
-	//   CDATA and text nodes. When we index into the set of child elements, we are assuming that text nodes have been 
-	//   excluded.
-	// REFACTORING CANDIDATE: This should be called "followIndexStep"
-	getNextNode : function (CFIStepValue, $currNode, classBlacklist, elementBlacklist, idBlacklist) {
+    // Description: Follows a step
+    // Rationale: The use of children() is important here, as this jQuery method returns a tree of xml nodes, EXCLUDING
+    //   CDATA and text nodes. When we index into the set of child elements, we are assuming that text nodes have been 
+    //   excluded.
+    // REFACTORING CANDIDATE: This should be called "followIndexStep"
+    getNextNode : function (CFIStepValue, $currNode, classBlacklist, elementBlacklist, idBlacklist) {
 
-		// Find the jquery index for the current node
-		var $targetNode;
-		if (CFIStepValue % 2 == 0) {
+        // Find the jquery index for the current node
+        var $targetNode;
+        if (CFIStepValue % 2 == 0) {
 
-			$targetNode = this.elementNodeStep(CFIStepValue, $currNode, classBlacklist, elementBlacklist, idBlacklist);
-		}
-		else {
+            $targetNode = this.elementNodeStep(CFIStepValue, $currNode, classBlacklist, elementBlacklist, idBlacklist);
+        }
+        else {
 
-			$targetNode = this.inferTargetTextNode(CFIStepValue, $currNode, classBlacklist, elementBlacklist, idBlacklist);
-		}
+            $targetNode = this.inferTargetTextNode(CFIStepValue, $currNode, classBlacklist, elementBlacklist, idBlacklist);
+        }
 
-		return $targetNode;
-	},
+        return $targetNode;
+    },
 
-	// Description: This instruction executes an indirection step, where a resource is retrieved using a 
-	//   link contained on a attribute of the target element. The attribute that contains the link differs
-	//   depending on the target. 
-	// Note: Iframe indirection will (should) fail if the iframe is not from the same domain as its containing script due to 
-	//   the cross origin security policy
-	followIndirectionStep : function (CFIStepValue, $currNode, classBlacklist, elementBlacklist, idBlacklist) {
+    // Description: This instruction executes an indirection step, where a resource is retrieved using a 
+    //   link contained on a attribute of the target element. The attribute that contains the link differs
+    //   depending on the target. 
+    // Note: Iframe indirection will (should) fail if the iframe is not from the same domain as its containing script due to 
+    //   the cross origin security policy
+    followIndirectionStep : function (CFIStepValue, $currNode, classBlacklist, elementBlacklist, idBlacklist) {
 
-		var that = this;
-		var $contentDocument; 
-		var $blacklistExcluded;
-		var $startElement;
-		var $targetNode;
+        var that = this;
+        var $contentDocument; 
+        var $blacklistExcluded;
+        var $startElement;
+        var $targetNode;
 
-		// TODO: This check must be expanded to all the different types of indirection step
-		// Only expects iframes, at the moment
-		if ($currNode === undefined || !$currNode.is("iframe")) {
+        // TODO: This check must be expanded to all the different types of indirection step
+        // Only expects iframes, at the moment
+        if ($currNode === undefined || !$currNode.is("iframe")) {
 
-			throw cfiRuntimeErrors.NodeTypeError($currNode, "expected an iframe element");
-		}
+            throw cfiRuntimeErrors.NodeTypeError($currNode, "expected an iframe element");
+        }
 
-		// Check node type; only iframe indirection is handled, at the moment
-		if ($currNode.is("iframe")) {
+        // Check node type; only iframe indirection is handled, at the moment
+        if ($currNode.is("iframe")) {
 
-			// Get content
-			$contentDocument = $currNode.contents();
+            // Get content
+            $contentDocument = $currNode.contents();
 
-			// Go to the first XHTML element, which will be the first child of the top-level document object
-			$blacklistExcluded = this.applyBlacklist($contentDocument.children(), classBlacklist, elementBlacklist, idBlacklist);
-			$startElement = $($blacklistExcluded[0]);
+            // Go to the first XHTML element, which will be the first child of the top-level document object
+            $blacklistExcluded = this.applyBlacklist($contentDocument.children(), classBlacklist, elementBlacklist, idBlacklist);
+            $startElement = $($blacklistExcluded[0]);
 
-			// Follow an index step
-			$targetNode = this.getNextNode(CFIStepValue, $startElement, classBlacklist, elementBlacklist, idBlacklist);
+            // Follow an index step
+            $targetNode = this.getNextNode(CFIStepValue, $startElement, classBlacklist, elementBlacklist, idBlacklist);
 
-			// Return that shit!
-			return $targetNode; 
-		}
+            // Return that shit!
+            return $targetNode; 
+        }
 
-		// TODO: Other types of indirection
-		// TODO: $targetNode.is("embed")) : src
-		// TODO: ($targetNode.is("object")) : data
-		// TODO: ($targetNode.is("image") || $targetNode.is("xlink:href")) : xlink:href
-	},
+        // TODO: Other types of indirection
+        // TODO: $targetNode.is("embed")) : src
+        // TODO: ($targetNode.is("object")) : data
+        // TODO: ($targetNode.is("image") || $targetNode.is("xlink:href")) : xlink:href
+    },
 
-	// Description: Injects an element at the specified text node
-	// Arguments: a cfi text termination string, a jquery object to the current node
-	// REFACTORING CANDIDATE: Rename this to indicate that it injects into a text terminus
-	textTermination : function ($currNode, textOffset, elementToInject) {
+    // Description: Injects an element at the specified text node
+    // Arguments: a cfi text termination string, a jquery object to the current node
+    // REFACTORING CANDIDATE: Rename this to indicate that it injects into a text terminus
+    textTermination : function ($currNode, textOffset, elementToInject) {
 
-		var $injectedElement;
-		// Get the first node, this should be a text node
-		if ($currNode === undefined) {
+        var $injectedElement;
+        // Get the first node, this should be a text node
+        if ($currNode === undefined) {
 
-			throw cfiRuntimeErrors.NodeTypeError($currNode, "expected a terminating node, or node list");
-		} 
-		else if ($currNode.length === 0) {
+            throw cfiRuntimeErrors.NodeTypeError($currNode, "expected a terminating node, or node list");
+        } 
+        else if ($currNode.length === 0) {
 
-			throw cfiRuntimeErrors.TerminusError("Text", "Text offset:" + textOffset, "no nodes found for termination condition");
-		}
+            throw cfiRuntimeErrors.TerminusError("Text", "Text offset:" + textOffset, "no nodes found for termination condition");
+        }
 
-		$injectedElement = this.injectCFIMarkerIntoText($currNode, textOffset, elementToInject);
-		return $injectedElement;
-	},
+        $injectedElement = this.injectCFIMarkerIntoText($currNode, textOffset, elementToInject);
+        return $injectedElement;
+    },
 
-	// Description: Checks that the id assertion for the node target matches that on 
-	//   the found node. 
-	targetIdMatchesIdAssertion : function ($foundNode, idAssertion) {
+    // Description: Checks that the id assertion for the node target matches that on 
+    //   the found node. 
+    targetIdMatchesIdAssertion : function ($foundNode, idAssertion) {
 
-		if ($foundNode.attr("id") === idAssertion) {
+        if ($foundNode.attr("id") === idAssertion) {
 
-			return true;
-		}
-		else {
+            return true;
+        }
+        else {
 
-			return false;
-		}
-	},
+            return false;
+        }
+    },
 
-	// ------------------------------------------------------------------------------------ //
-	//  "PRIVATE" HELPERS                                                                   //
-	// ------------------------------------------------------------------------------------ //
+    // ------------------------------------------------------------------------------------ //
+    //  "PRIVATE" HELPERS                                                                   //
+    // ------------------------------------------------------------------------------------ //
 
-	// Description: Step reference for xml element node. Expected that CFIStepValue is an even integer
-	elementNodeStep : function (CFIStepValue, $currNode, classBlacklist, elementBlacklist, idBlacklist) {
+    // Description: Step reference for xml element node. Expected that CFIStepValue is an even integer
+    elementNodeStep : function (CFIStepValue, $currNode, classBlacklist, elementBlacklist, idBlacklist) {
 
-		var $targetNode;
-		var $blacklistExcluded;
-		var numElements;
-		var jqueryTargetNodeIndex = (CFIStepValue / 2) - 1;
+        var $targetNode;
+        var $blacklistExcluded;
+        var numElements;
+        var jqueryTargetNodeIndex = (CFIStepValue / 2) - 1;
 
-		$blacklistExcluded = this.applyBlacklist($currNode.children(), classBlacklist, elementBlacklist, idBlacklist);
-		numElements = $blacklistExcluded.length;
+        $blacklistExcluded = this.applyBlacklist($currNode.children(), classBlacklist, elementBlacklist, idBlacklist);
+        numElements = $blacklistExcluded.length;
 
-		if (this.indexOutOfRange(jqueryTargetNodeIndex, numElements)) {
+        if (this.indexOutOfRange(jqueryTargetNodeIndex, numElements)) {
 
-			throw cfiRuntimeErrors.OutOfRangeError(jqueryTargetNodeIndex, numElements - 1, "");
-		}
+            throw cfiRuntimeErrors.OutOfRangeError(jqueryTargetNodeIndex, numElements - 1, "");
+        }
 
-	    $targetNode = $($blacklistExcluded[jqueryTargetNodeIndex]);
-		return $targetNode;
-	},
+        $targetNode = $($blacklistExcluded[jqueryTargetNodeIndex]);
+        return $targetNode;
+    },
 
-	retrieveItemRefHref : function ($itemRefElement, $packageDocument) {
+    retrieveItemRefHref : function ($itemRefElement, $packageDocument) {
 
-		return $("#" + $itemRefElement.attr("idref"), $packageDocument).attr("href");
-	},
+        return $("#" + $itemRefElement.attr("idref"), $packageDocument).attr("href");
+    },
 
-	indexOutOfRange : function (targetIndex, numChildElements) {
+    indexOutOfRange : function (targetIndex, numChildElements) {
 
-		return (targetIndex > numChildElements - 1) ? true : false;
-	},
+        return (targetIndex > numChildElements - 1) ? true : false;
+    },
 
-	// Rationale: In order to inject an element into a specific position, access to the parent object 
-	//   is required. This is obtained with the jquery parent() method. An alternative would be to 
-	//   pass in the parent with a filtered list containing only children that are part of the target text node.
+    // Rationale: In order to inject an element into a specific position, access to the parent object 
+    //   is required. This is obtained with the jquery parent() method. An alternative would be to 
+    //   pass in the parent with a filtered list containing only children that are part of the target text node.
     injectCFIMarkerIntoText : function ($textNodeList, textOffset, elementToInject) {
         var document = $textNodeList[0].ownerDocument;
 
@@ -11418,7 +11418,7 @@ var obj = {
                 if (currNodeMaxIndex > textOffset) {
 
                     // This node is going to be split and the components re-inserted
-                    originalText = $textNodeList[nodeNum].nodeValue;	
+                    originalText = $textNodeList[nodeNum].nodeValue;    
 
                     // Before part
                     $textNodeList[nodeNum].nodeValue = originalText.slice(0, nodeOffset);
@@ -11439,10 +11439,10 @@ var obj = {
                     currTextPosition = currNodeMaxIndex;
                 }
             } else if($textNodeList[nodeNum].nodeType === Node.COMMENT_NODE){
-            	currNodeMaxIndex = $textNodeList[nodeNum].nodeValue.length + 7 + currTextPosition;
+                currNodeMaxIndex = $textNodeList[nodeNum].nodeValue.length + 7 + currTextPosition;
                 currTextPosition = currNodeMaxIndex;
             } else if($textNodeList[nodeNum].nodeType === Node.PROCESSING_INSTRUCTION_NODE){
-            	currNodeMaxIndex = $textNodeList[nodeNum].nodeValue.length + $textNodeList[nodeNum].target.length + 5
+                currNodeMaxIndex = $textNodeList[nodeNum].nodeValue.length + $textNodeList[nodeNum].target.length + 5
                 currTextPosition = currNodeMaxIndex;
             }
         }
@@ -11450,85 +11450,85 @@ var obj = {
         throw cfiRuntimeErrors.TerminusError("Text", "Text offset:" + textOffset, "The offset exceeded the length of the text");
     },
 
-	// Rationale: In order to inject an element into a specific position, access to the parent object 
-	//   is required. This is obtained with the jquery parent() method. An alternative would be to 
-	//   pass in the parent with a filtered list containing only children that are part of the target text node.
+    // Rationale: In order to inject an element into a specific position, access to the parent object 
+    //   is required. This is obtained with the jquery parent() method. An alternative would be to 
+    //   pass in the parent with a filtered list containing only children that are part of the target text node.
 
-	// Description: This method finds a target text node and then injects an element into the appropriate node
-	// Rationale: The possibility that cfi marker elements have been injected into a text node at some point previous to 
-	//   this method being called (and thus splitting the original text node into two separate text nodes) necessitates that
-	//   the set of nodes that compromised the original target text node are inferred and returned.
-	// Notes: Passed a current node. This node should have a set of elements under it. This will include at least one text node, 
-	//   element nodes (maybe), or possibly a mix. 
-	// REFACTORING CANDIDATE: This method is pretty long (and confusing). Worth investigating to see if it can be refactored into something clearer.
-	inferTargetTextNode : function (CFIStepValue, $currNode, classBlacklist, elementBlacklist, idBlacklist) {
-		
-		var $elementsWithoutMarkers;
-		var currLogicalTextNodeIndex;
-		var targetLogicalTextNodeIndex;
-		var nodeNum;
-		var $targetTextNodeList;
-		var prevNodeWasTextNode;
+    // Description: This method finds a target text node and then injects an element into the appropriate node
+    // Rationale: The possibility that cfi marker elements have been injected into a text node at some point previous to 
+    //   this method being called (and thus splitting the original text node into two separate text nodes) necessitates that
+    //   the set of nodes that compromised the original target text node are inferred and returned.
+    // Notes: Passed a current node. This node should have a set of elements under it. This will include at least one text node, 
+    //   element nodes (maybe), or possibly a mix. 
+    // REFACTORING CANDIDATE: This method is pretty long (and confusing). Worth investigating to see if it can be refactored into something clearer.
+    inferTargetTextNode : function (CFIStepValue, $currNode, classBlacklist, elementBlacklist, idBlacklist) {
+        
+        var $elementsWithoutMarkers;
+        var currLogicalTextNodeIndex;
+        var targetLogicalTextNodeIndex;
+        var nodeNum;
+        var $targetTextNodeList;
+        var prevNodeWasTextNode;
 
-		// Remove any cfi marker elements from the set of elements. 
-		// Rationale: A filtering function is used, as simply using a class selector with jquery appears to 
-		//   result in behaviour where text nodes are also filtered out, along with the class element being filtered.
-		$elementsWithoutMarkers = this.applyBlacklist($currNode.contents(), classBlacklist, elementBlacklist, idBlacklist);
+        // Remove any cfi marker elements from the set of elements. 
+        // Rationale: A filtering function is used, as simply using a class selector with jquery appears to 
+        //   result in behaviour where text nodes are also filtered out, along with the class element being filtered.
+        $elementsWithoutMarkers = this.applyBlacklist($currNode.contents(), classBlacklist, elementBlacklist, idBlacklist);
 
-		// Convert CFIStepValue to logical index; assumes odd integer for the step value
-		targetLogicalTextNodeIndex = ((parseInt(CFIStepValue) + 1) / 2) - 1;
+        // Convert CFIStepValue to logical index; assumes odd integer for the step value
+        targetLogicalTextNodeIndex = ((parseInt(CFIStepValue) + 1) / 2) - 1;
 
-		// Set text node position counter
-		currLogicalTextNodeIndex = 0;
-		prevNodeWasTextNode = false;
-		$targetTextNodeList = $elementsWithoutMarkers.filter(
-			function () {
+        // Set text node position counter
+        currLogicalTextNodeIndex = 0;
+        prevNodeWasTextNode = false;
+        $targetTextNodeList = $elementsWithoutMarkers.filter(
+            function () {
 
-				if (currLogicalTextNodeIndex === targetLogicalTextNodeIndex) {
+                if (currLogicalTextNodeIndex === targetLogicalTextNodeIndex) {
 
-					// If it's a text node
-					if (this.nodeType === Node.TEXT_NODE || this.nodeType === Node.COMMENT_NODE || this.nodeType === Node.PROCESSING_INSTRUCTION_NODE) {
-						prevNodeWasTextNode = true;
-						return true;
-					}
-					// Rationale: The logical text node position is only incremented once a group of text nodes (a single logical
-					//   text node) has been passed by the loop. 
-					else if (prevNodeWasTextNode && (this.nodeType !== Node.TEXT_NODE)) {
-						currLogicalTextNodeIndex++;
-						prevNodeWasTextNode = false;
-						return false;
-					}
-				}
-				// Don't return any elements
-				else {
-
-					if (this.nodeType === Node.TEXT_NODE || this.nodeType === Node.COMMENT_NODE || this.nodeType === Node.PROCESSING_INSTRUCTION_NODE) {
-						prevNodeWasTextNode = true;
-					}else if (!prevNodeWasTextNode && this.nodeType === Node.ELEMENT_NODE){
+                    // If it's a text node
+                    if (this.nodeType === Node.TEXT_NODE || this.nodeType === Node.COMMENT_NODE || this.nodeType === Node.PROCESSING_INSTRUCTION_NODE) {
+                        prevNodeWasTextNode = true;
+                        return true;
+                    }
+                    // Rationale: The logical text node position is only incremented once a group of text nodes (a single logical
+                    //   text node) has been passed by the loop. 
+                    else if (prevNodeWasTextNode && (this.nodeType !== Node.TEXT_NODE)) {
                         currLogicalTextNodeIndex++;
-						prevNodeWasTextNode = true;
-					}
-					else if (prevNodeWasTextNode && (this.nodeType !== Node.TEXT_NODE) && (this !== $elementsWithoutMarkers.lastChild)) {
-						currLogicalTextNodeIndex++;
-						prevNodeWasTextNode = false;
-					}
+                        prevNodeWasTextNode = false;
+                        return false;
+                    }
+                }
+                // Don't return any elements
+                else {
 
-					return false;
-				}
-			}
-		);
+                    if (this.nodeType === Node.TEXT_NODE || this.nodeType === Node.COMMENT_NODE || this.nodeType === Node.PROCESSING_INSTRUCTION_NODE) {
+                        prevNodeWasTextNode = true;
+                    }else if (!prevNodeWasTextNode && this.nodeType === Node.ELEMENT_NODE){
+                        currLogicalTextNodeIndex++;
+                        prevNodeWasTextNode = true;
+                    }
+                    else if (prevNodeWasTextNode && (this.nodeType !== Node.TEXT_NODE) && (this !== $elementsWithoutMarkers.lastChild)) {
+                        currLogicalTextNodeIndex++;
+                        prevNodeWasTextNode = false;
+                    }
 
-		// The filtering above should have counted the number of "logical" text nodes; this can be used to 
-		// detect out of range errors
-		if ($targetTextNodeList.length === 0) {
-			throw cfiRuntimeErrors.OutOfRangeError(targetLogicalTextNodeIndex, currLogicalTextNodeIndex, "Index out of range");
-		}
+                    return false;
+                }
+            }
+        );
 
-		// return the text node list
-		return $targetTextNodeList;
-	},
+        // The filtering above should have counted the number of "logical" text nodes; this can be used to 
+        // detect out of range errors
+        if ($targetTextNodeList.length === 0) {
+            throw cfiRuntimeErrors.OutOfRangeError(targetLogicalTextNodeIndex, currLogicalTextNodeIndex, "Index out of range");
+        }
 
-	applyBlacklist : function ($elements, classBlacklist, elementBlacklist, idBlacklist) {
+        // return the text node list
+        return $targetTextNodeList;
+    },
+
+    applyBlacklist : function ($elements, classBlacklist, elementBlacklist, idBlacklist) {
 
         var $filteredElements;
 
@@ -11540,45 +11540,45 @@ var obj = {
 
                 if (classBlacklist) {
 
-                	// Filter each element with the class type
-                	$.each(classBlacklist, function (index, value) {
+                    // Filter each element with the class type
+                    $.each(classBlacklist, function (index, value) {
 
-	                    if ($currElement.hasClass(value)) {
-	                    	includeInList = false;
+                        if ($currElement.hasClass(value)) {
+                            includeInList = false;
 
-	                    	// Break this loop
-	                        return false;
-	                    }
-                	});
+                            // Break this loop
+                            return false;
+                        }
+                    });
                 }
 
                 if (elementBlacklist) {
-                	
-	                // For each type of element
-	                $.each(elementBlacklist, function (index, value) {
+                    
+                    // For each type of element
+                    $.each(elementBlacklist, function (index, value) {
 
-	                    if ($currElement.is(value)) {
-	                    	includeInList = false;
+                        if ($currElement.is(value)) {
+                            includeInList = false;
 
-	                    	// Break this loop
-	                        return false;
-	                    }
-	                });
-				}
+                            // Break this loop
+                            return false;
+                        }
+                    });
+                }
 
-				if (idBlacklist) {
-                	
-	                // For each type of element
-	                $.each(idBlacklist, function (index, value) {
+                if (idBlacklist) {
+                    
+                    // For each type of element
+                    $.each(idBlacklist, function (index, value) {
 
-	                    if ($currElement.attr("id") === value) {
-	                    	includeInList = false;
+                        if ($currElement.attr("id") === value) {
+                            includeInList = false;
 
-	                    	// Break this loop
-	                        return false;
-	                    }
-	                });
-				}
+                            // Break this loop
+                            return false;
+                        }
+                    });
+                }
 
                 return includeInList;
             }
@@ -35976,11 +35976,11 @@ var Spine = function(epubPackage, spineDTO) {
     };
 
     this.item = function(index) {
-		
-		if (isValidIndex(index))
-        	return self.items[index];
-			
-		return undefined;
+        
+        if (isValidIndex(index))
+            return self.items[index];
+            
+        return undefined;
     };
 
     this.isRightToLeft = function() {
@@ -36708,7 +36708,7 @@ SmilModel.fromSmilDTO = function(smilDTO, mo) {
             indent++;
             copyChildren(nodeDTO, node);
             indent--;
-			
+            
             for(var i = 0, count = node.children.length; i < count; i++) {
                 var child = node.children[i];
 
@@ -41334,11 +41334,11 @@ define('readium_shared_js/models/trigger',["jquery", "../helpers"], function($, 
 
 var Trigger = function(domNode) {
     var $el = $(domNode);
-    this.action 	= $el.attr("action");
-    this.ref 		= $el.attr("ref");
-    this.event 		= $el.attr("ev:event");
-    this.observer 	= $el.attr("ev:observer");
-    this.ref 		= $el.attr("ref");
+    this.action     = $el.attr("action");
+    this.ref         = $el.attr("ref");
+    this.event         = $el.attr("ev:event");
+    this.observer     = $el.attr("ev:observer");
+    this.ref         = $el.attr("ref");
 };
 
 Trigger.register = function(dom) {
