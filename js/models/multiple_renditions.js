@@ -67,155 +67,155 @@ define([], function() {
 var MultipleRenditions = function(multipleRenditions) {
 
     var self = this;
-	
-	/**
-	 * @see {ReadiumSDK.Models.MultipleRenditionsData}
-	 */
-	this.renditions = multipleRenditions ? multipleRenditions.renditions : undefined;
-	this.selectedIndex = multipleRenditions ? multipleRenditions.selectedIndex : -1;
-	this.mappings = multipleRenditions ? multipleRenditions.mappings : undefined;
+    
+    /**
+     * @see {ReadiumSDK.Models.MultipleRenditionsData}
+     */
+    this.renditions = multipleRenditions ? multipleRenditions.renditions : undefined;
+    this.selectedIndex = multipleRenditions ? multipleRenditions.selectedIndex : -1;
+    this.mappings = multipleRenditions ? multipleRenditions.mappings : undefined;
 
-	
-	var cfiTokenise = function(cfi) {
+    
+    var cfiTokenise = function(cfi) {
 //console.log(cfi);
-		var arrayOfIndices = [];
-		
-		var split = cfi.split("/");
-		for (var i = 0; i < split.length; i++) {
-			var token = split[i];
-			var j = token.indexOf("[");
-			if (j > 0) {
-				token = token.substr(0, token.length - j);
-			}
-			j = token.indexOf("@");
-			if (j > 0) {
-				token = token.substr(0, token.length - j);
-			}
-			if (!token.length) continue;
-			
-			var index = parseInt(token);
+        var arrayOfIndices = [];
+        
+        var split = cfi.split("/");
+        for (var i = 0; i < split.length; i++) {
+            var token = split[i];
+            var j = token.indexOf("[");
+            if (j > 0) {
+                token = token.substr(0, token.length - j);
+            }
+            j = token.indexOf("@");
+            if (j > 0) {
+                token = token.substr(0, token.length - j);
+            }
+            if (!token.length) continue;
+            
+            var index = parseInt(token);
 //console.log(index);
-			arrayOfIndices.push(index);
-		}
+            arrayOfIndices.push(index);
+        }
 
-		return arrayOfIndices;
-	};
-	
-	// cfi1 <= cfi2
-	var cfiIsBeforeOrEqual = function(cfi1, cfi2) {
-		
-		var i = 0;
-		while (i < cfi1.length && i < cfi2.length) {
-			if (cfi1[i] > cfi2[i]) return false;
-			i++;
-		}
+        return arrayOfIndices;
+    };
+    
+    // cfi1 <= cfi2
+    var cfiIsBeforeOrEqual = function(cfi1, cfi2) {
+        
+        var i = 0;
+        while (i < cfi1.length && i < cfi2.length) {
+            if (cfi1[i] > cfi2[i]) return false;
+            i++;
+        }
 
-		return true;
-	};
+        return true;
+    };
 
 
-	/**
-	 * Get spine item data in readium-shared-js accepted format.
-	 * @param openPageRequest the original page request
-	 * @returns The unmodified openPageRequest parameter if the rendition OPF is the same, or the modified openPageRequest parameter if the rendition OPF was mapped succesfully, or undefined if the OPF could not be mapped.
-	 */
-	this.adjustPageRequestRenditionMapping = function(openPageRequest) {
-		
-		if (!openPageRequest) return undefined;
-		if (!multipleRenditions || !openPageRequest.opfPath) return openPageRequest;
-	
-		var rendition = multipleRenditions.renditions[multipleRenditions.selectedIndex];
-		
-		if (rendition.opfPath == openPageRequest.opfPath) return openPageRequest;
+    /**
+     * Get spine item data in readium-shared-js accepted format.
+     * @param openPageRequest the original page request
+     * @returns The unmodified openPageRequest parameter if the rendition OPF is the same, or the modified openPageRequest parameter if the rendition OPF was mapped succesfully, or undefined if the OPF could not be mapped.
+     */
+    this.adjustPageRequestRenditionMapping = function(openPageRequest) {
+        
+        if (!openPageRequest) return undefined;
+        if (!multipleRenditions || !openPageRequest.opfPath) return openPageRequest;
+    
+        var rendition = multipleRenditions.renditions[multipleRenditions.selectedIndex];
+        
+        if (rendition.opfPath == openPageRequest.opfPath) return openPageRequest;
 
-		if (!multipleRenditions.mappings) return undefined;
-		
-		var nearestMapping = undefined;
-		
-		console.log("ADJUSTING READING LOCATION");
-		console.debug(openPageRequest.elementCfi);
-		
-		var cfi2 = cfiTokenise(openPageRequest.elementCfi);
+        if (!multipleRenditions.mappings) return undefined;
+        
+        var nearestMapping = undefined;
+        
+        console.log("ADJUSTING READING LOCATION");
+        console.debug(openPageRequest.elementCfi);
+        
+        var cfi2 = cfiTokenise(openPageRequest.elementCfi);
 
-		for (var i = 0; i < multipleRenditions.mappings.length; i++) {
-			var mappingUL = multipleRenditions.mappings[i];
-			
-			for (var j = 0; j < mappingUL.length; j++) {
-				var mapping = mappingUL[j];
-				
-				if (openPageRequest.opfPath === mapping.opf && openPageRequest.idref === mapping.idref) {
-					var cfi1 = cfiTokenise(mapping.cfiPartial);
-					if (nearestMapping) {
-						var cfi3 = cfiTokenise(nearestMapping.cfiPartial);
-						if (cfiIsBeforeOrEqual(cfi1, cfi3)) {
-							break;
-						}
-					}
-					if (cfiIsBeforeOrEqual(cfi1, cfi2)) {
-						
-						for (var k = 0; k < mappingUL.length; k++) {
-							var m = mappingUL[k];
-							if (rendition.opfPath === m.opf) {
-								nearestMapping = m;
-								break;
-							}
-						}
-						
-						break;
-					}
-				}
-				
-				//mapping.opf
-				//openPageRequest.opfPath
-				
-				//mapping.idref
-				//openPageRequest.idref
-				
-				//mapping.cfiPartial
-				//openPageRequest.elementCfi
-			}
-		}
-		
-		if (nearestMapping) {
+        for (var i = 0; i < multipleRenditions.mappings.length; i++) {
+            var mappingUL = multipleRenditions.mappings[i];
+            
+            for (var j = 0; j < mappingUL.length; j++) {
+                var mapping = mappingUL[j];
+                
+                if (openPageRequest.opfPath === mapping.opf && openPageRequest.idref === mapping.idref) {
+                    var cfi1 = cfiTokenise(mapping.cfiPartial);
+                    if (nearestMapping) {
+                        var cfi3 = cfiTokenise(nearestMapping.cfiPartial);
+                        if (cfiIsBeforeOrEqual(cfi1, cfi3)) {
+                            break;
+                        }
+                    }
+                    if (cfiIsBeforeOrEqual(cfi1, cfi2)) {
+                        
+                        for (var k = 0; k < mappingUL.length; k++) {
+                            var m = mappingUL[k];
+                            if (rendition.opfPath === m.opf) {
+                                nearestMapping = m;
+                                break;
+                            }
+                        }
+                        
+                        break;
+                    }
+                }
+                
+                //mapping.opf
+                //openPageRequest.opfPath
+                
+                //mapping.idref
+                //openPageRequest.idref
+                
+                //mapping.cfiPartial
+                //openPageRequest.elementCfi
+            }
+        }
+        
+        if (nearestMapping) {
 console.log("FOUND!");
 console.debug(nearestMapping);
-			var elCfi = nearestMapping.cfiPartial;
-			var split = elCfi.split("/");
-			var lastIndex = split[split.length-1];
-			var l = lastIndex.indexOf("@");
-			if (l > 0) {
-				lastIndex = lastIndex.substr(0, lastIndex.length-l);
-			}
-			
-			var isOdd = (lastIndex % 2) == 1;
-			if (isOdd) {
-				elCfi = "";
-				for (var k = 0; k < split.length-1; k++) {
-					var index = split[k];
-					if (!index.length) continue;
-					elCfi += ("/" + index);
-				}
-				
+            var elCfi = nearestMapping.cfiPartial;
+            var split = elCfi.split("/");
+            var lastIndex = split[split.length-1];
+            var l = lastIndex.indexOf("@");
+            if (l > 0) {
+                lastIndex = lastIndex.substr(0, lastIndex.length-l);
+            }
+            
+            var isOdd = (lastIndex % 2) == 1;
+            if (isOdd) {
+                elCfi = "";
+                for (var k = 0; k < split.length-1; k++) {
+                    var index = split[k];
+                    if (!index.length) continue;
+                    elCfi += ("/" + index);
+                }
+                
 console.debug("ODD: "+elCfi);
-			}
-			
-			var l = elCfi.indexOf("@");
-			if (l < 0) {
-				elCfi += "@0:0";
-			}
-			
-			openPageRequest.opfPath = nearestMapping.opf;
-			openPageRequest.idref = nearestMapping.idref;
-			openPageRequest.elementCfi = elCfi;
-		
+            }
+            
+            var l = elCfi.indexOf("@");
+            if (l < 0) {
+                elCfi += "@0:0";
+            }
+            
+            openPageRequest.opfPath = nearestMapping.opf;
+            openPageRequest.idref = nearestMapping.idref;
+            openPageRequest.elementCfi = elCfi;
+        
 console.debug(JSON.stringify(openPageRequest));
-		} else {
+        } else {
 console.log("RENDITION MAPPING NOT FOUND!");
-			openPageRequest = undefined;
-		}
-		
-		return openPageRequest;
-	};
+            openPageRequest = undefined;
+        }
+        
+        return openPageRequest;
+    };
 };
 
 return MultipleRenditions;

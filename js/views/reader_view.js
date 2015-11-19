@@ -335,16 +335,16 @@ var ReaderView = function (options) {
     this.userStyles = function () {
         return _userStyles;
     };
-	
+    
     /**
      * Returns the EPUB3 Multiple Renditions data for the currently-opened ebook (initialised in this.openBook())
      *
      * @returns {ReadiumSDK.Models.MultipleRenditions} can be undefined
      */
-	this.getMultipleRenditions = function() {
-		return _multipleRenditions;
-	};
-	
+    this.getMultipleRenditions = function() {
+        return _multipleRenditions;
+    };
+    
     /**
      * Open Book Data
      *
@@ -391,20 +391,20 @@ var ReaderView = function (options) {
         }
 
         if (openBookData.multipleRenditions) {
-			_multipleRenditions = new MultipleRenditions(openBookData.multipleRenditions);
+            _multipleRenditions = new MultipleRenditions(openBookData.multipleRenditions);
         } else {
-			_multipleRenditions = undefined;
-		}
-		
+            _multipleRenditions = undefined;
+        }
+        
         var pageRequestData = undefined;
 
         if(openBookData.openPageRequest) {
-			
-			if (_multipleRenditions) {
-				openBookData.openPageRequest = _multipleRenditions.adjustPageRequestRenditionMapping(openBookData.openPageRequest);
-			}
-		}
-		
+            
+            if (_multipleRenditions) {
+                openBookData.openPageRequest = _multipleRenditions.adjustPageRequestRenditionMapping(openBookData.openPageRequest);
+            }
+        }
+        
         if(openBookData.openPageRequest) {
             if (openBookData.openPageRequest.idref || (openBookData.openPageRequest.contentRefUrl && openBookData.openPageRequest.sourceFileHref)) {
                 pageRequestData = openBookData.openPageRequest;
