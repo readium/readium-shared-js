@@ -11271,7 +11271,7 @@ return jQuery;
  * URI.js - Mutating URLs
  * IPv6 Support
  *
- * Version: 1.16.1
+ * Version: 1.17.0
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -11460,7 +11460,7 @@ return jQuery;
  * URI.js - Mutating URLs
  * Second Level Domain (SLD) Support
  *
- * Version: 1.16.1
+ * Version: 1.17.0
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -11701,7 +11701,7 @@ return jQuery;
 /*!
  * URI.js - Mutating URLs
  *
- * Version: 1.16.1
+ * Version: 1.17.0
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -11772,7 +11772,7 @@ return jQuery;
     return this;
   }
 
-  URI.version = '1.16.1';
+  URI.version = '1.17.0';
 
   var p = URI.prototype;
   var hasOwn = Object.prototype.hasOwnProperty;
@@ -12923,6 +12923,27 @@ return jQuery;
   };
 
   // compound accessors
+  p.origin = function(v, build) {
+    var parts;
+
+    if (this._parts.urn) {
+      return v === undefined ? '' : this;
+    }
+
+    if (v === undefined) {
+      var protocol = this.protocol();
+      var authority = this.authority();
+      if (!authority) return '';
+      return (protocol ? protocol + '://' : '') + this.authority();
+    } else {
+      var origin = URI(v);
+      this
+        .protocol(origin.protocol())
+        .authority(origin.authority())
+        .build(!build);
+      return this;
+    }
+  };
   p.host = function(v, build) {
     if (this._parts.urn) {
       return v === undefined ? '' : this;

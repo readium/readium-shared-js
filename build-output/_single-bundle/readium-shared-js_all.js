@@ -13511,7 +13511,7 @@ if ('undefined' !== typeof module) {
  * URI.js - Mutating URLs
  * IPv6 Support
  *
- * Version: 1.16.1
+ * Version: 1.17.0
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -13700,7 +13700,7 @@ if ('undefined' !== typeof module) {
  * URI.js - Mutating URLs
  * Second Level Domain (SLD) Support
  *
- * Version: 1.16.1
+ * Version: 1.17.0
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -13941,7 +13941,7 @@ if ('undefined' !== typeof module) {
 /*!
  * URI.js - Mutating URLs
  *
- * Version: 1.16.1
+ * Version: 1.17.0
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -14012,7 +14012,7 @@ if ('undefined' !== typeof module) {
     return this;
   }
 
-  URI.version = '1.16.1';
+  URI.version = '1.17.0';
 
   var p = URI.prototype;
   var hasOwn = Object.prototype.hasOwnProperty;
@@ -15163,6 +15163,27 @@ if ('undefined' !== typeof module) {
   };
 
   // compound accessors
+  p.origin = function(v, build) {
+    var parts;
+
+    if (this._parts.urn) {
+      return v === undefined ? '' : this;
+    }
+
+    if (v === undefined) {
+      var protocol = this.protocol();
+      var authority = this.authority();
+      if (!authority) return '';
+      return (protocol ? protocol + '://' : '') + this.authority();
+    } else {
+      var origin = URI(v);
+      this
+        .protocol(origin.protocol())
+        .authority(origin.authority())
+        .build(!build);
+      return this;
+    }
+  };
   p.host = function(v, build) {
     if (this._parts.urn) {
       return v === undefined ? '' : this;
@@ -19594,8 +19615,9 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
         var elementRect = Helpers.Rect.fromElement($element);
         if (_.isNaN(elementRect.left)) {
             // this is actually a point element, doesnt have a bounding rectangle
+            var position = $element.position();
             elementRect = new Helpers.Rect(
-                    $element.position().top, $element.position().left, 0, 0);
+                    position.left, position.top, 0, 0);
         }
         var topOffset = visibleContentOffsets.top || 0;
         var isBelowVisibleTop = elementRect.bottom() > topOffset;

@@ -1856,8 +1856,9 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
         var elementRect = Helpers.Rect.fromElement($element);
         if (_.isNaN(elementRect.left)) {
             // this is actually a point element, doesnt have a bounding rectangle
+            var position = $element.position();
             elementRect = new Helpers.Rect(
-                    $element.position().top, $element.position().left, 0, 0);
+                    position.left, position.top, 0, 0);
         }
         var topOffset = visibleContentOffsets.top || 0;
         var isBelowVisibleTop = elementRect.bottom() > topOffset;
