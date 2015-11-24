@@ -53,9 +53,6 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
         return $iframe[0].contentDocument;
     };
 
-    // FIXED LAYOUT if (!options.rectangleBased) alert("!!!options.rectangleBased");
-
-
     function createRange() {
         return self.getRootDocument().createRange();
     }
@@ -96,10 +93,17 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
     }
 
     function getFrameDimensions() {
-        return {
-            width: $iframe[0].clientWidth,
-            height: $iframe[0].clientHeight
-        };
+        if (isPaginatedView()) {
+            return {
+                width: $iframe[0].clientWidth,
+                height: $iframe[0].clientHeight
+            };
+        } else {
+            return {
+                width: $viewport.parent()[0].clientWidth,
+                height: $viewport.parent()[0].clientHeight
+            };
+        }
     }
 
     function getCaretRangeFromPoint(x, y, document) {
@@ -108,9 +112,9 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
         return document.caretRangeFromPoint(x, y);
     }
 
-    var visibilityCheckerFunc = options.rectangleBased
-        ? checkVisibilityByRectangles
-        : checkVisibilityByVerticalOffsets;
+    function isPaginatedView() {
+        return !!options.paginationInfo;
+    }
 
     /**
      * @private
@@ -156,11 +160,12 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
             return false;
         }
 
-        if (isVwm) {
+        if (isPaginatedView()) {
+            return rect.left >= 0 && rect.left < frameDimensions.width;
+        } else {
             return rect.top >= 0 && rect.top < frameDimensions.height;
         }
 
-        return rect.left >= 0 && rect.left < frameDimensions.width;
     }
 
     /**
@@ -170,12 +175,12 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
      * @returns {number} Full width of a column in pixels
      */
     function getColumnFullWidth() {
-        
+
         if (!options.paginationInfo || isVerticalWritingMode())
         {
             return $iframe.width();
         }
-        
+
         return options.paginationInfo.columnWidth + options.paginationInfo.columnGap;
     }
 
@@ -190,57 +195,23 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
     function getVisibleContentOffsets() {
         if(isVerticalWritingMode()){
             return {
-                top: (options.paginationInfo ? options.paginationInfo.pageOffset : 0)
+                top: (options.paginationInfo ? options.paginationInfo.pageOffset : 0),
+                left: 0
             };
         }
-        return {
-            left: (options.paginationInfo ? options.paginationInfo.pageOffset : 0)
-                * (isPageProgressionRightToLeft() ? -1 : 1)
-        };
-    }
-
-    // Old (offsetTop-based) algorithm, useful in top-to-bottom layouts
-    function checkVisibilityByVerticalOffsets($element, visibleContentOffsets, shouldCalculateVisibilityOffset) {
-
-        //TODO JC: Trace calls to this function and verify the use of visibleContentOffsets
-        if (!visibleContentOffsets) {
-            visibleContentOffsets = {};
+        
+        if (isPaginatedView()) {
+            return {
+                top: 0,
+                left: 0
+            };
+        } else {
+            return {
+                top: -$viewport.parent().scrollTop(),
+                left: 0
+            };
         }
-
-        var elementRect = Helpers.Rect.fromElement($element);
-        if (_.isNaN(elementRect.left)) {
-            // this is actually a point element, doesnt have a bounding rectangle
-            elementRect = new Helpers.Rect(
-                    $element.position().top, $element.position().left, 0, 0);
-        }
-        var topOffset = visibleContentOffsets.top || 0;
-        var isBelowVisibleTop = elementRect.bottom() > topOffset;
-        var isAboveVisibleBottom = visibleContentOffsets.bottom !== undefined
-            ? elementRect.top < visibleContentOffsets.bottom
-            : true; //this check always passed, if corresponding offset isn't set
-
-        var percentOfElementHeight = 0;
-        if (isBelowVisibleTop && isAboveVisibleBottom) { // element is visible
-            if (!shouldCalculateVisibilityOffset) {
-                return 100;
-            }
-            else if (elementRect.top <= topOffset) {
-                percentOfElementHeight = Math.ceil(
-                    100 * (topOffset - elementRect.top) / elementRect.height
-                );
-
-                // below goes another algorithm, which has been used in getVisibleElements pattern,
-                // but it seems to be a bit incorrect
-                // (as spatial offset should be measured at the first visible point of the element):
-                //
-                // var visibleTop = Math.max(elementRect.top, visibleContentOffsets.top);
-                // var visibleBottom = Math.min(elementRect.bottom(), visibleContentOffsets.bottom);
-                // var visibleHeight = visibleBottom - visibleTop;
-                // var percentVisible = Math.round((visibleHeight / elementRect.height) * 100);
-            }
-            return 100 - percentOfElementHeight;
-        }
-        return 0; // element isn't visible
+        
     }
 
     /**
@@ -259,14 +230,12 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
      *      (will just give 100, if `shouldCalculateVisibilityPercentage` => false)
      *      null for elements with display:none
      */
-    function checkVisibilityByRectangles($element, _props, shouldCalculateVisibilityPercentage, frameDimensions) {
+    function checkVisibilityByRectangles($element, shouldCalculateVisibilityPercentage, visibleContentOffsets, frameDimensions) {
+        visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
         frameDimensions = frameDimensions || getFrameDimensions();
 
-
-        var visibleContentOffsets = getVisibleContentOffsets();
-        visibleContentOffsets = undefined; // TODO check this! https://github.com/readium/readium-js-viewer/issues/404#issuecomment-141372102
         var elementRectangles = getNormalizedRectangles($element, visibleContentOffsets);
-        
+
         var clientRectangles = elementRectangles.clientRectangles;
         if (clientRectangles.length === 0) { // elements with display:none, etc.
             return null;
@@ -276,11 +245,13 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
 
         if (clientRectangles.length === 1) {
             var adjustedRect = clientRectangles[0];
-
-            if (adjustedRect.bottom > frameDimensions.height || adjustedRect.top < 0) {
-                // because of webkit inconsistency, that single rectangle should be adjusted
-                // until it hits the end OR will be based on the FIRST column that is visible
-                adjustRectangle(adjustedRect, true, frameDimensions);
+            
+            if (isPaginatedView()) {
+                if (adjustedRect.bottom > frameDimensions.height || adjustedRect.top < 0) {
+                    // because of webkit inconsistency, that single rectangle should be adjusted
+                    // until it hits the end OR will be based on the FIRST column that is visible
+                    adjustRectangle(adjustedRect, true, frameDimensions);
+                }
             }
 
             if (isRectVisible(adjustedRect)) {
@@ -318,13 +289,9 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
      * @returns {number|null}
      */
     function findPageByRectangles($element, spatialVerticalOffset) {
-        
+
         var visibleContentOffsets = getVisibleContentOffsets();
-        //console.debug(visibleContentOffsets);
-        visibleContentOffsets = undefined; // TODO check this! https://github.com/readium/readium-js-viewer/issues/404#issuecomment-141372102
-        
         var elementRectangles = getNormalizedRectangles($element, visibleContentOffsets);
-        //console.debug(JSON.stringify(elementRectangles));
 
         var clientRectangles  = elementRectangles.clientRectangles;
         if (clientRectangles.length === 0) { // elements with display:none, etc.
@@ -357,8 +324,7 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
         if (clientRectangles.length === 1) {
             adjustRectangle(firstRectangle, false, frameDimensions, columnFullWidth, isRtl, isVwm);
         }
-        //console.debug(JSON.stringify(firstRectangle));
-        
+
         var pageIndex;
 
         if (isVwm) {
@@ -602,7 +568,7 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
         if (isVwm) {
             return;
         }
-        
+
         var totalHeight = _.reduce(rects, function(prev, cur) {
             return prev + cur.height;
         }, 0);
@@ -766,7 +732,7 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
         //
         // top left corner & top right corner
         // but for y coord use the mid point between top and bottom
-        
+
         if (isVerticalWritingMode()) {
             var x = rect.right - (rect.width / 2);
             return [{x: x, y: rect.top}, {x: x, y: rect.bottom}];
@@ -778,7 +744,8 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
     }
 
     function getVisibleTextRangeOffsetsSelectedByFunc(textNode, pickerFunc) {
-
+        var visibleContentOffsets = getVisibleContentOffsets();
+        
         var textNodeFragments = getNodeClientRectList(textNode);
 
         var visibleFragments = _.filter(textNodeFragments, function (rect) {
@@ -791,17 +758,43 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
             return null;
         }
         var fragmentCorner = pickerFunc(getTextNodeRectCornerPairs(fragment));
+        
         var caretRange = getCaretRangeFromPoint(fragmentCorner.x, fragmentCorner.y);
+        console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'a0');
+        // Desperately try to find it from all angles! Darn sub pixeling..
+        //TODO: remove the need for this brute-force method, since it's making the result non-deterministic
         if (!caretRange || caretRange.startContainer !== textNode) {
-            // Desperately try to find it from all angles! Darn sub pixels..
             caretRange = getCaretRangeFromPoint(fragmentCorner.x - 1, fragmentCorner.y);
-            if (!caretRange || caretRange.startContainer !== textNode) {
-                caretRange = getCaretRangeFromPoint(fragmentCorner.x, fragmentCorner.y - 1);
-                if (!caretRange || caretRange.startContainer !== textNode) {
-                    caretRange = getCaretRangeFromPoint(fragmentCorner.x - 1, fragmentCorner.y - 1);
-                }
-            }
+            console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'a1');
         }
+        if (!caretRange || caretRange.startContainer !== textNode) {
+            caretRange = getCaretRangeFromPoint(fragmentCorner.x, fragmentCorner.y - 1);
+            console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'a2');
+        }
+        if (!caretRange || caretRange.startContainer !== textNode) {
+            caretRange = getCaretRangeFromPoint(fragmentCorner.x - 1, fragmentCorner.y - 1);
+            console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'a3');
+        }
+        if (!caretRange || caretRange.startContainer !== textNode) {
+            fragmentCorner.x = Math.floor(fragmentCorner.x);
+            fragmentCorner.y = Math.floor(fragmentCorner.y);
+            caretRange = getCaretRangeFromPoint(fragmentCorner.x, fragmentCorner.y);
+            console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'b0');
+        }
+        // Desperately try to find it from all angles! Darn sub pixeling..
+        if (!caretRange || caretRange.startContainer !== textNode) {
+            caretRange = getCaretRangeFromPoint(fragmentCorner.x - 1, fragmentCorner.y);
+            console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'b1');
+        }
+        if (!caretRange || caretRange.startContainer !== textNode) {
+            caretRange = getCaretRangeFromPoint(fragmentCorner.x, fragmentCorner.y - 1);
+            console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'b2');
+        }
+        if (!caretRange || caretRange.startContainer !== textNode) {
+            caretRange = getCaretRangeFromPoint(fragmentCorner.x - 1, fragmentCorner.y - 1);
+            console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'b3');
+        }
+
         // Still nothing? fall through..
         if (!caretRange) {
             console.warn('getVisibleTextRangeOffsetsSelectedByFunc: no caret range result');
@@ -862,7 +855,7 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
     // get an array of visible text elements and then select one based on the func supplied
     // and generate a CFI for the first visible text subrange.
     function getVisibleTextRangeCfiForTextElementSelectedByFunc(pickerFunc) {
-        var visibleLeafNodeList = self.getVisibleLeafNodes();
+        var visibleLeafNodeList = self.getVisibleLeafNodes(getVisibleContentOffsets());
         return findVisibleLeafNodeCfi(visibleLeafNodeList, pickerFunc);
     }
 
@@ -1053,9 +1046,8 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
                 ["MathJax_Message", "MathJax_SVG_Hidden"]);
 
             var visibleContentOffsets = getVisibleContentOffsets();
-            visibleContentOffsets = undefined; // TODO check this! https://github.com/readium/readium-js-viewer/issues/404#issuecomment-141372102
             var normRects = getNormalizedRectangles($element, visibleContentOffsets);
-            
+
             return {startInfo: null, endInfo: null, clientRect: normRects.wrapperRectangle }
         }
     };
@@ -1210,12 +1202,11 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
     };
 
     this.getElementVisibility = function ($element, visibleContentOffsets) {
-        return visibilityCheckerFunc($element, visibleContentOffsets, true);
+        return checkVisibilityByRectangles($element, true, visibleContentOffsets);
     };
 
 
-
-    this.isElementVisible = visibilityCheckerFunc;
+    this.isElementVisible = checkVisibilityByRectangles;
 
     this.getVisibleElementsWithFilter = function (visibleContentOffsets, filterFunction) {
         var $elements = this.getElementsWithFilter($("body", this.getRootElement()), filterFunction);
@@ -1244,8 +1235,8 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
         _.each($elements, function ($node) {
             var isTextNode = ($node[0].nodeType === Node.TEXT_NODE);
             var $element = isTextNode ? $node.parent() : $node;
-            var visibilityPercentage = visibilityCheckerFunc(
-                $element, visibleContentOffsets, true);
+            var visibilityPercentage = checkVisibilityByRectangles(
+                $element, true, visibleContentOffsets);
 
             if (visibilityPercentage) {
                 var $visibleElement = $element;
@@ -1345,7 +1336,7 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
                 return fromCache;
             }
         }
-        
+
         var nodeIterator = document.createNodeIterator(
             $root[0],
             NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
@@ -1354,7 +1345,7 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
             },
             false
         );
-        
+
         var $leafNodeElements = [];
 
         var node;
@@ -1372,7 +1363,7 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
         if (_cacheEnabled) {
             _cache.leafNodeElements.set($root, $leafNodeElements);
         }
-        
+
         return $leafNodeElements;
     };
 
@@ -1534,7 +1525,7 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
 
         function drawDebugOverlayFromRect(rect) {
             var leftOffset, topOffset;
-            
+
             if (isVerticalWritingMode()) {
                 leftOffset = 0;
                 topOffset = -getPaginationLeftOffset();
@@ -1542,7 +1533,7 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
                 leftOffset = -getPaginationLeftOffset();
                 topOffset = 0;
             }
-            
+
             addOverlayRect({
                 left: rect.left + leftOffset,
                 top: rect.top + topOffset,
