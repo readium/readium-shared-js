@@ -24,8 +24,8 @@
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-define(["jquery", "underscore", "eventEmitter", "./cfi_navigation_logic", "../helpers", "../models/viewer_settings"],
-    function ($, _, EventEmitter, CfiNavigationLogic, Helpers, ViewerSettings) {
+define(["jquery", "underscore", "eventEmitter", "./cfi_navigation_logic", "../helpers", "../models/viewer_settings", "../models/bookmark_data"],
+    function ($, _, EventEmitter, CfiNavigationLogic, Helpers, ViewerSettings, BookmarkData) {
 
 /**
  * Renders one page of fixed layout spread
@@ -955,7 +955,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
     };
 
     function createBookmarkFromCfi(cfi){
-        return new ReadiumSDK.Models.BookmarkData(_currentSpineItem.idref, cfi);
+        return new BookmarkData(_currentSpineItem.idref, cfi);
     }
 
     this.getLoadedContentFrames = function () {
