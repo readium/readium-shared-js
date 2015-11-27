@@ -924,21 +924,22 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
             pageRange = getPageViewRange(pageView);
             sfiNav = pageView.getNavigator();
-            $element = sfiNav.getElementByCfi(pageRequest.elementCfi);
 
-            if (!$element || !$element.length) {
-                console.warn("Element cfi=" + pageRequest.elementCfi + " not found!");
+            var domRange = sfiNav.getDomRangeFromRangeCfi(pageRequest.elementCfi);            
+            if (!domRange) {
+                console.warn("Range for cfi=" + pageRequest.elementCfi + " not found!");
                 return;
             }
-
-            if (isElementVisibleOnScreen(pageView, $element, 60)) {
+            
+            var domRangeAsRange = getDomRangeAsRange(pageView, domRange);
+            if (isRangeIsVisibleOnScreen(pageView, domRangeAsRange, 60)) {
                 //TODO refactoring required
                 // this is artificial call because MO player waits for this event to continue playing.
                 onPaginationChanged(pageRequest.initiator, pageRequest.spineItem, pageRequest.elementId);
                 return;
             }
 
-            topOffset = sfiNav.getVerticalOffsetForElement($element) + pageRange.top;
+            topOffset = domRangeAsRange.top;
 
         }
         else if (pageRequest.firstPage) {
@@ -1349,6 +1350,18 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         var elementRange = {top: 0, bottom: 0};
         elementRange.top = $element.offset().top + pageRange.top;
         elementRange.bottom = elementRange.top + $element.height();
+
+        return elementRange;
+    }
+    
+    function getDomRangeAsRange(pageView, domRange) {
+
+        var pageRange = getPageViewRange(pageView);
+
+        var elementRange = {top: 0, bottom: 0};
+        var boundingClientRect = domRange.getBoundingClientRect();
+        elementRange.top = boundingClientRect.top + pageRange.top;
+        elementRange.bottom = elementRange.top + boundingClientRect.height;
 
         return elementRange;
     }

@@ -84,11 +84,13 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
         return normalizeRectangle(range.getBoundingClientRect(),0,0);
     }
 
-    function getNodeClientRectList(node) {
+    function getNodeClientRectList(node, visibleContentOffsets) {
+        visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
+        
         var range = createRange();
         range.selectNode(node);
         return _.map(range.getClientRects(), function (rect) {
-            return normalizeRectangle(rect, 0, 0);
+            return normalizeRectangle(rect, visibleContentOffsets.left, visibleContentOffsets.top);
         });
     }
 
@@ -108,7 +110,7 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
 
     function getCaretRangeFromPoint(x, y, document) {
         document = document || self.getRootDocument();
-        Helpers.polyfillCaretRangeFromPoint(document);
+        Helpers.polyfillCaretRangeFromPoint(document); //only polyfills once, no-op afterwards
         return document.caretRangeFromPoint(x, y);
     }
 
@@ -146,7 +148,7 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
      * @param {boolean} [isVwm]           isVerticalWritingMode
      * @returns {boolean}
      */
-    function isRectVisible(rect, frameDimensions, isVwm) {
+    function isRectVisible(rect, ignorePartiallyVisible, frameDimensions, isVwm) {
 
         frameDimensions = frameDimensions || getFrameDimensions();
         isVwm = isVwm || isVerticalWritingMode();
@@ -161,9 +163,11 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
         }
 
         if (isPaginatedView()) {
-            return rect.left >= 0 && rect.left < frameDimensions.width;
+            return (rect.left >= 0 && rect.left < frameDimensions.width) || 
+                (!ignorePartiallyVisible && rect.left < 0 && rect.right >= 0);
         } else {
-            return rect.top >= 0 && rect.top < frameDimensions.height;
+            return (rect.top >= 0 && rect.top < frameDimensions.height) || 
+                (!ignorePartiallyVisible && rect.top < 0 && rect.bottom >= 0);
         }
 
     }
@@ -254,7 +258,7 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
                 }
             }
 
-            if (isRectVisible(adjustedRect)) {
+            if (isRectVisible(adjustedRect, false)) {
                 //it might still be partially visible in webkit
                 if (shouldCalculateVisibilityPercentage && adjustedRect.top < 0) {
                     visibilityPercentage =
@@ -268,7 +272,7 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
             // both Firefox and IE produce as many client rectangles;
             // each of those should be checked
             for (var i = 0, l = clientRectangles.length; i < l; ++i) {
-                if (isRectVisible(clientRectangles[i])) {
+                if (isRectVisible(clientRectangles[i], false)) {
                     visibilityPercentage = shouldCalculateVisibilityPercentage
                         ? measureVisibilityPercentageByRectangles(clientRectangles, i)
                         : 100;
@@ -537,7 +541,7 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
         // (i.e., is the first visible one).
         if (shouldLookForFirstVisibleColumn) {
             while (rect.bottom >= frameDimensions.height) {
-                if (isRectVisible(rect, frameDimensions, isVwm)) {
+                if (isRectVisible(rect, false, frameDimensions, isVwm)) {
                     break;
                 }
                 offsetRectangle(rect, columnFullWidth, -frameDimensions.height);
@@ -630,7 +634,7 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
                 return null;
             }
             var testRect = getNodeContentsClientRect(elementFromPoint);
-            if (!isRectVisible(testRect)) {
+            if (!isRectVisible(testRect, false)) {
                 return null;
             }
             if ((x < testRect.left || x > testRect.right) || (y < testRect.top || y > testRect.bottom)) {
@@ -746,10 +750,10 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
     function getVisibleTextRangeOffsetsSelectedByFunc(textNode, pickerFunc) {
         var visibleContentOffsets = getVisibleContentOffsets();
         
-        var textNodeFragments = getNodeClientRectList(textNode);
+        var textNodeFragments = getNodeClientRectList(textNode, visibleContentOffsets);
 
         var visibleFragments = _.filter(textNodeFragments, function (rect) {
-            return isRectVisible(rect);
+            return isRectVisible(rect, false);
         });
 
         var fragment = pickerFunc(visibleFragments);
@@ -758,6 +762,9 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
             return null;
         }
         var fragmentCorner = pickerFunc(getTextNodeRectCornerPairs(fragment));
+        // Reverse taking into account of visible content offsets
+        fragmentCorner.x -= visibleContentOffsets.left;
+        fragmentCorner.y -= visibleContentOffsets.top;
         
         var caretRange = getCaretRangeFromPoint(fragmentCorner.x, fragmentCorner.y);
         console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'a0');
@@ -1055,7 +1062,7 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
     this.isNodeFromRangeCfiVisible = function (cfi) {
         var nodeRangeInfo = this.getNodeRangeInfoFromCfi(cfi);
         if (nodeRangeInfo) {
-            return isRectVisible(nodeRangeInfo.clientRect);
+            return isRectVisible(nodeRangeInfo.clientRect, false);
         } else {
             return undefined;
         }
