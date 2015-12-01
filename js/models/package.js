@@ -52,6 +52,16 @@ var Package = function(packageData){
     this.rendition_orientation = undefined;
 
     this.resolveRelativeUrlMO = function(relativeUrl) {
+        
+        var relativeUrlUri = undefined;
+        try {
+            relativeUrlUri = new URI(relativeUrl);
+        } catch(err) {
+            console.error(err);
+            console.log(relativeUrl);
+        }
+        if (relativeUrlUri && relativeUrlUri.is("absolute")) return relativeUrl; //relativeUrlUri.scheme() == "http://", "https://", "data:", etc.
+
 
         if(self.rootUrlMO && self.rootUrlMO.length > 0) {
 
@@ -78,7 +88,16 @@ var Package = function(packageData){
 
     this.resolveRelativeUrl = function(relativeUrl) {
 
+        var relativeUrlUri = undefined;
+        try {
+            relativeUrlUri = new URI(relativeUrl);
+        } catch(err) {
+            console.error(err);
+            console.log(relativeUrl);
+        }
+        if (relativeUrlUri && relativeUrlUri.is("absolute")) return relativeUrl; //relativeUrlUri.scheme() == "http://", "https://", "data:", etc.
 
+        
         if(self.rootUrl) {
 
             var url = self.rootUrl;

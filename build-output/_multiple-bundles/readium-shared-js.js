@@ -1090,11 +1090,15 @@ var Helpers = {};
  * @returns string representing the file path / name from which the asset referenced by this URL originates
  */
 Helpers.getEbookUrlFilePath = function(ebookURL) {
-    
     if (!window.Blob || !window.File) return ebookURL;
-    
-    var ebookURL_filepath = (ebookURL instanceof Blob) ? ((ebookURL instanceof File) ? ebookURL.name : "readium-ebook.epub") : ebookURL;
-    return ebookURL_filepath;
+
+    if (ebookURL instanceof File) {
+        return ebookURL.name;
+    } else if (ebookURL instanceof Blob) {
+        return "readium-ebook.epub";
+    } else {
+        return ebookURL;
+    }
 };
 
 /**
@@ -1235,9 +1239,9 @@ Helpers.UpdateHtmlFontSize = function ($epubHtml, fontSize) {
             originalLineHeight = 0;
         }
 
-        ele.style.fontSize = (originalFontSize * factor) + 'px';
+        $(ele).css("font-size", (originalFontSize * factor) + 'px');
         if (originalLineHeight) {
-            ele.style.lineHeight = (originalLineHeight * factor) + 'px';
+            $(ele).css("line-height", (originalLineHeight * factor) + 'px');
         }
 
     }
@@ -1852,8 +1856,9 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
         var elementRect = Helpers.Rect.fromElement($element);
         if (_.isNaN(elementRect.left)) {
             // this is actually a point element, doesnt have a bounding rectangle
+            var position = $element.position();
             elementRect = new Helpers.Rect(
-                    $element.position().top, $element.position().left, 0, 0);
+                    position.left, position.top, 0, 0);
         }
         var topOffset = visibleContentOffsets.top || 0;
         var isBelowVisibleTop = elementRect.bottom() > topOffset;
@@ -4565,6 +4570,7 @@ var InternalLinksSupport = function(reader) {
 
     function readOpfFile(path, callback) {
 
+        //TODO: this should use readium-js resource fetcher (file / URI access abstraction layer), as right now this fails with packed EPUBs  
         $.ajax({
             // encoding: "UTF-8",
             // mimeType: "text/plain; charset=UTF-8",
@@ -10236,7 +10242,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define('readium_shared_js/models/spine',["./spine_item"], function(SpineItem) {
+define('readium_shared_js/models/spine',["./spine_item", "../helpers", "URIjs"], function(SpineItem, Helpers, URI) {
 /**
  *  Wrapper of the spine object received from hosting application
  *
@@ -10360,11 +10366,11 @@ var Spine = function(epubPackage, spineDTO) {
     };
 
     this.item = function(index) {
-		
-		if (isValidIndex(index))
-        	return self.items[index];
-			
-		return undefined;
+        
+        if (isValidIndex(index))
+            return self.items[index];
+            
+        return undefined;
     };
 
     this.isRightToLeft = function() {
@@ -10393,11 +10399,21 @@ var Spine = function(epubPackage, spineDTO) {
 
     this.getItemByHref = function(href) {
 
+        // var href1 = Helpers.ResolveContentRef(self.items[i].href, self.package.rootUrl + "/pack.opf");
+        // var href1 = self.package.resolveRelativeUrl(href);
+        //var href1 = new URI(href).absoluteTo(self.package.rootUrl).pathname();
+        //var href1 = new URI(self.package.resolveRelativeUrl(href)).relativeTo(self.package.rootUrl).pathname();
+        
+        var href1 = new URI(self.package.resolveRelativeUrl(href)).normalizePathname().pathname();
+        
         var length = self.items.length;
 
         for(var i = 0; i < length; i++) {
-            if(self.items[i].href == href) {
-
+            
+            var href2 = new URI(self.package.resolveRelativeUrl(self.items[i].href)).normalizePathname().pathname();
+            
+            //if(self.items[i].href == href) {
+            if(href1 == href2) {
                 return self.items[i];
             }
         }
@@ -11082,7 +11098,7 @@ SmilModel.fromSmilDTO = function(smilDTO, mo) {
             indent++;
             copyChildren(nodeDTO, node);
             indent--;
-			
+            
             for(var i = 0, count = node.children.length; i < count; i++) {
                 var child = node.children[i];
 
@@ -11440,16 +11456,14 @@ var MediaOverlay = function(package) {
     }
 };
 
-MediaOverlay.fromDTO = function(moDTO, package) {
+MediaOverlay.fromDTO = function(moDTO, pack) {
 
-    var mo = new MediaOverlay(package);
+    var mo = new MediaOverlay(pack);
 
     if(!moDTO) {
         console.debug("No Media Overlay.");
         return mo;
     }
-
-    console.debug("Media Overlay INIT...");
 
     // if (mo.DEBUG)
     //     console.debug(JSON.stringify(moDTO));
@@ -11643,6 +11657,16 @@ var Package = function(packageData){
     this.rendition_orientation = undefined;
 
     this.resolveRelativeUrlMO = function(relativeUrl) {
+        
+        var relativeUrlUri = undefined;
+        try {
+            relativeUrlUri = new URI(relativeUrl);
+        } catch(err) {
+            console.error(err);
+            console.log(relativeUrl);
+        }
+        if (relativeUrlUri && relativeUrlUri.is("absolute")) return relativeUrl; //relativeUrlUri.scheme() == "http://", "https://", "data:", etc.
+
 
         if(self.rootUrlMO && self.rootUrlMO.length > 0) {
 
@@ -11669,7 +11693,16 @@ var Package = function(packageData){
 
     this.resolveRelativeUrl = function(relativeUrl) {
 
+        var relativeUrlUri = undefined;
+        try {
+            relativeUrlUri = new URI(relativeUrl);
+        } catch(err) {
+            console.error(err);
+            console.log(relativeUrl);
+        }
+        if (relativeUrlUri && relativeUrlUri.is("absolute")) return relativeUrl; //relativeUrlUri.scheme() == "http://", "https://", "data:", etc.
 
+        
         if(self.rootUrl) {
 
             var url = self.rootUrl;
@@ -13070,9 +13103,6 @@ var Switches = function() {
 // cases that are not supported
 Switches.apply = function(dom) {
 
-
-    // helper method, returns true if a given case node
-    // is supported, false otherwise
     function isSupported(caseNode) {
 
         var ns = caseNode.attributes["required-namespace"];
@@ -13085,31 +13115,39 @@ Switches.apply = function(dom) {
         // all the xmlns that readium is known to support
         // TODO this is going to require maintenance
         var supportedNamespaces = ["http://www.w3.org/1998/Math/MathML"];
-        return _.include(supportedNamespaces, ns);
+        return _.include(supportedNamespaces, ns.value);
     }
 
-    $('switch', dom).each( function() {
+    var getQuery = ((window.navigator.userAgent.indexOf("Trident") > 0) || (window.navigator.userAgent.indexOf("Edge") > 0))
+        ? function (elementName) { return 'epub\\:' + elementName; }
+        : function (elementName) { return elementName; };
+
+    _.each(dom.querySelectorAll(getQuery('switch')), function(switchNode) {
 
         // keep track of whether or now we found one
         var found = false;
 
-        $('case', this).each(function() {
+        _.each(switchNode.querySelectorAll(getQuery('case')), function(caseNode) {
 
-            if( !found && isSupported(this) ) {
+            if( !found && isSupported(caseNode) ) {
                 found = true; // we found the node, don't remove it
             }
             else {
-                $(this).remove(); // remove the node from the dom
-//                    $(this).prop("hidden", true);
+                $(caseNode).remove(); // remove the node from the dom
             }
+
         });
 
-        if(found) {
+        if (found) {
+
             // if we found a supported case, remove the default
-            $('default', this).remove();
-//                $('default', this).prop("hidden", true);
+            _.each(switchNode.querySelectorAll(getQuery('default')), function(defaultNode) {
+                $(defaultNode).remove();
+            });
+
         }
-    })
+
+    });
 };
     return Switches;
 });
@@ -13151,11 +13189,11 @@ define('readium_shared_js/models/trigger',["jquery", "../helpers"], function($, 
 
 var Trigger = function(domNode) {
     var $el = $(domNode);
-    this.action 	= $el.attr("action");
-    this.ref 		= $el.attr("ref");
-    this.event 		= $el.attr("ev:event");
-    this.observer 	= $el.attr("ev:observer");
-    this.ref 		= $el.attr("ref");
+    this.action     = $el.attr("action");
+    this.ref         = $el.attr("ref");
+    this.event         = $el.attr("ev:event");
+    this.observer     = $el.attr("ev:observer");
+    this.ref         = $el.attr("ref");
 };
 
 Trigger.register = function(dom) {

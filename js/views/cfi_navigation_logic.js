@@ -215,7 +215,6 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
                 left: 0
             };
         }
-        
     }
 
     /**
