@@ -190,7 +190,7 @@ var ReflowableView = function(options, reader){
 
             var src = _spine.package.resolveRelativeUrl(spineItem.href);
             
-            Globals.logEvent("CONTENT_DOCUMENT_LOAD_START", "EMIT", "reflowable_view.js");
+            Globals.logEvent("CONTENT_DOCUMENT_LOAD_START", "EMIT", "reflowable_view.js [ " + spineItem.href + " -- " + src + " ]");
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, _$iframe, spineItem);
 
             _$iframe.css("opacity", "0.01");
@@ -241,7 +241,7 @@ var ReflowableView = function(options, reader){
             return;
         }
 
-        Globals.logEvent("CONTENT_DOCUMENT_LOADED", "EMIT", "reflowable_view.js");
+        Globals.logEvent("CONTENT_DOCUMENT_LOADED", "EMIT", "reflowable_view.js [ " + _currentSpineItem.href + " ]");
         self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, _$iframe, _currentSpineItem);
 
         var epubContentDocument = _$iframe[0].contentDocument;

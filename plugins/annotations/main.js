@@ -102,7 +102,7 @@ define(['readium_shared_js/globals', 'readium_js_plugins', './annotations_manage
 
 
         api.reader.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function ($iframe, spineItem) {
-            Globals.logEvent("CONTENT_DOCUMENT_LOADED", "ON", "plugins/annotations/main.js");
+            Globals.logEvent("CONTENT_DOCUMENT_LOADED", "ON", "plugins/annotations/main.js [ " + spineItem.href + " ]");
             
             if (_initialized) {
                 _annotationsManager.attachAnnotations($iframe, spineItem);
