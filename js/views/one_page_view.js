@@ -768,7 +768,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
                 self.hideIFrame();
             }
 
-            Globals.logEvent("ReadiumSDK.Events.OnePageView.Events.SPINE_ITEM_OPEN_START - EMIT - one_page_view.js");
+            Globals.logEvent("OnePageView.Events.SPINE_ITEM_OPEN_START", "EMIT", "one_page_view.js");
             self.emit(OnePageView.Events.SPINE_ITEM_OPEN_START, _$iframe, _currentSpineItem);
             
             _iframeLoader.loadIframe(_$iframe[0], src, function (success) {

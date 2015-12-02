@@ -65,7 +65,7 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
     var _elementHighlighter = new MediaOverlayElementHighlighter(reader);
 
     reader.on(Globals.Events.READER_VIEW_DESTROYED, function(){
-        Globals.logEvent("ReadiumSDK.Events.READER_VIEW_DESTROYED - ON - media_overlay_player.js");
+        Globals.logEvent("READER_VIEW_DESTROYED", "ON", "media_overlay_player.js");
         
         self.reset();
     });
@@ -95,7 +95,7 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
     
     reader.on(Globals.Events.SETTINGS_APPLIED, function() {
         
-        Globals.logEvent("ReadiumSDK.Events.SETTINGS_APPLIED - ON - media_overlay_player.js");
+        Globals.logEvent("SETTINGS_APPLIED", "ON", "media_overlay_player.js");
         this.onSettingsApplied();
     }, this);
 
@@ -1111,7 +1111,7 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
 
         if (!_enableHTMLSpeech)
         {
-            Globals.logEvent("ReadiumSDK.Events.MEDIA_OVERLAY_TTS_SPEAK - EMIT - media_overlay_player.js");
+            Globals.logEvent("MEDIA_OVERLAY_TTS_SPEAK", "EMIT", "media_overlay_player.js");
             reader.emit(Globals.Events.MEDIA_OVERLAY_TTS_SPEAK, {tts: txt}); // resume if txt == undefined
             return;
         }
@@ -1409,7 +1409,7 @@ console.debug("TTS resume");
 
         if (!_enableHTMLSpeech)
         {
-            Globals.logEvent("ReadiumSDK.Events.MEDIA_OVERLAY_TTS_STOP - EMIT - media_overlay_player.js");
+            Globals.logEvent("MEDIA_OVERLAY_TTS_STOP", "EMIT", "media_overlay_player.js");
             reader.emit(Globals.Events.MEDIA_OVERLAY_TTS_STOP, undefined);
             return;
         }

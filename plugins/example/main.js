@@ -10,7 +10,7 @@ define(['readium_shared_js/globals', 'readium_js_plugins', 'jquery'], function (
         api.plugin.warn('Example warning. Used when this plugin is initialized.');
 
         api.reader.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function ($iframe, spineItem) {
-            Globals.logEvent("ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED - ON - plugins/example/main.js");
+            Globals.logEvent("CONTENT_DOCUMENT_LOADED", "ON", "plugins/example/main.js");
             
             var div = '<div id="" style="position: absolute; left: 0; top: 0; border: 1px solid '
                 + config.borderColor + '; background-color: ' + config.backgroundColor + ';">'

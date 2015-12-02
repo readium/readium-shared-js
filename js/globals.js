@@ -123,9 +123,9 @@ var Globals = {
         CURRENT_VIEW_PAGINATION_CHANGED: "CurrentViewPaginationChanged",
     },
     
-    logEvent: function(msg) {
+    logEvent: function(eventName, eventType, eventSource) {
         if (DEBUG) {
-            console.debug("#### " + msg);
+            console.debug("#### ReadiumSDK.Events." + eventName + " - "+eventType+" - " + eventSource);
         }
     }
 };

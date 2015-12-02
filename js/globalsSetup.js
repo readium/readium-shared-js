@@ -46,7 +46,7 @@ define(['./globals', 'jquery', 'console_shim', 'es6-collections', 'eventEmitter'
     Globals.Plugins = PluginsController;
     Globals.on(Globals.Events.READER_INITIALIZED, function(reader) {
         
-        Globals.logEvent("ReadiumSDK.Events.READER_INITIALIZED - ON - globalsSetup.js");
+        Globals.logEvent("READER_INITIALIZED", "ON", "globalsSetup.js");
         
         try {
             PluginsController.initialize(reader);
@@ -55,7 +55,7 @@ define(['./globals', 'jquery', 'console_shim', 'es6-collections', 'eventEmitter'
         }
 
         _.defer(function() {
-            Globals.logEvent("ReadiumSDK.Events.PLUGINS_LOADED - EMIT - globalsSetup.js");
+            Globals.logEvent("PLUGINS_LOADED", "EMIT", "globalsSetup.js");
             Globals.emit(Globals.Events.PLUGINS_LOADED, reader);
         });
     });

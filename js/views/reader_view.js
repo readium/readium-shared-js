@@ -228,12 +228,12 @@ var ReaderView = function (options) {
 
         _currentView = self.createViewForType(desiredViewType, viewCreationParams);
         
-        Globals.logEvent("ReadiumSDK.Events.READER_VIEW_CREATED - EMIT - reader_view.js");
+        Globals.logEvent("READER_VIEW_CREATED", "EMIT", "reader_view.js");
         self.emit(Globals.Events.READER_VIEW_CREATED, desiredViewType);
 
         _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOADED, function ($iframe, spineItem) {
             
-            Globals.logEvent("ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED - ON - reader_view.js (current view)");
+            Globals.logEvent("CONTENT_DOCUMENT_LOADED", "ON", "reader_view.js (current view)");
 
             if (!Helpers.isIframeAlive($iframe[0])) return;
 
@@ -246,18 +246,18 @@ var ReaderView = function (options) {
             Trigger.register(contentDoc);
             Switches.apply(contentDoc);
 
-            Globals.logEvent("ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED - EMIT - reader_view.js");
+            Globals.logEvent("CONTENT_DOCUMENT_LOADED", "EMIT", "reader_view.js");
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
         });
 
         _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOAD_START, function ($iframe, spineItem) {
-            Globals.logEvent("ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START - EMIT - reader_view.js");
+            Globals.logEvent("CONTENT_DOCUMENT_LOAD_START", "EMIT", "reader_view.js");
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
         });
 
         _currentView.on(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, function (pageChangeData) {
             
-            Globals.logEvent("ReadiumSDK.Events.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED - ON - reader_view.js");
+            Globals.logEvent("InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED", "ON", "reader_view.js");
 
             //we call on onPageChanged explicitly instead of subscribing to the Globals.Events.PAGINATION_CHANGED by
             //mediaOverlayPlayer because we hve to guarantee that mediaOverlayPlayer will be updated before the host
@@ -265,13 +265,13 @@ var ReaderView = function (options) {
             _mediaOverlayPlayer.onPageChanged(pageChangeData);
 
             _.defer(function () {
-                Globals.logEvent("ReadiumSDK.Events.PAGINATION_CHANGED - EMIT - reader_view.js");
+                Globals.logEvent("PAGINATION_CHANGED", "EMIT", "reader_view.js");
                 self.emit(Globals.Events.PAGINATION_CHANGED, pageChangeData);
             });
         });
 
         _currentView.on(Globals.Events.FXL_VIEW_RESIZED, function () {
-            Globals.logEvent("ReadiumSDK.Events.FXL_VIEW_RESIZED - EMIT - reader_view.js");
+            Globals.logEvent("FXL_VIEW_RESIZED", "EMIT", "reader_view.js");
             self.emit(Globals.Events.FXL_VIEW_RESIZED);
         })
 
@@ -307,11 +307,11 @@ var ReaderView = function (options) {
             return;
         }
 
-        Globals.logEvent("ReadiumSDK.Events.READER_VIEW_DESTROYED - EMIT - reader_view.js");
+        Globals.logEvent("READER_VIEW_DESTROYED", "EMIT", "reader_view.js");
         self.emit(Globals.Events.READER_VIEW_DESTROYED);
 
 
-        Globals.logEvent("ReadiumSDK.Events.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED - OFF - reader_view.js");
+        Globals.logEvent("InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED", "OFF", "reader_view.js");
         _currentView.off(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED);
         
         _currentView.remove();
@@ -456,7 +456,7 @@ var ReaderView = function (options) {
     };
 
     function onMediaPlayerStatusChanged(status) {
-        Globals.logEvent("ReadiumSDK.Events.MEDIA_OVERLAY_STATUS_CHANGED - EMIT - reader_view.js");
+        Globals.logEvent("MEDIA_OVERLAY_STATUS_CHANGED", "EMIT", "reader_view.js");
         self.emit(Globals.Events.MEDIA_OVERLAY_STATUS_CHANGED, status);
     }
 
@@ -590,7 +590,7 @@ var ReaderView = function (options) {
                         // }, 60);
                     }
 
-                    Globals.logEvent("ReadiumSDK.Events.SETTINGS_APPLIED 1 - EMIT - reader_view.js");
+                    Globals.logEvent("SETTINGS_APPLIED 1", "EMIT", "reader_view.js");
                     self.emit(Globals.Events.SETTINGS_APPLIED);
                 });
                 
@@ -598,7 +598,7 @@ var ReaderView = function (options) {
             }
         }
 
-        Globals.logEvent("ReadiumSDK.Events.SETTINGS_APPLIED 2 - EMIT - reader_view.js");
+        Globals.logEvent("SETTINGS_APPLIED 2", "EMIT", "reader_view.js");
         self.emit(Globals.Events.SETTINGS_APPLIED);
     };
 
@@ -1287,7 +1287,7 @@ var ReaderView = function (options) {
         };
 
         readerView.on(Globals.Events.CONTENT_DOCUMENT_LOADED, function ($iframe, spineItem) {
-            Globals.logEvent("ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED - ON - reader_view.js (via BackgroundAudioTrackManager)");
+            Globals.logEvent("CONTENT_DOCUMENT_LOADED", "ON", "reader_view.js (via BackgroundAudioTrackManager)");
             
             try {
                 if (spineItem && spineItem.idref && $iframe && $iframe[0]) {
@@ -1304,7 +1304,7 @@ var ReaderView = function (options) {
         });
 
         readerView.on(Globals.Events.PAGINATION_CHANGED, function (pageChangeData) {
-            Globals.logEvent("ReadiumSDK.Events.PAGINATION_CHANGED - ON - reader_view.js (via BackgroundAudioTrackManager)");
+            Globals.logEvent("PAGINATION_CHANGED", "ON", "reader_view.js (via BackgroundAudioTrackManager)");
             
             // console.log("PAGINATION_CHANGED");
             // console.debug(pageChangeData);
@@ -1422,7 +1422,7 @@ var ReaderView = function (options) {
         });
 
         readerView.on(Globals.Events.MEDIA_OVERLAY_STATUS_CHANGED, function (value) {
-            Globals.logEvent("ReadiumSDK.Events.MEDIA_OVERLAY_STATUS_CHANGED - ON - reader_view.js (via BackgroundAudioTrackManager)");
+            Globals.logEvent("MEDIA_OVERLAY_STATUS_CHANGED", "ON", "reader_view.js (via BackgroundAudioTrackManager)");
             
             if (!value.smilIndex) return;
             var package = readerView.package();

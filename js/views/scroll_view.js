@@ -664,9 +664,9 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
         pageView.on(OnePageView.Events.SPINE_ITEM_OPEN_START, function($iframe, spineItem) {
             
-            Globals.logEvent("ReadiumSDK.Events.OnePageView.Events.SPINE_ITEM_OPEN_START - ON - scroll_view.js");
+            Globals.logEvent("OnePageView.Events.SPINE_ITEM_OPEN_START", "ON", "scroll_view.js");
 
-            Globals.logEvent("ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START - EMIT - scroll_view.js");
+            Globals.logEvent("CONTENT_DOCUMENT_LOAD_START", "EMIT", "scroll_view.js");
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
         });
 
@@ -762,7 +762,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
     function onPageViewLoaded(pageView, success, $iframe, spineItem, isNewlyLoaded, context) {
 
         if (success && isNewlyLoaded) {
-            Globals.logEvent("ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED - EMIT - scroll_view.js");
+            Globals.logEvent("CONTENT_DOCUMENT_LOADED", "EMIT", "scroll_view.js");
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
         }
 
@@ -990,7 +990,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
     function onPaginationChanged(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
         
-        Globals.logEvent("ReadiumSDK.Events.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED - EMIT - scroll_view.js");
+        Globals.logEvent("InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED", "EMIT", "scroll_view.js");
         self.emit(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, {
             paginationInfo: self.getPaginationInfo(),
             initiator: initiator,
