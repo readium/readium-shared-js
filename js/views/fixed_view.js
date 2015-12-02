@@ -408,7 +408,6 @@ var FixedView = function(options, reader){
         }
         
         Globals.logEvent("FXL_VIEW_RESIZED", "EMIT", "fixed_view.js");
-console.trace(viewportIsResizing);
         self.emit(Globals.Events.FXL_VIEW_RESIZED);
     }
 
