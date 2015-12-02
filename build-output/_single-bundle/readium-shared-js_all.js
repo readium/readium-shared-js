@@ -16168,6 +16168,8 @@ define("es6-collections", function(){});
       return this;
     }
 
+    _path = URI.recodePath(_path);
+
     var _was_relative;
     var _leadingParents = '';
     var _parent, _pos;
@@ -16198,7 +16200,7 @@ define("es6-collections", function(){});
 
     // resolve parents
     while (true) {
-      _parent = _path.indexOf('/..');
+      _parent = _path.search(/\/\.\.(\/|$)/);
       if (_parent === -1) {
         // no more ../ to resolve
         break;
@@ -16220,7 +16222,6 @@ define("es6-collections", function(){});
       _path = _leadingParents + _path.substring(1);
     }
 
-    _path = URI.recodePath(_path);
     this._parts.path = _path;
     this.build(!build);
     return this;
