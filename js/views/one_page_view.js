@@ -24,8 +24,8 @@
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-define(["jquery", "underscore", "eventEmitter", "./cfi_navigation_logic", "../helpers", "../models/viewer_settings", "../models/bookmark_data"],
-    function ($, _, EventEmitter, CfiNavigationLogic, Helpers, ViewerSettings, BookmarkData) {
+define(["../globals", "jquery", "underscore", "eventEmitter", "./cfi_navigation_logic", "../helpers", "../models/viewer_settings", "../models/bookmark_data"],
+    function (Globals, $, _, EventEmitter, CfiNavigationLogic, Helpers, ViewerSettings, BookmarkData) {
 
 /**
  * Renders one page of fixed layout spread
@@ -768,7 +768,9 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
                 self.hideIFrame();
             }
 
-            self.emit(OnePageView.SPINE_ITEM_OPEN_START, _$iframe, _currentSpineItem);
+            Globals.logEvent("ReadiumSDK.Events.OnePageView.Events.SPINE_ITEM_OPEN_START - EMIT - one_page_view.js");
+            self.emit(OnePageView.Events.SPINE_ITEM_OPEN_START, _$iframe, _currentSpineItem);
+            
             _iframeLoader.loadIframe(_$iframe[0], src, function (success) {
 
                 if (success && callback) {
@@ -996,6 +998,8 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
 };
 
-OnePageView.SPINE_ITEM_OPEN_START = "SpineItemOpenStart";
+OnePageView.Events = {
+    SPINE_ITEM_OPEN_START: "SpineItemOpenStart"
+};
 return OnePageView;
 });

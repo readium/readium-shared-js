@@ -23,10 +23,10 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define (["jquery", "underscore", "eventEmitter", "../models/bookmark_data", "../models/current_pages_info",
-    "../models/fixed_page_spread", "./one_page_view", "../models/page_open_request", "../helpers", "../globals"],
-    function($, _, EventEmitter, BookmarkData, CurrentPagesInfo,
-             Spread, OnePageView, PageOpenRequest, Helpers, Globals) {
+define (["../globals", "jquery", "underscore", "eventEmitter", "../models/bookmark_data", "../models/current_pages_info",
+    "../models/fixed_page_spread", "./one_page_view", "../models/page_open_request", "../helpers"],
+    function(Globals, $, _, EventEmitter, BookmarkData, CurrentPagesInfo,
+             Spread, OnePageView, PageOpenRequest, Helpers) {
 /**
  * View for rendering fixed layout page spread
  * @param options
@@ -72,8 +72,12 @@ var FixedView = function(options, reader){
         reader
         );
 
-        pageView.on(OnePageView.SPINE_ITEM_OPEN_START, function($iframe, spineItem) {
 
+        pageView.on(OnePageView.Events.SPINE_ITEM_OPEN_START, function($iframe, spineItem) {
+            
+            Globals.logEvent("ReadiumSDK.Events.OnePageView.Events.SPINE_ITEM_OPEN_START - ON - fixed_view.js");
+
+            Globals.logEvent("ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START - EMIT - fixed_view.js");
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
         });   
     
@@ -240,7 +244,9 @@ var FixedView = function(options, reader){
         updateContentMetaSize();
         resizeBook();
         window.setTimeout(function () {
-            self.trigger(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, {
+            
+            Globals.logEvent("ReadiumSDK.Events.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED - EMIT - fixed_view.js");
+            self.emit(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, {
                 paginationInfo: self.getPaginationInfo(),
                 initiator: initiator,
                 spineItem: paginationRequest_spineItem,
@@ -395,6 +401,7 @@ var FixedView = function(options, reader){
             _centerPageView[transFunc](scale, left, top);
         }
         
+        Globals.logEvent("ReadiumSDK.Events.FXL_VIEW_RESIZED - EMIT - fixed_view.js");
         self.emit(Globals.Events.FXL_VIEW_RESIZED);
     }
 
@@ -539,6 +546,7 @@ var FixedView = function(options, reader){
                         console.error("Invalid document " + spineItem.href + ": viewport is not specified!");
                     }
 
+                    Globals.logEvent("ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED - EMIT - fixed_view.js");
                     self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
                 }
 

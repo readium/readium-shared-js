@@ -26,11 +26,11 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define(["jquery", "underscore", "eventEmitter", "../models/bookmark_data", "./cfi_navigation_logic",
-    "../models/current_pages_info", "../helpers", "../models/page_open_request", "../globals",
+define(["../globals", "jquery", "underscore", "eventEmitter", "../models/bookmark_data", "./cfi_navigation_logic",
+    "../models/current_pages_info", "../helpers", "../models/page_open_request",
     "../models/viewer_settings", "./font_loader"],
-    function($, _, EventEmitter, BookmarkData, CfiNavigationLogic,
-             CurrentPagesInfo, Helpers, PageOpenRequest, Globals,
+    function(Globals, $, _, EventEmitter, BookmarkData, CfiNavigationLogic,
+             CurrentPagesInfo, Helpers, PageOpenRequest,
              ViewerSettings, FontLoader) {
 /**
  * Renders reflowable content using CSS columns
@@ -189,6 +189,8 @@ var ReflowableView = function(options, reader){
             _isWaitingFrameRender = true;
 
             var src = _spine.package.resolveRelativeUrl(spineItem.href);
+            
+            Globals.logEvent("ReadiumSDK.Events.CONTENT_DOCUMENT_LOAD_START - EMIT - reflowable_view.js");
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, _$iframe, spineItem);
 
             _$iframe.css("opacity", "0.01");
@@ -239,6 +241,7 @@ var ReflowableView = function(options, reader){
             return;
         }
 
+        Globals.logEvent("ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED - EMIT - reflowable_view.js");
         self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, _$iframe, _currentSpineItem);
 
         var epubContentDocument = _$iframe[0].contentDocument;
@@ -475,6 +478,8 @@ var ReflowableView = function(options, reader){
         redraw();
 
         _.defer(function () {
+            
+            Globals.logEvent("ReadiumSDK.Events.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED - EMIT - reflowable_view.js");
             self.emit(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, {
                 paginationInfo: self.getPaginationInfo(),
                 initiator: initiator,

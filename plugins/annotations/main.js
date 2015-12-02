@@ -1,4 +1,4 @@
-define(['readium_js_plugins', './annotations_manager'], function (Plugins, AnnotationsManager) {
+define(['readium_shared_js/globals', 'readium_js_plugins', './annotations_manager'], function (Globals, Plugins, AnnotationsManager) {
     var config = {};
 
     Plugins.register("annotations", function (api) {
@@ -102,6 +102,8 @@ define(['readium_js_plugins', './annotations_manager'], function (Plugins, Annot
 
 
         api.reader.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function ($iframe, spineItem) {
+            Globals.logEvent("ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED - ON - plugins/annotations/main.js");
+            
             if (_initialized) {
                 _annotationsManager.attachAnnotations($iframe, spineItem);
             } else {
