@@ -457,6 +457,7 @@ var ReaderView = function (options) {
 
     function onMediaPlayerStatusChanged(status) {
         Globals.logEvent("MEDIA_OVERLAY_STATUS_CHANGED", "EMIT", "reader_view.js (via MediaOverlayPlayer + AudioPlayer)");
+console.trace(JSON.stringify(status));
         self.emit(Globals.Events.MEDIA_OVERLAY_STATUS_CHANGED, status);
     }
 
@@ -590,7 +591,7 @@ var ReaderView = function (options) {
                         // }, 60);
                     }
 
-                    Globals.logEvent("SETTINGS_APPLIED 1", "EMIT", "reader_view.js");
+                    Globals.logEvent("SETTINGS_APPLIED 1 (view update)", "EMIT", "reader_view.js");
                     self.emit(Globals.Events.SETTINGS_APPLIED);
                 });
                 
@@ -598,7 +599,8 @@ var ReaderView = function (options) {
             }
         }
 
-        Globals.logEvent("SETTINGS_APPLIED 2", "EMIT", "reader_view.js");
+        Globals.logEvent("SETTINGS_APPLIED 2 (no view update)", "EMIT", "reader_view.js");
+console.trace(JSON.stringify(settingsData));
         self.emit(Globals.Events.SETTINGS_APPLIED);
     };
 
