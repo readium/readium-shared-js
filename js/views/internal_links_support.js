@@ -116,6 +116,7 @@ var InternalLinksSupport = function(reader) {
 
     function readOpfFile(path, callback) {
 
+        //TODO: this should use readium-js resource fetcher (file / URI access abstraction layer), as right now this fails with packed EPUBs  
         $.ajax({
             // encoding: "UTF-8",
             // mimeType: "text/plain; charset=UTF-8",

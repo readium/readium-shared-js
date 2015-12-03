@@ -132,8 +132,9 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
         var elementRect = Helpers.Rect.fromElement($element);
         if (_.isNaN(elementRect.left)) {
             // this is actually a point element, doesnt have a bounding rectangle
+            var position = $element.position();
             elementRect = new Helpers.Rect(
-                    $element.position().top, $element.position().left, 0, 0);
+                    position.left, position.top, 0, 0);
         }
         var topOffset = visibleContentOffsets.top || 0;
         var isBelowVisibleTop = elementRect.bottom() > topOffset;
@@ -744,8 +745,21 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
 
     this.isElementVisible = visibilityCheckerFunc;
 
-
-
+    this.isElementCfiVisible = function (partialCfi) {
+        var pageIndex = this.getPageForElementCfi(partialCfi,
+            ["cfi-marker", "mo-cfi-highlight"],
+            [],
+            ["MathJax_Message"]);
+        var paginationInfo = options.paginationInfo || null;
+        if (paginationInfo) {
+            var openPages = [paginationInfo.currentSpreadIndex * paginationInfo.visibleColumnCount];
+            if (paginationInfo.visibleColumnCount == 2) {
+                openPages.push(openPages[0] + 1);
+            }
+            return _.contains(openPages, pageIndex);
+        }
+        return undefined;
+    };
 
 
     function isValidTextNode(node) {

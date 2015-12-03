@@ -35,7 +35,7 @@ define (["jquery", "underscore", "eventEmitter", "../models/bookmark_data", "../
  */
 var FixedView = function(options, reader){
 
-    _.extend(this, new EventEmitter());
+    $.extend(this, new EventEmitter());
 
     var self = this;
 
@@ -239,8 +239,16 @@ var FixedView = function(options, reader){
 
         updateContentMetaSize();
         resizeBook();
-        
-        self.emit(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
+        window.setTimeout(function () {
+            self.trigger(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, {
+                paginationInfo: self.getPaginationInfo(),
+                initiator: initiator,
+                spineItem: paginationRequest_spineItem,
+                elementId: paginationRequest_elementId
+            });
+        }, 60);
+        //this delay of 60ms is to ensure that it triggers
+        // after any other 10-50ms timers that defer the pagination process in OnePageView
     }
 
     this.onViewportResize = function() {
@@ -668,9 +676,18 @@ var FixedView = function(options, reader){
 
     this.insureElementVisibility = function(spineItemId, element, initiator) {
 
-        //TODO: during zoom+pan, playing element might not actualy be visible
+        //TODO: during zoom+pan, playing element might not actually be visible
 
-    }
+    };
+
+    this.isElementCfiVisible = function (spineIdRef, contentCfi) {
+        var spineItemFound = _.findWhere(this.getLoadedSpineItems(), {idref: spineIdRef});
+
+        // it is assumed that if the whole spine item page is visible then any element cfi is visible
+        //TODO: during zoom+pan, element cfi might not actually be visible
+        return !!spineItemFound;
+
+    };
 
 };
     return FixedView;

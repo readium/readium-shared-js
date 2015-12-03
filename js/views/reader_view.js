@@ -48,7 +48,7 @@ define(["jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", ".
  */
 var ReaderView = function (options) {
 
-    _.extend(this, new EventEmitter());
+    $.extend(this, new EventEmitter());
 
     var self = this;
     var _currentView = undefined;
@@ -252,7 +252,9 @@ var ReaderView = function (options) {
             //application will be notified by the same Globals.Events.PAGINATION_CHANGED event
             _mediaOverlayPlayer.onPageChanged(pageChangeData);
 
-            self.emit(Globals.Events.PAGINATION_CHANGED, pageChangeData);
+            _.defer(function () {
+                self.emit(Globals.Events.PAGINATION_CHANGED, pageChangeData);
+            });
         });
 
         _currentView.on(Globals.Events.FXL_VIEW_RESIZED, function () {
@@ -570,8 +572,9 @@ var ReaderView = function (options) {
                     }
 
                     self.emit(Globals.Events.SETTINGS_APPLIED);
-                    return;
                 });
+                
+                return;
             }
         }
 
@@ -1184,6 +1187,13 @@ var ReaderView = function (options) {
      */
     this.addIFrameEventListener = function (eventName, callback, context) {
         _iframeLoader.addIFrameEventListener(eventName, callback, context);
+    };
+
+    this.isElementCfiVisible = function (spineIdRef, contentCfi) {
+        if (!_currentView) {
+            return false;
+        }
+        return _currentView.isElementCfiVisible(spineIdRef, contentCfi);
     };
 
     var BackgroundAudioTrackManager = function () {

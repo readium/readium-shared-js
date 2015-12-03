@@ -30,6 +30,23 @@ var Helpers = {};
 
 /**
  *
+ * @param ebookURL URL string, or Blob (possibly File)
+ * @returns string representing the file path / name from which the asset referenced by this URL originates
+ */
+Helpers.getEbookUrlFilePath = function(ebookURL) {
+    if (!window.Blob || !window.File) return ebookURL;
+
+    if (ebookURL instanceof File) {
+        return ebookURL.name;
+    } else if (ebookURL instanceof Blob) {
+        return "readium-ebook.epub";
+    } else {
+        return ebookURL;
+    }
+};
+
+/**
+ *
  * @returns object (map between URL query parameter names and corresponding decoded / unescaped values)
  */
 Helpers.getURLQueryParams = function() {
@@ -166,9 +183,9 @@ Helpers.UpdateHtmlFontSize = function ($epubHtml, fontSize) {
             originalLineHeight = 0;
         }
 
-        ele.style.fontSize = (originalFontSize * factor) + 'px';
+        $(ele).css("font-size", (originalFontSize * factor) + 'px');
         if (originalLineHeight) {
-            ele.style.lineHeight = (originalLineHeight * factor) + 'px';
+            $(ele).css("line-height", (originalLineHeight * factor) + 'px');
         }
 
     }

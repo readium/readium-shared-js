@@ -38,7 +38,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
     var _DEBUG = false;
 
-    _.extend(this, new EventEmitter());
+    $.extend(this, new EventEmitter());
 
     var SCROLL_MARGIN_TO_SHOW_LAST_VISBLE_LINE = 5;
     var ITEM_LOAD_SCROLL_BUFFER = 2000;
@@ -1379,7 +1379,12 @@ var ScrollView = function (options, isContinuousScroll, reader) {
             self.openPage(openPageRequest);
         }
 
-    }
+    };
+
+    this.isElementCfiVisible = function (spineIdRef, contentCfi) {
+        // TODO: implement this for scrollable views
+        return false;
+    };
 
 };
 return ScrollView;
