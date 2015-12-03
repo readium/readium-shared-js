@@ -869,9 +869,26 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
     };
 
+    function getVisibleContentOffsets() {
+        return {
+            top: -_$el.parent().scrollTop(),
+            left: 0
+        };
+    }
+    
+    function getFrameDimensions() {
+        return {
+            width: _$el.parent()[0].clientWidth,
+            height: _$el.parent()[0].clientHeight
+        };
+    }
+    
     this.getNavigator = function () {
-
-        return new CfiNavigationLogic(_$el, _$iframe);
+        return new CfiNavigationLogic({
+            $iframe: _$iframe,
+            frameDimensions: getFrameDimensions,
+            visibleContentOffsets: getVisibleContentOffsets
+        });
     };
 
     this.getElementByCfi = function (spineItemIdref, cfi, classBlacklist, elementBlacklist, idBlacklist) {
@@ -970,12 +987,12 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         return [{spineItem: _currentSpineItem, $iframe: _$iframe}];
     };
 
-    this.getFirstVisibleCfi = function () {
-        return createBookmarkFromCfi(self.getNavigator().getFirstVisibleCfi());
+    this.getFirstVisibleCfi = function (visibleContentOffsets, frameDimensions) {
+        return createBookmarkFromCfi(self.getNavigator().getFirstVisibleCfi(visibleContentOffsets, frameDimensions));
     };
 
-    this.getLastVisibleCfi = function () {
-        return createBookmarkFromCfi(self.getNavigator().getLastVisibleCfi());
+    this.getLastVisibleCfi = function (visibleContentOffsets, frameDimensions) {
+        return createBookmarkFromCfi(self.getNavigator().getLastVisibleCfi(visibleContentOffsets, frameDimensions));
     };
 
     this.getDomRangeFromRangeCfi = function (rangeCfi, rangeCfi2, inclusive) {
