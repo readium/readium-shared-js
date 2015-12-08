@@ -33,7 +33,7 @@
 
 name: "readium-shared-js"
 
-version: "0.22.0-alpha"
+version: "0.23.0-alpha"
 
 engines:
     node: ">=0.12"
@@ -116,11 +116,16 @@ devDependencies:
 
     "underscore": 'latest'
 
-    "URIjs": 'danielweck/URI.js'
-    #"URIjs": 'latest'
+    "urijs": 'danielweck/URI.js'
+    #"urijs": 'latest'
 
     "eventemitter3": 'latest'
 
+    "FontLoader": 'smnh/FontLoader'
+    
+    "CSSOM": 'danielweck/CSSOM#gh-pages'
+    #"CSSOM": 'NV/CSSOM#gh-pages'
+    
 
 # Below dependencies are only used for building tasks (above are runtime deps):
 

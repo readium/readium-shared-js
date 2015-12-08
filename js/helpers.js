@@ -34,11 +34,15 @@ var Helpers = {};
  * @returns string representing the file path / name from which the asset referenced by this URL originates
  */
 Helpers.getEbookUrlFilePath = function(ebookURL) {
-    
     if (!window.Blob || !window.File) return ebookURL;
-    
-    var ebookURL_filepath = (ebookURL instanceof Blob) ? ((ebookURL instanceof File) ? ebookURL.name : "readium-ebook.epub") : ebookURL;
-    return ebookURL_filepath;
+
+    if (ebookURL instanceof File) {
+        return ebookURL.name;
+    } else if (ebookURL instanceof Blob) {
+        return "readium-ebook.epub";
+    } else {
+        return ebookURL;
+    }
 };
 
 /**
@@ -179,9 +183,9 @@ Helpers.UpdateHtmlFontSize = function ($epubHtml, fontSize) {
             originalLineHeight = 0;
         }
 
-        ele.style.fontSize = (originalFontSize * factor) + 'px';
+        $(ele).css("font-size", (originalFontSize * factor) + 'px');
         if (originalLineHeight) {
-            ele.style.lineHeight = (originalLineHeight * factor) + 'px';
+            $(ele).css("line-height", (originalLineHeight * factor) + 'px');
         }
 
     }

@@ -636,7 +636,7 @@ SmilModel.fromSmilDTO = function(smilDTO, mo) {
             indent++;
             copyChildren(nodeDTO, node);
             indent--;
-			
+            
             for(var i = 0, count = node.children.length; i < count; i++) {
                 var child = node.children[i];
 

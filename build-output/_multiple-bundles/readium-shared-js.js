@@ -1086,6 +1086,23 @@ var Helpers = {};
 
 /**
  *
+ * @param ebookURL URL string, or Blob (possibly File)
+ * @returns string representing the file path / name from which the asset referenced by this URL originates
+ */
+Helpers.getEbookUrlFilePath = function(ebookURL) {
+    if (!window.Blob || !window.File) return ebookURL;
+
+    if (ebookURL instanceof File) {
+        return ebookURL.name;
+    } else if (ebookURL instanceof Blob) {
+        return "readium-ebook.epub";
+    } else {
+        return ebookURL;
+    }
+};
+
+/**
+ *
  * @returns object (map between URL query parameter names and corresponding decoded / unescaped values)
  */
 Helpers.getURLQueryParams = function() {
@@ -1222,9 +1239,9 @@ Helpers.UpdateHtmlFontSize = function ($epubHtml, fontSize) {
             originalLineHeight = 0;
         }
 
-        ele.style.fontSize = (originalFontSize * factor) + 'px';
+        $(ele).css("font-size", (originalFontSize * factor) + 'px');
         if (originalLineHeight) {
-            ele.style.lineHeight = (originalLineHeight * factor) + 'px';
+            $(ele).css("line-height", (originalLineHeight * factor) + 'px');
         }
 
     }
@@ -1839,8 +1856,9 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
         var elementRect = Helpers.Rect.fromElement($element);
         if (_.isNaN(elementRect.left)) {
             // this is actually a point element, doesnt have a bounding rectangle
+            var position = $element.position();
             elementRect = new Helpers.Rect(
-                    $element.position().top, $element.position().left, 0, 0);
+                    position.left, position.top, 0, 0);
         }
         var topOffset = visibleContentOffsets.top || 0;
         var isBelowVisibleTop = elementRect.bottom() > topOffset;
@@ -2790,6 +2808,9 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         _pageTransitions.push(_pageTransition_SWING); // 3
 
         var _disablePageTransitions = opts.disablePageTransitions || false;
+                
+        // TODO: page transitions are broken, sp we disable them to avoid nasty visual artefacts
+        _disablePageTransitions = true;
 
         var _pageTransition = -1;
 
@@ -3168,7 +3189,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             css["height"] = _meta_size.height;
             _$scaler.css(css);
         }
-
+                
         // Chrome workaround: otherwise text is sometimes invisible (probably a rendering glitch due to the 3D transform graphics backend?)
         //_$epubHtml.css("visibility", "hidden"); // "flashing" in two-page spread mode is annoying :(
         _$epubHtml.css("opacity", "0.999");
@@ -3179,7 +3200,10 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             //_$epubHtml.css("visibility", "visible");
             _$epubHtml.css("opacity", "1");
         }, 0);
-
+        
+        // TODO: the CSS transitions do not work anymore, tested on Firefox and Chrome.
+        // The line of code below still needs to be invoked, but the logic in _pageTransitionHandler probably need adjusting to work around the animation timing issue.
+        // PS: opacity=1 above seems to interfere with the fade-in transition, probably a browser issue with mixing inner-iframe effects with effects applied to the iframe parent/ancestors.
         _pageTransitionHandler.transformContentImmediate_END(_$el, scale, left, top);
     };
 
@@ -3862,8 +3886,16 @@ var FixedView = function(options, reader){
 
         updateContentMetaSize();
         resizeBook();
-        
-        self.emit(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
+        window.setTimeout(function () {
+            self.trigger(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, {
+                paginationInfo: self.getPaginationInfo(),
+                initiator: initiator,
+                spineItem: paginationRequest_spineItem,
+                elementId: paginationRequest_elementId
+            });
+        }, 60);
+        //this delay of 60ms is to ensure that it triggers
+        // after any other 10-50ms timers that defer the pagination process in OnePageView
     }
 
     this.onViewportResize = function() {
@@ -4544,6 +4576,7 @@ var InternalLinksSupport = function(reader) {
 
     function readOpfFile(path, callback) {
 
+        //TODO: this should use readium-js resource fetcher (file / URI access abstraction layer), as right now this fails with packed EPUBs  
         $.ajax({
             // encoding: "UTF-8",
             // mimeType: "text/plain; charset=UTF-8",
@@ -10215,7 +10248,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define('readium_shared_js/models/spine',["./spine_item"], function(SpineItem) {
+define('readium_shared_js/models/spine',["./spine_item", "../helpers", "URIjs"], function(SpineItem, Helpers, URI) {
 /**
  *  Wrapper of the spine object received from hosting application
  *
@@ -10339,11 +10372,11 @@ var Spine = function(epubPackage, spineDTO) {
     };
 
     this.item = function(index) {
-		
-		if (isValidIndex(index))
-        	return self.items[index];
-			
-		return undefined;
+        
+        if (isValidIndex(index))
+            return self.items[index];
+            
+        return undefined;
     };
 
     this.isRightToLeft = function() {
@@ -10372,11 +10405,21 @@ var Spine = function(epubPackage, spineDTO) {
 
     this.getItemByHref = function(href) {
 
+        // var href1 = Helpers.ResolveContentRef(self.items[i].href, self.package.rootUrl + "/pack.opf");
+        // var href1 = self.package.resolveRelativeUrl(href);
+        //var href1 = new URI(href).absoluteTo(self.package.rootUrl).pathname();
+        //var href1 = new URI(self.package.resolveRelativeUrl(href)).relativeTo(self.package.rootUrl).pathname();
+        
+        var href1 = new URI(self.package.resolveRelativeUrl(href)).normalizePathname().pathname();
+        
         var length = self.items.length;
 
         for(var i = 0; i < length; i++) {
-            if(self.items[i].href == href) {
-
+            
+            var href2 = new URI(self.package.resolveRelativeUrl(self.items[i].href)).normalizePathname().pathname();
+            
+            //if(self.items[i].href == href) {
+            if(href1 == href2) {
                 return self.items[i];
             }
         }
@@ -11061,7 +11104,7 @@ SmilModel.fromSmilDTO = function(smilDTO, mo) {
             indent++;
             copyChildren(nodeDTO, node);
             indent--;
-			
+            
             for(var i = 0, count = node.children.length; i < count; i++) {
                 var child = node.children[i];
 
@@ -11419,16 +11462,14 @@ var MediaOverlay = function(package) {
     }
 };
 
-MediaOverlay.fromDTO = function(moDTO, package) {
+MediaOverlay.fromDTO = function(moDTO, pack) {
 
-    var mo = new MediaOverlay(package);
+    var mo = new MediaOverlay(pack);
 
     if(!moDTO) {
         console.debug("No Media Overlay.");
         return mo;
     }
-
-    console.debug("Media Overlay INIT...");
 
     // if (mo.DEBUG)
     //     console.debug(JSON.stringify(moDTO));
@@ -11592,7 +11633,7 @@ return PackageData;
 //  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
-define('readium_shared_js/models/package',['../helpers','./spine_item','./spine','./media_overlay', './package_data'], function (Helpers, SpineItem, Spine, MediaOverlay, PackageData) {
+define('readium_shared_js/models/package',['../helpers','./spine_item','./spine','./media_overlay', './package_data', 'URIjs'], function (Helpers, SpineItem, Spine, MediaOverlay, PackageData, URI) {
 /**
  *
  * @class Package
@@ -11622,14 +11663,34 @@ var Package = function(packageData){
     this.rendition_orientation = undefined;
 
     this.resolveRelativeUrlMO = function(relativeUrl) {
+        
+        var relativeUrlUri = undefined;
+        try {
+            relativeUrlUri = new URI(relativeUrl);
+        } catch(err) {
+            console.error(err);
+            console.log(relativeUrl);
+        }
+        if (relativeUrlUri && relativeUrlUri.is("absolute")) return relativeUrl; //relativeUrlUri.scheme() == "http://", "https://", "data:", etc.
+
 
         if(self.rootUrlMO && self.rootUrlMO.length > 0) {
 
-            if(Helpers.EndsWith(self.rootUrlMO, "/")){
-                return self.rootUrlMO + relativeUrl;
+            var url = self.rootUrlMO;
+            
+            try {
+                //url = new URI(relativeUrl).absoluteTo(url).search('').hash('').toString();
+                url = new URI(url).search('').hash('').toString();
+            } catch(err) {
+                console.error(err);
+                console.log(url);
+            }
+            
+            if(Helpers.EndsWith(url, "/")){
+                return url + relativeUrl;
             }
             else {
-                return self.rootUrlMO + "/" + relativeUrl;
+                return url + "/" + relativeUrl;
             }
         }
 
@@ -11638,13 +11699,33 @@ var Package = function(packageData){
 
     this.resolveRelativeUrl = function(relativeUrl) {
 
+        var relativeUrlUri = undefined;
+        try {
+            relativeUrlUri = new URI(relativeUrl);
+        } catch(err) {
+            console.error(err);
+            console.log(relativeUrl);
+        }
+        if (relativeUrlUri && relativeUrlUri.is("absolute")) return relativeUrl; //relativeUrlUri.scheme() == "http://", "https://", "data:", etc.
+
+        
         if(self.rootUrl) {
 
-            if(Helpers.EndsWith(self.rootUrl, "/")){
-                return self.rootUrl + relativeUrl;
+            var url = self.rootUrl;
+            
+            try {
+                //url = new URI(relativeUrl).absoluteTo(url).search('').hash('').toString();
+                url = new URI(url).search('').hash('').toString();
+            } catch(err) {
+                console.error(err);
+                console.log(url);
+            }
+            
+            if(Helpers.EndsWith(url, "/")){
+                return url + relativeUrl;
             }
             else {
-                return self.rootUrl + "/" + relativeUrl;
+                return url + "/" + relativeUrl;
             }
         }
 
@@ -11683,40 +11764,268 @@ return Package;
 });
 
 
+//  Created by Juan Corona <juanc@evidentpoint.com>
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//
+//  Redistribution and use in source and binary forms, with or without modification,
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice,
+//  this list of conditions and the following disclaimer in the documentation and/or
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be
+//  used to endorse or promote products derived from this software without specific
+//  prior written permission.
+//
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
+
+//TODO: This could be made into a plugin in the future.
+// A plugin would be ideal because we can make a light-weight alternative that doesn't need the FontLoader shim and the CSSOM parser.
+define('readium_shared_js/views/font_loader',["jquery", "underscore", "FontLoader", "cssom"], function($, _, FontLoader, CSSOM) {
+
+var FontLoaderFallback = function(document, options) {
+    var debug = options.debug;
+
+    var getRestrictedCssRules = function (styleSheet, callback) {
+        $.get(styleSheet.href).done(function(data) {
+            callback(CSSOM.parse(data).cssRules);
+        }).fail(function() {
+            callback(null);
+        });
+    };
+
+    var getUsedFonts = function(callback) {
+        var styleSheets = document.styleSheets;
+        var fontFamilies = [];
+        var fontFamilyRules = [];
+
+        var getFontFamilyFromRule = function(rule) {
+            if (rule.style && (rule.style.getPropertyValue || rule.style.fontFamily)) {
+                return rule.style.getPropertyValue("font-family") || rule.style.fontFamily;
+            }
+        }
+
+        var returnUsedFonts = function() {
+            if (debug) {
+                console.log(fontFamilies);
+            }
+            var usedFontFamilies = [];
+            _.each(fontFamilyRules, function(rule) {
+                var usedFontFamily = _.find(fontFamilies, function(family) {
+                    var fontFamily = getFontFamilyFromRule(rule);
+                    if (fontFamily && ~fontFamily.indexOf(family[1])) {
+                        return true;
+                    }
+                });
+
+                if (usedFontFamily && rule.selectorText && !_.contains(usedFontFamilies, usedFontFamily[0]) && document.querySelector(rule.selectorText)) {
+                    usedFontFamilies.push(usedFontFamily[0]);
+                }
+            });
+
+            if (debug) {
+                console.log(usedFontFamilies);
+            }
+
+            callback(usedFontFamilies);
+        };
+
+        var processedCount = 0;
+        var processCssRules = function(cssRules) {
+            _.each(cssRules, function(rule) {
+                var fontFamily = getFontFamilyFromRule(rule);
+                if (fontFamily) {
+                    if (rule.type === CSSRule.FONT_FACE_RULE) {
+                        fontFamilies.push([fontFamily.replace(/(^['"]|['"]$)/g, '').replace(/\\(['"])/g, '$1'), fontFamily]);
+                    } else {
+                        fontFamilyRules.push(rule);
+                    }
+                }
+            });
+
+            processedCount++;
+
+            if (processedCount >= styleSheets.length) {
+                returnUsedFonts();
+            }
+        };
+
+        _.each(styleSheets, function(styleSheet) {
+            var cssRules;
+            // Firefox (and possibly IE as well) throw a security exception if the CSS was loaded from a different domain.
+            // Other browsers just have null as the value of cssRules for that case.
+            try {
+                cssRules = styleSheet.cssRules || styleSheet.rules;
+            } catch (ignored) {}
+
+            if (!cssRules) {
+                getRestrictedCssRules(styleSheet, processCssRules);
+            } else {
+                processCssRules(cssRules);
+            }
+        });
+    };
+
+    return function(callback) {
+        callback = _.once(callback);
+        var loadCount = 0;
+
+        getUsedFonts(function(usedFontFamilies){
+            var fontLoader = new FontLoader(usedFontFamilies, {
+                "fontsLoaded": function(error) {
+                    if (debug) {
+                        if (error !== null) {
+                            // Reached the timeout but not all fonts were loaded
+                            console.log("font loader: " + error.message, error.notLoadedFonts);
+                        } else {
+                            // All fonts were loaded
+                            console.log("font loader: all fonts were loaded");
+                        }
+                    }
+                    callback();
+                },
+                "fontLoaded": function(font) {
+                    loadCount++;
+                    if (debug) {
+                        console.log("font loaded: " + font.family);
+                    }
+                    if (usedFontFamilies.length > options.minLoadCount && (loadCount / usedFontFamilies.length) >= options.minLoadRatio) {
+
+                        if (debug) {
+                            console.log('font loader: early callback');
+                        }
+                        callback();
+                    }
+                }
+            }, options.timeout, document);
+
+            fontLoader.loadFonts();
+        });
+    };
+};
+
+var FontLoaderNative = function(document, options) {
+    var debug = options.debug;
+
+    return function(callback) {
+        callback = _.once(callback);
+        var loadCount = 0;
+
+        var fontFaceCount = document.fonts.size;
+        var fontLoaded = function(font) {
+            loadCount++;
+            if (debug) {
+                console.log("(native) font loaded: " + font.family);
+            }
+            if (fontFaceCount > options.minLoadCount && (loadCount / fontFaceCount) >= options.minLoadRatio) {
+
+                if (debug) {
+                    console.log('(native) font loader: early callback');
+                }
+                callback();
+            }
+        }
+
+        var fontIterator = function(font) {
+            font.loaded.then(function() {
+                fontLoaded(font);
+            });
+        };
+
+        // For some reason (at this time) Chrome's implementation has a .forEach
+        // but it is not Array-like. This is opposite with Firefox's though.
+        if (document.fonts.forEach) {
+            document.fonts.forEach(fontIterator);
+        } else {
+            _.each(document.fonts, fontIterator);
+        }
+
+        document.fonts.ready.then(function() {
+            if (debug) {
+                // All fonts were loaded
+                console.log("(native) font loader: all fonts were loaded");
+            }
+            callback();
+        });
+
+
+        window.setTimeout(function() {
+            if (debug && loadCount !== fontFaceCount) {
+                console.log('(native) font loader: timeout, not all fonts loaded/required');
+            } else if (debug) {
+                console.log('(native) font loader: timeout');
+            }
+            callback();
+        }, options.timeout);
+    }
+}
+
+var FontLoaderWrapper = function($iframe, options) {
+    options = options || {};
+
+    options.debug = options.debug || false;
+    options.timeout = options.timeout || 1500;
+    options.minLoadCount = options.minLoadCount || 3;
+    options.minLoadRatio = options.minLoadRatio || 0.75;
+
+    var document = $iframe[0].contentDocument;
+
+    // For browsers without CSS Font Loading Module
+    var fallbackNeeded = !document.fonts;
+
+    var fontLoader = fallbackNeeded ? FontLoaderFallback : FontLoaderNative;
+
+    this.waitForFonts = fontLoader(document, options);
+};
+
+return FontLoaderWrapper;
+
+});
+
 
 //  LauncherOSX
 //
 //  Created by Boris Schneiderman.
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
-//  
-//  Redistribution and use in source and binary forms, with or without modification, 
+//
+//  Redistribution and use in source and binary forms, with or without modification,
 //  are permitted provided that the following conditions are met:
-//  1. Redistributions of source code must retain the above copyright notice, this 
+//  1. Redistributions of source code must retain the above copyright notice, this
 //  list of conditions and the following disclaimer.
-//  2. Redistributions in binary form must reproduce the above copyright notice, 
-//  this list of conditions and the following disclaimer in the documentation and/or 
+//  2. Redistributions in binary form must reproduce the above copyright notice,
+//  this list of conditions and the following disclaimer in the documentation and/or
 //  other materials provided with the distribution.
-//  3. Neither the name of the organization nor the names of its contributors may be 
-//  used to endorse or promote products derived from this software without specific 
+//  3. Neither the name of the organization nor the names of its contributors may be
+//  used to endorse or promote products derived from this software without specific
 //  prior written permission.
-//  
-//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
-//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
-//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
-//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
-//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
-//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
-//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
+//
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 define('readium_shared_js/views/reflowable_view',["jquery", "underscore", "eventEmitter", "../models/bookmark_data", "./cfi_navigation_logic",
     "../models/current_pages_info", "../helpers", "../models/page_open_request", "../globals",
-    "../models/viewer_settings"],
+    "../models/viewer_settings", "./font_loader"],
     function($, _, EventEmitter, BookmarkData, CfiNavigationLogic,
              CurrentPagesInfo, Helpers, PageOpenRequest, Globals,
-             ViewerSettings) {
+             ViewerSettings, FontLoader) {
 /**
  * Renders reflowable content using CSS columns
  * @param options
@@ -11727,15 +12036,15 @@ var ReflowableView = function(options, reader){
     $.extend(this, new EventEmitter());
 
     var self = this;
-    
+
     var _$viewport = options.$viewport;
     var _spine = options.spine;
     var _userStyles = options.userStyles;
     var _bookStyles = options.bookStyles;
     var _iframeLoader = options.iframeLoader;
-    
+
     var _currentSpineItem;
-    var _isWaitingFrameRender = false;    
+    var _isWaitingFrameRender = false;
     var _deferredPageRequest;
     var _fontSize = 100;
     var _$contentFrame;
@@ -11743,14 +12052,14 @@ var ReflowableView = function(options, reader){
     var _$el;
     var _$iframe;
     var _$epubHtml;
-    
+
     var _$htmlBody;
-    
+
     var _htmlBodyIsVerticalWritingMode;
     var _htmlBodyIsLTRDirection;
     var _htmlBodyIsLTRWritingMode;
-    
-    
+
+
     var _currentOpacity = -1;
 
     var _lastViewPortSize = {
@@ -11823,7 +12132,7 @@ var ReflowableView = function(options, reader){
 
     var _viewSettings = undefined;
     this.setViewSettings = function(settings) {
-        
+
         _viewSettings = settings;
 
         _paginationInfo.columnGap = settings.columnGap;
@@ -11831,7 +12140,7 @@ var ReflowableView = function(options, reader){
 
         updateHtmlFontSize();
         updateColumnGap();
-        
+
         updateViewportSize();
         updatePagination();
     };
@@ -11877,7 +12186,7 @@ var ReflowableView = function(options, reader){
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, _$iframe, spineItem);
 
             _$iframe.css("opacity", "0.01");
-            
+
             _iframeLoader.loadIframe(_$iframe[0], src, onIFrameLoad, self, {spineItem : spineItem});
         }
     }
@@ -11898,6 +12207,17 @@ var ReflowableView = function(options, reader){
     }
 
     function onIFrameLoad(success) {
+        if (!success) {
+            applyIFrameLoad(success);
+            return;
+        }
+        var fontLoader = new FontLoader(_$iframe);
+        fontLoader.waitForFonts(function () {
+            applyIFrameLoad(success);
+        });
+    }
+
+    function applyIFrameLoad(success) {
 
         _isWaitingFrameRender = false;
 
@@ -11933,13 +12253,13 @@ var ReflowableView = function(options, reader){
             $("video", _$htmlBody).css("transform", "translateZ(0)");
         }
         */
-        
+
         _htmlBodyIsVerticalWritingMode = false;
         _htmlBodyIsLTRDirection = true;
         _htmlBodyIsLTRWritingMode = undefined;
-        
+
         var win = _$iframe[0].contentDocument.defaultView || _$iframe[0].contentWindow;
-        
+
         //Helpers.isIframeAlive
         var htmlBodyComputedStyle = win.getComputedStyle(_$htmlBody[0], null);
         if (htmlBodyComputedStyle)
@@ -11959,7 +12279,7 @@ var ReflowableView = function(options, reader){
             if (writingMode)
             {
                 _htmlBodyIsLTRWritingMode = writingMode.indexOf("-lr") >= 0; // || writingMode.indexOf("horizontal-") >= 0; we need explicit!
-            
+
                 if (writingMode.indexOf("vertical") >= 0 || writingMode.indexOf("tb-") >= 0 || writingMode.indexOf("bt-") >= 0)
                 {
                     _htmlBodyIsVerticalWritingMode = true;
@@ -11982,15 +12302,15 @@ var ReflowableView = function(options, reader){
             _htmlBodyIsLTRDirection = false;
             _htmlBodyIsLTRWritingMode = false;
         }
-        
+
         _paginationInfo.isVerticalWritingMode = _htmlBodyIsVerticalWritingMode;
-        
+
         hideBook();
         _$iframe.css("opacity", "1");
-        
+
         updateViewportSize();
         _$epubHtml.css("height", _lastViewPortSize.height + "px");
-        
+
         _$epubHtml.css("position", "relative");
         _$epubHtml.css("margin", "0");
         _$epubHtml.css("padding", "0");
@@ -12007,7 +12327,7 @@ var ReflowableView = function(options, reader){
         // _$epubHtml.css("background-color", '#b0c4de');
         //
         // ////
-        
+
         self.applyBookStyles();
         resizeImages();
 
@@ -12142,13 +12462,22 @@ var ReflowableView = function(options, reader){
         return false;
     }
 
-    function onPaginationChanged(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
+    function onPaginationChanged_(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
 
         _paginationInfo.pageOffset = (_paginationInfo.columnWidth + _paginationInfo.columnGap) * _paginationInfo.visibleColumnCount * _paginationInfo.currentSpreadIndex;
-        
+
         redraw();
-        self.emit(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, { paginationInfo: self.getPaginationInfo(), initiator: initiator, spineItem: paginationRequest_spineItem, elementId: paginationRequest_elementId } );
+
+        _.defer(function () {
+            self.emit(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, {
+                paginationInfo: self.getPaginationInfo(),
+                initiator: initiator,
+                spineItem: paginationRequest_spineItem,
+                elementId: paginationRequest_elementId
+            });
+        });
     }
+    var onPaginationChanged = _.debounce(onPaginationChanged_, 100);
 
     this.openPagePrev = function (initiator) {
 
@@ -12196,16 +12525,16 @@ var ReflowableView = function(options, reader){
 
 
     function updatePagination() {
-        
+
         // At 100% font-size = 16px (on HTML, not body or descendant markup!)
         var MAXW = 550; //TODO user/vendor-configurable?
         var MINW = 400;
-        
+
         var isDoublePageSyntheticSpread = Helpers.deduceSyntheticSpread(_$viewport, _currentSpineItem, _viewSettings);
-        
+
         var forced = (isDoublePageSyntheticSpread === false) || (isDoublePageSyntheticSpread === true);
         // excludes 0 and 1 falsy/truthy values which denote non-forced result
-        
+
 // console.debug("isDoublePageSyntheticSpread: " + isDoublePageSyntheticSpread);
 // console.debug("forced: " + forced);
 //
@@ -12214,9 +12543,9 @@ var ReflowableView = function(options, reader){
             isDoublePageSyntheticSpread = 1; // try double page, will shrink if doesn't fit
 // console.debug("TRYING SPREAD INSTEAD OF SINGLE...");
         }
-        
+
         _paginationInfo.visibleColumnCount = isDoublePageSyntheticSpread ? 2 : 1;
-   
+
         if (_htmlBodyIsVerticalWritingMode)
         {
             MAXW *= 2;
@@ -12229,9 +12558,9 @@ var ReflowableView = function(options, reader){
         if(!_$epubHtml) {
             return;
         }
-        
+
         hideBook(); // shiftBookOfScreen();
-        
+
         var borderLeft = parseInt(_$viewport.css("border-left-width"));
         var borderRight = parseInt(_$viewport.css("border-right-width"));
         var adjustedGapLeft = _paginationInfo.columnGap/2;
@@ -12240,7 +12569,7 @@ var ReflowableView = function(options, reader){
         adjustedGapRight = Math.max(0, adjustedGapRight-borderRight)
 
         var filler = 0;
-        
+
 //         var win = _$iframe[0].contentDocument.defaultView || _$iframe[0].contentWindow;
 //         var htmlBodyComputedStyle = win.getComputedStyle(_$htmlBody[0], null);
 //         if (htmlBodyComputedStyle)
@@ -12256,21 +12585,21 @@ var ReflowableView = function(options, reader){
 //             }
 // console.debug(fontSize);
 //         }
-        
+
         if (_viewSettings.fontSize)
         {
             var fontSizeAdjust = (_viewSettings.fontSize*0.8)/100;
             MAXW = Math.floor(MAXW * fontSizeAdjust);
             MINW = Math.floor(MINW * fontSizeAdjust);
         }
-        
+
         var availableWidth = _$viewport.width();
         var textWidth = availableWidth - borderLeft - borderRight - adjustedGapLeft - adjustedGapRight;
         if (isDoublePageSyntheticSpread)
         {
             textWidth = (textWidth - _paginationInfo.columnGap) * 0.5;
         }
-        
+
         if (textWidth > MAXW)
         {
 // console.debug("LIMITING WIDTH");
@@ -12281,23 +12610,23 @@ var ReflowableView = function(options, reader){
 //console.debug("REDUCING SPREAD TO SINGLE");
             isDoublePageSyntheticSpread = false;
             _paginationInfo.visibleColumnCount = 1;
-            
+
             textWidth = availableWidth - borderLeft - borderRight - adjustedGapLeft - adjustedGapRight;
             if (textWidth > MAXW)
             {
                 filler = Math.floor((textWidth - MAXW) * 0.5);
             }
         }
-        
+
         _$el.css({"left": (filler+adjustedGapLeft + "px"), "right": (filler+adjustedGapRight + "px")});
         updateViewportSize(); //_$contentFrame ==> _lastViewPortSize
 
-        
+
         _$iframe.css("width", _lastViewPortSize.width + "px");
         _$iframe.css("height", _lastViewPortSize.height + "px");
 
         _$epubHtml.css("height", _lastViewPortSize.height + "px");
-        
+
         // below min- max- are required in vertical writing mode (height is not enough, in some cases...weird!)
         _$epubHtml.css("min-height", _lastViewPortSize.height + "px");
         _$epubHtml.css("max-height", _lastViewPortSize.height + "px");
@@ -12316,16 +12645,18 @@ var ReflowableView = function(options, reader){
         var useColumnCountNotWidth = _paginationInfo.visibleColumnCount > 1; // column-count == 1 does not work in Chrome, and is not needed anyway (HTML width is full viewport width, no Firefox video flickering)
         if (useColumnCountNotWidth) {
             _$epubHtml.css("width", _lastViewPortSize.width + "px");
+            _$epubHtml.css("column-width", "auto");
             _$epubHtml.css("column-count", _paginationInfo.visibleColumnCount);
         } else {
             _$epubHtml.css("width", (_htmlBodyIsVerticalWritingMode ? _lastViewPortSize.width : _paginationInfo.columnWidth) + "px");
+            _$epubHtml.css("column-count", "auto");
             _$epubHtml.css("column-width", _paginationInfo.columnWidth + "px");
         }
 
         _$epubHtml.css("column-fill", "auto");
-        
+
         _$epubHtml.css({left: "0", right: "0", top: "0"});
-        
+
         Helpers.triggerLayout(_$iframe);
 
         _paginationInfo.columnCount = ((_htmlBodyIsVerticalWritingMode ? _$epubHtml[0].scrollHeight : _$epubHtml[0].scrollWidth) + _paginationInfo.columnGap) / (_paginationInfo.columnWidth + _paginationInfo.columnGap);
@@ -12340,7 +12671,7 @@ var ReflowableView = function(options, reader){
             console.debug("ADJUST COLUMN");
             console.log(_paginationInfo.columnWidth);
             console.log(colWidthCheck);
-            
+
             _paginationInfo.columnWidth = colWidthCheck;
         }
 
@@ -12358,7 +12689,7 @@ var ReflowableView = function(options, reader){
         else {
 
             //we get here on resizing the viewport
-            
+
             onPaginationChanged(self); // => redraw() => showBook(), so the trick below is not needed
 
             // //We do this to force re-rendering of the document in the iframe.
@@ -12386,7 +12717,7 @@ var ReflowableView = function(options, reader){
     function hideBook()
     {
         if (_currentOpacity != -1) return; // already hidden
-        
+
         _currentOpacity = _$epubHtml.css('opacity');
         _$epubHtml.css('opacity', "0");
     }
@@ -12532,12 +12863,12 @@ var ReflowableView = function(options, reader){
         var visibleContentOffsets = getVisibleContentOffsets();
         return _navigationLogic.getFirstVisibleMediaOverlayElement(visibleContentOffsets);
     };
-    
+
     // /**
     //  * @deprecated
     //  */
     // this.getVisibleMediaOverlayElements = function() {
-    // 
+    //
     //     var visibleContentOffsets = getVisibleContentOffsets();
     //     return _navigationLogic.getVisibleMediaOverlayElements(visibleContentOffsets);
     // };
@@ -12565,7 +12896,7 @@ var ReflowableView = function(options, reader){
         {
             id = element.getAttribute("id");
         }
-        
+
         if (id)
         {
             openPageRequest.setElementId(id);
@@ -12778,9 +13109,6 @@ var Switches = function() {
 // cases that are not supported
 Switches.apply = function(dom) {
 
-
-    // helper method, returns true if a given case node
-    // is supported, false otherwise
     function isSupported(caseNode) {
 
         var ns = caseNode.attributes["required-namespace"];
@@ -12793,31 +13121,39 @@ Switches.apply = function(dom) {
         // all the xmlns that readium is known to support
         // TODO this is going to require maintenance
         var supportedNamespaces = ["http://www.w3.org/1998/Math/MathML"];
-        return _.include(supportedNamespaces, ns);
+        return _.include(supportedNamespaces, ns.value);
     }
 
-    $('switch', dom).each( function() {
+    var getQuery = ((window.navigator.userAgent.indexOf("Trident") > 0) || (window.navigator.userAgent.indexOf("Edge") > 0))
+        ? function (elementName) { return 'epub\\:' + elementName; }
+        : function (elementName) { return elementName; };
+
+    _.each(dom.querySelectorAll(getQuery('switch')), function(switchNode) {
 
         // keep track of whether or now we found one
         var found = false;
 
-        $('case', this).each(function() {
+        _.each(switchNode.querySelectorAll(getQuery('case')), function(caseNode) {
 
-            if( !found && isSupported(this) ) {
+            if( !found && isSupported(caseNode) ) {
                 found = true; // we found the node, don't remove it
             }
             else {
-                $(this).remove(); // remove the node from the dom
-//                    $(this).prop("hidden", true);
+                $(caseNode).remove(); // remove the node from the dom
             }
+
         });
 
-        if(found) {
+        if (found) {
+
             // if we found a supported case, remove the default
-            $('default', this).remove();
-//                $('default', this).prop("hidden", true);
+            _.each(switchNode.querySelectorAll(getQuery('default')), function(defaultNode) {
+                $(defaultNode).remove();
+            });
+
         }
-    })
+
+    });
 };
     return Switches;
 });
@@ -12859,11 +13195,11 @@ define('readium_shared_js/models/trigger',["jquery", "../helpers"], function($, 
 
 var Trigger = function(domNode) {
     var $el = $(domNode);
-    this.action 	= $el.attr("action");
-    this.ref 		= $el.attr("ref");
-    this.event 		= $el.attr("ev:event");
-    this.observer 	= $el.attr("ev:observer");
-    this.ref 		= $el.attr("ref");
+    this.action     = $el.attr("action");
+    this.ref         = $el.attr("ref");
+    this.event         = $el.attr("ev:event");
+    this.observer     = $el.attr("ev:observer");
+    this.ref         = $el.attr("ref");
 };
 
 Trigger.register = function(dom) {
@@ -13168,7 +13504,9 @@ var ReaderView = function (options) {
             //application will be notified by the same Globals.Events.PAGINATION_CHANGED event
             _mediaOverlayPlayer.onPageChanged(pageChangeData);
 
-            self.emit(Globals.Events.PAGINATION_CHANGED, pageChangeData);
+            _.defer(function () {
+                self.emit(Globals.Events.PAGINATION_CHANGED, pageChangeData);
+            });
         });
 
         _currentView.on(Globals.Events.FXL_VIEW_RESIZED, function () {
@@ -13486,8 +13824,9 @@ var ReaderView = function (options) {
                     }
 
                     self.emit(Globals.Events.SETTINGS_APPLIED);
-                    return;
                 });
+                
+                return;
             }
         }
 
