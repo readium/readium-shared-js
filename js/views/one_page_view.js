@@ -173,6 +173,9 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         _pageTransitions.push(_pageTransition_SWING); // 3
 
         var _disablePageTransitions = opts.disablePageTransitions || false;
+                
+        // TODO: page transitions are broken, sp we disable them to avoid nasty visual artefacts
+        _disablePageTransitions = true;
 
         var _pageTransition = -1;
 
@@ -551,7 +554,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             css["height"] = _meta_size.height;
             _$scaler.css(css);
         }
-
+                
         // Chrome workaround: otherwise text is sometimes invisible (probably a rendering glitch due to the 3D transform graphics backend?)
         //_$epubHtml.css("visibility", "hidden"); // "flashing" in two-page spread mode is annoying :(
         _$epubHtml.css("opacity", "0.999");
@@ -562,7 +565,10 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             //_$epubHtml.css("visibility", "visible");
             _$epubHtml.css("opacity", "1");
         }, 0);
-
+        
+        // TODO: the CSS transitions do not work anymore, tested on Firefox and Chrome.
+        // The line of code below still needs to be invoked, but the logic in _pageTransitionHandler probably need adjusting to work around the animation timing issue.
+        // PS: opacity=1 above seems to interfere with the fade-in transition, probably a browser issue with mixing inner-iframe effects with effects applied to the iframe parent/ancestors.
         _pageTransitionHandler.transformContentImmediate_END(_$el, scale, left, top);
     };
 

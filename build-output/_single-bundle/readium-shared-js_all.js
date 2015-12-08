@@ -15757,6 +15757,8 @@ if ('undefined' !== typeof module) {
       return this;
     }
 
+    _path = URI.recodePath(_path);
+
     var _was_relative;
     var _leadingParents = '';
     var _parent, _pos;
@@ -15787,7 +15789,7 @@ if ('undefined' !== typeof module) {
 
     // resolve parents
     while (true) {
-      _parent = _path.indexOf('/..');
+      _parent = _path.search(/\/\.\.(\/|$)/);
       if (_parent === -1) {
         // no more ../ to resolve
         break;
@@ -15809,7 +15811,6 @@ if ('undefined' !== typeof module) {
       _path = _leadingParents + _path.substring(1);
     }
 
-    _path = URI.recodePath(_path);
     this._parts.path = _path;
     this.build(!build);
     return this;
@@ -19615,8 +19616,9 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
         var elementRect = Helpers.Rect.fromElement($element);
         if (_.isNaN(elementRect.left)) {
             // this is actually a point element, doesnt have a bounding rectangle
+            var position = $element.position();
             elementRect = new Helpers.Rect(
-                    $element.position().top, $element.position().left, 0, 0);
+                    position.left, position.top, 0, 0);
         }
         var topOffset = visibleContentOffsets.top || 0;
         var isBelowVisibleTop = elementRect.bottom() > topOffset;
@@ -20566,6 +20568,9 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         _pageTransitions.push(_pageTransition_SWING); // 3
 
         var _disablePageTransitions = opts.disablePageTransitions || false;
+                
+        // TODO: page transitions are broken, sp we disable them to avoid nasty visual artefacts
+        _disablePageTransitions = true;
 
         var _pageTransition = -1;
 
@@ -20944,7 +20949,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             css["height"] = _meta_size.height;
             _$scaler.css(css);
         }
-
+                
         // Chrome workaround: otherwise text is sometimes invisible (probably a rendering glitch due to the 3D transform graphics backend?)
         //_$epubHtml.css("visibility", "hidden"); // "flashing" in two-page spread mode is annoying :(
         _$epubHtml.css("opacity", "0.999");
@@ -20955,7 +20960,10 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             //_$epubHtml.css("visibility", "visible");
             _$epubHtml.css("opacity", "1");
         }, 0);
-
+        
+        // TODO: the CSS transitions do not work anymore, tested on Firefox and Chrome.
+        // The line of code below still needs to be invoked, but the logic in _pageTransitionHandler probably need adjusting to work around the animation timing issue.
+        // PS: opacity=1 above seems to interfere with the fade-in transition, probably a browser issue with mixing inner-iframe effects with effects applied to the iframe parent/ancestors.
         _pageTransitionHandler.transformContentImmediate_END(_$el, scale, left, top);
     };
 
@@ -39731,7 +39739,7 @@ CSSOM.parse = function parse(token) {
 			}
 			break;
 
-		case '(':
+		case "(":
 			if (state === 'value') {
 				// ie css expression mode
 				if (buffer.trim() === 'expression') {
@@ -39744,17 +39752,19 @@ CSSOM.parse = function parse(token) {
 						i = info.idx;
 					}
 				} else {
-					index = token.indexOf(')', i + 1);
-					if (index === -1) {
-						parseError('Unmatched "("');
-					}
-					buffer += token.slice(i, index + 1);
-					i = index;
+					state = 'value-parenthesis';
+					buffer += character;
 				}
 			} else {
 				buffer += character;
 			}
+			break;
 
+		case ")":
+			if (state === 'value-parenthesis') {
+				state = 'value';
+			}
+			buffer += character;
 			break;
 
 		case "!":
@@ -41483,155 +41493,155 @@ define('readium_shared_js/models/multiple_renditions',[], function() {
 var MultipleRenditions = function(multipleRenditions) {
 
     var self = this;
-	
-	/**
-	 * @see {ReadiumSDK.Models.MultipleRenditionsData}
-	 */
-	this.renditions = multipleRenditions ? multipleRenditions.renditions : undefined;
-	this.selectedIndex = multipleRenditions ? multipleRenditions.selectedIndex : -1;
-	this.mappings = multipleRenditions ? multipleRenditions.mappings : undefined;
+    
+    /**
+     * @see {ReadiumSDK.Models.MultipleRenditionsData}
+     */
+    this.renditions = multipleRenditions ? multipleRenditions.renditions : undefined;
+    this.selectedIndex = multipleRenditions ? multipleRenditions.selectedIndex : -1;
+    this.mappings = multipleRenditions ? multipleRenditions.mappings : undefined;
 
-	
-	var cfiTokenise = function(cfi) {
+    
+    var cfiTokenise = function(cfi) {
 //console.log(cfi);
-		var arrayOfIndices = [];
-		
-		var split = cfi.split("/");
-		for (var i = 0; i < split.length; i++) {
-			var token = split[i];
-			var j = token.indexOf("[");
-			if (j > 0) {
-				token = token.substr(0, token.length - j);
-			}
-			j = token.indexOf("@");
-			if (j > 0) {
-				token = token.substr(0, token.length - j);
-			}
-			if (!token.length) continue;
-			
-			var index = parseInt(token);
+        var arrayOfIndices = [];
+        
+        var split = cfi.split("/");
+        for (var i = 0; i < split.length; i++) {
+            var token = split[i];
+            var j = token.indexOf("[");
+            if (j > 0) {
+                token = token.substr(0, token.length - j);
+            }
+            j = token.indexOf("@");
+            if (j > 0) {
+                token = token.substr(0, token.length - j);
+            }
+            if (!token.length) continue;
+            
+            var index = parseInt(token);
 //console.log(index);
-			arrayOfIndices.push(index);
-		}
+            arrayOfIndices.push(index);
+        }
 
-		return arrayOfIndices;
-	};
-	
-	// cfi1 <= cfi2
-	var cfiIsBeforeOrEqual = function(cfi1, cfi2) {
-		
-		var i = 0;
-		while (i < cfi1.length && i < cfi2.length) {
-			if (cfi1[i] > cfi2[i]) return false;
-			i++;
-		}
+        return arrayOfIndices;
+    };
+    
+    // cfi1 <= cfi2
+    var cfiIsBeforeOrEqual = function(cfi1, cfi2) {
+        
+        var i = 0;
+        while (i < cfi1.length && i < cfi2.length) {
+            if (cfi1[i] > cfi2[i]) return false;
+            i++;
+        }
 
-		return true;
-	};
+        return true;
+    };
 
 
-	/**
-	 * Get spine item data in readium-shared-js accepted format.
-	 * @param openPageRequest the original page request
-	 * @returns The unmodified openPageRequest parameter if the rendition OPF is the same, or the modified openPageRequest parameter if the rendition OPF was mapped succesfully, or undefined if the OPF could not be mapped.
-	 */
-	this.adjustPageRequestRenditionMapping = function(openPageRequest) {
-		
-		if (!openPageRequest) return undefined;
-		if (!multipleRenditions || !openPageRequest.opfPath) return openPageRequest;
-	
-		var rendition = multipleRenditions.renditions[multipleRenditions.selectedIndex];
-		
-		if (rendition.opfPath == openPageRequest.opfPath) return openPageRequest;
+    /**
+     * Get spine item data in readium-shared-js accepted format.
+     * @param openPageRequest the original page request
+     * @returns The unmodified openPageRequest parameter if the rendition OPF is the same, or the modified openPageRequest parameter if the rendition OPF was mapped succesfully, or undefined if the OPF could not be mapped.
+     */
+    this.adjustPageRequestRenditionMapping = function(openPageRequest) {
+        
+        if (!openPageRequest) return undefined;
+        if (!multipleRenditions || !openPageRequest.opfPath) return openPageRequest;
+    
+        var rendition = multipleRenditions.renditions[multipleRenditions.selectedIndex];
+        
+        if (rendition.opfPath == openPageRequest.opfPath) return openPageRequest;
 
-		if (!multipleRenditions.mappings) return undefined;
-		
-		var nearestMapping = undefined;
-		
-		console.log("ADJUSTING READING LOCATION");
-		console.debug(openPageRequest.elementCfi);
-		
-		var cfi2 = cfiTokenise(openPageRequest.elementCfi);
+        if (!multipleRenditions.mappings) return undefined;
+        
+        var nearestMapping = undefined;
+        
+        console.log("ADJUSTING READING LOCATION");
+        console.debug(openPageRequest.elementCfi);
+        
+        var cfi2 = cfiTokenise(openPageRequest.elementCfi);
 
-		for (var i = 0; i < multipleRenditions.mappings.length; i++) {
-			var mappingUL = multipleRenditions.mappings[i];
-			
-			for (var j = 0; j < mappingUL.length; j++) {
-				var mapping = mappingUL[j];
-				
-				if (openPageRequest.opfPath === mapping.opf && openPageRequest.idref === mapping.idref) {
-					var cfi1 = cfiTokenise(mapping.cfiPartial);
-					if (nearestMapping) {
-						var cfi3 = cfiTokenise(nearestMapping.cfiPartial);
-						if (cfiIsBeforeOrEqual(cfi1, cfi3)) {
-							break;
-						}
-					}
-					if (cfiIsBeforeOrEqual(cfi1, cfi2)) {
-						
-						for (var k = 0; k < mappingUL.length; k++) {
-							var m = mappingUL[k];
-							if (rendition.opfPath === m.opf) {
-								nearestMapping = m;
-								break;
-							}
-						}
-						
-						break;
-					}
-				}
-				
-				//mapping.opf
-				//openPageRequest.opfPath
-				
-				//mapping.idref
-				//openPageRequest.idref
-				
-				//mapping.cfiPartial
-				//openPageRequest.elementCfi
-			}
-		}
-		
-		if (nearestMapping) {
+        for (var i = 0; i < multipleRenditions.mappings.length; i++) {
+            var mappingUL = multipleRenditions.mappings[i];
+            
+            for (var j = 0; j < mappingUL.length; j++) {
+                var mapping = mappingUL[j];
+                
+                if (openPageRequest.opfPath === mapping.opf && openPageRequest.idref === mapping.idref) {
+                    var cfi1 = cfiTokenise(mapping.cfiPartial);
+                    if (nearestMapping) {
+                        var cfi3 = cfiTokenise(nearestMapping.cfiPartial);
+                        if (cfiIsBeforeOrEqual(cfi1, cfi3)) {
+                            break;
+                        }
+                    }
+                    if (cfiIsBeforeOrEqual(cfi1, cfi2)) {
+                        
+                        for (var k = 0; k < mappingUL.length; k++) {
+                            var m = mappingUL[k];
+                            if (rendition.opfPath === m.opf) {
+                                nearestMapping = m;
+                                break;
+                            }
+                        }
+                        
+                        break;
+                    }
+                }
+                
+                //mapping.opf
+                //openPageRequest.opfPath
+                
+                //mapping.idref
+                //openPageRequest.idref
+                
+                //mapping.cfiPartial
+                //openPageRequest.elementCfi
+            }
+        }
+        
+        if (nearestMapping) {
 console.log("FOUND!");
 console.debug(nearestMapping);
-			var elCfi = nearestMapping.cfiPartial;
-			var split = elCfi.split("/");
-			var lastIndex = split[split.length-1];
-			var l = lastIndex.indexOf("@");
-			if (l > 0) {
-				lastIndex = lastIndex.substr(0, lastIndex.length-l);
-			}
-			
-			var isOdd = (lastIndex % 2) == 1;
-			if (isOdd) {
-				elCfi = "";
-				for (var k = 0; k < split.length-1; k++) {
-					var index = split[k];
-					if (!index.length) continue;
-					elCfi += ("/" + index);
-				}
-				
+            var elCfi = nearestMapping.cfiPartial;
+            var split = elCfi.split("/");
+            var lastIndex = split[split.length-1];
+            var l = lastIndex.indexOf("@");
+            if (l > 0) {
+                lastIndex = lastIndex.substr(0, lastIndex.length-l);
+            }
+            
+            var isOdd = (lastIndex % 2) == 1;
+            if (isOdd) {
+                elCfi = "";
+                for (var k = 0; k < split.length-1; k++) {
+                    var index = split[k];
+                    if (!index.length) continue;
+                    elCfi += ("/" + index);
+                }
+                
 console.debug("ODD: "+elCfi);
-			}
-			
-			var l = elCfi.indexOf("@");
-			if (l < 0) {
-				elCfi += "@0:0";
-			}
-			
-			openPageRequest.opfPath = nearestMapping.opf;
-			openPageRequest.idref = nearestMapping.idref;
-			openPageRequest.elementCfi = elCfi;
-		
+            }
+            
+            var l = elCfi.indexOf("@");
+            if (l < 0) {
+                elCfi += "@0:0";
+            }
+            
+            openPageRequest.opfPath = nearestMapping.opf;
+            openPageRequest.idref = nearestMapping.idref;
+            openPageRequest.elementCfi = elCfi;
+        
 console.debug(JSON.stringify(openPageRequest));
-		} else {
+        } else {
 console.log("RENDITION MAPPING NOT FOUND!");
-			openPageRequest = undefined;
-		}
-		
-		return openPageRequest;
-	};
+            openPageRequest = undefined;
+        }
+        
+        return openPageRequest;
+    };
 };
 
 return MultipleRenditions;
@@ -41976,16 +41986,16 @@ var ReaderView = function (options) {
     this.userStyles = function () {
         return _userStyles;
     };
-	
+    
     /**
      * Returns the EPUB3 Multiple Renditions data for the currently-opened ebook (initialised in this.openBook())
      *
      * @returns {ReadiumSDK.Models.MultipleRenditions} can be undefined
      */
-	this.getMultipleRenditions = function() {
-		return _multipleRenditions;
-	};
-	
+    this.getMultipleRenditions = function() {
+        return _multipleRenditions;
+    };
+    
     /**
      * Open Book Data
      *
@@ -42032,20 +42042,20 @@ var ReaderView = function (options) {
         }
 
         if (openBookData.multipleRenditions) {
-			_multipleRenditions = new MultipleRenditions(openBookData.multipleRenditions);
+            _multipleRenditions = new MultipleRenditions(openBookData.multipleRenditions);
         } else {
-			_multipleRenditions = undefined;
-		}
-		
+            _multipleRenditions = undefined;
+        }
+        
         var pageRequestData = undefined;
 
         if(openBookData.openPageRequest) {
-			
-			if (_multipleRenditions) {
-				openBookData.openPageRequest = _multipleRenditions.adjustPageRequestRenditionMapping(openBookData.openPageRequest);
-			}
-		}
-		
+            
+            if (_multipleRenditions) {
+                openBookData.openPageRequest = _multipleRenditions.adjustPageRequestRenditionMapping(openBookData.openPageRequest);
+            }
+        }
+        
         if(openBookData.openPageRequest) {
             if (openBookData.openPageRequest.idref || (openBookData.openPageRequest.contentRefUrl && openBookData.openPageRequest.sourceFileHref)) {
                 pageRequestData = openBookData.openPageRequest;
