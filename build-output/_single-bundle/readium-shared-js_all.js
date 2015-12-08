@@ -19851,16 +19851,16 @@ return Helpers;
 /**
  * CFI navigation helper class
  *
- * @param $viewport
- * @param $iframe
  * @param options Additional settings for NavigationLogic object
- *      - rectangleBased    If truthy, clientRect-based geometry will be used
- *      - paginationInfo    Layout details, used by clientRect-based geometry
+ *      - paginationInfo            Layout details, used by clientRect-based geometry
+ *      - visibleContentOffsets     Function that returns offsets. If supplied it is used instead of the inferred offsets
+ *      - frameDimensions           Function that returns an object with width and height properties. Needs to be set.
+ *      - $iframe                   Iframe reference, and needs to be set.
  * @constructor
  */
 define('readium_shared_js/views/cfi_navigation_logic',["jquery", "underscore", "../helpers", 'readium_cfi_js'], function($, _, Helpers, epubCfi) {
 
-var CfiNavigationLogic = function($viewport, $iframe, options){
+var CfiNavigationLogic = function(options) {
 
     var self = this;
     options = options || {};
@@ -19869,11 +19869,11 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
 
     this.getRootElement = function(){
 
-        return $iframe[0].contentDocument.documentElement;
+        return options.$iframe[0].contentDocument.documentElement;
     };
 
     this.getRootDocument = function () {
-        return $iframe[0].contentDocument;
+        return options.$iframe[0].contentDocument;
     };
 
     function createRange() {
@@ -19918,17 +19918,12 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
     }
 
     function getFrameDimensions() {
-        if (isPaginatedView()) {
-            return {
-                width: $iframe[0].clientWidth,
-                height: $iframe[0].clientHeight
-            };
-        } else {
-            return {
-                width: $viewport.parent()[0].clientWidth,
-                height: $viewport.parent()[0].clientHeight
-            };
+        if (options.frameDimensions) {
+            return options.frameDimensions();
         }
+        
+        console.error('CfiNavigationLogic: No frame dimensions specified!');
+        return null;
     }
 
     function getCaretRangeFromPoint(x, y, document) {
@@ -20005,7 +20000,7 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
 
         if (!options.paginationInfo || isVerticalWritingMode())
         {
-            return $iframe.width();
+            return options.$iframe.width();
         }
 
         return options.paginationInfo.columnWidth + options.paginationInfo.columnGap;
@@ -20020,24 +20015,21 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
      * @returns {Object}
      */
     function getVisibleContentOffsets() {
-        if(isVerticalWritingMode()){
+        if (options.visibleContentOffsets) {
+            return options.visibleContentOffsets();
+        }
+
+        if (isVerticalWritingMode()) {
             return {
                 top: (options.paginationInfo ? options.paginationInfo.pageOffset : 0),
                 left: 0
             };
         }
-        
-        if (isPaginatedView()) {
-            return {
-                top: 0,
-                left: 0
-            };
-        } else {
-            return {
-                top: -$viewport.parent().scrollTop(),
-                left: 0
-            };
-        }
+
+        return {
+            top: 0,
+            left: 0
+        };
     }
 
     /**
@@ -20080,7 +20072,7 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
                 }
             }
 
-            if (isRectVisible(adjustedRect, false)) {
+            if (isRectVisible(adjustedRect, false, frameDimensions)) {
                 //it might still be partially visible in webkit
                 if (shouldCalculateVisibilityPercentage && adjustedRect.top < 0) {
                     visibilityPercentage =
@@ -20094,7 +20086,7 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
             // both Firefox and IE produce as many client rectangles;
             // each of those should be checked
             for (var i = 0, l = clientRectangles.length; i < l; ++i) {
-                if (isRectVisible(clientRectangles[i], false)) {
+                if (isRectVisible(clientRectangles[i], false, frameDimensions)) {
                     visibilityPercentage = shouldCalculateVisibilityPercentage
                         ? measureVisibilityPercentageByRectangles(clientRectangles, i)
                         : 100;
@@ -20132,14 +20124,16 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
      * Calculate a page index (0-based) for given client rectangles.
      *
      * @param {object} clientRectangles
-     * @param {number} spatialVerticalOffset
+     * @param {number} [spatialVerticalOffset]
+     * @param {object} [frameDimensions]
+     * @param {object} [columnFullWidth]
      * @returns {number|null}
      */
-    function calculatePageIndexByRectangles(clientRectangles, spatialVerticalOffset) {
+    function calculatePageIndexByRectangles(clientRectangles, spatialVerticalOffset, frameDimensions, columnFullWidth) {
         var isRtl = isPageProgressionRightToLeft();
         var isVwm = isVerticalWritingMode();
-        var columnFullWidth = getColumnFullWidth();
-        var frameDimensions = getFrameDimensions();
+        columnFullWidth = columnFullWidth || getColumnFullWidth();
+        frameDimensions = frameDimensions || getFrameDimensions();
 
         if (spatialVerticalOffset) {
             trimRectanglesByVertOffset(clientRectangles, spatialVerticalOffset,
@@ -20179,18 +20173,18 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
      * Calculations are based on viewport dimensions, offsets, and rectangle coordinates
      *
      * @param {ClientRect} clientRectangle
+     * @param {Object} [visibleContentOffsets]
+     * @param {Object} [frameDimensions]
      * @returns {number|null}
      */
-    function findPageBySingleRectangle(clientRectangle) {
-         // TODO check this! https://github.com/readium/readium-js-viewer/issues/404#issuecomment-141372102
-        var visibleContentOffsets = getVisibleContentOffsets() || {};
-        var leftContentOffset = visibleContentOffsets.left || 0;
-        var topContentOffset = visibleContentOffsets.top || 0;
-
+    function findPageBySingleRectangle(clientRectangle, visibleContentOffsets, frameDimensions) {
+        visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
+        frameDimensions = frameDimensions || getFrameDimensions();
+        
         var normalizedRectangle = normalizeRectangle(
-            clientRectangle, leftContentOffset, topContentOffset);
+            clientRectangle, visibleContentOffsets.left, visibleContentOffsets.top);
 
-        return calculatePageIndexByRectangles([normalizedRectangle]);
+        return calculatePageIndexByRectangles([normalizedRectangle], frameDimensions);
     }
 
     /**
@@ -20569,13 +20563,13 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
         }
     }
 
-    function getVisibleTextRangeOffsetsSelectedByFunc(textNode, pickerFunc) {
-        var visibleContentOffsets = getVisibleContentOffsets();
+    function getVisibleTextRangeOffsetsSelectedByFunc(textNode, pickerFunc, visibleContentOffsets, frameDimensions) {
+        visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
         
         var textNodeFragments = getNodeClientRectList(textNode, visibleContentOffsets);
 
         var visibleFragments = _.filter(textNodeFragments, function (rect) {
-            return isRectVisible(rect, false);
+            return isRectVisible(rect, false, frameDimensions);
         });
 
         var fragment = pickerFunc(visibleFragments);
@@ -20641,7 +20635,7 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
         }
     }
 
-    function findVisibleLeafNodeCfi(leafNodeList, pickerFunc, targetLeafNode) {
+    function findVisibleLeafNodeCfi(leafNodeList, pickerFunc, targetLeafNode, visibleContentOffsets, frameDimensions) {
         var index = 0;
         if (!targetLeafNode) {
             index = leafNodeList.indexOf(pickerFunc(leafNodeList))
@@ -20665,11 +20659,11 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
 
         //if a valid text node is found, try to generate a CFI with range offsets
         if (textNode && isValidTextNode(textNode)) {
-            var visibleRange = getVisibleTextRangeOffsetsSelectedByFunc(textNode, pickerFunc);
+            var visibleRange = getVisibleTextRangeOffsetsSelectedByFunc(textNode, pickerFunc, visibleContentOffsets, frameDimensions);
             if (!visibleRange) {
                 //the text node is valid, but not visible..
                 //let's try again with the next node in the list
-                return findVisibleLeafNodeCfi(leafNodeList, pickerFunc, visibleLeafNode);
+                return findVisibleLeafNodeCfi(leafNodeList, pickerFunc, visibleLeafNode, visibleContentOffsets, frameDimensions);
             }
             var range = createRange();
             range.setStart(textNode, visibleRange.start);
@@ -20683,26 +20677,25 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
 
     // get an array of visible text elements and then select one based on the func supplied
     // and generate a CFI for the first visible text subrange.
-    function getVisibleTextRangeCfiForTextElementSelectedByFunc(pickerFunc) {
-        var visibleLeafNodeList = self.getVisibleLeafNodes(getVisibleContentOffsets());
-        return findVisibleLeafNodeCfi(visibleLeafNodeList, pickerFunc);
+    function getVisibleTextRangeCfiForTextElementSelectedByFunc(pickerFunc, visibleContentOffsets, frameDimensions) {        
+        var visibleLeafNodeList = self.getVisibleLeafNodes(visibleContentOffsets, frameDimensions);
+        return findVisibleLeafNodeCfi(visibleLeafNodeList, pickerFunc, null, visibleContentOffsets, frameDimensions);
     }
 
-    function getLastVisibleTextRangeCfi() {
-        return getVisibleTextRangeCfiForTextElementSelectedByFunc(_.last);
+    function getLastVisibleTextRangeCfi(visibleContentOffsets, frameDimensions) {
+        return getVisibleTextRangeCfiForTextElementSelectedByFunc(_.last, visibleContentOffsets, frameDimensions);
     }
 
-    function getFirstVisibleTextRangeCfi() {
-        return getVisibleTextRangeCfiForTextElementSelectedByFunc(_.first);
+    function getFirstVisibleTextRangeCfi(visibleContentOffsets, frameDimensions) {
+        return getVisibleTextRangeCfiForTextElementSelectedByFunc(_.first, visibleContentOffsets, frameDimensions);
     }
 
-
-    this.getFirstVisibleCfi = function () {
-        return getFirstVisibleTextRangeCfi();
+    this.getFirstVisibleCfi = function (visibleContentOffsets, frameDimensions) {
+        return getFirstVisibleTextRangeCfi(visibleContentOffsets, frameDimensions);
     };
 
-    this.getLastVisibleCfi = function () {
-        return getLastVisibleTextRangeCfi();
+    this.getLastVisibleCfi = function (visibleContentOffsets, frameDimensions) {
+        return getLastVisibleTextRangeCfi(visibleContentOffsets, frameDimensions);
     };
 
     function generateCfiFromDomRange(range) {
@@ -20914,7 +20907,7 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
         }
 
         var posInElement = this.getVerticalOffsetForPointOnElement($element, x, y);
-        return Math.floor(posInElement / $viewport.height());
+        return Math.floor(posInElement / getFrameDimensions().height);
     };
 
     this.getVerticalOffsetForElement = function ($element) {
@@ -21057,7 +21050,7 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
         return visibleElements;
     };
 
-    this.getVisibleElements = function ($elements, visibleContentOffsets) {
+    this.getVisibleElements = function ($elements, visibleContentOffsets, frameDimensions) {
 
         var visibleElements = [];
 
@@ -21065,7 +21058,7 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
             var isTextNode = ($node[0].nodeType === Node.TEXT_NODE);
             var $element = isTextNode ? $node.parent() : $node;
             var visibilityPercentage = checkVisibilityByRectangles(
-                $element, true, visibleContentOffsets);
+                $element, true, visibleContentOffsets, frameDimensions);
 
             if (visibilityPercentage) {
                 var $visibleElement = $element;
@@ -21081,7 +21074,7 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
         return visibleElements;
     };
 
-    this.getVisibleLeafNodes = function (visibleContentOffsets) {
+    this.getVisibleLeafNodes = function (visibleContentOffsets, frameDimensions) {
 
         if (_cacheEnabled) {
             var cacheKey = (options.paginationInfo || {}).currentSpreadIndex || 0;
@@ -21093,7 +21086,7 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
 
         var $elements = this.getLeafNodeElements($("body", this.getRootElement()));
 
-        var visibleElements = this.getVisibleElements($elements, visibleContentOffsets);
+        var visibleElements = this.getVisibleElements($elements, visibleContentOffsets, frameDimensions);
 
         if (_cacheEnabled) {
             _cache.visibleLeafNodes.set(cacheKey, visibleElements);
@@ -21170,7 +21163,7 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
             $root[0],
             NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
             function() {
-                return NodeFilter.FILTER_ACCEPT
+                return NodeFilter.FILTER_ACCEPT;
             },
             false
         );
@@ -22417,9 +22410,26 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
     };
 
+    function getVisibleContentOffsets() {
+        return {
+            top: -_$el.parent().scrollTop(),
+            left: 0
+        };
+    }
+    
+    function getFrameDimensions() {
+        return {
+            width: _$el.parent()[0].clientWidth,
+            height: _$el.parent()[0].clientHeight
+        };
+    }
+    
     this.getNavigator = function () {
-
-        return new CfiNavigationLogic(_$el, _$iframe);
+        return new CfiNavigationLogic({
+            $iframe: _$iframe,
+            frameDimensions: getFrameDimensions,
+            visibleContentOffsets: getVisibleContentOffsets
+        });
     };
 
     this.getElementByCfi = function (spineItemIdref, cfi, classBlacklist, elementBlacklist, idBlacklist) {
@@ -22518,12 +22528,12 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         return [{spineItem: _currentSpineItem, $iframe: _$iframe}];
     };
 
-    this.getFirstVisibleCfi = function () {
-        return createBookmarkFromCfi(self.getNavigator().getFirstVisibleCfi());
+    this.getFirstVisibleCfi = function (visibleContentOffsets, frameDimensions) {
+        return createBookmarkFromCfi(self.getNavigator().getFirstVisibleCfi(visibleContentOffsets, frameDimensions));
     };
 
-    this.getLastVisibleCfi = function () {
-        return createBookmarkFromCfi(self.getNavigator().getLastVisibleCfi());
+    this.getLastVisibleCfi = function (visibleContentOffsets, frameDimensions) {
+        return createBookmarkFromCfi(self.getNavigator().getLastVisibleCfi(visibleContentOffsets, frameDimensions));
     };
 
     this.getDomRangeFromRangeCfi = function (rangeCfi, rangeCfi2, inclusive) {
@@ -35205,16 +35215,58 @@ var ScrollView = function (options, isContinuousScroll, reader) {
             return pageView.isVisibleSpineItemElementCfi(spineIdRef, partialCfi);
         }
     };
+    
+    function getFirstOrLastVisibleCfi(pickerFunc) {
+        var pageViews = getVisiblePageViews();
+        var selectedPageView = pickerFunc(pageViews);
+        var pageViewTopOffset = selectedPageView.element().position().top;
+        var visibleContentOffsets, frameDimensions;
+        
+        var setupFunctions = [
+            function () {
+                visibleContentOffsets = {
+                    top: pageViewTopOffset,
+                    left: 0
+                };
+            },
+            function() {
+                var height = selectedPageView.element().height();
+                
+                if (pageViewTopOffset >= 0) {
+                    height = viewHeight() - pageViewTopOffset;
+                }
+
+                frameDimensions = {
+                    width: selectedPageView.element().width(),
+                    height: height
+                };
+                
+                visibleContentOffsets = {
+                    top: 0,
+                    left: 0
+                };
+            }
+        ];
+        
+        //invoke setup function
+        pickerFunc(setupFunctions)();
+        
+        var cfiFunctions = [
+            selectedPageView.getFirstVisibleCfi,
+            selectedPageView.getLastVisibleCfi
+        ];
+        
+        return pickerFunc(cfiFunctions)(visibleContentOffsets, frameDimensions);
+    }
+    
     this.getFirstVisibleCfi = function () {
-        return callOnVisiblePageView(function (pageView) {
-            return pageView.getFirstVisibleCfi();
-        });
+        
+        return getFirstOrLastVisibleCfi(_.first);
     };
 
     this.getLastVisibleCfi = function () {
-        return callOnVisiblePageView(function (pageView) {
-            return pageView.getLastVisibleCfi();
-        });
+        
+        return getFirstOrLastVisibleCfi(_.last);
     };
 
     this.getDomRangeFromRangeCfi = function (rangeCfi, rangeCfi2, inclusive) {
@@ -35227,7 +35279,9 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         rangeCfi2 = rangeCfi2 || {};
 
         return callOnVisiblePageView(function (pageView) {
-            return pageView.getDomRangeFromRangeCfi(rangeCfi.contentCFI, rangeCfi2.contentCFI, inclusive);
+            if (pageView.currentSpineItem().idref === rangeCfi.idref) {
+                return pageView.getDomRangeFromRangeCfi(rangeCfi.contentCFI, rangeCfi2.contentCFI, inclusive);
+            }
         });
     };
 
@@ -41879,6 +41933,13 @@ var ReflowableView = function(options, reader){
         updateViewportSize();
         updatePagination();
     };
+    
+    function getFrameDimensions() {
+        return {
+            width: _$iframe[0].clientWidth,
+            height: _$iframe[0].clientHeight
+        };
+    }
 
     function renderIframe() {
         if (_$contentFrame) {
@@ -41900,9 +41961,11 @@ var ReflowableView = function(options, reader){
         //_$iframe.css(_spine.isLeftToRight() ? "left" : "right", "0px");
         _$iframe.css("overflow", "hidden");
 
-        _navigationLogic = new CfiNavigationLogic(
-            _$contentFrame, _$iframe,
-            { rectangleBased: true, paginationInfo: _paginationInfo });
+        _navigationLogic = new CfiNavigationLogic({
+            $iframe: _$iframe,
+            frameDimensions: getFrameDimensions,
+            paginationInfo: _paginationInfo
+        });
     }
 
     function loadSpineItem(spineItem) {
