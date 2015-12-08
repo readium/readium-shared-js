@@ -7,10 +7,13 @@ require(["readium_shared_js/globalsSetup", "readium_shared_js/globals"], functio
 
             Globals.logEvent("PLUGINS_LOADED", "ON", "dev/index.js");
             
-            // readium built-in (should have been require()'d outside this scope)
+            // legacy (should be undefined / null)
             console.log(reader.plugins.annotations);
+            
+            // same as above, new implementation
+            console.log(reader.plugins.highlights);
 
-            // external (require()'d via Dependency Injection, see examplePluginConfig function parameter passed above)
+            // see plugins/example/
             console.log(reader.plugins.example);
         });
 
