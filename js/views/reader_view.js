@@ -166,13 +166,20 @@ var ReaderView = function (options) {
     //based on https://docs.google.com/spreadsheet/ccc?key=0AoPMUkQhc4wcdDI0anFvWm96N0xRT184ZE96MXFRdFE&usp=drive_web#gid=0 document
     function deduceDesiredViewType(spineItem) {
 
+        var isLinear = self.spine().isValidLinearItem(spineItem.index);
+        
         //check settings
         if (_viewerSettings.scroll == "scroll-doc") {
             return ReaderView.VIEW_TYPE_SCROLLED_DOC;
         }
 
         if (_viewerSettings.scroll == "scroll-continuous") {
-            return ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
+            
+           if (isLinear) {
+               return ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
+           } else {
+               return ReaderView.VIEW_TYPE_SCROLLED_DOC;
+           }
         }
 
         //is fixed layout ignore flow
@@ -186,7 +193,12 @@ var ReaderView = function (options) {
         }
 
         if (spineItem.isFlowScrolledContinuous()) {
-            return ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
+            
+           if (isLinear) {
+               return ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
+           } else {
+               return ReaderView.VIEW_TYPE_SCROLLED_DOC;
+           }
         }
 
         return ReaderView.VIEW_TYPE_COLUMNIZED;
