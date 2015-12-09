@@ -9,9 +9,15 @@ define(function() {
             return matrix === "none" ? undefined : matrix;
         },
         getScaleFromMatrix: function(matrix) {
-            var matrixRegex = /matrix\((-?\d*\.?\d+),\s*0,\s*0,\s*(-?\d*\.?\d+),\s*0,\s*0\)/,
-                matches = matrix.match(matrixRegex);
-            return matches[1];
+            if (matrix) {
+                var matrixRegex = /matrix\((-?\d*\.?\d+),\s*0,\s*0,\s*(-?\d*\.?\d+),\s*0,\s*0\)/;
+                var matches = matrix.match(matrixRegex);
+
+                if (matches && matches.length > 0)
+                    return matches[1];
+            }
+            
+            return 1.0;
         }
     };
 
