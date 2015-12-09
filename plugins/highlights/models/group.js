@@ -430,12 +430,11 @@ function($, _, Class, TextLineInferrer, HighlightView, HighlightBorderView, High
             $html.on(this.getBoundHighlightContainerEvents(), that.boundHighlightCallback);
         },
 
-        resetHighlights: function(viewportElement, offsetTop, offsetLeft) {
+        resetHighlights: function(offsetTop, offsetLeft) {
             this.offsetTopAddition = offsetTop;
             this.offsetLeftAddition = offsetLeft;
             this.destroyCurrentHighlights();
             this.constructHighlightViews();
-            this.renderHighlights(viewportElement);
         },
 
         destroyCurrentHighlights: function() {
@@ -462,7 +461,11 @@ function($, _, Class, TextLineInferrer, HighlightView, HighlightBorderView, High
                 return;
             }
 
-            _.each(this.highlightViews, function(view, index) {
+            // execute the rendering on the next run loop iteration in case
+            // we create multiple highlights in batch, we don't want to
+            // do a layout for each highlight!
+            var that = this;
+            _.each(that.highlightViews, function(view, index) {
                 $(viewportElement).append(view.render());
             });
         },

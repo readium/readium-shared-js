@@ -56,7 +56,12 @@ function($, _, Class, HighlightHelpers, HighlightGroup) {
             var leftAddition = -this._getPaginationLeftOffset();
             var visibleCfiRange = this.getVisibleCfiRange();
 
-            // Highlights
+            // We do the position calculation and rendering in two steps,
+            // because if we render each highlight after calculating its
+            // position, the browser will trigger multiple layouts.
+            // Which is slooooow...
+
+            // calculate position and visiblity of highlights
             _.each(this.highlights, function(highlightGroup) {
                 var visible = true;
 
@@ -72,8 +77,13 @@ function($, _, Class, HighlightHelpers, HighlightGroup) {
                         visibleCfiRange.lastVisibleCfi.contentCFI);
                 }
                 highlightGroup.visible = visible;
-                highlightGroup.resetHighlights(that.readerBoundElement, 0, leftAddition);
+                highlightGroup.resetHighlights(0, leftAddition);
 
+            });
+
+            // render highlights
+            _.each(this.highlights, function(highlightGroup) {
+                highlightGroup.renderHighlights(that.readerBoundElement);
             });
         },
 
@@ -393,8 +403,13 @@ function($, _, Class, HighlightHelpers, HighlightGroup) {
             this.annotationHash[annotationId] = highlightGroup;
             this.highlights.push(highlightGroup);
 
-
-            highlightGroup.renderHighlights(this.readerBoundElement);
+            // perform the rendering on the next run loop step because we
+            // might be creating a bunch of highlights at the same time,
+            // we don't want to trigger a re-layout for each highlight
+            var that = this;
+            setTimeout(function() {
+                highlightGroup.renderHighlights(that.readerBoundElement);
+            }, 0);
         },
 
         _normalizeRectangle: function(rect) {
