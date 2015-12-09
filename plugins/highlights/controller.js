@@ -150,6 +150,36 @@ function($, _, Class, HighlightHelpers, HighlightGroup) {
             return idPrefix;
         },
 
+        // create a dummy test div to determine if the browser provides
+        // client rectangles that take transform scaling into consideration
+        calculateScaleIfNeeded: function() {
+            if (this.scale != 0)
+                return;
+
+            this.scale = 1.0;
+
+            var contentDoc = this.context.document;
+            var $div = $('<div style="font-size: 50px; position: absolute; background: red; top:-9001px;">##</div>');
+            $(contentDoc.documentElement).append($div);
+            range = contentDoc.createRange();
+            range.selectNode($div[0]);
+            var renderedWidth = this._normalizeRectangle(range.getBoundingClientRect()).width;
+            var clientWidth = $div[0].clientWidth;
+            $div.remove();
+            var renderedVsClientWidthFactor = renderedWidth / clientWidth;
+            if (renderedVsClientWidthFactor === 1) {
+                // browser doesn't provide scaled client rectangles (firefox)
+            } else if (this.context.isIe9 || this.context.isIe10) {
+                //use the test scale factor as our scale value for IE 9/10
+                this.scale = renderedVsClientWidthFactor;
+            } else {
+                //get transform scale of content document
+                var matrix = HighlightHelpers.getMatrix($('html', contentDoc));
+                if (matrix) {
+                    this.scale = HighlightHelpers.getScaleFromMatrix(matrix);
+                }
+            }
+        },
 
         // takes partial CFI as parameter
         addHighlight: function(CFI, id, type, styles) {
@@ -161,32 +191,9 @@ function($, _, Class, HighlightHelpers, HighlightGroup) {
             var leftAddition;
 
             var contentDoc = this.context.document;
-            //get transform scale of content document
-            var scale = 1.0;
-            var matrix = HighlightHelpers.getMatrix($('html', contentDoc));
-            if (matrix) {
-                scale = HighlightHelpers.getScaleFromMatrix(matrix);
-            }
 
-            //create a dummy test div to determine if the browser provides
-            // client rectangles that take transform scaling into consideration
-            var $div = $('<div style="font-size: 50px; position: absolute; background: red; top:-9001px;">##</div>');
-            $(contentDoc.documentElement).append($div);
-            range = contentDoc.createRange();
-            range.selectNode($div[0]);
-            var renderedWidth = this._normalizeRectangle(range.getBoundingClientRect()).width;
-            var clientWidth = $div[0].clientWidth;
-            $div.remove();
-            var renderedVsClientWidthFactor = renderedWidth / clientWidth;
-            if (renderedVsClientWidthFactor === 1) {
-                //browser doesn't provide scaled client rectangles (firefox)
-                scale = 1;
-            } else if (this.context.isIe9 || this.context.isIe10) {
-                //use the test scale factor as our scale value for IE 9/10
-                scale = renderedVsClientWidthFactor;
-            }
-            this.scale = scale;
-
+            this.calculateScaleIfNeeded();
+            
             // form fake full CFI to satisfy getRangeTargetNodes
             var arbitraryPackageDocCFI = "/99!"
             var fullFakeCFI = "epubcfi(" + arbitraryPackageDocCFI + CFI + ")";
