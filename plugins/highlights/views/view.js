@@ -9,8 +9,6 @@ function($, _, Class, Length, TextLineInferrer, CopiedTextStyles) {
         init: function(context, options) {
             this.context = context;
 
-            this.lengthLib = new Length(this.context.document);
-
             this.highlight = {
                 id: options.id,
                 CFI: options.CFI,
@@ -187,7 +185,7 @@ function($, _, Class, Length, TextLineInferrer, CopiedTextStyles) {
                             delete copiedFirstLineStyles['text-transform'];
                             _.each(["font-size", "letter-spacing"], function(styleName) {
                                 if (copiedFirstLineStyles[styleName]) {
-                                    copiedFirstLineStyles[styleName] = that.lengthLib.toPx(data.ancestorEl, copiedFirstLineStyles[styleName]) + "px";
+                                    copiedFirstLineStyles[styleName] = that.getLengthLib().toPx(data.ancestorEl, copiedFirstLineStyles[styleName]) + "px";
                                 }
                             });
                         }
@@ -225,6 +223,16 @@ function($, _, Class, Length, TextLineInferrer, CopiedTextStyles) {
                 processedElements = null;
                 computedStyles = null;
             }
+        },
+
+        getLengthLib: function() {
+            // lazy-load length lib has it takes ~300ms in some cases and we
+            // don't always need it
+            if (!this.lengthLib) {
+                this.lengthLib = new Length(this.context.document);
+            }
+
+            return this.lengthLib;
         },
 
         setCSS: function() {
