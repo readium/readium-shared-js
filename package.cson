@@ -153,19 +153,25 @@ scripts:
             prepare:submodule
         &&
         npm run
-            prepare:dependencies
+            prepare:local
         &&
         npm run
             prepare:patch
     '
 
 #=====================
-    'prepare:dependencies': '
+    'prepare:local': '
 
+        npm outdated
+        &&
         npm install
         &&
         npm update
         &&
+        npm ls --depth 0 --prod
+        &
+        npm ls --depth 0 --dev
+        &
         node
             readium-cfi-js/readium-build-tools/gitHubForksUpdater.js
     '
