@@ -61,7 +61,7 @@
   "scripts": {
     "cson2json": "node ./readium-cfi-js/node_modules/cson/bin/cson2json package.cson > package.json && node readium-cfi-js/readium-build-tools/optimizePackageJsonScripts.js",
     "prepare": "npm run prepare:submodule && npm run prepare:local && npm run prepare:patch",
-    "prepare:local": "npm outdated && npm install && npm update && npm ls --depth 0 --prod & npm ls --depth 0 --dev & node readium-cfi-js/readium-build-tools/gitHubForksUpdater.js",
+    "prepare:local": "npm outdated && npm install && npm update && node readium-cfi-js/readium-build-tools/gitHubForksUpdater.js",
     "prepare:submodule": "cd readium-cfi-js && npm run prepare && cd .. && ls",
     "prepare:patch": "node ./readium-cfi-js/node_modules/rimraf/bin.js node_modules/eventemitter3/_rjs/** && node readium-cfi-js/node_modules/requirejs/bin/r.js -convert node_modules/eventemitter3/ node_modules/eventemitter3/_rjs/",
     "clean": "node --version && npm --version && node ./readium-cfi-js/node_modules/rimraf/bin.js build-output/*",
