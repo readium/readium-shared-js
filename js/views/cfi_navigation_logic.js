@@ -1558,12 +1558,13 @@ var CfiNavigationLogic = function(options) {
         function getPaginationLeftOffset() {
 
             var $htmlElement = $("html", self.getRootDocument());
-            var offsetLeftPixels = $htmlElement.css(isVerticalWritingMode() ? "top" : "left");
+            var offsetLeftPixels = $htmlElement.css(isVerticalWritingMode() ? "top" : (isPageProgressionRightToLeft() ? "right" : "left");
             var offsetLeft = parseInt(offsetLeftPixels.replace("px", ""));
             if (isNaN(offsetLeft)) {
                 //for fixed layouts, $htmlElement.css("left") has no numerical value
                 offsetLeft = 0;
             }
+            if (isPageProgressionRightToLeft()) return -offsetLeft; 
             return offsetLeft;
         }
 
