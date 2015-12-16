@@ -564,14 +564,17 @@ function($, _, Class, HighlightHelpers, HighlightGroup) {
         },
 
         _injectAnnotationCSS: function(annotationCSSUrl) {
-            var $contentDocHead = $("head", this.context.document);
-            $contentDocHead.append(
-                $("<link/>", {
-                    rel: "stylesheet",
-                    href: annotationCSSUrl,
-                    type: "text/css"
-                })
-            );
+            var doc = this.context.document;
+            setTimeout(function(){
+                var $contentDocHead = $("head", doc);
+                $contentDocHead.append(
+                    $("<link/>", {
+                        rel: "stylesheet",
+                        href: annotationCSSUrl,
+                        type: "text/css"
+                    })
+                );
+            }, 0);
         }
     });
 
