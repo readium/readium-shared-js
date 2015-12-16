@@ -554,12 +554,14 @@ function($, _, Class, HighlightHelpers, HighlightGroup) {
                 // if there is no html element, we might be dealing with a fxl with a svg spine item
                 return 0;
             }
-            var offsetLeftPixels = $htmlElement.css("left");
+            
+            var offsetLeftPixels = $htmlElement.css(this.context.isRTL ? "right" : "left");
             var offsetLeft = parseInt(offsetLeftPixels.replace("px", ""));
             if (isNaN(offsetLeft)) {
                 //for fixed layouts, $htmlElement.css("left") has no numerical value
                 offsetLeft = 0;
             }
+            if (this.context.isRTL) return -offsetLeft; 
             return offsetLeft;
         },
 
