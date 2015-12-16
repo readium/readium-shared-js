@@ -195,6 +195,10 @@ var ReflowableView = function(options, reader){
             _paginationInfo.pageOffset = 0;
             _paginationInfo.currentSpreadIndex = 0;
             _currentSpineItem = spineItem;
+            
+            // TODO: this is a dirty hack!!
+            _currentSpineItem.paginationInfo = _paginationInfo; 
+            
             _isWaitingFrameRender = true;
 
             var src = _spine.package.resolveRelativeUrl(spineItem.href);
@@ -321,7 +325,7 @@ var ReflowableView = function(options, reader){
             _htmlBodyIsLTRWritingMode = false;
         }
 
-        _paginationInfo.isVerticalWritingMode = _htmlBodyIsVerticalWritingMode;
+        _paginationInfo.isVerticalWritingMode = _htmlBodyIsVerticalWritingMode; 
 
         hideBook();
         _$iframe.css("opacity", "1");
@@ -483,7 +487,7 @@ var ReflowableView = function(options, reader){
     function onPaginationChanged_(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
 
         _paginationInfo.pageOffset = (_paginationInfo.columnWidth + _paginationInfo.columnGap) * _paginationInfo.visibleColumnCount * _paginationInfo.currentSpreadIndex;
-
+        
         redraw();
 
         _.defer(function () {

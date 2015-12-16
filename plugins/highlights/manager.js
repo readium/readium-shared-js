@@ -113,7 +113,8 @@ var HighlightsManager = function (proxyObj, options) {
             manager: self,
             cssUrl: annotationCSSUrl,
             isFixedLayout: spineItem.isFixedLayout(),
-            isRTL: spineItem.spine.isRightToLeft()
+            isRTL: spineItem.spine.isRightToLeft(),
+            paginationInfo: function() { return spineItem.paginationInfo; }
             
         }, defaultContext);
 
