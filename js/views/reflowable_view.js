@@ -26,11 +26,11 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define(["jquery", "underscore", "eventEmitter", "../models/bookmark_data", "./cfi_navigation_logic",
-    "../models/current_pages_info", "../helpers", "../models/page_open_request", "../globals",
+define(["../globals", "jquery", "underscore", "eventEmitter", "../models/bookmark_data", "./cfi_navigation_logic",
+    "../models/current_pages_info", "../helpers", "../models/page_open_request",
     "../models/viewer_settings", "./font_loader"],
-    function($, _, EventEmitter, BookmarkData, CfiNavigationLogic,
-             CurrentPagesInfo, Helpers, PageOpenRequest, Globals,
+    function(Globals, $, _, EventEmitter, BookmarkData, CfiNavigationLogic,
+             CurrentPagesInfo, Helpers, PageOpenRequest,
              ViewerSettings, FontLoader) {
 /**
  * Renders reflowable content using CSS columns
@@ -150,6 +150,13 @@ var ReflowableView = function(options, reader){
         updateViewportSize();
         updatePagination();
     };
+    
+    function getFrameDimensions() {
+        return {
+            width: _$iframe[0].clientWidth,
+            height: _$iframe[0].clientHeight
+        };
+    }
 
     function renderIframe() {
         if (_$contentFrame) {
@@ -171,9 +178,11 @@ var ReflowableView = function(options, reader){
         //_$iframe.css(_spine.isLeftToRight() ? "left" : "right", "0px");
         _$iframe.css("overflow", "hidden");
 
-        _navigationLogic = new CfiNavigationLogic(
-            _$contentFrame, _$iframe,
-            { rectangleBased: true, paginationInfo: _paginationInfo });
+        _navigationLogic = new CfiNavigationLogic({
+            $iframe: _$iframe,
+            frameDimensions: getFrameDimensions,
+            paginationInfo: _paginationInfo
+        });
     }
 
     function loadSpineItem(spineItem) {
@@ -186,9 +195,15 @@ var ReflowableView = function(options, reader){
             _paginationInfo.pageOffset = 0;
             _paginationInfo.currentSpreadIndex = 0;
             _currentSpineItem = spineItem;
+            
+            // TODO: this is a dirty hack!!
+            _currentSpineItem.paginationInfo = _paginationInfo; 
+            
             _isWaitingFrameRender = true;
 
             var src = _spine.package.resolveRelativeUrl(spineItem.href);
+            
+            Globals.logEvent("CONTENT_DOCUMENT_LOAD_START", "EMIT", "reflowable_view.js [ " + spineItem.href + " -- " + src + " ]");
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, _$iframe, spineItem);
 
             _$iframe.css("opacity", "0.01");
@@ -239,6 +254,7 @@ var ReflowableView = function(options, reader){
             return;
         }
 
+        Globals.logEvent("CONTENT_DOCUMENT_LOADED", "EMIT", "reflowable_view.js [ " + _currentSpineItem.href + " ]");
         self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, _$iframe, _currentSpineItem);
 
         var epubContentDocument = _$iframe[0].contentDocument;
@@ -309,7 +325,7 @@ var ReflowableView = function(options, reader){
             _htmlBodyIsLTRWritingMode = false;
         }
 
-        _paginationInfo.isVerticalWritingMode = _htmlBodyIsVerticalWritingMode;
+        _paginationInfo.isVerticalWritingMode = _htmlBodyIsVerticalWritingMode; 
 
         hideBook();
         _$iframe.css("opacity", "1");
@@ -471,10 +487,12 @@ var ReflowableView = function(options, reader){
     function onPaginationChanged_(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
 
         _paginationInfo.pageOffset = (_paginationInfo.columnWidth + _paginationInfo.columnGap) * _paginationInfo.visibleColumnCount * _paginationInfo.currentSpreadIndex;
-
+        
         redraw();
 
         _.defer(function () {
+            
+            Globals.logEvent("InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED", "EMIT", "reflowable_view.js");
             self.emit(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, {
                 paginationInfo: self.getPaginationInfo(),
                 initiator: initiator,
@@ -813,7 +831,7 @@ var ReflowableView = function(options, reader){
 
         if(!_currentSpineItem) {
 
-            return new BookmarkData("", "");
+            return undefined;
         }
 
         return new BookmarkData(_currentSpineItem.idref, self.getFirstVisibleElementCfi());
@@ -834,19 +852,19 @@ var ReflowableView = function(options, reader){
         return [_currentSpineItem];
     };
 
-    this.getElementByCfi = function(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
+    this.getElementByCfi = function(spineItemIdref, cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
-        if(spineItem != _currentSpineItem) {
-            console.error("spine item is not loaded");
+        if(spineItemIdref != _currentSpineItem.idref) {
+            console.warn("spine item is not loaded");
             return undefined;
         }
 
         return _navigationLogic.getElementByCfi(cfi, classBlacklist, elementBlacklist, idBlacklist);
     };
 
-    this.getElementById = function(spineItem, id) {
+    this.getElementById = function(spineItemIdref, id) {
 
-        if(spineItem != _currentSpineItem) {
+        if(spineItemIdref != _currentSpineItem.idref) {
             console.error("spine item is not loaded");
             return undefined;
         }
@@ -854,10 +872,10 @@ var ReflowableView = function(options, reader){
         return _navigationLogic.getElementById(id);
     };
 
-    this.getElement = function(spineItem, selector) {
+    this.getElement = function(spineItemIdref, selector) {
 
-        if(spineItem != _currentSpineItem) {
-            console.error("spine item is not loaded");
+        if(spineItemIdref != _currentSpineItem.idref) {
+            console.warn("spine item is not loaded");
             return undefined;
         }
 
@@ -911,13 +929,113 @@ var ReflowableView = function(options, reader){
         self.openPage(openPageRequest);
     };
 
-    this.isElementCfiVisible = function(spineIdRef, contentCfi) {
-        if (spineIdRef != _currentSpineItem.idref) {
-            return false;
+    this.getVisibleElementsWithFilter = function(filterFunction, includeSpineItem) {
+
+        var visibleContentOffsets = getVisibleContentOffsets();
+
+        var elements = _navigationLogic.getVisibleElementsWithFilter(visibleContentOffsets,filterFunction);
+
+        if (includeSpineItem) {
+            return [{elements: elements, spineItem:_currentSpineItem}];
+        } else {
+            return elements;
         }
-        return _navigationLogic.isElementCfiVisible(contentCfi);
+
     };
 
+    this.getVisibleElements = function(selector, includeSpineItem) {
+
+        var visibleContentOffsets = getVisibleContentOffsets();
+
+        var elements = _navigationLogic.getAllVisibleElementsWithSelector(selector, visibleContentOffsets);
+
+        if (includeSpineItem) {
+            return [{elements: elements, spineItem:_currentSpineItem}];
+        } else {
+            return elements;
+        }
+
+    };
+
+    this.isElementVisible = function ($element) {
+
+        return _navigationLogic.isElementVisible($element, getVisibleContentOffsets());
+
+    };
+
+    this.getElements = function(spineItemIdref, selector) {
+
+        if(spineItemIdref != _currentSpineItem.idref) {
+            console.warn("spine item is not loaded");
+            return undefined;
+        }
+
+        return _navigationLogic.getElements(selector);
+    };
+
+    this.isNodeFromRangeCfiVisible = function (spineIdref, partialCfi) {
+        if (_currentSpineItem.idref === spineIdref) {
+            return _navigationLogic.isNodeFromRangeCfiVisible(partialCfi);
+        }
+        return undefined;
+    };
+
+    this.isVisibleSpineItemElementCfi = function (spineIdRef, partialCfi) {
+        if (_navigationLogic.isRangeCfi(partialCfi)) {
+            return this.isNodeFromRangeCfiVisible(spineIdRef, partialCfi);
+        }
+        var $elementFromCfi = this.getElementByCfi(spineIdRef, partialCfi);
+        return ($elementFromCfi && this.isElementVisible($elementFromCfi));
+    };
+
+    this.getNodeRangeInfoFromCfi = function (spineIdRef, partialCfi) {
+        if (spineIdRef != _currentSpineItem.idref) {
+            console.warn("spine item is not loaded");
+            return undefined;
+        }
+
+        return _navigationLogic.getNodeRangeInfoFromCfi(partialCfi);
+    };
+
+    function createBookmarkFromCfi(cfi){
+        return new BookmarkData(_currentSpineItem.idref, cfi);
+    }
+
+    this.getFirstVisibleCfi = function () {
+        return createBookmarkFromCfi(_navigationLogic.getFirstVisibleCfi());
+    };
+
+    this.getLastVisibleCfi = function () {
+        return createBookmarkFromCfi(_navigationLogic.getLastVisibleCfi());
+    };
+
+    this.getDomRangeFromRangeCfi = function (rangeCfi, rangeCfi2, inclusive) {
+        if (rangeCfi2 && rangeCfi.idref !== rangeCfi2.idref) {
+            console.error("getDomRangeFromRangeCfi: both CFIs must be scoped under the same spineitem idref");
+            return undefined;
+        }
+        return _navigationLogic.getDomRangeFromRangeCfi(rangeCfi.contentCFI, rangeCfi2? rangeCfi2.contentCFI: null, inclusive);
+    };
+
+    this.getRangeCfiFromDomRange = function (domRange) {
+        return createBookmarkFromCfi(_navigationLogic.getRangeCfiFromDomRange(domRange));
+    };
+
+    this.getVisibleCfiFromPoint = function (x, y, precisePoint) {
+        return createBookmarkFromCfi(_navigationLogic.getVisibleCfiFromPoint(x, y, precisePoint));
+    };
+
+    this.getRangeCfiFromPoints = function(startX, startY, endX, endY) {
+        return createBookmarkFromCfi(_navigationLogic.getRangeCfiFromPoints(startX, startY, endX, endY));
+    };
+
+    this.getCfiForElement = function(x, y) {
+        return createBookmarkFromCfi(_navigationLogic.getCfiForElement(x, y));
+    };
+
+    this.getElementFromPoint = function(x, y) {
+        return _navigationLogic.getElementFromPoint(x,y);
+    };
 };
     return ReflowableView;
 });

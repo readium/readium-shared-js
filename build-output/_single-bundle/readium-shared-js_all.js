@@ -12721,17 +12721,1554 @@ if (typeof define == 'function' && typeof define.amd == 'object') {
 
 define('readium_cfi_js', ['readium_cfi_js/cfi_API'], function (main) { return main; });
 
-/*
-This code is required to IE for console shim
-*/
-(function(){
-    "use strict";
-    if (!console["debug"]) console.debug = console.log;
-    if (!console["info"]) console.info = console.log;
-    if (!console["warn"]) console.warn = console.log;
-    if (!console["error"]) console.error = console.log;
-})();
-define("console_shim", function(){});
+//     Underscore.js 1.8.3
+//     http://underscorejs.org
+//     (c) 2009-2015 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+//     Underscore may be freely distributed under the MIT license.
+
+(function() {
+
+  // Baseline setup
+  // --------------
+
+  // Establish the root object, `window` in the browser, or `exports` on the server.
+  var root = this;
+
+  // Save the previous value of the `_` variable.
+  var previousUnderscore = root._;
+
+  // Save bytes in the minified (but not gzipped) version:
+  var ArrayProto = Array.prototype, ObjProto = Object.prototype, FuncProto = Function.prototype;
+
+  // Create quick reference variables for speed access to core prototypes.
+  var
+    push             = ArrayProto.push,
+    slice            = ArrayProto.slice,
+    toString         = ObjProto.toString,
+    hasOwnProperty   = ObjProto.hasOwnProperty;
+
+  // All **ECMAScript 5** native function implementations that we hope to use
+  // are declared here.
+  var
+    nativeIsArray      = Array.isArray,
+    nativeKeys         = Object.keys,
+    nativeBind         = FuncProto.bind,
+    nativeCreate       = Object.create;
+
+  // Naked function reference for surrogate-prototype-swapping.
+  var Ctor = function(){};
+
+  // Create a safe reference to the Underscore object for use below.
+  var _ = function(obj) {
+    if (obj instanceof _) return obj;
+    if (!(this instanceof _)) return new _(obj);
+    this._wrapped = obj;
+  };
+
+  // Export the Underscore object for **Node.js**, with
+  // backwards-compatibility for the old `require()` API. If we're in
+  // the browser, add `_` as a global object.
+  if (typeof exports !== 'undefined') {
+    if (typeof module !== 'undefined' && module.exports) {
+      exports = module.exports = _;
+    }
+    exports._ = _;
+  } else {
+    root._ = _;
+  }
+
+  // Current version.
+  _.VERSION = '1.8.3';
+
+  // Internal function that returns an efficient (for current engines) version
+  // of the passed-in callback, to be repeatedly applied in other Underscore
+  // functions.
+  var optimizeCb = function(func, context, argCount) {
+    if (context === void 0) return func;
+    switch (argCount == null ? 3 : argCount) {
+      case 1: return function(value) {
+        return func.call(context, value);
+      };
+      case 2: return function(value, other) {
+        return func.call(context, value, other);
+      };
+      case 3: return function(value, index, collection) {
+        return func.call(context, value, index, collection);
+      };
+      case 4: return function(accumulator, value, index, collection) {
+        return func.call(context, accumulator, value, index, collection);
+      };
+    }
+    return function() {
+      return func.apply(context, arguments);
+    };
+  };
+
+  // A mostly-internal function to generate callbacks that can be applied
+  // to each element in a collection, returning the desired result — either
+  // identity, an arbitrary callback, a property matcher, or a property accessor.
+  var cb = function(value, context, argCount) {
+    if (value == null) return _.identity;
+    if (_.isFunction(value)) return optimizeCb(value, context, argCount);
+    if (_.isObject(value)) return _.matcher(value);
+    return _.property(value);
+  };
+  _.iteratee = function(value, context) {
+    return cb(value, context, Infinity);
+  };
+
+  // An internal function for creating assigner functions.
+  var createAssigner = function(keysFunc, undefinedOnly) {
+    return function(obj) {
+      var length = arguments.length;
+      if (length < 2 || obj == null) return obj;
+      for (var index = 1; index < length; index++) {
+        var source = arguments[index],
+            keys = keysFunc(source),
+            l = keys.length;
+        for (var i = 0; i < l; i++) {
+          var key = keys[i];
+          if (!undefinedOnly || obj[key] === void 0) obj[key] = source[key];
+        }
+      }
+      return obj;
+    };
+  };
+
+  // An internal function for creating a new object that inherits from another.
+  var baseCreate = function(prototype) {
+    if (!_.isObject(prototype)) return {};
+    if (nativeCreate) return nativeCreate(prototype);
+    Ctor.prototype = prototype;
+    var result = new Ctor;
+    Ctor.prototype = null;
+    return result;
+  };
+
+  var property = function(key) {
+    return function(obj) {
+      return obj == null ? void 0 : obj[key];
+    };
+  };
+
+  // Helper for collection methods to determine whether a collection
+  // should be iterated as an array or as an object
+  // Related: http://people.mozilla.org/~jorendorff/es6-draft.html#sec-tolength
+  // Avoids a very nasty iOS 8 JIT bug on ARM-64. #2094
+  var MAX_ARRAY_INDEX = Math.pow(2, 53) - 1;
+  var getLength = property('length');
+  var isArrayLike = function(collection) {
+    var length = getLength(collection);
+    return typeof length == 'number' && length >= 0 && length <= MAX_ARRAY_INDEX;
+  };
+
+  // Collection Functions
+  // --------------------
+
+  // The cornerstone, an `each` implementation, aka `forEach`.
+  // Handles raw objects in addition to array-likes. Treats all
+  // sparse array-likes as if they were dense.
+  _.each = _.forEach = function(obj, iteratee, context) {
+    iteratee = optimizeCb(iteratee, context);
+    var i, length;
+    if (isArrayLike(obj)) {
+      for (i = 0, length = obj.length; i < length; i++) {
+        iteratee(obj[i], i, obj);
+      }
+    } else {
+      var keys = _.keys(obj);
+      for (i = 0, length = keys.length; i < length; i++) {
+        iteratee(obj[keys[i]], keys[i], obj);
+      }
+    }
+    return obj;
+  };
+
+  // Return the results of applying the iteratee to each element.
+  _.map = _.collect = function(obj, iteratee, context) {
+    iteratee = cb(iteratee, context);
+    var keys = !isArrayLike(obj) && _.keys(obj),
+        length = (keys || obj).length,
+        results = Array(length);
+    for (var index = 0; index < length; index++) {
+      var currentKey = keys ? keys[index] : index;
+      results[index] = iteratee(obj[currentKey], currentKey, obj);
+    }
+    return results;
+  };
+
+  // Create a reducing function iterating left or right.
+  function createReduce(dir) {
+    // Optimized iterator function as using arguments.length
+    // in the main function will deoptimize the, see #1991.
+    function iterator(obj, iteratee, memo, keys, index, length) {
+      for (; index >= 0 && index < length; index += dir) {
+        var currentKey = keys ? keys[index] : index;
+        memo = iteratee(memo, obj[currentKey], currentKey, obj);
+      }
+      return memo;
+    }
+
+    return function(obj, iteratee, memo, context) {
+      iteratee = optimizeCb(iteratee, context, 4);
+      var keys = !isArrayLike(obj) && _.keys(obj),
+          length = (keys || obj).length,
+          index = dir > 0 ? 0 : length - 1;
+      // Determine the initial value if none is provided.
+      if (arguments.length < 3) {
+        memo = obj[keys ? keys[index] : index];
+        index += dir;
+      }
+      return iterator(obj, iteratee, memo, keys, index, length);
+    };
+  }
+
+  // **Reduce** builds up a single result from a list of values, aka `inject`,
+  // or `foldl`.
+  _.reduce = _.foldl = _.inject = createReduce(1);
+
+  // The right-associative version of reduce, also known as `foldr`.
+  _.reduceRight = _.foldr = createReduce(-1);
+
+  // Return the first value which passes a truth test. Aliased as `detect`.
+  _.find = _.detect = function(obj, predicate, context) {
+    var key;
+    if (isArrayLike(obj)) {
+      key = _.findIndex(obj, predicate, context);
+    } else {
+      key = _.findKey(obj, predicate, context);
+    }
+    if (key !== void 0 && key !== -1) return obj[key];
+  };
+
+  // Return all the elements that pass a truth test.
+  // Aliased as `select`.
+  _.filter = _.select = function(obj, predicate, context) {
+    var results = [];
+    predicate = cb(predicate, context);
+    _.each(obj, function(value, index, list) {
+      if (predicate(value, index, list)) results.push(value);
+    });
+    return results;
+  };
+
+  // Return all the elements for which a truth test fails.
+  _.reject = function(obj, predicate, context) {
+    return _.filter(obj, _.negate(cb(predicate)), context);
+  };
+
+  // Determine whether all of the elements match a truth test.
+  // Aliased as `all`.
+  _.every = _.all = function(obj, predicate, context) {
+    predicate = cb(predicate, context);
+    var keys = !isArrayLike(obj) && _.keys(obj),
+        length = (keys || obj).length;
+    for (var index = 0; index < length; index++) {
+      var currentKey = keys ? keys[index] : index;
+      if (!predicate(obj[currentKey], currentKey, obj)) return false;
+    }
+    return true;
+  };
+
+  // Determine if at least one element in the object matches a truth test.
+  // Aliased as `any`.
+  _.some = _.any = function(obj, predicate, context) {
+    predicate = cb(predicate, context);
+    var keys = !isArrayLike(obj) && _.keys(obj),
+        length = (keys || obj).length;
+    for (var index = 0; index < length; index++) {
+      var currentKey = keys ? keys[index] : index;
+      if (predicate(obj[currentKey], currentKey, obj)) return true;
+    }
+    return false;
+  };
+
+  // Determine if the array or object contains a given item (using `===`).
+  // Aliased as `includes` and `include`.
+  _.contains = _.includes = _.include = function(obj, item, fromIndex, guard) {
+    if (!isArrayLike(obj)) obj = _.values(obj);
+    if (typeof fromIndex != 'number' || guard) fromIndex = 0;
+    return _.indexOf(obj, item, fromIndex) >= 0;
+  };
+
+  // Invoke a method (with arguments) on every item in a collection.
+  _.invoke = function(obj, method) {
+    var args = slice.call(arguments, 2);
+    var isFunc = _.isFunction(method);
+    return _.map(obj, function(value) {
+      var func = isFunc ? method : value[method];
+      return func == null ? func : func.apply(value, args);
+    });
+  };
+
+  // Convenience version of a common use case of `map`: fetching a property.
+  _.pluck = function(obj, key) {
+    return _.map(obj, _.property(key));
+  };
+
+  // Convenience version of a common use case of `filter`: selecting only objects
+  // containing specific `key:value` pairs.
+  _.where = function(obj, attrs) {
+    return _.filter(obj, _.matcher(attrs));
+  };
+
+  // Convenience version of a common use case of `find`: getting the first object
+  // containing specific `key:value` pairs.
+  _.findWhere = function(obj, attrs) {
+    return _.find(obj, _.matcher(attrs));
+  };
+
+  // Return the maximum element (or element-based computation).
+  _.max = function(obj, iteratee, context) {
+    var result = -Infinity, lastComputed = -Infinity,
+        value, computed;
+    if (iteratee == null && obj != null) {
+      obj = isArrayLike(obj) ? obj : _.values(obj);
+      for (var i = 0, length = obj.length; i < length; i++) {
+        value = obj[i];
+        if (value > result) {
+          result = value;
+        }
+      }
+    } else {
+      iteratee = cb(iteratee, context);
+      _.each(obj, function(value, index, list) {
+        computed = iteratee(value, index, list);
+        if (computed > lastComputed || computed === -Infinity && result === -Infinity) {
+          result = value;
+          lastComputed = computed;
+        }
+      });
+    }
+    return result;
+  };
+
+  // Return the minimum element (or element-based computation).
+  _.min = function(obj, iteratee, context) {
+    var result = Infinity, lastComputed = Infinity,
+        value, computed;
+    if (iteratee == null && obj != null) {
+      obj = isArrayLike(obj) ? obj : _.values(obj);
+      for (var i = 0, length = obj.length; i < length; i++) {
+        value = obj[i];
+        if (value < result) {
+          result = value;
+        }
+      }
+    } else {
+      iteratee = cb(iteratee, context);
+      _.each(obj, function(value, index, list) {
+        computed = iteratee(value, index, list);
+        if (computed < lastComputed || computed === Infinity && result === Infinity) {
+          result = value;
+          lastComputed = computed;
+        }
+      });
+    }
+    return result;
+  };
+
+  // Shuffle a collection, using the modern version of the
+  // [Fisher-Yates shuffle](http://en.wikipedia.org/wiki/Fisher–Yates_shuffle).
+  _.shuffle = function(obj) {
+    var set = isArrayLike(obj) ? obj : _.values(obj);
+    var length = set.length;
+    var shuffled = Array(length);
+    for (var index = 0, rand; index < length; index++) {
+      rand = _.random(0, index);
+      if (rand !== index) shuffled[index] = shuffled[rand];
+      shuffled[rand] = set[index];
+    }
+    return shuffled;
+  };
+
+  // Sample **n** random values from a collection.
+  // If **n** is not specified, returns a single random element.
+  // The internal `guard` argument allows it to work with `map`.
+  _.sample = function(obj, n, guard) {
+    if (n == null || guard) {
+      if (!isArrayLike(obj)) obj = _.values(obj);
+      return obj[_.random(obj.length - 1)];
+    }
+    return _.shuffle(obj).slice(0, Math.max(0, n));
+  };
+
+  // Sort the object's values by a criterion produced by an iteratee.
+  _.sortBy = function(obj, iteratee, context) {
+    iteratee = cb(iteratee, context);
+    return _.pluck(_.map(obj, function(value, index, list) {
+      return {
+        value: value,
+        index: index,
+        criteria: iteratee(value, index, list)
+      };
+    }).sort(function(left, right) {
+      var a = left.criteria;
+      var b = right.criteria;
+      if (a !== b) {
+        if (a > b || a === void 0) return 1;
+        if (a < b || b === void 0) return -1;
+      }
+      return left.index - right.index;
+    }), 'value');
+  };
+
+  // An internal function used for aggregate "group by" operations.
+  var group = function(behavior) {
+    return function(obj, iteratee, context) {
+      var result = {};
+      iteratee = cb(iteratee, context);
+      _.each(obj, function(value, index) {
+        var key = iteratee(value, index, obj);
+        behavior(result, value, key);
+      });
+      return result;
+    };
+  };
+
+  // Groups the object's values by a criterion. Pass either a string attribute
+  // to group by, or a function that returns the criterion.
+  _.groupBy = group(function(result, value, key) {
+    if (_.has(result, key)) result[key].push(value); else result[key] = [value];
+  });
+
+  // Indexes the object's values by a criterion, similar to `groupBy`, but for
+  // when you know that your index values will be unique.
+  _.indexBy = group(function(result, value, key) {
+    result[key] = value;
+  });
+
+  // Counts instances of an object that group by a certain criterion. Pass
+  // either a string attribute to count by, or a function that returns the
+  // criterion.
+  _.countBy = group(function(result, value, key) {
+    if (_.has(result, key)) result[key]++; else result[key] = 1;
+  });
+
+  // Safely create a real, live array from anything iterable.
+  _.toArray = function(obj) {
+    if (!obj) return [];
+    if (_.isArray(obj)) return slice.call(obj);
+    if (isArrayLike(obj)) return _.map(obj, _.identity);
+    return _.values(obj);
+  };
+
+  // Return the number of elements in an object.
+  _.size = function(obj) {
+    if (obj == null) return 0;
+    return isArrayLike(obj) ? obj.length : _.keys(obj).length;
+  };
+
+  // Split a collection into two arrays: one whose elements all satisfy the given
+  // predicate, and one whose elements all do not satisfy the predicate.
+  _.partition = function(obj, predicate, context) {
+    predicate = cb(predicate, context);
+    var pass = [], fail = [];
+    _.each(obj, function(value, key, obj) {
+      (predicate(value, key, obj) ? pass : fail).push(value);
+    });
+    return [pass, fail];
+  };
+
+  // Array Functions
+  // ---------------
+
+  // Get the first element of an array. Passing **n** will return the first N
+  // values in the array. Aliased as `head` and `take`. The **guard** check
+  // allows it to work with `_.map`.
+  _.first = _.head = _.take = function(array, n, guard) {
+    if (array == null) return void 0;
+    if (n == null || guard) return array[0];
+    return _.initial(array, array.length - n);
+  };
+
+  // Returns everything but the last entry of the array. Especially useful on
+  // the arguments object. Passing **n** will return all the values in
+  // the array, excluding the last N.
+  _.initial = function(array, n, guard) {
+    return slice.call(array, 0, Math.max(0, array.length - (n == null || guard ? 1 : n)));
+  };
+
+  // Get the last element of an array. Passing **n** will return the last N
+  // values in the array.
+  _.last = function(array, n, guard) {
+    if (array == null) return void 0;
+    if (n == null || guard) return array[array.length - 1];
+    return _.rest(array, Math.max(0, array.length - n));
+  };
+
+  // Returns everything but the first entry of the array. Aliased as `tail` and `drop`.
+  // Especially useful on the arguments object. Passing an **n** will return
+  // the rest N values in the array.
+  _.rest = _.tail = _.drop = function(array, n, guard) {
+    return slice.call(array, n == null || guard ? 1 : n);
+  };
+
+  // Trim out all falsy values from an array.
+  _.compact = function(array) {
+    return _.filter(array, _.identity);
+  };
+
+  // Internal implementation of a recursive `flatten` function.
+  var flatten = function(input, shallow, strict, startIndex) {
+    var output = [], idx = 0;
+    for (var i = startIndex || 0, length = getLength(input); i < length; i++) {
+      var value = input[i];
+      if (isArrayLike(value) && (_.isArray(value) || _.isArguments(value))) {
+        //flatten current level of array or arguments object
+        if (!shallow) value = flatten(value, shallow, strict);
+        var j = 0, len = value.length;
+        output.length += len;
+        while (j < len) {
+          output[idx++] = value[j++];
+        }
+      } else if (!strict) {
+        output[idx++] = value;
+      }
+    }
+    return output;
+  };
+
+  // Flatten out an array, either recursively (by default), or just one level.
+  _.flatten = function(array, shallow) {
+    return flatten(array, shallow, false);
+  };
+
+  // Return a version of the array that does not contain the specified value(s).
+  _.without = function(array) {
+    return _.difference(array, slice.call(arguments, 1));
+  };
+
+  // Produce a duplicate-free version of the array. If the array has already
+  // been sorted, you have the option of using a faster algorithm.
+  // Aliased as `unique`.
+  _.uniq = _.unique = function(array, isSorted, iteratee, context) {
+    if (!_.isBoolean(isSorted)) {
+      context = iteratee;
+      iteratee = isSorted;
+      isSorted = false;
+    }
+    if (iteratee != null) iteratee = cb(iteratee, context);
+    var result = [];
+    var seen = [];
+    for (var i = 0, length = getLength(array); i < length; i++) {
+      var value = array[i],
+          computed = iteratee ? iteratee(value, i, array) : value;
+      if (isSorted) {
+        if (!i || seen !== computed) result.push(value);
+        seen = computed;
+      } else if (iteratee) {
+        if (!_.contains(seen, computed)) {
+          seen.push(computed);
+          result.push(value);
+        }
+      } else if (!_.contains(result, value)) {
+        result.push(value);
+      }
+    }
+    return result;
+  };
+
+  // Produce an array that contains the union: each distinct element from all of
+  // the passed-in arrays.
+  _.union = function() {
+    return _.uniq(flatten(arguments, true, true));
+  };
+
+  // Produce an array that contains every item shared between all the
+  // passed-in arrays.
+  _.intersection = function(array) {
+    var result = [];
+    var argsLength = arguments.length;
+    for (var i = 0, length = getLength(array); i < length; i++) {
+      var item = array[i];
+      if (_.contains(result, item)) continue;
+      for (var j = 1; j < argsLength; j++) {
+        if (!_.contains(arguments[j], item)) break;
+      }
+      if (j === argsLength) result.push(item);
+    }
+    return result;
+  };
+
+  // Take the difference between one array and a number of other arrays.
+  // Only the elements present in just the first array will remain.
+  _.difference = function(array) {
+    var rest = flatten(arguments, true, true, 1);
+    return _.filter(array, function(value){
+      return !_.contains(rest, value);
+    });
+  };
+
+  // Zip together multiple lists into a single array -- elements that share
+  // an index go together.
+  _.zip = function() {
+    return _.unzip(arguments);
+  };
+
+  // Complement of _.zip. Unzip accepts an array of arrays and groups
+  // each array's elements on shared indices
+  _.unzip = function(array) {
+    var length = array && _.max(array, getLength).length || 0;
+    var result = Array(length);
+
+    for (var index = 0; index < length; index++) {
+      result[index] = _.pluck(array, index);
+    }
+    return result;
+  };
+
+  // Converts lists into objects. Pass either a single array of `[key, value]`
+  // pairs, or two parallel arrays of the same length -- one of keys, and one of
+  // the corresponding values.
+  _.object = function(list, values) {
+    var result = {};
+    for (var i = 0, length = getLength(list); i < length; i++) {
+      if (values) {
+        result[list[i]] = values[i];
+      } else {
+        result[list[i][0]] = list[i][1];
+      }
+    }
+    return result;
+  };
+
+  // Generator function to create the findIndex and findLastIndex functions
+  function createPredicateIndexFinder(dir) {
+    return function(array, predicate, context) {
+      predicate = cb(predicate, context);
+      var length = getLength(array);
+      var index = dir > 0 ? 0 : length - 1;
+      for (; index >= 0 && index < length; index += dir) {
+        if (predicate(array[index], index, array)) return index;
+      }
+      return -1;
+    };
+  }
+
+  // Returns the first index on an array-like that passes a predicate test
+  _.findIndex = createPredicateIndexFinder(1);
+  _.findLastIndex = createPredicateIndexFinder(-1);
+
+  // Use a comparator function to figure out the smallest index at which
+  // an object should be inserted so as to maintain order. Uses binary search.
+  _.sortedIndex = function(array, obj, iteratee, context) {
+    iteratee = cb(iteratee, context, 1);
+    var value = iteratee(obj);
+    var low = 0, high = getLength(array);
+    while (low < high) {
+      var mid = Math.floor((low + high) / 2);
+      if (iteratee(array[mid]) < value) low = mid + 1; else high = mid;
+    }
+    return low;
+  };
+
+  // Generator function to create the indexOf and lastIndexOf functions
+  function createIndexFinder(dir, predicateFind, sortedIndex) {
+    return function(array, item, idx) {
+      var i = 0, length = getLength(array);
+      if (typeof idx == 'number') {
+        if (dir > 0) {
+            i = idx >= 0 ? idx : Math.max(idx + length, i);
+        } else {
+            length = idx >= 0 ? Math.min(idx + 1, length) : idx + length + 1;
+        }
+      } else if (sortedIndex && idx && length) {
+        idx = sortedIndex(array, item);
+        return array[idx] === item ? idx : -1;
+      }
+      if (item !== item) {
+        idx = predicateFind(slice.call(array, i, length), _.isNaN);
+        return idx >= 0 ? idx + i : -1;
+      }
+      for (idx = dir > 0 ? i : length - 1; idx >= 0 && idx < length; idx += dir) {
+        if (array[idx] === item) return idx;
+      }
+      return -1;
+    };
+  }
+
+  // Return the position of the first occurrence of an item in an array,
+  // or -1 if the item is not included in the array.
+  // If the array is large and already in sort order, pass `true`
+  // for **isSorted** to use binary search.
+  _.indexOf = createIndexFinder(1, _.findIndex, _.sortedIndex);
+  _.lastIndexOf = createIndexFinder(-1, _.findLastIndex);
+
+  // Generate an integer Array containing an arithmetic progression. A port of
+  // the native Python `range()` function. See
+  // [the Python documentation](http://docs.python.org/library/functions.html#range).
+  _.range = function(start, stop, step) {
+    if (stop == null) {
+      stop = start || 0;
+      start = 0;
+    }
+    step = step || 1;
+
+    var length = Math.max(Math.ceil((stop - start) / step), 0);
+    var range = Array(length);
+
+    for (var idx = 0; idx < length; idx++, start += step) {
+      range[idx] = start;
+    }
+
+    return range;
+  };
+
+  // Function (ahem) Functions
+  // ------------------
+
+  // Determines whether to execute a function as a constructor
+  // or a normal function with the provided arguments
+  var executeBound = function(sourceFunc, boundFunc, context, callingContext, args) {
+    if (!(callingContext instanceof boundFunc)) return sourceFunc.apply(context, args);
+    var self = baseCreate(sourceFunc.prototype);
+    var result = sourceFunc.apply(self, args);
+    if (_.isObject(result)) return result;
+    return self;
+  };
+
+  // Create a function bound to a given object (assigning `this`, and arguments,
+  // optionally). Delegates to **ECMAScript 5**'s native `Function.bind` if
+  // available.
+  _.bind = function(func, context) {
+    if (nativeBind && func.bind === nativeBind) return nativeBind.apply(func, slice.call(arguments, 1));
+    if (!_.isFunction(func)) throw new TypeError('Bind must be called on a function');
+    var args = slice.call(arguments, 2);
+    var bound = function() {
+      return executeBound(func, bound, context, this, args.concat(slice.call(arguments)));
+    };
+    return bound;
+  };
+
+  // Partially apply a function by creating a version that has had some of its
+  // arguments pre-filled, without changing its dynamic `this` context. _ acts
+  // as a placeholder, allowing any combination of arguments to be pre-filled.
+  _.partial = function(func) {
+    var boundArgs = slice.call(arguments, 1);
+    var bound = function() {
+      var position = 0, length = boundArgs.length;
+      var args = Array(length);
+      for (var i = 0; i < length; i++) {
+        args[i] = boundArgs[i] === _ ? arguments[position++] : boundArgs[i];
+      }
+      while (position < arguments.length) args.push(arguments[position++]);
+      return executeBound(func, bound, this, this, args);
+    };
+    return bound;
+  };
+
+  // Bind a number of an object's methods to that object. Remaining arguments
+  // are the method names to be bound. Useful for ensuring that all callbacks
+  // defined on an object belong to it.
+  _.bindAll = function(obj) {
+    var i, length = arguments.length, key;
+    if (length <= 1) throw new Error('bindAll must be passed function names');
+    for (i = 1; i < length; i++) {
+      key = arguments[i];
+      obj[key] = _.bind(obj[key], obj);
+    }
+    return obj;
+  };
+
+  // Memoize an expensive function by storing its results.
+  _.memoize = function(func, hasher) {
+    var memoize = function(key) {
+      var cache = memoize.cache;
+      var address = '' + (hasher ? hasher.apply(this, arguments) : key);
+      if (!_.has(cache, address)) cache[address] = func.apply(this, arguments);
+      return cache[address];
+    };
+    memoize.cache = {};
+    return memoize;
+  };
+
+  // Delays a function for the given number of milliseconds, and then calls
+  // it with the arguments supplied.
+  _.delay = function(func, wait) {
+    var args = slice.call(arguments, 2);
+    return setTimeout(function(){
+      return func.apply(null, args);
+    }, wait);
+  };
+
+  // Defers a function, scheduling it to run after the current call stack has
+  // cleared.
+  _.defer = _.partial(_.delay, _, 1);
+
+  // Returns a function, that, when invoked, will only be triggered at most once
+  // during a given window of time. Normally, the throttled function will run
+  // as much as it can, without ever going more than once per `wait` duration;
+  // but if you'd like to disable the execution on the leading edge, pass
+  // `{leading: false}`. To disable execution on the trailing edge, ditto.
+  _.throttle = function(func, wait, options) {
+    var context, args, result;
+    var timeout = null;
+    var previous = 0;
+    if (!options) options = {};
+    var later = function() {
+      previous = options.leading === false ? 0 : _.now();
+      timeout = null;
+      result = func.apply(context, args);
+      if (!timeout) context = args = null;
+    };
+    return function() {
+      var now = _.now();
+      if (!previous && options.leading === false) previous = now;
+      var remaining = wait - (now - previous);
+      context = this;
+      args = arguments;
+      if (remaining <= 0 || remaining > wait) {
+        if (timeout) {
+          clearTimeout(timeout);
+          timeout = null;
+        }
+        previous = now;
+        result = func.apply(context, args);
+        if (!timeout) context = args = null;
+      } else if (!timeout && options.trailing !== false) {
+        timeout = setTimeout(later, remaining);
+      }
+      return result;
+    };
+  };
+
+  // Returns a function, that, as long as it continues to be invoked, will not
+  // be triggered. The function will be called after it stops being called for
+  // N milliseconds. If `immediate` is passed, trigger the function on the
+  // leading edge, instead of the trailing.
+  _.debounce = function(func, wait, immediate) {
+    var timeout, args, context, timestamp, result;
+
+    var later = function() {
+      var last = _.now() - timestamp;
+
+      if (last < wait && last >= 0) {
+        timeout = setTimeout(later, wait - last);
+      } else {
+        timeout = null;
+        if (!immediate) {
+          result = func.apply(context, args);
+          if (!timeout) context = args = null;
+        }
+      }
+    };
+
+    return function() {
+      context = this;
+      args = arguments;
+      timestamp = _.now();
+      var callNow = immediate && !timeout;
+      if (!timeout) timeout = setTimeout(later, wait);
+      if (callNow) {
+        result = func.apply(context, args);
+        context = args = null;
+      }
+
+      return result;
+    };
+  };
+
+  // Returns the first function passed as an argument to the second,
+  // allowing you to adjust arguments, run code before and after, and
+  // conditionally execute the original function.
+  _.wrap = function(func, wrapper) {
+    return _.partial(wrapper, func);
+  };
+
+  // Returns a negated version of the passed-in predicate.
+  _.negate = function(predicate) {
+    return function() {
+      return !predicate.apply(this, arguments);
+    };
+  };
+
+  // Returns a function that is the composition of a list of functions, each
+  // consuming the return value of the function that follows.
+  _.compose = function() {
+    var args = arguments;
+    var start = args.length - 1;
+    return function() {
+      var i = start;
+      var result = args[start].apply(this, arguments);
+      while (i--) result = args[i].call(this, result);
+      return result;
+    };
+  };
+
+  // Returns a function that will only be executed on and after the Nth call.
+  _.after = function(times, func) {
+    return function() {
+      if (--times < 1) {
+        return func.apply(this, arguments);
+      }
+    };
+  };
+
+  // Returns a function that will only be executed up to (but not including) the Nth call.
+  _.before = function(times, func) {
+    var memo;
+    return function() {
+      if (--times > 0) {
+        memo = func.apply(this, arguments);
+      }
+      if (times <= 1) func = null;
+      return memo;
+    };
+  };
+
+  // Returns a function that will be executed at most one time, no matter how
+  // often you call it. Useful for lazy initialization.
+  _.once = _.partial(_.before, 2);
+
+  // Object Functions
+  // ----------------
+
+  // Keys in IE < 9 that won't be iterated by `for key in ...` and thus missed.
+  var hasEnumBug = !{toString: null}.propertyIsEnumerable('toString');
+  var nonEnumerableProps = ['valueOf', 'isPrototypeOf', 'toString',
+                      'propertyIsEnumerable', 'hasOwnProperty', 'toLocaleString'];
+
+  function collectNonEnumProps(obj, keys) {
+    var nonEnumIdx = nonEnumerableProps.length;
+    var constructor = obj.constructor;
+    var proto = (_.isFunction(constructor) && constructor.prototype) || ObjProto;
+
+    // Constructor is a special case.
+    var prop = 'constructor';
+    if (_.has(obj, prop) && !_.contains(keys, prop)) keys.push(prop);
+
+    while (nonEnumIdx--) {
+      prop = nonEnumerableProps[nonEnumIdx];
+      if (prop in obj && obj[prop] !== proto[prop] && !_.contains(keys, prop)) {
+        keys.push(prop);
+      }
+    }
+  }
+
+  // Retrieve the names of an object's own properties.
+  // Delegates to **ECMAScript 5**'s native `Object.keys`
+  _.keys = function(obj) {
+    if (!_.isObject(obj)) return [];
+    if (nativeKeys) return nativeKeys(obj);
+    var keys = [];
+    for (var key in obj) if (_.has(obj, key)) keys.push(key);
+    // Ahem, IE < 9.
+    if (hasEnumBug) collectNonEnumProps(obj, keys);
+    return keys;
+  };
+
+  // Retrieve all the property names of an object.
+  _.allKeys = function(obj) {
+    if (!_.isObject(obj)) return [];
+    var keys = [];
+    for (var key in obj) keys.push(key);
+    // Ahem, IE < 9.
+    if (hasEnumBug) collectNonEnumProps(obj, keys);
+    return keys;
+  };
+
+  // Retrieve the values of an object's properties.
+  _.values = function(obj) {
+    var keys = _.keys(obj);
+    var length = keys.length;
+    var values = Array(length);
+    for (var i = 0; i < length; i++) {
+      values[i] = obj[keys[i]];
+    }
+    return values;
+  };
+
+  // Returns the results of applying the iteratee to each element of the object
+  // In contrast to _.map it returns an object
+  _.mapObject = function(obj, iteratee, context) {
+    iteratee = cb(iteratee, context);
+    var keys =  _.keys(obj),
+          length = keys.length,
+          results = {},
+          currentKey;
+      for (var index = 0; index < length; index++) {
+        currentKey = keys[index];
+        results[currentKey] = iteratee(obj[currentKey], currentKey, obj);
+      }
+      return results;
+  };
+
+  // Convert an object into a list of `[key, value]` pairs.
+  _.pairs = function(obj) {
+    var keys = _.keys(obj);
+    var length = keys.length;
+    var pairs = Array(length);
+    for (var i = 0; i < length; i++) {
+      pairs[i] = [keys[i], obj[keys[i]]];
+    }
+    return pairs;
+  };
+
+  // Invert the keys and values of an object. The values must be serializable.
+  _.invert = function(obj) {
+    var result = {};
+    var keys = _.keys(obj);
+    for (var i = 0, length = keys.length; i < length; i++) {
+      result[obj[keys[i]]] = keys[i];
+    }
+    return result;
+  };
+
+  // Return a sorted list of the function names available on the object.
+  // Aliased as `methods`
+  _.functions = _.methods = function(obj) {
+    var names = [];
+    for (var key in obj) {
+      if (_.isFunction(obj[key])) names.push(key);
+    }
+    return names.sort();
+  };
+
+  // Extend a given object with all the properties in passed-in object(s).
+  _.extend = createAssigner(_.allKeys);
+
+  // Assigns a given object with all the own properties in the passed-in object(s)
+  // (https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object/assign)
+  _.extendOwn = _.assign = createAssigner(_.keys);
+
+  // Returns the first key on an object that passes a predicate test
+  _.findKey = function(obj, predicate, context) {
+    predicate = cb(predicate, context);
+    var keys = _.keys(obj), key;
+    for (var i = 0, length = keys.length; i < length; i++) {
+      key = keys[i];
+      if (predicate(obj[key], key, obj)) return key;
+    }
+  };
+
+  // Return a copy of the object only containing the whitelisted properties.
+  _.pick = function(object, oiteratee, context) {
+    var result = {}, obj = object, iteratee, keys;
+    if (obj == null) return result;
+    if (_.isFunction(oiteratee)) {
+      keys = _.allKeys(obj);
+      iteratee = optimizeCb(oiteratee, context);
+    } else {
+      keys = flatten(arguments, false, false, 1);
+      iteratee = function(value, key, obj) { return key in obj; };
+      obj = Object(obj);
+    }
+    for (var i = 0, length = keys.length; i < length; i++) {
+      var key = keys[i];
+      var value = obj[key];
+      if (iteratee(value, key, obj)) result[key] = value;
+    }
+    return result;
+  };
+
+   // Return a copy of the object without the blacklisted properties.
+  _.omit = function(obj, iteratee, context) {
+    if (_.isFunction(iteratee)) {
+      iteratee = _.negate(iteratee);
+    } else {
+      var keys = _.map(flatten(arguments, false, false, 1), String);
+      iteratee = function(value, key) {
+        return !_.contains(keys, key);
+      };
+    }
+    return _.pick(obj, iteratee, context);
+  };
+
+  // Fill in a given object with default properties.
+  _.defaults = createAssigner(_.allKeys, true);
+
+  // Creates an object that inherits from the given prototype object.
+  // If additional properties are provided then they will be added to the
+  // created object.
+  _.create = function(prototype, props) {
+    var result = baseCreate(prototype);
+    if (props) _.extendOwn(result, props);
+    return result;
+  };
+
+  // Create a (shallow-cloned) duplicate of an object.
+  _.clone = function(obj) {
+    if (!_.isObject(obj)) return obj;
+    return _.isArray(obj) ? obj.slice() : _.extend({}, obj);
+  };
+
+  // Invokes interceptor with the obj, and then returns obj.
+  // The primary purpose of this method is to "tap into" a method chain, in
+  // order to perform operations on intermediate results within the chain.
+  _.tap = function(obj, interceptor) {
+    interceptor(obj);
+    return obj;
+  };
+
+  // Returns whether an object has a given set of `key:value` pairs.
+  _.isMatch = function(object, attrs) {
+    var keys = _.keys(attrs), length = keys.length;
+    if (object == null) return !length;
+    var obj = Object(object);
+    for (var i = 0; i < length; i++) {
+      var key = keys[i];
+      if (attrs[key] !== obj[key] || !(key in obj)) return false;
+    }
+    return true;
+  };
+
+
+  // Internal recursive comparison function for `isEqual`.
+  var eq = function(a, b, aStack, bStack) {
+    // Identical objects are equal. `0 === -0`, but they aren't identical.
+    // See the [Harmony `egal` proposal](http://wiki.ecmascript.org/doku.php?id=harmony:egal).
+    if (a === b) return a !== 0 || 1 / a === 1 / b;
+    // A strict comparison is necessary because `null == undefined`.
+    if (a == null || b == null) return a === b;
+    // Unwrap any wrapped objects.
+    if (a instanceof _) a = a._wrapped;
+    if (b instanceof _) b = b._wrapped;
+    // Compare `[[Class]]` names.
+    var className = toString.call(a);
+    if (className !== toString.call(b)) return false;
+    switch (className) {
+      // Strings, numbers, regular expressions, dates, and booleans are compared by value.
+      case '[object RegExp]':
+      // RegExps are coerced to strings for comparison (Note: '' + /a/i === '/a/i')
+      case '[object String]':
+        // Primitives and their corresponding object wrappers are equivalent; thus, `"5"` is
+        // equivalent to `new String("5")`.
+        return '' + a === '' + b;
+      case '[object Number]':
+        // `NaN`s are equivalent, but non-reflexive.
+        // Object(NaN) is equivalent to NaN
+        if (+a !== +a) return +b !== +b;
+        // An `egal` comparison is performed for other numeric values.
+        return +a === 0 ? 1 / +a === 1 / b : +a === +b;
+      case '[object Date]':
+      case '[object Boolean]':
+        // Coerce dates and booleans to numeric primitive values. Dates are compared by their
+        // millisecond representations. Note that invalid dates with millisecond representations
+        // of `NaN` are not equivalent.
+        return +a === +b;
+    }
+
+    var areArrays = className === '[object Array]';
+    if (!areArrays) {
+      if (typeof a != 'object' || typeof b != 'object') return false;
+
+      // Objects with different constructors are not equivalent, but `Object`s or `Array`s
+      // from different frames are.
+      var aCtor = a.constructor, bCtor = b.constructor;
+      if (aCtor !== bCtor && !(_.isFunction(aCtor) && aCtor instanceof aCtor &&
+                               _.isFunction(bCtor) && bCtor instanceof bCtor)
+                          && ('constructor' in a && 'constructor' in b)) {
+        return false;
+      }
+    }
+    // Assume equality for cyclic structures. The algorithm for detecting cyclic
+    // structures is adapted from ES 5.1 section 15.12.3, abstract operation `JO`.
+
+    // Initializing stack of traversed objects.
+    // It's done here since we only need them for objects and arrays comparison.
+    aStack = aStack || [];
+    bStack = bStack || [];
+    var length = aStack.length;
+    while (length--) {
+      // Linear search. Performance is inversely proportional to the number of
+      // unique nested structures.
+      if (aStack[length] === a) return bStack[length] === b;
+    }
+
+    // Add the first object to the stack of traversed objects.
+    aStack.push(a);
+    bStack.push(b);
+
+    // Recursively compare objects and arrays.
+    if (areArrays) {
+      // Compare array lengths to determine if a deep comparison is necessary.
+      length = a.length;
+      if (length !== b.length) return false;
+      // Deep compare the contents, ignoring non-numeric properties.
+      while (length--) {
+        if (!eq(a[length], b[length], aStack, bStack)) return false;
+      }
+    } else {
+      // Deep compare objects.
+      var keys = _.keys(a), key;
+      length = keys.length;
+      // Ensure that both objects contain the same number of properties before comparing deep equality.
+      if (_.keys(b).length !== length) return false;
+      while (length--) {
+        // Deep compare each member
+        key = keys[length];
+        if (!(_.has(b, key) && eq(a[key], b[key], aStack, bStack))) return false;
+      }
+    }
+    // Remove the first object from the stack of traversed objects.
+    aStack.pop();
+    bStack.pop();
+    return true;
+  };
+
+  // Perform a deep comparison to check if two objects are equal.
+  _.isEqual = function(a, b) {
+    return eq(a, b);
+  };
+
+  // Is a given array, string, or object empty?
+  // An "empty" object has no enumerable own-properties.
+  _.isEmpty = function(obj) {
+    if (obj == null) return true;
+    if (isArrayLike(obj) && (_.isArray(obj) || _.isString(obj) || _.isArguments(obj))) return obj.length === 0;
+    return _.keys(obj).length === 0;
+  };
+
+  // Is a given value a DOM element?
+  _.isElement = function(obj) {
+    return !!(obj && obj.nodeType === 1);
+  };
+
+  // Is a given value an array?
+  // Delegates to ECMA5's native Array.isArray
+  _.isArray = nativeIsArray || function(obj) {
+    return toString.call(obj) === '[object Array]';
+  };
+
+  // Is a given variable an object?
+  _.isObject = function(obj) {
+    var type = typeof obj;
+    return type === 'function' || type === 'object' && !!obj;
+  };
+
+  // Add some isType methods: isArguments, isFunction, isString, isNumber, isDate, isRegExp, isError.
+  _.each(['Arguments', 'Function', 'String', 'Number', 'Date', 'RegExp', 'Error'], function(name) {
+    _['is' + name] = function(obj) {
+      return toString.call(obj) === '[object ' + name + ']';
+    };
+  });
+
+  // Define a fallback version of the method in browsers (ahem, IE < 9), where
+  // there isn't any inspectable "Arguments" type.
+  if (!_.isArguments(arguments)) {
+    _.isArguments = function(obj) {
+      return _.has(obj, 'callee');
+    };
+  }
+
+  // Optimize `isFunction` if appropriate. Work around some typeof bugs in old v8,
+  // IE 11 (#1621), and in Safari 8 (#1929).
+  if (typeof /./ != 'function' && typeof Int8Array != 'object') {
+    _.isFunction = function(obj) {
+      return typeof obj == 'function' || false;
+    };
+  }
+
+  // Is a given object a finite number?
+  _.isFinite = function(obj) {
+    return isFinite(obj) && !isNaN(parseFloat(obj));
+  };
+
+  // Is the given value `NaN`? (NaN is the only number which does not equal itself).
+  _.isNaN = function(obj) {
+    return _.isNumber(obj) && obj !== +obj;
+  };
+
+  // Is a given value a boolean?
+  _.isBoolean = function(obj) {
+    return obj === true || obj === false || toString.call(obj) === '[object Boolean]';
+  };
+
+  // Is a given value equal to null?
+  _.isNull = function(obj) {
+    return obj === null;
+  };
+
+  // Is a given variable undefined?
+  _.isUndefined = function(obj) {
+    return obj === void 0;
+  };
+
+  // Shortcut function for checking if an object has a given property directly
+  // on itself (in other words, not on a prototype).
+  _.has = function(obj, key) {
+    return obj != null && hasOwnProperty.call(obj, key);
+  };
+
+  // Utility Functions
+  // -----------------
+
+  // Run Underscore.js in *noConflict* mode, returning the `_` variable to its
+  // previous owner. Returns a reference to the Underscore object.
+  _.noConflict = function() {
+    root._ = previousUnderscore;
+    return this;
+  };
+
+  // Keep the identity function around for default iteratees.
+  _.identity = function(value) {
+    return value;
+  };
+
+  // Predicate-generating functions. Often useful outside of Underscore.
+  _.constant = function(value) {
+    return function() {
+      return value;
+    };
+  };
+
+  _.noop = function(){};
+
+  _.property = property;
+
+  // Generates a function for a given object that returns a given property.
+  _.propertyOf = function(obj) {
+    return obj == null ? function(){} : function(key) {
+      return obj[key];
+    };
+  };
+
+  // Returns a predicate for checking whether an object has a given set of
+  // `key:value` pairs.
+  _.matcher = _.matches = function(attrs) {
+    attrs = _.extendOwn({}, attrs);
+    return function(obj) {
+      return _.isMatch(obj, attrs);
+    };
+  };
+
+  // Run a function **n** times.
+  _.times = function(n, iteratee, context) {
+    var accum = Array(Math.max(0, n));
+    iteratee = optimizeCb(iteratee, context, 1);
+    for (var i = 0; i < n; i++) accum[i] = iteratee(i);
+    return accum;
+  };
+
+  // Return a random integer between min and max (inclusive).
+  _.random = function(min, max) {
+    if (max == null) {
+      max = min;
+      min = 0;
+    }
+    return min + Math.floor(Math.random() * (max - min + 1));
+  };
+
+  // A (possibly faster) way to get the current timestamp as an integer.
+  _.now = Date.now || function() {
+    return new Date().getTime();
+  };
+
+   // List of HTML entities for escaping.
+  var escapeMap = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#x27;',
+    '`': '&#x60;'
+  };
+  var unescapeMap = _.invert(escapeMap);
+
+  // Functions for escaping and unescaping strings to/from HTML interpolation.
+  var createEscaper = function(map) {
+    var escaper = function(match) {
+      return map[match];
+    };
+    // Regexes for identifying a key that needs to be escaped
+    var source = '(?:' + _.keys(map).join('|') + ')';
+    var testRegexp = RegExp(source);
+    var replaceRegexp = RegExp(source, 'g');
+    return function(string) {
+      string = string == null ? '' : '' + string;
+      return testRegexp.test(string) ? string.replace(replaceRegexp, escaper) : string;
+    };
+  };
+  _.escape = createEscaper(escapeMap);
+  _.unescape = createEscaper(unescapeMap);
+
+  // If the value of the named `property` is a function then invoke it with the
+  // `object` as context; otherwise, return it.
+  _.result = function(object, property, fallback) {
+    var value = object == null ? void 0 : object[property];
+    if (value === void 0) {
+      value = fallback;
+    }
+    return _.isFunction(value) ? value.call(object) : value;
+  };
+
+  // Generate a unique integer id (unique within the entire client session).
+  // Useful for temporary DOM ids.
+  var idCounter = 0;
+  _.uniqueId = function(prefix) {
+    var id = ++idCounter + '';
+    return prefix ? prefix + id : id;
+  };
+
+  // By default, Underscore uses ERB-style template delimiters, change the
+  // following template settings to use alternative delimiters.
+  _.templateSettings = {
+    evaluate    : /<%([\s\S]+?)%>/g,
+    interpolate : /<%=([\s\S]+?)%>/g,
+    escape      : /<%-([\s\S]+?)%>/g
+  };
+
+  // When customizing `templateSettings`, if you don't want to define an
+  // interpolation, evaluation or escaping regex, we need one that is
+  // guaranteed not to match.
+  var noMatch = /(.)^/;
+
+  // Certain characters need to be escaped so that they can be put into a
+  // string literal.
+  var escapes = {
+    "'":      "'",
+    '\\':     '\\',
+    '\r':     'r',
+    '\n':     'n',
+    '\u2028': 'u2028',
+    '\u2029': 'u2029'
+  };
+
+  var escaper = /\\|'|\r|\n|\u2028|\u2029/g;
+
+  var escapeChar = function(match) {
+    return '\\' + escapes[match];
+  };
+
+  // JavaScript micro-templating, similar to John Resig's implementation.
+  // Underscore templating handles arbitrary delimiters, preserves whitespace,
+  // and correctly escapes quotes within interpolated code.
+  // NB: `oldSettings` only exists for backwards compatibility.
+  _.template = function(text, settings, oldSettings) {
+    if (!settings && oldSettings) settings = oldSettings;
+    settings = _.defaults({}, settings, _.templateSettings);
+
+    // Combine delimiters into one regular expression via alternation.
+    var matcher = RegExp([
+      (settings.escape || noMatch).source,
+      (settings.interpolate || noMatch).source,
+      (settings.evaluate || noMatch).source
+    ].join('|') + '|$', 'g');
+
+    // Compile the template source, escaping string literals appropriately.
+    var index = 0;
+    var source = "__p+='";
+    text.replace(matcher, function(match, escape, interpolate, evaluate, offset) {
+      source += text.slice(index, offset).replace(escaper, escapeChar);
+      index = offset + match.length;
+
+      if (escape) {
+        source += "'+\n((__t=(" + escape + "))==null?'':_.escape(__t))+\n'";
+      } else if (interpolate) {
+        source += "'+\n((__t=(" + interpolate + "))==null?'':__t)+\n'";
+      } else if (evaluate) {
+        source += "';\n" + evaluate + "\n__p+='";
+      }
+
+      // Adobe VMs need the match returned to produce the correct offest.
+      return match;
+    });
+    source += "';\n";
+
+    // If a variable is not specified, place data values in local scope.
+    if (!settings.variable) source = 'with(obj||{}){\n' + source + '}\n';
+
+    source = "var __t,__p='',__j=Array.prototype.join," +
+      "print=function(){__p+=__j.call(arguments,'');};\n" +
+      source + 'return __p;\n';
+
+    try {
+      var render = new Function(settings.variable || 'obj', '_', source);
+    } catch (e) {
+      e.source = source;
+      throw e;
+    }
+
+    var template = function(data) {
+      return render.call(this, data, _);
+    };
+
+    // Provide the compiled source as a convenience for precompilation.
+    var argument = settings.variable || 'obj';
+    template.source = 'function(' + argument + '){\n' + source + '}';
+
+    return template;
+  };
+
+  // Add a "chain" function. Start chaining a wrapped Underscore object.
+  _.chain = function(obj) {
+    var instance = _(obj);
+    instance._chain = true;
+    return instance;
+  };
+
+  // OOP
+  // ---------------
+  // If Underscore is called as a function, it returns a wrapped object that
+  // can be used OO-style. This wrapper holds altered versions of all the
+  // underscore functions. Wrapped objects may be chained.
+
+  // Helper function to continue chaining intermediate results.
+  var result = function(instance, obj) {
+    return instance._chain ? _(obj).chain() : obj;
+  };
+
+  // Add your own custom functions to the Underscore object.
+  _.mixin = function(obj) {
+    _.each(_.functions(obj), function(name) {
+      var func = _[name] = obj[name];
+      _.prototype[name] = function() {
+        var args = [this._wrapped];
+        push.apply(args, arguments);
+        return result(this, func.apply(_, args));
+      };
+    });
+  };
+
+  // Add all of the Underscore functions to the wrapper object.
+  _.mixin(_);
+
+  // Add all mutator Array functions to the wrapper.
+  _.each(['pop', 'push', 'reverse', 'shift', 'sort', 'splice', 'unshift'], function(name) {
+    var method = ArrayProto[name];
+    _.prototype[name] = function() {
+      var obj = this._wrapped;
+      method.apply(obj, arguments);
+      if ((name === 'shift' || name === 'splice') && obj.length === 0) delete obj[0];
+      return result(this, obj);
+    };
+  });
+
+  // Add all accessor Array functions to the wrapper.
+  _.each(['concat', 'join', 'slice'], function(name) {
+    var method = ArrayProto[name];
+    _.prototype[name] = function() {
+      return result(this, method.apply(this._wrapped, arguments));
+    };
+  });
+
+  // Extracts the result from a wrapped and chained object.
+  _.prototype.value = function() {
+    return this._wrapped;
+  };
+
+  // Provide unwrapping proxy for some methods used in engine operations
+  // such as arithmetic and JSON stringification.
+  _.prototype.valueOf = _.prototype.toJSON = _.prototype.value;
+
+  _.prototype.toString = function() {
+    return '' + this._wrapped;
+  };
+
+  // AMD registration happens at the end for compatibility with AMD loaders
+  // that may not enforce next-turn semantics on modules. Even though general
+  // practice for AMD registration is to be anonymous, underscore registers
+  // as a named module because, like jQuery, it is a base library that is
+  // popular enough to be bundled in a third party lib, but not be part of
+  // an AMD load request. Those cases could generate an error when an
+  // anonymous define() is called outside of a loader request.
+  if (typeof define === 'function' && define.amd) {
+    define('underscore', [], function() {
+      return _;
+    });
+  }
+}.call(this));
 
 define('eventEmitter',['require','exports','module'],function (require, exports, module) {'use strict';
 
@@ -12997,6 +14534,3229 @@ if ('undefined' !== typeof module) {
 }
 
 });
+
+//
+//  Created by Juan Corona
+//  Based on original proposal by Mickaël Menu
+//  Portions adapted from Rangy's Module system: Copyright (c) 2014 Tim Down
+//
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//
+//  Redistribution and use in source and binary forms, with or without modification,
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice,
+//  this list of conditions and the following disclaimer in the documentation and/or
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be
+//  used to endorse or promote products derived from this software without specific
+//  prior written permission.
+//
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
+
+define('readium_js_plugins',["jquery", "underscore", "eventEmitter"], function ($, _, EventEmitter) {
+
+    var _registeredPlugins = {};
+
+    /**
+     * A  plugins controller used to easily add plugins from the host app, eg.
+     * ReadiumSDK.Plugins.register("footnotes", function(api){ ... });
+     *
+     * @constructor
+     */
+    var PluginsController = function () {
+        var self = this;
+
+
+        this.initialize = function (reader) {
+            var apiFactory = new PluginApiFactory(reader);
+
+            if (!reader.plugins) {
+                //attach an object to the reader that will be
+                // used for plugin namespaces and their extensions
+                reader.plugins = {};
+            } else {
+                throw new Error("Already initialized on reader!");
+            }
+            _.each(_registeredPlugins, function (plugin) {
+                plugin.init(apiFactory);
+            });
+        };
+
+        this.getLoadedPlugins = function() {
+            return _registeredPlugins;
+        };
+
+        // Creates a new instance of the given plugin constructor.
+        this.register = function (name, optDependencies, initFunc) {
+
+            if (_registeredPlugins[name]) {
+                throw new Error("Duplicate registration for plugin with name: " + name);
+            }
+
+            var dependencies;
+            if (typeof optDependencies === 'function') {
+                initFunc = optDependencies;
+            } else {
+                dependencies = optDependencies;
+            }
+
+            _registeredPlugins[name] = new Plugin(name, dependencies, function(plugin, api) {
+                if (!plugin.initialized || !api.host.plugins[plugin.name]) {
+                    plugin.initialized = true;
+                    try {
+                        var pluginContext = {};
+                        $.extend(pluginContext, new EventEmitter());
+
+                        initFunc.call(pluginContext, api.instance);
+                        plugin.supported = true;
+
+                        api.host.plugins[plugin.name] = pluginContext;
+                    } catch (ex) {
+                        plugin.fail(ex);
+                    }
+                }
+            });
+        };
+    };
+
+    function PluginApi(reader, plugin) {
+        this.reader = reader;
+        this.plugin = plugin;
+    }
+
+    function PluginApiFactory(reader) {
+        this.create = function (plugin) {
+            return {
+                host: reader,
+                instance: new PluginApi(reader, plugin)
+            };
+        };
+    }
+
+//
+//  The following is adapted from Rangy's Module class:
+//
+//  Copyright (c) 2014 Tim Down
+//
+//  The MIT License (MIT)
+//  Permission is hereby granted, free of charge, to any person obtaining a copy
+//  of this software and associated documentation files (the "Software"), to deal
+//  in the Software without restriction, including without limitation the rights
+//  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+//  copies of the Software, and to permit persons to whom the Software is
+//  furnished to do so, subject to the following conditions:
+//
+//  The above copyright notice and this permission notice shall be included in all
+//  copies or substantial portions of the Software.
+//
+//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+//  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+//  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+//  SOFTWARE.
+
+    function Plugin(name, dependencies, initializer) {
+        this.name = name;
+        this.dependencies = dependencies;
+        this.initialized = false;
+        this.supported = false;
+        this.initializer = initializer;
+    }
+
+    Plugin.prototype = {
+        init: function (apiFactory) {
+            var requiredPluginNames = this.dependencies || [];
+            for (var i = 0, len = requiredPluginNames.length, requiredPlugin, PluginName; i < len; ++i) {
+                PluginName = requiredPluginNames[i];
+
+                requiredPlugin = _registeredPlugins[PluginName];
+                if (!requiredPlugin || !(requiredPlugin instanceof Plugin)) {
+                    throw new Error("required Plugin '" + PluginName + "' not found");
+                }
+
+                requiredPlugin.init(apiFactory);
+
+                if (!requiredPlugin.supported) {
+                    throw new Error("required Plugin '" + PluginName + "' not supported");
+                }
+            }
+
+            // Now run initializer
+            this.initializer(this, apiFactory.create(this));
+        },
+
+        fail: function (reason) {
+            this.initialized = true;
+            this.supported = false;
+            throw new Error("Plugin '" + this.name + "' failed to load: " + reason);
+        },
+
+        warn: function (msg) {
+            console.warn("Plugin " + this.name + ": " + msg);
+        },
+
+        deprecationNotice: function (deprecated, replacement) {
+            console.warn("DEPRECATED: " + deprecated + " in Plugin " + this.name + "is deprecated. Please use "
+            + replacement + " instead");
+        },
+
+        createError: function (msg) {
+            return new Error("Error in " + this.name + " Plugin: " + msg);
+        }
+    };
+
+    var instance = new PluginsController();
+    return instance;
+});
+
+//  LauncherOSX
+//
+//  Created by Boris Schneiderman.
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  
+//  Redistribution and use in source and binary forms, with or without modification, 
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this 
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice, 
+//  this list of conditions and the following disclaimer in the documentation and/or 
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be 
+//  used to endorse or promote products derived from this software without specific 
+//  prior written permission.
+//  
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
+
+define('readium_shared_js/globals',['jquery','eventEmitter'], function($, EventEmitter) {
+    
+    var DEBUG = true;
+    
+/**
+ * Top level ReadiumSDK namespace
+ * @namespace
+ */
+var Globals = {
+
+    /**
+     * Current version of the JS SDK
+     * @static
+     * @return {string} version
+     */
+    version: function () {
+        return "0.8.0";
+    },
+    /**
+     * @namespace
+     */
+    Views: {
+        /**
+         * Landscape Orientation
+         */
+        ORIENTATION_LANDSCAPE: "orientation_landscape",
+        /**
+         * Portrait Orientation
+         */
+        ORIENTATION_PORTRAIT: "orientation_portrait"
+    },
+    /**
+     * @namespace
+     */
+    Events: {
+        /**
+         * @event
+         */
+        READER_INITIALIZED: "ReaderInitialized",
+        /**
+         * This gets triggered on every page turnover. It includes spine information and such.
+         * @event
+         */
+        PAGINATION_CHANGED: "PaginationChanged",
+        /**
+         * @event
+         */
+        SETTINGS_APPLIED: "SettingsApplied",
+        /**
+         * @event
+         */
+        FXL_VIEW_RESIZED: "FXLViewResized",
+        /**
+         * @event
+         */
+        READER_VIEW_CREATED: "ReaderViewCreated",
+        /**
+         * @event
+         */
+        READER_VIEW_DESTROYED: "ReaderViewDestroyed",
+        /**
+         * @event
+         */
+        CONTENT_DOCUMENT_LOAD_START: "ContentDocumentLoadStart",
+        /**
+         * @event
+         */
+        CONTENT_DOCUMENT_LOADED: "ContentDocumentLoaded",
+        /**
+         * @event
+         */
+        MEDIA_OVERLAY_STATUS_CHANGED: "MediaOverlayStatusChanged",
+        /**
+         * @event
+         */
+        MEDIA_OVERLAY_TTS_SPEAK: "MediaOverlayTTSSpeak",
+        /**
+         * @event
+         */
+        MEDIA_OVERLAY_TTS_STOP: "MediaOverlayTTSStop",
+        /**
+         * @event
+         */
+        PLUGINS_LOADED: "PluginsLoaded"
+    },
+    /**
+     * Internal Events
+     *
+     * @desc Should not be triggered outside of {@link Views.ReaderView}.
+     * @namespace
+     */
+    InternalEvents: {
+        /**
+         * @event
+         */
+        CURRENT_VIEW_PAGINATION_CHANGED: "CurrentViewPaginationChanged",
+    },
+    
+    logEvent: function(eventName, eventType, eventSource) {
+        if (DEBUG) {
+            console.debug("#### ReadiumSDK.Events." + eventName + " - "+eventType+" - " + eventSource);
+        }
+    }
+};
+$.extend(Globals, new EventEmitter());
+
+return Globals;
+
+});
+
+//This is default implementation of reading system object that will be available for the publication's javascript to analyze at runtime
+//To extend/modify/replace this object reading system should subscribe Globals.Events.READER_INITIALIZED and apply changes in reaction to this event
+navigator.epubReadingSystem = {
+    name: "",
+    version: "0.0.0",
+    layoutStyle: "paginated",
+
+    hasFeature: function (feature, version) {
+
+        // for now all features must be version 1.0 so fail fast if the user has asked for something else
+        if (version && version !== "1.0") {
+            return false;
+        }
+
+        if (feature === "dom-manipulation") {
+            // Scripts may make structural changes to the document???s DOM (applies to spine-level scripting only).
+            return true;
+        }
+        if (feature === "layout-changes") {
+            // Scripts may modify attributes and CSS styles that affect content layout (applies to spine-level scripting only).
+            return true;
+        }
+        if (feature === "touch-events") {
+            // The device supports touch events and the Reading System passes touch events to the content.
+            return false;
+        }
+        if (feature === "mouse-events") {
+            // The device supports mouse events and the Reading System passes mouse events to the content.
+            return true;
+        }
+        if (feature === "keyboard-events") {
+            // The device supports keyboard events and the Reading System passes keyboard events to the content.
+            return true;
+        }
+
+        if (feature === "spine-scripting") {
+            //Spine-level scripting is supported.
+            return true;
+        }
+
+        return false;
+    }
+};
+/* Simple JavaScript Inheritance
+ * By John Resig http://ejohn.org/
+ * MIT Licensed.
+ */
+// Inspired by base2 and Prototype
+define('readium_plugin_highlights/lib/class',[],function() {
+
+    var initializing = false,
+        fnTest = /xyz/.test(function() {
+            xyz;
+        }) ? /\b_super\b/ : /.*/;
+
+    // The base Class implementation (does nothing)
+    var Class = function() {};
+
+    // Create a new Class that inherits from this class
+    Class.extend = function(prop) {
+        var _super = this.prototype;
+
+        // Instantiate a base class (but only create the instance,
+        // don't run the init constructor)
+        initializing = true;
+        var prototype = new this();
+        initializing = false;
+
+        // Copy the properties over onto the new prototype
+        for (var name in prop) {
+            // Check if we're overwriting an existing function
+            prototype[name] = typeof prop[name] == "function" &&
+                typeof _super[name] == "function" && fnTest.test(prop[name]) ?
+                (function(name, fn) {
+                    return function() {
+                        var tmp = this._super;
+
+                        // Add a new ._super() method that is the same method
+                        // but on the super-class
+                        this._super = _super[name];
+
+                        // The method only need to be bound temporarily, so we
+                        // remove it when we're done executing
+                        var ret = fn.apply(this, arguments);
+                        this._super = tmp;
+
+                        return ret;
+                    };
+                })(name, prop[name]) :
+                prop[name];
+        }
+
+        // The dummy class constructor
+        function Class() {
+            // All construction is actually done in the init method
+            if (!initializing && this.init)
+                this.init.apply(this, arguments);
+        }
+
+        // Populate our constructed prototype object
+        Class.prototype = prototype;
+
+        // Enforce the constructor to be what we expect
+        Class.prototype.constructor = Class;
+
+        // And make this class extendable
+        Class.extend = arguments.callee;
+
+        return Class;
+    };
+
+    return Class;
+});
+
+define('readium_plugin_highlights/helpers',[],function() {
+    var HighlightHelpers = {
+        getMatrix: function($obj) {
+            var matrix = $obj.css("-webkit-transform") ||
+                $obj.css("-moz-transform") ||
+                $obj.css("-ms-transform") ||
+                $obj.css("-o-transform") ||
+                $obj.css("transform");
+            return matrix === "none" ? undefined : matrix;
+        },
+        getScaleFromMatrix: function(matrix) {
+            var matrixRegex = /matrix\((-?\d*\.?\d+),\s*0,\s*0,\s*(-?\d*\.?\d+),\s*0,\s*0\)/,
+                matches = matrix.match(matrixRegex);
+            return matches[1];
+        }
+    };
+
+    return HighlightHelpers;
+});
+
+define('readium_plugin_highlights/models/text_line_inferrer',["../lib/class"], function(Class) {
+    var TextLineInferrer = Class.extend({
+
+        init: function(options) {
+            this.lineHorizontalThreshold = options.lineHorizontalThreshold || 0;
+            this.lineHorizontalLimit = options.lineHorizontalLimit || 0;
+        },
+
+        // ----------------- PUBLIC INTERFACE --------------------------------------------------------------
+
+        inferLines: function(rectTextList) {
+            var inferredLines = [];
+            var numRects = rectTextList.length;
+            var numLines = 0;
+            var currLine;
+            var currRect;
+            var currRectTextObj;
+            var rectAppended;
+
+            // Iterate through each rect
+            for (var currRectNum = 0; currRectNum <= numRects - 1; currRectNum++) {
+                currRectTextObj = rectTextList[currRectNum];
+                currRect = currRectTextObj.rect;
+                // Check if the rect can be added to any of the current lines
+                rectAppended = false;
+
+                if (inferredLines.length > 0) {
+                    currLine = inferredLines[inferredLines.length - 1];
+
+                    if (this.includeRectInLine(currLine.line, currRect.top, currRect.left,
+                            currRect.width, currRect.height)) {
+                        rectAppended = this.expandLine(currLine.line, currRect.left, currRect.top,
+                            currRect.width, currRect.height);
+
+                        currLine.data.push(currRectTextObj);
+                    }
+                }
+
+                if (!rectAppended) {
+                    inferredLines.push({
+                        data: [currRectTextObj],
+                        line: this.createNewLine(currRect.left, currRect.top,
+                            currRect.width, currRect.height)
+                    });
+                    // Update the number of lines, so we're not using .length on every iteration
+                    numLines = numLines + 1;
+                }
+            }
+            return inferredLines;
+        },
+
+
+        // ----------------- PRIVATE HELPERS ---------------------------------------------------------------
+
+        includeRectInLine: function(currLine, rectTop, rectLeft, rectWidth, rectHeight) {
+            // is on an existing line : based on vertical position
+            if (this.rectIsWithinLineVertically(rectTop, rectHeight, currLine.maxTop, currLine.maxBottom)) {
+                if (this.rectIsWithinLineHorizontally(rectLeft, rectWidth, currLine.left,
+                        currLine.width, currLine.avgHeight)) {
+                    return true;
+                }
+            }
+            return false;
+        },
+
+        rectIsWithinLineVertically: function(rectTop, rectHeight, currLineMaxTop, currLineMaxBottom) {
+            var rectBottom = rectTop + rectHeight;
+            var lineHeight = currLineMaxBottom - currLineMaxTop;
+            var lineHeightAdjustment = (lineHeight * 0.75) / 2;
+            var rectHeightAdjustment = (rectHeight * 0.75) / 2;
+
+            rectTop = rectTop + rectHeightAdjustment;
+            rectBottom = rectBottom - rectHeightAdjustment;
+            currLineMaxTop = currLineMaxTop + lineHeightAdjustment;
+            currLineMaxBottom = currLineMaxBottom - lineHeightAdjustment;
+
+            if (rectTop === currLineMaxTop && rectBottom === currLineMaxBottom) {
+                return true;
+            } else if (rectTop < currLineMaxTop && rectBottom < currLineMaxBottom &&
+                rectBottom > currLineMaxTop) {
+                return true;
+            } else if (rectTop > currLineMaxTop && rectBottom > currLineMaxBottom &&
+                rectTop < currLineMaxBottom) {
+                return true;
+            } else if (rectTop > currLineMaxTop && rectBottom < currLineMaxBottom) {
+                return true;
+            } else if (rectTop < currLineMaxTop && rectBottom > currLineMaxBottom) {
+                return true;
+            } else {
+                return false;
+            }
+        },
+
+        rectIsWithinLineHorizontally: function(rectLeft, rectWidth, currLineLeft, currLineWidth,
+            currLineAvgHeight) {
+            var lineGapHeuristic = 2 * currLineAvgHeight;
+            var rectRight = rectLeft + rectWidth;
+            var currLineRight = rectLeft + currLineWidth;
+
+            if ((currLineLeft - rectRight) > lineGapHeuristic) {
+                return false;
+            } else if ((rectLeft - currLineRight) > lineGapHeuristic) {
+                return false;
+            } else {
+                return true;
+            }
+        },
+
+        createNewLine: function(rectLeft, rectTop, rectWidth, rectHeight) {
+            var maxBottom = rectTop + rectHeight;
+
+            return {
+                left: rectLeft,
+                startTop: rectTop,
+                width: rectWidth,
+                avgHeight: rectHeight,
+                maxTop: rectTop,
+                maxBottom: maxBottom,
+                numRects: 1
+            };
+        },
+
+        expandLine: function(currLine, rectLeft, rectTop, rectWidth, rectHeight) {
+            var lineOldRight = currLine.left + currLine.width;
+
+            // Update all the properties of the current line with rect dimensions
+            var rectRight = rectLeft + rectWidth;
+            var rectBottom = rectTop + rectHeight;
+            var numRectsPlusOne = currLine.numRects + 1;
+
+            // Average height calculation
+            var currSumHeights = currLine.avgHeight * currLine.numRects;
+            var avgHeight = Math.ceil((currSumHeights + rectHeight) / numRectsPlusOne);
+            currLine.avgHeight = avgHeight;
+            currLine.numRects = numRectsPlusOne;
+
+            // Expand the line vertically
+            currLine = this.expandLineVertically(currLine, rectTop, rectBottom);
+            currLine = this.expandLineHorizontally(currLine, rectLeft, rectRight);
+
+            return currLine;
+        },
+
+        expandLineVertically: function(currLine, rectTop, rectBottom) {
+            if (rectTop < currLine.maxTop) {
+                currLine.maxTop = rectTop;
+            }
+            if (rectBottom > currLine.maxBottom) {
+                currLine.maxBottom = rectBottom;
+            }
+
+            return currLine;
+        },
+
+        expandLineHorizontally: function(currLine, rectLeft, rectRight) {
+            var newLineLeft = currLine.left <= rectLeft ? currLine.left : rectLeft;
+            var lineRight = currLine.left + currLine.width;
+            var newLineRight = lineRight >= rectRight ? lineRight : rectRight;
+            var newLineWidth = newLineRight - newLineLeft;
+
+            //cancel the expansion if the line is going to expand outside a horizontal limit
+            //this is used to prevent lines from spanning multiple columns in a two column epub view
+            var horizontalThreshold = this.lineHorizontalThreshold;
+            var horizontalLimit = this.lineHorizontalLimit;
+
+            var leftBoundary = Math.floor(newLineLeft / horizontalLimit) * horizontalLimit;
+            var centerBoundary = leftBoundary + horizontalThreshold;
+            var rightBoundary = leftBoundary + horizontalLimit;
+            if ((newLineLeft > leftBoundary && newLineRight > centerBoundary && newLineLeft < centerBoundary) || (newLineLeft > centerBoundary && newLineRight > rightBoundary)) {
+                return undefined;
+            }
+
+            currLine.left = newLineLeft;
+            currLine.width = newLineWidth;
+
+            return currLine;
+        }
+    });
+
+    return TextLineInferrer;
+});
+
+// https://github.com/heygrady/Units
+//
+// Copyright (c) 2013 Grady Kuhnline
+//
+// MIT License
+//
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
+// the following conditions:
+//
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+define('readium_plugin_highlights/lib/length',[],function() {
+    return function(document) {
+        "use strict";
+
+        // create a test element
+        var testElem = document.createElement('test'),
+            docElement = document.documentElement,
+            defaultView = document.defaultView,
+            getComputedStyle = defaultView && defaultView.getComputedStyle,
+            computedValueBug,
+            runit = /^(-?[\d+\.\-]+)([a-z]+|%)$/i,
+            convert = {},
+            conversions = [1 / 25.4, 1 / 2.54, 1 / 72, 1 / 6],
+            units = ['mm', 'cm', 'pt', 'pc', 'in', 'mozmm'],
+            i = 6; // units.length
+
+        // add the test element to the dom
+        docElement.appendChild(testElem);
+
+        // test for the WebKit getComputedStyle bug
+        // @see http://bugs.jquery.com/ticket/10639
+        if (getComputedStyle) {
+            // add a percentage margin and measure it
+            testElem.style.marginTop = '1%';
+            computedValueBug = getComputedStyle(testElem).marginTop === '1%';
+        }
+
+        // pre-calculate absolute unit conversions
+        while (i--) {
+            convert[units[i] + "toPx"] = conversions[i] ? conversions[i] * convert.inToPx : toPx(testElem, '1' + units[i]);
+        }
+
+        // remove the test element from the DOM and delete it
+        docElement.removeChild(testElem);
+        testElem = undefined;
+
+        // convert a value to pixels
+        function toPx(elem, value, prop, force) {
+            // use width as the default property, or specify your own
+            prop = prop || 'width';
+
+            var style,
+                inlineValue,
+                ret,
+                unit = (value.match(runit) || [])[2],
+                conversion = unit === 'px' ? 1 : convert[unit + 'toPx'],
+                rem = /r?em/i;
+
+            if (conversion || rem.test(unit) && !force) {
+                // calculate known conversions immediately
+                // find the correct element for absolute units or rem or fontSize + em or em
+                elem = conversion ? elem : unit === 'rem' ? docElement : prop === 'fontSize' ? elem.parentNode || elem : elem;
+
+                // use the pre-calculated conversion or fontSize of the element for rem and em
+                conversion = conversion || parseFloat(curCSS(elem, 'fontSize'));
+
+                // multiply the value by the conversion
+                ret = parseFloat(value) // conversion;
+            } else {
+                // begin "the awesome hack by Dean Edwards"
+                // @see http://erik.eae.net/archives/2007/07/27/18.54.15/#comment-102291
+
+                // remember the current style
+                style = elem.style;
+                inlineValue = style[prop];
+
+                // set the style on the target element
+                try {
+                    style[prop] = value;
+                } catch (e) {
+                    // IE 8 and below throw an exception when setting unsupported units
+                    return 0;
+                }
+
+                // read the computed value
+                // if style is nothing we probably set an unsupported unit
+                ret = !style[prop] ? 0 : parseFloat(curCSS(elem, prop));
+
+                // reset the style back to what it was or blank it out
+                style[prop] = inlineValue !== undefined ? inlineValue : null;
+            }
+
+            // return a number
+            return ret;
+        }
+
+        // return the computed value of a CSS property
+        function curCSS(elem, prop) {
+            var value,
+                pixel,
+                unit,
+                rvpos = /^top|bottom/,
+                outerProp = ["paddingTop", "paddingBottom", "borderTop", "borderBottom"],
+                innerHeight,
+                parent,
+                i = 4; // outerProp.length
+
+            if (getComputedStyle) {
+                // FireFox, Chrome/Safari, Opera and IE9+
+                value = getComputedStyle(elem)[prop];
+            } else if (pixel = elem.style['pixel' + prop.charAt(0).toUpperCase() + prop.slice(1)]) {
+                // IE and Opera support pixel shortcuts for top, bottom, left, right, height, width
+                // WebKit supports pixel shortcuts only when an absolute unit is used
+                value = pixel + 'px';
+            } else if (prop === 'fontSize') {
+                // correct IE issues with font-size
+                // @see http://bugs.jquery.com/ticket/760
+                value = toPx(elem, '1em', 'left', 1) + 'px';
+            } else {
+                // IE 8 and below return the specified style
+                value = elem.currentStyle[prop];
+            }
+
+            // check the unit
+            unit = (value.match(runit) || [])[2];
+            if (unit === '%' && computedValueBug) {
+                // WebKit won't convert percentages for top, bottom, left, right, margin and text-indent
+                if (rvpos.test(prop)) {
+                    // Top and bottom require measuring the innerHeight of the parent.
+                    innerHeight = (parent = elem.parentNode || elem).offsetHeight;
+                    while (i--) {
+                        innerHeight -= parseFloat(curCSS(parent, outerProp[i]));
+                    }
+                    value = parseFloat(value) / 100 // innerHeight + 'px';
+                } else {
+                    // This fixes margin, left, right and text-indent
+                    // @see https://bugs.webkit.org/show_bug.cgi?id=29084
+                    // @see http://bugs.jquery.com/ticket/10639
+                    value = toPx(elem, value);
+                }
+            } else if ((value === 'auto' || (unit && unit !== 'px')) && getComputedStyle) {
+                // WebKit and Opera will return auto in some cases
+                // Firefox will pass back an unaltered value when it can't be set, like top on a static element
+                value = 0;
+            } else if (unit && unit !== 'px' && !getComputedStyle) {
+                // IE 8 and below won't convert units for us
+                // try to convert using a prop that will return pixels
+                // this will be accurate for everything (except font-size and some percentages)
+                value = toPx(elem, value) + 'px';
+            }
+            return value;
+        }
+
+        // export the conversion function
+        return {
+            toPx: toPx
+        };
+    };
+});
+
+define('readium_plugin_highlights/models/copied_text_styles',[],function() {
+    return [
+        "color",
+        "font-family",
+        "font-size",
+        "font-weight",
+        "font-style",
+        //"line-height",
+        "text-decoration",
+        "text-transform",
+        "text-shadow",
+        "letter-spacing",
+
+        "text-rendering",
+        "font-kerning",
+        "font-language-override",
+        "font-size-adjust",
+        "font-stretch",
+        "font-synthesis",
+        "font-variant",
+        "font-variant-alternates",
+        "font-variant-caps",
+        "font-variant-east-asian",
+        "font-variant-ligatures",
+        "font-variant-numeric",
+        "font-variant-position",
+        "-webkit-font-smoothing ",
+
+        "-ms-writing-mode",
+        "-webkit-writing-mode",
+        "-moz-writing-mode",
+        "-ms-writing-mode",
+        "writing-mode",
+
+        "-webkit-text-orientation",
+        "-moz-text-orientation",
+        "-ms-text-orientation",
+        "text-orientation: mixed"
+    ];
+});
+
+define('readium_plugin_highlights/views/view',["jquery", "underscore", "../lib/class", "../lib/length", "../models/text_line_inferrer", "../models/copied_text_styles"],
+function($, _, Class, Length, TextLineInferrer, CopiedTextStyles) {
+    // This is not a backbone view.
+
+    var HighlightView = Class.extend({
+        // this is an element that highlight will be associated with, it is not styled at this point
+        template: "<div class=\"rd-highlight\"></div>",
+
+        init: function(context, options) {
+            this.context = context;
+
+            this.lengthLib = new Length(this.context.document);
+
+            this.highlight = {
+                id: options.id,
+                CFI: options.CFI,
+                type: options.type,
+                top: options.top,
+                left: options.left,
+                height: options.height,
+                width: options.width,
+                styles: options.styles,
+                contentRenderData: options.contentRenderData
+            };
+
+            this.swipeThreshold = 10;
+            this.swipeVelocity = 0.65; // in px/ms
+        },
+
+        render: function() {
+            this.$el = $(this.template, this.context.document);
+            this.$el.attr('data-id', this.highlight.id);
+            this.updateStyles();
+            this.renderContent();
+            return this.$el;
+        },
+
+        remove: function() {
+            this.highlight = null;
+            this.context = null;
+            this.$el.remove();
+        },
+
+
+
+        resetPosition: function(top, left, height, width) {
+            _.assign(this.highlight, {
+                top: top,
+                left: left,
+                height: height,
+                width: width
+            });
+            this.setCSS();
+        },
+
+        setStyles: function(styles) {
+            this.highlight.styles = styles;
+            this.updateStyles();
+        },
+
+        update: function(type, styles) {
+            // save old type
+            var oldType = this.highlight.type;
+
+            _.assign(this.highlight, {
+                type: type,
+                styles: styles
+            });
+
+            // we need to fully restyle view elements
+            // remove all the "inline" styles
+            this.$el.removeAttr("style");
+
+            // remove class applied by "type"
+            this.$el.removeClass(oldType);
+
+            this.updateStyles();
+        },
+
+        updateStyles: function() {
+            this.setBaseHighlight();
+            this.setCSS();
+        },
+
+        // Will return null or false if :first-line/letter would not apply to the first text node child
+        getFirstTextNodeChild: function(elem) {
+            for (var i = 0; i < elem.childNodes.length; i++) {
+                var child = elem.childNodes[i];
+                if (child.nodeType === Node.TEXT_NODE) {
+                    return child;
+                }
+
+                if (child.nodeType === Node.ELEMENT_NODE) {
+                    var doc = child.ownerDocument;
+                    var style = doc.defaultView.getComputedStyle(child);
+                    // If it's not an element we can definitely ignore
+                    if ((style['position'] !== 'absolute' && style['position'] !== 'fixed') &&
+                        style['float'] === 'none' && style['display'] !== 'none') {
+                        if (style['display'] === 'inline') {
+                            var result = this.getFirstTextNodeChild(child);
+                            if (result) {
+                                return result;
+                            } else if (result === false) {
+                                return false;
+                            }
+                        } else {
+                            return false;
+                        }
+                    }
+                }
+            }
+            return null;
+        },
+
+        // Returns the styles which apply to the first line of the specified element, or null if there aren't any
+        // Assumes that the specified argument is a block element
+        getFirstLineStyles: function(elem) {
+            var win = elem.ownerDocument.defaultView;
+            if (!win.getMatchedCSSRules) {
+                // Without getMatchingCSSRules, we can't get first-line styles
+                return null;
+            }
+            while (elem) {
+                var styles = win.getMatchedCSSRules(elem, 'first-line');
+                if (styles) {
+                    return styles[0].style;
+                }
+
+                // Go through previous siblings, return null if there's a non-empty text node, or an element that's
+                // not display: none; - both of these prevent :first-line styles from the parents from applying
+                var sibling = elem;
+                while (sibling = sibling.previousSibling) {
+                    if (sibling.nodeType === Node.ELEMENT_NODE) {
+                        var siblingStyles = win.getComputedStyle(sibling);
+                        if (siblingStyles['display'] !== 'none') {
+                            return null;
+                        }
+                    } else if (sibling.nodeType === Node.TEXT_NODE && sibling.textContent.match(/\S/)) {
+                        return null;
+                    }
+                };
+                elem = elem.parentNode;
+            }
+        },
+
+        renderContent: function() {
+            var that = this;
+            var renderData = this.highlight.contentRenderData;
+            if (renderData) {
+                _.each(renderData.data, function(data) {
+                    var $ancestor = $(data.ancestorEl);
+                    var $blockAncestor = $(data.blockAncestorEl);
+                    var document = data.ancestorEl.ownerDocument;
+
+                    var el = document.createElement("div");
+                    el.style.position = 'absolute';
+                    el.style.top = (data.rect.top - renderData.top) + "px";
+                    el.style.left = (data.rect.left - renderData.left) + "px";
+                    el.style.width = (data.rect.width + 1) + "px";
+                    el.style.height = data.rect.height + "px";
+
+                    var copyStyles = function(copyFrom, copyTo) {
+                        _.each(CopiedTextStyles, function(styleName) {
+                            var style = copyFrom[styleName];
+                            if (style) {
+                                copyTo[styleName] = style;
+                            }
+                        });
+                    };
+
+                    var copiedStyles = $ancestor.data("rd-copied-text-styles");
+                    if (!copiedStyles) {
+                        copiedStyles = {};
+                        var computedStyle = document.defaultView.getComputedStyle(data.ancestorEl);
+                        copyStyles(computedStyle, copiedStyles);
+                        $ancestor.data("rd-copied-text-styles", copiedStyles);
+                    }
+
+                    var copiedFirstLineStyles = $blockAncestor.data("rd-copied-first-line-styles");
+                    if (copiedFirstLineStyles === undefined) {
+                        copiedFirstLineStyles = null;
+                        var firstLineStyles = that.getFirstLineStyles(data.blockAncestorEl);
+                        if (firstLineStyles) {
+                            copiedFirstLineStyles = {};
+                            copyStyles(firstLineStyles, copiedFirstLineStyles);
+                            // Delete text-transform because it doesn't apply in Chrome on :first-line
+                            delete copiedFirstLineStyles['text-transform'];
+                            _.each(["font-size", "letter-spacing"], function(styleName) {
+                                if (copiedFirstLineStyles[styleName]) {
+                                    copiedFirstLineStyles[styleName] = that.lengthLib.toPx(data.ancestorEl, copiedFirstLineStyles[styleName]) + "px";
+                                }
+                            });
+                        }
+                        $blockAncestor.data("rd-copied-first-line-styles", copiedFirstLineStyles);
+                    }
+
+                    if (copiedFirstLineStyles) {
+                        var textNode = that.getFirstTextNodeChild(data.blockAncestorEl);
+                        var range = document.createRange();
+                        range.setStart(textNode, 0);
+                        range.setEnd(data.node, data.startOffset + 1);
+                        var rects = range.getClientRects();
+                        var inferrer = new TextLineInferrer({
+                            lineHorizontalThreshold: $("body", document).clientWidth,
+                            lineHorizontalLimit: document.defaultView.innerWidth
+                        });
+                        if (inferrer.inferLines(_.map(rects, function(rect) {
+                                return {
+                                    rect: rect
+                                }
+                            })).length > 1) {
+                            copiedFirstLineStyles = null;
+                        }
+                    }
+
+                    _.each(copiedStyles, function(style, styleName) {
+                        style = copiedFirstLineStyles ? copiedFirstLineStyles[styleName] || style : style;
+                        el.style[styleName] = style;
+                    });
+                    el.style["line-height"] = data.rect.height + "px";
+
+                    el.appendChild(document.createTextNode(data.text));
+                    that.$el[0].appendChild(el);
+                });
+                processedElements = null;
+                computedStyles = null;
+            }
+        },
+
+        setCSS: function() {
+            // set highlight's absolute position
+            this.$el.css({
+                "position": "absolute",
+                "top": this.highlight.top + "px",
+                "left": this.highlight.left + "px",
+                "height": this.highlight.height + "px",
+                "width": this.highlight.width + "px"
+            });
+
+            // apply styles, if any
+            var styles = this.highlight.styles || {};
+            try {
+                this.$el.css(styles);
+            } catch (ex) {
+                console.log('EpubAnnotations: invalid css styles');
+            }
+        },
+
+        setBaseHighlight: function(removeFocus) {
+            var type = this.highlight.type;
+            this.$el.addClass(type);
+            this.$el.removeClass("hover-" + type);
+            if (removeFocus) {
+                this.$el.removeClass("focused-" + type);
+            }
+        },
+
+        setHoverHighlight: function() {
+            var type = this.highlight.type;
+            this.$el.addClass("hover-" + type);
+            this.$el.removeClass(type);
+        },
+
+        setFocusedHighlight: function() {
+            var type = this.highlight.type;
+            this.$el.addClass("focused-" + type);
+            this.$el.removeClass(type).removeClass("hover-" + type);
+        },
+
+        setVisibility: function(value) {
+            if (value) {
+                this.$el.css('display', '');
+            } else {
+                this.$el.css('display', 'none');
+            }
+        },
+
+    });
+
+    return HighlightView;
+});
+
+define('readium_plugin_highlights/views/border_view',["./view"], function(HighlightView) {
+
+    // This is not a backbone view.
+
+    var HighlightBorderView = HighlightView.extend({
+
+        template: "<div class=\"rd-highlight-border\"></div>",
+
+        setCSS: function() {
+
+            this.$el.css({
+                backgroundClip: 'padding-box',
+                borderStyle: 'solid',
+                borderWidth: '5px',
+                boxSizing: "border-box"
+            });
+            this._super();
+        },
+
+        setBaseHighlight: function() {
+
+            this.$el.addClass("highlight-border");
+            this.$el.removeClass("hover-highlight-border").removeClass("focused-highlight-border");
+        },
+
+        setHoverHighlight: function() {
+
+            this.$el.addClass("hover-highlight-border");
+            this.$el.removeClass("highlight-border");
+        },
+
+        setFocusedHighlight: function() {
+            this.$el.addClass('focused-highlight-border');
+            this.$el.removeClass('highlight-border').removeClass('hover-highlight-border');
+        }
+    });
+
+    return HighlightBorderView;
+});
+
+define('readium_plugin_highlights/models/group',["jquery", "underscore", "../lib/class", "./text_line_inferrer", "../views/view", "../views/border_view", "../helpers"],
+function($, _, Class, TextLineInferrer, HighlightView, HighlightBorderView, HighlightHelpers) {
+
+    var debouncedTrigger = _.debounce(
+        function(fn, eventName) {
+            fn(eventName);
+        }, 10);
+
+    var HighlightGroup = Class.extend({
+
+        init: function(context, options) {
+            this.context = context;
+
+            this.highlightViews = [];
+
+            this.CFI = options.CFI;
+            this.selectedNodes = options.selectedNodes;
+            this.offsetTopAddition = options.offsetTopAddition;
+            this.offsetLeftAddition = options.offsetLeftAddition;
+            this.styles = options.styles;
+            this.id = options.id;
+            this.type = options.type;
+            this.scale = options.scale;
+            this.selectionText = options.selectionText;
+            this.visible = options.visible;
+            this.rangeInfo = options.rangeInfo;
+
+            this.constructHighlightViews();
+        },
+
+        onHighlightEvent: function(event, type) {
+            var that = this;
+            var documentFrame = this.context.iframe;
+            var topView = this.context.manager;
+            var triggerEvent = _.partial(topView.trigger, _, that.type,
+                that.CFI, that.id, event, documentFrame);
+
+            if (type === "click" || type === "touchend") {
+                debouncedTrigger(triggerEvent, "annotationClicked");
+
+            } else if (type === "contextmenu") {
+                triggerEvent("annotationRightClicked");
+
+            } else if (type === "mousemove") {
+                triggerEvent("annotationMouseMove");
+
+            } else if (type === "mouseenter") {
+                triggerEvent("annotationHoverIn");
+
+            } else if (type === "mouseleave") {
+                triggerEvent("annotationHoverOut");
+
+            } else if (type === "mousedown") {
+                // prevent selection when right clicking
+                var preventEvent = function(event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    documentFrame.contentDocument.removeEventListener(event.type, preventEvent);
+                };
+                if (event.button === 2) {
+                    event.preventDefault();
+                    documentFrame.contentDocument.addEventListener("selectstart", preventEvent);
+                    documentFrame.contentDocument.addEventListener("mouseup", preventEvent);
+                    documentFrame.contentDocument.addEventListener("click", preventEvent);
+                    documentFrame.contentDocument.addEventListener("contextmenu", preventEvent);
+                }
+            }
+
+            // "mouseenter" and "mouseleave" events not only trigger corresponding named event, but also
+            // affect the appearance
+            if (type === "mouseenter" || type === "mouseleave") {
+                // Change appearance of highlightViews constituting this highlight group
+                // do not iterate over secondary highlight views (hightlightViewsSecondary)
+                _.each(this.highlightViews, function(highlightView) {
+
+                    if (type === "mouseenter") {
+                        highlightView.setHoverHighlight();
+                    } else if (type === "mouseleave") {
+                        highlightView.setBaseHighlight(false);
+                    }
+                });
+            }
+
+        },
+
+        normalizeRectangle: function(rect) {
+            return {
+                left: rect.left,
+                right: rect.right,
+                top: rect.top,
+                bottom: rect.bottom,
+                width: rect.right - rect.left,
+                height: rect.bottom - rect.top
+            };
+        },
+
+        // produces an event string corresponding to "pointer events" that we want to monitor on the
+        // bound HL container. We are adding namespace to the event names in order to be able to
+        // remove them by specifying <eventname>.<namespace> only, rather than classic callback function
+        getBoundHighlightContainerEvents: function() {
+            // these are the event names that we handle in "onHighlightEvent"
+            var boundHighlightContainerEvents = ["click", "touchstart", "touchend", "touchmove", "contextmenu",
+                "mouseenter", "mouseleave", "mousemove", "mousedown"
+            ];
+            var namespace = ".rdjsam-" + this.id;
+            return boundHighlightContainerEvents.map(function(e) {
+                return e + namespace;
+            }).join(" ");
+        },
+
+        getFirstBlockParent: function(elem) {
+            var win = elem.ownerDocument.defaultView;
+            do {
+                var style = win.getComputedStyle(elem);
+                if (style['display'] !== 'inline') {
+                    return elem;
+                }
+            } while (elem = elem.parentNode);
+        },
+
+        // construct view for each rectangle constituting HL group
+        constructHighlightViews: function() {
+            var that = this;
+            if (!this.visible)
+                return;
+
+            var rectTextList = [];
+
+            // this is an array of elements (not Node.TEXT_NODE) that are part of HL group
+            // they will presented as HighlightBorderView
+            var rectElementList = [];
+            var inferrer;
+            var inferredLines;
+            var allContainerRects = [];
+            var hoverThreshold = 2; // Pixels to expand each rect on each side, for hovering/clicking purposes
+            var rangeInfo = this.rangeInfo;
+            var selectedNodes = this.selectedNodes;
+            var includeMedia = this.includeMedia;
+            var contentDocumentFrame = this.context.iframe;
+            var highlightStyles = this.styles;
+            var cloneTextMode = highlightStyles ? highlightStyles['-rd-highlight-mode'] === 'clone-text' : false;
+
+            function pushToRectTextList(range) {
+                var match,
+                    rangeText = range.toString(),
+                    rects = [],
+                    node = range.startContainer,
+                    ancestor = range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE ? range.commonAncestorContainer : range.commonAncestorContainer.parentNode,
+                    blockAncestor = that.getFirstBlockParent(ancestor),
+                    baseOffset = range.startOffset,
+                    rgx = /\S+/g;
+
+                if (cloneTextMode) {
+                    while (match = rgx.exec(rangeText)) {
+                        var startOffset = baseOffset + rgx.lastIndex - match[0].length,
+                            endOffset = baseOffset + rgx.lastIndex;
+                        range.setStart(node, startOffset);
+                        range.setEnd(node, endOffset);
+                        var clientRects = range.getClientRects();
+                        var curRect = 0;
+                        var curStart = startOffset;
+                        var curEnd = curStart;
+                        while (curRect < clientRects.length) {
+                            var saveRect = false;
+                            if (clientRects[curRect].width === 0 || clientRects[curRect].height === 0) {
+                                curRect++;
+                                continue;
+                            }
+                            if (curRect === clientRects.length - 1) {
+                                curEnd = endOffset;
+                                saveRect = true;
+                            } else {
+                                curEnd++;
+                                range.setStart(node, curStart);
+                                range.setEnd(node, curEnd);
+                                var tempRects = range.getClientRects();
+                                var tempRect = tempRects[0];
+                                // Skip over empty first rect if there is one
+                                if (tempRects.length > 1 && (tempRect.width === 0 || tempRect.height === 0)) {
+                                    tempRect = tempRects[1];
+                                }
+                                var differences = 0;
+                                _.each(["top", "left", "bottom", "right"], function(prop) {
+                                    differences += (tempRects[0][prop] !== clientRects[curRect][prop] ? 1 : 0);
+                                });
+                                if (differences === 0) {
+                                    saveRect = true;
+                                }
+                            }
+                            if (saveRect) {
+                                rects.push({
+                                    rect: clientRects[curRect],
+                                    text: node.textContent.substring(curStart, curEnd),
+                                    node: node,
+                                    startOffset: curStart
+                                });
+                                curRect++;
+                                curStart = curEnd;
+                            }
+                        }
+                    }
+                } else {
+                    _.each(range.getClientRects(), function(rect) {
+                        rects.push({
+                            rect: rect,
+                            text: rangeText
+                        });
+                    });
+                }
+                _.each(rects, function(rect) {
+                    var normalizedRect = that.normalizeRectangle(rect.rect);
+
+                    //filter out empty rectangles
+                    if (normalizedRect.width === 0 || normalizedRect.height === 0) {
+                        return;
+                    }
+
+                    // push both rect and ancestor in the list
+                    rectTextList.push({
+                        rect: normalizedRect,
+                        text: rect.text,
+                        ancestorEl: ancestor,
+                        blockAncestorEl: blockAncestor,
+                        node: rect.node,
+                        startOffset: rect.startOffset
+                    });
+                });
+            }
+
+            // if range is within one node
+            if (rangeInfo && rangeInfo.startNode === rangeInfo.endNode) {
+                var node = rangeInfo.startNode;
+                var range = that.context.document.createRange();
+                range.setStart(node, rangeInfo.startOffset);
+                range.setEnd(node, rangeInfo.endOffset);
+
+                // we are only interested in TEXT_NODE
+                if (node.nodeType === Node.TEXT_NODE) {
+                    // get client rectangles for the range and push them into rectTextList
+                    pushToRectTextList(range);
+                    selectedNodes = [];
+                }
+            }
+
+            // multi-node range, for each selected node
+            _.each(selectedNodes, function(node) {
+                // create new Range
+                var range = that.context.document.createRange();
+                if (node.nodeType === Node.TEXT_NODE) {
+                    if (rangeInfo && node === rangeInfo.startNode && rangeInfo.startOffset !== 0) {
+                        range.setStart(node, rangeInfo.startOffset);
+                        range.setEnd(node, node.length);
+                    } else if (rangeInfo && node === rangeInfo.endNode && rangeInfo.endOffset !== 0) {
+                        range.setStart(node, 0);
+                        range.setEnd(node, rangeInfo.endOffset);
+                    } else {
+                        range.selectNodeContents(node);
+                    }
+
+                    // for each client rectangle
+                    pushToRectTextList(range);
+                } else if (node.nodeType === Node.ELEMENT_NODE && includeMedia) {
+                    // non-text node element
+                    // if we support this elements in the HL group
+                    if (_.contains(["img", "video", "audio"], node.tagName.toLowerCase())) {
+                        // set the Range to contain the node and its contents and push rectangle to the list
+                        range.selectNode(node);
+                        rectElementList.push(range.getBoundingClientRect());
+                    }
+                }
+            });
+
+            var $html = $(that.context.document.documentElement);
+
+            function calculateScale() {
+                var scale = that.scale;
+                //is there a transform scale for the content document?
+                var matrix = HighlightHelpers.getMatrix($html);
+                if (!matrix && (that.context.isIe9 || that.context.isIe10)) {
+                    //if there's no transform scale then set the scale as the IE zoom factor
+                    scale = (window.screen.deviceXDPI / 96); //96dpi == 100% scale
+                } else if (matrix) {
+                    scale = HighlightHelpers.getScaleFromMatrix(matrix);
+                }
+                return scale;
+            }
+
+            var scale = calculateScale();
+
+            inferrer = new TextLineInferrer({
+                lineHorizontalThreshold: $("body", $html).clientWidth,
+                lineHorizontalLimit: contentDocumentFrame.contentWindow.innerWidth
+            });
+
+            // only take "rect" property when inferring lines
+            inferredLines = inferrer.inferLines(rectTextList);
+            _.each(inferredLines, function(line, index) {
+                var renderData = line.data;
+                //console.log(line.data);
+                line = line.line;
+                var highlightTop = (line.startTop + that.offsetTopAddition) / scale;
+                var highlightLeft = (line.left + that.offsetLeftAddition) / scale;
+                var highlightHeight = line.avgHeight / scale;
+                var highlightWidth = line.width / scale;
+                allContainerRects.push({
+                    top: highlightTop - hoverThreshold,
+                    left: highlightLeft - hoverThreshold,
+                    bottom: highlightTop + highlightHeight + hoverThreshold * 2,
+                    right: highlightLeft + highlightWidth + hoverThreshold * 2,
+                });
+
+                var highlightView = new HighlightView(that.context, {
+                    id: that.id,
+                    CFI: that.CFI,
+                    type: that.type,
+                    top: highlightTop,
+                    left: highlightLeft,
+                    height: highlightHeight,
+                    width: highlightWidth,
+                    styles: _.extend({
+                        "z-index": "1000",
+                        "pointer-events": "none"
+                    }, highlightStyles),
+                    contentRenderData: cloneTextMode ? {
+                        data: renderData,
+                        top: line.startTop,
+                        left: line.left
+                    } : null
+                });
+
+                that.highlightViews.push(highlightView);
+            });
+
+            // deal with non TEXT_NODE elements
+            _.each(rectElementList, function(rect) {
+                var highlightTop = (rect.top + that.offsetTopAddition) / scale;
+                var highlightLeft = (rect.left + that.offsetLeftAddition) / scale;
+                var highlightHeight = rect.height / scale;
+                var highlightWidth = rect.width / scale;
+                allContainerRects.push({
+                    top: highlightTop - hoverThreshold,
+                    left: highlightLeft - hoverThreshold,
+                    bottom: highlightTop + highlightHeight + hoverThreshold * 2,
+                    right: highlightLeft + highlightWidth + hoverThreshold * 2,
+                });
+
+                var highlightView = new HighlightBorderView(this.context, {
+                    highlightId: that.id,
+                    CFI: that.CFI,
+                    top: highlightTop,
+                    left: highlightLeft,
+                    height: highlightHeight,
+                    width: highlightWidth,
+                    styles: highlightStyles
+                });
+
+                that.highlightViews.push(highlightView);
+            });
+
+            // this is a flag indicating if mouse is currently within the boundary of HL group
+            var mouseEntered = false;
+
+            // helper function to test if a point is within a rectangle
+            function pointRectangleIntersection(point, rect) {
+                return point.x > rect.left && point.x < rect.right &&
+                    point.y > rect.top && point.y < rect.bottom;
+            };
+
+            that.boundHighlightCallback = function(e) {
+                var scale = calculateScale();
+                var mouseIsInside = false;
+
+                var x = e.pageX;
+                var y = e.pageY;
+
+                if (e.type === 'touchend') {
+                    var lastTouch = _.last(e.changedTouches);
+                    x = lastTouch.pageX;
+                    y = lastTouch.pageY;
+                }
+
+                var point = {
+                    x: (x + that.offsetLeftAddition) / scale,
+                    y: (y + that.offsetTopAddition) / scale
+                };
+
+                _.each(allContainerRects, function(rect) {
+
+                    if (pointRectangleIntersection(point, rect)) {
+                        mouseIsInside = true;
+                        // if event is "click" and there is an active selection
+                        if (e.type === "click") {
+                            var sel = e.target.ownerDocument.getSelection();
+                            // had to add this check to make sure that rangeCount is not 0
+                            if (sel && sel.rangeCount && !sel.getRangeAt(0).collapsed) {
+                                //do not trigger a click when there is an active selection
+                                return;
+                            }
+                        }
+
+                        var isTouchEvent = e.type.indexOf('touch') !== -1;
+
+                        if (isTouchEvent) {
+                            // call "normal" event handler for HL group to touch capable devices
+                            that.onHighlightEvent(e, e.type);
+                        }
+
+                        // if this is the first time we are mouse entering in the area
+                        if (!mouseEntered) {
+                            // regardless of the actual event type we want highlightGroupCallback process "mouseenter"
+                            that.onHighlightEvent(e, "mouseenter");
+
+                            // set flag indicating that we are in HL group confines
+                            mouseEntered = true;
+                            return;
+                        } else if (!isTouchEvent) {
+                            // call "normal" event handler for HL group to desktop devices
+                            that.onHighlightEvent(e, e.type);
+                        }
+                    }
+                });
+
+                if (!mouseIsInside && mouseEntered) {
+                    // set flag indicating that we left HL group confines
+                    mouseEntered = false;
+                    that.onHighlightEvent(e, "mouseleave");
+                }
+            };
+            that.boundHighlightElement = $html;
+            $html.on(this.getBoundHighlightContainerEvents(), that.boundHighlightCallback);
+        },
+
+        resetHighlights: function(viewportElement, offsetTop, offsetLeft) {
+            this.offsetTopAddition = offsetTop;
+            this.offsetLeftAddition = offsetLeft;
+            this.destroyCurrentHighlights();
+            this.constructHighlightViews();
+            this.renderHighlights(viewportElement);
+        },
+
+        destroyCurrentHighlights: function() {
+            var that = this;
+            _.each(this.highlightViews, function(highlightView) {
+                highlightView.remove();
+            });
+
+            var events = that.getBoundHighlightContainerEvents();
+            var $el = this.boundHighlightElement;
+            if ($el) {
+                $el.off(events, this.boundHighlightCallback);
+            }
+
+            this.boundHighlightCallback = null;
+            this.boundHighlightElement = null;
+
+            this.highlightViews.length = 0;
+        },
+
+        renderHighlights: function(viewportElement) {
+            // higlight group is live, it just doesn't need to be visible, yet.
+            if (!this.visible) {
+                return;
+            }
+
+            _.each(this.highlightViews, function(view, index) {
+                $(viewportElement).append(view.render());
+            });
+        },
+
+        toInfo: function() {
+            // get array of rectangles for all the HightligtViews
+            var rectangleArray = [];
+            var offsetTopAddition = this.offsetTopAddition;
+            var offsetLeftAddition = this.offsetLeftAddition;
+            var scale = this.scale;
+            _.each(this.highlightViews, function(view, index) {
+                var hl = view.highlight;
+                rectangleArray.push({
+                    top: (hl.top - offsetTopAddition) * scale,
+                    left: (hl.left - offsetLeftAddition) * scale,
+                    height: hl.height * scale,
+                    width: hl.width * scale
+                });
+            });
+
+            return {
+                id: this.id,
+                type: this.type,
+                CFI: this.CFI,
+                rectangleArray: rectangleArray,
+                selectedText: this.selectionText
+            };
+        },
+
+        setStyles: function(styles) {
+            this.styles = styles;
+            _.each(this.highlightViews, function(view, index) {
+                view.setStyles(styles);
+            });
+        },
+
+        update: function(type, styles) {
+            this.type = type;
+            this.styles = styles;
+
+            // for each View of the HightlightGroup
+            _.each(this.highlightViews, function(view, index) {
+                view.update(type, styles);
+            });
+        },
+
+        setState: function(state, value) {
+            _.each(this.highlightViews, function(view, index) {
+                if (state === "hover") {
+                    if (value) {
+                        view.setHoverHighlight();
+                    } else {
+                        view.setBaseHighlight(false);
+                    }
+                } else if (state === "visible") {
+                    view.setVisibility(value);
+                } else if (state === "focused") {
+                    if (value) {
+                        view.setFocusedHighlight();
+                    } else {
+                        view.setBaseHighlight(true);
+                    }
+
+                }
+            });
+        }
+    });
+
+    return HighlightGroup;
+});
+
+define('readium_plugin_highlights/controller',["jquery", "underscore", "./lib/class", "./helpers", "./models/group"],
+function($, _, Class, HighlightHelpers, HighlightGroup) {
+    var HighlightsController = Class.extend({
+
+        highlights: [],
+        annotationHash: {},
+        offsetTopAddition: 0,
+        offsetLeftAddition: 0,
+        readerBoundElement: undefined,
+        scale: 0,
+
+        init: function(context, options) {
+            this.context = context;
+
+            this.epubCFI = EPUBcfi;
+            this.readerBoundElement = this.context.document.documentElement;
+
+            if (options.getVisibleCfiRangeFn) {
+                this.getVisibleCfiRange = options.getVisibleCfiRangeFn;
+            }
+
+            // inject annotation CSS into iframe
+            if (this.context.cssUrl) {
+                this._injectAnnotationCSS(this.context.cssUrl);
+            }
+
+            // emit an event when user selects some text.
+            var that = this;
+            this.context.document.addEventListener("mouseup", function(event) {
+                var range = that._getCurrentSelectionRange();
+                if (range === undefined) {
+                    return;
+                }
+                if (range.startOffset - range.endOffset) {
+                    that.context.manager.trigger("textSelectionEvent", event, range, that.context.iframe);
+                }
+            });
+
+            if (!rangy.initialized) {
+                rangy.init();
+            }
+        },
+
+        getVisibleCfiRange: function() {
+            // returns {firstVisibleCfi: <>, lastVisibleCfi: <>}
+            // implemented in Readium.ReaderView, passed in via options
+        },
+
+        // ------------------------------------------------------------------------------------ //
+        //  "PUBLIC" METHODS (THE API)                                                          //
+        // ------------------------------------------------------------------------------------ //
+
+        redraw: function() {
+            var that = this;
+
+            var leftAddition = -this._getPaginationLeftOffset();
+            
+            var isVerticalWritingMode = this.context.paginationInfo().isVerticalWritingMode;
+
+            var visibleCfiRange = this.getVisibleCfiRange();
+
+            // Highlights
+            _.each(this.highlights, function(highlightGroup) {
+                var visible = true;
+
+                if (visibleCfiRange &&
+                    visibleCfiRange.firstVisibleCfi &&
+                    visibleCfiRange.firstVisibleCfi.contentCFI &&
+                    visibleCfiRange.lastVisibleCfi &&
+                    visibleCfiRange.lastVisibleCfi.contentCFI) {
+
+                    visible = that._cfiIsBetweenTwoCfis(
+                        highlightGroup.CFI,
+                        visibleCfiRange.firstVisibleCfi.contentCFI,
+                        visibleCfiRange.lastVisibleCfi.contentCFI);
+                }
+                highlightGroup.visible = visible;
+                highlightGroup.resetHighlights(that.readerBoundElement,
+                    isVerticalWritingMode ? leftAddition : 0,
+                    isVerticalWritingMode ? 0 : leftAddition
+                    );
+
+            });
+        },
+
+        getHighlight: function(id) {
+            var highlight = this.annotationHash[id];
+            if (highlight) {
+                return highlight.toInfo();
+            } else {
+                return undefined;
+            }
+        },
+
+        getHighlights: function() {
+            var highlights = [];
+            _.each(this.highlights, function(highlight) {
+                highlights.push(highlight.toInfo());
+            });
+            return highlights;
+        },
+
+        removeHighlight: function(annotationId) {
+            var annotationHash = this.annotationHash;
+            var highlights = this.highlights;
+
+            delete annotationHash[annotationId];
+
+            highlights = _.reject(highlights, function(highlightGroup) {
+                if (highlightGroup.id == annotationId) {
+                    highlightGroup.destroyCurrentHighlights();
+                    return true;
+                } else {
+                    return false;
+                }
+            });
+
+            this.highlights = highlights;
+        },
+
+        removeHighlightsByType: function(type) {
+            var annotationHash = this.annotationHash;
+            var highlights = this.highlights;
+
+            // the returned list only contains HLs for which the function returns false
+            highlights = _.reject(highlights, function(highlightGroup) {
+                if (highlightGroup.type === type) {
+                    delete annotationHash[highlightGroup.id];
+                    highlightGroup.destroyCurrentHighlights();
+                    return true;
+                } else {
+                    return false;
+                }
+            });
+
+            this.highlights = highlights;
+        },
+
+        // generate unique prefix for HL ids
+        generateIdPrefix: function() {
+            var idPrefix = 'xxxxxxxx'.replace(/[x]/g, function(c) {
+                var r = Math.random() * 16 | 0;
+                return r.toString(16);
+            });
+            idPrefix += "_";
+            return idPrefix;
+        },
+
+
+        // takes partial CFI as parameter
+        addHighlight: function(CFI, id, type, styles) {
+            var CFIRangeInfo;
+            var range;
+            var rangeStartNode;
+            var rangeEndNode;
+            var selectedElements;
+            var leftAddition;
+
+            var contentDoc = this.context.document;
+            //get transform scale of content document
+            var scale = 1.0;
+            var matrix = HighlightHelpers.getMatrix($('html', contentDoc));
+            if (matrix) {
+                scale = HighlightHelpers.getScaleFromMatrix(matrix);
+            }
+
+            //create a dummy test div to determine if the browser provides
+            // client rectangles that take transform scaling into consideration
+            var $div = $('<div style="font-size: 50px; position: absolute; background: red; top:-9001px;">##</div>');
+            $(contentDoc.documentElement).append($div);
+            range = contentDoc.createRange();
+            range.selectNode($div[0]);
+            var renderedWidth = this._normalizeRectangle(range.getBoundingClientRect()).width;
+            var clientWidth = $div[0].clientWidth;
+            $div.remove();
+            var renderedVsClientWidthFactor = renderedWidth / clientWidth;
+            if (renderedVsClientWidthFactor === 1) {
+                //browser doesn't provide scaled client rectangles (firefox)
+                scale = 1;
+            } else if (this.context.isIe9 || this.context.isIe10) {
+                //use the test scale factor as our scale value for IE 9/10
+                scale = renderedVsClientWidthFactor;
+            }
+            this.scale = scale;
+
+            // form fake full CFI to satisfy getRangeTargetNodes
+            var arbitraryPackageDocCFI = "/99!"
+            var fullFakeCFI = "epubcfi(" + arbitraryPackageDocCFI + CFI + ")";
+            if (this.epubCFI.Interpreter.isRangeCfi(fullFakeCFI)) {
+                CFIRangeInfo = this.epubCFI.getRangeTargetElements(fullFakeCFI, contentDoc, ["cfi-marker", "cfi-blacklist", "mo-cfi-highlight"], [], ["MathJax_Message", "MathJax_SVG_Hidden"]);
+
+                var startNode = CFIRangeInfo.startElement,
+                    endNode = CFIRangeInfo.endElement;
+                range = rangy.createRange(contentDoc);
+                if (startNode.length < CFIRangeInfo.startOffset) {
+                    //this is a workaround
+                    // "Uncaught IndexSizeError: Index or size was negative, or greater than the allowed value." errors
+                    // the range cfi generator outputs a cfi like /4/2,/1:125,/16
+                    // can't explain, investigating..
+                    CFIRangeInfo.startOffset = startNode.length;
+                }
+                range.setStart(startNode, CFIRangeInfo.startOffset);
+                range.setEnd(endNode, CFIRangeInfo.endOffset);
+                selectedElements = range.getNodes();
+            } else {
+                var element = this.epubCFI.getTargetElement(fullFakeCFI, contentDoc, ["cfi-marker", "cfi-blacklist", "mo-cfi-highlight"], [], ["MathJax_Message", "MathJax_SVG_Hidden"]);
+                selectedElements = [element ? element[0] : null];
+                range = null;
+            }
+
+            leftAddition = -this._getPaginationLeftOffset();
+
+            var isVerticalWritingMode = this.context.paginationInfo().isVerticalWritingMode;
+
+            this._addHighlightHelper(
+                CFI, id, type, styles, selectedElements, range,
+                startNode, endNode,
+                isVerticalWritingMode ? leftAddition : 0,
+                isVerticalWritingMode ? 0 : leftAddition
+                );
+
+            return {
+                selectedElements: selectedElements,
+                CFI: CFI
+            };
+        },
+
+
+        // this returns a partial CFI only!!
+        getCurrentSelectionCFI: function() {
+            var currentSelection = this._getCurrentSelectionRange();
+            var CFI;
+            if (currentSelection) {
+                selectionInfo = this._getSelectionInfo(currentSelection);
+                CFI = selectionInfo.CFI;
+            }
+
+            return CFI;
+        },
+
+        // this returns a partial CFI only!!
+        getCurrentSelectionOffsetCFI: function() {
+            var currentSelection = this._getCurrentSelectionRange();
+
+            var CFI;
+            if (currentSelection) {
+                CFI = this._generateCharOffsetCFI(currentSelection);
+            }
+            return CFI;
+        },
+
+        addSelectionHighlight: function(id, type, styles, clearSelection) {
+            var CFI = this.getCurrentSelectionCFI();
+            if (CFI) {
+
+                // if clearSelection is true
+                if (clearSelection) {
+                    var iframeDocument = this.context.document;
+                    if (iframeDocument.getSelection) {
+                        var currentSelection = iframeDocument.getSelection();
+                        currentSelection.collapseToStart();
+                    }
+                }
+                return this.addHighlight(CFI, id, type, styles);
+            } else {
+                throw new Error("Nothing selected");
+            }
+        },
+
+        updateAnnotation: function(id, type, styles) {
+            var annotationViews = this.annotationHash[id];
+            if (annotationViews) {
+                annotationViews.update(type, styles);
+            }
+            return annotationViews;
+        },
+
+        replaceAnnotation: function(id, cfi, type, styles) {
+            var annotationViews = this.annotationHash[id];
+            if (annotationViews) {
+                // remove an existing annotatio
+                this.removeHighlight(id);
+
+                // create a new HL
+                this.addHighlight(cfi, id, type, styles);
+            }
+            return annotationViews;
+        },
+
+        updateAnnotationView: function(id, styles) {
+            var annotationViews = this.annotationHash[id];
+            if (annotationViews) {
+                annotationViews.setStyles(styles);
+            }
+            return annotationViews;
+        },
+
+        setAnnotationViewState: function(id, state, value) {
+            var annotationViews = this.annotationHash[id];
+            if (annotationViews) {
+                annotationViews.setState(state, value);
+            }
+            return annotationViews;
+        },
+
+        setAnnotationViewStateForAll: function(state, value) {
+            var annotationViews = this.annotationHash;
+            _.each(annotationViews, function(annotationView) {
+                annotationView.setState(state, value);
+            });
+        },
+
+        // ------------------------------------------------------------------------------------ //
+        //  "PRIVATE" HELPERS                                                                   //
+        // ------------------------------------------------------------------------------------ //
+
+
+
+        //return an array of all numbers in the content cfi
+        _parseContentCfi: function(cont) {
+            return cont.replace(/\[(.*?)\]/, "").split(/[\/,:]/).map(function(n) {
+                return parseInt(n);
+            }).filter(Boolean);
+        },
+
+        _contentCfiComparator: function(cont1, cont2) {
+            cont1 = this._parseContentCfi(cont1);
+            cont2 = this._parseContentCfi(cont2);
+
+            //compare cont arrays looking for differences
+            for (var i = 0; i < cont1.length; i++) {
+                if (cont1[i] > cont2[i]) {
+                    return 1;
+                } else if (cont1[i] < cont2[i]) {
+                    return -1;
+                }
+            }
+
+            //no differences found, so confirm that cont2 did not have values we didn't check
+            if (cont1.length < cont2.length) {
+                return -1;
+            }
+
+            //cont arrays are identical
+            return 0;
+        },
+
+        // determine if a given Cfi falls between two other cfis.2
+        _cfiIsBetweenTwoCfis: function(cfi, firstVisibleCfi, lastVisibleCfi) {
+            if (!firstVisibleCfi || !lastVisibleCfi) {
+                return null;
+            }
+            var first = this._contentCfiComparator(cfi, firstVisibleCfi);
+            var second = this._contentCfiComparator(cfi, lastVisibleCfi);
+            return first >= 0 && second <= 0;
+        },
+
+        _addHighlightHelper: function(CFI, annotationId, type, styles, highlightedNodes,
+            range, startNode, endNode, offsetTop, offsetLeft) {
+            if (!offsetTop) {
+                offsetTop = this.offsetTopAddition;
+            }
+            if (!offsetLeft) {
+                offsetLeft = this.offsetLeftAddition;
+            }
+
+            var visible;
+            // check if the options specify lastVisibleCfi/firstVisibleCfi. If they don't fall back to displaying the highlights anyway.
+            var visibleCfiRange = this.getVisibleCfiRange();
+            if (visibleCfiRange &&
+                visibleCfiRange.firstVisibleCfi &&
+                visibleCfiRange.firstVisibleCfi.contentCFI &&
+                visibleCfiRange.lastVisibleCfi &&
+                visibleCfiRange.lastVisibleCfi.contentCFI) {
+                visible = this._cfiIsBetweenTwoCfis(CFI, visibleCfiRange.firstVisibleCfi.contentCFI, visibleCfiRange.lastVisibleCfi.contentCFI);
+            } else {
+                visible = true;
+            }
+
+            annotationId = annotationId.toString();
+            if (this.annotationHash[annotationId]) {
+                throw new Error("That annotation id already exists; annotation not added");
+            }
+
+            var highlightGroup = new HighlightGroup(this.context, {
+                CFI: CFI,
+                selectedNodes: highlightedNodes,
+                offsetTopAddition: offsetTop,
+                offsetLeftAddition: offsetLeft,
+                styles: styles,
+                id: annotationId,
+                type: type,
+                scale: this.scale,
+                selectionText: range ? range.toString() : "",
+                visible: visible,
+                rangeInfo: range ? {
+                    startNode: startNode,
+                    startOffset: range.startOffset,
+                    endNode: endNode,
+                    endOffset: range.endOffset
+                } : null
+            });
+
+            this.annotationHash[annotationId] = highlightGroup;
+            this.highlights.push(highlightGroup);
+
+
+            highlightGroup.renderHighlights(this.readerBoundElement);
+        },
+
+        _normalizeRectangle: function(rect) {
+            return {
+                left: rect.left,
+                right: rect.right,
+                top: rect.top,
+                bottom: rect.bottom,
+                width: rect.right - rect.left,
+                height: rect.bottom - rect.top
+            };
+        },
+
+        _getSelectionInfo: function(selectedRange, elementType) {
+            // Generate CFI for selected text
+            var CFI = this._generateRangeCFI(selectedRange);
+            var intervalState = {
+                startElementFound: false,
+                endElementFound: false
+            };
+            var selectedElements = [];
+
+            if (!elementType) {
+                var elementType = ["text"];
+            }
+
+            this._findSelectedElements(
+                selectedRange.commonAncestorContainer,
+                selectedRange.startContainer,
+                selectedRange.endContainer,
+                intervalState,
+                selectedElements,
+                elementType
+            );
+
+            // Return a list of selected text nodes and the CFI
+            return {
+                CFI: CFI,
+                selectedElements: selectedElements
+            };
+        },
+
+        _generateRangeCFI: function(selectedRange) {
+            var startNode = selectedRange.startContainer;
+            var endNode = selectedRange.endContainer;
+            var commonAncestor = selectedRange.commonAncestorContainer;
+            var startOffset;
+            var endOffset;
+            var rangeCFIComponent;
+
+            startOffset = selectedRange.startOffset;
+            endOffset = selectedRange.endOffset;
+
+            rangeCFIComponent = this.epubCFI.generateRangeComponent(
+                startNode,
+                startOffset,
+                endNode,
+                endOffset, ["cfi-marker", "cfi-blacklist", "mo-cfi-highlight"], [], ["MathJax_Message", "MathJax_SVG_Hidden"]
+            );
+            return rangeCFIComponent;
+        },
+
+        _generateCharOffsetCFI: function(selectedRange) {
+            // Character offset
+            var startNode = selectedRange.startContainer;
+            var startOffset = selectedRange.startOffset;
+            var charOffsetCFI;
+
+            if (startNode.nodeType === Node.TEXT_NODE) {
+                charOffsetCFI = this.epubCFI.generateCharacterOffsetCFIComponent(
+                    startNode,
+                    startOffset, ["cfi-marker", "cfi-blacklist", "mo-cfi-highlight"], [], ["MathJax_Message", "MathJax_SVG_Hidden"]
+                );
+            }
+            return charOffsetCFI;
+        },
+
+        // REFACTORING CANDIDATE: Convert this to jquery
+        _findSelectedElements: function(
+            currElement, startElement, endElement, intervalState, selectedElements, elementTypes) {
+
+            if (currElement === startElement) {
+                intervalState.startElementFound = true;
+            }
+
+            if (intervalState.startElementFound === true) {
+                this._addElement(currElement, selectedElements, elementTypes);
+            }
+
+            if (currElement === endElement) {
+                intervalState.endElementFound = true;
+                return;
+            }
+
+            if (currElement.firstChild) {
+                this._findSelectedElements(currElement.firstChild, startElement, endElement,
+                    intervalState, selectedElements, elementTypes);
+                if (intervalState.endElementFound) {
+                    return;
+                }
+            }
+
+            if (currElement.nextSibling) {
+                this._findSelectedElements(currElement.nextSibling, startElement, endElement,
+                    intervalState, selectedElements, elementTypes);
+                if (intervalState.endElementFound) {
+                    return;
+                }
+            }
+        },
+
+        _addElement: function(currElement, selectedElements, elementTypes) {
+            // Check if the node is one of the types
+            _.each(elementTypes, function(elementType) {
+
+                if (elementType === "text") {
+                    if (currElement.nodeType === Node.TEXT_NODE) {
+                        selectedElements.push(currElement);
+                    }
+                } else {
+                    if ($(currElement).is(elementType)) {
+                        selectedElements.push(currElement);
+                    }
+                }
+            });
+        },
+
+        // Rationale: This is a cross-browser method to get the currently selected text
+        _getCurrentSelectionRange: function() {
+            var currentSelection;
+            var iframeDocument = this.context.document;
+            if (iframeDocument.getSelection) {
+
+                currentSelection = iframeDocument.getSelection();
+                if (!currentSelection || currentSelection.rangeCount === 0) {
+                    return undefined;
+                }
+
+                var range = currentSelection.getRangeAt(0);
+
+                if (range.toString() !== '') {
+                    return range;
+                } else {
+                    return undefined;
+                }
+            } else if (iframeDocument.selection) {
+                return iframeDocument.selection.createRange();
+            } else {
+                return undefined;
+            }
+        },
+
+        _getPaginationLeftOffset: function() {
+        
+            var $htmlElement = $(this.context.document.documentElement);
+            if (!$htmlElement || !$htmlElement.length) {
+                // if there is no html element, we might be dealing with a fxl with a svg spine item
+                return 0;
+            }
+
+            var offsetLeftPixels = $htmlElement.css(this.context.paginationInfo().isVerticalWritingMode ? "top" : (this.context.isRTL ? "right" : "left"));
+            var offsetLeft = parseInt(offsetLeftPixels.replace("px", ""));
+            if (isNaN(offsetLeft)) {
+                //for fixed layouts, $htmlElement.css("left") has no numerical value
+                offsetLeft = 0;
+            }
+            
+            if (this.context.isRTL && !this.context.paginationInfo().isVerticalWritingMode) return -offsetLeft;
+             
+            return offsetLeft;
+        },
+
+        _injectAnnotationCSS: function(annotationCSSUrl) {
+            var doc = this.context.document;
+            setTimeout(function(){
+                var $contentDocHead = $("head", doc);
+                $contentDocHead.append(
+                    $("<link/>", {
+                        rel: "stylesheet",
+                        href: annotationCSSUrl,
+                        type: "text/css"
+                    })
+                );
+            }, 0);
+        }
+    });
+
+    return HighlightsController;
+});
+
+//  Created by Boris Schneiderman.
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  
+//  Redistribution and use in source and binary forms, with or without modification, 
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this 
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice, 
+//  this list of conditions and the following disclaimer in the documentation and/or 
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be 
+//  used to endorse or promote products derived from this software without specific 
+//  prior written permission.
+//  
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
+
+define('readium_shared_js/models/bookmark_data',[],function() {
+/**
+ * @class Models.BookmarkData
+ */
+var BookmarkData = function(idref, contentCFI) {
+
+    var self = this;
+
+    /**
+     * spine item idref
+     * @property idref
+     * @type {string}
+     */
+    this.idref = idref;
+
+    /**
+     * cfi of the first visible element
+     * @property contentCFI
+     * @type {string}
+     */
+    this.contentCFI = contentCFI;
+
+    /**
+     * serialize to string
+     * @return JSON string representation
+     */
+    this.toString = function(){
+        return JSON.stringify(self);
+    }
+
+};
+
+/**
+ * Deserialize from string
+ * @param str
+ * @returns {ReadiumSDK.Models.BookmarkData}
+ */
+BookmarkData.fromString = function(str) {
+    var obj = JSON.parse(str);
+    return new BookmarkData(obj.idref,obj.contentCFI);
+};
+return BookmarkData;
+});
+//  Created by Dmitry Markushevich (dmitrym@evidentpoint.com)
+//
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//
+//  Redistribution and use in source and binary forms, with or without modification,
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice,
+//  this list of conditions and the following disclaimer in the documentation and/or
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be
+//  used to endorse or promote products derived from this software without specific
+//  prior written permission.
+//
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
+
+define('readium_plugin_highlights/manager',['jquery', 'underscore', 'eventEmitter', './controller', './helpers', 'readium_shared_js/models/bookmark_data'], function($, _, EventEmitter, HighlightsController, HighlightHelpers, BookmarkData) {
+
+var defaultContext = {};
+
+//determine if browser is IE9 or IE10
+var div = document.createElement("div");
+div.innerHTML = "<!--[if IE 9]><i></i><![endif]-->";
+defaultContext.isIe9 = (div.getElementsByTagName("i").length == 1);
+// IE10 introduced a prefixed version of PointerEvent, but not unprefixed.
+defaultContext.isIe10 = window.MSPointerEvent && !window.PointerEvent;
+
+/**
+ *
+ * @param proxyObj
+ * @param options
+ * @constructor
+ */
+var HighlightsManager = function (proxyObj, options) {
+
+    var self = this;
+
+    // live annotations contains references to the annotation _module_ for visible spines
+    var liveAnnotations = {};
+    var spines = {};
+    var proxy = proxyObj;
+    var annotationCSSUrl = options.annotationCSSUrl;
+
+    if (!annotationCSSUrl) {
+        console.warn("WARNING! Annotations CSS not supplied. Highlighting might not work.");
+    }
+
+    _.extend(this, new EventEmitter());
+
+    // this.on("all", function() {
+    // });
+    //TODO: EventEmitter3 does not support "all" or "*" (catch-all event sink)
+    //https://github.com/primus/eventemitter3/blob/master/index.js#L61
+    //...so instead we patch trigger() and emit() (which are synonymous, see Bootstrapper.js EventEmitter.prototype.trigger = EventEmitter.prototype.emit;)
+
+    var originalEmit = self['emit'];
+
+    var triggerEmitPatch = function() {
+        var args = Array.prototype.slice.call(arguments);
+        // mangle annotationClicked event. What really needs to happen is, the annotation_module needs to return a
+        // bare Cfi, and this class should append the idref.
+        var mangleEvent = function(annotationEvent){
+            if (args.length && args[0] === annotationEvent) {
+                for (var spineIndex in liveAnnotations)
+                {
+                    var contentDocumentFrame = args[5];
+                    var jQueryEvent = args[4];
+                    if (typeof jQueryEvent.clientX === 'undefined') {
+                        jQueryEvent.clientX = jQueryEvent.pageX;
+                        jQueryEvent.clientY = jQueryEvent.pageY;
+                    }
+
+                    var annotationId = args[3];
+                    var partialCfi = args[2];
+                    var type = args[1];
+                    if (liveAnnotations[spineIndex].getHighlight(annotationId)) {
+                        var idref = spines[spineIndex].idref;
+                        args = [annotationEvent, type, idref, partialCfi, annotationId, jQueryEvent, contentDocumentFrame];
+                    }
+                }
+            }
+        }
+        mangleEvent('annotationClicked');
+        mangleEvent('annotationTouched');
+        mangleEvent('annotationRightClicked');
+        mangleEvent('annotationHoverIn');
+        mangleEvent('annotationHoverOut');
+
+        originalEmit.apply(this, args);
+        originalEmit.apply(proxy, args);
+    };
+
+    this.trigger = triggerEmitPatch;
+    this.emit = triggerEmitPatch;
+
+    this.attachAnnotations = function($iframe, spineItem, loadedSpineItems) {
+        var iframe = $iframe[0];
+
+        var context = _.extend({
+            document: iframe.contentDocument,
+            window: iframe.contentWindow,
+            iframe: iframe,
+            manager: self,
+            cssUrl: annotationCSSUrl,
+            isFixedLayout: spineItem.isFixedLayout(),
+            isRTL: spineItem.spine.isRightToLeft(),
+            paginationInfo: function() { return spineItem.paginationInfo; }
+            
+        }, defaultContext);
+
+        liveAnnotations[spineItem.index] = new HighlightsController(context, {getVisibleCfiRangeFn: options.getVisibleCfiRangeFn});
+        spines[spineItem.index] = spineItem;
+
+        // check to see which spine indicies can be culled depending on the currently loaded spine items
+        for(var spineIndex in liveAnnotations) {
+            if (liveAnnotations.hasOwnProperty(spineIndex) && !_.contains(loadedSpineItems, spines[spineIndex])) {
+                delete liveAnnotations[spineIndex];
+            }
+        }
+    };
+
+    this.getCurrentSelectionCfi = function() {
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            var partialCfi = annotationsForView.getCurrentSelectionCFI();
+            if (partialCfi) {
+                return {"idref":spines[spine].idref, "cfi":partialCfi};
+            }
+        }
+        return undefined;
+    };
+
+    this.addSelectionHighlight = function(id, type, clearSelection, styles) {
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            if (annotationsForView.getCurrentSelectionCFI()) {
+                var annotation = annotationsForView.addSelectionHighlight(
+                    id, type, clearSelection, styles);
+                return new BookmarkData(spines[spine].idref, annotation.CFI);
+            }
+        }
+        return undefined;
+    };
+
+    this.addHighlight = function(spineIdRef, partialCfi, id, type, styles) {
+        for(var spine in liveAnnotations) {
+            if (spines[spine].idref === spineIdRef) {
+                var annotationsForView = liveAnnotations[spine];
+                var annotation = annotationsForView.addHighlight(partialCfi, id, type, styles);
+                if (annotation) {
+                    return new BookmarkData(spineIdRef, annotation.CFI);
+                }
+            }
+        }
+        return undefined;
+    };
+
+    this.removeHighlight = function(id) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result  = annotationsForView.removeHighlight(id);
+        }
+        return result;
+    };
+
+    this.removeHighlightsByType = function(type) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result  = annotationsForView.removeHighlightsByType(type);
+        }
+        return result;
+    };
+
+    this.getHighlight = function(id) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result  = annotationsForView.getHighlight(id);
+            if (result !== undefined)
+				return result;
+        }
+        return result;
+    };
+
+    this.updateAnnotation = function(id, type, styles) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result = annotationsForView.updateAnnotation(id, type, styles);
+            if(result) {
+                break;
+            }
+        }
+        return result;
+    };
+
+    this.replaceAnnotation = function(id, cfi, type, styles) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result = annotationsForView.replaceAnnotation(id, cfi, type, styles);
+            if(result) {
+                break;
+            }
+        }
+        return result;
+    };
+
+    // redraw gets called on pagination change, so for progressive rendering we may have to add annotations that were previously not visible.
+    this.redrawAnnotations = function(){
+        for(var spine in liveAnnotations) {
+            liveAnnotations[spine].redraw();
+        }
+    };
+
+    this.updateAnnotationView = function(id, styles) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result = annotationsForView.updateAnnotationView(id,styles);
+            if(result){
+                break;
+            }
+        }
+        return result;
+    };
+
+    this.setAnnotationViewState = function(id, state, value) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result = annotationsForView.setAnnotationViewState(id, state, value);
+            if(result){
+                break;
+            }
+        }
+        return result;
+    };
+
+    this.setAnnotationViewStateForAll = function(state, value) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result = annotationsForView.setAnnotationViewStateForAll(state, value);
+            if(result){
+                break;
+            }
+        }
+        return result;
+    };
+
+    this.cfiIsBetweenTwoCfis = function (cfi, lowBoundaryCfi, highBoundaryCfi) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result = annotationsForView.cfiIsBetweenTwoCfis(cfi, lowBoundaryCfi, highBoundaryCfi);
+            if(result){
+                break;
+            }
+        }
+        return result;
+    };
+
+    this.contentCfiComparator = function(contCfi1, contCfi2) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result = annotationsForView.contentCfiComparator(contCfi1, contCfi2);
+            if(result){
+                break;
+            }
+        }
+        return result;
+    };
+
+    function getElementFromViewElement(element) {
+        //TODO JC: yuck, we get two different collection structures from non fixed and fixed views.. must refactor..
+        return element.element ? element.element : element;
+    }
+
+    this.getAnnotationMidpoints = function($elementSpineItemCollection){
+        var output = [];
+
+        _.each($elementSpineItemCollection, function (item){
+            var annotations = [];
+
+            var lastId = null;
+
+            var baseOffset = {top: 0, left: 0};
+            if (item.elements && item.elements.length > 0) {
+                var firstElement = getElementFromViewElement(item.elements[0]);
+                var offsetElement = firstElement.ownerDocument.defaultView.frameElement.parentElement;
+                baseOffset = {top: offsetElement.offsetTop, left: offsetElement.offsetLeft};
+            }
+
+            _.each(item.elements, function(element){
+
+                var $element = $(getElementFromViewElement(element));
+                var elementId = $element.attr('data-id');
+
+                if(!elementId){
+                    console.warn('AnnotationsManager:getAnnotationMidpoints: Got an annotation element with no ID??')
+                    return;
+                }
+                if (elementId === lastId) return;
+                lastId = elementId;
+
+                //calculate position offsets with scaling
+                var scale = 1;
+                //figure out a better way to get the html parent from an element..
+                var $html = $element.parent();
+                //get transformation scale from content document
+                var matrix = HighlightHelpers.getMatrix($html);
+                if (matrix) {
+                    scale = HighlightHelpers.getScaleFromMatrix(matrix);
+                }
+                var offset = $element.offset();
+                offset.top += baseOffset.top + ($element.height() / 2);
+                offset.left += baseOffset.left;
+                if(scale !== 1){
+                    offset = {top: (offset.top * scale)*(1/scale), left: offset.left };
+                }
+                var $highlighted = {id: elementId, position: offset, lineHeight: parseInt($element.css('line-height'),10)};
+                annotations.push($highlighted)
+            });
+
+            output.push({annotations:annotations, spineItem: item.spineItem});
+        });
+
+        return output;
+    };
+
+    this.getAnnotationsElementSelector = function () {
+        return 'div.rd-highlight, div.rd-highlight-border';
+    };
+
+};
+
+return HighlightsManager;
+});
+
+define('readium_plugin_highlights/main',['readium_js_plugins', 'readium_shared_js/globals', './manager'], function (Plugins, Globals, HighlightsManager) {
+    var config = {};
+
+    Plugins.register("highlights", function (api) {
+        var reader = api.reader, _highlightsManager, _initialized = false, _initializedLate = false;
+
+        var self = this;
+
+        function isInitialized() {
+            if (!_initialized) {
+                api.plugin.warn('Not initialized!')
+            }
+            return _initialized;
+        }
+
+        this.initialize = function (options) {
+            options = options || {};
+
+            setTimeout(isInitialized, 1000);
+
+            if (_initialized) {
+                api.plugin.warn('Already initialized!');
+                return;
+            }
+
+            if (reader.getFirstVisibleCfi && reader.getLastVisibleCfi && !options.getVisibleCfiRangeFn) {
+                options.getVisibleCfiRangeFn = function () {
+                    return {firstVisibleCfi: reader.getFirstVisibleCfi(), lastVisibleCfi: reader.getLastVisibleCfi()};
+                };
+            }
+
+            _highlightsManager = new HighlightsManager(self, options);
+
+            if (_initializedLate) {
+                api.plugin.warn('Unable to attach to currently loaded content document.\n' +
+                'Initialize the plugin before loading a content document.');
+            }
+
+            _initialized = true;
+        };
+
+        this.getHighlightsManager = function() {
+            return _highlightsManager;
+        };
+
+        /**
+         * Returns current selection partial Cfi, useful for workflows that need to check whether the user has selected something.
+         *
+         * @returns {object | undefined} partial cfi object or undefined if nothing is selected
+         */
+        this.getCurrentSelectionCfi = function() {
+            return _highlightsManager.getCurrentSelectionCfi();
+        };
+
+        /**
+         * Creates a higlight based on given parameters
+         *
+         * @param {string} spineIdRef		Spine idref that defines the partial Cfi
+         * @param {string} cfi				Partial CFI (withouth the indirection step) relative to the spine index
+         * @param {string} id				Id of the highlight. must be unique
+         * @param {string} type 			Name of the class selector rule in annotations stylesheet.
+         * 									The style of the class will be applied to the created hightlight
+         * @param {object} styles			Object representing CSS properties to be applied to the highlight.
+         * 									e.g., to apply background color pass in: {'background-color': 'green'}
+         *
+         * @returns {object | undefined} partial cfi object of the created highlight
+         */
+        this.addHighlight = function(spineIdRef, cfi, id, type, styles) {
+            return _highlightsManager.addHighlight(spineIdRef, cfi, id, type, styles);
+        };
+
+        /**
+         * Creates a higlight based on the current selection
+         *
+         * @param {string} id id of the highlight. must be unique
+         * @param {string} type - name of the class selector rule in annotations.css file.
+         * @param {boolean} clearSelection - set to true to clear the current selection
+         * after it is highlighted
+         * The style of the class will be applied to the created hightlight
+         * @param {object} styles - object representing CSS properties to be applied to the highlight.
+         * e.g., to apply background color pass this {'background-color': 'green'}
+         *
+         * @returns {object | undefined} partial cfi object of the created highlight
+         */
+        this.addSelectionHighlight =  function(id, type, styles, clearSelection) {
+            return _highlightsManager.addSelectionHighlight(id, type, styles, clearSelection);
+        };
+
+        /**
+         * Removes a given highlight
+         *
+         * @param {string} id  The id associated with the highlight.
+         *
+         * @returns {undefined}
+         *
+         */
+        this.removeHighlight = function(id) {
+            return _highlightsManager.removeHighlight(id);
+        };
+
+        /**
+         * Removes highlights of a given type
+         *
+         * @param {string} type type of the highlight.
+         *
+         * @returns {undefined}
+         *
+         */
+        this.removeHighlightsByType = function(type) {
+            return _highlightsManager.removeHighlightsByType(type);
+        };
+
+        /**
+         * Client Rectangle
+         * @typedef {object} ReadiumSDK.Views.ReaderView.ClientRect
+         * @property {number} top
+         * @property {number} left
+         * @property {number} height
+         * @property {number} width
+         */
+
+        /**
+         * Highlight Info
+         *
+         * @typedef {object} ReadiumSDK.Views.ReaderView.HighlightInfo
+         * @property {string} id - unique id of the highlight
+         * @property {string} type - highlight type (css class)
+         * @property {string} CFI - partial CFI range of the highlight
+         * @property {ReadiumSDK.Views.ReaderView.ClientRect[]} rectangleArray - array of rectangles consituting the highlight
+         * @property {string} selectedText - concatenation of highlight nodes' text
+         */
+
+        /**
+         * Gets given highlight
+         *
+         * @param {string} id id of the highlight.
+         *
+         * @returns {ReadiumSDK.Views.ReaderView.HighlightInfo} Object describing the highlight
+         */
+        this.getHighlight = function(id) {
+            return _highlightsManager.getHighlight(id);
+        };
+
+        /**
+         * Update annotation by the id, reapplies CSS styles to the existing annotaion
+         *
+         * @param {string} id id of the annotation.
+         * @property {string} type - annotation type (name of css class)
+         * @param {object} styles - object representing CSS properties to be applied to the annotation.
+         * e.g., to apply background color pass this {'background-color': 'green'}.
+         */
+        this.updateAnnotation = function(id, type, styles) {
+            _highlightsManager.updateAnnotation(id, type, styles);
+        };
+
+        /**
+         * Replace annotation with this id. Current annotation is removed and a new one is created.
+         *
+         * @param {string} id id of the annotation.
+         * @property {string} cfi - partial CFI range of the annotation
+         * @property {string} type - annotation type (name of css class)
+         * @param {object} styles - object representing CSS properties to be applied to the annotation.
+         * e.g., to apply background color pass this {'background-color': 'green'}.
+         */
+        this.replaceAnnotation = function(id, cfi, type, styles) {
+            _highlightsManager.replaceAnnotation(id, cfi, type, styles);
+        };
+
+
+        /**
+         * Redraws all annotations
+         */
+        this.redrawAnnotations = function() {
+            _highlightsManager.redrawAnnotations();
+        };
+
+        /**
+         * Updates an annotation to use the supplied styles
+         *
+         * @param {string} id
+         * @param {string} styles
+         */
+        this.updateAnnotationView = function(id, styles) {
+            _highlightsManager.updateAnnotationView(id, styles);
+        };
+
+        /**
+         * Updates an annotation view state, such as whether its hovered in or not.
+         * @param {string} id       The id associated with the highlight.
+         * @param {string} state    The state type to be updated
+         * @param {string} value    The state value to apply to the highlight
+         * @returns {undefined}
+         */
+        this.setAnnotationViewState = function(id, state, value) {
+            return _highlightsManager.setAnnotationViewState(id, state, value);
+        };
+
+        /**
+         * Updates an annotation view state for all views.
+         * @param {string} state    The state type to be updated
+         * @param {string} value    The state value to apply to the highlights
+         * @returns {undefined}
+         */
+        this.setAnnotationViewStateForAll = function (state, value) {
+            return _highlightsManager.setAnnotationViewStateForAll(state, value);
+        };
+
+        /**
+         * Gets a list of the visible midpoint positions of all annotations
+         *
+         * @returns {HTMLElement[]}
+         */
+        this.getVisibleAnnotationMidpoints = function () {
+            if (reader.getVisibleElements) {
+                var $visibleElements = reader.getVisibleElements(_highlightsManager.getAnnotationsElementSelector(), true);
+
+                var elementMidpoints = _highlightsManager.getAnnotationMidpoints($visibleElements);
+                return elementMidpoints || [];
+            } else {
+                // FIXME: Expose the getVisibleElements call from the reader's internal views.
+                console.warn('getAnnotationMidpoints won\'t work with this version of Readium');
+            }
+        };
+
+        reader.on(Globals.Events.CONTENT_DOCUMENT_LOADED, function ($iframe, spineItem) {
+            if (_initialized) {
+                _highlightsManager.attachAnnotations($iframe, spineItem, reader.getLoadedSpineItems());
+            } else {
+                _initializedLate = true;
+            }
+        });
+
+        ////FIXME: JCCR mj8: this is sometimes faulty, consider removal
+        //// automatically redraw annotations.
+        //reader.on(ReadiumSDK.Events.PAGINATION_CHANGED, _.debounce(function () {
+        //    self.redrawAnnotations();
+        //}, 10, true));
+
+
+
+    });
+
+    return config;
+});
+
+define('readium_plugin_highlights', ['readium_plugin_highlights/main'], function (main) { return main; });
+
+/*
+This code is required to IE for console shim
+*/
+(function(){
+    "use strict";
+    if (!console["debug"]) console.debug = console.log;
+    if (!console["info"]) console.info = console.log;
+    if (!console["warn"]) console.warn = console.log;
+    if (!console["error"]) console.error = console.log;
+})();
+define("console_shim", function(){});
+
+(function (exports) {'use strict';
+  //shared pointer
+  var i;
+  //shortcuts
+  var defineProperty = Object.defineProperty, is = function(a,b) { return isNaN(a)? isNaN(b): a === b; };
+
+
+  //Polyfill global objects
+  if (typeof WeakMap == 'undefined') {
+    exports.WeakMap = createCollection({
+      // WeakMap#delete(key:void*):boolean
+      'delete': sharedDelete,
+      // WeakMap#clear():
+      clear: sharedClear,
+      // WeakMap#get(key:void*):void*
+      get: sharedGet,
+      // WeakMap#has(key:void*):boolean
+      has: mapHas,
+      // WeakMap#set(key:void*, value:void*):void
+      set: sharedSet
+    }, true);
+  }
+
+  if (typeof Map == 'undefined' || typeof ((new Map).values) !== 'function' || !(new Map).values().next) {
+    exports.Map = createCollection({
+      // WeakMap#delete(key:void*):boolean
+      'delete': sharedDelete,
+      //:was Map#get(key:void*[, d3fault:void*]):void*
+      // Map#has(key:void*):boolean
+      has: mapHas,
+      // Map#get(key:void*):boolean
+      get: sharedGet,
+      // Map#set(key:void*, value:void*):void
+      set: sharedSet,
+      // Map#keys(void):Iterator
+      keys: sharedKeys,
+      // Map#values(void):Iterator
+      values: sharedValues,
+      // Map#entries(void):Iterator
+      entries: mapEntries,
+      // Map#forEach(callback:Function, context:void*):void ==> callback.call(context, key, value, mapObject) === not in specs`
+      forEach: sharedForEach,
+      // Map#clear():
+      clear: sharedClear
+    });
+  }
+
+  if (typeof Set == 'undefined' || typeof ((new Set).values) !== 'function' || !(new Set).values().next) {
+    exports.Set = createCollection({
+      // Set#has(value:void*):boolean
+      has: setHas,
+      // Set#add(value:void*):boolean
+      add: sharedAdd,
+      // Set#delete(key:void*):boolean
+      'delete': sharedDelete,
+      // Set#clear():
+      clear: sharedClear,
+      // Set#keys(void):Iterator
+      keys: sharedValues, // specs actually say "the same function object as the initial value of the values property"
+      // Set#values(void):Iterator
+      values: sharedValues,
+      // Set#entries(void):Iterator
+      entries: setEntries,
+      // Set#forEach(callback:Function, context:void*):void ==> callback.call(context, value, index) === not in specs
+      forEach: sharedForEach
+    });
+  }
+
+  if (typeof WeakSet == 'undefined') {
+    exports.WeakSet = createCollection({
+      // WeakSet#delete(key:void*):boolean
+      'delete': sharedDelete,
+      // WeakSet#add(value:void*):boolean
+      add: sharedAdd,
+      // WeakSet#clear():
+      clear: sharedClear,
+      // WeakSet#has(value:void*):boolean
+      has: setHas
+    }, true);
+  }
+
+
+  /**
+   * ES6 collection constructor
+   * @return {Function} a collection class
+   */
+  function createCollection(proto, objectOnly){
+    function Collection(a){
+      if (!this || this.constructor !== Collection) return new Collection(a);
+      this._keys = [];
+      this._values = [];
+      this._itp = []; // iteration pointers
+      this.objectOnly = objectOnly;
+
+      //parse initial iterable argument passed
+      if (a) init.call(this, a);
+    }
+
+    //define size for non object-only collections
+    if (!objectOnly) {
+      defineProperty(proto, 'size', {
+        get: sharedSize
+      });
+    }
+
+    //set prototype
+    proto.constructor = Collection;
+    Collection.prototype = proto;
+
+    return Collection;
+  }
+
+
+  /** parse initial iterable argument passed */
+  function init(a){
+    var i;
+    //init Set argument, like `[1,2,3,{}]`
+    if (this.add)
+      a.forEach(this.add, this);
+    //init Map argument like `[[1,2], [{}, 4]]`
+    else
+      a.forEach(function(a){this.set(a[0],a[1])}, this);
+  }
+
+
+  /** delete */
+  function sharedDelete(key) {
+    if (this.has(key)) {
+      this._keys.splice(i, 1);
+      this._values.splice(i, 1);
+      // update iteration pointers
+      this._itp.forEach(function(p) { if (i < p[0]) p[0]--; });
+    }
+    // Aurora here does it while Canary doesn't
+    return -1 < i;
+  };
+
+  function sharedGet(key) {
+    return this.has(key) ? this._values[i] : undefined;
+  }
+
+  function has(list, key) {
+    if (this.objectOnly && key !== Object(key))
+      throw new TypeError("Invalid value used as weak collection key");
+    //NaN or 0 passed
+    if (key != key || key === 0) for (i = list.length; i-- && !is(list[i], key);){}
+    else i = list.indexOf(key);
+    return -1 < i;
+  }
+
+  function setHas(value) {
+    return has.call(this, this._values, value);
+  }
+
+  function mapHas(value) {
+    return has.call(this, this._keys, value);
+  }
+
+  /** @chainable */
+  function sharedSet(key, value) {
+    this.has(key) ?
+      this._values[i] = value
+      :
+      this._values[this._keys.push(key) - 1] = value
+    ;
+    return this;
+  }
+
+  /** @chainable */
+  function sharedAdd(value) {
+    if (!this.has(value)) this._values.push(value);
+    return this;
+  }
+
+  function sharedClear() {
+    (this._keys || 0).length =
+    this._values.length = 0;
+  }
+
+  /** keys, values, and iterate related methods */
+  function sharedKeys() {
+    return sharedIterator(this._itp, this._keys);
+  }
+
+  function sharedValues() {
+    return sharedIterator(this._itp, this._values);
+  }
+
+  function mapEntries() {
+    return sharedIterator(this._itp, this._keys, this._values);
+  }
+
+  function setEntries() {
+    return sharedIterator(this._itp, this._values, this._values);
+  }
+
+  function sharedIterator(itp, array, array2) {
+    var p = [0], done = false;
+    itp.push(p);
+    return {
+      next: function() {
+        var v, k = p[0];
+        if (!done && k < array.length) {
+          v = array2 ? [array[k], array2[k]]: array[k];
+          p[0]++;
+        } else {
+          done = true;
+          itp.splice(itp.indexOf(p), 1);
+        }
+        return { done: done, value: v };
+      }
+    };
+  }
+
+  function sharedSize() {
+    return this._values.length;
+  }
+
+  function sharedForEach(callback, context) {
+    var it = this.entries();
+    for (;;) {
+      var r = it.next();
+      if (r.done) break;
+      callback.call(context, r.value[1], r.value[0], this);
+    }
+  }
+
+})(typeof exports != 'undefined' && typeof global != 'undefined' ? global : window );
+
+define("es6-collections", function(){});
 
 /*! https://mths.be/punycode v1.4.0 by @mathias */
 ;(function(root) {
@@ -16150,1914 +20910,6 @@ if ('undefined' !== typeof module) {
   return URI;
 }));
 
-//     Underscore.js 1.8.3
-//     http://underscorejs.org
-//     (c) 2009-2015 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
-//     Underscore may be freely distributed under the MIT license.
-
-(function() {
-
-  // Baseline setup
-  // --------------
-
-  // Establish the root object, `window` in the browser, or `exports` on the server.
-  var root = this;
-
-  // Save the previous value of the `_` variable.
-  var previousUnderscore = root._;
-
-  // Save bytes in the minified (but not gzipped) version:
-  var ArrayProto = Array.prototype, ObjProto = Object.prototype, FuncProto = Function.prototype;
-
-  // Create quick reference variables for speed access to core prototypes.
-  var
-    push             = ArrayProto.push,
-    slice            = ArrayProto.slice,
-    toString         = ObjProto.toString,
-    hasOwnProperty   = ObjProto.hasOwnProperty;
-
-  // All **ECMAScript 5** native function implementations that we hope to use
-  // are declared here.
-  var
-    nativeIsArray      = Array.isArray,
-    nativeKeys         = Object.keys,
-    nativeBind         = FuncProto.bind,
-    nativeCreate       = Object.create;
-
-  // Naked function reference for surrogate-prototype-swapping.
-  var Ctor = function(){};
-
-  // Create a safe reference to the Underscore object for use below.
-  var _ = function(obj) {
-    if (obj instanceof _) return obj;
-    if (!(this instanceof _)) return new _(obj);
-    this._wrapped = obj;
-  };
-
-  // Export the Underscore object for **Node.js**, with
-  // backwards-compatibility for the old `require()` API. If we're in
-  // the browser, add `_` as a global object.
-  if (typeof exports !== 'undefined') {
-    if (typeof module !== 'undefined' && module.exports) {
-      exports = module.exports = _;
-    }
-    exports._ = _;
-  } else {
-    root._ = _;
-  }
-
-  // Current version.
-  _.VERSION = '1.8.3';
-
-  // Internal function that returns an efficient (for current engines) version
-  // of the passed-in callback, to be repeatedly applied in other Underscore
-  // functions.
-  var optimizeCb = function(func, context, argCount) {
-    if (context === void 0) return func;
-    switch (argCount == null ? 3 : argCount) {
-      case 1: return function(value) {
-        return func.call(context, value);
-      };
-      case 2: return function(value, other) {
-        return func.call(context, value, other);
-      };
-      case 3: return function(value, index, collection) {
-        return func.call(context, value, index, collection);
-      };
-      case 4: return function(accumulator, value, index, collection) {
-        return func.call(context, accumulator, value, index, collection);
-      };
-    }
-    return function() {
-      return func.apply(context, arguments);
-    };
-  };
-
-  // A mostly-internal function to generate callbacks that can be applied
-  // to each element in a collection, returning the desired result — either
-  // identity, an arbitrary callback, a property matcher, or a property accessor.
-  var cb = function(value, context, argCount) {
-    if (value == null) return _.identity;
-    if (_.isFunction(value)) return optimizeCb(value, context, argCount);
-    if (_.isObject(value)) return _.matcher(value);
-    return _.property(value);
-  };
-  _.iteratee = function(value, context) {
-    return cb(value, context, Infinity);
-  };
-
-  // An internal function for creating assigner functions.
-  var createAssigner = function(keysFunc, undefinedOnly) {
-    return function(obj) {
-      var length = arguments.length;
-      if (length < 2 || obj == null) return obj;
-      for (var index = 1; index < length; index++) {
-        var source = arguments[index],
-            keys = keysFunc(source),
-            l = keys.length;
-        for (var i = 0; i < l; i++) {
-          var key = keys[i];
-          if (!undefinedOnly || obj[key] === void 0) obj[key] = source[key];
-        }
-      }
-      return obj;
-    };
-  };
-
-  // An internal function for creating a new object that inherits from another.
-  var baseCreate = function(prototype) {
-    if (!_.isObject(prototype)) return {};
-    if (nativeCreate) return nativeCreate(prototype);
-    Ctor.prototype = prototype;
-    var result = new Ctor;
-    Ctor.prototype = null;
-    return result;
-  };
-
-  var property = function(key) {
-    return function(obj) {
-      return obj == null ? void 0 : obj[key];
-    };
-  };
-
-  // Helper for collection methods to determine whether a collection
-  // should be iterated as an array or as an object
-  // Related: http://people.mozilla.org/~jorendorff/es6-draft.html#sec-tolength
-  // Avoids a very nasty iOS 8 JIT bug on ARM-64. #2094
-  var MAX_ARRAY_INDEX = Math.pow(2, 53) - 1;
-  var getLength = property('length');
-  var isArrayLike = function(collection) {
-    var length = getLength(collection);
-    return typeof length == 'number' && length >= 0 && length <= MAX_ARRAY_INDEX;
-  };
-
-  // Collection Functions
-  // --------------------
-
-  // The cornerstone, an `each` implementation, aka `forEach`.
-  // Handles raw objects in addition to array-likes. Treats all
-  // sparse array-likes as if they were dense.
-  _.each = _.forEach = function(obj, iteratee, context) {
-    iteratee = optimizeCb(iteratee, context);
-    var i, length;
-    if (isArrayLike(obj)) {
-      for (i = 0, length = obj.length; i < length; i++) {
-        iteratee(obj[i], i, obj);
-      }
-    } else {
-      var keys = _.keys(obj);
-      for (i = 0, length = keys.length; i < length; i++) {
-        iteratee(obj[keys[i]], keys[i], obj);
-      }
-    }
-    return obj;
-  };
-
-  // Return the results of applying the iteratee to each element.
-  _.map = _.collect = function(obj, iteratee, context) {
-    iteratee = cb(iteratee, context);
-    var keys = !isArrayLike(obj) && _.keys(obj),
-        length = (keys || obj).length,
-        results = Array(length);
-    for (var index = 0; index < length; index++) {
-      var currentKey = keys ? keys[index] : index;
-      results[index] = iteratee(obj[currentKey], currentKey, obj);
-    }
-    return results;
-  };
-
-  // Create a reducing function iterating left or right.
-  function createReduce(dir) {
-    // Optimized iterator function as using arguments.length
-    // in the main function will deoptimize the, see #1991.
-    function iterator(obj, iteratee, memo, keys, index, length) {
-      for (; index >= 0 && index < length; index += dir) {
-        var currentKey = keys ? keys[index] : index;
-        memo = iteratee(memo, obj[currentKey], currentKey, obj);
-      }
-      return memo;
-    }
-
-    return function(obj, iteratee, memo, context) {
-      iteratee = optimizeCb(iteratee, context, 4);
-      var keys = !isArrayLike(obj) && _.keys(obj),
-          length = (keys || obj).length,
-          index = dir > 0 ? 0 : length - 1;
-      // Determine the initial value if none is provided.
-      if (arguments.length < 3) {
-        memo = obj[keys ? keys[index] : index];
-        index += dir;
-      }
-      return iterator(obj, iteratee, memo, keys, index, length);
-    };
-  }
-
-  // **Reduce** builds up a single result from a list of values, aka `inject`,
-  // or `foldl`.
-  _.reduce = _.foldl = _.inject = createReduce(1);
-
-  // The right-associative version of reduce, also known as `foldr`.
-  _.reduceRight = _.foldr = createReduce(-1);
-
-  // Return the first value which passes a truth test. Aliased as `detect`.
-  _.find = _.detect = function(obj, predicate, context) {
-    var key;
-    if (isArrayLike(obj)) {
-      key = _.findIndex(obj, predicate, context);
-    } else {
-      key = _.findKey(obj, predicate, context);
-    }
-    if (key !== void 0 && key !== -1) return obj[key];
-  };
-
-  // Return all the elements that pass a truth test.
-  // Aliased as `select`.
-  _.filter = _.select = function(obj, predicate, context) {
-    var results = [];
-    predicate = cb(predicate, context);
-    _.each(obj, function(value, index, list) {
-      if (predicate(value, index, list)) results.push(value);
-    });
-    return results;
-  };
-
-  // Return all the elements for which a truth test fails.
-  _.reject = function(obj, predicate, context) {
-    return _.filter(obj, _.negate(cb(predicate)), context);
-  };
-
-  // Determine whether all of the elements match a truth test.
-  // Aliased as `all`.
-  _.every = _.all = function(obj, predicate, context) {
-    predicate = cb(predicate, context);
-    var keys = !isArrayLike(obj) && _.keys(obj),
-        length = (keys || obj).length;
-    for (var index = 0; index < length; index++) {
-      var currentKey = keys ? keys[index] : index;
-      if (!predicate(obj[currentKey], currentKey, obj)) return false;
-    }
-    return true;
-  };
-
-  // Determine if at least one element in the object matches a truth test.
-  // Aliased as `any`.
-  _.some = _.any = function(obj, predicate, context) {
-    predicate = cb(predicate, context);
-    var keys = !isArrayLike(obj) && _.keys(obj),
-        length = (keys || obj).length;
-    for (var index = 0; index < length; index++) {
-      var currentKey = keys ? keys[index] : index;
-      if (predicate(obj[currentKey], currentKey, obj)) return true;
-    }
-    return false;
-  };
-
-  // Determine if the array or object contains a given item (using `===`).
-  // Aliased as `includes` and `include`.
-  _.contains = _.includes = _.include = function(obj, item, fromIndex, guard) {
-    if (!isArrayLike(obj)) obj = _.values(obj);
-    if (typeof fromIndex != 'number' || guard) fromIndex = 0;
-    return _.indexOf(obj, item, fromIndex) >= 0;
-  };
-
-  // Invoke a method (with arguments) on every item in a collection.
-  _.invoke = function(obj, method) {
-    var args = slice.call(arguments, 2);
-    var isFunc = _.isFunction(method);
-    return _.map(obj, function(value) {
-      var func = isFunc ? method : value[method];
-      return func == null ? func : func.apply(value, args);
-    });
-  };
-
-  // Convenience version of a common use case of `map`: fetching a property.
-  _.pluck = function(obj, key) {
-    return _.map(obj, _.property(key));
-  };
-
-  // Convenience version of a common use case of `filter`: selecting only objects
-  // containing specific `key:value` pairs.
-  _.where = function(obj, attrs) {
-    return _.filter(obj, _.matcher(attrs));
-  };
-
-  // Convenience version of a common use case of `find`: getting the first object
-  // containing specific `key:value` pairs.
-  _.findWhere = function(obj, attrs) {
-    return _.find(obj, _.matcher(attrs));
-  };
-
-  // Return the maximum element (or element-based computation).
-  _.max = function(obj, iteratee, context) {
-    var result = -Infinity, lastComputed = -Infinity,
-        value, computed;
-    if (iteratee == null && obj != null) {
-      obj = isArrayLike(obj) ? obj : _.values(obj);
-      for (var i = 0, length = obj.length; i < length; i++) {
-        value = obj[i];
-        if (value > result) {
-          result = value;
-        }
-      }
-    } else {
-      iteratee = cb(iteratee, context);
-      _.each(obj, function(value, index, list) {
-        computed = iteratee(value, index, list);
-        if (computed > lastComputed || computed === -Infinity && result === -Infinity) {
-          result = value;
-          lastComputed = computed;
-        }
-      });
-    }
-    return result;
-  };
-
-  // Return the minimum element (or element-based computation).
-  _.min = function(obj, iteratee, context) {
-    var result = Infinity, lastComputed = Infinity,
-        value, computed;
-    if (iteratee == null && obj != null) {
-      obj = isArrayLike(obj) ? obj : _.values(obj);
-      for (var i = 0, length = obj.length; i < length; i++) {
-        value = obj[i];
-        if (value < result) {
-          result = value;
-        }
-      }
-    } else {
-      iteratee = cb(iteratee, context);
-      _.each(obj, function(value, index, list) {
-        computed = iteratee(value, index, list);
-        if (computed < lastComputed || computed === Infinity && result === Infinity) {
-          result = value;
-          lastComputed = computed;
-        }
-      });
-    }
-    return result;
-  };
-
-  // Shuffle a collection, using the modern version of the
-  // [Fisher-Yates shuffle](http://en.wikipedia.org/wiki/Fisher–Yates_shuffle).
-  _.shuffle = function(obj) {
-    var set = isArrayLike(obj) ? obj : _.values(obj);
-    var length = set.length;
-    var shuffled = Array(length);
-    for (var index = 0, rand; index < length; index++) {
-      rand = _.random(0, index);
-      if (rand !== index) shuffled[index] = shuffled[rand];
-      shuffled[rand] = set[index];
-    }
-    return shuffled;
-  };
-
-  // Sample **n** random values from a collection.
-  // If **n** is not specified, returns a single random element.
-  // The internal `guard` argument allows it to work with `map`.
-  _.sample = function(obj, n, guard) {
-    if (n == null || guard) {
-      if (!isArrayLike(obj)) obj = _.values(obj);
-      return obj[_.random(obj.length - 1)];
-    }
-    return _.shuffle(obj).slice(0, Math.max(0, n));
-  };
-
-  // Sort the object's values by a criterion produced by an iteratee.
-  _.sortBy = function(obj, iteratee, context) {
-    iteratee = cb(iteratee, context);
-    return _.pluck(_.map(obj, function(value, index, list) {
-      return {
-        value: value,
-        index: index,
-        criteria: iteratee(value, index, list)
-      };
-    }).sort(function(left, right) {
-      var a = left.criteria;
-      var b = right.criteria;
-      if (a !== b) {
-        if (a > b || a === void 0) return 1;
-        if (a < b || b === void 0) return -1;
-      }
-      return left.index - right.index;
-    }), 'value');
-  };
-
-  // An internal function used for aggregate "group by" operations.
-  var group = function(behavior) {
-    return function(obj, iteratee, context) {
-      var result = {};
-      iteratee = cb(iteratee, context);
-      _.each(obj, function(value, index) {
-        var key = iteratee(value, index, obj);
-        behavior(result, value, key);
-      });
-      return result;
-    };
-  };
-
-  // Groups the object's values by a criterion. Pass either a string attribute
-  // to group by, or a function that returns the criterion.
-  _.groupBy = group(function(result, value, key) {
-    if (_.has(result, key)) result[key].push(value); else result[key] = [value];
-  });
-
-  // Indexes the object's values by a criterion, similar to `groupBy`, but for
-  // when you know that your index values will be unique.
-  _.indexBy = group(function(result, value, key) {
-    result[key] = value;
-  });
-
-  // Counts instances of an object that group by a certain criterion. Pass
-  // either a string attribute to count by, or a function that returns the
-  // criterion.
-  _.countBy = group(function(result, value, key) {
-    if (_.has(result, key)) result[key]++; else result[key] = 1;
-  });
-
-  // Safely create a real, live array from anything iterable.
-  _.toArray = function(obj) {
-    if (!obj) return [];
-    if (_.isArray(obj)) return slice.call(obj);
-    if (isArrayLike(obj)) return _.map(obj, _.identity);
-    return _.values(obj);
-  };
-
-  // Return the number of elements in an object.
-  _.size = function(obj) {
-    if (obj == null) return 0;
-    return isArrayLike(obj) ? obj.length : _.keys(obj).length;
-  };
-
-  // Split a collection into two arrays: one whose elements all satisfy the given
-  // predicate, and one whose elements all do not satisfy the predicate.
-  _.partition = function(obj, predicate, context) {
-    predicate = cb(predicate, context);
-    var pass = [], fail = [];
-    _.each(obj, function(value, key, obj) {
-      (predicate(value, key, obj) ? pass : fail).push(value);
-    });
-    return [pass, fail];
-  };
-
-  // Array Functions
-  // ---------------
-
-  // Get the first element of an array. Passing **n** will return the first N
-  // values in the array. Aliased as `head` and `take`. The **guard** check
-  // allows it to work with `_.map`.
-  _.first = _.head = _.take = function(array, n, guard) {
-    if (array == null) return void 0;
-    if (n == null || guard) return array[0];
-    return _.initial(array, array.length - n);
-  };
-
-  // Returns everything but the last entry of the array. Especially useful on
-  // the arguments object. Passing **n** will return all the values in
-  // the array, excluding the last N.
-  _.initial = function(array, n, guard) {
-    return slice.call(array, 0, Math.max(0, array.length - (n == null || guard ? 1 : n)));
-  };
-
-  // Get the last element of an array. Passing **n** will return the last N
-  // values in the array.
-  _.last = function(array, n, guard) {
-    if (array == null) return void 0;
-    if (n == null || guard) return array[array.length - 1];
-    return _.rest(array, Math.max(0, array.length - n));
-  };
-
-  // Returns everything but the first entry of the array. Aliased as `tail` and `drop`.
-  // Especially useful on the arguments object. Passing an **n** will return
-  // the rest N values in the array.
-  _.rest = _.tail = _.drop = function(array, n, guard) {
-    return slice.call(array, n == null || guard ? 1 : n);
-  };
-
-  // Trim out all falsy values from an array.
-  _.compact = function(array) {
-    return _.filter(array, _.identity);
-  };
-
-  // Internal implementation of a recursive `flatten` function.
-  var flatten = function(input, shallow, strict, startIndex) {
-    var output = [], idx = 0;
-    for (var i = startIndex || 0, length = getLength(input); i < length; i++) {
-      var value = input[i];
-      if (isArrayLike(value) && (_.isArray(value) || _.isArguments(value))) {
-        //flatten current level of array or arguments object
-        if (!shallow) value = flatten(value, shallow, strict);
-        var j = 0, len = value.length;
-        output.length += len;
-        while (j < len) {
-          output[idx++] = value[j++];
-        }
-      } else if (!strict) {
-        output[idx++] = value;
-      }
-    }
-    return output;
-  };
-
-  // Flatten out an array, either recursively (by default), or just one level.
-  _.flatten = function(array, shallow) {
-    return flatten(array, shallow, false);
-  };
-
-  // Return a version of the array that does not contain the specified value(s).
-  _.without = function(array) {
-    return _.difference(array, slice.call(arguments, 1));
-  };
-
-  // Produce a duplicate-free version of the array. If the array has already
-  // been sorted, you have the option of using a faster algorithm.
-  // Aliased as `unique`.
-  _.uniq = _.unique = function(array, isSorted, iteratee, context) {
-    if (!_.isBoolean(isSorted)) {
-      context = iteratee;
-      iteratee = isSorted;
-      isSorted = false;
-    }
-    if (iteratee != null) iteratee = cb(iteratee, context);
-    var result = [];
-    var seen = [];
-    for (var i = 0, length = getLength(array); i < length; i++) {
-      var value = array[i],
-          computed = iteratee ? iteratee(value, i, array) : value;
-      if (isSorted) {
-        if (!i || seen !== computed) result.push(value);
-        seen = computed;
-      } else if (iteratee) {
-        if (!_.contains(seen, computed)) {
-          seen.push(computed);
-          result.push(value);
-        }
-      } else if (!_.contains(result, value)) {
-        result.push(value);
-      }
-    }
-    return result;
-  };
-
-  // Produce an array that contains the union: each distinct element from all of
-  // the passed-in arrays.
-  _.union = function() {
-    return _.uniq(flatten(arguments, true, true));
-  };
-
-  // Produce an array that contains every item shared between all the
-  // passed-in arrays.
-  _.intersection = function(array) {
-    var result = [];
-    var argsLength = arguments.length;
-    for (var i = 0, length = getLength(array); i < length; i++) {
-      var item = array[i];
-      if (_.contains(result, item)) continue;
-      for (var j = 1; j < argsLength; j++) {
-        if (!_.contains(arguments[j], item)) break;
-      }
-      if (j === argsLength) result.push(item);
-    }
-    return result;
-  };
-
-  // Take the difference between one array and a number of other arrays.
-  // Only the elements present in just the first array will remain.
-  _.difference = function(array) {
-    var rest = flatten(arguments, true, true, 1);
-    return _.filter(array, function(value){
-      return !_.contains(rest, value);
-    });
-  };
-
-  // Zip together multiple lists into a single array -- elements that share
-  // an index go together.
-  _.zip = function() {
-    return _.unzip(arguments);
-  };
-
-  // Complement of _.zip. Unzip accepts an array of arrays and groups
-  // each array's elements on shared indices
-  _.unzip = function(array) {
-    var length = array && _.max(array, getLength).length || 0;
-    var result = Array(length);
-
-    for (var index = 0; index < length; index++) {
-      result[index] = _.pluck(array, index);
-    }
-    return result;
-  };
-
-  // Converts lists into objects. Pass either a single array of `[key, value]`
-  // pairs, or two parallel arrays of the same length -- one of keys, and one of
-  // the corresponding values.
-  _.object = function(list, values) {
-    var result = {};
-    for (var i = 0, length = getLength(list); i < length; i++) {
-      if (values) {
-        result[list[i]] = values[i];
-      } else {
-        result[list[i][0]] = list[i][1];
-      }
-    }
-    return result;
-  };
-
-  // Generator function to create the findIndex and findLastIndex functions
-  function createPredicateIndexFinder(dir) {
-    return function(array, predicate, context) {
-      predicate = cb(predicate, context);
-      var length = getLength(array);
-      var index = dir > 0 ? 0 : length - 1;
-      for (; index >= 0 && index < length; index += dir) {
-        if (predicate(array[index], index, array)) return index;
-      }
-      return -1;
-    };
-  }
-
-  // Returns the first index on an array-like that passes a predicate test
-  _.findIndex = createPredicateIndexFinder(1);
-  _.findLastIndex = createPredicateIndexFinder(-1);
-
-  // Use a comparator function to figure out the smallest index at which
-  // an object should be inserted so as to maintain order. Uses binary search.
-  _.sortedIndex = function(array, obj, iteratee, context) {
-    iteratee = cb(iteratee, context, 1);
-    var value = iteratee(obj);
-    var low = 0, high = getLength(array);
-    while (low < high) {
-      var mid = Math.floor((low + high) / 2);
-      if (iteratee(array[mid]) < value) low = mid + 1; else high = mid;
-    }
-    return low;
-  };
-
-  // Generator function to create the indexOf and lastIndexOf functions
-  function createIndexFinder(dir, predicateFind, sortedIndex) {
-    return function(array, item, idx) {
-      var i = 0, length = getLength(array);
-      if (typeof idx == 'number') {
-        if (dir > 0) {
-            i = idx >= 0 ? idx : Math.max(idx + length, i);
-        } else {
-            length = idx >= 0 ? Math.min(idx + 1, length) : idx + length + 1;
-        }
-      } else if (sortedIndex && idx && length) {
-        idx = sortedIndex(array, item);
-        return array[idx] === item ? idx : -1;
-      }
-      if (item !== item) {
-        idx = predicateFind(slice.call(array, i, length), _.isNaN);
-        return idx >= 0 ? idx + i : -1;
-      }
-      for (idx = dir > 0 ? i : length - 1; idx >= 0 && idx < length; idx += dir) {
-        if (array[idx] === item) return idx;
-      }
-      return -1;
-    };
-  }
-
-  // Return the position of the first occurrence of an item in an array,
-  // or -1 if the item is not included in the array.
-  // If the array is large and already in sort order, pass `true`
-  // for **isSorted** to use binary search.
-  _.indexOf = createIndexFinder(1, _.findIndex, _.sortedIndex);
-  _.lastIndexOf = createIndexFinder(-1, _.findLastIndex);
-
-  // Generate an integer Array containing an arithmetic progression. A port of
-  // the native Python `range()` function. See
-  // [the Python documentation](http://docs.python.org/library/functions.html#range).
-  _.range = function(start, stop, step) {
-    if (stop == null) {
-      stop = start || 0;
-      start = 0;
-    }
-    step = step || 1;
-
-    var length = Math.max(Math.ceil((stop - start) / step), 0);
-    var range = Array(length);
-
-    for (var idx = 0; idx < length; idx++, start += step) {
-      range[idx] = start;
-    }
-
-    return range;
-  };
-
-  // Function (ahem) Functions
-  // ------------------
-
-  // Determines whether to execute a function as a constructor
-  // or a normal function with the provided arguments
-  var executeBound = function(sourceFunc, boundFunc, context, callingContext, args) {
-    if (!(callingContext instanceof boundFunc)) return sourceFunc.apply(context, args);
-    var self = baseCreate(sourceFunc.prototype);
-    var result = sourceFunc.apply(self, args);
-    if (_.isObject(result)) return result;
-    return self;
-  };
-
-  // Create a function bound to a given object (assigning `this`, and arguments,
-  // optionally). Delegates to **ECMAScript 5**'s native `Function.bind` if
-  // available.
-  _.bind = function(func, context) {
-    if (nativeBind && func.bind === nativeBind) return nativeBind.apply(func, slice.call(arguments, 1));
-    if (!_.isFunction(func)) throw new TypeError('Bind must be called on a function');
-    var args = slice.call(arguments, 2);
-    var bound = function() {
-      return executeBound(func, bound, context, this, args.concat(slice.call(arguments)));
-    };
-    return bound;
-  };
-
-  // Partially apply a function by creating a version that has had some of its
-  // arguments pre-filled, without changing its dynamic `this` context. _ acts
-  // as a placeholder, allowing any combination of arguments to be pre-filled.
-  _.partial = function(func) {
-    var boundArgs = slice.call(arguments, 1);
-    var bound = function() {
-      var position = 0, length = boundArgs.length;
-      var args = Array(length);
-      for (var i = 0; i < length; i++) {
-        args[i] = boundArgs[i] === _ ? arguments[position++] : boundArgs[i];
-      }
-      while (position < arguments.length) args.push(arguments[position++]);
-      return executeBound(func, bound, this, this, args);
-    };
-    return bound;
-  };
-
-  // Bind a number of an object's methods to that object. Remaining arguments
-  // are the method names to be bound. Useful for ensuring that all callbacks
-  // defined on an object belong to it.
-  _.bindAll = function(obj) {
-    var i, length = arguments.length, key;
-    if (length <= 1) throw new Error('bindAll must be passed function names');
-    for (i = 1; i < length; i++) {
-      key = arguments[i];
-      obj[key] = _.bind(obj[key], obj);
-    }
-    return obj;
-  };
-
-  // Memoize an expensive function by storing its results.
-  _.memoize = function(func, hasher) {
-    var memoize = function(key) {
-      var cache = memoize.cache;
-      var address = '' + (hasher ? hasher.apply(this, arguments) : key);
-      if (!_.has(cache, address)) cache[address] = func.apply(this, arguments);
-      return cache[address];
-    };
-    memoize.cache = {};
-    return memoize;
-  };
-
-  // Delays a function for the given number of milliseconds, and then calls
-  // it with the arguments supplied.
-  _.delay = function(func, wait) {
-    var args = slice.call(arguments, 2);
-    return setTimeout(function(){
-      return func.apply(null, args);
-    }, wait);
-  };
-
-  // Defers a function, scheduling it to run after the current call stack has
-  // cleared.
-  _.defer = _.partial(_.delay, _, 1);
-
-  // Returns a function, that, when invoked, will only be triggered at most once
-  // during a given window of time. Normally, the throttled function will run
-  // as much as it can, without ever going more than once per `wait` duration;
-  // but if you'd like to disable the execution on the leading edge, pass
-  // `{leading: false}`. To disable execution on the trailing edge, ditto.
-  _.throttle = function(func, wait, options) {
-    var context, args, result;
-    var timeout = null;
-    var previous = 0;
-    if (!options) options = {};
-    var later = function() {
-      previous = options.leading === false ? 0 : _.now();
-      timeout = null;
-      result = func.apply(context, args);
-      if (!timeout) context = args = null;
-    };
-    return function() {
-      var now = _.now();
-      if (!previous && options.leading === false) previous = now;
-      var remaining = wait - (now - previous);
-      context = this;
-      args = arguments;
-      if (remaining <= 0 || remaining > wait) {
-        if (timeout) {
-          clearTimeout(timeout);
-          timeout = null;
-        }
-        previous = now;
-        result = func.apply(context, args);
-        if (!timeout) context = args = null;
-      } else if (!timeout && options.trailing !== false) {
-        timeout = setTimeout(later, remaining);
-      }
-      return result;
-    };
-  };
-
-  // Returns a function, that, as long as it continues to be invoked, will not
-  // be triggered. The function will be called after it stops being called for
-  // N milliseconds. If `immediate` is passed, trigger the function on the
-  // leading edge, instead of the trailing.
-  _.debounce = function(func, wait, immediate) {
-    var timeout, args, context, timestamp, result;
-
-    var later = function() {
-      var last = _.now() - timestamp;
-
-      if (last < wait && last >= 0) {
-        timeout = setTimeout(later, wait - last);
-      } else {
-        timeout = null;
-        if (!immediate) {
-          result = func.apply(context, args);
-          if (!timeout) context = args = null;
-        }
-      }
-    };
-
-    return function() {
-      context = this;
-      args = arguments;
-      timestamp = _.now();
-      var callNow = immediate && !timeout;
-      if (!timeout) timeout = setTimeout(later, wait);
-      if (callNow) {
-        result = func.apply(context, args);
-        context = args = null;
-      }
-
-      return result;
-    };
-  };
-
-  // Returns the first function passed as an argument to the second,
-  // allowing you to adjust arguments, run code before and after, and
-  // conditionally execute the original function.
-  _.wrap = function(func, wrapper) {
-    return _.partial(wrapper, func);
-  };
-
-  // Returns a negated version of the passed-in predicate.
-  _.negate = function(predicate) {
-    return function() {
-      return !predicate.apply(this, arguments);
-    };
-  };
-
-  // Returns a function that is the composition of a list of functions, each
-  // consuming the return value of the function that follows.
-  _.compose = function() {
-    var args = arguments;
-    var start = args.length - 1;
-    return function() {
-      var i = start;
-      var result = args[start].apply(this, arguments);
-      while (i--) result = args[i].call(this, result);
-      return result;
-    };
-  };
-
-  // Returns a function that will only be executed on and after the Nth call.
-  _.after = function(times, func) {
-    return function() {
-      if (--times < 1) {
-        return func.apply(this, arguments);
-      }
-    };
-  };
-
-  // Returns a function that will only be executed up to (but not including) the Nth call.
-  _.before = function(times, func) {
-    var memo;
-    return function() {
-      if (--times > 0) {
-        memo = func.apply(this, arguments);
-      }
-      if (times <= 1) func = null;
-      return memo;
-    };
-  };
-
-  // Returns a function that will be executed at most one time, no matter how
-  // often you call it. Useful for lazy initialization.
-  _.once = _.partial(_.before, 2);
-
-  // Object Functions
-  // ----------------
-
-  // Keys in IE < 9 that won't be iterated by `for key in ...` and thus missed.
-  var hasEnumBug = !{toString: null}.propertyIsEnumerable('toString');
-  var nonEnumerableProps = ['valueOf', 'isPrototypeOf', 'toString',
-                      'propertyIsEnumerable', 'hasOwnProperty', 'toLocaleString'];
-
-  function collectNonEnumProps(obj, keys) {
-    var nonEnumIdx = nonEnumerableProps.length;
-    var constructor = obj.constructor;
-    var proto = (_.isFunction(constructor) && constructor.prototype) || ObjProto;
-
-    // Constructor is a special case.
-    var prop = 'constructor';
-    if (_.has(obj, prop) && !_.contains(keys, prop)) keys.push(prop);
-
-    while (nonEnumIdx--) {
-      prop = nonEnumerableProps[nonEnumIdx];
-      if (prop in obj && obj[prop] !== proto[prop] && !_.contains(keys, prop)) {
-        keys.push(prop);
-      }
-    }
-  }
-
-  // Retrieve the names of an object's own properties.
-  // Delegates to **ECMAScript 5**'s native `Object.keys`
-  _.keys = function(obj) {
-    if (!_.isObject(obj)) return [];
-    if (nativeKeys) return nativeKeys(obj);
-    var keys = [];
-    for (var key in obj) if (_.has(obj, key)) keys.push(key);
-    // Ahem, IE < 9.
-    if (hasEnumBug) collectNonEnumProps(obj, keys);
-    return keys;
-  };
-
-  // Retrieve all the property names of an object.
-  _.allKeys = function(obj) {
-    if (!_.isObject(obj)) return [];
-    var keys = [];
-    for (var key in obj) keys.push(key);
-    // Ahem, IE < 9.
-    if (hasEnumBug) collectNonEnumProps(obj, keys);
-    return keys;
-  };
-
-  // Retrieve the values of an object's properties.
-  _.values = function(obj) {
-    var keys = _.keys(obj);
-    var length = keys.length;
-    var values = Array(length);
-    for (var i = 0; i < length; i++) {
-      values[i] = obj[keys[i]];
-    }
-    return values;
-  };
-
-  // Returns the results of applying the iteratee to each element of the object
-  // In contrast to _.map it returns an object
-  _.mapObject = function(obj, iteratee, context) {
-    iteratee = cb(iteratee, context);
-    var keys =  _.keys(obj),
-          length = keys.length,
-          results = {},
-          currentKey;
-      for (var index = 0; index < length; index++) {
-        currentKey = keys[index];
-        results[currentKey] = iteratee(obj[currentKey], currentKey, obj);
-      }
-      return results;
-  };
-
-  // Convert an object into a list of `[key, value]` pairs.
-  _.pairs = function(obj) {
-    var keys = _.keys(obj);
-    var length = keys.length;
-    var pairs = Array(length);
-    for (var i = 0; i < length; i++) {
-      pairs[i] = [keys[i], obj[keys[i]]];
-    }
-    return pairs;
-  };
-
-  // Invert the keys and values of an object. The values must be serializable.
-  _.invert = function(obj) {
-    var result = {};
-    var keys = _.keys(obj);
-    for (var i = 0, length = keys.length; i < length; i++) {
-      result[obj[keys[i]]] = keys[i];
-    }
-    return result;
-  };
-
-  // Return a sorted list of the function names available on the object.
-  // Aliased as `methods`
-  _.functions = _.methods = function(obj) {
-    var names = [];
-    for (var key in obj) {
-      if (_.isFunction(obj[key])) names.push(key);
-    }
-    return names.sort();
-  };
-
-  // Extend a given object with all the properties in passed-in object(s).
-  _.extend = createAssigner(_.allKeys);
-
-  // Assigns a given object with all the own properties in the passed-in object(s)
-  // (https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object/assign)
-  _.extendOwn = _.assign = createAssigner(_.keys);
-
-  // Returns the first key on an object that passes a predicate test
-  _.findKey = function(obj, predicate, context) {
-    predicate = cb(predicate, context);
-    var keys = _.keys(obj), key;
-    for (var i = 0, length = keys.length; i < length; i++) {
-      key = keys[i];
-      if (predicate(obj[key], key, obj)) return key;
-    }
-  };
-
-  // Return a copy of the object only containing the whitelisted properties.
-  _.pick = function(object, oiteratee, context) {
-    var result = {}, obj = object, iteratee, keys;
-    if (obj == null) return result;
-    if (_.isFunction(oiteratee)) {
-      keys = _.allKeys(obj);
-      iteratee = optimizeCb(oiteratee, context);
-    } else {
-      keys = flatten(arguments, false, false, 1);
-      iteratee = function(value, key, obj) { return key in obj; };
-      obj = Object(obj);
-    }
-    for (var i = 0, length = keys.length; i < length; i++) {
-      var key = keys[i];
-      var value = obj[key];
-      if (iteratee(value, key, obj)) result[key] = value;
-    }
-    return result;
-  };
-
-   // Return a copy of the object without the blacklisted properties.
-  _.omit = function(obj, iteratee, context) {
-    if (_.isFunction(iteratee)) {
-      iteratee = _.negate(iteratee);
-    } else {
-      var keys = _.map(flatten(arguments, false, false, 1), String);
-      iteratee = function(value, key) {
-        return !_.contains(keys, key);
-      };
-    }
-    return _.pick(obj, iteratee, context);
-  };
-
-  // Fill in a given object with default properties.
-  _.defaults = createAssigner(_.allKeys, true);
-
-  // Creates an object that inherits from the given prototype object.
-  // If additional properties are provided then they will be added to the
-  // created object.
-  _.create = function(prototype, props) {
-    var result = baseCreate(prototype);
-    if (props) _.extendOwn(result, props);
-    return result;
-  };
-
-  // Create a (shallow-cloned) duplicate of an object.
-  _.clone = function(obj) {
-    if (!_.isObject(obj)) return obj;
-    return _.isArray(obj) ? obj.slice() : _.extend({}, obj);
-  };
-
-  // Invokes interceptor with the obj, and then returns obj.
-  // The primary purpose of this method is to "tap into" a method chain, in
-  // order to perform operations on intermediate results within the chain.
-  _.tap = function(obj, interceptor) {
-    interceptor(obj);
-    return obj;
-  };
-
-  // Returns whether an object has a given set of `key:value` pairs.
-  _.isMatch = function(object, attrs) {
-    var keys = _.keys(attrs), length = keys.length;
-    if (object == null) return !length;
-    var obj = Object(object);
-    for (var i = 0; i < length; i++) {
-      var key = keys[i];
-      if (attrs[key] !== obj[key] || !(key in obj)) return false;
-    }
-    return true;
-  };
-
-
-  // Internal recursive comparison function for `isEqual`.
-  var eq = function(a, b, aStack, bStack) {
-    // Identical objects are equal. `0 === -0`, but they aren't identical.
-    // See the [Harmony `egal` proposal](http://wiki.ecmascript.org/doku.php?id=harmony:egal).
-    if (a === b) return a !== 0 || 1 / a === 1 / b;
-    // A strict comparison is necessary because `null == undefined`.
-    if (a == null || b == null) return a === b;
-    // Unwrap any wrapped objects.
-    if (a instanceof _) a = a._wrapped;
-    if (b instanceof _) b = b._wrapped;
-    // Compare `[[Class]]` names.
-    var className = toString.call(a);
-    if (className !== toString.call(b)) return false;
-    switch (className) {
-      // Strings, numbers, regular expressions, dates, and booleans are compared by value.
-      case '[object RegExp]':
-      // RegExps are coerced to strings for comparison (Note: '' + /a/i === '/a/i')
-      case '[object String]':
-        // Primitives and their corresponding object wrappers are equivalent; thus, `"5"` is
-        // equivalent to `new String("5")`.
-        return '' + a === '' + b;
-      case '[object Number]':
-        // `NaN`s are equivalent, but non-reflexive.
-        // Object(NaN) is equivalent to NaN
-        if (+a !== +a) return +b !== +b;
-        // An `egal` comparison is performed for other numeric values.
-        return +a === 0 ? 1 / +a === 1 / b : +a === +b;
-      case '[object Date]':
-      case '[object Boolean]':
-        // Coerce dates and booleans to numeric primitive values. Dates are compared by their
-        // millisecond representations. Note that invalid dates with millisecond representations
-        // of `NaN` are not equivalent.
-        return +a === +b;
-    }
-
-    var areArrays = className === '[object Array]';
-    if (!areArrays) {
-      if (typeof a != 'object' || typeof b != 'object') return false;
-
-      // Objects with different constructors are not equivalent, but `Object`s or `Array`s
-      // from different frames are.
-      var aCtor = a.constructor, bCtor = b.constructor;
-      if (aCtor !== bCtor && !(_.isFunction(aCtor) && aCtor instanceof aCtor &&
-                               _.isFunction(bCtor) && bCtor instanceof bCtor)
-                          && ('constructor' in a && 'constructor' in b)) {
-        return false;
-      }
-    }
-    // Assume equality for cyclic structures. The algorithm for detecting cyclic
-    // structures is adapted from ES 5.1 section 15.12.3, abstract operation `JO`.
-
-    // Initializing stack of traversed objects.
-    // It's done here since we only need them for objects and arrays comparison.
-    aStack = aStack || [];
-    bStack = bStack || [];
-    var length = aStack.length;
-    while (length--) {
-      // Linear search. Performance is inversely proportional to the number of
-      // unique nested structures.
-      if (aStack[length] === a) return bStack[length] === b;
-    }
-
-    // Add the first object to the stack of traversed objects.
-    aStack.push(a);
-    bStack.push(b);
-
-    // Recursively compare objects and arrays.
-    if (areArrays) {
-      // Compare array lengths to determine if a deep comparison is necessary.
-      length = a.length;
-      if (length !== b.length) return false;
-      // Deep compare the contents, ignoring non-numeric properties.
-      while (length--) {
-        if (!eq(a[length], b[length], aStack, bStack)) return false;
-      }
-    } else {
-      // Deep compare objects.
-      var keys = _.keys(a), key;
-      length = keys.length;
-      // Ensure that both objects contain the same number of properties before comparing deep equality.
-      if (_.keys(b).length !== length) return false;
-      while (length--) {
-        // Deep compare each member
-        key = keys[length];
-        if (!(_.has(b, key) && eq(a[key], b[key], aStack, bStack))) return false;
-      }
-    }
-    // Remove the first object from the stack of traversed objects.
-    aStack.pop();
-    bStack.pop();
-    return true;
-  };
-
-  // Perform a deep comparison to check if two objects are equal.
-  _.isEqual = function(a, b) {
-    return eq(a, b);
-  };
-
-  // Is a given array, string, or object empty?
-  // An "empty" object has no enumerable own-properties.
-  _.isEmpty = function(obj) {
-    if (obj == null) return true;
-    if (isArrayLike(obj) && (_.isArray(obj) || _.isString(obj) || _.isArguments(obj))) return obj.length === 0;
-    return _.keys(obj).length === 0;
-  };
-
-  // Is a given value a DOM element?
-  _.isElement = function(obj) {
-    return !!(obj && obj.nodeType === 1);
-  };
-
-  // Is a given value an array?
-  // Delegates to ECMA5's native Array.isArray
-  _.isArray = nativeIsArray || function(obj) {
-    return toString.call(obj) === '[object Array]';
-  };
-
-  // Is a given variable an object?
-  _.isObject = function(obj) {
-    var type = typeof obj;
-    return type === 'function' || type === 'object' && !!obj;
-  };
-
-  // Add some isType methods: isArguments, isFunction, isString, isNumber, isDate, isRegExp, isError.
-  _.each(['Arguments', 'Function', 'String', 'Number', 'Date', 'RegExp', 'Error'], function(name) {
-    _['is' + name] = function(obj) {
-      return toString.call(obj) === '[object ' + name + ']';
-    };
-  });
-
-  // Define a fallback version of the method in browsers (ahem, IE < 9), where
-  // there isn't any inspectable "Arguments" type.
-  if (!_.isArguments(arguments)) {
-    _.isArguments = function(obj) {
-      return _.has(obj, 'callee');
-    };
-  }
-
-  // Optimize `isFunction` if appropriate. Work around some typeof bugs in old v8,
-  // IE 11 (#1621), and in Safari 8 (#1929).
-  if (typeof /./ != 'function' && typeof Int8Array != 'object') {
-    _.isFunction = function(obj) {
-      return typeof obj == 'function' || false;
-    };
-  }
-
-  // Is a given object a finite number?
-  _.isFinite = function(obj) {
-    return isFinite(obj) && !isNaN(parseFloat(obj));
-  };
-
-  // Is the given value `NaN`? (NaN is the only number which does not equal itself).
-  _.isNaN = function(obj) {
-    return _.isNumber(obj) && obj !== +obj;
-  };
-
-  // Is a given value a boolean?
-  _.isBoolean = function(obj) {
-    return obj === true || obj === false || toString.call(obj) === '[object Boolean]';
-  };
-
-  // Is a given value equal to null?
-  _.isNull = function(obj) {
-    return obj === null;
-  };
-
-  // Is a given variable undefined?
-  _.isUndefined = function(obj) {
-    return obj === void 0;
-  };
-
-  // Shortcut function for checking if an object has a given property directly
-  // on itself (in other words, not on a prototype).
-  _.has = function(obj, key) {
-    return obj != null && hasOwnProperty.call(obj, key);
-  };
-
-  // Utility Functions
-  // -----------------
-
-  // Run Underscore.js in *noConflict* mode, returning the `_` variable to its
-  // previous owner. Returns a reference to the Underscore object.
-  _.noConflict = function() {
-    root._ = previousUnderscore;
-    return this;
-  };
-
-  // Keep the identity function around for default iteratees.
-  _.identity = function(value) {
-    return value;
-  };
-
-  // Predicate-generating functions. Often useful outside of Underscore.
-  _.constant = function(value) {
-    return function() {
-      return value;
-    };
-  };
-
-  _.noop = function(){};
-
-  _.property = property;
-
-  // Generates a function for a given object that returns a given property.
-  _.propertyOf = function(obj) {
-    return obj == null ? function(){} : function(key) {
-      return obj[key];
-    };
-  };
-
-  // Returns a predicate for checking whether an object has a given set of
-  // `key:value` pairs.
-  _.matcher = _.matches = function(attrs) {
-    attrs = _.extendOwn({}, attrs);
-    return function(obj) {
-      return _.isMatch(obj, attrs);
-    };
-  };
-
-  // Run a function **n** times.
-  _.times = function(n, iteratee, context) {
-    var accum = Array(Math.max(0, n));
-    iteratee = optimizeCb(iteratee, context, 1);
-    for (var i = 0; i < n; i++) accum[i] = iteratee(i);
-    return accum;
-  };
-
-  // Return a random integer between min and max (inclusive).
-  _.random = function(min, max) {
-    if (max == null) {
-      max = min;
-      min = 0;
-    }
-    return min + Math.floor(Math.random() * (max - min + 1));
-  };
-
-  // A (possibly faster) way to get the current timestamp as an integer.
-  _.now = Date.now || function() {
-    return new Date().getTime();
-  };
-
-   // List of HTML entities for escaping.
-  var escapeMap = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#x27;',
-    '`': '&#x60;'
-  };
-  var unescapeMap = _.invert(escapeMap);
-
-  // Functions for escaping and unescaping strings to/from HTML interpolation.
-  var createEscaper = function(map) {
-    var escaper = function(match) {
-      return map[match];
-    };
-    // Regexes for identifying a key that needs to be escaped
-    var source = '(?:' + _.keys(map).join('|') + ')';
-    var testRegexp = RegExp(source);
-    var replaceRegexp = RegExp(source, 'g');
-    return function(string) {
-      string = string == null ? '' : '' + string;
-      return testRegexp.test(string) ? string.replace(replaceRegexp, escaper) : string;
-    };
-  };
-  _.escape = createEscaper(escapeMap);
-  _.unescape = createEscaper(unescapeMap);
-
-  // If the value of the named `property` is a function then invoke it with the
-  // `object` as context; otherwise, return it.
-  _.result = function(object, property, fallback) {
-    var value = object == null ? void 0 : object[property];
-    if (value === void 0) {
-      value = fallback;
-    }
-    return _.isFunction(value) ? value.call(object) : value;
-  };
-
-  // Generate a unique integer id (unique within the entire client session).
-  // Useful for temporary DOM ids.
-  var idCounter = 0;
-  _.uniqueId = function(prefix) {
-    var id = ++idCounter + '';
-    return prefix ? prefix + id : id;
-  };
-
-  // By default, Underscore uses ERB-style template delimiters, change the
-  // following template settings to use alternative delimiters.
-  _.templateSettings = {
-    evaluate    : /<%([\s\S]+?)%>/g,
-    interpolate : /<%=([\s\S]+?)%>/g,
-    escape      : /<%-([\s\S]+?)%>/g
-  };
-
-  // When customizing `templateSettings`, if you don't want to define an
-  // interpolation, evaluation or escaping regex, we need one that is
-  // guaranteed not to match.
-  var noMatch = /(.)^/;
-
-  // Certain characters need to be escaped so that they can be put into a
-  // string literal.
-  var escapes = {
-    "'":      "'",
-    '\\':     '\\',
-    '\r':     'r',
-    '\n':     'n',
-    '\u2028': 'u2028',
-    '\u2029': 'u2029'
-  };
-
-  var escaper = /\\|'|\r|\n|\u2028|\u2029/g;
-
-  var escapeChar = function(match) {
-    return '\\' + escapes[match];
-  };
-
-  // JavaScript micro-templating, similar to John Resig's implementation.
-  // Underscore templating handles arbitrary delimiters, preserves whitespace,
-  // and correctly escapes quotes within interpolated code.
-  // NB: `oldSettings` only exists for backwards compatibility.
-  _.template = function(text, settings, oldSettings) {
-    if (!settings && oldSettings) settings = oldSettings;
-    settings = _.defaults({}, settings, _.templateSettings);
-
-    // Combine delimiters into one regular expression via alternation.
-    var matcher = RegExp([
-      (settings.escape || noMatch).source,
-      (settings.interpolate || noMatch).source,
-      (settings.evaluate || noMatch).source
-    ].join('|') + '|$', 'g');
-
-    // Compile the template source, escaping string literals appropriately.
-    var index = 0;
-    var source = "__p+='";
-    text.replace(matcher, function(match, escape, interpolate, evaluate, offset) {
-      source += text.slice(index, offset).replace(escaper, escapeChar);
-      index = offset + match.length;
-
-      if (escape) {
-        source += "'+\n((__t=(" + escape + "))==null?'':_.escape(__t))+\n'";
-      } else if (interpolate) {
-        source += "'+\n((__t=(" + interpolate + "))==null?'':__t)+\n'";
-      } else if (evaluate) {
-        source += "';\n" + evaluate + "\n__p+='";
-      }
-
-      // Adobe VMs need the match returned to produce the correct offest.
-      return match;
-    });
-    source += "';\n";
-
-    // If a variable is not specified, place data values in local scope.
-    if (!settings.variable) source = 'with(obj||{}){\n' + source + '}\n';
-
-    source = "var __t,__p='',__j=Array.prototype.join," +
-      "print=function(){__p+=__j.call(arguments,'');};\n" +
-      source + 'return __p;\n';
-
-    try {
-      var render = new Function(settings.variable || 'obj', '_', source);
-    } catch (e) {
-      e.source = source;
-      throw e;
-    }
-
-    var template = function(data) {
-      return render.call(this, data, _);
-    };
-
-    // Provide the compiled source as a convenience for precompilation.
-    var argument = settings.variable || 'obj';
-    template.source = 'function(' + argument + '){\n' + source + '}';
-
-    return template;
-  };
-
-  // Add a "chain" function. Start chaining a wrapped Underscore object.
-  _.chain = function(obj) {
-    var instance = _(obj);
-    instance._chain = true;
-    return instance;
-  };
-
-  // OOP
-  // ---------------
-  // If Underscore is called as a function, it returns a wrapped object that
-  // can be used OO-style. This wrapper holds altered versions of all the
-  // underscore functions. Wrapped objects may be chained.
-
-  // Helper function to continue chaining intermediate results.
-  var result = function(instance, obj) {
-    return instance._chain ? _(obj).chain() : obj;
-  };
-
-  // Add your own custom functions to the Underscore object.
-  _.mixin = function(obj) {
-    _.each(_.functions(obj), function(name) {
-      var func = _[name] = obj[name];
-      _.prototype[name] = function() {
-        var args = [this._wrapped];
-        push.apply(args, arguments);
-        return result(this, func.apply(_, args));
-      };
-    });
-  };
-
-  // Add all of the Underscore functions to the wrapper object.
-  _.mixin(_);
-
-  // Add all mutator Array functions to the wrapper.
-  _.each(['pop', 'push', 'reverse', 'shift', 'sort', 'splice', 'unshift'], function(name) {
-    var method = ArrayProto[name];
-    _.prototype[name] = function() {
-      var obj = this._wrapped;
-      method.apply(obj, arguments);
-      if ((name === 'shift' || name === 'splice') && obj.length === 0) delete obj[0];
-      return result(this, obj);
-    };
-  });
-
-  // Add all accessor Array functions to the wrapper.
-  _.each(['concat', 'join', 'slice'], function(name) {
-    var method = ArrayProto[name];
-    _.prototype[name] = function() {
-      return result(this, method.apply(this._wrapped, arguments));
-    };
-  });
-
-  // Extracts the result from a wrapped and chained object.
-  _.prototype.value = function() {
-    return this._wrapped;
-  };
-
-  // Provide unwrapping proxy for some methods used in engine operations
-  // such as arithmetic and JSON stringification.
-  _.prototype.valueOf = _.prototype.toJSON = _.prototype.value;
-
-  _.prototype.toString = function() {
-    return '' + this._wrapped;
-  };
-
-  // AMD registration happens at the end for compatibility with AMD loaders
-  // that may not enforce next-turn semantics on modules. Even though general
-  // practice for AMD registration is to be anonymous, underscore registers
-  // as a named module because, like jQuery, it is a base library that is
-  // popular enough to be bundled in a third party lib, but not be part of
-  // an AMD load request. Those cases could generate an error when an
-  // anonymous define() is called outside of a loader request.
-  if (typeof define === 'function' && define.amd) {
-    define('underscore', [], function() {
-      return _;
-    });
-  }
-}.call(this));
-
-//
-//  Created by Juan Corona
-//  Based on original proposal by Mickaël Menu
-//  Portions adapted from Rangy's Module system: Copyright (c) 2014 Tim Down
-//
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
-//
-//  Redistribution and use in source and binary forms, with or without modification,
-//  are permitted provided that the following conditions are met:
-//  1. Redistributions of source code must retain the above copyright notice, this
-//  list of conditions and the following disclaimer.
-//  2. Redistributions in binary form must reproduce the above copyright notice,
-//  this list of conditions and the following disclaimer in the documentation and/or
-//  other materials provided with the distribution.
-//  3. Neither the name of the organization nor the names of its contributors may be
-//  used to endorse or promote products derived from this software without specific
-//  prior written permission.
-//
-//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
-//  OF THE POSSIBILITY OF SUCH DAMAGE.
-
-define('readium_js_plugins',["jquery", "underscore", "eventEmitter"], function ($, _, EventEmitter) {
-
-    var _registeredPlugins = {};
-
-    /**
-     * A  plugins controller used to easily add plugins from the host app, eg.
-     * ReadiumSDK.Plugins.register("footnotes", function(api){ ... });
-     *
-     * @constructor
-     */
-    var PluginsController = function () {
-        var self = this;
-
-
-        this.initialize = function (reader) {
-            var apiFactory = new PluginApiFactory(reader);
-
-            if (!reader.plugins) {
-                //attach an object to the reader that will be
-                // used for plugin namespaces and their extensions
-                reader.plugins = {};
-            } else {
-                throw new Error("Already initialized on reader!");
-            }
-            _.each(_registeredPlugins, function (plugin) {
-                plugin.init(apiFactory);
-            });
-        };
-
-        this.getLoadedPlugins = function() {
-            return _registeredPlugins;
-        };
-
-        // Creates a new instance of the given plugin constructor.
-        this.register = function (name, optDependencies, initFunc) {
-
-            if (_registeredPlugins[name]) {
-                throw new Error("Duplicate registration for plugin with name: " + name);
-            }
-
-            var dependencies;
-            if (typeof optDependencies === 'function') {
-                initFunc = optDependencies;
-            } else {
-                dependencies = optDependencies;
-            }
-
-            _registeredPlugins[name] = new Plugin(name, dependencies, function(plugin, api) {
-                if (!plugin.initialized || !api.host.plugins[plugin.name]) {
-                    plugin.initialized = true;
-                    try {
-                        var pluginContext = {};
-                        $.extend(pluginContext, new EventEmitter());
-
-                        initFunc.call(pluginContext, api.instance);
-                        plugin.supported = true;
-
-                        api.host.plugins[plugin.name] = pluginContext;
-                    } catch (ex) {
-                        plugin.fail(ex);
-                    }
-                }
-            });
-        };
-    };
-
-    function PluginApi(reader, plugin) {
-        this.reader = reader;
-        this.plugin = plugin;
-    }
-
-    function PluginApiFactory(reader) {
-        this.create = function (plugin) {
-            return {
-                host: reader,
-                instance: new PluginApi(reader, plugin)
-            };
-        };
-    }
-
-//
-//  The following is adapted from Rangy's Module class:
-//
-//  Copyright (c) 2014 Tim Down
-//
-//  The MIT License (MIT)
-//  Permission is hereby granted, free of charge, to any person obtaining a copy
-//  of this software and associated documentation files (the "Software"), to deal
-//  in the Software without restriction, including without limitation the rights
-//  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-//  copies of the Software, and to permit persons to whom the Software is
-//  furnished to do so, subject to the following conditions:
-//
-//  The above copyright notice and this permission notice shall be included in all
-//  copies or substantial portions of the Software.
-//
-//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-//  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-//  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-//  SOFTWARE.
-
-    function Plugin(name, dependencies, initializer) {
-        this.name = name;
-        this.dependencies = dependencies;
-        this.initialized = false;
-        this.supported = false;
-        this.initializer = initializer;
-    }
-
-    Plugin.prototype = {
-        init: function (apiFactory) {
-            var requiredPluginNames = this.dependencies || [];
-            for (var i = 0, len = requiredPluginNames.length, requiredPlugin, PluginName; i < len; ++i) {
-                PluginName = requiredPluginNames[i];
-
-                requiredPlugin = _registeredPlugins[PluginName];
-                if (!requiredPlugin || !(requiredPlugin instanceof Plugin)) {
-                    throw new Error("required Plugin '" + PluginName + "' not found");
-                }
-
-                requiredPlugin.init(apiFactory);
-
-                if (!requiredPlugin.supported) {
-                    throw new Error("required Plugin '" + PluginName + "' not supported");
-                }
-            }
-
-            // Now run initializer
-            this.initializer(this, apiFactory.create(this));
-        },
-
-        fail: function (reason) {
-            this.initialized = true;
-            this.supported = false;
-            throw new Error("Plugin '" + this.name + "' failed to load: " + reason);
-        },
-
-        warn: function (msg) {
-            console.warn("Plugin " + this.name + ": " + msg);
-        },
-
-        deprecationNotice: function (deprecated, replacement) {
-            console.warn("DEPRECATED: " + deprecated + " in Plugin " + this.name + "is deprecated. Please use "
-            + replacement + " instead");
-        },
-
-        createError: function (msg) {
-            return new Error("Error in " + this.name + " Plugin: " + msg);
-        }
-    };
-
-    var instance = new PluginsController();
-    return instance;
-});
-
-//  LauncherOSX
-//
-//  Created by Boris Schneiderman.
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
-//  
-//  Redistribution and use in source and binary forms, with or without modification, 
-//  are permitted provided that the following conditions are met:
-//  1. Redistributions of source code must retain the above copyright notice, this 
-//  list of conditions and the following disclaimer.
-//  2. Redistributions in binary form must reproduce the above copyright notice, 
-//  this list of conditions and the following disclaimer in the documentation and/or 
-//  other materials provided with the distribution.
-//  3. Neither the name of the organization nor the names of its contributors may be 
-//  used to endorse or promote products derived from this software without specific 
-//  prior written permission.
-//  
-//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
-//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
-//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
-//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
-//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
-//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
-//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
-//  OF THE POSSIBILITY OF SUCH DAMAGE.
-
-define('readium_shared_js/globals',['jquery','eventEmitter'], function($, EventEmitter) {
-/**
- * Top level ReadiumSDK namespace
- * @namespace
- */
-var Globals = {
-
-    /**
-     * Current version of the JS SDK
-     * @static
-     * @return {string} version
-     */
-    version: function () {
-        return "0.8.0";
-    },
-    /**
-     * @namespace
-     */
-    Views: {
-        /**
-         * Landscape Orientation
-         */
-        ORIENTATION_LANDSCAPE: "orientation_landscape",
-        /**
-         * Portrait Orientation
-         */
-        ORIENTATION_PORTRAIT: "orientation_portrait"
-    },
-    /**
-     * @namespace
-     */
-    Events: {
-        /**
-         * @event
-         */
-        READER_INITIALIZED: "ReaderInitialized",
-        /**
-         * This gets triggered on every page turnover. It includes spine information and such.
-         * @event
-         */
-        PAGINATION_CHANGED: "PaginationChanged",
-        /**
-         * @event
-         */
-        SETTINGS_APPLIED: "SettingsApplied",
-        /**
-         * @event
-         */
-        FXL_VIEW_RESIZED: "FXLViewResized",
-        /**
-         * @event
-         */
-        READER_VIEW_CREATED: "ReaderViewCreated",
-        /**
-         * @event
-         */
-        READER_VIEW_DESTROYED: "ReaderViewDestroyed",
-        /**
-         * @event
-         */
-        CONTENT_DOCUMENT_LOAD_START: "ContentDocumentLoadStart",
-        /**
-         * @event
-         */
-        CONTENT_DOCUMENT_LOADED: "ContentDocumentLoaded",
-        /**
-         * @event
-         */
-        MEDIA_OVERLAY_STATUS_CHANGED: "MediaOverlayStatusChanged",
-        /**
-         * @event
-         */
-        MEDIA_OVERLAY_TTS_SPEAK: "MediaOverlayTTSSpeak",
-        /**
-         * @event
-         */
-        MEDIA_OVERLAY_TTS_STOP: "MediaOverlayTTSStop",
-        /**
-         * @event
-         */
-        PLUGINS_LOADED: "PluginsLoaded"
-    },
-    /**
-     * Internal Events
-     *
-     * @desc Should not be triggered outside of {@link Views.ReaderView}.
-     * @namespace
-     */
-    InternalEvents: {
-        /**
-         * @event
-         */
-        CURRENT_VIEW_PAGINATION_CHANGED: "CurrentViewPaginationChanged",
-    }
-
-};
-$.extend(Globals, new EventEmitter());
-
-return Globals;
-
-});
-
-//This is default implementation of reading system object that will be available for the publication's javascript to analyze at runtime
-//To extend/modify/replace this object reading system should subscribe Globals.Events.READER_INITIALIZED and apply changes in reaction to this event
-navigator.epubReadingSystem = {
-    name: "",
-    version: "0.0.0",
-    layoutStyle: "paginated",
-
-    hasFeature: function (feature, version) {
-
-        // for now all features must be version 1.0 so fail fast if the user has asked for something else
-        if (version && version !== "1.0") {
-            return false;
-        }
-
-        if (feature === "dom-manipulation") {
-            // Scripts may make structural changes to the document???s DOM (applies to spine-level scripting only).
-            return true;
-        }
-        if (feature === "layout-changes") {
-            // Scripts may modify attributes and CSS styles that affect content layout (applies to spine-level scripting only).
-            return true;
-        }
-        if (feature === "touch-events") {
-            // The device supports touch events and the Reading System passes touch events to the content.
-            return false;
-        }
-        if (feature === "mouse-events") {
-            // The device supports mouse events and the Reading System passes mouse events to the content.
-            return true;
-        }
-        if (feature === "keyboard-events") {
-            // The device supports keyboard events and the Reading System passes keyboard events to the content.
-            return true;
-        }
-
-        if (feature === "spine-scripting") {
-            //Spine-level scripting is supported.
-            return true;
-        }
-
-        return false;
-    }
-};
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
 //
 //  Redistribution and use in source and binary forms, with or without modification,
@@ -18072,7 +20924,7 @@ navigator.epubReadingSystem = {
 //  prior written permission.
 
 //'text!empty:'
-define('readium_shared_js/globalsSetup',['jquery', 'console_shim', 'eventEmitter', 'URIjs', 'readium_cfi_js', 'readium_js_plugins', './globals'], function ($, console_shim, EventEmitter, URI, epubCfi, PluginsController, Globals) {
+define('readium_shared_js/globalsSetup',['./globals', 'jquery', 'console_shim', 'es6-collections', 'eventEmitter', 'URIjs', 'readium_cfi_js', 'readium_js_plugins'], function (Globals, $, console_shim, es6collections, EventEmitter, URI, epubCfi, PluginsController) {
 
     console.log("Globals...");
 
@@ -18105,6 +20957,9 @@ define('readium_shared_js/globalsSetup',['jquery', 'console_shim', 'eventEmitter
     // Plugins bootstrapping begins
     Globals.Plugins = PluginsController;
     Globals.on(Globals.Events.READER_INITIALIZED, function(reader) {
+        
+        Globals.logEvent("READER_INITIALIZED", "ON", "globalsSetup.js");
+        
         try {
             PluginsController.initialize(reader);
         } catch (ex) {
@@ -18112,7 +20967,7 @@ define('readium_shared_js/globalsSetup',['jquery', 'console_shim', 'eventEmitter
         }
 
         _.defer(function() {
-            console.log("Plugins loaded.");
+            Globals.logEvent("PLUGINS_LOADED", "EMIT", "globalsSetup.js");
             Globals.emit(Globals.Events.PLUGINS_LOADED, reader);
         });
     });
@@ -18139,58 +20994,6 @@ define('readium_shared_js/globalsSetup',['jquery', 'console_shim', 'eventEmitter
 
 define('readium_shared_js', ['readium_shared_js/globalsSetup'], function (main) { return main; });
 
-//  Created by Boris Schneiderman.
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
-//  
-//  Redistribution and use in source and binary forms, with or without modification, 
-//  are permitted provided that the following conditions are met:
-//  1. Redistributions of source code must retain the above copyright notice, this 
-//  list of conditions and the following disclaimer.
-//  2. Redistributions in binary form must reproduce the above copyright notice, 
-//  this list of conditions and the following disclaimer in the documentation and/or 
-//  other materials provided with the distribution.
-//  3. Neither the name of the organization nor the names of its contributors may be 
-//  used to endorse or promote products derived from this software without specific 
-//  prior written permission.
-//  
-//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
-//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
-//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
-//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
-//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
-//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
-//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
-//  OF THE POSSIBILITY OF SUCH DAMAGE.
-
-define('readium_shared_js/models/bookmark_data',[],function() {
-/**
- * @class Models.BookmarkData
- */
-var BookmarkData = function(idref, contentCFI) {
-
-    /**
-     * spine item idref
-     * @property idref
-     * @type {string}
-     */
-    this.idref = idref;
-
-    /**
-     * cfi of the first visible element
-     * @property contentCFI
-     * @type {string}
-     */
-    this.contentCFI = contentCFI;
-
-    this.toString = function () {
-        return JSON.stringify(this);
-    }
-};
-
-return BookmarkData;
-});
 //  Created by Boris Schneiderman.
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
 //  
@@ -18865,7 +21668,7 @@ SpineItem.alternateSpread = function(spread) {
 //  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
-define('readium_shared_js/helpers',['underscore', "jquery", "jquerySizes", "./models/spine_item", "./globals"], function(_, $, JQuerySizes, SpineItem, Globals) {
+define('readium_shared_js/helpers',["./globals", 'underscore', "jquery", "jquerySizes", "./models/spine_item"], function(Globals, _, $, JQuerySizes, SpineItem) {
 
 var Helpers = {};
 
@@ -19503,6 +22306,87 @@ Helpers.escapeJQuerySelector = function (sel) {
     return selector;
 };
 
+Helpers.polyfillCaretRangeFromPoint = function(document) {
+    //Derived from css-regions-polyfill:
+    // https://github.com/FremyCompany/css-regions-polyfill/blob/bfbb6445ec2a2a883005ab8801d8463fa54b5701/src/range-extensions.js
+    //Copyright (c) 2013 François REMY
+    //Copyright (c) 2013 Adobe Systems Inc.
+    //Licensed under the Apache License, Version 2.0
+    if (!document.caretRangeFromPoint) {
+        if (document.caretPositionFromPoint) {
+            document.caretRangeFromPoint = function caretRangeFromPoint(x, y) {
+                var r = document.createRange();
+                var p = document.caretPositionFromPoint(x, y);
+                if (p.offsetNode) {
+                    r.setStart(p.offsetNode, p.offset);
+                    r.setEnd(p.offsetNode, p.offset);
+                }
+                return r;
+            }
+        } else if ((document.body || document.createElement('body')).createTextRange) {
+            //
+            // we may want to convert TextRange to Range
+            //
+
+            //TextRangeUtils, taken from: https://code.google.com/p/ierange/
+            //Copyright (c) 2009 Tim Cameron Ryan
+            //Released under the MIT/X License
+            var TextRangeUtils = {
+                convertToDOMRange: function(textRange, document) {
+                    var adoptBoundary = function(domRange, textRangeInner, bStart) {
+                        // iterate backwards through parent element to find anchor location
+                        var cursorNode = document.createElement('a'),
+                            cursor = textRangeInner.duplicate();
+                        cursor.collapse(bStart);
+                        var parent = cursor.parentElement();
+                        do {
+                            parent.insertBefore(cursorNode, cursorNode.previousSibling);
+                            cursor.moveToElementText(cursorNode);
+                        } while (cursor.compareEndPoints(bStart ? 'StartToStart' : 'StartToEnd', textRangeInner) > 0 && cursorNode.previousSibling);
+                        // when we exceed or meet the cursor, we've found the node
+                        if (cursor.compareEndPoints(bStart ? 'StartToStart' : 'StartToEnd', textRangeInner) == -1 && cursorNode.nextSibling) {
+                            // data node
+                            cursor.setEndPoint(bStart ? 'EndToStart' : 'EndToEnd', textRangeInner);
+                            domRange[bStart ? 'setStart' : 'setEnd'](cursorNode.nextSibling, cursor.text.length);
+                        } else {
+                            // element
+                            domRange[bStart ? 'setStartBefore' : 'setEndBefore'](cursorNode);
+                        }
+                        cursorNode.parentNode.removeChild(cursorNode);
+                    };
+                    // return a DOM range
+                    var domRange = document.createRange();
+                    adoptBoundary(domRange, textRange, true);
+                    adoptBoundary(domRange, textRange, false);
+                    return domRange;
+                }
+            };
+
+            document.caretRangeFromPoint = function caretRangeFromPoint(x, y) {
+                // the accepted number of vertical backtracking, in CSS pixels
+                var IYDepth = 40;
+                // try to create a text range at the specified location
+                var tr = document.body.createTextRange();
+                for (var iy = IYDepth; iy; iy = iy - 4) {
+                    try {
+                        tr.moveToPoint(x, iy + y - IYDepth);
+                        return TextRangeUtils.convertToDOMRange(tr, document);
+                    } catch (ex) {
+                    }
+                }
+                // if that fails, return the location just after the element located there
+                try {
+                    var elem = document.elementFromPoint(x - 1, y - 1);
+                    var r = document.createRange();
+                    r.setStartAfter(elem);
+                    return r;
+                } catch (ex) {
+                    return null;
+                }
+            }
+        }
+    }
+};
 
 return Helpers;
 });
@@ -19537,29 +22421,90 @@ return Helpers;
 /**
  * CFI navigation helper class
  *
- * @param $viewport
- * @param $iframe
  * @param options Additional settings for NavigationLogic object
- *      - rectangleBased    If truthy, clientRect-based geometry will be used
- *      - paginationInfo    Layout details, used by clientRect-based geometry
+ *      - paginationInfo            Layout details, used by clientRect-based geometry
+ *      - visibleContentOffsets     Function that returns offsets. If supplied it is used instead of the inferred offsets
+ *      - frameDimensions           Function that returns an object with width and height properties. Needs to be set.
+ *      - $iframe                   Iframe reference, and needs to be set.
  * @constructor
  */
 define('readium_shared_js/views/cfi_navigation_logic',["jquery", "underscore", "../helpers", 'readium_cfi_js'], function($, _, Helpers, epubCfi) {
 
-var CfiNavigationLogic = function($viewport, $iframe, options){
+var CfiNavigationLogic = function(options) {
 
+    var self = this;
     options = options || {};
+
+    var debugMode = ReadiumSDK.DEBUG_MODE;
 
     this.getRootElement = function(){
 
-        return $iframe[0].contentDocument.documentElement;
+        return options.$iframe[0].contentDocument.documentElement;
     };
-    
-    // FIXED LAYOUT if (!options.rectangleBased) alert("!!!options.rectangleBased");
-    
-    var visibilityCheckerFunc = options.rectangleBased
-        ? checkVisibilityByRectangles
-        : checkVisibilityByVerticalOffsets;
+
+    this.getRootDocument = function () {
+        return options.$iframe[0].contentDocument;
+    };
+
+    function createRange() {
+        return self.getRootDocument().createRange();
+    }
+
+    function getNodeClientRect(node) {
+        var range = createRange();
+        range.selectNode(node);
+        return normalizeRectangle(range.getBoundingClientRect(),0,0);
+    }
+
+    function getNodeContentsClientRect(node) {
+        var range = createRange();
+        range.selectNodeContents(node);
+        return normalizeRectangle(range.getBoundingClientRect(),0,0);
+    }
+
+    function getElementClientRect($element) {
+        return normalizeRectangle($element[0].getBoundingClientRect(),0,0);
+    }
+
+    function getNodeRangeClientRect(startNode, startOffset, endNode, endOffset) {
+        var range = createRange();
+        range.setStart(startNode, startOffset ? startOffset : 0);
+        if (endNode.nodeType === Node.ELEMENT_NODE) {
+            range.setEnd(endNode, endOffset ? endOffset : endNode.childNodes.length);
+        } else if (endNode.nodeType === Node.TEXT_NODE) {
+            range.setEnd(endNode, endOffset ? endOffset : 0);
+        }
+        return normalizeRectangle(range.getBoundingClientRect(),0,0);
+    }
+
+    function getNodeClientRectList(node, visibleContentOffsets) {
+        visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
+        
+        var range = createRange();
+        range.selectNode(node);
+        return _.map(range.getClientRects(), function (rect) {
+            return normalizeRectangle(rect, visibleContentOffsets.left, visibleContentOffsets.top);
+        });
+    }
+
+    function getFrameDimensions() {
+        if (options.frameDimensions) {
+            return options.frameDimensions();
+        }
+        
+        console.error('CfiNavigationLogic: No frame dimensions specified!');
+        return null;
+    }
+
+    function getCaretRangeFromPoint(x, y, document) {
+        document = document || self.getRootDocument();
+        Helpers.polyfillCaretRangeFromPoint(document); //only polyfills once, no-op afterwards
+        return document.caretRangeFromPoint(x, y);
+    }
+
+    function isPaginatedView() {
+        return !!options.paginationInfo;
+    }
 
     /**
      * @private
@@ -19587,15 +22532,32 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
      * Checks whether or not a (fully adjusted) rectangle is at least partly visible
      *
      * @param {Object} rect
-     * @param {Object} frameDimensions
+     * @param {Object} [frameDimensions]
      * @param {boolean} [isVwm]           isVerticalWritingMode
      * @returns {boolean}
      */
-    function isRectVisible(rect, frameDimensions, isVwm) {
-        if (isVwm) {
-            return rect.top >= 0 && rect.top < frameDimensions.height;
+    function isRectVisible(rect, ignorePartiallyVisible, frameDimensions, isVwm) {
+
+        frameDimensions = frameDimensions || getFrameDimensions();
+        isVwm = isVwm || isVerticalWritingMode();
+
+        //Text nodes without printable text dont have client rectangles
+        if (!rect) {
+            return false;
         }
-        return rect.left >= 0 && rect.left < frameDimensions.width;
+        //Sometimes we get client rects that are "empty" and aren't supposed to be visible
+        if (rect.left == 0 && rect.right == 0 && rect.top == 0 && rect.bottom == 0) {
+            return false;
+        }
+
+        if (isPaginatedView()) {
+            return (rect.left >= 0 && rect.left < frameDimensions.width) || 
+                (!ignorePartiallyVisible && rect.left < 0 && rect.right >= 0);
+        } else {
+            return (rect.top >= 0 && rect.top < frameDimensions.height) || 
+                (!ignorePartiallyVisible && rect.top < 0 && rect.bottom >= 0);
+        }
+
     }
 
     /**
@@ -19605,12 +22567,12 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
      * @returns {number} Full width of a column in pixels
      */
     function getColumnFullWidth() {
-        
+
         if (!options.paginationInfo || isVerticalWritingMode())
         {
-            return $iframe.width();
+            return options.$iframe.width();
         }
-        
+
         return options.paginationInfo.columnWidth + options.paginationInfo.columnGap;
     }
 
@@ -19623,56 +22585,21 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
      * @returns {Object}
      */
     function getVisibleContentOffsets() {
-        if(isVerticalWritingMode()){
+        if (options.visibleContentOffsets) {
+            return options.visibleContentOffsets();
+        }
+
+        if (isVerticalWritingMode()) {
             return {
-                top: (options.paginationInfo ? options.paginationInfo.pageOffset : 0)
+                top: (options.paginationInfo ? options.paginationInfo.pageOffset : 0),
+                left: 0
             };
         }
+
         return {
-            left: (options.paginationInfo ? options.paginationInfo.pageOffset : 0)
-                * (isPageProgressionRightToLeft() ? -1 : 1)
+            top: 0,
+            left: 0
         };
-    }
-
-    // Old (offsetTop-based) algorithm, useful in top-to-bottom layouts
-    function checkVisibilityByVerticalOffsets(
-            $element, visibleContentOffsets, shouldCalculateVisibilityOffset) {
-
-        var elementRect = Helpers.Rect.fromElement($element);
-        if (_.isNaN(elementRect.left)) {
-            // this is actually a point element, doesnt have a bounding rectangle
-            var position = $element.position();
-            elementRect = new Helpers.Rect(
-                    position.left, position.top, 0, 0);
-        }
-        var topOffset = visibleContentOffsets.top || 0;
-        var isBelowVisibleTop = elementRect.bottom() > topOffset;
-        var isAboveVisibleBottom = visibleContentOffsets.bottom !== undefined
-            ? elementRect.top < visibleContentOffsets.bottom
-            : true; //this check always passed, if corresponding offset isn't set
-
-        var percentOfElementHeight = 0;
-        if (isBelowVisibleTop && isAboveVisibleBottom) { // element is visible
-            if (!shouldCalculateVisibilityOffset) {
-                return 100;
-            }
-            else if (elementRect.top <= topOffset) {
-                percentOfElementHeight = Math.ceil(
-                    100 * (topOffset - elementRect.top) / elementRect.height
-                );
-
-                // below goes another algorithm, which has been used in getVisibleElements pattern,
-                // but it seems to be a bit incorrect
-                // (as spatial offset should be measured at the first visible point of the element):
-                //
-                // var visibleTop = Math.max(elementRect.top, visibleContentOffsets.top);
-                // var visibleBottom = Math.min(elementRect.bottom(), visibleContentOffsets.bottom);
-                // var visibleHeight = visibleBottom - visibleTop;
-                // var percentVisible = Math.round((visibleHeight / elementRect.height) * 100);
-            }
-            return 100 - percentOfElementHeight;
-        }
-        return 0; // element isn't visible
     }
 
     /**
@@ -19684,48 +22611,60 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
      * @param {jQuery} $element
      * @param {Object} _props
      * @param {boolean} shouldCalculateVisibilityPercentage
+     * @param {Object} [frameDimensions]
      * @returns {number|null}
      *      0 for non-visible elements,
      *      0 < n <= 100 for visible elements
      *      (will just give 100, if `shouldCalculateVisibilityPercentage` => false)
      *      null for elements with display:none
      */
-    function checkVisibilityByRectangles(
-            $element, _props, shouldCalculateVisibilityPercentage) {
+    function checkVisibilityByRectangles($element, shouldCalculateVisibilityPercentage, visibleContentOffsets, frameDimensions) {
+        visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
+        frameDimensions = frameDimensions || getFrameDimensions();
 
-        var elementRectangles = getNormalizedRectangles($element);
+        var elementRectangles = getNormalizedRectangles($element, visibleContentOffsets);
+
         var clientRectangles = elementRectangles.clientRectangles;
         if (clientRectangles.length === 0) { // elements with display:none, etc.
             return null;
         }
 
-        var isRtl = isPageProgressionRightToLeft();
-        var isVwm = isVerticalWritingMode();
-        var columnFullWidth = getColumnFullWidth();
-        var frameDimensions = {
-            width: $iframe.width(),
-            height: $iframe.height()
-        };
+        var visibilityPercentage = 0;
 
         if (clientRectangles.length === 1) {
-            // because of webkit inconsistency, that single rectangle should be adjusted
-            // until it hits the end OR will be based on the FIRST column that is visible
-            adjustRectangle(clientRectangles[0], frameDimensions, columnFullWidth,
-                    isRtl, isVwm, true);
-        }
+            var adjustedRect = clientRectangles[0];
+            
+            if (isPaginatedView()) {
+                if (adjustedRect.bottom > frameDimensions.height || adjustedRect.top < 0) {
+                    // because of webkit inconsistency, that single rectangle should be adjusted
+                    // until it hits the end OR will be based on the FIRST column that is visible
+                    adjustRectangle(adjustedRect, true, frameDimensions);
+                }
+            }
 
-        // for an element split between several CSS columns,
-        // both Firefox and IE produce as many client rectangles;
-        // each of those should be checked
-        var visibilityPercentage = 0;
-        for (var i = 0, l = clientRectangles.length; i < l; ++i) {
-            if (isRectVisible(clientRectangles[i], frameDimensions, isVwm)) {
-                visibilityPercentage = shouldCalculateVisibilityPercentage
-                    ? measureVisibilityPercentageByRectangles(clientRectangles, i)
-                    : 100;
-                break;
+            if (isRectVisible(adjustedRect, false, frameDimensions)) {
+                //it might still be partially visible in webkit
+                if (shouldCalculateVisibilityPercentage && adjustedRect.top < 0) {
+                    visibilityPercentage =
+                        Math.floor(100 * (adjustedRect.height + adjustedRect.top) / adjustedRect.height);
+                } else {
+                    visibilityPercentage = 100;
+                }
+            }
+        } else {
+            // for an element split between several CSS columns,z
+            // both Firefox and IE produce as many client rectangles;
+            // each of those should be checked
+            for (var i = 0, l = clientRectangles.length; i < l; ++i) {
+                if (isRectVisible(clientRectangles[i], false, frameDimensions)) {
+                    visibilityPercentage = shouldCalculateVisibilityPercentage
+                        ? measureVisibilityPercentageByRectangles(clientRectangles, i)
+                        : 100;
+                    break;
+                }
             }
         }
+
         return visibilityPercentage;
     }
 
@@ -19738,37 +22677,49 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
      * @returns {number|null}
      */
     function findPageByRectangles($element, spatialVerticalOffset) {
+
         var visibleContentOffsets = getVisibleContentOffsets();
         var elementRectangles = getNormalizedRectangles($element, visibleContentOffsets);
+
         var clientRectangles  = elementRectangles.clientRectangles;
         if (clientRectangles.length === 0) { // elements with display:none, etc.
             return null;
         }
 
+        return calculatePageIndexByRectangles(clientRectangles, spatialVerticalOffset);
+    }
+
+    /**
+     * @private
+     * Calculate a page index (0-based) for given client rectangles.
+     *
+     * @param {object} clientRectangles
+     * @param {number} [spatialVerticalOffset]
+     * @param {object} [frameDimensions]
+     * @param {object} [columnFullWidth]
+     * @returns {number|null}
+     */
+    function calculatePageIndexByRectangles(clientRectangles, spatialVerticalOffset, frameDimensions, columnFullWidth) {
         var isRtl = isPageProgressionRightToLeft();
         var isVwm = isVerticalWritingMode();
-        var columnFullWidth = getColumnFullWidth();
-
-        var frameHeight = $iframe.height();
-        var frameWidth  = $iframe.width();
+        columnFullWidth = columnFullWidth || getColumnFullWidth();
+        frameDimensions = frameDimensions || getFrameDimensions();
 
         if (spatialVerticalOffset) {
             trimRectanglesByVertOffset(clientRectangles, spatialVerticalOffset,
-                frameHeight, columnFullWidth, isRtl, isVwm);
+                frameDimensions, columnFullWidth, isRtl, isVwm);
         }
 
         var firstRectangle = _.first(clientRectangles);
         if (clientRectangles.length === 1) {
-            adjustRectangle(firstRectangle, {
-                height: frameHeight, width: frameWidth
-            }, columnFullWidth, isRtl, isVwm);
+            adjustRectangle(firstRectangle, false, frameDimensions, columnFullWidth, isRtl, isVwm);
         }
 
         var pageIndex;
 
         if (isVwm) {
             var topOffset = firstRectangle.top;
-            pageIndex = Math.floor(topOffset / frameHeight);
+            pageIndex = Math.floor(topOffset / frameDimensions.height);
         } else {
             var leftOffset = firstRectangle.left;
             if (isRtl) {
@@ -19788,6 +22739,25 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
     }
 
     /**
+     * Finds a page index (0-based) for a specific client rectangle.
+     * Calculations are based on viewport dimensions, offsets, and rectangle coordinates
+     *
+     * @param {ClientRect} clientRectangle
+     * @param {Object} [visibleContentOffsets]
+     * @param {Object} [frameDimensions]
+     * @returns {number|null}
+     */
+    function findPageBySingleRectangle(clientRectangle, visibleContentOffsets, frameDimensions) {
+        visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
+        frameDimensions = frameDimensions || getFrameDimensions();
+        
+        var normalizedRectangle = normalizeRectangle(
+            clientRectangle, visibleContentOffsets.left, visibleContentOffsets.top);
+
+        return calculatePageIndexByRectangles([normalizedRectangle], frameDimensions);
+    }
+
+    /**
      * @private
      * Calculates the visibility offset percentage based on ClientRect dimensions
      *
@@ -19795,14 +22765,13 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
      * @param {number} firstVisibleRectIndex
      * @returns {number} - visibility percentage (0 < n <= 100)
      */
-    function measureVisibilityPercentageByRectangles(
-            clientRectangles, firstVisibleRectIndex) {
+    function measureVisibilityPercentageByRectangles(clientRectangles, firstVisibleRectIndex) {
 
         var heightTotal = 0;
         var heightVisible = 0;
 
         if (clientRectangles.length > 1) {
-            _.each(clientRectangles, function(rect, index) {
+            _.each(clientRectangles, function (rect, index) {
                 heightTotal += rect.height;
                 if (index >= firstVisibleRectIndex) {
                     // in this case, all the rectangles after the first visible
@@ -19813,9 +22782,9 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
         }
         else {
             // should already be normalized and adjusted
-            heightTotal   = clientRectangles[0].height;
+            heightTotal = clientRectangles[0].height;
             heightVisible = clientRectangles[0].height - Math.max(
-                    0, -clientRectangles[0].top);
+                0, -clientRectangles[0].top);
         }
         return heightVisible === heightTotal
             ? 100 // trivial case: element is 100% visible
@@ -19834,11 +22803,11 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
 
         visibleContentOffsets = visibleContentOffsets || {};
         var leftOffset = visibleContentOffsets.left || 0;
-        var topOffset  = visibleContentOffsets.top  || 0;
+        var topOffset = visibleContentOffsets.top || 0;
 
         // union of all rectangles wrapping the element
         var wrapperRectangle = normalizeRectangle(
-                $el[0].getBoundingClientRect(), leftOffset, topOffset);
+            $el[0].getBoundingClientRect(), leftOffset, topOffset);
 
         // all the separate rectangles (for detecting position of the element
         // split between several columns)
@@ -19904,9 +22873,9 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
      */
     function offsetRectangle(rect, leftOffset, topOffset) {
 
-        rect.left   += leftOffset;
-        rect.right  += leftOffset;
-        rect.top    += topOffset;
+        rect.left += leftOffset;
+        rect.right += leftOffset;
+        rect.top += topOffset;
         rect.bottom += topOffset;
     }
 
@@ -19923,17 +22892,20 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
      * Ugh.
      *
      * @param {Object} rect
-     * @param {Object} frameDimensions
-     * @param {number} columnFullWidth
-     * @param {boolean} isRtl
-     * @param {boolean} isVwm               isVerticalWritingMode
-     * @param {boolean} shouldLookForFirstVisibleColumn
+     * @param {boolean} [shouldLookForFirstVisibleColumn]
      *      If set, there'll be two-phase adjustment
      *      (to align a rectangle with a viewport)
-
+     * @param {Object} [frameDimensions]
+     * @param {number} [columnFullWidth]
+     * @param {boolean} [isRtl]
+     * @param {boolean} [isVwm]               isVerticalWritingMode
      */
-    function adjustRectangle(rect, frameDimensions, columnFullWidth, isRtl, isVwm,
-            shouldLookForFirstVisibleColumn) {
+    function adjustRectangle(rect, shouldLookForFirstVisibleColumn, frameDimensions, columnFullWidth, isRtl, isVwm) {
+
+        frameDimensions = frameDimensions || getFrameDimensions();
+        columnFullWidth = columnFullWidth || getColumnFullWidth();
+        isRtl = isRtl || isPageProgressionRightToLeft();
+        isVwm = isVwm || isVerticalWritingMode();
 
         // Rectangle adjustment is not needed in VWM since it does not deal with columns
         if (isVwm) {
@@ -19955,7 +22927,7 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
         // (i.e., is the first visible one).
         if (shouldLookForFirstVisibleColumn) {
             while (rect.bottom >= frameDimensions.height) {
-                if (isRectVisible(rect, frameDimensions, isVwm)) {
+                if (isRectVisible(rect, false, frameDimensions, isVwm)) {
                     break;
                 }
                 offsetRectangle(rect, columnFullWidth, -frameDimensions.height);
@@ -19969,19 +22941,24 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
      *
      * @param {Array} rects
      * @param {number} verticalOffset
-     * @param {number} frameHeight
+     * @param {number} frameDimensions
      * @param {number} columnFullWidth
      * @param {boolean} isRtl
      * @param {boolean} isVwm               isVerticalWritingMode
      */
     function trimRectanglesByVertOffset(
-            rects, verticalOffset, frameHeight, columnFullWidth, isRtl, isVwm) {
+            rects, verticalOffset, frameDimensions, columnFullWidth, isRtl, isVwm) {
+
+        frameDimensions = frameDimensions || getFrameDimensions();
+        columnFullWidth = columnFullWidth || getColumnFullWidth();
+        isRtl = isRtl || isPageProgressionRightToLeft();
+        isVwm = isVwm || isVerticalWritingMode();
 
         //TODO: Support vertical writing mode
         if (isVwm) {
             return;
         }
-        
+
         var totalHeight = _.reduce(rects, function(prev, cur) {
             return prev + cur.height;
         }, 0);
@@ -20003,8 +22980,8 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
             if (isRtl) {
                 columnFullWidth *= -1;
             }
-            while (rects[0].bottom >= frameHeight) {
-                offsetRectangle(rects[0], columnFullWidth, -frameHeight);
+            while (rects[0].bottom >= frameDimensions.height) {
+                offsetRectangle(rects[0], columnFullWidth, -frameDimensions.height);
             }
 
             rects[0].top += heightToHide;
@@ -20012,87 +22989,394 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
         }
     }
 
-    //we look for text and images
-    this.findFirstVisibleElement = function (props) {
+    this.getCfiForElement = function (element) {
+        var cfi = EPUBcfi.Generator.generateElementCFIComponent(element,
+            ["cfi-marker"],
+            [],
+            ["MathJax_Message", "MathJax_SVG_Hidden"]);
 
-        if (typeof props !== 'object') {
-            // compatibility with legacy code, `props` is `topOffset` actually
-            props = { top: props };
+        if (cfi[0] == "!") {
+            cfi = cfi.substring(1);
         }
-
-        var $elements;
-        var $firstVisibleTextNode = null;
-        var percentOfElementHeight = 0;
-
-        $elements = $("body", this.getRootElement()).find(":not(iframe)").contents().filter(function () {
-            return isValidTextNode(this) || this.nodeName.toLowerCase() === 'img';
-        });
-
-        // Find the first visible text node
-        $.each($elements, function() {
-
-            var $element;
-
-            if(this.nodeType === Node.TEXT_NODE)  { //text node
-                $element = $(this).parent();
-            }
-            else {
-                $element = $(this); //image
-            }
-
-            var visibilityResult = visibilityCheckerFunc($element, props, true);
-            if (visibilityResult) {
-                $firstVisibleTextNode = $element;
-                percentOfElementHeight = 100 - visibilityResult;
-                return false;
-            }
-            return true;
-        });
-
-        return {$element: $firstVisibleTextNode, percentY: percentOfElementHeight};
+        return cfi;
     };
 
-    this.getFirstVisibleElementCfi = function(topOffset) {
+    //TODO JC: Can now use getFirstVisibleCfi instead, use that instead of this at top levels
+    this.getFirstVisibleElementCfi = function (topOffset) {
 
-        var foundElement = this.findFirstVisibleElement(topOffset);
+        return self.getFirstVisibleCfi();
 
-        if(!foundElement.$element) {
-            console.log("Could not generate CFI no visible element on page");
+    };
+
+
+    this.getVisibleCfiFromPoint = function (x, y, precisePoint) {
+        var document = self.getRootDocument();
+        var firstVisibleCaretRange = getCaretRangeFromPoint(x, y, document);
+        var elementFromPoint = document.elementFromPoint(x, y);
+        var invalidElementFromPoint = !elementFromPoint || elementFromPoint === document.documentElement;
+
+        if (precisePoint) {
+            if (!elementFromPoint || invalidElementFromPoint) {
+                return null;
+            }
+            var testRect = getNodeContentsClientRect(elementFromPoint);
+            if (!isRectVisible(testRect, false)) {
+                return null;
+            }
+            if ((x < testRect.left || x > testRect.right) || (y < testRect.top || y > testRect.bottom)) {
+                return null;
+            }
+        }
+
+        if (!firstVisibleCaretRange) {
+            if (invalidElementFromPoint) {
+                console.error("Could not generate CFI no visible element on page");
+                return null;
+            }
+            firstVisibleCaretRange = createRange();
+            firstVisibleCaretRange.selectNode(elementFromPoint);
+        }
+
+        var range = firstVisibleCaretRange;
+        var cfi;
+        //if we get a text node we need to get an approximate range for the first visible character offsets.
+        var node = range.startContainer;
+        var startOffset, endOffset;
+        if (node.nodeType === Node.TEXT_NODE) {
+            if (precisePoint && node.parentNode !== elementFromPoint) {
+                return null;
+            }
+            if (node.length === 1 && range.startOffset === 1) {
+                startOffset = 0;
+                endOffset = 1;
+            } else if (range.startOffset === node.length) {
+                startOffset = range.startOffset - 1;
+                endOffset = range.startOffset;
+            } else {
+                startOffset = range.startOffset;
+                endOffset = range.startOffset + 1;
+            }
+            var wrappedRange = {
+                startContainer: node,
+                endContainer: node,
+                startOffset: startOffset,
+                endOffset: endOffset,
+                commonAncestorContainer: range.commonAncestorContainer
+            };
+
+            if (debugMode) {
+                drawDebugOverlayFromDomRange(wrappedRange);
+            }
+
+            cfi = generateCfiFromDomRange(wrappedRange);
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+            node =
+                range.startContainer.childNodes[range.startOffset] ||
+                range.startContainer.childNodes[0] ||
+                range.startContainer;
+            if (precisePoint && node !== elementFromPoint) {
+                return null;
+            }
+
+            if (node.nodeType !== Node.ELEMENT_NODE) {
+                cfi = generateCfiFromDomRange(range);
+            } else {
+                cfi = self.getCfiForElement(node);
+            }
+        } else {
+            if (precisePoint && node !== elementFromPoint) {
+                return null;
+            }
+
+            cfi = self.getCfiForElement(elementFromPoint);
+        }
+
+        //This should not happen but if it does print some output, just in case
+        if (cfi && cfi.indexOf('NaN') !== -1) {
+            console.log('Did not generate a valid CFI:' + cfi);
             return undefined;
         }
 
-        //noinspection JSUnresolvedVariable
-        var cfi = EPUBcfi.Generator.generateElementCFIComponent(foundElement.$element[0]);
-
-        if(cfi[0] == "!") {
-            cfi = cfi.substring(1);
-        }
-
-        return cfi + "@0:" + foundElement.percentY;
+        return cfi;
     };
 
-    this.getPageForElementCfi = function(cfi, classBlacklist, elementBlacklist, idBlacklist) {
+    this.getRangeCfiFromPoints = function(startX, startY, endX, endY) {
+        var document = self.getRootDocument();
+        var start = getCaretRangeFromPoint(startX, startY, document),
+            end = getCaretRangeFromPoint(endX, endY, document),
+            range = createRange();
+        range.setStart(start.startContainer, start.startOffset);
+        range.setEnd(end.startContainer, end.startOffset);
+        // if we're looking at a text node create a nice range (n, n+1)
+        if (start.startContainer === start.endContainer && start.startContainer.nodeType === Node.TEXT_NODE && end.startContainer.length > end.startOffset+1) {
+            range.setEnd(end.startContainer, end.startOffset+1);
+        }
+        return generateCfiFromDomRange(range);
+    };
+
+    function getTextNodeRectCornerPairs(rect) {
+        //
+        //    top left             top right
+        //    ╲                   ╱
+        //  ── ▒T▒E▒X▒T▒ ▒R▒E▒C▒T▒ ──
+        //
+        // top left corner & top right corner
+        // but for y coord use the mid point between top and bottom
+
+        if (isVerticalWritingMode()) {
+            var x = rect.right - (rect.width / 2);
+            return [{x: x, y: rect.top}, {x: x, y: rect.bottom}];
+        } else {
+            var y = rect.top + (rect.height / 2);
+            var result = [{x: rect.left, y: y}, {x: rect.right, y: y}]
+            return isPageProgressionRightToLeft() ? result.reverse() : result;
+        }
+    }
+
+    function getVisibleTextRangeOffsetsSelectedByFunc(textNode, pickerFunc, visibleContentOffsets, frameDimensions) {
+        visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
+        
+        var textNodeFragments = getNodeClientRectList(textNode, visibleContentOffsets);
+
+        var visibleFragments = _.filter(textNodeFragments, function (rect) {
+            return isRectVisible(rect, false, frameDimensions);
+        });
+
+        var fragment = pickerFunc(visibleFragments);
+        if (!fragment) {
+            //no visible fragment, empty text node?
+            return null;
+        }
+        var fragmentCorner = pickerFunc(getTextNodeRectCornerPairs(fragment));
+        // Reverse taking into account of visible content offsets
+        fragmentCorner.x -= visibleContentOffsets.left;
+        fragmentCorner.y -= visibleContentOffsets.top;
+        
+        var caretRange = getCaretRangeFromPoint(fragmentCorner.x, fragmentCorner.y);
+        console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'a0');
+        // Desperately try to find it from all angles! Darn sub pixeling..
+        //TODO: remove the need for this brute-force method, since it's making the result non-deterministic
+        if (!caretRange || caretRange.startContainer !== textNode) {
+            caretRange = getCaretRangeFromPoint(fragmentCorner.x - 1, fragmentCorner.y);
+            console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'a1');
+        }
+        if (!caretRange || caretRange.startContainer !== textNode) {
+            caretRange = getCaretRangeFromPoint(fragmentCorner.x, fragmentCorner.y - 1);
+            console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'a2');
+        }
+        if (!caretRange || caretRange.startContainer !== textNode) {
+            caretRange = getCaretRangeFromPoint(fragmentCorner.x - 1, fragmentCorner.y - 1);
+            console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'a3');
+        }
+        if (!caretRange || caretRange.startContainer !== textNode) {
+            fragmentCorner.x = Math.floor(fragmentCorner.x);
+            fragmentCorner.y = Math.floor(fragmentCorner.y);
+            caretRange = getCaretRangeFromPoint(fragmentCorner.x, fragmentCorner.y);
+            console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'b0');
+        }
+        // Desperately try to find it from all angles! Darn sub pixeling..
+        if (!caretRange || caretRange.startContainer !== textNode) {
+            caretRange = getCaretRangeFromPoint(fragmentCorner.x - 1, fragmentCorner.y);
+            console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'b1');
+        }
+        if (!caretRange || caretRange.startContainer !== textNode) {
+            caretRange = getCaretRangeFromPoint(fragmentCorner.x, fragmentCorner.y - 1);
+            console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'b2');
+        }
+        if (!caretRange || caretRange.startContainer !== textNode) {
+            caretRange = getCaretRangeFromPoint(fragmentCorner.x - 1, fragmentCorner.y - 1);
+            console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'b3');
+        }
+
+        // Still nothing? fall through..
+        if (!caretRange) {
+            console.warn('getVisibleTextRangeOffsetsSelectedByFunc: no caret range result');
+            return null;
+        }
+
+        if (caretRange.startContainer === textNode) {
+            return pickerFunc(
+                [{start: caretRange.startOffset, end: caretRange.startOffset + 1},
+                {start: caretRange.startOffset - 1, end: caretRange.startOffset}]
+            );
+        } else {
+            console.warn('getVisibleTextRangeOffsetsSelectedByFunc: incorrect caret range result');
+            return null;
+        }
+    }
+
+    function findVisibleLeafNodeCfi(leafNodeList, pickerFunc, targetLeafNode, visibleContentOffsets, frameDimensions) {
+        var index = 0;
+        if (!targetLeafNode) {
+            index = leafNodeList.indexOf(pickerFunc(leafNodeList))
+        } else {
+            index = leafNodeList.indexOf(targetLeafNode);
+            if (index === -1) {
+                //target leaf node not the right type? not in list?
+                return null;
+            }
+            // use the next leaf node in the list
+            index += pickerFunc([1, -1]);
+        }
+        var visibleLeafNode = leafNodeList[index];
+
+        if (!visibleLeafNode) {
+            return null;
+        }
+
+        var element = visibleLeafNode.element;
+        var textNode = visibleLeafNode.textNode;
+
+        //if a valid text node is found, try to generate a CFI with range offsets
+        if (textNode && isValidTextNode(textNode)) {
+            var visibleRange = getVisibleTextRangeOffsetsSelectedByFunc(textNode, pickerFunc, visibleContentOffsets, frameDimensions);
+            if (!visibleRange) {
+                //the text node is valid, but not visible..
+                //let's try again with the next node in the list
+                return findVisibleLeafNodeCfi(leafNodeList, pickerFunc, visibleLeafNode, visibleContentOffsets, frameDimensions);
+            }
+            var range = createRange();
+            range.setStart(textNode, visibleRange.start);
+            range.setEnd(textNode, visibleRange.end);
+            return generateCfiFromDomRange(range);
+        } else {
+            //if not then generate a CFI for the element
+            return self.getCfiForElement(element);
+        }
+    }
+
+    // get an array of visible text elements and then select one based on the func supplied
+    // and generate a CFI for the first visible text subrange.
+    function getVisibleTextRangeCfiForTextElementSelectedByFunc(pickerFunc, visibleContentOffsets, frameDimensions) {        
+        var visibleLeafNodeList = self.getVisibleLeafNodes(visibleContentOffsets, frameDimensions);
+        return findVisibleLeafNodeCfi(visibleLeafNodeList, pickerFunc, null, visibleContentOffsets, frameDimensions);
+    }
+
+    function getLastVisibleTextRangeCfi(visibleContentOffsets, frameDimensions) {
+        return getVisibleTextRangeCfiForTextElementSelectedByFunc(_.last, visibleContentOffsets, frameDimensions);
+    }
+
+    function getFirstVisibleTextRangeCfi(visibleContentOffsets, frameDimensions) {
+        return getVisibleTextRangeCfiForTextElementSelectedByFunc(_.first, visibleContentOffsets, frameDimensions);
+    }
+
+    this.getFirstVisibleCfi = function (visibleContentOffsets, frameDimensions) {
+        return getFirstVisibleTextRangeCfi(visibleContentOffsets, frameDimensions);
+    };
+
+    this.getLastVisibleCfi = function (visibleContentOffsets, frameDimensions) {
+        return getLastVisibleTextRangeCfi(visibleContentOffsets, frameDimensions);
+    };
+
+    function generateCfiFromDomRange(range) {
+        return EPUBcfi.generateRangeComponent(
+            range.startContainer, range.startOffset,
+            range.endContainer, range.endOffset,
+            range.commonAncestorContainer,
+            ['cfi-marker'], [], ["MathJax_Message", "MathJax_SVG_Hidden"]);
+    }
+
+    function getRangeTargetNodes(rangeCfi) {
+        return EPUBcfi.getRangeTargetElements(
+            getWrappedCfiRelativeToContent(rangeCfi),
+            self.getRootDocument(),
+            ['cfi-marker'], [], ["MathJax_Message", "MathJax_SVG_Hidden"]);
+    }
+
+    this.getDomRangeFromRangeCfi = function(rangeCfi, rangeCfi2, inclusive) {
+        var range = createRange();
+
+        if (!rangeCfi2) {
+            if (self.isRangeCfi(rangeCfi)) {
+                var rangeInfo = getRangeTargetNodes(rangeCfi);
+                range.setStart(rangeInfo.startElement, rangeInfo.startOffset);
+                range.setEnd(rangeInfo.endElement, rangeInfo.endOffset);
+            } else {
+                var element = self.getElementByCfi(rangeCfi,
+                    ['cfi-marker'], [], ["MathJax_Message", "MathJax_SVG_Hidden"])[0];
+                range.selectNode(element);
+            }
+        } else {
+            if (self.isRangeCfi(rangeCfi)) {
+                var rangeInfo1 = getRangeTargetNodes(rangeCfi);
+                range.setStart(rangeInfo1.startElement, rangeInfo1.startOffset);
+            } else {
+                var startElement = self.getElementByCfi(rangeCfi,
+                    ['cfi-marker'], [], ["MathJax_Message", "MathJax_SVG_Hidden"])[0];
+                range.setStart(startElement, 0);
+            }
+
+            if (self.isRangeCfi(rangeCfi2)) {
+                var rangeInfo2 = getRangeTargetNodes(rangeCfi2);
+                if (inclusive) {
+                    range.setEnd(rangeInfo2.endElement, rangeInfo2.endOffset);
+                } else {
+                    range.setEnd(rangeInfo2.startElement, rangeInfo2.startOffset);
+                }
+            } else {
+                var endElement = self.getElementByCfi(rangeCfi2,
+                    ['cfi-marker'], [], ["MathJax_Message", "MathJax_SVG_Hidden"])[0];
+                range.setEnd(endElement, endElement.childNodes.length);
+            }
+        }
+        return range;
+    };
+
+    this.getRangeCfiFromDomRange = function(domRange) {
+        return generateCfiFromDomRange(domRange);
+    };
+
+    function getWrappedCfi(partialCfi) {
+        return "epubcfi(" + partialCfi + ")";
+    }
+
+    function getWrappedCfiRelativeToContent(partialCfi) {
+        return "epubcfi(/99!" + partialCfi + ")";
+    }
+
+    this.isRangeCfi = function (partialCfi) {
+        return EPUBcfi.Interpreter.isRangeCfi(getWrappedCfi(partialCfi)) || EPUBcfi.Interpreter.isRangeCfi(getWrappedCfiRelativeToContent(partialCfi));
+    };
+
+    this.getPageForElementCfi = function (cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
         var cfiParts = splitCfi(cfi);
+        var partialCfi = cfiParts.cfi;
+
+        if (this.isRangeCfi(partialCfi)) {
+            //if given a range cfi the exact page index needs to be calculated by getting node info from the range cfi
+            var nodeRangeInfoFromCfi = this.getNodeRangeInfoFromCfi(partialCfi);
+            //the page index is calculated from the node's client rectangle
+            return findPageBySingleRectangle(nodeRangeInfoFromCfi.clientRect);
+        }
 
         var $element = getElementByPartialCfi(cfiParts.cfi, classBlacklist, elementBlacklist, idBlacklist);
 
-        if(!$element) {
+        if (!$element) {
             return -1;
         }
 
-        return this.getPageForPointOnElement($element, cfiParts.x, cfiParts.y);
+        var pageIndex = this.getPageForPointOnElement($element, cfiParts.x, cfiParts.y);
+
+        return pageIndex;
+
     };
 
     function getElementByPartialCfi(cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
-        var contentDoc = $iframe[0].contentDocument;
+        var contentDoc = self.getRootDocument();
 
-        var wrappedCfi = "epubcfi(" + cfi + ")";
-        //noinspection JSUnresolvedVariable
-        var $element = EPUBcfi.getTargetElementWithPartialCFI(wrappedCfi, contentDoc, classBlacklist, elementBlacklist, idBlacklist);
+        var wrappedCfi = getWrappedCfi(cfi);
 
-        if(!$element || $element.length == 0) {
+        try {
+            //noinspection JSUnresolvedVariable
+            var $element = EPUBcfi.getTargetElementWithPartialCFI(wrappedCfi, contentDoc, classBlacklist, elementBlacklist, idBlacklist);
+
+        } catch (ex) {
+            //EPUBcfi.Interpreter can throw a SyntaxError
+        }
+
+        if (!$element || $element.length == 0) {
             console.log("Can't find element for CFI: " + cfi);
             return undefined;
         }
@@ -20100,18 +23384,87 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
         return $element;
     }
 
-    this.getElementByCfi = function(cfi, classBlacklist, elementBlacklist, idBlacklist) {
+    this.getElementFromPoint = function (x, y) {
+
+        var document = self.getRootDocument();
+        return document.elementFromPoint(x, y);
+    };
+
+    this.getNodeRangeInfoFromCfi = function (cfi) {
+        var contentDoc = self.getRootDocument();
+        if (self.isRangeCfi(cfi)) {
+            var wrappedCfi = getWrappedCfiRelativeToContent(cfi);
+
+            try {
+                //noinspection JSUnresolvedVariable
+                var nodeResult = EPUBcfi.Interpreter.getRangeTargetElements(wrappedCfi, contentDoc,
+                    ["cfi-marker"],
+                    [],
+                    ["MathJax_Message", "MathJax_SVG_Hidden"]);
+
+                if (debugMode) {
+                    console.log(nodeResult);
+                }
+            } catch (ex) {
+                //EPUBcfi.Interpreter can throw a SyntaxError
+            }
+
+            if (!nodeResult) {
+                console.log("Can't find nodes for range CFI: " + cfi);
+                return undefined;
+            }
+
+            var startRangeInfo = {node: nodeResult.startElement, offset: nodeResult.startOffset};
+            var endRangeInfo = {node: nodeResult.endElement, offset: nodeResult.endOffset};
+            var nodeRangeClientRect =
+                startRangeInfo && endRangeInfo ?
+                    getNodeRangeClientRect(
+                        startRangeInfo.node,
+                        startRangeInfo.offset,
+                        endRangeInfo.node,
+                        endRangeInfo.offset)
+                    : null;
+
+            if (debugMode) {
+                console.log(nodeRangeClientRect);
+                addOverlayRect(nodeRangeClientRect, 'purple', contentDoc);
+            }
+
+            return {startInfo: startRangeInfo, endInfo: endRangeInfo, clientRect: nodeRangeClientRect}
+        } else {
+            var $element = self.getElementByCfi(cfi,
+                ["cfi-marker"],
+                [],
+                ["MathJax_Message", "MathJax_SVG_Hidden"]);
+
+            var visibleContentOffsets = getVisibleContentOffsets();
+            var normRects = getNormalizedRectangles($element, visibleContentOffsets);
+
+            return {startInfo: null, endInfo: null, clientRect: normRects.wrapperRectangle }
+        }
+    };
+
+    this.isNodeFromRangeCfiVisible = function (cfi) {
+        var nodeRangeInfo = this.getNodeRangeInfoFromCfi(cfi);
+        if (nodeRangeInfo) {
+            return isRectVisible(nodeRangeInfo.clientRect, false);
+        } else {
+            return undefined;
+        }
+    };
+
+    this.getElementByCfi = function (cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
         var cfiParts = splitCfi(cfi);
         return getElementByPartialCfi(cfiParts.cfi, classBlacklist, elementBlacklist, idBlacklist);
     };
 
-    this.getPageForElement = function($element) {
+    this.getPageForElement = function ($element) {
 
         return this.getPageForPointOnElement($element, 0, 0);
     };
 
-    this.getPageForPointOnElement = function($element, x, y) {
+    this.getPageForPointOnElement = function ($element, x, y) {
 
         var pageIndex;
         if (options.rectangleBased) {
@@ -20124,27 +23477,27 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
         }
 
         var posInElement = this.getVerticalOffsetForPointOnElement($element, x, y);
-        return Math.floor(posInElement / $viewport.height());
+        return Math.floor(posInElement / getFrameDimensions().height);
     };
 
-    this.getVerticalOffsetForElement = function($element) {
+    this.getVerticalOffsetForElement = function ($element) {
 
         return this.getVerticalOffsetForPointOnElement($element, 0, 0);
     };
 
-    this.getVerticalOffsetForPointOnElement = function($element, x, y) {
+    this.getVerticalOffsetForPointOnElement = function ($element, x, y) {
 
         var elementRect = Helpers.Rect.fromElement($element);
         return Math.ceil(elementRect.top + y * elementRect.height / 100);
     };
 
-    this.getElementById = function(id) {
+    this.getElementById = function (id) {
 
-        var contentDoc = $iframe[0].contentDocument;
+        var contentDoc = this.getRootDocument();
 
         var $element = $(contentDoc.getElementById(id));
         //$("#" + Helpers.escapeJQuerySelector(id), contentDoc);
-        
+
         if($element.length == 0) {
             return undefined;
         }
@@ -20152,10 +23505,10 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
         return $element;
     };
 
-    this.getPageForElementId = function(id) {
+    this.getPageForElementId = function (id) {
 
         var $element = this.getElementById(id);
-        if(!$element) {
+        if (!$element) {
             return -1;
         }
 
@@ -20172,11 +23525,11 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
 
         var ix = cfi.indexOf("@");
 
-        if(ix != -1) {
+        if (ix != -1) {
             var terminus = cfi.substring(ix + 1);
 
             var colIx = terminus.indexOf(":");
-            if(colIx != -1) {
+            if (colIx != -1) {
                 ret.x = parseInt(terminus.substr(0, colIx));
                 ret.y = parseInt(terminus.substr(colIx + 1));
             }
@@ -20195,8 +23548,7 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
     }
 
     // returns raw DOM element (not $ jQuery-wrapped)
-    this.getFirstVisibleMediaOverlayElement = function(visibleContentOffsets)
-    {
+    this.getFirstVisibleMediaOverlayElement = function(visibleContentOffsets) {
         var docElement = this.getRootElement();
         if (!docElement) return undefined;
 
@@ -20207,29 +23559,24 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
 
         var firstPartial = undefined;
 
-        function traverseArray(arr)
-        {
+        function traverseArray(arr) {
             if (!arr || !arr.length) return undefined;
 
-            for (var i = 0, count = arr.length; i < count; i++)
-            {
+            for (var i = 0, count = arr.length; i < count; i++) {
                 var item = arr[i];
                 if (!item) continue;
 
                 var $item = $(item);
 
-                if($item.data("mediaOverlayData"))
-                {
+                if ($item.data("mediaOverlayData")) {
                     var visible = that.getElementVisibility($item, visibleContentOffsets);
-                    if (visible)
-                    {
+                    if (visible) {
                         if (!firstPartial) firstPartial = item;
 
                         if (visible == 100) return item;
                     }
                 }
-                else
-                {
+                else {
                     var elem = traverseArray(item.children);
                     if (elem) return elem;
                 }
@@ -20246,49 +23593,201 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
         // return this.getVisibleElements($elements, visibleContentOffsets);
     };
 
-    this.getElementVisibility = function($element, visibleContentOffsets) {
-        return visibilityCheckerFunc($element, visibleContentOffsets, true);
+    this.getElementVisibility = function ($element, visibleContentOffsets) {
+        return checkVisibilityByRectangles($element, true, visibleContentOffsets);
     };
 
 
+    this.isElementVisible = checkVisibilityByRectangles;
 
-    this.isElementVisible = visibilityCheckerFunc;
+    this.getVisibleElementsWithFilter = function (visibleContentOffsets, filterFunction) {
+        var $elements = this.getElementsWithFilter($("body", this.getRootElement()), filterFunction);
+        return this.getVisibleElements($elements, visibleContentOffsets);
+    };
 
-    this.isElementCfiVisible = function (partialCfi) {
-        var pageIndex = this.getPageForElementCfi(partialCfi,
-            ["cfi-marker", "mo-cfi-highlight"],
-            [],
-            ["MathJax_Message"]);
-        var paginationInfo = options.paginationInfo || null;
-        if (paginationInfo) {
-            var openPages = [paginationInfo.currentSpreadIndex * paginationInfo.visibleColumnCount];
-            if (paginationInfo.visibleColumnCount == 2) {
-                openPages.push(openPages[0] + 1);
+    this.getAllElementsWithFilter = function (filterFunction) {
+        var $elements = this.getElementsWithFilter($("body", this.getRootElement()), filterFunction);
+        return $elements;
+    };
+
+    this.getAllVisibleElementsWithSelector = function (selector, visibleContentOffset) {
+        var elements = $(selector, this.getRootElement());
+        var $newElements = [];
+        $.each(elements, function () {
+            $newElements.push($(this));
+        });
+        var visibleElements = this.getVisibleElements($newElements, visibleContentOffset);
+        return visibleElements;
+    };
+
+    this.getVisibleElements = function ($elements, visibleContentOffsets, frameDimensions) {
+
+        var visibleElements = [];
+
+        _.each($elements, function ($node) {
+            var isTextNode = ($node[0].nodeType === Node.TEXT_NODE);
+            var $element = isTextNode ? $node.parent() : $node;
+            var visibilityPercentage = checkVisibilityByRectangles(
+                $element, true, visibleContentOffsets, frameDimensions);
+
+            if (visibilityPercentage) {
+                var $visibleElement = $element;
+
+                visibleElements.push({
+                    element: $visibleElement[0], // DOM Element is pushed
+                    textNode: isTextNode ? $node[0] : null,
+                    percentVisible: visibilityPercentage
+                });
             }
-            return _.contains(openPages, pageIndex);
-        }
-        return undefined;
+        });
+
+        return visibleElements;
     };
 
+    this.getVisibleLeafNodes = function (visibleContentOffsets, frameDimensions) {
+
+        if (_cacheEnabled) {
+            var cacheKey = (options.paginationInfo || {}).currentSpreadIndex || 0;
+            var fromCache = _cache.visibleLeafNodes.get(cacheKey);
+            if (fromCache) {
+                return fromCache;
+            }
+        }
+
+        var $elements = this.getLeafNodeElements($("body", this.getRootElement()));
+
+        var visibleElements = this.getVisibleElements($elements, visibleContentOffsets, frameDimensions);
+
+        if (_cacheEnabled) {
+            _cache.visibleLeafNodes.set(cacheKey, visibleElements);
+        }
+
+        return visibleElements;
+    };
+
+    this.getElementsWithFilter = function ($root, filterFunction) {
+
+        var $elements = [];
+
+        function traverseCollection(elements) {
+
+            if (elements == undefined) return;
+
+            for (var i = 0, count = elements.length; i < count; i++) {
+
+                var $element = $(elements[i]);
+
+                if (filterFunction($element)) {
+                    $elements.push($element);
+                }
+                else {
+                    traverseCollection($element[0].children);
+                }
+
+            }
+        }
+
+        traverseCollection([$root[0]]);
+
+        return $elements;
+    };
+
+    function isElementBlacklisted($element) {
+        //TODO: Ok we really need to have a single point of reference for this blacklist
+        var blacklist = {
+            classes: ["cfi-marker", "mo-cfi-highlight"],
+            elements: [], //not looked at
+            ids: ["MathJax_Message", "MathJax_SVG_Hidden"]
+        };
+
+        var isBlacklisted = false;
+
+        _.some(blacklist.classes, function (value) {
+            if ($element.hasClass(value)) {
+                isBlacklisted = true;
+            }
+            return isBlacklisted;
+        });
+
+        _.some(blacklist.ids, function (value) {
+            if ($element.attr("id") === value) {
+                isBlacklisted = true;
+            }
+            return isBlacklisted;
+        });
+
+
+        return isBlacklisted;
+    }
+
+    this.getLeafNodeElements = function ($root) {
+
+        if (_cacheEnabled) {
+            var fromCache = _cache.leafNodeElements.get($root);
+            if (fromCache) {
+                return fromCache;
+            }
+        }
+
+        var nodeIterator = document.createNodeIterator(
+            $root[0],
+            NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
+            function() {
+                return NodeFilter.FILTER_ACCEPT;
+            },
+            false
+        );
+
+        var $leafNodeElements = [];
+
+        var node;
+        while ((node = nodeIterator.nextNode())) {
+            var isLeafNode = node.nodeType === Node.ELEMENT_NODE && !node.childElementCount && !isValidTextNodeContent(node.textContent);
+            if (isLeafNode || isValidTextNode(node)){
+                var $node = $(node);
+                var $element = (node.nodeType === Node.TEXT_NODE) ? $node.parent() : $node;
+                if (!isElementBlacklisted($element)) {
+                    $leafNodeElements.push($node);
+                }
+            }
+        }
+
+        if (_cacheEnabled) {
+            _cache.leafNodeElements.set($root, $leafNodeElements);
+        }
+
+        return $leafNodeElements;
+    };
 
     function isValidTextNode(node) {
 
-        if(node.nodeType === Node.TEXT_NODE) {
+        if (node.nodeType === Node.TEXT_NODE) {
 
-            // Heuristic to find a text node with actual text
-            var nodeText = node.nodeValue.replace(/\n/g, "");
-            nodeText = nodeText.replace(/ /g, "");
-
-             return nodeText.length > 0;
+            return isValidTextNodeContent(node.nodeValue);
         }
 
         return false;
 
     }
 
-    this.getElement = function(selector) {
+    function isValidTextNodeContent(text) {
+        // Heuristic to find a text node with actual text
+        // If we don't do this, we may get a reference to a node that doesn't get rendered
+        // (such as for example a node that has tab character and a bunch of spaces)
+        // this is would be bad! ask me why.
+        return text.replace(/[\s\n\r\t]/g, "").length > 0;
+    }
 
-        var $element = $(selector, this.getRootElement());
+    this.getElements = function (selector) {
+        if (!selector) {
+            return $(this.getRootElement()).children();
+        }
+        return $(selector, this.getRootElement());
+    };
+
+    this.getElement = function (selector) {
+
+        var $element = this.getElements(selector);
 
         if($element.length > 0) {
             return $element;
@@ -20296,6 +23795,199 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
 
         return undefined;
     };
+
+    function Cache() {
+        var that = this;
+
+        //true = survives invalidation
+        var props = {
+            leafNodeElements: true,
+            visibleLeafNodes: false
+        };
+
+        _.each(props, function (val, key) {
+            that[key] = new Map();
+        });
+
+        this._invalidate = function () {
+            _.each(props, function (val, key) {
+                if (!val) {
+                    that[key] = new Map();
+                }
+            });
+        }
+    }
+
+    var _cache = new Cache();
+
+    var _cacheEnabled = false;
+
+    this.invalidateCache = function () {
+        _cache._invalidate();
+    };
+
+
+    // dmitry debug
+    // dmitry debug
+    // dmitry debug
+    // dmitry debug
+    // dmitry debug
+    // dmitry debug
+
+    var parseContentCfi = function(cont) {
+        return cont.replace(/\[(.*?)\]/, "").split(/[\/,:]/).map(function(n) { return parseInt(n); }).filter(Boolean);
+    };
+
+    var contentCfiComparator = function(cont1, cont2) {
+        cont1 = this.parseContentCfi(cont1);
+        cont2 = this.parseContentCfi(cont2);
+
+        //compare cont arrays looking for differences
+        for (var i=0; i<cont1.length; i++) {
+            if (cont1[i] > cont2[i]) {
+                return 1;
+            }
+            else if (cont1[i] < cont2[i]) {
+                return -1;
+            }
+        }
+
+        //no differences found, so confirm that cont2 did not have values we didn't check
+        if (cont1.length < cont2.length) {
+            return -1;
+        }
+
+        //cont arrays are identical
+        return 0;
+    };
+
+
+    // end dmitry debug
+
+    //if (debugMode) {
+
+        var $debugOverlays = [];
+
+        //used for visual debug atm
+        function getRandomColor() {
+            var letters = '0123456789ABCDEF'.split('');
+            var color = '#';
+            for (var i = 0; i < 6; i++) {
+                color += letters[Math.round(Math.random() * 15)];
+            }
+            return color;
+        }
+
+        //used for visual debug atm
+        function addOverlayRect(rects, color, doc) {
+            var random = getRandomColor();
+            if (!(rects instanceof Array)) {
+                rects = [rects];
+            }
+            for (var i = 0; i != rects.length; i++) {
+                var rect = rects[i];
+                var overlayDiv = doc.createElement('div');
+                overlayDiv.style.position = 'absolute';
+                $(overlayDiv).css('z-index', '1000');
+                $(overlayDiv).css('pointer-events', 'none');
+                $(overlayDiv).css('opacity', '0.4');
+                overlayDiv.style.border = '1px solid white';
+                if (!color && !random) {
+                    overlayDiv.style.background = 'purple';
+                } else if (random && !color) {
+                    overlayDiv.style.background = random;
+                } else {
+                    if (color === true) {
+                        color = 'red';
+                    }
+                    overlayDiv.style.border = '1px dashed ' + color;
+                    overlayDiv.style.background = 'yellow';
+                }
+
+                overlayDiv.style.margin = overlayDiv.style.padding = '0';
+                overlayDiv.style.top = (rect.top ) + 'px';
+                overlayDiv.style.left = (rect.left ) + 'px';
+                // we want rect.width to be the border width, so content width is 2px less.
+                overlayDiv.style.width = (rect.width - 2) + 'px';
+                overlayDiv.style.height = (rect.height - 2) + 'px';
+                doc.documentElement.appendChild(overlayDiv);
+                $debugOverlays.push($(overlayDiv));
+            }
+        }
+
+        function drawDebugOverlayFromRect(rect) {
+            var leftOffset, topOffset;
+
+            if (isVerticalWritingMode()) {
+                leftOffset = 0;
+                topOffset = -getPaginationLeftOffset();
+            } else {
+                leftOffset = -getPaginationLeftOffset();
+                topOffset = 0;
+            }
+
+            addOverlayRect({
+                left: rect.left + leftOffset,
+                top: rect.top + topOffset,
+                width: rect.width,
+                height: rect.height
+            }, true, self.getRootDocument());
+        }
+
+        function drawDebugOverlayFromDomRange(range) {
+            var rect = getNodeRangeClientRect(
+                range.startContainer,
+                range.startOffset,
+                range.endContainer,
+                range.endOffset);
+            drawDebugOverlayFromRect(rect);
+            return rect;
+        }
+
+        function drawDebugOverlayFromNode(node) {
+            drawDebugOverlayFromRect(getNodeClientRect(node));
+        }
+
+        function getPaginationLeftOffset() {
+
+            var $htmlElement = $("html", self.getRootDocument());
+            var offsetLeftPixels = $htmlElement.css(isVerticalWritingMode() ? "top" : (isPageProgressionRightToLeft() ? "right" : "left"));
+            var offsetLeft = parseInt(offsetLeftPixels.replace("px", ""));
+            if (isNaN(offsetLeft)) {
+                //for fixed layouts, $htmlElement.css("left") has no numerical value
+                offsetLeft = 0;
+            }
+            if (isPageProgressionRightToLeft() && !isVerticalWritingMode()) return -offsetLeft; 
+            return offsetLeft;
+        }
+
+        function clearDebugOverlays() {
+            _.each($debugOverlays, function($el){
+                $el.remove();
+            });
+            $debugOverlays.clear();
+        }
+
+        ReadiumSDK._DEBUG_CfiNavigationLogic = {
+            clearDebugOverlays: clearDebugOverlays,
+            drawDebugOverlayFromRect: drawDebugOverlayFromRect,
+            drawDebugOverlayFromDomRange: drawDebugOverlayFromDomRange,
+            drawDebugOverlayFromNode: drawDebugOverlayFromNode,
+            debugVisibleCfis: function () {
+                console.log(JSON.stringify(ReadiumSDK.reader.getPaginationInfo().openPages));
+
+                var cfi1 = ReadiumSDK.reader.getFirstVisibleCfi();
+                var range1 = ReadiumSDK.reader.getDomRangeFromRangeCfi(cfi1);
+                console.log(cfi1, range1, drawDebugOverlayFromDomRange(range1));
+
+                var cfi2 = ReadiumSDK.reader.getLastVisibleCfi();
+                var range2 = ReadiumSDK.reader.getDomRangeFromRangeCfi(cfi2);
+                console.log(cfi2, range2, drawDebugOverlayFromDomRange(range2));
+            }
+        };
+
+        //
+   // }
 
 };
 return CfiNavigationLogic;
@@ -20444,8 +24136,8 @@ var ViewerSettings = function(settingsData) {
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-define('readium_shared_js/views/one_page_view',["jquery", "underscore", "eventEmitter", "./cfi_navigation_logic", "../helpers", "../models/viewer_settings"],
-    function ($, _, EventEmitter, CfiNavigationLogic, Helpers, ViewerSettings) {
+define('readium_shared_js/views/one_page_view',["../globals", "jquery", "underscore", "eventEmitter", "./cfi_navigation_logic", "../helpers", "../models/viewer_settings", "../models/bookmark_data"],
+    function (Globals, $, _, EventEmitter, CfiNavigationLogic, Helpers, ViewerSettings, BookmarkData) {
 
 /**
  * Renders one page of fixed layout spread
@@ -20467,6 +24159,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
     var _currentSpineItem;
     var _spine = options.spine;
     var _iframeLoader = options.iframeLoader;
+    var _navigationLogic = undefined;
     var _bookStyles = options.bookStyles;
 
     var _$viewport = options.$viewport;
@@ -21193,7 +24886,9 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
                 self.hideIFrame();
             }
 
-            self.emit(OnePageView.SPINE_ITEM_OPEN_START, _$iframe, _currentSpineItem);
+            Globals.logEvent("OnePageView.Events.SPINE_ITEM_OPEN_START", "EMIT", "one_page_view.js [ " + spineItem.href + " -- " + src + " ]");
+            self.emit(OnePageView.Events.SPINE_ITEM_OPEN_START, _$iframe, _currentSpineItem);
+            
             _iframeLoader.loadIframe(_$iframe[0], src, function (success) {
 
                 if (success && callback) {
@@ -21281,52 +24976,69 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
     this.getFirstVisibleElementCfi = function () {
 
-        var navigation = new CfiNavigationLogic(_$el, _$iframe);
+        var navigation = self.getNavigator();
         return navigation.getFirstVisibleElementCfi(0);
 
     };
 
+    function getVisibleContentOffsets() {
+        return {
+            top: -_$el.parent().scrollTop(),
+            left: 0
+        };
+    }
+    
+    function getFrameDimensions() {
+        return {
+            width: _$el.parent()[0].clientWidth,
+            height: _$el.parent()[0].clientHeight
+        };
+    }
+    
     this.getNavigator = function () {
-
-        return new CfiNavigationLogic(_$el, _$iframe);
+        return new CfiNavigationLogic({
+            $iframe: _$iframe,
+            frameDimensions: getFrameDimensions,
+            visibleContentOffsets: getVisibleContentOffsets
+        });
     };
 
-    this.getElementByCfi = function (spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
+    this.getElementByCfi = function (spineItemIdref, cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
-        if (spineItem != _currentSpineItem) {
+        if (spineItemIdref != _currentSpineItem.idref) {
             console.error("spine item is not loaded");
             return undefined;
         }
 
-        var navigation = new CfiNavigationLogic(_$el, _$iframe);
+        var navigation = self.getNavigator();
         return navigation.getElementByCfi(cfi, classBlacklist, elementBlacklist, idBlacklist);
     };
 
-    this.getElementById = function (spineItem, id) {
+    this.getElementById = function (spineItemIdref, id) {
 
-        if (spineItem != _currentSpineItem) {
+        if (spineItemIdref != _currentSpineItem.idref) {
             console.error("spine item is not loaded");
             return undefined;
         }
 
-        var navigation = new CfiNavigationLogic(_$el, _$iframe);
+        var navigation = self.getNavigator();
         return navigation.getElementById(id);
     };
 
-    this.getElement = function (spineItem, selector) {
+    this.getElement = function (spineItemIdref, selector) {
 
-        if (spineItem != _currentSpineItem) {
+        if(spineItemIdref != _currentSpineItem.idref) {
             console.error("spine item is not loaded");
             return undefined;
         }
 
-        var navigation = new CfiNavigationLogic(_$el, _$iframe);
+        var navigation = self.getNavigator();
         return navigation.getElement(selector);
     };
 
-    this.getFirstVisibleMediaOverlayElement = function () {
-        var navigation = new CfiNavigationLogic(_$el, _$iframe);
-        return navigation.getFirstVisibleMediaOverlayElement({top: 0, bottom: _$iframe.height()});
+    this.getFirstVisibleMediaOverlayElement = function() {
+        var navigation = self.getNavigator();
+        return navigation.getFirstVisibleMediaOverlayElement({top:0, bottom: _$iframe.height()});
     };
 
     this.offset = function () {
@@ -21334,10 +25046,96 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             return _$iframe.offset();
         }
         return undefined;
+    };
+
+    this.getVisibleElementsWithFilter = function (filterFunction) {
+        var navigation = self.getNavigator();
+        var visibleContentOffsets = {top: 0, bottom: _$iframe.height()};
+        var elements = navigation.getVisibleElementsWithFilter(visibleContentOffsets, filterFunction);
+        return elements;
+    };
+
+    this.getVisibleElements = function (selector) {
+
+        var navigation = self.getNavigator();
+        var visibleContentOffsets = {top: 0, bottom: _$iframe.height()};
+        var elements = navigation.getAllVisibleElementsWithSelector(selector, visibleContentOffsets);
+        return elements;
+    };
+
+    this.getAllElementsWithFilter = function (filterFunction, outsideBody) {
+        var navigation = self.getNavigator();
+        var elements = navigation.getAllElementsWithFilter(filterFunction, outsideBody);
+        return elements;
+    };
+
+    this.getElements = function(spineItemIdref, selector) {
+
+        if(spineItemIdref != _currentSpineItem.idref) {
+            console.error("spine item is not loaded");
+            return undefined;
+        }
+
+        var navigation = self.getNavigator();
+
+        return navigation.getElements(selector);
+    };
+
+    this.getNodeRangeInfoFromCfi = function (spineIdRef, partialCfi) {
+        if (spineIdRef != _currentSpineItem.idref) {
+            console.warn("spine item is not loaded");
+            return undefined;
+        }
+        var navigation = self.getNavigator();
+
+        return navigation.getNodeRangeInfoFromCfi(partialCfi);
+    };
+
+    function createBookmarkFromCfi(cfi){
+        return new BookmarkData(_currentSpineItem.idref, cfi);
     }
+
+    this.getLoadedContentFrames = function () {
+        return [{spineItem: _currentSpineItem, $iframe: _$iframe}];
+    };
+
+    this.getFirstVisibleCfi = function (visibleContentOffsets, frameDimensions) {
+        return createBookmarkFromCfi(self.getNavigator().getFirstVisibleCfi(visibleContentOffsets, frameDimensions));
+    };
+
+    this.getLastVisibleCfi = function (visibleContentOffsets, frameDimensions) {
+        return createBookmarkFromCfi(self.getNavigator().getLastVisibleCfi(visibleContentOffsets, frameDimensions));
+    };
+
+    this.getDomRangeFromRangeCfi = function (rangeCfi, rangeCfi2, inclusive) {
+        return self.getNavigator().getDomRangeFromRangeCfi(rangeCfi, rangeCfi2, inclusive);
+    };
+
+    this.getRangeCfiFromDomRange = function (domRange) {
+        return createBookmarkFromCfi(self.getNavigator().getRangeCfiFromDomRange(domRange));
+    };
+
+    this.getVisibleCfiFromPoint = function (x, y, precisePoint) {
+        return createBookmarkFromCfi(self.getNavigator().getVisibleCfiFromPoint(x, y, precisePoint));
+    };
+
+    this.getRangeCfiFromPoints = function(startX, startY, endX, endY) {
+        return createBookmarkFromCfi(self.getNavigator().getRangeCfiFromPoints(startX, startY, endX, endY));
+    };
+
+    this.getCfiForElement = function(x, y) {
+        return createBookmarkFromCfi(self.getNavigator().getCfiForElement(x, y));
+    };
+
+    this.getElementFromPoint = function (x, y) {
+        return self.getNavigator().getElementFromPoint(x, y);
+    };
+
 };
 
-OnePageView.SPINE_ITEM_OPEN_START = "SpineItemOpenStart";
+OnePageView.Events = {
+    SPINE_ITEM_OPEN_START: "SpineItemOpenStart"
+};
 return OnePageView;
 });
 
@@ -21455,10 +25253,10 @@ return PageOpenRequest;
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define ('readium_shared_js/views/fixed_view',["jquery", "underscore", "eventEmitter", "../models/bookmark_data", "../models/current_pages_info",
-    "../models/fixed_page_spread", "./one_page_view", "../models/page_open_request", "../helpers", "../globals"],
-    function($, _, EventEmitter, BookmarkData, CurrentPagesInfo,
-             Spread, OnePageView, PageOpenRequest, Helpers, Globals) {
+define ('readium_shared_js/views/fixed_view',["../globals", "jquery", "underscore", "eventEmitter", "../models/bookmark_data", "../models/current_pages_info",
+    "../models/fixed_page_spread", "./one_page_view", "../models/page_open_request", "../helpers"],
+    function(Globals, $, _, EventEmitter, BookmarkData, CurrentPagesInfo,
+             Spread, OnePageView, PageOpenRequest, Helpers) {
 /**
  * View for rendering fixed layout page spread
  * @param options
@@ -21504,8 +25302,12 @@ var FixedView = function(options, reader){
         reader
         );
 
-        pageView.on(OnePageView.SPINE_ITEM_OPEN_START, function($iframe, spineItem) {
 
+        pageView.on(OnePageView.Events.SPINE_ITEM_OPEN_START, function($iframe, spineItem) {
+            
+            Globals.logEvent("OnePageView.Events.SPINE_ITEM_OPEN_START", "ON", "fixed_view.js [ " + spineItem.href + " ]");
+
+            Globals.logEvent("CONTENT_DOCUMENT_LOAD_START", "EMIT", "fixed_view.js [ " + spineItem.href + " ]");
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
         });   
     
@@ -21587,9 +25389,10 @@ var FixedView = function(options, reader){
 
         var context = {isElementAdded : false};
 
-        var pageLoadDeferrals = createPageLoadDeferrals([{pageView: _leftPageView, spineItem: _spread.leftItem, context: context},
-                                                              {pageView: _rightPageView, spineItem: _spread.rightItem, context: context},
-                                                              {pageView: _centerPageView, spineItem: _spread.centerItem, context: context}]);
+        var pageLoadDeferrals = createPageLoadDeferrals([
+            {pageView: _leftPageView, spineItem: _spread.leftItem, context: context},
+            {pageView: _rightPageView, spineItem: _spread.rightItem, context: context},
+            {pageView: _centerPageView, spineItem: _spread.centerItem, context: context}]);
 
         $.when.apply($, pageLoadDeferrals).done(function(){
             _isRedrowing = false;
@@ -21601,8 +25404,13 @@ var FixedView = function(options, reader){
                 redraw(p1, p2);
             }
             else {
+                
                 if(context.isElementAdded) {
-                    self.applyStyles();
+                    //self.applyStyles();
+                    
+                    Helpers.setStyles(_userStyles.getStyles(), _$el.parent());
+                    updateBookMargins();
+                    // updateContentMetaSize() and resizeBook() are invoked in onPagesLoaded below
                 }
 
                 if (paginationRequest)
@@ -21637,10 +25445,9 @@ var FixedView = function(options, reader){
     this.applyStyles = function() {
 
         Helpers.setStyles(_userStyles.getStyles(), _$el.parent());
-
         updateBookMargins();
+        
         updateContentMetaSize();
-
         resizeBook();
     };
 
@@ -21668,11 +25475,14 @@ var FixedView = function(options, reader){
     }
 
     function onPagesLoaded(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
-
+        
         updateContentMetaSize();
         resizeBook();
+        
         window.setTimeout(function () {
-            self.trigger(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, {
+            
+            Globals.logEvent("InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED", "EMIT", "fixed_view.js");
+            self.emit(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, {
                 paginationInfo: self.getPaginationInfo(),
                 initiator: initiator,
                 spineItem: paginationRequest_spineItem,
@@ -21827,6 +25637,7 @@ var FixedView = function(options, reader){
             _centerPageView[transFunc](scale, left, top);
         }
         
+        Globals.logEvent("FXL_VIEW_RESIZED", "EMIT", "fixed_view.js");
         self.emit(Globals.Events.FXL_VIEW_RESIZED);
     }
 
@@ -21971,6 +25782,7 @@ var FixedView = function(options, reader){
                         console.error("Invalid document " + spineItem.href + ": viewport is not specified!");
                     }
 
+                    Globals.logEvent("CONTENT_DOCUMENT_LOADED", "EMIT", "fixed_view.js [ " + spineItem.href + " ]");
                     self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
                 }
 
@@ -22046,54 +25858,43 @@ var FixedView = function(options, reader){
         return _spread.validItems();
     };
 
-    this.getElement = function(spineItem, selector) {
-
+    function callOnPageView(spineItemIdref, fn) {
         var views = getDisplayingViews();
 
-        for(var i = 0, count = views.length; i < count; i++) {
+        for (var i = 0, count = views.length; i < count; i++) {
 
             var view = views[i];
-            if(view.currentSpineItem() == spineItem) {
-                return view.getElement(spineItem, selector);
+            if (view.currentSpineItem().idref == spineItemIdref) {
+                return fn(view);
             }
         }
 
         console.error("spine item is not loaded");
         return undefined;
+    }
+
+    this.getElement = function (spineItemIdref, selector) {
+
+        return callOnPageView(spineItemIdref, function (view) {
+            return view.getElement(spineItemIdref, selector);
+        });
     };
 
-    this.getElementById = function(spineItem, id) {
+    this.getElementById = function (spineItemIdref, id) {
 
-        var views = getDisplayingViews();
-
-        for(var i = 0, count = views.length; i < count; i++) {
-
-            var view = views[i];
-            if(view.currentSpineItem() == spineItem) {
-                return view.getElementById(spineItem, id);
-            }
-        }
-
-        console.error("spine item is not loaded");
-        return undefined;
+        return callOnPageView(spineItemIdref, function (view) {
+            return view.getElementById(spineItemIdref, id);
+        });
     };
 
-    this.getElementByCfi = function(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
-        var views = getDisplayingViews();
+    this.getElementByCfi = function(spineItemIdref, cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
-        for(var i = 0, count = views.length; i < count; i++) {
-
-            var view = views[i];
-            if(view.currentSpineItem() == spineItem) {
-                return view.getElementByCfi(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist);
-            }
-        }
-
-        console.error("spine item is not loaded");
-        return undefined;
+        return callOnPageView(spineItemIdref, function (view) {
+            return view.getElementByCfi(spineItemIdref, cfi, classBlacklist, elementBlacklist, idBlacklist);
+        });
     };
-
+    
     this.getFirstVisibleMediaOverlayElement = function() {
 
         var views = getDisplayingViews();
@@ -22111,14 +25912,182 @@ var FixedView = function(options, reader){
         //TODO: during zoom+pan, playing element might not actually be visible
 
     };
+    
+    this.getElements = function(spineItemIdref, selector) {
 
-    this.isElementCfiVisible = function (spineIdRef, contentCfi) {
-        var spineItemFound = _.findWhere(this.getLoadedSpineItems(), {idref: spineIdRef});
+        return callOnPageView(spineItemIdref, function (view) {
+            return view.getElements(spineItemIdref, selector);
+        });
+    };
+    
+    this.isElementVisible = function($element){
 
-        // it is assumed that if the whole spine item page is visible then any element cfi is visible
-        //TODO: during zoom+pan, element cfi might not actually be visible
-        return !!spineItemFound;
+        //for now we assume that for fixed layouts, elements are always visible
+        return true;
+    };
+    
+    this.getVisibleElementsWithFilter = function(filterFunction, includeSpineItems) {
 
+        var elements = [];
+
+        var views = getDisplayingViews();
+
+        for(var i = 0, count = views.length; i < count; i++) {
+            //for now we assume that for fixed layouts, elements are always visible
+            elements.push(views[i].getAllElementsWithFilter(filterFunction, includeSpineItems));
+        }
+
+        return elements;
+    };
+
+    this.getVisibleElements = function (selector, includeSpineItems) {
+
+        var elements = [];
+
+        var views = getDisplayingViews();
+
+        for (var i = 0, count = views.length; i < count; i++) {
+            //for now we assume that for fixed layouts, elements are always visible
+            if (includeSpineItems) {
+                elements.push({elements: views[i].getElements(views[i].currentSpineItem().idref, selector), spineItem: views[i].currentSpineItem()});
+            } else {
+                elements.push(views[i].getElements(views[i].currentSpineItem().idref, selector));
+            }
+        }
+
+        return elements;
+    };
+
+    this.isElementVisible = function($element){
+
+        //for now we assume that for fixed layouts, elements are always visible
+        return true;
+    };
+    
+    this.isVisibleSpineItemElementCfi = function (spineItemIdref, partialCfi) {
+
+        return callOnPageView(spineItemIdref, function (view) {
+            //for now we assume that for fixed layouts, everything is always visible
+            return true;
+        });
+    };
+
+    this.getNodeRangeInfoFromCfi = function (spineItemIdref, partialCfi) {
+
+        return callOnPageView(spineItemIdref, function (view) {
+            return view.getNodeRangeInfoFromCfi(spineItemIdref, partialCfi);
+        });
+    };
+
+
+    this.getFirstVisibleCfi = function () {
+        var views = getDisplayingViews();
+        if (views.length > 0) {
+            return views[0].getFirstVisibleCfi();
+        }
+        return undefined;
+    };
+
+    this.getLastVisibleCfi = function () {
+        var views = getDisplayingViews();
+        if (views.length > 0) {
+            return views[views.length - 1].getLastVisibleCfi();
+        }
+        return undefined;
+    };
+
+    this.getDomRangesFromRangeCfi = function (rangeCfi, rangeCfi2, inclusive) {
+        var views = getDisplayingViews();
+        if (rangeCfi2 && rangeCfi.idref !== rangeCfi2.idref) {
+            var ranges = [];
+            for (var i = 0, count = views.length; i < count; i++) {
+                var view = views[i];
+                if (view.currentSpineItem().idref === rangeCfi.idref) {
+                    var last = view.getLastVisibleCfi();
+                    ranges.push(view.getDomRangeFromRangeCfi(rangeCfi.contentCFI, last.contentCFI, inclusive));
+                } else if (view.currentSpineItem().idref === rangeCfi2.idref) {
+                    var first = view.getFirstVisibleCfi();
+                    ranges.push(view.getDomRangeFromRangeCfi(first.contentCFI, rangeCfi2.contentCFI, inclusive));
+                }
+            }
+            return ranges;
+        }
+
+        return [this.getDomRangeFromRangeCfi(rangeCfi, rangeCfi2, inclusive)];
+    },
+
+    this.getDomRangeFromRangeCfi = function (rangeCfi, rangeCfi2, inclusive) {
+        var views = getDisplayingViews();
+        if (rangeCfi2 && rangeCfi.idref !== rangeCfi2.idref) {
+            console.error("getDomRangeFromRangeCfi: both CFIs must be scoped under the same spineitem idref");
+            return undefined;
+        }
+        for (var i = 0, count = views.length; i < count; i++) {
+
+            var view = views[i];
+            if (view.currentSpineItem().idref === rangeCfi.idref) {
+                return view.getDomRangeFromRangeCfi(rangeCfi.contentCFI, rangeCfi2 ? rangeCfi2.contentCFI : null, inclusive);
+            }
+        }
+
+        return undefined;
+    };
+
+    this.getRangeCfiFromDomRange = function (domRange) {
+
+        var views = getDisplayingViews();
+
+        for (var i = 0, count = views.length; i < count; i++) {
+
+            var view = views[i];
+            if (view.getLoadedContentFrames()[0].$iframe[0].contentDocument === domRange.startContainer.ownerDocument) {
+                return view.getRangeCfiFromDomRange(domRange);
+            }
+        }
+
+        return undefined;
+    };
+
+    this.getVisibleCfiFromPoint = function (x, y, precisePoint, spineItemIdref) {
+        if (!spineItemIdref) {
+            throw new Error("getVisibleCfiFromPoint: Spine item idref must be specified for this fixed layout view.");
+        }
+        return callOnPageView(spineItemIdref, function (view) {
+            return view.getVisibleCfiFromPoint(x,y, precisePoint);
+        });
+    };
+
+    this.getRangeCfiFromPoints = function (startX, startY, endX, endY, spineItemIdref) {
+        if (!spineItemIdref) {
+            throw new Error("getRangeCfiFromPoints: Spine item idref must be specified for this fixed layout view.");
+        }
+        return callOnPageView(spineItemIdref, function (view) {
+            return view.getRangeCfiFromPoints(startX, startY, endX, endY);
+        });
+    };
+
+    this.getCfiForElement = function (element) {
+
+        var views = getDisplayingViews();
+
+        for (var i = 0, count = views.length; i < count; i++) {
+
+            var view = views[i];
+            if (view.getLoadedContentFrames()[0].$iframe[0].contentDocument === element.ownerDocument) {
+                return view.getCfiForElement(element);
+            }
+        }
+
+        return undefined;
+    };
+
+    this.getElementFromPoint = function (x, y, spineItemIdref) {
+        if (!spineItemIdref) {
+            throw new Error("getElementFromPoint: Spine item idref must be specified for this fixed layout view.");
+        }
+        return callOnPageView(spineItemIdref, function (view) {
+            return view.getElementFromPoint(x,y);
+        });
     };
 
 };
@@ -32178,7 +36147,23 @@ var MediaOverlayElementHighlighter = function(reader) {
                 _rangyCSS.applyToRange(_rangyRange);
             }
         }
-        else if (_reader.plugins.annotations)
+        else if (_reader.plugins.highlights) // same API, newer implementation
+        {
+            try
+            {
+                //var id = $hel.data("mediaOverlayData").par.getSmil().spineItemId;
+                var id = par.getSmil().spineItemId;
+                _reader.plugins.highlights.addHighlight(id, par.cfi.partialRangeCfi, HIGHLIGHT_ID,
+                "highlight", //"underline"
+                undefined // styles
+                            );
+            }
+            catch(error)
+            {
+                console.error(error);
+            }
+        }
+        else if (_reader.plugins.annotations) // legacy
         {
             try
             {
@@ -32268,7 +36253,32 @@ var MediaOverlayElementHighlighter = function(reader) {
                 //_rangyCSS = undefined;
                 _rangyRange = undefined;
             }
-            else if (_reader.plugins.annotations)
+            else if (_reader.plugins.highlights) // same API, new implementation
+            {
+                try
+                {
+                    _reader.plugins.highlights.removeHighlight(HIGHLIGHT_ID);
+        
+                    var toRemove = undefined;
+                    while ((toRemove = doc.getElementById("start-" + HIGHLIGHT_ID)) !== null)
+                    {
+            console.log("toRemove START");
+            console.log(toRemove);
+                        toRemove.parentNode.removeChild(toRemove);
+                    }
+                    while ((toRemove = doc.getElementById("end-" + HIGHLIGHT_ID)) !== null)
+                    {
+            console.log("toRemove END");
+            console.log(toRemove);
+                        toRemove.parentNode.removeChild(toRemove);
+                    }
+                }
+                catch(error)
+                {
+                    console.error(error);
+                }
+            }
+            else if (_reader.plugins.annotations) // legacy
             {
                 try
                 {
@@ -32386,10 +36396,10 @@ var MediaOverlayElementHighlighter = function(reader) {
 //  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
-define('readium_shared_js/views/scroll_view',["jquery", "underscore", "eventEmitter", "../models/bookmark_data", "../models/current_pages_info", "../helpers",
-        "./one_page_view", "../models/page_open_request", "../globals", "../models/viewer_settings"],
-    function ($, _, EventEmitter, BookmarkData, CurrentPagesInfo, Helpers,
-              OnePageView, PageOpenRequest, Globals, ViewerSettings) {
+define('readium_shared_js/views/scroll_view',["../globals", "jquery", "underscore", "eventEmitter", "../models/bookmark_data", "../models/current_pages_info", "../helpers",
+        "./one_page_view", "../models/page_open_request", "../models/viewer_settings"],
+    function (Globals, $, _, EventEmitter, BookmarkData, CurrentPagesInfo, Helpers,
+              OnePageView, PageOpenRequest, ViewerSettings) {
 /**
  * Renders content inside a scrollable view port
  * @param options
@@ -33025,8 +37035,11 @@ var ScrollView = function (options, isContinuousScroll, reader) {
             true, //enableBookStyleOverrides
             reader);
 
-        pageView.on(OnePageView.SPINE_ITEM_OPEN_START, function($iframe, spineItem) {
+        pageView.on(OnePageView.Events.SPINE_ITEM_OPEN_START, function($iframe, spineItem) {
+            
+            Globals.logEvent("OnePageView.Events.SPINE_ITEM_OPEN_START", "ON", "scroll_view.js [ " + spineItem.href + " ]");
 
+            Globals.logEvent("CONTENT_DOCUMENT_LOAD_START", "EMIT", "scroll_view.js [ " + spineItem.href + " ]");
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
         });
 
@@ -33122,6 +37135,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
     function onPageViewLoaded(pageView, success, $iframe, spineItem, isNewlyLoaded, context) {
 
         if (success && isNewlyLoaded) {
+            Globals.logEvent("CONTENT_DOCUMENT_LOADED", "EMIT", "scroll_view.js [ " + spineItem.href + " ]");
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
         }
 
@@ -33287,21 +37301,22 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
             pageRange = getPageViewRange(pageView);
             sfiNav = pageView.getNavigator();
-            $element = sfiNav.getElementByCfi(pageRequest.elementCfi);
 
-            if (!$element || !$element.length) {
-                console.warn("Element cfi=" + pageRequest.elementCfi + " not found!");
+            var domRange = sfiNav.getDomRangeFromRangeCfi(pageRequest.elementCfi);            
+            if (!domRange) {
+                console.warn("Range for cfi=" + pageRequest.elementCfi + " not found!");
                 return;
             }
-
-            if (isElementVisibleOnScreen(pageView, $element, 60)) {
+            
+            var domRangeAsRange = getDomRangeAsRange(pageView, domRange);
+            if (isRangeIsVisibleOnScreen(pageView, domRangeAsRange, 60)) {
                 //TODO refactoring required
                 // this is artificial call because MO player waits for this event to continue playing.
                 onPaginationChanged(pageRequest.initiator, pageRequest.spineItem, pageRequest.elementId);
                 return;
             }
 
-            topOffset = sfiNav.getVerticalOffsetForElement($element) + pageRange.top;
+            topOffset = domRangeAsRange.top;
 
         }
         else if (pageRequest.firstPage) {
@@ -33347,6 +37362,8 @@ var ScrollView = function (options, isContinuousScroll, reader) {
     }
 
     function onPaginationChanged(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
+        
+        Globals.logEvent("InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED", "EMIT", "scroll_view.js");
         self.emit(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, {
             paginationInfo: self.getPaginationInfo(),
             initiator: initiator,
@@ -33514,11 +37531,11 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         return spineItems;
     };
 
-    this.getElement = function (spineItem, selector) {
+    this.getElement = function (spineItemIdref, selector) {
         var element = undefined;
 
         forEachItemView(function (pageView) {
-            if (pageView.currentSpineItem() == spineItem) {
+            if(pageView.currentSpineItem().idref == spineItemIdref) {
 
                 element = pageView.getNavigator().getElement(selector);
 
@@ -33532,35 +37549,11 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         return element;
     };
 
-    this.getElementByCfi = function (spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
-
+    this.getElementById = function(spineItemIdref, id) {
         var found = undefined;
 
         forEachItemView(function (pageView) {
-            if (pageView.currentSpineItem() == spineItem) {
-
-                found = pageView.getElementByCfi(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist);
-                return false;
-            }
-
-            return true;
-
-        }, false);
-
-        if (!found) {
-            console.error("spine item is not loaded");
-            return undefined;
-        }
-
-        return found;
-    };
-
-    this.getElementById = function (spineItem, id) {
-
-        var found = undefined;
-
-        forEachItemView(function (pageView) {
-            if (pageView.currentSpineItem() == spineItem) {
+            if (pageView.currentSpineItem().idref == spineItemIdref) {
 
                 found = pageView.getNavigator().getElementById(id);
                 return false;
@@ -33578,10 +37571,33 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         return found;
     };
 
-    this.getFirstVisibleMediaOverlayElement = function () {
+    this.getElementByCfi = function (spineItemIdref, cfi, classBlacklist, elementBlacklist, idBlacklist) {
+        var found = undefined;
+
+        forEachItemView(function (pageView) {
+            if (pageView.currentSpineItem().idref == spineItemIdref) {
+
+                found = pageView.getNavigator().getElementByCfi(spineItemIdref, cfi, classBlacklist, elementBlacklist, idBlacklist);
+                return false;
+            }
+
+            return true;
+
+        }, false);
+
+        if (!found) {
+            console.error("spine item is not loaded");
+            return undefined;
+        }
+
+        return found;
+
+    };
+
+    function callOnVisiblePageView(iterator) {
         var viewPortRange = getVisibleRange();
 
-        var moElement = undefined;
+        var result = undefined;
         var normalizedRange = {top: 0, bottom: 0};
         var pageViewRange;
 
@@ -33596,8 +37612,8 @@ var ScrollView = function (options, isContinuousScroll, reader) {
             if (rangeLength(normalizedRange) > 0) {
                 steppedToVisiblePage = true;
 
-                moElement = pageView.getNavigator().getFirstVisibleMediaOverlayElement(normalizedRange);
-                if (moElement) {
+                result = iterator(pageView, normalizedRange);
+                if (result) {
                     return false;
                 }
             }
@@ -33609,7 +37625,13 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
         }, false);
 
-        return moElement;
+        return result;
+    }
+
+    this.getFirstVisibleMediaOverlayElement = function () {
+        return callOnVisiblePageView(function (pageView, pageRange) {
+            return pageView.getNavigator().getFirstVisibleMediaOverlayElement(pageRange);
+        });
     };
 
     // /**
@@ -33710,6 +37732,18 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
         return elementRange;
     }
+    
+    function getDomRangeAsRange(pageView, domRange) {
+
+        var pageRange = getPageViewRange(pageView);
+
+        var elementRange = {top: 0, bottom: 0};
+        var boundingClientRect = domRange.getBoundingClientRect();
+        elementRange.top = boundingClientRect.top + pageRange.top;
+        elementRange.bottom = elementRange.top + boundingClientRect.height;
+
+        return elementRange;
+    }
 
     this.insureElementVisibility = function (spineItemId, element, initiator) {
         var pageView = undefined;
@@ -33744,12 +37778,156 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
     };
 
-    this.isElementCfiVisible = function (spineIdRef, contentCfi) {
-        // TODO: implement this for scrollable views
-        return false;
+    this.getVisibleElements = function(selector, includeSpineItem) {
+        var elements = [];
+        forEachItemView(function (pageView) {
+            if (includeSpineItem) {
+                elements.push({elements: pageView.getVisibleElements(selector), spineItem: pageView.currentSpineItem()});
+            } else {
+                elements = _.flatten([elements, pageView.getVisibleElements(selector)], true);
+            }
+        });
+        return elements;
     };
 
+    this.getVisibleElementsWithFilter = function(filterFunction) {
+
+        console.warn('getVisibleElementsWithFilter: Not implemented yet for scroll_view');
+    };
+
+    this.isElementVisible = function($element){
+
+        console.warn('isElementVisible: Not implemented yet for scroll_view');
+    };
+
+    this.getElements = function(spineItemIdref, selector) {
+        var pageView = findPageViewForSpineItem(spineItemIdref);
+        if (pageView) {
+            return pageView.getElements(spineItemIdref, selector);
+        }
+    };
+
+    this.isNodeFromRangeCfiVisible = function (spineIdref, partialCfi) {
+        var pageView = findPageViewForSpineItem(spineIdRef);
+        if (pageView) {
+            return pageView.isNodeFromRangeCfiVisible(spineIdRef, partialCfi);
+        }
+    };
+
+    this.isVisibleSpineItemElementCfi = function (spineIdRef, partialCfi) {
+        var pageView = findPageViewForSpineItem(spineIdRef);
+        if (pageView) {
+            return pageView.isVisibleSpineItemElementCfi(spineIdRef, partialCfi);
+        }
+    };
+
+    this.getNodeRangeInfoFromCfi = function(spineIdRef, partialCfi){
+        var pageView = findPageViewForSpineItem(spineIdRef);
+        if (pageView) {
+            return pageView.isVisibleSpineItemElementCfi(spineIdRef, partialCfi);
+        }
+    };
+    
+    function getFirstOrLastVisibleCfi(pickerFunc) {
+        var pageViews = getVisiblePageViews();
+        var selectedPageView = pickerFunc(pageViews);
+        var pageViewTopOffset = selectedPageView.element().position().top;
+        var visibleContentOffsets, frameDimensions;
+        
+        var setupFunctions = [
+            function () {
+                visibleContentOffsets = {
+                    top: pageViewTopOffset,
+                    left: 0
+                };
+            },
+            function() {
+                var height = selectedPageView.element().height();
+                
+                if (pageViewTopOffset >= 0) {
+                    height = viewHeight() - pageViewTopOffset;
+                }
+
+                frameDimensions = {
+                    width: selectedPageView.element().width(),
+                    height: height
+                };
+                
+                visibleContentOffsets = {
+                    top: 0,
+                    left: 0
+                };
+            }
+        ];
+        
+        //invoke setup function
+        pickerFunc(setupFunctions)();
+        
+        var cfiFunctions = [
+            selectedPageView.getFirstVisibleCfi,
+            selectedPageView.getLastVisibleCfi
+        ];
+        
+        return pickerFunc(cfiFunctions)(visibleContentOffsets, frameDimensions);
+    }
+    
+    this.getFirstVisibleCfi = function () {
+        
+        return getFirstOrLastVisibleCfi(_.first);
+    };
+
+    this.getLastVisibleCfi = function () {
+        
+        return getFirstOrLastVisibleCfi(_.last);
+    };
+
+    this.getDomRangeFromRangeCfi = function (rangeCfi, rangeCfi2, inclusive) {
+        if (rangeCfi2 && rangeCfi.idref !== rangeCfi2.idref) {
+            console.error("getDomRangeFromRangeCfi: both CFIs must be scoped under the same spineitem idref");
+            return undefined;
+        }
+
+        rangeCfi = rangeCfi || {};
+        rangeCfi2 = rangeCfi2 || {};
+
+        return callOnVisiblePageView(function (pageView) {
+            if (pageView.currentSpineItem().idref === rangeCfi.idref) {
+                return pageView.getDomRangeFromRangeCfi(rangeCfi.contentCFI, rangeCfi2.contentCFI, inclusive);
+            }
+        });
+    };
+
+    this.getRangeCfiFromDomRange = function (domRange) {
+        return callOnVisiblePageView(function (pageView) {
+            return pageView.getRangeCfiFromDomRange(domRange);
+        });
+    };
+
+    this.getVisibleCfiFromPoint = function (x, y, precisePoint) {
+        return callOnVisiblePageView(function (pageView) {
+            return createBookmark(pageView.currentSpineItem(), pageView.getVisibleCfiFromPoint(x, y, precisePoint));
+        });
+    };
+
+    this.getRangeCfiFromPoints = function (startX, startY, endX, endY) {
+        return callOnVisiblePageView(function (pageView) {
+            return createBookmark(pageView.currentSpineItem(), pageView.getRangeCfiFromPoints(startX, startY, endX, endY));
+        });
+    };
+
+    this.getCfiForElement = function(x, y) {
+        return callOnVisiblePageView(function (pageView) {
+            return createBookmark(pageView.currentSpineItem(), pageView.getCfiForElement(x, y));
+        });
+    };
+
+    this.getElementFromPoint = function (x, y) {
+        return callOnVisiblePageView(function (pageView) {
+            return pageView.getElementFromPoint(x, y);
+        });
+    };
 };
+
 return ScrollView;
 });
 
@@ -33781,8 +37959,8 @@ return ScrollView;
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define('readium_shared_js/views/media_overlay_player',["jquery", "../helpers", "./audio_player", "./media_overlay_element_highlighter", "../globals", "../models/smil_iterator", "rangy", 'readium_cfi_js', './scroll_view'],
-    function($, Helpers, AudioPlayer, MediaOverlayElementHighlighter, Globals, SmilIterator, rangy, epubCfi, ScrollView) {
+define('readium_shared_js/views/media_overlay_player',["../globals", "jquery", "../helpers", "./audio_player", "./media_overlay_element_highlighter", "../models/smil_iterator", "rangy", 'readium_cfi_js', './scroll_view'],
+    function(Globals, $, Helpers, AudioPlayer, MediaOverlayElementHighlighter, SmilIterator, rangy, epubCfi, ScrollView) {
 /**
  *
  * @param reader
@@ -33820,9 +37998,9 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
     var _elementHighlighter = new MediaOverlayElementHighlighter(reader);
 
     reader.on(Globals.Events.READER_VIEW_DESTROYED, function(){
-
+        Globals.logEvent("READER_VIEW_DESTROYED", "ON", "media_overlay_player.js");
+        
         self.reset();
-
     });
 
 
@@ -33847,8 +38025,12 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
         _audioPlayer.setVolume(_settings.mediaOverlaysVolume / 100.0);
     };
     self.onSettingsApplied();
-    //Globals.
-    reader.on(Globals.Events.SETTINGS_APPLIED, this.onSettingsApplied, this);
+    
+    reader.on(Globals.Events.SETTINGS_APPLIED, function() {
+        
+        Globals.logEvent("SETTINGS_APPLIED", "ON", "media_overlay_player.js");
+        this.onSettingsApplied();
+    }, this);
 
     /*
     var lastElement = undefined;
@@ -33943,7 +38125,7 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
                         try
                         {
                             var cfi = parts[0] + parts[1];
-                            var $element = reader.getElementByCfi(spineItem, cfi,
+                            var $element = reader.getElementByCfi(spineItem.idref, cfi,
                 ["cfi-marker", "mo-cfi-highlight"],
                 [],
                 ["MathJax_Message"]);
@@ -33969,7 +38151,7 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
                         {
                             //var cfi = "epubcfi(" + partial + ")";
                             //var $element = EPUBcfi.getTargetElementWithPartialCFI(cfi, DOC);
-                            var $element = reader.getElementByCfi(spineItem, partial,
+                            var $element = reader.getElementByCfi(spineItem.idref, partial,
                 ["cfi-marker", "mo-cfi-highlight"],
                 [],
                 ["MathJax_Message"]);
@@ -33995,12 +38177,12 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
                 {
                     if (paginationData.initiator == self && !paginationData.elementId)
                     {
-                        var $element = reader.getElement(spineItem, "body");
+                        var $element = reader.getElement(spineItem.idref, "body");
                         element = ($element && $element.length > 0) ? $element[0] : undefined;
                     }
                     else
                     {
-                        var $element = reader.getElementById(spineItem, paginationData.elementId);
+                        var $element = reader.getElementById(spineItem.idref, paginationData.elementId);
                         element = ($element && $element.length > 0) ? $element[0] : undefined;
                         //("#" + Globals.Helpers.escapeJQuerySelector(paginationData.elementId))
                     }
@@ -34862,6 +39044,7 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
 
         if (!_enableHTMLSpeech)
         {
+            Globals.logEvent("MEDIA_OVERLAY_TTS_SPEAK", "EMIT", "media_overlay_player.js");
             reader.emit(Globals.Events.MEDIA_OVERLAY_TTS_SPEAK, {tts: txt}); // resume if txt == undefined
             return;
         }
@@ -35154,12 +39337,20 @@ console.debug("TTS resume");
 
     var speakStop = function()
     {
-        onStatusChanged({isPlaying: false});
+        var wasPlaying = _ttsIsPlaying;
+
+        if (wasPlaying) {
+            onStatusChanged({isPlaying: false});
+        }
+        
         _ttsIsPlaying = false;
 
         if (!_enableHTMLSpeech)
         {
-            reader.emit(Globals.Events.MEDIA_OVERLAY_TTS_STOP, undefined);
+            if (wasPlaying) {
+                Globals.logEvent("MEDIA_OVERLAY_TTS_STOP", "EMIT", "media_overlay_player.js");
+                reader.emit(Globals.Events.MEDIA_OVERLAY_TTS_STOP, undefined);
+            }
             return;
         }
 
@@ -35446,25 +39637,36 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
     };
 
     this.resetBlankPage = function() {
+        var wasPlaying = false;
+        
         if (_blankPagePlayer)
         {
+            wasPlaying = true;
+            
             var timer = _blankPagePlayer;
             _blankPagePlayer = undefined;
             clearTimeout(timer);
         }
         _blankPagePlayer = undefined;
 
-        onStatusChanged({isPlaying: false});
+        if (wasPlaying) {
+            onStatusChanged({isPlaying: false});
+        }
     };
 
     this.resetEmbedded = function() {
+        var wasPlaying = _embeddedIsPlaying;
+        
         if (_currentEmbedded)
         {
             $(_currentEmbedded).off("ended", self.onEmbeddedEnd);
             _currentEmbedded.pause();
         }
         _currentEmbedded = undefined;
-        onStatusChanged({isPlaying: false});
+        
+        if (wasPlaying) {
+            onStatusChanged({isPlaying: false});
+        }
         _embeddedIsPlaying = false;
     };
 
@@ -35740,8 +39942,8 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
                 if (id)
                 {
-                    var $element = reader.getElementById(spineItem, id);
-                    //var $element = reader.getElement(spineItem, "#" + Globals.Helpers.escapeJQuerySelector(id));
+                    var $element = reader.getElementById(spineItem.idref, id);
+                    //var $element = reader.getElement(spineItem.idref, "#" + ReadiumSDK.Helpers.escapeJQuerySelector(id));
                     element = ($element && $element.length > 0) ? $element[0] : undefined;
                 }
                 else if (spineItem.isFixedLayout())
@@ -35753,7 +39955,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
                     
                         if (paginationData.paginationInfo.openPages[index] && paginationData.paginationInfo.openPages[index].idref && paginationData.paginationInfo.openPages[index].idref === spineItem.idref)
                         {
-                            var $element = reader.getElement(spineItem, "body");
+                            var $element = reader.getElement(spineItem.idref, "body");
                             element = ($element && $element.length > 0) ? $element[0] : undefined;
                         }
                     }
@@ -40219,11 +44421,11 @@ return FontLoaderWrapper;
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define('readium_shared_js/views/reflowable_view',["jquery", "underscore", "eventEmitter", "../models/bookmark_data", "./cfi_navigation_logic",
-    "../models/current_pages_info", "../helpers", "../models/page_open_request", "../globals",
+define('readium_shared_js/views/reflowable_view',["../globals", "jquery", "underscore", "eventEmitter", "../models/bookmark_data", "./cfi_navigation_logic",
+    "../models/current_pages_info", "../helpers", "../models/page_open_request",
     "../models/viewer_settings", "./font_loader"],
-    function($, _, EventEmitter, BookmarkData, CfiNavigationLogic,
-             CurrentPagesInfo, Helpers, PageOpenRequest, Globals,
+    function(Globals, $, _, EventEmitter, BookmarkData, CfiNavigationLogic,
+             CurrentPagesInfo, Helpers, PageOpenRequest,
              ViewerSettings, FontLoader) {
 /**
  * Renders reflowable content using CSS columns
@@ -40343,6 +44545,13 @@ var ReflowableView = function(options, reader){
         updateViewportSize();
         updatePagination();
     };
+    
+    function getFrameDimensions() {
+        return {
+            width: _$iframe[0].clientWidth,
+            height: _$iframe[0].clientHeight
+        };
+    }
 
     function renderIframe() {
         if (_$contentFrame) {
@@ -40364,9 +44573,11 @@ var ReflowableView = function(options, reader){
         //_$iframe.css(_spine.isLeftToRight() ? "left" : "right", "0px");
         _$iframe.css("overflow", "hidden");
 
-        _navigationLogic = new CfiNavigationLogic(
-            _$contentFrame, _$iframe,
-            { rectangleBased: true, paginationInfo: _paginationInfo });
+        _navigationLogic = new CfiNavigationLogic({
+            $iframe: _$iframe,
+            frameDimensions: getFrameDimensions,
+            paginationInfo: _paginationInfo
+        });
     }
 
     function loadSpineItem(spineItem) {
@@ -40379,9 +44590,15 @@ var ReflowableView = function(options, reader){
             _paginationInfo.pageOffset = 0;
             _paginationInfo.currentSpreadIndex = 0;
             _currentSpineItem = spineItem;
+            
+            // TODO: this is a dirty hack!!
+            _currentSpineItem.paginationInfo = _paginationInfo; 
+            
             _isWaitingFrameRender = true;
 
             var src = _spine.package.resolveRelativeUrl(spineItem.href);
+            
+            Globals.logEvent("CONTENT_DOCUMENT_LOAD_START", "EMIT", "reflowable_view.js [ " + spineItem.href + " -- " + src + " ]");
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, _$iframe, spineItem);
 
             _$iframe.css("opacity", "0.01");
@@ -40432,6 +44649,7 @@ var ReflowableView = function(options, reader){
             return;
         }
 
+        Globals.logEvent("CONTENT_DOCUMENT_LOADED", "EMIT", "reflowable_view.js [ " + _currentSpineItem.href + " ]");
         self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, _$iframe, _currentSpineItem);
 
         var epubContentDocument = _$iframe[0].contentDocument;
@@ -40502,7 +44720,7 @@ var ReflowableView = function(options, reader){
             _htmlBodyIsLTRWritingMode = false;
         }
 
-        _paginationInfo.isVerticalWritingMode = _htmlBodyIsVerticalWritingMode;
+        _paginationInfo.isVerticalWritingMode = _htmlBodyIsVerticalWritingMode; 
 
         hideBook();
         _$iframe.css("opacity", "1");
@@ -40664,10 +44882,12 @@ var ReflowableView = function(options, reader){
     function onPaginationChanged_(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
 
         _paginationInfo.pageOffset = (_paginationInfo.columnWidth + _paginationInfo.columnGap) * _paginationInfo.visibleColumnCount * _paginationInfo.currentSpreadIndex;
-
+        
         redraw();
 
         _.defer(function () {
+            
+            Globals.logEvent("InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED", "EMIT", "reflowable_view.js");
             self.emit(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, {
                 paginationInfo: self.getPaginationInfo(),
                 initiator: initiator,
@@ -41006,7 +45226,7 @@ var ReflowableView = function(options, reader){
 
         if(!_currentSpineItem) {
 
-            return new BookmarkData("", "");
+            return undefined;
         }
 
         return new BookmarkData(_currentSpineItem.idref, self.getFirstVisibleElementCfi());
@@ -41027,19 +45247,19 @@ var ReflowableView = function(options, reader){
         return [_currentSpineItem];
     };
 
-    this.getElementByCfi = function(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
+    this.getElementByCfi = function(spineItemIdref, cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
-        if(spineItem != _currentSpineItem) {
-            console.error("spine item is not loaded");
+        if(spineItemIdref != _currentSpineItem.idref) {
+            console.warn("spine item is not loaded");
             return undefined;
         }
 
         return _navigationLogic.getElementByCfi(cfi, classBlacklist, elementBlacklist, idBlacklist);
     };
 
-    this.getElementById = function(spineItem, id) {
+    this.getElementById = function(spineItemIdref, id) {
 
-        if(spineItem != _currentSpineItem) {
+        if(spineItemIdref != _currentSpineItem.idref) {
             console.error("spine item is not loaded");
             return undefined;
         }
@@ -41047,10 +45267,10 @@ var ReflowableView = function(options, reader){
         return _navigationLogic.getElementById(id);
     };
 
-    this.getElement = function(spineItem, selector) {
+    this.getElement = function(spineItemIdref, selector) {
 
-        if(spineItem != _currentSpineItem) {
-            console.error("spine item is not loaded");
+        if(spineItemIdref != _currentSpineItem.idref) {
+            console.warn("spine item is not loaded");
             return undefined;
         }
 
@@ -41104,13 +45324,113 @@ var ReflowableView = function(options, reader){
         self.openPage(openPageRequest);
     };
 
-    this.isElementCfiVisible = function(spineIdRef, contentCfi) {
-        if (spineIdRef != _currentSpineItem.idref) {
-            return false;
+    this.getVisibleElementsWithFilter = function(filterFunction, includeSpineItem) {
+
+        var visibleContentOffsets = getVisibleContentOffsets();
+
+        var elements = _navigationLogic.getVisibleElementsWithFilter(visibleContentOffsets,filterFunction);
+
+        if (includeSpineItem) {
+            return [{elements: elements, spineItem:_currentSpineItem}];
+        } else {
+            return elements;
         }
-        return _navigationLogic.isElementCfiVisible(contentCfi);
+
     };
 
+    this.getVisibleElements = function(selector, includeSpineItem) {
+
+        var visibleContentOffsets = getVisibleContentOffsets();
+
+        var elements = _navigationLogic.getAllVisibleElementsWithSelector(selector, visibleContentOffsets);
+
+        if (includeSpineItem) {
+            return [{elements: elements, spineItem:_currentSpineItem}];
+        } else {
+            return elements;
+        }
+
+    };
+
+    this.isElementVisible = function ($element) {
+
+        return _navigationLogic.isElementVisible($element, getVisibleContentOffsets());
+
+    };
+
+    this.getElements = function(spineItemIdref, selector) {
+
+        if(spineItemIdref != _currentSpineItem.idref) {
+            console.warn("spine item is not loaded");
+            return undefined;
+        }
+
+        return _navigationLogic.getElements(selector);
+    };
+
+    this.isNodeFromRangeCfiVisible = function (spineIdref, partialCfi) {
+        if (_currentSpineItem.idref === spineIdref) {
+            return _navigationLogic.isNodeFromRangeCfiVisible(partialCfi);
+        }
+        return undefined;
+    };
+
+    this.isVisibleSpineItemElementCfi = function (spineIdRef, partialCfi) {
+        if (_navigationLogic.isRangeCfi(partialCfi)) {
+            return this.isNodeFromRangeCfiVisible(spineIdRef, partialCfi);
+        }
+        var $elementFromCfi = this.getElementByCfi(spineIdRef, partialCfi);
+        return ($elementFromCfi && this.isElementVisible($elementFromCfi));
+    };
+
+    this.getNodeRangeInfoFromCfi = function (spineIdRef, partialCfi) {
+        if (spineIdRef != _currentSpineItem.idref) {
+            console.warn("spine item is not loaded");
+            return undefined;
+        }
+
+        return _navigationLogic.getNodeRangeInfoFromCfi(partialCfi);
+    };
+
+    function createBookmarkFromCfi(cfi){
+        return new BookmarkData(_currentSpineItem.idref, cfi);
+    }
+
+    this.getFirstVisibleCfi = function () {
+        return createBookmarkFromCfi(_navigationLogic.getFirstVisibleCfi());
+    };
+
+    this.getLastVisibleCfi = function () {
+        return createBookmarkFromCfi(_navigationLogic.getLastVisibleCfi());
+    };
+
+    this.getDomRangeFromRangeCfi = function (rangeCfi, rangeCfi2, inclusive) {
+        if (rangeCfi2 && rangeCfi.idref !== rangeCfi2.idref) {
+            console.error("getDomRangeFromRangeCfi: both CFIs must be scoped under the same spineitem idref");
+            return undefined;
+        }
+        return _navigationLogic.getDomRangeFromRangeCfi(rangeCfi.contentCFI, rangeCfi2? rangeCfi2.contentCFI: null, inclusive);
+    };
+
+    this.getRangeCfiFromDomRange = function (domRange) {
+        return createBookmarkFromCfi(_navigationLogic.getRangeCfiFromDomRange(domRange));
+    };
+
+    this.getVisibleCfiFromPoint = function (x, y, precisePoint) {
+        return createBookmarkFromCfi(_navigationLogic.getVisibleCfiFromPoint(x, y, precisePoint));
+    };
+
+    this.getRangeCfiFromPoints = function(startX, startY, endX, endY) {
+        return createBookmarkFromCfi(_navigationLogic.getRangeCfiFromPoints(startX, startY, endX, endY));
+    };
+
+    this.getCfiForElement = function(x, y) {
+        return createBookmarkFromCfi(_navigationLogic.getCfiForElement(x, y));
+    };
+
+    this.getElementFromPoint = function(x, y) {
+        return _navigationLogic.getElementFromPoint(x,y);
+    };
 };
     return ReflowableView;
 });
@@ -41449,6 +45769,97 @@ Trigger.prototype.execute = function(dom) {
     return Trigger;
 });
 
+//  Created by Juan Corona
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//
+//  Redistribution and use in source and binary forms, with or without modification,
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice,
+//  this list of conditions and the following disclaimer in the documentation and/or
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be
+//  used to endorse or promote products derived from this software without specific
+//  prior written permission.
+//
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
+
+define('readium_shared_js/models/node_range_info',[],function () {
+
+    /**
+     * @class ReadiumSDK.Models.NodeRangePositionInfo
+     * @constructor
+     */
+    var NodeRangePositionInfo = function (node, offset) {
+
+        /**
+         * The actual DOM node
+         * @property node
+         * @type {Node}
+         */
+        this.node = node;
+
+        /**
+         * The position offsetf for the node
+         * @property offset
+         * @type {Number}
+         */
+        this.offset = offset;
+
+    };
+
+    /**
+     * @class ReadiumSDK.Models.NodeRangeInfo
+     * @constructor
+     */
+    var NodeRangeInfo = function (clientRect, startInfo, endInfo) {
+
+        var self = this;
+        /**
+         * Client rectangle information for the range content bounds
+         * @property clientRect
+         * @type {ClientRect}
+         */
+        this.clientRect = clientRect;
+
+        /**
+         * Node and position information providing where and which node the range starts with
+         * @property startInfo
+         * @type {ReadiumSDK.Models.NodeRangePositionInfo}
+         */
+        this.startInfo = startInfo;
+
+        /**
+         * Node and position information providing where and which node the range ends with
+         * @property endInfo
+         * @type {ReadiumSDK.Models.NodeRangePositionInfo}
+         */
+        this.endInfo = endInfo;
+
+
+        this.setStartInfo = function (info) {
+            self.startInfo = new NodeRangePositionInfo(info);
+            return self;
+        };
+
+        this.setEndInfo = function (info) {
+            self.endInfo = new NodeRangePositionInfo(info);
+            return self;
+        };
+    };
+
+    return NodeRangeInfo;
+});
 //  Created by Boris Schneiderman.
 // Modified by Daniel Weck
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
@@ -41475,14 +45886,14 @@ Trigger.prototype.execute = function(dom) {
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define('readium_shared_js/views/reader_view',["jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", "./iframe_loader", "./internal_links_support",
+define('readium_shared_js/views/reader_view',["../globals", "jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", "./iframe_loader", "./internal_links_support",
         "./media_overlay_data_injector", "./media_overlay_player", "../models/package", "../models/page_open_request",
         "./reflowable_view", "./scroll_view", "../models/style_collection", "../models/switches", "../models/trigger",
-        "../models/viewer_settings", "../globals"],
-    function ($, _, EventEmitter, FixedView, Helpers, IFrameLoader, InternalLinksSupport,
+        "../models/viewer_settings", "../models/bookmark_data", "../models/node_range_info"],
+    function (Globals, $, _, EventEmitter, FixedView, Helpers, IFrameLoader, InternalLinksSupport,
               MediaOverlayDataInjector, MediaOverlayPlayer, Package, PageOpenRequest,
               ReflowableView, ScrollView, StyleCollection, Switches, Trigger,
-              ViewerSettings, Globals) {
+              ViewerSettings, BookmarkData, NodeRangeInfo) {
 /**
  * Options passed on the reader from the readium loader/initializer
  *
@@ -41611,6 +46022,10 @@ var ReaderView = function (options) {
         return undefined;
     };
 
+    this.getCurrentView = function () {
+        return _currentView;
+    };
+
     //based on https://docs.google.com/spreadsheet/ccc?key=0AoPMUkQhc4wcdDI0anFvWm96N0xRT184ZE96MXFRdFE&usp=drive_web#gid=0 document
     function deduceDesiredViewType(spineItem) {
 
@@ -41674,9 +46089,13 @@ var ReaderView = function (options) {
 
 
         _currentView = self.createViewForType(desiredViewType, viewCreationParams);
+        
+        Globals.logEvent("READER_VIEW_CREATED", "EMIT", "reader_view.js");
         self.emit(Globals.Events.READER_VIEW_CREATED, desiredViewType);
 
         _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOADED, function ($iframe, spineItem) {
+            
+            Globals.logEvent("CONTENT_DOCUMENT_LOADED", "ON", "reader_view.js (current view) [ " + spineItem.href + " ]");
 
             if (!Helpers.isIframeAlive($iframe[0])) return;
 
@@ -41689,14 +46108,18 @@ var ReaderView = function (options) {
             Trigger.register(contentDoc);
             Switches.apply(contentDoc);
 
+            Globals.logEvent("CONTENT_DOCUMENT_LOADED", "EMIT", "reader_view.js [ " + spineItem.href + " ]");
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
         });
 
         _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOAD_START, function ($iframe, spineItem) {
+            Globals.logEvent("CONTENT_DOCUMENT_LOAD_START", "EMIT", "reader_view.js [ " + spineItem.href + " ]");
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
         });
 
         _currentView.on(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, function (pageChangeData) {
+            
+            Globals.logEvent("InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED", "ON", "reader_view.js");
 
             //we call on onPageChanged explicitly instead of subscribing to the Globals.Events.PAGINATION_CHANGED by
             //mediaOverlayPlayer because we hve to guarantee that mediaOverlayPlayer will be updated before the host
@@ -41704,11 +46127,13 @@ var ReaderView = function (options) {
             _mediaOverlayPlayer.onPageChanged(pageChangeData);
 
             _.defer(function () {
+                Globals.logEvent("PAGINATION_CHANGED", "EMIT", "reader_view.js");
                 self.emit(Globals.Events.PAGINATION_CHANGED, pageChangeData);
             });
         });
 
         _currentView.on(Globals.Events.FXL_VIEW_RESIZED, function () {
+            Globals.logEvent("FXL_VIEW_RESIZED", "EMIT", "reader_view.js");
             self.emit(Globals.Events.FXL_VIEW_RESIZED);
         })
 
@@ -41744,9 +46169,13 @@ var ReaderView = function (options) {
             return;
         }
 
+        Globals.logEvent("READER_VIEW_DESTROYED", "EMIT", "reader_view.js");
         self.emit(Globals.Events.READER_VIEW_DESTROYED);
 
+
+        Globals.logEvent("InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED", "OFF", "reader_view.js");
         _currentView.off(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED);
+        
         _currentView.remove();
         _currentView = undefined;
     }
@@ -41889,6 +46318,8 @@ var ReaderView = function (options) {
     };
 
     function onMediaPlayerStatusChanged(status) {
+        Globals.logEvent("MEDIA_OVERLAY_STATUS_CHANGED", "EMIT", "reader_view.js (via MediaOverlayPlayer + AudioPlayer)");
+console.trace(JSON.stringify(status));
         self.emit(Globals.Events.MEDIA_OVERLAY_STATUS_CHANGED, status);
     }
 
@@ -42022,6 +46453,7 @@ var ReaderView = function (options) {
                         // }, 60);
                     }
 
+                    Globals.logEvent("SETTINGS_APPLIED 1 (view update)", "EMIT", "reader_view.js");
                     self.emit(Globals.Events.SETTINGS_APPLIED);
                 });
                 
@@ -42029,6 +46461,8 @@ var ReaderView = function (options) {
             }
         }
 
+        Globals.logEvent("SETTINGS_APPLIED 2 (no view update)", "EMIT", "reader_view.js");
+console.trace(JSON.stringify(settingsData));
         self.emit(Globals.Events.SETTINGS_APPLIED);
     };
 
@@ -42274,10 +46708,10 @@ var ReaderView = function (options) {
      * @param {string} selector                      The query selector
      * @returns {HTMLElement|undefined}
      */
-    this.getElement = function (spineItem, selector) {
+    this.getElement = function (spineItemIdref, selector) {
 
         if (_currentView) {
-            return _currentView.getElement(spineItem, selector);
+            return _currentView.getElement(spineItemIdref, selector);
         }
 
         return undefined;
@@ -42286,14 +46720,14 @@ var ReaderView = function (options) {
     /**
      * Gets an element from active content documents based on an element id.
      *
-     * @param {Models.SpineItem} spineItem      The spine item object associated with an active content document
+     * @param {string} spineItemIdref      The spine item idref associated with an active content document
      * @param {string} id                                  The element id
      * @returns {HTMLElement|undefined}
      */
-    this.getElementById = function (spineItem, id) {
+    this.getElementById = function (spineItemIdref, id) {
 
         if (_currentView) {
-            return _currentView.getElementById(spineItem, id);
+            return _currentView.getElementById(spineItemIdref, id);
         }
 
         return undefined;
@@ -42302,17 +46736,17 @@ var ReaderView = function (options) {
     /**
      * Gets an element from active content documents based on a content CFI.
      *
-     * @param {Models.SpineItem} spineItem     The spine item idref associated with an active content document
+     * @param {string} spineItemIdref     The spine item idref associated with an active content document
      * @param {string} cfi                                The partial content CFI
      * @param {string[]} [classBlacklist]
      * @param {string[]} [elementBlacklist]
      * @param {string[]} [idBlacklist]
      * @returns {HTMLElement|undefined}
      */
-    this.getElementByCfi = function (spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
+    this.getElementByCfi = function (spineItemIdref, cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
         if (_currentView) {
-            return _currentView.getElementByCfi(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist);
+            return _currentView.getElementByCfi(spineItemIdref, cfi, classBlacklist, elementBlacklist, idBlacklist);
         }
 
         return undefined;
@@ -42416,10 +46850,12 @@ var ReaderView = function (options) {
     /**
      * Returns the bookmark associated with currently opened page.
      *
-     * @returns {string} Serialized Globals.Models.BookmarkData object as JSON string.
+     * @returns {string} Serialized ReadiumSDK.Models.BookmarkData object as JSON string.
+     *          {null} If a bookmark could not be created successfully.
      */
-    this.bookmarkCurrentPage = function () {
-        return JSON.stringify(_currentView.bookmarkCurrentPage());
+    this.bookmarkCurrentPage = function() {
+        var bookmark = _currentView.bookmarkCurrentPage();
+        return bookmark ? bookmark.toString() : null;
     };
 
     /**
@@ -42647,7 +47083,7 @@ var ReaderView = function (options) {
         return _currentView.isElementCfiVisible(spineIdRef, contentCfi);
     };
 
-    var BackgroundAudioTrackManager = function () {
+    var BackgroundAudioTrackManager = function (readerView) {
         var _spineItemIframeMap = {};
         var _wasPlaying = false;
 
@@ -42714,7 +47150,9 @@ var ReaderView = function (options) {
             _wasPlaying = wasPlaying;
         };
 
-        self.on(Globals.Events.CONTENT_DOCUMENT_LOADED, function ($iframe, spineItem) {
+        readerView.on(Globals.Events.CONTENT_DOCUMENT_LOADED, function ($iframe, spineItem) {
+            Globals.logEvent("CONTENT_DOCUMENT_LOADED", "ON", "reader_view.js (via BackgroundAudioTrackManager) [ " + spineItem.href + " ]");;
+            
             try {
                 if (spineItem && spineItem.idref && $iframe && $iframe[0]) {
                     // console.log("CONTENT_DOCUMENT_LOADED");
@@ -42729,7 +47167,9 @@ var ReaderView = function (options) {
             }
         });
 
-        self.on(Globals.Events.PAGINATION_CHANGED, function (pageChangeData) {
+        readerView.on(Globals.Events.PAGINATION_CHANGED, function (pageChangeData) {
+            Globals.logEvent("PAGINATION_CHANGED", "ON", "reader_view.js (via BackgroundAudioTrackManager)");
+            
             // console.log("PAGINATION_CHANGED");
             // console.debug(pageChangeData);
             //
@@ -42845,9 +47285,11 @@ var ReaderView = function (options) {
             }
         });
 
-        self.on(Globals.Events.MEDIA_OVERLAY_STATUS_CHANGED, function (value) {
+        readerView.on(Globals.Events.MEDIA_OVERLAY_STATUS_CHANGED, function (value) {
+            Globals.logEvent("MEDIA_OVERLAY_STATUS_CHANGED", "ON", "reader_view.js (via BackgroundAudioTrackManager)");
+            
             if (!value.smilIndex) return;
-            var package = self.package();
+            var package = readerView.package();
             var smil = package.media_overlay.smilAt(value.smilIndex);
             if (!smil || !smil.spineItemId) return;
 
@@ -42887,7 +47329,215 @@ var ReaderView = function (options) {
             }
         });
     };
-    this.backgroundAudioTrackManager = new BackgroundAudioTrackManager();
+    this.backgroundAudioTrackManager = new BackgroundAudioTrackManager(self);
+
+    function getCfisForVisibleRegion() {
+        return {firstVisibleCfi: self.getFirstVisibleCfi(), lastVisibleCfi: self.getLastVisibleCfi()};
+    }
+
+
+    this.isVisibleSpineItemElementCfi = function(spineIdRef, partialCfi){
+        var spineItem = getSpineItem(spineIdRef);
+
+        if (!spineItem) {
+            return false;
+        }
+
+        if (_currentView) {
+
+            if(!partialCfi || (partialCfi && partialCfi === '')){
+                var spines = _currentView.getLoadedSpineItems();
+                for(var i = 0, count = spines.length; i < count; i++) {
+                    if(spines[i].idref == spineIdRef){
+                        return true;
+                    }
+                }
+            }
+            return _currentView.isVisibleSpineItemElementCfi(spineIdRef, partialCfi);
+
+        }
+        return false;
+    };
+
+    /**
+     * Gets all elements from active content documents based on a query selector.
+     *
+     * @param {string} spineItemIdref    The spine item idref associated with the content document
+     * @param {string} selector          The query selector
+     * @returns {HTMLElement[]}
+     */
+    this.getElements = function(spineItemIdref, selector) {
+
+        if(_currentView) {
+            return _currentView.getElements(spineItemIdref, selector);
+        }
+
+        return undefined;
+    };
+
+    /**
+     * Determine if an element is visible on the active content documents
+     *
+     * @param {HTMLElement} element The element.
+     * @returns {boolean}
+     */
+    this.isElementVisible = function (element) {
+        return _currentView.isElementVisible($(element));
+
+    };
+
+    /**
+     * Resolve a range CFI into an object containing info about it.
+     * @param {string} spineIdRef    The spine item idref associated with the content document
+     * @param {string} partialCfi    The partial CFI that is the range CFI to resolve
+     * @returns {ReadiumSDK.Models.NodeRangeInfo}
+     */
+    this.getNodeRangeInfoFromCfi = function (spineIdRef, partialCfi) {
+        if (_currentView && spineIdRef && partialCfi) {
+            var nodeRangeInfo = _currentView.getNodeRangeInfoFromCfi(spineIdRef, partialCfi);
+            if (nodeRangeInfo) {
+                return new NodeRangeInfo(nodeRangeInfo.clientRect)
+                    .setStartInfo(nodeRangeInfo.startInfo)
+                    .setEndInfo(nodeRangeInfo.endInfo);
+            }
+        }
+        return undefined;
+    };
+
+    /**
+     * Get the pagination info from the current view
+     *
+     * @returns {ReadiumSDK.Models.CurrentPagesInfo}
+     */
+    this.getPaginationInfo = function(){
+        return _currentView.getPaginationInfo();
+    };
+    /**
+     * Get CFI of the first element visible in the viewport
+     * @returns {ReadiumSDK.Models.BookmarkData}
+     */
+    this.getFirstVisibleCfi = function() {
+        if (_currentView) {
+            return _currentView.getFirstVisibleCfi();
+        }
+        return undefined;
+    };
+
+    /**
+     * Get CFI of the last element visible in the viewport
+     * @returns {ReadiumSDK.Models.BookmarkData}
+     */
+    this.getLastVisibleCfi = function() {
+        if (_currentView) {
+            return _currentView.getLastVisibleCfi();
+        }
+        return undefined;
+    };
+    /**
+     *
+     * @param {string} rangeCfi
+     * @param {string} [rangeCfi2]
+     * @param {boolean} [inclusive]
+     * @returns {array}
+     */
+    this.getDomRangesFromRangeCfi = function(rangeCfi, rangeCfi2, inclusive) {
+        if (_currentView) {
+            if (_currentView.getDomRangesFromRangeCfi) {
+                return _currentView.getDomRangesFromRangeCfi(rangeCfi, rangeCfi2, inclusive);
+            } else {
+                return [_currentView.getDomRangeFromRangeCfi(rangeCfi, rangeCfi2, inclusive)];
+            }
+        }
+        return undefined;
+    };
+
+    /**
+     *
+     * @param {ReadiumSDK.Models.BookmarkData} startCfi starting CFI
+     * @param {ReadiumSDK.Models.BookmarkData} [endCfi] ending CFI
+     * optional - may be omited if startCfi is a range CFI
+     * @param {boolean} [inclusive] optional indicating if the range should be inclusive
+     * @returns {array}
+     */
+    this.getDomRangesFromRangeCfi = function(rangeCfi, rangeCfi2, inclusive) {
+        if (_currentView) {
+            if (_currentView.getDomRangesFromRangeCfi) {
+                return _currentView.getDomRangesFromRangeCfi(rangeCfi, rangeCfi2, inclusive);
+            } else {
+                return [_currentView.getDomRangeFromRangeCfi(rangeCfi, rangeCfi2, inclusive)];
+            }
+        }
+        return undefined;
+    };
+
+    /**
+     *
+     * @param {ReadiumSDK.Models.BookmarkData} startCfi starting CFI
+     * @param {ReadiumSDK.Models.BookmarkData} [endCfi] ending CFI
+     * optional - may be omited if startCfi is a range CFI
+     * @param {boolean} [inclusive] optional indicating if the range should be inclusive
+     * @returns {DOM Range} https://developer.mozilla.org/en-US/docs/Web/API/Range
+     */
+    this.getDomRangeFromRangeCfi = function(startCfi, endCfi, inclusive) {
+        if (_currentView) {
+            return _currentView.getDomRangeFromRangeCfi(startCfi, endCfi, inclusive);
+        }
+        return undefined;
+    };
+
+    /**
+     * Generate range CFI from DOM range
+     * @param {DOM Range} https://developer.mozilla.org/en-US/docs/Web/API/Range
+     * @returns {string} - represents Range CFI for the DOM range
+     */
+    this.getRangeCfiFromDomRange = function(domRange) {
+        if (_currentView) {
+            return _currentView.getRangeCfiFromDomRange(domRange);
+        }
+        return undefined;
+    };
+
+    /**
+     * @param x
+     * @param y
+     * @param [precisePoint]
+     * @param [spineItemIdref] Required for fixed layout views
+     * @returns {string}
+     */
+    this.getVisibleCfiFromPoint = function (x, y, precisePoint, spineItemIdref) {
+        if (_currentView) {
+            return _currentView.getVisibleCfiFromPoint(x, y, precisePoint, spineItemIdref);
+        }
+        return undefined;
+    };
+
+    /**
+     *
+     * @param startX
+     * @param startY
+     * @param endX
+     * @param endY
+     * @param [spineItemIdref] Required for fixed layout views
+     * @returns {*}
+     */
+    this.getRangeCfiFromPoints = function(startX, startY, endX, endY, spineItemIdref) {
+        if (_currentView) {
+            return _currentView.getRangeCfiFromPoints(startX, startY, endX, endY, spineItemIdref);
+        }
+        return undefined;
+    };
+
+    /**
+     *
+     * @param {HTMLElement} element
+     * @returns {*}
+     */
+    this.getCfiForElement = function(element) {
+        if (_currentView) {
+            return _currentView.getCfiForElement(element);
+        }
+        return undefined;
+    };
 };
 
 /**
@@ -42905,6 +47555,7 @@ ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS = 4;
 return ReaderView;
 });
 
-require(["readium_cfi_js/cfi_API", "readium_shared_js/globalsSetup"]);
+
+require(["readium_cfi_js/cfi_API", "readium_plugin_highlights", "readium_shared_js/globalsSetup"]);
 
 //# sourceMappingURL=readium-shared-js_all.js.map
