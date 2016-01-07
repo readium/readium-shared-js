@@ -46,6 +46,7 @@ var FontLoaderFallback = function(document, options) {
         // if no style sheets are found return immediately
         if (!styleSheets || styleSheets.length <= 0) {
             callback([]);
+            return;
         }
 
         var getFontFamilyFromRule = function(rule) {
