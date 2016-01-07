@@ -1401,6 +1401,9 @@ function($, _, Class, HighlightHelpers, HighlightGroup) {
             var that = this;
 
             var leftAddition = -this._getPaginationLeftOffset();
+            
+            var isVerticalWritingMode = this.context.paginationInfo().isVerticalWritingMode;
+
             var visibleCfiRange = this.getVisibleCfiRange();
 
             // Highlights
@@ -1419,7 +1422,10 @@ function($, _, Class, HighlightHelpers, HighlightGroup) {
                         visibleCfiRange.lastVisibleCfi.contentCFI);
                 }
                 highlightGroup.visible = visible;
-                highlightGroup.resetHighlights(that.readerBoundElement, 0, leftAddition);
+                highlightGroup.resetHighlights(that.readerBoundElement,
+                    isVerticalWritingMode ? leftAddition : 0,
+                    isVerticalWritingMode ? 0 : leftAddition
+                    );
 
             });
         },
@@ -1551,9 +1557,14 @@ function($, _, Class, HighlightHelpers, HighlightGroup) {
 
             leftAddition = -this._getPaginationLeftOffset();
 
+            var isVerticalWritingMode = this.context.paginationInfo().isVerticalWritingMode;
+
             this._addHighlightHelper(
                 CFI, id, type, styles, selectedElements, range,
-                startNode, endNode, 0, leftAddition);
+                startNode, endNode,
+                isVerticalWritingMode ? leftAddition : 0,
+                isVerticalWritingMode ? 0 : leftAddition
+                );
 
             return {
                 selectedElements: selectedElements,
@@ -1895,30 +1906,37 @@ function($, _, Class, HighlightHelpers, HighlightGroup) {
         },
 
         _getPaginationLeftOffset: function() {
-
+        
             var $htmlElement = $(this.context.document.documentElement);
             if (!$htmlElement || !$htmlElement.length) {
                 // if there is no html element, we might be dealing with a fxl with a svg spine item
                 return 0;
             }
-            var offsetLeftPixels = $htmlElement.css("left");
+
+            var offsetLeftPixels = $htmlElement.css(this.context.paginationInfo().isVerticalWritingMode ? "top" : (this.context.isRTL ? "right" : "left"));
             var offsetLeft = parseInt(offsetLeftPixels.replace("px", ""));
             if (isNaN(offsetLeft)) {
                 //for fixed layouts, $htmlElement.css("left") has no numerical value
                 offsetLeft = 0;
             }
+            
+            if (this.context.isRTL && !this.context.paginationInfo().isVerticalWritingMode) return -offsetLeft;
+             
             return offsetLeft;
         },
 
         _injectAnnotationCSS: function(annotationCSSUrl) {
-            var $contentDocHead = $("head", this.context.document);
-            $contentDocHead.append(
-                $("<link/>", {
-                    rel: "stylesheet",
-                    href: annotationCSSUrl,
-                    type: "text/css"
-                })
-            );
+            var doc = this.context.document;
+            setTimeout(function(){
+                var $contentDocHead = $("head", doc);
+                $contentDocHead.append(
+                    $("<link/>", {
+                        rel: "stylesheet",
+                        href: annotationCSSUrl,
+                        type: "text/css"
+                    })
+                );
+            }, 0);
         }
     });
 
@@ -2039,7 +2057,10 @@ var HighlightsManager = function (proxyObj, options) {
             iframe: iframe,
             manager: self,
             cssUrl: annotationCSSUrl,
-            isFixedLayout: spineItem.isFixedLayout()
+            isFixedLayout: spineItem.isFixedLayout(),
+            isRTL: spineItem.spine.isRightToLeft(),
+            paginationInfo: function() { return spineItem.paginationInfo; }
+            
         }, defaultContext);
 
         liveAnnotations[spineItem.index] = new HighlightsController(context, {getVisibleCfiRangeFn: options.getVisibleCfiRangeFn});
