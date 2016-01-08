@@ -464,11 +464,7 @@ function($, _, Class, TextLineInferrer, HighlightView, HighlightBorderView, High
                 return;
             }
 
-            // execute the rendering on the next run loop iteration in case
-            // we create multiple highlights in batch, we don't want to
-            // do a layout for each highlight!
-            var that = this;
-            _.each(that.highlightViews, function(view, index) {
+            _.each(this.highlightViews, function(view, index) {
                 $(viewportElement).append(view.render());
             });
         },
