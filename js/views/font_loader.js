@@ -43,6 +43,12 @@ var FontLoaderFallback = function(document, options) {
         var fontFamilies = [];
         var fontFamilyRules = [];
 
+        // if no style sheets are found return immediately
+        if (!styleSheets || styleSheets.length <= 0) {
+            callback([]);
+            return;
+        }
+
         var getFontFamilyFromRule = function(rule) {
             if (rule.style && (rule.style.getPropertyValue || rule.style.fontFamily)) {
                 return rule.style.getPropertyValue("font-family") || rule.style.fontFamily;

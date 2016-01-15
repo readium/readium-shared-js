@@ -1,4 +1,4 @@
-define(['readium_js_plugins', 'jquery'], function (Plugins, $) {
+define(['readium_shared_js/globals', 'readium_js_plugins', 'jquery'], function (Globals, Plugins, $) {
     var config = {
         backgroundColor: "yellow",
         borderColor: "red"
@@ -10,6 +10,8 @@ define(['readium_js_plugins', 'jquery'], function (Plugins, $) {
         api.plugin.warn('Example warning. Used when this plugin is initialized.');
 
         api.reader.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function ($iframe, spineItem) {
+            Globals.logEvent("CONTENT_DOCUMENT_LOADED", "ON", "plugins/example/main.js [ " + spineItem.href + " ]");
+            
             var div = '<div id="" style="position: absolute; left: 0; top: 0; border: 1px solid '
                 + config.borderColor + '; background-color: ' + config.backgroundColor + ';">'
                 + 'spineItemIdref: ' + spineItem.idref + '</div>';
