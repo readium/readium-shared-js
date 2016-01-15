@@ -1,6 +1,6 @@
 # You may add the plugins that should be included here.
 plugins: [
- # 'annotations' NOW EXCLUDED, see https://github.com/readium/readium-js-viewer/issues/386
+  'highlights'
  # 'example'
 ]
 
@@ -10,5 +10,5 @@ plugins: [
 #        'example'
 #    ]
 #    exclude: [
-#      'annotations'
+#      'highlights'
 #    ]

@@ -120,6 +120,8 @@ devDependencies:
     #"urijs": 'latest'
 
     "eventemitter3": 'latest'
+    
+    "es6-collections": 'latest'
 
     "FontLoader": 'smnh/FontLoader'
     
@@ -153,15 +155,17 @@ scripts:
             prepare:submodule
         &&
         npm run
-            prepare:dependencies
+            prepare:local
         &&
         npm run
             prepare:patch
     '
 
 #=====================
-    'prepare:dependencies': '
+    'prepare:local': '
 
+        npm outdated
+        &&
         npm install
         &&
         npm update
