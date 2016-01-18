@@ -879,7 +879,6 @@ var CfiNavigationLogic = function(options) {
         return EPUBcfi.generateRangeComponent(
             range.startContainer, range.startOffset,
             range.endContainer, range.endOffset,
-            range.commonAncestorContainer,
             ['cfi-marker'], [], ["MathJax_Message", "MathJax_SVG_Hidden"]);
     }
 
