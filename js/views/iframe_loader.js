@@ -49,8 +49,8 @@ var IFrameLoader = function() {
     this.updateIframeEvents = function (iframe) {
 
         _.each(eventListeners, function (value, key) {
+            $(iframe.contentWindow).off(key);
             for (var i = 0, count = value.length; i < count; i++) {
-                $(iframe.contentWindow).off(key);
                 $(iframe.contentWindow).on(key, value[i].callback, value[i].context);
             }
         });
