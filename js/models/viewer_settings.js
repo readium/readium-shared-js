@@ -32,6 +32,8 @@ define([], function() {
 var ViewerSettings = function(settingsData) {
 
     var self = this;
+    
+    this.epubPopupFootnotes = true;
 
     this.syntheticSpread = "auto";
     this.fontSize = 100;
@@ -92,6 +94,7 @@ var ViewerSettings = function(settingsData) {
 
     this.update = function(settingsData) {
 
+        mapProperty("epubPopupFootnotes", settingsData);
         mapProperty("columnGap", settingsData);
         mapProperty("fontSize", settingsData);
         mapProperty("mediaOverlaysPreservePlaybackWhenScroll", settingsData);
