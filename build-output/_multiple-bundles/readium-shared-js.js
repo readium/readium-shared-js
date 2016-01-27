@@ -2803,6 +2803,8 @@ var CfiNavigationLogic = function(options) {
         }
     }
 
+    var DEBUG = false;
+
     function getVisibleTextRangeOffsetsSelectedByFunc(textNode, pickerFunc, visibleContentOffsets, frameDimensions) {
         visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
         
@@ -2823,44 +2825,64 @@ var CfiNavigationLogic = function(options) {
         fragmentCorner.y -= visibleContentOffsets.top;
         
         var caretRange = getCaretRangeFromPoint(fragmentCorner.x, fragmentCorner.y);
+        
+        if (DEBUG)
         console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'a0');
+        
         // Desperately try to find it from all angles! Darn sub pixeling..
         //TODO: remove the need for this brute-force method, since it's making the result non-deterministic
         if (!caretRange || caretRange.startContainer !== textNode) {
             caretRange = getCaretRangeFromPoint(fragmentCorner.x - 1, fragmentCorner.y);
+            
+            if (DEBUG)
             console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'a1');
         }
         if (!caretRange || caretRange.startContainer !== textNode) {
             caretRange = getCaretRangeFromPoint(fragmentCorner.x, fragmentCorner.y - 1);
+            
+            if (DEBUG)
             console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'a2');
         }
         if (!caretRange || caretRange.startContainer !== textNode) {
             caretRange = getCaretRangeFromPoint(fragmentCorner.x - 1, fragmentCorner.y - 1);
+            
+            if (DEBUG)
             console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'a3');
         }
         if (!caretRange || caretRange.startContainer !== textNode) {
             fragmentCorner.x = Math.floor(fragmentCorner.x);
             fragmentCorner.y = Math.floor(fragmentCorner.y);
             caretRange = getCaretRangeFromPoint(fragmentCorner.x, fragmentCorner.y);
+            
+            if (DEBUG)
             console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'b0');
         }
         // Desperately try to find it from all angles! Darn sub pixeling..
         if (!caretRange || caretRange.startContainer !== textNode) {
             caretRange = getCaretRangeFromPoint(fragmentCorner.x - 1, fragmentCorner.y);
+            
+            if (DEBUG)
             console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'b1');
         }
         if (!caretRange || caretRange.startContainer !== textNode) {
             caretRange = getCaretRangeFromPoint(fragmentCorner.x, fragmentCorner.y - 1);
+            
+            if (DEBUG)
             console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'b2');
         }
         if (!caretRange || caretRange.startContainer !== textNode) {
             caretRange = getCaretRangeFromPoint(fragmentCorner.x - 1, fragmentCorner.y - 1);
+            
+            if (DEBUG)
             console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'b3');
         }
 
         // Still nothing? fall through..
         if (!caretRange) {
+            
+            if (DEBUG)
             console.warn('getVisibleTextRangeOffsetsSelectedByFunc: no caret range result');
+            
             return null;
         }
 
@@ -2870,7 +2892,10 @@ var CfiNavigationLogic = function(options) {
                 {start: caretRange.startOffset - 1, end: caretRange.startOffset}]
             );
         } else {
+            
+            if (DEBUG)
             console.warn('getVisibleTextRangeOffsetsSelectedByFunc: incorrect caret range result');
+            
             return null;
         }
     }
@@ -2942,7 +2967,6 @@ var CfiNavigationLogic = function(options) {
         return EPUBcfi.generateRangeComponent(
             range.startContainer, range.startOffset,
             range.endContainer, range.endOffset,
-            range.commonAncestorContainer,
             ['cfi-marker'], [], ["MathJax_Message", "MathJax_SVG_Hidden"]);
     }
 
@@ -5815,8 +5839,8 @@ var IFrameLoader = function() {
     this.updateIframeEvents = function (iframe) {
 
         _.each(eventListeners, function (value, key) {
+            $(iframe.contentWindow).off(key);
             for (var i = 0, count = value.length; i < count; i++) {
-                $(iframe.contentWindow).off(key);
                 $(iframe.contentWindow).on(key, value[i].callback, value[i].context);
             }
         });
@@ -5882,6 +5906,7 @@ var IFrameLoader = function() {
 
 return IFrameLoader;
 });
+
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
 // 
 //  Redistribution and use in source and binary forms, with or without modification, 
