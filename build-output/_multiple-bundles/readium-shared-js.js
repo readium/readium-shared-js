@@ -2107,9 +2107,15 @@ var CfiNavigationLogic = function(options) {
 
     var debugMode = ReadiumSDK.DEBUG_MODE;
 
-    this.getRootElement = function(){
+    this.getRootElement = function() {
 
         return options.$iframe[0].contentDocument.documentElement;
+    };
+    
+    this.getBodyElement = function () {
+        
+        // In SVG documents the root element can be considered the body.
+        return this.getRootDocument().body || this.getRootElement();
     };
 
     this.getRootDocument = function () {
@@ -3243,10 +3249,7 @@ var CfiNavigationLogic = function(options) {
 
     // returns raw DOM element (not $ jQuery-wrapped)
     this.getFirstVisibleMediaOverlayElement = function(visibleContentOffsets) {
-        var docElement = this.getRootElement();
-        if (!docElement) return undefined;
-
-        var $root = $("body", docElement);
+        var $root = $(this.getBodyElement());
         if (!$root || !$root.length || !$root[0]) return undefined;
 
         var that = this;
@@ -3295,12 +3298,12 @@ var CfiNavigationLogic = function(options) {
     this.isElementVisible = checkVisibilityByRectangles;
 
     this.getVisibleElementsWithFilter = function (visibleContentOffsets, filterFunction) {
-        var $elements = this.getElementsWithFilter($("body", this.getRootElement()), filterFunction);
+        var $elements = this.getElementsWithFilter($(this.getBodyElement()), filterFunction);
         return this.getVisibleElements($elements, visibleContentOffsets);
     };
 
     this.getAllElementsWithFilter = function (filterFunction) {
-        var $elements = this.getElementsWithFilter($("body", this.getRootElement()), filterFunction);
+        var $elements = this.getElementsWithFilter($(this.getBodyElement()), filterFunction);
         return $elements;
     };
 
@@ -3348,7 +3351,7 @@ var CfiNavigationLogic = function(options) {
             }
         }
 
-        var $elements = this.getLeafNodeElements($("body", this.getRootElement()));
+        var $elements = this.getLeafNodeElements($(this.getBodyElement()));
 
         var visibleElements = this.getVisibleElements($elements, visibleContentOffsets, frameDimensions);
 
@@ -4093,7 +4096,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
     this.isDisplaying = function () {
 
-        return _isIframeLoaded;
+        return _isIframeLoaded; //_$iframe && _$iframe[0] && _$epubHtml
     };
 
     this.render = function () {
@@ -4140,14 +4143,25 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
     };
 
     this.remove = function () {
-        _isIframeLoaded = false;
+        this.clear();
+        
         _currentSpineItem = undefined;
-        _$el.remove();
+        
+        if (_$el && _$el[0]) {
+            _$el.remove();
+        }
+        
+        _$el = undefined;
+        _$scaler = undefined;
+        _$iframe = undefined;
     };
 
     this.clear = function () {
         _isIframeLoaded = false;
-        _$iframe[0].src = "";
+        
+        if (_$iframe && _$iframe[0]) {
+            _$iframe[0].src = "";
+        }
     };
 
     this.currentSpineItem = function () {
@@ -5460,12 +5474,13 @@ var FixedView = function(options, reader){
         }
         else {
 
-            if(!pageView.isDisplaying()) {
-
-                _$el.append(pageView.render().element());
-
-                context.isElementAdded = true;
-            }
+            //if(pageView.isDisplaying()) { // always DO (no iframe reuse, as this creates problems with BlobURIs, and navigator history ... just like the reflowable view, we re-create an iframe from the template whenever needed for a new spine item URI)
+            pageView.remove();
+            
+            //if(!pageView.isDisplaying()) { // always TRUE
+            _$el.append(pageView.render().element());
+            context.isElementAdded = true;
+        
 
             pageView.loadSpineItem(item, function(success, $iframe, spineItem, isNewContentDocumentLoaded, context){
 
