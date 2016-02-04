@@ -47,8 +47,8 @@ require.config({
         IPv6:
             process._RJS_rootDir(1) + '/node_modules/urijs/src/IPv6',
 
-        // jquerySizes:
-        //     process._RJS_rootDir(1) + '/node_modules/jquery-sizes/lib/jquery.sizes',
+        jquerySizes:
+            process._RJS_rootDir(1) + '/node_modules/jquery-sizes/lib/jquery.sizes',
 
         domReady:
             process._RJS_rootDir(1) + '/node_modules/domReady/domReady',
@@ -96,11 +96,11 @@ require.config({
             exports: 'CSSOM'
         },
 
-        // jquerySizes:
-        // {
-        //     deps: ['jquery'],
-        //     exports: 'jQuery'
-        // },
+        jquerySizes:
+        {
+            deps: ['jquery'],
+            exports: 'jQuery'
+        },
 
         'rangy-core':
         {

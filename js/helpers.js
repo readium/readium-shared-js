@@ -24,7 +24,7 @@
 //  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
-define(["./globals", 'underscore', "jquery", "./models/spine_item"], function(Globals, _, $, SpineItem) {
+define(["./globals", 'underscore', "jquery", "./models/spine_item", "jquerySizes"], function(Globals, _, $, SpineItem, jquerySizes) { // NOTE that the jquerySizes parameter is not used anywhere explicitely, as this is a jQuery plugin!
 
 var Helpers = {};
 
