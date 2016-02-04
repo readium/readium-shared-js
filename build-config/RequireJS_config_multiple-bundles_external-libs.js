@@ -25,8 +25,8 @@ require.config({
             create: true,
             include: ['jquery', 'underscore',
             'URIjs', 'punycode', 'SecondLevelDomains', 'IPv6',
-            'jquerySizes', 'domReady', 'eventEmitter', 'console_shim',
-            'rangy', 'rangy-core', 'rangy-textrange', 'rangy-highlighter', 'rangy-cssclassapplier', 'rangy-position', 'cssom', 'FontLoader'],
+            'domReady', 'eventEmitter', 'console_shim',
+            'rangy', 'rangy-core', 'rangy-textrange', 'rangy-highlighter', 'rangy-cssclassapplier', 'rangy-position', 'cssom', 'FontLoader'], //'jquerySizes'
         }
     ]
 });
