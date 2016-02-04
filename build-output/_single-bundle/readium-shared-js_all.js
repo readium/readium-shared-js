@@ -13190,6 +13190,79 @@ if (typeof define == 'function' && typeof define.amd == 'object') {
 
 })(typeof window !== "undefined" ? window : this);
 
+//  LauncherOSX
+//
+//  Created by Boris Schneiderman.
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//
+//  Redistribution and use in source and binary forms, with or without modification,
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice,
+//  this list of conditions and the following disclaimer in the documentation and/or
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be
+//  used to endorse or promote products derived from this software without specific
+//  prior written permission.
+//
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
+
+(function(global) {
+
+
+var init = function() {
+    var XmlParse = {};
+
+    XmlParse.fromString = function(str, contentType) {
+        
+        if (!contentType) contentType = "text/xml"
+
+        if (str && (str.indexOf('version="1.1"') > 0)) {
+            
+            console.warn("Replacing XML v1.1 with v1.0 (web browser compatibility).");
+            
+            console.log(str.substr(0, 50));
+            
+            str = str.replace(/(<\?xml[\s\S]+?)version="1.1"([\s\S]+?\?>)/, '$1version="1.0"$2');
+            
+            console.log(str.substr(0, 50));
+        }
+        
+        var parser = new window.DOMParser;
+        return parser.parseFromString(str, contentType);
+    };
+
+    global.XmlParse = XmlParse;
+    return XmlParse;
+};
+
+
+if (typeof define == 'function' && typeof define.amd == 'object') {
+    console.log("RequireJS ... XmlParse");
+    
+    define('readium_cfi_js/XmlParse',[],
+    function () {
+        return init();
+    });
+} else {
+    console.log("!RequireJS ... XmlParse");
+    
+    //global.XmlParse = 
+    init();
+}
+
+})(typeof window !== "undefined" ? window : this);
+
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
 //
 //  Redistribution and use in source and binary forms, with or without modification,
@@ -13205,7 +13278,7 @@ if (typeof define == 'function' && typeof define.amd == 'object') {
 
 (function(global) {
 
-var init = function(cfiParser, cfiInterpreter, cfiInstructions, cfiRuntimeErrors, cfiGenerator) {
+var init = function(cfiParser, cfiInterpreter, cfiInstructions, cfiRuntimeErrors, cfiGenerator, xmlParse) {
 
     if (typeof cfiParser === "undefined") {
         throw new Error("UNDEFINED?! cfiParser");
@@ -13314,10 +13387,10 @@ var init = function(cfiParser, cfiInterpreter, cfiInstructions, cfiRuntimeErrors
 if (typeof define == 'function' && typeof define.amd == 'object') {
     console.log("RequireJS ... cfi_API");
 
-    define('readium_cfi_js/cfi_API',['readium_cfi_js/cfi_parser', './cfi_interpreter', './cfi_instructions', './cfi_runtime_errors', './cfi_generator'],
-    function (cfiParser, cfiInterpreter, cfiInstructions, cfiRuntimeErrors, cfiGenerator) {
+    define('readium_cfi_js/cfi_API',['readium_cfi_js/cfi_parser', './cfi_interpreter', './cfi_instructions', './cfi_runtime_errors', './cfi_generator', './XmlParse'],
+    function (cfiParser, cfiInterpreter, cfiInstructions, cfiRuntimeErrors, cfiGenerator, xmlParse) {
 
-        return init(cfiParser, cfiInterpreter, cfiInstructions, cfiRuntimeErrors, cfiGenerator);
+        return init(cfiParser, cfiInterpreter, cfiInstructions, cfiRuntimeErrors, cfiGenerator, xmlParse);
     });
 } else {
     console.log("!RequireJS ... cfi_API");
@@ -13335,7 +13408,7 @@ if (typeof define == 'function' && typeof define.amd == 'object') {
             TerminusError: global.EPUBcfi.TerminusError,
             CFIAssertionError: global.EPUBcfi.CFIAssertionError
         },
-        global.EPUBcfi.Generator);
+        global.EPUBcfi.Generator, global.XmlParse);
 }
 
 })(typeof window !== "undefined" ? window : this);
@@ -21953,90 +22026,6 @@ Spread.POSITION_CENTER = "center";
 
 return Spread;
 });
-/**
- * @preserve JSizes - JQuery plugin v0.33
- *
- * Licensed under the revised BSD License.
- * Copyright 2008-2010 Bram Stein
- * All rights reserved.
- */
-/*global jQuery*/
-(function ($) {
-	'use strict';
-	var num = function (value) {
-			return parseInt(value, 10) || 0;
-		};
-
-	/**
-	 * Sets or gets the values for min-width, min-height, max-width
-	 * and max-height.
-	 */
-	$.each(['min', 'max'], function (i, name) {
-		$.fn[name + 'Size'] = function (value) {
-			var width, height;
-			if (value) {
-				if (value.width !== undefined) {
-					this.css(name + '-width', value.width);
-				}
-				if (value.height !== undefined) {
-					this.css(name + '-height', value.height);
-				}
-			} else {
-				width = this.css(name + '-width');
-				height = this.css(name + '-height');
-				// Apparently:
-				//  * Opera returns -1px instead of none
-				//  * IE6 returns undefined instead of none
-				return {'width': (name === 'max' && (width === undefined || width === 'none' || num(width) === -1) && Number.MAX_VALUE) || num(width), 
-						'height': (name === 'max' && (height === undefined || height === 'none' || num(height) === -1) && Number.MAX_VALUE) || num(height)};
-			}
-			return this;
-		};
-	});
-
-	/**
-	 * Returns whether or not an element is visible.
-	 */
-	$.fn.isVisible = function () {
-		return this.is(':visible');
-	};
-
-	/**
-	 * Sets or gets the values for border, margin and padding.
-	 */
-	$.each(['border', 'margin', 'padding'], function (i, name) {
-		$.fn[name] = function (value) {
-			if (value) {
-				if (value.top !== undefined) {
-					this.css(name + '-top' + (name === 'border' ? '-width' : ''), value.top);
-				}
-				if (value.bottom !== undefined) {
-					this.css(name + '-bottom' + (name === 'border' ? '-width' : ''), value.bottom);
-				}
-				if (value.left !== undefined) {
-					this.css(name + '-left' + (name === 'border' ? '-width' : ''), value.left);
-				}
-				if (value.right !== undefined) {
-					this.css(name + '-right' + (name === 'border' ? '-width' : ''), value.right);
-				}
-			} else {
-				return {top: num(this.css(name + '-top' + (name === 'border' ? '-width' : ''))),
-						bottom: num(this.css(name + '-bottom' + (name === 'border' ? '-width' : ''))),
-						left: num(this.css(name + '-left' + (name === 'border' ? '-width' : ''))),
-						right: num(this.css(name + '-right' + (name === 'border' ? '-width' : '')))};
-			}
-			return this;
-		};
-	});
-}(jQuery));
-
-define("jquerySizes", ["jquery"], (function (global) {
-    return function () {
-        var ret, fn;
-        return ret || global.jQuery;
-    };
-}(this)));
-
 //  Created by Boris Schneiderman.
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
 //  
@@ -22307,7 +22296,7 @@ SpineItem.alternateSpread = function(spread) {
 //  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
-define('readium_shared_js/helpers',["./globals", 'underscore', "jquery", "jquerySizes", "./models/spine_item"], function(Globals, _, $, JQuerySizes, SpineItem) {
+define('readium_shared_js/helpers',["./globals", 'underscore', "jquery", "./models/spine_item"], function(Globals, _, $, SpineItem) {
 
 var Helpers = {};
 
@@ -26915,7 +26904,7 @@ return IFrameLoader;
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define('readium_shared_js/views/internal_links_support',['jquery', '../helpers', 'readium_cfi_js'], function($, Helpers, epubCfi) {
+define('readium_shared_js/views/internal_links_support',['jquery', '../helpers', 'readium_cfi_js', 'readium_cfi_js/XmlParse'], function($, Helpers, epubCfi, XmlParse) {
 /**
  *
  * @param reader
@@ -26976,8 +26965,8 @@ var InternalLinksSupport = function(reader) {
                 return;
             }
 
-            var parser = new window.DOMParser;
-            var packageDom = parser.parseFromString(opfText, 'text/xml');
+            var packageDom = XmlParse.fromString(opfText);
+            
             var cfi = splitCfi(fullCfi);
 
             if(!cfi) {

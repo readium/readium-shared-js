@@ -1338,7 +1338,7 @@ SpineItem.alternateSpread = function(spread) {
 //  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
-define('readium_shared_js/helpers',["./globals", 'underscore', "jquery", "jquerySizes", "./models/spine_item"], function(Globals, _, $, JQuerySizes, SpineItem) {
+define('readium_shared_js/helpers',["./globals", 'underscore', "jquery", "./models/spine_item"], function(Globals, _, $, SpineItem) {
 
 var Helpers = {};
 
@@ -5946,7 +5946,7 @@ return IFrameLoader;
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define('readium_shared_js/views/internal_links_support',['jquery', '../helpers', 'readium_cfi_js'], function($, Helpers, epubCfi) {
+define('readium_shared_js/views/internal_links_support',['jquery', '../helpers', 'readium_cfi_js', 'readium_cfi_js/XmlParse'], function($, Helpers, epubCfi, XmlParse) {
 /**
  *
  * @param reader
@@ -6007,8 +6007,8 @@ var InternalLinksSupport = function(reader) {
                 return;
             }
 
-            var parser = new window.DOMParser;
-            var packageDom = parser.parseFromString(opfText, 'text/xml');
+            var packageDom = XmlParse.fromString(opfText);
+            
             var cfi = splitCfi(fullCfi);
 
             if(!cfi) {
