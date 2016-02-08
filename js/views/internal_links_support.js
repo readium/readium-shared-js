@@ -83,7 +83,7 @@ var InternalLinksSupport = function(reader) {
                 return;
             }
 
-            var packageDom = XmlParse.fromString(opfText);
+            var packageDom = XmlParse.fromString(opfText, "text/xml");
             
             var cfi = splitCfi(fullCfi);
 

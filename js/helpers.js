@@ -30,6 +30,30 @@ var Helpers = {};
 
 /**
  *
+ * @param el XML / HTML element node
+ * @returns string value of attribute epub:type (XHTML) or role (HTML) 
+ */
+Helpers.getEpubTypeRoleAttributeValue = function(el) {
+    if (!el) return undefined;
+
+    var attr = undefined;
+    
+    if (el.getAttributeNS) {
+        attr = el.getAttributeNS('http://www.idpf.org/2007/ops', 'type'); 
+    }
+    
+    if (!attr) {
+        attr = el.getAttribute("epub:type") || el.getAttribute("type") || el.getAttribute("role");
+    }
+    
+    if (!attr) return undefined;
+    
+    return attr;
+}
+
+    
+/**
+ *
  * @param ebookURL URL string, or Blob (possibly File)
  * @returns string representing the file path / name from which the asset referenced by this URL originates
  */

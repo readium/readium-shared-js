@@ -1222,6 +1222,7 @@ console.trace(JSON.stringify(settingsData));
     };
 
     var BackgroundAudioTrackManager = function (readerView) {
+                
         var _spineItemIframeMap = {};
         var _wasPlaying = false;
 
@@ -1262,7 +1263,7 @@ console.trace(JSON.stringify(settingsData));
 
                     $.each($audios, function () {
 
-                        var attr = this.getAttribute("epub:type") || this.getAttribute("type");
+                        var attr = Helpers.getEpubTypeRoleAttributeValue(this);
 
                         if (!attr) return true; // continue
 
@@ -1365,8 +1366,8 @@ console.trace(JSON.stringify(settingsData));
 
                         var $audios = $("audio", $iframe[0].contentDocument);
                         $.each($audios, function () {
-
-                            var attr = this.getAttribute("epub:type") || this.getAttribute("type");
+                            
+                            var attr = getEpubTypeRoleAttributeValue(this);
 
                             if (!attr) return true; // continue
 
