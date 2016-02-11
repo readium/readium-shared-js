@@ -10,7 +10,7 @@ Windows ( https://github.com/readium/SDKLauncher-Windows ), etc.
 
 You can try Readium here:
 
-* Online "cloud reader" demo: http://development.readium.divshot.io
+* Online "cloud reader" demo: https://readium.firebaseapp.com
 * Chrome extension (can be used offline): https://chrome.google.com/webstore/detail/readium/fepbnnnkkadjhjahcafoaglimekefifl
 
 
