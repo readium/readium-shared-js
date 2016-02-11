@@ -44,9 +44,15 @@ var CfiNavigationLogic = function(options) {
 
     var debugMode = ReadiumSDK.DEBUG_MODE;
 
-    this.getRootElement = function(){
+    this.getRootElement = function() {
 
         return options.$iframe[0].contentDocument.documentElement;
+    };
+    
+    this.getBodyElement = function () {
+        
+        // In SVG documents the root element can be considered the body.
+        return this.getRootDocument().body || this.getRootElement();
     };
 
     this.getRootDocument = function () {
@@ -740,6 +746,8 @@ var CfiNavigationLogic = function(options) {
         }
     }
 
+    var DEBUG = false;
+
     function getVisibleTextRangeOffsetsSelectedByFunc(textNode, pickerFunc, visibleContentOffsets, frameDimensions) {
         visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
         
@@ -760,44 +768,64 @@ var CfiNavigationLogic = function(options) {
         fragmentCorner.y -= visibleContentOffsets.top;
         
         var caretRange = getCaretRangeFromPoint(fragmentCorner.x, fragmentCorner.y);
+        
+        if (DEBUG)
         console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'a0');
+        
         // Desperately try to find it from all angles! Darn sub pixeling..
         //TODO: remove the need for this brute-force method, since it's making the result non-deterministic
         if (!caretRange || caretRange.startContainer !== textNode) {
             caretRange = getCaretRangeFromPoint(fragmentCorner.x - 1, fragmentCorner.y);
+            
+            if (DEBUG)
             console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'a1');
         }
         if (!caretRange || caretRange.startContainer !== textNode) {
             caretRange = getCaretRangeFromPoint(fragmentCorner.x, fragmentCorner.y - 1);
+            
+            if (DEBUG)
             console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'a2');
         }
         if (!caretRange || caretRange.startContainer !== textNode) {
             caretRange = getCaretRangeFromPoint(fragmentCorner.x - 1, fragmentCorner.y - 1);
+            
+            if (DEBUG)
             console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'a3');
         }
         if (!caretRange || caretRange.startContainer !== textNode) {
             fragmentCorner.x = Math.floor(fragmentCorner.x);
             fragmentCorner.y = Math.floor(fragmentCorner.y);
             caretRange = getCaretRangeFromPoint(fragmentCorner.x, fragmentCorner.y);
+            
+            if (DEBUG)
             console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'b0');
         }
         // Desperately try to find it from all angles! Darn sub pixeling..
         if (!caretRange || caretRange.startContainer !== textNode) {
             caretRange = getCaretRangeFromPoint(fragmentCorner.x - 1, fragmentCorner.y);
+            
+            if (DEBUG)
             console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'b1');
         }
         if (!caretRange || caretRange.startContainer !== textNode) {
             caretRange = getCaretRangeFromPoint(fragmentCorner.x, fragmentCorner.y - 1);
+            
+            if (DEBUG)
             console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'b2');
         }
         if (!caretRange || caretRange.startContainer !== textNode) {
             caretRange = getCaretRangeFromPoint(fragmentCorner.x - 1, fragmentCorner.y - 1);
+            
+            if (DEBUG)
             console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'b3');
         }
 
         // Still nothing? fall through..
         if (!caretRange) {
+            
+            if (DEBUG)
             console.warn('getVisibleTextRangeOffsetsSelectedByFunc: no caret range result');
+            
             return null;
         }
 
@@ -807,7 +835,10 @@ var CfiNavigationLogic = function(options) {
                 {start: caretRange.startOffset - 1, end: caretRange.startOffset}]
             );
         } else {
+            
+            if (DEBUG)
             console.warn('getVisibleTextRangeOffsetsSelectedByFunc: incorrect caret range result');
+            
             return null;
         }
     }
@@ -879,7 +910,6 @@ var CfiNavigationLogic = function(options) {
         return EPUBcfi.generateRangeComponent(
             range.startContainer, range.startOffset,
             range.endContainer, range.endOffset,
-            range.commonAncestorContainer,
             ['cfi-marker'], [], ["MathJax_Message", "MathJax_SVG_Hidden"]);
     }
 
@@ -1156,10 +1186,7 @@ var CfiNavigationLogic = function(options) {
 
     // returns raw DOM element (not $ jQuery-wrapped)
     this.getFirstVisibleMediaOverlayElement = function(visibleContentOffsets) {
-        var docElement = this.getRootElement();
-        if (!docElement) return undefined;
-
-        var $root = $("body", docElement);
+        var $root = $(this.getBodyElement());
         if (!$root || !$root.length || !$root[0]) return undefined;
 
         var that = this;
@@ -1208,12 +1235,12 @@ var CfiNavigationLogic = function(options) {
     this.isElementVisible = checkVisibilityByRectangles;
 
     this.getVisibleElementsWithFilter = function (visibleContentOffsets, filterFunction) {
-        var $elements = this.getElementsWithFilter($("body", this.getRootElement()), filterFunction);
+        var $elements = this.getElementsWithFilter($(this.getBodyElement()), filterFunction);
         return this.getVisibleElements($elements, visibleContentOffsets);
     };
 
     this.getAllElementsWithFilter = function (filterFunction) {
-        var $elements = this.getElementsWithFilter($("body", this.getRootElement()), filterFunction);
+        var $elements = this.getElementsWithFilter($(this.getBodyElement()), filterFunction);
         return $elements;
     };
 
@@ -1261,7 +1288,7 @@ var CfiNavigationLogic = function(options) {
             }
         }
 
-        var $elements = this.getLeafNodeElements($("body", this.getRootElement()));
+        var $elements = this.getLeafNodeElements($(this.getBodyElement()));
 
         var visibleElements = this.getVisibleElements($elements, visibleContentOffsets, frameDimensions);
 
