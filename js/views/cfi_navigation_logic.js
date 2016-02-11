@@ -44,9 +44,15 @@ var CfiNavigationLogic = function(options) {
 
     var debugMode = ReadiumSDK.DEBUG_MODE;
 
-    this.getRootElement = function(){
+    this.getRootElement = function() {
 
         return options.$iframe[0].contentDocument.documentElement;
+    };
+    
+    this.getBodyElement = function () {
+        
+        // In SVG documents the root element can be considered the body.
+        return this.getRootDocument().body || this.getRootElement();
     };
 
     this.getRootDocument = function () {
@@ -1180,10 +1186,7 @@ var CfiNavigationLogic = function(options) {
 
     // returns raw DOM element (not $ jQuery-wrapped)
     this.getFirstVisibleMediaOverlayElement = function(visibleContentOffsets) {
-        var docElement = this.getRootElement();
-        if (!docElement) return undefined;
-
-        var $root = $("body", docElement);
+        var $root = $(this.getBodyElement());
         if (!$root || !$root.length || !$root[0]) return undefined;
 
         var that = this;
@@ -1232,12 +1235,12 @@ var CfiNavigationLogic = function(options) {
     this.isElementVisible = checkVisibilityByRectangles;
 
     this.getVisibleElementsWithFilter = function (visibleContentOffsets, filterFunction) {
-        var $elements = this.getElementsWithFilter($("body", this.getRootElement()), filterFunction);
+        var $elements = this.getElementsWithFilter($(this.getBodyElement()), filterFunction);
         return this.getVisibleElements($elements, visibleContentOffsets);
     };
 
     this.getAllElementsWithFilter = function (filterFunction) {
-        var $elements = this.getElementsWithFilter($("body", this.getRootElement()), filterFunction);
+        var $elements = this.getElementsWithFilter($(this.getBodyElement()), filterFunction);
         return $elements;
     };
 
@@ -1285,7 +1288,7 @@ var CfiNavigationLogic = function(options) {
             }
         }
 
-        var $elements = this.getLeafNodeElements($("body", this.getRootElement()));
+        var $elements = this.getLeafNodeElements($(this.getBodyElement()));
 
         var visibleElements = this.getVisibleElements($elements, visibleContentOffsets, frameDimensions);
 

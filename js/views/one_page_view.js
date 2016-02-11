@@ -287,7 +287,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
     this.isDisplaying = function () {
 
-        return _isIframeLoaded;
+        return _isIframeLoaded; //_$iframe && _$iframe[0] && _$epubHtml
     };
 
     this.render = function () {
@@ -334,14 +334,25 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
     };
 
     this.remove = function () {
-        _isIframeLoaded = false;
+        this.clear();
+        
         _currentSpineItem = undefined;
-        _$el.remove();
+        
+        if (_$el && _$el[0]) {
+            _$el.remove();
+        }
+        
+        _$el = undefined;
+        _$scaler = undefined;
+        _$iframe = undefined;
     };
 
     this.clear = function () {
         _isIframeLoaded = false;
-        _$iframe[0].src = "";
+        
+        if (_$iframe && _$iframe[0]) {
+            _$iframe[0].src = "";
+        }
     };
 
     this.currentSpineItem = function () {
