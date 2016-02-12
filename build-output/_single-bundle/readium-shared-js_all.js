@@ -26868,6 +26868,11 @@ var IFrameLoader = function() {
 
             var mathJax = iframe.contentWindow.MathJax;
             if (mathJax) {
+                
+                console.log("MathJax VERSION: " + mathJax.cdnVersion + " // " + mathJax.fileversion + " // " + mathJax.version);
+            
+                mathJax.Hub.Config({showMathMenu:false, messageStyle: "none", showProcessingMessages: true, SVG:{useFontCache:!mathJax.Hub.Browser.isFirefox}});
+                
                 // If MathJax is being used, delay the callback until it has completed rendering
                 var mathJaxCallback = _.once(callback);
                 try {
