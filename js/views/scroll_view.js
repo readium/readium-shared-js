@@ -38,6 +38,16 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
     var _DEBUG = false;
 
+    var _jQueryVersionIsAboveTwoPointOne = false;
+    try {
+        var vs = $.fn.jquery.split(".");
+        if (parseInt(vs[0]) >= 2 && parseInt(vs[1]) >= 2) {
+            _jQueryVersionIsAboveTwoPointOne = true;
+        }
+    } catch(err) {
+        console.error(err);
+    }
+    
     $.extend(this, new EventEmitter());
 
     var SCROLL_MARGIN_TO_SHOW_LAST_VISBLE_LINE = 5;
@@ -1085,7 +1095,16 @@ var ScrollView = function (options, isContinuousScroll, reader) {
     function getPageViewRange(pageView) {
         var range = {top: 0, bottom: 0};
 
-        range.top = pageView.element().position().top + scrollTop();
+        var el = pageView.element();
+        var pos = el.position();
+        
+        if (_jQueryVersionIsAboveTwoPointOne) {
+            var offsetParent = el.offsetParent();
+            pos.top -= offsetParent.scrollTop();
+            pos.left -= offsetParent.scrollLeft();
+        }
+
+        range.top = pos.top + scrollTop();
         range.bottom = range.top + pageView.getCalculatedPageHeight();
 
         return range;
