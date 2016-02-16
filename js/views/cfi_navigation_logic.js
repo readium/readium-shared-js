@@ -1103,29 +1103,12 @@ var CfiNavigationLogic = function(options) {
 
     this.getPageForPointOnElement = function ($element, x, y) {
 
-        var pageIndex;
-        if (options.rectangleBased) {
-            pageIndex = findPageByRectangles($element, y);
-            if (pageIndex === null) {
-                console.warn('Impossible to locate a hidden element: ', $element);
-                return 0;
-            }
-            return pageIndex;
+        var pageIndex = findPageByRectangles($element, y);
+        if (pageIndex === null) {
+            console.warn('Impossible to locate a hidden element: ', $element);
+            return 0;
         }
-
-        var posInElement = this.getVerticalOffsetForPointOnElement($element, x, y);
-        return Math.floor(posInElement / getFrameDimensions().height);
-    };
-
-    this.getVerticalOffsetForElement = function ($element) {
-
-        return this.getVerticalOffsetForPointOnElement($element, 0, 0);
-    };
-
-    this.getVerticalOffsetForPointOnElement = function ($element, x, y) {
-
-        var elementRect = Helpers.Rect.fromElement($element);
-        return Math.ceil(elementRect.top + y * elementRect.height / 100);
+        return pageIndex;
     };
 
     this.getElementById = function (id) {
