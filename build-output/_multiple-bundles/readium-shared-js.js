@@ -14138,6 +14138,8 @@ var ReflowableView = function(options, reader){
         }
         else if(pageRequest.elementId) {
             pageIndex = _navigationLogic.getPageForElementId(pageRequest.elementId);
+            
+            if (pageIndex < 0) pageIndex = 0;
         }
         else if(pageRequest.elementCfi) {
             try
@@ -14146,6 +14148,8 @@ var ReflowableView = function(options, reader){
                     ["cfi-marker", "mo-cfi-highlight"],
                     [],
                     ["MathJax_Message"]);
+                
+                if (pageIndex < 0) pageIndex = 0;
             }
             catch (e)
             {
