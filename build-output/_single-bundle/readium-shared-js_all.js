@@ -1908,7 +1908,7 @@ define("readium_cfi_js/cfi_parser", (function (global) {
 }(this)));
 
 /*!
- * jQuery JavaScript Library v2.2.0
+ * jQuery JavaScript Library v2.2.1
  * http://jquery.com/
  *
  * Includes Sizzle.js
@@ -1918,7 +1918,7 @@ define("readium_cfi_js/cfi_parser", (function (global) {
  * Released under the MIT license
  * http://jquery.org/license
  *
- * Date: 2016-01-08T20:02Z
+ * Date: 2016-02-22T19:11Z
  */
 
 (function( global, factory ) {
@@ -1974,7 +1974,7 @@ var support = {};
 
 
 var
-	version = "2.2.0",
+	version = "2.2.1",
 
 	// Define a local copy of jQuery
 	jQuery = function( selector, context ) {
@@ -6388,7 +6388,7 @@ function on( elem, types, selector, data, fn, one ) {
 	if ( fn === false ) {
 		fn = returnFalse;
 	} else if ( !fn ) {
-		return this;
+		return elem;
 	}
 
 	if ( one === 1 ) {
@@ -7037,14 +7037,14 @@ var
 	rscriptTypeMasked = /^true\/(.*)/,
 	rcleanScript = /^\s*<!(?:\[CDATA\[|--)|(?:\]\]|--)>\s*$/g;
 
+// Manipulating tables requires a tbody
 function manipulationTarget( elem, content ) {
-	if ( jQuery.nodeName( elem, "table" ) &&
-		jQuery.nodeName( content.nodeType !== 11 ? content : content.firstChild, "tr" ) ) {
+	return jQuery.nodeName( elem, "table" ) &&
+		jQuery.nodeName( content.nodeType !== 11 ? content : content.firstChild, "tr" ) ?
 
-		return elem.getElementsByTagName( "tbody" )[ 0 ] || elem;
-	}
-
-	return elem;
+		elem.getElementsByTagName( "tbody" )[ 0 ] ||
+			elem.appendChild( elem.ownerDocument.createElement( "tbody" ) ) :
+		elem;
 }
 
 // Replace/restore the type attribute of script elements for safe DOM manipulation
@@ -7551,7 +7551,7 @@ var getStyles = function( elem ) {
 		// FF meanwhile throws on frame elements through "defaultView.getComputedStyle"
 		var view = elem.ownerDocument.defaultView;
 
-		if ( !view.opener ) {
+		if ( !view || !view.opener ) {
 			view = window;
 		}
 
@@ -7700,15 +7700,18 @@ function curCSS( elem, name, computed ) {
 		style = elem.style;
 
 	computed = computed || getStyles( elem );
+	ret = computed ? computed.getPropertyValue( name ) || computed[ name ] : undefined;
+
+	// Support: Opera 12.1x only
+	// Fall back to style even without computed
+	// computed is undefined for elems on document fragments
+	if ( ( ret === "" || ret === undefined ) && !jQuery.contains( elem.ownerDocument, elem ) ) {
+		ret = jQuery.style( elem, name );
+	}
 
 	// Support: IE9
 	// getPropertyValue is only needed for .css('filter') (#12537)
 	if ( computed ) {
-		ret = computed.getPropertyValue( name ) || computed[ name ];
-
-		if ( ret === "" && !jQuery.contains( elem.ownerDocument, elem ) ) {
-			ret = jQuery.style( elem, name );
-		}
 
 		// A tribute to the "awesome hack by Dean Edwards"
 		// Android Browser returns percentage for some values,
@@ -9758,7 +9761,7 @@ jQuery.extend( jQuery.event, {
 				// But now, this "simulate" function is used only for events
 				// for which stopPropagation() is noop, so there is no need for that anymore.
 				//
-				// For the compat branch though, guard for "click" and "submit"
+				// For the 1.x branch though, guard for "click" and "submit"
 				// events is still used, but was moved to jQuery.event.stopPropagation function
 				// because `originalEvent` should point to the original event for the constancy
 				// with other events and for more focused logic
@@ -11528,11 +11531,8 @@ jQuery.fn.extend( {
 			}
 
 			// Add offsetParent borders
-			// Subtract offsetParent scroll positions
-			parentOffset.top += jQuery.css( offsetParent[ 0 ], "borderTopWidth", true ) -
-				offsetParent.scrollTop();
-			parentOffset.left += jQuery.css( offsetParent[ 0 ], "borderLeftWidth", true ) -
-				offsetParent.scrollLeft();
+			parentOffset.top += jQuery.css( offsetParent[ 0 ], "borderTopWidth", true );
+			parentOffset.left += jQuery.css( offsetParent[ 0 ], "borderLeftWidth", true );
 		}
 
 		// Subtract parent offsets and element margins
@@ -33040,6 +33040,19 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
     var _DEBUG = false;
 
+    //https://github.com/jquery/jquery/commit/2d715940b9b6fdeed005cd006c8bf63951cf7fb2
+    //https://github.com/jquery/jquery/commit/49833f7795d665ff1d543c4f71f29fca95b567e9
+    //https://github.com/jquery/jquery/compare/2.1.4...2.2.0
+    var _jQueryPositionNeedsFix = false; // v2.2.0 only
+    try {
+        var vs = $.fn.jquery.split(".");
+        if (parseInt(vs[0]) == 2 && parseInt(vs[1]) == 2 && parseInt(vs[2]) == 0) {
+            _jQueryPositionNeedsFix = true;
+        }
+    } catch(err) {
+        console.error(err);
+    }
+    
     $.extend(this, new EventEmitter());
 
     var SCROLL_MARGIN_TO_SHOW_LAST_VISBLE_LINE = 5;
@@ -34080,7 +34093,16 @@ var ScrollView = function (options, isContinuousScroll, reader) {
     function getPageViewRange(pageView) {
         var range = {top: 0, bottom: 0};
 
-        range.top = pageView.element().position().top + scrollTop();
+        var el = pageView.element();
+        var pos = el.position();
+        
+        if (_jQueryPositionNeedsFix) {
+            var offsetParent = el.offsetParent();
+            pos.top -= offsetParent.scrollTop();
+            pos.left -= offsetParent.scrollLeft();
+        }
+
+        range.top = pos.top + scrollTop();
         range.bottom = range.top + pageView.getCalculatedPageHeight();
 
         return range;
@@ -39136,20 +39158,24 @@ CSSOM.CSSRule = function CSSRule() {
 	this.parentStyleSheet = null;
 };
 
+CSSOM.CSSRule.UNKNOWN_RULE = 0;                 // obsolete
 CSSOM.CSSRule.STYLE_RULE = 1;
+CSSOM.CSSRule.CHARSET_RULE = 2;                 // obsolete
 CSSOM.CSSRule.IMPORT_RULE = 3;
 CSSOM.CSSRule.MEDIA_RULE = 4;
 CSSOM.CSSRule.FONT_FACE_RULE = 5;
 CSSOM.CSSRule.PAGE_RULE = 6;
-CSSOM.CSSRule.WEBKIT_KEYFRAMES_RULE = 8;
-CSSOM.CSSRule.WEBKIT_KEYFRAME_RULE = 9;
+CSSOM.CSSRule.KEYFRAMES_RULE = 7;
+CSSOM.CSSRule.KEYFRAME_RULE = 8;
+CSSOM.CSSRule.MARGIN_RULE = 9;
+CSSOM.CSSRule.NAMESPACE_RULE = 10;
+CSSOM.CSSRule.COUNTER_STYLE_RULE = 11;
+CSSOM.CSSRule.SUPPORTS_RULE = 12;
+CSSOM.CSSRule.DOCUMENT_RULE = 13;
+CSSOM.CSSRule.FONT_FEATURE_VALUES_RULE = 14;
+CSSOM.CSSRule.VIEWPORT_RULE = 15;
+CSSOM.CSSRule.REGION_STYLE_RULE = 16;
 
-// Obsolete in CSSOM http://dev.w3.org/csswg/cssom/
-//CSSOM.CSSRule.UNKNOWN_RULE = 0;
-//CSSOM.CSSRule.CHARSET_RULE = 2;
-
-// Never implemented
-//CSSOM.CSSRule.VARIABLES_RULE = 7;
 
 CSSOM.CSSRule.prototype = {
 	constructor: CSSOM.CSSRule
