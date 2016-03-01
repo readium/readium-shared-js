@@ -937,7 +937,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
     this.getFirstVisibleMediaOverlayElement = function() {
         var navigation = self.getNavigator();
-        return navigation.getFirstVisibleMediaOverlayElement({top:0, bottom: _$iframe.height()});
+        return navigation.getFirstVisibleMediaOverlayElement();
     };
 
     this.offset = function () {
@@ -949,16 +949,14 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
     this.getVisibleElementsWithFilter = function (filterFunction) {
         var navigation = self.getNavigator();
-        var visibleContentOffsets = {top: 0, bottom: _$iframe.height()};
-        var elements = navigation.getVisibleElementsWithFilter(visibleContentOffsets, filterFunction);
+        var elements = navigation.getVisibleElementsWithFilter(null, filterFunction);
         return elements;
     };
 
     this.getVisibleElements = function (selector) {
 
         var navigation = self.getNavigator();
-        var visibleContentOffsets = {top: 0, bottom: _$iframe.height()};
-        var elements = navigation.getAllVisibleElementsWithSelector(selector, visibleContentOffsets);
+        var elements = navigation.getAllVisibleElementsWithSelector(selector);
         return elements;
     };
 
