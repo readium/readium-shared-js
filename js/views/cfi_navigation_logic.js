@@ -614,14 +614,6 @@ var CfiNavigationLogic = function(options) {
         return cfi;
     };
 
-    //TODO JC: Can now use getFirstVisibleCfi instead, use that instead of this at top levels
-    this.getFirstVisibleElementCfi = function (topOffset) {
-
-        return self.getFirstVisibleCfi();
-
-    };
-
-
     this.getVisibleCfiFromPoint = function (x, y, precisePoint) {
         var document = self.getRootDocument();
         var firstVisibleCaretRange = getCaretRangeFromPoint(x, y, document);

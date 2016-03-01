@@ -873,13 +873,6 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         return undefined;
     }
 
-    this.getFirstVisibleElementCfi = function () {
-
-        var navigation = self.getNavigator();
-        return navigation.getFirstVisibleElementCfi(0);
-
-    };
-
     function getVisibleContentOffsets() {
         return {
             top: -_$el.parent().scrollTop(),

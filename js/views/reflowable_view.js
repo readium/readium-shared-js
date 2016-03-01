@@ -759,12 +759,6 @@ var ReflowableView = function(options, reader){
         _currentOpacity = -1;
     }
 
-    this.getFirstVisibleElementCfi = function() {
-
-        var contentOffsets = getVisibleContentOffsets();
-        return _navigationLogic.getFirstVisibleElementCfi(contentOffsets);
-    };
-
     this.getPaginationInfo = function() {
 
         var paginationInfo = new CurrentPagesInfo(_spine, false);
@@ -838,7 +832,7 @@ var ReflowableView = function(options, reader){
             return undefined;
         }
 
-        return new BookmarkData(_currentSpineItem.idref, self.getFirstVisibleElementCfi());
+        return new BookmarkData(_currentSpineItem.idref, self.getFirstVisibleCfi());
     };
 
     this.getLoadedSpineItems = function() {

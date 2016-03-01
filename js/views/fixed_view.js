@@ -590,7 +590,7 @@ var FixedView = function(options, reader){
         if(views.length > 0) {
 
             var idref = views[0].currentSpineItem().idref;
-            var cfi = views[0].getFirstVisibleElementCfi();
+            var cfi = views[0].getFirstVisibleCfi();
 
             if(cfi == undefined) {
                 cfi = "";
