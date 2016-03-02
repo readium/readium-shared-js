@@ -932,7 +932,7 @@ var ReflowableView = function(options, reader){
 
     this.isElementVisible = function ($element) {
 
-        return _navigationLogic.isElementVisible($element, getVisibleContentOffsets());
+        return _navigationLogic.isElementVisible($element);
 
     };
 
