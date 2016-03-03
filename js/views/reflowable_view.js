@@ -832,7 +832,7 @@ var ReflowableView = function(options, reader){
             return undefined;
         }
 
-        return new BookmarkData(_currentSpineItem.idref, self.getFirstVisibleCfi());
+        return self.getFirstVisibleCfi();
     };
 
     this.getLoadedSpineItems = function() {

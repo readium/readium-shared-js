@@ -589,17 +589,10 @@ var FixedView = function(options, reader){
 
         if(views.length > 0) {
 
-            var idref = views[0].currentSpineItem().idref;
-            var cfi = views[0].getFirstVisibleCfi();
-
-            if(cfi == undefined) {
-                cfi = "";
-            }
-
-            return new BookmarkData(idref, cfi);
+            return views[0].getFirstVisibleCfi();
         }
 
-        return new BookmarkData("", "");
+        return undefined;
     };
 
     function getDisplayingViews() {

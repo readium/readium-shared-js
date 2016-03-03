@@ -1150,14 +1150,8 @@ var ScrollView = function (options, isContinuousScroll, reader) {
     };
 
     this.bookmarkCurrentPage = function () {
-        var pageView = getFirstVisiblePageView();
-
-        if (!pageView) {
-
-            return new BookmarkData("", "");
-        }
-
-        return new BookmarkData(pageView.currentSpineItem().idref, self.getFirstVisibleCfi());
+        
+        return self.getFirstVisibleCfi();
     };
 
 
