@@ -759,12 +759,6 @@ var ReflowableView = function(options, reader){
         _currentOpacity = -1;
     }
 
-    this.getFirstVisibleElementCfi = function() {
-
-        var contentOffsets = getVisibleContentOffsets();
-        return _navigationLogic.getFirstVisibleElementCfi(contentOffsets);
-    };
-
     this.getPaginationInfo = function() {
 
         var paginationInfo = new CurrentPagesInfo(_spine, false);
@@ -838,19 +832,8 @@ var ReflowableView = function(options, reader){
             return undefined;
         }
 
-        return new BookmarkData(_currentSpineItem.idref, self.getFirstVisibleElementCfi());
+        return self.getFirstVisibleCfi();
     };
-
-    function getVisibleContentOffsets() {
-        //TODO: _htmlBodyIsVerticalWritingMode ? (_lastViewPortSize.height * _paginationInfo.currentSpreadIndex)
-        // NOT used with options.rectangleBased anyway (see CfiNavigationLogic constructor call, here in this reflow engine class)
-        var columnsLeftOfViewport = Math.round(_paginationInfo.pageOffset / (_paginationInfo.columnWidth + _paginationInfo.columnGap));
-
-        var topOffset =  columnsLeftOfViewport * _$contentFrame.height();
-        var bottomOffset = topOffset + _paginationInfo.visibleColumnCount * _$contentFrame.height();
-
-        return {top: topOffset, bottom: bottomOffset};
-    }
 
     this.getLoadedSpineItems = function() {
         return [_currentSpineItem];
@@ -888,23 +871,13 @@ var ReflowableView = function(options, reader){
 
     this.getFirstVisibleMediaOverlayElement = function() {
 
-        var visibleContentOffsets = getVisibleContentOffsets();
-        return _navigationLogic.getFirstVisibleMediaOverlayElement(visibleContentOffsets);
+        return _navigationLogic.getFirstVisibleMediaOverlayElement();
     };
-
-    // /**
-    //  * @deprecated
-    //  */
-    // this.getVisibleMediaOverlayElements = function() {
-    //
-    //     var visibleContentOffsets = getVisibleContentOffsets();
-    //     return _navigationLogic.getVisibleMediaOverlayElements(visibleContentOffsets);
-    // };
 
     this.insureElementVisibility = function(spineItemId, element, initiator) {
 
         var $element = $(element);
-        if(_navigationLogic.isElementVisible($element, getVisibleContentOffsets()))
+        if(_navigationLogic.isElementVisible($element))
         {
             return;
         }
@@ -935,9 +908,7 @@ var ReflowableView = function(options, reader){
 
     this.getVisibleElementsWithFilter = function(filterFunction, includeSpineItem) {
 
-        var visibleContentOffsets = getVisibleContentOffsets();
-
-        var elements = _navigationLogic.getVisibleElementsWithFilter(visibleContentOffsets,filterFunction);
+        var elements = _navigationLogic.getVisibleElementsWithFilter(null, filterFunction);
 
         if (includeSpineItem) {
             return [{elements: elements, spineItem:_currentSpineItem}];
@@ -949,9 +920,7 @@ var ReflowableView = function(options, reader){
 
     this.getVisibleElements = function(selector, includeSpineItem) {
 
-        var visibleContentOffsets = getVisibleContentOffsets();
-
-        var elements = _navigationLogic.getAllVisibleElementsWithSelector(selector, visibleContentOffsets);
+        var elements = _navigationLogic.getAllVisibleElementsWithSelector(selector);
 
         if (includeSpineItem) {
             return [{elements: elements, spineItem:_currentSpineItem}];
@@ -963,7 +932,7 @@ var ReflowableView = function(options, reader){
 
     this.isElementVisible = function ($element) {
 
-        return _navigationLogic.isElementVisible($element, getVisibleContentOffsets());
+        return _navigationLogic.isElementVisible($element);
 
     };
 
