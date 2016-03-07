@@ -1384,6 +1384,61 @@ Helpers.getURLQueryParams = function() {
 
 
 /**
+ * @param urlpath: string corresponding a URL without query parameters (i.e. the part before the '?' question mark in index.html?param=value). If undefined/null, the default window.location is used.
+ * @param overrides: object that maps query parameter names with values (to be included in the resulting URL, while any other query params in the current window.location are preserved as-is) 
+ * @returns a string corresponding to a URL obtained by concatenating the given URL with the given query parameters (and those already in window.location)
+ */
+Helpers.buildUrlQueryParameters = function(urlpath, overrides) {
+    
+    if (!urlpath) {
+        urlpath =
+        window.location ? (
+            window.location.protocol
+            + "//"
+            + window.location.hostname
+            + (window.location.port ? (':' + window.location.port) : '')
+            + window.location.pathname
+        ) : 'index.html';
+    }
+
+    var paramsString = "";
+    
+    for (var key in overrides) {
+        if (!overrides.hasOwnProperty(key)) continue;
+        
+        if (!overrides[key]) continue;
+        
+        var val = overrides[key].trim();
+        if (!val) continue;
+        
+        console.debug("URL QUERY PARAM OVERRIDE: " + key + " = " + val);
+
+        paramsString += (key + "=" + encodeURIComponent(val));
+        paramsString += "&";
+    }
+    
+    var urlParams = Helpers.getURLQueryParams();
+    for (var key in urlParams) {
+        if (!urlParams.hasOwnProperty(key)) continue;
+        
+        if (!urlParams[key]) continue;
+        
+        if (overrides[key]) continue;
+
+        var val = urlParams[key].trim();
+        if (!val) continue;
+        
+        console.debug("URL QUERY PARAM PRESERVED: " + key + " = " + val);
+
+        paramsString += (key + "=" + encodeURIComponent(val));
+        paramsString += "&";
+    }
+    
+    return urlpath + "?" + paramsString;
+};
+
+
+/**
  *
  * @param left
  * @param top
@@ -2676,14 +2731,6 @@ var CfiNavigationLogic = function(options) {
         }
         return cfi;
     };
-
-    //TODO JC: Can now use getFirstVisibleCfi instead, use that instead of this at top levels
-    this.getFirstVisibleElementCfi = function (topOffset) {
-
-        return self.getFirstVisibleCfi();
-
-    };
-
 
     this.getVisibleCfiFromPoint = function (x, y, precisePoint) {
         var document = self.getRootDocument();
@@ -4665,13 +4712,6 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         return undefined;
     }
 
-    this.getFirstVisibleElementCfi = function () {
-
-        var navigation = self.getNavigator();
-        return navigation.getFirstVisibleElementCfi(0);
-
-    };
-
     function getVisibleContentOffsets() {
         return {
             top: -_$el.parent().scrollTop(),
@@ -4729,7 +4769,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
     this.getFirstVisibleMediaOverlayElement = function() {
         var navigation = self.getNavigator();
-        return navigation.getFirstVisibleMediaOverlayElement({top:0, bottom: _$iframe.height()});
+        return navigation.getFirstVisibleMediaOverlayElement();
     };
 
     this.offset = function () {
@@ -4741,16 +4781,14 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
     this.getVisibleElementsWithFilter = function (filterFunction) {
         var navigation = self.getNavigator();
-        var visibleContentOffsets = {top: 0, bottom: _$iframe.height()};
-        var elements = navigation.getVisibleElementsWithFilter(visibleContentOffsets, filterFunction);
+        var elements = navigation.getVisibleElementsWithFilter(null, filterFunction);
         return elements;
     };
 
     this.getVisibleElements = function (selector) {
 
         var navigation = self.getNavigator();
-        var visibleContentOffsets = {top: 0, bottom: _$iframe.height()};
-        var elements = navigation.getAllVisibleElementsWithSelector(selector, visibleContentOffsets);
+        var elements = navigation.getAllVisibleElementsWithSelector(selector);
         return elements;
     };
 
@@ -5510,17 +5548,10 @@ var FixedView = function(options, reader){
 
         if(views.length > 0) {
 
-            var idref = views[0].currentSpineItem().idref;
-            var cfi = views[0].getFirstVisibleElementCfi();
-
-            if(cfi == undefined) {
-                cfi = "";
-            }
-
-            return new BookmarkData(idref, cfi);
+            return views[0].getFirstVisibleCfi();
         }
 
-        return new BookmarkData("", "");
+        return undefined;
     };
 
     function getDisplayingViews() {
@@ -9320,15 +9351,6 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         return range;
     }
 
-    this.getFirstVisibleElementCfi = function () {
-        var visibleViewPage = getFirstVisiblePageView();
-        if (visibleViewPage) {
-            return visibleViewPage.getNavigator().getFirstVisibleElementCfi(scrollTop());
-        }
-
-        return undefined;
-    };
-
     this.getPaginationInfo = function () {
         var spineItem;
         var pageCount;
@@ -9366,14 +9388,8 @@ var ScrollView = function (options, isContinuousScroll, reader) {
     };
 
     this.bookmarkCurrentPage = function () {
-        var pageView = getFirstVisiblePageView();
-
-        if (!pageView) {
-
-            return new BookmarkData("", "");
-        }
-
-        return new BookmarkData(pageView.currentSpineItem().idref, self.getFirstVisibleElementCfi());
+        
+        return self.getFirstVisibleCfi();
     };
 
 
@@ -14482,12 +14498,6 @@ var ReflowableView = function(options, reader){
         _currentOpacity = -1;
     }
 
-    this.getFirstVisibleElementCfi = function() {
-
-        var contentOffsets = getVisibleContentOffsets();
-        return _navigationLogic.getFirstVisibleElementCfi(contentOffsets);
-    };
-
     this.getPaginationInfo = function() {
 
         var paginationInfo = new CurrentPagesInfo(_spine, false);
@@ -14561,19 +14571,8 @@ var ReflowableView = function(options, reader){
             return undefined;
         }
 
-        return new BookmarkData(_currentSpineItem.idref, self.getFirstVisibleElementCfi());
+        return self.getFirstVisibleCfi();
     };
-
-    function getVisibleContentOffsets() {
-        //TODO: _htmlBodyIsVerticalWritingMode ? (_lastViewPortSize.height * _paginationInfo.currentSpreadIndex)
-        // NOT used with options.rectangleBased anyway (see CfiNavigationLogic constructor call, here in this reflow engine class)
-        var columnsLeftOfViewport = Math.round(_paginationInfo.pageOffset / (_paginationInfo.columnWidth + _paginationInfo.columnGap));
-
-        var topOffset =  columnsLeftOfViewport * _$contentFrame.height();
-        var bottomOffset = topOffset + _paginationInfo.visibleColumnCount * _$contentFrame.height();
-
-        return {top: topOffset, bottom: bottomOffset};
-    }
 
     this.getLoadedSpineItems = function() {
         return [_currentSpineItem];
@@ -14611,23 +14610,13 @@ var ReflowableView = function(options, reader){
 
     this.getFirstVisibleMediaOverlayElement = function() {
 
-        var visibleContentOffsets = getVisibleContentOffsets();
-        return _navigationLogic.getFirstVisibleMediaOverlayElement(visibleContentOffsets);
+        return _navigationLogic.getFirstVisibleMediaOverlayElement();
     };
-
-    // /**
-    //  * @deprecated
-    //  */
-    // this.getVisibleMediaOverlayElements = function() {
-    //
-    //     var visibleContentOffsets = getVisibleContentOffsets();
-    //     return _navigationLogic.getVisibleMediaOverlayElements(visibleContentOffsets);
-    // };
 
     this.insureElementVisibility = function(spineItemId, element, initiator) {
 
         var $element = $(element);
-        if(_navigationLogic.isElementVisible($element, getVisibleContentOffsets()))
+        if(_navigationLogic.isElementVisible($element))
         {
             return;
         }
@@ -14658,9 +14647,7 @@ var ReflowableView = function(options, reader){
 
     this.getVisibleElementsWithFilter = function(filterFunction, includeSpineItem) {
 
-        var visibleContentOffsets = getVisibleContentOffsets();
-
-        var elements = _navigationLogic.getVisibleElementsWithFilter(visibleContentOffsets,filterFunction);
+        var elements = _navigationLogic.getVisibleElementsWithFilter(null, filterFunction);
 
         if (includeSpineItem) {
             return [{elements: elements, spineItem:_currentSpineItem}];
@@ -14672,9 +14659,7 @@ var ReflowableView = function(options, reader){
 
     this.getVisibleElements = function(selector, includeSpineItem) {
 
-        var visibleContentOffsets = getVisibleContentOffsets();
-
-        var elements = _navigationLogic.getAllVisibleElementsWithSelector(selector, visibleContentOffsets);
+        var elements = _navigationLogic.getAllVisibleElementsWithSelector(selector);
 
         if (includeSpineItem) {
             return [{elements: elements, spineItem:_currentSpineItem}];
@@ -14686,7 +14671,7 @@ var ReflowableView = function(options, reader){
 
     this.isElementVisible = function ($element) {
 
-        return _navigationLogic.isElementVisible($element, getVisibleContentOffsets());
+        return _navigationLogic.isElementVisible($element);
 
     };
 
