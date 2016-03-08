@@ -614,14 +614,6 @@ var CfiNavigationLogic = function(options) {
         return cfi;
     };
 
-    //TODO JC: Can now use getFirstVisibleCfi instead, use that instead of this at top levels
-    this.getFirstVisibleElementCfi = function (topOffset) {
-
-        return self.getFirstVisibleCfi();
-
-    };
-
-
     this.getVisibleCfiFromPoint = function (x, y, precisePoint) {
         var document = self.getRootDocument();
         var firstVisibleCaretRange = getCaretRangeFromPoint(x, y, document);
@@ -746,7 +738,7 @@ var CfiNavigationLogic = function(options) {
         }
     }
 
-    var DEBUG = false;
+    var DEBUG = true;
 
     function getVisibleTextRangeOffsetsSelectedByFunc(textNode, pickerFunc, visibleContentOffsets, frameDimensions) {
         visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
@@ -768,7 +760,32 @@ var CfiNavigationLogic = function(options) {
         fragmentCorner.y -= visibleContentOffsets.top;
         
         var caretRange = getCaretRangeFromPoint(fragmentCorner.x, fragmentCorner.y);
-        
+
+        // Workaround for inconsistencies with the caretRangeFromPoint IE TextRange based shim.
+        if (caretRange && caretRange.startContainer !== textNode && caretRange.startContainer === textNode.parentNode) {
+            if (DEBUG) console.log('ieTextRangeWorkaround needed');
+            var startOrEnd = pickerFunc([0, 1]);
+
+            // #1
+            if (caretRange.startOffset === caretRange.endOffset) {
+                var checkNode = caretRange.startContainer.childNodes[Math.max(caretRange.startOffset - 1, 0)];
+                if (checkNode === textNode) {
+                    caretRange = {
+                        startContainer: textNode,
+                        endContainer: textNode,
+                        startOffset: startOrEnd === 0 ? 0 : textNode.nodeValue.length,
+                        startOffset: startOrEnd === 0 ? 0 : textNode.nodeValue.length
+                    };
+                    if (DEBUG) console.log('ieTextRangeWorkaround #1:', caretRange);
+                }
+            }
+
+            // Failed
+            else if (DEBUG) {
+                console.log('ieTextRangeWorkaround didn\'t work :(');
+            }
+        }
+
         if (DEBUG)
         console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'a0');
         
@@ -843,10 +860,11 @@ var CfiNavigationLogic = function(options) {
         }
     }
 
-    function findVisibleLeafNodeCfi(leafNodeList, pickerFunc, targetLeafNode, visibleContentOffsets, frameDimensions) {
+    function findVisibleLeafNodeCfi(leafNodeList, pickerFunc, targetLeafNode, visibleContentOffsets, frameDimensions, startingParent) {
         var index = 0;
         if (!targetLeafNode) {
-            index = leafNodeList.indexOf(pickerFunc(leafNodeList))
+            index = leafNodeList.indexOf(pickerFunc(leafNodeList));
+            startingParent = leafNodeList[index].element;
         } else {
             index = leafNodeList.indexOf(targetLeafNode);
             if (index === -1) {
@@ -865,13 +883,18 @@ var CfiNavigationLogic = function(options) {
         var element = visibleLeafNode.element;
         var textNode = visibleLeafNode.textNode;
 
+        if (targetLeafNode && element !== startingParent && !_.contains($(textNode || element).parents(), startingParent)) {
+            if (DEBUG) console.warn("findVisibleLeafNodeCfi: stopped recursion early");
+            return null;
+        }
+
         //if a valid text node is found, try to generate a CFI with range offsets
         if (textNode && isValidTextNode(textNode)) {
             var visibleRange = getVisibleTextRangeOffsetsSelectedByFunc(textNode, pickerFunc, visibleContentOffsets, frameDimensions);
             if (!visibleRange) {
                 //the text node is valid, but not visible..
                 //let's try again with the next node in the list
-                return findVisibleLeafNodeCfi(leafNodeList, pickerFunc, visibleLeafNode, visibleContentOffsets, frameDimensions);
+                return findVisibleLeafNodeCfi(leafNodeList, pickerFunc, visibleLeafNode, visibleContentOffsets, frameDimensions, startingParent);
             }
             var range = createRange();
             range.setStart(textNode, visibleRange.start);
@@ -1103,29 +1126,12 @@ var CfiNavigationLogic = function(options) {
 
     this.getPageForPointOnElement = function ($element, x, y) {
 
-        var pageIndex;
-        if (options.rectangleBased) {
-            pageIndex = findPageByRectangles($element, y);
-            if (pageIndex === null) {
-                console.warn('Impossible to locate a hidden element: ', $element);
-                return 0;
-            }
-            return pageIndex;
+        var pageIndex = findPageByRectangles($element, y);
+        if (pageIndex === null) {
+            console.warn('Impossible to locate a hidden element: ', $element);
+            return 0;
         }
-
-        var posInElement = this.getVerticalOffsetForPointOnElement($element, x, y);
-        return Math.floor(posInElement / getFrameDimensions().height);
-    };
-
-    this.getVerticalOffsetForElement = function ($element) {
-
-        return this.getVerticalOffsetForPointOnElement($element, 0, 0);
-    };
-
-    this.getVerticalOffsetForPointOnElement = function ($element, x, y) {
-
-        var elementRect = Helpers.Rect.fromElement($element);
-        return Math.ceil(elementRect.top + y * elementRect.height / 100);
+        return pageIndex;
     };
 
     this.getElementById = function (id) {
