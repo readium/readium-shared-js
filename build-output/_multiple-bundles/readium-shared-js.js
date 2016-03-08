@@ -1384,6 +1384,61 @@ Helpers.getURLQueryParams = function() {
 
 
 /**
+ * @param urlpath: string corresponding a URL without query parameters (i.e. the part before the '?' question mark in index.html?param=value). If undefined/null, the default window.location is used.
+ * @param overrides: object that maps query parameter names with values (to be included in the resulting URL, while any other query params in the current window.location are preserved as-is) 
+ * @returns a string corresponding to a URL obtained by concatenating the given URL with the given query parameters (and those already in window.location)
+ */
+Helpers.buildUrlQueryParameters = function(urlpath, overrides) {
+    
+    if (!urlpath) {
+        urlpath =
+        window.location ? (
+            window.location.protocol
+            + "//"
+            + window.location.hostname
+            + (window.location.port ? (':' + window.location.port) : '')
+            + window.location.pathname
+        ) : 'index.html';
+    }
+
+    var paramsString = "";
+    
+    for (var key in overrides) {
+        if (!overrides.hasOwnProperty(key)) continue;
+        
+        if (!overrides[key]) continue;
+        
+        var val = overrides[key].trim();
+        if (!val) continue;
+        
+        console.debug("URL QUERY PARAM OVERRIDE: " + key + " = " + val);
+
+        paramsString += (key + "=" + encodeURIComponent(val));
+        paramsString += "&";
+    }
+    
+    var urlParams = Helpers.getURLQueryParams();
+    for (var key in urlParams) {
+        if (!urlParams.hasOwnProperty(key)) continue;
+        
+        if (!urlParams[key]) continue;
+        
+        if (overrides[key]) continue;
+
+        var val = urlParams[key].trim();
+        if (!val) continue;
+        
+        console.debug("URL QUERY PARAM PRESERVED: " + key + " = " + val);
+
+        paramsString += (key + "=" + encodeURIComponent(val));
+        paramsString += "&";
+    }
+    
+    return urlpath + "?" + paramsString;
+};
+
+
+/**
  *
  * @param left
  * @param top
@@ -2677,14 +2732,6 @@ var CfiNavigationLogic = function(options) {
         return cfi;
     };
 
-    //TODO JC: Can now use getFirstVisibleCfi instead, use that instead of this at top levels
-    this.getFirstVisibleElementCfi = function (topOffset) {
-
-        return self.getFirstVisibleCfi();
-
-    };
-
-
     this.getVisibleCfiFromPoint = function (x, y, precisePoint) {
         var document = self.getRootDocument();
         var firstVisibleCaretRange = getCaretRangeFromPoint(x, y, document);
@@ -2809,7 +2856,7 @@ var CfiNavigationLogic = function(options) {
         }
     }
 
-    var DEBUG = false;
+    var DEBUG = true;
 
     function getVisibleTextRangeOffsetsSelectedByFunc(textNode, pickerFunc, visibleContentOffsets, frameDimensions) {
         visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
@@ -2831,7 +2878,32 @@ var CfiNavigationLogic = function(options) {
         fragmentCorner.y -= visibleContentOffsets.top;
         
         var caretRange = getCaretRangeFromPoint(fragmentCorner.x, fragmentCorner.y);
-        
+
+        // Workaround for inconsistencies with the caretRangeFromPoint IE TextRange based shim.
+        if (caretRange && caretRange.startContainer !== textNode && caretRange.startContainer === textNode.parentNode) {
+            if (DEBUG) console.log('ieTextRangeWorkaround needed');
+            var startOrEnd = pickerFunc([0, 1]);
+
+            // #1
+            if (caretRange.startOffset === caretRange.endOffset) {
+                var checkNode = caretRange.startContainer.childNodes[Math.max(caretRange.startOffset - 1, 0)];
+                if (checkNode === textNode) {
+                    caretRange = {
+                        startContainer: textNode,
+                        endContainer: textNode,
+                        startOffset: startOrEnd === 0 ? 0 : textNode.nodeValue.length,
+                        startOffset: startOrEnd === 0 ? 0 : textNode.nodeValue.length
+                    };
+                    if (DEBUG) console.log('ieTextRangeWorkaround #1:', caretRange);
+                }
+            }
+
+            // Failed
+            else if (DEBUG) {
+                console.log('ieTextRangeWorkaround didn\'t work :(');
+            }
+        }
+
         if (DEBUG)
         console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'a0');
         
@@ -2906,10 +2978,11 @@ var CfiNavigationLogic = function(options) {
         }
     }
 
-    function findVisibleLeafNodeCfi(leafNodeList, pickerFunc, targetLeafNode, visibleContentOffsets, frameDimensions) {
+    function findVisibleLeafNodeCfi(leafNodeList, pickerFunc, targetLeafNode, visibleContentOffsets, frameDimensions, startingParent) {
         var index = 0;
         if (!targetLeafNode) {
-            index = leafNodeList.indexOf(pickerFunc(leafNodeList))
+            index = leafNodeList.indexOf(pickerFunc(leafNodeList));
+            startingParent = leafNodeList[index].element;
         } else {
             index = leafNodeList.indexOf(targetLeafNode);
             if (index === -1) {
@@ -2928,13 +3001,18 @@ var CfiNavigationLogic = function(options) {
         var element = visibleLeafNode.element;
         var textNode = visibleLeafNode.textNode;
 
+        if (targetLeafNode && element !== startingParent && !_.contains($(textNode || element).parents(), startingParent)) {
+            if (DEBUG) console.warn("findVisibleLeafNodeCfi: stopped recursion early");
+            return null;
+        }
+
         //if a valid text node is found, try to generate a CFI with range offsets
         if (textNode && isValidTextNode(textNode)) {
             var visibleRange = getVisibleTextRangeOffsetsSelectedByFunc(textNode, pickerFunc, visibleContentOffsets, frameDimensions);
             if (!visibleRange) {
                 //the text node is valid, but not visible..
                 //let's try again with the next node in the list
-                return findVisibleLeafNodeCfi(leafNodeList, pickerFunc, visibleLeafNode, visibleContentOffsets, frameDimensions);
+                return findVisibleLeafNodeCfi(leafNodeList, pickerFunc, visibleLeafNode, visibleContentOffsets, frameDimensions, startingParent);
             }
             var range = createRange();
             range.setStart(textNode, visibleRange.start);
@@ -3166,29 +3244,12 @@ var CfiNavigationLogic = function(options) {
 
     this.getPageForPointOnElement = function ($element, x, y) {
 
-        var pageIndex;
-        if (options.rectangleBased) {
-            pageIndex = findPageByRectangles($element, y);
-            if (pageIndex === null) {
-                console.warn('Impossible to locate a hidden element: ', $element);
-                return 0;
-            }
-            return pageIndex;
+        var pageIndex = findPageByRectangles($element, y);
+        if (pageIndex === null) {
+            console.warn('Impossible to locate a hidden element: ', $element);
+            return 0;
         }
-
-        var posInElement = this.getVerticalOffsetForPointOnElement($element, x, y);
-        return Math.floor(posInElement / getFrameDimensions().height);
-    };
-
-    this.getVerticalOffsetForElement = function ($element) {
-
-        return this.getVerticalOffsetForPointOnElement($element, 0, 0);
-    };
-
-    this.getVerticalOffsetForPointOnElement = function ($element, x, y) {
-
-        var elementRect = Helpers.Rect.fromElement($element);
-        return Math.ceil(elementRect.top + y * elementRect.height / 100);
+        return pageIndex;
     };
 
     this.getElementById = function (id) {
@@ -4682,13 +4743,6 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         return undefined;
     }
 
-    this.getFirstVisibleElementCfi = function () {
-
-        var navigation = self.getNavigator();
-        return navigation.getFirstVisibleElementCfi(0);
-
-    };
-
     function getVisibleContentOffsets() {
         return {
             top: -_$el.parent().scrollTop(),
@@ -4746,7 +4800,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
     this.getFirstVisibleMediaOverlayElement = function() {
         var navigation = self.getNavigator();
-        return navigation.getFirstVisibleMediaOverlayElement({top:0, bottom: _$iframe.height()});
+        return navigation.getFirstVisibleMediaOverlayElement();
     };
 
     this.offset = function () {
@@ -4758,16 +4812,14 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
     this.getVisibleElementsWithFilter = function (filterFunction) {
         var navigation = self.getNavigator();
-        var visibleContentOffsets = {top: 0, bottom: _$iframe.height()};
-        var elements = navigation.getVisibleElementsWithFilter(visibleContentOffsets, filterFunction);
+        var elements = navigation.getVisibleElementsWithFilter(null, filterFunction);
         return elements;
     };
 
     this.getVisibleElements = function (selector) {
 
         var navigation = self.getNavigator();
-        var visibleContentOffsets = {top: 0, bottom: _$iframe.height()};
-        var elements = navigation.getAllVisibleElementsWithSelector(selector, visibleContentOffsets);
+        var elements = navigation.getAllVisibleElementsWithSelector(selector);
         return elements;
     };
 
@@ -5527,17 +5579,10 @@ var FixedView = function(options, reader){
 
         if(views.length > 0) {
 
-            var idref = views[0].currentSpineItem().idref;
-            var cfi = views[0].getFirstVisibleElementCfi();
-
-            if(cfi == undefined) {
-                cfi = "";
-            }
-
-            return new BookmarkData(idref, cfi);
+            return views[0].getFirstVisibleCfi();
         }
 
-        return new BookmarkData("", "");
+        return undefined;
     };
 
     function getDisplayingViews() {
@@ -5899,6 +5944,24 @@ var IFrameLoader = function() {
 
             var mathJax = iframe.contentWindow.MathJax;
             if (mathJax) {
+                
+                console.log("MathJax VERSION: " + mathJax.cdnVersion + " // " + mathJax.fileversion + " // " + mathJax.version);
+    
+                var useFontCache = true; // default in MathJax
+                
+                // Firefox fails to render SVG otherwise
+                if (mathJax.Hub.Browser.isFirefox) {
+                    useFontCache = false;
+                }
+                
+                // Edge fails to render SVG otherwise
+                // https://github.com/readium/readium-js-viewer/issues/394#issuecomment-185382196
+                if (window.navigator.userAgent.indexOf("Edge") > 0) {
+                    useFontCache = false;
+                }
+                
+                mathJax.Hub.Config({showMathMenu:false, messageStyle: "none", showProcessingMessages: true, SVG:{useFontCache:useFontCache}});
+                
                 // If MathJax is being used, delay the callback until it has completed rendering
                 var mathJaxCallback = _.once(callback);
                 try {
@@ -8244,6 +8307,19 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
     var _DEBUG = false;
 
+    //https://github.com/jquery/jquery/commit/2d715940b9b6fdeed005cd006c8bf63951cf7fb2
+    //https://github.com/jquery/jquery/commit/49833f7795d665ff1d543c4f71f29fca95b567e9
+    //https://github.com/jquery/jquery/compare/2.1.4...2.2.0
+    var _jQueryPositionNeedsFix = false; // v2.2.0 only
+    try {
+        var vs = $.fn.jquery.split(".");
+        if (parseInt(vs[0]) == 2 && parseInt(vs[1]) == 2 && parseInt(vs[2]) == 0) {
+            _jQueryPositionNeedsFix = true;
+        }
+    } catch(err) {
+        console.error(err);
+    }
+    
     $.extend(this, new EventEmitter());
 
     var SCROLL_MARGIN_TO_SHOW_LAST_VISBLE_LINE = 5;
@@ -9291,20 +9367,20 @@ var ScrollView = function (options, isContinuousScroll, reader) {
     function getPageViewRange(pageView) {
         var range = {top: 0, bottom: 0};
 
-        range.top = pageView.element().position().top + scrollTop();
+        var el = pageView.element();
+        var pos = el.position();
+        
+        if (_jQueryPositionNeedsFix) {
+            var offsetParent = el.offsetParent();
+            pos.top -= offsetParent.scrollTop();
+            pos.left -= offsetParent.scrollLeft();
+        }
+
+        range.top = pos.top + scrollTop();
         range.bottom = range.top + pageView.getCalculatedPageHeight();
 
         return range;
     }
-
-    this.getFirstVisibleElementCfi = function () {
-        var visibleViewPage = getFirstVisiblePageView();
-        if (visibleViewPage) {
-            return visibleViewPage.getNavigator().getFirstVisibleElementCfi(scrollTop());
-        }
-
-        return undefined;
-    };
 
     this.getPaginationInfo = function () {
         var spineItem;
@@ -9343,14 +9419,8 @@ var ScrollView = function (options, isContinuousScroll, reader) {
     };
 
     this.bookmarkCurrentPage = function () {
-        var pageView = getFirstVisiblePageView();
-
-        if (!pageView) {
-
-            return new BookmarkData("", "");
-        }
-
-        return new BookmarkData(pageView.currentSpineItem().idref, self.getFirstVisibleElementCfi());
+        
+        return self.getFirstVisibleCfi();
     };
 
 
@@ -13652,15 +13722,18 @@ var FontLoaderNative = function(document, options) {
         } else {
             _.each(document.fonts, fontIterator);
         }
-
-        document.fonts.ready.then(function() {
+        var fontsReady = document.fonts.ready;
+        // In older implementations (chromium 35 for example) this is a method not a property
+        if (_.isFunction(fontsReady)) {
+            fontsReady = fontsReady.call(document.fonts);
+        }
+        fontsReady.then(function() {
             if (debug) {
                 // All fonts were loaded
                 console.log("(native) font loader: all fonts were loaded");
             }
             callback();
         });
-
 
         window.setTimeout(function() {
             if (debug && loadCount !== fontFaceCount) {
@@ -14112,6 +14185,8 @@ var ReflowableView = function(options, reader){
         }
         else if(pageRequest.elementId) {
             pageIndex = _navigationLogic.getPageForElementId(pageRequest.elementId);
+            
+            if (pageIndex < 0) pageIndex = 0;
         }
         else if(pageRequest.elementCfi) {
             try
@@ -14120,6 +14195,8 @@ var ReflowableView = function(options, reader){
                     ["cfi-marker", "mo-cfi-highlight"],
                     [],
                     ["MathJax_Message"]);
+                
+                if (pageIndex < 0) pageIndex = 0;
             }
             catch (e)
             {
@@ -14452,12 +14529,6 @@ var ReflowableView = function(options, reader){
         _currentOpacity = -1;
     }
 
-    this.getFirstVisibleElementCfi = function() {
-
-        var contentOffsets = getVisibleContentOffsets();
-        return _navigationLogic.getFirstVisibleElementCfi(contentOffsets);
-    };
-
     this.getPaginationInfo = function() {
 
         var paginationInfo = new CurrentPagesInfo(_spine, false);
@@ -14531,19 +14602,8 @@ var ReflowableView = function(options, reader){
             return undefined;
         }
 
-        return new BookmarkData(_currentSpineItem.idref, self.getFirstVisibleElementCfi());
+        return self.getFirstVisibleCfi();
     };
-
-    function getVisibleContentOffsets() {
-        //TODO: _htmlBodyIsVerticalWritingMode ? (_lastViewPortSize.height * _paginationInfo.currentSpreadIndex)
-        // NOT used with options.rectangleBased anyway (see CfiNavigationLogic constructor call, here in this reflow engine class)
-        var columnsLeftOfViewport = Math.round(_paginationInfo.pageOffset / (_paginationInfo.columnWidth + _paginationInfo.columnGap));
-
-        var topOffset =  columnsLeftOfViewport * _$contentFrame.height();
-        var bottomOffset = topOffset + _paginationInfo.visibleColumnCount * _$contentFrame.height();
-
-        return {top: topOffset, bottom: bottomOffset};
-    }
 
     this.getLoadedSpineItems = function() {
         return [_currentSpineItem];
@@ -14581,23 +14641,13 @@ var ReflowableView = function(options, reader){
 
     this.getFirstVisibleMediaOverlayElement = function() {
 
-        var visibleContentOffsets = getVisibleContentOffsets();
-        return _navigationLogic.getFirstVisibleMediaOverlayElement(visibleContentOffsets);
+        return _navigationLogic.getFirstVisibleMediaOverlayElement();
     };
-
-    // /**
-    //  * @deprecated
-    //  */
-    // this.getVisibleMediaOverlayElements = function() {
-    //
-    //     var visibleContentOffsets = getVisibleContentOffsets();
-    //     return _navigationLogic.getVisibleMediaOverlayElements(visibleContentOffsets);
-    // };
 
     this.insureElementVisibility = function(spineItemId, element, initiator) {
 
         var $element = $(element);
-        if(_navigationLogic.isElementVisible($element, getVisibleContentOffsets()))
+        if(_navigationLogic.isElementVisible($element))
         {
             return;
         }
@@ -14628,9 +14678,7 @@ var ReflowableView = function(options, reader){
 
     this.getVisibleElementsWithFilter = function(filterFunction, includeSpineItem) {
 
-        var visibleContentOffsets = getVisibleContentOffsets();
-
-        var elements = _navigationLogic.getVisibleElementsWithFilter(visibleContentOffsets,filterFunction);
+        var elements = _navigationLogic.getVisibleElementsWithFilter(null, filterFunction);
 
         if (includeSpineItem) {
             return [{elements: elements, spineItem:_currentSpineItem}];
@@ -14642,9 +14690,7 @@ var ReflowableView = function(options, reader){
 
     this.getVisibleElements = function(selector, includeSpineItem) {
 
-        var visibleContentOffsets = getVisibleContentOffsets();
-
-        var elements = _navigationLogic.getAllVisibleElementsWithSelector(selector, visibleContentOffsets);
+        var elements = _navigationLogic.getAllVisibleElementsWithSelector(selector);
 
         if (includeSpineItem) {
             return [{elements: elements, spineItem:_currentSpineItem}];
@@ -14656,7 +14702,7 @@ var ReflowableView = function(options, reader){
 
     this.isElementVisible = function ($element) {
 
-        return _navigationLogic.isElementVisible($element, getVisibleContentOffsets());
+        return _navigationLogic.isElementVisible($element);
 
     };
 
