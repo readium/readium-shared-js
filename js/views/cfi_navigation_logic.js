@@ -738,7 +738,7 @@ var CfiNavigationLogic = function(options) {
         }
     }
 
-    var DEBUG = false;
+    var DEBUG = true;
 
     function getVisibleTextRangeOffsetsSelectedByFunc(textNode, pickerFunc, visibleContentOffsets, frameDimensions) {
         visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
