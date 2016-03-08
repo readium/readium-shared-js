@@ -15453,7 +15453,11 @@ var Globals = {
         /**
          * @event
          */
-        PLUGINS_LOADED: "PluginsLoaded"
+        PLUGINS_LOADED: "PluginsLoaded",
+        /**
+         * @event
+         */
+        EPUB_POPUP_FOOTNOTE: "EpubPopupFootnote"
     },
     /**
      * Internal Events
@@ -24751,6 +24755,8 @@ define('readium_shared_js/models/viewer_settings',[], function() {
 var ViewerSettings = function(settingsData) {
 
     var self = this;
+    
+    this.epubPopupFootnotes = true;
 
     this.syntheticSpread = "auto";
     this.fontSize = 100;
@@ -24811,6 +24817,7 @@ var ViewerSettings = function(settingsData) {
 
     this.update = function(settingsData) {
 
+        mapProperty("epubPopupFootnotes", settingsData);
         mapProperty("columnGap", settingsData);
         mapProperty("fontSize", settingsData);
         mapProperty("mediaOverlaysPreservePlaybackWhenScroll", settingsData);
@@ -26975,7 +26982,7 @@ return IFrameLoader;
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define('readium_shared_js/views/internal_links_support',['jquery', '../helpers', 'readium_cfi_js'], function($, Helpers, epubCfi) {
+define('readium_shared_js/views/internal_links_support',['jquery', '../helpers', 'readium_cfi_js', '../globals', '../models/viewer_settings'], function($, Helpers, epubCfi, Globals, ViewerSettings) {
 /**
  *
  * @param reader
@@ -27132,40 +27139,172 @@ var InternalLinksSupport = function(reader) {
 
     this.processLinkElements = function($iframe, spineItem) {
 
+        var settings = reader.viewerSettings();
+        if (!settings || typeof settings.epubPopupFootnotes === "undefined")
+        {
+            //defaults
+            settings = new ViewerSettings({});
+        }
+        var epubPopupFootNotesAreEnabled = settings.epubPopupFootnotes;
+        if (epubPopupFootNotesAreEnabled) {
+            var doc = ( $iframe[0].contentWindow || $iframe[0].contentDocument ).document;
+            var $elements = $("*[epub\\:type]", doc);
+            if ($elements.length) {
+                
+                var sources = [];
+                var targets = [];
+                
+                $elements.each(function(i) {
+                    
+                    if ($elements[i].localName !== "a"
+                        && $elements[i].localName !== "aside") {
+                        return true; // continue
+                    }
+                    
+                    var $element = $($elements[i]);
+                    var epubType = $element.attr("epub:type"); 
+
+                    if (epubType == "noteref" && $element[0].localName === "a") {
+                        sources.push($element);
+                    } else if (epubType == "footnote" && $element[0].localName === "aside") {
+                        targets.push($element);
+                    }
+                });
+                
+                for (var i = 0; i < targets.length; i++) {
+                    
+                    var target = targets[i]; 
+                    
+                    var targetID = target.attr("id");
+                    
+                    if (!targetID) {
+                        console.warn("Aside footnote has no ID!");
+                        continue;
+                    }
+                        
+                    for (var j = 0; j < sources.length; j++) {
+                        var source = sources[j];
+                        
+                        var sourceIDREF = source.attr("href");
+                            
+                        if (!sourceIDREF) {
+                            console.warn("Link has no HREF!");
+                            continue;
+                        }
+                        
+                        if (sourceIDREF === ("#" + targetID)) {
+                            
+                            target.hide();
+                            
+                            source.data("popupfootnotedata", targetID);
+                        }
+                    }
+                }
+            }
+        }
+
         var epubContentDocument = $iframe[0].contentDocument;
 
         $('a', epubContentDocument).click(function (clickEvent) {
-            // Check for both href and xlink:href attribute and get value
-            var href;
-            if (clickEvent.currentTarget.attributes["xlink:href"]) {
+            
+            var $aElement = $(this);
+            var popupfootnotedata = $aElement.data("popupfootnotedata");
+            if (popupfootnotedata) {
                 
-                href = clickEvent.currentTarget.attributes["xlink:href"].value;
-            }
-            else {
-                href = clickEvent.currentTarget.attributes["href"].value;
-            }
-
-            var overrideClickEvent = false;
-            var hrefUri = new URI(href);
-            var hrefIsRelative = hrefUri.is('relative');
-
-            if (hrefIsRelative) {
-
-                if(isDeepLikHref(hrefUri)) {
-                    processDeepLink(hrefUri, spineItem);
+                var target = epubContentDocument.getElementById(popupfootnotedata);
+                if (target) {
+                    var $target = $(target);
+                    
+                    $("img", $target).each(function(i){
+                        var $thiz = $(this);
+                        
+                        $thiz.attr("data-readium-baseuri", $thiz[0].baseURI);
+                        if ($thiz[0].currentSrc) {
+                            $thiz.attr("data-readium-src", $thiz[0].currentSrc);
+                        }
+                    });
+                    
+                    var htmlFragment = $target.html();
+                    //console.debug(htmlFragment);
+                    var $html = $("<div>"+htmlFragment+"</div>");
+                    
+                    
+                    $("img", $html).each(function(i){
+                        var $thiz = $(this);
+                        
+                        var readiumSrc = $thiz.attr("data-readium-src");
+                        if (readiumSrc) {
+                            $thiz.attr("src", readiumSrc);
+                        } else {
+                            var readiumBaseUri = $thiz.attr("data-readium-baseuri");
+                            if (readiumBaseUri) {
+                                $thiz.attr("src", readiumBaseUri + "/../" + $thiz.attr("src"));
+                            }
+                        }
+                    });
+                    
+                    
+                    $("a", $html).each(function(i){
+                        var $thiz = $(this);
+                        
+                        $thiz.attr("target", "_BLANK");
+                        
+                        var href = $thiz.attr("href");
+                        if (href && href.indexOf("http") !== 0) {
+                            //$thiz.attr("href", "about:blank");
+                            $thiz.removeAttr("href");
+                        }
+                    });
+                    
+                    $("script", $html).each(function(i){
+                        var $thiz = $(this);
+                        
+                        $thiz.remove();
+                    });
+                    
+                    var sanitizedHTML = $html.html();
+                    //console.log(sanitizedHTML);
+                    
+                    sanitizedHTML = sanitizedHTML.replace(/xmlns="http:\/\/www.w3.org\/1999\/xhtml"/g, ' ');
+                    
+                    Globals.logEvent("EPUB_POPUP_FOOTNOTE", "EMIT", "internal_links_support.js [ " + popupfootnotedata + " ]");
+                    reader.emit(Globals.Events.EPUB_POPUP_FOOTNOTE, popupfootnotedata, sanitizedHTML);
+                    
                     overrideClickEvent = true;
+                }
+            } else {
+                // Check for both href and xlink:href attribute and get value
+                var href;
+                if (clickEvent.currentTarget.attributes["xlink:href"]) {
+                    
+                    href = clickEvent.currentTarget.attributes["xlink:href"].value;
                 }
                 else {
-                    processLinkWithHash(hrefUri, spineItem);
-                    overrideClickEvent = true;
+                    href = clickEvent.currentTarget.attributes["href"].value;
                 }
 
-            } else {
-                // It's an absolute URL to a remote site - open it in a separate window outside the reader
-                window.open(href, '_blank');
-                overrideClickEvent = true;
-            }
+                var overrideClickEvent = false;
+                var hrefUri = new URI(href);
+                var hrefIsRelative = hrefUri.is('relative');
 
+                if (hrefIsRelative) {
+
+                    if(isDeepLikHref(hrefUri)) {
+                        processDeepLink(hrefUri, spineItem);
+                        overrideClickEvent = true;
+                    }
+                    else {
+                        processLinkWithHash(hrefUri, spineItem);
+                        overrideClickEvent = true;
+                    }
+
+                } else {
+                    // It's an absolute URL to a remote site - open it in a separate window outside the reader
+                    window.open(href, '_blank');
+                    overrideClickEvent = true;
+                }
+            }
+            
             if (overrideClickEvent) {
                 clickEvent.preventDefault();
                 clickEvent.stopPropagation();
@@ -47051,7 +47190,7 @@ var ReaderView = function (options) {
 
     function onMediaPlayerStatusChanged(status) {
         Globals.logEvent("MEDIA_OVERLAY_STATUS_CHANGED", "EMIT", "reader_view.js (via MediaOverlayPlayer + AudioPlayer)");
-console.trace(JSON.stringify(status));
+console.debug(JSON.stringify(status));
         self.emit(Globals.Events.MEDIA_OVERLAY_STATUS_CHANGED, status);
     }
 
@@ -47194,7 +47333,7 @@ console.trace(JSON.stringify(status));
         }
 
         Globals.logEvent("SETTINGS_APPLIED 2 (no view update)", "EMIT", "reader_view.js");
-console.trace(JSON.stringify(settingsData));
+console.debug(JSON.stringify(settingsData));
         self.emit(Globals.Events.SETTINGS_APPLIED);
     };
 
