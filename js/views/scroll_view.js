@@ -38,6 +38,19 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
     var _DEBUG = false;
 
+    //https://github.com/jquery/jquery/commit/2d715940b9b6fdeed005cd006c8bf63951cf7fb2
+    //https://github.com/jquery/jquery/commit/49833f7795d665ff1d543c4f71f29fca95b567e9
+    //https://github.com/jquery/jquery/compare/2.1.4...2.2.0
+    var _jQueryPositionNeedsFix = false; // v2.2.0 only
+    try {
+        var vs = $.fn.jquery.split(".");
+        if (parseInt(vs[0]) == 2 && parseInt(vs[1]) == 2 && parseInt(vs[2]) == 0) {
+            _jQueryPositionNeedsFix = true;
+        }
+    } catch(err) {
+        console.error(err);
+    }
+    
     $.extend(this, new EventEmitter());
 
     var SCROLL_MARGIN_TO_SHOW_LAST_VISBLE_LINE = 5;
@@ -1085,20 +1098,20 @@ var ScrollView = function (options, isContinuousScroll, reader) {
     function getPageViewRange(pageView) {
         var range = {top: 0, bottom: 0};
 
-        range.top = pageView.element().position().top + scrollTop();
+        var el = pageView.element();
+        var pos = el.position();
+        
+        if (_jQueryPositionNeedsFix) {
+            var offsetParent = el.offsetParent();
+            pos.top -= offsetParent.scrollTop();
+            pos.left -= offsetParent.scrollLeft();
+        }
+
+        range.top = pos.top + scrollTop();
         range.bottom = range.top + pageView.getCalculatedPageHeight();
 
         return range;
     }
-
-    this.getFirstVisibleElementCfi = function () {
-        var visibleViewPage = getFirstVisiblePageView();
-        if (visibleViewPage) {
-            return visibleViewPage.getNavigator().getFirstVisibleElementCfi(scrollTop());
-        }
-
-        return undefined;
-    };
 
     this.getPaginationInfo = function () {
         var spineItem;
@@ -1137,14 +1150,8 @@ var ScrollView = function (options, isContinuousScroll, reader) {
     };
 
     this.bookmarkCurrentPage = function () {
-        var pageView = getFirstVisiblePageView();
-
-        if (!pageView) {
-
-            return new BookmarkData("", "");
-        }
-
-        return new BookmarkData(pageView.currentSpineItem().idref, self.getFirstVisibleElementCfi());
+        
+        return self.getFirstVisibleCfi();
     };
 
 
