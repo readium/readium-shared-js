@@ -25531,7 +25531,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
                     console.warn("Viewport: using img dimensions!");
                 }
             }
-            else {
+            else if (false) { // SVG image fits within viewport 100%
                 $img = $(contentDocument).find('image');
                 if ($img.length > 0) {
                     var width = undefined;
@@ -25573,7 +25573,13 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             height = _$viewport.height();
 
             // hacky method to determine the actual available horizontal space (half the two-page spread is a reasonable approximation, this means that whatever the size of the other iframe / one_page_view, the aspect ratio of this one exactly corresponds to half the viewport rendering surface)
-            var isTwoPageSyntheticSpread = $("iframe.iframe-fixed", _$viewport).length > 1;
+            var isTwoPageSyntheticSpread =
+                ($("iframe.iframe-fixed", _$viewport).length > 1) || // more than one iframe (well, two)
+                (
+                ($("div.fixed-page-frame-left", _$viewport).length > 0) || // ...or one iframe, but left/right aligned (not center)
+                ($("div.fixed-page-frame-right", _$viewport).length > 0)
+                );
+                
             if (isTwoPageSyntheticSpread) width *= 0.5;
 
             // the original SVG width/height might have been specified as a percentage of the containing viewport
@@ -25599,9 +25605,14 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             _meta_size.height = size.height;
 
             // Not strictly necessary, let's preserve the percentage values
-            // if (isFallbackDimension && contentDocument && contentDocument.documentElement && contentDocument.documentElement.nodeName && contentDocument.documentElement.nodeName.toLowerCase() == "svg") {
-            //     contentDocument.documentElement.setAttribute("width", size.width + "px");
-            //     contentDocument.documentElement.setAttribute("height", size.height + "px");
+            // if (isFallbackDimension) {
+            //     if (contentDocument && contentDocument.documentElement && contentDocument.documentElement.nodeName && contentDocument.documentElement.nodeName.toLowerCase() == "svg") {
+            //         contentDocument.documentElement.setAttribute("width", size.width + "px");
+            //         contentDocument.documentElement.setAttribute("height", size.height + "px");
+            //     } else {
+            //         contentDocument.body.setAttribute("width", size.width + "px");
+            //         contentDocument.body.setAttribute("height", size.height + "px");
+            //     }
             // }
         }
     }
