@@ -237,7 +237,7 @@ scripts:
     lint: '
 
         npm run jshint
-            js/**.js
+            "js/**.js"
     '
 
 #=====================
