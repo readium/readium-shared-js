@@ -206,7 +206,7 @@ var InternalLinksSupport = function(reader) {
 
                     if (epubType == "noteref" && $element[0].localName === "a") {
                         sources.push($element);
-                    } else if ((epubType == "footnote" || epubType == "note") && $element[0].localName === "aside") {
+                    } else if ((epubType == "footnote" || epubType == "note" || epubType == "rearnote") && $element[0].localName === "aside") {
                         targets.push($element);
                     }
                 });
