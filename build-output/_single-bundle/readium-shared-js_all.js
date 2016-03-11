@@ -24786,6 +24786,9 @@ var ViewerSettings = function(settingsData) {
     this.syntheticSpread = "auto";
     this.fontSize = 100;
     this.columnGap = 20;
+    
+    this.columnMaxWidth = 700;
+    this.columnMinWidth = 400;
 
     this.mediaOverlaysPreservePlaybackWhenScroll = false;
 
@@ -24843,6 +24846,8 @@ var ViewerSettings = function(settingsData) {
     this.update = function(settingsData) {
 
         mapProperty("columnGap", settingsData);
+        mapProperty("columnMaxWidth", settingsData);
+        mapProperty("columnMinWidth", settingsData);
         mapProperty("fontSize", settingsData);
         mapProperty("mediaOverlaysPreservePlaybackWhenScroll", settingsData);
         mapProperty("mediaOverlaysSkipSkippables", settingsData);
@@ -45261,6 +45266,8 @@ var ReflowableView = function(options, reader){
 
         visibleColumnCount : 2,
         columnGap : 20,
+        columnMaxWidth: 550,
+        columnMinWidth: 400,
         spreadCount : 0,
         currentSpreadIndex : 0,
         columnWidth : undefined,
@@ -45326,6 +45333,9 @@ var ReflowableView = function(options, reader){
         _viewSettings = settings;
 
         _paginationInfo.columnGap = settings.columnGap;
+        _paginationInfo.columnMaxWidth = settings.columnMaxWidth;
+        _paginationInfo.columnMinWidth = settings.columnMinWidth;
+        
         _fontSize = settings.fontSize;
 
         updateHtmlFontSize();
@@ -45739,8 +45749,8 @@ var ReflowableView = function(options, reader){
     function updatePagination() {
 
         // At 100% font-size = 16px (on HTML, not body or descendant markup!)
-        var MAXW = 550; //TODO user/vendor-configurable?
-        var MINW = 400;
+        var MAXW = _paginationInfo.columnMaxWidth;
+        var MINW = _paginationInfo.columnMinWidth;
 
         var isDoublePageSyntheticSpread = Helpers.deduceSyntheticSpread(_$viewport, _currentSpineItem, _viewSettings);
 
