@@ -18234,7 +18234,7 @@ define("console_shim", function(){});
   //shared pointer
   var i;
   //shortcuts
-  var defineProperty = Object.defineProperty, is = function(a,b) { return isNaN(a)? isNaN(b): a === b; };
+  var defineProperty = Object.defineProperty, is = function(a,b) { return (a === b) || (a !== a && b !== b) };
 
 
   //Polyfill global objects
@@ -19088,8 +19088,6 @@ define("es6-collections", function(){});
       while (segments.length < total) {
         segments.splice(pos, 0, '0000');
       }
-
-      length = segments.length;
     }
 
     // strip leading zeros
@@ -20303,6 +20301,39 @@ define("es6-collections", function(){});
     }
   };
 
+
+  URI.joinPaths = function() {
+    var input = [];
+    var segments = [];
+    var nonEmptySegments = 0;
+
+    for (var i = 0; i < arguments.length; i++) {
+      var url = new URI(arguments[i]);
+      input.push(url);
+      var _segments = url.segment();
+      for (var s = 0; s < _segments.length; s++) {
+        if (typeof _segments[s] === 'string') {
+          segments.push(_segments[s]);
+        }
+
+        if (_segments[s]) {
+          nonEmptySegments++;
+        }
+      }
+    }
+
+    if (!segments.length || !nonEmptySegments) {
+      return new URI('');
+    }
+
+    var uri = new URI('').segment(segments);
+
+    if (input[0].path() === '' || input[0].path().slice(0, 1) === '/') {
+      uri.path('/' + uri.path());
+    }
+
+    return uri.normalize();
+  };
 
   URI.commonPath = function(one, two) {
     var length = Math.min(one.length, two.length);
@@ -24861,6 +24892,9 @@ var ViewerSettings = function(settingsData) {
     this.syntheticSpread = "auto";
     this.fontSize = 100;
     this.columnGap = 20;
+    
+    this.columnMaxWidth = 700;
+    this.columnMinWidth = 400;
 
     this.mediaOverlaysPreservePlaybackWhenScroll = false;
 
@@ -24918,6 +24952,8 @@ var ViewerSettings = function(settingsData) {
     this.update = function(settingsData) {
 
         mapProperty("columnGap", settingsData);
+        mapProperty("columnMaxWidth", settingsData);
+        mapProperty("columnMinWidth", settingsData);
         mapProperty("fontSize", settingsData);
         mapProperty("mediaOverlaysPreservePlaybackWhenScroll", settingsData);
         mapProperty("mediaOverlaysSkipSkippables", settingsData);
@@ -27477,9 +27513,8 @@ return SmilIterator;
 });
 
 /**
- * @license RequireJS domReady 2.0.1 Copyright (c) 2010-2012, The Dojo Foundation All Rights Reserved.
- * Available via the MIT or new BSD license.
- * see: http://github.com/requirejs/domReady for details
+ * @license domReady 2.0.1 Copyright jQuery Foundation and other contributors.
+ * Released under MIT license, http://github.com/requirejs/domReady/LICENSE
  */
 /*jslint */
 /*global require: false, define: false, requirejs: false,
@@ -45337,6 +45372,8 @@ var ReflowableView = function(options, reader){
 
         visibleColumnCount : 2,
         columnGap : 20,
+        columnMaxWidth: 550,
+        columnMinWidth: 400,
         spreadCount : 0,
         currentSpreadIndex : 0,
         columnWidth : undefined,
@@ -45402,6 +45439,9 @@ var ReflowableView = function(options, reader){
         _viewSettings = settings;
 
         _paginationInfo.columnGap = settings.columnGap;
+        _paginationInfo.columnMaxWidth = settings.columnMaxWidth;
+        _paginationInfo.columnMinWidth = settings.columnMinWidth;
+        
         _fontSize = settings.fontSize;
 
         updateHtmlFontSize();
@@ -45815,8 +45855,8 @@ var ReflowableView = function(options, reader){
     function updatePagination() {
 
         // At 100% font-size = 16px (on HTML, not body or descendant markup!)
-        var MAXW = 550; //TODO user/vendor-configurable?
-        var MINW = 400;
+        var MAXW = _paginationInfo.columnMaxWidth;
+        var MINW = _paginationInfo.columnMinWidth;
 
         var isDoublePageSyntheticSpread = Helpers.deduceSyntheticSpread(_$viewport, _currentSpineItem, _viewSettings);
 
