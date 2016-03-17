@@ -795,6 +795,7 @@ Helpers.polyfillCaretRangeFromPoint = function(document) {
             document.caretRangeFromPoint = function caretRangeFromPoint(x, y) {
                 var r = document.createRange();
                 var p = document.caretPositionFromPoint(x, y);
+                if (!p) return null;
                 if (p.offsetNode) {
                     r.setStart(p.offsetNode, p.offset);
                     r.setEnd(p.offsetNode, p.offset);
