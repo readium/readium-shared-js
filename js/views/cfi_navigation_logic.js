@@ -864,7 +864,10 @@ var CfiNavigationLogic = function(options) {
         var index = 0;
         if (!targetLeafNode) {
             index = leafNodeList.indexOf(pickerFunc(leafNodeList));
-            startingParent = leafNodeList[index].element;
+            var leafNode = leafNodeList[index];
+            if (leafNode) {
+                startingParent = leafNode.element;
+            }
         } else {
             index = leafNodeList.indexOf(targetLeafNode);
             if (index === -1) {
