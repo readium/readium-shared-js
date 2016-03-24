@@ -1279,13 +1279,11 @@ var CfiNavigationLogic = function(options) {
             var isTextNode = ($node[0].nodeType === Node.TEXT_NODE);
             var $element = isTextNode ? $node.parent() : $node;
             var visibilityPercentage = checkVisibilityByRectangles(
-                $element, true, visibleContentOffsets, frameDimensions);
+                $node, true, visibleContentOffsets, frameDimensions);
 
             if (visibilityPercentage) {
-                var $visibleElement = $element;
-
                 visibleElements.push({
-                    element: $visibleElement[0], // DOM Element is pushed
+                    element: $element[0], // DOM Element is pushed
                     textNode: isTextNode ? $node[0] : null,
                     percentVisible: visibilityPercentage
                 });
