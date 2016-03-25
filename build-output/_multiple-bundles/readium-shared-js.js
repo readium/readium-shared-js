@@ -2421,9 +2421,7 @@ var CfiNavigationLogic = function(options) {
         visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
         frameDimensions = frameDimensions || getFrameDimensions();
 
-        var elementRectangles = getNormalizedRectangles($element, visibleContentOffsets);
-
-        var clientRectangles = elementRectangles.clientRectangles;
+        var clientRectangles = getNormalizedRectangles($element, visibleContentOffsets);
         if (clientRectangles.length === 0) { // elements with display:none, etc.
             return null;
         }
@@ -2478,9 +2476,8 @@ var CfiNavigationLogic = function(options) {
     function findPageByRectangles($element, spatialVerticalOffset) {
 
         var visibleContentOffsets = getVisibleContentOffsets();
-        var elementRectangles = getNormalizedRectangles($element, visibleContentOffsets);
 
-        var clientRectangles  = elementRectangles.clientRectangles;
+        var clientRectangles = getNormalizedRectangles($element, visibleContentOffsets);
         if (clientRectangles.length === 0) { // elements with display:none, etc.
             return null;
         }
@@ -2604,14 +2601,20 @@ var CfiNavigationLogic = function(options) {
         var leftOffset = visibleContentOffsets.left || 0;
         var topOffset = visibleContentOffsets.top || 0;
 
-        // union of all rectangles wrapping the element
-        var wrapperRectangle = normalizeRectangle(
-            $el[0].getBoundingClientRect(), leftOffset, topOffset);
+        var isTextNode = ($el[0].nodeType === Node.TEXT_NODE);
+        var clientRectList;
+
+        if (isTextNode) {
+            var range = createRange();
+            range.selectNode($el[0]);
+            clientRectList = range.getClientRects();
+        } else {
+            clientRectList = $el[0].getClientRects();
+        }
 
         // all the separate rectangles (for detecting position of the element
         // split between several columns)
         var clientRectangles = [];
-        var clientRectList = $el[0].getClientRects();
         for (var i = 0, l = clientRectList.length; i < l; ++i) {
             if (clientRectList[i].height > 0) {
                 // Firefox sometimes gets it wrong,
@@ -2622,20 +2625,27 @@ var CfiNavigationLogic = function(options) {
             }
         }
 
-        if (clientRectangles.length === 0) {
-            // sometimes an element is either hidden or empty, and that means
-            // Webkit-based browsers fail to assign proper clientRects to it
-            // in this case we need to go for its sibling (if it exists)
-            $el = $el.next();
-            if ($el.length) {
-                return getNormalizedRectangles($el, visibleContentOffsets);
-            }
+        return clientRectangles;
+    }
+
+    function getNormalizedBoundingRect($el, visibleContentOffsets) {
+        visibleContentOffsets = visibleContentOffsets || {};
+        var leftOffset = visibleContentOffsets.left || 0;
+        var topOffset = visibleContentOffsets.top || 0;
+
+        var isTextNode = ($el[0].nodeType === Node.TEXT_NODE);
+        var boundingClientRect;
+
+        if (isTextNode) {
+            var range = createRange();
+            range.selectNode($el[0]);
+            boundingClientRect = range.getBoundingClientRect();
+        } else {
+            boundingClientRect = $el[0].getBoundingClientRect();
         }
 
-        return {
-            wrapperRectangle: wrapperRectangle,
-            clientRectangles: clientRectangles
-        };
+        // union of all rectangles wrapping the element
+        return normalizeRectangle(boundingClientRect, leftOffset, topOffset);
     }
 
     /**
@@ -3287,9 +3297,7 @@ var CfiNavigationLogic = function(options) {
                 ["MathJax_Message", "MathJax_SVG_Hidden"]);
 
             var visibleContentOffsets = getVisibleContentOffsets();
-            var normRects = getNormalizedRectangles($element, visibleContentOffsets);
-
-            return {startInfo: null, endInfo: null, clientRect: normRects.wrapperRectangle }
+            return {startInfo: null, endInfo: null, clientRect: getNormalizedBoundingRect($element, visibleContentOffsets)};
         }
     };
 
@@ -3457,13 +3465,11 @@ var CfiNavigationLogic = function(options) {
             var isTextNode = ($node[0].nodeType === Node.TEXT_NODE);
             var $element = isTextNode ? $node.parent() : $node;
             var visibilityPercentage = checkVisibilityByRectangles(
-                $element, true, visibleContentOffsets, frameDimensions);
+                $node, true, visibleContentOffsets, frameDimensions);
 
             if (visibilityPercentage) {
-                var $visibleElement = $element;
-
                 visibleElements.push({
-                    element: $visibleElement[0], // DOM Element is pushed
+                    element: $element[0], // DOM Element is pushed
                     textNode: isTextNode ? $node[0] : null,
                     percentVisible: visibilityPercentage
                 });
