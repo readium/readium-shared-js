@@ -26,12 +26,12 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define(["jquery", "underscore"], function($, _) {
+define(["jquery", "underscore", 'URIjs'], function($, _, URI) {
 /**
  *
  * @constructor
  */
-var IFrameLoader = function() {
+var IFrameLoader = function(getCurrentResourceFetcher) {
 
     var self = this;
     var eventListeners = {};
@@ -86,6 +86,77 @@ var IFrameLoader = function() {
         iframe.onload = function () {
 
             var doc = iframe.contentDocument || iframe.contentWindow.document;
+        
+            // $('iframe', doc).each(function(i, child_iframe){
+            //     console.debug(child_iframe);
+            //     console.log(child_iframe.attr("data-src"));
+            // });
+            
+            // TODO: this should be in readium-js, alongside the iframe_zip_loader! (ResourceFetcher does not exist in the readium-shared-js code space)
+            if (iframe.contentWindow.frames && getCurrentResourceFetcher) {
+                for (var i = 0; i < iframe.contentWindow.frames.length; i++) {
+                    var child_iframe = iframe.contentWindow.frames[i];
+                    // console.debug(child_iframe);
+                    
+                    // console.log(child_iframe.frameElement.baseURI);
+                    
+                    // console.log(child_iframe.location);
+                    
+                    var childSrc = undefined;
+                    
+                    try{
+                        childSrc = child_iframe.frameElement.getAttribute("data-src");
+                    } catch(err) {
+                        // HTTP(S) cross-origin access?
+                        console.warn(err);
+                        continue;
+                    }
+                    // console.log(childSrc);
+                    
+                    if (!childSrc) {
+                        if (child_iframe.frameElement.localName == "iframe") {
+                            console.error("IFRAME data-src missing?!");
+                        }
+                        continue;
+                    }
+                        
+                    // console.debug(attachedData);
+                    var contentDocumentPathRelativeToPackage = attachedData.spineItem.href; 
+                        
+                    var publicationFetcher = getCurrentResourceFetcher();
+                        
+                    var contentDocumentPathRelativeToBase = publicationFetcher.convertPathRelativeToPackageToRelativeToBase(contentDocumentPathRelativeToPackage);
+                    // console.log("contentDocumentPathRelativeToBase: " + contentDocumentPathRelativeToBase);
+
+                    var refAttrOrigVal_RelativeToBase = (new URI(childSrc)).absoluteTo(contentDocumentPathRelativeToBase).toString();
+                    // console.log("refAttrOrigVal_RelativeToBase: " + refAttrOrigVal_RelativeToBase);
+
+                    var packageFullPath = publicationFetcher.getPackageFullPathRelativeToBase();
+                    // console.log("packageFullPath: " + packageFullPath);
+
+
+                    var refAttrOrigVal_RelativeToPackage = (new URI("/"+refAttrOrigVal_RelativeToBase)).relativeTo("/"+packageFullPath).toString();
+                    // console.log("refAttrOrigVal_RelativeToPackage: " + refAttrOrigVal_RelativeToPackage);
+
+                    var childIframeLoader = new IFrameLoader(getCurrentResourceFetcher);
+                    childIframeLoader.loadIframe(
+                        child_iframe.frameElement,
+                        childSrc,
+                        function() {
+                            console.log("CHILD IFRAME LOADED.");
+                        },
+                        self,
+                        {
+                            spineItem:
+                            {
+                                media_type: attachedData.spineItem.media_type, //ContentTypeDiscovery.identifyContentTypeFromFileName(refAttrOrigVal_RelativeToPackage);
+                                href: refAttrOrigVal_RelativeToPackage
+                            }
+                        }
+                    );
+                }
+            }
+            
             $('svg', doc).load(function(){
                 console.log('SVG loaded');
             });

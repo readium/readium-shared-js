@@ -85,7 +85,7 @@ var ReaderView = function (options) {
         _iframeLoader = options.iframeLoader;
     }
     else {
-        _iframeLoader = new IFrameLoader({mathJaxUrl: options.mathJaxUrl});
+        _iframeLoader = new IFrameLoader();
     }
 
 
