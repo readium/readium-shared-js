@@ -17712,12 +17712,12 @@ var HighlightsManager = function (proxyObj, options) {
         return undefined;
     };
 
-    this.addSelectionHighlight = function(id, type, clearSelection, styles) {
+    this.addSelectionHighlight = function(id, type, styles, clearSelection) {
         for(var spine in liveAnnotations) {
             var annotationsForView = liveAnnotations[spine];
             if (annotationsForView.getCurrentSelectionCFI()) {
                 var annotation = annotationsForView.addSelectionHighlight(
-                    id, type, clearSelection, styles);
+                    id, type, styles, clearSelection);
                 return new BookmarkData(spines[spine].idref, annotation.CFI);
             }
         }
@@ -17999,11 +17999,10 @@ define('readium_plugin_highlights/main',['readium_js_plugins', 'readium_shared_j
          *
          * @param {string} id id of the highlight. must be unique
          * @param {string} type - name of the class selector rule in annotations.css file.
-         * @param {boolean} clearSelection - set to true to clear the current selection
-         * after it is highlighted
-         * The style of the class will be applied to the created hightlight
          * @param {object} styles - object representing CSS properties to be applied to the highlight.
          * e.g., to apply background color pass this {'background-color': 'green'}
+         * @param {boolean} clearSelection - set to true to clear the current selection
+         * after it is highlighted
          *
          * @returns {object | undefined} partial cfi object of the created highlight
          */
