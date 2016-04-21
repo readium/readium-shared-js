@@ -196,6 +196,9 @@ var ReflowableView = function(options, reader){
 
             //create & append iframe to container frame
             renderIframe();
+            if (_currentSpineItem) {
+                self.emit(Globals.Events.CONTENT_DOCUMENT_UNLOADED, _$iframe, _currentSpineItem);
+            }
 
             _paginationInfo.pageOffset = 0;
             _paginationInfo.currentSpreadIndex = 0;

@@ -770,20 +770,31 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         }
     }
 
+    function onUnload (spineItem) {
+        if (spineItem) {
+            self.emit(Globals.Events.CONTENT_DOCUMENT_UNLOADED, _$iframe, spineItem);
+        }
+    }
+
+    this.onUnload = function () {
+        onUnload(_currentSpineItem);
+    };
+
     //expected callback signature: function(success, $iframe, spineItem, isNewlyLoaded, context)
     this.loadSpineItem = function (spineItem, callback, context) {
 
         if (_currentSpineItem != spineItem) {
 
+            var prevSpineItem = _currentSpineItem;
             _currentSpineItem = spineItem;
             var src = _spine.package.resolveRelativeUrl(spineItem.href);
 
-            //if (spineItem && spineItem.isFixedLayout())
-            if (true) // both fixed layout and reflowable documents need hiding due to flashing during layout/rendering
-            {
-                //hide iframe until content is scaled
-                self.hideIFrame();
-            }
+            // both fixed layout and reflowable documents need hiding due to flashing during layout/rendering
+            //hide iframe until content is scaled
+            self.hideIFrame();
+
+            onUnload(prevSpineItem);
+
 
             Globals.logEvent("OnePageView.Events.SPINE_ITEM_OPEN_START", "EMIT", "one_page_view.js [ " + spineItem.href + " -- " + src + " ]");
             self.emit(OnePageView.Events.SPINE_ITEM_OPEN_START, _$iframe, _currentSpineItem);
