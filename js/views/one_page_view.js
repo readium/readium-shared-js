@@ -42,6 +42,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
     var self = this;
 
     var _$epubHtml;
+    var _$epubBody;
     var _$el;
     var _$iframe;
     var _currentSpineItem;
@@ -368,6 +369,8 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             _$epubHtml = $("html", epubContentDocument);
             if (!_$epubHtml || _$epubHtml.length == 0) {
                 _$epubHtml = $("svg", epubContentDocument);
+            } else {
+                _$epubBody = $("body", _$epubHtml);
             }
 
             //_$epubHtml.css("overflow", "hidden");
@@ -549,10 +552,20 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         if (settings.enableGPUHardwareAccelerationCSS3D) {
             enable3D = true;
         }
-
+        
         if (reader.needsFixedLayoutScalerWorkAround()) {
             var css1 = Helpers.CSSTransformString({scale: scale, enable3D: enable3D});
+            
+            // See https://github.com/readium/readium-shared-js/issues/285 
+            css1["min-width"] = _meta_size.width;
+            css1["min-height"] = _meta_size.height;
+            
             _$epubHtml.css(css1);
+            
+            // Ensures content dimensions matches viewport meta (authors / production tools should do this in their CSS...but unfortunately some don't).
+            if (_$epubBody && _$epubBody.length) {
+                _$epubBody.css({width:_meta_size.width, height:_meta_size.height});
+            }
 
             var css2 = Helpers.CSSTransformString({scale : 1, enable3D: enable3D});
             css2["width"] = _meta_size.width * scale;
