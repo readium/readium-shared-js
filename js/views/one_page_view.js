@@ -42,6 +42,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
     var self = this;
 
     var _$epubHtml;
+    var _$epubBody;
     var _$el;
     var _$iframe;
     var _currentSpineItem;
@@ -368,6 +369,8 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             _$epubHtml = $("html", epubContentDocument);
             if (!_$epubHtml || _$epubHtml.length == 0) {
                 _$epubHtml = $("svg", epubContentDocument);
+            } else {
+                _$epubBody = $("body", _$epubHtml);
             }
 
             //_$epubHtml.css("overflow", "hidden");
@@ -549,10 +552,20 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         if (settings.enableGPUHardwareAccelerationCSS3D) {
             enable3D = true;
         }
-
+        
         if (reader.needsFixedLayoutScalerWorkAround()) {
             var css1 = Helpers.CSSTransformString({scale: scale, enable3D: enable3D});
+            
+            // See https://github.com/readium/readium-shared-js/issues/285 
+            css1["min-width"] = _meta_size.width;
+            css1["min-height"] = _meta_size.height;
+            
             _$epubHtml.css(css1);
+            
+            // Ensures content dimensions matches viewport meta (authors / production tools should do this in their CSS...but unfortunately some don't).
+            if (_$epubBody && _$epubBody.length) {
+                _$epubBody.css({width:_meta_size.width, height:_meta_size.height});
+            }
 
             var css2 = Helpers.CSSTransformString({scale : 1, enable3D: enable3D});
             css2["width"] = _meta_size.width * scale;
@@ -781,20 +794,31 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         }
     }
 
+    function onUnload (spineItem) {
+        if (spineItem) {
+            self.emit(Globals.Events.CONTENT_DOCUMENT_UNLOADED, _$iframe, spineItem);
+        }
+    }
+
+    this.onUnload = function () {
+        onUnload(_currentSpineItem);
+    };
+
     //expected callback signature: function(success, $iframe, spineItem, isNewlyLoaded, context)
     this.loadSpineItem = function (spineItem, callback, context) {
 
         if (_currentSpineItem != spineItem) {
 
+            var prevSpineItem = _currentSpineItem;
             _currentSpineItem = spineItem;
             var src = _spine.package.resolveRelativeUrl(spineItem.href);
 
-            //if (spineItem && spineItem.isFixedLayout())
-            if (true) // both fixed layout and reflowable documents need hiding due to flashing during layout/rendering
-            {
-                //hide iframe until content is scaled
-                self.hideIFrame();
-            }
+            // both fixed layout and reflowable documents need hiding due to flashing during layout/rendering
+            //hide iframe until content is scaled
+            self.hideIFrame();
+
+            onUnload(prevSpineItem);
+
 
             Globals.logEvent("OnePageView.Events.SPINE_ITEM_OPEN_START", "EMIT", "one_page_view.js [ " + spineItem.href + " -- " + src + " ]");
             self.emit(OnePageView.Events.SPINE_ITEM_OPEN_START, _$iframe, _currentSpineItem);
@@ -1024,8 +1048,8 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         return createBookmarkFromCfi(self.getNavigator().getRangeCfiFromPoints(startX, startY, endX, endY));
     };
 
-    this.getCfiForElement = function(x, y) {
-        return createBookmarkFromCfi(self.getNavigator().getCfiForElement(x, y));
+    this.getCfiForElement = function(element) {
+        return createBookmarkFromCfi(self.getNavigator().getCfiForElement(element));
     };
 
     this.getElementFromPoint = function (x, y) {
