@@ -196,6 +196,9 @@ var ReflowableView = function(options, reader){
 
             //create & append iframe to container frame
             renderIframe();
+            if (_currentSpineItem) {
+                self.emit(Globals.Events.CONTENT_DOCUMENT_UNLOADED, _$iframe, _currentSpineItem);
+            }
 
             _paginationInfo.pageOffset = 0;
             _paginationInfo.currentSpreadIndex = 0;
@@ -1025,8 +1028,8 @@ var ReflowableView = function(options, reader){
         return createBookmarkFromCfi(_navigationLogic.getRangeCfiFromPoints(startX, startY, endX, endY));
     };
 
-    this.getCfiForElement = function(x, y) {
-        return createBookmarkFromCfi(_navigationLogic.getCfiForElement(x, y));
+    this.getCfiForElement = function(element) {
+        return createBookmarkFromCfi(_navigationLogic.getCfiForElement(element));
     };
 
     this.getElementFromPoint = function(x, y) {
