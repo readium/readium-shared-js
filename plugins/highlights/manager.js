@@ -140,12 +140,12 @@ var HighlightsManager = function (proxyObj, options) {
         return undefined;
     };
 
-    this.addSelectionHighlight = function(id, type, clearSelection, styles) {
+    this.addSelectionHighlight = function(id, type, styles, clearSelection) {
         for(var spine in liveAnnotations) {
             var annotationsForView = liveAnnotations[spine];
             if (annotationsForView.getCurrentSelectionCFI()) {
                 var annotation = annotationsForView.addSelectionHighlight(
-                    id, type, clearSelection, styles);
+                    id, type, styles, clearSelection);
                 return new BookmarkData(spines[spine].idref, annotation.CFI);
             }
         }
