@@ -619,6 +619,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
     function removePageView(pageView) {
 
+        pageView.onUnload();
         pageView.element().remove();
 
     }
@@ -1549,9 +1550,9 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         });
     };
 
-    this.getCfiForElement = function(x, y) {
+    this.getCfiForElement = function(element) {
         return callOnVisiblePageView(function (pageView) {
-            return createBookmark(pageView.currentSpineItem(), pageView.getCfiForElement(x, y));
+            return createBookmark(pageView.currentSpineItem(), pageView.getCfiForElement(element));
         });
     };
 

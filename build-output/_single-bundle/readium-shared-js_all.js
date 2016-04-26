@@ -1,11 +1,9 @@
 /**
- * @license almond 0.3.1 Copyright (c) 2011-2014, The Dojo Foundation All Rights Reserved.
- * Available via the MIT or new BSD license.
- * see: http://github.com/jrburke/almond for details
+ * @license almond 0.3.2 Copyright jQuery Foundation and other contributors.
+ * Released under MIT license, http://github.com/requirejs/almond/LICENSE
  */
 //Going sloppy to avoid 'use strict' string cost, but strict practices should
 //be followed.
-/*jslint sloppy: true */
 /*global setTimeout: false */
 
 var requirejs, require, define;
@@ -33,60 +31,58 @@ var requirejs, require, define;
      */
     function normalize(name, baseName) {
         var nameParts, nameSegment, mapValue, foundMap, lastIndex,
-            foundI, foundStarMap, starI, i, j, part,
+            foundI, foundStarMap, starI, i, j, part, normalizedBaseParts,
             baseParts = baseName && baseName.split("/"),
             map = config.map,
             starMap = (map && map['*']) || {};
 
         //Adjust any relative paths.
-        if (name && name.charAt(0) === ".") {
-            //If have a base name, try to normalize against it,
-            //otherwise, assume it is a top-level require that will
-            //be relative to baseUrl in the end.
-            if (baseName) {
-                name = name.split('/');
-                lastIndex = name.length - 1;
+        if (name) {
+            name = name.split('/');
+            lastIndex = name.length - 1;
 
-                // Node .js allowance:
-                if (config.nodeIdCompat && jsSuffixRegExp.test(name[lastIndex])) {
-                    name[lastIndex] = name[lastIndex].replace(jsSuffixRegExp, '');
-                }
+            // If wanting node ID compatibility, strip .js from end
+            // of IDs. Have to do this here, and not in nameToUrl
+            // because node allows either .js or non .js to map
+            // to same file.
+            if (config.nodeIdCompat && jsSuffixRegExp.test(name[lastIndex])) {
+                name[lastIndex] = name[lastIndex].replace(jsSuffixRegExp, '');
+            }
 
-                //Lop off the last part of baseParts, so that . matches the
-                //"directory" and not name of the baseName's module. For instance,
-                //baseName of "one/two/three", maps to "one/two/three.js", but we
-                //want the directory, "one/two" for this normalization.
-                name = baseParts.slice(0, baseParts.length - 1).concat(name);
+            // Starts with a '.' so need the baseName
+            if (name[0].charAt(0) === '.' && baseParts) {
+                //Convert baseName to array, and lop off the last part,
+                //so that . matches that 'directory' and not name of the baseName's
+                //module. For instance, baseName of 'one/two/three', maps to
+                //'one/two/three.js', but we want the directory, 'one/two' for
+                //this normalization.
+                normalizedBaseParts = baseParts.slice(0, baseParts.length - 1);
+                name = normalizedBaseParts.concat(name);
+            }
 
-                //start trimDots
-                for (i = 0; i < name.length; i += 1) {
-                    part = name[i];
-                    if (part === ".") {
-                        name.splice(i, 1);
-                        i -= 1;
-                    } else if (part === "..") {
-                        if (i === 1 && (name[2] === '..' || name[0] === '..')) {
-                            //End of the line. Keep at least one non-dot
-                            //path segment at the front so it can be mapped
-                            //correctly to disk. Otherwise, there is likely
-                            //no path mapping for a path starting with '..'.
-                            //This can still fail, but catches the most reasonable
-                            //uses of ..
-                            break;
-                        } else if (i > 0) {
-                            name.splice(i - 1, 2);
-                            i -= 2;
-                        }
+            //start trimDots
+            for (i = 0; i < name.length; i++) {
+                part = name[i];
+                if (part === '.') {
+                    name.splice(i, 1);
+                    i -= 1;
+                } else if (part === '..') {
+                    // If at the start, or previous value is still ..,
+                    // keep them so that when converted to a path it may
+                    // still work when converted to a path, even though
+                    // as an ID it is less than ideal. In larger point
+                    // releases, may be better to just kick out an error.
+                    if (i === 0 || (i === 1 && name[2] === '..') || name[i - 1] === '..') {
+                        continue;
+                    } else if (i > 0) {
+                        name.splice(i - 1, 2);
+                        i -= 2;
                     }
                 }
-                //end trimDots
-
-                name = name.join("/");
-            } else if (name.indexOf('./') === 0) {
-                // No baseName, so this is ID is resolved relative
-                // to baseUrl, pull off the leading dot.
-                name = name.substring(2);
             }
+            //end trimDots
+
+            name = name.join('/');
         }
 
         //Apply map config if available.
@@ -1908,7 +1904,7 @@ define("readium_cfi_js/cfi_parser", (function (global) {
 }(this)));
 
 /*!
- * jQuery JavaScript Library v2.2.1
+ * jQuery JavaScript Library v2.2.3
  * http://jquery.com/
  *
  * Includes Sizzle.js
@@ -1918,7 +1914,7 @@ define("readium_cfi_js/cfi_parser", (function (global) {
  * Released under the MIT license
  * http://jquery.org/license
  *
- * Date: 2016-02-22T19:11Z
+ * Date: 2016-04-05T19:26Z
  */
 
 (function( global, factory ) {
@@ -1974,7 +1970,7 @@ var support = {};
 
 
 var
-	version = "2.2.1",
+	version = "2.2.3",
 
 	// Define a local copy of jQuery
 	jQuery = function( selector, context ) {
@@ -2185,6 +2181,7 @@ jQuery.extend( {
 	},
 
 	isPlainObject: function( obj ) {
+		var key;
 
 		// Not plain objects:
 		// - Any object or value whose internal [[Class]] property is not "[object Object]"
@@ -2194,14 +2191,18 @@ jQuery.extend( {
 			return false;
 		}
 
+		// Not own constructor property must be Object
 		if ( obj.constructor &&
-				!hasOwn.call( obj.constructor.prototype, "isPrototypeOf" ) ) {
+				!hasOwn.call( obj, "constructor" ) &&
+				!hasOwn.call( obj.constructor.prototype || {}, "isPrototypeOf" ) ) {
 			return false;
 		}
 
-		// If the function hasn't returned already, we're confident that
-		// |obj| is a plain object, created by {} or constructed with new Object
-		return true;
+		// Own properties are enumerated firstly, so to speed up,
+		// if last one is own, then all properties are own
+		for ( key in obj ) {}
+
+		return key === undefined || hasOwn.call( obj, key );
 	},
 
 	isEmptyObject: function( obj ) {
@@ -9234,6 +9235,12 @@ jQuery.extend( {
 	}
 } );
 
+// Support: IE <=11 only
+// Accessing the selectedIndex property
+// forces the browser to respect setting selected
+// on the option
+// The getter ensures a default option is selected
+// when in an optgroup
 if ( !support.optSelected ) {
 	jQuery.propHooks.selected = {
 		get: function( elem ) {
@@ -9242,6 +9249,16 @@ if ( !support.optSelected ) {
 				parent.parentNode.selectedIndex;
 			}
 			return null;
+		},
+		set: function( elem ) {
+			var parent = elem.parentNode;
+			if ( parent ) {
+				parent.selectedIndex;
+
+				if ( parent.parentNode ) {
+					parent.parentNode.selectedIndex;
+				}
+			}
 		}
 	};
 }
@@ -9436,7 +9453,8 @@ jQuery.fn.extend( {
 
 
 
-var rreturn = /\r/g;
+var rreturn = /\r/g,
+	rspaces = /[\x20\t\r\n\f]+/g;
 
 jQuery.fn.extend( {
 	val: function( value ) {
@@ -9512,9 +9530,15 @@ jQuery.extend( {
 		option: {
 			get: function( elem ) {
 
-				// Support: IE<11
-				// option.value not trimmed (#14858)
-				return jQuery.trim( elem.value );
+				var val = jQuery.find.attr( elem, "value" );
+				return val != null ?
+					val :
+
+					// Support: IE10-11+
+					// option.text throws exceptions (#14686, #14858)
+					// Strip and collapse whitespace
+					// https://html.spec.whatwg.org/#strip-and-collapse-whitespace
+					jQuery.trim( jQuery.text( elem ) ).replace( rspaces, " " );
 			}
 		},
 		select: {
@@ -9567,7 +9591,7 @@ jQuery.extend( {
 				while ( i-- ) {
 					option = options[ i ];
 					if ( option.selected =
-							jQuery.inArray( jQuery.valHooks.option.get( option ), values ) > -1
+						jQuery.inArray( jQuery.valHooks.option.get( option ), values ) > -1
 					) {
 						optionSet = true;
 					}
@@ -11262,18 +11286,6 @@ jQuery.ajaxPrefilter( "json jsonp", function( s, originalSettings, jqXHR ) {
 
 
 
-// Support: Safari 8+
-// In Safari 8 documents created via document.implementation.createHTMLDocument
-// collapse sibling forms: the second one becomes a child of the first one.
-// Because of that, this security measure has to be disabled in Safari 8.
-// https://bugs.webkit.org/show_bug.cgi?id=137337
-support.createHTMLDocument = ( function() {
-	var body = document.implementation.createHTMLDocument( "" ).body;
-	body.innerHTML = "<form></form><form></form>";
-	return body.childNodes.length === 2;
-} )();
-
-
 // Argument "data" should be string of html
 // context (optional): If specified, the fragment will be created in this context,
 // defaults to document
@@ -11286,12 +11298,7 @@ jQuery.parseHTML = function( data, context, keepScripts ) {
 		keepScripts = context;
 		context = false;
 	}
-
-	// Stop scripts or inline event handlers from being executed immediately
-	// by using document.implementation
-	context = context || ( support.createHTMLDocument ?
-		document.implementation.createHTMLDocument( "" ) :
-		document );
+	context = context || document;
 
 	var parsed = rsingleTag.exec( data ),
 		scripts = !keepScripts && [];
@@ -11373,7 +11380,7 @@ jQuery.fn.load = function( url, params, callback ) {
 		// If it fails, this function gets "jqXHR", "status", "error"
 		} ).always( callback && function( jqXHR, status ) {
 			self.each( function() {
-				callback.apply( self, response || [ jqXHR.responseText, status, jqXHR ] );
+				callback.apply( this, response || [ jqXHR.responseText, status, jqXHR ] );
 			} );
 		} );
 	}
@@ -14975,6 +14982,8 @@ define('readium_cfi_js', ['readium_cfi_js/cfi_API'], function (main) { return ma
 
 define('eventEmitter',['require','exports','module'],function (require, exports, module) {'use strict';
 
+var has = Object.prototype.hasOwnProperty;
+
 //
 // We store our EE objects in a plain object whose properties are event names.
 // If `Object.create(null)` is not supported we prefix the event names with a
@@ -14990,7 +14999,7 @@ var prefix = typeof Object.create !== 'function' ? '~' : false;
  *
  * @param {Function} fn Event handler to be called.
  * @param {Mixed} context Context for function execution.
- * @param {Boolean} once Only emit once
+ * @param {Boolean} [once=false] Only emit once
  * @api private
  */
 function EE(fn, context, once) {
@@ -15009,12 +15018,37 @@ function EE(fn, context, once) {
 function EventEmitter() { /* Nothing to set */ }
 
 /**
- * Holds the assigned EventEmitters by name.
+ * Hold the assigned EventEmitters by name.
  *
  * @type {Object}
  * @private
  */
 EventEmitter.prototype._events = undefined;
+
+/**
+ * Return an array listing the events for which the emitter has registered
+ * listeners.
+ *
+ * @returns {Array}
+ * @api public
+ */
+EventEmitter.prototype.eventNames = function eventNames() {
+  var events = this._events
+    , names = []
+    , name;
+
+  if (!events) return names;
+
+  for (name in events) {
+    if (has.call(events, name)) names.push(prefix ? name.slice(1) : name);
+  }
+
+  if (Object.getOwnPropertySymbols) {
+    return names.concat(Object.getOwnPropertySymbols(events));
+  }
+
+  return names;
+};
 
 /**
  * Return a list of assigned event listeners.
@@ -15101,8 +15135,8 @@ EventEmitter.prototype.emit = function emit(event, a1, a2, a3, a4, a5) {
  * Register a new EventListener for the given event.
  *
  * @param {String} event Name of the event.
- * @param {Functon} fn Callback function.
- * @param {Mixed} context The context of the function.
+ * @param {Function} fn Callback function.
+ * @param {Mixed} [context=this] The context of the function.
  * @api public
  */
 EventEmitter.prototype.on = function on(event, fn, context) {
@@ -15126,7 +15160,7 @@ EventEmitter.prototype.on = function on(event, fn, context) {
  *
  * @param {String} event Name of the event.
  * @param {Function} fn Callback function.
- * @param {Mixed} context The context of the function.
+ * @param {Mixed} [context=this] The context of the function.
  * @api public
  */
 EventEmitter.prototype.once = function once(event, fn, context) {
@@ -15520,6 +15554,10 @@ var Globals = {
          * @event
          */
         CONTENT_DOCUMENT_LOADED: "ContentDocumentLoaded",
+        /**
+         * @event
+         */
+        CONTENT_DOCUMENT_UNLOADED: "ContentDocumentUnloaded",
         /**
          * @event
          */
@@ -17760,12 +17798,12 @@ var HighlightsManager = function (proxyObj, options) {
         return undefined;
     };
 
-    this.addSelectionHighlight = function(id, type, clearSelection, styles) {
+    this.addSelectionHighlight = function(id, type, styles, clearSelection) {
         for(var spine in liveAnnotations) {
             var annotationsForView = liveAnnotations[spine];
             if (annotationsForView.getCurrentSelectionCFI()) {
                 var annotation = annotationsForView.addSelectionHighlight(
-                    id, type, clearSelection, styles);
+                    id, type, styles, clearSelection);
                 return new BookmarkData(spines[spine].idref, annotation.CFI);
             }
         }
@@ -18047,11 +18085,10 @@ define('readium_plugin_highlights/main',['readium_js_plugins', 'readium_shared_j
          *
          * @param {string} id id of the highlight. must be unique
          * @param {string} type - name of the class selector rule in annotations.css file.
-         * @param {boolean} clearSelection - set to true to clear the current selection
-         * after it is highlighted
-         * The style of the class will be applied to the created hightlight
          * @param {object} styles - object representing CSS properties to be applied to the highlight.
          * e.g., to apply background color pass this {'background-color': 'green'}
+         * @param {boolean} clearSelection - set to true to clear the current selection
+         * after it is highlighted
          *
          * @returns {object | undefined} partial cfi object of the created highlight
          */
@@ -20109,11 +20146,13 @@ define("es6-collections", function(){});
 
     if (parts.username) {
       t += URI.encode(parts.username);
+    }
 
-      if (parts.password) {
-        t += ':' + URI.encode(parts.password);
-      }
+    if (parts.password) {
+      t += ':' + URI.encode(parts.password);
+    }
 
+    if (t) {
       t += '@';
     }
 
@@ -20758,12 +20797,8 @@ define("es6-collections", function(){});
     }
 
     if (v === undefined) {
-      if (!this._parts.username) {
-        return '';
-      }
-
       var t = URI.buildUserinfo(this._parts);
-      return t.substring(0, t.length -1);
+      return t ? t.substring(0, t.length -1) : t;
     } else {
       if (v[v.length-1] !== '@') {
         v += '@';
@@ -22417,7 +22452,53 @@ define("jquerySizes", ["jquery"], (function (global) {
 //  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
+
 define('readium_shared_js/helpers',["./globals", 'underscore', "jquery", "./models/spine_item", "jquerySizes"], function(Globals, _, $, SpineItem, jquerySizes) { // NOTE that the jquerySizes parameter is not used anywhere explicitely, as this is a jQuery plugin!
+
+(function()
+{
+/* jshint strict: true */
+/* jshint -W034 */
+    "use strict";
+    
+    if(window.performance)
+    {
+        if (window.performance.now)
+        {
+            return;
+        }
+        
+        var vendors = ['webkitNow', 'mozNow', 'msNow', 'oNow'];
+        
+        for (var i = 0; i < vendors.length; i++)
+        {
+            if (vendors[i] in window.performance)
+            {
+                window.performance.now = window.performance[vendors[i]];
+                return;
+            }
+        }
+    }
+    else
+    {
+        window.performance = {};
+        
+    }
+    
+    if(Date.now)
+    {
+        window.performance.now = function()
+        {
+            return Date.now();
+        };
+        return;
+    }
+    
+    window.performance.now = function()
+    {
+        return +(new Date());
+    };
+})();
 
 var Helpers = {};
 
@@ -22613,6 +22694,11 @@ Helpers.Rect.fromElement = function ($element) {
 
 Helpers.UpdateHtmlFontSize = function ($epubHtml, fontSize) {
 
+    var perf = false;
+
+    // TODO: very slow on Firefox!
+    // See https://github.com/readium/readium-shared-js/issues/274
+    if (perf) var time1 = window.performance.now();
 
     var factor = fontSize / 100;
     var win = $epubHtml[0].ownerDocument.defaultView;
@@ -22662,6 +22748,23 @@ Helpers.UpdateHtmlFontSize = function ($epubHtml, fontSize) {
 
     }
     $epubHtml.css("font-size", fontSize + "%");
+    
+    if (perf) {
+        var time2 = window.performance.now();
+    
+        // Firefox: 80+
+        // Chrome: 4-10
+        // Edge: 15-34
+        // IE: 10-15
+        // https://readium.firebase.com/?epub=..%2Fepub_content%2Faccessible_epub_3&goto=%7B%22idref%22%3A%22id-id2635343%22%2C%22elementCfi%22%3A%22%2F4%2F2%5Bbuilding_a_better_epub%5D%2F10%2F44%2F6%2C%2F1%3A334%2C%2F1%3A335%22%7D
+        
+        var diff = time2-time1;
+        console.log(diff);
+        
+        // setTimeout(function(){
+        //     alert(diff);
+        // }, 2000);
+    }
 };
 
 
@@ -23145,6 +23248,7 @@ Helpers.polyfillCaretRangeFromPoint = function(document) {
             document.caretRangeFromPoint = function caretRangeFromPoint(x, y) {
                 var r = document.createRange();
                 var p = document.caretPositionFromPoint(x, y);
+                if (!p) return null;
                 if (p.offsetNode) {
                     r.setStart(p.offsetNode, p.offset);
                     r.setEnd(p.offsetNode, p.offset);
@@ -23456,9 +23560,7 @@ var CfiNavigationLogic = function(options) {
         visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
         frameDimensions = frameDimensions || getFrameDimensions();
 
-        var elementRectangles = getNormalizedRectangles($element, visibleContentOffsets);
-
-        var clientRectangles = elementRectangles.clientRectangles;
+        var clientRectangles = getNormalizedRectangles($element, visibleContentOffsets);
         if (clientRectangles.length === 0) { // elements with display:none, etc.
             return null;
         }
@@ -23513,9 +23615,8 @@ var CfiNavigationLogic = function(options) {
     function findPageByRectangles($element, spatialVerticalOffset) {
 
         var visibleContentOffsets = getVisibleContentOffsets();
-        var elementRectangles = getNormalizedRectangles($element, visibleContentOffsets);
 
-        var clientRectangles  = elementRectangles.clientRectangles;
+        var clientRectangles = getNormalizedRectangles($element, visibleContentOffsets);
         if (clientRectangles.length === 0) { // elements with display:none, etc.
             return null;
         }
@@ -23639,14 +23740,20 @@ var CfiNavigationLogic = function(options) {
         var leftOffset = visibleContentOffsets.left || 0;
         var topOffset = visibleContentOffsets.top || 0;
 
-        // union of all rectangles wrapping the element
-        var wrapperRectangle = normalizeRectangle(
-            $el[0].getBoundingClientRect(), leftOffset, topOffset);
+        var isTextNode = ($el[0].nodeType === Node.TEXT_NODE);
+        var clientRectList;
+
+        if (isTextNode) {
+            var range = createRange();
+            range.selectNode($el[0]);
+            clientRectList = range.getClientRects();
+        } else {
+            clientRectList = $el[0].getClientRects();
+        }
 
         // all the separate rectangles (for detecting position of the element
         // split between several columns)
         var clientRectangles = [];
-        var clientRectList = $el[0].getClientRects();
         for (var i = 0, l = clientRectList.length; i < l; ++i) {
             if (clientRectList[i].height > 0) {
                 // Firefox sometimes gets it wrong,
@@ -23657,20 +23764,27 @@ var CfiNavigationLogic = function(options) {
             }
         }
 
-        if (clientRectangles.length === 0) {
-            // sometimes an element is either hidden or empty, and that means
-            // Webkit-based browsers fail to assign proper clientRects to it
-            // in this case we need to go for its sibling (if it exists)
-            $el = $el.next();
-            if ($el.length) {
-                return getNormalizedRectangles($el, visibleContentOffsets);
-            }
+        return clientRectangles;
+    }
+
+    function getNormalizedBoundingRect($el, visibleContentOffsets) {
+        visibleContentOffsets = visibleContentOffsets || {};
+        var leftOffset = visibleContentOffsets.left || 0;
+        var topOffset = visibleContentOffsets.top || 0;
+
+        var isTextNode = ($el[0].nodeType === Node.TEXT_NODE);
+        var boundingClientRect;
+
+        if (isTextNode) {
+            var range = createRange();
+            range.selectNode($el[0]);
+            boundingClientRect = range.getBoundingClientRect();
+        } else {
+            boundingClientRect = $el[0].getBoundingClientRect();
         }
 
-        return {
-            wrapperRectangle: wrapperRectangle,
-            clientRectangles: clientRectangles
-        };
+        // union of all rectangles wrapping the element
+        return normalizeRectangle(boundingClientRect, leftOffset, topOffset);
     }
 
     /**
@@ -24085,7 +24199,10 @@ var CfiNavigationLogic = function(options) {
         var index = 0;
         if (!targetLeafNode) {
             index = leafNodeList.indexOf(pickerFunc(leafNodeList));
-            startingParent = leafNodeList[index].element;
+            var leafNode = leafNodeList[index];
+            if (leafNode) {
+                startingParent = leafNode.element;
+            }
         } else {
             index = leafNodeList.indexOf(targetLeafNode);
             if (index === -1) {
@@ -24319,9 +24436,7 @@ var CfiNavigationLogic = function(options) {
                 ["MathJax_Message", "MathJax_SVG_Hidden"]);
 
             var visibleContentOffsets = getVisibleContentOffsets();
-            var normRects = getNormalizedRectangles($element, visibleContentOffsets);
-
-            return {startInfo: null, endInfo: null, clientRect: normRects.wrapperRectangle }
+            return {startInfo: null, endInfo: null, clientRect: getNormalizedBoundingRect($element, visibleContentOffsets)};
         }
     };
 
@@ -24489,13 +24604,11 @@ var CfiNavigationLogic = function(options) {
             var isTextNode = ($node[0].nodeType === Node.TEXT_NODE);
             var $element = isTextNode ? $node.parent() : $node;
             var visibilityPercentage = checkVisibilityByRectangles(
-                $element, true, visibleContentOffsets, frameDimensions);
+                $node, true, visibleContentOffsets, frameDimensions);
 
             if (visibilityPercentage) {
-                var $visibleElement = $element;
-
                 visibleElements.push({
-                    element: $visibleElement[0], // DOM Element is pushed
+                    element: $element[0], // DOM Element is pushed
                     textNode: isTextNode ? $node[0] : null,
                     percentVisible: visibilityPercentage
                 });
@@ -25020,6 +25133,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
     var self = this;
 
     var _$epubHtml;
+    var _$epubBody;
     var _$el;
     var _$iframe;
     var _currentSpineItem;
@@ -25346,6 +25460,8 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             _$epubHtml = $("html", epubContentDocument);
             if (!_$epubHtml || _$epubHtml.length == 0) {
                 _$epubHtml = $("svg", epubContentDocument);
+            } else {
+                _$epubBody = $("body", _$epubHtml);
             }
 
             //_$epubHtml.css("overflow", "hidden");
@@ -25527,10 +25643,20 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         if (settings.enableGPUHardwareAccelerationCSS3D) {
             enable3D = true;
         }
-
+        
         if (reader.needsFixedLayoutScalerWorkAround()) {
             var css1 = Helpers.CSSTransformString({scale: scale, enable3D: enable3D});
+            
+            // See https://github.com/readium/readium-shared-js/issues/285 
+            css1["min-width"] = _meta_size.width;
+            css1["min-height"] = _meta_size.height;
+            
             _$epubHtml.css(css1);
+            
+            // Ensures content dimensions matches viewport meta (authors / production tools should do this in their CSS...but unfortunately some don't).
+            if (_$epubBody && _$epubBody.length) {
+                _$epubBody.css({width:_meta_size.width, height:_meta_size.height});
+            }
 
             var css2 = Helpers.CSSTransformString({scale : 1, enable3D: enable3D});
             css2["width"] = _meta_size.width * scale;
@@ -25748,20 +25874,31 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         }
     }
 
+    function onUnload (spineItem) {
+        if (spineItem) {
+            self.emit(Globals.Events.CONTENT_DOCUMENT_UNLOADED, _$iframe, spineItem);
+        }
+    }
+
+    this.onUnload = function () {
+        onUnload(_currentSpineItem);
+    };
+
     //expected callback signature: function(success, $iframe, spineItem, isNewlyLoaded, context)
     this.loadSpineItem = function (spineItem, callback, context) {
 
         if (_currentSpineItem != spineItem) {
 
+            var prevSpineItem = _currentSpineItem;
             _currentSpineItem = spineItem;
             var src = _spine.package.resolveRelativeUrl(spineItem.href);
 
-            //if (spineItem && spineItem.isFixedLayout())
-            if (true) // both fixed layout and reflowable documents need hiding due to flashing during layout/rendering
-            {
-                //hide iframe until content is scaled
-                self.hideIFrame();
-            }
+            // both fixed layout and reflowable documents need hiding due to flashing during layout/rendering
+            //hide iframe until content is scaled
+            self.hideIFrame();
+
+            onUnload(prevSpineItem);
+
 
             Globals.logEvent("OnePageView.Events.SPINE_ITEM_OPEN_START", "EMIT", "one_page_view.js [ " + spineItem.href + " -- " + src + " ]");
             self.emit(OnePageView.Events.SPINE_ITEM_OPEN_START, _$iframe, _currentSpineItem);
@@ -25991,8 +26128,8 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         return createBookmarkFromCfi(self.getNavigator().getRangeCfiFromPoints(startX, startY, endX, endY));
     };
 
-    this.getCfiForElement = function(x, y) {
-        return createBookmarkFromCfi(self.getNavigator().getCfiForElement(x, y));
+    this.getCfiForElement = function(element) {
+        return createBookmarkFromCfi(self.getNavigator().getCfiForElement(element));
     };
 
     this.getElementFromPoint = function (x, y) {
@@ -26177,8 +26314,13 @@ var FixedView = function(options, reader){
 
             Globals.logEvent("CONTENT_DOCUMENT_LOAD_START", "EMIT", "fixed_view.js [ " + spineItem.href + " ]");
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
-        });   
-    
+        });
+
+        pageView.on(Globals.Events.CONTENT_DOCUMENT_UNLOADED, function($iframe, spineItem) {
+
+            self.emit(Globals.Events.CONTENT_DOCUMENT_UNLOADED, $iframe, spineItem);
+        });
+
         return pageView;
     }
 
@@ -27059,6 +27201,12 @@ var IFrameLoader = function() {
                 
                 // Firefox fails to render SVG otherwise
                 if (mathJax.Hub.Browser.isFirefox) {
+                    useFontCache = false;
+                }
+                
+                // Chrome 49+ fails to render SVG otherwise
+                // https://github.com/readium/readium-js/issues/138
+                if (mathJax.Hub.Browser.isChrome) {
                     useFontCache = false;
                 }
                 
@@ -35983,103 +36131,6 @@ return MediaOverlayDataInjector;
 
 define('readium_shared_js/views/audio_player',['jquery'],function($) {
 
-    var _iOS = navigator.userAgent.match(/(iPad|iPhone|iPod)/g) ? true : false;
-    var _Android = navigator.userAgent.toLowerCase().indexOf('android') > -1;
-    var _isMobile = _iOS || _Android;
-
-    //var _isReadiumJS = typeof window.requirejs !== "undefined";
-
-    var DEBUG = false;
-
-    var _audioElement = new Audio();
-    
-    if (DEBUG)
-    {
-        _audioElement.addEventListener("load", function()
-            {
-                console.debug("0) load");
-            }
-        );
-
-        _audioElement.addEventListener("loadstart", function()
-            {
-                console.debug("1) loadstart");
-            }
-        );
-
-        _audioElement.addEventListener("durationchange", function()
-            {
-                console.debug("2) durationchange");
-            }
-        );
-
-        _audioElement.addEventListener("loadedmetadata", function()
-            {
-                console.debug("3) loadedmetadata");
-            }
-        );
-
-        _audioElement.addEventListener("loadeddata", function()
-            {
-                console.debug("4) loadeddata");
-            }
-        );
-
-        _audioElement.addEventListener("progress", function()
-            {
-                console.debug("5) progress");
-            }
-        );
-
-        _audioElement.addEventListener("canplay", function()
-            {
-                console.debug("6) canplay");
-            }
-        );
-
-        _audioElement.addEventListener("canplaythrough", function()
-            {
-                console.debug("7) canplaythrough");
-            }
-        );
-
-        _audioElement.addEventListener("play", function()
-            {
-                console.debug("8) play");
-            }
-        );
-
-        _audioElement.addEventListener("pause", function()
-            {
-                console.debug("9) pause");
-            }
-        );
-
-        _audioElement.addEventListener("ended", function()
-            {
-                console.debug("10) ended");
-            }
-        );
-
-        _audioElement.addEventListener("seeked", function()
-            {
-                console.debug("X) seeked");
-            }
-        );
-
-        _audioElement.addEventListener("timeupdate", function()
-            {
-                console.debug("Y) timeupdate");
-            }
-        );
-
-        _audioElement.addEventListener("seeking", function()
-            {
-                console.debug("Z) seeking");
-            }
-        );
-    }
-
     /**
      *
      * @param onStatusChanged
@@ -36091,6 +36142,103 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
      */
     var AudioPlayer = function(onStatusChanged, onPositionChanged, onAudioEnded, onAudioPlay, onAudioPause)
     {
+        var _iOS = navigator.userAgent.match(/(iPad|iPhone|iPod)/g) ? true : false;
+        var _Android = navigator.userAgent.toLowerCase().indexOf('android') > -1;
+        var _isMobile = _iOS || _Android;
+
+        //var _isReadiumJS = typeof window.requirejs !== "undefined";
+
+        var DEBUG = false;
+
+        var _audioElement = new Audio();
+        
+        if (DEBUG)
+        {
+            _audioElement.addEventListener("load", function()
+                {
+                    console.debug("0) load");
+                }
+            );
+
+            _audioElement.addEventListener("loadstart", function()
+                {
+                    console.debug("1) loadstart");
+                }
+            );
+
+            _audioElement.addEventListener("durationchange", function()
+                {
+                    console.debug("2) durationchange");
+                }
+            );
+
+            _audioElement.addEventListener("loadedmetadata", function()
+                {
+                    console.debug("3) loadedmetadata");
+                }
+            );
+
+            _audioElement.addEventListener("loadeddata", function()
+                {
+                    console.debug("4) loadeddata");
+                }
+            );
+
+            _audioElement.addEventListener("progress", function()
+                {
+                    console.debug("5) progress");
+                }
+            );
+
+            _audioElement.addEventListener("canplay", function()
+                {
+                    console.debug("6) canplay");
+                }
+            );
+
+            _audioElement.addEventListener("canplaythrough", function()
+                {
+                    console.debug("7) canplaythrough");
+                }
+            );
+
+            _audioElement.addEventListener("play", function()
+                {
+                    console.debug("8) play");
+                }
+            );
+
+            _audioElement.addEventListener("pause", function()
+                {
+                    console.debug("9) pause");
+                }
+            );
+
+            _audioElement.addEventListener("ended", function()
+                {
+                    console.debug("10) ended");
+                }
+            );
+
+            _audioElement.addEventListener("seeked", function()
+                {
+                    console.debug("X) seeked");
+                }
+            );
+
+            _audioElement.addEventListener("timeupdate", function()
+                {
+                    console.debug("Y) timeupdate");
+                }
+            );
+
+            _audioElement.addEventListener("seeking", function()
+                {
+                    console.debug("Z) seeking");
+                }
+            );
+        }
+
         var self = this;
      
         //_audioElement.setAttribute("preload", "auto");
@@ -37872,6 +38020,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
     function removePageView(pageView) {
 
+        pageView.onUnload();
         pageView.element().remove();
 
     }
@@ -38802,9 +38951,9 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         });
     };
 
-    this.getCfiForElement = function(x, y) {
+    this.getCfiForElement = function(element) {
         return callOnVisiblePageView(function (pageView) {
-            return createBookmark(pageView.currentSpineItem(), pageView.getCfiForElement(x, y));
+            return createBookmark(pageView.currentSpineItem(), pageView.getCfiForElement(element));
         });
     };
 
@@ -45491,6 +45640,9 @@ var ReflowableView = function(options, reader){
 
             //create & append iframe to container frame
             renderIframe();
+            if (_currentSpineItem) {
+                self.emit(Globals.Events.CONTENT_DOCUMENT_UNLOADED, _$iframe, _currentSpineItem);
+            }
 
             _paginationInfo.pageOffset = 0;
             _paginationInfo.currentSpreadIndex = 0;
@@ -45776,6 +45928,12 @@ var ReflowableView = function(options, reader){
     function updateViewportSize() {
 
         var newWidth = _$contentFrame.width();
+        
+        // Ensure that the new viewport width is always even numbered
+        // this is to prevent a rendering inconsistency between browsers when odd-numbered bounds are used for CSS columns
+        // See https://github.com/readium/readium-shared-js/issues/37
+        newWidth -= newWidth % 2;
+
         var newHeight = _$contentFrame.height();
 
         if(_lastViewPortSize.width !== newWidth || _lastViewPortSize.height !== newHeight){
@@ -45889,66 +46047,78 @@ var ReflowableView = function(options, reader){
 
         hideBook(); // shiftBookOfScreen();
 
+        // "borderLeft" is the blank vertical strip (e.g. 40px wide) where the left-arrow button resides, i.e. previous page command
         var borderLeft = parseInt(_$viewport.css("border-left-width"));
-        var borderRight = parseInt(_$viewport.css("border-right-width"));
+        
+        // The "columnGap" separates two consecutive columns in a 2-page synthetic spread (e.g. 60px wide).
+        // This middle gap (blank vertical strip) actually corresponds to the left page's right-most margin, combined with the right page's left-most margin.
+        // So, "adjustedGapLeft" is half of the center strip... 
         var adjustedGapLeft = _paginationInfo.columnGap/2;
-        adjustedGapLeft = Math.max(0, adjustedGapLeft-borderLeft)
+        // ...but we include the "borderLeft" strip to avoid wasting valuable rendering real-estate:  
+        adjustedGapLeft = Math.max(0, adjustedGapLeft-borderLeft);
+        // Typically, "adjustedGapLeft" is zero because the space available for the 'previous page' button is wider than half of the column gap!
+
+        // "borderRight" is the blank vertical strip (e.g. 40px wide) where the right-arrow button resides, i.e. next page command
+        var borderRight = parseInt(_$viewport.css("border-right-width"));
+        
+        // The "columnGap" separates two consecutive columns in a 2-page synthetic spread (e.g. 60px wide).
+        // This middle gap (blank vertical strip) actually corresponds to the left page's right-most margin, combined with the right page's left-most margin.
+        // So, "adjustedGapRight" is half of the center strip... 
         var adjustedGapRight = _paginationInfo.columnGap/2;
-        adjustedGapRight = Math.max(0, adjustedGapRight-borderRight)
+        // ...but we include the "borderRight" strip to avoid wasting valuable rendering real-estate:
+        adjustedGapRight = Math.max(0, adjustedGapRight-borderRight);
+        // Typically, "adjustedGapRight" is zero because the space available for the 'next page' button is wider than half of the column gap! (in other words, the right-most and left-most page margins are fully included in the strips reserved for the arrow buttons)
 
-        var filler = 0;
-
-//         var win = _$iframe[0].contentDocument.defaultView || _$iframe[0].contentWindow;
-//         var htmlBodyComputedStyle = win.getComputedStyle(_$htmlBody[0], null);
-//         if (htmlBodyComputedStyle)
-//         {
-//             var fontSize = undefined;
-//             if (htmlBodyComputedStyle.getPropertyValue)
-//             {
-//                 fontSize = htmlBodyComputedStyle.getPropertyValue("font-size");
-//             }
-//             else
-//             {
-//                 fontSize = htmlBodyComputedStyle.fontSize;
-//             }
-// console.debug(fontSize);
-//         }
-
-        if (_viewSettings.fontSize)
-        {
-            var fontSizeAdjust = (_viewSettings.fontSize*0.8)/100;
-            MAXW = Math.floor(MAXW * fontSizeAdjust);
-            MINW = Math.floor(MINW * fontSizeAdjust);
-        }
-
+        // Note that "availableWidth" does not contain "borderLeft" and "borderRight" (.width() excludes the padding and border and margin in the CSS box model of div#epub-reader-frame)  
         var availableWidth = _$viewport.width();
-        var textWidth = availableWidth - borderLeft - borderRight - adjustedGapLeft - adjustedGapRight;
+        
+        // ...So, we substract the page margins and button spacing to obtain the width available for actual text:
+        var textWidth = availableWidth - adjustedGapLeft - adjustedGapRight;
+        
+        // ...and if we have 2 pages / columns, then we split the text width in half: 
         if (isDoublePageSyntheticSpread)
         {
             textWidth = (textWidth - _paginationInfo.columnGap) * 0.5;
         }
 
+        var filler = 0;
+
+        // Now, if the resulting width actually available for document content is greater than the maximum allowed value, we create even more left+right blank space to "compress" the horizontal run of text.  
         if (textWidth > MAXW)
         {
-// console.debug("LIMITING WIDTH");
-            filler = Math.floor((textWidth - MAXW) * (isDoublePageSyntheticSpread ? 1 : 0.5));
+            var eachPageColumnReduction = textWidth - MAXW;
+            
+            // if we have a 2-page synthetic spread, then we "trim" left and right sides by adding "eachPageColumnReduction" blank space.
+            // if we have a single page / column, then this loss of text real estate is shared between right and left sides  
+            filler = Math.floor(eachPageColumnReduction * (isDoublePageSyntheticSpread ? 1 : 0.5));
         }
+
+        // Let's check whether a narrow two-page synthetic spread (impeded reabability) can be reduced down to a single page / column:
         else if (!forced && textWidth < MINW && isDoublePageSyntheticSpread)
         {
-//console.debug("REDUCING SPREAD TO SINGLE");
             isDoublePageSyntheticSpread = false;
             _paginationInfo.visibleColumnCount = 1;
 
-            textWidth = availableWidth - borderLeft - borderRight - adjustedGapLeft - adjustedGapRight;
+            textWidth = availableWidth - adjustedGapLeft - adjustedGapRight;
             if (textWidth > MAXW)
             {
                 filler = Math.floor((textWidth - MAXW) * 0.5);
             }
         }
-
+        
         _$el.css({"left": (filler+adjustedGapLeft + "px"), "right": (filler+adjustedGapRight + "px")});
+        
         updateViewportSize(); //_$contentFrame ==> _lastViewPortSize
 
+        var resultingColumnWidth = _$el.width();
+        if (isDoublePageSyntheticSpread) {
+            resultingColumnWidth = (resultingColumnWidth - _paginationInfo.columnGap) / 2;
+        }
+        resultingColumnWidth = Math.floor(resultingColumnWidth);
+        if ((resultingColumnWidth-1) > MAXW) {
+            console.debug("resultingColumnWidth > MAXW ! " + resultingColumnWidth + " > " + MAXW);
+        }
+        
 
         _$iframe.css("width", _lastViewPortSize.width + "px");
         _$iframe.css("height", _lastViewPortSize.height + "px");
@@ -46302,8 +46472,8 @@ var ReflowableView = function(options, reader){
         return createBookmarkFromCfi(_navigationLogic.getRangeCfiFromPoints(startX, startY, endX, endY));
     };
 
-    this.getCfiForElement = function(x, y) {
-        return createBookmarkFromCfi(_navigationLogic.getCfiForElement(x, y));
+    this.getCfiForElement = function(element) {
+        return createBookmarkFromCfi(_navigationLogic.getCfiForElement(element));
     };
 
     this.getElementFromPoint = function(x, y) {
@@ -46993,6 +47163,10 @@ var ReaderView = function (options) {
         _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOAD_START, function ($iframe, spineItem) {
             Globals.logEvent("CONTENT_DOCUMENT_LOAD_START", "EMIT", "reader_view.js [ " + spineItem.href + " ]");
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
+        });
+
+        _currentView.on(Globals.Events.CONTENT_DOCUMENT_UNLOADED, function ($iframe, spineItem) {
+            self.emit(Globals.Events.CONTENT_DOCUMENT_UNLOADED, $iframe, spineItem);
         });
 
         _currentView.on(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, function (pageChangeData) {
