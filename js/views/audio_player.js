@@ -29,103 +29,6 @@
 
 define(['jquery'],function($) {
 
-    var _iOS = navigator.userAgent.match(/(iPad|iPhone|iPod)/g) ? true : false;
-    var _Android = navigator.userAgent.toLowerCase().indexOf('android') > -1;
-    var _isMobile = _iOS || _Android;
-
-    //var _isReadiumJS = typeof window.requirejs !== "undefined";
-
-    var DEBUG = false;
-
-    var _audioElement = new Audio();
-    
-    if (DEBUG)
-    {
-        _audioElement.addEventListener("load", function()
-            {
-                console.debug("0) load");
-            }
-        );
-
-        _audioElement.addEventListener("loadstart", function()
-            {
-                console.debug("1) loadstart");
-            }
-        );
-
-        _audioElement.addEventListener("durationchange", function()
-            {
-                console.debug("2) durationchange");
-            }
-        );
-
-        _audioElement.addEventListener("loadedmetadata", function()
-            {
-                console.debug("3) loadedmetadata");
-            }
-        );
-
-        _audioElement.addEventListener("loadeddata", function()
-            {
-                console.debug("4) loadeddata");
-            }
-        );
-
-        _audioElement.addEventListener("progress", function()
-            {
-                console.debug("5) progress");
-            }
-        );
-
-        _audioElement.addEventListener("canplay", function()
-            {
-                console.debug("6) canplay");
-            }
-        );
-
-        _audioElement.addEventListener("canplaythrough", function()
-            {
-                console.debug("7) canplaythrough");
-            }
-        );
-
-        _audioElement.addEventListener("play", function()
-            {
-                console.debug("8) play");
-            }
-        );
-
-        _audioElement.addEventListener("pause", function()
-            {
-                console.debug("9) pause");
-            }
-        );
-
-        _audioElement.addEventListener("ended", function()
-            {
-                console.debug("10) ended");
-            }
-        );
-
-        _audioElement.addEventListener("seeked", function()
-            {
-                console.debug("X) seeked");
-            }
-        );
-
-        _audioElement.addEventListener("timeupdate", function()
-            {
-                console.debug("Y) timeupdate");
-            }
-        );
-
-        _audioElement.addEventListener("seeking", function()
-            {
-                console.debug("Z) seeking");
-            }
-        );
-    }
-
     /**
      *
      * @param onStatusChanged
@@ -137,6 +40,103 @@ define(['jquery'],function($) {
      */
     var AudioPlayer = function(onStatusChanged, onPositionChanged, onAudioEnded, onAudioPlay, onAudioPause)
     {
+        var _iOS = navigator.userAgent.match(/(iPad|iPhone|iPod)/g) ? true : false;
+        var _Android = navigator.userAgent.toLowerCase().indexOf('android') > -1;
+        var _isMobile = _iOS || _Android;
+
+        //var _isReadiumJS = typeof window.requirejs !== "undefined";
+
+        var DEBUG = false;
+
+        var _audioElement = new Audio();
+        
+        if (DEBUG)
+        {
+            _audioElement.addEventListener("load", function()
+                {
+                    console.debug("0) load");
+                }
+            );
+
+            _audioElement.addEventListener("loadstart", function()
+                {
+                    console.debug("1) loadstart");
+                }
+            );
+
+            _audioElement.addEventListener("durationchange", function()
+                {
+                    console.debug("2) durationchange");
+                }
+            );
+
+            _audioElement.addEventListener("loadedmetadata", function()
+                {
+                    console.debug("3) loadedmetadata");
+                }
+            );
+
+            _audioElement.addEventListener("loadeddata", function()
+                {
+                    console.debug("4) loadeddata");
+                }
+            );
+
+            _audioElement.addEventListener("progress", function()
+                {
+                    console.debug("5) progress");
+                }
+            );
+
+            _audioElement.addEventListener("canplay", function()
+                {
+                    console.debug("6) canplay");
+                }
+            );
+
+            _audioElement.addEventListener("canplaythrough", function()
+                {
+                    console.debug("7) canplaythrough");
+                }
+            );
+
+            _audioElement.addEventListener("play", function()
+                {
+                    console.debug("8) play");
+                }
+            );
+
+            _audioElement.addEventListener("pause", function()
+                {
+                    console.debug("9) pause");
+                }
+            );
+
+            _audioElement.addEventListener("ended", function()
+                {
+                    console.debug("10) ended");
+                }
+            );
+
+            _audioElement.addEventListener("seeked", function()
+                {
+                    console.debug("X) seeked");
+                }
+            );
+
+            _audioElement.addEventListener("timeupdate", function()
+                {
+                    console.debug("Y) timeupdate");
+                }
+            );
+
+            _audioElement.addEventListener("seeking", function()
+                {
+                    console.debug("Z) seeking");
+                }
+            );
+        }
+
         var self = this;
      
         //_audioElement.setAttribute("preload", "auto");
