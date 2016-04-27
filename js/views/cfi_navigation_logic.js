@@ -1278,16 +1278,19 @@ var CfiNavigationLogic = function(options) {
         _.each($elements, function ($node) {
             var isTextNode = ($node[0].nodeType === Node.TEXT_NODE);
             var $element = isTextNode ? $node.parent() : $node;
-            var visibilityPercentage = checkVisibilityByRectangles(
-                $node, true, visibleContentOffsets, frameDimensions);
+	    if (($element[0].tagName !== "A") || $node[0].nodeValue) {
+                // Skip <a> tags with empty content.
+		var visibilityPercentage = checkVisibilityByRectangles(
+                    $node, true, visibleContentOffsets, frameDimensions);
 
-            if (visibilityPercentage) {
-                visibleElements.push({
-                    element: $element[0], // DOM Element is pushed
-                    textNode: isTextNode ? $node[0] : null,
-                    percentVisible: visibilityPercentage
-                });
-            }
+		if (visibilityPercentage) {
+                    visibleElements.push({
+			element: $element[0], // DOM Element is pushed
+			textNode: isTextNode ? $node[0] : null,
+			percentVisible: visibilityPercentage
+                    });
+		}
+	    }
         });
 
         return visibleElements;
