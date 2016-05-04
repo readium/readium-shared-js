@@ -1313,6 +1313,25 @@ var CfiNavigationLogic = function (options) {
             return visibleElements;
         };
 
+        function getBaseCfiSelectedByFunc(pickerFunc) {
+            var $elements = self.getLeafNodeElements($(self.getBodyElement()));
+            var $selectedNode = pickerFunc($elements);
+            var collapseToStart = pickerFunc([true, false]);
+            var range = createRange();
+            range.selectNodeContents($selectedNode[0]);
+            range.collapse(collapseToStart);
+            return generateCfiFromDomRange(range);
+        }
+
+        this.getStartCfi = function () {
+            return getBaseCfiSelectedByFunc(_.first);
+        };
+
+
+        this.getEndCfi = function () {
+            return getBaseCfiSelectedByFunc(_.last);
+        };
+
         this.getElementsWithFilter = function ($root, filterFunction) {
 
             var $elements = [];

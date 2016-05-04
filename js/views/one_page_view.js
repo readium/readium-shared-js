@@ -1124,6 +1124,13 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         return self.getNavigator().getElementFromPoint(x, y);
     };
 
+    this.getStartCfi = function () {
+        return createBookmarkFromCfi(self.getNavigator().getStartCfi());
+    };
+
+    this.getEndCfi = function () {
+        return createBookmarkFromCfi(self.getNavigator().getEndCfi());
+    };
 
     this.getNearestCfiFromElement = function(element) {
         return createBookmarkFromCfi(self.getNavigator().getNearestCfiFromElement(element));

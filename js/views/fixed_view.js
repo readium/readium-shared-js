@@ -862,6 +862,14 @@ var FixedView = function(options, reader){
         });
     };
 
+    this.getStartCfi = function () {
+        return getDisplayingViews()[0].getStartCfi();
+    };
+
+    this.getEndCfi = function () {
+        return getDisplayingViews()[0].getEndCfi();
+    };
+
     this.getNearestCfiFromElement = function(element) {
         var views = getDisplayingViews();
 

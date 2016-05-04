@@ -1441,6 +1441,18 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         });
     };
 
+    this.getStartCfi = function () {
+        return callOnVisiblePageView(function (pageView) {
+            return pageView.getStartCfi();
+        });
+    };
+
+    this.getEndCfi = function () {
+        return callOnVisiblePageView(function (pageView) {
+            return pageView.getEndCfi();
+        });
+    };
+
     this.getNearestCfiFromElement = function (element) {
         return callOnVisiblePageView(function (pageView) {
             return pageView.getNearestCfiFromElement(element);

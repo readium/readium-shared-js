@@ -1172,6 +1172,14 @@ var ReflowableView = function(options, reader){
         return createBookmarkFromCfi(_navigationLogic.getLastVisibleCfi());
     };
 
+    this.getStartCfi = function () {
+        return createBookmarkFromCfi(_navigationLogic.getStartCfi());
+    };
+
+    this.getEndCfi = function () {
+        return createBookmarkFromCfi(_navigationLogic.getEndCfi());
+    };
+
     this.getDomRangeFromRangeCfi = function (rangeCfi, rangeCfi2, inclusive) {
         if (rangeCfi2 && rangeCfi.idref !== rangeCfi2.idref) {
             console.error("getDomRangeFromRangeCfi: both CFIs must be scoped under the same spineitem idref");
