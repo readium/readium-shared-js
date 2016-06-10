@@ -43,6 +43,12 @@ var FontLoaderFallback = function(document, options) {
         var fontFamilies = [];
         var fontFamilyRules = [];
 
+        // if no style sheets are found return immediately
+        if (!styleSheets || styleSheets.length <= 0) {
+            callback([]);
+            return;
+        }
+
         var getFontFamilyFromRule = function(rule) {
             if (rule.style && (rule.style.getPropertyValue || rule.style.fontFamily)) {
                 return rule.style.getPropertyValue("font-family") || rule.style.fontFamily;
@@ -183,15 +189,18 @@ var FontLoaderNative = function(document, options) {
         } else {
             _.each(document.fonts, fontIterator);
         }
-
-        document.fonts.ready.then(function() {
+        var fontsReady = document.fonts.ready;
+        // In older implementations (chromium 35 for example) this is a method not a property
+        if (_.isFunction(fontsReady)) {
+            fontsReady = fontsReady.call(document.fonts);
+        }
+        fontsReady.then(function() {
             if (debug) {
                 // All fonts were loaded
                 console.log("(native) font loader: all fonts were loaded");
             }
             callback();
         });
-
 
         window.setTimeout(function() {
             if (debug && loadCount !== fontFaceCount) {

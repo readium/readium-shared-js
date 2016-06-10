@@ -1,0 +1,17 @@
+{
+  "COMMAND LINE": "node node_modules/yuidocjs/lib/cli.js -N -C -c yuidocs.json",
+  "name": "readium-shared-js",
+  "description": "Readium - shared Javascript library",
+  "version": "0.0.0",
+  "url": "https://github.com/readium/readium-shared-js",
+  "logo": "http://readium.org/sites/readium.org/files/header-logo.png",
+  "options": {
+    "linkNatives": "true",
+    "exclude": "readium-cfi-js,host_app_reference_files,static,lib,node_modules,api-docs,dev,tests,gen,build-output,dist,build-config",
+    "paths": [
+      "js",
+      "plugins"
+    ],
+    "outdir": "./api-docs"
+  }
+}

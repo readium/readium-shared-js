@@ -338,7 +338,23 @@ var MediaOverlayElementHighlighter = function(reader) {
                 _rangyCSS.applyToRange(_rangyRange);
             }
         }
-        else if (_reader.plugins.annotations)
+        else if (_reader.plugins.highlights) // same API, newer implementation
+        {
+            try
+            {
+                //var id = $hel.data("mediaOverlayData").par.getSmil().spineItemId;
+                var id = par.getSmil().spineItemId;
+                _reader.plugins.highlights.addHighlight(id, par.cfi.partialRangeCfi, HIGHLIGHT_ID,
+                "highlight", //"underline"
+                undefined // styles
+                            );
+            }
+            catch(error)
+            {
+                console.error(error);
+            }
+        }
+        else if (_reader.plugins.annotations) // legacy
         {
             try
             {
@@ -428,7 +444,32 @@ var MediaOverlayElementHighlighter = function(reader) {
                 //_rangyCSS = undefined;
                 _rangyRange = undefined;
             }
-            else if (_reader.plugins.annotations)
+            else if (_reader.plugins.highlights) // same API, new implementation
+            {
+                try
+                {
+                    _reader.plugins.highlights.removeHighlight(HIGHLIGHT_ID);
+        
+                    var toRemove = undefined;
+                    while ((toRemove = doc.getElementById("start-" + HIGHLIGHT_ID)) !== null)
+                    {
+            console.log("toRemove START");
+            console.log(toRemove);
+                        toRemove.parentNode.removeChild(toRemove);
+                    }
+                    while ((toRemove = doc.getElementById("end-" + HIGHLIGHT_ID)) !== null)
+                    {
+            console.log("toRemove END");
+            console.log(toRemove);
+                        toRemove.parentNode.removeChild(toRemove);
+                    }
+                }
+                catch(error)
+                {
+                    console.error(error);
+                }
+            }
+            else if (_reader.plugins.annotations) // legacy
             {
                 try
                 {

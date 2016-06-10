@@ -26,6 +26,9 @@
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 define(['jquery','eventEmitter'], function($, EventEmitter) {
+    
+    var DEBUG = true;
+    
 /**
  * Top level ReadiumSDK namespace
  * @namespace
@@ -93,6 +96,10 @@ var Globals = {
         /**
          * @event
          */
+        CONTENT_DOCUMENT_UNLOADED: "ContentDocumentUnloaded",
+        /**
+         * @event
+         */
         MEDIA_OVERLAY_STATUS_CHANGED: "MediaOverlayStatusChanged",
         /**
          * @event
@@ -118,8 +125,13 @@ var Globals = {
          * @event
          */
         CURRENT_VIEW_PAGINATION_CHANGED: "CurrentViewPaginationChanged",
+    },
+    
+    logEvent: function(eventName, eventType, eventSource) {
+        if (DEBUG) {
+            console.debug("#### ReadiumSDK.Events." + eventName + " - "+eventType+" - " + eventSource);
+        }
     }
-
 };
 $.extend(Globals, new EventEmitter());
 

@@ -1,11 +1,9 @@
 /**
- * @license almond 0.3.1 Copyright (c) 2011-2014, The Dojo Foundation All Rights Reserved.
- * Available via the MIT or new BSD license.
- * see: http://github.com/jrburke/almond for details
+ * @license almond 0.3.2 Copyright jQuery Foundation and other contributors.
+ * Released under MIT license, http://github.com/requirejs/almond/LICENSE
  */
 //Going sloppy to avoid 'use strict' string cost, but strict practices should
 //be followed.
-/*jslint sloppy: true */
 /*global setTimeout: false */
 
 var requirejs, require, define;
@@ -33,60 +31,58 @@ var requirejs, require, define;
      */
     function normalize(name, baseName) {
         var nameParts, nameSegment, mapValue, foundMap, lastIndex,
-            foundI, foundStarMap, starI, i, j, part,
+            foundI, foundStarMap, starI, i, j, part, normalizedBaseParts,
             baseParts = baseName && baseName.split("/"),
             map = config.map,
             starMap = (map && map['*']) || {};
 
         //Adjust any relative paths.
-        if (name && name.charAt(0) === ".") {
-            //If have a base name, try to normalize against it,
-            //otherwise, assume it is a top-level require that will
-            //be relative to baseUrl in the end.
-            if (baseName) {
-                name = name.split('/');
-                lastIndex = name.length - 1;
+        if (name) {
+            name = name.split('/');
+            lastIndex = name.length - 1;
 
-                // Node .js allowance:
-                if (config.nodeIdCompat && jsSuffixRegExp.test(name[lastIndex])) {
-                    name[lastIndex] = name[lastIndex].replace(jsSuffixRegExp, '');
-                }
+            // If wanting node ID compatibility, strip .js from end
+            // of IDs. Have to do this here, and not in nameToUrl
+            // because node allows either .js or non .js to map
+            // to same file.
+            if (config.nodeIdCompat && jsSuffixRegExp.test(name[lastIndex])) {
+                name[lastIndex] = name[lastIndex].replace(jsSuffixRegExp, '');
+            }
 
-                //Lop off the last part of baseParts, so that . matches the
-                //"directory" and not name of the baseName's module. For instance,
-                //baseName of "one/two/three", maps to "one/two/three.js", but we
-                //want the directory, "one/two" for this normalization.
-                name = baseParts.slice(0, baseParts.length - 1).concat(name);
+            // Starts with a '.' so need the baseName
+            if (name[0].charAt(0) === '.' && baseParts) {
+                //Convert baseName to array, and lop off the last part,
+                //so that . matches that 'directory' and not name of the baseName's
+                //module. For instance, baseName of 'one/two/three', maps to
+                //'one/two/three.js', but we want the directory, 'one/two' for
+                //this normalization.
+                normalizedBaseParts = baseParts.slice(0, baseParts.length - 1);
+                name = normalizedBaseParts.concat(name);
+            }
 
-                //start trimDots
-                for (i = 0; i < name.length; i += 1) {
-                    part = name[i];
-                    if (part === ".") {
-                        name.splice(i, 1);
-                        i -= 1;
-                    } else if (part === "..") {
-                        if (i === 1 && (name[2] === '..' || name[0] === '..')) {
-                            //End of the line. Keep at least one non-dot
-                            //path segment at the front so it can be mapped
-                            //correctly to disk. Otherwise, there is likely
-                            //no path mapping for a path starting with '..'.
-                            //This can still fail, but catches the most reasonable
-                            //uses of ..
-                            break;
-                        } else if (i > 0) {
-                            name.splice(i - 1, 2);
-                            i -= 2;
-                        }
+            //start trimDots
+            for (i = 0; i < name.length; i++) {
+                part = name[i];
+                if (part === '.') {
+                    name.splice(i, 1);
+                    i -= 1;
+                } else if (part === '..') {
+                    // If at the start, or previous value is still ..,
+                    // keep them so that when converted to a path it may
+                    // still work when converted to a path, even though
+                    // as an ID it is less than ideal. In larger point
+                    // releases, may be better to just kick out an error.
+                    if (i === 0 || (i === 1 && name[2] === '..') || name[i - 1] === '..') {
+                        continue;
+                    } else if (i > 0) {
+                        name.splice(i - 1, 2);
+                        i -= 2;
                     }
                 }
-                //end trimDots
-
-                name = name.join("/");
-            } else if (name.indexOf('./') === 0) {
-                // No baseName, so this is ID is resolved relative
-                // to baseUrl, pull off the leading dot.
-                name = name.substring(2);
             }
+            //end trimDots
+
+            name = name.join('/');
         }
 
         //Apply map config if available.
@@ -586,7 +582,9 @@ window.EPUBcfiParser = (function() {
         peg$c64 = { type: "literal", value: "-", description: "\"-\"" },
         peg$c65 = "_",
         peg$c66 = { type: "literal", value: "_", description: "\"_\"" },
-        peg$c67 = function(charVal) { return charVal; },
+        peg$c67 = "%",
+        peg$c68 = { type: "literal", value: "%", description: "\"%\"" },
+        peg$c69 = function(charVal) { return charVal; },
 
         peg$currPos          = 0,
         peg$savedPos         = 0,
@@ -1860,6 +1858,15 @@ window.EPUBcfiParser = (function() {
                   s1 = peg$FAILED;
                   if (peg$silentFails === 0) { peg$fail(peg$c38); }
                 }
+                if (s1 === peg$FAILED) {
+                  if (input.charCodeAt(peg$currPos) === 37) {
+                    s1 = peg$c67;
+                    peg$currPos++;
+                  } else {
+                    s1 = peg$FAILED;
+                    if (peg$silentFails === 0) { peg$fail(peg$c68); }
+                  }
+                }
               }
             }
           }
@@ -1867,7 +1874,7 @@ window.EPUBcfiParser = (function() {
       }
       if (s1 !== peg$FAILED) {
         peg$savedPos = s0;
-        s1 = peg$c67(s1);
+        s1 = peg$c69(s1);
       }
       s0 = s1;
 
@@ -1908,7 +1915,7 @@ define("readium_cfi_js/cfi_parser", (function (global) {
 }(this)));
 
 /*!
- * jQuery JavaScript Library v2.2.1
+ * jQuery JavaScript Library v2.2.4
  * http://jquery.com/
  *
  * Includes Sizzle.js
@@ -1918,7 +1925,7 @@ define("readium_cfi_js/cfi_parser", (function (global) {
  * Released under the MIT license
  * http://jquery.org/license
  *
- * Date: 2016-02-22T19:11Z
+ * Date: 2016-05-20T17:23Z
  */
 
 (function( global, factory ) {
@@ -1974,7 +1981,7 @@ var support = {};
 
 
 var
-	version = "2.2.1",
+	version = "2.2.4",
 
 	// Define a local copy of jQuery
 	jQuery = function( selector, context ) {
@@ -2185,6 +2192,7 @@ jQuery.extend( {
 	},
 
 	isPlainObject: function( obj ) {
+		var key;
 
 		// Not plain objects:
 		// - Any object or value whose internal [[Class]] property is not "[object Object]"
@@ -2194,14 +2202,18 @@ jQuery.extend( {
 			return false;
 		}
 
+		// Not own constructor property must be Object
 		if ( obj.constructor &&
-				!hasOwn.call( obj.constructor.prototype, "isPrototypeOf" ) ) {
+				!hasOwn.call( obj, "constructor" ) &&
+				!hasOwn.call( obj.constructor.prototype || {}, "isPrototypeOf" ) ) {
 			return false;
 		}
 
-		// If the function hasn't returned already, we're confident that
-		// |obj| is a plain object, created by {} or constructed with new Object
-		return true;
+		// Own properties are enumerated firstly, so to speed up,
+		// if last one is own, then all properties are own
+		for ( key in obj ) {}
+
+		return key === undefined || hasOwn.call( obj, key );
 	},
 
 	isEmptyObject: function( obj ) {
@@ -6910,13 +6922,14 @@ jQuery.Event.prototype = {
 	isDefaultPrevented: returnFalse,
 	isPropagationStopped: returnFalse,
 	isImmediatePropagationStopped: returnFalse,
+	isSimulated: false,
 
 	preventDefault: function() {
 		var e = this.originalEvent;
 
 		this.isDefaultPrevented = returnTrue;
 
-		if ( e ) {
+		if ( e && !this.isSimulated ) {
 			e.preventDefault();
 		}
 	},
@@ -6925,7 +6938,7 @@ jQuery.Event.prototype = {
 
 		this.isPropagationStopped = returnTrue;
 
-		if ( e ) {
+		if ( e && !this.isSimulated ) {
 			e.stopPropagation();
 		}
 	},
@@ -6934,7 +6947,7 @@ jQuery.Event.prototype = {
 
 		this.isImmediatePropagationStopped = returnTrue;
 
-		if ( e ) {
+		if ( e && !this.isSimulated ) {
 			e.stopImmediatePropagation();
 		}
 
@@ -7864,19 +7877,6 @@ function getWidthOrHeight( elem, name, extra ) {
 		val = name === "width" ? elem.offsetWidth : elem.offsetHeight,
 		styles = getStyles( elem ),
 		isBorderBox = jQuery.css( elem, "boxSizing", false, styles ) === "border-box";
-
-	// Support: IE11 only
-	// In IE 11 fullscreen elements inside of an iframe have
-	// 100x too small dimensions (gh-1764).
-	if ( document.msFullscreenElement && window.top !== window ) {
-
-		// Support: IE11 only
-		// Running getBoundingClientRect on a disconnected node
-		// in IE throws an error.
-		if ( elem.getClientRects().length ) {
-			val = Math.round( elem.getBoundingClientRect()[ name ] * 100 );
-		}
-	}
 
 	// Some non-html elements return undefined for offsetWidth, so check for null/undefined
 	// svg - https://bugzilla.mozilla.org/show_bug.cgi?id=649285
@@ -9234,6 +9234,12 @@ jQuery.extend( {
 	}
 } );
 
+// Support: IE <=11 only
+// Accessing the selectedIndex property
+// forces the browser to respect setting selected
+// on the option
+// The getter ensures a default option is selected
+// when in an optgroup
 if ( !support.optSelected ) {
 	jQuery.propHooks.selected = {
 		get: function( elem ) {
@@ -9242,6 +9248,16 @@ if ( !support.optSelected ) {
 				parent.parentNode.selectedIndex;
 			}
 			return null;
+		},
+		set: function( elem ) {
+			var parent = elem.parentNode;
+			if ( parent ) {
+				parent.selectedIndex;
+
+				if ( parent.parentNode ) {
+					parent.parentNode.selectedIndex;
+				}
+			}
 		}
 	};
 }
@@ -9436,7 +9452,8 @@ jQuery.fn.extend( {
 
 
 
-var rreturn = /\r/g;
+var rreturn = /\r/g,
+	rspaces = /[\x20\t\r\n\f]+/g;
 
 jQuery.fn.extend( {
 	val: function( value ) {
@@ -9512,9 +9529,15 @@ jQuery.extend( {
 		option: {
 			get: function( elem ) {
 
-				// Support: IE<11
-				// option.value not trimmed (#14858)
-				return jQuery.trim( elem.value );
+				var val = jQuery.find.attr( elem, "value" );
+				return val != null ?
+					val :
+
+					// Support: IE10-11+
+					// option.text throws exceptions (#14686, #14858)
+					// Strip and collapse whitespace
+					// https://html.spec.whatwg.org/#strip-and-collapse-whitespace
+					jQuery.trim( jQuery.text( elem ) ).replace( rspaces, " " );
 			}
 		},
 		select: {
@@ -9567,7 +9590,7 @@ jQuery.extend( {
 				while ( i-- ) {
 					option = options[ i ];
 					if ( option.selected =
-							jQuery.inArray( jQuery.valHooks.option.get( option ), values ) > -1
+						jQuery.inArray( jQuery.valHooks.option.get( option ), values ) > -1
 					) {
 						optionSet = true;
 					}
@@ -9745,6 +9768,7 @@ jQuery.extend( jQuery.event, {
 	},
 
 	// Piggyback on a donor event to simulate a different one
+	// Used only for `focus(in | out)` events
 	simulate: function( type, elem, event ) {
 		var e = jQuery.extend(
 			new jQuery.Event(),
@@ -9752,27 +9776,10 @@ jQuery.extend( jQuery.event, {
 			{
 				type: type,
 				isSimulated: true
-
-				// Previously, `originalEvent: {}` was set here, so stopPropagation call
-				// would not be triggered on donor event, since in our own
-				// jQuery.event.stopPropagation function we had a check for existence of
-				// originalEvent.stopPropagation method, so, consequently it would be a noop.
-				//
-				// But now, this "simulate" function is used only for events
-				// for which stopPropagation() is noop, so there is no need for that anymore.
-				//
-				// For the 1.x branch though, guard for "click" and "submit"
-				// events is still used, but was moved to jQuery.event.stopPropagation function
-				// because `originalEvent` should point to the original event for the constancy
-				// with other events and for more focused logic
 			}
 		);
 
 		jQuery.event.trigger( e, null, elem );
-
-		if ( e.isDefaultPrevented() ) {
-			event.preventDefault();
-		}
 	}
 
 } );
@@ -11262,18 +11269,6 @@ jQuery.ajaxPrefilter( "json jsonp", function( s, originalSettings, jqXHR ) {
 
 
 
-// Support: Safari 8+
-// In Safari 8 documents created via document.implementation.createHTMLDocument
-// collapse sibling forms: the second one becomes a child of the first one.
-// Because of that, this security measure has to be disabled in Safari 8.
-// https://bugs.webkit.org/show_bug.cgi?id=137337
-support.createHTMLDocument = ( function() {
-	var body = document.implementation.createHTMLDocument( "" ).body;
-	body.innerHTML = "<form></form><form></form>";
-	return body.childNodes.length === 2;
-} )();
-
-
 // Argument "data" should be string of html
 // context (optional): If specified, the fragment will be created in this context,
 // defaults to document
@@ -11286,12 +11281,7 @@ jQuery.parseHTML = function( data, context, keepScripts ) {
 		keepScripts = context;
 		context = false;
 	}
-
-	// Stop scripts or inline event handlers from being executed immediately
-	// by using document.implementation
-	context = context || ( support.createHTMLDocument ?
-		document.implementation.createHTMLDocument( "" ) :
-		document );
+	context = context || document;
 
 	var parsed = rsingleTag.exec( data ),
 		scripts = !keepScripts && [];
@@ -11373,7 +11363,7 @@ jQuery.fn.load = function( url, params, callback ) {
 		// If it fails, this function gets "jqXHR", "status", "error"
 		} ).always( callback && function( jqXHR, status ) {
 			self.each( function() {
-				callback.apply( self, response || [ jqXHR.responseText, status, jqXHR ] );
+				callback.apply( this, response || [ jqXHR.responseText, status, jqXHR ] );
 			} );
 		} );
 	}
@@ -12499,14 +12489,21 @@ var obj = {
 
         // Return the element at the end of the CFI
         textOffset = parseInt(CFIAST.cfiString.localPath.termStep.offsetValue);
-        return { textNode : $currElement,
+        return { textNode : $currElement[0],
                  textOffset : textOffset
             };
     },
-    // Description: This function will determine if the input CFI is expressed as a range
+
+    // Description: This function will determine if the input "partial" CFI is expressed as a range
     isRangeCfi: function (cfi) {
         var CFIAST = cfiParser.parse(cfi);
         return CFIAST.cfiString.range1 ? true : false;
+    },
+
+    // Description: This function will determine if the input "partial" CFI has a text terminus step
+    hasTextTerminus: function (cfi) {
+        var CFIAST = cfiParser.parse(cfi);
+        return CFIAST.cfiString.localPath.termStep ? true : false;
     },
 
     // ------------------------------------------------------------------------------------ //
@@ -13248,7 +13245,10 @@ var init = function(cfiParser, cfiInterpreter, cfiInstructions, cfiRuntimeErrors
             return cfiInterpreter.getRangeTargetElements(rangeCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist);
         },
         isRangeCfi : function (cfi) {
-          return cfiInterpreter.isRangeCfi(cfi);
+            return cfiInterpreter.isRangeCfi(cfi);
+        },
+        hasTextTerminus: function(cfi) {
+            return cfiInterpreter.hasTextTerminus(cfi);
         },
         getTextTerminusInfoWithPartialCFI : function (contentDocumentCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
             return cfiInterpreter.getTextTerminusInfoWithPartialCFI(contentDocumentCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist);
@@ -13341,3450 +13341,6 @@ if (typeof define == 'function' && typeof define.amd == 'object') {
 })(typeof window !== "undefined" ? window : this);
 
 define('readium_cfi_js', ['readium_cfi_js/cfi_API'], function (main) { return main; });
-
-/*
-This code is required to IE for console shim
-*/
-(function(){
-    "use strict";
-    if (!console["debug"]) console.debug = console.log;
-    if (!console["info"]) console.info = console.log;
-    if (!console["warn"]) console.warn = console.log;
-    if (!console["error"]) console.error = console.log;
-})();
-define("console_shim", function(){});
-
-define('eventEmitter',['require','exports','module'],function (require, exports, module) {'use strict';
-
-//
-// We store our EE objects in a plain object whose properties are event names.
-// If `Object.create(null)` is not supported we prefix the event names with a
-// `~` to make sure that the built-in object properties are not overridden or
-// used as an attack vector.
-// We also assume that `Object.create(null)` is available when the event name
-// is an ES6 Symbol.
-//
-var prefix = typeof Object.create !== 'function' ? '~' : false;
-
-/**
- * Representation of a single EventEmitter function.
- *
- * @param {Function} fn Event handler to be called.
- * @param {Mixed} context Context for function execution.
- * @param {Boolean} once Only emit once
- * @api private
- */
-function EE(fn, context, once) {
-  this.fn = fn;
-  this.context = context;
-  this.once = once || false;
-}
-
-/**
- * Minimal EventEmitter interface that is molded against the Node.js
- * EventEmitter interface.
- *
- * @constructor
- * @api public
- */
-function EventEmitter() { /* Nothing to set */ }
-
-/**
- * Holds the assigned EventEmitters by name.
- *
- * @type {Object}
- * @private
- */
-EventEmitter.prototype._events = undefined;
-
-/**
- * Return a list of assigned event listeners.
- *
- * @param {String} event The events that should be listed.
- * @param {Boolean} exists We only need to know if there are listeners.
- * @returns {Array|Boolean}
- * @api public
- */
-EventEmitter.prototype.listeners = function listeners(event, exists) {
-  var evt = prefix ? prefix + event : event
-    , available = this._events && this._events[evt];
-
-  if (exists) return !!available;
-  if (!available) return [];
-  if (available.fn) return [available.fn];
-
-  for (var i = 0, l = available.length, ee = new Array(l); i < l; i++) {
-    ee[i] = available[i].fn;
-  }
-
-  return ee;
-};
-
-/**
- * Emit an event to all registered event listeners.
- *
- * @param {String} event The name of the event.
- * @returns {Boolean} Indication if we've emitted an event.
- * @api public
- */
-EventEmitter.prototype.emit = function emit(event, a1, a2, a3, a4, a5) {
-  var evt = prefix ? prefix + event : event;
-
-  if (!this._events || !this._events[evt]) return false;
-
-  var listeners = this._events[evt]
-    , len = arguments.length
-    , args
-    , i;
-
-  if ('function' === typeof listeners.fn) {
-    if (listeners.once) this.removeListener(event, listeners.fn, undefined, true);
-
-    switch (len) {
-      case 1: return listeners.fn.call(listeners.context), true;
-      case 2: return listeners.fn.call(listeners.context, a1), true;
-      case 3: return listeners.fn.call(listeners.context, a1, a2), true;
-      case 4: return listeners.fn.call(listeners.context, a1, a2, a3), true;
-      case 5: return listeners.fn.call(listeners.context, a1, a2, a3, a4), true;
-      case 6: return listeners.fn.call(listeners.context, a1, a2, a3, a4, a5), true;
-    }
-
-    for (i = 1, args = new Array(len -1); i < len; i++) {
-      args[i - 1] = arguments[i];
-    }
-
-    listeners.fn.apply(listeners.context, args);
-  } else {
-    var length = listeners.length
-      , j;
-
-    for (i = 0; i < length; i++) {
-      if (listeners[i].once) this.removeListener(event, listeners[i].fn, undefined, true);
-
-      switch (len) {
-        case 1: listeners[i].fn.call(listeners[i].context); break;
-        case 2: listeners[i].fn.call(listeners[i].context, a1); break;
-        case 3: listeners[i].fn.call(listeners[i].context, a1, a2); break;
-        default:
-          if (!args) for (j = 1, args = new Array(len -1); j < len; j++) {
-            args[j - 1] = arguments[j];
-          }
-
-          listeners[i].fn.apply(listeners[i].context, args);
-      }
-    }
-  }
-
-  return true;
-};
-
-/**
- * Register a new EventListener for the given event.
- *
- * @param {String} event Name of the event.
- * @param {Functon} fn Callback function.
- * @param {Mixed} context The context of the function.
- * @api public
- */
-EventEmitter.prototype.on = function on(event, fn, context) {
-  var listener = new EE(fn, context || this)
-    , evt = prefix ? prefix + event : event;
-
-  if (!this._events) this._events = prefix ? {} : Object.create(null);
-  if (!this._events[evt]) this._events[evt] = listener;
-  else {
-    if (!this._events[evt].fn) this._events[evt].push(listener);
-    else this._events[evt] = [
-      this._events[evt], listener
-    ];
-  }
-
-  return this;
-};
-
-/**
- * Add an EventListener that's only called once.
- *
- * @param {String} event Name of the event.
- * @param {Function} fn Callback function.
- * @param {Mixed} context The context of the function.
- * @api public
- */
-EventEmitter.prototype.once = function once(event, fn, context) {
-  var listener = new EE(fn, context || this, true)
-    , evt = prefix ? prefix + event : event;
-
-  if (!this._events) this._events = prefix ? {} : Object.create(null);
-  if (!this._events[evt]) this._events[evt] = listener;
-  else {
-    if (!this._events[evt].fn) this._events[evt].push(listener);
-    else this._events[evt] = [
-      this._events[evt], listener
-    ];
-  }
-
-  return this;
-};
-
-/**
- * Remove event listeners.
- *
- * @param {String} event The event we want to remove.
- * @param {Function} fn The listener that we need to find.
- * @param {Mixed} context Only remove listeners matching this context.
- * @param {Boolean} once Only remove once listeners.
- * @api public
- */
-EventEmitter.prototype.removeListener = function removeListener(event, fn, context, once) {
-  var evt = prefix ? prefix + event : event;
-
-  if (!this._events || !this._events[evt]) return this;
-
-  var listeners = this._events[evt]
-    , events = [];
-
-  if (fn) {
-    if (listeners.fn) {
-      if (
-           listeners.fn !== fn
-        || (once && !listeners.once)
-        || (context && listeners.context !== context)
-      ) {
-        events.push(listeners);
-      }
-    } else {
-      for (var i = 0, length = listeners.length; i < length; i++) {
-        if (
-             listeners[i].fn !== fn
-          || (once && !listeners[i].once)
-          || (context && listeners[i].context !== context)
-        ) {
-          events.push(listeners[i]);
-        }
-      }
-    }
-  }
-
-  //
-  // Reset the array, or remove it completely if we have no more listeners.
-  //
-  if (events.length) {
-    this._events[evt] = events.length === 1 ? events[0] : events;
-  } else {
-    delete this._events[evt];
-  }
-
-  return this;
-};
-
-/**
- * Remove all listeners or only the listeners for the specified event.
- *
- * @param {String} event The event want to remove all listeners for.
- * @api public
- */
-EventEmitter.prototype.removeAllListeners = function removeAllListeners(event) {
-  if (!this._events) return this;
-
-  if (event) delete this._events[prefix ? prefix + event : event];
-  else this._events = prefix ? {} : Object.create(null);
-
-  return this;
-};
-
-//
-// Alias methods names because people roll like that.
-//
-EventEmitter.prototype.off = EventEmitter.prototype.removeListener;
-EventEmitter.prototype.addListener = EventEmitter.prototype.on;
-
-//
-// This function doesn't apply anymore.
-//
-EventEmitter.prototype.setMaxListeners = function setMaxListeners() {
-  return this;
-};
-
-//
-// Expose the prefix.
-//
-EventEmitter.prefixed = prefix;
-
-//
-// Expose the module.
-//
-if ('undefined' !== typeof module) {
-  module.exports = EventEmitter;
-}
-
-});
-
-/*! https://mths.be/punycode v1.4.0 by @mathias */
-;(function(root) {
-
-	/** Detect free variables */
-	var freeExports = typeof exports == 'object' && exports &&
-		!exports.nodeType && exports;
-	var freeModule = typeof module == 'object' && module &&
-		!module.nodeType && module;
-	var freeGlobal = typeof global == 'object' && global;
-	if (
-		freeGlobal.global === freeGlobal ||
-		freeGlobal.window === freeGlobal ||
-		freeGlobal.self === freeGlobal
-	) {
-		root = freeGlobal;
-	}
-
-	/**
-	 * The `punycode` object.
-	 * @name punycode
-	 * @type Object
-	 */
-	var punycode,
-
-	/** Highest positive signed 32-bit float value */
-	maxInt = 2147483647, // aka. 0x7FFFFFFF or 2^31-1
-
-	/** Bootstring parameters */
-	base = 36,
-	tMin = 1,
-	tMax = 26,
-	skew = 38,
-	damp = 700,
-	initialBias = 72,
-	initialN = 128, // 0x80
-	delimiter = '-', // '\x2D'
-
-	/** Regular expressions */
-	regexPunycode = /^xn--/,
-	regexNonASCII = /[^\x20-\x7E]/, // unprintable ASCII chars + non-ASCII chars
-	regexSeparators = /[\x2E\u3002\uFF0E\uFF61]/g, // RFC 3490 separators
-
-	/** Error messages */
-	errors = {
-		'overflow': 'Overflow: input needs wider integers to process',
-		'not-basic': 'Illegal input >= 0x80 (not a basic code point)',
-		'invalid-input': 'Invalid input'
-	},
-
-	/** Convenience shortcuts */
-	baseMinusTMin = base - tMin,
-	floor = Math.floor,
-	stringFromCharCode = String.fromCharCode,
-
-	/** Temporary variable */
-	key;
-
-	/*--------------------------------------------------------------------------*/
-
-	/**
-	 * A generic error utility function.
-	 * @private
-	 * @param {String} type The error type.
-	 * @returns {Error} Throws a `RangeError` with the applicable error message.
-	 */
-	function error(type) {
-		throw new RangeError(errors[type]);
-	}
-
-	/**
-	 * A generic `Array#map` utility function.
-	 * @private
-	 * @param {Array} array The array to iterate over.
-	 * @param {Function} callback The function that gets called for every array
-	 * item.
-	 * @returns {Array} A new array of values returned by the callback function.
-	 */
-	function map(array, fn) {
-		var length = array.length;
-		var result = [];
-		while (length--) {
-			result[length] = fn(array[length]);
-		}
-		return result;
-	}
-
-	/**
-	 * A simple `Array#map`-like wrapper to work with domain name strings or email
-	 * addresses.
-	 * @private
-	 * @param {String} domain The domain name or email address.
-	 * @param {Function} callback The function that gets called for every
-	 * character.
-	 * @returns {Array} A new string of characters returned by the callback
-	 * function.
-	 */
-	function mapDomain(string, fn) {
-		var parts = string.split('@');
-		var result = '';
-		if (parts.length > 1) {
-			// In email addresses, only the domain name should be punycoded. Leave
-			// the local part (i.e. everything up to `@`) intact.
-			result = parts[0] + '@';
-			string = parts[1];
-		}
-		// Avoid `split(regex)` for IE8 compatibility. See #17.
-		string = string.replace(regexSeparators, '\x2E');
-		var labels = string.split('.');
-		var encoded = map(labels, fn).join('.');
-		return result + encoded;
-	}
-
-	/**
-	 * Creates an array containing the numeric code points of each Unicode
-	 * character in the string. While JavaScript uses UCS-2 internally,
-	 * this function will convert a pair of surrogate halves (each of which
-	 * UCS-2 exposes as separate characters) into a single code point,
-	 * matching UTF-16.
-	 * @see `punycode.ucs2.encode`
-	 * @see <https://mathiasbynens.be/notes/javascript-encoding>
-	 * @memberOf punycode.ucs2
-	 * @name decode
-	 * @param {String} string The Unicode input string (UCS-2).
-	 * @returns {Array} The new array of code points.
-	 */
-	function ucs2decode(string) {
-		var output = [],
-		    counter = 0,
-		    length = string.length,
-		    value,
-		    extra;
-		while (counter < length) {
-			value = string.charCodeAt(counter++);
-			if (value >= 0xD800 && value <= 0xDBFF && counter < length) {
-				// high surrogate, and there is a next character
-				extra = string.charCodeAt(counter++);
-				if ((extra & 0xFC00) == 0xDC00) { // low surrogate
-					output.push(((value & 0x3FF) << 10) + (extra & 0x3FF) + 0x10000);
-				} else {
-					// unmatched surrogate; only append this code unit, in case the next
-					// code unit is the high surrogate of a surrogate pair
-					output.push(value);
-					counter--;
-				}
-			} else {
-				output.push(value);
-			}
-		}
-		return output;
-	}
-
-	/**
-	 * Creates a string based on an array of numeric code points.
-	 * @see `punycode.ucs2.decode`
-	 * @memberOf punycode.ucs2
-	 * @name encode
-	 * @param {Array} codePoints The array of numeric code points.
-	 * @returns {String} The new Unicode string (UCS-2).
-	 */
-	function ucs2encode(array) {
-		return map(array, function(value) {
-			var output = '';
-			if (value > 0xFFFF) {
-				value -= 0x10000;
-				output += stringFromCharCode(value >>> 10 & 0x3FF | 0xD800);
-				value = 0xDC00 | value & 0x3FF;
-			}
-			output += stringFromCharCode(value);
-			return output;
-		}).join('');
-	}
-
-	/**
-	 * Converts a basic code point into a digit/integer.
-	 * @see `digitToBasic()`
-	 * @private
-	 * @param {Number} codePoint The basic numeric code point value.
-	 * @returns {Number} The numeric value of a basic code point (for use in
-	 * representing integers) in the range `0` to `base - 1`, or `base` if
-	 * the code point does not represent a value.
-	 */
-	function basicToDigit(codePoint) {
-		if (codePoint - 48 < 10) {
-			return codePoint - 22;
-		}
-		if (codePoint - 65 < 26) {
-			return codePoint - 65;
-		}
-		if (codePoint - 97 < 26) {
-			return codePoint - 97;
-		}
-		return base;
-	}
-
-	/**
-	 * Converts a digit/integer into a basic code point.
-	 * @see `basicToDigit()`
-	 * @private
-	 * @param {Number} digit The numeric value of a basic code point.
-	 * @returns {Number} The basic code point whose value (when used for
-	 * representing integers) is `digit`, which needs to be in the range
-	 * `0` to `base - 1`. If `flag` is non-zero, the uppercase form is
-	 * used; else, the lowercase form is used. The behavior is undefined
-	 * if `flag` is non-zero and `digit` has no uppercase form.
-	 */
-	function digitToBasic(digit, flag) {
-		//  0..25 map to ASCII a..z or A..Z
-		// 26..35 map to ASCII 0..9
-		return digit + 22 + 75 * (digit < 26) - ((flag != 0) << 5);
-	}
-
-	/**
-	 * Bias adaptation function as per section 3.4 of RFC 3492.
-	 * https://tools.ietf.org/html/rfc3492#section-3.4
-	 * @private
-	 */
-	function adapt(delta, numPoints, firstTime) {
-		var k = 0;
-		delta = firstTime ? floor(delta / damp) : delta >> 1;
-		delta += floor(delta / numPoints);
-		for (/* no initialization */; delta > baseMinusTMin * tMax >> 1; k += base) {
-			delta = floor(delta / baseMinusTMin);
-		}
-		return floor(k + (baseMinusTMin + 1) * delta / (delta + skew));
-	}
-
-	/**
-	 * Converts a Punycode string of ASCII-only symbols to a string of Unicode
-	 * symbols.
-	 * @memberOf punycode
-	 * @param {String} input The Punycode string of ASCII-only symbols.
-	 * @returns {String} The resulting string of Unicode symbols.
-	 */
-	function decode(input) {
-		// Don't use UCS-2
-		var output = [],
-		    inputLength = input.length,
-		    out,
-		    i = 0,
-		    n = initialN,
-		    bias = initialBias,
-		    basic,
-		    j,
-		    index,
-		    oldi,
-		    w,
-		    k,
-		    digit,
-		    t,
-		    /** Cached calculation results */
-		    baseMinusT;
-
-		// Handle the basic code points: let `basic` be the number of input code
-		// points before the last delimiter, or `0` if there is none, then copy
-		// the first basic code points to the output.
-
-		basic = input.lastIndexOf(delimiter);
-		if (basic < 0) {
-			basic = 0;
-		}
-
-		for (j = 0; j < basic; ++j) {
-			// if it's not a basic code point
-			if (input.charCodeAt(j) >= 0x80) {
-				error('not-basic');
-			}
-			output.push(input.charCodeAt(j));
-		}
-
-		// Main decoding loop: start just after the last delimiter if any basic code
-		// points were copied; start at the beginning otherwise.
-
-		for (index = basic > 0 ? basic + 1 : 0; index < inputLength; /* no final expression */) {
-
-			// `index` is the index of the next character to be consumed.
-			// Decode a generalized variable-length integer into `delta`,
-			// which gets added to `i`. The overflow checking is easier
-			// if we increase `i` as we go, then subtract off its starting
-			// value at the end to obtain `delta`.
-			for (oldi = i, w = 1, k = base; /* no condition */; k += base) {
-
-				if (index >= inputLength) {
-					error('invalid-input');
-				}
-
-				digit = basicToDigit(input.charCodeAt(index++));
-
-				if (digit >= base || digit > floor((maxInt - i) / w)) {
-					error('overflow');
-				}
-
-				i += digit * w;
-				t = k <= bias ? tMin : (k >= bias + tMax ? tMax : k - bias);
-
-				if (digit < t) {
-					break;
-				}
-
-				baseMinusT = base - t;
-				if (w > floor(maxInt / baseMinusT)) {
-					error('overflow');
-				}
-
-				w *= baseMinusT;
-
-			}
-
-			out = output.length + 1;
-			bias = adapt(i - oldi, out, oldi == 0);
-
-			// `i` was supposed to wrap around from `out` to `0`,
-			// incrementing `n` each time, so we'll fix that now:
-			if (floor(i / out) > maxInt - n) {
-				error('overflow');
-			}
-
-			n += floor(i / out);
-			i %= out;
-
-			// Insert `n` at position `i` of the output
-			output.splice(i++, 0, n);
-
-		}
-
-		return ucs2encode(output);
-	}
-
-	/**
-	 * Converts a string of Unicode symbols (e.g. a domain name label) to a
-	 * Punycode string of ASCII-only symbols.
-	 * @memberOf punycode
-	 * @param {String} input The string of Unicode symbols.
-	 * @returns {String} The resulting Punycode string of ASCII-only symbols.
-	 */
-	function encode(input) {
-		var n,
-		    delta,
-		    handledCPCount,
-		    basicLength,
-		    bias,
-		    j,
-		    m,
-		    q,
-		    k,
-		    t,
-		    currentValue,
-		    output = [],
-		    /** `inputLength` will hold the number of code points in `input`. */
-		    inputLength,
-		    /** Cached calculation results */
-		    handledCPCountPlusOne,
-		    baseMinusT,
-		    qMinusT;
-
-		// Convert the input in UCS-2 to Unicode
-		input = ucs2decode(input);
-
-		// Cache the length
-		inputLength = input.length;
-
-		// Initialize the state
-		n = initialN;
-		delta = 0;
-		bias = initialBias;
-
-		// Handle the basic code points
-		for (j = 0; j < inputLength; ++j) {
-			currentValue = input[j];
-			if (currentValue < 0x80) {
-				output.push(stringFromCharCode(currentValue));
-			}
-		}
-
-		handledCPCount = basicLength = output.length;
-
-		// `handledCPCount` is the number of code points that have been handled;
-		// `basicLength` is the number of basic code points.
-
-		// Finish the basic string - if it is not empty - with a delimiter
-		if (basicLength) {
-			output.push(delimiter);
-		}
-
-		// Main encoding loop:
-		while (handledCPCount < inputLength) {
-
-			// All non-basic code points < n have been handled already. Find the next
-			// larger one:
-			for (m = maxInt, j = 0; j < inputLength; ++j) {
-				currentValue = input[j];
-				if (currentValue >= n && currentValue < m) {
-					m = currentValue;
-				}
-			}
-
-			// Increase `delta` enough to advance the decoder's <n,i> state to <m,0>,
-			// but guard against overflow
-			handledCPCountPlusOne = handledCPCount + 1;
-			if (m - n > floor((maxInt - delta) / handledCPCountPlusOne)) {
-				error('overflow');
-			}
-
-			delta += (m - n) * handledCPCountPlusOne;
-			n = m;
-
-			for (j = 0; j < inputLength; ++j) {
-				currentValue = input[j];
-
-				if (currentValue < n && ++delta > maxInt) {
-					error('overflow');
-				}
-
-				if (currentValue == n) {
-					// Represent delta as a generalized variable-length integer
-					for (q = delta, k = base; /* no condition */; k += base) {
-						t = k <= bias ? tMin : (k >= bias + tMax ? tMax : k - bias);
-						if (q < t) {
-							break;
-						}
-						qMinusT = q - t;
-						baseMinusT = base - t;
-						output.push(
-							stringFromCharCode(digitToBasic(t + qMinusT % baseMinusT, 0))
-						);
-						q = floor(qMinusT / baseMinusT);
-					}
-
-					output.push(stringFromCharCode(digitToBasic(q, 0)));
-					bias = adapt(delta, handledCPCountPlusOne, handledCPCount == basicLength);
-					delta = 0;
-					++handledCPCount;
-				}
-			}
-
-			++delta;
-			++n;
-
-		}
-		return output.join('');
-	}
-
-	/**
-	 * Converts a Punycode string representing a domain name or an email address
-	 * to Unicode. Only the Punycoded parts of the input will be converted, i.e.
-	 * it doesn't matter if you call it on a string that has already been
-	 * converted to Unicode.
-	 * @memberOf punycode
-	 * @param {String} input The Punycoded domain name or email address to
-	 * convert to Unicode.
-	 * @returns {String} The Unicode representation of the given Punycode
-	 * string.
-	 */
-	function toUnicode(input) {
-		return mapDomain(input, function(string) {
-			return regexPunycode.test(string)
-				? decode(string.slice(4).toLowerCase())
-				: string;
-		});
-	}
-
-	/**
-	 * Converts a Unicode string representing a domain name or an email address to
-	 * Punycode. Only the non-ASCII parts of the domain name will be converted,
-	 * i.e. it doesn't matter if you call it with a domain that's already in
-	 * ASCII.
-	 * @memberOf punycode
-	 * @param {String} input The domain name or email address to convert, as a
-	 * Unicode string.
-	 * @returns {String} The Punycode representation of the given domain name or
-	 * email address.
-	 */
-	function toASCII(input) {
-		return mapDomain(input, function(string) {
-			return regexNonASCII.test(string)
-				? 'xn--' + encode(string)
-				: string;
-		});
-	}
-
-	/*--------------------------------------------------------------------------*/
-
-	/** Define the public API */
-	punycode = {
-		/**
-		 * A string representing the current Punycode.js version number.
-		 * @memberOf punycode
-		 * @type String
-		 */
-		'version': '1.3.2',
-		/**
-		 * An object of methods to convert from JavaScript's internal character
-		 * representation (UCS-2) to Unicode code points, and back.
-		 * @see <https://mathiasbynens.be/notes/javascript-encoding>
-		 * @memberOf punycode
-		 * @type Object
-		 */
-		'ucs2': {
-			'decode': ucs2decode,
-			'encode': ucs2encode
-		},
-		'decode': decode,
-		'encode': encode,
-		'toASCII': toASCII,
-		'toUnicode': toUnicode
-	};
-
-	/** Expose `punycode` */
-	// Some AMD build optimizers, like r.js, check for specific condition patterns
-	// like the following:
-	if (
-		typeof define == 'function' &&
-		typeof define.amd == 'object' &&
-		define.amd
-	) {
-		define('punycode', [],function() {
-			return punycode;
-		});
-	} else if (freeExports && freeModule) {
-		if (module.exports == freeExports) {
-			// in Node.js, io.js, or RingoJS v0.8.0+
-			freeModule.exports = punycode;
-		} else {
-			// in Narwhal or RingoJS v0.7.0-
-			for (key in punycode) {
-				punycode.hasOwnProperty(key) && (freeExports[key] = punycode[key]);
-			}
-		}
-	} else {
-		// in Rhino or a web browser
-		root.punycode = punycode;
-	}
-
-}(this));
-
-/*!
- * URI.js - Mutating URLs
- * IPv6 Support
- *
- * Version: 1.17.1
- *
- * Author: Rodney Rehm
- * Web: http://medialize.github.io/URI.js/
- *
- * Licensed under
- *   MIT License http://www.opensource.org/licenses/mit-license
- *
- */
-
-(function (root, factory) {
-  'use strict';
-  // https://github.com/umdjs/umd/blob/master/returnExports.js
-  if (typeof exports === 'object') {
-    // Node
-    module.exports = factory();
-  } else if (typeof define === 'function' && define.amd) {
-    // AMD. Register as an anonymous module.
-    define('IPv6',factory);
-  } else {
-    // Browser globals (root is window)
-    root.IPv6 = factory(root);
-  }
-}(this, function (root) {
-  'use strict';
-
-  /*
-  var _in = "fe80:0000:0000:0000:0204:61ff:fe9d:f156";
-  var _out = IPv6.best(_in);
-  var _expected = "fe80::204:61ff:fe9d:f156";
-
-  console.log(_in, _out, _expected, _out === _expected);
-  */
-
-  // save current IPv6 variable, if any
-  var _IPv6 = root && root.IPv6;
-
-  function bestPresentation(address) {
-    // based on:
-    // Javascript to test an IPv6 address for proper format, and to
-    // present the "best text representation" according to IETF Draft RFC at
-    // http://tools.ietf.org/html/draft-ietf-6man-text-addr-representation-04
-    // 8 Feb 2010 Rich Brown, Dartware, LLC
-    // Please feel free to use this code as long as you provide a link to
-    // http://www.intermapper.com
-    // http://intermapper.com/support/tools/IPV6-Validator.aspx
-    // http://download.dartware.com/thirdparty/ipv6validator.js
-
-    var _address = address.toLowerCase();
-    var segments = _address.split(':');
-    var length = segments.length;
-    var total = 8;
-
-    // trim colons (:: or ::a:b:c… or …a:b:c::)
-    if (segments[0] === '' && segments[1] === '' && segments[2] === '') {
-      // must have been ::
-      // remove first two items
-      segments.shift();
-      segments.shift();
-    } else if (segments[0] === '' && segments[1] === '') {
-      // must have been ::xxxx
-      // remove the first item
-      segments.shift();
-    } else if (segments[length - 1] === '' && segments[length - 2] === '') {
-      // must have been xxxx::
-      segments.pop();
-    }
-
-    length = segments.length;
-
-    // adjust total segments for IPv4 trailer
-    if (segments[length - 1].indexOf('.') !== -1) {
-      // found a "." which means IPv4
-      total = 7;
-    }
-
-    // fill empty segments them with "0000"
-    var pos;
-    for (pos = 0; pos < length; pos++) {
-      if (segments[pos] === '') {
-        break;
-      }
-    }
-
-    if (pos < total) {
-      segments.splice(pos, 1, '0000');
-      while (segments.length < total) {
-        segments.splice(pos, 0, '0000');
-      }
-
-      length = segments.length;
-    }
-
-    // strip leading zeros
-    var _segments;
-    for (var i = 0; i < total; i++) {
-      _segments = segments[i].split('');
-      for (var j = 0; j < 3 ; j++) {
-        if (_segments[0] === '0' && _segments.length > 1) {
-          _segments.splice(0,1);
-        } else {
-          break;
-        }
-      }
-
-      segments[i] = _segments.join('');
-    }
-
-    // find longest sequence of zeroes and coalesce them into one segment
-    var best = -1;
-    var _best = 0;
-    var _current = 0;
-    var current = -1;
-    var inzeroes = false;
-    // i; already declared
-
-    for (i = 0; i < total; i++) {
-      if (inzeroes) {
-        if (segments[i] === '0') {
-          _current += 1;
-        } else {
-          inzeroes = false;
-          if (_current > _best) {
-            best = current;
-            _best = _current;
-          }
-        }
-      } else {
-        if (segments[i] === '0') {
-          inzeroes = true;
-          current = i;
-          _current = 1;
-        }
-      }
-    }
-
-    if (_current > _best) {
-      best = current;
-      _best = _current;
-    }
-
-    if (_best > 1) {
-      segments.splice(best, _best, '');
-    }
-
-    length = segments.length;
-
-    // assemble remaining segments
-    var result = '';
-    if (segments[0] === '')  {
-      result = ':';
-    }
-
-    for (i = 0; i < length; i++) {
-      result += segments[i];
-      if (i === length - 1) {
-        break;
-      }
-
-      result += ':';
-    }
-
-    if (segments[length - 1] === '') {
-      result += ':';
-    }
-
-    return result;
-  }
-
-  function noConflict() {
-    /*jshint validthis: true */
-    if (root.IPv6 === this) {
-      root.IPv6 = _IPv6;
-    }
-  
-    return this;
-  }
-
-  return {
-    best: bestPresentation,
-    noConflict: noConflict
-  };
-}));
-
-/*!
- * URI.js - Mutating URLs
- * Second Level Domain (SLD) Support
- *
- * Version: 1.17.1
- *
- * Author: Rodney Rehm
- * Web: http://medialize.github.io/URI.js/
- *
- * Licensed under
- *   MIT License http://www.opensource.org/licenses/mit-license
- *
- */
-
-(function (root, factory) {
-  'use strict';
-  // https://github.com/umdjs/umd/blob/master/returnExports.js
-  if (typeof exports === 'object') {
-    // Node
-    module.exports = factory();
-  } else if (typeof define === 'function' && define.amd) {
-    // AMD. Register as an anonymous module.
-    define('SecondLevelDomains',factory);
-  } else {
-    // Browser globals (root is window)
-    root.SecondLevelDomains = factory(root);
-  }
-}(this, function (root) {
-  'use strict';
-
-  // save current SecondLevelDomains variable, if any
-  var _SecondLevelDomains = root && root.SecondLevelDomains;
-
-  var SLD = {
-    // list of known Second Level Domains
-    // converted list of SLDs from https://github.com/gavingmiller/second-level-domains
-    // ----
-    // publicsuffix.org is more current and actually used by a couple of browsers internally.
-    // downside is it also contains domains like "dyndns.org" - which is fine for the security
-    // issues browser have to deal with (SOP for cookies, etc) - but is way overboard for URI.js
-    // ----
-    list: {
-      'ac':' com gov mil net org ',
-      'ae':' ac co gov mil name net org pro sch ',
-      'af':' com edu gov net org ',
-      'al':' com edu gov mil net org ',
-      'ao':' co ed gv it og pb ',
-      'ar':' com edu gob gov int mil net org tur ',
-      'at':' ac co gv or ',
-      'au':' asn com csiro edu gov id net org ',
-      'ba':' co com edu gov mil net org rs unbi unmo unsa untz unze ',
-      'bb':' biz co com edu gov info net org store tv ',
-      'bh':' biz cc com edu gov info net org ',
-      'bn':' com edu gov net org ',
-      'bo':' com edu gob gov int mil net org tv ',
-      'br':' adm adv agr am arq art ato b bio blog bmd cim cng cnt com coop ecn edu eng esp etc eti far flog fm fnd fot fst g12 ggf gov imb ind inf jor jus lel mat med mil mus net nom not ntr odo org ppg pro psc psi qsl rec slg srv tmp trd tur tv vet vlog wiki zlg ',
-      'bs':' com edu gov net org ',
-      'bz':' du et om ov rg ',
-      'ca':' ab bc mb nb nf nl ns nt nu on pe qc sk yk ',
-      'ck':' biz co edu gen gov info net org ',
-      'cn':' ac ah bj com cq edu fj gd gov gs gx gz ha hb he hi hl hn jl js jx ln mil net nm nx org qh sc sd sh sn sx tj tw xj xz yn zj ',
-      'co':' com edu gov mil net nom org ',
-      'cr':' ac c co ed fi go or sa ',
-      'cy':' ac biz com ekloges gov ltd name net org parliament press pro tm ',
-      'do':' art com edu gob gov mil net org sld web ',
-      'dz':' art asso com edu gov net org pol ',
-      'ec':' com edu fin gov info med mil net org pro ',
-      'eg':' com edu eun gov mil name net org sci ',
-      'er':' com edu gov ind mil net org rochest w ',
-      'es':' com edu gob nom org ',
-      'et':' biz com edu gov info name net org ',
-      'fj':' ac biz com info mil name net org pro ',
-      'fk':' ac co gov net nom org ',
-      'fr':' asso com f gouv nom prd presse tm ',
-      'gg':' co net org ',
-      'gh':' com edu gov mil org ',
-      'gn':' ac com gov net org ',
-      'gr':' com edu gov mil net org ',
-      'gt':' com edu gob ind mil net org ',
-      'gu':' com edu gov net org ',
-      'hk':' com edu gov idv net org ',
-      'hu':' 2000 agrar bolt casino city co erotica erotika film forum games hotel info ingatlan jogasz konyvelo lakas media news org priv reklam sex shop sport suli szex tm tozsde utazas video ',
-      'id':' ac co go mil net or sch web ',
-      'il':' ac co gov idf k12 muni net org ',
-      'in':' ac co edu ernet firm gen gov i ind mil net nic org res ',
-      'iq':' com edu gov i mil net org ',
-      'ir':' ac co dnssec gov i id net org sch ',
-      'it':' edu gov ',
-      'je':' co net org ',
-      'jo':' com edu gov mil name net org sch ',
-      'jp':' ac ad co ed go gr lg ne or ',
-      'ke':' ac co go info me mobi ne or sc ',
-      'kh':' com edu gov mil net org per ',
-      'ki':' biz com de edu gov info mob net org tel ',
-      'km':' asso com coop edu gouv k medecin mil nom notaires pharmaciens presse tm veterinaire ',
-      'kn':' edu gov net org ',
-      'kr':' ac busan chungbuk chungnam co daegu daejeon es gangwon go gwangju gyeongbuk gyeonggi gyeongnam hs incheon jeju jeonbuk jeonnam k kg mil ms ne or pe re sc seoul ulsan ',
-      'kw':' com edu gov net org ',
-      'ky':' com edu gov net org ',
-      'kz':' com edu gov mil net org ',
-      'lb':' com edu gov net org ',
-      'lk':' assn com edu gov grp hotel int ltd net ngo org sch soc web ',
-      'lr':' com edu gov net org ',
-      'lv':' asn com conf edu gov id mil net org ',
-      'ly':' com edu gov id med net org plc sch ',
-      'ma':' ac co gov m net org press ',
-      'mc':' asso tm ',
-      'me':' ac co edu gov its net org priv ',
-      'mg':' com edu gov mil nom org prd tm ',
-      'mk':' com edu gov inf name net org pro ',
-      'ml':' com edu gov net org presse ',
-      'mn':' edu gov org ',
-      'mo':' com edu gov net org ',
-      'mt':' com edu gov net org ',
-      'mv':' aero biz com coop edu gov info int mil museum name net org pro ',
-      'mw':' ac co com coop edu gov int museum net org ',
-      'mx':' com edu gob net org ',
-      'my':' com edu gov mil name net org sch ',
-      'nf':' arts com firm info net other per rec store web ',
-      'ng':' biz com edu gov mil mobi name net org sch ',
-      'ni':' ac co com edu gob mil net nom org ',
-      'np':' com edu gov mil net org ',
-      'nr':' biz com edu gov info net org ',
-      'om':' ac biz co com edu gov med mil museum net org pro sch ',
-      'pe':' com edu gob mil net nom org sld ',
-      'ph':' com edu gov i mil net ngo org ',
-      'pk':' biz com edu fam gob gok gon gop gos gov net org web ',
-      'pl':' art bialystok biz com edu gda gdansk gorzow gov info katowice krakow lodz lublin mil net ngo olsztyn org poznan pwr radom slupsk szczecin torun warszawa waw wroc wroclaw zgora ',
-      'pr':' ac biz com edu est gov info isla name net org pro prof ',
-      'ps':' com edu gov net org plo sec ',
-      'pw':' belau co ed go ne or ',
-      'ro':' arts com firm info nom nt org rec store tm www ',
-      'rs':' ac co edu gov in org ',
-      'sb':' com edu gov net org ',
-      'sc':' com edu gov net org ',
-      'sh':' co com edu gov net nom org ',
-      'sl':' com edu gov net org ',
-      'st':' co com consulado edu embaixada gov mil net org principe saotome store ',
-      'sv':' com edu gob org red ',
-      'sz':' ac co org ',
-      'tr':' av bbs bel biz com dr edu gen gov info k12 name net org pol tel tsk tv web ',
-      'tt':' aero biz cat co com coop edu gov info int jobs mil mobi museum name net org pro tel travel ',
-      'tw':' club com ebiz edu game gov idv mil net org ',
-      'mu':' ac co com gov net or org ',
-      'mz':' ac co edu gov org ',
-      'na':' co com ',
-      'nz':' ac co cri geek gen govt health iwi maori mil net org parliament school ',
-      'pa':' abo ac com edu gob ing med net nom org sld ',
-      'pt':' com edu gov int net nome org publ ',
-      'py':' com edu gov mil net org ',
-      'qa':' com edu gov mil net org ',
-      're':' asso com nom ',
-      'ru':' ac adygeya altai amur arkhangelsk astrakhan bashkiria belgorod bir bryansk buryatia cbg chel chelyabinsk chita chukotka chuvashia com dagestan e-burg edu gov grozny int irkutsk ivanovo izhevsk jar joshkar-ola kalmykia kaluga kamchatka karelia kazan kchr kemerovo khabarovsk khakassia khv kirov koenig komi kostroma kranoyarsk kuban kurgan kursk lipetsk magadan mari mari-el marine mil mordovia mosreg msk murmansk nalchik net nnov nov novosibirsk nsk omsk orenburg org oryol penza perm pp pskov ptz rnd ryazan sakhalin samara saratov simbirsk smolensk spb stavropol stv surgut tambov tatarstan tom tomsk tsaritsyn tsk tula tuva tver tyumen udm udmurtia ulan-ude vladikavkaz vladimir vladivostok volgograd vologda voronezh vrn vyatka yakutia yamal yekaterinburg yuzhno-sakhalinsk ',
-      'rw':' ac co com edu gouv gov int mil net ',
-      'sa':' com edu gov med net org pub sch ',
-      'sd':' com edu gov info med net org tv ',
-      'se':' a ac b bd c d e f g h i k l m n o org p parti pp press r s t tm u w x y z ',
-      'sg':' com edu gov idn net org per ',
-      'sn':' art com edu gouv org perso univ ',
-      'sy':' com edu gov mil net news org ',
-      'th':' ac co go in mi net or ',
-      'tj':' ac biz co com edu go gov info int mil name net nic org test web ',
-      'tn':' agrinet com defense edunet ens fin gov ind info intl mincom nat net org perso rnrt rns rnu tourism ',
-      'tz':' ac co go ne or ',
-      'ua':' biz cherkassy chernigov chernovtsy ck cn co com crimea cv dn dnepropetrovsk donetsk dp edu gov if in ivano-frankivsk kh kharkov kherson khmelnitskiy kiev kirovograd km kr ks kv lg lugansk lutsk lviv me mk net nikolaev od odessa org pl poltava pp rovno rv sebastopol sumy te ternopil uzhgorod vinnica vn zaporizhzhe zhitomir zp zt ',
-      'ug':' ac co go ne or org sc ',
-      'uk':' ac bl british-library co cym gov govt icnet jet lea ltd me mil mod national-library-scotland nel net nhs nic nls org orgn parliament plc police sch scot soc ',
-      'us':' dni fed isa kids nsn ',
-      'uy':' com edu gub mil net org ',
-      've':' co com edu gob info mil net org web ',
-      'vi':' co com k12 net org ',
-      'vn':' ac biz com edu gov health info int name net org pro ',
-      'ye':' co com gov ltd me net org plc ',
-      'yu':' ac co edu gov org ',
-      'za':' ac agric alt bourse city co cybernet db edu gov grondar iaccess imt inca landesign law mil net ngo nis nom olivetti org pix school tm web ',
-      'zm':' ac co com edu gov net org sch '
-    },
-    // gorhill 2013-10-25: Using indexOf() instead Regexp(). Significant boost
-    // in both performance and memory footprint. No initialization required.
-    // http://jsperf.com/uri-js-sld-regex-vs-binary-search/4
-    // Following methods use lastIndexOf() rather than array.split() in order
-    // to avoid any memory allocations.
-    has: function(domain) {
-      var tldOffset = domain.lastIndexOf('.');
-      if (tldOffset <= 0 || tldOffset >= (domain.length-1)) {
-        return false;
-      }
-      var sldOffset = domain.lastIndexOf('.', tldOffset-1);
-      if (sldOffset <= 0 || sldOffset >= (tldOffset-1)) {
-        return false;
-      }
-      var sldList = SLD.list[domain.slice(tldOffset+1)];
-      if (!sldList) {
-        return false;
-      }
-      return sldList.indexOf(' ' + domain.slice(sldOffset+1, tldOffset) + ' ') >= 0;
-    },
-    is: function(domain) {
-      var tldOffset = domain.lastIndexOf('.');
-      if (tldOffset <= 0 || tldOffset >= (domain.length-1)) {
-        return false;
-      }
-      var sldOffset = domain.lastIndexOf('.', tldOffset-1);
-      if (sldOffset >= 0) {
-        return false;
-      }
-      var sldList = SLD.list[domain.slice(tldOffset+1)];
-      if (!sldList) {
-        return false;
-      }
-      return sldList.indexOf(' ' + domain.slice(0, tldOffset) + ' ') >= 0;
-    },
-    get: function(domain) {
-      var tldOffset = domain.lastIndexOf('.');
-      if (tldOffset <= 0 || tldOffset >= (domain.length-1)) {
-        return null;
-      }
-      var sldOffset = domain.lastIndexOf('.', tldOffset-1);
-      if (sldOffset <= 0 || sldOffset >= (tldOffset-1)) {
-        return null;
-      }
-      var sldList = SLD.list[domain.slice(tldOffset+1)];
-      if (!sldList) {
-        return null;
-      }
-      if (sldList.indexOf(' ' + domain.slice(sldOffset+1, tldOffset) + ' ') < 0) {
-        return null;
-      }
-      return domain.slice(sldOffset+1);
-    },
-    noConflict: function(){
-      if (root.SecondLevelDomains === this) {
-        root.SecondLevelDomains = _SecondLevelDomains;
-      }
-      return this;
-    }
-  };
-
-  return SLD;
-}));
-
-/*!
- * URI.js - Mutating URLs
- *
- * Version: 1.17.1
- *
- * Author: Rodney Rehm
- * Web: http://medialize.github.io/URI.js/
- *
- * Licensed under
- *   MIT License http://www.opensource.org/licenses/mit-license
- *
- */
-(function (root, factory) {
-  'use strict';
-  // https://github.com/umdjs/umd/blob/master/returnExports.js
-  if (typeof exports === 'object') {
-    // Node
-    module.exports = factory(require('./punycode'), require('./IPv6'), require('./SecondLevelDomains'));
-  } else if (typeof define === 'function' && define.amd) {
-    // AMD. Register as an anonymous module.
-    define('URIjs',['./punycode', './IPv6', './SecondLevelDomains'], factory);
-  } else {
-    // Browser globals (root is window)
-    root.URI = factory(root.punycode, root.IPv6, root.SecondLevelDomains, root);
-  }
-}(this, function (punycode, IPv6, SLD, root) {
-  'use strict';
-  /*global location, escape, unescape */
-  // FIXME: v2.0.0 renamce non-camelCase properties to uppercase
-  /*jshint camelcase: false */
-
-  // save current URI variable, if any
-  var _URI = root && root.URI;
-
-  function URI(url, base) {
-    var _urlSupplied = arguments.length >= 1;
-    var _baseSupplied = arguments.length >= 2;
-
-    // Allow instantiation without the 'new' keyword
-    if (!(this instanceof URI)) {
-      if (_urlSupplied) {
-        if (_baseSupplied) {
-          return new URI(url, base);
-        }
-
-        return new URI(url);
-      }
-
-      return new URI();
-    }
-
-    if (url === undefined) {
-      if (_urlSupplied) {
-        throw new TypeError('undefined is not a valid argument for URI');
-      }
-
-      if (typeof location !== 'undefined') {
-        url = location.href + '';
-      } else {
-        url = '';
-      }
-    }
-
-    this.href(url);
-
-    // resolve to base according to http://dvcs.w3.org/hg/url/raw-file/tip/Overview.html#constructor
-    if (base !== undefined) {
-      return this.absoluteTo(base);
-    }
-
-    return this;
-  }
-
-  URI.version = '1.17.1';
-
-  var p = URI.prototype;
-  var hasOwn = Object.prototype.hasOwnProperty;
-
-  function escapeRegEx(string) {
-    // https://github.com/medialize/URI.js/commit/85ac21783c11f8ccab06106dba9735a31a86924d#commitcomment-821963
-    return string.replace(/([.*+?^=!:${}()|[\]\/\\])/g, '\\$1');
-  }
-
-  function getType(value) {
-    // IE8 doesn't return [Object Undefined] but [Object Object] for undefined value
-    if (value === undefined) {
-      return 'Undefined';
-    }
-
-    return String(Object.prototype.toString.call(value)).slice(8, -1);
-  }
-
-  function isArray(obj) {
-    return getType(obj) === 'Array';
-  }
-
-  function filterArrayValues(data, value) {
-    var lookup = {};
-    var i, length;
-
-    if (getType(value) === 'RegExp') {
-      lookup = null;
-    } else if (isArray(value)) {
-      for (i = 0, length = value.length; i < length; i++) {
-        lookup[value[i]] = true;
-      }
-    } else {
-      lookup[value] = true;
-    }
-
-    for (i = 0, length = data.length; i < length; i++) {
-      /*jshint laxbreak: true */
-      var _match = lookup && lookup[data[i]] !== undefined
-        || !lookup && value.test(data[i]);
-      /*jshint laxbreak: false */
-      if (_match) {
-        data.splice(i, 1);
-        length--;
-        i--;
-      }
-    }
-
-    return data;
-  }
-
-  function arrayContains(list, value) {
-    var i, length;
-
-    // value may be string, number, array, regexp
-    if (isArray(value)) {
-      // Note: this can be optimized to O(n) (instead of current O(m * n))
-      for (i = 0, length = value.length; i < length; i++) {
-        if (!arrayContains(list, value[i])) {
-          return false;
-        }
-      }
-
-      return true;
-    }
-
-    var _type = getType(value);
-    for (i = 0, length = list.length; i < length; i++) {
-      if (_type === 'RegExp') {
-        if (typeof list[i] === 'string' && list[i].match(value)) {
-          return true;
-        }
-      } else if (list[i] === value) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  function arraysEqual(one, two) {
-    if (!isArray(one) || !isArray(two)) {
-      return false;
-    }
-
-    // arrays can't be equal if they have different amount of content
-    if (one.length !== two.length) {
-      return false;
-    }
-
-    one.sort();
-    two.sort();
-
-    for (var i = 0, l = one.length; i < l; i++) {
-      if (one[i] !== two[i]) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  function trimSlashes(text) {
-    var trim_expression = /^\/+|\/+$/g;
-    return text.replace(trim_expression, '');
-  }
-
-  URI._parts = function() {
-    return {
-      protocol: null,
-      username: null,
-      password: null,
-      hostname: null,
-      urn: null,
-      port: null,
-      path: null,
-      query: null,
-      fragment: null,
-      // state
-      duplicateQueryParameters: URI.duplicateQueryParameters,
-      escapeQuerySpace: URI.escapeQuerySpace
-    };
-  };
-  // state: allow duplicate query parameters (a=1&a=1)
-  URI.duplicateQueryParameters = false;
-  // state: replaces + with %20 (space in query strings)
-  URI.escapeQuerySpace = true;
-  // static properties
-  URI.protocol_expression = /^[a-z][a-z0-9.+-]*$/i;
-  URI.idn_expression = /[^a-z0-9\.-]/i;
-  URI.punycode_expression = /(xn--)/i;
-  // well, 333.444.555.666 matches, but it sure ain't no IPv4 - do we care?
-  URI.ip4_expression = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
-  // credits to Rich Brown
-  // source: http://forums.intermapper.com/viewtopic.php?p=1096#1096
-  // specification: http://www.ietf.org/rfc/rfc4291.txt
-  URI.ip6_expression = /^\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?\s*$/;
-  // expression used is "gruber revised" (@gruber v2) determined to be the
-  // best solution in a regex-golf we did a couple of ages ago at
-  // * http://mathiasbynens.be/demo/url-regex
-  // * http://rodneyrehm.de/t/url-regex.html
-  URI.find_uri_expression = /\b((?:[a-z][\w-]+:(?:\/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}\/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?«»“”‘’]))/ig;
-  URI.findUri = {
-    // valid "scheme://" or "www."
-    start: /\b(?:([a-z][a-z0-9.+-]*:\/\/)|www\.)/gi,
-    // everything up to the next whitespace
-    end: /[\s\r\n]|$/,
-    // trim trailing punctuation captured by end RegExp
-    trim: /[`!()\[\]{};:'".,<>?«»“”„‘’]+$/
-  };
-  // http://www.iana.org/assignments/uri-schemes.html
-  // http://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers#Well-known_ports
-  URI.defaultPorts = {
-    http: '80',
-    https: '443',
-    ftp: '21',
-    gopher: '70',
-    ws: '80',
-    wss: '443'
-  };
-  // allowed hostname characters according to RFC 3986
-  // ALPHA DIGIT "-" "." "_" "~" "!" "$" "&" "'" "(" ")" "*" "+" "," ";" "=" %encoded
-  // I've never seen a (non-IDN) hostname other than: ALPHA DIGIT . -
-  URI.invalid_hostname_characters = /[^a-zA-Z0-9\.-]/;
-  // map DOM Elements to their URI attribute
-  URI.domAttributes = {
-    'a': 'href',
-    'blockquote': 'cite',
-    'link': 'href',
-    'base': 'href',
-    'script': 'src',
-    'form': 'action',
-    'img': 'src',
-    'area': 'href',
-    'iframe': 'src',
-    'embed': 'src',
-    'source': 'src',
-    'track': 'src',
-    'input': 'src', // but only if type="image"
-    'audio': 'src',
-    'video': 'src'
-  };
-  URI.getDomAttribute = function(node) {
-    if (!node || !node.nodeName) {
-      return undefined;
-    }
-
-    var nodeName = node.nodeName.toLowerCase();
-    // <input> should only expose src for type="image"
-    if (nodeName === 'input' && node.type !== 'image') {
-      return undefined;
-    }
-
-    return URI.domAttributes[nodeName];
-  };
-
-  function escapeForDumbFirefox36(value) {
-    // https://github.com/medialize/URI.js/issues/91
-    return escape(value);
-  }
-
-  // encoding / decoding according to RFC3986
-  function strictEncodeURIComponent(string) {
-    // see https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/encodeURIComponent
-    return encodeURIComponent(string)
-      .replace(/[!'()*]/g, escapeForDumbFirefox36)
-      .replace(/\*/g, '%2A');
-  }
-  URI.encode = strictEncodeURIComponent;
-  URI.decode = decodeURIComponent;
-  URI.iso8859 = function() {
-    URI.encode = escape;
-    URI.decode = unescape;
-  };
-  URI.unicode = function() {
-    URI.encode = strictEncodeURIComponent;
-    URI.decode = decodeURIComponent;
-  };
-  URI.characters = {
-    pathname: {
-      encode: {
-        // RFC3986 2.1: For consistency, URI producers and normalizers should
-        // use uppercase hexadecimal digits for all percent-encodings.
-        expression: /%(24|26|2B|2C|3B|3D|3A|40)/ig,
-        map: {
-          // -._~!'()*
-          '%24': '$',
-          '%26': '&',
-          '%2B': '+',
-          '%2C': ',',
-          '%3B': ';',
-          '%3D': '=',
-          '%3A': ':',
-          '%40': '@'
-        }
-      },
-      decode: {
-        expression: /[\/\?#]/g,
-        map: {
-          '/': '%2F',
-          '?': '%3F',
-          '#': '%23'
-        }
-      }
-    },
-    reserved: {
-      encode: {
-        // RFC3986 2.1: For consistency, URI producers and normalizers should
-        // use uppercase hexadecimal digits for all percent-encodings.
-        expression: /%(21|23|24|26|27|28|29|2A|2B|2C|2F|3A|3B|3D|3F|40|5B|5D)/ig,
-        map: {
-          // gen-delims
-          '%3A': ':',
-          '%2F': '/',
-          '%3F': '?',
-          '%23': '#',
-          '%5B': '[',
-          '%5D': ']',
-          '%40': '@',
-          // sub-delims
-          '%21': '!',
-          '%24': '$',
-          '%26': '&',
-          '%27': '\'',
-          '%28': '(',
-          '%29': ')',
-          '%2A': '*',
-          '%2B': '+',
-          '%2C': ',',
-          '%3B': ';',
-          '%3D': '='
-        }
-      }
-    },
-    urnpath: {
-      // The characters under `encode` are the characters called out by RFC 2141 as being acceptable
-      // for usage in a URN. RFC2141 also calls out "-", ".", and "_" as acceptable characters, but
-      // these aren't encoded by encodeURIComponent, so we don't have to call them out here. Also
-      // note that the colon character is not featured in the encoding map; this is because URI.js
-      // gives the colons in URNs semantic meaning as the delimiters of path segements, and so it
-      // should not appear unencoded in a segment itself.
-      // See also the note above about RFC3986 and capitalalized hex digits.
-      encode: {
-        expression: /%(21|24|27|28|29|2A|2B|2C|3B|3D|40)/ig,
-        map: {
-          '%21': '!',
-          '%24': '$',
-          '%27': '\'',
-          '%28': '(',
-          '%29': ')',
-          '%2A': '*',
-          '%2B': '+',
-          '%2C': ',',
-          '%3B': ';',
-          '%3D': '=',
-          '%40': '@'
-        }
-      },
-      // These characters are the characters called out by RFC2141 as "reserved" characters that
-      // should never appear in a URN, plus the colon character (see note above).
-      decode: {
-        expression: /[\/\?#:]/g,
-        map: {
-          '/': '%2F',
-          '?': '%3F',
-          '#': '%23',
-          ':': '%3A'
-        }
-      }
-    }
-  };
-  URI.encodeQuery = function(string, escapeQuerySpace) {
-    var escaped = URI.encode(string + '');
-    if (escapeQuerySpace === undefined) {
-      escapeQuerySpace = URI.escapeQuerySpace;
-    }
-
-    return escapeQuerySpace ? escaped.replace(/%20/g, '+') : escaped;
-  };
-  URI.decodeQuery = function(string, escapeQuerySpace) {
-    string += '';
-    if (escapeQuerySpace === undefined) {
-      escapeQuerySpace = URI.escapeQuerySpace;
-    }
-
-    try {
-      return URI.decode(escapeQuerySpace ? string.replace(/\+/g, '%20') : string);
-    } catch(e) {
-      // we're not going to mess with weird encodings,
-      // give up and return the undecoded original string
-      // see https://github.com/medialize/URI.js/issues/87
-      // see https://github.com/medialize/URI.js/issues/92
-      return string;
-    }
-  };
-  // generate encode/decode path functions
-  var _parts = {'encode':'encode', 'decode':'decode'};
-  var _part;
-  var generateAccessor = function(_group, _part) {
-    return function(string) {
-      try {
-        return URI[_part](string + '').replace(URI.characters[_group][_part].expression, function(c) {
-          return URI.characters[_group][_part].map[c];
-        });
-      } catch (e) {
-        // we're not going to mess with weird encodings,
-        // give up and return the undecoded original string
-        // see https://github.com/medialize/URI.js/issues/87
-        // see https://github.com/medialize/URI.js/issues/92
-        return string;
-      }
-    };
-  };
-
-  for (_part in _parts) {
-    URI[_part + 'PathSegment'] = generateAccessor('pathname', _parts[_part]);
-    URI[_part + 'UrnPathSegment'] = generateAccessor('urnpath', _parts[_part]);
-  }
-
-  var generateSegmentedPathFunction = function(_sep, _codingFuncName, _innerCodingFuncName) {
-    return function(string) {
-      // Why pass in names of functions, rather than the function objects themselves? The
-      // definitions of some functions (but in particular, URI.decode) will occasionally change due
-      // to URI.js having ISO8859 and Unicode modes. Passing in the name and getting it will ensure
-      // that the functions we use here are "fresh".
-      var actualCodingFunc;
-      if (!_innerCodingFuncName) {
-        actualCodingFunc = URI[_codingFuncName];
-      } else {
-        actualCodingFunc = function(string) {
-          return URI[_codingFuncName](URI[_innerCodingFuncName](string));
-        };
-      }
-
-      var segments = (string + '').split(_sep);
-
-      for (var i = 0, length = segments.length; i < length; i++) {
-        segments[i] = actualCodingFunc(segments[i]);
-      }
-
-      return segments.join(_sep);
-    };
-  };
-
-  // This takes place outside the above loop because we don't want, e.g., encodeUrnPath functions.
-  URI.decodePath = generateSegmentedPathFunction('/', 'decodePathSegment');
-  URI.decodeUrnPath = generateSegmentedPathFunction(':', 'decodeUrnPathSegment');
-  URI.recodePath = generateSegmentedPathFunction('/', 'encodePathSegment', 'decode');
-  URI.recodeUrnPath = generateSegmentedPathFunction(':', 'encodeUrnPathSegment', 'decode');
-
-  URI.encodeReserved = generateAccessor('reserved', 'encode');
-
-  URI.parse = function(string, parts) {
-    var pos;
-    if (!parts) {
-      parts = {};
-    }
-    // [protocol"://"[username[":"password]"@"]hostname[":"port]"/"?][path]["?"querystring]["#"fragment]
-
-    // extract fragment
-    pos = string.indexOf('#');
-    if (pos > -1) {
-      // escaping?
-      parts.fragment = string.substring(pos + 1) || null;
-      string = string.substring(0, pos);
-    }
-
-    // extract query
-    pos = string.indexOf('?');
-    if (pos > -1) {
-      // escaping?
-      parts.query = string.substring(pos + 1) || null;
-      string = string.substring(0, pos);
-    }
-
-    // extract protocol
-    if (string.substring(0, 2) === '//') {
-      // relative-scheme
-      parts.protocol = null;
-      string = string.substring(2);
-      // extract "user:pass@host:port"
-      string = URI.parseAuthority(string, parts);
-    } else {
-      pos = string.indexOf(':');
-      if (pos > -1) {
-        parts.protocol = string.substring(0, pos) || null;
-        if (parts.protocol && !parts.protocol.match(URI.protocol_expression)) {
-          // : may be within the path
-          parts.protocol = undefined;
-        } else if (string.substring(pos + 1, pos + 3) === '//') {
-          string = string.substring(pos + 3);
-
-          // extract "user:pass@host:port"
-          string = URI.parseAuthority(string, parts);
-        } else {
-          string = string.substring(pos + 1);
-          parts.urn = true;
-        }
-      }
-    }
-
-    // what's left must be the path
-    parts.path = string;
-
-    // and we're done
-    return parts;
-  };
-  URI.parseHost = function(string, parts) {
-    // Copy chrome, IE, opera backslash-handling behavior.
-    // Back slashes before the query string get converted to forward slashes
-    // See: https://github.com/joyent/node/blob/386fd24f49b0e9d1a8a076592a404168faeecc34/lib/url.js#L115-L124
-    // See: https://code.google.com/p/chromium/issues/detail?id=25916
-    // https://github.com/medialize/URI.js/pull/233
-    string = string.replace(/\\/g, '/');
-
-    // extract host:port
-    var pos = string.indexOf('/');
-    var bracketPos;
-    var t;
-
-    if (pos === -1) {
-      pos = string.length;
-    }
-
-    if (string.charAt(0) === '[') {
-      // IPv6 host - http://tools.ietf.org/html/draft-ietf-6man-text-addr-representation-04#section-6
-      // I claim most client software breaks on IPv6 anyways. To simplify things, URI only accepts
-      // IPv6+port in the format [2001:db8::1]:80 (for the time being)
-      bracketPos = string.indexOf(']');
-      parts.hostname = string.substring(1, bracketPos) || null;
-      parts.port = string.substring(bracketPos + 2, pos) || null;
-      if (parts.port === '/') {
-        parts.port = null;
-      }
-    } else {
-      var firstColon = string.indexOf(':');
-      var firstSlash = string.indexOf('/');
-      var nextColon = string.indexOf(':', firstColon + 1);
-      if (nextColon !== -1 && (firstSlash === -1 || nextColon < firstSlash)) {
-        // IPv6 host contains multiple colons - but no port
-        // this notation is actually not allowed by RFC 3986, but we're a liberal parser
-        parts.hostname = string.substring(0, pos) || null;
-        parts.port = null;
-      } else {
-        t = string.substring(0, pos).split(':');
-        parts.hostname = t[0] || null;
-        parts.port = t[1] || null;
-      }
-    }
-
-    if (parts.hostname && string.substring(pos).charAt(0) !== '/') {
-      pos++;
-      string = '/' + string;
-    }
-
-    return string.substring(pos) || '/';
-  };
-  URI.parseAuthority = function(string, parts) {
-    string = URI.parseUserinfo(string, parts);
-    return URI.parseHost(string, parts);
-  };
-  URI.parseUserinfo = function(string, parts) {
-    // extract username:password
-    var firstSlash = string.indexOf('/');
-    var pos = string.lastIndexOf('@', firstSlash > -1 ? firstSlash : string.length - 1);
-    var t;
-
-    // authority@ must come before /path
-    if (pos > -1 && (firstSlash === -1 || pos < firstSlash)) {
-      t = string.substring(0, pos).split(':');
-      parts.username = t[0] ? URI.decode(t[0]) : null;
-      t.shift();
-      parts.password = t[0] ? URI.decode(t.join(':')) : null;
-      string = string.substring(pos + 1);
-    } else {
-      parts.username = null;
-      parts.password = null;
-    }
-
-    return string;
-  };
-  URI.parseQuery = function(string, escapeQuerySpace) {
-    if (!string) {
-      return {};
-    }
-
-    // throw out the funky business - "?"[name"="value"&"]+
-    string = string.replace(/&+/g, '&').replace(/^\?*&*|&+$/g, '');
-
-    if (!string) {
-      return {};
-    }
-
-    var items = {};
-    var splits = string.split('&');
-    var length = splits.length;
-    var v, name, value;
-
-    for (var i = 0; i < length; i++) {
-      v = splits[i].split('=');
-      name = URI.decodeQuery(v.shift(), escapeQuerySpace);
-      // no "=" is null according to http://dvcs.w3.org/hg/url/raw-file/tip/Overview.html#collect-url-parameters
-      value = v.length ? URI.decodeQuery(v.join('='), escapeQuerySpace) : null;
-
-      if (hasOwn.call(items, name)) {
-        if (typeof items[name] === 'string' || items[name] === null) {
-          items[name] = [items[name]];
-        }
-
-        items[name].push(value);
-      } else {
-        items[name] = value;
-      }
-    }
-
-    return items;
-  };
-
-  URI.build = function(parts) {
-    var t = '';
-
-    if (parts.protocol) {
-      t += parts.protocol + ':';
-    }
-
-    if (!parts.urn && (t || parts.hostname)) {
-      t += '//';
-    }
-
-    t += (URI.buildAuthority(parts) || '');
-
-    if (typeof parts.path === 'string') {
-      if (parts.path.charAt(0) !== '/' && typeof parts.hostname === 'string') {
-        t += '/';
-      }
-
-      t += parts.path;
-    }
-
-    if (typeof parts.query === 'string' && parts.query) {
-      t += '?' + parts.query;
-    }
-
-    if (typeof parts.fragment === 'string' && parts.fragment) {
-      t += '#' + parts.fragment;
-    }
-    return t;
-  };
-  URI.buildHost = function(parts) {
-    var t = '';
-
-    if (!parts.hostname) {
-      return '';
-    } else if (URI.ip6_expression.test(parts.hostname)) {
-      t += '[' + parts.hostname + ']';
-    } else {
-      t += parts.hostname;
-    }
-
-    if (parts.port) {
-      t += ':' + parts.port;
-    }
-
-    return t;
-  };
-  URI.buildAuthority = function(parts) {
-    return URI.buildUserinfo(parts) + URI.buildHost(parts);
-  };
-  URI.buildUserinfo = function(parts) {
-    var t = '';
-
-    if (parts.username) {
-      t += URI.encode(parts.username);
-
-      if (parts.password) {
-        t += ':' + URI.encode(parts.password);
-      }
-
-      t += '@';
-    }
-
-    return t;
-  };
-  URI.buildQuery = function(data, duplicateQueryParameters, escapeQuerySpace) {
-    // according to http://tools.ietf.org/html/rfc3986 or http://labs.apache.org/webarch/uri/rfc/rfc3986.html
-    // being »-._~!$&'()*+,;=:@/?« %HEX and alnum are allowed
-    // the RFC explicitly states ?/foo being a valid use case, no mention of parameter syntax!
-    // URI.js treats the query string as being application/x-www-form-urlencoded
-    // see http://www.w3.org/TR/REC-html40/interact/forms.html#form-content-type
-
-    var t = '';
-    var unique, key, i, length;
-    for (key in data) {
-      if (hasOwn.call(data, key) && key) {
-        if (isArray(data[key])) {
-          unique = {};
-          for (i = 0, length = data[key].length; i < length; i++) {
-            if (data[key][i] !== undefined && unique[data[key][i] + ''] === undefined) {
-              t += '&' + URI.buildQueryParameter(key, data[key][i], escapeQuerySpace);
-              if (duplicateQueryParameters !== true) {
-                unique[data[key][i] + ''] = true;
-              }
-            }
-          }
-        } else if (data[key] !== undefined) {
-          t += '&' + URI.buildQueryParameter(key, data[key], escapeQuerySpace);
-        }
-      }
-    }
-
-    return t.substring(1);
-  };
-  URI.buildQueryParameter = function(name, value, escapeQuerySpace) {
-    // http://www.w3.org/TR/REC-html40/interact/forms.html#form-content-type -- application/x-www-form-urlencoded
-    // don't append "=" for null values, according to http://dvcs.w3.org/hg/url/raw-file/tip/Overview.html#url-parameter-serialization
-    return URI.encodeQuery(name, escapeQuerySpace) + (value !== null ? '=' + URI.encodeQuery(value, escapeQuerySpace) : '');
-  };
-
-  URI.addQuery = function(data, name, value) {
-    if (typeof name === 'object') {
-      for (var key in name) {
-        if (hasOwn.call(name, key)) {
-          URI.addQuery(data, key, name[key]);
-        }
-      }
-    } else if (typeof name === 'string') {
-      if (data[name] === undefined) {
-        data[name] = value;
-        return;
-      } else if (typeof data[name] === 'string') {
-        data[name] = [data[name]];
-      }
-
-      if (!isArray(value)) {
-        value = [value];
-      }
-
-      data[name] = (data[name] || []).concat(value);
-    } else {
-      throw new TypeError('URI.addQuery() accepts an object, string as the name parameter');
-    }
-  };
-  URI.removeQuery = function(data, name, value) {
-    var i, length, key;
-
-    if (isArray(name)) {
-      for (i = 0, length = name.length; i < length; i++) {
-        data[name[i]] = undefined;
-      }
-    } else if (getType(name) === 'RegExp') {
-      for (key in data) {
-        if (name.test(key)) {
-          data[key] = undefined;
-        }
-      }
-    } else if (typeof name === 'object') {
-      for (key in name) {
-        if (hasOwn.call(name, key)) {
-          URI.removeQuery(data, key, name[key]);
-        }
-      }
-    } else if (typeof name === 'string') {
-      if (value !== undefined) {
-        if (getType(value) === 'RegExp') {
-          if (!isArray(data[name]) && value.test(data[name])) {
-            data[name] = undefined;
-          } else {
-            data[name] = filterArrayValues(data[name], value);
-          }
-        } else if (data[name] === String(value) && (!isArray(value) || value.length === 1)) {
-          data[name] = undefined;
-        } else if (isArray(data[name])) {
-          data[name] = filterArrayValues(data[name], value);
-        }
-      } else {
-        data[name] = undefined;
-      }
-    } else {
-      throw new TypeError('URI.removeQuery() accepts an object, string, RegExp as the first parameter');
-    }
-  };
-  URI.hasQuery = function(data, name, value, withinArray) {
-    switch (getType(name)) {
-      case 'String':
-        // Nothing to do here
-        break;
-
-      case 'RegExp':
-        for (var key in data) {
-          if (hasOwn.call(data, key)) {
-            if (name.test(key) && (value === undefined || URI.hasQuery(data, key, value))) {
-              return true;
-            }
-          }
-        }
-
-        return false;
-
-      case 'Object':
-        for (var _key in name) {
-          if (hasOwn.call(name, _key)) {
-            if (!URI.hasQuery(data, _key, name[_key])) {
-              return false;
-            }
-          }
-        }
-
-        return true;
-
-      default:
-        throw new TypeError('URI.hasQuery() accepts a string, regular expression or object as the name parameter');
-    }
-
-    switch (getType(value)) {
-      case 'Undefined':
-        // true if exists (but may be empty)
-        return name in data; // data[name] !== undefined;
-
-      case 'Boolean':
-        // true if exists and non-empty
-        var _booly = Boolean(isArray(data[name]) ? data[name].length : data[name]);
-        return value === _booly;
-
-      case 'Function':
-        // allow complex comparison
-        return !!value(data[name], name, data);
-
-      case 'Array':
-        if (!isArray(data[name])) {
-          return false;
-        }
-
-        var op = withinArray ? arrayContains : arraysEqual;
-        return op(data[name], value);
-
-      case 'RegExp':
-        if (!isArray(data[name])) {
-          return Boolean(data[name] && data[name].match(value));
-        }
-
-        if (!withinArray) {
-          return false;
-        }
-
-        return arrayContains(data[name], value);
-
-      case 'Number':
-        value = String(value);
-        /* falls through */
-      case 'String':
-        if (!isArray(data[name])) {
-          return data[name] === value;
-        }
-
-        if (!withinArray) {
-          return false;
-        }
-
-        return arrayContains(data[name], value);
-
-      default:
-        throw new TypeError('URI.hasQuery() accepts undefined, boolean, string, number, RegExp, Function as the value parameter');
-    }
-  };
-
-
-  URI.commonPath = function(one, two) {
-    var length = Math.min(one.length, two.length);
-    var pos;
-
-    // find first non-matching character
-    for (pos = 0; pos < length; pos++) {
-      if (one.charAt(pos) !== two.charAt(pos)) {
-        pos--;
-        break;
-      }
-    }
-
-    if (pos < 1) {
-      return one.charAt(0) === two.charAt(0) && one.charAt(0) === '/' ? '/' : '';
-    }
-
-    // revert to last /
-    if (one.charAt(pos) !== '/' || two.charAt(pos) !== '/') {
-      pos = one.substring(0, pos).lastIndexOf('/');
-    }
-
-    return one.substring(0, pos + 1);
-  };
-
-  URI.withinString = function(string, callback, options) {
-    options || (options = {});
-    var _start = options.start || URI.findUri.start;
-    var _end = options.end || URI.findUri.end;
-    var _trim = options.trim || URI.findUri.trim;
-    var _attributeOpen = /[a-z0-9-]=["']?$/i;
-
-    _start.lastIndex = 0;
-    while (true) {
-      var match = _start.exec(string);
-      if (!match) {
-        break;
-      }
-
-      var start = match.index;
-      if (options.ignoreHtml) {
-        // attribut(e=["']?$)
-        var attributeOpen = string.slice(Math.max(start - 3, 0), start);
-        if (attributeOpen && _attributeOpen.test(attributeOpen)) {
-          continue;
-        }
-      }
-
-      var end = start + string.slice(start).search(_end);
-      var slice = string.slice(start, end).replace(_trim, '');
-      if (options.ignore && options.ignore.test(slice)) {
-        continue;
-      }
-
-      end = start + slice.length;
-      var result = callback(slice, start, end, string);
-      string = string.slice(0, start) + result + string.slice(end);
-      _start.lastIndex = start + result.length;
-    }
-
-    _start.lastIndex = 0;
-    return string;
-  };
-
-  URI.ensureValidHostname = function(v) {
-    // Theoretically URIs allow percent-encoding in Hostnames (according to RFC 3986)
-    // they are not part of DNS and therefore ignored by URI.js
-
-    if (v.match(URI.invalid_hostname_characters)) {
-      // test punycode
-      if (!punycode) {
-        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-] and Punycode.js is not available');
-      }
-
-      if (punycode.toASCII(v).match(URI.invalid_hostname_characters)) {
-        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-]');
-      }
-    }
-  };
-
-  // noConflict
-  URI.noConflict = function(removeAll) {
-    if (removeAll) {
-      var unconflicted = {
-        URI: this.noConflict()
-      };
-
-      if (root.URITemplate && typeof root.URITemplate.noConflict === 'function') {
-        unconflicted.URITemplate = root.URITemplate.noConflict();
-      }
-
-      if (root.IPv6 && typeof root.IPv6.noConflict === 'function') {
-        unconflicted.IPv6 = root.IPv6.noConflict();
-      }
-
-      if (root.SecondLevelDomains && typeof root.SecondLevelDomains.noConflict === 'function') {
-        unconflicted.SecondLevelDomains = root.SecondLevelDomains.noConflict();
-      }
-
-      return unconflicted;
-    } else if (root.URI === this) {
-      root.URI = _URI;
-    }
-
-    return this;
-  };
-
-  p.build = function(deferBuild) {
-    if (deferBuild === true) {
-      this._deferred_build = true;
-    } else if (deferBuild === undefined || this._deferred_build) {
-      this._string = URI.build(this._parts);
-      this._deferred_build = false;
-    }
-
-    return this;
-  };
-
-  p.clone = function() {
-    return new URI(this);
-  };
-
-  p.valueOf = p.toString = function() {
-    return this.build(false)._string;
-  };
-
-
-  function generateSimpleAccessor(_part){
-    return function(v, build) {
-      if (v === undefined) {
-        return this._parts[_part] || '';
-      } else {
-        this._parts[_part] = v || null;
-        this.build(!build);
-        return this;
-      }
-    };
-  }
-
-  function generatePrefixAccessor(_part, _key){
-    return function(v, build) {
-      if (v === undefined) {
-        return this._parts[_part] || '';
-      } else {
-        if (v !== null) {
-          v = v + '';
-          if (v.charAt(0) === _key) {
-            v = v.substring(1);
-          }
-        }
-
-        this._parts[_part] = v;
-        this.build(!build);
-        return this;
-      }
-    };
-  }
-
-  p.protocol = generateSimpleAccessor('protocol');
-  p.username = generateSimpleAccessor('username');
-  p.password = generateSimpleAccessor('password');
-  p.hostname = generateSimpleAccessor('hostname');
-  p.port = generateSimpleAccessor('port');
-  p.query = generatePrefixAccessor('query', '?');
-  p.fragment = generatePrefixAccessor('fragment', '#');
-
-  p.search = function(v, build) {
-    var t = this.query(v, build);
-    return typeof t === 'string' && t.length ? ('?' + t) : t;
-  };
-  p.hash = function(v, build) {
-    var t = this.fragment(v, build);
-    return typeof t === 'string' && t.length ? ('#' + t) : t;
-  };
-
-  p.pathname = function(v, build) {
-    if (v === undefined || v === true) {
-      var res = this._parts.path || (this._parts.hostname ? '/' : '');
-      return v ? (this._parts.urn ? URI.decodeUrnPath : URI.decodePath)(res) : res;
-    } else {
-      if (this._parts.urn) {
-        this._parts.path = v ? URI.recodeUrnPath(v) : '';
-      } else {
-        this._parts.path = v ? URI.recodePath(v) : '/';
-      }
-      this.build(!build);
-      return this;
-    }
-  };
-  p.path = p.pathname;
-  p.href = function(href, build) {
-    var key;
-
-    if (href === undefined) {
-      return this.toString();
-    }
-
-    this._string = '';
-    this._parts = URI._parts();
-
-    var _URI = href instanceof URI;
-    var _object = typeof href === 'object' && (href.hostname || href.path || href.pathname);
-    if (href.nodeName) {
-      var attribute = URI.getDomAttribute(href);
-      href = href[attribute] || '';
-      _object = false;
-    }
-
-    // window.location is reported to be an object, but it's not the sort
-    // of object we're looking for:
-    // * location.protocol ends with a colon
-    // * location.query != object.search
-    // * location.hash != object.fragment
-    // simply serializing the unknown object should do the trick
-    // (for location, not for everything...)
-    if (!_URI && _object && href.pathname !== undefined) {
-      href = href.toString();
-    }
-
-    if (typeof href === 'string' || href instanceof String) {
-      this._parts = URI.parse(String(href), this._parts);
-    } else if (_URI || _object) {
-      var src = _URI ? href._parts : href;
-      for (key in src) {
-        if (hasOwn.call(this._parts, key)) {
-          this._parts[key] = src[key];
-        }
-      }
-    } else {
-      throw new TypeError('invalid input');
-    }
-
-    this.build(!build);
-    return this;
-  };
-
-  // identification accessors
-  p.is = function(what) {
-    var ip = false;
-    var ip4 = false;
-    var ip6 = false;
-    var name = false;
-    var sld = false;
-    var idn = false;
-    var punycode = false;
-    var relative = !this._parts.urn;
-
-    if (this._parts.hostname) {
-      relative = false;
-      ip4 = URI.ip4_expression.test(this._parts.hostname);
-      ip6 = URI.ip6_expression.test(this._parts.hostname);
-      ip = ip4 || ip6;
-      name = !ip;
-      sld = name && SLD && SLD.has(this._parts.hostname);
-      idn = name && URI.idn_expression.test(this._parts.hostname);
-      punycode = name && URI.punycode_expression.test(this._parts.hostname);
-    }
-
-    switch (what.toLowerCase()) {
-      case 'relative':
-        return relative;
-
-      case 'absolute':
-        return !relative;
-
-      // hostname identification
-      case 'domain':
-      case 'name':
-        return name;
-
-      case 'sld':
-        return sld;
-
-      case 'ip':
-        return ip;
-
-      case 'ip4':
-      case 'ipv4':
-      case 'inet4':
-        return ip4;
-
-      case 'ip6':
-      case 'ipv6':
-      case 'inet6':
-        return ip6;
-
-      case 'idn':
-        return idn;
-
-      case 'url':
-        return !this._parts.urn;
-
-      case 'urn':
-        return !!this._parts.urn;
-
-      case 'punycode':
-        return punycode;
-    }
-
-    return null;
-  };
-
-  // component specific input validation
-  var _protocol = p.protocol;
-  var _port = p.port;
-  var _hostname = p.hostname;
-
-  p.protocol = function(v, build) {
-    if (v !== undefined) {
-      if (v) {
-        // accept trailing ://
-        v = v.replace(/:(\/\/)?$/, '');
-
-        if (!v.match(URI.protocol_expression)) {
-          throw new TypeError('Protocol "' + v + '" contains characters other than [A-Z0-9.+-] or doesn\'t start with [A-Z]');
-        }
-      }
-    }
-    return _protocol.call(this, v, build);
-  };
-  p.scheme = p.protocol;
-  p.port = function(v, build) {
-    if (this._parts.urn) {
-      return v === undefined ? '' : this;
-    }
-
-    if (v !== undefined) {
-      if (v === 0) {
-        v = null;
-      }
-
-      if (v) {
-        v += '';
-        if (v.charAt(0) === ':') {
-          v = v.substring(1);
-        }
-
-        if (v.match(/[^0-9]/)) {
-          throw new TypeError('Port "' + v + '" contains characters other than [0-9]');
-        }
-      }
-    }
-    return _port.call(this, v, build);
-  };
-  p.hostname = function(v, build) {
-    if (this._parts.urn) {
-      return v === undefined ? '' : this;
-    }
-
-    if (v !== undefined) {
-      var x = {};
-      var res = URI.parseHost(v, x);
-      if (res !== '/') {
-        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-]');
-      }
-
-      v = x.hostname;
-    }
-    return _hostname.call(this, v, build);
-  };
-
-  // compound accessors
-  p.origin = function(v, build) {
-    if (this._parts.urn) {
-      return v === undefined ? '' : this;
-    }
-
-    if (v === undefined) {
-      var protocol = this.protocol();
-      var authority = this.authority();
-      if (!authority) {
-        return '';
-      }
-
-      return (protocol ? protocol + '://' : '') + this.authority();
-    } else {
-      var origin = URI(v);
-      this
-        .protocol(origin.protocol())
-        .authority(origin.authority())
-        .build(!build);
-      return this;
-    }
-  };
-  p.host = function(v, build) {
-    if (this._parts.urn) {
-      return v === undefined ? '' : this;
-    }
-
-    if (v === undefined) {
-      return this._parts.hostname ? URI.buildHost(this._parts) : '';
-    } else {
-      var res = URI.parseHost(v, this._parts);
-      if (res !== '/') {
-        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-]');
-      }
-
-      this.build(!build);
-      return this;
-    }
-  };
-  p.authority = function(v, build) {
-    if (this._parts.urn) {
-      return v === undefined ? '' : this;
-    }
-
-    if (v === undefined) {
-      return this._parts.hostname ? URI.buildAuthority(this._parts) : '';
-    } else {
-      var res = URI.parseAuthority(v, this._parts);
-      if (res !== '/') {
-        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-]');
-      }
-
-      this.build(!build);
-      return this;
-    }
-  };
-  p.userinfo = function(v, build) {
-    if (this._parts.urn) {
-      return v === undefined ? '' : this;
-    }
-
-    if (v === undefined) {
-      if (!this._parts.username) {
-        return '';
-      }
-
-      var t = URI.buildUserinfo(this._parts);
-      return t.substring(0, t.length -1);
-    } else {
-      if (v[v.length-1] !== '@') {
-        v += '@';
-      }
-
-      URI.parseUserinfo(v, this._parts);
-      this.build(!build);
-      return this;
-    }
-  };
-  p.resource = function(v, build) {
-    var parts;
-
-    if (v === undefined) {
-      return this.path() + this.search() + this.hash();
-    }
-
-    parts = URI.parse(v);
-    this._parts.path = parts.path;
-    this._parts.query = parts.query;
-    this._parts.fragment = parts.fragment;
-    this.build(!build);
-    return this;
-  };
-
-  // fraction accessors
-  p.subdomain = function(v, build) {
-    if (this._parts.urn) {
-      return v === undefined ? '' : this;
-    }
-
-    // convenience, return "www" from "www.example.org"
-    if (v === undefined) {
-      if (!this._parts.hostname || this.is('IP')) {
-        return '';
-      }
-
-      // grab domain and add another segment
-      var end = this._parts.hostname.length - this.domain().length - 1;
-      return this._parts.hostname.substring(0, end) || '';
-    } else {
-      var e = this._parts.hostname.length - this.domain().length;
-      var sub = this._parts.hostname.substring(0, e);
-      var replace = new RegExp('^' + escapeRegEx(sub));
-
-      if (v && v.charAt(v.length - 1) !== '.') {
-        v += '.';
-      }
-
-      if (v) {
-        URI.ensureValidHostname(v);
-      }
-
-      this._parts.hostname = this._parts.hostname.replace(replace, v);
-      this.build(!build);
-      return this;
-    }
-  };
-  p.domain = function(v, build) {
-    if (this._parts.urn) {
-      return v === undefined ? '' : this;
-    }
-
-    if (typeof v === 'boolean') {
-      build = v;
-      v = undefined;
-    }
-
-    // convenience, return "example.org" from "www.example.org"
-    if (v === undefined) {
-      if (!this._parts.hostname || this.is('IP')) {
-        return '';
-      }
-
-      // if hostname consists of 1 or 2 segments, it must be the domain
-      var t = this._parts.hostname.match(/\./g);
-      if (t && t.length < 2) {
-        return this._parts.hostname;
-      }
-
-      // grab tld and add another segment
-      var end = this._parts.hostname.length - this.tld(build).length - 1;
-      end = this._parts.hostname.lastIndexOf('.', end -1) + 1;
-      return this._parts.hostname.substring(end) || '';
-    } else {
-      if (!v) {
-        throw new TypeError('cannot set domain empty');
-      }
-
-      URI.ensureValidHostname(v);
-
-      if (!this._parts.hostname || this.is('IP')) {
-        this._parts.hostname = v;
-      } else {
-        var replace = new RegExp(escapeRegEx(this.domain()) + '$');
-        this._parts.hostname = this._parts.hostname.replace(replace, v);
-      }
-
-      this.build(!build);
-      return this;
-    }
-  };
-  p.tld = function(v, build) {
-    if (this._parts.urn) {
-      return v === undefined ? '' : this;
-    }
-
-    if (typeof v === 'boolean') {
-      build = v;
-      v = undefined;
-    }
-
-    // return "org" from "www.example.org"
-    if (v === undefined) {
-      if (!this._parts.hostname || this.is('IP')) {
-        return '';
-      }
-
-      var pos = this._parts.hostname.lastIndexOf('.');
-      var tld = this._parts.hostname.substring(pos + 1);
-
-      if (build !== true && SLD && SLD.list[tld.toLowerCase()]) {
-        return SLD.get(this._parts.hostname) || tld;
-      }
-
-      return tld;
-    } else {
-      var replace;
-
-      if (!v) {
-        throw new TypeError('cannot set TLD empty');
-      } else if (v.match(/[^a-zA-Z0-9-]/)) {
-        if (SLD && SLD.is(v)) {
-          replace = new RegExp(escapeRegEx(this.tld()) + '$');
-          this._parts.hostname = this._parts.hostname.replace(replace, v);
-        } else {
-          throw new TypeError('TLD "' + v + '" contains characters other than [A-Z0-9]');
-        }
-      } else if (!this._parts.hostname || this.is('IP')) {
-        throw new ReferenceError('cannot set TLD on non-domain host');
-      } else {
-        replace = new RegExp(escapeRegEx(this.tld()) + '$');
-        this._parts.hostname = this._parts.hostname.replace(replace, v);
-      }
-
-      this.build(!build);
-      return this;
-    }
-  };
-  p.directory = function(v, build) {
-    if (this._parts.urn) {
-      return v === undefined ? '' : this;
-    }
-
-    if (v === undefined || v === true) {
-      if (!this._parts.path && !this._parts.hostname) {
-        return '';
-      }
-
-      if (this._parts.path === '/') {
-        return '/';
-      }
-
-      var end = this._parts.path.length - this.filename().length - 1;
-      var res = this._parts.path.substring(0, end) || (this._parts.hostname ? '/' : '');
-
-      return v ? URI.decodePath(res) : res;
-
-    } else {
-      var e = this._parts.path.length - this.filename().length;
-      var directory = this._parts.path.substring(0, e);
-      var replace = new RegExp('^' + escapeRegEx(directory));
-
-      // fully qualifier directories begin with a slash
-      if (!this.is('relative')) {
-        if (!v) {
-          v = '/';
-        }
-
-        if (v.charAt(0) !== '/') {
-          v = '/' + v;
-        }
-      }
-
-      // directories always end with a slash
-      if (v && v.charAt(v.length - 1) !== '/') {
-        v += '/';
-      }
-
-      v = URI.recodePath(v);
-      this._parts.path = this._parts.path.replace(replace, v);
-      this.build(!build);
-      return this;
-    }
-  };
-  p.filename = function(v, build) {
-    if (this._parts.urn) {
-      return v === undefined ? '' : this;
-    }
-
-    if (v === undefined || v === true) {
-      if (!this._parts.path || this._parts.path === '/') {
-        return '';
-      }
-
-      var pos = this._parts.path.lastIndexOf('/');
-      var res = this._parts.path.substring(pos+1);
-
-      return v ? URI.decodePathSegment(res) : res;
-    } else {
-      var mutatedDirectory = false;
-
-      if (v.charAt(0) === '/') {
-        v = v.substring(1);
-      }
-
-      if (v.match(/\.?\//)) {
-        mutatedDirectory = true;
-      }
-
-      var replace = new RegExp(escapeRegEx(this.filename()) + '$');
-      v = URI.recodePath(v);
-      this._parts.path = this._parts.path.replace(replace, v);
-
-      if (mutatedDirectory) {
-        this.normalizePath(build);
-      } else {
-        this.build(!build);
-      }
-
-      return this;
-    }
-  };
-  p.suffix = function(v, build) {
-    if (this._parts.urn) {
-      return v === undefined ? '' : this;
-    }
-
-    if (v === undefined || v === true) {
-      if (!this._parts.path || this._parts.path === '/') {
-        return '';
-      }
-
-      var filename = this.filename();
-      var pos = filename.lastIndexOf('.');
-      var s, res;
-
-      if (pos === -1) {
-        return '';
-      }
-
-      // suffix may only contain alnum characters (yup, I made this up.)
-      s = filename.substring(pos+1);
-      res = (/^[a-z0-9%]+$/i).test(s) ? s : '';
-      return v ? URI.decodePathSegment(res) : res;
-    } else {
-      if (v.charAt(0) === '.') {
-        v = v.substring(1);
-      }
-
-      var suffix = this.suffix();
-      var replace;
-
-      if (!suffix) {
-        if (!v) {
-          return this;
-        }
-
-        this._parts.path += '.' + URI.recodePath(v);
-      } else if (!v) {
-        replace = new RegExp(escapeRegEx('.' + suffix) + '$');
-      } else {
-        replace = new RegExp(escapeRegEx(suffix) + '$');
-      }
-
-      if (replace) {
-        v = URI.recodePath(v);
-        this._parts.path = this._parts.path.replace(replace, v);
-      }
-
-      this.build(!build);
-      return this;
-    }
-  };
-  p.segment = function(segment, v, build) {
-    var separator = this._parts.urn ? ':' : '/';
-    var path = this.path();
-    var absolute = path.substring(0, 1) === '/';
-    var segments = path.split(separator);
-
-    if (segment !== undefined && typeof segment !== 'number') {
-      build = v;
-      v = segment;
-      segment = undefined;
-    }
-
-    if (segment !== undefined && typeof segment !== 'number') {
-      throw new Error('Bad segment "' + segment + '", must be 0-based integer');
-    }
-
-    if (absolute) {
-      segments.shift();
-    }
-
-    if (segment < 0) {
-      // allow negative indexes to address from the end
-      segment = Math.max(segments.length + segment, 0);
-    }
-
-    if (v === undefined) {
-      /*jshint laxbreak: true */
-      return segment === undefined
-        ? segments
-        : segments[segment];
-      /*jshint laxbreak: false */
-    } else if (segment === null || segments[segment] === undefined) {
-      if (isArray(v)) {
-        segments = [];
-        // collapse empty elements within array
-        for (var i=0, l=v.length; i < l; i++) {
-          if (!v[i].length && (!segments.length || !segments[segments.length -1].length)) {
-            continue;
-          }
-
-          if (segments.length && !segments[segments.length -1].length) {
-            segments.pop();
-          }
-
-          segments.push(trimSlashes(v[i]));
-        }
-      } else if (v || typeof v === 'string') {
-        v = trimSlashes(v);
-        if (segments[segments.length -1] === '') {
-          // empty trailing elements have to be overwritten
-          // to prevent results such as /foo//bar
-          segments[segments.length -1] = v;
-        } else {
-          segments.push(v);
-        }
-      }
-    } else {
-      if (v) {
-        segments[segment] = trimSlashes(v);
-      } else {
-        segments.splice(segment, 1);
-      }
-    }
-
-    if (absolute) {
-      segments.unshift('');
-    }
-
-    return this.path(segments.join(separator), build);
-  };
-  p.segmentCoded = function(segment, v, build) {
-    var segments, i, l;
-
-    if (typeof segment !== 'number') {
-      build = v;
-      v = segment;
-      segment = undefined;
-    }
-
-    if (v === undefined) {
-      segments = this.segment(segment, v, build);
-      if (!isArray(segments)) {
-        segments = segments !== undefined ? URI.decode(segments) : undefined;
-      } else {
-        for (i = 0, l = segments.length; i < l; i++) {
-          segments[i] = URI.decode(segments[i]);
-        }
-      }
-
-      return segments;
-    }
-
-    if (!isArray(v)) {
-      v = (typeof v === 'string' || v instanceof String) ? URI.encode(v) : v;
-    } else {
-      for (i = 0, l = v.length; i < l; i++) {
-        v[i] = URI.encode(v[i]);
-      }
-    }
-
-    return this.segment(segment, v, build);
-  };
-
-  // mutating query string
-  var q = p.query;
-  p.query = function(v, build) {
-    if (v === true) {
-      return URI.parseQuery(this._parts.query, this._parts.escapeQuerySpace);
-    } else if (typeof v === 'function') {
-      var data = URI.parseQuery(this._parts.query, this._parts.escapeQuerySpace);
-      var result = v.call(this, data);
-      this._parts.query = URI.buildQuery(result || data, this._parts.duplicateQueryParameters, this._parts.escapeQuerySpace);
-      this.build(!build);
-      return this;
-    } else if (v !== undefined && typeof v !== 'string') {
-      this._parts.query = URI.buildQuery(v, this._parts.duplicateQueryParameters, this._parts.escapeQuerySpace);
-      this.build(!build);
-      return this;
-    } else {
-      return q.call(this, v, build);
-    }
-  };
-  p.setQuery = function(name, value, build) {
-    var data = URI.parseQuery(this._parts.query, this._parts.escapeQuerySpace);
-
-    if (typeof name === 'string' || name instanceof String) {
-      data[name] = value !== undefined ? value : null;
-    } else if (typeof name === 'object') {
-      for (var key in name) {
-        if (hasOwn.call(name, key)) {
-          data[key] = name[key];
-        }
-      }
-    } else {
-      throw new TypeError('URI.addQuery() accepts an object, string as the name parameter');
-    }
-
-    this._parts.query = URI.buildQuery(data, this._parts.duplicateQueryParameters, this._parts.escapeQuerySpace);
-    if (typeof name !== 'string') {
-      build = value;
-    }
-
-    this.build(!build);
-    return this;
-  };
-  p.addQuery = function(name, value, build) {
-    var data = URI.parseQuery(this._parts.query, this._parts.escapeQuerySpace);
-    URI.addQuery(data, name, value === undefined ? null : value);
-    this._parts.query = URI.buildQuery(data, this._parts.duplicateQueryParameters, this._parts.escapeQuerySpace);
-    if (typeof name !== 'string') {
-      build = value;
-    }
-
-    this.build(!build);
-    return this;
-  };
-  p.removeQuery = function(name, value, build) {
-    var data = URI.parseQuery(this._parts.query, this._parts.escapeQuerySpace);
-    URI.removeQuery(data, name, value);
-    this._parts.query = URI.buildQuery(data, this._parts.duplicateQueryParameters, this._parts.escapeQuerySpace);
-    if (typeof name !== 'string') {
-      build = value;
-    }
-
-    this.build(!build);
-    return this;
-  };
-  p.hasQuery = function(name, value, withinArray) {
-    var data = URI.parseQuery(this._parts.query, this._parts.escapeQuerySpace);
-    return URI.hasQuery(data, name, value, withinArray);
-  };
-  p.setSearch = p.setQuery;
-  p.addSearch = p.addQuery;
-  p.removeSearch = p.removeQuery;
-  p.hasSearch = p.hasQuery;
-
-  // sanitizing URLs
-  p.normalize = function() {
-    if (this._parts.urn) {
-      return this
-        .normalizeProtocol(false)
-        .normalizePath(false)
-        .normalizeQuery(false)
-        .normalizeFragment(false)
-        .build();
-    }
-
-    return this
-      .normalizeProtocol(false)
-      .normalizeHostname(false)
-      .normalizePort(false)
-      .normalizePath(false)
-      .normalizeQuery(false)
-      .normalizeFragment(false)
-      .build();
-  };
-  p.normalizeProtocol = function(build) {
-    if (typeof this._parts.protocol === 'string') {
-      this._parts.protocol = this._parts.protocol.toLowerCase();
-      this.build(!build);
-    }
-
-    return this;
-  };
-  p.normalizeHostname = function(build) {
-    if (this._parts.hostname) {
-      if (this.is('IDN') && punycode) {
-        this._parts.hostname = punycode.toASCII(this._parts.hostname);
-      } else if (this.is('IPv6') && IPv6) {
-        this._parts.hostname = IPv6.best(this._parts.hostname);
-      }
-
-      this._parts.hostname = this._parts.hostname.toLowerCase();
-      this.build(!build);
-    }
-
-    return this;
-  };
-  p.normalizePort = function(build) {
-    // remove port of it's the protocol's default
-    if (typeof this._parts.protocol === 'string' && this._parts.port === URI.defaultPorts[this._parts.protocol]) {
-      this._parts.port = null;
-      this.build(!build);
-    }
-
-    return this;
-  };
-  p.normalizePath = function(build) {
-    var _path = this._parts.path;
-    if (!_path) {
-      return this;
-    }
-
-    if (this._parts.urn) {
-      this._parts.path = URI.recodeUrnPath(this._parts.path);
-      this.build(!build);
-      return this;
-    }
-
-    if (this._parts.path === '/') {
-      return this;
-    }
-
-    _path = URI.recodePath(_path);
-
-    var _was_relative;
-    var _leadingParents = '';
-    var _parent, _pos;
-
-    // handle relative paths
-    if (_path.charAt(0) !== '/') {
-      _was_relative = true;
-      _path = '/' + _path;
-    }
-
-    // handle relative files (as opposed to directories)
-    if (_path.slice(-3) === '/..' || _path.slice(-2) === '/.') {
-      _path += '/';
-    }
-
-    // resolve simples
-    _path = _path
-      .replace(/(\/(\.\/)+)|(\/\.$)/g, '/')
-      .replace(/\/{2,}/g, '/');
-
-    // remember leading parents
-    if (_was_relative) {
-      _leadingParents = _path.substring(1).match(/^(\.\.\/)+/) || '';
-      if (_leadingParents) {
-        _leadingParents = _leadingParents[0];
-      }
-    }
-
-    // resolve parents
-    while (true) {
-      _parent = _path.search(/\/\.\.(\/|$)/);
-      if (_parent === -1) {
-        // no more ../ to resolve
-        break;
-      } else if (_parent === 0) {
-        // top level cannot be relative, skip it
-        _path = _path.substring(3);
-        continue;
-      }
-
-      _pos = _path.substring(0, _parent).lastIndexOf('/');
-      if (_pos === -1) {
-        _pos = _parent;
-      }
-      _path = _path.substring(0, _pos) + _path.substring(_parent + 3);
-    }
-
-    // revert to relative
-    if (_was_relative && this.is('relative')) {
-      _path = _leadingParents + _path.substring(1);
-    }
-
-    this._parts.path = _path;
-    this.build(!build);
-    return this;
-  };
-  p.normalizePathname = p.normalizePath;
-  p.normalizeQuery = function(build) {
-    if (typeof this._parts.query === 'string') {
-      if (!this._parts.query.length) {
-        this._parts.query = null;
-      } else {
-        this.query(URI.parseQuery(this._parts.query, this._parts.escapeQuerySpace));
-      }
-
-      this.build(!build);
-    }
-
-    return this;
-  };
-  p.normalizeFragment = function(build) {
-    if (!this._parts.fragment) {
-      this._parts.fragment = null;
-      this.build(!build);
-    }
-
-    return this;
-  };
-  p.normalizeSearch = p.normalizeQuery;
-  p.normalizeHash = p.normalizeFragment;
-
-  p.iso8859 = function() {
-    // expect unicode input, iso8859 output
-    var e = URI.encode;
-    var d = URI.decode;
-
-    URI.encode = escape;
-    URI.decode = decodeURIComponent;
-    try {
-      this.normalize();
-    } finally {
-      URI.encode = e;
-      URI.decode = d;
-    }
-    return this;
-  };
-
-  p.unicode = function() {
-    // expect iso8859 input, unicode output
-    var e = URI.encode;
-    var d = URI.decode;
-
-    URI.encode = strictEncodeURIComponent;
-    URI.decode = unescape;
-    try {
-      this.normalize();
-    } finally {
-      URI.encode = e;
-      URI.decode = d;
-    }
-    return this;
-  };
-
-  p.readable = function() {
-    var uri = this.clone();
-    // removing username, password, because they shouldn't be displayed according to RFC 3986
-    uri.username('').password('').normalize();
-    var t = '';
-    if (uri._parts.protocol) {
-      t += uri._parts.protocol + '://';
-    }
-
-    if (uri._parts.hostname) {
-      if (uri.is('punycode') && punycode) {
-        t += punycode.toUnicode(uri._parts.hostname);
-        if (uri._parts.port) {
-          t += ':' + uri._parts.port;
-        }
-      } else {
-        t += uri.host();
-      }
-    }
-
-    if (uri._parts.hostname && uri._parts.path && uri._parts.path.charAt(0) !== '/') {
-      t += '/';
-    }
-
-    t += uri.path(true);
-    if (uri._parts.query) {
-      var q = '';
-      for (var i = 0, qp = uri._parts.query.split('&'), l = qp.length; i < l; i++) {
-        var kv = (qp[i] || '').split('=');
-        q += '&' + URI.decodeQuery(kv[0], this._parts.escapeQuerySpace)
-          .replace(/&/g, '%26');
-
-        if (kv[1] !== undefined) {
-          q += '=' + URI.decodeQuery(kv[1], this._parts.escapeQuerySpace)
-            .replace(/&/g, '%26');
-        }
-      }
-      t += '?' + q.substring(1);
-    }
-
-    t += URI.decodeQuery(uri.hash(), true);
-    return t;
-  };
-
-  // resolving relative and absolute URLs
-  p.absoluteTo = function(base) {
-    var resolved = this.clone();
-    var properties = ['protocol', 'username', 'password', 'hostname', 'port'];
-    var basedir, i, p;
-
-    if (!(base instanceof URI)) {
-      base = new URI(base);
-    }
-
-    // << Readium patch
-    // "filesystem:chrome-extension:"
-    //
-    
-    if (this._parts.protocol == 'filesystem') {
-
-      return resolved;
-    }
-
-    if (base._parts.protocol == 'filesystem') {
-
-      var uri = this.absoluteTo(base._parts.path);
-
-      if (base._parts.path.indexOf("chrome-extension:") !== -1 || base._parts.path.indexOf("http:") !== -1 || base._parts.path.indexOf("https:") !== -1) {
-
-        return new URI('filesystem:' + uri.toString());
-      }
-
-      return uri;
-    }
-
-    if (this._parts.urn) {
-      throw new Error('URNs do not have any generally defined hierarchical components');
-    }
-
-    //
-    // Readium patch >>
-
-    if (!resolved._parts.protocol) {
-      resolved._parts.protocol = base._parts.protocol;
-    }
-
-    if (this._parts.hostname) {
-      return resolved;
-    }
-
-    for (i = 0; (p = properties[i]); i++) {
-      resolved._parts[p] = base._parts[p];
-    }
-
-    if (!resolved._parts.path) {
-      resolved._parts.path = base._parts.path;
-      if (!resolved._parts.query) {
-        resolved._parts.query = base._parts.query;
-      }
-    } else if (resolved._parts.path.substring(-2) === '..') {
-      resolved._parts.path += '/';
-    }
-
-    if (resolved.path().charAt(0) !== '/') {
-      basedir = base.directory();
-      basedir = basedir ? basedir : base.path().indexOf('/') === 0 ? '/' : '';
-      resolved._parts.path = (basedir ? (basedir + '/') : '') + resolved._parts.path;
-      resolved.normalizePath();
-    }
-
-    resolved.build();
-    return resolved;
-  };
-  p.relativeTo = function(base) {
-    var relative = this.clone().normalize();
-    var relativeParts, baseParts, common, relativePath, basePath;
-
-    if (relative._parts.urn) {
-      throw new Error('URNs do not have any generally defined hierarchical components');
-    }
-
-    base = new URI(base).normalize();
-    relativeParts = relative._parts;
-    baseParts = base._parts;
-    relativePath = relative.path();
-    basePath = base.path();
-
-    if (relativePath.charAt(0) !== '/') {
-      throw new Error('URI is already relative');
-    }
-
-    if (basePath.charAt(0) !== '/') {
-      throw new Error('Cannot calculate a URI relative to another relative URI');
-    }
-
-    if (relativeParts.protocol === baseParts.protocol) {
-      relativeParts.protocol = null;
-    }
-
-    if (relativeParts.username !== baseParts.username || relativeParts.password !== baseParts.password) {
-      return relative.build();
-    }
-
-    if (relativeParts.protocol !== null || relativeParts.username !== null || relativeParts.password !== null) {
-      return relative.build();
-    }
-
-    if (relativeParts.hostname === baseParts.hostname && relativeParts.port === baseParts.port) {
-      relativeParts.hostname = null;
-      relativeParts.port = null;
-    } else {
-      return relative.build();
-    }
-
-    if (relativePath === basePath) {
-      relativeParts.path = '';
-      return relative.build();
-    }
-
-    // determine common sub path
-    common = URI.commonPath(relativePath, basePath);
-
-    // If the paths have nothing in common, return a relative URL with the absolute path.
-    if (!common) {
-      return relative.build();
-    }
-
-    var parents = baseParts.path
-      .substring(common.length)
-      .replace(/[^\/]*$/, '')
-      .replace(/.*?\//g, '../');
-
-    relativeParts.path = (parents + relativeParts.path.substring(common.length)) || './';
-
-    return relative.build();
-  };
-
-  // comparing URIs
-  p.equals = function(uri) {
-    var one = this.clone();
-    var two = new URI(uri);
-    var one_map = {};
-    var two_map = {};
-    var checked = {};
-    var one_query, two_query, key;
-
-    one.normalize();
-    two.normalize();
-
-    // exact match
-    if (one.toString() === two.toString()) {
-      return true;
-    }
-
-    // extract query string
-    one_query = one.query();
-    two_query = two.query();
-    one.query('');
-    two.query('');
-
-    // definitely not equal if not even non-query parts match
-    if (one.toString() !== two.toString()) {
-      return false;
-    }
-
-    // query parameters have the same length, even if they're permuted
-    if (one_query.length !== two_query.length) {
-      return false;
-    }
-
-    one_map = URI.parseQuery(one_query, this._parts.escapeQuerySpace);
-    two_map = URI.parseQuery(two_query, this._parts.escapeQuerySpace);
-
-    for (key in one_map) {
-      if (hasOwn.call(one_map, key)) {
-        if (!isArray(one_map[key])) {
-          if (one_map[key] !== two_map[key]) {
-            return false;
-          }
-        } else if (!arraysEqual(one_map[key], two_map[key])) {
-          return false;
-        }
-
-        checked[key] = true;
-      }
-    }
-
-    for (key in two_map) {
-      if (hasOwn.call(two_map, key)) {
-        if (!checked[key]) {
-          // two contains a parameter not present in one
-          return false;
-        }
-      }
-    }
-
-    return true;
-  };
-
-  // state
-  p.duplicateQueryParameters = function(v) {
-    this._parts.duplicateQueryParameters = !!v;
-    return this;
-  };
-
-  p.escapeQuerySpace = function(v) {
-    this._parts.escapeQuerySpace = !!v;
-    return this;
-  };
-
-  return URI;
-}));
 
 //     Underscore.js 1.8.3
 //     http://underscorejs.org
@@ -18335,6 +14891,298 @@ if ('undefined' !== typeof module) {
   }
 }.call(this));
 
+define('eventEmitter',['require','exports','module'],function (require, exports, module) {'use strict';
+
+var has = Object.prototype.hasOwnProperty;
+
+//
+// We store our EE objects in a plain object whose properties are event names.
+// If `Object.create(null)` is not supported we prefix the event names with a
+// `~` to make sure that the built-in object properties are not overridden or
+// used as an attack vector.
+// We also assume that `Object.create(null)` is available when the event name
+// is an ES6 Symbol.
+//
+var prefix = typeof Object.create !== 'function' ? '~' : false;
+
+/**
+ * Representation of a single EventEmitter function.
+ *
+ * @param {Function} fn Event handler to be called.
+ * @param {Mixed} context Context for function execution.
+ * @param {Boolean} [once=false] Only emit once
+ * @api private
+ */
+function EE(fn, context, once) {
+  this.fn = fn;
+  this.context = context;
+  this.once = once || false;
+}
+
+/**
+ * Minimal EventEmitter interface that is molded against the Node.js
+ * EventEmitter interface.
+ *
+ * @constructor
+ * @api public
+ */
+function EventEmitter() { /* Nothing to set */ }
+
+/**
+ * Hold the assigned EventEmitters by name.
+ *
+ * @type {Object}
+ * @private
+ */
+EventEmitter.prototype._events = undefined;
+
+/**
+ * Return an array listing the events for which the emitter has registered
+ * listeners.
+ *
+ * @returns {Array}
+ * @api public
+ */
+EventEmitter.prototype.eventNames = function eventNames() {
+  var events = this._events
+    , names = []
+    , name;
+
+  if (!events) return names;
+
+  for (name in events) {
+    if (has.call(events, name)) names.push(prefix ? name.slice(1) : name);
+  }
+
+  if (Object.getOwnPropertySymbols) {
+    return names.concat(Object.getOwnPropertySymbols(events));
+  }
+
+  return names;
+};
+
+/**
+ * Return a list of assigned event listeners.
+ *
+ * @param {String} event The events that should be listed.
+ * @param {Boolean} exists We only need to know if there are listeners.
+ * @returns {Array|Boolean}
+ * @api public
+ */
+EventEmitter.prototype.listeners = function listeners(event, exists) {
+  var evt = prefix ? prefix + event : event
+    , available = this._events && this._events[evt];
+
+  if (exists) return !!available;
+  if (!available) return [];
+  if (available.fn) return [available.fn];
+
+  for (var i = 0, l = available.length, ee = new Array(l); i < l; i++) {
+    ee[i] = available[i].fn;
+  }
+
+  return ee;
+};
+
+/**
+ * Emit an event to all registered event listeners.
+ *
+ * @param {String} event The name of the event.
+ * @returns {Boolean} Indication if we've emitted an event.
+ * @api public
+ */
+EventEmitter.prototype.emit = function emit(event, a1, a2, a3, a4, a5) {
+  var evt = prefix ? prefix + event : event;
+
+  if (!this._events || !this._events[evt]) return false;
+
+  var listeners = this._events[evt]
+    , len = arguments.length
+    , args
+    , i;
+
+  if ('function' === typeof listeners.fn) {
+    if (listeners.once) this.removeListener(event, listeners.fn, undefined, true);
+
+    switch (len) {
+      case 1: return listeners.fn.call(listeners.context), true;
+      case 2: return listeners.fn.call(listeners.context, a1), true;
+      case 3: return listeners.fn.call(listeners.context, a1, a2), true;
+      case 4: return listeners.fn.call(listeners.context, a1, a2, a3), true;
+      case 5: return listeners.fn.call(listeners.context, a1, a2, a3, a4), true;
+      case 6: return listeners.fn.call(listeners.context, a1, a2, a3, a4, a5), true;
+    }
+
+    for (i = 1, args = new Array(len -1); i < len; i++) {
+      args[i - 1] = arguments[i];
+    }
+
+    listeners.fn.apply(listeners.context, args);
+  } else {
+    var length = listeners.length
+      , j;
+
+    for (i = 0; i < length; i++) {
+      if (listeners[i].once) this.removeListener(event, listeners[i].fn, undefined, true);
+
+      switch (len) {
+        case 1: listeners[i].fn.call(listeners[i].context); break;
+        case 2: listeners[i].fn.call(listeners[i].context, a1); break;
+        case 3: listeners[i].fn.call(listeners[i].context, a1, a2); break;
+        default:
+          if (!args) for (j = 1, args = new Array(len -1); j < len; j++) {
+            args[j - 1] = arguments[j];
+          }
+
+          listeners[i].fn.apply(listeners[i].context, args);
+      }
+    }
+  }
+
+  return true;
+};
+
+/**
+ * Register a new EventListener for the given event.
+ *
+ * @param {String} event Name of the event.
+ * @param {Function} fn Callback function.
+ * @param {Mixed} [context=this] The context of the function.
+ * @api public
+ */
+EventEmitter.prototype.on = function on(event, fn, context) {
+  var listener = new EE(fn, context || this)
+    , evt = prefix ? prefix + event : event;
+
+  if (!this._events) this._events = prefix ? {} : Object.create(null);
+  if (!this._events[evt]) this._events[evt] = listener;
+  else {
+    if (!this._events[evt].fn) this._events[evt].push(listener);
+    else this._events[evt] = [
+      this._events[evt], listener
+    ];
+  }
+
+  return this;
+};
+
+/**
+ * Add an EventListener that's only called once.
+ *
+ * @param {String} event Name of the event.
+ * @param {Function} fn Callback function.
+ * @param {Mixed} [context=this] The context of the function.
+ * @api public
+ */
+EventEmitter.prototype.once = function once(event, fn, context) {
+  var listener = new EE(fn, context || this, true)
+    , evt = prefix ? prefix + event : event;
+
+  if (!this._events) this._events = prefix ? {} : Object.create(null);
+  if (!this._events[evt]) this._events[evt] = listener;
+  else {
+    if (!this._events[evt].fn) this._events[evt].push(listener);
+    else this._events[evt] = [
+      this._events[evt], listener
+    ];
+  }
+
+  return this;
+};
+
+/**
+ * Remove event listeners.
+ *
+ * @param {String} event The event we want to remove.
+ * @param {Function} fn The listener that we need to find.
+ * @param {Mixed} context Only remove listeners matching this context.
+ * @param {Boolean} once Only remove once listeners.
+ * @api public
+ */
+EventEmitter.prototype.removeListener = function removeListener(event, fn, context, once) {
+  var evt = prefix ? prefix + event : event;
+
+  if (!this._events || !this._events[evt]) return this;
+
+  var listeners = this._events[evt]
+    , events = [];
+
+  if (fn) {
+    if (listeners.fn) {
+      if (
+           listeners.fn !== fn
+        || (once && !listeners.once)
+        || (context && listeners.context !== context)
+      ) {
+        events.push(listeners);
+      }
+    } else {
+      for (var i = 0, length = listeners.length; i < length; i++) {
+        if (
+             listeners[i].fn !== fn
+          || (once && !listeners[i].once)
+          || (context && listeners[i].context !== context)
+        ) {
+          events.push(listeners[i]);
+        }
+      }
+    }
+  }
+
+  //
+  // Reset the array, or remove it completely if we have no more listeners.
+  //
+  if (events.length) {
+    this._events[evt] = events.length === 1 ? events[0] : events;
+  } else {
+    delete this._events[evt];
+  }
+
+  return this;
+};
+
+/**
+ * Remove all listeners or only the listeners for the specified event.
+ *
+ * @param {String} event The event want to remove all listeners for.
+ * @api public
+ */
+EventEmitter.prototype.removeAllListeners = function removeAllListeners(event) {
+  if (!this._events) return this;
+
+  if (event) delete this._events[prefix ? prefix + event : event];
+  else this._events = prefix ? {} : Object.create(null);
+
+  return this;
+};
+
+//
+// Alias methods names because people roll like that.
+//
+EventEmitter.prototype.off = EventEmitter.prototype.removeListener;
+EventEmitter.prototype.addListener = EventEmitter.prototype.on;
+
+//
+// This function doesn't apply anymore.
+//
+EventEmitter.prototype.setMaxListeners = function setMaxListeners() {
+  return this;
+};
+
+//
+// Expose the prefix.
+//
+EventEmitter.prefixed = prefix;
+
+//
+// Expose the module.
+//
+if ('undefined' !== typeof module) {
+  module.exports = EventEmitter;
+}
+
+});
+
 //
 //  Created by Juan Corona
 //  Based on original proposal by Mickaël Menu
@@ -18550,6 +15398,9 @@ define('readium_js_plugins',["jquery", "underscore", "eventEmitter"], function (
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 define('readium_shared_js/globals',['jquery','eventEmitter'], function($, EventEmitter) {
+    
+    var DEBUG = true;
+    
 /**
  * Top level ReadiumSDK namespace
  * @namespace
@@ -18617,6 +15468,10 @@ var Globals = {
         /**
          * @event
          */
+        CONTENT_DOCUMENT_UNLOADED: "ContentDocumentUnloaded",
+        /**
+         * @event
+         */
         MEDIA_OVERLAY_STATUS_CHANGED: "MediaOverlayStatusChanged",
         /**
          * @event
@@ -18642,8 +15497,13 @@ var Globals = {
          * @event
          */
         CURRENT_VIEW_PAGINATION_CHANGED: "CurrentViewPaginationChanged",
+    },
+    
+    logEvent: function(eventName, eventType, eventSource) {
+        if (DEBUG) {
+            console.debug("#### ReadiumSDK.Events." + eventName + " - "+eventType+" - " + eventSource);
+        }
     }
-
 };
 $.extend(Globals, new EventEmitter());
 
@@ -18694,86 +15554,1950 @@ navigator.epubReadingSystem = {
         return false;
     }
 };
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
-//
-//  Redistribution and use in source and binary forms, with or without modification,
-//  are permitted provided that the following conditions are met:
-//  1. Redistributions of source code must retain the above copyright notice, this
-//  list of conditions and the following disclaimer.
-//  2. Redistributions in binary form must reproduce the above copyright notice,
-//  this list of conditions and the following disclaimer in the documentation and/or
-//  other materials provided with the distribution.
-//  3. Neither the name of the organization nor the names of its contributors may be
-//  used to endorse or promote products derived from this software without specific
-//  prior written permission.
+/* Simple JavaScript Inheritance
+ * By John Resig http://ejohn.org/
+ * MIT Licensed.
+ */
+// Inspired by base2 and Prototype
+define('readium_plugin_highlights/lib/class',[],function() {
 
-//'text!empty:'
-define('readium_shared_js/globalsSetup',['jquery', 'console_shim', 'eventEmitter', 'URIjs', 'readium_cfi_js', 'readium_js_plugins', './globals'], function ($, console_shim, EventEmitter, URI, epubCfi, PluginsController, Globals) {
+    var initializing = false,
+        fnTest = /xyz/.test(function() {
+            xyz;
+        }) ? /\b_super\b/ : /.*/;
 
-    console.log("Globals...");
+    // The base Class implementation (does nothing)
+    var Class = function() {};
 
-    if (window["ReadiumSDK"]) {
-        console.log("ReadiumSDK extend.");
-        $.extend(Globals, window.ReadiumSDK);
-    } else {
-        console.log("ReadiumSDK set.");
-    }
+    // Create a new Class that inherits from this class
+    Class.extend = function(prop) {
+        var _super = this.prototype;
 
-    window.ReadiumSDK = Globals;
+        // Instantiate a base class (but only create the instance,
+        // don't run the init constructor)
+        initializing = true;
+        var prototype = new this();
+        initializing = false;
 
-    // TODO: refactor client code to use emit instead of trigger?
-    EventEmitter.prototype.trigger = EventEmitter.prototype.emit;
+        // Copy the properties over onto the new prototype
+        for (var name in prop) {
+            // Check if we're overwriting an existing function
+            prototype[name] = typeof prop[name] == "function" &&
+                typeof _super[name] == "function" && fnTest.test(prop[name]) ?
+                (function(name, fn) {
+                    return function() {
+                        var tmp = this._super;
 
-    // TODO pass as dependency injection define() function parameter, not window global!
-    window.EventEmitter = EventEmitter;
+                        // Add a new ._super() method that is the same method
+                        // but on the super-class
+                        this._super = _super[name];
 
-    // TODO pass as dependency injection define() function parameter, not window global!
-    window.URI = URI;
+                        // The method only need to be bound temporarily, so we
+                        // remove it when we're done executing
+                        var ret = fn.apply(this, arguments);
+                        this._super = tmp;
 
-    // window.URL accessor to window.webkitURL (Safari 6 support)
-    if ('URL' in window === false) {
-        if ('webkitURL' in window === false) {
-            throw Error('Browser does not support window.URL');
+                        return ret;
+                    };
+                })(name, prop[name]) :
+                prop[name];
         }
 
-        window.URL = window.webkitURL;
-    }
-    // Plugins bootstrapping begins
-    Globals.Plugins = PluginsController;
-    Globals.on(Globals.Events.READER_INITIALIZED, function(reader) {
-        try {
-            PluginsController.initialize(reader);
-        } catch (ex) {
-            console.error("Plugins failed to initialize:", ex);
+        // The dummy class constructor
+        function Class() {
+            // All construction is actually done in the init method
+            if (!initializing && this.init)
+                this.init.apply(this, arguments);
         }
 
-        _.defer(function() {
-            console.log("Plugins loaded.");
-            Globals.emit(Globals.Events.PLUGINS_LOADED, reader);
-        });
-    });
+        // Populate our constructed prototype object
+        Class.prototype = prototype;
 
-    if (window._RJS_isBrowser) {
-        // If under a browser env and using RequireJS, dynamically require all plugins
-        var pluginsList = window._RJS_pluginsList;
-        console.log("Plugins included: ", pluginsList.map(function(v) {
-            // To stay consistent with bundled output
-            return v.replace('readium_plugin_', '');
-        }));
+        // Enforce the constructor to be what we expect
+        Class.prototype.constructor = Class;
 
-        require(pluginsList);
-    } else {
-        // Else list which plugins were included when using almond and bundle(s)
-        setTimeout(function() {
-            // Assume that in the next callback all the plugins have been registered
-            var pluginsList = Object.keys(PluginsController.getLoadedPlugins());
-            console.log("Plugins included: ", pluginsList);
-        }, 0);
-    }
-    // Plugins bootstrapping ends
+        // And make this class extendable
+        Class.extend = arguments.callee;
+
+        return Class;
+    };
+
+    return Class;
 });
 
-define('readium_shared_js', ['readium_shared_js/globalsSetup'], function (main) { return main; });
+define('readium_plugin_highlights/helpers',[],function() {
+    var HighlightHelpers = {
+        getMatrix: function($obj) {
+            var matrix = $obj.css("-webkit-transform") ||
+                $obj.css("-moz-transform") ||
+                $obj.css("-ms-transform") ||
+                $obj.css("-o-transform") ||
+                $obj.css("transform");
+            return matrix === "none" ? undefined : matrix;
+        },
+        getScaleFromMatrix: function(matrix) {
+            var matrixRegex = /matrix\((-?\d*\.?\d+),\s*0,\s*0,\s*(-?\d*\.?\d+),\s*0,\s*0\)/,
+                matches = matrix.match(matrixRegex);
+            return matches[1];
+        }
+    };
+
+    return HighlightHelpers;
+});
+
+define('readium_plugin_highlights/models/text_line_inferrer',["../lib/class"], function(Class) {
+    var TextLineInferrer = Class.extend({
+
+        init: function(options) {
+            this.lineHorizontalThreshold = options.lineHorizontalThreshold || 0;
+            this.lineHorizontalLimit = options.lineHorizontalLimit || 0;
+        },
+
+        // ----------------- PUBLIC INTERFACE --------------------------------------------------------------
+
+        inferLines: function(rectTextList) {
+            var inferredLines = [];
+            var numRects = rectTextList.length;
+            var numLines = 0;
+            var currLine;
+            var currRect;
+            var currRectTextObj;
+            var rectAppended;
+
+            // Iterate through each rect
+            for (var currRectNum = 0; currRectNum <= numRects - 1; currRectNum++) {
+                currRectTextObj = rectTextList[currRectNum];
+                currRect = currRectTextObj.rect;
+                // Check if the rect can be added to any of the current lines
+                rectAppended = false;
+
+                if (inferredLines.length > 0) {
+                    currLine = inferredLines[inferredLines.length - 1];
+
+                    if (this.includeRectInLine(currLine.line, currRect.top, currRect.left,
+                            currRect.width, currRect.height)) {
+                        rectAppended = this.expandLine(currLine.line, currRect.left, currRect.top,
+                            currRect.width, currRect.height);
+
+                        currLine.data.push(currRectTextObj);
+                    }
+                }
+
+                if (!rectAppended) {
+                    inferredLines.push({
+                        data: [currRectTextObj],
+                        line: this.createNewLine(currRect.left, currRect.top,
+                            currRect.width, currRect.height)
+                    });
+                    // Update the number of lines, so we're not using .length on every iteration
+                    numLines = numLines + 1;
+                }
+            }
+            return inferredLines;
+        },
+
+
+        // ----------------- PRIVATE HELPERS ---------------------------------------------------------------
+
+        includeRectInLine: function(currLine, rectTop, rectLeft, rectWidth, rectHeight) {
+            // is on an existing line : based on vertical position
+            if (this.rectIsWithinLineVertically(rectTop, rectHeight, currLine.maxTop, currLine.maxBottom)) {
+                if (this.rectIsWithinLineHorizontally(rectLeft, rectWidth, currLine.left,
+                        currLine.width, currLine.avgHeight)) {
+                    return true;
+                }
+            }
+            return false;
+        },
+
+        rectIsWithinLineVertically: function(rectTop, rectHeight, currLineMaxTop, currLineMaxBottom) {
+            var rectBottom = rectTop + rectHeight;
+            var lineHeight = currLineMaxBottom - currLineMaxTop;
+            var lineHeightAdjustment = (lineHeight * 0.75) / 2;
+            var rectHeightAdjustment = (rectHeight * 0.75) / 2;
+
+            rectTop = rectTop + rectHeightAdjustment;
+            rectBottom = rectBottom - rectHeightAdjustment;
+            currLineMaxTop = currLineMaxTop + lineHeightAdjustment;
+            currLineMaxBottom = currLineMaxBottom - lineHeightAdjustment;
+
+            if (rectTop === currLineMaxTop && rectBottom === currLineMaxBottom) {
+                return true;
+            } else if (rectTop < currLineMaxTop && rectBottom < currLineMaxBottom &&
+                rectBottom > currLineMaxTop) {
+                return true;
+            } else if (rectTop > currLineMaxTop && rectBottom > currLineMaxBottom &&
+                rectTop < currLineMaxBottom) {
+                return true;
+            } else if (rectTop > currLineMaxTop && rectBottom < currLineMaxBottom) {
+                return true;
+            } else if (rectTop < currLineMaxTop && rectBottom > currLineMaxBottom) {
+                return true;
+            } else {
+                return false;
+            }
+        },
+
+        rectIsWithinLineHorizontally: function(rectLeft, rectWidth, currLineLeft, currLineWidth,
+            currLineAvgHeight) {
+            var lineGapHeuristic = 2 * currLineAvgHeight;
+            var rectRight = rectLeft + rectWidth;
+            var currLineRight = rectLeft + currLineWidth;
+
+            if ((currLineLeft - rectRight) > lineGapHeuristic) {
+                return false;
+            } else if ((rectLeft - currLineRight) > lineGapHeuristic) {
+                return false;
+            } else {
+                return true;
+            }
+        },
+
+        createNewLine: function(rectLeft, rectTop, rectWidth, rectHeight) {
+            var maxBottom = rectTop + rectHeight;
+
+            return {
+                left: rectLeft,
+                startTop: rectTop,
+                width: rectWidth,
+                avgHeight: rectHeight,
+                maxTop: rectTop,
+                maxBottom: maxBottom,
+                numRects: 1
+            };
+        },
+
+        expandLine: function(currLine, rectLeft, rectTop, rectWidth, rectHeight) {
+            var lineOldRight = currLine.left + currLine.width;
+
+            // Update all the properties of the current line with rect dimensions
+            var rectRight = rectLeft + rectWidth;
+            var rectBottom = rectTop + rectHeight;
+            var numRectsPlusOne = currLine.numRects + 1;
+
+            // Average height calculation
+            var currSumHeights = currLine.avgHeight * currLine.numRects;
+            var avgHeight = Math.ceil((currSumHeights + rectHeight) / numRectsPlusOne);
+            currLine.avgHeight = avgHeight;
+            currLine.numRects = numRectsPlusOne;
+
+            // Expand the line vertically
+            currLine = this.expandLineVertically(currLine, rectTop, rectBottom);
+            currLine = this.expandLineHorizontally(currLine, rectLeft, rectRight);
+
+            return currLine;
+        },
+
+        expandLineVertically: function(currLine, rectTop, rectBottom) {
+            if (rectTop < currLine.maxTop) {
+                currLine.maxTop = rectTop;
+            }
+            if (rectBottom > currLine.maxBottom) {
+                currLine.maxBottom = rectBottom;
+            }
+
+            return currLine;
+        },
+
+        expandLineHorizontally: function(currLine, rectLeft, rectRight) {
+            var newLineLeft = currLine.left <= rectLeft ? currLine.left : rectLeft;
+            var lineRight = currLine.left + currLine.width;
+            var newLineRight = lineRight >= rectRight ? lineRight : rectRight;
+            var newLineWidth = newLineRight - newLineLeft;
+
+            //cancel the expansion if the line is going to expand outside a horizontal limit
+            //this is used to prevent lines from spanning multiple columns in a two column epub view
+            var horizontalThreshold = this.lineHorizontalThreshold;
+            var horizontalLimit = this.lineHorizontalLimit;
+
+            var leftBoundary = Math.floor(newLineLeft / horizontalLimit) * horizontalLimit;
+            var centerBoundary = leftBoundary + horizontalThreshold;
+            var rightBoundary = leftBoundary + horizontalLimit;
+            if ((newLineLeft > leftBoundary && newLineRight > centerBoundary && newLineLeft < centerBoundary) || (newLineLeft > centerBoundary && newLineRight > rightBoundary)) {
+                return undefined;
+            }
+
+            currLine.left = newLineLeft;
+            currLine.width = newLineWidth;
+
+            return currLine;
+        }
+    });
+
+    return TextLineInferrer;
+});
+
+// https://github.com/heygrady/Units
+//
+// Copyright (c) 2013 Grady Kuhnline
+//
+// MIT License
+//
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
+// the following conditions:
+//
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+define('readium_plugin_highlights/lib/length',[],function() {
+    return function(document) {
+        "use strict";
+
+        // create a test element
+        var testElem = document.createElement('test'),
+            docElement = document.documentElement,
+            defaultView = document.defaultView,
+            getComputedStyle = defaultView && defaultView.getComputedStyle,
+            computedValueBug,
+            runit = /^(-?[\d+\.\-]+)([a-z]+|%)$/i,
+            convert = {},
+            conversions = [1 / 25.4, 1 / 2.54, 1 / 72, 1 / 6],
+            units = ['mm', 'cm', 'pt', 'pc', 'in', 'mozmm'],
+            i = 6; // units.length
+
+        // add the test element to the dom
+        docElement.appendChild(testElem);
+
+        // test for the WebKit getComputedStyle bug
+        // @see http://bugs.jquery.com/ticket/10639
+        if (getComputedStyle) {
+            // add a percentage margin and measure it
+            testElem.style.marginTop = '1%';
+            computedValueBug = getComputedStyle(testElem).marginTop === '1%';
+        }
+
+        // pre-calculate absolute unit conversions
+        while (i--) {
+            convert[units[i] + "toPx"] = conversions[i] ? conversions[i] * convert.inToPx : toPx(testElem, '1' + units[i]);
+        }
+
+        // remove the test element from the DOM and delete it
+        docElement.removeChild(testElem);
+        testElem = undefined;
+
+        // convert a value to pixels
+        function toPx(elem, value, prop, force) {
+            // use width as the default property, or specify your own
+            prop = prop || 'width';
+
+            var style,
+                inlineValue,
+                ret,
+                unit = (value.match(runit) || [])[2],
+                conversion = unit === 'px' ? 1 : convert[unit + 'toPx'],
+                rem = /r?em/i;
+
+            if (conversion || rem.test(unit) && !force) {
+                // calculate known conversions immediately
+                // find the correct element for absolute units or rem or fontSize + em or em
+                elem = conversion ? elem : unit === 'rem' ? docElement : prop === 'fontSize' ? elem.parentNode || elem : elem;
+
+                // use the pre-calculated conversion or fontSize of the element for rem and em
+                conversion = conversion || parseFloat(curCSS(elem, 'fontSize'));
+
+                // multiply the value by the conversion
+                ret = parseFloat(value) // conversion;
+            } else {
+                // begin "the awesome hack by Dean Edwards"
+                // @see http://erik.eae.net/archives/2007/07/27/18.54.15/#comment-102291
+
+                // remember the current style
+                style = elem.style;
+                inlineValue = style[prop];
+
+                // set the style on the target element
+                try {
+                    style[prop] = value;
+                } catch (e) {
+                    // IE 8 and below throw an exception when setting unsupported units
+                    return 0;
+                }
+
+                // read the computed value
+                // if style is nothing we probably set an unsupported unit
+                ret = !style[prop] ? 0 : parseFloat(curCSS(elem, prop));
+
+                // reset the style back to what it was or blank it out
+                style[prop] = inlineValue !== undefined ? inlineValue : null;
+            }
+
+            // return a number
+            return ret;
+        }
+
+        // return the computed value of a CSS property
+        function curCSS(elem, prop) {
+            var value,
+                pixel,
+                unit,
+                rvpos = /^top|bottom/,
+                outerProp = ["paddingTop", "paddingBottom", "borderTop", "borderBottom"],
+                innerHeight,
+                parent,
+                i = 4; // outerProp.length
+
+            if (getComputedStyle) {
+                // FireFox, Chrome/Safari, Opera and IE9+
+                value = getComputedStyle(elem)[prop];
+            } else if (pixel = elem.style['pixel' + prop.charAt(0).toUpperCase() + prop.slice(1)]) {
+                // IE and Opera support pixel shortcuts for top, bottom, left, right, height, width
+                // WebKit supports pixel shortcuts only when an absolute unit is used
+                value = pixel + 'px';
+            } else if (prop === 'fontSize') {
+                // correct IE issues with font-size
+                // @see http://bugs.jquery.com/ticket/760
+                value = toPx(elem, '1em', 'left', 1) + 'px';
+            } else {
+                // IE 8 and below return the specified style
+                value = elem.currentStyle[prop];
+            }
+
+            // check the unit
+            unit = (value.match(runit) || [])[2];
+            if (unit === '%' && computedValueBug) {
+                // WebKit won't convert percentages for top, bottom, left, right, margin and text-indent
+                if (rvpos.test(prop)) {
+                    // Top and bottom require measuring the innerHeight of the parent.
+                    innerHeight = (parent = elem.parentNode || elem).offsetHeight;
+                    while (i--) {
+                        innerHeight -= parseFloat(curCSS(parent, outerProp[i]));
+                    }
+                    value = parseFloat(value) / 100 // innerHeight + 'px';
+                } else {
+                    // This fixes margin, left, right and text-indent
+                    // @see https://bugs.webkit.org/show_bug.cgi?id=29084
+                    // @see http://bugs.jquery.com/ticket/10639
+                    value = toPx(elem, value);
+                }
+            } else if ((value === 'auto' || (unit && unit !== 'px')) && getComputedStyle) {
+                // WebKit and Opera will return auto in some cases
+                // Firefox will pass back an unaltered value when it can't be set, like top on a static element
+                value = 0;
+            } else if (unit && unit !== 'px' && !getComputedStyle) {
+                // IE 8 and below won't convert units for us
+                // try to convert using a prop that will return pixels
+                // this will be accurate for everything (except font-size and some percentages)
+                value = toPx(elem, value) + 'px';
+            }
+            return value;
+        }
+
+        // export the conversion function
+        return {
+            toPx: toPx
+        };
+    };
+});
+
+define('readium_plugin_highlights/models/copied_text_styles',[],function() {
+    return [
+        "color",
+        "font-family",
+        "font-size",
+        "font-weight",
+        "font-style",
+        //"line-height",
+        "text-decoration",
+        "text-transform",
+        "text-shadow",
+        "letter-spacing",
+
+        "text-rendering",
+        "font-kerning",
+        "font-language-override",
+        "font-size-adjust",
+        "font-stretch",
+        "font-synthesis",
+        "font-variant",
+        "font-variant-alternates",
+        "font-variant-caps",
+        "font-variant-east-asian",
+        "font-variant-ligatures",
+        "font-variant-numeric",
+        "font-variant-position",
+        "-webkit-font-smoothing ",
+
+        "-ms-writing-mode",
+        "-webkit-writing-mode",
+        "-moz-writing-mode",
+        "-ms-writing-mode",
+        "writing-mode",
+
+        "-webkit-text-orientation",
+        "-moz-text-orientation",
+        "-ms-text-orientation",
+        "text-orientation: mixed"
+    ];
+});
+
+define('readium_plugin_highlights/views/view',["jquery", "underscore", "../lib/class", "../lib/length", "../models/text_line_inferrer", "../models/copied_text_styles"],
+function($, _, Class, Length, TextLineInferrer, CopiedTextStyles) {
+    // This is not a backbone view.
+
+    var HighlightView = Class.extend({
+        // this is an element that highlight will be associated with, it is not styled at this point
+        template: "<div class=\"rd-highlight\"></div>",
+
+        init: function(context, options) {
+            this.context = context;
+
+            this.lengthLib = new Length(this.context.document);
+
+            this.highlight = {
+                id: options.id,
+                CFI: options.CFI,
+                type: options.type,
+                top: options.top,
+                left: options.left,
+                height: options.height,
+                width: options.width,
+                styles: options.styles,
+                contentRenderData: options.contentRenderData
+            };
+
+            this.swipeThreshold = 10;
+            this.swipeVelocity = 0.65; // in px/ms
+        },
+
+        render: function() {
+            this.$el = $(this.template, this.context.document);
+            this.$el.attr('data-id', this.highlight.id);
+            this.updateStyles();
+            this.renderContent();
+            return this.$el;
+        },
+
+        remove: function() {
+            this.highlight = null;
+            this.context = null;
+            this.$el.remove();
+        },
+
+
+
+        resetPosition: function(top, left, height, width) {
+            _.assign(this.highlight, {
+                top: top,
+                left: left,
+                height: height,
+                width: width
+            });
+            this.setCSS();
+        },
+
+        setStyles: function(styles) {
+            this.highlight.styles = styles;
+            this.updateStyles();
+        },
+
+        update: function(type, styles) {
+            // save old type
+            var oldType = this.highlight.type;
+
+            _.assign(this.highlight, {
+                type: type,
+                styles: styles
+            });
+
+            // we need to fully restyle view elements
+            // remove all the "inline" styles
+            this.$el.removeAttr("style");
+
+            // remove class applied by "type"
+            this.$el.removeClass(oldType);
+
+            this.updateStyles();
+        },
+
+        updateStyles: function() {
+            this.setBaseHighlight();
+            this.setCSS();
+        },
+
+        // Will return null or false if :first-line/letter would not apply to the first text node child
+        getFirstTextNodeChild: function(elem) {
+            for (var i = 0; i < elem.childNodes.length; i++) {
+                var child = elem.childNodes[i];
+                if (child.nodeType === Node.TEXT_NODE) {
+                    return child;
+                }
+
+                if (child.nodeType === Node.ELEMENT_NODE) {
+                    var doc = child.ownerDocument;
+                    var style = doc.defaultView.getComputedStyle(child);
+                    // If it's not an element we can definitely ignore
+                    if ((style['position'] !== 'absolute' && style['position'] !== 'fixed') &&
+                        style['float'] === 'none' && style['display'] !== 'none') {
+                        if (style['display'] === 'inline') {
+                            var result = this.getFirstTextNodeChild(child);
+                            if (result) {
+                                return result;
+                            } else if (result === false) {
+                                return false;
+                            }
+                        } else {
+                            return false;
+                        }
+                    }
+                }
+            }
+            return null;
+        },
+
+        // Returns the styles which apply to the first line of the specified element, or null if there aren't any
+        // Assumes that the specified argument is a block element
+        getFirstLineStyles: function(elem) {
+            var win = elem.ownerDocument.defaultView;
+            if (!win.getMatchedCSSRules) {
+                // Without getMatchingCSSRules, we can't get first-line styles
+                return null;
+            }
+            while (elem) {
+                var styles = win.getMatchedCSSRules(elem, 'first-line');
+                if (styles) {
+                    return styles[0].style;
+                }
+
+                // Go through previous siblings, return null if there's a non-empty text node, or an element that's
+                // not display: none; - both of these prevent :first-line styles from the parents from applying
+                var sibling = elem;
+                while (sibling = sibling.previousSibling) {
+                    if (sibling.nodeType === Node.ELEMENT_NODE) {
+                        var siblingStyles = win.getComputedStyle(sibling);
+                        if (siblingStyles['display'] !== 'none') {
+                            return null;
+                        }
+                    } else if (sibling.nodeType === Node.TEXT_NODE && sibling.textContent.match(/\S/)) {
+                        return null;
+                    }
+                };
+                elem = elem.parentNode;
+            }
+        },
+
+        renderContent: function() {
+            var that = this;
+            var renderData = this.highlight.contentRenderData;
+            if (renderData) {
+                _.each(renderData.data, function(data) {
+                    var $ancestor = $(data.ancestorEl);
+                    var $blockAncestor = $(data.blockAncestorEl);
+                    var document = data.ancestorEl.ownerDocument;
+
+                    var el = document.createElement("div");
+                    el.style.position = 'absolute';
+                    el.style.top = (data.rect.top - renderData.top) + "px";
+                    el.style.left = (data.rect.left - renderData.left) + "px";
+                    el.style.width = (data.rect.width + 1) + "px";
+                    el.style.height = data.rect.height + "px";
+
+                    var copyStyles = function(copyFrom, copyTo) {
+                        _.each(CopiedTextStyles, function(styleName) {
+                            var style = copyFrom[styleName];
+                            if (style) {
+                                copyTo[styleName] = style;
+                            }
+                        });
+                    };
+
+                    var copiedStyles = $ancestor.data("rd-copied-text-styles");
+                    if (!copiedStyles) {
+                        copiedStyles = {};
+                        var computedStyle = document.defaultView.getComputedStyle(data.ancestorEl);
+                        copyStyles(computedStyle, copiedStyles);
+                        $ancestor.data("rd-copied-text-styles", copiedStyles);
+                    }
+
+                    var copiedFirstLineStyles = $blockAncestor.data("rd-copied-first-line-styles");
+                    if (copiedFirstLineStyles === undefined) {
+                        copiedFirstLineStyles = null;
+                        var firstLineStyles = that.getFirstLineStyles(data.blockAncestorEl);
+                        if (firstLineStyles) {
+                            copiedFirstLineStyles = {};
+                            copyStyles(firstLineStyles, copiedFirstLineStyles);
+                            // Delete text-transform because it doesn't apply in Chrome on :first-line
+                            delete copiedFirstLineStyles['text-transform'];
+                            _.each(["font-size", "letter-spacing"], function(styleName) {
+                                if (copiedFirstLineStyles[styleName]) {
+                                    copiedFirstLineStyles[styleName] = that.lengthLib.toPx(data.ancestorEl, copiedFirstLineStyles[styleName]) + "px";
+                                }
+                            });
+                        }
+                        $blockAncestor.data("rd-copied-first-line-styles", copiedFirstLineStyles);
+                    }
+
+                    if (copiedFirstLineStyles) {
+                        var textNode = that.getFirstTextNodeChild(data.blockAncestorEl);
+                        var range = document.createRange();
+                        range.setStart(textNode, 0);
+                        range.setEnd(data.node, data.startOffset + 1);
+                        var rects = range.getClientRects();
+                        var inferrer = new TextLineInferrer({
+                            lineHorizontalThreshold: $("body", document).clientWidth,
+                            lineHorizontalLimit: document.defaultView.innerWidth
+                        });
+                        if (inferrer.inferLines(_.map(rects, function(rect) {
+                                return {
+                                    rect: rect
+                                }
+                            })).length > 1) {
+                            copiedFirstLineStyles = null;
+                        }
+                    }
+
+                    _.each(copiedStyles, function(style, styleName) {
+                        style = copiedFirstLineStyles ? copiedFirstLineStyles[styleName] || style : style;
+                        el.style[styleName] = style;
+                    });
+                    el.style["line-height"] = data.rect.height + "px";
+
+                    el.appendChild(document.createTextNode(data.text));
+                    that.$el[0].appendChild(el);
+                });
+                processedElements = null;
+                computedStyles = null;
+            }
+        },
+
+        setCSS: function() {
+            // set highlight's absolute position
+            this.$el.css({
+                "position": "absolute",
+                "top": this.highlight.top + "px",
+                "left": this.highlight.left + "px",
+                "height": this.highlight.height + "px",
+                "width": this.highlight.width + "px"
+            });
+
+            // apply styles, if any
+            var styles = this.highlight.styles || {};
+            try {
+                this.$el.css(styles);
+            } catch (ex) {
+                console.log('EpubAnnotations: invalid css styles');
+            }
+        },
+
+        setBaseHighlight: function(removeFocus) {
+            var type = this.highlight.type;
+            this.$el.addClass(type);
+            this.$el.removeClass("hover-" + type);
+            if (removeFocus) {
+                this.$el.removeClass("focused-" + type);
+            }
+        },
+
+        setHoverHighlight: function() {
+            var type = this.highlight.type;
+            this.$el.addClass("hover-" + type);
+            this.$el.removeClass(type);
+        },
+
+        setFocusedHighlight: function() {
+            var type = this.highlight.type;
+            this.$el.addClass("focused-" + type);
+            this.$el.removeClass(type).removeClass("hover-" + type);
+        },
+
+        setVisibility: function(value) {
+            if (value) {
+                this.$el.css('display', '');
+            } else {
+                this.$el.css('display', 'none');
+            }
+        },
+
+    });
+
+    return HighlightView;
+});
+
+define('readium_plugin_highlights/views/border_view',["./view"], function(HighlightView) {
+
+    // This is not a backbone view.
+
+    var HighlightBorderView = HighlightView.extend({
+
+        template: "<div class=\"rd-highlight-border\"></div>",
+
+        setCSS: function() {
+
+            this.$el.css({
+                backgroundClip: 'padding-box',
+                borderStyle: 'solid',
+                borderWidth: '5px',
+                boxSizing: "border-box"
+            });
+            this._super();
+        },
+
+        setBaseHighlight: function() {
+
+            this.$el.addClass("highlight-border");
+            this.$el.removeClass("hover-highlight-border").removeClass("focused-highlight-border");
+        },
+
+        setHoverHighlight: function() {
+
+            this.$el.addClass("hover-highlight-border");
+            this.$el.removeClass("highlight-border");
+        },
+
+        setFocusedHighlight: function() {
+            this.$el.addClass('focused-highlight-border');
+            this.$el.removeClass('highlight-border').removeClass('hover-highlight-border');
+        }
+    });
+
+    return HighlightBorderView;
+});
+
+define('readium_plugin_highlights/models/group',["jquery", "underscore", "../lib/class", "./text_line_inferrer", "../views/view", "../views/border_view", "../helpers"],
+function($, _, Class, TextLineInferrer, HighlightView, HighlightBorderView, HighlightHelpers) {
+
+    var debouncedTrigger = _.debounce(
+        function(fn, eventName) {
+            fn(eventName);
+        }, 10);
+
+    var HighlightGroup = Class.extend({
+
+        init: function(context, options) {
+            this.context = context;
+
+            this.highlightViews = [];
+
+            this.CFI = options.CFI;
+            this.selectedNodes = options.selectedNodes;
+            this.offsetTopAddition = options.offsetTopAddition;
+            this.offsetLeftAddition = options.offsetLeftAddition;
+            this.styles = options.styles;
+            this.id = options.id;
+            this.type = options.type;
+            this.scale = options.scale;
+            this.selectionText = options.selectionText;
+            this.visible = options.visible;
+            this.rangeInfo = options.rangeInfo;
+
+            this.constructHighlightViews();
+        },
+
+        onHighlightEvent: function(event, type) {
+            var that = this;
+            var documentFrame = this.context.iframe;
+            var topView = this.context.manager;
+            var triggerEvent = _.partial(topView.trigger, _, that.type,
+                that.CFI, that.id, event, documentFrame);
+
+            if (type === "click" || type === "touchend") {
+                debouncedTrigger(triggerEvent, "annotationClicked");
+
+            } else if (type === "contextmenu") {
+                triggerEvent("annotationRightClicked");
+
+            } else if (type === "mousemove") {
+                triggerEvent("annotationMouseMove");
+
+            } else if (type === "mouseenter") {
+                triggerEvent("annotationHoverIn");
+
+            } else if (type === "mouseleave") {
+                triggerEvent("annotationHoverOut");
+
+            } else if (type === "mousedown") {
+                // prevent selection when right clicking
+                var preventEvent = function(event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    documentFrame.contentDocument.removeEventListener(event.type, preventEvent);
+                };
+                if (event.button === 2) {
+                    event.preventDefault();
+                    documentFrame.contentDocument.addEventListener("selectstart", preventEvent);
+                    documentFrame.contentDocument.addEventListener("mouseup", preventEvent);
+                    documentFrame.contentDocument.addEventListener("click", preventEvent);
+                    documentFrame.contentDocument.addEventListener("contextmenu", preventEvent);
+                }
+            }
+
+            // "mouseenter" and "mouseleave" events not only trigger corresponding named event, but also
+            // affect the appearance
+            if (type === "mouseenter" || type === "mouseleave") {
+                // Change appearance of highlightViews constituting this highlight group
+                // do not iterate over secondary highlight views (hightlightViewsSecondary)
+                _.each(this.highlightViews, function(highlightView) {
+
+                    if (type === "mouseenter") {
+                        highlightView.setHoverHighlight();
+                    } else if (type === "mouseleave") {
+                        highlightView.setBaseHighlight(false);
+                    }
+                });
+            }
+
+        },
+
+        normalizeRectangle: function(rect) {
+            return {
+                left: rect.left,
+                right: rect.right,
+                top: rect.top,
+                bottom: rect.bottom,
+                width: rect.right - rect.left,
+                height: rect.bottom - rect.top
+            };
+        },
+
+        // produces an event string corresponding to "pointer events" that we want to monitor on the
+        // bound HL container. We are adding namespace to the event names in order to be able to
+        // remove them by specifying <eventname>.<namespace> only, rather than classic callback function
+        getBoundHighlightContainerEvents: function() {
+            // these are the event names that we handle in "onHighlightEvent"
+            var boundHighlightContainerEvents = ["click", "touchstart", "touchend", "touchmove", "contextmenu",
+                "mouseenter", "mouseleave", "mousemove", "mousedown"
+            ];
+            var namespace = ".rdjsam-" + this.id;
+            return boundHighlightContainerEvents.map(function(e) {
+                return e + namespace;
+            }).join(" ");
+        },
+
+        getFirstBlockParent: function(elem) {
+            var win = elem.ownerDocument.defaultView;
+            do {
+                var style = win.getComputedStyle(elem);
+                if (style['display'] !== 'inline') {
+                    return elem;
+                }
+            } while (elem = elem.parentNode);
+        },
+
+        // construct view for each rectangle constituting HL group
+        constructHighlightViews: function() {
+            var that = this;
+            if (!this.visible)
+                return;
+
+            var rectTextList = [];
+
+            // this is an array of elements (not Node.TEXT_NODE) that are part of HL group
+            // they will presented as HighlightBorderView
+            var rectElementList = [];
+            var inferrer;
+            var inferredLines;
+            var allContainerRects = [];
+            var hoverThreshold = 2; // Pixels to expand each rect on each side, for hovering/clicking purposes
+            var rangeInfo = this.rangeInfo;
+            var selectedNodes = this.selectedNodes;
+            var includeMedia = this.includeMedia;
+            var contentDocumentFrame = this.context.iframe;
+            var highlightStyles = this.styles;
+            var cloneTextMode = highlightStyles ? highlightStyles['-rd-highlight-mode'] === 'clone-text' : false;
+
+            function pushToRectTextList(range) {
+                var match,
+                    rangeText = range.toString(),
+                    rects = [],
+                    node = range.startContainer,
+                    ancestor = range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE ? range.commonAncestorContainer : range.commonAncestorContainer.parentNode,
+                    blockAncestor = that.getFirstBlockParent(ancestor),
+                    baseOffset = range.startOffset,
+                    rgx = /\S+/g;
+
+                if (cloneTextMode) {
+                    while (match = rgx.exec(rangeText)) {
+                        var startOffset = baseOffset + rgx.lastIndex - match[0].length,
+                            endOffset = baseOffset + rgx.lastIndex;
+                        range.setStart(node, startOffset);
+                        range.setEnd(node, endOffset);
+                        var clientRects = range.getClientRects();
+                        var curRect = 0;
+                        var curStart = startOffset;
+                        var curEnd = curStart;
+                        while (curRect < clientRects.length) {
+                            var saveRect = false;
+                            if (clientRects[curRect].width === 0 || clientRects[curRect].height === 0) {
+                                curRect++;
+                                continue;
+                            }
+                            if (curRect === clientRects.length - 1) {
+                                curEnd = endOffset;
+                                saveRect = true;
+                            } else {
+                                curEnd++;
+                                range.setStart(node, curStart);
+                                range.setEnd(node, curEnd);
+                                var tempRects = range.getClientRects();
+                                var tempRect = tempRects[0];
+                                // Skip over empty first rect if there is one
+                                if (tempRects.length > 1 && (tempRect.width === 0 || tempRect.height === 0)) {
+                                    tempRect = tempRects[1];
+                                }
+                                var differences = 0;
+                                _.each(["top", "left", "bottom", "right"], function(prop) {
+                                    differences += (tempRects[0][prop] !== clientRects[curRect][prop] ? 1 : 0);
+                                });
+                                if (differences === 0) {
+                                    saveRect = true;
+                                }
+                            }
+                            if (saveRect) {
+                                rects.push({
+                                    rect: clientRects[curRect],
+                                    text: node.textContent.substring(curStart, curEnd),
+                                    node: node,
+                                    startOffset: curStart
+                                });
+                                curRect++;
+                                curStart = curEnd;
+                            }
+                        }
+                    }
+                } else {
+                    _.each(range.getClientRects(), function(rect) {
+                        rects.push({
+                            rect: rect,
+                            text: rangeText
+                        });
+                    });
+                }
+                _.each(rects, function(rect) {
+                    var normalizedRect = that.normalizeRectangle(rect.rect);
+
+                    //filter out empty rectangles
+                    if (normalizedRect.width === 0 || normalizedRect.height === 0) {
+                        return;
+                    }
+
+                    // push both rect and ancestor in the list
+                    rectTextList.push({
+                        rect: normalizedRect,
+                        text: rect.text,
+                        ancestorEl: ancestor,
+                        blockAncestorEl: blockAncestor,
+                        node: rect.node,
+                        startOffset: rect.startOffset
+                    });
+                });
+            }
+
+            // if range is within one node
+            if (rangeInfo && rangeInfo.startNode === rangeInfo.endNode) {
+                var node = rangeInfo.startNode;
+                var range = that.context.document.createRange();
+                range.setStart(node, rangeInfo.startOffset);
+                range.setEnd(node, rangeInfo.endOffset);
+
+                // we are only interested in TEXT_NODE
+                if (node.nodeType === Node.TEXT_NODE) {
+                    // get client rectangles for the range and push them into rectTextList
+                    pushToRectTextList(range);
+                    selectedNodes = [];
+                }
+            }
+
+            // multi-node range, for each selected node
+            _.each(selectedNodes, function(node) {
+                // create new Range
+                var range = that.context.document.createRange();
+                if (node.nodeType === Node.TEXT_NODE) {
+                    if (rangeInfo && node === rangeInfo.startNode && rangeInfo.startOffset !== 0) {
+                        range.setStart(node, rangeInfo.startOffset);
+                        range.setEnd(node, node.length);
+                    } else if (rangeInfo && node === rangeInfo.endNode && rangeInfo.endOffset !== 0) {
+                        range.setStart(node, 0);
+                        range.setEnd(node, rangeInfo.endOffset);
+                    } else {
+                        range.selectNodeContents(node);
+                    }
+
+                    // for each client rectangle
+                    pushToRectTextList(range);
+                } else if (node.nodeType === Node.ELEMENT_NODE && includeMedia) {
+                    // non-text node element
+                    // if we support this elements in the HL group
+                    if (_.contains(["img", "video", "audio"], node.tagName.toLowerCase())) {
+                        // set the Range to contain the node and its contents and push rectangle to the list
+                        range.selectNode(node);
+                        rectElementList.push(range.getBoundingClientRect());
+                    }
+                }
+            });
+
+            var $html = $(that.context.document.documentElement);
+
+            function calculateScale() {
+                var scale = that.scale;
+                //is there a transform scale for the content document?
+                var matrix = HighlightHelpers.getMatrix($html);
+                if (!matrix && (that.context.isIe9 || that.context.isIe10)) {
+                    //if there's no transform scale then set the scale as the IE zoom factor
+                    scale = (window.screen.deviceXDPI / 96); //96dpi == 100% scale
+                } else if (matrix) {
+                    scale = HighlightHelpers.getScaleFromMatrix(matrix);
+                }
+                return scale;
+            }
+
+            var scale = calculateScale();
+
+            inferrer = new TextLineInferrer({
+                lineHorizontalThreshold: $("body", $html).clientWidth,
+                lineHorizontalLimit: contentDocumentFrame.contentWindow.innerWidth
+            });
+
+            // only take "rect" property when inferring lines
+            inferredLines = inferrer.inferLines(rectTextList);
+            _.each(inferredLines, function(line, index) {
+                var renderData = line.data;
+                //console.log(line.data);
+                line = line.line;
+                var highlightTop = (line.startTop + that.offsetTopAddition) / scale;
+                var highlightLeft = (line.left + that.offsetLeftAddition) / scale;
+                var highlightHeight = line.avgHeight / scale;
+                var highlightWidth = line.width / scale;
+                allContainerRects.push({
+                    top: highlightTop - hoverThreshold,
+                    left: highlightLeft - hoverThreshold,
+                    bottom: highlightTop + highlightHeight + hoverThreshold * 2,
+                    right: highlightLeft + highlightWidth + hoverThreshold * 2,
+                });
+
+                var highlightView = new HighlightView(that.context, {
+                    id: that.id,
+                    CFI: that.CFI,
+                    type: that.type,
+                    top: highlightTop,
+                    left: highlightLeft,
+                    height: highlightHeight,
+                    width: highlightWidth,
+                    styles: _.extend({
+                        "z-index": "1000",
+                        "pointer-events": "none"
+                    }, highlightStyles),
+                    contentRenderData: cloneTextMode ? {
+                        data: renderData,
+                        top: line.startTop,
+                        left: line.left
+                    } : null
+                });
+
+                that.highlightViews.push(highlightView);
+            });
+
+            // deal with non TEXT_NODE elements
+            _.each(rectElementList, function(rect) {
+                var highlightTop = (rect.top + that.offsetTopAddition) / scale;
+                var highlightLeft = (rect.left + that.offsetLeftAddition) / scale;
+                var highlightHeight = rect.height / scale;
+                var highlightWidth = rect.width / scale;
+                allContainerRects.push({
+                    top: highlightTop - hoverThreshold,
+                    left: highlightLeft - hoverThreshold,
+                    bottom: highlightTop + highlightHeight + hoverThreshold * 2,
+                    right: highlightLeft + highlightWidth + hoverThreshold * 2,
+                });
+
+                var highlightView = new HighlightBorderView(this.context, {
+                    highlightId: that.id,
+                    CFI: that.CFI,
+                    top: highlightTop,
+                    left: highlightLeft,
+                    height: highlightHeight,
+                    width: highlightWidth,
+                    styles: highlightStyles
+                });
+
+                that.highlightViews.push(highlightView);
+            });
+
+            // this is a flag indicating if mouse is currently within the boundary of HL group
+            var mouseEntered = false;
+
+            // helper function to test if a point is within a rectangle
+            function pointRectangleIntersection(point, rect) {
+                return point.x > rect.left && point.x < rect.right &&
+                    point.y > rect.top && point.y < rect.bottom;
+            };
+
+            that.boundHighlightCallback = function(e) {
+                var scale = calculateScale();
+                var mouseIsInside = false;
+
+                var x = e.pageX;
+                var y = e.pageY;
+
+                if (e.type === 'touchend') {
+                    var lastTouch = _.last(e.changedTouches);
+                    x = lastTouch.pageX;
+                    y = lastTouch.pageY;
+                }
+
+                var point = {
+                    x: (x + that.offsetLeftAddition) / scale,
+                    y: (y + that.offsetTopAddition) / scale
+                };
+
+                _.each(allContainerRects, function(rect) {
+
+                    if (pointRectangleIntersection(point, rect)) {
+                        mouseIsInside = true;
+                        // if event is "click" and there is an active selection
+                        if (e.type === "click") {
+                            var sel = e.target.ownerDocument.getSelection();
+                            // had to add this check to make sure that rangeCount is not 0
+                            if (sel && sel.rangeCount && !sel.getRangeAt(0).collapsed) {
+                                //do not trigger a click when there is an active selection
+                                return;
+                            }
+                        }
+
+                        var isTouchEvent = e.type.indexOf('touch') !== -1;
+
+                        if (isTouchEvent) {
+                            // call "normal" event handler for HL group to touch capable devices
+                            that.onHighlightEvent(e, e.type);
+                        }
+
+                        // if this is the first time we are mouse entering in the area
+                        if (!mouseEntered) {
+                            // regardless of the actual event type we want highlightGroupCallback process "mouseenter"
+                            that.onHighlightEvent(e, "mouseenter");
+
+                            // set flag indicating that we are in HL group confines
+                            mouseEntered = true;
+                            return;
+                        } else if (!isTouchEvent) {
+                            // call "normal" event handler for HL group to desktop devices
+                            that.onHighlightEvent(e, e.type);
+                        }
+                    }
+                });
+
+                if (!mouseIsInside && mouseEntered) {
+                    // set flag indicating that we left HL group confines
+                    mouseEntered = false;
+                    that.onHighlightEvent(e, "mouseleave");
+                }
+            };
+            that.boundHighlightElement = $html;
+            $html.on(this.getBoundHighlightContainerEvents(), that.boundHighlightCallback);
+        },
+
+        resetHighlights: function(viewportElement, offsetTop, offsetLeft) {
+            this.offsetTopAddition = offsetTop;
+            this.offsetLeftAddition = offsetLeft;
+            this.destroyCurrentHighlights();
+            this.constructHighlightViews();
+            this.renderHighlights(viewportElement);
+        },
+
+        destroyCurrentHighlights: function() {
+            var that = this;
+            _.each(this.highlightViews, function(highlightView) {
+                highlightView.remove();
+            });
+
+            var events = that.getBoundHighlightContainerEvents();
+            var $el = this.boundHighlightElement;
+            if ($el) {
+                $el.off(events, this.boundHighlightCallback);
+            }
+
+            this.boundHighlightCallback = null;
+            this.boundHighlightElement = null;
+
+            this.highlightViews.length = 0;
+        },
+
+        renderHighlights: function(viewportElement) {
+            // higlight group is live, it just doesn't need to be visible, yet.
+            if (!this.visible) {
+                return;
+            }
+
+            _.each(this.highlightViews, function(view, index) {
+                $(viewportElement).append(view.render());
+            });
+        },
+
+        toInfo: function() {
+            // get array of rectangles for all the HightligtViews
+            var rectangleArray = [];
+            var offsetTopAddition = this.offsetTopAddition;
+            var offsetLeftAddition = this.offsetLeftAddition;
+            var scale = this.scale;
+            _.each(this.highlightViews, function(view, index) {
+                var hl = view.highlight;
+                rectangleArray.push({
+                    top: (hl.top - offsetTopAddition) * scale,
+                    left: (hl.left - offsetLeftAddition) * scale,
+                    height: hl.height * scale,
+                    width: hl.width * scale
+                });
+            });
+
+            return {
+                id: this.id,
+                type: this.type,
+                CFI: this.CFI,
+                rectangleArray: rectangleArray,
+                selectedText: this.selectionText
+            };
+        },
+
+        setStyles: function(styles) {
+            this.styles = styles;
+            _.each(this.highlightViews, function(view, index) {
+                view.setStyles(styles);
+            });
+        },
+
+        update: function(type, styles) {
+            this.type = type;
+            this.styles = styles;
+
+            // for each View of the HightlightGroup
+            _.each(this.highlightViews, function(view, index) {
+                view.update(type, styles);
+            });
+        },
+
+        setState: function(state, value) {
+            _.each(this.highlightViews, function(view, index) {
+                if (state === "hover") {
+                    if (value) {
+                        view.setHoverHighlight();
+                    } else {
+                        view.setBaseHighlight(false);
+                    }
+                } else if (state === "visible") {
+                    view.setVisibility(value);
+                } else if (state === "focused") {
+                    if (value) {
+                        view.setFocusedHighlight();
+                    } else {
+                        view.setBaseHighlight(true);
+                    }
+
+                }
+            });
+        }
+    });
+
+    return HighlightGroup;
+});
+
+define('readium_plugin_highlights/controller',["jquery", "underscore", "./lib/class", "./helpers", "./models/group"],
+function($, _, Class, HighlightHelpers, HighlightGroup) {
+    var HighlightsController = Class.extend({
+
+        highlights: [],
+        annotationHash: {},
+        offsetTopAddition: 0,
+        offsetLeftAddition: 0,
+        readerBoundElement: undefined,
+        scale: 0,
+
+        init: function(context, options) {
+            this.context = context;
+
+            this.epubCFI = EPUBcfi;
+            this.readerBoundElement = this.context.document.documentElement;
+
+            if (options.getVisibleCfiRangeFn) {
+                this.getVisibleCfiRange = options.getVisibleCfiRangeFn;
+            }
+
+            // inject annotation CSS into iframe
+            if (this.context.cssUrl) {
+                this._injectAnnotationCSS(this.context.cssUrl);
+            }
+
+            // emit an event when user selects some text.
+            var that = this;
+            this.context.document.addEventListener("mouseup", function(event) {
+                var range = that._getCurrentSelectionRange();
+                if (range === undefined) {
+                    return;
+                }
+                if (range.startOffset - range.endOffset) {
+                    that.context.manager.trigger("textSelectionEvent", event, range, that.context.iframe);
+                }
+            });
+
+            if (!rangy.initialized) {
+                rangy.init();
+            }
+        },
+
+        getVisibleCfiRange: function() {
+            // returns {firstVisibleCfi: <>, lastVisibleCfi: <>}
+            // implemented in Readium.ReaderView, passed in via options
+        },
+
+        // ------------------------------------------------------------------------------------ //
+        //  "PUBLIC" METHODS (THE API)                                                          //
+        // ------------------------------------------------------------------------------------ //
+
+        redraw: function() {
+            var that = this;
+
+            var leftAddition = -this._getPaginationLeftOffset();
+            
+            var isVerticalWritingMode = this.context.paginationInfo().isVerticalWritingMode;
+
+            var visibleCfiRange = this.getVisibleCfiRange();
+
+            // Highlights
+            _.each(this.highlights, function(highlightGroup) {
+                var visible = true;
+
+                if (visibleCfiRange &&
+                    visibleCfiRange.firstVisibleCfi &&
+                    visibleCfiRange.firstVisibleCfi.contentCFI &&
+                    visibleCfiRange.lastVisibleCfi &&
+                    visibleCfiRange.lastVisibleCfi.contentCFI) {
+
+                    visible = that._cfiIsBetweenTwoCfis(
+                        highlightGroup.CFI,
+                        visibleCfiRange.firstVisibleCfi.contentCFI,
+                        visibleCfiRange.lastVisibleCfi.contentCFI);
+                }
+                highlightGroup.visible = visible;
+                highlightGroup.resetHighlights(that.readerBoundElement,
+                    isVerticalWritingMode ? leftAddition : 0,
+                    isVerticalWritingMode ? 0 : leftAddition
+                    );
+
+            });
+        },
+
+        getHighlight: function(id) {
+            var highlight = this.annotationHash[id];
+            if (highlight) {
+                return highlight.toInfo();
+            } else {
+                return undefined;
+            }
+        },
+
+        getHighlights: function() {
+            var highlights = [];
+            _.each(this.highlights, function(highlight) {
+                highlights.push(highlight.toInfo());
+            });
+            return highlights;
+        },
+
+        removeHighlight: function(annotationId) {
+            var annotationHash = this.annotationHash;
+            var highlights = this.highlights;
+
+            delete annotationHash[annotationId];
+
+            highlights = _.reject(highlights, function(highlightGroup) {
+                if (highlightGroup.id == annotationId) {
+                    highlightGroup.destroyCurrentHighlights();
+                    return true;
+                } else {
+                    return false;
+                }
+            });
+
+            this.highlights = highlights;
+        },
+
+        removeHighlightsByType: function(type) {
+            var annotationHash = this.annotationHash;
+            var highlights = this.highlights;
+
+            // the returned list only contains HLs for which the function returns false
+            highlights = _.reject(highlights, function(highlightGroup) {
+                if (highlightGroup.type === type) {
+                    delete annotationHash[highlightGroup.id];
+                    highlightGroup.destroyCurrentHighlights();
+                    return true;
+                } else {
+                    return false;
+                }
+            });
+
+            this.highlights = highlights;
+        },
+
+        // generate unique prefix for HL ids
+        generateIdPrefix: function() {
+            var idPrefix = 'xxxxxxxx'.replace(/[x]/g, function(c) {
+                var r = Math.random() * 16 | 0;
+                return r.toString(16);
+            });
+            idPrefix += "_";
+            return idPrefix;
+        },
+
+
+        // takes partial CFI as parameter
+        addHighlight: function(CFI, id, type, styles) {
+            var CFIRangeInfo;
+            var range;
+            var rangeStartNode;
+            var rangeEndNode;
+            var selectedElements;
+            var leftAddition;
+
+            var contentDoc = this.context.document;
+            //get transform scale of content document
+            var scale = 1.0;
+            var matrix = HighlightHelpers.getMatrix($('html', contentDoc));
+            if (matrix) {
+                scale = HighlightHelpers.getScaleFromMatrix(matrix);
+            }
+
+            //create a dummy test div to determine if the browser provides
+            // client rectangles that take transform scaling into consideration
+            var $div = $('<div style="font-size: 50px; position: absolute; background: red; top:-9001px;">##</div>');
+            $(contentDoc.documentElement).append($div);
+            range = contentDoc.createRange();
+            range.selectNode($div[0]);
+            var renderedWidth = this._normalizeRectangle(range.getBoundingClientRect()).width;
+            var clientWidth = $div[0].clientWidth;
+            $div.remove();
+            var renderedVsClientWidthFactor = renderedWidth / clientWidth;
+            if (renderedVsClientWidthFactor === 1) {
+                //browser doesn't provide scaled client rectangles (firefox)
+                scale = 1;
+            } else if (this.context.isIe9 || this.context.isIe10) {
+                //use the test scale factor as our scale value for IE 9/10
+                scale = renderedVsClientWidthFactor;
+            }
+            this.scale = scale;
+
+            // form fake full CFI to satisfy getRangeTargetNodes
+            var arbitraryPackageDocCFI = "/99!"
+            var fullFakeCFI = "epubcfi(" + arbitraryPackageDocCFI + CFI + ")";
+            if (this.epubCFI.Interpreter.isRangeCfi(fullFakeCFI)) {
+                CFIRangeInfo = this.epubCFI.getRangeTargetElements(fullFakeCFI, contentDoc, ["cfi-marker", "cfi-blacklist", "mo-cfi-highlight"], [], ["MathJax_Message", "MathJax_SVG_Hidden"]);
+
+                var startNode = CFIRangeInfo.startElement,
+                    endNode = CFIRangeInfo.endElement;
+                range = rangy.createRange(contentDoc);
+                if (startNode.length < CFIRangeInfo.startOffset) {
+                    //this is a workaround
+                    // "Uncaught IndexSizeError: Index or size was negative, or greater than the allowed value." errors
+                    // the range cfi generator outputs a cfi like /4/2,/1:125,/16
+                    // can't explain, investigating..
+                    CFIRangeInfo.startOffset = startNode.length;
+                }
+                range.setStart(startNode, CFIRangeInfo.startOffset);
+                range.setEnd(endNode, CFIRangeInfo.endOffset);
+                selectedElements = range.getNodes();
+            } else {
+                var element = this.epubCFI.getTargetElement(fullFakeCFI, contentDoc, ["cfi-marker", "cfi-blacklist", "mo-cfi-highlight"], [], ["MathJax_Message", "MathJax_SVG_Hidden"]);
+                selectedElements = [element ? element[0] : null];
+                range = null;
+            }
+
+            leftAddition = -this._getPaginationLeftOffset();
+
+            var isVerticalWritingMode = this.context.paginationInfo().isVerticalWritingMode;
+
+            this._addHighlightHelper(
+                CFI, id, type, styles, selectedElements, range,
+                startNode, endNode,
+                isVerticalWritingMode ? leftAddition : 0,
+                isVerticalWritingMode ? 0 : leftAddition
+                );
+
+            return {
+                selectedElements: selectedElements,
+                CFI: CFI
+            };
+        },
+
+
+        // this returns a partial CFI only!!
+        getCurrentSelectionCFI: function() {
+            var currentSelection = this._getCurrentSelectionRange();
+            var CFI;
+            if (currentSelection) {
+                selectionInfo = this._getSelectionInfo(currentSelection);
+                CFI = selectionInfo.CFI;
+            }
+
+            return CFI;
+        },
+
+        // this returns a partial CFI only!!
+        getCurrentSelectionOffsetCFI: function() {
+            var currentSelection = this._getCurrentSelectionRange();
+
+            var CFI;
+            if (currentSelection) {
+                CFI = this._generateCharOffsetCFI(currentSelection);
+            }
+            return CFI;
+        },
+
+        addSelectionHighlight: function(id, type, styles, clearSelection) {
+            var CFI = this.getCurrentSelectionCFI();
+            if (CFI) {
+
+                // if clearSelection is true
+                if (clearSelection) {
+                    var iframeDocument = this.context.document;
+                    if (iframeDocument.getSelection) {
+                        var currentSelection = iframeDocument.getSelection();
+                        currentSelection.collapseToStart();
+                    }
+                }
+                return this.addHighlight(CFI, id, type, styles);
+            } else {
+                throw new Error("Nothing selected");
+            }
+        },
+
+        updateAnnotation: function(id, type, styles) {
+            var annotationViews = this.annotationHash[id];
+            if (annotationViews) {
+                annotationViews.update(type, styles);
+            }
+            return annotationViews;
+        },
+
+        replaceAnnotation: function(id, cfi, type, styles) {
+            var annotationViews = this.annotationHash[id];
+            if (annotationViews) {
+                // remove an existing annotatio
+                this.removeHighlight(id);
+
+                // create a new HL
+                this.addHighlight(cfi, id, type, styles);
+            }
+            return annotationViews;
+        },
+
+        updateAnnotationView: function(id, styles) {
+            var annotationViews = this.annotationHash[id];
+            if (annotationViews) {
+                annotationViews.setStyles(styles);
+            }
+            return annotationViews;
+        },
+
+        setAnnotationViewState: function(id, state, value) {
+            var annotationViews = this.annotationHash[id];
+            if (annotationViews) {
+                annotationViews.setState(state, value);
+            }
+            return annotationViews;
+        },
+
+        setAnnotationViewStateForAll: function(state, value) {
+            var annotationViews = this.annotationHash;
+            _.each(annotationViews, function(annotationView) {
+                annotationView.setState(state, value);
+            });
+        },
+
+        // ------------------------------------------------------------------------------------ //
+        //  "PRIVATE" HELPERS                                                                   //
+        // ------------------------------------------------------------------------------------ //
+
+
+
+        //return an array of all numbers in the content cfi
+        _parseContentCfi: function(cont) {
+            return cont.replace(/\[(.*?)\]/, "").split(/[\/,:]/).map(function(n) {
+                return parseInt(n);
+            }).filter(Boolean);
+        },
+
+        _contentCfiComparator: function(cont1, cont2) {
+            cont1 = this._parseContentCfi(cont1);
+            cont2 = this._parseContentCfi(cont2);
+
+            //compare cont arrays looking for differences
+            for (var i = 0; i < cont1.length; i++) {
+                if (cont1[i] > cont2[i]) {
+                    return 1;
+                } else if (cont1[i] < cont2[i]) {
+                    return -1;
+                }
+            }
+
+            //no differences found, so confirm that cont2 did not have values we didn't check
+            if (cont1.length < cont2.length) {
+                return -1;
+            }
+
+            //cont arrays are identical
+            return 0;
+        },
+
+        // determine if a given Cfi falls between two other cfis.2
+        _cfiIsBetweenTwoCfis: function(cfi, firstVisibleCfi, lastVisibleCfi) {
+            if (!firstVisibleCfi || !lastVisibleCfi) {
+                return null;
+            }
+            var first = this._contentCfiComparator(cfi, firstVisibleCfi);
+            var second = this._contentCfiComparator(cfi, lastVisibleCfi);
+            return first >= 0 && second <= 0;
+        },
+
+        _addHighlightHelper: function(CFI, annotationId, type, styles, highlightedNodes,
+            range, startNode, endNode, offsetTop, offsetLeft) {
+            if (!offsetTop) {
+                offsetTop = this.offsetTopAddition;
+            }
+            if (!offsetLeft) {
+                offsetLeft = this.offsetLeftAddition;
+            }
+
+            var visible;
+            // check if the options specify lastVisibleCfi/firstVisibleCfi. If they don't fall back to displaying the highlights anyway.
+            var visibleCfiRange = this.getVisibleCfiRange();
+            if (visibleCfiRange &&
+                visibleCfiRange.firstVisibleCfi &&
+                visibleCfiRange.firstVisibleCfi.contentCFI &&
+                visibleCfiRange.lastVisibleCfi &&
+                visibleCfiRange.lastVisibleCfi.contentCFI) {
+                visible = this._cfiIsBetweenTwoCfis(CFI, visibleCfiRange.firstVisibleCfi.contentCFI, visibleCfiRange.lastVisibleCfi.contentCFI);
+            } else {
+                visible = true;
+            }
+
+            annotationId = annotationId.toString();
+            if (this.annotationHash[annotationId]) {
+                throw new Error("That annotation id already exists; annotation not added");
+            }
+
+            var highlightGroup = new HighlightGroup(this.context, {
+                CFI: CFI,
+                selectedNodes: highlightedNodes,
+                offsetTopAddition: offsetTop,
+                offsetLeftAddition: offsetLeft,
+                styles: styles,
+                id: annotationId,
+                type: type,
+                scale: this.scale,
+                selectionText: range ? range.toString() : "",
+                visible: visible,
+                rangeInfo: range ? {
+                    startNode: startNode,
+                    startOffset: range.startOffset,
+                    endNode: endNode,
+                    endOffset: range.endOffset
+                } : null
+            });
+
+            this.annotationHash[annotationId] = highlightGroup;
+            this.highlights.push(highlightGroup);
+
+
+            highlightGroup.renderHighlights(this.readerBoundElement);
+        },
+
+        _normalizeRectangle: function(rect) {
+            return {
+                left: rect.left,
+                right: rect.right,
+                top: rect.top,
+                bottom: rect.bottom,
+                width: rect.right - rect.left,
+                height: rect.bottom - rect.top
+            };
+        },
+
+        _getSelectionInfo: function(selectedRange, elementType) {
+            // Generate CFI for selected text
+            var CFI = this._generateRangeCFI(selectedRange);
+            var intervalState = {
+                startElementFound: false,
+                endElementFound: false
+            };
+            var selectedElements = [];
+
+            if (!elementType) {
+                var elementType = ["text"];
+            }
+
+            this._findSelectedElements(
+                selectedRange.commonAncestorContainer,
+                selectedRange.startContainer,
+                selectedRange.endContainer,
+                intervalState,
+                selectedElements,
+                elementType
+            );
+
+            // Return a list of selected text nodes and the CFI
+            return {
+                CFI: CFI,
+                selectedElements: selectedElements
+            };
+        },
+
+        _generateRangeCFI: function(selectedRange) {
+            var startNode = selectedRange.startContainer;
+            var endNode = selectedRange.endContainer;
+            var commonAncestor = selectedRange.commonAncestorContainer;
+            var startOffset;
+            var endOffset;
+            var rangeCFIComponent;
+
+            startOffset = selectedRange.startOffset;
+            endOffset = selectedRange.endOffset;
+
+            rangeCFIComponent = this.epubCFI.generateRangeComponent(
+                startNode,
+                startOffset,
+                endNode,
+                endOffset, ["cfi-marker", "cfi-blacklist", "mo-cfi-highlight"], [], ["MathJax_Message", "MathJax_SVG_Hidden"]
+            );
+            return rangeCFIComponent;
+        },
+
+        _generateCharOffsetCFI: function(selectedRange) {
+            // Character offset
+            var startNode = selectedRange.startContainer;
+            var startOffset = selectedRange.startOffset;
+            var charOffsetCFI;
+
+            if (startNode.nodeType === Node.TEXT_NODE) {
+                charOffsetCFI = this.epubCFI.generateCharacterOffsetCFIComponent(
+                    startNode,
+                    startOffset, ["cfi-marker", "cfi-blacklist", "mo-cfi-highlight"], [], ["MathJax_Message", "MathJax_SVG_Hidden"]
+                );
+            }
+            return charOffsetCFI;
+        },
+
+        // REFACTORING CANDIDATE: Convert this to jquery
+        _findSelectedElements: function(
+            currElement, startElement, endElement, intervalState, selectedElements, elementTypes) {
+
+            if (currElement === startElement) {
+                intervalState.startElementFound = true;
+            }
+
+            if (intervalState.startElementFound === true) {
+                this._addElement(currElement, selectedElements, elementTypes);
+            }
+
+            if (currElement === endElement) {
+                intervalState.endElementFound = true;
+                return;
+            }
+
+            if (currElement.firstChild) {
+                this._findSelectedElements(currElement.firstChild, startElement, endElement,
+                    intervalState, selectedElements, elementTypes);
+                if (intervalState.endElementFound) {
+                    return;
+                }
+            }
+
+            if (currElement.nextSibling) {
+                this._findSelectedElements(currElement.nextSibling, startElement, endElement,
+                    intervalState, selectedElements, elementTypes);
+                if (intervalState.endElementFound) {
+                    return;
+                }
+            }
+        },
+
+        _addElement: function(currElement, selectedElements, elementTypes) {
+            // Check if the node is one of the types
+            _.each(elementTypes, function(elementType) {
+
+                if (elementType === "text") {
+                    if (currElement.nodeType === Node.TEXT_NODE) {
+                        selectedElements.push(currElement);
+                    }
+                } else {
+                    if ($(currElement).is(elementType)) {
+                        selectedElements.push(currElement);
+                    }
+                }
+            });
+        },
+
+        // Rationale: This is a cross-browser method to get the currently selected text
+        _getCurrentSelectionRange: function() {
+            var currentSelection;
+            var iframeDocument = this.context.document;
+            if (iframeDocument.getSelection) {
+
+                currentSelection = iframeDocument.getSelection();
+                if (!currentSelection || currentSelection.rangeCount === 0) {
+                    return undefined;
+                }
+
+                var range = currentSelection.getRangeAt(0);
+
+                if (range.toString() !== '') {
+                    return range;
+                } else {
+                    return undefined;
+                }
+            } else if (iframeDocument.selection) {
+                return iframeDocument.selection.createRange();
+            } else {
+                return undefined;
+            }
+        },
+
+        _getPaginationLeftOffset: function() {
+        
+            var $htmlElement = $(this.context.document.documentElement);
+            if (!$htmlElement || !$htmlElement.length) {
+                // if there is no html element, we might be dealing with a fxl with a svg spine item
+                return 0;
+            }
+
+            var offsetLeftPixels = $htmlElement.css(this.context.paginationInfo().isVerticalWritingMode ? "top" : (this.context.isRTL ? "right" : "left"));
+            var offsetLeft = parseInt(offsetLeftPixels.replace("px", ""));
+            if (isNaN(offsetLeft)) {
+                //for fixed layouts, $htmlElement.css("left") has no numerical value
+                offsetLeft = 0;
+            }
+            
+            if (this.context.isRTL && !this.context.paginationInfo().isVerticalWritingMode) return -offsetLeft;
+             
+            return offsetLeft;
+        },
+
+        _injectAnnotationCSS: function(annotationCSSUrl) {
+            var doc = this.context.document;
+            setTimeout(function(){
+                var $contentDocHead = $("head", doc);
+                $contentDocHead.append(
+                    $("<link/>", {
+                        rel: "stylesheet",
+                        href: annotationCSSUrl,
+                        type: "text/css"
+                    })
+                );
+            }, 0);
+        }
+    });
+
+    return HighlightsController;
+});
 
 //  Created by Boris Schneiderman.
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
@@ -18806,6 +17530,8 @@ define('readium_shared_js/models/bookmark_data',[],function() {
  */
 var BookmarkData = function(idref, contentCFI) {
 
+    var self = this;
+
     /**
      * spine item idref
      * @property idref
@@ -18820,13 +17546,4149 @@ var BookmarkData = function(idref, contentCFI) {
      */
     this.contentCFI = contentCFI;
 
-    this.toString = function () {
-        return JSON.stringify(this);
+    /**
+     * serialize to string
+     * @return JSON string representation
+     */
+    this.toString = function(){
+        return JSON.stringify(self);
     }
+
 };
 
+/**
+ * Deserialize from string
+ * @param str
+ * @returns {ReadiumSDK.Models.BookmarkData}
+ */
+BookmarkData.fromString = function(str) {
+    var obj = JSON.parse(str);
+    return new BookmarkData(obj.idref,obj.contentCFI);
+};
 return BookmarkData;
 });
+//  Created by Dmitry Markushevich (dmitrym@evidentpoint.com)
+//
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//
+//  Redistribution and use in source and binary forms, with or without modification,
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice,
+//  this list of conditions and the following disclaimer in the documentation and/or
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be
+//  used to endorse or promote products derived from this software without specific
+//  prior written permission.
+//
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
+
+define('readium_plugin_highlights/manager',['jquery', 'underscore', 'eventEmitter', './controller', './helpers', 'readium_shared_js/models/bookmark_data'], function($, _, EventEmitter, HighlightsController, HighlightHelpers, BookmarkData) {
+
+var defaultContext = {};
+
+//determine if browser is IE9 or IE10
+var div = document.createElement("div");
+div.innerHTML = "<!--[if IE 9]><i></i><![endif]-->";
+defaultContext.isIe9 = (div.getElementsByTagName("i").length == 1);
+// IE10 introduced a prefixed version of PointerEvent, but not unprefixed.
+defaultContext.isIe10 = window.MSPointerEvent && !window.PointerEvent;
+
+/**
+ *
+ * @param proxyObj
+ * @param options
+ * @constructor
+ */
+var HighlightsManager = function (proxyObj, options) {
+
+    var self = this;
+
+    // live annotations contains references to the annotation _module_ for visible spines
+    var liveAnnotations = {};
+    var spines = {};
+    var proxy = proxyObj;
+    var annotationCSSUrl = options.annotationCSSUrl;
+
+    if (!annotationCSSUrl) {
+        console.warn("WARNING! Annotations CSS not supplied. Highlighting might not work.");
+    }
+
+    _.extend(this, new EventEmitter());
+
+    // this.on("all", function() {
+    // });
+    //TODO: EventEmitter3 does not support "all" or "*" (catch-all event sink)
+    //https://github.com/primus/eventemitter3/blob/master/index.js#L61
+    //...so instead we patch trigger() and emit() (which are synonymous, see Bootstrapper.js EventEmitter.prototype.trigger = EventEmitter.prototype.emit;)
+
+    var originalEmit = self['emit'];
+
+    var triggerEmitPatch = function() {
+        var args = Array.prototype.slice.call(arguments);
+        // mangle annotationClicked event. What really needs to happen is, the annotation_module needs to return a
+        // bare Cfi, and this class should append the idref.
+        var mangleEvent = function(annotationEvent){
+            if (args.length && args[0] === annotationEvent) {
+                for (var spineIndex in liveAnnotations)
+                {
+                    var contentDocumentFrame = args[5];
+                    var jQueryEvent = args[4];
+                    if (typeof jQueryEvent.clientX === 'undefined') {
+                        jQueryEvent.clientX = jQueryEvent.pageX;
+                        jQueryEvent.clientY = jQueryEvent.pageY;
+                    }
+
+                    var annotationId = args[3];
+                    var partialCfi = args[2];
+                    var type = args[1];
+                    if (liveAnnotations[spineIndex].getHighlight(annotationId)) {
+                        var idref = spines[spineIndex].idref;
+                        args = [annotationEvent, type, idref, partialCfi, annotationId, jQueryEvent, contentDocumentFrame];
+                    }
+                }
+            }
+        }
+        mangleEvent('annotationClicked');
+        mangleEvent('annotationTouched');
+        mangleEvent('annotationRightClicked');
+        mangleEvent('annotationHoverIn');
+        mangleEvent('annotationHoverOut');
+
+        originalEmit.apply(this, args);
+        originalEmit.apply(proxy, args);
+    };
+
+    this.trigger = triggerEmitPatch;
+    this.emit = triggerEmitPatch;
+
+    this.attachAnnotations = function($iframe, spineItem, loadedSpineItems) {
+        var iframe = $iframe[0];
+
+        var context = _.extend({
+            document: iframe.contentDocument,
+            window: iframe.contentWindow,
+            iframe: iframe,
+            manager: self,
+            cssUrl: annotationCSSUrl,
+            isFixedLayout: spineItem.isFixedLayout(),
+            isRTL: spineItem.spine.isRightToLeft(),
+            paginationInfo: function() { return spineItem.paginationInfo; }
+            
+        }, defaultContext);
+
+        liveAnnotations[spineItem.index] = new HighlightsController(context, {getVisibleCfiRangeFn: options.getVisibleCfiRangeFn});
+        spines[spineItem.index] = spineItem;
+
+        // check to see which spine indicies can be culled depending on the currently loaded spine items
+        for(var spineIndex in liveAnnotations) {
+            if (liveAnnotations.hasOwnProperty(spineIndex) && !_.contains(loadedSpineItems, spines[spineIndex])) {
+                delete liveAnnotations[spineIndex];
+            }
+        }
+    };
+
+    this.getCurrentSelectionCfi = function() {
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            var partialCfi = annotationsForView.getCurrentSelectionCFI();
+            if (partialCfi) {
+                return {"idref":spines[spine].idref, "cfi":partialCfi};
+            }
+        }
+        return undefined;
+    };
+
+    this.addSelectionHighlight = function(id, type, styles, clearSelection) {
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            if (annotationsForView.getCurrentSelectionCFI()) {
+                var annotation = annotationsForView.addSelectionHighlight(
+                    id, type, styles, clearSelection);
+                return new BookmarkData(spines[spine].idref, annotation.CFI);
+            }
+        }
+        return undefined;
+    };
+
+    this.addHighlight = function(spineIdRef, partialCfi, id, type, styles) {
+        for(var spine in liveAnnotations) {
+            if (spines[spine].idref === spineIdRef) {
+                var annotationsForView = liveAnnotations[spine];
+                var annotation = annotationsForView.addHighlight(partialCfi, id, type, styles);
+                if (annotation) {
+                    return new BookmarkData(spineIdRef, annotation.CFI);
+                }
+            }
+        }
+        return undefined;
+    };
+
+    this.removeHighlight = function(id) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result  = annotationsForView.removeHighlight(id);
+        }
+        return result;
+    };
+
+    this.removeHighlightsByType = function(type) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result  = annotationsForView.removeHighlightsByType(type);
+        }
+        return result;
+    };
+
+    this.getHighlight = function(id) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result  = annotationsForView.getHighlight(id);
+            if (result !== undefined)
+				return result;
+        }
+        return result;
+    };
+
+    this.updateAnnotation = function(id, type, styles) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result = annotationsForView.updateAnnotation(id, type, styles);
+            if(result) {
+                break;
+            }
+        }
+        return result;
+    };
+
+    this.replaceAnnotation = function(id, cfi, type, styles) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result = annotationsForView.replaceAnnotation(id, cfi, type, styles);
+            if(result) {
+                break;
+            }
+        }
+        return result;
+    };
+
+    // redraw gets called on pagination change, so for progressive rendering we may have to add annotations that were previously not visible.
+    this.redrawAnnotations = function(){
+        for(var spine in liveAnnotations) {
+            liveAnnotations[spine].redraw();
+        }
+    };
+
+    this.updateAnnotationView = function(id, styles) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result = annotationsForView.updateAnnotationView(id,styles);
+            if(result){
+                break;
+            }
+        }
+        return result;
+    };
+
+    this.setAnnotationViewState = function(id, state, value) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result = annotationsForView.setAnnotationViewState(id, state, value);
+            if(result){
+                break;
+            }
+        }
+        return result;
+    };
+
+    this.setAnnotationViewStateForAll = function(state, value) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result = annotationsForView.setAnnotationViewStateForAll(state, value);
+            if(result){
+                break;
+            }
+        }
+        return result;
+    };
+
+    this.cfiIsBetweenTwoCfis = function (cfi, lowBoundaryCfi, highBoundaryCfi) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result = annotationsForView.cfiIsBetweenTwoCfis(cfi, lowBoundaryCfi, highBoundaryCfi);
+            if(result){
+                break;
+            }
+        }
+        return result;
+    };
+
+    this.contentCfiComparator = function(contCfi1, contCfi2) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result = annotationsForView.contentCfiComparator(contCfi1, contCfi2);
+            if(result){
+                break;
+            }
+        }
+        return result;
+    };
+
+    function getElementFromViewElement(element) {
+        //TODO JC: yuck, we get two different collection structures from non fixed and fixed views.. must refactor..
+        return element.element ? element.element : element;
+    }
+
+    this.getAnnotationMidpoints = function($elementSpineItemCollection){
+        var output = [];
+
+        _.each($elementSpineItemCollection, function (item){
+            var annotations = [];
+
+            var lastId = null;
+
+            var baseOffset = {top: 0, left: 0};
+            if (item.elements && item.elements.length > 0) {
+                var firstElement = getElementFromViewElement(item.elements[0]);
+                var offsetElement = firstElement.ownerDocument.defaultView.frameElement.parentElement;
+                baseOffset = {top: offsetElement.offsetTop, left: offsetElement.offsetLeft};
+            }
+
+            _.each(item.elements, function(element){
+
+                var $element = $(getElementFromViewElement(element));
+                var elementId = $element.attr('data-id');
+
+                if(!elementId){
+                    console.warn('AnnotationsManager:getAnnotationMidpoints: Got an annotation element with no ID??')
+                    return;
+                }
+                if (elementId === lastId) return;
+                lastId = elementId;
+
+                //calculate position offsets with scaling
+                var scale = 1;
+                //figure out a better way to get the html parent from an element..
+                var $html = $element.parent();
+                //get transformation scale from content document
+                var matrix = HighlightHelpers.getMatrix($html);
+                if (matrix) {
+                    scale = HighlightHelpers.getScaleFromMatrix(matrix);
+                }
+                var offset = $element.offset();
+                offset.top += baseOffset.top + ($element.height() / 2);
+                offset.left += baseOffset.left;
+                if(scale !== 1){
+                    offset = {top: (offset.top * scale)*(1/scale), left: offset.left };
+                }
+                var $highlighted = {id: elementId, position: offset, lineHeight: parseInt($element.css('line-height'),10)};
+                annotations.push($highlighted)
+            });
+
+            output.push({annotations:annotations, spineItem: item.spineItem});
+        });
+
+        return output;
+    };
+
+    this.getAnnotationsElementSelector = function () {
+        return 'div.rd-highlight, div.rd-highlight-border';
+    };
+
+};
+
+return HighlightsManager;
+});
+
+define('readium_plugin_highlights/main',['readium_js_plugins', 'readium_shared_js/globals', './manager'], function (Plugins, Globals, HighlightsManager) {
+    var config = {};
+
+    Plugins.register("highlights", function (api) {
+        var reader = api.reader, _highlightsManager, _initialized = false, _initializedLate = false;
+
+        var self = this;
+
+        function isInitialized() {
+            if (!_initialized) {
+                api.plugin.warn('Not initialized!')
+            }
+            return _initialized;
+        }
+
+        this.initialize = function (options) {
+            options = options || {};
+
+            setTimeout(isInitialized, 1000);
+
+            if (_initialized) {
+                api.plugin.warn('Already initialized!');
+                return;
+            }
+
+            if (reader.getFirstVisibleCfi && reader.getLastVisibleCfi && !options.getVisibleCfiRangeFn) {
+                options.getVisibleCfiRangeFn = function () {
+                    return {firstVisibleCfi: reader.getFirstVisibleCfi(), lastVisibleCfi: reader.getLastVisibleCfi()};
+                };
+            }
+
+            _highlightsManager = new HighlightsManager(self, options);
+
+            if (_initializedLate) {
+                api.plugin.warn('Unable to attach to currently loaded content document.\n' +
+                'Initialize the plugin before loading a content document.');
+            }
+
+            _initialized = true;
+        };
+
+        this.getHighlightsManager = function() {
+            return _highlightsManager;
+        };
+
+        /**
+         * Returns current selection partial Cfi, useful for workflows that need to check whether the user has selected something.
+         *
+         * @returns {object | undefined} partial cfi object or undefined if nothing is selected
+         */
+        this.getCurrentSelectionCfi = function() {
+            return _highlightsManager.getCurrentSelectionCfi();
+        };
+
+        /**
+         * Creates a higlight based on given parameters
+         *
+         * @param {string} spineIdRef		Spine idref that defines the partial Cfi
+         * @param {string} cfi				Partial CFI (withouth the indirection step) relative to the spine index
+         * @param {string} id				Id of the highlight. must be unique
+         * @param {string} type 			Name of the class selector rule in annotations stylesheet.
+         * 									The style of the class will be applied to the created hightlight
+         * @param {object} styles			Object representing CSS properties to be applied to the highlight.
+         * 									e.g., to apply background color pass in: {'background-color': 'green'}
+         *
+         * @returns {object | undefined} partial cfi object of the created highlight
+         */
+        this.addHighlight = function(spineIdRef, cfi, id, type, styles) {
+            return _highlightsManager.addHighlight(spineIdRef, cfi, id, type, styles);
+        };
+
+        /**
+         * Creates a higlight based on the current selection
+         *
+         * @param {string} id id of the highlight. must be unique
+         * @param {string} type - name of the class selector rule in annotations.css file.
+         * @param {object} styles - object representing CSS properties to be applied to the highlight.
+         * e.g., to apply background color pass this {'background-color': 'green'}
+         * @param {boolean} clearSelection - set to true to clear the current selection
+         * after it is highlighted
+         *
+         * @returns {object | undefined} partial cfi object of the created highlight
+         */
+        this.addSelectionHighlight =  function(id, type, styles, clearSelection) {
+            return _highlightsManager.addSelectionHighlight(id, type, styles, clearSelection);
+        };
+
+        /**
+         * Removes a given highlight
+         *
+         * @param {string} id  The id associated with the highlight.
+         *
+         * @returns {undefined}
+         *
+         */
+        this.removeHighlight = function(id) {
+            return _highlightsManager.removeHighlight(id);
+        };
+
+        /**
+         * Removes highlights of a given type
+         *
+         * @param {string} type type of the highlight.
+         *
+         * @returns {undefined}
+         *
+         */
+        this.removeHighlightsByType = function(type) {
+            return _highlightsManager.removeHighlightsByType(type);
+        };
+
+        /**
+         * Client Rectangle
+         * @typedef {object} ReadiumSDK.Views.ReaderView.ClientRect
+         * @property {number} top
+         * @property {number} left
+         * @property {number} height
+         * @property {number} width
+         */
+
+        /**
+         * Highlight Info
+         *
+         * @typedef {object} ReadiumSDK.Views.ReaderView.HighlightInfo
+         * @property {string} id - unique id of the highlight
+         * @property {string} type - highlight type (css class)
+         * @property {string} CFI - partial CFI range of the highlight
+         * @property {ReadiumSDK.Views.ReaderView.ClientRect[]} rectangleArray - array of rectangles consituting the highlight
+         * @property {string} selectedText - concatenation of highlight nodes' text
+         */
+
+        /**
+         * Gets given highlight
+         *
+         * @param {string} id id of the highlight.
+         *
+         * @returns {ReadiumSDK.Views.ReaderView.HighlightInfo} Object describing the highlight
+         */
+        this.getHighlight = function(id) {
+            return _highlightsManager.getHighlight(id);
+        };
+
+        /**
+         * Update annotation by the id, reapplies CSS styles to the existing annotaion
+         *
+         * @param {string} id id of the annotation.
+         * @property {string} type - annotation type (name of css class)
+         * @param {object} styles - object representing CSS properties to be applied to the annotation.
+         * e.g., to apply background color pass this {'background-color': 'green'}.
+         */
+        this.updateAnnotation = function(id, type, styles) {
+            _highlightsManager.updateAnnotation(id, type, styles);
+        };
+
+        /**
+         * Replace annotation with this id. Current annotation is removed and a new one is created.
+         *
+         * @param {string} id id of the annotation.
+         * @property {string} cfi - partial CFI range of the annotation
+         * @property {string} type - annotation type (name of css class)
+         * @param {object} styles - object representing CSS properties to be applied to the annotation.
+         * e.g., to apply background color pass this {'background-color': 'green'}.
+         */
+        this.replaceAnnotation = function(id, cfi, type, styles) {
+            _highlightsManager.replaceAnnotation(id, cfi, type, styles);
+        };
+
+
+        /**
+         * Redraws all annotations
+         */
+        this.redrawAnnotations = function() {
+            _highlightsManager.redrawAnnotations();
+        };
+
+        /**
+         * Updates an annotation to use the supplied styles
+         *
+         * @param {string} id
+         * @param {string} styles
+         */
+        this.updateAnnotationView = function(id, styles) {
+            _highlightsManager.updateAnnotationView(id, styles);
+        };
+
+        /**
+         * Updates an annotation view state, such as whether its hovered in or not.
+         * @param {string} id       The id associated with the highlight.
+         * @param {string} state    The state type to be updated
+         * @param {string} value    The state value to apply to the highlight
+         * @returns {undefined}
+         */
+        this.setAnnotationViewState = function(id, state, value) {
+            return _highlightsManager.setAnnotationViewState(id, state, value);
+        };
+
+        /**
+         * Updates an annotation view state for all views.
+         * @param {string} state    The state type to be updated
+         * @param {string} value    The state value to apply to the highlights
+         * @returns {undefined}
+         */
+        this.setAnnotationViewStateForAll = function (state, value) {
+            return _highlightsManager.setAnnotationViewStateForAll(state, value);
+        };
+
+        /**
+         * Gets a list of the visible midpoint positions of all annotations
+         *
+         * @returns {HTMLElement[]}
+         */
+        this.getVisibleAnnotationMidpoints = function () {
+            if (reader.getVisibleElements) {
+                var $visibleElements = reader.getVisibleElements(_highlightsManager.getAnnotationsElementSelector(), true);
+
+                var elementMidpoints = _highlightsManager.getAnnotationMidpoints($visibleElements);
+                return elementMidpoints || [];
+            } else {
+                // FIXME: Expose the getVisibleElements call from the reader's internal views.
+                console.warn('getAnnotationMidpoints won\'t work with this version of Readium');
+            }
+        };
+
+        reader.on(Globals.Events.CONTENT_DOCUMENT_LOADED, function ($iframe, spineItem) {
+            if (_initialized) {
+                _highlightsManager.attachAnnotations($iframe, spineItem, reader.getLoadedSpineItems());
+            } else {
+                _initializedLate = true;
+            }
+        });
+
+        ////FIXME: JCCR mj8: this is sometimes faulty, consider removal
+        //// automatically redraw annotations.
+        //reader.on(ReadiumSDK.Events.PAGINATION_CHANGED, _.debounce(function () {
+        //    self.redrawAnnotations();
+        //}, 10, true));
+
+
+
+    });
+
+    return config;
+});
+
+define('readium_plugin_highlights', ['readium_plugin_highlights/main'], function (main) { return main; });
+
+/*
+This code is required to IE for console shim
+*/
+(function(){
+    "use strict";
+    if (!console["debug"]) console.debug = console.log;
+    if (!console["info"]) console.info = console.log;
+    if (!console["warn"]) console.warn = console.log;
+    if (!console["error"]) console.error = console.log;
+})();
+define("console_shim", function(){});
+
+(function (exports) {'use strict';
+  //shared pointer
+  var i;
+  //shortcuts
+  var defineProperty = Object.defineProperty, is = function(a,b) { return (a === b) || (a !== a && b !== b) };
+
+
+  //Polyfill global objects
+  if (typeof WeakMap == 'undefined') {
+    exports.WeakMap = createCollection({
+      // WeakMap#delete(key:void*):boolean
+      'delete': sharedDelete,
+      // WeakMap#clear():
+      clear: sharedClear,
+      // WeakMap#get(key:void*):void*
+      get: sharedGet,
+      // WeakMap#has(key:void*):boolean
+      has: mapHas,
+      // WeakMap#set(key:void*, value:void*):void
+      set: sharedSet
+    }, true);
+  }
+
+  if (typeof Map == 'undefined' || typeof ((new Map).values) !== 'function' || !(new Map).values().next) {
+    exports.Map = createCollection({
+      // WeakMap#delete(key:void*):boolean
+      'delete': sharedDelete,
+      //:was Map#get(key:void*[, d3fault:void*]):void*
+      // Map#has(key:void*):boolean
+      has: mapHas,
+      // Map#get(key:void*):boolean
+      get: sharedGet,
+      // Map#set(key:void*, value:void*):void
+      set: sharedSet,
+      // Map#keys(void):Iterator
+      keys: sharedKeys,
+      // Map#values(void):Iterator
+      values: sharedValues,
+      // Map#entries(void):Iterator
+      entries: mapEntries,
+      // Map#forEach(callback:Function, context:void*):void ==> callback.call(context, key, value, mapObject) === not in specs`
+      forEach: sharedForEach,
+      // Map#clear():
+      clear: sharedClear
+    });
+  }
+
+  if (typeof Set == 'undefined' || typeof ((new Set).values) !== 'function' || !(new Set).values().next) {
+    exports.Set = createCollection({
+      // Set#has(value:void*):boolean
+      has: setHas,
+      // Set#add(value:void*):boolean
+      add: sharedAdd,
+      // Set#delete(key:void*):boolean
+      'delete': sharedDelete,
+      // Set#clear():
+      clear: sharedClear,
+      // Set#keys(void):Iterator
+      keys: sharedValues, // specs actually say "the same function object as the initial value of the values property"
+      // Set#values(void):Iterator
+      values: sharedValues,
+      // Set#entries(void):Iterator
+      entries: setEntries,
+      // Set#forEach(callback:Function, context:void*):void ==> callback.call(context, value, index) === not in specs
+      forEach: sharedForEach
+    });
+  }
+
+  if (typeof WeakSet == 'undefined') {
+    exports.WeakSet = createCollection({
+      // WeakSet#delete(key:void*):boolean
+      'delete': sharedDelete,
+      // WeakSet#add(value:void*):boolean
+      add: sharedAdd,
+      // WeakSet#clear():
+      clear: sharedClear,
+      // WeakSet#has(value:void*):boolean
+      has: setHas
+    }, true);
+  }
+
+
+  /**
+   * ES6 collection constructor
+   * @return {Function} a collection class
+   */
+  function createCollection(proto, objectOnly){
+    function Collection(a){
+      if (!this || this.constructor !== Collection) return new Collection(a);
+      this._keys = [];
+      this._values = [];
+      this._itp = []; // iteration pointers
+      this.objectOnly = objectOnly;
+
+      //parse initial iterable argument passed
+      if (a) init.call(this, a);
+    }
+
+    //define size for non object-only collections
+    if (!objectOnly) {
+      defineProperty(proto, 'size', {
+        get: sharedSize
+      });
+    }
+
+    //set prototype
+    proto.constructor = Collection;
+    Collection.prototype = proto;
+
+    return Collection;
+  }
+
+
+  /** parse initial iterable argument passed */
+  function init(a){
+    var i;
+    //init Set argument, like `[1,2,3,{}]`
+    if (this.add)
+      a.forEach(this.add, this);
+    //init Map argument like `[[1,2], [{}, 4]]`
+    else
+      a.forEach(function(a){this.set(a[0],a[1])}, this);
+  }
+
+
+  /** delete */
+  function sharedDelete(key) {
+    if (this.has(key)) {
+      this._keys.splice(i, 1);
+      this._values.splice(i, 1);
+      // update iteration pointers
+      this._itp.forEach(function(p) { if (i < p[0]) p[0]--; });
+    }
+    // Aurora here does it while Canary doesn't
+    return -1 < i;
+  };
+
+  function sharedGet(key) {
+    return this.has(key) ? this._values[i] : undefined;
+  }
+
+  function has(list, key) {
+    if (this.objectOnly && key !== Object(key))
+      throw new TypeError("Invalid value used as weak collection key");
+    //NaN or 0 passed
+    if (key != key || key === 0) for (i = list.length; i-- && !is(list[i], key);){}
+    else i = list.indexOf(key);
+    return -1 < i;
+  }
+
+  function setHas(value) {
+    return has.call(this, this._values, value);
+  }
+
+  function mapHas(value) {
+    return has.call(this, this._keys, value);
+  }
+
+  /** @chainable */
+  function sharedSet(key, value) {
+    this.has(key) ?
+      this._values[i] = value
+      :
+      this._values[this._keys.push(key) - 1] = value
+    ;
+    return this;
+  }
+
+  /** @chainable */
+  function sharedAdd(value) {
+    if (!this.has(value)) this._values.push(value);
+    return this;
+  }
+
+  function sharedClear() {
+    (this._keys || 0).length =
+    this._values.length = 0;
+  }
+
+  /** keys, values, and iterate related methods */
+  function sharedKeys() {
+    return sharedIterator(this._itp, this._keys);
+  }
+
+  function sharedValues() {
+    return sharedIterator(this._itp, this._values);
+  }
+
+  function mapEntries() {
+    return sharedIterator(this._itp, this._keys, this._values);
+  }
+
+  function setEntries() {
+    return sharedIterator(this._itp, this._values, this._values);
+  }
+
+  function sharedIterator(itp, array, array2) {
+    var p = [0], done = false;
+    itp.push(p);
+    return {
+      next: function() {
+        var v, k = p[0];
+        if (!done && k < array.length) {
+          v = array2 ? [array[k], array2[k]]: array[k];
+          p[0]++;
+        } else {
+          done = true;
+          itp.splice(itp.indexOf(p), 1);
+        }
+        return { done: done, value: v };
+      }
+    };
+  }
+
+  function sharedSize() {
+    return this._values.length;
+  }
+
+  function sharedForEach(callback, context) {
+    var it = this.entries();
+    for (;;) {
+      var r = it.next();
+      if (r.done) break;
+      callback.call(context, r.value[1], r.value[0], this);
+    }
+  }
+
+})(typeof exports != 'undefined' && typeof global != 'undefined' ? global : window );
+
+define("es6-collections", function(){});
+
+/*! https://mths.be/punycode v1.4.0 by @mathias */
+;(function(root) {
+
+	/** Detect free variables */
+	var freeExports = typeof exports == 'object' && exports &&
+		!exports.nodeType && exports;
+	var freeModule = typeof module == 'object' && module &&
+		!module.nodeType && module;
+	var freeGlobal = typeof global == 'object' && global;
+	if (
+		freeGlobal.global === freeGlobal ||
+		freeGlobal.window === freeGlobal ||
+		freeGlobal.self === freeGlobal
+	) {
+		root = freeGlobal;
+	}
+
+	/**
+	 * The `punycode` object.
+	 * @name punycode
+	 * @type Object
+	 */
+	var punycode,
+
+	/** Highest positive signed 32-bit float value */
+	maxInt = 2147483647, // aka. 0x7FFFFFFF or 2^31-1
+
+	/** Bootstring parameters */
+	base = 36,
+	tMin = 1,
+	tMax = 26,
+	skew = 38,
+	damp = 700,
+	initialBias = 72,
+	initialN = 128, // 0x80
+	delimiter = '-', // '\x2D'
+
+	/** Regular expressions */
+	regexPunycode = /^xn--/,
+	regexNonASCII = /[^\x20-\x7E]/, // unprintable ASCII chars + non-ASCII chars
+	regexSeparators = /[\x2E\u3002\uFF0E\uFF61]/g, // RFC 3490 separators
+
+	/** Error messages */
+	errors = {
+		'overflow': 'Overflow: input needs wider integers to process',
+		'not-basic': 'Illegal input >= 0x80 (not a basic code point)',
+		'invalid-input': 'Invalid input'
+	},
+
+	/** Convenience shortcuts */
+	baseMinusTMin = base - tMin,
+	floor = Math.floor,
+	stringFromCharCode = String.fromCharCode,
+
+	/** Temporary variable */
+	key;
+
+	/*--------------------------------------------------------------------------*/
+
+	/**
+	 * A generic error utility function.
+	 * @private
+	 * @param {String} type The error type.
+	 * @returns {Error} Throws a `RangeError` with the applicable error message.
+	 */
+	function error(type) {
+		throw new RangeError(errors[type]);
+	}
+
+	/**
+	 * A generic `Array#map` utility function.
+	 * @private
+	 * @param {Array} array The array to iterate over.
+	 * @param {Function} callback The function that gets called for every array
+	 * item.
+	 * @returns {Array} A new array of values returned by the callback function.
+	 */
+	function map(array, fn) {
+		var length = array.length;
+		var result = [];
+		while (length--) {
+			result[length] = fn(array[length]);
+		}
+		return result;
+	}
+
+	/**
+	 * A simple `Array#map`-like wrapper to work with domain name strings or email
+	 * addresses.
+	 * @private
+	 * @param {String} domain The domain name or email address.
+	 * @param {Function} callback The function that gets called for every
+	 * character.
+	 * @returns {Array} A new string of characters returned by the callback
+	 * function.
+	 */
+	function mapDomain(string, fn) {
+		var parts = string.split('@');
+		var result = '';
+		if (parts.length > 1) {
+			// In email addresses, only the domain name should be punycoded. Leave
+			// the local part (i.e. everything up to `@`) intact.
+			result = parts[0] + '@';
+			string = parts[1];
+		}
+		// Avoid `split(regex)` for IE8 compatibility. See #17.
+		string = string.replace(regexSeparators, '\x2E');
+		var labels = string.split('.');
+		var encoded = map(labels, fn).join('.');
+		return result + encoded;
+	}
+
+	/**
+	 * Creates an array containing the numeric code points of each Unicode
+	 * character in the string. While JavaScript uses UCS-2 internally,
+	 * this function will convert a pair of surrogate halves (each of which
+	 * UCS-2 exposes as separate characters) into a single code point,
+	 * matching UTF-16.
+	 * @see `punycode.ucs2.encode`
+	 * @see <https://mathiasbynens.be/notes/javascript-encoding>
+	 * @memberOf punycode.ucs2
+	 * @name decode
+	 * @param {String} string The Unicode input string (UCS-2).
+	 * @returns {Array} The new array of code points.
+	 */
+	function ucs2decode(string) {
+		var output = [],
+		    counter = 0,
+		    length = string.length,
+		    value,
+		    extra;
+		while (counter < length) {
+			value = string.charCodeAt(counter++);
+			if (value >= 0xD800 && value <= 0xDBFF && counter < length) {
+				// high surrogate, and there is a next character
+				extra = string.charCodeAt(counter++);
+				if ((extra & 0xFC00) == 0xDC00) { // low surrogate
+					output.push(((value & 0x3FF) << 10) + (extra & 0x3FF) + 0x10000);
+				} else {
+					// unmatched surrogate; only append this code unit, in case the next
+					// code unit is the high surrogate of a surrogate pair
+					output.push(value);
+					counter--;
+				}
+			} else {
+				output.push(value);
+			}
+		}
+		return output;
+	}
+
+	/**
+	 * Creates a string based on an array of numeric code points.
+	 * @see `punycode.ucs2.decode`
+	 * @memberOf punycode.ucs2
+	 * @name encode
+	 * @param {Array} codePoints The array of numeric code points.
+	 * @returns {String} The new Unicode string (UCS-2).
+	 */
+	function ucs2encode(array) {
+		return map(array, function(value) {
+			var output = '';
+			if (value > 0xFFFF) {
+				value -= 0x10000;
+				output += stringFromCharCode(value >>> 10 & 0x3FF | 0xD800);
+				value = 0xDC00 | value & 0x3FF;
+			}
+			output += stringFromCharCode(value);
+			return output;
+		}).join('');
+	}
+
+	/**
+	 * Converts a basic code point into a digit/integer.
+	 * @see `digitToBasic()`
+	 * @private
+	 * @param {Number} codePoint The basic numeric code point value.
+	 * @returns {Number} The numeric value of a basic code point (for use in
+	 * representing integers) in the range `0` to `base - 1`, or `base` if
+	 * the code point does not represent a value.
+	 */
+	function basicToDigit(codePoint) {
+		if (codePoint - 48 < 10) {
+			return codePoint - 22;
+		}
+		if (codePoint - 65 < 26) {
+			return codePoint - 65;
+		}
+		if (codePoint - 97 < 26) {
+			return codePoint - 97;
+		}
+		return base;
+	}
+
+	/**
+	 * Converts a digit/integer into a basic code point.
+	 * @see `basicToDigit()`
+	 * @private
+	 * @param {Number} digit The numeric value of a basic code point.
+	 * @returns {Number} The basic code point whose value (when used for
+	 * representing integers) is `digit`, which needs to be in the range
+	 * `0` to `base - 1`. If `flag` is non-zero, the uppercase form is
+	 * used; else, the lowercase form is used. The behavior is undefined
+	 * if `flag` is non-zero and `digit` has no uppercase form.
+	 */
+	function digitToBasic(digit, flag) {
+		//  0..25 map to ASCII a..z or A..Z
+		// 26..35 map to ASCII 0..9
+		return digit + 22 + 75 * (digit < 26) - ((flag != 0) << 5);
+	}
+
+	/**
+	 * Bias adaptation function as per section 3.4 of RFC 3492.
+	 * https://tools.ietf.org/html/rfc3492#section-3.4
+	 * @private
+	 */
+	function adapt(delta, numPoints, firstTime) {
+		var k = 0;
+		delta = firstTime ? floor(delta / damp) : delta >> 1;
+		delta += floor(delta / numPoints);
+		for (/* no initialization */; delta > baseMinusTMin * tMax >> 1; k += base) {
+			delta = floor(delta / baseMinusTMin);
+		}
+		return floor(k + (baseMinusTMin + 1) * delta / (delta + skew));
+	}
+
+	/**
+	 * Converts a Punycode string of ASCII-only symbols to a string of Unicode
+	 * symbols.
+	 * @memberOf punycode
+	 * @param {String} input The Punycode string of ASCII-only symbols.
+	 * @returns {String} The resulting string of Unicode symbols.
+	 */
+	function decode(input) {
+		// Don't use UCS-2
+		var output = [],
+		    inputLength = input.length,
+		    out,
+		    i = 0,
+		    n = initialN,
+		    bias = initialBias,
+		    basic,
+		    j,
+		    index,
+		    oldi,
+		    w,
+		    k,
+		    digit,
+		    t,
+		    /** Cached calculation results */
+		    baseMinusT;
+
+		// Handle the basic code points: let `basic` be the number of input code
+		// points before the last delimiter, or `0` if there is none, then copy
+		// the first basic code points to the output.
+
+		basic = input.lastIndexOf(delimiter);
+		if (basic < 0) {
+			basic = 0;
+		}
+
+		for (j = 0; j < basic; ++j) {
+			// if it's not a basic code point
+			if (input.charCodeAt(j) >= 0x80) {
+				error('not-basic');
+			}
+			output.push(input.charCodeAt(j));
+		}
+
+		// Main decoding loop: start just after the last delimiter if any basic code
+		// points were copied; start at the beginning otherwise.
+
+		for (index = basic > 0 ? basic + 1 : 0; index < inputLength; /* no final expression */) {
+
+			// `index` is the index of the next character to be consumed.
+			// Decode a generalized variable-length integer into `delta`,
+			// which gets added to `i`. The overflow checking is easier
+			// if we increase `i` as we go, then subtract off its starting
+			// value at the end to obtain `delta`.
+			for (oldi = i, w = 1, k = base; /* no condition */; k += base) {
+
+				if (index >= inputLength) {
+					error('invalid-input');
+				}
+
+				digit = basicToDigit(input.charCodeAt(index++));
+
+				if (digit >= base || digit > floor((maxInt - i) / w)) {
+					error('overflow');
+				}
+
+				i += digit * w;
+				t = k <= bias ? tMin : (k >= bias + tMax ? tMax : k - bias);
+
+				if (digit < t) {
+					break;
+				}
+
+				baseMinusT = base - t;
+				if (w > floor(maxInt / baseMinusT)) {
+					error('overflow');
+				}
+
+				w *= baseMinusT;
+
+			}
+
+			out = output.length + 1;
+			bias = adapt(i - oldi, out, oldi == 0);
+
+			// `i` was supposed to wrap around from `out` to `0`,
+			// incrementing `n` each time, so we'll fix that now:
+			if (floor(i / out) > maxInt - n) {
+				error('overflow');
+			}
+
+			n += floor(i / out);
+			i %= out;
+
+			// Insert `n` at position `i` of the output
+			output.splice(i++, 0, n);
+
+		}
+
+		return ucs2encode(output);
+	}
+
+	/**
+	 * Converts a string of Unicode symbols (e.g. a domain name label) to a
+	 * Punycode string of ASCII-only symbols.
+	 * @memberOf punycode
+	 * @param {String} input The string of Unicode symbols.
+	 * @returns {String} The resulting Punycode string of ASCII-only symbols.
+	 */
+	function encode(input) {
+		var n,
+		    delta,
+		    handledCPCount,
+		    basicLength,
+		    bias,
+		    j,
+		    m,
+		    q,
+		    k,
+		    t,
+		    currentValue,
+		    output = [],
+		    /** `inputLength` will hold the number of code points in `input`. */
+		    inputLength,
+		    /** Cached calculation results */
+		    handledCPCountPlusOne,
+		    baseMinusT,
+		    qMinusT;
+
+		// Convert the input in UCS-2 to Unicode
+		input = ucs2decode(input);
+
+		// Cache the length
+		inputLength = input.length;
+
+		// Initialize the state
+		n = initialN;
+		delta = 0;
+		bias = initialBias;
+
+		// Handle the basic code points
+		for (j = 0; j < inputLength; ++j) {
+			currentValue = input[j];
+			if (currentValue < 0x80) {
+				output.push(stringFromCharCode(currentValue));
+			}
+		}
+
+		handledCPCount = basicLength = output.length;
+
+		// `handledCPCount` is the number of code points that have been handled;
+		// `basicLength` is the number of basic code points.
+
+		// Finish the basic string - if it is not empty - with a delimiter
+		if (basicLength) {
+			output.push(delimiter);
+		}
+
+		// Main encoding loop:
+		while (handledCPCount < inputLength) {
+
+			// All non-basic code points < n have been handled already. Find the next
+			// larger one:
+			for (m = maxInt, j = 0; j < inputLength; ++j) {
+				currentValue = input[j];
+				if (currentValue >= n && currentValue < m) {
+					m = currentValue;
+				}
+			}
+
+			// Increase `delta` enough to advance the decoder's <n,i> state to <m,0>,
+			// but guard against overflow
+			handledCPCountPlusOne = handledCPCount + 1;
+			if (m - n > floor((maxInt - delta) / handledCPCountPlusOne)) {
+				error('overflow');
+			}
+
+			delta += (m - n) * handledCPCountPlusOne;
+			n = m;
+
+			for (j = 0; j < inputLength; ++j) {
+				currentValue = input[j];
+
+				if (currentValue < n && ++delta > maxInt) {
+					error('overflow');
+				}
+
+				if (currentValue == n) {
+					// Represent delta as a generalized variable-length integer
+					for (q = delta, k = base; /* no condition */; k += base) {
+						t = k <= bias ? tMin : (k >= bias + tMax ? tMax : k - bias);
+						if (q < t) {
+							break;
+						}
+						qMinusT = q - t;
+						baseMinusT = base - t;
+						output.push(
+							stringFromCharCode(digitToBasic(t + qMinusT % baseMinusT, 0))
+						);
+						q = floor(qMinusT / baseMinusT);
+					}
+
+					output.push(stringFromCharCode(digitToBasic(q, 0)));
+					bias = adapt(delta, handledCPCountPlusOne, handledCPCount == basicLength);
+					delta = 0;
+					++handledCPCount;
+				}
+			}
+
+			++delta;
+			++n;
+
+		}
+		return output.join('');
+	}
+
+	/**
+	 * Converts a Punycode string representing a domain name or an email address
+	 * to Unicode. Only the Punycoded parts of the input will be converted, i.e.
+	 * it doesn't matter if you call it on a string that has already been
+	 * converted to Unicode.
+	 * @memberOf punycode
+	 * @param {String} input The Punycoded domain name or email address to
+	 * convert to Unicode.
+	 * @returns {String} The Unicode representation of the given Punycode
+	 * string.
+	 */
+	function toUnicode(input) {
+		return mapDomain(input, function(string) {
+			return regexPunycode.test(string)
+				? decode(string.slice(4).toLowerCase())
+				: string;
+		});
+	}
+
+	/**
+	 * Converts a Unicode string representing a domain name or an email address to
+	 * Punycode. Only the non-ASCII parts of the domain name will be converted,
+	 * i.e. it doesn't matter if you call it with a domain that's already in
+	 * ASCII.
+	 * @memberOf punycode
+	 * @param {String} input The domain name or email address to convert, as a
+	 * Unicode string.
+	 * @returns {String} The Punycode representation of the given domain name or
+	 * email address.
+	 */
+	function toASCII(input) {
+		return mapDomain(input, function(string) {
+			return regexNonASCII.test(string)
+				? 'xn--' + encode(string)
+				: string;
+		});
+	}
+
+	/*--------------------------------------------------------------------------*/
+
+	/** Define the public API */
+	punycode = {
+		/**
+		 * A string representing the current Punycode.js version number.
+		 * @memberOf punycode
+		 * @type String
+		 */
+		'version': '1.3.2',
+		/**
+		 * An object of methods to convert from JavaScript's internal character
+		 * representation (UCS-2) to Unicode code points, and back.
+		 * @see <https://mathiasbynens.be/notes/javascript-encoding>
+		 * @memberOf punycode
+		 * @type Object
+		 */
+		'ucs2': {
+			'decode': ucs2decode,
+			'encode': ucs2encode
+		},
+		'decode': decode,
+		'encode': encode,
+		'toASCII': toASCII,
+		'toUnicode': toUnicode
+	};
+
+	/** Expose `punycode` */
+	// Some AMD build optimizers, like r.js, check for specific condition patterns
+	// like the following:
+	if (
+		typeof define == 'function' &&
+		typeof define.amd == 'object' &&
+		define.amd
+	) {
+		define('punycode', [],function() {
+			return punycode;
+		});
+	} else if (freeExports && freeModule) {
+		if (module.exports == freeExports) {
+			// in Node.js, io.js, or RingoJS v0.8.0+
+			freeModule.exports = punycode;
+		} else {
+			// in Narwhal or RingoJS v0.7.0-
+			for (key in punycode) {
+				punycode.hasOwnProperty(key) && (freeExports[key] = punycode[key]);
+			}
+		}
+	} else {
+		// in Rhino or a web browser
+		root.punycode = punycode;
+	}
+
+}(this));
+
+/*!
+ * URI.js - Mutating URLs
+ * IPv6 Support
+ *
+ * Version: 1.18.1
+ *
+ * Author: Rodney Rehm
+ * Web: http://medialize.github.io/URI.js/
+ *
+ * Licensed under
+ *   MIT License http://www.opensource.org/licenses/mit-license
+ *
+ */
+
+(function (root, factory) {
+  'use strict';
+  // https://github.com/umdjs/umd/blob/master/returnExports.js
+  if (typeof exports === 'object') {
+    // Node
+    module.exports = factory();
+  } else if (typeof define === 'function' && define.amd) {
+    // AMD. Register as an anonymous module.
+    define('IPv6',factory);
+  } else {
+    // Browser globals (root is window)
+    root.IPv6 = factory(root);
+  }
+}(this, function (root) {
+  'use strict';
+
+  /*
+  var _in = "fe80:0000:0000:0000:0204:61ff:fe9d:f156";
+  var _out = IPv6.best(_in);
+  var _expected = "fe80::204:61ff:fe9d:f156";
+
+  console.log(_in, _out, _expected, _out === _expected);
+  */
+
+  // save current IPv6 variable, if any
+  var _IPv6 = root && root.IPv6;
+
+  function bestPresentation(address) {
+    // based on:
+    // Javascript to test an IPv6 address for proper format, and to
+    // present the "best text representation" according to IETF Draft RFC at
+    // http://tools.ietf.org/html/draft-ietf-6man-text-addr-representation-04
+    // 8 Feb 2010 Rich Brown, Dartware, LLC
+    // Please feel free to use this code as long as you provide a link to
+    // http://www.intermapper.com
+    // http://intermapper.com/support/tools/IPV6-Validator.aspx
+    // http://download.dartware.com/thirdparty/ipv6validator.js
+
+    var _address = address.toLowerCase();
+    var segments = _address.split(':');
+    var length = segments.length;
+    var total = 8;
+
+    // trim colons (:: or ::a:b:c… or …a:b:c::)
+    if (segments[0] === '' && segments[1] === '' && segments[2] === '') {
+      // must have been ::
+      // remove first two items
+      segments.shift();
+      segments.shift();
+    } else if (segments[0] === '' && segments[1] === '') {
+      // must have been ::xxxx
+      // remove the first item
+      segments.shift();
+    } else if (segments[length - 1] === '' && segments[length - 2] === '') {
+      // must have been xxxx::
+      segments.pop();
+    }
+
+    length = segments.length;
+
+    // adjust total segments for IPv4 trailer
+    if (segments[length - 1].indexOf('.') !== -1) {
+      // found a "." which means IPv4
+      total = 7;
+    }
+
+    // fill empty segments them with "0000"
+    var pos;
+    for (pos = 0; pos < length; pos++) {
+      if (segments[pos] === '') {
+        break;
+      }
+    }
+
+    if (pos < total) {
+      segments.splice(pos, 1, '0000');
+      while (segments.length < total) {
+        segments.splice(pos, 0, '0000');
+      }
+    }
+
+    // strip leading zeros
+    var _segments;
+    for (var i = 0; i < total; i++) {
+      _segments = segments[i].split('');
+      for (var j = 0; j < 3 ; j++) {
+        if (_segments[0] === '0' && _segments.length > 1) {
+          _segments.splice(0,1);
+        } else {
+          break;
+        }
+      }
+
+      segments[i] = _segments.join('');
+    }
+
+    // find longest sequence of zeroes and coalesce them into one segment
+    var best = -1;
+    var _best = 0;
+    var _current = 0;
+    var current = -1;
+    var inzeroes = false;
+    // i; already declared
+
+    for (i = 0; i < total; i++) {
+      if (inzeroes) {
+        if (segments[i] === '0') {
+          _current += 1;
+        } else {
+          inzeroes = false;
+          if (_current > _best) {
+            best = current;
+            _best = _current;
+          }
+        }
+      } else {
+        if (segments[i] === '0') {
+          inzeroes = true;
+          current = i;
+          _current = 1;
+        }
+      }
+    }
+
+    if (_current > _best) {
+      best = current;
+      _best = _current;
+    }
+
+    if (_best > 1) {
+      segments.splice(best, _best, '');
+    }
+
+    length = segments.length;
+
+    // assemble remaining segments
+    var result = '';
+    if (segments[0] === '')  {
+      result = ':';
+    }
+
+    for (i = 0; i < length; i++) {
+      result += segments[i];
+      if (i === length - 1) {
+        break;
+      }
+
+      result += ':';
+    }
+
+    if (segments[length - 1] === '') {
+      result += ':';
+    }
+
+    return result;
+  }
+
+  function noConflict() {
+    /*jshint validthis: true */
+    if (root.IPv6 === this) {
+      root.IPv6 = _IPv6;
+    }
+  
+    return this;
+  }
+
+  return {
+    best: bestPresentation,
+    noConflict: noConflict
+  };
+}));
+
+/*!
+ * URI.js - Mutating URLs
+ * Second Level Domain (SLD) Support
+ *
+ * Version: 1.18.1
+ *
+ * Author: Rodney Rehm
+ * Web: http://medialize.github.io/URI.js/
+ *
+ * Licensed under
+ *   MIT License http://www.opensource.org/licenses/mit-license
+ *
+ */
+
+(function (root, factory) {
+  'use strict';
+  // https://github.com/umdjs/umd/blob/master/returnExports.js
+  if (typeof exports === 'object') {
+    // Node
+    module.exports = factory();
+  } else if (typeof define === 'function' && define.amd) {
+    // AMD. Register as an anonymous module.
+    define('SecondLevelDomains',factory);
+  } else {
+    // Browser globals (root is window)
+    root.SecondLevelDomains = factory(root);
+  }
+}(this, function (root) {
+  'use strict';
+
+  // save current SecondLevelDomains variable, if any
+  var _SecondLevelDomains = root && root.SecondLevelDomains;
+
+  var SLD = {
+    // list of known Second Level Domains
+    // converted list of SLDs from https://github.com/gavingmiller/second-level-domains
+    // ----
+    // publicsuffix.org is more current and actually used by a couple of browsers internally.
+    // downside is it also contains domains like "dyndns.org" - which is fine for the security
+    // issues browser have to deal with (SOP for cookies, etc) - but is way overboard for URI.js
+    // ----
+    list: {
+      'ac':' com gov mil net org ',
+      'ae':' ac co gov mil name net org pro sch ',
+      'af':' com edu gov net org ',
+      'al':' com edu gov mil net org ',
+      'ao':' co ed gv it og pb ',
+      'ar':' com edu gob gov int mil net org tur ',
+      'at':' ac co gv or ',
+      'au':' asn com csiro edu gov id net org ',
+      'ba':' co com edu gov mil net org rs unbi unmo unsa untz unze ',
+      'bb':' biz co com edu gov info net org store tv ',
+      'bh':' biz cc com edu gov info net org ',
+      'bn':' com edu gov net org ',
+      'bo':' com edu gob gov int mil net org tv ',
+      'br':' adm adv agr am arq art ato b bio blog bmd cim cng cnt com coop ecn edu eng esp etc eti far flog fm fnd fot fst g12 ggf gov imb ind inf jor jus lel mat med mil mus net nom not ntr odo org ppg pro psc psi qsl rec slg srv tmp trd tur tv vet vlog wiki zlg ',
+      'bs':' com edu gov net org ',
+      'bz':' du et om ov rg ',
+      'ca':' ab bc mb nb nf nl ns nt nu on pe qc sk yk ',
+      'ck':' biz co edu gen gov info net org ',
+      'cn':' ac ah bj com cq edu fj gd gov gs gx gz ha hb he hi hl hn jl js jx ln mil net nm nx org qh sc sd sh sn sx tj tw xj xz yn zj ',
+      'co':' com edu gov mil net nom org ',
+      'cr':' ac c co ed fi go or sa ',
+      'cy':' ac biz com ekloges gov ltd name net org parliament press pro tm ',
+      'do':' art com edu gob gov mil net org sld web ',
+      'dz':' art asso com edu gov net org pol ',
+      'ec':' com edu fin gov info med mil net org pro ',
+      'eg':' com edu eun gov mil name net org sci ',
+      'er':' com edu gov ind mil net org rochest w ',
+      'es':' com edu gob nom org ',
+      'et':' biz com edu gov info name net org ',
+      'fj':' ac biz com info mil name net org pro ',
+      'fk':' ac co gov net nom org ',
+      'fr':' asso com f gouv nom prd presse tm ',
+      'gg':' co net org ',
+      'gh':' com edu gov mil org ',
+      'gn':' ac com gov net org ',
+      'gr':' com edu gov mil net org ',
+      'gt':' com edu gob ind mil net org ',
+      'gu':' com edu gov net org ',
+      'hk':' com edu gov idv net org ',
+      'hu':' 2000 agrar bolt casino city co erotica erotika film forum games hotel info ingatlan jogasz konyvelo lakas media news org priv reklam sex shop sport suli szex tm tozsde utazas video ',
+      'id':' ac co go mil net or sch web ',
+      'il':' ac co gov idf k12 muni net org ',
+      'in':' ac co edu ernet firm gen gov i ind mil net nic org res ',
+      'iq':' com edu gov i mil net org ',
+      'ir':' ac co dnssec gov i id net org sch ',
+      'it':' edu gov ',
+      'je':' co net org ',
+      'jo':' com edu gov mil name net org sch ',
+      'jp':' ac ad co ed go gr lg ne or ',
+      'ke':' ac co go info me mobi ne or sc ',
+      'kh':' com edu gov mil net org per ',
+      'ki':' biz com de edu gov info mob net org tel ',
+      'km':' asso com coop edu gouv k medecin mil nom notaires pharmaciens presse tm veterinaire ',
+      'kn':' edu gov net org ',
+      'kr':' ac busan chungbuk chungnam co daegu daejeon es gangwon go gwangju gyeongbuk gyeonggi gyeongnam hs incheon jeju jeonbuk jeonnam k kg mil ms ne or pe re sc seoul ulsan ',
+      'kw':' com edu gov net org ',
+      'ky':' com edu gov net org ',
+      'kz':' com edu gov mil net org ',
+      'lb':' com edu gov net org ',
+      'lk':' assn com edu gov grp hotel int ltd net ngo org sch soc web ',
+      'lr':' com edu gov net org ',
+      'lv':' asn com conf edu gov id mil net org ',
+      'ly':' com edu gov id med net org plc sch ',
+      'ma':' ac co gov m net org press ',
+      'mc':' asso tm ',
+      'me':' ac co edu gov its net org priv ',
+      'mg':' com edu gov mil nom org prd tm ',
+      'mk':' com edu gov inf name net org pro ',
+      'ml':' com edu gov net org presse ',
+      'mn':' edu gov org ',
+      'mo':' com edu gov net org ',
+      'mt':' com edu gov net org ',
+      'mv':' aero biz com coop edu gov info int mil museum name net org pro ',
+      'mw':' ac co com coop edu gov int museum net org ',
+      'mx':' com edu gob net org ',
+      'my':' com edu gov mil name net org sch ',
+      'nf':' arts com firm info net other per rec store web ',
+      'ng':' biz com edu gov mil mobi name net org sch ',
+      'ni':' ac co com edu gob mil net nom org ',
+      'np':' com edu gov mil net org ',
+      'nr':' biz com edu gov info net org ',
+      'om':' ac biz co com edu gov med mil museum net org pro sch ',
+      'pe':' com edu gob mil net nom org sld ',
+      'ph':' com edu gov i mil net ngo org ',
+      'pk':' biz com edu fam gob gok gon gop gos gov net org web ',
+      'pl':' art bialystok biz com edu gda gdansk gorzow gov info katowice krakow lodz lublin mil net ngo olsztyn org poznan pwr radom slupsk szczecin torun warszawa waw wroc wroclaw zgora ',
+      'pr':' ac biz com edu est gov info isla name net org pro prof ',
+      'ps':' com edu gov net org plo sec ',
+      'pw':' belau co ed go ne or ',
+      'ro':' arts com firm info nom nt org rec store tm www ',
+      'rs':' ac co edu gov in org ',
+      'sb':' com edu gov net org ',
+      'sc':' com edu gov net org ',
+      'sh':' co com edu gov net nom org ',
+      'sl':' com edu gov net org ',
+      'st':' co com consulado edu embaixada gov mil net org principe saotome store ',
+      'sv':' com edu gob org red ',
+      'sz':' ac co org ',
+      'tr':' av bbs bel biz com dr edu gen gov info k12 name net org pol tel tsk tv web ',
+      'tt':' aero biz cat co com coop edu gov info int jobs mil mobi museum name net org pro tel travel ',
+      'tw':' club com ebiz edu game gov idv mil net org ',
+      'mu':' ac co com gov net or org ',
+      'mz':' ac co edu gov org ',
+      'na':' co com ',
+      'nz':' ac co cri geek gen govt health iwi maori mil net org parliament school ',
+      'pa':' abo ac com edu gob ing med net nom org sld ',
+      'pt':' com edu gov int net nome org publ ',
+      'py':' com edu gov mil net org ',
+      'qa':' com edu gov mil net org ',
+      're':' asso com nom ',
+      'ru':' ac adygeya altai amur arkhangelsk astrakhan bashkiria belgorod bir bryansk buryatia cbg chel chelyabinsk chita chukotka chuvashia com dagestan e-burg edu gov grozny int irkutsk ivanovo izhevsk jar joshkar-ola kalmykia kaluga kamchatka karelia kazan kchr kemerovo khabarovsk khakassia khv kirov koenig komi kostroma kranoyarsk kuban kurgan kursk lipetsk magadan mari mari-el marine mil mordovia mosreg msk murmansk nalchik net nnov nov novosibirsk nsk omsk orenburg org oryol penza perm pp pskov ptz rnd ryazan sakhalin samara saratov simbirsk smolensk spb stavropol stv surgut tambov tatarstan tom tomsk tsaritsyn tsk tula tuva tver tyumen udm udmurtia ulan-ude vladikavkaz vladimir vladivostok volgograd vologda voronezh vrn vyatka yakutia yamal yekaterinburg yuzhno-sakhalinsk ',
+      'rw':' ac co com edu gouv gov int mil net ',
+      'sa':' com edu gov med net org pub sch ',
+      'sd':' com edu gov info med net org tv ',
+      'se':' a ac b bd c d e f g h i k l m n o org p parti pp press r s t tm u w x y z ',
+      'sg':' com edu gov idn net org per ',
+      'sn':' art com edu gouv org perso univ ',
+      'sy':' com edu gov mil net news org ',
+      'th':' ac co go in mi net or ',
+      'tj':' ac biz co com edu go gov info int mil name net nic org test web ',
+      'tn':' agrinet com defense edunet ens fin gov ind info intl mincom nat net org perso rnrt rns rnu tourism ',
+      'tz':' ac co go ne or ',
+      'ua':' biz cherkassy chernigov chernovtsy ck cn co com crimea cv dn dnepropetrovsk donetsk dp edu gov if in ivano-frankivsk kh kharkov kherson khmelnitskiy kiev kirovograd km kr ks kv lg lugansk lutsk lviv me mk net nikolaev od odessa org pl poltava pp rovno rv sebastopol sumy te ternopil uzhgorod vinnica vn zaporizhzhe zhitomir zp zt ',
+      'ug':' ac co go ne or org sc ',
+      'uk':' ac bl british-library co cym gov govt icnet jet lea ltd me mil mod national-library-scotland nel net nhs nic nls org orgn parliament plc police sch scot soc ',
+      'us':' dni fed isa kids nsn ',
+      'uy':' com edu gub mil net org ',
+      've':' co com edu gob info mil net org web ',
+      'vi':' co com k12 net org ',
+      'vn':' ac biz com edu gov health info int name net org pro ',
+      'ye':' co com gov ltd me net org plc ',
+      'yu':' ac co edu gov org ',
+      'za':' ac agric alt bourse city co cybernet db edu gov grondar iaccess imt inca landesign law mil net ngo nis nom olivetti org pix school tm web ',
+      'zm':' ac co com edu gov net org sch '
+    },
+    // gorhill 2013-10-25: Using indexOf() instead Regexp(). Significant boost
+    // in both performance and memory footprint. No initialization required.
+    // http://jsperf.com/uri-js-sld-regex-vs-binary-search/4
+    // Following methods use lastIndexOf() rather than array.split() in order
+    // to avoid any memory allocations.
+    has: function(domain) {
+      var tldOffset = domain.lastIndexOf('.');
+      if (tldOffset <= 0 || tldOffset >= (domain.length-1)) {
+        return false;
+      }
+      var sldOffset = domain.lastIndexOf('.', tldOffset-1);
+      if (sldOffset <= 0 || sldOffset >= (tldOffset-1)) {
+        return false;
+      }
+      var sldList = SLD.list[domain.slice(tldOffset+1)];
+      if (!sldList) {
+        return false;
+      }
+      return sldList.indexOf(' ' + domain.slice(sldOffset+1, tldOffset) + ' ') >= 0;
+    },
+    is: function(domain) {
+      var tldOffset = domain.lastIndexOf('.');
+      if (tldOffset <= 0 || tldOffset >= (domain.length-1)) {
+        return false;
+      }
+      var sldOffset = domain.lastIndexOf('.', tldOffset-1);
+      if (sldOffset >= 0) {
+        return false;
+      }
+      var sldList = SLD.list[domain.slice(tldOffset+1)];
+      if (!sldList) {
+        return false;
+      }
+      return sldList.indexOf(' ' + domain.slice(0, tldOffset) + ' ') >= 0;
+    },
+    get: function(domain) {
+      var tldOffset = domain.lastIndexOf('.');
+      if (tldOffset <= 0 || tldOffset >= (domain.length-1)) {
+        return null;
+      }
+      var sldOffset = domain.lastIndexOf('.', tldOffset-1);
+      if (sldOffset <= 0 || sldOffset >= (tldOffset-1)) {
+        return null;
+      }
+      var sldList = SLD.list[domain.slice(tldOffset+1)];
+      if (!sldList) {
+        return null;
+      }
+      if (sldList.indexOf(' ' + domain.slice(sldOffset+1, tldOffset) + ' ') < 0) {
+        return null;
+      }
+      return domain.slice(sldOffset+1);
+    },
+    noConflict: function(){
+      if (root.SecondLevelDomains === this) {
+        root.SecondLevelDomains = _SecondLevelDomains;
+      }
+      return this;
+    }
+  };
+
+  return SLD;
+}));
+
+/*!
+ * URI.js - Mutating URLs
+ *
+ * Version: 1.18.1
+ *
+ * Author: Rodney Rehm
+ * Web: http://medialize.github.io/URI.js/
+ *
+ * Licensed under
+ *   MIT License http://www.opensource.org/licenses/mit-license
+ *
+ */
+(function (root, factory) {
+  'use strict';
+  // https://github.com/umdjs/umd/blob/master/returnExports.js
+  if (typeof exports === 'object') {
+    // Node
+    module.exports = factory(require('./punycode'), require('./IPv6'), require('./SecondLevelDomains'));
+  } else if (typeof define === 'function' && define.amd) {
+    // AMD. Register as an anonymous module.
+    define('URIjs',['./punycode', './IPv6', './SecondLevelDomains'], factory);
+  } else {
+    // Browser globals (root is window)
+    root.URI = factory(root.punycode, root.IPv6, root.SecondLevelDomains, root);
+  }
+}(this, function (punycode, IPv6, SLD, root) {
+  'use strict';
+  /*global location, escape, unescape */
+  // FIXME: v2.0.0 renamce non-camelCase properties to uppercase
+  /*jshint camelcase: false */
+
+  // save current URI variable, if any
+  var _URI = root && root.URI;
+
+  function URI(url, base) {
+    var _urlSupplied = arguments.length >= 1;
+    var _baseSupplied = arguments.length >= 2;
+
+    // Allow instantiation without the 'new' keyword
+    if (!(this instanceof URI)) {
+      if (_urlSupplied) {
+        if (_baseSupplied) {
+          return new URI(url, base);
+        }
+
+        return new URI(url);
+      }
+
+      return new URI();
+    }
+
+    if (url === undefined) {
+      if (_urlSupplied) {
+        throw new TypeError('undefined is not a valid argument for URI');
+      }
+
+      if (typeof location !== 'undefined') {
+        url = location.href + '';
+      } else {
+        url = '';
+      }
+    }
+
+    this.href(url);
+
+    // resolve to base according to http://dvcs.w3.org/hg/url/raw-file/tip/Overview.html#constructor
+    if (base !== undefined) {
+      return this.absoluteTo(base);
+    }
+
+    return this;
+  }
+
+  URI.version = '1.18.1';
+
+  var p = URI.prototype;
+  var hasOwn = Object.prototype.hasOwnProperty;
+
+  function escapeRegEx(string) {
+    // https://github.com/medialize/URI.js/commit/85ac21783c11f8ccab06106dba9735a31a86924d#commitcomment-821963
+    return string.replace(/([.*+?^=!:${}()|[\]\/\\])/g, '\\$1');
+  }
+
+  function getType(value) {
+    // IE8 doesn't return [Object Undefined] but [Object Object] for undefined value
+    if (value === undefined) {
+      return 'Undefined';
+    }
+
+    return String(Object.prototype.toString.call(value)).slice(8, -1);
+  }
+
+  function isArray(obj) {
+    return getType(obj) === 'Array';
+  }
+
+  function filterArrayValues(data, value) {
+    var lookup = {};
+    var i, length;
+
+    if (getType(value) === 'RegExp') {
+      lookup = null;
+    } else if (isArray(value)) {
+      for (i = 0, length = value.length; i < length; i++) {
+        lookup[value[i]] = true;
+      }
+    } else {
+      lookup[value] = true;
+    }
+
+    for (i = 0, length = data.length; i < length; i++) {
+      /*jshint laxbreak: true */
+      var _match = lookup && lookup[data[i]] !== undefined
+        || !lookup && value.test(data[i]);
+      /*jshint laxbreak: false */
+      if (_match) {
+        data.splice(i, 1);
+        length--;
+        i--;
+      }
+    }
+
+    return data;
+  }
+
+  function arrayContains(list, value) {
+    var i, length;
+
+    // value may be string, number, array, regexp
+    if (isArray(value)) {
+      // Note: this can be optimized to O(n) (instead of current O(m * n))
+      for (i = 0, length = value.length; i < length; i++) {
+        if (!arrayContains(list, value[i])) {
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    var _type = getType(value);
+    for (i = 0, length = list.length; i < length; i++) {
+      if (_type === 'RegExp') {
+        if (typeof list[i] === 'string' && list[i].match(value)) {
+          return true;
+        }
+      } else if (list[i] === value) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  function arraysEqual(one, two) {
+    if (!isArray(one) || !isArray(two)) {
+      return false;
+    }
+
+    // arrays can't be equal if they have different amount of content
+    if (one.length !== two.length) {
+      return false;
+    }
+
+    one.sort();
+    two.sort();
+
+    for (var i = 0, l = one.length; i < l; i++) {
+      if (one[i] !== two[i]) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  function trimSlashes(text) {
+    var trim_expression = /^\/+|\/+$/g;
+    return text.replace(trim_expression, '');
+  }
+
+  URI._parts = function() {
+    return {
+      protocol: null,
+      username: null,
+      password: null,
+      hostname: null,
+      urn: null,
+      port: null,
+      path: null,
+      query: null,
+      fragment: null,
+      // state
+      duplicateQueryParameters: URI.duplicateQueryParameters,
+      escapeQuerySpace: URI.escapeQuerySpace
+    };
+  };
+  // state: allow duplicate query parameters (a=1&a=1)
+  URI.duplicateQueryParameters = false;
+  // state: replaces + with %20 (space in query strings)
+  URI.escapeQuerySpace = true;
+  // static properties
+  URI.protocol_expression = /^[a-z][a-z0-9.+-]*$/i;
+  URI.idn_expression = /[^a-z0-9\.-]/i;
+  URI.punycode_expression = /(xn--)/i;
+  // well, 333.444.555.666 matches, but it sure ain't no IPv4 - do we care?
+  URI.ip4_expression = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
+  // credits to Rich Brown
+  // source: http://forums.intermapper.com/viewtopic.php?p=1096#1096
+  // specification: http://www.ietf.org/rfc/rfc4291.txt
+  URI.ip6_expression = /^\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?\s*$/;
+  // expression used is "gruber revised" (@gruber v2) determined to be the
+  // best solution in a regex-golf we did a couple of ages ago at
+  // * http://mathiasbynens.be/demo/url-regex
+  // * http://rodneyrehm.de/t/url-regex.html
+  URI.find_uri_expression = /\b((?:[a-z][\w-]+:(?:\/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}\/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?«»“”‘’]))/ig;
+  URI.findUri = {
+    // valid "scheme://" or "www."
+    start: /\b(?:([a-z][a-z0-9.+-]*:\/\/)|www\.)/gi,
+    // everything up to the next whitespace
+    end: /[\s\r\n]|$/,
+    // trim trailing punctuation captured by end RegExp
+    trim: /[`!()\[\]{};:'".,<>?«»“”„‘’]+$/
+  };
+  // http://www.iana.org/assignments/uri-schemes.html
+  // http://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers#Well-known_ports
+  URI.defaultPorts = {
+    http: '80',
+    https: '443',
+    ftp: '21',
+    gopher: '70',
+    ws: '80',
+    wss: '443'
+  };
+  // allowed hostname characters according to RFC 3986
+  // ALPHA DIGIT "-" "." "_" "~" "!" "$" "&" "'" "(" ")" "*" "+" "," ";" "=" %encoded
+  // I've never seen a (non-IDN) hostname other than: ALPHA DIGIT . -
+  URI.invalid_hostname_characters = /[^a-zA-Z0-9\.-]/;
+  // map DOM Elements to their URI attribute
+  URI.domAttributes = {
+    'a': 'href',
+    'blockquote': 'cite',
+    'link': 'href',
+    'base': 'href',
+    'script': 'src',
+    'form': 'action',
+    'img': 'src',
+    'area': 'href',
+    'iframe': 'src',
+    'embed': 'src',
+    'source': 'src',
+    'track': 'src',
+    'input': 'src', // but only if type="image"
+    'audio': 'src',
+    'video': 'src'
+  };
+  URI.getDomAttribute = function(node) {
+    if (!node || !node.nodeName) {
+      return undefined;
+    }
+
+    var nodeName = node.nodeName.toLowerCase();
+    // <input> should only expose src for type="image"
+    if (nodeName === 'input' && node.type !== 'image') {
+      return undefined;
+    }
+
+    return URI.domAttributes[nodeName];
+  };
+
+  function escapeForDumbFirefox36(value) {
+    // https://github.com/medialize/URI.js/issues/91
+    return escape(value);
+  }
+
+  // encoding / decoding according to RFC3986
+  function strictEncodeURIComponent(string) {
+    // see https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/encodeURIComponent
+    return encodeURIComponent(string)
+      .replace(/[!'()*]/g, escapeForDumbFirefox36)
+      .replace(/\*/g, '%2A');
+  }
+  URI.encode = strictEncodeURIComponent;
+  URI.decode = decodeURIComponent;
+  URI.iso8859 = function() {
+    URI.encode = escape;
+    URI.decode = unescape;
+  };
+  URI.unicode = function() {
+    URI.encode = strictEncodeURIComponent;
+    URI.decode = decodeURIComponent;
+  };
+  URI.characters = {
+    pathname: {
+      encode: {
+        // RFC3986 2.1: For consistency, URI producers and normalizers should
+        // use uppercase hexadecimal digits for all percent-encodings.
+        expression: /%(24|26|2B|2C|3B|3D|3A|40)/ig,
+        map: {
+          // -._~!'()*
+          '%24': '$',
+          '%26': '&',
+          '%2B': '+',
+          '%2C': ',',
+          '%3B': ';',
+          '%3D': '=',
+          '%3A': ':',
+          '%40': '@'
+        }
+      },
+      decode: {
+        expression: /[\/\?#]/g,
+        map: {
+          '/': '%2F',
+          '?': '%3F',
+          '#': '%23'
+        }
+      }
+    },
+    reserved: {
+      encode: {
+        // RFC3986 2.1: For consistency, URI producers and normalizers should
+        // use uppercase hexadecimal digits for all percent-encodings.
+        expression: /%(21|23|24|26|27|28|29|2A|2B|2C|2F|3A|3B|3D|3F|40|5B|5D)/ig,
+        map: {
+          // gen-delims
+          '%3A': ':',
+          '%2F': '/',
+          '%3F': '?',
+          '%23': '#',
+          '%5B': '[',
+          '%5D': ']',
+          '%40': '@',
+          // sub-delims
+          '%21': '!',
+          '%24': '$',
+          '%26': '&',
+          '%27': '\'',
+          '%28': '(',
+          '%29': ')',
+          '%2A': '*',
+          '%2B': '+',
+          '%2C': ',',
+          '%3B': ';',
+          '%3D': '='
+        }
+      }
+    },
+    urnpath: {
+      // The characters under `encode` are the characters called out by RFC 2141 as being acceptable
+      // for usage in a URN. RFC2141 also calls out "-", ".", and "_" as acceptable characters, but
+      // these aren't encoded by encodeURIComponent, so we don't have to call them out here. Also
+      // note that the colon character is not featured in the encoding map; this is because URI.js
+      // gives the colons in URNs semantic meaning as the delimiters of path segements, and so it
+      // should not appear unencoded in a segment itself.
+      // See also the note above about RFC3986 and capitalalized hex digits.
+      encode: {
+        expression: /%(21|24|27|28|29|2A|2B|2C|3B|3D|40)/ig,
+        map: {
+          '%21': '!',
+          '%24': '$',
+          '%27': '\'',
+          '%28': '(',
+          '%29': ')',
+          '%2A': '*',
+          '%2B': '+',
+          '%2C': ',',
+          '%3B': ';',
+          '%3D': '=',
+          '%40': '@'
+        }
+      },
+      // These characters are the characters called out by RFC2141 as "reserved" characters that
+      // should never appear in a URN, plus the colon character (see note above).
+      decode: {
+        expression: /[\/\?#:]/g,
+        map: {
+          '/': '%2F',
+          '?': '%3F',
+          '#': '%23',
+          ':': '%3A'
+        }
+      }
+    }
+  };
+  URI.encodeQuery = function(string, escapeQuerySpace) {
+    var escaped = URI.encode(string + '');
+    if (escapeQuerySpace === undefined) {
+      escapeQuerySpace = URI.escapeQuerySpace;
+    }
+
+    return escapeQuerySpace ? escaped.replace(/%20/g, '+') : escaped;
+  };
+  URI.decodeQuery = function(string, escapeQuerySpace) {
+    string += '';
+    if (escapeQuerySpace === undefined) {
+      escapeQuerySpace = URI.escapeQuerySpace;
+    }
+
+    try {
+      return URI.decode(escapeQuerySpace ? string.replace(/\+/g, '%20') : string);
+    } catch(e) {
+      // we're not going to mess with weird encodings,
+      // give up and return the undecoded original string
+      // see https://github.com/medialize/URI.js/issues/87
+      // see https://github.com/medialize/URI.js/issues/92
+      return string;
+    }
+  };
+  // generate encode/decode path functions
+  var _parts = {'encode':'encode', 'decode':'decode'};
+  var _part;
+  var generateAccessor = function(_group, _part) {
+    return function(string) {
+      try {
+        return URI[_part](string + '').replace(URI.characters[_group][_part].expression, function(c) {
+          return URI.characters[_group][_part].map[c];
+        });
+      } catch (e) {
+        // we're not going to mess with weird encodings,
+        // give up and return the undecoded original string
+        // see https://github.com/medialize/URI.js/issues/87
+        // see https://github.com/medialize/URI.js/issues/92
+        return string;
+      }
+    };
+  };
+
+  for (_part in _parts) {
+    URI[_part + 'PathSegment'] = generateAccessor('pathname', _parts[_part]);
+    URI[_part + 'UrnPathSegment'] = generateAccessor('urnpath', _parts[_part]);
+  }
+
+  var generateSegmentedPathFunction = function(_sep, _codingFuncName, _innerCodingFuncName) {
+    return function(string) {
+      // Why pass in names of functions, rather than the function objects themselves? The
+      // definitions of some functions (but in particular, URI.decode) will occasionally change due
+      // to URI.js having ISO8859 and Unicode modes. Passing in the name and getting it will ensure
+      // that the functions we use here are "fresh".
+      var actualCodingFunc;
+      if (!_innerCodingFuncName) {
+        actualCodingFunc = URI[_codingFuncName];
+      } else {
+        actualCodingFunc = function(string) {
+          return URI[_codingFuncName](URI[_innerCodingFuncName](string));
+        };
+      }
+
+      var segments = (string + '').split(_sep);
+
+      for (var i = 0, length = segments.length; i < length; i++) {
+        segments[i] = actualCodingFunc(segments[i]);
+      }
+
+      return segments.join(_sep);
+    };
+  };
+
+  // This takes place outside the above loop because we don't want, e.g., encodeUrnPath functions.
+  URI.decodePath = generateSegmentedPathFunction('/', 'decodePathSegment');
+  URI.decodeUrnPath = generateSegmentedPathFunction(':', 'decodeUrnPathSegment');
+  URI.recodePath = generateSegmentedPathFunction('/', 'encodePathSegment', 'decode');
+  URI.recodeUrnPath = generateSegmentedPathFunction(':', 'encodeUrnPathSegment', 'decode');
+
+  URI.encodeReserved = generateAccessor('reserved', 'encode');
+
+  URI.parse = function(string, parts) {
+    var pos;
+    if (!parts) {
+      parts = {};
+    }
+    // [protocol"://"[username[":"password]"@"]hostname[":"port]"/"?][path]["?"querystring]["#"fragment]
+
+    // extract fragment
+    pos = string.indexOf('#');
+    if (pos > -1) {
+      // escaping?
+      parts.fragment = string.substring(pos + 1) || null;
+      string = string.substring(0, pos);
+    }
+
+    // extract query
+    pos = string.indexOf('?');
+    if (pos > -1) {
+      // escaping?
+      parts.query = string.substring(pos + 1) || null;
+      string = string.substring(0, pos);
+    }
+
+    // extract protocol
+    if (string.substring(0, 2) === '//') {
+      // relative-scheme
+      parts.protocol = null;
+      string = string.substring(2);
+      // extract "user:pass@host:port"
+      string = URI.parseAuthority(string, parts);
+    } else {
+      pos = string.indexOf(':');
+      if (pos > -1) {
+        parts.protocol = string.substring(0, pos) || null;
+        if (parts.protocol && !parts.protocol.match(URI.protocol_expression)) {
+          // : may be within the path
+          parts.protocol = undefined;
+        } else if (string.substring(pos + 1, pos + 3) === '//') {
+          string = string.substring(pos + 3);
+
+          // extract "user:pass@host:port"
+          string = URI.parseAuthority(string, parts);
+        } else {
+          string = string.substring(pos + 1);
+          parts.urn = true;
+        }
+      }
+    }
+
+    // what's left must be the path
+    parts.path = string;
+
+    // and we're done
+    return parts;
+  };
+  URI.parseHost = function(string, parts) {
+    // Copy chrome, IE, opera backslash-handling behavior.
+    // Back slashes before the query string get converted to forward slashes
+    // See: https://github.com/joyent/node/blob/386fd24f49b0e9d1a8a076592a404168faeecc34/lib/url.js#L115-L124
+    // See: https://code.google.com/p/chromium/issues/detail?id=25916
+    // https://github.com/medialize/URI.js/pull/233
+    string = string.replace(/\\/g, '/');
+
+    // extract host:port
+    var pos = string.indexOf('/');
+    var bracketPos;
+    var t;
+
+    if (pos === -1) {
+      pos = string.length;
+    }
+
+    if (string.charAt(0) === '[') {
+      // IPv6 host - http://tools.ietf.org/html/draft-ietf-6man-text-addr-representation-04#section-6
+      // I claim most client software breaks on IPv6 anyways. To simplify things, URI only accepts
+      // IPv6+port in the format [2001:db8::1]:80 (for the time being)
+      bracketPos = string.indexOf(']');
+      parts.hostname = string.substring(1, bracketPos) || null;
+      parts.port = string.substring(bracketPos + 2, pos) || null;
+      if (parts.port === '/') {
+        parts.port = null;
+      }
+    } else {
+      var firstColon = string.indexOf(':');
+      var firstSlash = string.indexOf('/');
+      var nextColon = string.indexOf(':', firstColon + 1);
+      if (nextColon !== -1 && (firstSlash === -1 || nextColon < firstSlash)) {
+        // IPv6 host contains multiple colons - but no port
+        // this notation is actually not allowed by RFC 3986, but we're a liberal parser
+        parts.hostname = string.substring(0, pos) || null;
+        parts.port = null;
+      } else {
+        t = string.substring(0, pos).split(':');
+        parts.hostname = t[0] || null;
+        parts.port = t[1] || null;
+      }
+    }
+
+    if (parts.hostname && string.substring(pos).charAt(0) !== '/') {
+      pos++;
+      string = '/' + string;
+    }
+
+    return string.substring(pos) || '/';
+  };
+  URI.parseAuthority = function(string, parts) {
+    string = URI.parseUserinfo(string, parts);
+    return URI.parseHost(string, parts);
+  };
+  URI.parseUserinfo = function(string, parts) {
+    // extract username:password
+    var firstSlash = string.indexOf('/');
+    var pos = string.lastIndexOf('@', firstSlash > -1 ? firstSlash : string.length - 1);
+    var t;
+
+    // authority@ must come before /path
+    if (pos > -1 && (firstSlash === -1 || pos < firstSlash)) {
+      t = string.substring(0, pos).split(':');
+      parts.username = t[0] ? URI.decode(t[0]) : null;
+      t.shift();
+      parts.password = t[0] ? URI.decode(t.join(':')) : null;
+      string = string.substring(pos + 1);
+    } else {
+      parts.username = null;
+      parts.password = null;
+    }
+
+    return string;
+  };
+  URI.parseQuery = function(string, escapeQuerySpace) {
+    if (!string) {
+      return {};
+    }
+
+    // throw out the funky business - "?"[name"="value"&"]+
+    string = string.replace(/&+/g, '&').replace(/^\?*&*|&+$/g, '');
+
+    if (!string) {
+      return {};
+    }
+
+    var items = {};
+    var splits = string.split('&');
+    var length = splits.length;
+    var v, name, value;
+
+    for (var i = 0; i < length; i++) {
+      v = splits[i].split('=');
+      name = URI.decodeQuery(v.shift(), escapeQuerySpace);
+      // no "=" is null according to http://dvcs.w3.org/hg/url/raw-file/tip/Overview.html#collect-url-parameters
+      value = v.length ? URI.decodeQuery(v.join('='), escapeQuerySpace) : null;
+
+      if (hasOwn.call(items, name)) {
+        if (typeof items[name] === 'string' || items[name] === null) {
+          items[name] = [items[name]];
+        }
+
+        items[name].push(value);
+      } else {
+        items[name] = value;
+      }
+    }
+
+    return items;
+  };
+
+  URI.build = function(parts) {
+    var t = '';
+
+    if (parts.protocol) {
+      t += parts.protocol + ':';
+    }
+
+    if (!parts.urn && (t || parts.hostname)) {
+      t += '//';
+    }
+
+    t += (URI.buildAuthority(parts) || '');
+
+    if (typeof parts.path === 'string') {
+      if (parts.path.charAt(0) !== '/' && typeof parts.hostname === 'string') {
+        t += '/';
+      }
+
+      t += parts.path;
+    }
+
+    if (typeof parts.query === 'string' && parts.query) {
+      t += '?' + parts.query;
+    }
+
+    if (typeof parts.fragment === 'string' && parts.fragment) {
+      t += '#' + parts.fragment;
+    }
+    return t;
+  };
+  URI.buildHost = function(parts) {
+    var t = '';
+
+    if (!parts.hostname) {
+      return '';
+    } else if (URI.ip6_expression.test(parts.hostname)) {
+      t += '[' + parts.hostname + ']';
+    } else {
+      t += parts.hostname;
+    }
+
+    if (parts.port) {
+      t += ':' + parts.port;
+    }
+
+    return t;
+  };
+  URI.buildAuthority = function(parts) {
+    return URI.buildUserinfo(parts) + URI.buildHost(parts);
+  };
+  URI.buildUserinfo = function(parts) {
+    var t = '';
+
+    if (parts.username) {
+      t += URI.encode(parts.username);
+    }
+
+    if (parts.password) {
+      t += ':' + URI.encode(parts.password);
+    }
+
+    if (t) {
+      t += '@';
+    }
+
+    return t;
+  };
+  URI.buildQuery = function(data, duplicateQueryParameters, escapeQuerySpace) {
+    // according to http://tools.ietf.org/html/rfc3986 or http://labs.apache.org/webarch/uri/rfc/rfc3986.html
+    // being »-._~!$&'()*+,;=:@/?« %HEX and alnum are allowed
+    // the RFC explicitly states ?/foo being a valid use case, no mention of parameter syntax!
+    // URI.js treats the query string as being application/x-www-form-urlencoded
+    // see http://www.w3.org/TR/REC-html40/interact/forms.html#form-content-type
+
+    var t = '';
+    var unique, key, i, length;
+    for (key in data) {
+      if (hasOwn.call(data, key) && key) {
+        if (isArray(data[key])) {
+          unique = {};
+          for (i = 0, length = data[key].length; i < length; i++) {
+            if (data[key][i] !== undefined && unique[data[key][i] + ''] === undefined) {
+              t += '&' + URI.buildQueryParameter(key, data[key][i], escapeQuerySpace);
+              if (duplicateQueryParameters !== true) {
+                unique[data[key][i] + ''] = true;
+              }
+            }
+          }
+        } else if (data[key] !== undefined) {
+          t += '&' + URI.buildQueryParameter(key, data[key], escapeQuerySpace);
+        }
+      }
+    }
+
+    return t.substring(1);
+  };
+  URI.buildQueryParameter = function(name, value, escapeQuerySpace) {
+    // http://www.w3.org/TR/REC-html40/interact/forms.html#form-content-type -- application/x-www-form-urlencoded
+    // don't append "=" for null values, according to http://dvcs.w3.org/hg/url/raw-file/tip/Overview.html#url-parameter-serialization
+    return URI.encodeQuery(name, escapeQuerySpace) + (value !== null ? '=' + URI.encodeQuery(value, escapeQuerySpace) : '');
+  };
+
+  URI.addQuery = function(data, name, value) {
+    if (typeof name === 'object') {
+      for (var key in name) {
+        if (hasOwn.call(name, key)) {
+          URI.addQuery(data, key, name[key]);
+        }
+      }
+    } else if (typeof name === 'string') {
+      if (data[name] === undefined) {
+        data[name] = value;
+        return;
+      } else if (typeof data[name] === 'string') {
+        data[name] = [data[name]];
+      }
+
+      if (!isArray(value)) {
+        value = [value];
+      }
+
+      data[name] = (data[name] || []).concat(value);
+    } else {
+      throw new TypeError('URI.addQuery() accepts an object, string as the name parameter');
+    }
+  };
+  URI.removeQuery = function(data, name, value) {
+    var i, length, key;
+
+    if (isArray(name)) {
+      for (i = 0, length = name.length; i < length; i++) {
+        data[name[i]] = undefined;
+      }
+    } else if (getType(name) === 'RegExp') {
+      for (key in data) {
+        if (name.test(key)) {
+          data[key] = undefined;
+        }
+      }
+    } else if (typeof name === 'object') {
+      for (key in name) {
+        if (hasOwn.call(name, key)) {
+          URI.removeQuery(data, key, name[key]);
+        }
+      }
+    } else if (typeof name === 'string') {
+      if (value !== undefined) {
+        if (getType(value) === 'RegExp') {
+          if (!isArray(data[name]) && value.test(data[name])) {
+            data[name] = undefined;
+          } else {
+            data[name] = filterArrayValues(data[name], value);
+          }
+        } else if (data[name] === String(value) && (!isArray(value) || value.length === 1)) {
+          data[name] = undefined;
+        } else if (isArray(data[name])) {
+          data[name] = filterArrayValues(data[name], value);
+        }
+      } else {
+        data[name] = undefined;
+      }
+    } else {
+      throw new TypeError('URI.removeQuery() accepts an object, string, RegExp as the first parameter');
+    }
+  };
+  URI.hasQuery = function(data, name, value, withinArray) {
+    switch (getType(name)) {
+      case 'String':
+        // Nothing to do here
+        break;
+
+      case 'RegExp':
+        for (var key in data) {
+          if (hasOwn.call(data, key)) {
+            if (name.test(key) && (value === undefined || URI.hasQuery(data, key, value))) {
+              return true;
+            }
+          }
+        }
+
+        return false;
+
+      case 'Object':
+        for (var _key in name) {
+          if (hasOwn.call(name, _key)) {
+            if (!URI.hasQuery(data, _key, name[_key])) {
+              return false;
+            }
+          }
+        }
+
+        return true;
+
+      default:
+        throw new TypeError('URI.hasQuery() accepts a string, regular expression or object as the name parameter');
+    }
+
+    switch (getType(value)) {
+      case 'Undefined':
+        // true if exists (but may be empty)
+        return name in data; // data[name] !== undefined;
+
+      case 'Boolean':
+        // true if exists and non-empty
+        var _booly = Boolean(isArray(data[name]) ? data[name].length : data[name]);
+        return value === _booly;
+
+      case 'Function':
+        // allow complex comparison
+        return !!value(data[name], name, data);
+
+      case 'Array':
+        if (!isArray(data[name])) {
+          return false;
+        }
+
+        var op = withinArray ? arrayContains : arraysEqual;
+        return op(data[name], value);
+
+      case 'RegExp':
+        if (!isArray(data[name])) {
+          return Boolean(data[name] && data[name].match(value));
+        }
+
+        if (!withinArray) {
+          return false;
+        }
+
+        return arrayContains(data[name], value);
+
+      case 'Number':
+        value = String(value);
+        /* falls through */
+      case 'String':
+        if (!isArray(data[name])) {
+          return data[name] === value;
+        }
+
+        if (!withinArray) {
+          return false;
+        }
+
+        return arrayContains(data[name], value);
+
+      default:
+        throw new TypeError('URI.hasQuery() accepts undefined, boolean, string, number, RegExp, Function as the value parameter');
+    }
+  };
+
+
+  URI.joinPaths = function() {
+    var input = [];
+    var segments = [];
+    var nonEmptySegments = 0;
+
+    for (var i = 0; i < arguments.length; i++) {
+      var url = new URI(arguments[i]);
+      input.push(url);
+      var _segments = url.segment();
+      for (var s = 0; s < _segments.length; s++) {
+        if (typeof _segments[s] === 'string') {
+          segments.push(_segments[s]);
+        }
+
+        if (_segments[s]) {
+          nonEmptySegments++;
+        }
+      }
+    }
+
+    if (!segments.length || !nonEmptySegments) {
+      return new URI('');
+    }
+
+    var uri = new URI('').segment(segments);
+
+    if (input[0].path() === '' || input[0].path().slice(0, 1) === '/') {
+      uri.path('/' + uri.path());
+    }
+
+    return uri.normalize();
+  };
+
+  URI.commonPath = function(one, two) {
+    var length = Math.min(one.length, two.length);
+    var pos;
+
+    // find first non-matching character
+    for (pos = 0; pos < length; pos++) {
+      if (one.charAt(pos) !== two.charAt(pos)) {
+        pos--;
+        break;
+      }
+    }
+
+    if (pos < 1) {
+      return one.charAt(0) === two.charAt(0) && one.charAt(0) === '/' ? '/' : '';
+    }
+
+    // revert to last /
+    if (one.charAt(pos) !== '/' || two.charAt(pos) !== '/') {
+      pos = one.substring(0, pos).lastIndexOf('/');
+    }
+
+    return one.substring(0, pos + 1);
+  };
+
+  URI.withinString = function(string, callback, options) {
+    options || (options = {});
+    var _start = options.start || URI.findUri.start;
+    var _end = options.end || URI.findUri.end;
+    var _trim = options.trim || URI.findUri.trim;
+    var _attributeOpen = /[a-z0-9-]=["']?$/i;
+
+    _start.lastIndex = 0;
+    while (true) {
+      var match = _start.exec(string);
+      if (!match) {
+        break;
+      }
+
+      var start = match.index;
+      if (options.ignoreHtml) {
+        // attribut(e=["']?$)
+        var attributeOpen = string.slice(Math.max(start - 3, 0), start);
+        if (attributeOpen && _attributeOpen.test(attributeOpen)) {
+          continue;
+        }
+      }
+
+      var end = start + string.slice(start).search(_end);
+      var slice = string.slice(start, end).replace(_trim, '');
+      if (options.ignore && options.ignore.test(slice)) {
+        continue;
+      }
+
+      end = start + slice.length;
+      var result = callback(slice, start, end, string);
+      string = string.slice(0, start) + result + string.slice(end);
+      _start.lastIndex = start + result.length;
+    }
+
+    _start.lastIndex = 0;
+    return string;
+  };
+
+  URI.ensureValidHostname = function(v) {
+    // Theoretically URIs allow percent-encoding in Hostnames (according to RFC 3986)
+    // they are not part of DNS and therefore ignored by URI.js
+
+    if (v.match(URI.invalid_hostname_characters)) {
+      // test punycode
+      if (!punycode) {
+        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-] and Punycode.js is not available');
+      }
+
+      if (punycode.toASCII(v).match(URI.invalid_hostname_characters)) {
+        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-]');
+      }
+    }
+  };
+
+  // noConflict
+  URI.noConflict = function(removeAll) {
+    if (removeAll) {
+      var unconflicted = {
+        URI: this.noConflict()
+      };
+
+      if (root.URITemplate && typeof root.URITemplate.noConflict === 'function') {
+        unconflicted.URITemplate = root.URITemplate.noConflict();
+      }
+
+      if (root.IPv6 && typeof root.IPv6.noConflict === 'function') {
+        unconflicted.IPv6 = root.IPv6.noConflict();
+      }
+
+      if (root.SecondLevelDomains && typeof root.SecondLevelDomains.noConflict === 'function') {
+        unconflicted.SecondLevelDomains = root.SecondLevelDomains.noConflict();
+      }
+
+      return unconflicted;
+    } else if (root.URI === this) {
+      root.URI = _URI;
+    }
+
+    return this;
+  };
+
+  p.build = function(deferBuild) {
+    if (deferBuild === true) {
+      this._deferred_build = true;
+    } else if (deferBuild === undefined || this._deferred_build) {
+      this._string = URI.build(this._parts);
+      this._deferred_build = false;
+    }
+
+    return this;
+  };
+
+  p.clone = function() {
+    return new URI(this);
+  };
+
+  p.valueOf = p.toString = function() {
+    return this.build(false)._string;
+  };
+
+
+  function generateSimpleAccessor(_part){
+    return function(v, build) {
+      if (v === undefined) {
+        return this._parts[_part] || '';
+      } else {
+        this._parts[_part] = v || null;
+        this.build(!build);
+        return this;
+      }
+    };
+  }
+
+  function generatePrefixAccessor(_part, _key){
+    return function(v, build) {
+      if (v === undefined) {
+        return this._parts[_part] || '';
+      } else {
+        if (v !== null) {
+          v = v + '';
+          if (v.charAt(0) === _key) {
+            v = v.substring(1);
+          }
+        }
+
+        this._parts[_part] = v;
+        this.build(!build);
+        return this;
+      }
+    };
+  }
+
+  p.protocol = generateSimpleAccessor('protocol');
+  p.username = generateSimpleAccessor('username');
+  p.password = generateSimpleAccessor('password');
+  p.hostname = generateSimpleAccessor('hostname');
+  p.port = generateSimpleAccessor('port');
+  p.query = generatePrefixAccessor('query', '?');
+  p.fragment = generatePrefixAccessor('fragment', '#');
+
+  p.search = function(v, build) {
+    var t = this.query(v, build);
+    return typeof t === 'string' && t.length ? ('?' + t) : t;
+  };
+  p.hash = function(v, build) {
+    var t = this.fragment(v, build);
+    return typeof t === 'string' && t.length ? ('#' + t) : t;
+  };
+
+  p.pathname = function(v, build) {
+    if (v === undefined || v === true) {
+      var res = this._parts.path || (this._parts.hostname ? '/' : '');
+      return v ? (this._parts.urn ? URI.decodeUrnPath : URI.decodePath)(res) : res;
+    } else {
+      if (this._parts.urn) {
+        this._parts.path = v ? URI.recodeUrnPath(v) : '';
+      } else {
+        this._parts.path = v ? URI.recodePath(v) : '/';
+      }
+      this.build(!build);
+      return this;
+    }
+  };
+  p.path = p.pathname;
+  p.href = function(href, build) {
+    var key;
+
+    if (href === undefined) {
+      return this.toString();
+    }
+
+    this._string = '';
+    this._parts = URI._parts();
+
+    var _URI = href instanceof URI;
+    var _object = typeof href === 'object' && (href.hostname || href.path || href.pathname);
+    if (href.nodeName) {
+      var attribute = URI.getDomAttribute(href);
+      href = href[attribute] || '';
+      _object = false;
+    }
+
+    // window.location is reported to be an object, but it's not the sort
+    // of object we're looking for:
+    // * location.protocol ends with a colon
+    // * location.query != object.search
+    // * location.hash != object.fragment
+    // simply serializing the unknown object should do the trick
+    // (for location, not for everything...)
+    if (!_URI && _object && href.pathname !== undefined) {
+      href = href.toString();
+    }
+
+    if (typeof href === 'string' || href instanceof String) {
+      this._parts = URI.parse(String(href), this._parts);
+    } else if (_URI || _object) {
+      var src = _URI ? href._parts : href;
+      for (key in src) {
+        if (hasOwn.call(this._parts, key)) {
+          this._parts[key] = src[key];
+        }
+      }
+    } else {
+      throw new TypeError('invalid input');
+    }
+
+    this.build(!build);
+    return this;
+  };
+
+  // identification accessors
+  p.is = function(what) {
+    var ip = false;
+    var ip4 = false;
+    var ip6 = false;
+    var name = false;
+    var sld = false;
+    var idn = false;
+    var punycode = false;
+    var relative = !this._parts.urn;
+
+    if (this._parts.hostname) {
+      relative = false;
+      ip4 = URI.ip4_expression.test(this._parts.hostname);
+      ip6 = URI.ip6_expression.test(this._parts.hostname);
+      ip = ip4 || ip6;
+      name = !ip;
+      sld = name && SLD && SLD.has(this._parts.hostname);
+      idn = name && URI.idn_expression.test(this._parts.hostname);
+      punycode = name && URI.punycode_expression.test(this._parts.hostname);
+    }
+
+    switch (what.toLowerCase()) {
+      case 'relative':
+        return relative;
+
+      case 'absolute':
+        return !relative;
+
+      // hostname identification
+      case 'domain':
+      case 'name':
+        return name;
+
+      case 'sld':
+        return sld;
+
+      case 'ip':
+        return ip;
+
+      case 'ip4':
+      case 'ipv4':
+      case 'inet4':
+        return ip4;
+
+      case 'ip6':
+      case 'ipv6':
+      case 'inet6':
+        return ip6;
+
+      case 'idn':
+        return idn;
+
+      case 'url':
+        return !this._parts.urn;
+
+      case 'urn':
+        return !!this._parts.urn;
+
+      case 'punycode':
+        return punycode;
+    }
+
+    return null;
+  };
+
+  // component specific input validation
+  var _protocol = p.protocol;
+  var _port = p.port;
+  var _hostname = p.hostname;
+
+  p.protocol = function(v, build) {
+    if (v !== undefined) {
+      if (v) {
+        // accept trailing ://
+        v = v.replace(/:(\/\/)?$/, '');
+
+        if (!v.match(URI.protocol_expression)) {
+          throw new TypeError('Protocol "' + v + '" contains characters other than [A-Z0-9.+-] or doesn\'t start with [A-Z]');
+        }
+      }
+    }
+    return _protocol.call(this, v, build);
+  };
+  p.scheme = p.protocol;
+  p.port = function(v, build) {
+    if (this._parts.urn) {
+      return v === undefined ? '' : this;
+    }
+
+    if (v !== undefined) {
+      if (v === 0) {
+        v = null;
+      }
+
+      if (v) {
+        v += '';
+        if (v.charAt(0) === ':') {
+          v = v.substring(1);
+        }
+
+        if (v.match(/[^0-9]/)) {
+          throw new TypeError('Port "' + v + '" contains characters other than [0-9]');
+        }
+      }
+    }
+    return _port.call(this, v, build);
+  };
+  p.hostname = function(v, build) {
+    if (this._parts.urn) {
+      return v === undefined ? '' : this;
+    }
+
+    if (v !== undefined) {
+      var x = {};
+      var res = URI.parseHost(v, x);
+      if (res !== '/') {
+        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-]');
+      }
+
+      v = x.hostname;
+    }
+    return _hostname.call(this, v, build);
+  };
+
+  // compound accessors
+  p.origin = function(v, build) {
+    if (this._parts.urn) {
+      return v === undefined ? '' : this;
+    }
+
+    if (v === undefined) {
+      var protocol = this.protocol();
+      var authority = this.authority();
+      if (!authority) {
+        return '';
+      }
+
+      return (protocol ? protocol + '://' : '') + this.authority();
+    } else {
+      var origin = URI(v);
+      this
+        .protocol(origin.protocol())
+        .authority(origin.authority())
+        .build(!build);
+      return this;
+    }
+  };
+  p.host = function(v, build) {
+    if (this._parts.urn) {
+      return v === undefined ? '' : this;
+    }
+
+    if (v === undefined) {
+      return this._parts.hostname ? URI.buildHost(this._parts) : '';
+    } else {
+      var res = URI.parseHost(v, this._parts);
+      if (res !== '/') {
+        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-]');
+      }
+
+      this.build(!build);
+      return this;
+    }
+  };
+  p.authority = function(v, build) {
+    if (this._parts.urn) {
+      return v === undefined ? '' : this;
+    }
+
+    if (v === undefined) {
+      return this._parts.hostname ? URI.buildAuthority(this._parts) : '';
+    } else {
+      var res = URI.parseAuthority(v, this._parts);
+      if (res !== '/') {
+        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-]');
+      }
+
+      this.build(!build);
+      return this;
+    }
+  };
+  p.userinfo = function(v, build) {
+    if (this._parts.urn) {
+      return v === undefined ? '' : this;
+    }
+
+    if (v === undefined) {
+      var t = URI.buildUserinfo(this._parts);
+      return t ? t.substring(0, t.length -1) : t;
+    } else {
+      if (v[v.length-1] !== '@') {
+        v += '@';
+      }
+
+      URI.parseUserinfo(v, this._parts);
+      this.build(!build);
+      return this;
+    }
+  };
+  p.resource = function(v, build) {
+    var parts;
+
+    if (v === undefined) {
+      return this.path() + this.search() + this.hash();
+    }
+
+    parts = URI.parse(v);
+    this._parts.path = parts.path;
+    this._parts.query = parts.query;
+    this._parts.fragment = parts.fragment;
+    this.build(!build);
+    return this;
+  };
+
+  // fraction accessors
+  p.subdomain = function(v, build) {
+    if (this._parts.urn) {
+      return v === undefined ? '' : this;
+    }
+
+    // convenience, return "www" from "www.example.org"
+    if (v === undefined) {
+      if (!this._parts.hostname || this.is('IP')) {
+        return '';
+      }
+
+      // grab domain and add another segment
+      var end = this._parts.hostname.length - this.domain().length - 1;
+      return this._parts.hostname.substring(0, end) || '';
+    } else {
+      var e = this._parts.hostname.length - this.domain().length;
+      var sub = this._parts.hostname.substring(0, e);
+      var replace = new RegExp('^' + escapeRegEx(sub));
+
+      if (v && v.charAt(v.length - 1) !== '.') {
+        v += '.';
+      }
+
+      if (v) {
+        URI.ensureValidHostname(v);
+      }
+
+      this._parts.hostname = this._parts.hostname.replace(replace, v);
+      this.build(!build);
+      return this;
+    }
+  };
+  p.domain = function(v, build) {
+    if (this._parts.urn) {
+      return v === undefined ? '' : this;
+    }
+
+    if (typeof v === 'boolean') {
+      build = v;
+      v = undefined;
+    }
+
+    // convenience, return "example.org" from "www.example.org"
+    if (v === undefined) {
+      if (!this._parts.hostname || this.is('IP')) {
+        return '';
+      }
+
+      // if hostname consists of 1 or 2 segments, it must be the domain
+      var t = this._parts.hostname.match(/\./g);
+      if (t && t.length < 2) {
+        return this._parts.hostname;
+      }
+
+      // grab tld and add another segment
+      var end = this._parts.hostname.length - this.tld(build).length - 1;
+      end = this._parts.hostname.lastIndexOf('.', end -1) + 1;
+      return this._parts.hostname.substring(end) || '';
+    } else {
+      if (!v) {
+        throw new TypeError('cannot set domain empty');
+      }
+
+      URI.ensureValidHostname(v);
+
+      if (!this._parts.hostname || this.is('IP')) {
+        this._parts.hostname = v;
+      } else {
+        var replace = new RegExp(escapeRegEx(this.domain()) + '$');
+        this._parts.hostname = this._parts.hostname.replace(replace, v);
+      }
+
+      this.build(!build);
+      return this;
+    }
+  };
+  p.tld = function(v, build) {
+    if (this._parts.urn) {
+      return v === undefined ? '' : this;
+    }
+
+    if (typeof v === 'boolean') {
+      build = v;
+      v = undefined;
+    }
+
+    // return "org" from "www.example.org"
+    if (v === undefined) {
+      if (!this._parts.hostname || this.is('IP')) {
+        return '';
+      }
+
+      var pos = this._parts.hostname.lastIndexOf('.');
+      var tld = this._parts.hostname.substring(pos + 1);
+
+      if (build !== true && SLD && SLD.list[tld.toLowerCase()]) {
+        return SLD.get(this._parts.hostname) || tld;
+      }
+
+      return tld;
+    } else {
+      var replace;
+
+      if (!v) {
+        throw new TypeError('cannot set TLD empty');
+      } else if (v.match(/[^a-zA-Z0-9-]/)) {
+        if (SLD && SLD.is(v)) {
+          replace = new RegExp(escapeRegEx(this.tld()) + '$');
+          this._parts.hostname = this._parts.hostname.replace(replace, v);
+        } else {
+          throw new TypeError('TLD "' + v + '" contains characters other than [A-Z0-9]');
+        }
+      } else if (!this._parts.hostname || this.is('IP')) {
+        throw new ReferenceError('cannot set TLD on non-domain host');
+      } else {
+        replace = new RegExp(escapeRegEx(this.tld()) + '$');
+        this._parts.hostname = this._parts.hostname.replace(replace, v);
+      }
+
+      this.build(!build);
+      return this;
+    }
+  };
+  p.directory = function(v, build) {
+    if (this._parts.urn) {
+      return v === undefined ? '' : this;
+    }
+
+    if (v === undefined || v === true) {
+      if (!this._parts.path && !this._parts.hostname) {
+        return '';
+      }
+
+      if (this._parts.path === '/') {
+        return '/';
+      }
+
+      var end = this._parts.path.length - this.filename().length - 1;
+      var res = this._parts.path.substring(0, end) || (this._parts.hostname ? '/' : '');
+
+      return v ? URI.decodePath(res) : res;
+
+    } else {
+      var e = this._parts.path.length - this.filename().length;
+      var directory = this._parts.path.substring(0, e);
+      var replace = new RegExp('^' + escapeRegEx(directory));
+
+      // fully qualifier directories begin with a slash
+      if (!this.is('relative')) {
+        if (!v) {
+          v = '/';
+        }
+
+        if (v.charAt(0) !== '/') {
+          v = '/' + v;
+        }
+      }
+
+      // directories always end with a slash
+      if (v && v.charAt(v.length - 1) !== '/') {
+        v += '/';
+      }
+
+      v = URI.recodePath(v);
+      this._parts.path = this._parts.path.replace(replace, v);
+      this.build(!build);
+      return this;
+    }
+  };
+  p.filename = function(v, build) {
+    if (this._parts.urn) {
+      return v === undefined ? '' : this;
+    }
+
+    if (v === undefined || v === true) {
+      if (!this._parts.path || this._parts.path === '/') {
+        return '';
+      }
+
+      var pos = this._parts.path.lastIndexOf('/');
+      var res = this._parts.path.substring(pos+1);
+
+      return v ? URI.decodePathSegment(res) : res;
+    } else {
+      var mutatedDirectory = false;
+
+      if (v.charAt(0) === '/') {
+        v = v.substring(1);
+      }
+
+      if (v.match(/\.?\//)) {
+        mutatedDirectory = true;
+      }
+
+      var replace = new RegExp(escapeRegEx(this.filename()) + '$');
+      v = URI.recodePath(v);
+      this._parts.path = this._parts.path.replace(replace, v);
+
+      if (mutatedDirectory) {
+        this.normalizePath(build);
+      } else {
+        this.build(!build);
+      }
+
+      return this;
+    }
+  };
+  p.suffix = function(v, build) {
+    if (this._parts.urn) {
+      return v === undefined ? '' : this;
+    }
+
+    if (v === undefined || v === true) {
+      if (!this._parts.path || this._parts.path === '/') {
+        return '';
+      }
+
+      var filename = this.filename();
+      var pos = filename.lastIndexOf('.');
+      var s, res;
+
+      if (pos === -1) {
+        return '';
+      }
+
+      // suffix may only contain alnum characters (yup, I made this up.)
+      s = filename.substring(pos+1);
+      res = (/^[a-z0-9%]+$/i).test(s) ? s : '';
+      return v ? URI.decodePathSegment(res) : res;
+    } else {
+      if (v.charAt(0) === '.') {
+        v = v.substring(1);
+      }
+
+      var suffix = this.suffix();
+      var replace;
+
+      if (!suffix) {
+        if (!v) {
+          return this;
+        }
+
+        this._parts.path += '.' + URI.recodePath(v);
+      } else if (!v) {
+        replace = new RegExp(escapeRegEx('.' + suffix) + '$');
+      } else {
+        replace = new RegExp(escapeRegEx(suffix) + '$');
+      }
+
+      if (replace) {
+        v = URI.recodePath(v);
+        this._parts.path = this._parts.path.replace(replace, v);
+      }
+
+      this.build(!build);
+      return this;
+    }
+  };
+  p.segment = function(segment, v, build) {
+    var separator = this._parts.urn ? ':' : '/';
+    var path = this.path();
+    var absolute = path.substring(0, 1) === '/';
+    var segments = path.split(separator);
+
+    if (segment !== undefined && typeof segment !== 'number') {
+      build = v;
+      v = segment;
+      segment = undefined;
+    }
+
+    if (segment !== undefined && typeof segment !== 'number') {
+      throw new Error('Bad segment "' + segment + '", must be 0-based integer');
+    }
+
+    if (absolute) {
+      segments.shift();
+    }
+
+    if (segment < 0) {
+      // allow negative indexes to address from the end
+      segment = Math.max(segments.length + segment, 0);
+    }
+
+    if (v === undefined) {
+      /*jshint laxbreak: true */
+      return segment === undefined
+        ? segments
+        : segments[segment];
+      /*jshint laxbreak: false */
+    } else if (segment === null || segments[segment] === undefined) {
+      if (isArray(v)) {
+        segments = [];
+        // collapse empty elements within array
+        for (var i=0, l=v.length; i < l; i++) {
+          if (!v[i].length && (!segments.length || !segments[segments.length -1].length)) {
+            continue;
+          }
+
+          if (segments.length && !segments[segments.length -1].length) {
+            segments.pop();
+          }
+
+          segments.push(trimSlashes(v[i]));
+        }
+      } else if (v || typeof v === 'string') {
+        v = trimSlashes(v);
+        if (segments[segments.length -1] === '') {
+          // empty trailing elements have to be overwritten
+          // to prevent results such as /foo//bar
+          segments[segments.length -1] = v;
+        } else {
+          segments.push(v);
+        }
+      }
+    } else {
+      if (v) {
+        segments[segment] = trimSlashes(v);
+      } else {
+        segments.splice(segment, 1);
+      }
+    }
+
+    if (absolute) {
+      segments.unshift('');
+    }
+
+    return this.path(segments.join(separator), build);
+  };
+  p.segmentCoded = function(segment, v, build) {
+    var segments, i, l;
+
+    if (typeof segment !== 'number') {
+      build = v;
+      v = segment;
+      segment = undefined;
+    }
+
+    if (v === undefined) {
+      segments = this.segment(segment, v, build);
+      if (!isArray(segments)) {
+        segments = segments !== undefined ? URI.decode(segments) : undefined;
+      } else {
+        for (i = 0, l = segments.length; i < l; i++) {
+          segments[i] = URI.decode(segments[i]);
+        }
+      }
+
+      return segments;
+    }
+
+    if (!isArray(v)) {
+      v = (typeof v === 'string' || v instanceof String) ? URI.encode(v) : v;
+    } else {
+      for (i = 0, l = v.length; i < l; i++) {
+        v[i] = URI.encode(v[i]);
+      }
+    }
+
+    return this.segment(segment, v, build);
+  };
+
+  // mutating query string
+  var q = p.query;
+  p.query = function(v, build) {
+    if (v === true) {
+      return URI.parseQuery(this._parts.query, this._parts.escapeQuerySpace);
+    } else if (typeof v === 'function') {
+      var data = URI.parseQuery(this._parts.query, this._parts.escapeQuerySpace);
+      var result = v.call(this, data);
+      this._parts.query = URI.buildQuery(result || data, this._parts.duplicateQueryParameters, this._parts.escapeQuerySpace);
+      this.build(!build);
+      return this;
+    } else if (v !== undefined && typeof v !== 'string') {
+      this._parts.query = URI.buildQuery(v, this._parts.duplicateQueryParameters, this._parts.escapeQuerySpace);
+      this.build(!build);
+      return this;
+    } else {
+      return q.call(this, v, build);
+    }
+  };
+  p.setQuery = function(name, value, build) {
+    var data = URI.parseQuery(this._parts.query, this._parts.escapeQuerySpace);
+
+    if (typeof name === 'string' || name instanceof String) {
+      data[name] = value !== undefined ? value : null;
+    } else if (typeof name === 'object') {
+      for (var key in name) {
+        if (hasOwn.call(name, key)) {
+          data[key] = name[key];
+        }
+      }
+    } else {
+      throw new TypeError('URI.addQuery() accepts an object, string as the name parameter');
+    }
+
+    this._parts.query = URI.buildQuery(data, this._parts.duplicateQueryParameters, this._parts.escapeQuerySpace);
+    if (typeof name !== 'string') {
+      build = value;
+    }
+
+    this.build(!build);
+    return this;
+  };
+  p.addQuery = function(name, value, build) {
+    var data = URI.parseQuery(this._parts.query, this._parts.escapeQuerySpace);
+    URI.addQuery(data, name, value === undefined ? null : value);
+    this._parts.query = URI.buildQuery(data, this._parts.duplicateQueryParameters, this._parts.escapeQuerySpace);
+    if (typeof name !== 'string') {
+      build = value;
+    }
+
+    this.build(!build);
+    return this;
+  };
+  p.removeQuery = function(name, value, build) {
+    var data = URI.parseQuery(this._parts.query, this._parts.escapeQuerySpace);
+    URI.removeQuery(data, name, value);
+    this._parts.query = URI.buildQuery(data, this._parts.duplicateQueryParameters, this._parts.escapeQuerySpace);
+    if (typeof name !== 'string') {
+      build = value;
+    }
+
+    this.build(!build);
+    return this;
+  };
+  p.hasQuery = function(name, value, withinArray) {
+    var data = URI.parseQuery(this._parts.query, this._parts.escapeQuerySpace);
+    return URI.hasQuery(data, name, value, withinArray);
+  };
+  p.setSearch = p.setQuery;
+  p.addSearch = p.addQuery;
+  p.removeSearch = p.removeQuery;
+  p.hasSearch = p.hasQuery;
+
+  // sanitizing URLs
+  p.normalize = function() {
+    if (this._parts.urn) {
+      return this
+        .normalizeProtocol(false)
+        .normalizePath(false)
+        .normalizeQuery(false)
+        .normalizeFragment(false)
+        .build();
+    }
+
+    return this
+      .normalizeProtocol(false)
+      .normalizeHostname(false)
+      .normalizePort(false)
+      .normalizePath(false)
+      .normalizeQuery(false)
+      .normalizeFragment(false)
+      .build();
+  };
+  p.normalizeProtocol = function(build) {
+    if (typeof this._parts.protocol === 'string') {
+      this._parts.protocol = this._parts.protocol.toLowerCase();
+      this.build(!build);
+    }
+
+    return this;
+  };
+  p.normalizeHostname = function(build) {
+    if (this._parts.hostname) {
+      if (this.is('IDN') && punycode) {
+        this._parts.hostname = punycode.toASCII(this._parts.hostname);
+      } else if (this.is('IPv6') && IPv6) {
+        this._parts.hostname = IPv6.best(this._parts.hostname);
+      }
+
+      this._parts.hostname = this._parts.hostname.toLowerCase();
+      this.build(!build);
+    }
+
+    return this;
+  };
+  p.normalizePort = function(build) {
+    // remove port of it's the protocol's default
+    if (typeof this._parts.protocol === 'string' && this._parts.port === URI.defaultPorts[this._parts.protocol]) {
+      this._parts.port = null;
+      this.build(!build);
+    }
+
+    return this;
+  };
+  p.normalizePath = function(build) {
+    var _path = this._parts.path;
+    if (!_path) {
+      return this;
+    }
+
+    if (this._parts.urn) {
+      this._parts.path = URI.recodeUrnPath(this._parts.path);
+      this.build(!build);
+      return this;
+    }
+
+    if (this._parts.path === '/') {
+      return this;
+    }
+
+    _path = URI.recodePath(_path);
+
+    var _was_relative;
+    var _leadingParents = '';
+    var _parent, _pos;
+
+    // handle relative paths
+    if (_path.charAt(0) !== '/') {
+      _was_relative = true;
+      _path = '/' + _path;
+    }
+
+    // handle relative files (as opposed to directories)
+    if (_path.slice(-3) === '/..' || _path.slice(-2) === '/.') {
+      _path += '/';
+    }
+
+    // resolve simples
+    _path = _path
+      .replace(/(\/(\.\/)+)|(\/\.$)/g, '/')
+      .replace(/\/{2,}/g, '/');
+
+    // remember leading parents
+    if (_was_relative) {
+      _leadingParents = _path.substring(1).match(/^(\.\.\/)+/) || '';
+      if (_leadingParents) {
+        _leadingParents = _leadingParents[0];
+      }
+    }
+
+    // resolve parents
+    while (true) {
+      _parent = _path.search(/\/\.\.(\/|$)/);
+      if (_parent === -1) {
+        // no more ../ to resolve
+        break;
+      } else if (_parent === 0) {
+        // top level cannot be relative, skip it
+        _path = _path.substring(3);
+        continue;
+      }
+
+      _pos = _path.substring(0, _parent).lastIndexOf('/');
+      if (_pos === -1) {
+        _pos = _parent;
+      }
+      _path = _path.substring(0, _pos) + _path.substring(_parent + 3);
+    }
+
+    // revert to relative
+    if (_was_relative && this.is('relative')) {
+      _path = _leadingParents + _path.substring(1);
+    }
+
+    this._parts.path = _path;
+    this.build(!build);
+    return this;
+  };
+  p.normalizePathname = p.normalizePath;
+  p.normalizeQuery = function(build) {
+    if (typeof this._parts.query === 'string') {
+      if (!this._parts.query.length) {
+        this._parts.query = null;
+      } else {
+        this.query(URI.parseQuery(this._parts.query, this._parts.escapeQuerySpace));
+      }
+
+      this.build(!build);
+    }
+
+    return this;
+  };
+  p.normalizeFragment = function(build) {
+    if (!this._parts.fragment) {
+      this._parts.fragment = null;
+      this.build(!build);
+    }
+
+    return this;
+  };
+  p.normalizeSearch = p.normalizeQuery;
+  p.normalizeHash = p.normalizeFragment;
+
+  p.iso8859 = function() {
+    // expect unicode input, iso8859 output
+    var e = URI.encode;
+    var d = URI.decode;
+
+    URI.encode = escape;
+    URI.decode = decodeURIComponent;
+    try {
+      this.normalize();
+    } finally {
+      URI.encode = e;
+      URI.decode = d;
+    }
+    return this;
+  };
+
+  p.unicode = function() {
+    // expect iso8859 input, unicode output
+    var e = URI.encode;
+    var d = URI.decode;
+
+    URI.encode = strictEncodeURIComponent;
+    URI.decode = unescape;
+    try {
+      this.normalize();
+    } finally {
+      URI.encode = e;
+      URI.decode = d;
+    }
+    return this;
+  };
+
+  p.readable = function() {
+    var uri = this.clone();
+    // removing username, password, because they shouldn't be displayed according to RFC 3986
+    uri.username('').password('').normalize();
+    var t = '';
+    if (uri._parts.protocol) {
+      t += uri._parts.protocol + '://';
+    }
+
+    if (uri._parts.hostname) {
+      if (uri.is('punycode') && punycode) {
+        t += punycode.toUnicode(uri._parts.hostname);
+        if (uri._parts.port) {
+          t += ':' + uri._parts.port;
+        }
+      } else {
+        t += uri.host();
+      }
+    }
+
+    if (uri._parts.hostname && uri._parts.path && uri._parts.path.charAt(0) !== '/') {
+      t += '/';
+    }
+
+    t += uri.path(true);
+    if (uri._parts.query) {
+      var q = '';
+      for (var i = 0, qp = uri._parts.query.split('&'), l = qp.length; i < l; i++) {
+        var kv = (qp[i] || '').split('=');
+        q += '&' + URI.decodeQuery(kv[0], this._parts.escapeQuerySpace)
+          .replace(/&/g, '%26');
+
+        if (kv[1] !== undefined) {
+          q += '=' + URI.decodeQuery(kv[1], this._parts.escapeQuerySpace)
+            .replace(/&/g, '%26');
+        }
+      }
+      t += '?' + q.substring(1);
+    }
+
+    t += URI.decodeQuery(uri.hash(), true);
+    return t;
+  };
+
+  // resolving relative and absolute URLs
+  p.absoluteTo = function(base) {
+    var resolved = this.clone();
+    var properties = ['protocol', 'username', 'password', 'hostname', 'port'];
+    var basedir, i, p;
+
+    if (!(base instanceof URI)) {
+      base = new URI(base);
+    }
+
+    // << Readium patch
+    // "filesystem:chrome-extension:"
+    //
+    
+    if (this._parts.protocol == 'filesystem') {
+
+      return resolved;
+    }
+
+    if (base._parts.protocol == 'filesystem') {
+
+      var uri = this.absoluteTo(base._parts.path);
+
+      if (base._parts.path.indexOf("chrome-extension:") !== -1 || base._parts.path.indexOf("http:") !== -1 || base._parts.path.indexOf("https:") !== -1) {
+
+        return new URI('filesystem:' + uri.toString());
+      }
+
+      return uri;
+    }
+
+    if (this._parts.urn) {
+      throw new Error('URNs do not have any generally defined hierarchical components');
+    }
+
+    //
+    // Readium patch >>
+
+    if (!resolved._parts.protocol) {
+      resolved._parts.protocol = base._parts.protocol;
+    }
+
+    if (this._parts.hostname) {
+      return resolved;
+    }
+
+    for (i = 0; (p = properties[i]); i++) {
+      resolved._parts[p] = base._parts[p];
+    }
+
+    if (!resolved._parts.path) {
+      resolved._parts.path = base._parts.path;
+      if (!resolved._parts.query) {
+        resolved._parts.query = base._parts.query;
+      }
+    } else if (resolved._parts.path.substring(-2) === '..') {
+      resolved._parts.path += '/';
+    }
+
+    if (resolved.path().charAt(0) !== '/') {
+      basedir = base.directory();
+      basedir = basedir ? basedir : base.path().indexOf('/') === 0 ? '/' : '';
+      resolved._parts.path = (basedir ? (basedir + '/') : '') + resolved._parts.path;
+      resolved.normalizePath();
+    }
+
+    resolved.build();
+    return resolved;
+  };
+  p.relativeTo = function(base) {
+    var relative = this.clone().normalize();
+    var relativeParts, baseParts, common, relativePath, basePath;
+
+    if (relative._parts.urn) {
+      throw new Error('URNs do not have any generally defined hierarchical components');
+    }
+
+    base = new URI(base).normalize();
+    relativeParts = relative._parts;
+    baseParts = base._parts;
+    relativePath = relative.path();
+    basePath = base.path();
+
+    if (relativePath.charAt(0) !== '/') {
+      throw new Error('URI is already relative');
+    }
+
+    if (basePath.charAt(0) !== '/') {
+      throw new Error('Cannot calculate a URI relative to another relative URI');
+    }
+
+    if (relativeParts.protocol === baseParts.protocol) {
+      relativeParts.protocol = null;
+    }
+
+    if (relativeParts.username !== baseParts.username || relativeParts.password !== baseParts.password) {
+      return relative.build();
+    }
+
+    if (relativeParts.protocol !== null || relativeParts.username !== null || relativeParts.password !== null) {
+      return relative.build();
+    }
+
+    if (relativeParts.hostname === baseParts.hostname && relativeParts.port === baseParts.port) {
+      relativeParts.hostname = null;
+      relativeParts.port = null;
+    } else {
+      return relative.build();
+    }
+
+    if (relativePath === basePath) {
+      relativeParts.path = '';
+      return relative.build();
+    }
+
+    // determine common sub path
+    common = URI.commonPath(relativePath, basePath);
+
+    // If the paths have nothing in common, return a relative URL with the absolute path.
+    if (!common) {
+      return relative.build();
+    }
+
+    var parents = baseParts.path
+      .substring(common.length)
+      .replace(/[^\/]*$/, '')
+      .replace(/.*?\//g, '../');
+
+    relativeParts.path = (parents + relativeParts.path.substring(common.length)) || './';
+
+    return relative.build();
+  };
+
+  // comparing URIs
+  p.equals = function(uri) {
+    var one = this.clone();
+    var two = new URI(uri);
+    var one_map = {};
+    var two_map = {};
+    var checked = {};
+    var one_query, two_query, key;
+
+    one.normalize();
+    two.normalize();
+
+    // exact match
+    if (one.toString() === two.toString()) {
+      return true;
+    }
+
+    // extract query string
+    one_query = one.query();
+    two_query = two.query();
+    one.query('');
+    two.query('');
+
+    // definitely not equal if not even non-query parts match
+    if (one.toString() !== two.toString()) {
+      return false;
+    }
+
+    // query parameters have the same length, even if they're permuted
+    if (one_query.length !== two_query.length) {
+      return false;
+    }
+
+    one_map = URI.parseQuery(one_query, this._parts.escapeQuerySpace);
+    two_map = URI.parseQuery(two_query, this._parts.escapeQuerySpace);
+
+    for (key in one_map) {
+      if (hasOwn.call(one_map, key)) {
+        if (!isArray(one_map[key])) {
+          if (one_map[key] !== two_map[key]) {
+            return false;
+          }
+        } else if (!arraysEqual(one_map[key], two_map[key])) {
+          return false;
+        }
+
+        checked[key] = true;
+      }
+    }
+
+    for (key in two_map) {
+      if (hasOwn.call(two_map, key)) {
+        if (!checked[key]) {
+          // two contains a parameter not present in one
+          return false;
+        }
+      }
+    }
+
+    return true;
+  };
+
+  // state
+  p.duplicateQueryParameters = function(v) {
+    this._parts.duplicateQueryParameters = !!v;
+    return this;
+  };
+
+  p.escapeQuerySpace = function(v) {
+    this._parts.escapeQuerySpace = !!v;
+    return this;
+  };
+
+  return URI;
+}));
+
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//
+//  Redistribution and use in source and binary forms, with or without modification,
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice,
+//  this list of conditions and the following disclaimer in the documentation and/or
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be
+//  used to endorse or promote products derived from this software without specific
+//  prior written permission.
+
+//'text!empty:'
+define('readium_shared_js/globalsSetup',['./globals', 'jquery', 'console_shim', 'es6-collections', 'eventEmitter', 'URIjs', 'readium_cfi_js', 'readium_js_plugins'], function (Globals, $, console_shim, es6collections, EventEmitter, URI, epubCfi, PluginsController) {
+
+    console.log("Globals...");
+
+    if (window["ReadiumSDK"]) {
+        console.log("ReadiumSDK extend.");
+        $.extend(Globals, window.ReadiumSDK);
+    } else {
+        console.log("ReadiumSDK set.");
+    }
+
+    window.ReadiumSDK = Globals;
+
+    // TODO: refactor client code to use emit instead of trigger?
+    EventEmitter.prototype.trigger = EventEmitter.prototype.emit;
+
+    // TODO pass as dependency injection define() function parameter, not window global!
+    window.EventEmitter = EventEmitter;
+
+    // TODO pass as dependency injection define() function parameter, not window global!
+    window.URI = URI;
+
+    // window.URL accessor to window.webkitURL (Safari 6 support)
+    if ('URL' in window === false) {
+        if ('webkitURL' in window === false) {
+            throw Error('Browser does not support window.URL');
+        }
+
+        window.URL = window.webkitURL;
+    }
+    // Plugins bootstrapping begins
+    Globals.Plugins = PluginsController;
+    Globals.on(Globals.Events.READER_INITIALIZED, function(reader) {
+        
+        Globals.logEvent("READER_INITIALIZED", "ON", "globalsSetup.js");
+        
+        try {
+            PluginsController.initialize(reader);
+        } catch (ex) {
+            console.error("Plugins failed to initialize:", ex);
+        }
+
+        _.defer(function() {
+            Globals.logEvent("PLUGINS_LOADED", "EMIT", "globalsSetup.js");
+            Globals.emit(Globals.Events.PLUGINS_LOADED, reader);
+        });
+    });
+
+    if (window._RJS_isBrowser) {
+        // If under a browser env and using RequireJS, dynamically require all plugins
+        var pluginsList = window._RJS_pluginsList;
+        console.log("Plugins included: ", pluginsList.map(function(v) {
+            // To stay consistent with bundled output
+            return v.replace('readium_plugin_', '');
+        }));
+
+        require(pluginsList);
+    } else {
+        // Else list which plugins were included when using almond and bundle(s)
+        setTimeout(function() {
+            // Assume that in the next callback all the plugins have been registered
+            var pluginsList = Object.keys(PluginsController.getLoadedPlugins());
+            console.log("Plugins included: ", pluginsList);
+        }, 0);
+    }
+    // Plugins bootstrapping ends
+});
+
+define('readium_shared_js', ['readium_shared_js/globalsSetup'], function (main) { return main; });
+
 //  Created by Boris Schneiderman.
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
 //  
@@ -19501,7 +22363,52 @@ SpineItem.alternateSpread = function(spread) {
 //  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
-define('readium_shared_js/helpers',['underscore', "jquery", "jquerySizes", "./models/spine_item", "./globals"], function(_, $, JQuerySizes, SpineItem, Globals) {
+define('readium_shared_js/helpers',["./globals", 'underscore', "jquery", "jquerySizes", "./models/spine_item"], function(Globals, _, $, JQuerySizes, SpineItem) {
+    
+(function()
+{
+/* jshint strict: true */
+/* jshint -W034 */
+    "use strict";
+    
+    if(window.performance)
+    {
+        if (window.performance.now)
+        {
+            return;
+        }
+        
+        var vendors = ['webkitNow', 'mozNow', 'msNow', 'oNow'];
+        
+        for (var i = 0; i < vendors.length; i++)
+        {
+            if (vendors[i] in window.performance)
+            {
+                window.performance.now = window.performance[vendors[i]];
+                return;
+            }
+        }
+    }
+    else
+    {
+        window.performance = {};
+        
+    }
+    
+    if(Date.now)
+    {
+        window.performance.now = function()
+        {
+            return Date.now();
+        };
+        return;
+    }
+    
+    window.performance.now = function()
+    {
+        return +(new Date());
+    };
+})();
 
 var Helpers = {};
 
@@ -19543,6 +22450,61 @@ Helpers.getURLQueryParams = function() {
     }
 
     return params;
+};
+
+
+/**
+ * @param urlpath: string corresponding a URL without query parameters (i.e. the part before the '?' question mark in index.html?param=value). If undefined/null, the default window.location is used.
+ * @param overrides: object that maps query parameter names with values (to be included in the resulting URL, while any other query params in the current window.location are preserved as-is) 
+ * @returns a string corresponding to a URL obtained by concatenating the given URL with the given query parameters (and those already in window.location)
+ */
+Helpers.buildUrlQueryParameters = function(urlpath, overrides) {
+    
+    if (!urlpath) {
+        urlpath =
+        window.location ? (
+            window.location.protocol
+            + "//"
+            + window.location.hostname
+            + (window.location.port ? (':' + window.location.port) : '')
+            + window.location.pathname
+        ) : 'index.html';
+    }
+
+    var paramsString = "";
+    
+    for (var key in overrides) {
+        if (!overrides.hasOwnProperty(key)) continue;
+        
+        if (!overrides[key]) continue;
+        
+        var val = overrides[key].trim();
+        if (!val) continue;
+        
+        console.debug("URL QUERY PARAM OVERRIDE: " + key + " = " + val);
+
+        paramsString += (key + "=" + encodeURIComponent(val));
+        paramsString += "&";
+    }
+    
+    var urlParams = Helpers.getURLQueryParams();
+    for (var key in urlParams) {
+        if (!urlParams.hasOwnProperty(key)) continue;
+        
+        if (!urlParams[key]) continue;
+        
+        if (overrides[key]) continue;
+
+        var val = urlParams[key].trim();
+        if (!val) continue;
+        
+        console.debug("URL QUERY PARAM PRESERVED: " + key + " = " + val);
+
+        paramsString += (key + "=" + encodeURIComponent(val));
+        paramsString += "&";
+    }
+    
+    return urlpath + "?" + paramsString;
 };
 
 
@@ -19618,6 +22580,11 @@ Helpers.Rect.fromElement = function ($element) {
 
 Helpers.UpdateHtmlFontSize = function ($epubHtml, fontSize) {
 
+    var perf = false;
+
+    // TODO: very slow on Firefox!
+    // See https://github.com/readium/readium-shared-js/issues/274
+    if (perf) var time1 = window.performance.now();
 
     var factor = fontSize / 100;
     var win = $epubHtml[0].ownerDocument.defaultView;
@@ -19667,6 +22634,23 @@ Helpers.UpdateHtmlFontSize = function ($epubHtml, fontSize) {
 
     }
     $epubHtml.css("font-size", fontSize + "%");
+    
+    if (perf) {
+        var time2 = window.performance.now();
+    
+        // Firefox: 80+
+        // Chrome: 4-10
+        // Edge: 15-34
+        // IE: 10-15
+        // https://readium.firebase.com/?epub=..%2Fepub_content%2Faccessible_epub_3&goto=%7B%22idref%22%3A%22id-id2635343%22%2C%22elementCfi%22%3A%22%2F4%2F2%5Bbuilding_a_better_epub%5D%2F10%2F44%2F6%2C%2F1%3A334%2C%2F1%3A335%22%7D
+        
+        var diff = time2-time1;
+        console.log(diff);
+        
+        // setTimeout(function(){
+        //     alert(diff);
+        // }, 2000);
+    }
 };
 
 
@@ -20139,6 +23123,88 @@ Helpers.escapeJQuerySelector = function (sel) {
     return selector;
 };
 
+Helpers.polyfillCaretRangeFromPoint = function(document) {
+    //Derived from css-regions-polyfill:
+    // https://github.com/FremyCompany/css-regions-polyfill/blob/bfbb6445ec2a2a883005ab8801d8463fa54b5701/src/range-extensions.js
+    //Copyright (c) 2013 François REMY
+    //Copyright (c) 2013 Adobe Systems Inc.
+    //Licensed under the Apache License, Version 2.0
+    if (!document.caretRangeFromPoint) {
+        if (document.caretPositionFromPoint) {
+            document.caretRangeFromPoint = function caretRangeFromPoint(x, y) {
+                var r = document.createRange();
+                var p = document.caretPositionFromPoint(x, y);
+                if (!p) return null;
+                if (p.offsetNode) {
+                    r.setStart(p.offsetNode, p.offset);
+                    r.setEnd(p.offsetNode, p.offset);
+                }
+                return r;
+            }
+        } else if ((document.body || document.createElement('body')).createTextRange) {
+            //
+            // we may want to convert TextRange to Range
+            //
+
+            //TextRangeUtils, taken from: https://code.google.com/p/ierange/
+            //Copyright (c) 2009 Tim Cameron Ryan
+            //Released under the MIT/X License
+            var TextRangeUtils = {
+                convertToDOMRange: function(textRange, document) {
+                    var adoptBoundary = function(domRange, textRangeInner, bStart) {
+                        // iterate backwards through parent element to find anchor location
+                        var cursorNode = document.createElement('a'),
+                            cursor = textRangeInner.duplicate();
+                        cursor.collapse(bStart);
+                        var parent = cursor.parentElement();
+                        do {
+                            parent.insertBefore(cursorNode, cursorNode.previousSibling);
+                            cursor.moveToElementText(cursorNode);
+                        } while (cursor.compareEndPoints(bStart ? 'StartToStart' : 'StartToEnd', textRangeInner) > 0 && cursorNode.previousSibling);
+                        // when we exceed or meet the cursor, we've found the node
+                        if (cursor.compareEndPoints(bStart ? 'StartToStart' : 'StartToEnd', textRangeInner) == -1 && cursorNode.nextSibling) {
+                            // data node
+                            cursor.setEndPoint(bStart ? 'EndToStart' : 'EndToEnd', textRangeInner);
+                            domRange[bStart ? 'setStart' : 'setEnd'](cursorNode.nextSibling, cursor.text.length);
+                        } else {
+                            // element
+                            domRange[bStart ? 'setStartBefore' : 'setEndBefore'](cursorNode);
+                        }
+                        cursorNode.parentNode.removeChild(cursorNode);
+                    };
+                    // return a DOM range
+                    var domRange = document.createRange();
+                    adoptBoundary(domRange, textRange, true);
+                    adoptBoundary(domRange, textRange, false);
+                    return domRange;
+                }
+            };
+
+            document.caretRangeFromPoint = function caretRangeFromPoint(x, y) {
+                // the accepted number of vertical backtracking, in CSS pixels
+                var IYDepth = 40;
+                // try to create a text range at the specified location
+                var tr = document.body.createTextRange();
+                for (var iy = IYDepth; iy; iy = iy - 4) {
+                    try {
+                        tr.moveToPoint(x, iy + y - IYDepth);
+                        return TextRangeUtils.convertToDOMRange(tr, document);
+                    } catch (ex) {
+                    }
+                }
+                // if that fails, return the location just after the element located there
+                try {
+                    var elem = document.elementFromPoint(x - 1, y - 1);
+                    var r = document.createRange();
+                    r.setStartAfter(elem);
+                    return r;
+                } catch (ex) {
+                    return null;
+                }
+            }
+        }
+    }
+};
 
 return Helpers;
 });
@@ -20173,29 +23239,96 @@ return Helpers;
 /**
  * CFI navigation helper class
  *
- * @param $viewport
- * @param $iframe
  * @param options Additional settings for NavigationLogic object
- *      - rectangleBased    If truthy, clientRect-based geometry will be used
- *      - paginationInfo    Layout details, used by clientRect-based geometry
+ *      - paginationInfo            Layout details, used by clientRect-based geometry
+ *      - visibleContentOffsets     Function that returns offsets. If supplied it is used instead of the inferred offsets
+ *      - frameDimensions           Function that returns an object with width and height properties. Needs to be set.
+ *      - $iframe                   Iframe reference, and needs to be set.
  * @constructor
  */
 define('readium_shared_js/views/cfi_navigation_logic',["jquery", "underscore", "../helpers", 'readium_cfi_js'], function($, _, Helpers, epubCfi) {
 
-var CfiNavigationLogic = function($viewport, $iframe, options){
+var CfiNavigationLogic = function(options) {
 
+    var self = this;
     options = options || {};
 
-    this.getRootElement = function(){
+    var debugMode = ReadiumSDK.DEBUG_MODE;
 
-        return $iframe[0].contentDocument.documentElement;
+    this.getRootElement = function() {
+
+        return options.$iframe[0].contentDocument.documentElement;
     };
     
-    // FIXED LAYOUT if (!options.rectangleBased) alert("!!!options.rectangleBased");
-    
-    var visibilityCheckerFunc = options.rectangleBased
-        ? checkVisibilityByRectangles
-        : checkVisibilityByVerticalOffsets;
+    this.getBodyElement = function () {
+        
+        // In SVG documents the root element can be considered the body.
+        return this.getRootDocument().body || this.getRootElement();
+    };
+
+    this.getRootDocument = function () {
+        return options.$iframe[0].contentDocument;
+    };
+
+    function createRange() {
+        return self.getRootDocument().createRange();
+    }
+
+    function getNodeClientRect(node) {
+        var range = createRange();
+        range.selectNode(node);
+        return normalizeRectangle(range.getBoundingClientRect(),0,0);
+    }
+
+    function getNodeContentsClientRect(node) {
+        var range = createRange();
+        range.selectNodeContents(node);
+        return normalizeRectangle(range.getBoundingClientRect(),0,0);
+    }
+
+    function getElementClientRect($element) {
+        return normalizeRectangle($element[0].getBoundingClientRect(),0,0);
+    }
+
+    function getNodeRangeClientRect(startNode, startOffset, endNode, endOffset) {
+        var range = createRange();
+        range.setStart(startNode, startOffset ? startOffset : 0);
+        if (endNode.nodeType === Node.ELEMENT_NODE) {
+            range.setEnd(endNode, endOffset ? endOffset : endNode.childNodes.length);
+        } else if (endNode.nodeType === Node.TEXT_NODE) {
+            range.setEnd(endNode, endOffset ? endOffset : 0);
+        }
+        return normalizeRectangle(range.getBoundingClientRect(),0,0);
+    }
+
+    function getNodeClientRectList(node, visibleContentOffsets) {
+        visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
+        
+        var range = createRange();
+        range.selectNode(node);
+        return _.map(range.getClientRects(), function (rect) {
+            return normalizeRectangle(rect, visibleContentOffsets.left, visibleContentOffsets.top);
+        });
+    }
+
+    function getFrameDimensions() {
+        if (options.frameDimensions) {
+            return options.frameDimensions();
+        }
+        
+        console.error('CfiNavigationLogic: No frame dimensions specified!');
+        return null;
+    }
+
+    function getCaretRangeFromPoint(x, y, document) {
+        document = document || self.getRootDocument();
+        Helpers.polyfillCaretRangeFromPoint(document); //only polyfills once, no-op afterwards
+        return document.caretRangeFromPoint(x, y);
+    }
+
+    function isPaginatedView() {
+        return !!options.paginationInfo;
+    }
 
     /**
      * @private
@@ -20223,15 +23356,32 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
      * Checks whether or not a (fully adjusted) rectangle is at least partly visible
      *
      * @param {Object} rect
-     * @param {Object} frameDimensions
+     * @param {Object} [frameDimensions]
      * @param {boolean} [isVwm]           isVerticalWritingMode
      * @returns {boolean}
      */
-    function isRectVisible(rect, frameDimensions, isVwm) {
-        if (isVwm) {
-            return rect.top >= 0 && rect.top < frameDimensions.height;
+    function isRectVisible(rect, ignorePartiallyVisible, frameDimensions, isVwm) {
+
+        frameDimensions = frameDimensions || getFrameDimensions();
+        isVwm = isVwm || isVerticalWritingMode();
+
+        //Text nodes without printable text dont have client rectangles
+        if (!rect) {
+            return false;
         }
-        return rect.left >= 0 && rect.left < frameDimensions.width;
+        //Sometimes we get client rects that are "empty" and aren't supposed to be visible
+        if (rect.left == 0 && rect.right == 0 && rect.top == 0 && rect.bottom == 0) {
+            return false;
+        }
+
+        if (isPaginatedView()) {
+            return (rect.left >= 0 && rect.left < frameDimensions.width) || 
+                (!ignorePartiallyVisible && rect.left < 0 && rect.right >= 0);
+        } else {
+            return (rect.top >= 0 && rect.top < frameDimensions.height) || 
+                (!ignorePartiallyVisible && rect.top < 0 && rect.bottom >= 0);
+        }
+
     }
 
     /**
@@ -20241,12 +23391,12 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
      * @returns {number} Full width of a column in pixels
      */
     function getColumnFullWidth() {
-        
+
         if (!options.paginationInfo || isVerticalWritingMode())
         {
-            return $iframe.width();
+            return options.$iframe.width();
         }
-        
+
         return options.paginationInfo.columnWidth + options.paginationInfo.columnGap;
     }
 
@@ -20259,56 +23409,21 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
      * @returns {Object}
      */
     function getVisibleContentOffsets() {
-        if(isVerticalWritingMode()){
+        if (options.visibleContentOffsets) {
+            return options.visibleContentOffsets();
+        }
+
+        if (isVerticalWritingMode()) {
             return {
-                top: (options.paginationInfo ? options.paginationInfo.pageOffset : 0)
+                top: (options.paginationInfo ? options.paginationInfo.pageOffset : 0),
+                left: 0
             };
         }
+
         return {
-            left: (options.paginationInfo ? options.paginationInfo.pageOffset : 0)
-                * (isPageProgressionRightToLeft() ? -1 : 1)
+            top: 0,
+            left: 0
         };
-    }
-
-    // Old (offsetTop-based) algorithm, useful in top-to-bottom layouts
-    function checkVisibilityByVerticalOffsets(
-            $element, visibleContentOffsets, shouldCalculateVisibilityOffset) {
-
-        var elementRect = Helpers.Rect.fromElement($element);
-        if (_.isNaN(elementRect.left)) {
-            // this is actually a point element, doesnt have a bounding rectangle
-            var position = $element.position();
-            elementRect = new Helpers.Rect(
-                    position.left, position.top, 0, 0);
-        }
-        var topOffset = visibleContentOffsets.top || 0;
-        var isBelowVisibleTop = elementRect.bottom() > topOffset;
-        var isAboveVisibleBottom = visibleContentOffsets.bottom !== undefined
-            ? elementRect.top < visibleContentOffsets.bottom
-            : true; //this check always passed, if corresponding offset isn't set
-
-        var percentOfElementHeight = 0;
-        if (isBelowVisibleTop && isAboveVisibleBottom) { // element is visible
-            if (!shouldCalculateVisibilityOffset) {
-                return 100;
-            }
-            else if (elementRect.top <= topOffset) {
-                percentOfElementHeight = Math.ceil(
-                    100 * (topOffset - elementRect.top) / elementRect.height
-                );
-
-                // below goes another algorithm, which has been used in getVisibleElements pattern,
-                // but it seems to be a bit incorrect
-                // (as spatial offset should be measured at the first visible point of the element):
-                //
-                // var visibleTop = Math.max(elementRect.top, visibleContentOffsets.top);
-                // var visibleBottom = Math.min(elementRect.bottom(), visibleContentOffsets.bottom);
-                // var visibleHeight = visibleBottom - visibleTop;
-                // var percentVisible = Math.round((visibleHeight / elementRect.height) * 100);
-            }
-            return 100 - percentOfElementHeight;
-        }
-        return 0; // element isn't visible
     }
 
     /**
@@ -20320,48 +23435,58 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
      * @param {jQuery} $element
      * @param {Object} _props
      * @param {boolean} shouldCalculateVisibilityPercentage
+     * @param {Object} [frameDimensions]
      * @returns {number|null}
      *      0 for non-visible elements,
      *      0 < n <= 100 for visible elements
      *      (will just give 100, if `shouldCalculateVisibilityPercentage` => false)
      *      null for elements with display:none
      */
-    function checkVisibilityByRectangles(
-            $element, _props, shouldCalculateVisibilityPercentage) {
+    function checkVisibilityByRectangles($element, shouldCalculateVisibilityPercentage, visibleContentOffsets, frameDimensions) {
+        visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
+        frameDimensions = frameDimensions || getFrameDimensions();
 
-        var elementRectangles = getNormalizedRectangles($element);
-        var clientRectangles = elementRectangles.clientRectangles;
+        var clientRectangles = getNormalizedRectangles($element, visibleContentOffsets);
         if (clientRectangles.length === 0) { // elements with display:none, etc.
             return null;
         }
 
-        var isRtl = isPageProgressionRightToLeft();
-        var isVwm = isVerticalWritingMode();
-        var columnFullWidth = getColumnFullWidth();
-        var frameDimensions = {
-            width: $iframe.width(),
-            height: $iframe.height()
-        };
+        var visibilityPercentage = 0;
 
         if (clientRectangles.length === 1) {
-            // because of webkit inconsistency, that single rectangle should be adjusted
-            // until it hits the end OR will be based on the FIRST column that is visible
-            adjustRectangle(clientRectangles[0], frameDimensions, columnFullWidth,
-                    isRtl, isVwm, true);
-        }
+            var adjustedRect = clientRectangles[0];
+            
+            if (isPaginatedView()) {
+                if (adjustedRect.bottom > frameDimensions.height || adjustedRect.top < 0) {
+                    // because of webkit inconsistency, that single rectangle should be adjusted
+                    // until it hits the end OR will be based on the FIRST column that is visible
+                    adjustRectangle(adjustedRect, true, frameDimensions);
+                }
+            }
 
-        // for an element split between several CSS columns,
-        // both Firefox and IE produce as many client rectangles;
-        // each of those should be checked
-        var visibilityPercentage = 0;
-        for (var i = 0, l = clientRectangles.length; i < l; ++i) {
-            if (isRectVisible(clientRectangles[i], frameDimensions, isVwm)) {
-                visibilityPercentage = shouldCalculateVisibilityPercentage
-                    ? measureVisibilityPercentageByRectangles(clientRectangles, i)
-                    : 100;
-                break;
+            if (isRectVisible(adjustedRect, false, frameDimensions)) {
+                //it might still be partially visible in webkit
+                if (shouldCalculateVisibilityPercentage && adjustedRect.top < 0) {
+                    visibilityPercentage =
+                        Math.floor(100 * (adjustedRect.height + adjustedRect.top) / adjustedRect.height);
+                } else {
+                    visibilityPercentage = 100;
+                }
+            }
+        } else {
+            // for an element split between several CSS columns,z
+            // both Firefox and IE produce as many client rectangles;
+            // each of those should be checked
+            for (var i = 0, l = clientRectangles.length; i < l; ++i) {
+                if (isRectVisible(clientRectangles[i], false, frameDimensions)) {
+                    visibilityPercentage = shouldCalculateVisibilityPercentage
+                        ? measureVisibilityPercentageByRectangles(clientRectangles, i)
+                        : 100;
+                    break;
+                }
             }
         }
+
         return visibilityPercentage;
     }
 
@@ -20374,37 +23499,48 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
      * @returns {number|null}
      */
     function findPageByRectangles($element, spatialVerticalOffset) {
+
         var visibleContentOffsets = getVisibleContentOffsets();
-        var elementRectangles = getNormalizedRectangles($element, visibleContentOffsets);
-        var clientRectangles  = elementRectangles.clientRectangles;
+
+        var clientRectangles = getNormalizedRectangles($element, visibleContentOffsets);
         if (clientRectangles.length === 0) { // elements with display:none, etc.
             return null;
         }
 
+        return calculatePageIndexByRectangles(clientRectangles, spatialVerticalOffset);
+    }
+
+    /**
+     * @private
+     * Calculate a page index (0-based) for given client rectangles.
+     *
+     * @param {object} clientRectangles
+     * @param {number} [spatialVerticalOffset]
+     * @param {object} [frameDimensions]
+     * @param {object} [columnFullWidth]
+     * @returns {number|null}
+     */
+    function calculatePageIndexByRectangles(clientRectangles, spatialVerticalOffset, frameDimensions, columnFullWidth) {
         var isRtl = isPageProgressionRightToLeft();
         var isVwm = isVerticalWritingMode();
-        var columnFullWidth = getColumnFullWidth();
-
-        var frameHeight = $iframe.height();
-        var frameWidth  = $iframe.width();
+        columnFullWidth = columnFullWidth || getColumnFullWidth();
+        frameDimensions = frameDimensions || getFrameDimensions();
 
         if (spatialVerticalOffset) {
             trimRectanglesByVertOffset(clientRectangles, spatialVerticalOffset,
-                frameHeight, columnFullWidth, isRtl, isVwm);
+                frameDimensions, columnFullWidth, isRtl, isVwm);
         }
 
         var firstRectangle = _.first(clientRectangles);
         if (clientRectangles.length === 1) {
-            adjustRectangle(firstRectangle, {
-                height: frameHeight, width: frameWidth
-            }, columnFullWidth, isRtl, isVwm);
+            adjustRectangle(firstRectangle, false, frameDimensions, columnFullWidth, isRtl, isVwm);
         }
 
         var pageIndex;
 
         if (isVwm) {
             var topOffset = firstRectangle.top;
-            pageIndex = Math.floor(topOffset / frameHeight);
+            pageIndex = Math.floor(topOffset / frameDimensions.height);
         } else {
             var leftOffset = firstRectangle.left;
             if (isRtl) {
@@ -20424,6 +23560,25 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
     }
 
     /**
+     * Finds a page index (0-based) for a specific client rectangle.
+     * Calculations are based on viewport dimensions, offsets, and rectangle coordinates
+     *
+     * @param {ClientRect} clientRectangle
+     * @param {Object} [visibleContentOffsets]
+     * @param {Object} [frameDimensions]
+     * @returns {number|null}
+     */
+    function findPageBySingleRectangle(clientRectangle, visibleContentOffsets, frameDimensions) {
+        visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
+        frameDimensions = frameDimensions || getFrameDimensions();
+        
+        var normalizedRectangle = normalizeRectangle(
+            clientRectangle, visibleContentOffsets.left, visibleContentOffsets.top);
+
+        return calculatePageIndexByRectangles([normalizedRectangle], frameDimensions);
+    }
+
+    /**
      * @private
      * Calculates the visibility offset percentage based on ClientRect dimensions
      *
@@ -20431,14 +23586,13 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
      * @param {number} firstVisibleRectIndex
      * @returns {number} - visibility percentage (0 < n <= 100)
      */
-    function measureVisibilityPercentageByRectangles(
-            clientRectangles, firstVisibleRectIndex) {
+    function measureVisibilityPercentageByRectangles(clientRectangles, firstVisibleRectIndex) {
 
         var heightTotal = 0;
         var heightVisible = 0;
 
         if (clientRectangles.length > 1) {
-            _.each(clientRectangles, function(rect, index) {
+            _.each(clientRectangles, function (rect, index) {
                 heightTotal += rect.height;
                 if (index >= firstVisibleRectIndex) {
                     // in this case, all the rectangles after the first visible
@@ -20449,9 +23603,9 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
         }
         else {
             // should already be normalized and adjusted
-            heightTotal   = clientRectangles[0].height;
+            heightTotal = clientRectangles[0].height;
             heightVisible = clientRectangles[0].height - Math.max(
-                    0, -clientRectangles[0].top);
+                0, -clientRectangles[0].top);
         }
         return heightVisible === heightTotal
             ? 100 // trivial case: element is 100% visible
@@ -20470,16 +23624,22 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
 
         visibleContentOffsets = visibleContentOffsets || {};
         var leftOffset = visibleContentOffsets.left || 0;
-        var topOffset  = visibleContentOffsets.top  || 0;
+        var topOffset = visibleContentOffsets.top || 0;
 
-        // union of all rectangles wrapping the element
-        var wrapperRectangle = normalizeRectangle(
-                $el[0].getBoundingClientRect(), leftOffset, topOffset);
+        var isTextNode = ($el[0].nodeType === Node.TEXT_NODE);
+        var clientRectList;
+
+        if (isTextNode) {
+            var range = createRange();
+            range.selectNode($el[0]);
+            clientRectList = range.getClientRects();
+        } else {
+            clientRectList = $el[0].getClientRects();
+        }
 
         // all the separate rectangles (for detecting position of the element
         // split between several columns)
         var clientRectangles = [];
-        var clientRectList = $el[0].getClientRects();
         for (var i = 0, l = clientRectList.length; i < l; ++i) {
             if (clientRectList[i].height > 0) {
                 // Firefox sometimes gets it wrong,
@@ -20490,20 +23650,27 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
             }
         }
 
-        if (clientRectangles.length === 0) {
-            // sometimes an element is either hidden or empty, and that means
-            // Webkit-based browsers fail to assign proper clientRects to it
-            // in this case we need to go for its sibling (if it exists)
-            $el = $el.next();
-            if ($el.length) {
-                return getNormalizedRectangles($el, visibleContentOffsets);
-            }
+        return clientRectangles;
+    }
+
+    function getNormalizedBoundingRect($el, visibleContentOffsets) {
+        visibleContentOffsets = visibleContentOffsets || {};
+        var leftOffset = visibleContentOffsets.left || 0;
+        var topOffset = visibleContentOffsets.top || 0;
+
+        var isTextNode = ($el[0].nodeType === Node.TEXT_NODE);
+        var boundingClientRect;
+
+        if (isTextNode) {
+            var range = createRange();
+            range.selectNode($el[0]);
+            boundingClientRect = range.getBoundingClientRect();
+        } else {
+            boundingClientRect = $el[0].getBoundingClientRect();
         }
 
-        return {
-            wrapperRectangle: wrapperRectangle,
-            clientRectangles: clientRectangles
-        };
+        // union of all rectangles wrapping the element
+        return normalizeRectangle(boundingClientRect, leftOffset, topOffset);
     }
 
     /**
@@ -20540,9 +23707,9 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
      */
     function offsetRectangle(rect, leftOffset, topOffset) {
 
-        rect.left   += leftOffset;
-        rect.right  += leftOffset;
-        rect.top    += topOffset;
+        rect.left += leftOffset;
+        rect.right += leftOffset;
+        rect.top += topOffset;
         rect.bottom += topOffset;
     }
 
@@ -20559,17 +23726,20 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
      * Ugh.
      *
      * @param {Object} rect
-     * @param {Object} frameDimensions
-     * @param {number} columnFullWidth
-     * @param {boolean} isRtl
-     * @param {boolean} isVwm               isVerticalWritingMode
-     * @param {boolean} shouldLookForFirstVisibleColumn
+     * @param {boolean} [shouldLookForFirstVisibleColumn]
      *      If set, there'll be two-phase adjustment
      *      (to align a rectangle with a viewport)
-
+     * @param {Object} [frameDimensions]
+     * @param {number} [columnFullWidth]
+     * @param {boolean} [isRtl]
+     * @param {boolean} [isVwm]               isVerticalWritingMode
      */
-    function adjustRectangle(rect, frameDimensions, columnFullWidth, isRtl, isVwm,
-            shouldLookForFirstVisibleColumn) {
+    function adjustRectangle(rect, shouldLookForFirstVisibleColumn, frameDimensions, columnFullWidth, isRtl, isVwm) {
+
+        frameDimensions = frameDimensions || getFrameDimensions();
+        columnFullWidth = columnFullWidth || getColumnFullWidth();
+        isRtl = isRtl || isPageProgressionRightToLeft();
+        isVwm = isVwm || isVerticalWritingMode();
 
         // Rectangle adjustment is not needed in VWM since it does not deal with columns
         if (isVwm) {
@@ -20591,7 +23761,7 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
         // (i.e., is the first visible one).
         if (shouldLookForFirstVisibleColumn) {
             while (rect.bottom >= frameDimensions.height) {
-                if (isRectVisible(rect, frameDimensions, isVwm)) {
+                if (isRectVisible(rect, false, frameDimensions, isVwm)) {
                     break;
                 }
                 offsetRectangle(rect, columnFullWidth, -frameDimensions.height);
@@ -20605,19 +23775,24 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
      *
      * @param {Array} rects
      * @param {number} verticalOffset
-     * @param {number} frameHeight
+     * @param {number} frameDimensions
      * @param {number} columnFullWidth
      * @param {boolean} isRtl
      * @param {boolean} isVwm               isVerticalWritingMode
      */
     function trimRectanglesByVertOffset(
-            rects, verticalOffset, frameHeight, columnFullWidth, isRtl, isVwm) {
+            rects, verticalOffset, frameDimensions, columnFullWidth, isRtl, isVwm) {
+
+        frameDimensions = frameDimensions || getFrameDimensions();
+        columnFullWidth = columnFullWidth || getColumnFullWidth();
+        isRtl = isRtl || isPageProgressionRightToLeft();
+        isVwm = isVwm || isVerticalWritingMode();
 
         //TODO: Support vertical writing mode
         if (isVwm) {
             return;
         }
-        
+
         var totalHeight = _.reduce(rects, function(prev, cur) {
             return prev + cur.height;
         }, 0);
@@ -20639,8 +23814,8 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
             if (isRtl) {
                 columnFullWidth *= -1;
             }
-            while (rects[0].bottom >= frameHeight) {
-                offsetRectangle(rects[0], columnFullWidth, -frameHeight);
+            while (rects[0].bottom >= frameDimensions.height) {
+                offsetRectangle(rects[0], columnFullWidth, -frameDimensions.height);
             }
 
             rects[0].top += heightToHide;
@@ -20648,87 +23823,444 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
         }
     }
 
-    //we look for text and images
-    this.findFirstVisibleElement = function (props) {
+    this.getCfiForElement = function (element) {
+        var cfi = EPUBcfi.Generator.generateElementCFIComponent(element,
+            ["cfi-marker"],
+            [],
+            ["MathJax_Message", "MathJax_SVG_Hidden"]);
 
-        if (typeof props !== 'object') {
-            // compatibility with legacy code, `props` is `topOffset` actually
-            props = { top: props };
+        if (cfi[0] == "!") {
+            cfi = cfi.substring(1);
         }
-
-        var $elements;
-        var $firstVisibleTextNode = null;
-        var percentOfElementHeight = 0;
-
-        $elements = $("body", this.getRootElement()).find(":not(iframe)").contents().filter(function () {
-            return isValidTextNode(this) || this.nodeName.toLowerCase() === 'img';
-        });
-
-        // Find the first visible text node
-        $.each($elements, function() {
-
-            var $element;
-
-            if(this.nodeType === Node.TEXT_NODE)  { //text node
-                $element = $(this).parent();
-            }
-            else {
-                $element = $(this); //image
-            }
-
-            var visibilityResult = visibilityCheckerFunc($element, props, true);
-            if (visibilityResult) {
-                $firstVisibleTextNode = $element;
-                percentOfElementHeight = 100 - visibilityResult;
-                return false;
-            }
-            return true;
-        });
-
-        return {$element: $firstVisibleTextNode, percentY: percentOfElementHeight};
+        return cfi;
     };
 
-    this.getFirstVisibleElementCfi = function(topOffset) {
+    this.getVisibleCfiFromPoint = function (x, y, precisePoint) {
+        var document = self.getRootDocument();
+        var firstVisibleCaretRange = getCaretRangeFromPoint(x, y, document);
+        var elementFromPoint = document.elementFromPoint(x, y);
+        var invalidElementFromPoint = !elementFromPoint || elementFromPoint === document.documentElement;
 
-        var foundElement = this.findFirstVisibleElement(topOffset);
+        if (precisePoint) {
+            if (!elementFromPoint || invalidElementFromPoint) {
+                return null;
+            }
+            var testRect = getNodeContentsClientRect(elementFromPoint);
+            if (!isRectVisible(testRect, false)) {
+                return null;
+            }
+            if ((x < testRect.left || x > testRect.right) || (y < testRect.top || y > testRect.bottom)) {
+                return null;
+            }
+        }
 
-        if(!foundElement.$element) {
-            console.log("Could not generate CFI no visible element on page");
+        if (!firstVisibleCaretRange) {
+            if (invalidElementFromPoint) {
+                console.error("Could not generate CFI no visible element on page");
+                return null;
+            }
+            firstVisibleCaretRange = createRange();
+            firstVisibleCaretRange.selectNode(elementFromPoint);
+        }
+
+        var range = firstVisibleCaretRange;
+        var cfi;
+        //if we get a text node we need to get an approximate range for the first visible character offsets.
+        var node = range.startContainer;
+        var startOffset, endOffset;
+        if (node.nodeType === Node.TEXT_NODE) {
+            if (precisePoint && node.parentNode !== elementFromPoint) {
+                return null;
+            }
+            if (node.length === 1 && range.startOffset === 1) {
+                startOffset = 0;
+                endOffset = 1;
+            } else if (range.startOffset === node.length) {
+                startOffset = range.startOffset - 1;
+                endOffset = range.startOffset;
+            } else {
+                startOffset = range.startOffset;
+                endOffset = range.startOffset + 1;
+            }
+            var wrappedRange = {
+                startContainer: node,
+                endContainer: node,
+                startOffset: startOffset,
+                endOffset: endOffset,
+                commonAncestorContainer: range.commonAncestorContainer
+            };
+
+            if (debugMode) {
+                drawDebugOverlayFromDomRange(wrappedRange);
+            }
+
+            cfi = generateCfiFromDomRange(wrappedRange);
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+            node =
+                range.startContainer.childNodes[range.startOffset] ||
+                range.startContainer.childNodes[0] ||
+                range.startContainer;
+            if (precisePoint && node !== elementFromPoint) {
+                return null;
+            }
+
+            if (node.nodeType !== Node.ELEMENT_NODE) {
+                cfi = generateCfiFromDomRange(range);
+            } else {
+                cfi = self.getCfiForElement(node);
+            }
+        } else {
+            if (precisePoint && node !== elementFromPoint) {
+                return null;
+            }
+
+            cfi = self.getCfiForElement(elementFromPoint);
+        }
+
+        //This should not happen but if it does print some output, just in case
+        if (cfi && cfi.indexOf('NaN') !== -1) {
+            console.log('Did not generate a valid CFI:' + cfi);
             return undefined;
         }
 
-        //noinspection JSUnresolvedVariable
-        var cfi = EPUBcfi.Generator.generateElementCFIComponent(foundElement.$element[0]);
-
-        if(cfi[0] == "!") {
-            cfi = cfi.substring(1);
-        }
-
-        return cfi + "@0:" + foundElement.percentY;
+        return cfi;
     };
 
-    this.getPageForElementCfi = function(cfi, classBlacklist, elementBlacklist, idBlacklist) {
+    this.getRangeCfiFromPoints = function(startX, startY, endX, endY) {
+        var document = self.getRootDocument();
+        var start = getCaretRangeFromPoint(startX, startY, document),
+            end = getCaretRangeFromPoint(endX, endY, document),
+            range = createRange();
+        range.setStart(start.startContainer, start.startOffset);
+        range.setEnd(end.startContainer, end.startOffset);
+        // if we're looking at a text node create a nice range (n, n+1)
+        if (start.startContainer === start.endContainer && start.startContainer.nodeType === Node.TEXT_NODE && end.startContainer.length > end.startOffset+1) {
+            range.setEnd(end.startContainer, end.startOffset+1);
+        }
+        return generateCfiFromDomRange(range);
+    };
+
+    function getTextNodeRectCornerPairs(rect) {
+        //
+        //    top left             top right
+        //    ╲                   ╱
+        //  ── ▒T▒E▒X▒T▒ ▒R▒E▒C▒T▒ ──
+        //
+        // top left corner & top right corner
+        // but for y coord use the mid point between top and bottom
+
+        if (isVerticalWritingMode()) {
+            var x = rect.right - (rect.width / 2);
+            return [{x: x, y: rect.top}, {x: x, y: rect.bottom}];
+        } else {
+            var y = rect.top + (rect.height / 2);
+            var result = [{x: rect.left, y: y}, {x: rect.right, y: y}]
+            return isPageProgressionRightToLeft() ? result.reverse() : result;
+        }
+    }
+
+    var DEBUG = true;
+
+    function getVisibleTextRangeOffsetsSelectedByFunc(textNode, pickerFunc, visibleContentOffsets, frameDimensions) {
+        visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
+        
+        var textNodeFragments = getNodeClientRectList(textNode, visibleContentOffsets);
+
+        var visibleFragments = _.filter(textNodeFragments, function (rect) {
+            return isRectVisible(rect, false, frameDimensions);
+        });
+
+        var fragment = pickerFunc(visibleFragments);
+        if (!fragment) {
+            //no visible fragment, empty text node?
+            return null;
+        }
+        var fragmentCorner = pickerFunc(getTextNodeRectCornerPairs(fragment));
+        // Reverse taking into account of visible content offsets
+        fragmentCorner.x -= visibleContentOffsets.left;
+        fragmentCorner.y -= visibleContentOffsets.top;
+        
+        var caretRange = getCaretRangeFromPoint(fragmentCorner.x, fragmentCorner.y);
+
+        // Workaround for inconsistencies with the caretRangeFromPoint IE TextRange based shim.
+        if (caretRange && caretRange.startContainer !== textNode && caretRange.startContainer === textNode.parentNode) {
+            if (DEBUG) console.log('ieTextRangeWorkaround needed');
+            var startOrEnd = pickerFunc([0, 1]);
+
+            // #1
+            if (caretRange.startOffset === caretRange.endOffset) {
+                var checkNode = caretRange.startContainer.childNodes[Math.max(caretRange.startOffset - 1, 0)];
+                if (checkNode === textNode) {
+                    caretRange = {
+                        startContainer: textNode,
+                        endContainer: textNode,
+                        startOffset: startOrEnd === 0 ? 0 : textNode.nodeValue.length,
+                        startOffset: startOrEnd === 0 ? 0 : textNode.nodeValue.length
+                    };
+                    if (DEBUG) console.log('ieTextRangeWorkaround #1:', caretRange);
+                }
+            }
+
+            // Failed
+            else if (DEBUG) {
+                console.log('ieTextRangeWorkaround didn\'t work :(');
+            }
+        }
+
+        if (DEBUG)
+        console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'a0');
+        
+        // Desperately try to find it from all angles! Darn sub pixeling..
+        //TODO: remove the need for this brute-force method, since it's making the result non-deterministic
+        if (!caretRange || caretRange.startContainer !== textNode) {
+            caretRange = getCaretRangeFromPoint(fragmentCorner.x - 1, fragmentCorner.y);
+            
+            if (DEBUG)
+            console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'a1');
+        }
+        if (!caretRange || caretRange.startContainer !== textNode) {
+            caretRange = getCaretRangeFromPoint(fragmentCorner.x, fragmentCorner.y - 1);
+            
+            if (DEBUG)
+            console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'a2');
+        }
+        if (!caretRange || caretRange.startContainer !== textNode) {
+            caretRange = getCaretRangeFromPoint(fragmentCorner.x - 1, fragmentCorner.y - 1);
+            
+            if (DEBUG)
+            console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'a3');
+        }
+        if (!caretRange || caretRange.startContainer !== textNode) {
+            fragmentCorner.x = Math.floor(fragmentCorner.x);
+            fragmentCorner.y = Math.floor(fragmentCorner.y);
+            caretRange = getCaretRangeFromPoint(fragmentCorner.x, fragmentCorner.y);
+            
+            if (DEBUG)
+            console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'b0');
+        }
+        // Desperately try to find it from all angles! Darn sub pixeling..
+        if (!caretRange || caretRange.startContainer !== textNode) {
+            caretRange = getCaretRangeFromPoint(fragmentCorner.x - 1, fragmentCorner.y);
+            
+            if (DEBUG)
+            console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'b1');
+        }
+        if (!caretRange || caretRange.startContainer !== textNode) {
+            caretRange = getCaretRangeFromPoint(fragmentCorner.x, fragmentCorner.y - 1);
+            
+            if (DEBUG)
+            console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'b2');
+        }
+        if (!caretRange || caretRange.startContainer !== textNode) {
+            caretRange = getCaretRangeFromPoint(fragmentCorner.x - 1, fragmentCorner.y - 1);
+            
+            if (DEBUG)
+            console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'b3');
+        }
+
+        // Still nothing? fall through..
+        if (!caretRange) {
+            
+            if (DEBUG)
+            console.warn('getVisibleTextRangeOffsetsSelectedByFunc: no caret range result');
+            
+            return null;
+        }
+
+        if (caretRange.startContainer === textNode) {
+            return pickerFunc(
+                [{start: caretRange.startOffset, end: caretRange.startOffset + 1},
+                {start: caretRange.startOffset - 1, end: caretRange.startOffset}]
+            );
+        } else {
+            
+            if (DEBUG)
+            console.warn('getVisibleTextRangeOffsetsSelectedByFunc: incorrect caret range result');
+            
+            return null;
+        }
+    }
+
+    function findVisibleLeafNodeCfi(leafNodeList, pickerFunc, targetLeafNode, visibleContentOffsets, frameDimensions, startingParent) {
+        var index = 0;
+        if (!targetLeafNode) {
+            index = leafNodeList.indexOf(pickerFunc(leafNodeList));
+            var leafNode = leafNodeList[index];
+            if (leafNode) {
+                startingParent = leafNode.element;
+            }
+        } else {
+            index = leafNodeList.indexOf(targetLeafNode);
+            if (index === -1) {
+                //target leaf node not the right type? not in list?
+                return null;
+            }
+            // use the next leaf node in the list
+            index += pickerFunc([1, -1]);
+        }
+        var visibleLeafNode = leafNodeList[index];
+
+        if (!visibleLeafNode) {
+            return null;
+        }
+
+        var element = visibleLeafNode.element;
+        var textNode = visibleLeafNode.textNode;
+
+        if (targetLeafNode && element !== startingParent && !_.contains($(textNode || element).parents(), startingParent)) {
+            if (DEBUG) console.warn("findVisibleLeafNodeCfi: stopped recursion early");
+            return null;
+        }
+
+        //if a valid text node is found, try to generate a CFI with range offsets
+        if (textNode && isValidTextNode(textNode)) {
+            var visibleRange = getVisibleTextRangeOffsetsSelectedByFunc(textNode, pickerFunc, visibleContentOffsets, frameDimensions);
+            if (!visibleRange) {
+                //the text node is valid, but not visible..
+                //let's try again with the next node in the list
+                return findVisibleLeafNodeCfi(leafNodeList, pickerFunc, visibleLeafNode, visibleContentOffsets, frameDimensions, startingParent);
+            }
+            var range = createRange();
+            range.setStart(textNode, visibleRange.start);
+            range.setEnd(textNode, visibleRange.end);
+            return generateCfiFromDomRange(range);
+        } else {
+            //if not then generate a CFI for the element
+            return self.getCfiForElement(element);
+        }
+    }
+
+    // get an array of visible text elements and then select one based on the func supplied
+    // and generate a CFI for the first visible text subrange.
+    function getVisibleTextRangeCfiForTextElementSelectedByFunc(pickerFunc, visibleContentOffsets, frameDimensions) {        
+        var visibleLeafNodeList = self.getVisibleLeafNodes(visibleContentOffsets, frameDimensions);
+        return findVisibleLeafNodeCfi(visibleLeafNodeList, pickerFunc, null, visibleContentOffsets, frameDimensions);
+    }
+
+    function getLastVisibleTextRangeCfi(visibleContentOffsets, frameDimensions) {
+        return getVisibleTextRangeCfiForTextElementSelectedByFunc(_.last, visibleContentOffsets, frameDimensions);
+    }
+
+    function getFirstVisibleTextRangeCfi(visibleContentOffsets, frameDimensions) {
+        return getVisibleTextRangeCfiForTextElementSelectedByFunc(_.first, visibleContentOffsets, frameDimensions);
+    }
+
+    this.getFirstVisibleCfi = function (visibleContentOffsets, frameDimensions) {
+        return getFirstVisibleTextRangeCfi(visibleContentOffsets, frameDimensions);
+    };
+
+    this.getLastVisibleCfi = function (visibleContentOffsets, frameDimensions) {
+        return getLastVisibleTextRangeCfi(visibleContentOffsets, frameDimensions);
+    };
+
+    function generateCfiFromDomRange(range) {
+        return EPUBcfi.generateRangeComponent(
+            range.startContainer, range.startOffset,
+            range.endContainer, range.endOffset,
+            ['cfi-marker'], [], ["MathJax_Message", "MathJax_SVG_Hidden"]);
+    }
+
+    function getRangeTargetNodes(rangeCfi) {
+        return EPUBcfi.getRangeTargetElements(
+            getWrappedCfiRelativeToContent(rangeCfi),
+            self.getRootDocument(),
+            ['cfi-marker'], [], ["MathJax_Message", "MathJax_SVG_Hidden"]);
+    }
+
+    this.getDomRangeFromRangeCfi = function(rangeCfi, rangeCfi2, inclusive) {
+        var range = createRange();
+
+        if (!rangeCfi2) {
+            if (self.isRangeCfi(rangeCfi)) {
+                var rangeInfo = getRangeTargetNodes(rangeCfi);
+                range.setStart(rangeInfo.startElement, rangeInfo.startOffset);
+                range.setEnd(rangeInfo.endElement, rangeInfo.endOffset);
+            } else {
+                var element = self.getElementByCfi(rangeCfi,
+                    ['cfi-marker'], [], ["MathJax_Message", "MathJax_SVG_Hidden"])[0];
+                range.selectNode(element);
+            }
+        } else {
+            if (self.isRangeCfi(rangeCfi)) {
+                var rangeInfo1 = getRangeTargetNodes(rangeCfi);
+                range.setStart(rangeInfo1.startElement, rangeInfo1.startOffset);
+            } else {
+                var startElement = self.getElementByCfi(rangeCfi,
+                    ['cfi-marker'], [], ["MathJax_Message", "MathJax_SVG_Hidden"])[0];
+                range.setStart(startElement, 0);
+            }
+
+            if (self.isRangeCfi(rangeCfi2)) {
+                var rangeInfo2 = getRangeTargetNodes(rangeCfi2);
+                if (inclusive) {
+                    range.setEnd(rangeInfo2.endElement, rangeInfo2.endOffset);
+                } else {
+                    range.setEnd(rangeInfo2.startElement, rangeInfo2.startOffset);
+                }
+            } else {
+                var endElement = self.getElementByCfi(rangeCfi2,
+                    ['cfi-marker'], [], ["MathJax_Message", "MathJax_SVG_Hidden"])[0];
+                range.setEnd(endElement, endElement.childNodes.length);
+            }
+        }
+        return range;
+    };
+
+    this.getRangeCfiFromDomRange = function(domRange) {
+        return generateCfiFromDomRange(domRange);
+    };
+
+    function getWrappedCfi(partialCfi) {
+        return "epubcfi(" + partialCfi + ")";
+    }
+
+    function getWrappedCfiRelativeToContent(partialCfi) {
+        return "epubcfi(/99!" + partialCfi + ")";
+    }
+
+    this.isRangeCfi = function (partialCfi) {
+        return EPUBcfi.Interpreter.isRangeCfi(getWrappedCfi(partialCfi)) || EPUBcfi.Interpreter.isRangeCfi(getWrappedCfiRelativeToContent(partialCfi));
+    };
+
+    this.getPageForElementCfi = function (cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
         var cfiParts = splitCfi(cfi);
+        var partialCfi = cfiParts.cfi;
+
+        if (this.isRangeCfi(partialCfi)) {
+            //if given a range cfi the exact page index needs to be calculated by getting node info from the range cfi
+            var nodeRangeInfoFromCfi = this.getNodeRangeInfoFromCfi(partialCfi);
+            //the page index is calculated from the node's client rectangle
+            return findPageBySingleRectangle(nodeRangeInfoFromCfi.clientRect);
+        }
 
         var $element = getElementByPartialCfi(cfiParts.cfi, classBlacklist, elementBlacklist, idBlacklist);
 
-        if(!$element) {
+        if (!$element) {
             return -1;
         }
 
-        return this.getPageForPointOnElement($element, cfiParts.x, cfiParts.y);
+        var pageIndex = this.getPageForPointOnElement($element, cfiParts.x, cfiParts.y);
+
+        return pageIndex;
+
     };
 
     function getElementByPartialCfi(cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
-        var contentDoc = $iframe[0].contentDocument;
+        var contentDoc = self.getRootDocument();
 
-        var wrappedCfi = "epubcfi(" + cfi + ")";
-        //noinspection JSUnresolvedVariable
-        var $element = EPUBcfi.getTargetElementWithPartialCFI(wrappedCfi, contentDoc, classBlacklist, elementBlacklist, idBlacklist);
+        var wrappedCfi = getWrappedCfi(cfi);
 
-        if(!$element || $element.length == 0) {
+        try {
+            //noinspection JSUnresolvedVariable
+            var $element = EPUBcfi.getTargetElementWithPartialCFI(wrappedCfi, contentDoc, classBlacklist, elementBlacklist, idBlacklist);
+
+        } catch (ex) {
+            //EPUBcfi.Interpreter can throw a SyntaxError
+        }
+
+        if (!$element || $element.length == 0) {
             console.log("Can't find element for CFI: " + cfi);
             return undefined;
         }
@@ -20736,51 +24268,101 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
         return $element;
     }
 
-    this.getElementByCfi = function(cfi, classBlacklist, elementBlacklist, idBlacklist) {
+    this.getElementFromPoint = function (x, y) {
+
+        var document = self.getRootDocument();
+        return document.elementFromPoint(x, y);
+    };
+
+    this.getNodeRangeInfoFromCfi = function (cfi) {
+        var contentDoc = self.getRootDocument();
+        if (self.isRangeCfi(cfi)) {
+            var wrappedCfi = getWrappedCfiRelativeToContent(cfi);
+
+            try {
+                //noinspection JSUnresolvedVariable
+                var nodeResult = EPUBcfi.Interpreter.getRangeTargetElements(wrappedCfi, contentDoc,
+                    ["cfi-marker"],
+                    [],
+                    ["MathJax_Message", "MathJax_SVG_Hidden"]);
+
+                if (debugMode) {
+                    console.log(nodeResult);
+                }
+            } catch (ex) {
+                //EPUBcfi.Interpreter can throw a SyntaxError
+            }
+
+            if (!nodeResult) {
+                console.log("Can't find nodes for range CFI: " + cfi);
+                return undefined;
+            }
+
+            var startRangeInfo = {node: nodeResult.startElement, offset: nodeResult.startOffset};
+            var endRangeInfo = {node: nodeResult.endElement, offset: nodeResult.endOffset};
+            var nodeRangeClientRect =
+                startRangeInfo && endRangeInfo ?
+                    getNodeRangeClientRect(
+                        startRangeInfo.node,
+                        startRangeInfo.offset,
+                        endRangeInfo.node,
+                        endRangeInfo.offset)
+                    : null;
+
+            if (debugMode) {
+                console.log(nodeRangeClientRect);
+                addOverlayRect(nodeRangeClientRect, 'purple', contentDoc);
+            }
+
+            return {startInfo: startRangeInfo, endInfo: endRangeInfo, clientRect: nodeRangeClientRect}
+        } else {
+            var $element = self.getElementByCfi(cfi,
+                ["cfi-marker"],
+                [],
+                ["MathJax_Message", "MathJax_SVG_Hidden"]);
+
+            var visibleContentOffsets = getVisibleContentOffsets();
+            return {startInfo: null, endInfo: null, clientRect: getNormalizedBoundingRect($element, visibleContentOffsets)};
+        }
+    };
+
+    this.isNodeFromRangeCfiVisible = function (cfi) {
+        var nodeRangeInfo = this.getNodeRangeInfoFromCfi(cfi);
+        if (nodeRangeInfo) {
+            return isRectVisible(nodeRangeInfo.clientRect, false);
+        } else {
+            return undefined;
+        }
+    };
+
+    this.getElementByCfi = function (cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
         var cfiParts = splitCfi(cfi);
         return getElementByPartialCfi(cfiParts.cfi, classBlacklist, elementBlacklist, idBlacklist);
     };
 
-    this.getPageForElement = function($element) {
+    this.getPageForElement = function ($element) {
 
         return this.getPageForPointOnElement($element, 0, 0);
     };
 
-    this.getPageForPointOnElement = function($element, x, y) {
+    this.getPageForPointOnElement = function ($element, x, y) {
 
-        var pageIndex;
-        if (options.rectangleBased) {
-            pageIndex = findPageByRectangles($element, y);
-            if (pageIndex === null) {
-                console.warn('Impossible to locate a hidden element: ', $element);
-                return 0;
-            }
-            return pageIndex;
+        var pageIndex = findPageByRectangles($element, y);
+        if (pageIndex === null) {
+            console.warn('Impossible to locate a hidden element: ', $element);
+            return 0;
         }
-
-        var posInElement = this.getVerticalOffsetForPointOnElement($element, x, y);
-        return Math.floor(posInElement / $viewport.height());
+        return pageIndex;
     };
 
-    this.getVerticalOffsetForElement = function($element) {
+    this.getElementById = function (id) {
 
-        return this.getVerticalOffsetForPointOnElement($element, 0, 0);
-    };
-
-    this.getVerticalOffsetForPointOnElement = function($element, x, y) {
-
-        var elementRect = Helpers.Rect.fromElement($element);
-        return Math.ceil(elementRect.top + y * elementRect.height / 100);
-    };
-
-    this.getElementById = function(id) {
-
-        var contentDoc = $iframe[0].contentDocument;
+        var contentDoc = this.getRootDocument();
 
         var $element = $(contentDoc.getElementById(id));
         //$("#" + Helpers.escapeJQuerySelector(id), contentDoc);
-        
+
         if($element.length == 0) {
             return undefined;
         }
@@ -20788,10 +24370,10 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
         return $element;
     };
 
-    this.getPageForElementId = function(id) {
+    this.getPageForElementId = function (id) {
 
         var $element = this.getElementById(id);
-        if(!$element) {
+        if (!$element) {
             return -1;
         }
 
@@ -20808,11 +24390,11 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
 
         var ix = cfi.indexOf("@");
 
-        if(ix != -1) {
+        if (ix != -1) {
             var terminus = cfi.substring(ix + 1);
 
             var colIx = terminus.indexOf(":");
-            if(colIx != -1) {
+            if (colIx != -1) {
                 ret.x = parseInt(terminus.substr(0, colIx));
                 ret.y = parseInt(terminus.substr(colIx + 1));
             }
@@ -20831,41 +24413,32 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
     }
 
     // returns raw DOM element (not $ jQuery-wrapped)
-    this.getFirstVisibleMediaOverlayElement = function(visibleContentOffsets)
-    {
-        var docElement = this.getRootElement();
-        if (!docElement) return undefined;
-
-        var $root = $("body", docElement);
+    this.getFirstVisibleMediaOverlayElement = function(visibleContentOffsets) {
+        var $root = $(this.getBodyElement());
         if (!$root || !$root.length || !$root[0]) return undefined;
 
         var that = this;
 
         var firstPartial = undefined;
 
-        function traverseArray(arr)
-        {
+        function traverseArray(arr) {
             if (!arr || !arr.length) return undefined;
 
-            for (var i = 0, count = arr.length; i < count; i++)
-            {
+            for (var i = 0, count = arr.length; i < count; i++) {
                 var item = arr[i];
                 if (!item) continue;
 
                 var $item = $(item);
 
-                if($item.data("mediaOverlayData"))
-                {
+                if ($item.data("mediaOverlayData")) {
                     var visible = that.getElementVisibility($item, visibleContentOffsets);
-                    if (visible)
-                    {
+                    if (visible) {
                         if (!firstPartial) firstPartial = item;
 
                         if (visible == 100) return item;
                     }
                 }
-                else
-                {
+                else {
                     var elem = traverseArray(item.children);
                     if (elem) return elem;
                 }
@@ -20882,49 +24455,199 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
         // return this.getVisibleElements($elements, visibleContentOffsets);
     };
 
-    this.getElementVisibility = function($element, visibleContentOffsets) {
-        return visibilityCheckerFunc($element, visibleContentOffsets, true);
+    this.getElementVisibility = function ($element, visibleContentOffsets) {
+        return checkVisibilityByRectangles($element, true, visibleContentOffsets);
     };
 
 
+    this.isElementVisible = checkVisibilityByRectangles;
 
-    this.isElementVisible = visibilityCheckerFunc;
+    this.getVisibleElementsWithFilter = function (visibleContentOffsets, filterFunction) {
+        var $elements = this.getElementsWithFilter($(this.getBodyElement()), filterFunction);
+        return this.getVisibleElements($elements, visibleContentOffsets);
+    };
 
-    this.isElementCfiVisible = function (partialCfi) {
-        var pageIndex = this.getPageForElementCfi(partialCfi,
-            ["cfi-marker", "mo-cfi-highlight"],
-            [],
-            ["MathJax_Message"]);
-        var paginationInfo = options.paginationInfo || null;
-        if (paginationInfo) {
-            var openPages = [paginationInfo.currentSpreadIndex * paginationInfo.visibleColumnCount];
-            if (paginationInfo.visibleColumnCount == 2) {
-                openPages.push(openPages[0] + 1);
+    this.getAllElementsWithFilter = function (filterFunction) {
+        var $elements = this.getElementsWithFilter($(this.getBodyElement()), filterFunction);
+        return $elements;
+    };
+
+    this.getAllVisibleElementsWithSelector = function (selector, visibleContentOffset) {
+        var elements = $(selector, this.getRootElement());
+        var $newElements = [];
+        $.each(elements, function () {
+            $newElements.push($(this));
+        });
+        var visibleElements = this.getVisibleElements($newElements, visibleContentOffset);
+        return visibleElements;
+    };
+
+    this.getVisibleElements = function ($elements, visibleContentOffsets, frameDimensions) {
+
+        var visibleElements = [];
+
+        _.each($elements, function ($node) {
+            var isTextNode = ($node[0].nodeType === Node.TEXT_NODE);
+            var $element = isTextNode ? $node.parent() : $node;
+            var visibilityPercentage = checkVisibilityByRectangles(
+                $node, true, visibleContentOffsets, frameDimensions);
+
+            if (visibilityPercentage) {
+                visibleElements.push({
+                    element: $element[0], // DOM Element is pushed
+                    textNode: isTextNode ? $node[0] : null,
+                    percentVisible: visibilityPercentage
+                });
             }
-            return _.contains(openPages, pageIndex);
-        }
-        return undefined;
+        });
+
+        return visibleElements;
     };
 
+    this.getVisibleLeafNodes = function (visibleContentOffsets, frameDimensions) {
+
+        if (_cacheEnabled) {
+            var cacheKey = (options.paginationInfo || {}).currentSpreadIndex || 0;
+            var fromCache = _cache.visibleLeafNodes.get(cacheKey);
+            if (fromCache) {
+                return fromCache;
+            }
+        }
+
+        var $elements = this.getLeafNodeElements($(this.getBodyElement()));
+
+        var visibleElements = this.getVisibleElements($elements, visibleContentOffsets, frameDimensions);
+
+        if (_cacheEnabled) {
+            _cache.visibleLeafNodes.set(cacheKey, visibleElements);
+        }
+
+        return visibleElements;
+    };
+
+    this.getElementsWithFilter = function ($root, filterFunction) {
+
+        var $elements = [];
+
+        function traverseCollection(elements) {
+
+            if (elements == undefined) return;
+
+            for (var i = 0, count = elements.length; i < count; i++) {
+
+                var $element = $(elements[i]);
+
+                if (filterFunction($element)) {
+                    $elements.push($element);
+                }
+                else {
+                    traverseCollection($element[0].children);
+                }
+
+            }
+        }
+
+        traverseCollection([$root[0]]);
+
+        return $elements;
+    };
+
+    function isElementBlacklisted($element) {
+        //TODO: Ok we really need to have a single point of reference for this blacklist
+        var blacklist = {
+            classes: ["cfi-marker", "mo-cfi-highlight"],
+            elements: [], //not looked at
+            ids: ["MathJax_Message", "MathJax_SVG_Hidden"]
+        };
+
+        var isBlacklisted = false;
+
+        _.some(blacklist.classes, function (value) {
+            if ($element.hasClass(value)) {
+                isBlacklisted = true;
+            }
+            return isBlacklisted;
+        });
+
+        _.some(blacklist.ids, function (value) {
+            if ($element.attr("id") === value) {
+                isBlacklisted = true;
+            }
+            return isBlacklisted;
+        });
+
+
+        return isBlacklisted;
+    }
+
+    this.getLeafNodeElements = function ($root) {
+
+        if (_cacheEnabled) {
+            var fromCache = _cache.leafNodeElements.get($root);
+            if (fromCache) {
+                return fromCache;
+            }
+        }
+
+        var nodeIterator = document.createNodeIterator(
+            $root[0],
+            NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
+            function() {
+                return NodeFilter.FILTER_ACCEPT;
+            },
+            false
+        );
+
+        var $leafNodeElements = [];
+
+        var node;
+        while ((node = nodeIterator.nextNode())) {
+            var isLeafNode = node.nodeType === Node.ELEMENT_NODE && !node.childElementCount && !isValidTextNodeContent(node.textContent);
+            if (isLeafNode || isValidTextNode(node)){
+                var $node = $(node);
+                var $element = (node.nodeType === Node.TEXT_NODE) ? $node.parent() : $node;
+                if (!isElementBlacklisted($element)) {
+                    $leafNodeElements.push($node);
+                }
+            }
+        }
+
+        if (_cacheEnabled) {
+            _cache.leafNodeElements.set($root, $leafNodeElements);
+        }
+
+        return $leafNodeElements;
+    };
 
     function isValidTextNode(node) {
 
-        if(node.nodeType === Node.TEXT_NODE) {
+        if (node.nodeType === Node.TEXT_NODE) {
 
-            // Heuristic to find a text node with actual text
-            var nodeText = node.nodeValue.replace(/\n/g, "");
-            nodeText = nodeText.replace(/ /g, "");
-
-             return nodeText.length > 0;
+            return isValidTextNodeContent(node.nodeValue);
         }
 
         return false;
 
     }
 
-    this.getElement = function(selector) {
+    function isValidTextNodeContent(text) {
+        // Heuristic to find a text node with actual text
+        // If we don't do this, we may get a reference to a node that doesn't get rendered
+        // (such as for example a node that has tab character and a bunch of spaces)
+        // this is would be bad! ask me why.
+        return text.replace(/[\s\n\r\t]/g, "").length > 0;
+    }
 
-        var $element = $(selector, this.getRootElement());
+    this.getElements = function (selector) {
+        if (!selector) {
+            return $(this.getRootElement()).children();
+        }
+        return $(selector, this.getRootElement());
+    };
+
+    this.getElement = function (selector) {
+
+        var $element = this.getElements(selector);
 
         if($element.length > 0) {
             return $element;
@@ -20932,6 +24655,199 @@ var CfiNavigationLogic = function($viewport, $iframe, options){
 
         return undefined;
     };
+
+    function Cache() {
+        var that = this;
+
+        //true = survives invalidation
+        var props = {
+            leafNodeElements: true,
+            visibleLeafNodes: false
+        };
+
+        _.each(props, function (val, key) {
+            that[key] = new Map();
+        });
+
+        this._invalidate = function () {
+            _.each(props, function (val, key) {
+                if (!val) {
+                    that[key] = new Map();
+                }
+            });
+        }
+    }
+
+    var _cache = new Cache();
+
+    var _cacheEnabled = false;
+
+    this.invalidateCache = function () {
+        _cache._invalidate();
+    };
+
+
+    // dmitry debug
+    // dmitry debug
+    // dmitry debug
+    // dmitry debug
+    // dmitry debug
+    // dmitry debug
+
+    var parseContentCfi = function(cont) {
+        return cont.replace(/\[(.*?)\]/, "").split(/[\/,:]/).map(function(n) { return parseInt(n); }).filter(Boolean);
+    };
+
+    var contentCfiComparator = function(cont1, cont2) {
+        cont1 = this.parseContentCfi(cont1);
+        cont2 = this.parseContentCfi(cont2);
+
+        //compare cont arrays looking for differences
+        for (var i=0; i<cont1.length; i++) {
+            if (cont1[i] > cont2[i]) {
+                return 1;
+            }
+            else if (cont1[i] < cont2[i]) {
+                return -1;
+            }
+        }
+
+        //no differences found, so confirm that cont2 did not have values we didn't check
+        if (cont1.length < cont2.length) {
+            return -1;
+        }
+
+        //cont arrays are identical
+        return 0;
+    };
+
+
+    // end dmitry debug
+
+    //if (debugMode) {
+
+        var $debugOverlays = [];
+
+        //used for visual debug atm
+        function getRandomColor() {
+            var letters = '0123456789ABCDEF'.split('');
+            var color = '#';
+            for (var i = 0; i < 6; i++) {
+                color += letters[Math.round(Math.random() * 15)];
+            }
+            return color;
+        }
+
+        //used for visual debug atm
+        function addOverlayRect(rects, color, doc) {
+            var random = getRandomColor();
+            if (!(rects instanceof Array)) {
+                rects = [rects];
+            }
+            for (var i = 0; i != rects.length; i++) {
+                var rect = rects[i];
+                var overlayDiv = doc.createElement('div');
+                overlayDiv.style.position = 'absolute';
+                $(overlayDiv).css('z-index', '1000');
+                $(overlayDiv).css('pointer-events', 'none');
+                $(overlayDiv).css('opacity', '0.4');
+                overlayDiv.style.border = '1px solid white';
+                if (!color && !random) {
+                    overlayDiv.style.background = 'purple';
+                } else if (random && !color) {
+                    overlayDiv.style.background = random;
+                } else {
+                    if (color === true) {
+                        color = 'red';
+                    }
+                    overlayDiv.style.border = '1px dashed ' + color;
+                    overlayDiv.style.background = 'yellow';
+                }
+
+                overlayDiv.style.margin = overlayDiv.style.padding = '0';
+                overlayDiv.style.top = (rect.top ) + 'px';
+                overlayDiv.style.left = (rect.left ) + 'px';
+                // we want rect.width to be the border width, so content width is 2px less.
+                overlayDiv.style.width = (rect.width - 2) + 'px';
+                overlayDiv.style.height = (rect.height - 2) + 'px';
+                doc.documentElement.appendChild(overlayDiv);
+                $debugOverlays.push($(overlayDiv));
+            }
+        }
+
+        function drawDebugOverlayFromRect(rect) {
+            var leftOffset, topOffset;
+
+            if (isVerticalWritingMode()) {
+                leftOffset = 0;
+                topOffset = -getPaginationLeftOffset();
+            } else {
+                leftOffset = -getPaginationLeftOffset();
+                topOffset = 0;
+            }
+
+            addOverlayRect({
+                left: rect.left + leftOffset,
+                top: rect.top + topOffset,
+                width: rect.width,
+                height: rect.height
+            }, true, self.getRootDocument());
+        }
+
+        function drawDebugOverlayFromDomRange(range) {
+            var rect = getNodeRangeClientRect(
+                range.startContainer,
+                range.startOffset,
+                range.endContainer,
+                range.endOffset);
+            drawDebugOverlayFromRect(rect);
+            return rect;
+        }
+
+        function drawDebugOverlayFromNode(node) {
+            drawDebugOverlayFromRect(getNodeClientRect(node));
+        }
+
+        function getPaginationLeftOffset() {
+
+            var $htmlElement = $("html", self.getRootDocument());
+            var offsetLeftPixels = $htmlElement.css(isVerticalWritingMode() ? "top" : (isPageProgressionRightToLeft() ? "right" : "left"));
+            var offsetLeft = parseInt(offsetLeftPixels.replace("px", ""));
+            if (isNaN(offsetLeft)) {
+                //for fixed layouts, $htmlElement.css("left") has no numerical value
+                offsetLeft = 0;
+            }
+            if (isPageProgressionRightToLeft() && !isVerticalWritingMode()) return -offsetLeft; 
+            return offsetLeft;
+        }
+
+        function clearDebugOverlays() {
+            _.each($debugOverlays, function($el){
+                $el.remove();
+            });
+            $debugOverlays.clear();
+        }
+
+        ReadiumSDK._DEBUG_CfiNavigationLogic = {
+            clearDebugOverlays: clearDebugOverlays,
+            drawDebugOverlayFromRect: drawDebugOverlayFromRect,
+            drawDebugOverlayFromDomRange: drawDebugOverlayFromDomRange,
+            drawDebugOverlayFromNode: drawDebugOverlayFromNode,
+            debugVisibleCfis: function () {
+                console.log(JSON.stringify(ReadiumSDK.reader.getPaginationInfo().openPages));
+
+                var cfi1 = ReadiumSDK.reader.getFirstVisibleCfi();
+                var range1 = ReadiumSDK.reader.getDomRangeFromRangeCfi(cfi1);
+                console.log(cfi1, range1, drawDebugOverlayFromDomRange(range1));
+
+                var cfi2 = ReadiumSDK.reader.getLastVisibleCfi();
+                var range2 = ReadiumSDK.reader.getDomRangeFromRangeCfi(cfi2);
+                console.log(cfi2, range2, drawDebugOverlayFromDomRange(range2));
+            }
+        };
+
+        //
+   // }
 
 };
 return CfiNavigationLogic;
@@ -20975,6 +24891,9 @@ var ViewerSettings = function(settingsData) {
     this.syntheticSpread = "auto";
     this.fontSize = 100;
     this.columnGap = 20;
+    
+    this.columnMaxWidth = 700;
+    this.columnMinWidth = 400;
 
     this.mediaOverlaysPreservePlaybackWhenScroll = false;
 
@@ -21032,6 +24951,8 @@ var ViewerSettings = function(settingsData) {
     this.update = function(settingsData) {
 
         mapProperty("columnGap", settingsData);
+        mapProperty("columnMaxWidth", settingsData);
+        mapProperty("columnMinWidth", settingsData);
         mapProperty("fontSize", settingsData);
         mapProperty("mediaOverlaysPreservePlaybackWhenScroll", settingsData);
         mapProperty("mediaOverlaysSkipSkippables", settingsData);
@@ -21080,8 +25001,8 @@ var ViewerSettings = function(settingsData) {
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-define('readium_shared_js/views/one_page_view',["jquery", "underscore", "eventEmitter", "./cfi_navigation_logic", "../helpers", "../models/viewer_settings"],
-    function ($, _, EventEmitter, CfiNavigationLogic, Helpers, ViewerSettings) {
+define('readium_shared_js/views/one_page_view',["../globals", "jquery", "underscore", "eventEmitter", "./cfi_navigation_logic", "../helpers", "../models/viewer_settings", "../models/bookmark_data"],
+    function (Globals, $, _, EventEmitter, CfiNavigationLogic, Helpers, ViewerSettings, BookmarkData) {
 
 /**
  * Renders one page of fixed layout spread
@@ -21098,11 +25019,13 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
     var self = this;
 
     var _$epubHtml;
+    var _$epubBody;
     var _$el;
     var _$iframe;
     var _currentSpineItem;
     var _spine = options.spine;
     var _iframeLoader = options.iframeLoader;
+    var _navigationLogic = undefined;
     var _bookStyles = options.bookStyles;
 
     var _$viewport = options.$viewport;
@@ -21342,7 +25265,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
     this.isDisplaying = function () {
 
-        return _isIframeLoaded;
+        return _isIframeLoaded; //_$iframe && _$iframe[0] && _$epubHtml
     };
 
     this.render = function () {
@@ -21389,14 +25312,25 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
     };
 
     this.remove = function () {
-        _isIframeLoaded = false;
+        this.clear();
+        
         _currentSpineItem = undefined;
-        _$el.remove();
+        
+        if (_$el && _$el[0]) {
+            _$el.remove();
+        }
+        
+        _$el = undefined;
+        _$scaler = undefined;
+        _$iframe = undefined;
     };
 
     this.clear = function () {
         _isIframeLoaded = false;
-        _$iframe[0].src = "";
+        
+        if (_$iframe && _$iframe[0]) {
+            _$iframe[0].src = "";
+        }
     };
 
     this.currentSpineItem = function () {
@@ -21412,6 +25346,8 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             _$epubHtml = $("html", epubContentDocument);
             if (!_$epubHtml || _$epubHtml.length == 0) {
                 _$epubHtml = $("svg", epubContentDocument);
+            } else {
+                _$epubBody = $("body", _$epubHtml);
             }
 
             //_$epubHtml.css("overflow", "hidden");
@@ -21593,10 +25529,20 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         if (settings.enableGPUHardwareAccelerationCSS3D) {
             enable3D = true;
         }
-
+        
         if (reader.needsFixedLayoutScalerWorkAround()) {
             var css1 = Helpers.CSSTransformString({scale: scale, enable3D: enable3D});
+            
+            // See https://github.com/readium/readium-shared-js/issues/285 
+            css1["min-width"] = _meta_size.width;
+            css1["min-height"] = _meta_size.height;
+            
             _$epubHtml.css(css1);
+            
+            // Ensures content dimensions matches viewport meta (authors / production tools should do this in their CSS...but unfortunately some don't).
+            if (_$epubBody && _$epubBody.length) {
+                _$epubBody.css({width:_meta_size.width, height:_meta_size.height});
+            }
 
             var css2 = Helpers.CSSTransformString({scale : 1, enable3D: enable3D});
             css2["width"] = _meta_size.width * scale;
@@ -21814,22 +25760,35 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         }
     }
 
+    function onUnload (spineItem) {
+        if (spineItem) {
+            self.emit(Globals.Events.CONTENT_DOCUMENT_UNLOADED, _$iframe, spineItem);
+        }
+    }
+
+    this.onUnload = function () {
+        onUnload(_currentSpineItem);
+    };
+
     //expected callback signature: function(success, $iframe, spineItem, isNewlyLoaded, context)
     this.loadSpineItem = function (spineItem, callback, context) {
 
         if (_currentSpineItem != spineItem) {
 
+            var prevSpineItem = _currentSpineItem;
             _currentSpineItem = spineItem;
             var src = _spine.package.resolveRelativeUrl(spineItem.href);
 
-            //if (spineItem && spineItem.isFixedLayout())
-            if (true) // both fixed layout and reflowable documents need hiding due to flashing during layout/rendering
-            {
-                //hide iframe until content is scaled
-                self.hideIFrame();
-            }
+            // both fixed layout and reflowable documents need hiding due to flashing during layout/rendering
+            //hide iframe until content is scaled
+            self.hideIFrame();
 
-            self.emit(OnePageView.SPINE_ITEM_OPEN_START, _$iframe, _currentSpineItem);
+            onUnload(prevSpineItem);
+
+
+            Globals.logEvent("OnePageView.Events.SPINE_ITEM_OPEN_START", "EMIT", "one_page_view.js [ " + spineItem.href + " -- " + src + " ]");
+            self.emit(OnePageView.Events.SPINE_ITEM_OPEN_START, _$iframe, _currentSpineItem);
+            
             _iframeLoader.loadIframe(_$iframe[0], src, function (success) {
 
                 if (success && callback) {
@@ -21915,54 +25874,64 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         return undefined;
     }
 
-    this.getFirstVisibleElementCfi = function () {
-
-        var navigation = new CfiNavigationLogic(_$el, _$iframe);
-        return navigation.getFirstVisibleElementCfi(0);
-
-    };
-
+    function getVisibleContentOffsets() {
+        return {
+            top: -_$el.parent().scrollTop(),
+            left: 0
+        };
+    }
+    
+    function getFrameDimensions() {
+        return {
+            width: _$el.parent()[0].clientWidth,
+            height: _$el.parent()[0].clientHeight
+        };
+    }
+    
     this.getNavigator = function () {
-
-        return new CfiNavigationLogic(_$el, _$iframe);
+        return new CfiNavigationLogic({
+            $iframe: _$iframe,
+            frameDimensions: getFrameDimensions,
+            visibleContentOffsets: getVisibleContentOffsets
+        });
     };
 
-    this.getElementByCfi = function (spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
+    this.getElementByCfi = function (spineItemIdref, cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
-        if (spineItem != _currentSpineItem) {
+        if (spineItemIdref != _currentSpineItem.idref) {
             console.error("spine item is not loaded");
             return undefined;
         }
 
-        var navigation = new CfiNavigationLogic(_$el, _$iframe);
+        var navigation = self.getNavigator();
         return navigation.getElementByCfi(cfi, classBlacklist, elementBlacklist, idBlacklist);
     };
 
-    this.getElementById = function (spineItem, id) {
+    this.getElementById = function (spineItemIdref, id) {
 
-        if (spineItem != _currentSpineItem) {
+        if (spineItemIdref != _currentSpineItem.idref) {
             console.error("spine item is not loaded");
             return undefined;
         }
 
-        var navigation = new CfiNavigationLogic(_$el, _$iframe);
+        var navigation = self.getNavigator();
         return navigation.getElementById(id);
     };
 
-    this.getElement = function (spineItem, selector) {
+    this.getElement = function (spineItemIdref, selector) {
 
-        if (spineItem != _currentSpineItem) {
+        if(spineItemIdref != _currentSpineItem.idref) {
             console.error("spine item is not loaded");
             return undefined;
         }
 
-        var navigation = new CfiNavigationLogic(_$el, _$iframe);
+        var navigation = self.getNavigator();
         return navigation.getElement(selector);
     };
 
-    this.getFirstVisibleMediaOverlayElement = function () {
-        var navigation = new CfiNavigationLogic(_$el, _$iframe);
-        return navigation.getFirstVisibleMediaOverlayElement({top: 0, bottom: _$iframe.height()});
+    this.getFirstVisibleMediaOverlayElement = function() {
+        var navigation = self.getNavigator();
+        return navigation.getFirstVisibleMediaOverlayElement();
     };
 
     this.offset = function () {
@@ -21970,10 +25939,94 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             return _$iframe.offset();
         }
         return undefined;
+    };
+
+    this.getVisibleElementsWithFilter = function (filterFunction) {
+        var navigation = self.getNavigator();
+        var elements = navigation.getVisibleElementsWithFilter(null, filterFunction);
+        return elements;
+    };
+
+    this.getVisibleElements = function (selector) {
+
+        var navigation = self.getNavigator();
+        var elements = navigation.getAllVisibleElementsWithSelector(selector);
+        return elements;
+    };
+
+    this.getAllElementsWithFilter = function (filterFunction, outsideBody) {
+        var navigation = self.getNavigator();
+        var elements = navigation.getAllElementsWithFilter(filterFunction, outsideBody);
+        return elements;
+    };
+
+    this.getElements = function(spineItemIdref, selector) {
+
+        if(spineItemIdref != _currentSpineItem.idref) {
+            console.error("spine item is not loaded");
+            return undefined;
+        }
+
+        var navigation = self.getNavigator();
+
+        return navigation.getElements(selector);
+    };
+
+    this.getNodeRangeInfoFromCfi = function (spineIdRef, partialCfi) {
+        if (spineIdRef != _currentSpineItem.idref) {
+            console.warn("spine item is not loaded");
+            return undefined;
+        }
+        var navigation = self.getNavigator();
+
+        return navigation.getNodeRangeInfoFromCfi(partialCfi);
+    };
+
+    function createBookmarkFromCfi(cfi){
+        return new BookmarkData(_currentSpineItem.idref, cfi);
     }
+
+    this.getLoadedContentFrames = function () {
+        return [{spineItem: _currentSpineItem, $iframe: _$iframe}];
+    };
+
+    this.getFirstVisibleCfi = function (visibleContentOffsets, frameDimensions) {
+        return createBookmarkFromCfi(self.getNavigator().getFirstVisibleCfi(visibleContentOffsets, frameDimensions));
+    };
+
+    this.getLastVisibleCfi = function (visibleContentOffsets, frameDimensions) {
+        return createBookmarkFromCfi(self.getNavigator().getLastVisibleCfi(visibleContentOffsets, frameDimensions));
+    };
+
+    this.getDomRangeFromRangeCfi = function (rangeCfi, rangeCfi2, inclusive) {
+        return self.getNavigator().getDomRangeFromRangeCfi(rangeCfi, rangeCfi2, inclusive);
+    };
+
+    this.getRangeCfiFromDomRange = function (domRange) {
+        return createBookmarkFromCfi(self.getNavigator().getRangeCfiFromDomRange(domRange));
+    };
+
+    this.getVisibleCfiFromPoint = function (x, y, precisePoint) {
+        return createBookmarkFromCfi(self.getNavigator().getVisibleCfiFromPoint(x, y, precisePoint));
+    };
+
+    this.getRangeCfiFromPoints = function(startX, startY, endX, endY) {
+        return createBookmarkFromCfi(self.getNavigator().getRangeCfiFromPoints(startX, startY, endX, endY));
+    };
+
+    this.getCfiForElement = function(element) {
+        return createBookmarkFromCfi(self.getNavigator().getCfiForElement(element));
+    };
+
+    this.getElementFromPoint = function (x, y) {
+        return self.getNavigator().getElementFromPoint(x, y);
+    };
+
 };
 
-OnePageView.SPINE_ITEM_OPEN_START = "SpineItemOpenStart";
+OnePageView.Events = {
+    SPINE_ITEM_OPEN_START: "SpineItemOpenStart"
+};
 return OnePageView;
 });
 
@@ -22091,10 +26144,10 @@ return PageOpenRequest;
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define ('readium_shared_js/views/fixed_view',["jquery", "underscore", "eventEmitter", "../models/bookmark_data", "../models/current_pages_info",
-    "../models/fixed_page_spread", "./one_page_view", "../models/page_open_request", "../helpers", "../globals"],
-    function($, _, EventEmitter, BookmarkData, CurrentPagesInfo,
-             Spread, OnePageView, PageOpenRequest, Helpers, Globals) {
+define ('readium_shared_js/views/fixed_view',["../globals", "jquery", "underscore", "eventEmitter", "../models/bookmark_data", "../models/current_pages_info",
+    "../models/fixed_page_spread", "./one_page_view", "../models/page_open_request", "../helpers"],
+    function(Globals, $, _, EventEmitter, BookmarkData, CurrentPagesInfo,
+             Spread, OnePageView, PageOpenRequest, Helpers) {
 /**
  * View for rendering fixed layout page spread
  * @param options
@@ -22140,11 +26193,20 @@ var FixedView = function(options, reader){
         reader
         );
 
-        pageView.on(OnePageView.SPINE_ITEM_OPEN_START, function($iframe, spineItem) {
 
+        pageView.on(OnePageView.Events.SPINE_ITEM_OPEN_START, function($iframe, spineItem) {
+            
+            Globals.logEvent("OnePageView.Events.SPINE_ITEM_OPEN_START", "ON", "fixed_view.js [ " + spineItem.href + " ]");
+
+            Globals.logEvent("CONTENT_DOCUMENT_LOAD_START", "EMIT", "fixed_view.js [ " + spineItem.href + " ]");
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
-        });   
-    
+        });
+
+        pageView.on(Globals.Events.CONTENT_DOCUMENT_UNLOADED, function($iframe, spineItem) {
+
+            self.emit(Globals.Events.CONTENT_DOCUMENT_UNLOADED, $iframe, spineItem);
+        });
+
         return pageView;
     }
 
@@ -22223,9 +26285,10 @@ var FixedView = function(options, reader){
 
         var context = {isElementAdded : false};
 
-        var pageLoadDeferrals = createPageLoadDeferrals([{pageView: _leftPageView, spineItem: _spread.leftItem, context: context},
-                                                              {pageView: _rightPageView, spineItem: _spread.rightItem, context: context},
-                                                              {pageView: _centerPageView, spineItem: _spread.centerItem, context: context}]);
+        var pageLoadDeferrals = createPageLoadDeferrals([
+            {pageView: _leftPageView, spineItem: _spread.leftItem, context: context},
+            {pageView: _rightPageView, spineItem: _spread.rightItem, context: context},
+            {pageView: _centerPageView, spineItem: _spread.centerItem, context: context}]);
 
         $.when.apply($, pageLoadDeferrals).done(function(){
             _isRedrowing = false;
@@ -22237,8 +26300,13 @@ var FixedView = function(options, reader){
                 redraw(p1, p2);
             }
             else {
+                
                 if(context.isElementAdded) {
-                    self.applyStyles();
+                    //self.applyStyles();
+                    
+                    Helpers.setStyles(_userStyles.getStyles(), _$el.parent());
+                    updateBookMargins();
+                    // updateContentMetaSize() and resizeBook() are invoked in onPagesLoaded below
                 }
 
                 if (paginationRequest)
@@ -22273,10 +26341,9 @@ var FixedView = function(options, reader){
     this.applyStyles = function() {
 
         Helpers.setStyles(_userStyles.getStyles(), _$el.parent());
-
         updateBookMargins();
+        
         updateContentMetaSize();
-
         resizeBook();
     };
 
@@ -22304,11 +26371,14 @@ var FixedView = function(options, reader){
     }
 
     function onPagesLoaded(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
-
+        
         updateContentMetaSize();
         resizeBook();
+        
         window.setTimeout(function () {
-            self.trigger(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, {
+            
+            Globals.logEvent("InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED", "EMIT", "fixed_view.js");
+            self.emit(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, {
                 paginationInfo: self.getPaginationInfo(),
                 initiator: initiator,
                 spineItem: paginationRequest_spineItem,
@@ -22463,6 +26533,7 @@ var FixedView = function(options, reader){
             _centerPageView[transFunc](scale, left, top);
         }
         
+        Globals.logEvent("FXL_VIEW_RESIZED", "EMIT", "fixed_view.js");
         self.emit(Globals.Events.FXL_VIEW_RESIZED);
     }
 
@@ -22591,12 +26662,13 @@ var FixedView = function(options, reader){
         }
         else {
 
-            if(!pageView.isDisplaying()) {
-
-                _$el.append(pageView.render().element());
-
-                context.isElementAdded = true;
-            }
+            //if(pageView.isDisplaying()) { // always DO (no iframe reuse, as this creates problems with BlobURIs, and navigator history ... just like the reflowable view, we re-create an iframe from the template whenever needed for a new spine item URI)
+            pageView.remove();
+            
+            //if(!pageView.isDisplaying()) { // always TRUE
+            _$el.append(pageView.render().element());
+            context.isElementAdded = true;
+        
 
             pageView.loadSpineItem(item, function(success, $iframe, spineItem, isNewContentDocumentLoaded, context){
 
@@ -22607,6 +26679,7 @@ var FixedView = function(options, reader){
                         console.error("Invalid document " + spineItem.href + ": viewport is not specified!");
                     }
 
+                    Globals.logEvent("CONTENT_DOCUMENT_LOADED", "EMIT", "fixed_view.js [ " + spineItem.href + " ]");
                     self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
                 }
 
@@ -22642,17 +26715,10 @@ var FixedView = function(options, reader){
 
         if(views.length > 0) {
 
-            var idref = views[0].currentSpineItem().idref;
-            var cfi = views[0].getFirstVisibleElementCfi();
-
-            if(cfi == undefined) {
-                cfi = "";
-            }
-
-            return new BookmarkData(idref, cfi);
+            return views[0].getFirstVisibleCfi();
         }
 
-        return new BookmarkData("", "");
+        return undefined;
     };
 
     function getDisplayingViews() {
@@ -22682,54 +26748,43 @@ var FixedView = function(options, reader){
         return _spread.validItems();
     };
 
-    this.getElement = function(spineItem, selector) {
-
+    function callOnPageView(spineItemIdref, fn) {
         var views = getDisplayingViews();
 
-        for(var i = 0, count = views.length; i < count; i++) {
+        for (var i = 0, count = views.length; i < count; i++) {
 
             var view = views[i];
-            if(view.currentSpineItem() == spineItem) {
-                return view.getElement(spineItem, selector);
+            if (view.currentSpineItem().idref == spineItemIdref) {
+                return fn(view);
             }
         }
 
         console.error("spine item is not loaded");
         return undefined;
+    }
+
+    this.getElement = function (spineItemIdref, selector) {
+
+        return callOnPageView(spineItemIdref, function (view) {
+            return view.getElement(spineItemIdref, selector);
+        });
     };
 
-    this.getElementById = function(spineItem, id) {
+    this.getElementById = function (spineItemIdref, id) {
 
-        var views = getDisplayingViews();
-
-        for(var i = 0, count = views.length; i < count; i++) {
-
-            var view = views[i];
-            if(view.currentSpineItem() == spineItem) {
-                return view.getElementById(spineItem, id);
-            }
-        }
-
-        console.error("spine item is not loaded");
-        return undefined;
+        return callOnPageView(spineItemIdref, function (view) {
+            return view.getElementById(spineItemIdref, id);
+        });
     };
 
-    this.getElementByCfi = function(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
-        var views = getDisplayingViews();
+    this.getElementByCfi = function(spineItemIdref, cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
-        for(var i = 0, count = views.length; i < count; i++) {
-
-            var view = views[i];
-            if(view.currentSpineItem() == spineItem) {
-                return view.getElementByCfi(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist);
-            }
-        }
-
-        console.error("spine item is not loaded");
-        return undefined;
+        return callOnPageView(spineItemIdref, function (view) {
+            return view.getElementByCfi(spineItemIdref, cfi, classBlacklist, elementBlacklist, idBlacklist);
+        });
     };
-
+    
     this.getFirstVisibleMediaOverlayElement = function() {
 
         var views = getDisplayingViews();
@@ -22747,14 +26802,182 @@ var FixedView = function(options, reader){
         //TODO: during zoom+pan, playing element might not actually be visible
 
     };
+    
+    this.getElements = function(spineItemIdref, selector) {
 
-    this.isElementCfiVisible = function (spineIdRef, contentCfi) {
-        var spineItemFound = _.findWhere(this.getLoadedSpineItems(), {idref: spineIdRef});
+        return callOnPageView(spineItemIdref, function (view) {
+            return view.getElements(spineItemIdref, selector);
+        });
+    };
+    
+    this.isElementVisible = function($element){
 
-        // it is assumed that if the whole spine item page is visible then any element cfi is visible
-        //TODO: during zoom+pan, element cfi might not actually be visible
-        return !!spineItemFound;
+        //for now we assume that for fixed layouts, elements are always visible
+        return true;
+    };
+    
+    this.getVisibleElementsWithFilter = function(filterFunction, includeSpineItems) {
 
+        var elements = [];
+
+        var views = getDisplayingViews();
+
+        for(var i = 0, count = views.length; i < count; i++) {
+            //for now we assume that for fixed layouts, elements are always visible
+            elements.push(views[i].getAllElementsWithFilter(filterFunction, includeSpineItems));
+        }
+
+        return elements;
+    };
+
+    this.getVisibleElements = function (selector, includeSpineItems) {
+
+        var elements = [];
+
+        var views = getDisplayingViews();
+
+        for (var i = 0, count = views.length; i < count; i++) {
+            //for now we assume that for fixed layouts, elements are always visible
+            if (includeSpineItems) {
+                elements.push({elements: views[i].getElements(views[i].currentSpineItem().idref, selector), spineItem: views[i].currentSpineItem()});
+            } else {
+                elements.push(views[i].getElements(views[i].currentSpineItem().idref, selector));
+            }
+        }
+
+        return elements;
+    };
+
+    this.isElementVisible = function($element){
+
+        //for now we assume that for fixed layouts, elements are always visible
+        return true;
+    };
+    
+    this.isVisibleSpineItemElementCfi = function (spineItemIdref, partialCfi) {
+
+        return callOnPageView(spineItemIdref, function (view) {
+            //for now we assume that for fixed layouts, everything is always visible
+            return true;
+        });
+    };
+
+    this.getNodeRangeInfoFromCfi = function (spineItemIdref, partialCfi) {
+
+        return callOnPageView(spineItemIdref, function (view) {
+            return view.getNodeRangeInfoFromCfi(spineItemIdref, partialCfi);
+        });
+    };
+
+
+    this.getFirstVisibleCfi = function () {
+        var views = getDisplayingViews();
+        if (views.length > 0) {
+            return views[0].getFirstVisibleCfi();
+        }
+        return undefined;
+    };
+
+    this.getLastVisibleCfi = function () {
+        var views = getDisplayingViews();
+        if (views.length > 0) {
+            return views[views.length - 1].getLastVisibleCfi();
+        }
+        return undefined;
+    };
+
+    this.getDomRangesFromRangeCfi = function (rangeCfi, rangeCfi2, inclusive) {
+        var views = getDisplayingViews();
+        if (rangeCfi2 && rangeCfi.idref !== rangeCfi2.idref) {
+            var ranges = [];
+            for (var i = 0, count = views.length; i < count; i++) {
+                var view = views[i];
+                if (view.currentSpineItem().idref === rangeCfi.idref) {
+                    var last = view.getLastVisibleCfi();
+                    ranges.push(view.getDomRangeFromRangeCfi(rangeCfi.contentCFI, last.contentCFI, inclusive));
+                } else if (view.currentSpineItem().idref === rangeCfi2.idref) {
+                    var first = view.getFirstVisibleCfi();
+                    ranges.push(view.getDomRangeFromRangeCfi(first.contentCFI, rangeCfi2.contentCFI, inclusive));
+                }
+            }
+            return ranges;
+        }
+
+        return [this.getDomRangeFromRangeCfi(rangeCfi, rangeCfi2, inclusive)];
+    },
+
+    this.getDomRangeFromRangeCfi = function (rangeCfi, rangeCfi2, inclusive) {
+        var views = getDisplayingViews();
+        if (rangeCfi2 && rangeCfi.idref !== rangeCfi2.idref) {
+            console.error("getDomRangeFromRangeCfi: both CFIs must be scoped under the same spineitem idref");
+            return undefined;
+        }
+        for (var i = 0, count = views.length; i < count; i++) {
+
+            var view = views[i];
+            if (view.currentSpineItem().idref === rangeCfi.idref) {
+                return view.getDomRangeFromRangeCfi(rangeCfi.contentCFI, rangeCfi2 ? rangeCfi2.contentCFI : null, inclusive);
+            }
+        }
+
+        return undefined;
+    };
+
+    this.getRangeCfiFromDomRange = function (domRange) {
+
+        var views = getDisplayingViews();
+
+        for (var i = 0, count = views.length; i < count; i++) {
+
+            var view = views[i];
+            if (view.getLoadedContentFrames()[0].$iframe[0].contentDocument === domRange.startContainer.ownerDocument) {
+                return view.getRangeCfiFromDomRange(domRange);
+            }
+        }
+
+        return undefined;
+    };
+
+    this.getVisibleCfiFromPoint = function (x, y, precisePoint, spineItemIdref) {
+        if (!spineItemIdref) {
+            throw new Error("getVisibleCfiFromPoint: Spine item idref must be specified for this fixed layout view.");
+        }
+        return callOnPageView(spineItemIdref, function (view) {
+            return view.getVisibleCfiFromPoint(x,y, precisePoint);
+        });
+    };
+
+    this.getRangeCfiFromPoints = function (startX, startY, endX, endY, spineItemIdref) {
+        if (!spineItemIdref) {
+            throw new Error("getRangeCfiFromPoints: Spine item idref must be specified for this fixed layout view.");
+        }
+        return callOnPageView(spineItemIdref, function (view) {
+            return view.getRangeCfiFromPoints(startX, startY, endX, endY);
+        });
+    };
+
+    this.getCfiForElement = function (element) {
+
+        var views = getDisplayingViews();
+
+        for (var i = 0, count = views.length; i < count; i++) {
+
+            var view = views[i];
+            if (view.getLoadedContentFrames()[0].$iframe[0].contentDocument === element.ownerDocument) {
+                return view.getCfiForElement(element);
+            }
+        }
+
+        return undefined;
+    };
+
+    this.getElementFromPoint = function (x, y, spineItemIdref) {
+        if (!spineItemIdref) {
+            throw new Error("getElementFromPoint: Spine item idref must be specified for this fixed layout view.");
+        }
+        return callOnPageView(spineItemIdref, function (view) {
+            return view.getElementFromPoint(x,y);
+        });
     };
 
 };
@@ -22812,8 +27035,8 @@ var IFrameLoader = function() {
     this.updateIframeEvents = function (iframe) {
 
         _.each(eventListeners, function (value, key) {
+            $(iframe.contentWindow).off(key);
             for (var i = 0, count = value.length; i < count; i++) {
-                $(iframe.contentWindow).off(key);
                 $(iframe.contentWindow).on(key, value[i].callback, value[i].context);
             }
         });
@@ -22857,6 +27080,30 @@ var IFrameLoader = function() {
 
             var mathJax = iframe.contentWindow.MathJax;
             if (mathJax) {
+                
+                console.log("MathJax VERSION: " + mathJax.cdnVersion + " // " + mathJax.fileversion + " // " + mathJax.version);
+    
+                var useFontCache = true; // default in MathJax
+                
+                // Firefox fails to render SVG otherwise
+                if (mathJax.Hub.Browser.isFirefox) {
+                    useFontCache = false;
+                }
+                
+                // Chrome 49+ fails to render SVG otherwise
+                // https://github.com/readium/readium-js/issues/138
+                if (mathJax.Hub.Browser.isChrome) {
+                    useFontCache = false;
+                }
+                
+                // Edge fails to render SVG otherwise
+                // https://github.com/readium/readium-js-viewer/issues/394#issuecomment-185382196
+                if (window.navigator.userAgent.indexOf("Edge") > 0) {
+                    useFontCache = false;
+                }
+                
+                mathJax.Hub.Config({showMathMenu:false, messageStyle: "none", showProcessingMessages: true, SVG:{useFontCache:useFontCache}});
+                
                 // If MathJax is being used, delay the callback until it has completed rendering
                 var mathJaxCallback = _.once(callback);
                 try {
@@ -22879,6 +27126,7 @@ var IFrameLoader = function() {
 
 return IFrameLoader;
 });
+
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
 // 
 //  Redistribution and use in source and binary forms, with or without modification, 
@@ -23299,9 +27547,8 @@ return SmilIterator;
 });
 
 /**
- * @license RequireJS domReady 2.0.1 Copyright (c) 2010-2012, The Dojo Foundation All Rights Reserved.
- * Available via the MIT or new BSD license.
- * see: http://github.com/requirejs/domReady for details
+ * @license domReady 2.0.1 Copyright jQuery Foundation and other contributors.
+ * Released under MIT license, http://github.com/requirejs/domReady/LICENSE
  */
 /*jslint */
 /*global require: false, define: false, requirejs: false,
@@ -31770,103 +36017,6 @@ return MediaOverlayDataInjector;
 
 define('readium_shared_js/views/audio_player',['jquery'],function($) {
 
-    var _iOS = navigator.userAgent.match(/(iPad|iPhone|iPod)/g) ? true : false;
-    var _Android = navigator.userAgent.toLowerCase().indexOf('android') > -1;
-    var _isMobile = _iOS || _Android;
-
-    //var _isReadiumJS = typeof window.requirejs !== "undefined";
-
-    var DEBUG = false;
-
-    var _audioElement = new Audio();
-    
-    if (DEBUG)
-    {
-        _audioElement.addEventListener("load", function()
-            {
-                console.debug("0) load");
-            }
-        );
-
-        _audioElement.addEventListener("loadstart", function()
-            {
-                console.debug("1) loadstart");
-            }
-        );
-
-        _audioElement.addEventListener("durationchange", function()
-            {
-                console.debug("2) durationchange");
-            }
-        );
-
-        _audioElement.addEventListener("loadedmetadata", function()
-            {
-                console.debug("3) loadedmetadata");
-            }
-        );
-
-        _audioElement.addEventListener("loadeddata", function()
-            {
-                console.debug("4) loadeddata");
-            }
-        );
-
-        _audioElement.addEventListener("progress", function()
-            {
-                console.debug("5) progress");
-            }
-        );
-
-        _audioElement.addEventListener("canplay", function()
-            {
-                console.debug("6) canplay");
-            }
-        );
-
-        _audioElement.addEventListener("canplaythrough", function()
-            {
-                console.debug("7) canplaythrough");
-            }
-        );
-
-        _audioElement.addEventListener("play", function()
-            {
-                console.debug("8) play");
-            }
-        );
-
-        _audioElement.addEventListener("pause", function()
-            {
-                console.debug("9) pause");
-            }
-        );
-
-        _audioElement.addEventListener("ended", function()
-            {
-                console.debug("10) ended");
-            }
-        );
-
-        _audioElement.addEventListener("seeked", function()
-            {
-                console.debug("X) seeked");
-            }
-        );
-
-        _audioElement.addEventListener("timeupdate", function()
-            {
-                console.debug("Y) timeupdate");
-            }
-        );
-
-        _audioElement.addEventListener("seeking", function()
-            {
-                console.debug("Z) seeking");
-            }
-        );
-    }
-
     /**
      *
      * @param onStatusChanged
@@ -31878,6 +36028,103 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
      */
     var AudioPlayer = function(onStatusChanged, onPositionChanged, onAudioEnded, onAudioPlay, onAudioPause)
     {
+        var _iOS = navigator.userAgent.match(/(iPad|iPhone|iPod)/g) ? true : false;
+        var _Android = navigator.userAgent.toLowerCase().indexOf('android') > -1;
+        var _isMobile = _iOS || _Android;
+
+        //var _isReadiumJS = typeof window.requirejs !== "undefined";
+
+        var DEBUG = false;
+
+        var _audioElement = new Audio();
+        
+        if (DEBUG)
+        {
+            _audioElement.addEventListener("load", function()
+                {
+                    console.debug("0) load");
+                }
+            );
+
+            _audioElement.addEventListener("loadstart", function()
+                {
+                    console.debug("1) loadstart");
+                }
+            );
+
+            _audioElement.addEventListener("durationchange", function()
+                {
+                    console.debug("2) durationchange");
+                }
+            );
+
+            _audioElement.addEventListener("loadedmetadata", function()
+                {
+                    console.debug("3) loadedmetadata");
+                }
+            );
+
+            _audioElement.addEventListener("loadeddata", function()
+                {
+                    console.debug("4) loadeddata");
+                }
+            );
+
+            _audioElement.addEventListener("progress", function()
+                {
+                    console.debug("5) progress");
+                }
+            );
+
+            _audioElement.addEventListener("canplay", function()
+                {
+                    console.debug("6) canplay");
+                }
+            );
+
+            _audioElement.addEventListener("canplaythrough", function()
+                {
+                    console.debug("7) canplaythrough");
+                }
+            );
+
+            _audioElement.addEventListener("play", function()
+                {
+                    console.debug("8) play");
+                }
+            );
+
+            _audioElement.addEventListener("pause", function()
+                {
+                    console.debug("9) pause");
+                }
+            );
+
+            _audioElement.addEventListener("ended", function()
+                {
+                    console.debug("10) ended");
+                }
+            );
+
+            _audioElement.addEventListener("seeked", function()
+                {
+                    console.debug("X) seeked");
+                }
+            );
+
+            _audioElement.addEventListener("timeupdate", function()
+                {
+                    console.debug("Y) timeupdate");
+                }
+            );
+
+            _audioElement.addEventListener("seeking", function()
+                {
+                    console.debug("Z) seeking");
+                }
+            );
+        }
+
         var self = this;
      
         //_audioElement.setAttribute("preload", "auto");
@@ -32814,7 +37061,23 @@ var MediaOverlayElementHighlighter = function(reader) {
                 _rangyCSS.applyToRange(_rangyRange);
             }
         }
-        else if (_reader.plugins.annotations)
+        else if (_reader.plugins.highlights) // same API, newer implementation
+        {
+            try
+            {
+                //var id = $hel.data("mediaOverlayData").par.getSmil().spineItemId;
+                var id = par.getSmil().spineItemId;
+                _reader.plugins.highlights.addHighlight(id, par.cfi.partialRangeCfi, HIGHLIGHT_ID,
+                "highlight", //"underline"
+                undefined // styles
+                            );
+            }
+            catch(error)
+            {
+                console.error(error);
+            }
+        }
+        else if (_reader.plugins.annotations) // legacy
         {
             try
             {
@@ -32904,7 +37167,32 @@ var MediaOverlayElementHighlighter = function(reader) {
                 //_rangyCSS = undefined;
                 _rangyRange = undefined;
             }
-            else if (_reader.plugins.annotations)
+            else if (_reader.plugins.highlights) // same API, new implementation
+            {
+                try
+                {
+                    _reader.plugins.highlights.removeHighlight(HIGHLIGHT_ID);
+        
+                    var toRemove = undefined;
+                    while ((toRemove = doc.getElementById("start-" + HIGHLIGHT_ID)) !== null)
+                    {
+            console.log("toRemove START");
+            console.log(toRemove);
+                        toRemove.parentNode.removeChild(toRemove);
+                    }
+                    while ((toRemove = doc.getElementById("end-" + HIGHLIGHT_ID)) !== null)
+                    {
+            console.log("toRemove END");
+            console.log(toRemove);
+                        toRemove.parentNode.removeChild(toRemove);
+                    }
+                }
+                catch(error)
+                {
+                    console.error(error);
+                }
+            }
+            else if (_reader.plugins.annotations) // legacy
             {
                 try
                 {
@@ -33022,10 +37310,10 @@ var MediaOverlayElementHighlighter = function(reader) {
 //  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
-define('readium_shared_js/views/scroll_view',["jquery", "underscore", "eventEmitter", "../models/bookmark_data", "../models/current_pages_info", "../helpers",
-        "./one_page_view", "../models/page_open_request", "../globals", "../models/viewer_settings"],
-    function ($, _, EventEmitter, BookmarkData, CurrentPagesInfo, Helpers,
-              OnePageView, PageOpenRequest, Globals, ViewerSettings) {
+define('readium_shared_js/views/scroll_view',["../globals", "jquery", "underscore", "eventEmitter", "../models/bookmark_data", "../models/current_pages_info", "../helpers",
+        "./one_page_view", "../models/page_open_request", "../models/viewer_settings"],
+    function (Globals, $, _, EventEmitter, BookmarkData, CurrentPagesInfo, Helpers,
+              OnePageView, PageOpenRequest, ViewerSettings) {
 /**
  * Renders content inside a scrollable view port
  * @param options
@@ -33618,6 +37906,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
     function removePageView(pageView) {
 
+        pageView.onUnload();
         pageView.element().remove();
 
     }
@@ -33674,8 +37963,11 @@ var ScrollView = function (options, isContinuousScroll, reader) {
             true, //enableBookStyleOverrides
             reader);
 
-        pageView.on(OnePageView.SPINE_ITEM_OPEN_START, function($iframe, spineItem) {
+        pageView.on(OnePageView.Events.SPINE_ITEM_OPEN_START, function($iframe, spineItem) {
+            
+            Globals.logEvent("OnePageView.Events.SPINE_ITEM_OPEN_START", "ON", "scroll_view.js [ " + spineItem.href + " ]");
 
+            Globals.logEvent("CONTENT_DOCUMENT_LOAD_START", "EMIT", "scroll_view.js [ " + spineItem.href + " ]");
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
         });
 
@@ -33771,6 +38063,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
     function onPageViewLoaded(pageView, success, $iframe, spineItem, isNewlyLoaded, context) {
 
         if (success && isNewlyLoaded) {
+            Globals.logEvent("CONTENT_DOCUMENT_LOADED", "EMIT", "scroll_view.js [ " + spineItem.href + " ]");
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
         }
 
@@ -33936,21 +38229,22 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
             pageRange = getPageViewRange(pageView);
             sfiNav = pageView.getNavigator();
-            $element = sfiNav.getElementByCfi(pageRequest.elementCfi);
 
-            if (!$element || !$element.length) {
-                console.warn("Element cfi=" + pageRequest.elementCfi + " not found!");
+            var domRange = sfiNav.getDomRangeFromRangeCfi(pageRequest.elementCfi);            
+            if (!domRange) {
+                console.warn("Range for cfi=" + pageRequest.elementCfi + " not found!");
                 return;
             }
-
-            if (isElementVisibleOnScreen(pageView, $element, 60)) {
+            
+            var domRangeAsRange = getDomRangeAsRange(pageView, domRange);
+            if (isRangeIsVisibleOnScreen(pageView, domRangeAsRange, 60)) {
                 //TODO refactoring required
                 // this is artificial call because MO player waits for this event to continue playing.
                 onPaginationChanged(pageRequest.initiator, pageRequest.spineItem, pageRequest.elementId);
                 return;
             }
 
-            topOffset = sfiNav.getVerticalOffsetForElement($element) + pageRange.top;
+            topOffset = domRangeAsRange.top;
 
         }
         else if (pageRequest.firstPage) {
@@ -33996,6 +38290,8 @@ var ScrollView = function (options, isContinuousScroll, reader) {
     }
 
     function onPaginationChanged(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
+        
+        Globals.logEvent("InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED", "EMIT", "scroll_view.js");
         self.emit(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, {
             paginationInfo: self.getPaginationInfo(),
             initiator: initiator,
@@ -34105,15 +38401,6 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         return range;
     }
 
-    this.getFirstVisibleElementCfi = function () {
-        var visibleViewPage = getFirstVisiblePageView();
-        if (visibleViewPage) {
-            return visibleViewPage.getNavigator().getFirstVisibleElementCfi(scrollTop());
-        }
-
-        return undefined;
-    };
-
     this.getPaginationInfo = function () {
         var spineItem;
         var pageCount;
@@ -34151,14 +38438,8 @@ var ScrollView = function (options, isContinuousScroll, reader) {
     };
 
     this.bookmarkCurrentPage = function () {
-        var pageView = getFirstVisiblePageView();
-
-        if (!pageView) {
-
-            return new BookmarkData("", "");
-        }
-
-        return new BookmarkData(pageView.currentSpineItem().idref, self.getFirstVisibleElementCfi());
+        
+        return self.getFirstVisibleCfi();
     };
 
 
@@ -34172,11 +38453,11 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         return spineItems;
     };
 
-    this.getElement = function (spineItem, selector) {
+    this.getElement = function (spineItemIdref, selector) {
         var element = undefined;
 
         forEachItemView(function (pageView) {
-            if (pageView.currentSpineItem() == spineItem) {
+            if(pageView.currentSpineItem().idref == spineItemIdref) {
 
                 element = pageView.getNavigator().getElement(selector);
 
@@ -34190,35 +38471,11 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         return element;
     };
 
-    this.getElementByCfi = function (spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
-
+    this.getElementById = function(spineItemIdref, id) {
         var found = undefined;
 
         forEachItemView(function (pageView) {
-            if (pageView.currentSpineItem() == spineItem) {
-
-                found = pageView.getElementByCfi(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist);
-                return false;
-            }
-
-            return true;
-
-        }, false);
-
-        if (!found) {
-            console.error("spine item is not loaded");
-            return undefined;
-        }
-
-        return found;
-    };
-
-    this.getElementById = function (spineItem, id) {
-
-        var found = undefined;
-
-        forEachItemView(function (pageView) {
-            if (pageView.currentSpineItem() == spineItem) {
+            if (pageView.currentSpineItem().idref == spineItemIdref) {
 
                 found = pageView.getNavigator().getElementById(id);
                 return false;
@@ -34236,10 +38493,33 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         return found;
     };
 
-    this.getFirstVisibleMediaOverlayElement = function () {
+    this.getElementByCfi = function (spineItemIdref, cfi, classBlacklist, elementBlacklist, idBlacklist) {
+        var found = undefined;
+
+        forEachItemView(function (pageView) {
+            if (pageView.currentSpineItem().idref == spineItemIdref) {
+
+                found = pageView.getNavigator().getElementByCfi(spineItemIdref, cfi, classBlacklist, elementBlacklist, idBlacklist);
+                return false;
+            }
+
+            return true;
+
+        }, false);
+
+        if (!found) {
+            console.error("spine item is not loaded");
+            return undefined;
+        }
+
+        return found;
+
+    };
+
+    function callOnVisiblePageView(iterator) {
         var viewPortRange = getVisibleRange();
 
-        var moElement = undefined;
+        var result = undefined;
         var normalizedRange = {top: 0, bottom: 0};
         var pageViewRange;
 
@@ -34254,8 +38534,8 @@ var ScrollView = function (options, isContinuousScroll, reader) {
             if (rangeLength(normalizedRange) > 0) {
                 steppedToVisiblePage = true;
 
-                moElement = pageView.getNavigator().getFirstVisibleMediaOverlayElement(normalizedRange);
-                if (moElement) {
+                result = iterator(pageView, normalizedRange);
+                if (result) {
                     return false;
                 }
             }
@@ -34267,7 +38547,13 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
         }, false);
 
-        return moElement;
+        return result;
+    }
+
+    this.getFirstVisibleMediaOverlayElement = function () {
+        return callOnVisiblePageView(function (pageView, pageRange) {
+            return pageView.getNavigator().getFirstVisibleMediaOverlayElement(pageRange);
+        });
     };
 
     // /**
@@ -34368,6 +38654,18 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
         return elementRange;
     }
+    
+    function getDomRangeAsRange(pageView, domRange) {
+
+        var pageRange = getPageViewRange(pageView);
+
+        var elementRange = {top: 0, bottom: 0};
+        var boundingClientRect = domRange.getBoundingClientRect();
+        elementRange.top = boundingClientRect.top + pageRange.top;
+        elementRange.bottom = elementRange.top + boundingClientRect.height;
+
+        return elementRange;
+    }
 
     this.insureElementVisibility = function (spineItemId, element, initiator) {
         var pageView = undefined;
@@ -34402,12 +38700,156 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
     };
 
-    this.isElementCfiVisible = function (spineIdRef, contentCfi) {
-        // TODO: implement this for scrollable views
-        return false;
+    this.getVisibleElements = function(selector, includeSpineItem) {
+        var elements = [];
+        forEachItemView(function (pageView) {
+            if (includeSpineItem) {
+                elements.push({elements: pageView.getVisibleElements(selector), spineItem: pageView.currentSpineItem()});
+            } else {
+                elements = _.flatten([elements, pageView.getVisibleElements(selector)], true);
+            }
+        });
+        return elements;
     };
 
+    this.getVisibleElementsWithFilter = function(filterFunction) {
+
+        console.warn('getVisibleElementsWithFilter: Not implemented yet for scroll_view');
+    };
+
+    this.isElementVisible = function($element){
+
+        console.warn('isElementVisible: Not implemented yet for scroll_view');
+    };
+
+    this.getElements = function(spineItemIdref, selector) {
+        var pageView = findPageViewForSpineItem(spineItemIdref);
+        if (pageView) {
+            return pageView.getElements(spineItemIdref, selector);
+        }
+    };
+
+    this.isNodeFromRangeCfiVisible = function (spineIdref, partialCfi) {
+        var pageView = findPageViewForSpineItem(spineIdRef);
+        if (pageView) {
+            return pageView.isNodeFromRangeCfiVisible(spineIdRef, partialCfi);
+        }
+    };
+
+    this.isVisibleSpineItemElementCfi = function (spineIdRef, partialCfi) {
+        var pageView = findPageViewForSpineItem(spineIdRef);
+        if (pageView) {
+            return pageView.isVisibleSpineItemElementCfi(spineIdRef, partialCfi);
+        }
+    };
+
+    this.getNodeRangeInfoFromCfi = function(spineIdRef, partialCfi){
+        var pageView = findPageViewForSpineItem(spineIdRef);
+        if (pageView) {
+            return pageView.isVisibleSpineItemElementCfi(spineIdRef, partialCfi);
+        }
+    };
+    
+    function getFirstOrLastVisibleCfi(pickerFunc) {
+        var pageViews = getVisiblePageViews();
+        var selectedPageView = pickerFunc(pageViews);
+        var pageViewTopOffset = selectedPageView.element().position().top;
+        var visibleContentOffsets, frameDimensions;
+        
+        var setupFunctions = [
+            function () {
+                visibleContentOffsets = {
+                    top: pageViewTopOffset,
+                    left: 0
+                };
+            },
+            function() {
+                var height = selectedPageView.element().height();
+                
+                if (pageViewTopOffset >= 0) {
+                    height = viewHeight() - pageViewTopOffset;
+                }
+
+                frameDimensions = {
+                    width: selectedPageView.element().width(),
+                    height: height
+                };
+                
+                visibleContentOffsets = {
+                    top: 0,
+                    left: 0
+                };
+            }
+        ];
+        
+        //invoke setup function
+        pickerFunc(setupFunctions)();
+        
+        var cfiFunctions = [
+            selectedPageView.getFirstVisibleCfi,
+            selectedPageView.getLastVisibleCfi
+        ];
+        
+        return pickerFunc(cfiFunctions)(visibleContentOffsets, frameDimensions);
+    }
+    
+    this.getFirstVisibleCfi = function () {
+        
+        return getFirstOrLastVisibleCfi(_.first);
+    };
+
+    this.getLastVisibleCfi = function () {
+        
+        return getFirstOrLastVisibleCfi(_.last);
+    };
+
+    this.getDomRangeFromRangeCfi = function (rangeCfi, rangeCfi2, inclusive) {
+        if (rangeCfi2 && rangeCfi.idref !== rangeCfi2.idref) {
+            console.error("getDomRangeFromRangeCfi: both CFIs must be scoped under the same spineitem idref");
+            return undefined;
+        }
+
+        rangeCfi = rangeCfi || {};
+        rangeCfi2 = rangeCfi2 || {};
+
+        return callOnVisiblePageView(function (pageView) {
+            if (pageView.currentSpineItem().idref === rangeCfi.idref) {
+                return pageView.getDomRangeFromRangeCfi(rangeCfi.contentCFI, rangeCfi2.contentCFI, inclusive);
+            }
+        });
+    };
+
+    this.getRangeCfiFromDomRange = function (domRange) {
+        return callOnVisiblePageView(function (pageView) {
+            return pageView.getRangeCfiFromDomRange(domRange);
+        });
+    };
+
+    this.getVisibleCfiFromPoint = function (x, y, precisePoint) {
+        return callOnVisiblePageView(function (pageView) {
+            return createBookmark(pageView.currentSpineItem(), pageView.getVisibleCfiFromPoint(x, y, precisePoint));
+        });
+    };
+
+    this.getRangeCfiFromPoints = function (startX, startY, endX, endY) {
+        return callOnVisiblePageView(function (pageView) {
+            return createBookmark(pageView.currentSpineItem(), pageView.getRangeCfiFromPoints(startX, startY, endX, endY));
+        });
+    };
+
+    this.getCfiForElement = function(element) {
+        return callOnVisiblePageView(function (pageView) {
+            return createBookmark(pageView.currentSpineItem(), pageView.getCfiForElement(element));
+        });
+    };
+
+    this.getElementFromPoint = function (x, y) {
+        return callOnVisiblePageView(function (pageView) {
+            return pageView.getElementFromPoint(x, y);
+        });
+    };
 };
+
 return ScrollView;
 });
 
@@ -34439,8 +38881,8 @@ return ScrollView;
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define('readium_shared_js/views/media_overlay_player',["jquery", "../helpers", "./audio_player", "./media_overlay_element_highlighter", "../globals", "../models/smil_iterator", "rangy", 'readium_cfi_js', './scroll_view'],
-    function($, Helpers, AudioPlayer, MediaOverlayElementHighlighter, Globals, SmilIterator, rangy, epubCfi, ScrollView) {
+define('readium_shared_js/views/media_overlay_player',["../globals", "jquery", "../helpers", "./audio_player", "./media_overlay_element_highlighter", "../models/smil_iterator", "rangy", 'readium_cfi_js', './scroll_view'],
+    function(Globals, $, Helpers, AudioPlayer, MediaOverlayElementHighlighter, SmilIterator, rangy, epubCfi, ScrollView) {
 /**
  *
  * @param reader
@@ -34478,9 +38920,9 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
     var _elementHighlighter = new MediaOverlayElementHighlighter(reader);
 
     reader.on(Globals.Events.READER_VIEW_DESTROYED, function(){
-
+        Globals.logEvent("READER_VIEW_DESTROYED", "ON", "media_overlay_player.js");
+        
         self.reset();
-
     });
 
 
@@ -34505,8 +38947,12 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
         _audioPlayer.setVolume(_settings.mediaOverlaysVolume / 100.0);
     };
     self.onSettingsApplied();
-    //Globals.
-    reader.on(Globals.Events.SETTINGS_APPLIED, this.onSettingsApplied, this);
+    
+    reader.on(Globals.Events.SETTINGS_APPLIED, function() {
+        
+        Globals.logEvent("SETTINGS_APPLIED", "ON", "media_overlay_player.js");
+        this.onSettingsApplied();
+    }, this);
 
     /*
     var lastElement = undefined;
@@ -34601,7 +39047,7 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
                         try
                         {
                             var cfi = parts[0] + parts[1];
-                            var $element = reader.getElementByCfi(spineItem, cfi,
+                            var $element = reader.getElementByCfi(spineItem.idref, cfi,
                 ["cfi-marker", "mo-cfi-highlight"],
                 [],
                 ["MathJax_Message"]);
@@ -34627,7 +39073,7 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
                         {
                             //var cfi = "epubcfi(" + partial + ")";
                             //var $element = EPUBcfi.getTargetElementWithPartialCFI(cfi, DOC);
-                            var $element = reader.getElementByCfi(spineItem, partial,
+                            var $element = reader.getElementByCfi(spineItem.idref, partial,
                 ["cfi-marker", "mo-cfi-highlight"],
                 [],
                 ["MathJax_Message"]);
@@ -34653,12 +39099,12 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
                 {
                     if (paginationData.initiator == self && !paginationData.elementId)
                     {
-                        var $element = reader.getElement(spineItem, "body");
+                        var $element = reader.getElement(spineItem.idref, "body");
                         element = ($element && $element.length > 0) ? $element[0] : undefined;
                     }
                     else
                     {
-                        var $element = reader.getElementById(spineItem, paginationData.elementId);
+                        var $element = reader.getElementById(spineItem.idref, paginationData.elementId);
                         element = ($element && $element.length > 0) ? $element[0] : undefined;
                         //("#" + Globals.Helpers.escapeJQuerySelector(paginationData.elementId))
                     }
@@ -35520,6 +39966,7 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
 
         if (!_enableHTMLSpeech)
         {
+            Globals.logEvent("MEDIA_OVERLAY_TTS_SPEAK", "EMIT", "media_overlay_player.js");
             reader.emit(Globals.Events.MEDIA_OVERLAY_TTS_SPEAK, {tts: txt}); // resume if txt == undefined
             return;
         }
@@ -35812,12 +40259,20 @@ console.debug("TTS resume");
 
     var speakStop = function()
     {
-        onStatusChanged({isPlaying: false});
+        var wasPlaying = _ttsIsPlaying;
+
+        if (wasPlaying) {
+            onStatusChanged({isPlaying: false});
+        }
+        
         _ttsIsPlaying = false;
 
         if (!_enableHTMLSpeech)
         {
-            reader.emit(Globals.Events.MEDIA_OVERLAY_TTS_STOP, undefined);
+            if (wasPlaying) {
+                Globals.logEvent("MEDIA_OVERLAY_TTS_STOP", "EMIT", "media_overlay_player.js");
+                reader.emit(Globals.Events.MEDIA_OVERLAY_TTS_STOP, undefined);
+            }
             return;
         }
 
@@ -36104,25 +40559,36 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
     };
 
     this.resetBlankPage = function() {
+        var wasPlaying = false;
+        
         if (_blankPagePlayer)
         {
+            wasPlaying = true;
+            
             var timer = _blankPagePlayer;
             _blankPagePlayer = undefined;
             clearTimeout(timer);
         }
         _blankPagePlayer = undefined;
 
-        onStatusChanged({isPlaying: false});
+        if (wasPlaying) {
+            onStatusChanged({isPlaying: false});
+        }
     };
 
     this.resetEmbedded = function() {
+        var wasPlaying = _embeddedIsPlaying;
+        
         if (_currentEmbedded)
         {
             $(_currentEmbedded).off("ended", self.onEmbeddedEnd);
             _currentEmbedded.pause();
         }
         _currentEmbedded = undefined;
-        onStatusChanged({isPlaying: false});
+        
+        if (wasPlaying) {
+            onStatusChanged({isPlaying: false});
+        }
         _embeddedIsPlaying = false;
     };
 
@@ -36398,8 +40864,8 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
                 if (id)
                 {
-                    var $element = reader.getElementById(spineItem, id);
-                    //var $element = reader.getElement(spineItem, "#" + Globals.Helpers.escapeJQuerySelector(id));
+                    var $element = reader.getElementById(spineItem.idref, id);
+                    //var $element = reader.getElement(spineItem.idref, "#" + ReadiumSDK.Helpers.escapeJQuerySelector(id));
                     element = ($element && $element.length > 0) ? $element[0] : undefined;
                 }
                 else if (spineItem.isFixedLayout())
@@ -36411,7 +40877,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
                     
                         if (paginationData.paginationInfo.openPages[index] && paginationData.paginationInfo.openPages[index].idref && paginationData.paginationInfo.openPages[index].idref === spineItem.idref)
                         {
-                            var $element = reader.getElement(spineItem, "body");
+                            var $element = reader.getElement(spineItem.idref, "body");
                             element = ($element && $element.length > 0) ? $element[0] : undefined;
                         }
                     }
@@ -38087,120 +42553,204 @@ return Package;
 /* globals define, exports, module */
 
 (function(root, definition) {
-	if (typeof define === 'function' && define.amd) {
-		// AMD. Register as an anonymous module.
-		define('FontLoader',[], definition);
-	} else if (typeof exports === 'object') {
-		// Node. Does not work with strict CommonJS, but only CommonJS-like 
-		// environments that support module.exports, like Node.
-		module.exports = definition();
-	} else {
-		// Browser globals (root is window)
-		root.FontLoader = definition();
-	}
+    if (typeof define === 'function' && define.amd) {
+        // AMD. Register as an anonymous module.
+        define('FontLoader',[], definition);
+    } else if (typeof exports === 'object') {
+        // Node. Does not work with strict CommonJS, but only CommonJS-like
+        // environments that support module.exports, like Node.
+        module.exports = definition();
+    } else {
+        // Browser globals (root is window)
+        root.FontLoader = definition();
+    }
 }(window, function() {
-	
-	var isIE = /MSIE/i.test(navigator.userAgent),
-		ieVer = null;
-	
-	// Get Internet Explorer version
-	if (isIE) {
-		var re, result;
-		re = new RegExp("MSIE ([0-9]{1,}[.0-9]{0,})");
-		result = re.exec(navigator.userAgent);
-		if (result !== null) {
-			ieVer = parseFloat(result[1]);
-		}
-	}
+
+    var isIE = /MSIE/i.test(navigator.userAgent),
+        ieVer = null;
+
+    // Get Internet Explorer version
+    if (isIE) {
+        var re, result;
+        re = new RegExp("MSIE ([0-9]{1,}[.0-9]{0,})");
+        result = re.exec(navigator.userAgent);
+        if (result !== null) {
+            ieVer = parseFloat(result[1]);
+        }
+    }
 
     /**
      * @typedef {Object} FontDescriptor
      * @property {String} family
      * @property {String} weight
      * @property {String} style
+     * @property {String} stretch
      */
+    function FontDescriptor(fontDescriptor) {
+        this._validateFontDescriptor(fontDescriptor);
+        this.family = fontDescriptor.family;
+        this.weight = fontDescriptor.weight;
+        this.style = fontDescriptor.style;
+        this.stretch = fontDescriptor.stretch;
+    }
 
-	/**
-	 * FontLoader detects when web fonts specified in the "fontFamiliesArray" array were loaded and rendered. Then it
-	 * notifies the specified delegate object via "fontLoaded" and "complete" methods when specific or all fonts were
-	 * loaded respectively. The use of this functions implies that the insertion of specified web fonts into the
-	 * document is done elsewhere.
-	 *
+    FontDescriptor.prototype = {
+        constructor: FontDescriptor,
+        /**
+         * Returns font variation identifier of the FontDescriptor.
+         *
+         * FontDescriptors with different family-names may have same variation identifiers.
+         * This identifier is useful for mapping and storing font dimensions of fallback fonts with font variation
+         * properties similar to these of the loaded fonts.
+         *
+         * @returns {string}
+         */
+        variationKey: function() {
+            return this.weight + this.style + this.stretch;
+        },
+        /**
+         * Returns identifier of the FontDescriptor.
+         *
+         * @returns {string}
+         */
+        fontKey: function() {
+            return this.family + this.variationKey();
+        },
+        toJSON: function() {
+            return {
+                family: this.family,
+                weight: this.weight,
+                style: this.style,
+                stretch: this.stretch
+            };
+        },
+        _validateFontDescriptor: function(fontDescriptor) {
+            var style, stretch;
+
+            if (!fontDescriptor.family || !fontDescriptor.weight || !fontDescriptor.style) {
+                throw new Error("Illegal font descriptor, family, weight and style properties are required.")
+            }
+
+            if (!('possibleFontStyles' in FontLoader)) {
+                FontLoader.possibleFontStyles = [];
+                for (style in FontLoader.fontStyleAliasesMap) {
+                    if (FontLoader.fontStyleAliasesMap.hasOwnProperty(style)) {
+                        FontLoader.possibleFontStyles.push(FontLoader.fontStyleAliasesMap[style]);
+                    }
+                }
+            }
+            if (FontLoader.possibleFontStyles.indexOf(fontDescriptor.style) === -1) {
+                throw new Error("Illegal font descriptor, style property must be one of the following: " + FontLoader.possibleFontStyles.join(", "));
+            }
+
+            // For backward compatibility do not require "stretch" property
+            if ('stretch' in fontDescriptor) {
+                if (!('possibleFontStretches' in FontLoader)) {
+                    FontLoader.possibleFontStretches = [];
+                    for (stretch in FontLoader.fontStretchAliasesMap) {
+                        if (FontLoader.fontStretchAliasesMap.hasOwnProperty(stretch)) {
+                            FontLoader.possibleFontStretches.push(FontLoader.fontStretchAliasesMap[stretch]);
+                        }
+                    }
+                }
+                if (FontLoader.possibleFontStretches.indexOf(fontDescriptor.stretch) === -1) {
+                    throw new Error("Illegal font descriptor, stretch property must be one of the following: " + FontLoader.possibleFontStretches.join(", "));
+                }
+            } else {
+                fontDescriptor.stretch = 'normal';
+            }
+        }
+    };
+
+    /**
+     * FontLoader detects when web fonts specified in the "fontFamiliesArray" array were loaded and rendered. Then it
+     * notifies the specified delegate object via "fontLoaded" and "complete" methods when specific or all fonts were
+     * loaded respectively. The use of this functions implies that the insertion of specified web fonts into the
+     * document is done elsewhere.
+     *
      * The fonts parameter may be an array of strings specifying the font-families with optionally specified font
      * variations using FVD notation or font descriptor objects of the following type:
      * {
      *     family: "fontFamily",
      *     weight: 400,
-     *     style: 'normal'
+     *     style: 'normal',
+     *     stretch: 'normal'
      * }
      * Where styles may ne one of the following: normal, bold, italic or oblique. If only string is specified, the
-     * default used weight and style are 400 and 'normal' respectively.
+     * default values used for weight, style and stretch are 400, 'normal' and 'normal' respectively.
      *
-	 * If all the specified fonts were loaded before the timeout was reached, the "complete" delegate method will be
+     * If all the specified fonts were loaded before the timeout was reached, the "complete" delegate method will be
      * invoked with "null" error parameter. Otherwise, if timeout was reached before all specified fonts were loaded,
      * the "complete" method will be invoked with an error object with two fields: the "message" string and the
      * "notLoadedFonts" array of FontDescriptor objects of all the fonts that weren't loaded.
-	 *
-	 * @param {Array.<String|FontDescriptor>} fonts   Array of font-family strings or font descriptor objects.
-	 * @param {Object}        delegate                Delegate object whose callback methods will be invoked in its own context.
-	 * @param {Function}      [delegate.complete]     Called when all fonts were loaded or the timeout was reached.
-	 * @param {Function}      [delegate.fontLoaded]   Called for each loaded font with its font-family string as its single parameter.
-	 * @param {Number}        [timeout=3000]          Timeout in milliseconds. Pass "null" to disable timeout.
-	 * @param {HTMLDocument}  [contextDocument]       The DOM tree context to use, if none provided then it will be the document.
-	 * @constructor
-	 */
-	function FontLoader(fonts, delegate, timeout, contextDocument) {
-		// Public
-		this.delegate = delegate;
-		this.timeout = (typeof timeout !== "undefined") ? timeout : 3000;
+     *
+     * @param {Array.<String|FontDescriptor>} fonts   Array of font-family strings or font descriptor objects.
+     * @param {Object}        delegate                Delegate object whose callback methods will be invoked in its own context.
+     * @param {Function}      [delegate.complete]     Called when all fonts were loaded or the timeout was reached.
+     * @param {Function}      [delegate.fontLoaded]   Called for each loaded font with its font-family string as its single parameter.
+     * @param {Number}        [timeout=3000]          Timeout in milliseconds. Pass "null" to disable timeout.
+     * @param {HTMLDocument}  [contextDocument]       The DOM tree context to use, if none provided then it will be the document.
+     * @constructor
+     */
+    function FontLoader(fonts, delegate, timeout, contextDocument) {
+        // Public
+        this.delegate = delegate;
+        this.timeout = (typeof timeout !== "undefined") ? timeout : 3000;
 
-		// Private
+        // Private
         this._fontsArray = this._parseFonts(fonts);
-		this._testDiv = null;
-		this._testContainer = null;
-		this._adobeBlankSizeWatcher = null;
-		this._sizeWatchers = [];
-		this._timeoutId = null;
-		this._intervalId = null;
-		this._intervalDelay = 50;
-		this._numberOfLoadedFonts = 0;
-		this._numberOfFonts = this._fontsArray.length;
-		this._fontsMap = {};
-		this._finished = false;
-		this._document = contextDocument || document;
-	}
+        this._started = false;
+        this._testDiv = null;
+        this._testContainer = null;
+        this._adobeBlankSizeWatcher = null;
+        this._sizeWatchers = [];
+        this._timeoutId = null;
+        this._intervalId = null;
+        this._intervalDelay = 50;
+        this._numberOfLoadedFonts = 0;
+        this._numberOfFonts = this._fontsArray.length;
+        this._fontsMap = {};
+        this._finished = false;
+        this._document = contextDocument || document;
+    }
 
-	FontLoader.useAdobeBlank = !isIE || ieVer >= 11.0;
-	FontLoader.useResizeEvent = isIE && ieVer < 11.0 && typeof document.attachEvent !== "undefined";
-	FontLoader.useIntervalChecking = window.opera || (isIE && ieVer < 11.0 && !FontLoader.useResizeEvent);
-	FontLoader.referenceText = " !\"\\#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~";
-	FontLoader.referenceFontFamilies = FontLoader.useAdobeBlank ? ["AdobeBlank"] : ["serif", "cursive"];
+    FontLoader.useAdobeBlank = !isIE || ieVer >= 11.0;
+    FontLoader.useResizeEvent = isIE && ieVer < 11.0 && typeof document.attachEvent !== "undefined";
+    FontLoader.useIntervalChecking = window.opera || (isIE && ieVer < 11.0 && !FontLoader.useResizeEvent);
+    FontLoader.referenceText = " !\"\\#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~";
+    FontLoader.referenceFontFamilies = FontLoader.useAdobeBlank ? ["AdobeBlank"] : ["serif", "cursive"];
     FontLoader.adobeBlankFontFaceStyleId = "fontLoaderAdobeBlankFontFace";
     FontLoader.adobeBlankReferenceSize = null;
-	FontLoader.referenceFontFamilyVariationSizes = {};
-	FontLoader.adobeBlankFontFaceRule = "@font-face{ font-family:AdobeBlank; src:url('data:font/opentype;base64,T1RUTwAKAIAAAwAgQ0ZGIM6ZbkwAAEPEAAAZM0RTSUcAAAABAABtAAAAAAhPUy8yAR6vMwAAARAAAABgY21hcDqI98oAACjEAAAa4GhlYWT+BQILAAAArAAAADZoaGVhCCID7wAAAOQAAAAkaG10eAPoAHwAAFz4AAAQBm1heHAIAVAAAAABCAAAAAZuYW1lD/tWxwAAAXAAACdScG9zdP+4ADIAAEOkAAAAIAABAAAAAQj1Snw1O18PPPUAAwPoAAAAAM2C2p8AAAAAzYLanwB8/4gDbANwAAAAAwACAAAAAAAAAAEAAANw/4gAyAPoAHwAfANsAAEAAAAAAAAAAAAAAAAAAAACAABQAAgBAAAABAAAAZAABQAAAooCWAAAAEsCigJYAAABXgAyANwAAAAAAAAAAAAAAAD3/67/+9///w/gAD8AAAAAQURCRQHAAAD//wNw/4gAyANwAHhgLwH/AAAAAAAAAAAAAAAgAAAAAAARANIAAQAAAAAAAQALAAAAAQAAAAAAAgAHAAsAAQAAAAAAAwAbABIAAQAAAAAABAALAAAAAQAAAAAABQA5AC0AAQAAAAAABgAKAGYAAwABBAkAAABuAHAAAwABBAkAAQAWAN4AAwABBAkAAgAOAPQAAwABBAkAAwA2AQIAAwABBAkABAAWAN4AAwABBAkABQByATgAAwABBAkABgAUAaoAAwABBAkACAA0Ab4AAwABBAkACwA0AfIAAwABBAkADSQSAiYAAwABBAkADgBIJjhBZG9iZSBCbGFua1JlZ3VsYXIxLjAzNTtBREJFO0Fkb2JlQmxhbms7QURPQkVWZXJzaW9uIDEuMDM1O1BTIDEuMDAzO2hvdGNvbnYgMS4wLjcwO21ha2VvdGYubGliMi41LjU5MDBBZG9iZUJsYW5rAKkAIAAyADAAMQAzACAAQQBkAG8AYgBlACAAUwB5AHMAdABlAG0AcwAgAEkAbgBjAG8AcgBwAG8AcgBhAHQAZQBkAC4AIABBAGwAbAAgAFIAaQBnAGgAdABzACAAUgBlAHMAZQByAHYAZQBkAC4AQQBkAG8AYgBlACAAQgBsAGEAbgBrAFIAZQBnAHUAbABhAHIAMQAuADAAMwA1ADsAQQBEAEIARQA7AEEAZABvAGIAZQBCAGwAYQBuAGsAOwBBAEQATwBCAEUAVgBlAHIAcwBpAG8AbgAgADEALgAwADMANQA7AFAAUwAgADEALgAwADAAMwA7AGgAbwB0AGMAbwBuAHYAIAAxAC4AMAAuADcAMAA7AG0AYQBrAGUAbwB0AGYALgBsAGkAYgAyAC4ANQAuADUAOQAwADAAQQBkAG8AYgBlAEIAbABhAG4AawBBAGQAbwBiAGUAIABTAHkAcwB0AGUAbQBzACAASQBuAGMAbwByAHAAbwByAGEAdABlAGQAaAB0AHQAcAA6AC8ALwB3AHcAdwAuAGEAZABvAGIAZQAuAGMAbwBtAC8AdAB5AHAAZQAvAEEAZABvAGIAZQAgAEIAbABhAG4AawAgAGkAcwAgAHIAZQBsAGUAYQBzAGUAZAAgAHUAbgBkAGUAcgAgAHQAaABlACAAUwBJAEwAIABPAHAAZQBuACAARgBvAG4AdAAgAEwAaQBjAGUAbgBzAGUAIAAtACAAcABsAGUAYQBzAGUAIAByAGUAYQBkACAAaQB0ACAAYwBhAHIAZQBmAHUAbABsAHkAIABhAG4AZAAgAGQAbwAgAG4AbwB0ACAAZABvAHcAbgBsAG8AYQBkACAAdABoAGUAIABmAG8AbgB0AHMAIAB1AG4AbABlAHMAcwAgAHkAbwB1ACAAYQBnAHIAZQBlACAAdABvACAAdABoAGUAIAB0AGgAZQAgAHQAZQByAG0AcwAgAG8AZgAgAHQAaABlACAAbABpAGMAZQBuAHMAZQA6AA0ACgANAAoAQwBvAHAAeQByAGkAZwBoAHQAIACpACAAMgAwADEAMwAgAEEAZABvAGIAZQAgAFMAeQBzAHQAZQBtAHMAIABJAG4AYwBvAHIAcABvAHIAYQB0AGUAZAAgACgAaAB0AHQAcAA6AC8ALwB3AHcAdwAuAGEAZABvAGIAZQAuAGMAbwBtAC8AKQAsACAAdwBpAHQAaAAgAFIAZQBzAGUAcgB2AGUAZAAgAEYAbwBuAHQAIABOAGEAbQBlACAAQQBkAG8AYgBlACAAQgBsAGEAbgBrAA0ACgANAAoAVABoAGkAcwAgAEYAbwBuAHQAIABTAG8AZgB0AHcAYQByAGUAIABpAHMAIABsAGkAYwBlAG4AcwBlAGQAIAB1AG4AZABlAHIAIAB0AGgAZQAgAFMASQBMACAATwBwAGUAbgAgAEYAbwBuAHQAIABMAGkAYwBlAG4AcwBlACwAIABWAGUAcgBzAGkAbwBuACAAMQAuADEALgANAAoADQAKAFQAaABpAHMAIABsAGkAYwBlAG4AcwBlACAAaQBzACAAYwBvAHAAaQBlAGQAIABiAGUAbABvAHcALAAgAGEAbgBkACAAaQBzACAAYQBsAHMAbwAgAGEAdgBhAGkAbABhAGIAbABlACAAdwBpAHQAaAAgAGEAIABGAEEAUQAgAGEAdAA6ACAAaAB0AHQAcAA6AC8ALwBzAGMAcgBpAHAAdABzAC4AcwBpAGwALgBvAHIAZwAvAE8ARgBMAA0ACgANAAoALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAA0ACgBTAEkATAAgAE8AUABFAE4AIABGAE8ATgBUACAATABJAEMARQBOAFMARQAgAFYAZQByAHMAaQBvAG4AIAAxAC4AMQAgAC0AIAAyADYAIABGAGUAYgByAHUAYQByAHkAIAAyADAAMAA3AA0ACgAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ADQAKAA0ACgBQAFIARQBBAE0AQgBMAEUADQAKAFQAaABlACAAZwBvAGEAbABzACAAbwBmACAAdABoAGUAIABPAHAAZQBuACAARgBvAG4AdAAgAEwAaQBjAGUAbgBzAGUAIAAoAE8ARgBMACkAIABhAHIAZQAgAHQAbwAgAHMAdABpAG0AdQBsAGEAdABlACAAdwBvAHIAbABkAHcAaQBkAGUAIABkAGUAdgBlAGwAbwBwAG0AZQBuAHQAIABvAGYAIABjAG8AbABsAGEAYgBvAHIAYQB0AGkAdgBlACAAZgBvAG4AdAAgAHAAcgBvAGoAZQBjAHQAcwAsACAAdABvACAAcwB1AHAAcABvAHIAdAAgAHQAaABlACAAZgBvAG4AdAAgAGMAcgBlAGEAdABpAG8AbgAgAGUAZgBmAG8AcgB0AHMAIABvAGYAIABhAGMAYQBkAGUAbQBpAGMAIABhAG4AZAAgAGwAaQBuAGcAdQBpAHMAdABpAGMAIABjAG8AbQBtAHUAbgBpAHQAaQBlAHMALAAgAGEAbgBkACAAdABvACAAcAByAG8AdgBpAGQAZQAgAGEAIABmAHIAZQBlACAAYQBuAGQAIABvAHAAZQBuACAAZgByAGEAbQBlAHcAbwByAGsAIABpAG4AIAB3AGgAaQBjAGgAIABmAG8AbgB0AHMAIABtAGEAeQAgAGIAZQAgAHMAaABhAHIAZQBkACAAYQBuAGQAIABpAG0AcAByAG8AdgBlAGQAIABpAG4AIABwAGEAcgB0AG4AZQByAHMAaABpAHAAIAB3AGkAdABoACAAbwB0AGgAZQByAHMALgANAAoADQAKAFQAaABlACAATwBGAEwAIABhAGwAbABvAHcAcwAgAHQAaABlACAAbABpAGMAZQBuAHMAZQBkACAAZgBvAG4AdABzACAAdABvACAAYgBlACAAdQBzAGUAZAAsACAAcwB0AHUAZABpAGUAZAAsACAAbQBvAGQAaQBmAGkAZQBkACAAYQBuAGQAIAByAGUAZABpAHMAdAByAGkAYgB1AHQAZQBkACAAZgByAGUAZQBsAHkAIABhAHMAIABsAG8AbgBnACAAYQBzACAAdABoAGUAeQAgAGEAcgBlACAAbgBvAHQAIABzAG8AbABkACAAYgB5ACAAdABoAGUAbQBzAGUAbAB2AGUAcwAuACAAVABoAGUAIABmAG8AbgB0AHMALAAgAGkAbgBjAGwAdQBkAGkAbgBnACAAYQBuAHkAIABkAGUAcgBpAHYAYQB0AGkAdgBlACAAdwBvAHIAawBzACwAIABjAGEAbgAgAGIAZQAgAGIAdQBuAGQAbABlAGQALAAgAGUAbQBiAGUAZABkAGUAZAAsACAAcgBlAGQAaQBzAHQAcgBpAGIAdQB0AGUAZAAgAGEAbgBkAC8AbwByACAAcwBvAGwAZAAgAHcAaQB0AGgAIABhAG4AeQAgAHMAbwBmAHQAdwBhAHIAZQAgAHAAcgBvAHYAaQBkAGUAZAAgAHQAaABhAHQAIABhAG4AeQAgAHIAZQBzAGUAcgB2AGUAZAAgAG4AYQBtAGUAcwAgAGEAcgBlACAAbgBvAHQAIAB1AHMAZQBkACAAYgB5ACAAZABlAHIAaQB2AGEAdABpAHYAZQAgAHcAbwByAGsAcwAuACAAVABoAGUAIABmAG8AbgB0AHMAIABhAG4AZAAgAGQAZQByAGkAdgBhAHQAaQB2AGUAcwAsACAAaABvAHcAZQB2AGUAcgAsACAAYwBhAG4AbgBvAHQAIABiAGUAIAByAGUAbABlAGEAcwBlAGQAIAB1AG4AZABlAHIAIABhAG4AeQAgAG8AdABoAGUAcgAgAHQAeQBwAGUAIABvAGYAIABsAGkAYwBlAG4AcwBlAC4AIABUAGgAZQAgAHIAZQBxAHUAaQByAGUAbQBlAG4AdAAgAGYAbwByACAAZgBvAG4AdABzACAAdABvACAAcgBlAG0AYQBpAG4AIAB1AG4AZABlAHIAIAB0AGgAaQBzACAAbABpAGMAZQBuAHMAZQAgAGQAbwBlAHMAIABuAG8AdAAgAGEAcABwAGwAeQAgAHQAbwAgAGEAbgB5ACAAZABvAGMAdQBtAGUAbgB0ACAAYwByAGUAYQB0AGUAZAAgAHUAcwBpAG4AZwAgAHQAaABlACAAZgBvAG4AdABzACAAbwByACAAdABoAGUAaQByACAAZABlAHIAaQB2AGEAdABpAHYAZQBzAC4ADQAKAA0ACgBEAEUARgBJAE4ASQBUAEkATwBOAFMADQAKACIARgBvAG4AdAAgAFMAbwBmAHQAdwBhAHIAZQAiACAAcgBlAGYAZQByAHMAIAB0AG8AIAB0AGgAZQAgAHMAZQB0ACAAbwBmACAAZgBpAGwAZQBzACAAcgBlAGwAZQBhAHMAZQBkACAAYgB5ACAAdABoAGUAIABDAG8AcAB5AHIAaQBnAGgAdAAgAEgAbwBsAGQAZQByACgAcwApACAAdQBuAGQAZQByACAAdABoAGkAcwAgAGwAaQBjAGUAbgBzAGUAIABhAG4AZAAgAGMAbABlAGEAcgBsAHkAIABtAGEAcgBrAGUAZAAgAGEAcwAgAHMAdQBjAGgALgAgAFQAaABpAHMAIABtAGEAeQAgAGkAbgBjAGwAdQBkAGUAIABzAG8AdQByAGMAZQAgAGYAaQBsAGUAcwAsACAAYgB1AGkAbABkACAAcwBjAHIAaQBwAHQAcwAgAGEAbgBkACAAZABvAGMAdQBtAGUAbgB0AGEAdABpAG8AbgAuAA0ACgANAAoAIgBSAGUAcwBlAHIAdgBlAGQAIABGAG8AbgB0ACAATgBhAG0AZQAiACAAcgBlAGYAZQByAHMAIAB0AG8AIABhAG4AeQAgAG4AYQBtAGUAcwAgAHMAcABlAGMAaQBmAGkAZQBkACAAYQBzACAAcwB1AGMAaAAgAGEAZgB0AGUAcgAgAHQAaABlACAAYwBvAHAAeQByAGkAZwBoAHQAIABzAHQAYQB0AGUAbQBlAG4AdAAoAHMAKQAuAA0ACgANAAoAIgBPAHIAaQBnAGkAbgBhAGwAIABWAGUAcgBzAGkAbwBuACIAIAByAGUAZgBlAHIAcwAgAHQAbwAgAHQAaABlACAAYwBvAGwAbABlAGMAdABpAG8AbgAgAG8AZgAgAEYAbwBuAHQAIABTAG8AZgB0AHcAYQByAGUAIABjAG8AbQBwAG8AbgBlAG4AdABzACAAYQBzACAAZABpAHMAdAByAGkAYgB1AHQAZQBkACAAYgB5ACAAdABoAGUAIABDAG8AcAB5AHIAaQBnAGgAdAAgAEgAbwBsAGQAZQByACgAcwApAC4ADQAKAA0ACgAiAE0AbwBkAGkAZgBpAGUAZAAgAFYAZQByAHMAaQBvAG4AIgAgAHIAZQBmAGUAcgBzACAAdABvACAAYQBuAHkAIABkAGUAcgBpAHYAYQB0AGkAdgBlACAAbQBhAGQAZQAgAGIAeQAgAGEAZABkAGkAbgBnACAAdABvACwAIABkAGUAbABlAHQAaQBuAGcALAAgAG8AcgAgAHMAdQBiAHMAdABpAHQAdQB0AGkAbgBnACAALQAtACAAaQBuACAAcABhAHIAdAAgAG8AcgAgAGkAbgAgAHcAaABvAGwAZQAgAC0ALQAgAGEAbgB5ACAAbwBmACAAdABoAGUAIABjAG8AbQBwAG8AbgBlAG4AdABzACAAbwBmACAAdABoAGUAIABPAHIAaQBnAGkAbgBhAGwAIABWAGUAcgBzAGkAbwBuACwAIABiAHkAIABjAGgAYQBuAGcAaQBuAGcAIABmAG8AcgBtAGEAdABzACAAbwByACAAYgB5ACAAcABvAHIAdABpAG4AZwAgAHQAaABlACAARgBvAG4AdAAgAFMAbwBmAHQAdwBhAHIAZQAgAHQAbwAgAGEAIABuAGUAdwAgAGUAbgB2AGkAcgBvAG4AbQBlAG4AdAAuAA0ACgANAAoAIgBBAHUAdABoAG8AcgAiACAAcgBlAGYAZQByAHMAIAB0AG8AIABhAG4AeQAgAGQAZQBzAGkAZwBuAGUAcgAsACAAZQBuAGcAaQBuAGUAZQByACwAIABwAHIAbwBnAHIAYQBtAG0AZQByACwAIAB0AGUAYwBoAG4AaQBjAGEAbAAgAHcAcgBpAHQAZQByACAAbwByACAAbwB0AGgAZQByACAAcABlAHIAcwBvAG4AIAB3AGgAbwAgAGMAbwBuAHQAcgBpAGIAdQB0AGUAZAAgAHQAbwAgAHQAaABlACAARgBvAG4AdAAgAFMAbwBmAHQAdwBhAHIAZQAuAA0ACgANAAoAUABFAFIATQBJAFMAUwBJAE8ATgAgACYAIABDAE8ATgBEAEkAVABJAE8ATgBTAA0ACgBQAGUAcgBtAGkAcwBzAGkAbwBuACAAaQBzACAAaABlAHIAZQBiAHkAIABnAHIAYQBuAHQAZQBkACwAIABmAHIAZQBlACAAbwBmACAAYwBoAGEAcgBnAGUALAAgAHQAbwAgAGEAbgB5ACAAcABlAHIAcwBvAG4AIABvAGIAdABhAGkAbgBpAG4AZwAgAGEAIABjAG8AcAB5ACAAbwBmACAAdABoAGUAIABGAG8AbgB0ACAAUwBvAGYAdAB3AGEAcgBlACwAIAB0AG8AIAB1AHMAZQAsACAAcwB0AHUAZAB5ACwAIABjAG8AcAB5ACwAIABtAGUAcgBnAGUALAAgAGUAbQBiAGUAZAAsACAAbQBvAGQAaQBmAHkALAAgAHIAZQBkAGkAcwB0AHIAaQBiAHUAdABlACwAIABhAG4AZAAgAHMAZQBsAGwAIABtAG8AZABpAGYAaQBlAGQAIABhAG4AZAAgAHUAbgBtAG8AZABpAGYAaQBlAGQAIABjAG8AcABpAGUAcwAgAG8AZgAgAHQAaABlACAARgBvAG4AdAAgAFMAbwBmAHQAdwBhAHIAZQAsACAAcwB1AGIAagBlAGMAdAAgAHQAbwAgAHQAaABlACAAZgBvAGwAbABvAHcAaQBuAGcAIABjAG8AbgBkAGkAdABpAG8AbgBzADoADQAKAA0ACgAxACkAIABOAGUAaQB0AGgAZQByACAAdABoAGUAIABGAG8AbgB0ACAAUwBvAGYAdAB3AGEAcgBlACAAbgBvAHIAIABhAG4AeQAgAG8AZgAgAGkAdABzACAAaQBuAGQAaQB2AGkAZAB1AGEAbAAgAGMAbwBtAHAAbwBuAGUAbgB0AHMALAAgAGkAbgAgAE8AcgBpAGcAaQBuAGEAbAAgAG8AcgAgAE0AbwBkAGkAZgBpAGUAZAAgAFYAZQByAHMAaQBvAG4AcwAsACAAbQBhAHkAIABiAGUAIABzAG8AbABkACAAYgB5ACAAaQB0AHMAZQBsAGYALgANAAoADQAKADIAKQAgAE8AcgBpAGcAaQBuAGEAbAAgAG8AcgAgAE0AbwBkAGkAZgBpAGUAZAAgAFYAZQByAHMAaQBvAG4AcwAgAG8AZgAgAHQAaABlACAARgBvAG4AdAAgAFMAbwBmAHQAdwBhAHIAZQAgAG0AYQB5ACAAYgBlACAAYgB1AG4AZABsAGUAZAAsACAAcgBlAGQAaQBzAHQAcgBpAGIAdQB0AGUAZAAgAGEAbgBkAC8AbwByACAAcwBvAGwAZAAgAHcAaQB0AGgAIABhAG4AeQAgAHMAbwBmAHQAdwBhAHIAZQAsACAAcAByAG8AdgBpAGQAZQBkACAAdABoAGEAdAAgAGUAYQBjAGgAIABjAG8AcAB5ACAAYwBvAG4AdABhAGkAbgBzACAAdABoAGUAIABhAGIAbwB2AGUAIABjAG8AcAB5AHIAaQBnAGgAdAAgAG4AbwB0AGkAYwBlACAAYQBuAGQAIAB0AGgAaQBzACAAbABpAGMAZQBuAHMAZQAuACAAVABoAGUAcwBlACAAYwBhAG4AIABiAGUAIABpAG4AYwBsAHUAZABlAGQAIABlAGkAdABoAGUAcgAgAGEAcwAgAHMAdABhAG4AZAAtAGEAbABvAG4AZQAgAHQAZQB4AHQAIABmAGkAbABlAHMALAAgAGgAdQBtAGEAbgAtAHIAZQBhAGQAYQBiAGwAZQAgAGgAZQBhAGQAZQByAHMAIABvAHIAIABpAG4AIAB0AGgAZQAgAGEAcABwAHIAbwBwAHIAaQBhAHQAZQAgAG0AYQBjAGgAaQBuAGUALQByAGUAYQBkAGEAYgBsAGUAIABtAGUAdABhAGQAYQB0AGEAIABmAGkAZQBsAGQAcwAgAHcAaQB0AGgAaQBuACAAdABlAHgAdAAgAG8AcgAgAGIAaQBuAGEAcgB5ACAAZgBpAGwAZQBzACAAYQBzACAAbABvAG4AZwAgAGEAcwAgAHQAaABvAHMAZQAgAGYAaQBlAGwAZABzACAAYwBhAG4AIABiAGUAIABlAGEAcwBpAGwAeQAgAHYAaQBlAHcAZQBkACAAYgB5ACAAdABoAGUAIAB1AHMAZQByAC4ADQAKAA0ACgAzACkAIABOAG8AIABNAG8AZABpAGYAaQBlAGQAIABWAGUAcgBzAGkAbwBuACAAbwBmACAAdABoAGUAIABGAG8AbgB0ACAAUwBvAGYAdAB3AGEAcgBlACAAbQBhAHkAIAB1AHMAZQAgAHQAaABlACAAUgBlAHMAZQByAHYAZQBkACAARgBvAG4AdAAgAE4AYQBtAGUAKABzACkAIAB1AG4AbABlAHMAcwAgAGUAeABwAGwAaQBjAGkAdAAgAHcAcgBpAHQAdABlAG4AIABwAGUAcgBtAGkAcwBzAGkAbwBuACAAaQBzACAAZwByAGEAbgB0AGUAZAAgAGIAeQAgAHQAaABlACAAYwBvAHIAcgBlAHMAcABvAG4AZABpAG4AZwAgAEMAbwBwAHkAcgBpAGcAaAB0ACAASABvAGwAZABlAHIALgAgAFQAaABpAHMAIAByAGUAcwB0AHIAaQBjAHQAaQBvAG4AIABvAG4AbAB5ACAAYQBwAHAAbABpAGUAcwAgAHQAbwAgAHQAaABlACAAcAByAGkAbQBhAHIAeQAgAGYAbwBuAHQAIABuAGEAbQBlACAAYQBzACAAcAByAGUAcwBlAG4AdABlAGQAIAB0AG8AIAB0AGgAZQAgAHUAcwBlAHIAcwAuAA0ACgANAAoANAApACAAVABoAGUAIABuAGEAbQBlACgAcwApACAAbwBmACAAdABoAGUAIABDAG8AcAB5AHIAaQBnAGgAdAAgAEgAbwBsAGQAZQByACgAcwApACAAbwByACAAdABoAGUAIABBAHUAdABoAG8AcgAoAHMAKQAgAG8AZgAgAHQAaABlACAARgBvAG4AdAAgAFMAbwBmAHQAdwBhAHIAZQAgAHMAaABhAGwAbAAgAG4AbwB0ACAAYgBlACAAdQBzAGUAZAAgAHQAbwAgAHAAcgBvAG0AbwB0AGUALAAgAGUAbgBkAG8AcgBzAGUAIABvAHIAIABhAGQAdgBlAHIAdABpAHMAZQAgAGEAbgB5ACAATQBvAGQAaQBmAGkAZQBkACAAVgBlAHIAcwBpAG8AbgAsACAAZQB4AGMAZQBwAHQAIAB0AG8AIABhAGMAawBuAG8AdwBsAGUAZABnAGUAIAB0AGgAZQAgAGMAbwBuAHQAcgBpAGIAdQB0AGkAbwBuACgAcwApACAAbwBmACAAdABoAGUAIABDAG8AcAB5AHIAaQBnAGgAdAAgAEgAbwBsAGQAZQByACgAcwApACAAYQBuAGQAIAB0AGgAZQAgAEEAdQB0AGgAbwByACgAcwApACAAbwByACAAdwBpAHQAaAAgAHQAaABlAGkAcgAgAGUAeABwAGwAaQBjAGkAdAAgAHcAcgBpAHQAdABlAG4AIABwAGUAcgBtAGkAcwBzAGkAbwBuAC4ADQAKAA0ACgA1ACkAIABUAGgAZQAgAEYAbwBuAHQAIABTAG8AZgB0AHcAYQByAGUALAAgAG0AbwBkAGkAZgBpAGUAZAAgAG8AcgAgAHUAbgBtAG8AZABpAGYAaQBlAGQALAAgAGkAbgAgAHAAYQByAHQAIABvAHIAIABpAG4AIAB3AGgAbwBsAGUALAAgAG0AdQBzAHQAIABiAGUAIABkAGkAcwB0AHIAaQBiAHUAdABlAGQAIABlAG4AdABpAHIAZQBsAHkAIAB1AG4AZABlAHIAIAB0AGgAaQBzACAAbABpAGMAZQBuAHMAZQAsACAAYQBuAGQAIABtAHUAcwB0ACAAbgBvAHQAIABiAGUAIABkAGkAcwB0AHIAaQBiAHUAdABlAGQAIAB1AG4AZABlAHIAIABhAG4AeQAgAG8AdABoAGUAcgAgAGwAaQBjAGUAbgBzAGUALgAgAFQAaABlACAAcgBlAHEAdQBpAHIAZQBtAGUAbgB0ACAAZgBvAHIAIABmAG8AbgB0AHMAIAB0AG8AIAByAGUAbQBhAGkAbgAgAHUAbgBkAGUAcgAgAHQAaABpAHMAIABsAGkAYwBlAG4AcwBlACAAZABvAGUAcwAgAG4AbwB0ACAAYQBwAHAAbAB5ACAAdABvACAAYQBuAHkAIABkAG8AYwB1AG0AZQBuAHQAIABjAHIAZQBhAHQAZQBkACAAdQBzAGkAbgBnACAAdABoAGUAIABGAG8AbgB0ACAAUwBvAGYAdAB3AGEAcgBlAC4ADQAKAA0ACgBUAEUAUgBNAEkATgBBAFQASQBPAE4ADQAKAFQAaABpAHMAIABsAGkAYwBlAG4AcwBlACAAYgBlAGMAbwBtAGUAcwAgAG4AdQBsAGwAIABhAG4AZAAgAHYAbwBpAGQAIABpAGYAIABhAG4AeQAgAG8AZgAgAHQAaABlACAAYQBiAG8AdgBlACAAYwBvAG4AZABpAHQAaQBvAG4AcwAgAGEAcgBlACAAbgBvAHQAIABtAGUAdAAuAA0ACgANAAoARABJAFMAQwBMAEEASQBNAEUAUgANAAoAVABIAEUAIABGAE8ATgBUACAAUwBPAEYAVABXAEEAUgBFACAASQBTACAAUABSAE8AVgBJAEQARQBEACAAIgBBAFMAIABJAFMAIgAsACAAVwBJAFQASABPAFUAVAAgAFcAQQBSAFIAQQBOAFQAWQAgAE8ARgAgAEEATgBZACAASwBJAE4ARAAsACAARQBYAFAAUgBFAFMAUwAgAE8AUgAgAEkATQBQAEwASQBFAEQALAAgAEkATgBDAEwAVQBEAEkATgBHACAAQgBVAFQAIABOAE8AVAAgAEwASQBNAEkAVABFAEQAIABUAE8AIABBAE4AWQAgAFcAQQBSAFIAQQBOAFQASQBFAFMAIABPAEYAIABNAEUAUgBDAEgAQQBOAFQAQQBCAEkATABJAFQAWQAsACAARgBJAFQATgBFAFMAUwAgAEYATwBSACAAQQAgAFAAQQBSAFQASQBDAFUATABBAFIAIABQAFUAUgBQAE8AUwBFACAAQQBOAEQAIABOAE8ATgBJAE4ARgBSAEkATgBHAEUATQBFAE4AVAAgAE8ARgAgAEMATwBQAFkAUgBJAEcASABUACwAIABQAEEAVABFAE4AVAAsACAAVABSAEEARABFAE0AQQBSAEsALAAgAE8AUgAgAE8AVABIAEUAUgAgAFIASQBHAEgAVAAuACAASQBOACAATgBPACAARQBWAEUATgBUACAAUwBIAEEATABMACAAVABIAEUAIABDAE8AUABZAFIASQBHAEgAVAAgAEgATwBMAEQARQBSACAAQgBFACAATABJAEEAQgBMAEUAIABGAE8AUgAgAEEATgBZACAAQwBMAEEASQBNACwAIABEAEEATQBBAEcARQBTACAATwBSACAATwBUAEgARQBSACAATABJAEEAQgBJAEwASQBUAFkALAAgAEkATgBDAEwAVQBEAEkATgBHACAAQQBOAFkAIABHAEUATgBFAFIAQQBMACwAIABTAFAARQBDAEkAQQBMACwAIABJAE4ARABJAFIARQBDAFQALAAgAEkATgBDAEkARABFAE4AVABBAEwALAAgAE8AUgAgAEMATwBOAFMARQBRAFUARQBOAFQASQBBAEwAIABEAEEATQBBAEcARQBTACwAIABXAEgARQBUAEgARQBSACAASQBOACAAQQBOACAAQQBDAFQASQBPAE4AIABPAEYAIABDAE8ATgBUAFIAQQBDAFQALAAgAFQATwBSAFQAIABPAFIAIABPAFQASABFAFIAVwBJAFMARQAsACAAQQBSAEkAUwBJAE4ARwAgAEYAUgBPAE0ALAAgAE8AVQBUACAATwBGACAAVABIAEUAIABVAFMARQAgAE8AUgAgAEkATgBBAEIASQBMAEkAVABZACAAVABPACAAVQBTAEUAIABUAEgARQAgAEYATwBOAFQAIABTAE8ARgBUAFcAQQBSAEUAIABPAFIAIABGAFIATwBNACAATwBUAEgARQBSACAARABFAEEATABJAE4ARwBTACAASQBOACAAVABIAEUAIABGAE8ATgBUACAAUwBPAEYAVABXAEEAUgBFAC4ADQAKAGgAdAB0AHAAOgAvAC8AdwB3AHcALgBhAGQAbwBiAGUALgBjAG8AbQAvAHQAeQBwAGUALwBsAGUAZwBhAGwALgBoAHQAbQBsAAAAAAAFAAAAAwAAADgAAAAEAAABUAABAAAAAAAsAAMAAQAAADgAAwAKAAABUAAGAAwAAAAAAAEAAAAEARgAAABCAEAABQACB/8P/xf/H/8n/y//N/8//0f/T/9X/1//Z/9v/3f/f/+H/4//l/+f/6f/r/+3/7//x//P/9f/5//v//f//c///f//AAAAAAgAEAAYACAAKAAwADgAQABIAFAAWABgAGgAcAB4AIAAiACQAJgAoACoALAAuADAAMgA0ADgAOgA8AD4AP3w//8AAfgB8AHoAeAB2AHQAcgBwAG4AbABqAGgAZgBkAGIAYABeAFwAWgBYAFYAVABSAFAATgBMAEgARgBEAEIAQgBAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAAAAAAZkAAAAAAAAAIgAAAAAAAAB/8AAAABAAAIAAAAD/8AAAABAAAQAAAAF/8AAAABAAAYAAAAH/8AAAABAAAgAAAAJ/8AAAABAAAoAAAAL/8AAAABAAAwAAAAN/8AAAABAAA4AAAAP/8AAAABAABAAAAAR/8AAAABAABIAAAAT/8AAAABAABQAAAAV/8AAAABAABYAAAAX/8AAAABAABgAAAAZ/8AAAABAABoAAAAb/8AAAABAABwAAAAd/8AAAABAAB4AAAAf/8AAAABAACAAAAAh/8AAAABAACIAAAAj/8AAAABAACQAAAAl/8AAAABAACYAAAAn/8AAAABAACgAAAAp/8AAAABAACoAAAAr/8AAAABAACwAAAAt/8AAAABAAC4AAAAv/8AAAABAADAAAAAx/8AAAABAADIAAAAz/8AAAABAADQAAAA1/8AAAABAADgAAAA5/8AAAABAADoAAAA7/8AAAABAADwAAAA9/8AAAABAAD4AAAA/c8AAAABAAD98AAA//0AAAXxAAEAAAABB/8AAAABAAEIAAABD/8AAAABAAEQAAABF/8AAAABAAEYAAABH/8AAAABAAEgAAABJ/8AAAABAAEoAAABL/8AAAABAAEwAAABN/8AAAABAAE4AAABP/8AAAABAAFAAAABR/8AAAABAAFIAAABT/8AAAABAAFQAAABV/8AAAABAAFYAAABX/8AAAABAAFgAAABZ/8AAAABAAFoAAABb/8AAAABAAFwAAABd/8AAAABAAF4AAABf/8AAAABAAGAAAABh/8AAAABAAGIAAABj/8AAAABAAGQAAABl/8AAAABAAGYAAABn/8AAAABAAGgAAABp/8AAAABAAGoAAABr/8AAAABAAGwAAABt/8AAAABAAG4AAABv/8AAAABAAHAAAABx/8AAAABAAHIAAABz/8AAAABAAHQAAAB1/8AAAABAAHYAAAB3/8AAAABAAHgAAAB5/8AAAABAAHoAAAB7/8AAAABAAHwAAAB9/8AAAABAAH4AAAB//0AAAABAAIAAAACB/8AAAABAAIIAAACD/8AAAABAAIQAAACF/8AAAABAAIYAAACH/8AAAABAAIgAAACJ/8AAAABAAIoAAACL/8AAAABAAIwAAACN/8AAAABAAI4AAACP/8AAAABAAJAAAACR/8AAAABAAJIAAACT/8AAAABAAJQAAACV/8AAAABAAJYAAACX/8AAAABAAJgAAACZ/8AAAABAAJoAAACb/8AAAABAAJwAAACd/8AAAABAAJ4AAACf/8AAAABAAKAAAACh/8AAAABAAKIAAACj/8AAAABAAKQAAACl/8AAAABAAKYAAACn/8AAAABAAKgAAACp/8AAAABAAKoAAACr/8AAAABAAKwAAACt/8AAAABAAK4AAACv/8AAAABAALAAAACx/8AAAABAALIAAACz/8AAAABAALQAAAC1/8AAAABAALYAAAC3/8AAAABAALgAAAC5/8AAAABAALoAAAC7/8AAAABAALwAAAC9/8AAAABAAL4AAAC//0AAAABAAMAAAADB/8AAAABAAMIAAADD/8AAAABAAMQAAADF/8AAAABAAMYAAADH/8AAAABAAMgAAADJ/8AAAABAAMoAAADL/8AAAABAAMwAAADN/8AAAABAAM4AAADP/8AAAABAANAAAADR/8AAAABAANIAAADT/8AAAABAANQAAADV/8AAAABAANYAAADX/8AAAABAANgAAADZ/8AAAABAANoAAADb/8AAAABAANwAAADd/8AAAABAAN4AAADf/8AAAABAAOAAAADh/8AAAABAAOIAAADj/8AAAABAAOQAAADl/8AAAABAAOYAAADn/8AAAABAAOgAAADp/8AAAABAAOoAAADr/8AAAABAAOwAAADt/8AAAABAAO4AAADv/8AAAABAAPAAAADx/8AAAABAAPIAAADz/8AAAABAAPQAAAD1/8AAAABAAPYAAAD3/8AAAABAAPgAAAD5/8AAAABAAPoAAAD7/8AAAABAAPwAAAD9/8AAAABAAP4AAAD//0AAAABAAQAAAAEB/8AAAABAAQIAAAED/8AAAABAAQQAAAEF/8AAAABAAQYAAAEH/8AAAABAAQgAAAEJ/8AAAABAAQoAAAEL/8AAAABAAQwAAAEN/8AAAABAAQ4AAAEP/8AAAABAARAAAAER/8AAAABAARIAAAET/8AAAABAARQAAAEV/8AAAABAARYAAAEX/8AAAABAARgAAAEZ/8AAAABAARoAAAEb/8AAAABAARwAAAEd/8AAAABAAR4AAAEf/8AAAABAASAAAAEh/8AAAABAASIAAAEj/8AAAABAASQAAAEl/8AAAABAASYAAAEn/8AAAABAASgAAAEp/8AAAABAASoAAAEr/8AAAABAASwAAAEt/8AAAABAAS4AAAEv/8AAAABAATAAAAEx/8AAAABAATIAAAEz/8AAAABAATQAAAE1/8AAAABAATYAAAE3/8AAAABAATgAAAE5/8AAAABAAToAAAE7/8AAAABAATwAAAE9/8AAAABAAT4AAAE//0AAAABAAUAAAAFB/8AAAABAAUIAAAFD/8AAAABAAUQAAAFF/8AAAABAAUYAAAFH/8AAAABAAUgAAAFJ/8AAAABAAUoAAAFL/8AAAABAAUwAAAFN/8AAAABAAU4AAAFP/8AAAABAAVAAAAFR/8AAAABAAVIAAAFT/8AAAABAAVQAAAFV/8AAAABAAVYAAAFX/8AAAABAAVgAAAFZ/8AAAABAAVoAAAFb/8AAAABAAVwAAAFd/8AAAABAAV4AAAFf/8AAAABAAWAAAAFh/8AAAABAAWIAAAFj/8AAAABAAWQAAAFl/8AAAABAAWYAAAFn/8AAAABAAWgAAAFp/8AAAABAAWoAAAFr/8AAAABAAWwAAAFt/8AAAABAAW4AAAFv/8AAAABAAXAAAAFx/8AAAABAAXIAAAFz/8AAAABAAXQAAAF1/8AAAABAAXYAAAF3/8AAAABAAXgAAAF5/8AAAABAAXoAAAF7/8AAAABAAXwAAAF9/8AAAABAAX4AAAF//0AAAABAAYAAAAGB/8AAAABAAYIAAAGD/8AAAABAAYQAAAGF/8AAAABAAYYAAAGH/8AAAABAAYgAAAGJ/8AAAABAAYoAAAGL/8AAAABAAYwAAAGN/8AAAABAAY4AAAGP/8AAAABAAZAAAAGR/8AAAABAAZIAAAGT/8AAAABAAZQAAAGV/8AAAABAAZYAAAGX/8AAAABAAZgAAAGZ/8AAAABAAZoAAAGb/8AAAABAAZwAAAGd/8AAAABAAZ4AAAGf/8AAAABAAaAAAAGh/8AAAABAAaIAAAGj/8AAAABAAaQAAAGl/8AAAABAAaYAAAGn/8AAAABAAagAAAGp/8AAAABAAaoAAAGr/8AAAABAAawAAAGt/8AAAABAAa4AAAGv/8AAAABAAbAAAAGx/8AAAABAAbIAAAGz/8AAAABAAbQAAAG1/8AAAABAAbYAAAG3/8AAAABAAbgAAAG5/8AAAABAAboAAAG7/8AAAABAAbwAAAG9/8AAAABAAb4AAAG//0AAAABAAcAAAAHB/8AAAABAAcIAAAHD/8AAAABAAcQAAAHF/8AAAABAAcYAAAHH/8AAAABAAcgAAAHJ/8AAAABAAcoAAAHL/8AAAABAAcwAAAHN/8AAAABAAc4AAAHP/8AAAABAAdAAAAHR/8AAAABAAdIAAAHT/8AAAABAAdQAAAHV/8AAAABAAdYAAAHX/8AAAABAAdgAAAHZ/8AAAABAAdoAAAHb/8AAAABAAdwAAAHd/8AAAABAAd4AAAHf/8AAAABAAeAAAAHh/8AAAABAAeIAAAHj/8AAAABAAeQAAAHl/8AAAABAAeYAAAHn/8AAAABAAegAAAHp/8AAAABAAeoAAAHr/8AAAABAAewAAAHt/8AAAABAAe4AAAHv/8AAAABAAfAAAAHx/8AAAABAAfIAAAHz/8AAAABAAfQAAAH1/8AAAABAAfYAAAH3/8AAAABAAfgAAAH5/8AAAABAAfoAAAH7/8AAAABAAfwAAAH9/8AAAABAAf4AAAH//0AAAABAAgAAAAIB/8AAAABAAgIAAAID/8AAAABAAgQAAAIF/8AAAABAAgYAAAIH/8AAAABAAggAAAIJ/8AAAABAAgoAAAIL/8AAAABAAgwAAAIN/8AAAABAAg4AAAIP/8AAAABAAhAAAAIR/8AAAABAAhIAAAIT/8AAAABAAhQAAAIV/8AAAABAAhYAAAIX/8AAAABAAhgAAAIZ/8AAAABAAhoAAAIb/8AAAABAAhwAAAId/8AAAABAAh4AAAIf/8AAAABAAiAAAAIh/8AAAABAAiIAAAIj/8AAAABAAiQAAAIl/8AAAABAAiYAAAIn/8AAAABAAigAAAIp/8AAAABAAioAAAIr/8AAAABAAiwAAAIt/8AAAABAAi4AAAIv/8AAAABAAjAAAAIx/8AAAABAAjIAAAIz/8AAAABAAjQAAAI1/8AAAABAAjYAAAI3/8AAAABAAjgAAAI5/8AAAABAAjoAAAI7/8AAAABAAjwAAAI9/8AAAABAAj4AAAI//0AAAABAAkAAAAJB/8AAAABAAkIAAAJD/8AAAABAAkQAAAJF/8AAAABAAkYAAAJH/8AAAABAAkgAAAJJ/8AAAABAAkoAAAJL/8AAAABAAkwAAAJN/8AAAABAAk4AAAJP/8AAAABAAlAAAAJR/8AAAABAAlIAAAJT/8AAAABAAlQAAAJV/8AAAABAAlYAAAJX/8AAAABAAlgAAAJZ/8AAAABAAloAAAJb/8AAAABAAlwAAAJd/8AAAABAAl4AAAJf/8AAAABAAmAAAAJh/8AAAABAAmIAAAJj/8AAAABAAmQAAAJl/8AAAABAAmYAAAJn/8AAAABAAmgAAAJp/8AAAABAAmoAAAJr/8AAAABAAmwAAAJt/8AAAABAAm4AAAJv/8AAAABAAnAAAAJx/8AAAABAAnIAAAJz/8AAAABAAnQAAAJ1/8AAAABAAnYAAAJ3/8AAAABAAngAAAJ5/8AAAABAAnoAAAJ7/8AAAABAAnwAAAJ9/8AAAABAAn4AAAJ//0AAAABAAoAAAAKB/8AAAABAAoIAAAKD/8AAAABAAoQAAAKF/8AAAABAAoYAAAKH/8AAAABAAogAAAKJ/8AAAABAAooAAAKL/8AAAABAAowAAAKN/8AAAABAAo4AAAKP/8AAAABAApAAAAKR/8AAAABAApIAAAKT/8AAAABAApQAAAKV/8AAAABAApYAAAKX/8AAAABAApgAAAKZ/8AAAABAApoAAAKb/8AAAABAApwAAAKd/8AAAABAAp4AAAKf/8AAAABAAqAAAAKh/8AAAABAAqIAAAKj/8AAAABAAqQAAAKl/8AAAABAAqYAAAKn/8AAAABAAqgAAAKp/8AAAABAAqoAAAKr/8AAAABAAqwAAAKt/8AAAABAAq4AAAKv/8AAAABAArAAAAKx/8AAAABAArIAAAKz/8AAAABAArQAAAK1/8AAAABAArYAAAK3/8AAAABAArgAAAK5/8AAAABAAroAAAK7/8AAAABAArwAAAK9/8AAAABAAr4AAAK//0AAAABAAsAAAALB/8AAAABAAsIAAALD/8AAAABAAsQAAALF/8AAAABAAsYAAALH/8AAAABAAsgAAALJ/8AAAABAAsoAAALL/8AAAABAAswAAALN/8AAAABAAs4AAALP/8AAAABAAtAAAALR/8AAAABAAtIAAALT/8AAAABAAtQAAALV/8AAAABAAtYAAALX/8AAAABAAtgAAALZ/8AAAABAAtoAAALb/8AAAABAAtwAAALd/8AAAABAAt4AAALf/8AAAABAAuAAAALh/8AAAABAAuIAAALj/8AAAABAAuQAAALl/8AAAABAAuYAAALn/8AAAABAAugAAALp/8AAAABAAuoAAALr/8AAAABAAuwAAALt/8AAAABAAu4AAALv/8AAAABAAvAAAALx/8AAAABAAvIAAALz/8AAAABAAvQAAAL1/8AAAABAAvYAAAL3/8AAAABAAvgAAAL5/8AAAABAAvoAAAL7/8AAAABAAvwAAAL9/8AAAABAAv4AAAL//0AAAABAAwAAAAMB/8AAAABAAwIAAAMD/8AAAABAAwQAAAMF/8AAAABAAwYAAAMH/8AAAABAAwgAAAMJ/8AAAABAAwoAAAML/8AAAABAAwwAAAMN/8AAAABAAw4AAAMP/8AAAABAAxAAAAMR/8AAAABAAxIAAAMT/8AAAABAAxQAAAMV/8AAAABAAxYAAAMX/8AAAABAAxgAAAMZ/8AAAABAAxoAAAMb/8AAAABAAxwAAAMd/8AAAABAAx4AAAMf/8AAAABAAyAAAAMh/8AAAABAAyIAAAMj/8AAAABAAyQAAAMl/8AAAABAAyYAAAMn/8AAAABAAygAAAMp/8AAAABAAyoAAAMr/8AAAABAAywAAAMt/8AAAABAAy4AAAMv/8AAAABAAzAAAAMx/8AAAABAAzIAAAMz/8AAAABAAzQAAAM1/8AAAABAAzYAAAM3/8AAAABAAzgAAAM5/8AAAABAAzoAAAM7/8AAAABAAzwAAAM9/8AAAABAAz4AAAM//0AAAABAA0AAAANB/8AAAABAA0IAAAND/8AAAABAA0QAAANF/8AAAABAA0YAAANH/8AAAABAA0gAAANJ/8AAAABAA0oAAANL/8AAAABAA0wAAANN/8AAAABAA04AAANP/8AAAABAA1AAAANR/8AAAABAA1IAAANT/8AAAABAA1QAAANV/8AAAABAA1YAAANX/8AAAABAA1gAAANZ/8AAAABAA1oAAANb/8AAAABAA1wAAANd/8AAAABAA14AAANf/8AAAABAA2AAAANh/8AAAABAA2IAAANj/8AAAABAA2QAAANl/8AAAABAA2YAAANn/8AAAABAA2gAAANp/8AAAABAA2oAAANr/8AAAABAA2wAAANt/8AAAABAA24AAANv/8AAAABAA3AAAANx/8AAAABAA3IAAANz/8AAAABAA3QAAAN1/8AAAABAA3YAAAN3/8AAAABAA3gAAAN5/8AAAABAA3oAAAN7/8AAAABAA3wAAAN9/8AAAABAA34AAAN//0AAAABAA4AAAAOB/8AAAABAA4IAAAOD/8AAAABAA4QAAAOF/8AAAABAA4YAAAOH/8AAAABAA4gAAAOJ/8AAAABAA4oAAAOL/8AAAABAA4wAAAON/8AAAABAA44AAAOP/8AAAABAA5AAAAOR/8AAAABAA5IAAAOT/8AAAABAA5QAAAOV/8AAAABAA5YAAAOX/8AAAABAA5gAAAOZ/8AAAABAA5oAAAOb/8AAAABAA5wAAAOd/8AAAABAA54AAAOf/8AAAABAA6AAAAOh/8AAAABAA6IAAAOj/8AAAABAA6QAAAOl/8AAAABAA6YAAAOn/8AAAABAA6gAAAOp/8AAAABAA6oAAAOr/8AAAABAA6wAAAOt/8AAAABAA64AAAOv/8AAAABAA7AAAAOx/8AAAABAA7IAAAOz/8AAAABAA7QAAAO1/8AAAABAA7YAAAO3/8AAAABAA7gAAAO5/8AAAABAA7oAAAO7/8AAAABAA7wAAAO9/8AAAABAA74AAAO//0AAAABAA8AAAAPB/8AAAABAA8IAAAPD/8AAAABAA8QAAAPF/8AAAABAA8YAAAPH/8AAAABAA8gAAAPJ/8AAAABAA8oAAAPL/8AAAABAA8wAAAPN/8AAAABAA84AAAPP/8AAAABAA9AAAAPR/8AAAABAA9IAAAPT/8AAAABAA9QAAAPV/8AAAABAA9YAAAPX/8AAAABAA9gAAAPZ/8AAAABAA9oAAAPb/8AAAABAA9wAAAPd/8AAAABAA94AAAPf/8AAAABAA+AAAAPh/8AAAABAA+IAAAPj/8AAAABAA+QAAAPl/8AAAABAA+YAAAPn/8AAAABAA+gAAAPp/8AAAABAA+oAAAPr/8AAAABAA+wAAAPt/8AAAABAA+4AAAPv/8AAAABAA/AAAAPx/8AAAABAA/IAAAPz/8AAAABAA/QAAAP1/8AAAABAA/YAAAP3/8AAAABAA/gAAAP5/8AAAABAA/oAAAP7/8AAAABAA/wAAAP9/8AAAABAA/4AAAP//0AAAABABAAAAAQB/8AAAABABAIAAAQD/8AAAABABAQAAAQF/8AAAABABAYAAAQH/8AAAABABAgAAAQJ/8AAAABABAoAAAQL/8AAAABABAwAAAQN/8AAAABABA4AAAQP/8AAAABABBAAAAQR/8AAAABABBIAAAQT/8AAAABABBQAAAQV/8AAAABABBYAAAQX/8AAAABABBgAAAQZ/8AAAABABBoAAAQb/8AAAABABBwAAAQd/8AAAABABB4AAAQf/8AAAABABCAAAAQh/8AAAABABCIAAAQj/8AAAABABCQAAAQl/8AAAABABCYAAAQn/8AAAABABCgAAAQp/8AAAABABCoAAAQr/8AAAABABCwAAAQt/8AAAABABC4AAAQv/8AAAABABDAAAAQx/8AAAABABDIAAAQz/8AAAABABDQAAAQ1/8AAAABABDYAAAQ3/8AAAABABDgAAAQ5/8AAAABABDoAAAQ7/8AAAABABDwAAAQ9/8AAAABABD4AAAQ//0AAAABAAMAAAAAAAD/tQAyAAAAAAAAAAAAAAAAAAAAAAAAAAABAAQCAAEBAQtBZG9iZUJsYW5rAAEBATD4G/gciwwe+B0B+B4Ci/sM+gD6BAUeGgA/DB8cCAEMIvdMD/dZEfdRDCUcGRYMJAAFAQEGDk1YZ0Fkb2JlSWRlbnRpdHlDb3B5cmlnaHQgMjAxMyBBZG9iZSBTeXN0ZW1zIEluY29ycG9yYXRlZC4gQWxsIFJpZ2h0cyBSZXNlcnZlZC5BZG9iZSBCbGFua0Fkb2JlQmxhbmstMjA0OQAAAgABB/8DAAEAAAAIAQgBAgABAEsATABNAE4ATwBQAFEAUgBTAFQAVQBWAFcAWABZAFoAWwBcAF0AXgBfAGAAYQBiAGMAZABlAGYAZwBoAGkAagBrAGwAbQBuAG8AcABxAHIAcwB0AHUAdgB3AHgAeQB6AHsAfAB9AH4AfwCAAIEAggCDAIQAhQCGAIcAiACJAIoAiwCMAI0AjgCPAJAAkQCSAJMAlACVAJYAlwCYAJkAmgCbAJwAnQCeAJ8AoAChAKIAowCkAKUApgCnAKgAqQCqAKsArACtAK4ArwCwALEAsgCzALQAtQC2ALcAuAC5ALoAuwC8AL0AvgC/AMAAwQDCAMMAxADFAMYAxwDIAMkAygDLAMwAzQDOAM8A0ADRANIA0wDUANUA1gDXANgA2QDaANsA3ADdAN4A3wDgAOEA4gDjAOQA5QDmAOcA6ADpAOoA6wDsAO0A7gDvAPAA8QDyAPMA9AD1APYA9wD4APkA+gD7APwA/QD+AP8BAAEBAQIBAwEEAQUBBgEHAQgBCQEKAQsBDAENAQ4BDwEQAREBEgETARQBFQEWARcBGAEZARoBGwEcAR0BHgEfASABIQEiASMBJAElASYBJwEoASkBKgErASwBLQEuAS8BMAExATIBMwE0ATUBNgE3ATgBOQE6ATsBPAE9AT4BPwFAAUEBQgFDAUQBRQFGAUcBSAFJAUoBSwFMAU0BTgFPAVABUQFSAVMBVAFVAVYBVwFYAVkBWgFbAVwBXQFeAV8BYAFhAWIBYwFkAWUBZgFnAWgBaQFqAWsBbAFtAW4BbwFwAXEBcgFzAXQBdQF2AXcBeAF5AXoBewF8AX0BfgF/AYABgQGCAYMBhAGFAYYBhwGIAYkBigGLAYwBjQGOAY8BkAGRAZIBkwGUAZUBlgGXAZgBmQGaAZsBnAGdAZ4BnwGgAaEBogGjAaQBpQGmAacBqAGpAaoBqwGsAa0BrgGvAbABsQGyAbMBtAG1AbYBtwG4AbkBugG7AbwBvQG+Ab8BwAHBAcIBwwHEAcUBxgHHAcgByQHKAcsBzAHNAc4BzwHQAdEB0gHTAdQB1QHWAdcB2AHZAdoB2wHcAd0B3gHfAeAB4QHiAeMB5AHlAeYB5wHoAekB6gHrAewB7QHuAe8B8AHxAfIB8wH0AfUB9gH3AfgB+QH6AfsB/AH9Af4B/wIAAgECAgIDAgQCBQIGAgcCCAIJAgoCCwIMAg0CDgIPAhACEQISAhMCFAIVAhYCFwIYAhkCGgIbAhwCHQIeAh8CIAIhAiICIwIkAiUCJgInAigCKQIqAisCLAItAi4CLwIwAjECMgIzAjQCNQI2AjcCOAI5AjoCOwI8Aj0CPgI/AkACQQJCAkMCRAJFAkYCRwJIAkkCSgJLAkwCTQJOAk8CUAJRAlICUwJUAlUCVgJXAlgCWQJaAlsCXAJdAl4CXwJgAmECYgJjAmQCZQJmAmcCaAJpAmoCawJsAm0CbgJvAnACcQJyAnMCdAJ1AnYCdwJ4AnkCegJ7AnwCfQJ+An8CgAKBAoICgwKEAoUChgKHAogCiQKKAosCjAKNAo4CjwKQApECkgKTApQClQKWApcCmAKZApoCmwKcAp0CngKfAqACoQKiAqMCpAKlAqYCpwKoAqkCqgKrAqwCrQKuAq8CsAKxArICswK0ArUCtgK3ArgCuQK6ArsCvAK9Ar4CvwLAAsECwgLDAsQCxQLGAscCyALJAsoCywLMAs0CzgLPAtAC0QLSAtMC1ALVAtYC1wLYAtkC2gLbAtwC3QLeAt8C4ALhAuIC4wLkAuUC5gLnAugC6QLqAusC7ALtAu4C7wLwAvEC8gLzAvQC9QL2AvcC+AL5AvoC+wL8Av0C/gL/AwADAQMCAwMDBAMFAwYDBwMIAwkDCgMLAwwDDQMOAw8DEAMRAxIDEwMUAxUDFgMXAxgDGQMaAxsDHAMdAx4DHwMgAyEDIgMjAyQDJQMmAycDKAMpAyoDKwMsAy0DLgMvAzADMQMyAzMDNAM1AzYDNwM4AzkDOgM7AzwDPQM+Az8DQANBA0IDQwNEA0UDRgNHA0gDSQNKA0sDTANNA04DTwNQA1EDUgNTA1QDVQNWA1cDWANZA1oDWwNcA10DXgNfA2ADYQNiA2MDZANlA2YDZwNoA2kDagNrA2wDbQNuA28DcANxA3IDcwN0A3UDdgN3A3gDeQN6A3sDfAN9A34DfwOAA4EDggODA4QDhQOGA4cDiAOJA4oDiwOMA40DjgOPA5ADkQOSA5MDlAOVA5YDlwOYA5kDmgObA5wDnQOeA58DoAOhA6IDowOkA6UDpgOnA6gDqQOqA6sDrAOtA64DrwOwA7EDsgOzA7QDtQO2A7cDuAO5A7oDuwO8A70DvgO/A8ADwQPCA8MDxAPFA8YDxwPIA8kDygPLA8wDzQPOA88D0APRA9ID0wPUA9UD1gPXA9gD2QPaA9sD3APdA94D3wPgA+ED4gPjA+QD5QPmA+cD6APpA+oD6wPsA+0D7gPvA/AD8QPyA/MD9AP1A/YD9wP4A/kD+gP7A/wD/QP+A/8EAAQBBAIEAwQEBAUEBgQHBAgECQQKBAsEDAQNBA4EDwQQBBEEEgQTBBQEFQQWBBcEGAQZBBoEGwQcBB0EHgQfBCAEIQQiBCMEJAQlBCYEJwQoBCkEKgQrBCwELQQuBC8EMAQxBDIEMwQ0BDUENgQ3BDgEOQQ6BDsEPAQ9BD4EPwRABEEEQgRDBEQERQRGBEcESARJBEoESwRMBE0ETgRPBFAEUQRSBFMEVARVBFYEVwRYBFkEWgRbBFwEXQReBF8EYARhBGIEYwRkBGUEZgRnBGgEaQRqBGsEbARtBG4EbwRwBHEEcgRzBHQEdQR2BHcEeAR5BHoEewR8BH0EfgR/BIAEgQSCBIMEhASFBIYEhwSIBIkEigSLBIwEjQSOBI8EkASRBJIEkwSUBJUElgSXBJgEmQSaBJsEnASdBJ4EnwSgBKEEogSjBKQEpQSmBKcEqASpBKoEqwSsBK0ErgSvBLAEsQSyBLMEtAS1BLYEtwS4BLkEugS7BLwEvQS+BL8EwATBBMIEwwTEBMUExgTHBMgEyQTKBMsEzATNBM4EzwTQBNEE0gTTBNQE1QTWBNcE2ATZBNoE2wTcBN0E3gTfBOAE4QTiBOME5ATlBOYE5wToBOkE6gTrBOwE7QTuBO8E8ATxBPIE8wT0BPUE9gT3BPgE+QT6BPsE/AT9BP4E/wUABQEFAgUDBQQFBQUGBQcFCAUJBQoFCwUMBQ0FDgUPBRAFEQUSBRMFFAUVBRYFFwUYBRkFGgUbBRwFHQUeBR8FIAUhBSIFIwUkBSUFJgUnBSgFKQUqBSsFLAUtBS4FLwUwBTEFMgUzBTQFNQU2BTcFOAU5BToFOwU8BT0FPgU/BUAFQQVCBUMFRAVFBUYFRwVIBUkFSgVLBUwFTQVOBU8FUAVRBVIFUwVUBVUFVgVXBVgFWQVaBVsFXAVdBV4FXwVgBWEFYgVjBWQFZQVmBWcFaAVpBWoFawVsBW0FbgVvBXAFcQVyBXMFdAV1BXYFdwV4BXkFegV7BXwFfQV+BX8FgAWBBYIFgwWEBYUFhgWHBYgFiQWKBYsFjAWNBY4FjwWQBZEFkgWTBZQFlQWWBZcFmAWZBZoFmwWcBZ0FngWfBaAFoQWiBaMFpAWlBaYFpwWoBakFqgWrBawFrQWuBa8FsAWxBbIFswW0BbUFtgW3BbgFuQW6BbsFvAW9Bb4FvwXABcEFwgXDBcQFxQXGBccFyAXJBcoFywXMBc0FzgXPBdAF0QXSBdMF1AXVBdYF1wXYBdkF2gXbBdwF3QXeBd8F4AXhBeIF4wXkBeUF5gXnBegF6QXqBesF7AXtBe4F7wXwBfEF8gXzBfQF9QX2BfcF+AX5BfoF+wX8Bf0F/gX/BgAGAQYCBgMGBAYFBgYGBwYIBgkGCgYLBgwGDQYOBg8GEAYRBhIGEwYUBhUGFgYXBhgGGQYaBhsGHAYdBh4GHwYgBiEGIgYjBiQGJQYmBicGKAYpBioGKwYsBi0GLgYvBjAGMQYyBjMGNAY1BjYGNwY4BjkGOgY7BjwGPQY+Bj8GQAZBBkIGQwZEBkUGRgZHBkgGSQZKBksGTAZNBk4GTwZQBlEGUgZTBlQGVQZWBlcGWAZZBloGWwZcBl0GXgZfBmAGYQZiBmMGZAZlBmYGZwZoBmkGagZrBmwGbQZuBm8GcAZxBnIGcwZ0BnUGdgZ3BngGeQZ6BnsGfAZ9Bn4GfwaABoEGggaDBoQGhQaGBocGiAaJBooGiwaMBo0GjgaPBpAGkQaSBpMGlAaVBpYGlwaYBpkGmgabBpwGnQaeBp8GoAahBqIGowakBqUGpganBqgGqQaqBqsGrAatBq4GrwawBrEGsgazBrQGtQa2BrcGuAa5BroGuwa8Br0Gvga/BsAGwQbCBsMGxAbFBsYGxwbIBskGygbLBswGzQbOBs8G0AbRBtIG0wbUBtUG1gbXBtgG2QbaBtsG3AbdBt4G3wbgBuEG4gbjBuQG5QbmBucG6AbpBuoG6wbsBu0G7gbvBvAG8QbyBvMG9Ab1BvYG9wb4BvkG+gb7BvwG/Qb+Bv8HAAcBBwIHAwcEBwUHBgcHBwgHCQcKBwsHDAcNBw4HDwcQBxEHEgcTBxQHFQcWBxcHGAcZBxoHGwccBx0HHgcfByAHIQciByMHJAclByYHJwcoBykHKgcrBywHLQcuBy8HMAcxBzIHMwc0BzUHNgc3BzgHOQc6BzsHPAc9Bz4HPwdAB0EHQgdDB0QHRQdGB0cHSAdJB0oHSwdMB00HTgdPB1AHUQdSB1MHVAdVB1YHVwdYB1kHWgdbB1wHXQdeB18HYAdhB2IHYwdkB2UHZgdnB2gHaQdqB2sHbAdtB24HbwdwB3EHcgdzB3QHdQd2B3cHeAd5B3oHewd8B30Hfgd/B4AHgQeCB4MHhAeFB4YHhweIB4kHigeLB4wHjQeOB48HkAeRB5IHkweUB5UHlgeXB5gHmQeaB5sHnAedB54HnwegB6EHogejB6QHpQemB6cHqAepB6oHqwesB60HrgevB7AHsQeyB7MHtAe1B7YHtwe4B7kHuge7B7wHvQe+B78HwAfBB8IHwwfEB8UHxgfHB8gHyQfKB8sHzAfNB84HzwfQB9EH0gfTB9QH1QfWB9cH2AfZB9oH2wfcB90H3gffB+AH4QfiB+MH5AflB+YH5wfoB+kH6gfrB+wH7QfuB+8H8AfxB/IH8wf0B/UH9gf3B/gH+Qf6B/sH/Af9B/4H/wgACAEIAggDCAQIBQgGCAcICAgJCAoICwgMCA0IDggPCBAIEQgSCBMIFAgVCBYIFwgYCBkIGggbCBwIHQgeCB8IIAghCCIIIwgkCCUIJggnCCgIKQgqCCsILAgtCC4ILwgwCDEIMggzCDQINQg2CDcIOAg5CDoIOwg8CD0IPgg/CEAIQQhCCEMIRAhFCEYIRwhICEkISghLIPsMt/oktwH3ELf5LLcD9xD6BBX+fPmE+nwH/Vj+JxX50gf3xfwzBaawFfvF+DcF+PYGpmIV/dIH+8X4MwVwZhX3xfw3Bfz2Bg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODgABAQEK+B8MJpocGSQS+46LHAVGiwa9Cr0L+ucVAAPoAHwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAA') format('truetype'); }";
+    FontLoader.referenceFontFamilyVariationSizes = {};
+    FontLoader.adobeBlankFontFaceRule = "@font-face{ font-family:AdobeBlank; src:url('data:font/opentype;base64,T1RUTwAKAIAAAwAgQ0ZGIM6ZbkwAAEPEAAAZM0RTSUcAAAABAABtAAAAAAhPUy8yAR6vMwAAARAAAABgY21hcDqI98oAACjEAAAa4GhlYWT+BQILAAAArAAAADZoaGVhCCID7wAAAOQAAAAkaG10eAPoAHwAAFz4AAAQBm1heHAIAVAAAAABCAAAAAZuYW1lD/tWxwAAAXAAACdScG9zdP+4ADIAAEOkAAAAIAABAAAAAQj1Snw1O18PPPUAAwPoAAAAAM2C2p8AAAAAzYLanwB8/4gDbANwAAAAAwACAAAAAAAAAAEAAANw/4gAyAPoAHwAfANsAAEAAAAAAAAAAAAAAAAAAAACAABQAAgBAAAABAAAAZAABQAAAooCWAAAAEsCigJYAAABXgAyANwAAAAAAAAAAAAAAAD3/67/+9///w/gAD8AAAAAQURCRQHAAAD//wNw/4gAyANwAHhgLwH/AAAAAAAAAAAAAAAgAAAAAAARANIAAQAAAAAAAQALAAAAAQAAAAAAAgAHAAsAAQAAAAAAAwAbABIAAQAAAAAABAALAAAAAQAAAAAABQA5AC0AAQAAAAAABgAKAGYAAwABBAkAAABuAHAAAwABBAkAAQAWAN4AAwABBAkAAgAOAPQAAwABBAkAAwA2AQIAAwABBAkABAAWAN4AAwABBAkABQByATgAAwABBAkABgAUAaoAAwABBAkACAA0Ab4AAwABBAkACwA0AfIAAwABBAkADSQSAiYAAwABBAkADgBIJjhBZG9iZSBCbGFua1JlZ3VsYXIxLjAzNTtBREJFO0Fkb2JlQmxhbms7QURPQkVWZXJzaW9uIDEuMDM1O1BTIDEuMDAzO2hvdGNvbnYgMS4wLjcwO21ha2VvdGYubGliMi41LjU5MDBBZG9iZUJsYW5rAKkAIAAyADAAMQAzACAAQQBkAG8AYgBlACAAUwB5AHMAdABlAG0AcwAgAEkAbgBjAG8AcgBwAG8AcgBhAHQAZQBkAC4AIABBAGwAbAAgAFIAaQBnAGgAdABzACAAUgBlAHMAZQByAHYAZQBkAC4AQQBkAG8AYgBlACAAQgBsAGEAbgBrAFIAZQBnAHUAbABhAHIAMQAuADAAMwA1ADsAQQBEAEIARQA7AEEAZABvAGIAZQBCAGwAYQBuAGsAOwBBAEQATwBCAEUAVgBlAHIAcwBpAG8AbgAgADEALgAwADMANQA7AFAAUwAgADEALgAwADAAMwA7AGgAbwB0AGMAbwBuAHYAIAAxAC4AMAAuADcAMAA7AG0AYQBrAGUAbwB0AGYALgBsAGkAYgAyAC4ANQAuADUAOQAwADAAQQBkAG8AYgBlAEIAbABhAG4AawBBAGQAbwBiAGUAIABTAHkAcwB0AGUAbQBzACAASQBuAGMAbwByAHAAbwByAGEAdABlAGQAaAB0AHQAcAA6AC8ALwB3AHcAdwAuAGEAZABvAGIAZQAuAGMAbwBtAC8AdAB5AHAAZQAvAEEAZABvAGIAZQAgAEIAbABhAG4AawAgAGkAcwAgAHIAZQBsAGUAYQBzAGUAZAAgAHUAbgBkAGUAcgAgAHQAaABlACAAUwBJAEwAIABPAHAAZQBuACAARgBvAG4AdAAgAEwAaQBjAGUAbgBzAGUAIAAtACAAcABsAGUAYQBzAGUAIAByAGUAYQBkACAAaQB0ACAAYwBhAHIAZQBmAHUAbABsAHkAIABhAG4AZAAgAGQAbwAgAG4AbwB0ACAAZABvAHcAbgBsAG8AYQBkACAAdABoAGUAIABmAG8AbgB0AHMAIAB1AG4AbABlAHMAcwAgAHkAbwB1ACAAYQBnAHIAZQBlACAAdABvACAAdABoAGUAIAB0AGgAZQAgAHQAZQByAG0AcwAgAG8AZgAgAHQAaABlACAAbABpAGMAZQBuAHMAZQA6AA0ACgANAAoAQwBvAHAAeQByAGkAZwBoAHQAIACpACAAMgAwADEAMwAgAEEAZABvAGIAZQAgAFMAeQBzAHQAZQBtAHMAIABJAG4AYwBvAHIAcABvAHIAYQB0AGUAZAAgACgAaAB0AHQAcAA6AC8ALwB3AHcAdwAuAGEAZABvAGIAZQAuAGMAbwBtAC8AKQAsACAAdwBpAHQAaAAgAFIAZQBzAGUAcgB2AGUAZAAgAEYAbwBuAHQAIABOAGEAbQBlACAAQQBkAG8AYgBlACAAQgBsAGEAbgBrAA0ACgANAAoAVABoAGkAcwAgAEYAbwBuAHQAIABTAG8AZgB0AHcAYQByAGUAIABpAHMAIABsAGkAYwBlAG4AcwBlAGQAIAB1AG4AZABlAHIAIAB0AGgAZQAgAFMASQBMACAATwBwAGUAbgAgAEYAbwBuAHQAIABMAGkAYwBlAG4AcwBlACwAIABWAGUAcgBzAGkAbwBuACAAMQAuADEALgANAAoADQAKAFQAaABpAHMAIABsAGkAYwBlAG4AcwBlACAAaQBzACAAYwBvAHAAaQBlAGQAIABiAGUAbABvAHcALAAgAGEAbgBkACAAaQBzACAAYQBsAHMAbwAgAGEAdgBhAGkAbABhAGIAbABlACAAdwBpAHQAaAAgAGEAIABGAEEAUQAgAGEAdAA6ACAAaAB0AHQAcAA6AC8ALwBzAGMAcgBpAHAAdABzAC4AcwBpAGwALgBvAHIAZwAvAE8ARgBMAA0ACgANAAoALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAA0ACgBTAEkATAAgAE8AUABFAE4AIABGAE8ATgBUACAATABJAEMARQBOAFMARQAgAFYAZQByAHMAaQBvAG4AIAAxAC4AMQAgAC0AIAAyADYAIABGAGUAYgByAHUAYQByAHkAIAAyADAAMAA3AA0ACgAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ADQAKAA0ACgBQAFIARQBBAE0AQgBMAEUADQAKAFQAaABlACAAZwBvAGEAbABzACAAbwBmACAAdABoAGUAIABPAHAAZQBuACAARgBvAG4AdAAgAEwAaQBjAGUAbgBzAGUAIAAoAE8ARgBMACkAIABhAHIAZQAgAHQAbwAgAHMAdABpAG0AdQBsAGEAdABlACAAdwBvAHIAbABkAHcAaQBkAGUAIABkAGUAdgBlAGwAbwBwAG0AZQBuAHQAIABvAGYAIABjAG8AbABsAGEAYgBvAHIAYQB0AGkAdgBlACAAZgBvAG4AdAAgAHAAcgBvAGoAZQBjAHQAcwAsACAAdABvACAAcwB1AHAAcABvAHIAdAAgAHQAaABlACAAZgBvAG4AdAAgAGMAcgBlAGEAdABpAG8AbgAgAGUAZgBmAG8AcgB0AHMAIABvAGYAIABhAGMAYQBkAGUAbQBpAGMAIABhAG4AZAAgAGwAaQBuAGcAdQBpAHMAdABpAGMAIABjAG8AbQBtAHUAbgBpAHQAaQBlAHMALAAgAGEAbgBkACAAdABvACAAcAByAG8AdgBpAGQAZQAgAGEAIABmAHIAZQBlACAAYQBuAGQAIABvAHAAZQBuACAAZgByAGEAbQBlAHcAbwByAGsAIABpAG4AIAB3AGgAaQBjAGgAIABmAG8AbgB0AHMAIABtAGEAeQAgAGIAZQAgAHMAaABhAHIAZQBkACAAYQBuAGQAIABpAG0AcAByAG8AdgBlAGQAIABpAG4AIABwAGEAcgB0AG4AZQByAHMAaABpAHAAIAB3AGkAdABoACAAbwB0AGgAZQByAHMALgANAAoADQAKAFQAaABlACAATwBGAEwAIABhAGwAbABvAHcAcwAgAHQAaABlACAAbABpAGMAZQBuAHMAZQBkACAAZgBvAG4AdABzACAAdABvACAAYgBlACAAdQBzAGUAZAAsACAAcwB0AHUAZABpAGUAZAAsACAAbQBvAGQAaQBmAGkAZQBkACAAYQBuAGQAIAByAGUAZABpAHMAdAByAGkAYgB1AHQAZQBkACAAZgByAGUAZQBsAHkAIABhAHMAIABsAG8AbgBnACAAYQBzACAAdABoAGUAeQAgAGEAcgBlACAAbgBvAHQAIABzAG8AbABkACAAYgB5ACAAdABoAGUAbQBzAGUAbAB2AGUAcwAuACAAVABoAGUAIABmAG8AbgB0AHMALAAgAGkAbgBjAGwAdQBkAGkAbgBnACAAYQBuAHkAIABkAGUAcgBpAHYAYQB0AGkAdgBlACAAdwBvAHIAawBzACwAIABjAGEAbgAgAGIAZQAgAGIAdQBuAGQAbABlAGQALAAgAGUAbQBiAGUAZABkAGUAZAAsACAAcgBlAGQAaQBzAHQAcgBpAGIAdQB0AGUAZAAgAGEAbgBkAC8AbwByACAAcwBvAGwAZAAgAHcAaQB0AGgAIABhAG4AeQAgAHMAbwBmAHQAdwBhAHIAZQAgAHAAcgBvAHYAaQBkAGUAZAAgAHQAaABhAHQAIABhAG4AeQAgAHIAZQBzAGUAcgB2AGUAZAAgAG4AYQBtAGUAcwAgAGEAcgBlACAAbgBvAHQAIAB1AHMAZQBkACAAYgB5ACAAZABlAHIAaQB2AGEAdABpAHYAZQAgAHcAbwByAGsAcwAuACAAVABoAGUAIABmAG8AbgB0AHMAIABhAG4AZAAgAGQAZQByAGkAdgBhAHQAaQB2AGUAcwAsACAAaABvAHcAZQB2AGUAcgAsACAAYwBhAG4AbgBvAHQAIABiAGUAIAByAGUAbABlAGEAcwBlAGQAIAB1AG4AZABlAHIAIABhAG4AeQAgAG8AdABoAGUAcgAgAHQAeQBwAGUAIABvAGYAIABsAGkAYwBlAG4AcwBlAC4AIABUAGgAZQAgAHIAZQBxAHUAaQByAGUAbQBlAG4AdAAgAGYAbwByACAAZgBvAG4AdABzACAAdABvACAAcgBlAG0AYQBpAG4AIAB1AG4AZABlAHIAIAB0AGgAaQBzACAAbABpAGMAZQBuAHMAZQAgAGQAbwBlAHMAIABuAG8AdAAgAGEAcABwAGwAeQAgAHQAbwAgAGEAbgB5ACAAZABvAGMAdQBtAGUAbgB0ACAAYwByAGUAYQB0AGUAZAAgAHUAcwBpAG4AZwAgAHQAaABlACAAZgBvAG4AdABzACAAbwByACAAdABoAGUAaQByACAAZABlAHIAaQB2AGEAdABpAHYAZQBzAC4ADQAKAA0ACgBEAEUARgBJAE4ASQBUAEkATwBOAFMADQAKACIARgBvAG4AdAAgAFMAbwBmAHQAdwBhAHIAZQAiACAAcgBlAGYAZQByAHMAIAB0AG8AIAB0AGgAZQAgAHMAZQB0ACAAbwBmACAAZgBpAGwAZQBzACAAcgBlAGwAZQBhAHMAZQBkACAAYgB5ACAAdABoAGUAIABDAG8AcAB5AHIAaQBnAGgAdAAgAEgAbwBsAGQAZQByACgAcwApACAAdQBuAGQAZQByACAAdABoAGkAcwAgAGwAaQBjAGUAbgBzAGUAIABhAG4AZAAgAGMAbABlAGEAcgBsAHkAIABtAGEAcgBrAGUAZAAgAGEAcwAgAHMAdQBjAGgALgAgAFQAaABpAHMAIABtAGEAeQAgAGkAbgBjAGwAdQBkAGUAIABzAG8AdQByAGMAZQAgAGYAaQBsAGUAcwAsACAAYgB1AGkAbABkACAAcwBjAHIAaQBwAHQAcwAgAGEAbgBkACAAZABvAGMAdQBtAGUAbgB0AGEAdABpAG8AbgAuAA0ACgANAAoAIgBSAGUAcwBlAHIAdgBlAGQAIABGAG8AbgB0ACAATgBhAG0AZQAiACAAcgBlAGYAZQByAHMAIAB0AG8AIABhAG4AeQAgAG4AYQBtAGUAcwAgAHMAcABlAGMAaQBmAGkAZQBkACAAYQBzACAAcwB1AGMAaAAgAGEAZgB0AGUAcgAgAHQAaABlACAAYwBvAHAAeQByAGkAZwBoAHQAIABzAHQAYQB0AGUAbQBlAG4AdAAoAHMAKQAuAA0ACgANAAoAIgBPAHIAaQBnAGkAbgBhAGwAIABWAGUAcgBzAGkAbwBuACIAIAByAGUAZgBlAHIAcwAgAHQAbwAgAHQAaABlACAAYwBvAGwAbABlAGMAdABpAG8AbgAgAG8AZgAgAEYAbwBuAHQAIABTAG8AZgB0AHcAYQByAGUAIABjAG8AbQBwAG8AbgBlAG4AdABzACAAYQBzACAAZABpAHMAdAByAGkAYgB1AHQAZQBkACAAYgB5ACAAdABoAGUAIABDAG8AcAB5AHIAaQBnAGgAdAAgAEgAbwBsAGQAZQByACgAcwApAC4ADQAKAA0ACgAiAE0AbwBkAGkAZgBpAGUAZAAgAFYAZQByAHMAaQBvAG4AIgAgAHIAZQBmAGUAcgBzACAAdABvACAAYQBuAHkAIABkAGUAcgBpAHYAYQB0AGkAdgBlACAAbQBhAGQAZQAgAGIAeQAgAGEAZABkAGkAbgBnACAAdABvACwAIABkAGUAbABlAHQAaQBuAGcALAAgAG8AcgAgAHMAdQBiAHMAdABpAHQAdQB0AGkAbgBnACAALQAtACAAaQBuACAAcABhAHIAdAAgAG8AcgAgAGkAbgAgAHcAaABvAGwAZQAgAC0ALQAgAGEAbgB5ACAAbwBmACAAdABoAGUAIABjAG8AbQBwAG8AbgBlAG4AdABzACAAbwBmACAAdABoAGUAIABPAHIAaQBnAGkAbgBhAGwAIABWAGUAcgBzAGkAbwBuACwAIABiAHkAIABjAGgAYQBuAGcAaQBuAGcAIABmAG8AcgBtAGEAdABzACAAbwByACAAYgB5ACAAcABvAHIAdABpAG4AZwAgAHQAaABlACAARgBvAG4AdAAgAFMAbwBmAHQAdwBhAHIAZQAgAHQAbwAgAGEAIABuAGUAdwAgAGUAbgB2AGkAcgBvAG4AbQBlAG4AdAAuAA0ACgANAAoAIgBBAHUAdABoAG8AcgAiACAAcgBlAGYAZQByAHMAIAB0AG8AIABhAG4AeQAgAGQAZQBzAGkAZwBuAGUAcgAsACAAZQBuAGcAaQBuAGUAZQByACwAIABwAHIAbwBnAHIAYQBtAG0AZQByACwAIAB0AGUAYwBoAG4AaQBjAGEAbAAgAHcAcgBpAHQAZQByACAAbwByACAAbwB0AGgAZQByACAAcABlAHIAcwBvAG4AIAB3AGgAbwAgAGMAbwBuAHQAcgBpAGIAdQB0AGUAZAAgAHQAbwAgAHQAaABlACAARgBvAG4AdAAgAFMAbwBmAHQAdwBhAHIAZQAuAA0ACgANAAoAUABFAFIATQBJAFMAUwBJAE8ATgAgACYAIABDAE8ATgBEAEkAVABJAE8ATgBTAA0ACgBQAGUAcgBtAGkAcwBzAGkAbwBuACAAaQBzACAAaABlAHIAZQBiAHkAIABnAHIAYQBuAHQAZQBkACwAIABmAHIAZQBlACAAbwBmACAAYwBoAGEAcgBnAGUALAAgAHQAbwAgAGEAbgB5ACAAcABlAHIAcwBvAG4AIABvAGIAdABhAGkAbgBpAG4AZwAgAGEAIABjAG8AcAB5ACAAbwBmACAAdABoAGUAIABGAG8AbgB0ACAAUwBvAGYAdAB3AGEAcgBlACwAIAB0AG8AIAB1AHMAZQAsACAAcwB0AHUAZAB5ACwAIABjAG8AcAB5ACwAIABtAGUAcgBnAGUALAAgAGUAbQBiAGUAZAAsACAAbQBvAGQAaQBmAHkALAAgAHIAZQBkAGkAcwB0AHIAaQBiAHUAdABlACwAIABhAG4AZAAgAHMAZQBsAGwAIABtAG8AZABpAGYAaQBlAGQAIABhAG4AZAAgAHUAbgBtAG8AZABpAGYAaQBlAGQAIABjAG8AcABpAGUAcwAgAG8AZgAgAHQAaABlACAARgBvAG4AdAAgAFMAbwBmAHQAdwBhAHIAZQAsACAAcwB1AGIAagBlAGMAdAAgAHQAbwAgAHQAaABlACAAZgBvAGwAbABvAHcAaQBuAGcAIABjAG8AbgBkAGkAdABpAG8AbgBzADoADQAKAA0ACgAxACkAIABOAGUAaQB0AGgAZQByACAAdABoAGUAIABGAG8AbgB0ACAAUwBvAGYAdAB3AGEAcgBlACAAbgBvAHIAIABhAG4AeQAgAG8AZgAgAGkAdABzACAAaQBuAGQAaQB2AGkAZAB1AGEAbAAgAGMAbwBtAHAAbwBuAGUAbgB0AHMALAAgAGkAbgAgAE8AcgBpAGcAaQBuAGEAbAAgAG8AcgAgAE0AbwBkAGkAZgBpAGUAZAAgAFYAZQByAHMAaQBvAG4AcwAsACAAbQBhAHkAIABiAGUAIABzAG8AbABkACAAYgB5ACAAaQB0AHMAZQBsAGYALgANAAoADQAKADIAKQAgAE8AcgBpAGcAaQBuAGEAbAAgAG8AcgAgAE0AbwBkAGkAZgBpAGUAZAAgAFYAZQByAHMAaQBvAG4AcwAgAG8AZgAgAHQAaABlACAARgBvAG4AdAAgAFMAbwBmAHQAdwBhAHIAZQAgAG0AYQB5ACAAYgBlACAAYgB1AG4AZABsAGUAZAAsACAAcgBlAGQAaQBzAHQAcgBpAGIAdQB0AGUAZAAgAGEAbgBkAC8AbwByACAAcwBvAGwAZAAgAHcAaQB0AGgAIABhAG4AeQAgAHMAbwBmAHQAdwBhAHIAZQAsACAAcAByAG8AdgBpAGQAZQBkACAAdABoAGEAdAAgAGUAYQBjAGgAIABjAG8AcAB5ACAAYwBvAG4AdABhAGkAbgBzACAAdABoAGUAIABhAGIAbwB2AGUAIABjAG8AcAB5AHIAaQBnAGgAdAAgAG4AbwB0AGkAYwBlACAAYQBuAGQAIAB0AGgAaQBzACAAbABpAGMAZQBuAHMAZQAuACAAVABoAGUAcwBlACAAYwBhAG4AIABiAGUAIABpAG4AYwBsAHUAZABlAGQAIABlAGkAdABoAGUAcgAgAGEAcwAgAHMAdABhAG4AZAAtAGEAbABvAG4AZQAgAHQAZQB4AHQAIABmAGkAbABlAHMALAAgAGgAdQBtAGEAbgAtAHIAZQBhAGQAYQBiAGwAZQAgAGgAZQBhAGQAZQByAHMAIABvAHIAIABpAG4AIAB0AGgAZQAgAGEAcABwAHIAbwBwAHIAaQBhAHQAZQAgAG0AYQBjAGgAaQBuAGUALQByAGUAYQBkAGEAYgBsAGUAIABtAGUAdABhAGQAYQB0AGEAIABmAGkAZQBsAGQAcwAgAHcAaQB0AGgAaQBuACAAdABlAHgAdAAgAG8AcgAgAGIAaQBuAGEAcgB5ACAAZgBpAGwAZQBzACAAYQBzACAAbABvAG4AZwAgAGEAcwAgAHQAaABvAHMAZQAgAGYAaQBlAGwAZABzACAAYwBhAG4AIABiAGUAIABlAGEAcwBpAGwAeQAgAHYAaQBlAHcAZQBkACAAYgB5ACAAdABoAGUAIAB1AHMAZQByAC4ADQAKAA0ACgAzACkAIABOAG8AIABNAG8AZABpAGYAaQBlAGQAIABWAGUAcgBzAGkAbwBuACAAbwBmACAAdABoAGUAIABGAG8AbgB0ACAAUwBvAGYAdAB3AGEAcgBlACAAbQBhAHkAIAB1AHMAZQAgAHQAaABlACAAUgBlAHMAZQByAHYAZQBkACAARgBvAG4AdAAgAE4AYQBtAGUAKABzACkAIAB1AG4AbABlAHMAcwAgAGUAeABwAGwAaQBjAGkAdAAgAHcAcgBpAHQAdABlAG4AIABwAGUAcgBtAGkAcwBzAGkAbwBuACAAaQBzACAAZwByAGEAbgB0AGUAZAAgAGIAeQAgAHQAaABlACAAYwBvAHIAcgBlAHMAcABvAG4AZABpAG4AZwAgAEMAbwBwAHkAcgBpAGcAaAB0ACAASABvAGwAZABlAHIALgAgAFQAaABpAHMAIAByAGUAcwB0AHIAaQBjAHQAaQBvAG4AIABvAG4AbAB5ACAAYQBwAHAAbABpAGUAcwAgAHQAbwAgAHQAaABlACAAcAByAGkAbQBhAHIAeQAgAGYAbwBuAHQAIABuAGEAbQBlACAAYQBzACAAcAByAGUAcwBlAG4AdABlAGQAIAB0AG8AIAB0AGgAZQAgAHUAcwBlAHIAcwAuAA0ACgANAAoANAApACAAVABoAGUAIABuAGEAbQBlACgAcwApACAAbwBmACAAdABoAGUAIABDAG8AcAB5AHIAaQBnAGgAdAAgAEgAbwBsAGQAZQByACgAcwApACAAbwByACAAdABoAGUAIABBAHUAdABoAG8AcgAoAHMAKQAgAG8AZgAgAHQAaABlACAARgBvAG4AdAAgAFMAbwBmAHQAdwBhAHIAZQAgAHMAaABhAGwAbAAgAG4AbwB0ACAAYgBlACAAdQBzAGUAZAAgAHQAbwAgAHAAcgBvAG0AbwB0AGUALAAgAGUAbgBkAG8AcgBzAGUAIABvAHIAIABhAGQAdgBlAHIAdABpAHMAZQAgAGEAbgB5ACAATQBvAGQAaQBmAGkAZQBkACAAVgBlAHIAcwBpAG8AbgAsACAAZQB4AGMAZQBwAHQAIAB0AG8AIABhAGMAawBuAG8AdwBsAGUAZABnAGUAIAB0AGgAZQAgAGMAbwBuAHQAcgBpAGIAdQB0AGkAbwBuACgAcwApACAAbwBmACAAdABoAGUAIABDAG8AcAB5AHIAaQBnAGgAdAAgAEgAbwBsAGQAZQByACgAcwApACAAYQBuAGQAIAB0AGgAZQAgAEEAdQB0AGgAbwByACgAcwApACAAbwByACAAdwBpAHQAaAAgAHQAaABlAGkAcgAgAGUAeABwAGwAaQBjAGkAdAAgAHcAcgBpAHQAdABlAG4AIABwAGUAcgBtAGkAcwBzAGkAbwBuAC4ADQAKAA0ACgA1ACkAIABUAGgAZQAgAEYAbwBuAHQAIABTAG8AZgB0AHcAYQByAGUALAAgAG0AbwBkAGkAZgBpAGUAZAAgAG8AcgAgAHUAbgBtAG8AZABpAGYAaQBlAGQALAAgAGkAbgAgAHAAYQByAHQAIABvAHIAIABpAG4AIAB3AGgAbwBsAGUALAAgAG0AdQBzAHQAIABiAGUAIABkAGkAcwB0AHIAaQBiAHUAdABlAGQAIABlAG4AdABpAHIAZQBsAHkAIAB1AG4AZABlAHIAIAB0AGgAaQBzACAAbABpAGMAZQBuAHMAZQAsACAAYQBuAGQAIABtAHUAcwB0ACAAbgBvAHQAIABiAGUAIABkAGkAcwB0AHIAaQBiAHUAdABlAGQAIAB1AG4AZABlAHIAIABhAG4AeQAgAG8AdABoAGUAcgAgAGwAaQBjAGUAbgBzAGUALgAgAFQAaABlACAAcgBlAHEAdQBpAHIAZQBtAGUAbgB0ACAAZgBvAHIAIABmAG8AbgB0AHMAIAB0AG8AIAByAGUAbQBhAGkAbgAgAHUAbgBkAGUAcgAgAHQAaABpAHMAIABsAGkAYwBlAG4AcwBlACAAZABvAGUAcwAgAG4AbwB0ACAAYQBwAHAAbAB5ACAAdABvACAAYQBuAHkAIABkAG8AYwB1AG0AZQBuAHQAIABjAHIAZQBhAHQAZQBkACAAdQBzAGkAbgBnACAAdABoAGUAIABGAG8AbgB0ACAAUwBvAGYAdAB3AGEAcgBlAC4ADQAKAA0ACgBUAEUAUgBNAEkATgBBAFQASQBPAE4ADQAKAFQAaABpAHMAIABsAGkAYwBlAG4AcwBlACAAYgBlAGMAbwBtAGUAcwAgAG4AdQBsAGwAIABhAG4AZAAgAHYAbwBpAGQAIABpAGYAIABhAG4AeQAgAG8AZgAgAHQAaABlACAAYQBiAG8AdgBlACAAYwBvAG4AZABpAHQAaQBvAG4AcwAgAGEAcgBlACAAbgBvAHQAIABtAGUAdAAuAA0ACgANAAoARABJAFMAQwBMAEEASQBNAEUAUgANAAoAVABIAEUAIABGAE8ATgBUACAAUwBPAEYAVABXAEEAUgBFACAASQBTACAAUABSAE8AVgBJAEQARQBEACAAIgBBAFMAIABJAFMAIgAsACAAVwBJAFQASABPAFUAVAAgAFcAQQBSAFIAQQBOAFQAWQAgAE8ARgAgAEEATgBZACAASwBJAE4ARAAsACAARQBYAFAAUgBFAFMAUwAgAE8AUgAgAEkATQBQAEwASQBFAEQALAAgAEkATgBDAEwAVQBEAEkATgBHACAAQgBVAFQAIABOAE8AVAAgAEwASQBNAEkAVABFAEQAIABUAE8AIABBAE4AWQAgAFcAQQBSAFIAQQBOAFQASQBFAFMAIABPAEYAIABNAEUAUgBDAEgAQQBOAFQAQQBCAEkATABJAFQAWQAsACAARgBJAFQATgBFAFMAUwAgAEYATwBSACAAQQAgAFAAQQBSAFQASQBDAFUATABBAFIAIABQAFUAUgBQAE8AUwBFACAAQQBOAEQAIABOAE8ATgBJAE4ARgBSAEkATgBHAEUATQBFAE4AVAAgAE8ARgAgAEMATwBQAFkAUgBJAEcASABUACwAIABQAEEAVABFAE4AVAAsACAAVABSAEEARABFAE0AQQBSAEsALAAgAE8AUgAgAE8AVABIAEUAUgAgAFIASQBHAEgAVAAuACAASQBOACAATgBPACAARQBWAEUATgBUACAAUwBIAEEATABMACAAVABIAEUAIABDAE8AUABZAFIASQBHAEgAVAAgAEgATwBMAEQARQBSACAAQgBFACAATABJAEEAQgBMAEUAIABGAE8AUgAgAEEATgBZACAAQwBMAEEASQBNACwAIABEAEEATQBBAEcARQBTACAATwBSACAATwBUAEgARQBSACAATABJAEEAQgBJAEwASQBUAFkALAAgAEkATgBDAEwAVQBEAEkATgBHACAAQQBOAFkAIABHAEUATgBFAFIAQQBMACwAIABTAFAARQBDAEkAQQBMACwAIABJAE4ARABJAFIARQBDAFQALAAgAEkATgBDAEkARABFAE4AVABBAEwALAAgAE8AUgAgAEMATwBOAFMARQBRAFUARQBOAFQASQBBAEwAIABEAEEATQBBAEcARQBTACwAIABXAEgARQBUAEgARQBSACAASQBOACAAQQBOACAAQQBDAFQASQBPAE4AIABPAEYAIABDAE8ATgBUAFIAQQBDAFQALAAgAFQATwBSAFQAIABPAFIAIABPAFQASABFAFIAVwBJAFMARQAsACAAQQBSAEkAUwBJAE4ARwAgAEYAUgBPAE0ALAAgAE8AVQBUACAATwBGACAAVABIAEUAIABVAFMARQAgAE8AUgAgAEkATgBBAEIASQBMAEkAVABZACAAVABPACAAVQBTAEUAIABUAEgARQAgAEYATwBOAFQAIABTAE8ARgBUAFcAQQBSAEUAIABPAFIAIABGAFIATwBNACAATwBUAEgARQBSACAARABFAEEATABJAE4ARwBTACAASQBOACAAVABIAEUAIABGAE8ATgBUACAAUwBPAEYAVABXAEEAUgBFAC4ADQAKAGgAdAB0AHAAOgAvAC8AdwB3AHcALgBhAGQAbwBiAGUALgBjAG8AbQAvAHQAeQBwAGUALwBsAGUAZwBhAGwALgBoAHQAbQBsAAAAAAAFAAAAAwAAADgAAAAEAAABUAABAAAAAAAsAAMAAQAAADgAAwAKAAABUAAGAAwAAAAAAAEAAAAEARgAAABCAEAABQACB/8P/xf/H/8n/y//N/8//0f/T/9X/1//Z/9v/3f/f/+H/4//l/+f/6f/r/+3/7//x//P/9f/5//v//f//c///f//AAAAAAgAEAAYACAAKAAwADgAQABIAFAAWABgAGgAcAB4AIAAiACQAJgAoACoALAAuADAAMgA0ADgAOgA8AD4AP3w//8AAfgB8AHoAeAB2AHQAcgBwAG4AbABqAGgAZgBkAGIAYABeAFwAWgBYAFYAVABSAFAATgBMAEgARgBEAEIAQgBAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAAAAAAZkAAAAAAAAAIgAAAAAAAAB/8AAAABAAAIAAAAD/8AAAABAAAQAAAAF/8AAAABAAAYAAAAH/8AAAABAAAgAAAAJ/8AAAABAAAoAAAAL/8AAAABAAAwAAAAN/8AAAABAAA4AAAAP/8AAAABAABAAAAAR/8AAAABAABIAAAAT/8AAAABAABQAAAAV/8AAAABAABYAAAAX/8AAAABAABgAAAAZ/8AAAABAABoAAAAb/8AAAABAABwAAAAd/8AAAABAAB4AAAAf/8AAAABAACAAAAAh/8AAAABAACIAAAAj/8AAAABAACQAAAAl/8AAAABAACYAAAAn/8AAAABAACgAAAAp/8AAAABAACoAAAAr/8AAAABAACwAAAAt/8AAAABAAC4AAAAv/8AAAABAADAAAAAx/8AAAABAADIAAAAz/8AAAABAADQAAAA1/8AAAABAADgAAAA5/8AAAABAADoAAAA7/8AAAABAADwAAAA9/8AAAABAAD4AAAA/c8AAAABAAD98AAA//0AAAXxAAEAAAABB/8AAAABAAEIAAABD/8AAAABAAEQAAABF/8AAAABAAEYAAABH/8AAAABAAEgAAABJ/8AAAABAAEoAAABL/8AAAABAAEwAAABN/8AAAABAAE4AAABP/8AAAABAAFAAAABR/8AAAABAAFIAAABT/8AAAABAAFQAAABV/8AAAABAAFYAAABX/8AAAABAAFgAAABZ/8AAAABAAFoAAABb/8AAAABAAFwAAABd/8AAAABAAF4AAABf/8AAAABAAGAAAABh/8AAAABAAGIAAABj/8AAAABAAGQAAABl/8AAAABAAGYAAABn/8AAAABAAGgAAABp/8AAAABAAGoAAABr/8AAAABAAGwAAABt/8AAAABAAG4AAABv/8AAAABAAHAAAABx/8AAAABAAHIAAABz/8AAAABAAHQAAAB1/8AAAABAAHYAAAB3/8AAAABAAHgAAAB5/8AAAABAAHoAAAB7/8AAAABAAHwAAAB9/8AAAABAAH4AAAB//0AAAABAAIAAAACB/8AAAABAAIIAAACD/8AAAABAAIQAAACF/8AAAABAAIYAAACH/8AAAABAAIgAAACJ/8AAAABAAIoAAACL/8AAAABAAIwAAACN/8AAAABAAI4AAACP/8AAAABAAJAAAACR/8AAAABAAJIAAACT/8AAAABAAJQAAACV/8AAAABAAJYAAACX/8AAAABAAJgAAACZ/8AAAABAAJoAAACb/8AAAABAAJwAAACd/8AAAABAAJ4AAACf/8AAAABAAKAAAACh/8AAAABAAKIAAACj/8AAAABAAKQAAACl/8AAAABAAKYAAACn/8AAAABAAKgAAACp/8AAAABAAKoAAACr/8AAAABAAKwAAACt/8AAAABAAK4AAACv/8AAAABAALAAAACx/8AAAABAALIAAACz/8AAAABAALQAAAC1/8AAAABAALYAAAC3/8AAAABAALgAAAC5/8AAAABAALoAAAC7/8AAAABAALwAAAC9/8AAAABAAL4AAAC//0AAAABAAMAAAADB/8AAAABAAMIAAADD/8AAAABAAMQAAADF/8AAAABAAMYAAADH/8AAAABAAMgAAADJ/8AAAABAAMoAAADL/8AAAABAAMwAAADN/8AAAABAAM4AAADP/8AAAABAANAAAADR/8AAAABAANIAAADT/8AAAABAANQAAADV/8AAAABAANYAAADX/8AAAABAANgAAADZ/8AAAABAANoAAADb/8AAAABAANwAAADd/8AAAABAAN4AAADf/8AAAABAAOAAAADh/8AAAABAAOIAAADj/8AAAABAAOQAAADl/8AAAABAAOYAAADn/8AAAABAAOgAAADp/8AAAABAAOoAAADr/8AAAABAAOwAAADt/8AAAABAAO4AAADv/8AAAABAAPAAAADx/8AAAABAAPIAAADz/8AAAABAAPQAAAD1/8AAAABAAPYAAAD3/8AAAABAAPgAAAD5/8AAAABAAPoAAAD7/8AAAABAAPwAAAD9/8AAAABAAP4AAAD//0AAAABAAQAAAAEB/8AAAABAAQIAAAED/8AAAABAAQQAAAEF/8AAAABAAQYAAAEH/8AAAABAAQgAAAEJ/8AAAABAAQoAAAEL/8AAAABAAQwAAAEN/8AAAABAAQ4AAAEP/8AAAABAARAAAAER/8AAAABAARIAAAET/8AAAABAARQAAAEV/8AAAABAARYAAAEX/8AAAABAARgAAAEZ/8AAAABAARoAAAEb/8AAAABAARwAAAEd/8AAAABAAR4AAAEf/8AAAABAASAAAAEh/8AAAABAASIAAAEj/8AAAABAASQAAAEl/8AAAABAASYAAAEn/8AAAABAASgAAAEp/8AAAABAASoAAAEr/8AAAABAASwAAAEt/8AAAABAAS4AAAEv/8AAAABAATAAAAEx/8AAAABAATIAAAEz/8AAAABAATQAAAE1/8AAAABAATYAAAE3/8AAAABAATgAAAE5/8AAAABAAToAAAE7/8AAAABAATwAAAE9/8AAAABAAT4AAAE//0AAAABAAUAAAAFB/8AAAABAAUIAAAFD/8AAAABAAUQAAAFF/8AAAABAAUYAAAFH/8AAAABAAUgAAAFJ/8AAAABAAUoAAAFL/8AAAABAAUwAAAFN/8AAAABAAU4AAAFP/8AAAABAAVAAAAFR/8AAAABAAVIAAAFT/8AAAABAAVQAAAFV/8AAAABAAVYAAAFX/8AAAABAAVgAAAFZ/8AAAABAAVoAAAFb/8AAAABAAVwAAAFd/8AAAABAAV4AAAFf/8AAAABAAWAAAAFh/8AAAABAAWIAAAFj/8AAAABAAWQAAAFl/8AAAABAAWYAAAFn/8AAAABAAWgAAAFp/8AAAABAAWoAAAFr/8AAAABAAWwAAAFt/8AAAABAAW4AAAFv/8AAAABAAXAAAAFx/8AAAABAAXIAAAFz/8AAAABAAXQAAAF1/8AAAABAAXYAAAF3/8AAAABAAXgAAAF5/8AAAABAAXoAAAF7/8AAAABAAXwAAAF9/8AAAABAAX4AAAF//0AAAABAAYAAAAGB/8AAAABAAYIAAAGD/8AAAABAAYQAAAGF/8AAAABAAYYAAAGH/8AAAABAAYgAAAGJ/8AAAABAAYoAAAGL/8AAAABAAYwAAAGN/8AAAABAAY4AAAGP/8AAAABAAZAAAAGR/8AAAABAAZIAAAGT/8AAAABAAZQAAAGV/8AAAABAAZYAAAGX/8AAAABAAZgAAAGZ/8AAAABAAZoAAAGb/8AAAABAAZwAAAGd/8AAAABAAZ4AAAGf/8AAAABAAaAAAAGh/8AAAABAAaIAAAGj/8AAAABAAaQAAAGl/8AAAABAAaYAAAGn/8AAAABAAagAAAGp/8AAAABAAaoAAAGr/8AAAABAAawAAAGt/8AAAABAAa4AAAGv/8AAAABAAbAAAAGx/8AAAABAAbIAAAGz/8AAAABAAbQAAAG1/8AAAABAAbYAAAG3/8AAAABAAbgAAAG5/8AAAABAAboAAAG7/8AAAABAAbwAAAG9/8AAAABAAb4AAAG//0AAAABAAcAAAAHB/8AAAABAAcIAAAHD/8AAAABAAcQAAAHF/8AAAABAAcYAAAHH/8AAAABAAcgAAAHJ/8AAAABAAcoAAAHL/8AAAABAAcwAAAHN/8AAAABAAc4AAAHP/8AAAABAAdAAAAHR/8AAAABAAdIAAAHT/8AAAABAAdQAAAHV/8AAAABAAdYAAAHX/8AAAABAAdgAAAHZ/8AAAABAAdoAAAHb/8AAAABAAdwAAAHd/8AAAABAAd4AAAHf/8AAAABAAeAAAAHh/8AAAABAAeIAAAHj/8AAAABAAeQAAAHl/8AAAABAAeYAAAHn/8AAAABAAegAAAHp/8AAAABAAeoAAAHr/8AAAABAAewAAAHt/8AAAABAAe4AAAHv/8AAAABAAfAAAAHx/8AAAABAAfIAAAHz/8AAAABAAfQAAAH1/8AAAABAAfYAAAH3/8AAAABAAfgAAAH5/8AAAABAAfoAAAH7/8AAAABAAfwAAAH9/8AAAABAAf4AAAH//0AAAABAAgAAAAIB/8AAAABAAgIAAAID/8AAAABAAgQAAAIF/8AAAABAAgYAAAIH/8AAAABAAggAAAIJ/8AAAABAAgoAAAIL/8AAAABAAgwAAAIN/8AAAABAAg4AAAIP/8AAAABAAhAAAAIR/8AAAABAAhIAAAIT/8AAAABAAhQAAAIV/8AAAABAAhYAAAIX/8AAAABAAhgAAAIZ/8AAAABAAhoAAAIb/8AAAABAAhwAAAId/8AAAABAAh4AAAIf/8AAAABAAiAAAAIh/8AAAABAAiIAAAIj/8AAAABAAiQAAAIl/8AAAABAAiYAAAIn/8AAAABAAigAAAIp/8AAAABAAioAAAIr/8AAAABAAiwAAAIt/8AAAABAAi4AAAIv/8AAAABAAjAAAAIx/8AAAABAAjIAAAIz/8AAAABAAjQAAAI1/8AAAABAAjYAAAI3/8AAAABAAjgAAAI5/8AAAABAAjoAAAI7/8AAAABAAjwAAAI9/8AAAABAAj4AAAI//0AAAABAAkAAAAJB/8AAAABAAkIAAAJD/8AAAABAAkQAAAJF/8AAAABAAkYAAAJH/8AAAABAAkgAAAJJ/8AAAABAAkoAAAJL/8AAAABAAkwAAAJN/8AAAABAAk4AAAJP/8AAAABAAlAAAAJR/8AAAABAAlIAAAJT/8AAAABAAlQAAAJV/8AAAABAAlYAAAJX/8AAAABAAlgAAAJZ/8AAAABAAloAAAJb/8AAAABAAlwAAAJd/8AAAABAAl4AAAJf/8AAAABAAmAAAAJh/8AAAABAAmIAAAJj/8AAAABAAmQAAAJl/8AAAABAAmYAAAJn/8AAAABAAmgAAAJp/8AAAABAAmoAAAJr/8AAAABAAmwAAAJt/8AAAABAAm4AAAJv/8AAAABAAnAAAAJx/8AAAABAAnIAAAJz/8AAAABAAnQAAAJ1/8AAAABAAnYAAAJ3/8AAAABAAngAAAJ5/8AAAABAAnoAAAJ7/8AAAABAAnwAAAJ9/8AAAABAAn4AAAJ//0AAAABAAoAAAAKB/8AAAABAAoIAAAKD/8AAAABAAoQAAAKF/8AAAABAAoYAAAKH/8AAAABAAogAAAKJ/8AAAABAAooAAAKL/8AAAABAAowAAAKN/8AAAABAAo4AAAKP/8AAAABAApAAAAKR/8AAAABAApIAAAKT/8AAAABAApQAAAKV/8AAAABAApYAAAKX/8AAAABAApgAAAKZ/8AAAABAApoAAAKb/8AAAABAApwAAAKd/8AAAABAAp4AAAKf/8AAAABAAqAAAAKh/8AAAABAAqIAAAKj/8AAAABAAqQAAAKl/8AAAABAAqYAAAKn/8AAAABAAqgAAAKp/8AAAABAAqoAAAKr/8AAAABAAqwAAAKt/8AAAABAAq4AAAKv/8AAAABAArAAAAKx/8AAAABAArIAAAKz/8AAAABAArQAAAK1/8AAAABAArYAAAK3/8AAAABAArgAAAK5/8AAAABAAroAAAK7/8AAAABAArwAAAK9/8AAAABAAr4AAAK//0AAAABAAsAAAALB/8AAAABAAsIAAALD/8AAAABAAsQAAALF/8AAAABAAsYAAALH/8AAAABAAsgAAALJ/8AAAABAAsoAAALL/8AAAABAAswAAALN/8AAAABAAs4AAALP/8AAAABAAtAAAALR/8AAAABAAtIAAALT/8AAAABAAtQAAALV/8AAAABAAtYAAALX/8AAAABAAtgAAALZ/8AAAABAAtoAAALb/8AAAABAAtwAAALd/8AAAABAAt4AAALf/8AAAABAAuAAAALh/8AAAABAAuIAAALj/8AAAABAAuQAAALl/8AAAABAAuYAAALn/8AAAABAAugAAALp/8AAAABAAuoAAALr/8AAAABAAuwAAALt/8AAAABAAu4AAALv/8AAAABAAvAAAALx/8AAAABAAvIAAALz/8AAAABAAvQAAAL1/8AAAABAAvYAAAL3/8AAAABAAvgAAAL5/8AAAABAAvoAAAL7/8AAAABAAvwAAAL9/8AAAABAAv4AAAL//0AAAABAAwAAAAMB/8AAAABAAwIAAAMD/8AAAABAAwQAAAMF/8AAAABAAwYAAAMH/8AAAABAAwgAAAMJ/8AAAABAAwoAAAML/8AAAABAAwwAAAMN/8AAAABAAw4AAAMP/8AAAABAAxAAAAMR/8AAAABAAxIAAAMT/8AAAABAAxQAAAMV/8AAAABAAxYAAAMX/8AAAABAAxgAAAMZ/8AAAABAAxoAAAMb/8AAAABAAxwAAAMd/8AAAABAAx4AAAMf/8AAAABAAyAAAAMh/8AAAABAAyIAAAMj/8AAAABAAyQAAAMl/8AAAABAAyYAAAMn/8AAAABAAygAAAMp/8AAAABAAyoAAAMr/8AAAABAAywAAAMt/8AAAABAAy4AAAMv/8AAAABAAzAAAAMx/8AAAABAAzIAAAMz/8AAAABAAzQAAAM1/8AAAABAAzYAAAM3/8AAAABAAzgAAAM5/8AAAABAAzoAAAM7/8AAAABAAzwAAAM9/8AAAABAAz4AAAM//0AAAABAA0AAAANB/8AAAABAA0IAAAND/8AAAABAA0QAAANF/8AAAABAA0YAAANH/8AAAABAA0gAAANJ/8AAAABAA0oAAANL/8AAAABAA0wAAANN/8AAAABAA04AAANP/8AAAABAA1AAAANR/8AAAABAA1IAAANT/8AAAABAA1QAAANV/8AAAABAA1YAAANX/8AAAABAA1gAAANZ/8AAAABAA1oAAANb/8AAAABAA1wAAANd/8AAAABAA14AAANf/8AAAABAA2AAAANh/8AAAABAA2IAAANj/8AAAABAA2QAAANl/8AAAABAA2YAAANn/8AAAABAA2gAAANp/8AAAABAA2oAAANr/8AAAABAA2wAAANt/8AAAABAA24AAANv/8AAAABAA3AAAANx/8AAAABAA3IAAANz/8AAAABAA3QAAAN1/8AAAABAA3YAAAN3/8AAAABAA3gAAAN5/8AAAABAA3oAAAN7/8AAAABAA3wAAAN9/8AAAABAA34AAAN//0AAAABAA4AAAAOB/8AAAABAA4IAAAOD/8AAAABAA4QAAAOF/8AAAABAA4YAAAOH/8AAAABAA4gAAAOJ/8AAAABAA4oAAAOL/8AAAABAA4wAAAON/8AAAABAA44AAAOP/8AAAABAA5AAAAOR/8AAAABAA5IAAAOT/8AAAABAA5QAAAOV/8AAAABAA5YAAAOX/8AAAABAA5gAAAOZ/8AAAABAA5oAAAOb/8AAAABAA5wAAAOd/8AAAABAA54AAAOf/8AAAABAA6AAAAOh/8AAAABAA6IAAAOj/8AAAABAA6QAAAOl/8AAAABAA6YAAAOn/8AAAABAA6gAAAOp/8AAAABAA6oAAAOr/8AAAABAA6wAAAOt/8AAAABAA64AAAOv/8AAAABAA7AAAAOx/8AAAABAA7IAAAOz/8AAAABAA7QAAAO1/8AAAABAA7YAAAO3/8AAAABAA7gAAAO5/8AAAABAA7oAAAO7/8AAAABAA7wAAAO9/8AAAABAA74AAAO//0AAAABAA8AAAAPB/8AAAABAA8IAAAPD/8AAAABAA8QAAAPF/8AAAABAA8YAAAPH/8AAAABAA8gAAAPJ/8AAAABAA8oAAAPL/8AAAABAA8wAAAPN/8AAAABAA84AAAPP/8AAAABAA9AAAAPR/8AAAABAA9IAAAPT/8AAAABAA9QAAAPV/8AAAABAA9YAAAPX/8AAAABAA9gAAAPZ/8AAAABAA9oAAAPb/8AAAABAA9wAAAPd/8AAAABAA94AAAPf/8AAAABAA+AAAAPh/8AAAABAA+IAAAPj/8AAAABAA+QAAAPl/8AAAABAA+YAAAPn/8AAAABAA+gAAAPp/8AAAABAA+oAAAPr/8AAAABAA+wAAAPt/8AAAABAA+4AAAPv/8AAAABAA/AAAAPx/8AAAABAA/IAAAPz/8AAAABAA/QAAAP1/8AAAABAA/YAAAP3/8AAAABAA/gAAAP5/8AAAABAA/oAAAP7/8AAAABAA/wAAAP9/8AAAABAA/4AAAP//0AAAABABAAAAAQB/8AAAABABAIAAAQD/8AAAABABAQAAAQF/8AAAABABAYAAAQH/8AAAABABAgAAAQJ/8AAAABABAoAAAQL/8AAAABABAwAAAQN/8AAAABABA4AAAQP/8AAAABABBAAAAQR/8AAAABABBIAAAQT/8AAAABABBQAAAQV/8AAAABABBYAAAQX/8AAAABABBgAAAQZ/8AAAABABBoAAAQb/8AAAABABBwAAAQd/8AAAABABB4AAAQf/8AAAABABCAAAAQh/8AAAABABCIAAAQj/8AAAABABCQAAAQl/8AAAABABCYAAAQn/8AAAABABCgAAAQp/8AAAABABCoAAAQr/8AAAABABCwAAAQt/8AAAABABC4AAAQv/8AAAABABDAAAAQx/8AAAABABDIAAAQz/8AAAABABDQAAAQ1/8AAAABABDYAAAQ3/8AAAABABDgAAAQ5/8AAAABABDoAAAQ7/8AAAABABDwAAAQ9/8AAAABABD4AAAQ//0AAAABAAMAAAAAAAD/tQAyAAAAAAAAAAAAAAAAAAAAAAAAAAABAAQCAAEBAQtBZG9iZUJsYW5rAAEBATD4G/gciwwe+B0B+B4Ci/sM+gD6BAUeGgA/DB8cCAEMIvdMD/dZEfdRDCUcGRYMJAAFAQEGDk1YZ0Fkb2JlSWRlbnRpdHlDb3B5cmlnaHQgMjAxMyBBZG9iZSBTeXN0ZW1zIEluY29ycG9yYXRlZC4gQWxsIFJpZ2h0cyBSZXNlcnZlZC5BZG9iZSBCbGFua0Fkb2JlQmxhbmstMjA0OQAAAgABB/8DAAEAAAAIAQgBAgABAEsATABNAE4ATwBQAFEAUgBTAFQAVQBWAFcAWABZAFoAWwBcAF0AXgBfAGAAYQBiAGMAZABlAGYAZwBoAGkAagBrAGwAbQBuAG8AcABxAHIAcwB0AHUAdgB3AHgAeQB6AHsAfAB9AH4AfwCAAIEAggCDAIQAhQCGAIcAiACJAIoAiwCMAI0AjgCPAJAAkQCSAJMAlACVAJYAlwCYAJkAmgCbAJwAnQCeAJ8AoAChAKIAowCkAKUApgCnAKgAqQCqAKsArACtAK4ArwCwALEAsgCzALQAtQC2ALcAuAC5ALoAuwC8AL0AvgC/AMAAwQDCAMMAxADFAMYAxwDIAMkAygDLAMwAzQDOAM8A0ADRANIA0wDUANUA1gDXANgA2QDaANsA3ADdAN4A3wDgAOEA4gDjAOQA5QDmAOcA6ADpAOoA6wDsAO0A7gDvAPAA8QDyAPMA9AD1APYA9wD4APkA+gD7APwA/QD+AP8BAAEBAQIBAwEEAQUBBgEHAQgBCQEKAQsBDAENAQ4BDwEQAREBEgETARQBFQEWARcBGAEZARoBGwEcAR0BHgEfASABIQEiASMBJAElASYBJwEoASkBKgErASwBLQEuAS8BMAExATIBMwE0ATUBNgE3ATgBOQE6ATsBPAE9AT4BPwFAAUEBQgFDAUQBRQFGAUcBSAFJAUoBSwFMAU0BTgFPAVABUQFSAVMBVAFVAVYBVwFYAVkBWgFbAVwBXQFeAV8BYAFhAWIBYwFkAWUBZgFnAWgBaQFqAWsBbAFtAW4BbwFwAXEBcgFzAXQBdQF2AXcBeAF5AXoBewF8AX0BfgF/AYABgQGCAYMBhAGFAYYBhwGIAYkBigGLAYwBjQGOAY8BkAGRAZIBkwGUAZUBlgGXAZgBmQGaAZsBnAGdAZ4BnwGgAaEBogGjAaQBpQGmAacBqAGpAaoBqwGsAa0BrgGvAbABsQGyAbMBtAG1AbYBtwG4AbkBugG7AbwBvQG+Ab8BwAHBAcIBwwHEAcUBxgHHAcgByQHKAcsBzAHNAc4BzwHQAdEB0gHTAdQB1QHWAdcB2AHZAdoB2wHcAd0B3gHfAeAB4QHiAeMB5AHlAeYB5wHoAekB6gHrAewB7QHuAe8B8AHxAfIB8wH0AfUB9gH3AfgB+QH6AfsB/AH9Af4B/wIAAgECAgIDAgQCBQIGAgcCCAIJAgoCCwIMAg0CDgIPAhACEQISAhMCFAIVAhYCFwIYAhkCGgIbAhwCHQIeAh8CIAIhAiICIwIkAiUCJgInAigCKQIqAisCLAItAi4CLwIwAjECMgIzAjQCNQI2AjcCOAI5AjoCOwI8Aj0CPgI/AkACQQJCAkMCRAJFAkYCRwJIAkkCSgJLAkwCTQJOAk8CUAJRAlICUwJUAlUCVgJXAlgCWQJaAlsCXAJdAl4CXwJgAmECYgJjAmQCZQJmAmcCaAJpAmoCawJsAm0CbgJvAnACcQJyAnMCdAJ1AnYCdwJ4AnkCegJ7AnwCfQJ+An8CgAKBAoICgwKEAoUChgKHAogCiQKKAosCjAKNAo4CjwKQApECkgKTApQClQKWApcCmAKZApoCmwKcAp0CngKfAqACoQKiAqMCpAKlAqYCpwKoAqkCqgKrAqwCrQKuAq8CsAKxArICswK0ArUCtgK3ArgCuQK6ArsCvAK9Ar4CvwLAAsECwgLDAsQCxQLGAscCyALJAsoCywLMAs0CzgLPAtAC0QLSAtMC1ALVAtYC1wLYAtkC2gLbAtwC3QLeAt8C4ALhAuIC4wLkAuUC5gLnAugC6QLqAusC7ALtAu4C7wLwAvEC8gLzAvQC9QL2AvcC+AL5AvoC+wL8Av0C/gL/AwADAQMCAwMDBAMFAwYDBwMIAwkDCgMLAwwDDQMOAw8DEAMRAxIDEwMUAxUDFgMXAxgDGQMaAxsDHAMdAx4DHwMgAyEDIgMjAyQDJQMmAycDKAMpAyoDKwMsAy0DLgMvAzADMQMyAzMDNAM1AzYDNwM4AzkDOgM7AzwDPQM+Az8DQANBA0IDQwNEA0UDRgNHA0gDSQNKA0sDTANNA04DTwNQA1EDUgNTA1QDVQNWA1cDWANZA1oDWwNcA10DXgNfA2ADYQNiA2MDZANlA2YDZwNoA2kDagNrA2wDbQNuA28DcANxA3IDcwN0A3UDdgN3A3gDeQN6A3sDfAN9A34DfwOAA4EDggODA4QDhQOGA4cDiAOJA4oDiwOMA40DjgOPA5ADkQOSA5MDlAOVA5YDlwOYA5kDmgObA5wDnQOeA58DoAOhA6IDowOkA6UDpgOnA6gDqQOqA6sDrAOtA64DrwOwA7EDsgOzA7QDtQO2A7cDuAO5A7oDuwO8A70DvgO/A8ADwQPCA8MDxAPFA8YDxwPIA8kDygPLA8wDzQPOA88D0APRA9ID0wPUA9UD1gPXA9gD2QPaA9sD3APdA94D3wPgA+ED4gPjA+QD5QPmA+cD6APpA+oD6wPsA+0D7gPvA/AD8QPyA/MD9AP1A/YD9wP4A/kD+gP7A/wD/QP+A/8EAAQBBAIEAwQEBAUEBgQHBAgECQQKBAsEDAQNBA4EDwQQBBEEEgQTBBQEFQQWBBcEGAQZBBoEGwQcBB0EHgQfBCAEIQQiBCMEJAQlBCYEJwQoBCkEKgQrBCwELQQuBC8EMAQxBDIEMwQ0BDUENgQ3BDgEOQQ6BDsEPAQ9BD4EPwRABEEEQgRDBEQERQRGBEcESARJBEoESwRMBE0ETgRPBFAEUQRSBFMEVARVBFYEVwRYBFkEWgRbBFwEXQReBF8EYARhBGIEYwRkBGUEZgRnBGgEaQRqBGsEbARtBG4EbwRwBHEEcgRzBHQEdQR2BHcEeAR5BHoEewR8BH0EfgR/BIAEgQSCBIMEhASFBIYEhwSIBIkEigSLBIwEjQSOBI8EkASRBJIEkwSUBJUElgSXBJgEmQSaBJsEnASdBJ4EnwSgBKEEogSjBKQEpQSmBKcEqASpBKoEqwSsBK0ErgSvBLAEsQSyBLMEtAS1BLYEtwS4BLkEugS7BLwEvQS+BL8EwATBBMIEwwTEBMUExgTHBMgEyQTKBMsEzATNBM4EzwTQBNEE0gTTBNQE1QTWBNcE2ATZBNoE2wTcBN0E3gTfBOAE4QTiBOME5ATlBOYE5wToBOkE6gTrBOwE7QTuBO8E8ATxBPIE8wT0BPUE9gT3BPgE+QT6BPsE/AT9BP4E/wUABQEFAgUDBQQFBQUGBQcFCAUJBQoFCwUMBQ0FDgUPBRAFEQUSBRMFFAUVBRYFFwUYBRkFGgUbBRwFHQUeBR8FIAUhBSIFIwUkBSUFJgUnBSgFKQUqBSsFLAUtBS4FLwUwBTEFMgUzBTQFNQU2BTcFOAU5BToFOwU8BT0FPgU/BUAFQQVCBUMFRAVFBUYFRwVIBUkFSgVLBUwFTQVOBU8FUAVRBVIFUwVUBVUFVgVXBVgFWQVaBVsFXAVdBV4FXwVgBWEFYgVjBWQFZQVmBWcFaAVpBWoFawVsBW0FbgVvBXAFcQVyBXMFdAV1BXYFdwV4BXkFegV7BXwFfQV+BX8FgAWBBYIFgwWEBYUFhgWHBYgFiQWKBYsFjAWNBY4FjwWQBZEFkgWTBZQFlQWWBZcFmAWZBZoFmwWcBZ0FngWfBaAFoQWiBaMFpAWlBaYFpwWoBakFqgWrBawFrQWuBa8FsAWxBbIFswW0BbUFtgW3BbgFuQW6BbsFvAW9Bb4FvwXABcEFwgXDBcQFxQXGBccFyAXJBcoFywXMBc0FzgXPBdAF0QXSBdMF1AXVBdYF1wXYBdkF2gXbBdwF3QXeBd8F4AXhBeIF4wXkBeUF5gXnBegF6QXqBesF7AXtBe4F7wXwBfEF8gXzBfQF9QX2BfcF+AX5BfoF+wX8Bf0F/gX/BgAGAQYCBgMGBAYFBgYGBwYIBgkGCgYLBgwGDQYOBg8GEAYRBhIGEwYUBhUGFgYXBhgGGQYaBhsGHAYdBh4GHwYgBiEGIgYjBiQGJQYmBicGKAYpBioGKwYsBi0GLgYvBjAGMQYyBjMGNAY1BjYGNwY4BjkGOgY7BjwGPQY+Bj8GQAZBBkIGQwZEBkUGRgZHBkgGSQZKBksGTAZNBk4GTwZQBlEGUgZTBlQGVQZWBlcGWAZZBloGWwZcBl0GXgZfBmAGYQZiBmMGZAZlBmYGZwZoBmkGagZrBmwGbQZuBm8GcAZxBnIGcwZ0BnUGdgZ3BngGeQZ6BnsGfAZ9Bn4GfwaABoEGggaDBoQGhQaGBocGiAaJBooGiwaMBo0GjgaPBpAGkQaSBpMGlAaVBpYGlwaYBpkGmgabBpwGnQaeBp8GoAahBqIGowakBqUGpganBqgGqQaqBqsGrAatBq4GrwawBrEGsgazBrQGtQa2BrcGuAa5BroGuwa8Br0Gvga/BsAGwQbCBsMGxAbFBsYGxwbIBskGygbLBswGzQbOBs8G0AbRBtIG0wbUBtUG1gbXBtgG2QbaBtsG3AbdBt4G3wbgBuEG4gbjBuQG5QbmBucG6AbpBuoG6wbsBu0G7gbvBvAG8QbyBvMG9Ab1BvYG9wb4BvkG+gb7BvwG/Qb+Bv8HAAcBBwIHAwcEBwUHBgcHBwgHCQcKBwsHDAcNBw4HDwcQBxEHEgcTBxQHFQcWBxcHGAcZBxoHGwccBx0HHgcfByAHIQciByMHJAclByYHJwcoBykHKgcrBywHLQcuBy8HMAcxBzIHMwc0BzUHNgc3BzgHOQc6BzsHPAc9Bz4HPwdAB0EHQgdDB0QHRQdGB0cHSAdJB0oHSwdMB00HTgdPB1AHUQdSB1MHVAdVB1YHVwdYB1kHWgdbB1wHXQdeB18HYAdhB2IHYwdkB2UHZgdnB2gHaQdqB2sHbAdtB24HbwdwB3EHcgdzB3QHdQd2B3cHeAd5B3oHewd8B30Hfgd/B4AHgQeCB4MHhAeFB4YHhweIB4kHigeLB4wHjQeOB48HkAeRB5IHkweUB5UHlgeXB5gHmQeaB5sHnAedB54HnwegB6EHogejB6QHpQemB6cHqAepB6oHqwesB60HrgevB7AHsQeyB7MHtAe1B7YHtwe4B7kHuge7B7wHvQe+B78HwAfBB8IHwwfEB8UHxgfHB8gHyQfKB8sHzAfNB84HzwfQB9EH0gfTB9QH1QfWB9cH2AfZB9oH2wfcB90H3gffB+AH4QfiB+MH5AflB+YH5wfoB+kH6gfrB+wH7QfuB+8H8AfxB/IH8wf0B/UH9gf3B/gH+Qf6B/sH/Af9B/4H/wgACAEIAggDCAQIBQgGCAcICAgJCAoICwgMCA0IDggPCBAIEQgSCBMIFAgVCBYIFwgYCBkIGggbCBwIHQgeCB8IIAghCCIIIwgkCCUIJggnCCgIKQgqCCsILAgtCC4ILwgwCDEIMggzCDQINQg2CDcIOAg5CDoIOwg8CD0IPgg/CEAIQQhCCEMIRAhFCEYIRwhICEkISghLIPsMt/oktwH3ELf5LLcD9xD6BBX+fPmE+nwH/Vj+JxX50gf3xfwzBaawFfvF+DcF+PYGpmIV/dIH+8X4MwVwZhX3xfw3Bfz2Bg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODgABAQEK+B8MJpocGSQS+46LHAVGiwa9Cr0L+ucVAAPoAHwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAA') format('truetype'); }";
     FontLoader.fontStyleAliasesMap = {"n": "normal", "b": "bold", "i": "italic", "o": "oblique"};
-	
-	FontLoader.prototype = {
-		constructor: FontLoader,
-		loadFonts: function() {
-			var self = this,
+    FontLoader.fontStretchAliasesMap = {"a": "ultra-condensed", "b": "extra-condensed", "c": "condensed", "d": "semi-condensed", "n": "normal", "e": "semi-expanded", "f": "expanded", "g": "extra-expanded", "h": "ultra-expanded"};
+
+    FontLoader.prototype = {
+        constructor: FontLoader,
+        loadFonts: function() {
+            var self = this,
                 newFontVariations;
-			
-			if (this._numberOfFonts === 0) {
-				this._finish();
-				return;
-			}
-			
-			if (this.timeout !== null) {
-				this._timeoutId = window.setTimeout(function timeoutFire() {
-					self._finish();
-				}, this.timeout);
-			}
-			
-			// Use constant line-height so there won't be changes in height because Adobe Blank uses zero width but not zero height.
-			this._testContainer = this._document.createElement("div");
-			this._testContainer.style.cssText = "position:absolute; left:-10000px; top:-10000px; white-space:nowrap; font-size:20px; line-height:20px; visibility:hidden;";
+
+            if (this._started) {
+                throw new Error("FontLoader: loadFonts can not be called twice. Create new FontLoader to load different fonts.");
+            }
+            this._started = true;
+
+            if (this._numberOfFonts === 0) {
+                this._finish();
+                return;
+            }
+
+            if (this.timeout !== null) {
+                this._timeoutId = window.setTimeout(function timeoutFire() {
+                    self._finish();
+                }, this.timeout);
+            }
+
+            // Use constant line-height so there won't be changes in height because Adobe Blank uses zero width but not zero height.
+            this._testContainer = this._document.createElement("div");
+            this._testContainer.style.cssText = "position:absolute; left:-10000px; top:-10000px; white-space:nowrap; font-size:20px; line-height:20px; visibility:hidden;";
 
             // Create testDiv template that will be cloned for each font
             this._testDiv = this._document.createElement("div");
@@ -38224,9 +42774,9 @@ return Package;
                 // AdobeBlank is used but was not loaded
                 this._loadAdobeBlankFont();
             }
-		},
+        },
         _extractReferenceFontSizes: function(newFontVariations) {
-			var clonedDiv, j, i,
+            var clonedDiv, j, i,
                 key, size, fontVariation;
 
             clonedDiv = this._testDiv.cloneNode(true);
@@ -38241,6 +42791,7 @@ return Package;
                     clonedDiv.style.fontFamily = FontLoader.referenceFontFamilies[j];
                     clonedDiv.style.fontWeight = fontVariation.weight;
                     clonedDiv.style.fontStyle = fontVariation.style;
+                    clonedDiv.style.fontStretch = fontVariation.stretch;
                     size = new Size(clonedDiv.offsetWidth, clonedDiv.offsetHeight);
                     FontLoader.referenceFontFamilyVariationSizes[key].push(size);
                 }
@@ -38248,7 +42799,7 @@ return Package;
 
             this._testContainer.parentNode.removeChild(this._testContainer);
             clonedDiv.parentNode.removeChild(clonedDiv);
-		},
+        },
         _loadAdobeBlankFont: function() {
             var self = this,
                 adobeBlankDiv,
@@ -38285,108 +42836,118 @@ return Package;
                 adobeBlankDiv.style.fontFamily = FontLoader.referenceFontFamilies[0] + ", " + adobeBlankFallbackFont;
             }
         },
-        _getNewFontVariationsFromFonts: function(fonts) {
-            var font, key, i,
+        _getNewFontVariationsFromFonts: function(fontDescriptors) {
+            var fontDescriptor, key, i,
                 variations = [],
                 variationsMap = {};
 
-            for (i = 0; i < fonts.length; i++) {
-                font = fonts[i];
-                key = this._fontVariationKeyForFont(font);
+            for (i = 0; i < fontDescriptors.length; i++) {
+                fontDescriptor = fontDescriptors[i];
+                key = fontDescriptor.variationKey();
                 if (!(key in variationsMap) && !(key in FontLoader.referenceFontFamilyVariationSizes)) {
                     variationsMap[key] = true;
                     variations.push({
                         key: key,
-                        weight: font.weight,
-                        style: font.style
+                        weight: fontDescriptor.weight,
+                        style: fontDescriptor.style,
+                        stretch: fontDescriptor.stretch
                     });
                 }
             }
             return variations;
         },
-		_parseFonts: function(fonts) {
-			var processedFonts = [];
+        _parseFonts: function(fonts) {
+            var fontDescriptors = [], filteredFD,
+                i, font, fontKey, fontKeys = {};
 
-			fonts.forEach(function (font) {
+            for (i = 0; i < fonts.length; i++) {
+                font = fonts[i];
                 if (typeof font === "string") {
                     if (font.indexOf(':') > -1) {
-                        processedFonts = processedFonts.concat(this._convertShorthandToFontObjects(font));
+                        fontDescriptors = fontDescriptors.concat(this._parseFVD(font));
                     } else {
-                        processedFonts.push({
+                        fontDescriptors.push(new FontDescriptor({
                             family: font,
                             weight: 400,
-                            style: 'normal'
-                        });
+                            style: 'normal',
+                            stretch: 'normal'
+                        }));
                     }
-                } else if (this._isValidFontObject(font)) {
-                    processedFonts.push(font);
                 } else {
-                    throw new Error("Invalid font format");
+                    fontDescriptors.push(new FontDescriptor(font));
                 }
-			}, this);
+            }
 
-			return processedFonts;
-		},
-        /**
-         * @param {FontDescriptor} fontObject
-         * @returns {boolean}
-         * @private
-         */
-		_isValidFontObject: function(fontObject) {
-			if (!fontObject.family || !fontObject.weight || !fontObject.style) {
-				return false;
-			}
-			return ['normal', 'italic', 'bold', 'oblique'].indexOf(fontObject.style) !== -1;
-		},
+            // Filter duplicate fonts
+            filteredFD = [];
+            for (i = 0; i < fontDescriptors.length; i++) {
+                fontKey = fontDescriptors[i].fontKey();
+                if (!(fontKey in fontKeys)) {
+                    fontKeys[fontKey] = true;
+                    filteredFD.push(fontDescriptors[i]);
+                }
+            }
+
+            return filteredFD;
+        },
         /**
          * @param {string} fontString
          * @returns {Array.<FontDescriptor>}
          * @private
          */
-		_convertShorthandToFontObjects: function(fontString) {
-			var fonts = [],
+        _parseFVD: function(fontString) {
+            var fontDescriptors = [],
                 parts = fontString.split(':'),
-			    variants,
-			    fontFamily;
+                fontFamily, variants, i, variant,
+                styleAlias, weightAlias, stretchAlias,
+                weight, style, stretch;
 
             fontFamily = parts[0];
             variants = parts[1].split(',');
 
-			variants.forEach(function (variant) {
-                var styleAlias,
-                    weightAlias,
-                    weight,
-                    style;
+            for (i = 0; i < variants.length; i++) {
+                variant = variants[i];
 
-                if (variant.length !== 2) {
-                    throw new Error("Invalid Font Variation Description: '" + variant + "' for font string: '" + fontString + "'");
+                if (variant.length < 2 || variant.length > 3) {
+                    throw new Error("Invalid Font Variation Description: '" + fontString + "', number of variation characters must be 2 or 3");
                 }
 
                 styleAlias = variant[0];
                 weightAlias = variant[1];
+                stretchAlias = "n"; // stretch character is optional, default is 'n': 'normal'
+                if (variant.length === 3) {
+                    stretchAlias = variant[2]
+                }
 
                 if (styleAlias in FontLoader.fontStyleAliasesMap) {
                     style = FontLoader.fontStyleAliasesMap[styleAlias];
                 } else {
-                    return;
+                    throw new Error("Invalid Font Variation Description: '" + fontString + "', the first variant character is not complying to FVD font-style specification");
                 }
 
                 weight = parseInt(weightAlias, 10);
                 if (isNaN(weight)) {
-                    return;
+                    throw new Error("Invalid Font Variation Description: '" + fontString + "', the second variant character is not complying to FVD font-weight specification");
                 } else {
                     weight *= 100;
                 }
 
-                fonts.push({
-					family: fontFamily,
-					weight: weight,
-					style: style
-				});
-			});
+                if (stretchAlias in FontLoader.fontStretchAliasesMap) {
+                    stretch = FontLoader.fontStretchAliasesMap[stretchAlias];
+                } else {
+                    throw new Error("Invalid Font Variation Description: '" + fontString + "', the third variant character is not complying to FVD font-stretch specification");
+                }
 
-			return fonts;
-		},
+                fontDescriptors.push(new FontDescriptor({
+                    family: fontFamily,
+                    weight: weight,
+                    style: style,
+                    stretch: stretch
+                }));
+            }
+
+            return fontDescriptors;
+        },
         _addAdobeBlankFontFaceIfNeeded: function() {
             var adobeBlankFontFaceStyle;
             if (!this._document.getElementById(FontLoader.adobeBlankFontFaceStyleId)) {
@@ -38397,41 +42958,42 @@ return Package;
                 this._document.getElementsByTagName("head")[0].appendChild(adobeBlankFontFaceStyle);
             }
         },
-		_checkAdobeBlankSize: function() {
-			var adobeBlankDiv = this._testContainer.firstChild;
-			this._adobeBlankLoaded(adobeBlankDiv);
-		},
-		_adobeBlankLoaded: function(adobeBlankDiv) {
-			// Prevent false size change, for example if AdobeBlank height is higher than fallback font.
-			if (adobeBlankDiv.offsetWidth !== 0) {
-				return;
-			}
-			
-			FontLoader.adobeBlankReferenceSize = new Size(adobeBlankDiv.offsetWidth, adobeBlankDiv.offsetHeight);
-			
-			if (this._adobeBlankSizeWatcher !== null) {
-				// SizeWatcher method
-				this._adobeBlankSizeWatcher.endWatching();
-				this._adobeBlankSizeWatcher.removeScrollWatchers();
-				this._adobeBlankSizeWatcher = null;
-			} else {
-				// Polling method (IE)
-				window.clearInterval(this._intervalId);
-				adobeBlankDiv.parentNode.removeChild(adobeBlankDiv);
-			}
-			
-			this._testContainer.parentNode.removeChild(this._testContainer);
+        _checkAdobeBlankSize: function() {
+            var adobeBlankDiv = this._testContainer.firstChild;
+            this._adobeBlankLoaded(adobeBlankDiv);
+        },
+        _adobeBlankLoaded: function(adobeBlankDiv) {
+            // Prevent false size change, for example if AdobeBlank height is higher than fallback font.
+            if (adobeBlankDiv.offsetWidth !== 0) {
+                return;
+            }
 
-			this._loadFonts();
-		},
-		_cloneNodeSetStyleAndAttributes: function(font, fontKey, referenceFontFamilyIndex) {
-			var clonedDiv = this._testDiv.cloneNode(true);
+            FontLoader.adobeBlankReferenceSize = new Size(adobeBlankDiv.offsetWidth, adobeBlankDiv.offsetHeight);
+
+            if (this._adobeBlankSizeWatcher !== null) {
+                // SizeWatcher method
+                this._adobeBlankSizeWatcher.endWatching();
+                this._adobeBlankSizeWatcher.removeScrollWatchers();
+                this._adobeBlankSizeWatcher = null;
+            } else {
+                // Polling method (IE)
+                window.clearInterval(this._intervalId);
+                adobeBlankDiv.parentNode.removeChild(adobeBlankDiv);
+            }
+
+            this._testContainer.parentNode.removeChild(this._testContainer);
+
+            this._loadFonts();
+        },
+        _cloneNodeSetStyleAndAttributes: function(font, fontKey, referenceFontFamilyIndex) {
+            var clonedDiv = this._testDiv.cloneNode(true);
             clonedDiv.style.fontWeight = font.weight;
             clonedDiv.style.fontStyle = font.style;
+            clonedDiv.style.fontStretch = font.stretch;
             clonedDiv.setAttribute("data-font-map-key", fontKey);
-			clonedDiv.setAttribute("data-ref-font-family-index", String(referenceFontFamilyIndex));
-			return clonedDiv;
-		},
+            clonedDiv.setAttribute("data-ref-font-family-index", String(referenceFontFamilyIndex));
+            return clonedDiv;
+        },
         _getFontMapKeyFromElement: function(element) {
             return element.getAttribute("data-font-map-key");
         },
@@ -38450,91 +43012,85 @@ return Package;
             var referenceFontFamilyIndex = this._getReferenceFontFamilyIndexFromElement(element);
             return FontLoader.referenceFontFamilies[referenceFontFamilyIndex];
         },
-        _fontVariationKeyForFont: function(font) {
-            return font.weight + font.style;
-        },
-        _fontsMapKeyForFont: function(font) {
-            return font.family + font.weight + font.style
-        },
-		_loadFonts: function() {
-			var i, j, clonedDiv, sizeWatcher,
+        _loadFonts: function() {
+            var i, j, clonedDiv, sizeWatcher,
                 font,
                 fontKey,
                 fontVariationKey,
                 referenceFontSize,
                 sizeWatcherDirection,
                 sizeWatcherDimension,
-				self = this;
+                self = this;
 
-			// Add div for each font-family
-			for (i = 0; i < this._numberOfFonts; i++) {
+            // Add div for each font-family
+            for (i = 0; i < this._numberOfFonts; i++) {
                 font = this._fontsArray[i];
-                fontKey = this._fontsMapKeyForFont(font);
-				this._fontsMap[fontKey] = font;
+                fontKey = font.fontKey();
+                this._fontsMap[fontKey] = font;
 
-				for (j = 0; j < FontLoader.referenceFontFamilies.length; j++) {
+                for (j = 0; j < FontLoader.referenceFontFamilies.length; j++) {
                     clonedDiv = this._cloneNodeSetStyleAndAttributes(font, fontKey, j);
-					if (FontLoader.useResizeEvent) {
+                    if (FontLoader.useResizeEvent) {
                         clonedDiv.style.fontFamily = FontLoader.referenceFontFamilies[j];
                         this._testContainer.appendChild(clonedDiv);
-					} else if (FontLoader.useIntervalChecking) {
-						clonedDiv.style.fontFamily = "'" + font.family + "', " + FontLoader.referenceFontFamilies[j];
+                    } else if (FontLoader.useIntervalChecking) {
+                        clonedDiv.style.fontFamily = "'" + font.family + "', " + FontLoader.referenceFontFamilies[j];
                         this._testContainer.appendChild(clonedDiv);
-					} else {
+                    } else {
                         clonedDiv.style.fontFamily = FontLoader.referenceFontFamilies[j];
                         if (FontLoader.useAdobeBlank) {
                             referenceFontSize = FontLoader.adobeBlankReferenceSize;
                             sizeWatcherDirection = SizeWatcher.directions.increase;
                             sizeWatcherDimension = SizeWatcher.dimensions.horizontal;
                         } else {
-                            fontVariationKey = this._fontVariationKeyForFont(font);
+                            fontVariationKey = font.variationKey();
                             referenceFontSize = FontLoader.referenceFontFamilyVariationSizes[fontVariationKey][j];
                             sizeWatcherDirection = SizeWatcher.directions.both;
                             sizeWatcherDimension = SizeWatcher.dimensions.both;
                         }
-						sizeWatcher = new SizeWatcher(/** @type HTMLElement */clonedDiv, {
-							container: this._testContainer,
-							delegate: this,
-							size: referenceFontSize,
-							direction: sizeWatcherDirection,
-							dimension: sizeWatcherDimension,
-							document: this._document
-						});
-						// The prepareForWatch() and beginWatching() methods will be invoked in separate iterations to
-						// reduce number of browser's CSS recalculations.
-						this._sizeWatchers.push(sizeWatcher);
-					}
-				}
-			}
+                        sizeWatcher = new SizeWatcher(/** @type HTMLElement */clonedDiv, {
+                            container: this._testContainer,
+                            delegate: this,
+                            size: referenceFontSize,
+                            direction: sizeWatcherDirection,
+                            dimension: sizeWatcherDimension,
+                            document: this._document
+                        });
+                        // The prepareForWatch() and beginWatching() methods will be invoked in separate iterations to
+                        // reduce number of browser's CSS recalculations.
+                        this._sizeWatchers.push(sizeWatcher);
+                    }
+                }
+            }
 
-			// Append the testContainer after all test elements to minimize DOM insertions
-			this._document.body.appendChild(this._testContainer);
+            // Append the testContainer after all test elements to minimize DOM insertions
+            this._document.body.appendChild(this._testContainer);
 
-			if (FontLoader.useResizeEvent) {
-				for (j = 0; j < this._testContainer.childNodes.length; j++) {
-					clonedDiv = this._testContainer.childNodes[j];
-					// "resize" event works only with attachEvent
-					clonedDiv.attachEvent("onresize", (function(self, clonedDiv) {
-						return function() {
-							self._elementSizeChanged(clonedDiv);
-						}
-					})(this, clonedDiv));
-				}
-				window.setTimeout(function() {
-					for (j = 0; j < self._testContainer.childNodes.length; j++) {
-						clonedDiv = self._testContainer.childNodes[j];
-						clonedDiv.style.fontFamily = "'" + self._getFontFamilyFromElement(clonedDiv) + "', " + self._getReferenceFontFamilyFromElement(clonedDiv);
-					}
-				}, 0);
-			} else if (FontLoader.useIntervalChecking) {
-				// Start polling element sizes but also do first synchronous check in case all fonts where already loaded.
-				this._intervalId = window.setInterval(function intervalFire() {
-					self._checkSizes();
-				}, this._intervalDelay);
-				this._checkSizes();
-			} else {
-				// We are dividing the prepareForWatch() and beginWatching() methods to optimize browser performance by
-				// removing CSS recalculation from each iteration to the end of iterations.
+            if (FontLoader.useResizeEvent) {
+                for (j = 0; j < this._testContainer.childNodes.length; j++) {
+                    clonedDiv = this._testContainer.childNodes[j];
+                    // "resize" event works only with attachEvent
+                    clonedDiv.attachEvent("onresize", (function(self, clonedDiv) {
+                        return function() {
+                            self._elementSizeChanged(clonedDiv);
+                        }
+                    })(this, clonedDiv));
+                }
+                window.setTimeout(function() {
+                    for (j = 0; j < self._testContainer.childNodes.length; j++) {
+                        clonedDiv = self._testContainer.childNodes[j];
+                        clonedDiv.style.fontFamily = "'" + self._getFontFamilyFromElement(clonedDiv) + "', " + self._getReferenceFontFamilyFromElement(clonedDiv);
+                    }
+                }, 0);
+            } else if (FontLoader.useIntervalChecking) {
+                // Start polling element sizes but also do first synchronous check in case all fonts where already loaded.
+                this._intervalId = window.setInterval(function intervalFire() {
+                    self._checkSizes();
+                }, this._intervalDelay);
+                this._checkSizes();
+            } else {
+                // We are dividing the prepareForWatch() and beginWatching() methods to optimize browser performance by
+                // removing CSS recalculation from each iteration to the end of iterations.
                 for (i = 0; i < this._sizeWatchers.length; i++) {
                     sizeWatcher = this._sizeWatchers[i];
                     sizeWatcher.prepareForWatch();
@@ -38546,73 +43102,73 @@ return Package;
                     clonedDiv = sizeWatcher.getWatchedElement();
                     clonedDiv.style.fontFamily = "'" + this._getFontFamilyFromElement(clonedDiv) + "', " + self._getReferenceFontFamilyFromElement(clonedDiv);
                 }
-			}
-		},
-		_checkSizes: function() {
-			var i, testDiv, font, fontVariationKey, currSize, refSize, refFontFamilyIndex;
+            }
+        },
+        _checkSizes: function() {
+            var i, testDiv, font, fontVariationKey, currSize, refSize, refFontFamilyIndex;
 
-			for (i = this._testContainer.childNodes.length - 1; i >= 0; i--) {
-				testDiv = this._testContainer.childNodes[i];
-				currSize = new Size(testDiv.offsetWidth, testDiv.offsetHeight);
+            for (i = this._testContainer.childNodes.length - 1; i >= 0; i--) {
+                testDiv = this._testContainer.childNodes[i];
+                currSize = new Size(testDiv.offsetWidth, testDiv.offsetHeight);
                 if (FontLoader.useAdobeBlank) {
                     refSize = FontLoader.adobeBlankReferenceSize;
                 } else {
                     font = this._getFontFromElement(testDiv);
-                    fontVariationKey = this._fontVariationKeyForFont(font);
+                    fontVariationKey = font.variationKey();
                     refFontFamilyIndex = this._getReferenceFontFamilyIndexFromElement(testDiv);
                     refSize = FontLoader.referenceFontFamilyVariationSizes[fontVariationKey][refFontFamilyIndex];
                 }
-				if (!refSize.isEqual(currSize)) {
-					// Element dimensions changed, this means its font loaded, remove it from testContainer div
-					testDiv.parentNode.removeChild(testDiv);
-					this._elementSizeChanged(testDiv);
-				}
-			}
-		},
-		_elementSizeChanged: function(element) {
-			var font, fontKey;
+                if (!refSize.isEqual(currSize)) {
+                    // Element dimensions changed, this means its font loaded, remove it from testContainer div
+                    testDiv.parentNode.removeChild(testDiv);
+                    this._elementSizeChanged(testDiv);
+                }
+            }
+        },
+        _elementSizeChanged: function(element) {
+            var font, fontKey;
 
-			if (this._finished) {
-				return;
-			}
+            if (this._finished) {
+                return;
+            }
 
             fontKey = this._getFontMapKeyFromElement(element);
 
-			// Check that the font of this element wasn't already marked as loaded by an element with different reference font family.
-			if (typeof this._fontsMap[fontKey] === "undefined") {
-				return;
-			}
+            // Check that the font of this element wasn't already marked as loaded by an element with different reference font family.
+            if (typeof this._fontsMap[fontKey] === "undefined") {
+                return;
+            }
 
             font = this._fontsMap[fontKey];
 
-			this._numberOfLoadedFonts++;
-			delete this._fontsMap[fontKey];
+            this._numberOfLoadedFonts++;
+            delete this._fontsMap[fontKey];
 
-			if (this.delegate && typeof this.delegate.fontLoaded === "function") {
-				this.delegate.fontLoaded(font);
-			}
+            if (this.delegate && typeof this.delegate.fontLoaded === "function") {
+                this.delegate.fontLoaded(font.toJSON());
+            }
 
-			if (this._numberOfLoadedFonts === this._numberOfFonts) {
-				this._finish();
-			}
-		},
-		_finish: function() {
-			var error, i, sizeWatcher,
+            if (this._numberOfLoadedFonts === this._numberOfFonts) {
+                this._finish();
+            }
+        },
+        _finish: function() {
+            var error, i, sizeWatcher,
                 fontKey,
-				notLoadedFonts = [];
-			
-			if (this._finished) {
-				return;
-			}
-			
-			this._finished = true;
-			
-			if (this._adobeBlankSizeWatcher !== null) {
+                notLoadedFonts = [];
+
+            if (this._finished) {
+                return;
+            }
+
+            this._finished = true;
+
+            if (this._adobeBlankSizeWatcher !== null) {
                 if (this._adobeBlankSizeWatcher.getState() === SizeWatcher.states.watchingForSizeChange) {
                     this._adobeBlankSizeWatcher.endWatching();
                 }
-				this._adobeBlankSizeWatcher = null;
-			}
+                this._adobeBlankSizeWatcher = null;
+            }
 
             for (i = 0; i < this._sizeWatchers.length; i++) {
                 sizeWatcher = this._sizeWatchers[i];
@@ -38621,24 +43177,24 @@ return Package;
                 }
             }
             this._sizeWatchers = [];
-			
-			if (this._testContainer !== null) {
-				this._testContainer.parentNode.removeChild(this._testContainer);
-			}
-			
-			if (this._timeoutId !== null) {
-				window.clearTimeout(this._timeoutId);
-			}
-			
-			if (this._intervalId !== null) {
-				window.clearInterval(this._intervalId);
-			}
-			
+
+            if (this._testContainer !== null) {
+                this._testContainer.parentNode.removeChild(this._testContainer);
+            }
+
+            if (this._timeoutId !== null) {
+                window.clearTimeout(this._timeoutId);
+            }
+
+            if (this._intervalId !== null) {
+                window.clearInterval(this._intervalId);
+            }
+
             if (this.delegate) {
                 if (this._numberOfLoadedFonts < this._numberOfFonts) {
                     for (fontKey in this._fontsMap) {
                         if (this._fontsMap.hasOwnProperty(fontKey)) {
-                            notLoadedFonts.push(this._fontsMap[fontKey]);
+                            notLoadedFonts.push(this._fontsMap[fontKey].toJSON());
                         }
                     }
                     error = {
@@ -38654,32 +43210,32 @@ return Package;
                     this.delegate.fontsLoaded(error);
                 }
             }
-		},
-		/**
-		 * SizeWatcher delegate method
-		 * @param {SizeWatcher} sizeWatcher
-		 */
-		sizeWatcherChangedSize: function(sizeWatcher) {
-			var watchedElement = sizeWatcher.getWatchedElement();
-			if (sizeWatcher === this._adobeBlankSizeWatcher) {
-				this._adobeBlankLoaded(watchedElement);
-			} else {
-				this._elementSizeChanged(watchedElement);
-			}
-		}
-	};
+        },
+        /**
+         * SizeWatcher delegate method
+         * @param {SizeWatcher} sizeWatcher
+         */
+        sizeWatcherChangedSize: function(sizeWatcher) {
+            var watchedElement = sizeWatcher.getWatchedElement();
+            if (sizeWatcher === this._adobeBlankSizeWatcher) {
+                this._adobeBlankLoaded(watchedElement);
+            } else {
+                this._elementSizeChanged(watchedElement);
+            }
+        }
+    };
 
-	/**
-	 * Size object
-	 *
-	 * @param width
-	 * @param height
-	 * @constructor
-	 */
-	function Size(width, height) {
-		this.width = width;
-		this.height = height;
-	}
+    /**
+     * Size object
+     *
+     * @param width
+     * @param height
+     * @constructor
+     */
+    function Size(width, height) {
+        this.width = width;
+        this.height = height;
+    }
 
     Size.sizeFromString = function(sizeString) {
         var arr = sizeString.split(",");
@@ -38689,316 +43245,316 @@ return Package;
         return new Size(arr[0], arr[1]);
     };
 
-	/**
-	 * Compares receiver object to passed in size object.
-	 * 
-	 * @param otherSize
-	 * @returns {boolean}
-	 */
-	Size.prototype.isEqual = function(otherSize) {
-		return (this.width === otherSize.width && this.height === otherSize.height);
-	};
+    /**
+     * Compares receiver object to passed in size object.
+     *
+     * @param otherSize
+     * @returns {boolean}
+     */
+    Size.prototype.isEqual = function(otherSize) {
+        return (this.width === otherSize.width && this.height === otherSize.height);
+    };
 
     Size.prototype.toString = function() {
         return this.width + "," + this.height;
     };
 
-	/**
-	 * SizeWatcher observes size of an element and notifies when its size is changed. It doesn't use any timeouts
-	 * to check the element size, when change in size occurs a callback method immediately invoked.
-	 * 
-	 * To watch for element's size changes the element, and other required elements are appended to a container element
-	 * you specify, and which must be added to the DOM tree before invoking prepareForWatch() method. Your container
-	 * element should be positioned outside of client's visible area. Therefore you shouldn't use SizeWatcher to watch
-	 * for size changes of elements used for UI.
-	 * Such container element could be a simple <div> that is a child of the <body> element:
-	 * <div style="position:absolute; left:-10000px; top:-10000px;"></div>
-	 * 
-	 * You must invoke SizeWatcher's methods in a specific order to establish size change listeners:
-	 * 
-	 * 1. Create SizeWatcher instance by invoke SizeWatcher constructor passing the element (size of which you want to
-	 *    observe), the container element, the delegate object and optional size parameter of type Size which should be
-	 *    the pre-calculated initial size of your element.
-	 * 4. Invoke prepareForWatch() method. This method will calculate element size if you didn't passed it to the constructor.
-	 * 5. Invoke beginWatching() method. This method will set event listeners and invoke your delegate's method once
-	 *    element size changes. 
-	 * 
-	 * Failing to invoke above methods in their predefined order will throw an exception.
-	 * 
-	 * @param {HTMLElement}   element An element, size of which will be observed for changes.
-	 * @param {Object}        options
-	 * @param {HTMLElement}   options.container An element to which special observing elements will be added. Must be in DOM tree
-	 *                        when prepareForWatch() method is called.
-	 * @param {Object}        options.delegate A delegate object with a sizeWatcherChangedSize method which will be invoked, in
-	 *                        context of the delegate object, when change in size occurs. This method is invoked with single
-	 *                        parameter which is the current SizeWatcher instance.
-	 * @param {Size}          [options.size] The pre-calculated initial size of your element. When passed, the element is not
-	 *                        asked for offsetWidth and offsetHeight, which may be useful to reduce browser's CSS
-	 *                        recalculations. If you will not pass the size parameter then its size calculation will be
-	 *                        deferred to prepareForWatch() method.
-	 * @param {Boolean}       [options.continuous=false] A boolean flag indicating if the SizeWatcher will watch only for
-	 *                        the first size change (default) or will continuously watch for size changes.
-	 * @param {Number}        [options.direction=SizeWatcher.directions.both] The direction of size change that should be
-	 *                        watched: SizeWatcher.directions.increase, SizeWatcher.directions.decrease or
-	 *                        SizeWatcher.directions.both
-	 * @param {Number}        [options.dimension=SizeWatcher.dimensions.both] The dimension of size change that should be
-	 *                        watched: SizeWatcher.dimensions.horizontal, SizeWatcher.dimensions.vertical or
-	 *                        SizeWatcher.dimensions.both
-	 * @param {HTMLDocument}  [options.document] The DOM tree context to use, if none provided then it will be the document.
-	 * @constructor
-	 */
-	function SizeWatcher(element, options) {
-		this._element = element;
-		this._delegate = options.delegate;
-		this._size = null;
-		this._continuous = !!options.continuous;
-		this._direction = options.direction ? options.direction : SizeWatcher.directions.both;
-		this._dimension = options.dimension ? options.dimension : SizeWatcher.dimensions.both;
-		this._sizeIncreaseWatcherContentElm = null;
-		this._sizeDecreaseWatcherElm = null;
-		this._sizeIncreaseWatcherElm = null;
-		this._state = SizeWatcher.states.initialized;
-		this._scrollAmount = 2;
-		this._document = options.document || document;
+    /**
+     * SizeWatcher observes size of an element and notifies when its size is changed. It doesn't use any timeouts
+     * to check the element size, when change in size occurs a callback method immediately invoked.
+     *
+     * To watch for element's size changes the element, and other required elements are appended to a container element
+     * you specify, and which must be added to the DOM tree before invoking prepareForWatch() method. Your container
+     * element should be positioned outside of client's visible area. Therefore you shouldn't use SizeWatcher to watch
+     * for size changes of elements used for UI.
+     * Such container element could be a simple <div> that is a child of the <body> element:
+     * <div style="position:absolute; left:-10000px; top:-10000px;"></div>
+     *
+     * You must invoke SizeWatcher's methods in a specific order to establish size change listeners:
+     *
+     * 1. Create SizeWatcher instance by invoke SizeWatcher constructor passing the element (size of which you want to
+     *    observe), the container element, the delegate object and optional size parameter of type Size which should be
+     *    the pre-calculated initial size of your element.
+     * 4. Invoke prepareForWatch() method. This method will calculate element size if you didn't passed it to the constructor.
+     * 5. Invoke beginWatching() method. This method will set event listeners and invoke your delegate's method once
+     *    element size changes.
+     *
+     * Failing to invoke above methods in their predefined order will throw an exception.
+     *
+     * @param {HTMLElement}   element An element, size of which will be observed for changes.
+     * @param {Object}        options
+     * @param {HTMLElement}   options.container An element to which special observing elements will be added. Must be in DOM tree
+     *                        when prepareForWatch() method is called.
+     * @param {Object}        options.delegate A delegate object with a sizeWatcherChangedSize method which will be invoked, in
+     *                        context of the delegate object, when change in size occurs. This method is invoked with single
+     *                        parameter which is the current SizeWatcher instance.
+     * @param {Size}          [options.size] The pre-calculated initial size of your element. When passed, the element is not
+     *                        asked for offsetWidth and offsetHeight, which may be useful to reduce browser's CSS
+     *                        recalculations. If you will not pass the size parameter then its size calculation will be
+     *                        deferred to prepareForWatch() method.
+     * @param {Boolean}       [options.continuous=false] A boolean flag indicating if the SizeWatcher will watch only for
+     *                        the first size change (default) or will continuously watch for size changes.
+     * @param {Number}        [options.direction=SizeWatcher.directions.both] The direction of size change that should be
+     *                        watched: SizeWatcher.directions.increase, SizeWatcher.directions.decrease or
+     *                        SizeWatcher.directions.both
+     * @param {Number}        [options.dimension=SizeWatcher.dimensions.both] The dimension of size change that should be
+     *                        watched: SizeWatcher.dimensions.horizontal, SizeWatcher.dimensions.vertical or
+     *                        SizeWatcher.dimensions.both
+     * @param {HTMLDocument}  [options.document] The DOM tree context to use, if none provided then it will be the document.
+     * @constructor
+     */
+    function SizeWatcher(element, options) {
+        this._element = element;
+        this._delegate = options.delegate;
+        this._size = null;
+        this._continuous = !!options.continuous;
+        this._direction = options.direction ? options.direction : SizeWatcher.directions.both;
+        this._dimension = options.dimension ? options.dimension : SizeWatcher.dimensions.both;
+        this._sizeIncreaseWatcherContentElm = null;
+        this._sizeDecreaseWatcherElm = null;
+        this._sizeIncreaseWatcherElm = null;
+        this._state = SizeWatcher.states.initialized;
+        this._scrollAmount = 2;
+        this._document = options.document || document;
 
-		this._generateScrollWatchers(options.size);
-		this._appendScrollWatchersToElement(options.container);
-	}
-	
-	SizeWatcher.states = {
-		initialized: 0,
-		generatedScrollWatchers: 1,
-		appendedScrollWatchers: 2,
-		preparedScrollWatchers: 3,
-		watchingForSizeChange: 4
-	};
+        this._generateScrollWatchers(options.size);
+        this._appendScrollWatchersToElement(options.container);
+    }
 
-	SizeWatcher.directions = {
-		decrease: 1,
-		increase: 2,
-		both: 3
-	};
+    SizeWatcher.states = {
+        initialized: 0,
+        generatedScrollWatchers: 1,
+        appendedScrollWatchers: 2,
+        preparedScrollWatchers: 3,
+        watchingForSizeChange: 4
+    };
 
-	SizeWatcher.dimensions = {
-		horizontal: 1,
-		vertical: 2,
-		both: 3
-	};
-	
-	//noinspection JSUnusedLocalSymbols
-	SizeWatcher.prototype = {
-		constructor: SizeWatcher,
-		getWatchedElement: function() {
-			return this._element;
-		},
+    SizeWatcher.directions = {
+        decrease: 1,
+        increase: 2,
+        both: 3
+    };
+
+    SizeWatcher.dimensions = {
+        horizontal: 1,
+        vertical: 2,
+        both: 3
+    };
+
+    //noinspection JSUnusedLocalSymbols
+    SizeWatcher.prototype = {
+        constructor: SizeWatcher,
+        getWatchedElement: function() {
+            return this._element;
+        },
         getState: function() {
             return this._state;
         },
-		setSize: function(size) {
-			this._size = size;
-			//noinspection JSBitwiseOperatorUsage
-			if (this._direction & SizeWatcher.directions.increase) {
-				this._sizeIncreaseWatcherContentElm.style.cssText = "width: " + (size.width + this._scrollAmount) + "px; height: " + (size.height + this._scrollAmount) + "px;";
-			}
-			//noinspection JSBitwiseOperatorUsage
-			if (this._direction & SizeWatcher.directions.decrease) {
-				this._sizeDecreaseWatcherElm.style.cssText = "position:absolute; left: 0px; top: 0px; overflow: hidden; width: " + (size.width - this._scrollAmount) + "px; height: " + (size.height - this._scrollAmount) + "px;";
-			}
-		},
-		_generateScrollWatchers: function(size) {
+        setSize: function(size) {
+            this._size = size;
+            //noinspection JSBitwiseOperatorUsage
+            if (this._direction & SizeWatcher.directions.increase) {
+                this._sizeIncreaseWatcherContentElm.style.cssText = "width: " + (size.width + this._scrollAmount) + "px; height: " + (size.height + this._scrollAmount) + "px;";
+            }
+            //noinspection JSBitwiseOperatorUsage
+            if (this._direction & SizeWatcher.directions.decrease) {
+                this._sizeDecreaseWatcherElm.style.cssText = "position:absolute; left: 0px; top: 0px; overflow: hidden; width: " + (size.width - this._scrollAmount) + "px; height: " + (size.height - this._scrollAmount) + "px;";
+            }
+        },
+        _generateScrollWatchers: function(size) {
 
-			this._element.style.position = "absolute";
-			
-			//noinspection JSBitwiseOperatorUsage
-			if (this._direction & SizeWatcher.directions.increase) {
-				this._sizeIncreaseWatcherContentElm = this._document.createElement("div");
-				
-				this._sizeIncreaseWatcherElm = this._document.createElement("div");
-				this._sizeIncreaseWatcherElm.style.cssText = "position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden;";
-				this._sizeIncreaseWatcherElm.appendChild(this._sizeIncreaseWatcherContentElm);
+            this._element.style.position = "absolute";
 
-				this._element.appendChild(this._sizeIncreaseWatcherElm);
-			}
+            //noinspection JSBitwiseOperatorUsage
+            if (this._direction & SizeWatcher.directions.increase) {
+                this._sizeIncreaseWatcherContentElm = this._document.createElement("div");
 
-			//noinspection JSBitwiseOperatorUsage
-			if (this._direction & SizeWatcher.directions.decrease) {
-				this._sizeDecreaseWatcherElm = this._document.createElement("div");
-				this._sizeDecreaseWatcherElm.appendChild(this._element);
-			}
-			
-			if (size) {
-				this.setSize(size);
-			}
-			
-			this._state = SizeWatcher.states.generatedScrollWatchers;
-		},
-		_appendScrollWatchersToElement: function(container) {
-			if (this._state !== SizeWatcher.states.generatedScrollWatchers) {
-				throw new Error("SizeWatcher._appendScrollWatchersToElement() was invoked before SizeWatcher._generateScrollWatchers()");
-			}
+                this._sizeIncreaseWatcherElm = this._document.createElement("div");
+                this._sizeIncreaseWatcherElm.style.cssText = "position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden;";
+                this._sizeIncreaseWatcherElm.appendChild(this._sizeIncreaseWatcherContentElm);
 
-			//noinspection JSBitwiseOperatorUsage
-			if (this._direction & SizeWatcher.directions.decrease) {
-				container.appendChild(this._sizeDecreaseWatcherElm);
-			} else {
-				container.appendChild(this._element);
-			}
-			
-			this._state = SizeWatcher.states.appendedScrollWatchers;
-		},
-		removeScrollWatchers: function() {
-			//noinspection JSBitwiseOperatorUsage
-			if (this._direction & SizeWatcher.directions.decrease) {
-				if (this._sizeDecreaseWatcherElm.parentNode) {
-					this._sizeDecreaseWatcherElm.parentNode.removeChild(this._sizeDecreaseWatcherElm);
-				}
-			} else if (this._element.parentNode) {
-				this._element.parentNode.removeChild(this._element);
-			}
-		},
-		prepareForWatch: function() {
-			var parentNode,
-				sizeDecreaseWatcherElmScrolled = true,
-				sizeIncreaseWatcherElmScrolled = true;
-			
-			if (this._state !== SizeWatcher.states.appendedScrollWatchers) {
-				throw new Error("SizeWatcher.prepareForWatch() invoked before SizeWatcher._appendScrollWatchersToElement()");
-			}
-			
-			if (this._size === null) {
-				this.setSize(new Size(this._element.offsetWidth, this._element.offsetHeight));
-			}
+                this._element.appendChild(this._sizeIncreaseWatcherElm);
+            }
 
-			//noinspection JSBitwiseOperatorUsage
-			if (this._direction & SizeWatcher.directions.decrease) {
-				sizeDecreaseWatcherElmScrolled = this._scrollElementToBottomRight(this._sizeDecreaseWatcherElm);
-			}
-			//noinspection JSBitwiseOperatorUsage
-			if (this._direction & SizeWatcher.directions.increase) {
-				sizeIncreaseWatcherElmScrolled = this._scrollElementToBottomRight(this._sizeIncreaseWatcherElm);
-			}
-			
-			// Check if scroll positions updated.
-			if (!sizeDecreaseWatcherElmScrolled || !sizeIncreaseWatcherElmScrolled) {
-				
-				// Traverse tree to the top node to see if element is in the DOM tree.
-				parentNode = this._element.parentNode;
-				while (parentNode !== this._document && parentNode !== null) {
-					parentNode = parentNode.parentNode;
-				}
-				
-				if (parentNode === null) {
-					throw new Error("Can't set scroll position of scroll watchers. SizeWatcher is not in the DOM tree.");
-				} else if (console && typeof console.warn === "function") {
-					console.warn("SizeWatcher can't set scroll position of scroll watchers.");
-				}
-			}
-			
-			this._state = SizeWatcher.states.preparedScrollWatchers;
-		},
-		_scrollElementToBottomRight: function(element) {
-			var elementScrolled = true;
-			//noinspection JSBitwiseOperatorUsage
-			if (this._dimension & SizeWatcher.dimensions.vertical) {
-				element.scrollTop = this._scrollAmount;
-				elementScrolled = elementScrolled && element.scrollTop > 0;
-			}
-			//noinspection JSBitwiseOperatorUsage
-			if (this._dimension & SizeWatcher.dimensions.horizontal) {
-				element.scrollLeft = this._scrollAmount;
-				elementScrolled = elementScrolled && element.scrollLeft > 0;
-			}
-			return elementScrolled;
-		},
-		beginWatching: function() {
-			if (this._state !== SizeWatcher.states.preparedScrollWatchers) {
-				throw new Error("SizeWatcher.beginWatching() invoked before SizeWatcher.prepareForWatch()");
-			}
+            //noinspection JSBitwiseOperatorUsage
+            if (this._direction & SizeWatcher.directions.decrease) {
+                this._sizeDecreaseWatcherElm = this._document.createElement("div");
+                this._sizeDecreaseWatcherElm.appendChild(this._element);
+            }
 
-			//noinspection JSBitwiseOperatorUsage
-			if (this._direction & SizeWatcher.directions.decrease) {
-				//noinspection JSValidateTypes
-				this._sizeDecreaseWatcherElm.addEventListener("scroll", this, false);
-			}
-			//noinspection JSBitwiseOperatorUsage
-			if (this._direction & SizeWatcher.directions.increase) {
-				//noinspection JSValidateTypes
-				this._sizeIncreaseWatcherElm.addEventListener("scroll", this, false);
-			}
-			
-			this._state = SizeWatcher.states.watchingForSizeChange;
-		},
-		endWatching: function() {
-			if (this._state !== SizeWatcher.states.watchingForSizeChange) {
-				throw new Error("SizeWatcher.endWatching() invoked before SizeWatcher.beginWatching()");
-			}
+            if (size) {
+                this.setSize(size);
+            }
 
-			//noinspection JSBitwiseOperatorUsage
-			if (this._direction & SizeWatcher.directions.decrease) {
-				//noinspection JSValidateTypes
-				this._sizeDecreaseWatcherElm.removeEventListener("scroll", this, false);
-			}
-			//noinspection JSBitwiseOperatorUsage
-			if (this._direction & SizeWatcher.directions.increase) {
-				//noinspection JSValidateTypes
-				this._sizeIncreaseWatcherElm.removeEventListener("scroll", this, false);
-			}
-			this._state = SizeWatcher.states.appendedScrollWatchers;
-		},
-		/**
-		 * @private
-		 */
-		handleEvent: function(event) {
-			var newSize, oldSize;
-			
-			// This is not suppose to happen because when we run endWatching() we remove scroll listeners.
-			// But some browsers will fire second scroll event which was pushed into event stack before listener was
-			// removed so do this check anyway.
-			if (this._state !== SizeWatcher.states.watchingForSizeChange) {
-				return;
-			}
-			
-			newSize = new Size(this._element.offsetWidth, this._element.offsetHeight);
-			oldSize = this._size;
+            this._state = SizeWatcher.states.generatedScrollWatchers;
+        },
+        _appendScrollWatchersToElement: function(container) {
+            if (this._state !== SizeWatcher.states.generatedScrollWatchers) {
+                throw new Error("SizeWatcher._appendScrollWatchersToElement() was invoked before SizeWatcher._generateScrollWatchers()");
+            }
 
-			// Check if element size is changed. How come that element size isn't changed but scroll event fired?
-			// This can happen in two cases: when double scroll occurs or immediately after calling prepareForWatch()
-			// (event if scroll event listeners attached after it).
-			// The double scroll event happens when one size dimension (e.g.:width) is increased and another
-			// (e.g.:height) is decreased.
-			if (oldSize.isEqual(newSize)) {
-				return;
-			}
-			
-			if (this._delegate && typeof this._delegate.sizeWatcherChangedSize === "function") {
-				this._delegate.sizeWatcherChangedSize(this);
-				
-				// Check that endWatching() wasn't invoked from within the delegate.
-				if (this._state !== SizeWatcher.states.watchingForSizeChange) {
-					return;
-				}
-			}
+            //noinspection JSBitwiseOperatorUsage
+            if (this._direction & SizeWatcher.directions.decrease) {
+                container.appendChild(this._sizeDecreaseWatcherElm);
+            } else {
+                container.appendChild(this._element);
+            }
 
-			if (!this._continuous) {
-				this.endWatching();
-			} else {
-				// Set the new size so in case of double scroll event we won't cause the delegate method to be executed twice
-				// and also to update to the new watched size.
-				this.setSize(newSize);
-				// change state so prepareFowWatch() won't throw exception about wrong order invocation.
-				this._state = SizeWatcher.states.appendedScrollWatchers;
-				// Run prepareForWatch to reset the scroll watchers, we have already set the size
-				this.prepareForWatch();
-				// Set state to listeningForSizeChange, there is no need to invoke beginWatching() method as scroll event
-				// listeners and callback are already set.
-				this._state = SizeWatcher.states.watchingForSizeChange;
-				
-			}
-		}
-	};
-	
-	return FontLoader;
-	
+            this._state = SizeWatcher.states.appendedScrollWatchers;
+        },
+        removeScrollWatchers: function() {
+            //noinspection JSBitwiseOperatorUsage
+            if (this._direction & SizeWatcher.directions.decrease) {
+                if (this._sizeDecreaseWatcherElm.parentNode) {
+                    this._sizeDecreaseWatcherElm.parentNode.removeChild(this._sizeDecreaseWatcherElm);
+                }
+            } else if (this._element.parentNode) {
+                this._element.parentNode.removeChild(this._element);
+            }
+        },
+        prepareForWatch: function() {
+            var parentNode,
+                sizeDecreaseWatcherElmScrolled = true,
+                sizeIncreaseWatcherElmScrolled = true;
+
+            if (this._state !== SizeWatcher.states.appendedScrollWatchers) {
+                throw new Error("SizeWatcher.prepareForWatch() invoked before SizeWatcher._appendScrollWatchersToElement()");
+            }
+
+            if (this._size === null) {
+                this.setSize(new Size(this._element.offsetWidth, this._element.offsetHeight));
+            }
+
+            //noinspection JSBitwiseOperatorUsage
+            if (this._direction & SizeWatcher.directions.decrease) {
+                sizeDecreaseWatcherElmScrolled = this._scrollElementToBottomRight(this._sizeDecreaseWatcherElm);
+            }
+            //noinspection JSBitwiseOperatorUsage
+            if (this._direction & SizeWatcher.directions.increase) {
+                sizeIncreaseWatcherElmScrolled = this._scrollElementToBottomRight(this._sizeIncreaseWatcherElm);
+            }
+
+            // Check if scroll positions updated.
+            if (!sizeDecreaseWatcherElmScrolled || !sizeIncreaseWatcherElmScrolled) {
+
+                // Traverse tree to the top node to see if element is in the DOM tree.
+                parentNode = this._element.parentNode;
+                while (parentNode !== this._document && parentNode !== null) {
+                    parentNode = parentNode.parentNode;
+                }
+
+                if (parentNode === null) {
+                    throw new Error("Can't set scroll position of scroll watchers. SizeWatcher is not in the DOM tree.");
+                } else if (console && typeof console.warn === "function") {
+                    console.warn("SizeWatcher can't set scroll position of scroll watchers.");
+                }
+            }
+
+            this._state = SizeWatcher.states.preparedScrollWatchers;
+        },
+        _scrollElementToBottomRight: function(element) {
+            var elementScrolled = true;
+            //noinspection JSBitwiseOperatorUsage
+            if (this._dimension & SizeWatcher.dimensions.vertical) {
+                element.scrollTop = this._scrollAmount;
+                elementScrolled = elementScrolled && element.scrollTop > 0;
+            }
+            //noinspection JSBitwiseOperatorUsage
+            if (this._dimension & SizeWatcher.dimensions.horizontal) {
+                element.scrollLeft = this._scrollAmount;
+                elementScrolled = elementScrolled && element.scrollLeft > 0;
+            }
+            return elementScrolled;
+        },
+        beginWatching: function() {
+            if (this._state !== SizeWatcher.states.preparedScrollWatchers) {
+                throw new Error("SizeWatcher.beginWatching() invoked before SizeWatcher.prepareForWatch()");
+            }
+
+            //noinspection JSBitwiseOperatorUsage
+            if (this._direction & SizeWatcher.directions.decrease) {
+                //noinspection JSValidateTypes
+                this._sizeDecreaseWatcherElm.addEventListener("scroll", this, false);
+            }
+            //noinspection JSBitwiseOperatorUsage
+            if (this._direction & SizeWatcher.directions.increase) {
+                //noinspection JSValidateTypes
+                this._sizeIncreaseWatcherElm.addEventListener("scroll", this, false);
+            }
+
+            this._state = SizeWatcher.states.watchingForSizeChange;
+        },
+        endWatching: function() {
+            if (this._state !== SizeWatcher.states.watchingForSizeChange) {
+                throw new Error("SizeWatcher.endWatching() invoked before SizeWatcher.beginWatching()");
+            }
+
+            //noinspection JSBitwiseOperatorUsage
+            if (this._direction & SizeWatcher.directions.decrease) {
+                //noinspection JSValidateTypes
+                this._sizeDecreaseWatcherElm.removeEventListener("scroll", this, false);
+            }
+            //noinspection JSBitwiseOperatorUsage
+            if (this._direction & SizeWatcher.directions.increase) {
+                //noinspection JSValidateTypes
+                this._sizeIncreaseWatcherElm.removeEventListener("scroll", this, false);
+            }
+            this._state = SizeWatcher.states.appendedScrollWatchers;
+        },
+        /**
+         * @private
+         */
+        handleEvent: function(event) {
+            var newSize, oldSize;
+
+            // This is not suppose to happen because when we run endWatching() we remove scroll listeners.
+            // But some browsers will fire second scroll event which was pushed into event stack before listener was
+            // removed so do this check anyway.
+            if (this._state !== SizeWatcher.states.watchingForSizeChange) {
+                return;
+            }
+
+            newSize = new Size(this._element.offsetWidth, this._element.offsetHeight);
+            oldSize = this._size;
+
+            // Check if element size is changed. How come that element size isn't changed but scroll event fired?
+            // This can happen in two cases: when double scroll occurs or immediately after calling prepareForWatch()
+            // (event if scroll event listeners attached after it).
+            // The double scroll event happens when one size dimension (e.g.:width) is increased and another
+            // (e.g.:height) is decreased.
+            if (oldSize.isEqual(newSize)) {
+                return;
+            }
+
+            if (this._delegate && typeof this._delegate.sizeWatcherChangedSize === "function") {
+                this._delegate.sizeWatcherChangedSize(this);
+
+                // Check that endWatching() wasn't invoked from within the delegate.
+                if (this._state !== SizeWatcher.states.watchingForSizeChange) {
+                    return;
+                }
+            }
+
+            if (!this._continuous) {
+                this.endWatching();
+            } else {
+                // Set the new size so in case of double scroll event we won't cause the delegate method to be executed twice
+                // and also to update to the new watched size.
+                this.setSize(newSize);
+                // change state so prepareFowWatch() won't throw exception about wrong order invocation.
+                this._state = SizeWatcher.states.appendedScrollWatchers;
+                // Run prepareForWatch to reset the scroll watchers, we have already set the size
+                this.prepareForWatch();
+                // Set state to listeningForSizeChange, there is no need to invoke beginWatching() method as scroll event
+                // listeners and callback are already set.
+                this._state = SizeWatcher.states.watchingForSizeChange;
+
+            }
+        }
+    };
+
+    return FontLoader;
+
 }));
 
 (function(root) {
@@ -40670,6 +45226,12 @@ var FontLoaderFallback = function(document, options) {
         var fontFamilies = [];
         var fontFamilyRules = [];
 
+        // if no style sheets are found return immediately
+        if (!styleSheets || styleSheets.length <= 0) {
+            callback([]);
+            return;
+        }
+
         var getFontFamilyFromRule = function(rule) {
             if (rule.style && (rule.style.getPropertyValue || rule.style.fontFamily)) {
                 return rule.style.getPropertyValue("font-family") || rule.style.fontFamily;
@@ -40810,15 +45372,18 @@ var FontLoaderNative = function(document, options) {
         } else {
             _.each(document.fonts, fontIterator);
         }
-
-        document.fonts.ready.then(function() {
+        var fontsReady = document.fonts.ready;
+        // In older implementations (chromium 35 for example) this is a method not a property
+        if (_.isFunction(fontsReady)) {
+            fontsReady = fontsReady.call(document.fonts);
+        }
+        fontsReady.then(function() {
             if (debug) {
                 // All fonts were loaded
                 console.log("(native) font loader: all fonts were loaded");
             }
             callback();
         });
-
 
         window.setTimeout(function() {
             if (debug && loadCount !== fontFaceCount) {
@@ -40881,11 +45446,11 @@ return FontLoaderWrapper;
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define('readium_shared_js/views/reflowable_view',["jquery", "underscore", "eventEmitter", "../models/bookmark_data", "./cfi_navigation_logic",
-    "../models/current_pages_info", "../helpers", "../models/page_open_request", "../globals",
+define('readium_shared_js/views/reflowable_view',["../globals", "jquery", "underscore", "eventEmitter", "../models/bookmark_data", "./cfi_navigation_logic",
+    "../models/current_pages_info", "../helpers", "../models/page_open_request",
     "../models/viewer_settings", "./font_loader"],
-    function($, _, EventEmitter, BookmarkData, CfiNavigationLogic,
-             CurrentPagesInfo, Helpers, PageOpenRequest, Globals,
+    function(Globals, $, _, EventEmitter, BookmarkData, CfiNavigationLogic,
+             CurrentPagesInfo, Helpers, PageOpenRequest,
              ViewerSettings, FontLoader) {
 /**
  * Renders reflowable content using CSS columns
@@ -40932,6 +45497,8 @@ var ReflowableView = function(options, reader){
 
         visibleColumnCount : 2,
         columnGap : 20,
+        columnMaxWidth: 550,
+        columnMinWidth: 400,
         spreadCount : 0,
         currentSpreadIndex : 0,
         columnWidth : undefined,
@@ -40997,6 +45564,9 @@ var ReflowableView = function(options, reader){
         _viewSettings = settings;
 
         _paginationInfo.columnGap = settings.columnGap;
+        _paginationInfo.columnMaxWidth = settings.columnMaxWidth;
+        _paginationInfo.columnMinWidth = settings.columnMinWidth;
+        
         _fontSize = settings.fontSize;
 
         updateHtmlFontSize();
@@ -41005,6 +45575,13 @@ var ReflowableView = function(options, reader){
         updateViewportSize();
         updatePagination();
     };
+    
+    function getFrameDimensions() {
+        return {
+            width: _$iframe[0].clientWidth,
+            height: _$iframe[0].clientHeight
+        };
+    }
 
     function renderIframe() {
         if (_$contentFrame) {
@@ -41026,9 +45603,11 @@ var ReflowableView = function(options, reader){
         //_$iframe.css(_spine.isLeftToRight() ? "left" : "right", "0px");
         _$iframe.css("overflow", "hidden");
 
-        _navigationLogic = new CfiNavigationLogic(
-            _$contentFrame, _$iframe,
-            { rectangleBased: true, paginationInfo: _paginationInfo });
+        _navigationLogic = new CfiNavigationLogic({
+            $iframe: _$iframe,
+            frameDimensions: getFrameDimensions,
+            paginationInfo: _paginationInfo
+        });
     }
 
     function loadSpineItem(spineItem) {
@@ -41037,13 +45616,22 @@ var ReflowableView = function(options, reader){
 
             //create & append iframe to container frame
             renderIframe();
+            if (_currentSpineItem) {
+                self.emit(Globals.Events.CONTENT_DOCUMENT_UNLOADED, _$iframe, _currentSpineItem);
+            }
 
             _paginationInfo.pageOffset = 0;
             _paginationInfo.currentSpreadIndex = 0;
             _currentSpineItem = spineItem;
+            
+            // TODO: this is a dirty hack!!
+            _currentSpineItem.paginationInfo = _paginationInfo; 
+            
             _isWaitingFrameRender = true;
 
             var src = _spine.package.resolveRelativeUrl(spineItem.href);
+            
+            Globals.logEvent("CONTENT_DOCUMENT_LOAD_START", "EMIT", "reflowable_view.js [ " + spineItem.href + " -- " + src + " ]");
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, _$iframe, spineItem);
 
             _$iframe.css("opacity", "0.01");
@@ -41094,6 +45682,7 @@ var ReflowableView = function(options, reader){
             return;
         }
 
+        Globals.logEvent("CONTENT_DOCUMENT_LOADED", "EMIT", "reflowable_view.js [ " + _currentSpineItem.href + " ]");
         self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, _$iframe, _currentSpineItem);
 
         var epubContentDocument = _$iframe[0].contentDocument;
@@ -41164,7 +45753,7 @@ var ReflowableView = function(options, reader){
             _htmlBodyIsLTRWritingMode = false;
         }
 
-        _paginationInfo.isVerticalWritingMode = _htmlBodyIsVerticalWritingMode;
+        _paginationInfo.isVerticalWritingMode = _htmlBodyIsVerticalWritingMode; 
 
         hideBook();
         _$iframe.css("opacity", "1");
@@ -41254,6 +45843,8 @@ var ReflowableView = function(options, reader){
         }
         else if(pageRequest.elementId) {
             pageIndex = _navigationLogic.getPageForElementId(pageRequest.elementId);
+            
+            if (pageIndex < 0) pageIndex = 0;
         }
         else if(pageRequest.elementCfi) {
             try
@@ -41262,6 +45853,8 @@ var ReflowableView = function(options, reader){
                     ["cfi-marker", "mo-cfi-highlight"],
                     [],
                     ["MathJax_Message"]);
+                
+                if (pageIndex < 0) pageIndex = 0;
             }
             catch (e)
             {
@@ -41311,6 +45904,12 @@ var ReflowableView = function(options, reader){
     function updateViewportSize() {
 
         var newWidth = _$contentFrame.width();
+        
+        // Ensure that the new viewport width is always even numbered
+        // this is to prevent a rendering inconsistency between browsers when odd-numbered bounds are used for CSS columns
+        // See https://github.com/readium/readium-shared-js/issues/37
+        newWidth -= newWidth % 2;
+
         var newHeight = _$contentFrame.height();
 
         if(_lastViewPortSize.width !== newWidth || _lastViewPortSize.height !== newHeight){
@@ -41326,10 +45925,12 @@ var ReflowableView = function(options, reader){
     function onPaginationChanged_(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
 
         _paginationInfo.pageOffset = (_paginationInfo.columnWidth + _paginationInfo.columnGap) * _paginationInfo.visibleColumnCount * _paginationInfo.currentSpreadIndex;
-
+        
         redraw();
 
         _.defer(function () {
+            
+            Globals.logEvent("InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED", "EMIT", "reflowable_view.js");
             self.emit(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, {
                 paginationInfo: self.getPaginationInfo(),
                 initiator: initiator,
@@ -41388,8 +45989,8 @@ var ReflowableView = function(options, reader){
     function updatePagination() {
 
         // At 100% font-size = 16px (on HTML, not body or descendant markup!)
-        var MAXW = 550; //TODO user/vendor-configurable?
-        var MINW = 400;
+        var MAXW = _paginationInfo.columnMaxWidth;
+        var MINW = _paginationInfo.columnMinWidth;
 
         var isDoublePageSyntheticSpread = Helpers.deduceSyntheticSpread(_$viewport, _currentSpineItem, _viewSettings);
 
@@ -41422,66 +46023,78 @@ var ReflowableView = function(options, reader){
 
         hideBook(); // shiftBookOfScreen();
 
+        // "borderLeft" is the blank vertical strip (e.g. 40px wide) where the left-arrow button resides, i.e. previous page command
         var borderLeft = parseInt(_$viewport.css("border-left-width"));
-        var borderRight = parseInt(_$viewport.css("border-right-width"));
+        
+        // The "columnGap" separates two consecutive columns in a 2-page synthetic spread (e.g. 60px wide).
+        // This middle gap (blank vertical strip) actually corresponds to the left page's right-most margin, combined with the right page's left-most margin.
+        // So, "adjustedGapLeft" is half of the center strip... 
         var adjustedGapLeft = _paginationInfo.columnGap/2;
-        adjustedGapLeft = Math.max(0, adjustedGapLeft-borderLeft)
+        // ...but we include the "borderLeft" strip to avoid wasting valuable rendering real-estate:  
+        adjustedGapLeft = Math.max(0, adjustedGapLeft-borderLeft);
+        // Typically, "adjustedGapLeft" is zero because the space available for the 'previous page' button is wider than half of the column gap!
+
+        // "borderRight" is the blank vertical strip (e.g. 40px wide) where the right-arrow button resides, i.e. next page command
+        var borderRight = parseInt(_$viewport.css("border-right-width"));
+        
+        // The "columnGap" separates two consecutive columns in a 2-page synthetic spread (e.g. 60px wide).
+        // This middle gap (blank vertical strip) actually corresponds to the left page's right-most margin, combined with the right page's left-most margin.
+        // So, "adjustedGapRight" is half of the center strip... 
         var adjustedGapRight = _paginationInfo.columnGap/2;
-        adjustedGapRight = Math.max(0, adjustedGapRight-borderRight)
+        // ...but we include the "borderRight" strip to avoid wasting valuable rendering real-estate:
+        adjustedGapRight = Math.max(0, adjustedGapRight-borderRight);
+        // Typically, "adjustedGapRight" is zero because the space available for the 'next page' button is wider than half of the column gap! (in other words, the right-most and left-most page margins are fully included in the strips reserved for the arrow buttons)
 
-        var filler = 0;
-
-//         var win = _$iframe[0].contentDocument.defaultView || _$iframe[0].contentWindow;
-//         var htmlBodyComputedStyle = win.getComputedStyle(_$htmlBody[0], null);
-//         if (htmlBodyComputedStyle)
-//         {
-//             var fontSize = undefined;
-//             if (htmlBodyComputedStyle.getPropertyValue)
-//             {
-//                 fontSize = htmlBodyComputedStyle.getPropertyValue("font-size");
-//             }
-//             else
-//             {
-//                 fontSize = htmlBodyComputedStyle.fontSize;
-//             }
-// console.debug(fontSize);
-//         }
-
-        if (_viewSettings.fontSize)
-        {
-            var fontSizeAdjust = (_viewSettings.fontSize*0.8)/100;
-            MAXW = Math.floor(MAXW * fontSizeAdjust);
-            MINW = Math.floor(MINW * fontSizeAdjust);
-        }
-
+        // Note that "availableWidth" does not contain "borderLeft" and "borderRight" (.width() excludes the padding and border and margin in the CSS box model of div#epub-reader-frame)  
         var availableWidth = _$viewport.width();
-        var textWidth = availableWidth - borderLeft - borderRight - adjustedGapLeft - adjustedGapRight;
+        
+        // ...So, we substract the page margins and button spacing to obtain the width available for actual text:
+        var textWidth = availableWidth - adjustedGapLeft - adjustedGapRight;
+        
+        // ...and if we have 2 pages / columns, then we split the text width in half: 
         if (isDoublePageSyntheticSpread)
         {
             textWidth = (textWidth - _paginationInfo.columnGap) * 0.5;
         }
 
+        var filler = 0;
+
+        // Now, if the resulting width actually available for document content is greater than the maximum allowed value, we create even more left+right blank space to "compress" the horizontal run of text.  
         if (textWidth > MAXW)
         {
-// console.debug("LIMITING WIDTH");
-            filler = Math.floor((textWidth - MAXW) * (isDoublePageSyntheticSpread ? 1 : 0.5));
+            var eachPageColumnReduction = textWidth - MAXW;
+            
+            // if we have a 2-page synthetic spread, then we "trim" left and right sides by adding "eachPageColumnReduction" blank space.
+            // if we have a single page / column, then this loss of text real estate is shared between right and left sides  
+            filler = Math.floor(eachPageColumnReduction * (isDoublePageSyntheticSpread ? 1 : 0.5));
         }
+
+        // Let's check whether a narrow two-page synthetic spread (impeded reabability) can be reduced down to a single page / column:
         else if (!forced && textWidth < MINW && isDoublePageSyntheticSpread)
         {
-//console.debug("REDUCING SPREAD TO SINGLE");
             isDoublePageSyntheticSpread = false;
             _paginationInfo.visibleColumnCount = 1;
 
-            textWidth = availableWidth - borderLeft - borderRight - adjustedGapLeft - adjustedGapRight;
+            textWidth = availableWidth - adjustedGapLeft - adjustedGapRight;
             if (textWidth > MAXW)
             {
                 filler = Math.floor((textWidth - MAXW) * 0.5);
             }
         }
-
+        
         _$el.css({"left": (filler+adjustedGapLeft + "px"), "right": (filler+adjustedGapRight + "px")});
+        
         updateViewportSize(); //_$contentFrame ==> _lastViewPortSize
 
+        var resultingColumnWidth = _$el.width();
+        if (isDoublePageSyntheticSpread) {
+            resultingColumnWidth = (resultingColumnWidth - _paginationInfo.columnGap) / 2;
+        }
+        resultingColumnWidth = Math.floor(resultingColumnWidth);
+        if ((resultingColumnWidth-1) > MAXW) {
+            console.debug("resultingColumnWidth > MAXW ! " + resultingColumnWidth + " > " + MAXW);
+        }
+        
 
         _$iframe.css("width", _lastViewPortSize.width + "px");
         _$iframe.css("height", _lastViewPortSize.height + "px");
@@ -41592,12 +46205,6 @@ var ReflowableView = function(options, reader){
         _currentOpacity = -1;
     }
 
-    this.getFirstVisibleElementCfi = function() {
-
-        var contentOffsets = getVisibleContentOffsets();
-        return _navigationLogic.getFirstVisibleElementCfi(contentOffsets);
-    };
-
     this.getPaginationInfo = function() {
 
         var paginationInfo = new CurrentPagesInfo(_spine, false);
@@ -41668,40 +46275,29 @@ var ReflowableView = function(options, reader){
 
         if(!_currentSpineItem) {
 
-            return new BookmarkData("", "");
+            return undefined;
         }
 
-        return new BookmarkData(_currentSpineItem.idref, self.getFirstVisibleElementCfi());
+        return self.getFirstVisibleCfi();
     };
-
-    function getVisibleContentOffsets() {
-        //TODO: _htmlBodyIsVerticalWritingMode ? (_lastViewPortSize.height * _paginationInfo.currentSpreadIndex)
-        // NOT used with options.rectangleBased anyway (see CfiNavigationLogic constructor call, here in this reflow engine class)
-        var columnsLeftOfViewport = Math.round(_paginationInfo.pageOffset / (_paginationInfo.columnWidth + _paginationInfo.columnGap));
-
-        var topOffset =  columnsLeftOfViewport * _$contentFrame.height();
-        var bottomOffset = topOffset + _paginationInfo.visibleColumnCount * _$contentFrame.height();
-
-        return {top: topOffset, bottom: bottomOffset};
-    }
 
     this.getLoadedSpineItems = function() {
         return [_currentSpineItem];
     };
 
-    this.getElementByCfi = function(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
+    this.getElementByCfi = function(spineItemIdref, cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
-        if(spineItem != _currentSpineItem) {
-            console.error("spine item is not loaded");
+        if(spineItemIdref != _currentSpineItem.idref) {
+            console.warn("spine item is not loaded");
             return undefined;
         }
 
         return _navigationLogic.getElementByCfi(cfi, classBlacklist, elementBlacklist, idBlacklist);
     };
 
-    this.getElementById = function(spineItem, id) {
+    this.getElementById = function(spineItemIdref, id) {
 
-        if(spineItem != _currentSpineItem) {
+        if(spineItemIdref != _currentSpineItem.idref) {
             console.error("spine item is not loaded");
             return undefined;
         }
@@ -41709,10 +46305,10 @@ var ReflowableView = function(options, reader){
         return _navigationLogic.getElementById(id);
     };
 
-    this.getElement = function(spineItem, selector) {
+    this.getElement = function(spineItemIdref, selector) {
 
-        if(spineItem != _currentSpineItem) {
-            console.error("spine item is not loaded");
+        if(spineItemIdref != _currentSpineItem.idref) {
+            console.warn("spine item is not loaded");
             return undefined;
         }
 
@@ -41721,23 +46317,13 @@ var ReflowableView = function(options, reader){
 
     this.getFirstVisibleMediaOverlayElement = function() {
 
-        var visibleContentOffsets = getVisibleContentOffsets();
-        return _navigationLogic.getFirstVisibleMediaOverlayElement(visibleContentOffsets);
+        return _navigationLogic.getFirstVisibleMediaOverlayElement();
     };
-
-    // /**
-    //  * @deprecated
-    //  */
-    // this.getVisibleMediaOverlayElements = function() {
-    //
-    //     var visibleContentOffsets = getVisibleContentOffsets();
-    //     return _navigationLogic.getVisibleMediaOverlayElements(visibleContentOffsets);
-    // };
 
     this.insureElementVisibility = function(spineItemId, element, initiator) {
 
         var $element = $(element);
-        if(_navigationLogic.isElementVisible($element, getVisibleContentOffsets()))
+        if(_navigationLogic.isElementVisible($element))
         {
             return;
         }
@@ -41766,13 +46352,109 @@ var ReflowableView = function(options, reader){
         self.openPage(openPageRequest);
     };
 
-    this.isElementCfiVisible = function(spineIdRef, contentCfi) {
-        if (spineIdRef != _currentSpineItem.idref) {
-            return false;
+    this.getVisibleElementsWithFilter = function(filterFunction, includeSpineItem) {
+
+        var elements = _navigationLogic.getVisibleElementsWithFilter(null, filterFunction);
+
+        if (includeSpineItem) {
+            return [{elements: elements, spineItem:_currentSpineItem}];
+        } else {
+            return elements;
         }
-        return _navigationLogic.isElementCfiVisible(contentCfi);
+
     };
 
+    this.getVisibleElements = function(selector, includeSpineItem) {
+
+        var elements = _navigationLogic.getAllVisibleElementsWithSelector(selector);
+
+        if (includeSpineItem) {
+            return [{elements: elements, spineItem:_currentSpineItem}];
+        } else {
+            return elements;
+        }
+
+    };
+
+    this.isElementVisible = function ($element) {
+
+        return _navigationLogic.isElementVisible($element);
+
+    };
+
+    this.getElements = function(spineItemIdref, selector) {
+
+        if(spineItemIdref != _currentSpineItem.idref) {
+            console.warn("spine item is not loaded");
+            return undefined;
+        }
+
+        return _navigationLogic.getElements(selector);
+    };
+
+    this.isNodeFromRangeCfiVisible = function (spineIdref, partialCfi) {
+        if (_currentSpineItem.idref === spineIdref) {
+            return _navigationLogic.isNodeFromRangeCfiVisible(partialCfi);
+        }
+        return undefined;
+    };
+
+    this.isVisibleSpineItemElementCfi = function (spineIdRef, partialCfi) {
+        if (_navigationLogic.isRangeCfi(partialCfi)) {
+            return this.isNodeFromRangeCfiVisible(spineIdRef, partialCfi);
+        }
+        var $elementFromCfi = this.getElementByCfi(spineIdRef, partialCfi);
+        return ($elementFromCfi && this.isElementVisible($elementFromCfi));
+    };
+
+    this.getNodeRangeInfoFromCfi = function (spineIdRef, partialCfi) {
+        if (spineIdRef != _currentSpineItem.idref) {
+            console.warn("spine item is not loaded");
+            return undefined;
+        }
+
+        return _navigationLogic.getNodeRangeInfoFromCfi(partialCfi);
+    };
+
+    function createBookmarkFromCfi(cfi){
+        return new BookmarkData(_currentSpineItem.idref, cfi);
+    }
+
+    this.getFirstVisibleCfi = function () {
+        return createBookmarkFromCfi(_navigationLogic.getFirstVisibleCfi());
+    };
+
+    this.getLastVisibleCfi = function () {
+        return createBookmarkFromCfi(_navigationLogic.getLastVisibleCfi());
+    };
+
+    this.getDomRangeFromRangeCfi = function (rangeCfi, rangeCfi2, inclusive) {
+        if (rangeCfi2 && rangeCfi.idref !== rangeCfi2.idref) {
+            console.error("getDomRangeFromRangeCfi: both CFIs must be scoped under the same spineitem idref");
+            return undefined;
+        }
+        return _navigationLogic.getDomRangeFromRangeCfi(rangeCfi.contentCFI, rangeCfi2? rangeCfi2.contentCFI: null, inclusive);
+    };
+
+    this.getRangeCfiFromDomRange = function (domRange) {
+        return createBookmarkFromCfi(_navigationLogic.getRangeCfiFromDomRange(domRange));
+    };
+
+    this.getVisibleCfiFromPoint = function (x, y, precisePoint) {
+        return createBookmarkFromCfi(_navigationLogic.getVisibleCfiFromPoint(x, y, precisePoint));
+    };
+
+    this.getRangeCfiFromPoints = function(startX, startY, endX, endY) {
+        return createBookmarkFromCfi(_navigationLogic.getRangeCfiFromPoints(startX, startY, endX, endY));
+    };
+
+    this.getCfiForElement = function(element) {
+        return createBookmarkFromCfi(_navigationLogic.getCfiForElement(element));
+    };
+
+    this.getElementFromPoint = function(x, y) {
+        return _navigationLogic.getElementFromPoint(x,y);
+    };
 };
     return ReflowableView;
 });
@@ -42111,6 +46793,97 @@ Trigger.prototype.execute = function(dom) {
     return Trigger;
 });
 
+//  Created by Juan Corona
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//
+//  Redistribution and use in source and binary forms, with or without modification,
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice,
+//  this list of conditions and the following disclaimer in the documentation and/or
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be
+//  used to endorse or promote products derived from this software without specific
+//  prior written permission.
+//
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
+
+define('readium_shared_js/models/node_range_info',[],function () {
+
+    /**
+     * @class ReadiumSDK.Models.NodeRangePositionInfo
+     * @constructor
+     */
+    var NodeRangePositionInfo = function (node, offset) {
+
+        /**
+         * The actual DOM node
+         * @property node
+         * @type {Node}
+         */
+        this.node = node;
+
+        /**
+         * The position offsetf for the node
+         * @property offset
+         * @type {Number}
+         */
+        this.offset = offset;
+
+    };
+
+    /**
+     * @class ReadiumSDK.Models.NodeRangeInfo
+     * @constructor
+     */
+    var NodeRangeInfo = function (clientRect, startInfo, endInfo) {
+
+        var self = this;
+        /**
+         * Client rectangle information for the range content bounds
+         * @property clientRect
+         * @type {ClientRect}
+         */
+        this.clientRect = clientRect;
+
+        /**
+         * Node and position information providing where and which node the range starts with
+         * @property startInfo
+         * @type {ReadiumSDK.Models.NodeRangePositionInfo}
+         */
+        this.startInfo = startInfo;
+
+        /**
+         * Node and position information providing where and which node the range ends with
+         * @property endInfo
+         * @type {ReadiumSDK.Models.NodeRangePositionInfo}
+         */
+        this.endInfo = endInfo;
+
+
+        this.setStartInfo = function (info) {
+            self.startInfo = new NodeRangePositionInfo(info);
+            return self;
+        };
+
+        this.setEndInfo = function (info) {
+            self.endInfo = new NodeRangePositionInfo(info);
+            return self;
+        };
+    };
+
+    return NodeRangeInfo;
+});
 //  Created by Boris Schneiderman.
 // Modified by Daniel Weck
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
@@ -42137,14 +46910,14 @@ Trigger.prototype.execute = function(dom) {
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define('readium_shared_js/views/reader_view',["jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", "./iframe_loader", "./internal_links_support",
+define('readium_shared_js/views/reader_view',["../globals", "jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", "./iframe_loader", "./internal_links_support",
         "./media_overlay_data_injector", "./media_overlay_player", "../models/package", "../models/page_open_request",
         "./reflowable_view", "./scroll_view", "../models/style_collection", "../models/switches", "../models/trigger",
-        "../models/viewer_settings", "../globals"],
-    function ($, _, EventEmitter, FixedView, Helpers, IFrameLoader, InternalLinksSupport,
+        "../models/viewer_settings", "../models/bookmark_data", "../models/node_range_info"],
+    function (Globals, $, _, EventEmitter, FixedView, Helpers, IFrameLoader, InternalLinksSupport,
               MediaOverlayDataInjector, MediaOverlayPlayer, Package, PageOpenRequest,
               ReflowableView, ScrollView, StyleCollection, Switches, Trigger,
-              ViewerSettings, Globals) {
+              ViewerSettings, BookmarkData, NodeRangeInfo) {
 /**
  * Options passed on the reader from the readium loader/initializer
  *
@@ -42273,6 +47046,10 @@ var ReaderView = function (options) {
         return undefined;
     };
 
+    this.getCurrentView = function () {
+        return _currentView;
+    };
+
     //based on https://docs.google.com/spreadsheet/ccc?key=0AoPMUkQhc4wcdDI0anFvWm96N0xRT184ZE96MXFRdFE&usp=drive_web#gid=0 document
     function deduceDesiredViewType(spineItem) {
 
@@ -42336,9 +47113,13 @@ var ReaderView = function (options) {
 
 
         _currentView = self.createViewForType(desiredViewType, viewCreationParams);
+        
+        Globals.logEvent("READER_VIEW_CREATED", "EMIT", "reader_view.js");
         self.emit(Globals.Events.READER_VIEW_CREATED, desiredViewType);
 
         _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOADED, function ($iframe, spineItem) {
+            
+            Globals.logEvent("CONTENT_DOCUMENT_LOADED", "ON", "reader_view.js (current view) [ " + spineItem.href + " ]");
 
             if (!Helpers.isIframeAlive($iframe[0])) return;
 
@@ -42351,14 +47132,22 @@ var ReaderView = function (options) {
             Trigger.register(contentDoc);
             Switches.apply(contentDoc);
 
+            Globals.logEvent("CONTENT_DOCUMENT_LOADED", "EMIT", "reader_view.js [ " + spineItem.href + " ]");
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
         });
 
         _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOAD_START, function ($iframe, spineItem) {
+            Globals.logEvent("CONTENT_DOCUMENT_LOAD_START", "EMIT", "reader_view.js [ " + spineItem.href + " ]");
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
         });
 
+        _currentView.on(Globals.Events.CONTENT_DOCUMENT_UNLOADED, function ($iframe, spineItem) {
+            self.emit(Globals.Events.CONTENT_DOCUMENT_UNLOADED, $iframe, spineItem);
+        });
+
         _currentView.on(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, function (pageChangeData) {
+            
+            Globals.logEvent("InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED", "ON", "reader_view.js");
 
             //we call on onPageChanged explicitly instead of subscribing to the Globals.Events.PAGINATION_CHANGED by
             //mediaOverlayPlayer because we hve to guarantee that mediaOverlayPlayer will be updated before the host
@@ -42366,11 +47155,13 @@ var ReaderView = function (options) {
             _mediaOverlayPlayer.onPageChanged(pageChangeData);
 
             _.defer(function () {
+                Globals.logEvent("PAGINATION_CHANGED", "EMIT", "reader_view.js");
                 self.emit(Globals.Events.PAGINATION_CHANGED, pageChangeData);
             });
         });
 
         _currentView.on(Globals.Events.FXL_VIEW_RESIZED, function () {
+            Globals.logEvent("FXL_VIEW_RESIZED", "EMIT", "reader_view.js");
             self.emit(Globals.Events.FXL_VIEW_RESIZED);
         })
 
@@ -42406,9 +47197,13 @@ var ReaderView = function (options) {
             return;
         }
 
+        Globals.logEvent("READER_VIEW_DESTROYED", "EMIT", "reader_view.js");
         self.emit(Globals.Events.READER_VIEW_DESTROYED);
 
+
+        Globals.logEvent("InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED", "OFF", "reader_view.js");
         _currentView.off(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED);
+        
         _currentView.remove();
         _currentView = undefined;
     }
@@ -42551,6 +47346,8 @@ var ReaderView = function (options) {
     };
 
     function onMediaPlayerStatusChanged(status) {
+        Globals.logEvent("MEDIA_OVERLAY_STATUS_CHANGED", "EMIT", "reader_view.js (via MediaOverlayPlayer + AudioPlayer)");
+console.trace(JSON.stringify(status));
         self.emit(Globals.Events.MEDIA_OVERLAY_STATUS_CHANGED, status);
     }
 
@@ -42684,6 +47481,7 @@ var ReaderView = function (options) {
                         // }, 60);
                     }
 
+                    Globals.logEvent("SETTINGS_APPLIED 1 (view update)", "EMIT", "reader_view.js");
                     self.emit(Globals.Events.SETTINGS_APPLIED);
                 });
                 
@@ -42691,6 +47489,8 @@ var ReaderView = function (options) {
             }
         }
 
+        Globals.logEvent("SETTINGS_APPLIED 2 (no view update)", "EMIT", "reader_view.js");
+console.trace(JSON.stringify(settingsData));
         self.emit(Globals.Events.SETTINGS_APPLIED);
     };
 
@@ -42936,10 +47736,10 @@ var ReaderView = function (options) {
      * @param {string} selector                      The query selector
      * @returns {HTMLElement|undefined}
      */
-    this.getElement = function (spineItem, selector) {
+    this.getElement = function (spineItemIdref, selector) {
 
         if (_currentView) {
-            return _currentView.getElement(spineItem, selector);
+            return _currentView.getElement(spineItemIdref, selector);
         }
 
         return undefined;
@@ -42948,14 +47748,14 @@ var ReaderView = function (options) {
     /**
      * Gets an element from active content documents based on an element id.
      *
-     * @param {Models.SpineItem} spineItem      The spine item object associated with an active content document
+     * @param {string} spineItemIdref      The spine item idref associated with an active content document
      * @param {string} id                                  The element id
      * @returns {HTMLElement|undefined}
      */
-    this.getElementById = function (spineItem, id) {
+    this.getElementById = function (spineItemIdref, id) {
 
         if (_currentView) {
-            return _currentView.getElementById(spineItem, id);
+            return _currentView.getElementById(spineItemIdref, id);
         }
 
         return undefined;
@@ -42964,17 +47764,17 @@ var ReaderView = function (options) {
     /**
      * Gets an element from active content documents based on a content CFI.
      *
-     * @param {Models.SpineItem} spineItem     The spine item idref associated with an active content document
+     * @param {string} spineItemIdref     The spine item idref associated with an active content document
      * @param {string} cfi                                The partial content CFI
      * @param {string[]} [classBlacklist]
      * @param {string[]} [elementBlacklist]
      * @param {string[]} [idBlacklist]
      * @returns {HTMLElement|undefined}
      */
-    this.getElementByCfi = function (spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
+    this.getElementByCfi = function (spineItemIdref, cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
         if (_currentView) {
-            return _currentView.getElementByCfi(spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist);
+            return _currentView.getElementByCfi(spineItemIdref, cfi, classBlacklist, elementBlacklist, idBlacklist);
         }
 
         return undefined;
@@ -43078,10 +47878,12 @@ var ReaderView = function (options) {
     /**
      * Returns the bookmark associated with currently opened page.
      *
-     * @returns {string} Serialized Globals.Models.BookmarkData object as JSON string.
+     * @returns {string} Serialized ReadiumSDK.Models.BookmarkData object as JSON string.
+     *          {null} If a bookmark could not be created successfully.
      */
-    this.bookmarkCurrentPage = function () {
-        return JSON.stringify(_currentView.bookmarkCurrentPage());
+    this.bookmarkCurrentPage = function() {
+        var bookmark = _currentView.bookmarkCurrentPage();
+        return bookmark ? bookmark.toString() : null;
     };
 
     /**
@@ -43309,7 +48111,7 @@ var ReaderView = function (options) {
         return _currentView.isElementCfiVisible(spineIdRef, contentCfi);
     };
 
-    var BackgroundAudioTrackManager = function () {
+    var BackgroundAudioTrackManager = function (readerView) {
         var _spineItemIframeMap = {};
         var _wasPlaying = false;
 
@@ -43376,7 +48178,9 @@ var ReaderView = function (options) {
             _wasPlaying = wasPlaying;
         };
 
-        self.on(Globals.Events.CONTENT_DOCUMENT_LOADED, function ($iframe, spineItem) {
+        readerView.on(Globals.Events.CONTENT_DOCUMENT_LOADED, function ($iframe, spineItem) {
+            Globals.logEvent("CONTENT_DOCUMENT_LOADED", "ON", "reader_view.js (via BackgroundAudioTrackManager) [ " + spineItem.href + " ]");;
+            
             try {
                 if (spineItem && spineItem.idref && $iframe && $iframe[0]) {
                     // console.log("CONTENT_DOCUMENT_LOADED");
@@ -43391,7 +48195,9 @@ var ReaderView = function (options) {
             }
         });
 
-        self.on(Globals.Events.PAGINATION_CHANGED, function (pageChangeData) {
+        readerView.on(Globals.Events.PAGINATION_CHANGED, function (pageChangeData) {
+            Globals.logEvent("PAGINATION_CHANGED", "ON", "reader_view.js (via BackgroundAudioTrackManager)");
+            
             // console.log("PAGINATION_CHANGED");
             // console.debug(pageChangeData);
             //
@@ -43507,9 +48313,11 @@ var ReaderView = function (options) {
             }
         });
 
-        self.on(Globals.Events.MEDIA_OVERLAY_STATUS_CHANGED, function (value) {
+        readerView.on(Globals.Events.MEDIA_OVERLAY_STATUS_CHANGED, function (value) {
+            Globals.logEvent("MEDIA_OVERLAY_STATUS_CHANGED", "ON", "reader_view.js (via BackgroundAudioTrackManager)");
+            
             if (!value.smilIndex) return;
-            var package = self.package();
+            var package = readerView.package();
             var smil = package.media_overlay.smilAt(value.smilIndex);
             if (!smil || !smil.spineItemId) return;
 
@@ -43549,7 +48357,215 @@ var ReaderView = function (options) {
             }
         });
     };
-    this.backgroundAudioTrackManager = new BackgroundAudioTrackManager();
+    this.backgroundAudioTrackManager = new BackgroundAudioTrackManager(self);
+
+    function getCfisForVisibleRegion() {
+        return {firstVisibleCfi: self.getFirstVisibleCfi(), lastVisibleCfi: self.getLastVisibleCfi()};
+    }
+
+
+    this.isVisibleSpineItemElementCfi = function(spineIdRef, partialCfi){
+        var spineItem = getSpineItem(spineIdRef);
+
+        if (!spineItem) {
+            return false;
+        }
+
+        if (_currentView) {
+
+            if(!partialCfi || (partialCfi && partialCfi === '')){
+                var spines = _currentView.getLoadedSpineItems();
+                for(var i = 0, count = spines.length; i < count; i++) {
+                    if(spines[i].idref == spineIdRef){
+                        return true;
+                    }
+                }
+            }
+            return _currentView.isVisibleSpineItemElementCfi(spineIdRef, partialCfi);
+
+        }
+        return false;
+    };
+
+    /**
+     * Gets all elements from active content documents based on a query selector.
+     *
+     * @param {string} spineItemIdref    The spine item idref associated with the content document
+     * @param {string} selector          The query selector
+     * @returns {HTMLElement[]}
+     */
+    this.getElements = function(spineItemIdref, selector) {
+
+        if(_currentView) {
+            return _currentView.getElements(spineItemIdref, selector);
+        }
+
+        return undefined;
+    };
+
+    /**
+     * Determine if an element is visible on the active content documents
+     *
+     * @param {HTMLElement} element The element.
+     * @returns {boolean}
+     */
+    this.isElementVisible = function (element) {
+        return _currentView.isElementVisible($(element));
+
+    };
+
+    /**
+     * Resolve a range CFI into an object containing info about it.
+     * @param {string} spineIdRef    The spine item idref associated with the content document
+     * @param {string} partialCfi    The partial CFI that is the range CFI to resolve
+     * @returns {ReadiumSDK.Models.NodeRangeInfo}
+     */
+    this.getNodeRangeInfoFromCfi = function (spineIdRef, partialCfi) {
+        if (_currentView && spineIdRef && partialCfi) {
+            var nodeRangeInfo = _currentView.getNodeRangeInfoFromCfi(spineIdRef, partialCfi);
+            if (nodeRangeInfo) {
+                return new NodeRangeInfo(nodeRangeInfo.clientRect)
+                    .setStartInfo(nodeRangeInfo.startInfo)
+                    .setEndInfo(nodeRangeInfo.endInfo);
+            }
+        }
+        return undefined;
+    };
+
+    /**
+     * Get the pagination info from the current view
+     *
+     * @returns {ReadiumSDK.Models.CurrentPagesInfo}
+     */
+    this.getPaginationInfo = function(){
+        return _currentView.getPaginationInfo();
+    };
+    /**
+     * Get CFI of the first element visible in the viewport
+     * @returns {ReadiumSDK.Models.BookmarkData}
+     */
+    this.getFirstVisibleCfi = function() {
+        if (_currentView) {
+            return _currentView.getFirstVisibleCfi();
+        }
+        return undefined;
+    };
+
+    /**
+     * Get CFI of the last element visible in the viewport
+     * @returns {ReadiumSDK.Models.BookmarkData}
+     */
+    this.getLastVisibleCfi = function() {
+        if (_currentView) {
+            return _currentView.getLastVisibleCfi();
+        }
+        return undefined;
+    };
+    /**
+     *
+     * @param {string} rangeCfi
+     * @param {string} [rangeCfi2]
+     * @param {boolean} [inclusive]
+     * @returns {array}
+     */
+    this.getDomRangesFromRangeCfi = function(rangeCfi, rangeCfi2, inclusive) {
+        if (_currentView) {
+            if (_currentView.getDomRangesFromRangeCfi) {
+                return _currentView.getDomRangesFromRangeCfi(rangeCfi, rangeCfi2, inclusive);
+            } else {
+                return [_currentView.getDomRangeFromRangeCfi(rangeCfi, rangeCfi2, inclusive)];
+            }
+        }
+        return undefined;
+    };
+
+    /**
+     *
+     * @param {ReadiumSDK.Models.BookmarkData} startCfi starting CFI
+     * @param {ReadiumSDK.Models.BookmarkData} [endCfi] ending CFI
+     * optional - may be omited if startCfi is a range CFI
+     * @param {boolean} [inclusive] optional indicating if the range should be inclusive
+     * @returns {array}
+     */
+    this.getDomRangesFromRangeCfi = function(rangeCfi, rangeCfi2, inclusive) {
+        if (_currentView) {
+            if (_currentView.getDomRangesFromRangeCfi) {
+                return _currentView.getDomRangesFromRangeCfi(rangeCfi, rangeCfi2, inclusive);
+            } else {
+                return [_currentView.getDomRangeFromRangeCfi(rangeCfi, rangeCfi2, inclusive)];
+            }
+        }
+        return undefined;
+    };
+
+    /**
+     *
+     * @param {ReadiumSDK.Models.BookmarkData} startCfi starting CFI
+     * @param {ReadiumSDK.Models.BookmarkData} [endCfi] ending CFI
+     * optional - may be omited if startCfi is a range CFI
+     * @param {boolean} [inclusive] optional indicating if the range should be inclusive
+     * @returns {DOM Range} https://developer.mozilla.org/en-US/docs/Web/API/Range
+     */
+    this.getDomRangeFromRangeCfi = function(startCfi, endCfi, inclusive) {
+        if (_currentView) {
+            return _currentView.getDomRangeFromRangeCfi(startCfi, endCfi, inclusive);
+        }
+        return undefined;
+    };
+
+    /**
+     * Generate range CFI from DOM range
+     * @param {DOM Range} https://developer.mozilla.org/en-US/docs/Web/API/Range
+     * @returns {string} - represents Range CFI for the DOM range
+     */
+    this.getRangeCfiFromDomRange = function(domRange) {
+        if (_currentView) {
+            return _currentView.getRangeCfiFromDomRange(domRange);
+        }
+        return undefined;
+    };
+
+    /**
+     * @param x
+     * @param y
+     * @param [precisePoint]
+     * @param [spineItemIdref] Required for fixed layout views
+     * @returns {string}
+     */
+    this.getVisibleCfiFromPoint = function (x, y, precisePoint, spineItemIdref) {
+        if (_currentView) {
+            return _currentView.getVisibleCfiFromPoint(x, y, precisePoint, spineItemIdref);
+        }
+        return undefined;
+    };
+
+    /**
+     *
+     * @param startX
+     * @param startY
+     * @param endX
+     * @param endY
+     * @param [spineItemIdref] Required for fixed layout views
+     * @returns {*}
+     */
+    this.getRangeCfiFromPoints = function(startX, startY, endX, endY, spineItemIdref) {
+        if (_currentView) {
+            return _currentView.getRangeCfiFromPoints(startX, startY, endX, endY, spineItemIdref);
+        }
+        return undefined;
+    };
+
+    /**
+     *
+     * @param {HTMLElement} element
+     * @returns {*}
+     */
+    this.getCfiForElement = function(element) {
+        if (_currentView) {
+            return _currentView.getCfiForElement(element);
+        }
+        return undefined;
+    };
 };
 
 /**
@@ -43567,6 +48583,7 @@ ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS = 4;
 return ReaderView;
 });
 
-require(["readium_cfi_js/cfi_API", "readium_shared_js/globalsSetup"]);
+
+require(["readium_cfi_js/cfi_API", "readium_plugin_highlights", "readium_shared_js/globalsSetup"]);
 
 //# sourceMappingURL=readium-shared-js_all.js.map

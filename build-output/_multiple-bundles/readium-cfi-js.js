@@ -153,7 +153,9 @@ window.EPUBcfiParser = (function() {
         peg$c64 = { type: "literal", value: "-", description: "\"-\"" },
         peg$c65 = "_",
         peg$c66 = { type: "literal", value: "_", description: "\"_\"" },
-        peg$c67 = function(charVal) { return charVal; },
+        peg$c67 = "%",
+        peg$c68 = { type: "literal", value: "%", description: "\"%\"" },
+        peg$c69 = function(charVal) { return charVal; },
 
         peg$currPos          = 0,
         peg$savedPos         = 0,
@@ -1427,6 +1429,15 @@ window.EPUBcfiParser = (function() {
                   s1 = peg$FAILED;
                   if (peg$silentFails === 0) { peg$fail(peg$c38); }
                 }
+                if (s1 === peg$FAILED) {
+                  if (input.charCodeAt(peg$currPos) === 37) {
+                    s1 = peg$c67;
+                    peg$currPos++;
+                  } else {
+                    s1 = peg$FAILED;
+                    if (peg$silentFails === 0) { peg$fail(peg$c68); }
+                  }
+                }
               }
             }
           }
@@ -1434,7 +1445,7 @@ window.EPUBcfiParser = (function() {
       }
       if (s1 !== peg$FAILED) {
         peg$savedPos = s0;
-        s1 = peg$c67(s1);
+        s1 = peg$c69(s1);
       }
       s0 = s1;
 
@@ -2234,14 +2245,21 @@ var obj = {
 
         // Return the element at the end of the CFI
         textOffset = parseInt(CFIAST.cfiString.localPath.termStep.offsetValue);
-        return { textNode : $currElement,
+        return { textNode : $currElement[0],
                  textOffset : textOffset
             };
     },
-    // Description: This function will determine if the input CFI is expressed as a range
+
+    // Description: This function will determine if the input "partial" CFI is expressed as a range
     isRangeCfi: function (cfi) {
         var CFIAST = cfiParser.parse(cfi);
         return CFIAST.cfiString.range1 ? true : false;
+    },
+
+    // Description: This function will determine if the input "partial" CFI has a text terminus step
+    hasTextTerminus: function (cfi) {
+        var CFIAST = cfiParser.parse(cfi);
+        return CFIAST.cfiString.localPath.termStep ? true : false;
     },
 
     // ------------------------------------------------------------------------------------ //
@@ -2983,7 +3001,10 @@ var init = function(cfiParser, cfiInterpreter, cfiInstructions, cfiRuntimeErrors
             return cfiInterpreter.getRangeTargetElements(rangeCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist);
         },
         isRangeCfi : function (cfi) {
-          return cfiInterpreter.isRangeCfi(cfi);
+            return cfiInterpreter.isRangeCfi(cfi);
+        },
+        hasTextTerminus: function(cfi) {
+            return cfiInterpreter.hasTextTerminus(cfi);
         },
         getTextTerminusInfoWithPartialCFI : function (contentDocumentCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
             return cfiInterpreter.getTextTerminusInfoWithPartialCFI(contentDocumentCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist);

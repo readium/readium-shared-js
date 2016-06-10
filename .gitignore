@@ -1,3 +1,4 @@
+.DS_Store
 node_modules
 build.txt
 plugins-override.cson
@@ -5,3 +6,5 @@ RequireJS_config_plugins.js
 RequireJS_config_plugins_multiple-bundles.js
 RequireJS_config_plugins_single-bundle.js
 http.log
+api-docs
+.idea

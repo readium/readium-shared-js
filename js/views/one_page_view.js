@@ -24,8 +24,8 @@
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-define(["jquery", "underscore", "eventEmitter", "./cfi_navigation_logic", "../helpers", "../models/viewer_settings"],
-    function ($, _, EventEmitter, CfiNavigationLogic, Helpers, ViewerSettings) {
+define(["../globals", "jquery", "underscore", "eventEmitter", "./cfi_navigation_logic", "../helpers", "../models/viewer_settings", "../models/bookmark_data"],
+    function (Globals, $, _, EventEmitter, CfiNavigationLogic, Helpers, ViewerSettings, BookmarkData) {
 
 /**
  * Renders one page of fixed layout spread
@@ -42,11 +42,13 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
     var self = this;
 
     var _$epubHtml;
+    var _$epubBody;
     var _$el;
     var _$iframe;
     var _currentSpineItem;
     var _spine = options.spine;
     var _iframeLoader = options.iframeLoader;
+    var _navigationLogic = undefined;
     var _bookStyles = options.bookStyles;
 
     var _$viewport = options.$viewport;
@@ -286,7 +288,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
     this.isDisplaying = function () {
 
-        return _isIframeLoaded;
+        return _isIframeLoaded; //_$iframe && _$iframe[0] && _$epubHtml
     };
 
     this.render = function () {
@@ -333,14 +335,25 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
     };
 
     this.remove = function () {
-        _isIframeLoaded = false;
+        this.clear();
+        
         _currentSpineItem = undefined;
-        _$el.remove();
+        
+        if (_$el && _$el[0]) {
+            _$el.remove();
+        }
+        
+        _$el = undefined;
+        _$scaler = undefined;
+        _$iframe = undefined;
     };
 
     this.clear = function () {
         _isIframeLoaded = false;
-        _$iframe[0].src = "";
+        
+        if (_$iframe && _$iframe[0]) {
+            _$iframe[0].src = "";
+        }
     };
 
     this.currentSpineItem = function () {
@@ -356,6 +369,8 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             _$epubHtml = $("html", epubContentDocument);
             if (!_$epubHtml || _$epubHtml.length == 0) {
                 _$epubHtml = $("svg", epubContentDocument);
+            } else {
+                _$epubBody = $("body", _$epubHtml);
             }
 
             //_$epubHtml.css("overflow", "hidden");
@@ -537,10 +552,20 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         if (settings.enableGPUHardwareAccelerationCSS3D) {
             enable3D = true;
         }
-
+        
         if (reader.needsFixedLayoutScalerWorkAround()) {
             var css1 = Helpers.CSSTransformString({scale: scale, enable3D: enable3D});
+            
+            // See https://github.com/readium/readium-shared-js/issues/285 
+            css1["min-width"] = _meta_size.width;
+            css1["min-height"] = _meta_size.height;
+            
             _$epubHtml.css(css1);
+            
+            // Ensures content dimensions matches viewport meta (authors / production tools should do this in their CSS...but unfortunately some don't).
+            if (_$epubBody && _$epubBody.length) {
+                _$epubBody.css({width:_meta_size.width, height:_meta_size.height});
+            }
 
             var css2 = Helpers.CSSTransformString({scale : 1, enable3D: enable3D});
             css2["width"] = _meta_size.width * scale;
@@ -758,22 +783,35 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         }
     }
 
+    function onUnload (spineItem) {
+        if (spineItem) {
+            self.emit(Globals.Events.CONTENT_DOCUMENT_UNLOADED, _$iframe, spineItem);
+        }
+    }
+
+    this.onUnload = function () {
+        onUnload(_currentSpineItem);
+    };
+
     //expected callback signature: function(success, $iframe, spineItem, isNewlyLoaded, context)
     this.loadSpineItem = function (spineItem, callback, context) {
 
         if (_currentSpineItem != spineItem) {
 
+            var prevSpineItem = _currentSpineItem;
             _currentSpineItem = spineItem;
             var src = _spine.package.resolveRelativeUrl(spineItem.href);
 
-            //if (spineItem && spineItem.isFixedLayout())
-            if (true) // both fixed layout and reflowable documents need hiding due to flashing during layout/rendering
-            {
-                //hide iframe until content is scaled
-                self.hideIFrame();
-            }
+            // both fixed layout and reflowable documents need hiding due to flashing during layout/rendering
+            //hide iframe until content is scaled
+            self.hideIFrame();
 
-            self.emit(OnePageView.SPINE_ITEM_OPEN_START, _$iframe, _currentSpineItem);
+            onUnload(prevSpineItem);
+
+
+            Globals.logEvent("OnePageView.Events.SPINE_ITEM_OPEN_START", "EMIT", "one_page_view.js [ " + spineItem.href + " -- " + src + " ]");
+            self.emit(OnePageView.Events.SPINE_ITEM_OPEN_START, _$iframe, _currentSpineItem);
+            
             _iframeLoader.loadIframe(_$iframe[0], src, function (success) {
 
                 if (success && callback) {
@@ -859,54 +897,64 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         return undefined;
     }
 
-    this.getFirstVisibleElementCfi = function () {
-
-        var navigation = new CfiNavigationLogic(_$el, _$iframe);
-        return navigation.getFirstVisibleElementCfi(0);
-
-    };
-
+    function getVisibleContentOffsets() {
+        return {
+            top: -_$el.parent().scrollTop(),
+            left: 0
+        };
+    }
+    
+    function getFrameDimensions() {
+        return {
+            width: _$el.parent()[0].clientWidth,
+            height: _$el.parent()[0].clientHeight
+        };
+    }
+    
     this.getNavigator = function () {
-
-        return new CfiNavigationLogic(_$el, _$iframe);
+        return new CfiNavigationLogic({
+            $iframe: _$iframe,
+            frameDimensions: getFrameDimensions,
+            visibleContentOffsets: getVisibleContentOffsets
+        });
     };
 
-    this.getElementByCfi = function (spineItem, cfi, classBlacklist, elementBlacklist, idBlacklist) {
+    this.getElementByCfi = function (spineItemIdref, cfi, classBlacklist, elementBlacklist, idBlacklist) {
 
-        if (spineItem != _currentSpineItem) {
+        if (spineItemIdref != _currentSpineItem.idref) {
             console.error("spine item is not loaded");
             return undefined;
         }
 
-        var navigation = new CfiNavigationLogic(_$el, _$iframe);
+        var navigation = self.getNavigator();
         return navigation.getElementByCfi(cfi, classBlacklist, elementBlacklist, idBlacklist);
     };
 
-    this.getElementById = function (spineItem, id) {
+    this.getElementById = function (spineItemIdref, id) {
 
-        if (spineItem != _currentSpineItem) {
+        if (spineItemIdref != _currentSpineItem.idref) {
             console.error("spine item is not loaded");
             return undefined;
         }
 
-        var navigation = new CfiNavigationLogic(_$el, _$iframe);
+        var navigation = self.getNavigator();
         return navigation.getElementById(id);
     };
 
-    this.getElement = function (spineItem, selector) {
+    this.getElement = function (spineItemIdref, selector) {
 
-        if (spineItem != _currentSpineItem) {
+        if(spineItemIdref != _currentSpineItem.idref) {
             console.error("spine item is not loaded");
             return undefined;
         }
 
-        var navigation = new CfiNavigationLogic(_$el, _$iframe);
+        var navigation = self.getNavigator();
         return navigation.getElement(selector);
     };
 
-    this.getFirstVisibleMediaOverlayElement = function () {
-        var navigation = new CfiNavigationLogic(_$el, _$iframe);
-        return navigation.getFirstVisibleMediaOverlayElement({top: 0, bottom: _$iframe.height()});
+    this.getFirstVisibleMediaOverlayElement = function() {
+        var navigation = self.getNavigator();
+        return navigation.getFirstVisibleMediaOverlayElement();
     };
 
     this.offset = function () {
@@ -914,9 +962,93 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             return _$iframe.offset();
         }
         return undefined;
+    };
+
+    this.getVisibleElementsWithFilter = function (filterFunction) {
+        var navigation = self.getNavigator();
+        var elements = navigation.getVisibleElementsWithFilter(null, filterFunction);
+        return elements;
+    };
+
+    this.getVisibleElements = function (selector) {
+
+        var navigation = self.getNavigator();
+        var elements = navigation.getAllVisibleElementsWithSelector(selector);
+        return elements;
+    };
+
+    this.getAllElementsWithFilter = function (filterFunction, outsideBody) {
+        var navigation = self.getNavigator();
+        var elements = navigation.getAllElementsWithFilter(filterFunction, outsideBody);
+        return elements;
+    };
+
+    this.getElements = function(spineItemIdref, selector) {
+
+        if(spineItemIdref != _currentSpineItem.idref) {
+            console.error("spine item is not loaded");
+            return undefined;
+        }
+
+        var navigation = self.getNavigator();
+
+        return navigation.getElements(selector);
+    };
+
+    this.getNodeRangeInfoFromCfi = function (spineIdRef, partialCfi) {
+        if (spineIdRef != _currentSpineItem.idref) {
+            console.warn("spine item is not loaded");
+            return undefined;
+        }
+        var navigation = self.getNavigator();
+
+        return navigation.getNodeRangeInfoFromCfi(partialCfi);
+    };
+
+    function createBookmarkFromCfi(cfi){
+        return new BookmarkData(_currentSpineItem.idref, cfi);
     }
+
+    this.getLoadedContentFrames = function () {
+        return [{spineItem: _currentSpineItem, $iframe: _$iframe}];
+    };
+
+    this.getFirstVisibleCfi = function (visibleContentOffsets, frameDimensions) {
+        return createBookmarkFromCfi(self.getNavigator().getFirstVisibleCfi(visibleContentOffsets, frameDimensions));
+    };
+
+    this.getLastVisibleCfi = function (visibleContentOffsets, frameDimensions) {
+        return createBookmarkFromCfi(self.getNavigator().getLastVisibleCfi(visibleContentOffsets, frameDimensions));
+    };
+
+    this.getDomRangeFromRangeCfi = function (rangeCfi, rangeCfi2, inclusive) {
+        return self.getNavigator().getDomRangeFromRangeCfi(rangeCfi, rangeCfi2, inclusive);
+    };
+
+    this.getRangeCfiFromDomRange = function (domRange) {
+        return createBookmarkFromCfi(self.getNavigator().getRangeCfiFromDomRange(domRange));
+    };
+
+    this.getVisibleCfiFromPoint = function (x, y, precisePoint) {
+        return createBookmarkFromCfi(self.getNavigator().getVisibleCfiFromPoint(x, y, precisePoint));
+    };
+
+    this.getRangeCfiFromPoints = function(startX, startY, endX, endY) {
+        return createBookmarkFromCfi(self.getNavigator().getRangeCfiFromPoints(startX, startY, endX, endY));
+    };
+
+    this.getCfiForElement = function(element) {
+        return createBookmarkFromCfi(self.getNavigator().getCfiForElement(element));
+    };
+
+    this.getElementFromPoint = function (x, y) {
+        return self.getNavigator().getElementFromPoint(x, y);
+    };
+
 };
 
-OnePageView.SPINE_ITEM_OPEN_START = "SpineItemOpenStart";
+OnePageView.Events = {
+    SPINE_ITEM_OPEN_START: "SpineItemOpenStart"
+};
 return OnePageView;
 });
