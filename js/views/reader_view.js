@@ -542,6 +542,7 @@ console.trace(JSON.stringify(status));
      *
      * @typedef {object} Globals.Views.ReaderView.SettingsData
      * @property {number} fontSize - Font size as percentage
+     * @property {number} fontSelection - Font selection as the number in the list of possible fonts, where 0 is special meaning default.
      * @property {(string|boolean)} syntheticSpread - "auto"|true|false
      * @property {(string|boolean)} scroll - "auto"|true|false
      * @property {boolean} doNotUpdateView - Indicates whether the view should be updated after the settings are applied
