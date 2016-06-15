@@ -238,11 +238,58 @@ Helpers.Rect.fromElement = function ($element) {
 
     return new Helpers.Rect(offsetLeft, offsetTop, offsetWidth, offsetHeight);
 };
+/**
+ *
+ * @param $epubHtml: The html that is to have font attributes added.
+ * @param fontSize: The font size that is to be added to the element at all locations.
+ * @param fontObj: The font Object containing at minimum the URL, and fontFamilyName (In fields url and fontFamily) respectively. Pass in null's on the object's fields to signal no font.
+ */
 
-Helpers.UpdateHtmlFontSize = function ($epubHtml, fontSize) {
+Helpers.UpdateHtmlFontAttributes = function ($epubHtml, fontSize, fontObj) {
 
     var perf = false;
+    console.log("derek", fontObj);
+    if(fontObj.fontFamily && fontObj.url){
+        
+        var docHead = $("head", $epubHtml);
+        //Add link attribute if the font name is different.
+        var fontFamily = fontObj.fontFamily;
+        var link = $("#helpers-font-url", docHead);
+        if(!link.length){
+            setTimeout(function(){
+                docHead.append($("<link/>", {
+                    "id" : "helpers-font-url",
+                    "data-fontFamily" : fontFamily,
+                    "rel" : "stylesheet",
+                    "type" : "text/css",
+                    "href" : fontObj.url
+                }));
+            }, 0);  
+        }
+        else if(link.attr("data-fontFamily") != fontFamily){
+            link.attr({
+                "data-fontFamily" : fontFamily,
+                "src" : fontObj.url
+            });
+        }
+        
+        //Otherwise, leave the head alone, it's the same font url.
+        var body = $("body", $epubHtml);
+        console.log("derek", "body is", body[0]);
+        body.css({
+            fontFamily: fontFamily
+        });
+        console.log("derek", body.css("fontFamily"));
+    }
+    else{
+        var docHead = $("head", $epubHtml);
+        //Remove the whole link, it's default.
+        var link = $("#helpers-font-url", docHead);
+        if(link.length) link[0].remove();
+    }
+        
 
+    
     // TODO: very slow on Firefox!
     // See https://github.com/readium/readium-shared-js/issues/274
     if (perf) var time1 = window.performance.now();
