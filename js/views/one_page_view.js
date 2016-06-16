@@ -404,7 +404,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         if (!_enableBookStyleOverrides) return;
 
         if (_$epubHtml && _viewSettings) {
-            var font = (_viewSettings.fontSelection > 0 ? options.fonts[_viewSettings.fontSelection] : {});
+            var font = (_viewSettings.fontSelection > 0 ? reader.fonts[_viewSettings.fontSelection] : {});
             Helpers.UpdateHtmlFontAttributes(_$epubHtml, _viewSettings.fontSize, font);
         }
     }
