@@ -189,10 +189,10 @@ var CfiNavigationLogic = function (options) {
 
         if (isPaginatedView()) {
             return (rect.left >= 0 && rect.left < frameDimensions.width) ||
-                (!ignorePartiallyVisible && rect.left < 0 && rect.right >= 0);
+                (!ignorePartiallyVisible && rect.left < 0 && rect.right > 0);
         } else {
             return (rect.top >= 0 && rect.top < frameDimensions.height) ||
-                (!ignorePartiallyVisible && rect.top < 0 && rect.bottom >= 0);
+                (!ignorePartiallyVisible && rect.top < 0 && rect.bottom > 0);
         }
 
     }
