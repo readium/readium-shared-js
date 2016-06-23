@@ -235,29 +235,23 @@ var ReflowableView = function(options, reader){
                 //console.log(_$epubHtml.html());
             }
 
-            var _curFont = (_fontSelection == 0 ? {} : reader.fonts[_fontSelection-1]);
-            var fontFamilyNothingChange = Helpers.UpdateHtmlFontAttributes(_$epubHtml, _fontSize, _curFont);
+            var fontLoadCallback = function() {
 
-            if (fontFamilyNothingChange) {
-                if (DEBUG) {
-                    console.log("FONT LOAD: NOTHING");
-                }
-                whenDoneCallback();
-            } else {
                 if (DEBUG) {
                     console.trace("FONT LOADER ...");
                 }
-                setTimeout(function(){
-                    var fontLoader = new FontLoader(_$iframe, {debug: DEBUG});
-                    fontLoader.waitForFonts(function () {
-                        if (DEBUG) {
-                            console.log("FONT LOADED CALLBACK");
-                        }
-                        whenDoneCallback();
-                    });
-                }, 100); // Helpers.UpdateHtmlFontAttributes() has a setTimeout() for the link@href element (CSS stylesheet file import) 
+            
+                var fontLoader = new FontLoader(_$iframe, {debug: DEBUG});
+                fontLoader.waitForFonts(function () {
+                    if (DEBUG) {
+                        console.log("FONT LOADED CALLBACK");
+                    }
+                    whenDoneCallback();
+                });
+            };
 
-            }
+            var _curFont = (_fontSelection == 0 ? {} : reader.fonts[_fontSelection-1]);
+            Helpers.UpdateHtmlFontAttributes(_$epubHtml, _fontSize, _curFont, fontLoadCallback);
 
         } else {
             whenDoneCallback();
