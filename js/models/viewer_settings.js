@@ -34,7 +34,10 @@ var ViewerSettings = function(settingsData) {
     var self = this;
 
     this.syntheticSpread = "auto";
+    
     this.fontSize = 100;
+    this.fontSelection = 0;
+
     this.columnGap = 20;
     
     this.columnMaxWidth = 700;
