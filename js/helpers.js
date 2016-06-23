@@ -307,7 +307,7 @@ Helpers.UpdateHtmlFontAttributes = function ($epubHtml, fontSize, fontObj) {
         if (!fontSizeAttr) {
             var style = win.getComputedStyle(ele);
             var originalFontSize = parseInt(style.fontSize);
-            var originalLineHeight = parseInt(style.lineHeight);
+            originalLineHeight = parseInt(style.lineHeight);
             ele.setAttribute('data-original-font-size', originalFontSize);
 
             // getComputedStyle will not calculate the line-height if the value is 'normal'. In this case parseInt will return NaN
