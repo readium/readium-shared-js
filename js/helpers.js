@@ -380,6 +380,8 @@ Helpers.UpdateHtmlFontAttributes = function ($epubHtml, fontSize, fontObj) {
         //     alert(diff);
         // }, 2000);
     }
+
+    return (changeFontFamily == NOTHING);
 };
 
 

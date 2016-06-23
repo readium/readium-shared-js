@@ -374,8 +374,9 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             }
 
             //_$epubHtml.css("overflow", "hidden");
-
-            if (_enableBookStyleOverrides) {
+            
+            var docWillChange = false;
+            if (_enableBookStyleOverrides && !docWillChange) {
                 self.applyBookStyles();
             }
 
@@ -386,11 +387,11 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
     }
 
     var _viewSettings = undefined;
-    this.setViewSettings = function (settings) {
+    this.setViewSettings = function (settings, docWillChange) {
 
         _viewSettings = settings;
 
-        if (_enableBookStyleOverrides) {
+        if (_enableBookStyleOverrides && !docWillChange) {
             self.applyBookStyles();
         }
 

@@ -139,7 +139,7 @@ var ReflowableView = function(options, reader){
     };
 
     var _viewSettings = undefined;
-    this.setViewSettings = function(settings) {
+    this.setViewSettings = function(settings, docWillChange) {
 
         _viewSettings = settings;
 
@@ -150,11 +150,15 @@ var ReflowableView = function(options, reader){
         _fontSize = settings.fontSize;
         _fontSelection = settings.fontSelection;
 
-        updateHtmlFontInfo();
-        updateColumnGap();
-
         updateViewportSize();
-        updatePagination();
+
+        if (!docWillChange) {
+            updateColumnGap();
+
+            updateHtmlFontInfo(function() {
+                updatePagination();
+            });
+        }
     };
     
     function getFrameDimensions() {
@@ -221,11 +225,42 @@ var ReflowableView = function(options, reader){
         }
     }
 
-    function updateHtmlFontInfo() {
+    function updateHtmlFontInfo(whenDoneCallback) {
 
         if(_$epubHtml) {
+
+            var DEBUG = true;
+
+            if (DEBUG) {
+                //console.log(_$epubHtml.html());
+            }
+
             var _curFont = (_fontSelection == 0 ? {} : reader.fonts[_fontSelection-1]);
-            Helpers.UpdateHtmlFontAttributes(_$epubHtml, _fontSize,_curFont);
+            var fontFamilyNothingChange = Helpers.UpdateHtmlFontAttributes(_$epubHtml, _fontSize, _curFont);
+
+            if (fontFamilyNothingChange) {
+                if (DEBUG) {
+                    console.log("FONT LOAD: NOTHING");
+                }
+                whenDoneCallback();
+            } else {
+                if (DEBUG) {
+                    console.trace("FONT LOADER ...");
+                }
+                setTimeout(function(){
+                    var fontLoader = new FontLoader(_$iframe, {debug: DEBUG});
+                    fontLoader.waitForFonts(function () {
+                        if (DEBUG) {
+                            console.log("FONT LOADED CALLBACK");
+                        }
+                        whenDoneCallback();
+                    });
+                }, 100); // Helpers.UpdateHtmlFontAttributes() has a setTimeout() for the link@href element (CSS stylesheet file import) 
+
+            }
+
+        } else {
+            whenDoneCallback();
         }
     }
 
@@ -242,10 +277,12 @@ var ReflowableView = function(options, reader){
             applyIFrameLoad(success);
             return;
         }
-        var fontLoader = new FontLoader(_$iframe);
-        fontLoader.waitForFonts(function () {
-            applyIFrameLoad(success);
-        });
+        applyIFrameLoad(success);
+        // DONE IN updateHtmlFontInfo()
+        // var fontLoader = new FontLoader(_$iframe, {debug: true});
+        // fontLoader.waitForFonts(function () {
+        //     applyIFrameLoad(success);
+        // });
     }
 
     function applyIFrameLoad(success) {
@@ -363,11 +400,12 @@ var ReflowableView = function(options, reader){
         self.applyBookStyles();
         resizeImages();
 
-        updateHtmlFontInfo();
         updateColumnGap();
 
-
-        self.applyStyles();
+        updateHtmlFontInfo(function() {
+            // invokes updatePagination(), triggerLayout() etc.
+            self.applyStyles();
+        });
     }
 
     this.applyStyles = function() {
@@ -715,11 +753,19 @@ var ReflowableView = function(options, reader){
 
         Helpers.triggerLayout(_$iframe);
 
-        _paginationInfo.columnCount = ((_htmlBodyIsVerticalWritingMode ? _$epubHtml[0].scrollHeight : _$epubHtml[0].scrollWidth) + _paginationInfo.columnGap) / (_paginationInfo.columnWidth + _paginationInfo.columnGap);
+        var dim = (_htmlBodyIsVerticalWritingMode ? _$epubHtml[0].scrollHeight : _$epubHtml[0].scrollWidth);
+        if (dim == 0) {
+            console.error("Document dimensions zero?!");
+        }
+
+        _paginationInfo.columnCount = (dim + _paginationInfo.columnGap) / (_paginationInfo.columnWidth + _paginationInfo.columnGap);
         _paginationInfo.columnCount = Math.round(_paginationInfo.columnCount);
+        if (_paginationInfo.columnCount == 0) {
+            console.error("Column count zero?!");
+        }
 
         var totalGaps = (_paginationInfo.columnCount-1) * _paginationInfo.columnGap;
-        var colWidthCheck = ((_htmlBodyIsVerticalWritingMode ? _$epubHtml[0].scrollHeight : _$epubHtml[0].scrollWidth) - totalGaps) / _paginationInfo.columnCount;
+        var colWidthCheck = (dim - totalGaps) / _paginationInfo.columnCount;
         colWidthCheck = Math.round(colWidthCheck);
 
         if (colWidthCheck > _paginationInfo.columnWidth)

@@ -177,6 +177,9 @@ var FontLoaderNative = function(document, options) {
         }
 
         var fontIterator = function(font) {
+            if (debug) {
+                console.log("(native) font loading: " + font.family);
+            }
             font.loaded.then(function() {
                 fontLoaded(font);
             });
@@ -204,7 +207,7 @@ var FontLoaderNative = function(document, options) {
 
         window.setTimeout(function() {
             if (debug && loadCount !== fontFaceCount) {
-                console.log('(native) font loader: timeout, not all fonts loaded/required');
+                console.log('(native) font loader: timeout, not all fonts loaded/required [' + loadCount + '] / [' + fontFaceCount + ']');
             } else if (debug) {
                 console.log('(native) font loader: timeout');
             }
