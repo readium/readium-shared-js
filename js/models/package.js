@@ -1,5 +1,5 @@
 //  Created by Boris Schneiderman.
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  Copyright (c) 2016 Readium Foundation and/or its licensees. All rights reserved.
 //  
 //  Redistribution and use in source and binary forms, with or without modification, 
 //  are permitted provided that the following conditions are met:
@@ -31,18 +31,66 @@ define(['../helpers','./spine_item','./spine','./media_overlay', './package_data
 var Package = function(packageData){
 
     var self = this;
-
+    
+    /**
+     * The associated spine object
+     *
+     * @property spine
+     * @type     Models.Spine
+     */
     this.spine = undefined;
-    
+
+    /**
+     * The root URL of the package file
+     *
+     * @property rootUrl
+     * @type     String
+     */
     this.rootUrl = undefined;
+
+    /**
+     * The root URL of the package file, to prefix Media Overlays SMIL audio references
+     *
+     * @property rootUrlMO 
+     * @type     String
+     *
+     */
     this.rootUrlMO = undefined;
-    
+ 
+    /**
+     * The Media Overlays object
+     *
+     * @property media_overlay 
+     * @type     Object
+     *
+     */   
     this.media_overlay = undefined;
     
+    /**
+     * The rendition viewport
+     *
+     * @property rendition_viewport 
+     * @type     String?
+     *
+     */   
     this.rendition_viewport = undefined;
     
+    /**
+     * The rendition flow
+     *
+     * @property rendition_flow 
+     * @type     String?
+     *
+     */   
     this.rendition_flow = undefined;
     
+    /**
+     * The rendition layout
+     *
+     * @property rendition_layout 
+     * @type     String?
+     *
+     */   
     this.rendition_layout = undefined;
 
     //TODO: unused yet!
@@ -51,6 +99,13 @@ var Package = function(packageData){
     //TODO: unused yet!
     this.rendition_orientation = undefined;
 
+    /**
+     * Returns a resolved relative Url, Media Overlay variant.
+     *
+     * @method     resolveRelativeUrlMO
+     * @param      {String} relativeUrl  the relative URL to resolve
+     * @return     {String} the resolved relative URL.
+     */
     this.resolveRelativeUrlMO = function(relativeUrl) {
         
         var relativeUrlUri = undefined;
@@ -86,6 +141,13 @@ var Package = function(packageData){
         return self.resolveRelativeUrl(relativeUrl);
     };
 
+    /**
+     * Returns a resolved relative Url.
+     *
+     * @method     resolveRelativeUrl
+     * @param      {String} relativeUrl  the relative URL to resolve
+     * @return     {String} the resolved relative URL.
+     */
     this.resolveRelativeUrl = function(relativeUrl) {
 
         var relativeUrlUri = undefined;
@@ -121,21 +183,36 @@ var Package = function(packageData){
         return relativeUrl;
     };
 
+    /**
+     * Checks if the package is Fixed Layout.
+     *
+     * @method     isFixedLayout
+     * @return     {Boolean} TRUE if the package is Fixed Layout.
+     */
     this.isFixedLayout = function() {
         return self.rendition_layout === SpineItem.RENDITION_LAYOUT_PREPAGINATED;
     };
 
+    /**
+     * Checks if the package is Reflowable.
+     *
+     * @method     isReflowable
+     * @return     {Boolean} TRUE if the package is Reflowable (i.e. not Fixed Layout).
+     */
     this.isReflowable = function() {
         return !self.isFixedLayout();
     };
     
-
+    // initialization of class properties from the packageData parameters
+    console.log('--- packageData: ', packageData);
     if(packageData) {
         
         this.rootUrl = packageData.rootUrl;
         this.rootUrlMO = packageData.rootUrlMO;
 
         this.rendition_viewport = packageData.rendition_viewport;
+
+        console.log('--- rendition_viewport: ', this.rendition_viewport);
 
         this.rendition_layout = packageData.rendition_layout;
 
