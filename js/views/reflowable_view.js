@@ -28,10 +28,10 @@
 
 define(["../globals", "jquery", "underscore", "eventEmitter", "../models/bookmark_data", "./cfi_navigation_logic",
     "../models/current_pages_info", "../helpers", "../models/page_open_request",
-    "../models/viewer_settings", "./font_loader"],
+    "../models/viewer_settings", "./resize_sensor"],
     function(Globals, $, _, EventEmitter, BookmarkData, CfiNavigationLogic,
              CurrentPagesInfo, Helpers, PageOpenRequest,
-             ViewerSettings, FontLoader) {
+             ViewerSettings, ResizeSensor) {
 /**
  * Renders reflowable content using CSS columns
  * @param options
@@ -236,17 +236,6 @@ var ReflowableView = function(options, reader){
     }
 
     function onIFrameLoad(success) {
-        if (!success) {
-            applyIFrameLoad(success);
-            return;
-        }
-        var fontLoader = new FontLoader(_$iframe);
-        fontLoader.waitForFonts(function () {
-            applyIFrameLoad(success);
-        });
-    }
-
-    function applyIFrameLoad(success) {
 
         _isWaitingFrameRender = false;
 
@@ -364,6 +353,11 @@ var ReflowableView = function(options, reader){
         updateHtmlFontSize();
         updateColumnGap();
 
+        var bodyElement = _$htmlBody[0];
+        bodyElement.resizeSensor = new ResizeSensor(bodyElement, function() {
+            console.log("ReflowableView iframe body resized", $(bodyElement).width(), $(bodyElement).height());
+            updatePagination();
+        });
 
         self.applyStyles();
     }
