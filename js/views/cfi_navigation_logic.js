@@ -1145,6 +1145,15 @@ var CfiNavigationLogic = function(options) {
         return pageIndex;
     };
 
+    this.getVerticalOffsetForElement = function ($element) {
+      return this.getVerticalOffsetForPointOnElement($element, 0, 0);
+    };
+
+    this.getVerticalOffsetForPointOnElement = function ($element, x, y) {
+      var elementRect = Helpers.Rect.fromElement($element);
+      return Math.ceil(elementRect.top + y * elementRect.height / 100);
+    };
+
     this.getElementById = function (id) {
 
         var contentDoc = this.getRootDocument();
