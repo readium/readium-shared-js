@@ -159,6 +159,12 @@ var FontLoaderNative = function(document, options) {
 
     return function(callback) {
         callback = _.once(callback);
+        
+        // Callback right away if no native support is found (temp workaround)
+        if (!document.fonts) {
+            return callback();
+        }
+        
         var loadCount = 0;
 
         var fontFaceCount = document.fonts.size;
@@ -224,7 +230,7 @@ var FontLoaderWrapper = function($iframe, options) {
     var document = $iframe[0].contentDocument;
 
     // For browsers without CSS Font Loading Module
-    var fallbackNeeded = !document.fonts;
+    var fallbackNeeded = false;
 
     var fontLoader = fallbackNeeded ? FontLoaderFallback : FontLoaderNative;
 
