@@ -1212,7 +1212,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         forEachItemView(function (pageView) {
             if (pageView.currentSpineItem().idref == spineItemIdref) {
 
-                found = pageView.getNavigator().getElementByCfi(spineItemIdref, cfi, classBlacklist, elementBlacklist, idBlacklist);
+                found = pageView.getNavigator().getElementByCfi(cfi, classBlacklist, elementBlacklist, idBlacklist);
                 return false;
             }
 
