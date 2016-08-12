@@ -12331,7 +12331,7 @@ var obj = {
         indirectionNode.type = "indexStep";
 
         // Interpret the rest of the steps
-        $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, indirectionStepNum, $("html", contentDocument), classBlacklist, elementBlacklist, idBlacklist);
+        $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, indirectionStepNum, $(contentDocument.documentElement, contentDocument), classBlacklist, elementBlacklist, idBlacklist);
 
         // TODO: detect what kind of terminus; for now, text node termini are the only kind implemented
         $currElement = this.interpretTextTerminusNode(CFIAST.cfiString.localPath.termStep, $currElement, elementToInject);
@@ -12359,7 +12359,7 @@ var obj = {
         indirectionNode.type = "indexStep";
 
         // Interpret the rest of the steps in the first local path
-        $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, indirectionStepNum, $("html", contentDocument), classBlacklist, elementBlacklist, idBlacklist);
+        $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, indirectionStepNum, $(contentDocument.documentElement, contentDocument), classBlacklist, elementBlacklist, idBlacklist);
 
         // Interpret the first range local_path
         $range1TargetElement = this.interpretLocalPath(CFIAST.cfiString.range1, 0, $currElement, classBlacklist, elementBlacklist, idBlacklist);
@@ -12394,7 +12394,7 @@ var obj = {
         indirectionNode.type = "indexStep";
 
         // Interpret the rest of the steps
-        $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, indirectionStepNum, $("html", contentDocument), classBlacklist, elementBlacklist, idBlacklist);
+        $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, indirectionStepNum, $(contentDocument.documentElement, contentDocument), classBlacklist, elementBlacklist, idBlacklist);
 
         // Return the element at the end of the CFI
         return $currElement;
@@ -12419,7 +12419,7 @@ var obj = {
         indirectionNode.type = "indexStep";
 
         // Interpret the rest of the steps
-        $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, indirectionStepNum, $("html", contentDocument), classBlacklist, elementBlacklist, idBlacklist);
+        $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, indirectionStepNum, $(contentDocument.documentElement, contentDocument), classBlacklist, elementBlacklist, idBlacklist);
 
         // Interpret first range local_path
         $range1TargetElement = this.interpretLocalPath(CFIAST.cfiString.range1, 0, $currElement, classBlacklist, elementBlacklist, idBlacklist);
@@ -12456,7 +12456,7 @@ var obj = {
         var indirectionNode;
 
         // Interpret the path node
-        var $currElement = this.interpretIndexStepNode(CFIAST.cfiString.path, $("html", contentDocument), classBlacklist, elementBlacklist, idBlacklist);
+        var $currElement = this.interpretIndexStepNode(CFIAST.cfiString.path, $(contentDocument.documentElement, contentDocument), classBlacklist, elementBlacklist, idBlacklist);
 
         // Interpret the rest of the steps
         $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, 0, $currElement, classBlacklist, elementBlacklist, idBlacklist);
@@ -12482,7 +12482,7 @@ var obj = {
         var textOffset;
 
         // Interpret the path node
-        var $currElement = this.interpretIndexStepNode(CFIAST.cfiString.path, $("html", contentDocument), classBlacklist, elementBlacklist, idBlacklist);
+        var $currElement = this.interpretIndexStepNode(CFIAST.cfiString.path, $(contentDocument.documentElement, contentDocument), classBlacklist, elementBlacklist, idBlacklist);
 
         // Interpret the rest of the steps
         $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, 0, $currElement, classBlacklist, elementBlacklist, idBlacklist);
