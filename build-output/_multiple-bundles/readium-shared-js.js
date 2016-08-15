@@ -27,7 +27,7 @@
 
 define('readium_shared_js/globals',['jquery','eventEmitter'], function($, EventEmitter) {
     
-    var DEBUG = true;
+    var DEBUG = false;
     
 /**
  * Top level ReadiumSDK namespace
@@ -3250,7 +3250,7 @@ var CfiNavigationLogic = function(options) {
         }
     }
 
-    var DEBUG = true;
+    var DEBUG = false;
 
     function getVisibleTextRangeOffsetsSelectedByFunc(textNode, pickerFunc, visibleContentOffsets, frameDimensions) {
         visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
