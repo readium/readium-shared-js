@@ -156,8 +156,8 @@ var IFrameLoader = function(getCurrentResourceFetcher) {
                     );
                 }
             }
-            
-            $('svg', doc).load(function(){
+       
+            $('svg', doc).on("load", function(){
                 console.log('SVG loaded');
             });
             
