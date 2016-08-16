@@ -16297,10 +16297,6 @@ var ReaderView = function (options) {
     function onMediaPlayerStatusChanged(status) {
 
         Globals.logEvent("MEDIA_OVERLAY_STATUS_CHANGED", "EMIT", "reader_view.js (via MediaOverlayPlayer + AudioPlayer)");
-<<<<<<< HEAD
-console.debug(JSON.stringify(status));
-=======
->>>>>>> develop
         self.emit(Globals.Events.MEDIA_OVERLAY_STATUS_CHANGED, status);
     }
 
@@ -16443,10 +16439,6 @@ console.debug(JSON.stringify(status));
         }
 
         Globals.logEvent("SETTINGS_APPLIED 2 (no view update)", "EMIT", "reader_view.js");
-<<<<<<< HEAD
-console.debug(JSON.stringify(settingsData));
-=======
->>>>>>> develop
         self.emit(Globals.Events.SETTINGS_APPLIED);
     };
 
