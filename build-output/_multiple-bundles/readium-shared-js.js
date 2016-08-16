@@ -27,7 +27,7 @@
 
 define('readium_shared_js/globals',['jquery','eventEmitter'], function($, EventEmitter) {
     
-    var DEBUG = true;
+    var DEBUG = false;
     
 /**
  * Top level ReadiumSDK namespace
@@ -1102,8 +1102,8 @@ define('readium_shared_js/models/spine_item',[], function() {
 /**
  * Wrapper of the SpineItem object received from the host application
  *
- * @class Models.SpineItem
- *
+ * @class  Models.SpineItem
+ * @constructor
  * @param itemData spine item properties container
  * @param {Number} index
  * @param {Models.Spine} spine
@@ -1113,31 +1113,131 @@ var SpineItem = function(itemData, index, spine){
 
     var self = this;
 
+    /**
+     * The idref of the spine item, i.e. the ID-based pointer to the actual 
+     * manifest item that the spine item references
+     *
+     * @property idref
+     * @type {String}
+     * @default  None
+     */
     this.idref = itemData.idref;
+
+    /**
+     * The href of the spine item, i.e. the URI to the resource in the EPUB
+     * which the spineitem will render
+     *
+     * @property href
+     * @type String
+     * @default  None
+     */
     this.href = itemData.href;
 
+    /**
+     * A flag indicating whether the spineItem has the attribute linear, which 
+     * is either yes or no.  Default is yes.
+     *
+     * @property linear
+     * @type String
+     * @default  yes
+     */
     this.linear = itemData.linear ? itemData.linear.toLowerCase() : itemData.linear;
 
+    /**
+     * A variable indicating the type of synthetic spread for this specific
+     * spine item, where page:spread-* can be left, right or center or auto
+     *
+     * @property page_spread
+     * @type String
+     * @default  auto
+     */
     this.page_spread = itemData.page_spread;
     
+    /**
+     * A string specifying the height and width from the rendition:viewport tag.
+     * Note: This is deprecated in EPUB 3.1
+     *
+     * @property rendition_viewport
+     * @type     String
+     * @default  None
+     */
     this.rendition_viewport = itemData.rendition_viewport;
     
+    /**
+     * A string specifying the type of synthetic spread for ALL spine items, where
+     * where rendtion:spread-* can be left, right or center or auto
+     *
+     * @property rendition_spread
+     * @type     String
+     * @default  auto
+     */
     this.rendition_spread = itemData.rendition_spread;
-    
-    //TODO: unused yet!
+
+    /**
+     * A sring specifying desired orientation for ALL spine items. Possible values are
+     * rendition-orientation-*, which can be none, landscape, portrait, both or auto
+     *
+     * Note: Not yet implemented.
+     *
+     * @property rendition_orientation
+     * @type     String
+     * @default  auto
+     */
     this.rendition_orientation = itemData.rendition_orientation;
 
+    /**
+     * A string indicating the type of document layout, either prepaginated or reflowable
+     *
+     * @property rendition_layout
+     * @type     String
+     * @default  reflowable
+     */
     this.rendition_layout = itemData.rendition_layout;
     
+    /**
+     * A string specifying how "overflow" content that exceeds the current viewport should
+     * be laid out.  Possible values are paginated, scrolled-continuous, scrolled-doc or auto
+     *
+     * @property rendition_flow
+     * @type     String
+     * @default  auto
+     */
     this.rendition_flow = itemData.rendition_flow;
     
-    
-    
+    /**
+     * The ID, if any, of the root SMIL element of the media overlay for the document.
+     *
+     * @property media_overlay_id
+     * @type     String
+     * @default  None
+     */
     this.media_overlay_id = itemData.media_overlay_id;
 
+    /**
+     * The mimetype of this specific spine item.
+     *
+     * @property media_type
+     * @type     String
+     * @default  None
+     */
     this.media_type = itemData.media_type;
 
+    /**
+     * The index of this spine item in the spine itself.
+     * 
+     * @property index
+     * @type     String
+     * @default  None
+     */
     this.index = index;
+
+    /**
+     * The object which is the actual spine of which this spineItem is a child.
+     *
+     * @property spine
+     * @type     String
+     * @default  None
+     */
     this.spine = spine;
 
     validateSpread();
@@ -1148,12 +1248,23 @@ var SpineItem = function(itemData, index, spine){
         validateSpread();
     };
 
+    /**
+     * Checks to see if the manifest has specified a spread property of "none"
+     *
+     * @method     isRenditionSpreadAllowed
+     * @return     {Boolean} TRUE if spread=none has NOT been specified, else FALSE
+     */
     this.isRenditionSpreadAllowed = function() {
         
         var rendition_spread = self.getRenditionSpread();
         return !rendition_spread || rendition_spread != SpineItem.RENDITION_SPREAD_NONE;
     };
 
+    /**
+     * Checks to see if the value for the page-spread attribute is valid
+     *
+     * @method     validateSpread
+     */
     function validateSpread() {
 
         if(!self.page_spread) {
@@ -1166,25 +1277,56 @@ var SpineItem = function(itemData, index, spine){
 
             console.error(self.page_spread + " is not a recognized spread type");
         }
-
     }
 
+    /**
+     * Checks to see if this spineItem explicitly specifies SPREAD_LEFT
+     *
+     * @method     isLeftPage
+     * @return     {Boolean} 
+     */
     this.isLeftPage = function() {
         return self.page_spread == SpineItem.SPREAD_LEFT;
     };
 
+    /**
+     * Checks to see if this spineItem explicitly specifies SPREAD_RIGHT
+     *
+     * @method     isRightPage
+     * @return     {Boolean} 
+     */
     this.isRightPage = function() {
         return self.page_spread == SpineItem.SPREAD_RIGHT;
     };
 
+    /**
+     * Checks to see if this spineItem explicitly specifies SPREAD_CENTER
+     *
+     * @method     isCenterPage
+     * @return     {Boolean} 
+     */
     this.isCenterPage = function() {
         return self.page_spread == SpineItem.SPREAD_CENTER;
     };
 
+    /**
+     * Checks to see if the parent package of this spineIem is
+     * reflowable
+     *
+     * @method     isReflowable
+     * @return     {Boolean} 
+     */
     this.isReflowable = function() {
         return !self.isFixedLayout();
     };
 
+    /**
+     * Checks to see if the parent package of to this spineIem is
+     * fixed layout
+     *
+     * @method     isFixedLayout
+     * @return     {Boolean} 
+     */
     this.isFixedLayout = function() {
         
         // cannot use isPropertyValueSetForItemOrPackage() here!
@@ -1204,10 +1346,18 @@ var SpineItem = function(itemData, index, spine){
 
         // if image or svg use fixed layout
         return self.media_type.indexOf("image/") >= 0;
-
     };
 
-    this.getRenditionFlow = function() {
+    /**
+     * Returns a string indicating the type of layout for viewport overflow, 
+     * i.e. scrolldoc, scroll-continuous, paginated or auto.  Note that if the spineItem 
+     * has an override (local value) that is returned, else the package's 
+     * value is returned
+     *
+     * @method     getRenditionFlow
+     * @return     {String} 
+     */
+   this.getRenditionFlow = function() {
 
         if(self.rendition_flow) {
             return self.rendition_flow;
@@ -1216,7 +1366,16 @@ var SpineItem = function(itemData, index, spine){
         return self.spine.package.rendition_flow;
     };
     
-    this.getRenditionViewport = function() {
+    /**
+     * Returns the rendition:viewport, if any. Note that if the spineItem 
+     * has an override (local value) that is returned, else the package's 
+     * value is returned.
+     * Note that this attribute is deprecated in EPUB 3.1
+     *
+     * @method     getRenditionViewport
+     * @return     {Boolean} 
+     */
+     this.getRenditionViewport = function() {
 
         if(self.rendition_viewport) {
             return self.rendition_viewport;
@@ -1225,6 +1384,14 @@ var SpineItem = function(itemData, index, spine){
         return self.spine.package.rendition_viewport;
     };
 
+    /**
+     * Returns the rendition:spread, if any. Note that if the spineItem 
+     * has an override (local value) that is returned, else the package's 
+     * value is returned.
+     *
+     * @method     getRenditionSpread
+     * @return     {Boolean} 
+     */
     this.getRenditionSpread = function() {
 
         if(self.rendition_spread) {
@@ -1234,6 +1401,14 @@ var SpineItem = function(itemData, index, spine){
         return self.spine.package.rendition_spread;
     };
 
+    /**
+     * Returns the rendition:orientation, if any. Note that if the spineItem 
+     * has an override (local value) that is returned, else the package's 
+     * value is returned.
+     *
+     * @method     getRenditionOrientation
+     * @return     {Boolean} 
+     */
     this.getRenditionOrientation = function() {
 
         if(self.rendition_orientation) {
@@ -1243,6 +1418,14 @@ var SpineItem = function(itemData, index, spine){
         return self.spine.package.rendition_orientation;
     };
 
+    /**
+     * Returns the rendition:layout, if any. Note that if the spineItem 
+     * has an override (local value) that is returned, else the package's 
+     * value is returned.
+     *
+     * @method     getRenditionLayout
+     * @return     {String} 
+     */
     this.getRenditionLayout = function() {
 
         if(self.rendition_layout) {
@@ -1252,6 +1435,17 @@ var SpineItem = function(itemData, index, spine){
         return self.spine.package.rendition_layout;
     };
 
+    /**
+     * Checks to see if the specified property is set in this spineItem and
+     * matches the supplied value.  If the property is NOT set in the spineItem
+     * then the the package is checked. If not set in either place then 
+     * the function returns FALSE.
+     *
+     * @method     isPropertyValueSetForItemOrPackage
+     * @param      {String} propName  The name of the property to be checked
+     * @param      {String} propValue The value of the property to be checked
+     * @return     {Boolean} 
+     */
     function isPropertyValueSetForItemOrPackage(propName, propValue) {
 
         if(self[propName]) {
@@ -1265,39 +1459,157 @@ var SpineItem = function(itemData, index, spine){
         return false;
     }
 
+    /**
+     * Checks if this spineItem or its parent package has its overflow content 
+     * layout specified as scrolled-continuous.
+     *
+     * @method     isFlowScrolledContinuous
+     * @return     {Boolean} 
+     */
     this.isFlowScrolledContinuous = function() {
 
         return isPropertyValueSetForItemOrPackage("rendition_flow", SpineItem.RENDITION_FLOW_SCROLLED_CONTINUOUS);
     };
 
+    /**
+     * Checks if this spineItem or its parent package has its overflow content 
+     * layout specified as scrolled-doc.
+     *
+     * @method     isFlowScrolledDoc
+     * @return     {Boolean} 
+     */
     this.isFlowScrolledDoc = function() {
 
         return isPropertyValueSetForItemOrPackage("rendition_flow", SpineItem.RENDITION_FLOW_SCROLLED_DOC);
     };
 };
 
+/** 
+ * @property RENDITION_LAYOUT_REFLOWABLE 
+ * @type {String}
+ * @static 
+ */
 SpineItem.RENDITION_LAYOUT_REFLOWABLE = "reflowable";
+
+/** 
+ * @property RENDITION_LAYOUT_PREPAGINATED 
+ * @type {String}
+ * @static 
+ */
 SpineItem.RENDITION_LAYOUT_PREPAGINATED = "pre-paginated";
 
+/** 
+ * @property RENDITION_ORIENTATION_LANDSCAPE 
+ * @type {String}
+ * @static 
+ */
 SpineItem.RENDITION_ORIENTATION_LANDSCAPE = "landscape";
+
+/** 
+ * @property RENDITION_ORIENTATION_PORTRAIT 
+ * @type {String}
+ * @static 
+ */
 SpineItem.RENDITION_ORIENTATION_PORTRAIT = "portrait";
+/** 
+ * @property RENDITION_ORIENTATION_AUTO
+ * @type {String}
+ * @static 
+ */
 SpineItem.RENDITION_ORIENTATION_AUTO = "auto";
 
+/** 
+ * @property SPREAD_LEFT 
+ * @type {String}
+ * @static 
+ */
 SpineItem.SPREAD_LEFT = "page-spread-left";
+
+/** 
+ * @property SPREAD_RIGHT 
+ * @type {String}
+ * @static 
+ */
 SpineItem.SPREAD_RIGHT = "page-spread-right";
+
+/** 
+ * @property SPREAD_CENTER 
+ * @type {String}
+ * @static 
+ */
 SpineItem.SPREAD_CENTER = "page-spread-center";
 
+/** 
+ * @property RENDITION_SPREAD_NONE 
+ * @type {String}
+ * @static 
+ */
 SpineItem.RENDITION_SPREAD_NONE = "none";
+
+/** 
+ * @property RENDITION_SPREAD_LANDSCAPE 
+ * @type {String}
+ * @static 
+ */
 SpineItem.RENDITION_SPREAD_LANDSCAPE = "landscape";
+
+/** 
+ * @property RENDITION_SPREAD_PORTRAIT 
+ * @type {String}
+ * @static 
+ */
 SpineItem.RENDITION_SPREAD_PORTRAIT = "portrait";
+
+/** 
+ * @property RENDITION_SPREAD_BOTH 
+ * @type {String}
+ * @static 
+ */
 SpineItem.RENDITION_SPREAD_BOTH = "both";
+
+/** 
+ * @property RENDITION_SPREAD_AUTO 
+ * @type {String}
+ * @static 
+ */
 SpineItem.RENDITION_SPREAD_AUTO = "auto";
 
+/** 
+ * @property RENDITION_FLOW_PAGINATED 
+ * @type {String}
+ * @static 
+ */
 SpineItem.RENDITION_FLOW_PAGINATED = "paginated";
+
+/** 
+ * @property RENDITION_FLOW_SCROLLED_CONTINUOUS 
+ * @type {String}
+ * @static 
+ */
 SpineItem.RENDITION_FLOW_SCROLLED_CONTINUOUS = "scrolled-continuous";
+
+/** 
+ * @property RENDITION_FLOW_SCROLLED_DOC 
+ * @type {String}
+ * @static 
+ */
 SpineItem.RENDITION_FLOW_SCROLLED_DOC = "scrolled-doc";
+
+/** 
+ * @property RENDITION_FLOW_AUTO 
+ * @type {String}
+ * @static 
+ */
 SpineItem.RENDITION_FLOW_AUTO = "auto";
 
+/**
+ * Returns the inversion of the spineItem's SPREAD property. i.e
+ * if the page-spread is right it returns LEFT and vice versa.  If 
+ * the spread is center then it returns CENTER
+ *
+ * @method     alternateSpread
+ * @return     {String} 
+ */
 SpineItem.alternateSpread = function(spread) {
 
     if(spread === SpineItem.SPREAD_LEFT) {
@@ -1563,140 +1875,182 @@ Helpers.Rect.fromElement = function ($element) {
  * @param fontObj: The font Object containing at minimum the URL, and fontFamilyName (In fields url and fontFamily) respectively. Pass in null's on the object's fields to signal no font.
  */
 
-Helpers.UpdateHtmlFontAttributes = function ($epubHtml, fontSize, fontObj) {
-    const NOTHING =0, ADD = 1, REMOVE = 2; //Types for css font family.
+Helpers.UpdateHtmlFontAttributes = function ($epubHtml, fontSize, fontObj, callback) {
 
-    var perf = false;
+
+    var FONT_FAMILY_ID = "readium_font_family_link";
+
+    var docHead = $("head", $epubHtml);
+    var link = $("#" + FONT_FAMILY_ID, docHead);
+
+    const NOTHING = 0, ADD = 1, REMOVE = 2; //Types for css font family.
     var changeFontFamily = NOTHING;
-    if(fontObj.fontFamily && fontObj.url){
+
+    var fontLoadCallback = function() {
+            
+        var perf = false;
+
+        // TODO: very slow on Firefox!
+        // See https://github.com/readium/readium-shared-js/issues/274
+        if (perf) var time1 = window.performance.now();
+
+        var factor = fontSize / 100;
+        var win = $epubHtml[0].ownerDocument.defaultView;
+        var $textblocks = $('p, div, span, h1, h2, h3, h4, h5, h6, li, blockquote, td, pre', $epubHtml);
         
-        var docHead = $("head", $epubHtml);
-        //Add link attribute if the font name is different.
-        var fontFamily = fontObj.fontFamily;
-        var link = $("#helpers-font-url", docHead);
-        if(!link.length){
-            setTimeout(function(){
-                docHead.append($("<link/>", {
-                    "id" : "helpers-font-url",
-                    "data-fontFamily" : fontFamily,
-                    "rel" : "stylesheet",
-                    "type" : "text/css",
-                    "href" : fontObj.url
-                }));
-            }, 0);  
-            changeFontFamily = ADD;
-        }
-        else if(link.attr("data-fontFamily") != fontFamily){
-            link.attr({
-                "data-fontFamily" : fontFamily,
-                "src" : fontObj.url
-            });
-            changeFontFamily = ADD;
-        }
-        //Otherwise, leave the head alone, it's the same font url.
-    }
-    else{
-        changeFontFamily = REMOVE;
-        var docHead = $("head", $epubHtml);
-        //Remove the whole link, it's default.
-        var link = $("#helpers-font-url", docHead);
-        if(link.length) link[0].remove();
-    }
-    
-    // TODO: very slow on Firefox!
-    // See https://github.com/readium/readium-shared-js/issues/274
-    if (perf) var time1 = window.performance.now();
+        // need to do two passes because it is possible to have nested text blocks.
+        // If you change the font size of the parent this will then create an inaccurate
+        // font size for any children.
+        for (var i = 0; i < $textblocks.length; i++) {
 
-    var factor = fontSize / 100;
-    var win = $epubHtml[0].ownerDocument.defaultView;
-    var $textblocks = $('p, div, span, h1, h2, h3, h4, h5, h6, li, blockquote, td, pre', $epubHtml);
-    var originalLineHeight;
-    
+            var ele = $textblocks[i];
+            
+            var fontSizeAttr = ele.getAttribute('data-original-font-size');
+            if (fontSizeAttr) {
+                // early exit, original values already set.
+                break;
+            }
 
-    // need to do two passes because it is possible to have nested text blocks.
-    // If you change the font size of the parent this will then create an inaccurate
-    // font size for any children.
-    for (var i = 0; i < $textblocks.length; i++) {
-        var ele = $textblocks[i],
-            fontSizeAttr = ele.getAttribute('data-original-font-size'),
-            fontFamilyAttr = ele.getAttribute('data-original-font-family');
-
-
-        if (!fontSizeAttr) {
             var style = win.getComputedStyle(ele);
+            
             var originalFontSize = parseInt(style.fontSize);
-            var originalLineHeight = parseInt(style.lineHeight);
             ele.setAttribute('data-original-font-size', originalFontSize);
 
+            var originalLineHeight = parseInt(style.lineHeight);
             // getComputedStyle will not calculate the line-height if the value is 'normal'. In this case parseInt will return NaN
             if (originalLineHeight) {
                 ele.setAttribute('data-original-line-height', originalLineHeight);
             }
+            
+            var fontFamilyAttr = ele.getAttribute('data-original-font-family');
+            if (!fontFamilyAttr) {
+                var originalFontFamily = style.fontFamily;
+                if (originalFontFamily) {
+                    ele.setAttribute('data-original-font-family', originalFontFamily);
+                }
+            }
         }
+
+        for (var i = 0; i < $textblocks.length; i++) {
+            var ele = $textblocks[i];
+
+            // TODO: group the 3x potential $(ele).css() calls below to avoid multiple jQuery style mutations 
+
+            var fontSizeAttr = ele.getAttribute('data-original-font-size');
+            var originalFontSize = Number(fontSizeAttr);
+            $(ele).css("font-size", (originalFontSize * factor) + 'px');
+
+            var lineHeightAttr = ele.getAttribute('data-original-line-height');
+            var originalLineHeight = lineHeightAttr ? Number(lineHeightAttr) : 0;
+            if (originalLineHeight) {
+                $(ele).css("line-height", (originalLineHeight * factor) + 'px');
+            }
+            
+            var fontFamilyAttr = ele.getAttribute('data-original-font-family');
+            switch(changeFontFamily){
+                case NOTHING:
+                    break;
+                case ADD:
+                    $(ele).css("font-family", fontObj.fontFamily);
+                    break;
+                case REMOVE:
+                    $(ele).css("font-family", fontFamilyAttr);
+                    break;
+            }
+        }
+
+        $epubHtml.css("font-size", fontSize + "%");
+        // $epubHtml.css({
+        //     "font-size" : fontSize + "%",
+        //     "font-family" : (changeFontFamily == ADD ? fontFamily : "")
+        // });
         
-        if (!fontFamilyAttr) {
-            var style = win.getComputedStyle(ele);
-            var originalFontFamily = style.fontFamily;
-            ele.setAttribute('data-original-font-family', originalFontFamily);
+        if (perf) {
+            var time2 = window.performance.now();
+        
+            // Firefox: 80+
+            // Chrome: 4-10
+            // Edge: 15-34
+            // IE: 10-15
+            // https://readium.firebase.com/?epub=..%2Fepub_content%2Faccessible_epub_3&goto=%7B%22idref%22%3A%22id-id2635343%22%2C%22elementCfi%22%3A%22%2F4%2F2%5Bbuilding_a_better_epub%5D%2F10%2F44%2F6%2C%2F1%3A334%2C%2F1%3A335%22%7D
+            
+            var diff = time2-time1;
+            console.log(diff);
+            
+            // setTimeout(function(){
+            //     alert(diff);
+            // }, 2000);
+        }
+
+        callback();
+    };
+    var fontLoadCallback_ = _.once(fontLoadCallback);
+
+    if(fontObj.fontFamily && fontObj.url){
+        var dataFontFamily = link.length ? link.attr("data-fontfamily") : undefined;
+
+        if(!link.length){
+            changeFontFamily = ADD;
+
+            setTimeout(function(){
+                
+                link = $("<link/>", {
+                    "id" : FONT_FAMILY_ID,
+                    "data-fontfamily" : fontObj.fontFamily,
+                    "rel" : "stylesheet",
+                    "type" : "text/css"
+                });
+                if (!('onload' in link[0])) {
+//alert("LINK ONLOAD !?");
+                    var imgTag = $epubHtml[0].ownerDocument.createElement("img");
+                    imgTag.onerror = fontLoadCallback_;
+                    imgTag.src = fontObj.url;
+                } else {
+                    link[0].onload = fontLoadCallback_;
+                }
+                docHead.append(link);
+                    
+                link.attr({
+                    "href" : fontObj.url
+                });
+//alert("ADD");
+            }, 0);
+        }
+        else if(dataFontFamily != fontObj.fontFamily){
+            changeFontFamily = ADD;
+// TODO: test this! (several font-faces in choice list)
+alert("HREF CHANGE: " + dataFontFamily + " != " + fontObj.fontFamily);
+        
+            if (!('onload' in link[0])) {
+//alert("LINK ONLOAD !?");
+                var imgTag = $epubHtml[0].ownerDocument.createElement("img");
+                imgTag.onerror = fontLoadCallback_;
+                imgTag.src = fontObj.url;
+            } else {
+                link[0].onload = fontLoadCallback_;
+            }
+            link.attr({
+                "data-fontfamily" : fontObj.fontFamily,
+                "href" : fontObj.url
+            });
+        } else {
+            changeFontFamily = NOTHING;
         }
     }
-
-    // reset variable so the below logic works. All variables in JS are function scoped.
-    originalLineHeight = 0;
-    for (var i = 0; i < $textblocks.length; i++) {
-        var ele = $textblocks[i],
-            fontSizeAttr = ele.getAttribute('data-original-font-size'),
-            fontFamilyAttr = ele.getAttribute('data-original-font-family'),
-            lineHeightAttr = ele.getAttribute('data-original-line-height'),
-            originalFontSize = Number(fontSizeAttr);
-
-        if (lineHeightAttr) {
-            originalLineHeight = Number(lineHeightAttr);
-        }
-        else {
-            originalLineHeight = 0;
-        }
-
-        switch(changeFontFamily){
-            case NOTHING:
-                break;
-            case ADD:
-                $(ele).css({
-                    "font-size" : (originalFontSize * factor) + 'px',
-                    "font-family" : fontFamily
-                });
-                break;
-            case REMOVE:
-                $(ele).css({
-                    "font-size" : (originalFontSize * factor) + 'px',
-                    "font-family" : fontFamilyAttr
-                });
-        }
-        if (originalLineHeight) {
-            $(ele).css("line-height", (originalLineHeight * factor) + 'px');
-        }
-
+    else{
+        changeFontFamily = REMOVE;
+//alert("REMOVE");
+        if(link.length) link.remove();
     }
-    $epubHtml.css({
-        "font-size" : fontSize + "%",
-        "font-family" : (changeFontFamily == NOTHING ? "" : fontFamily)
-    });
-    
-    if (perf) {
-        var time2 = window.performance.now();
-    
-        // Firefox: 80+
-        // Chrome: 4-10
-        // Edge: 15-34
-        // IE: 10-15
-        // https://readium.firebase.com/?epub=..%2Fepub_content%2Faccessible_epub_3&goto=%7B%22idref%22%3A%22id-id2635343%22%2C%22elementCfi%22%3A%22%2F4%2F2%5Bbuilding_a_better_epub%5D%2F10%2F44%2F6%2C%2F1%3A334%2C%2F1%3A335%22%7D
-        
-        var diff = time2-time1;
-        console.log(diff);
-        
-        // setTimeout(function(){
-        //     alert(diff);
-        // }, 2000);
+
+    if (changeFontFamily == ADD) {
+        // just in case the link@onload does not trigger, we set a timeout
+        setTimeout(function(){
+            fontLoadCallback_();
+        }, 2000);
+    }
+    else { // REMOVE, NOTHING
+        fontLoadCallback();
     }
 };
 
@@ -3006,7 +3360,7 @@ var CfiNavigationLogic = function(options) {
         }
     }
 
-    var DEBUG = true;
+    var DEBUG = false;
 
     function getVisibleTextRangeOffsetsSelectedByFunc(textNode, pickerFunc, visibleContentOffsets, frameDimensions) {
         visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
@@ -3401,6 +3755,15 @@ var CfiNavigationLogic = function(options) {
             return 0;
         }
         return pageIndex;
+    };
+
+    this.getVerticalOffsetForElement = function ($element) {
+      return this.getVerticalOffsetForPointOnElement($element, 0, 0);
+    };
+
+    this.getVerticalOffsetForPointOnElement = function ($element, x, y) {
+      var elementRect = Helpers.Rect.fromElement($element);
+      return Math.ceil(elementRect.top + y * elementRect.height / 100);
     };
 
     this.getElementById = function (id) {
@@ -3936,7 +4299,10 @@ var ViewerSettings = function(settingsData) {
     var self = this;
 
     this.syntheticSpread = "auto";
+    
     this.fontSize = 100;
+    this.fontSelection = 0;
+
     this.columnGap = 20;
     
     this.columnMaxWidth = 700;
@@ -4399,8 +4765,9 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             }
 
             //_$epubHtml.css("overflow", "hidden");
-
-            if (_enableBookStyleOverrides) {
+            
+            var docWillChange = false;
+            if (_enableBookStyleOverrides && !docWillChange) {
                 self.applyBookStyles();
             }
 
@@ -4411,11 +4778,11 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
     }
 
     var _viewSettings = undefined;
-    this.setViewSettings = function (settings) {
+    this.setViewSettings = function (settings, docWillChange) {
 
         _viewSettings = settings;
 
-        if (_enableBookStyleOverrides) {
+        if (_enableBookStyleOverrides && !docWillChange) {
             self.applyBookStyles();
         }
 
@@ -4430,7 +4797,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
         if (_$epubHtml && _viewSettings) {
             var font = (_viewSettings.fontSelection > 0 ? reader.fonts[_viewSettings.fontSelection] : {});
-            Helpers.UpdateHtmlFontAttributes(_$epubHtml, _viewSettings.fontSize, font);
+            Helpers.UpdateHtmlFontAttributes(_$epubHtml, _viewSettings.fontSize, font, function(){});
         }
     }
 
@@ -4811,6 +5178,8 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
     function onUnload (spineItem) {
         if (spineItem) {
+            
+            Globals.logEvent("CONTENT_DOCUMENT_UNLOADED", "EMIT", "one_page_view.js [ " + spineItem.href + " ]");
             self.emit(Globals.Events.CONTENT_DOCUMENT_UNLOADED, _$iframe, spineItem);
         }
     }
@@ -5253,6 +5622,9 @@ var FixedView = function(options, reader){
 
         pageView.on(Globals.Events.CONTENT_DOCUMENT_UNLOADED, function($iframe, spineItem) {
 
+            Globals.logEvent("CONTENT_DOCUMENT_UNLOADED", "ON", "fixed_view.js [ " + spineItem.href + " ]");
+
+            Globals.logEvent("CONTENT_DOCUMENT_UNLOADED", "EMIT", "fixed_view.js [ " + spineItem.href + " ]");
             self.emit(Globals.Events.CONTENT_DOCUMENT_UNLOADED, $iframe, spineItem);
         });
 
@@ -5305,7 +5677,7 @@ var FixedView = function(options, reader){
     };
 
 
-    this.setViewSettings = function(settings) {
+    this.setViewSettings = function(settings, docWillChange) {
         
         _viewSettings = settings;
         
@@ -5313,7 +5685,7 @@ var FixedView = function(options, reader){
 
         var views = getDisplayingViews();
         for(var i = 0, count = views.length; i < count; i++) {
-            views[i].setViewSettings(settings);
+            views[i].setViewSettings(settings, docWillChange);
         }
     };
 
@@ -6121,7 +6493,7 @@ var IFrameLoader = function() {
         iframe.onload = function () {
 
             var doc = iframe.contentDocument || iframe.contentWindow.document;
-            $('svg', doc).load(function(){
+            $('svg', doc).on("load", function(){
                 console.log('SVG loaded');
             });
             
@@ -9115,19 +9487,19 @@ var ScrollView = function (options, isContinuousScroll, reader) {
     };
 
     var _viewSettings = undefined;
-    this.setViewSettings = function (settings) {
+    this.setViewSettings = function (settings, docWillChange) {
 
         _viewSettings = settings;
 
         forEachItemView(function (pageView) {
 
-            pageView.setViewSettings(settings);
+            pageView.setViewSettings(settings, docWillChange);
 
         }, false);
     };
 
     function createPageViewForSpineItem(isTemporaryView) {
-
+        
         options.disablePageTransitions = true; // force
 
         var pageView = new OnePageView(
@@ -9144,8 +9516,15 @@ var ScrollView = function (options, isContinuousScroll, reader) {
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
         });
 
+        pageView.on(Globals.Events.CONTENT_DOCUMENT_UNLOADED, function($iframe, spineItem) {
+            Globals.logEvent("CONTENT_DOCUMENT_UNLOADED", "ON", "scroll_view.js [ " + spineItem.href + " ]");
+            self.emit(Globals.Events.CONTENT_DOCUMENT_UNLOADED, $iframe, spineItem);
+        });
+
         pageView.render();
-        if (_viewSettings) pageView.setViewSettings(_viewSettings);
+
+        var docWillChange = true;
+        if (_viewSettings) pageView.setViewSettings(_viewSettings, docWillChange);
 
         if (!isTemporaryView) {
             pageView.element().data("pageView", pageView);
@@ -9672,7 +10051,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         forEachItemView(function (pageView) {
             if (pageView.currentSpineItem().idref == spineItemIdref) {
 
-                found = pageView.getNavigator().getElementByCfi(spineItemIdref, cfi, classBlacklist, elementBlacklist, idBlacklist);
+                found = pageView.getNavigator().getElementByCfi(cfi, classBlacklist, elementBlacklist, idBlacklist);
                 return false;
             }
 
@@ -13902,6 +14281,9 @@ var FontLoaderNative = function(document, options) {
         }
 
         var fontIterator = function(font) {
+            if (debug) {
+                console.log("(native) font loading: " + font.family);
+            }
             font.loaded.then(function() {
                 fontLoaded(font);
             });
@@ -13929,7 +14311,7 @@ var FontLoaderNative = function(document, options) {
 
         window.setTimeout(function() {
             if (debug && loadCount !== fontFaceCount) {
-                console.log('(native) font loader: timeout, not all fonts loaded/required');
+                console.log('(native) font loader: timeout, not all fonts loaded/required [' + loadCount + '] / [' + fontFaceCount + ']');
             } else if (debug) {
                 console.log('(native) font loader: timeout');
             }
@@ -14101,7 +14483,7 @@ var ReflowableView = function(options, reader){
     };
 
     var _viewSettings = undefined;
-    this.setViewSettings = function(settings) {
+    this.setViewSettings = function(settings, docWillChange) {
 
         _viewSettings = settings;
 
@@ -14112,11 +14494,15 @@ var ReflowableView = function(options, reader){
         _fontSize = settings.fontSize;
         _fontSelection = settings.fontSelection;
 
-        updateHtmlFontInfo();
-        updateColumnGap();
-
         updateViewportSize();
-        updatePagination();
+
+        if (!docWillChange) {
+            updateColumnGap();
+
+            updateHtmlFontInfo(function() {
+                updatePagination();
+            });
+        }
     };
     
     function getFrameDimensions() {
@@ -14160,6 +14546,7 @@ var ReflowableView = function(options, reader){
             //create & append iframe to container frame
             renderIframe();
             if (_currentSpineItem) {
+                Globals.logEvent("CONTENT_DOCUMENT_UNLOADED", "EMIT", "reflowable_view.js [ " + _currentSpineItem.href + " ]");
                 self.emit(Globals.Events.CONTENT_DOCUMENT_UNLOADED, _$iframe, _currentSpineItem);
             }
 
@@ -14183,11 +14570,36 @@ var ReflowableView = function(options, reader){
         }
     }
 
-    function updateHtmlFontInfo() {
+    function updateHtmlFontInfo(whenDoneCallback) {
 
         if(_$epubHtml) {
+
+            var DEBUG = true;
+
+            if (DEBUG) {
+                //console.log(_$epubHtml.html());
+            }
+
+            var fontLoadCallback = function() {
+
+                if (DEBUG) {
+                    console.trace("FONT LOADER ...");
+                }
+            
+                var fontLoader = new FontLoader(_$iframe, {debug: DEBUG});
+                fontLoader.waitForFonts(function () {
+                    if (DEBUG) {
+                        console.log("FONT LOADED CALLBACK");
+                    }
+                    whenDoneCallback();
+                });
+            };
+
             var _curFont = (_fontSelection == 0 ? {} : reader.fonts[_fontSelection-1]);
-            Helpers.UpdateHtmlFontAttributes(_$epubHtml, _fontSize,_curFont);
+            Helpers.UpdateHtmlFontAttributes(_$epubHtml, _fontSize, _curFont, fontLoadCallback);
+
+        } else {
+            whenDoneCallback();
         }
     }
 
@@ -14204,10 +14616,12 @@ var ReflowableView = function(options, reader){
             applyIFrameLoad(success);
             return;
         }
-        var fontLoader = new FontLoader(_$iframe);
-        fontLoader.waitForFonts(function () {
-            applyIFrameLoad(success);
-        });
+        applyIFrameLoad(success);
+        // DONE IN updateHtmlFontInfo()
+        // var fontLoader = new FontLoader(_$iframe, {debug: true});
+        // fontLoader.waitForFonts(function () {
+        //     applyIFrameLoad(success);
+        // });
     }
 
     function applyIFrameLoad(success) {
@@ -14325,11 +14739,12 @@ var ReflowableView = function(options, reader){
         self.applyBookStyles();
         resizeImages();
 
-        updateHtmlFontInfo();
         updateColumnGap();
 
-
-        self.applyStyles();
+        updateHtmlFontInfo(function() {
+            // invokes updatePagination(), triggerLayout() etc.
+            self.applyStyles();
+        });
     }
 
     this.applyStyles = function() {
@@ -14677,11 +15092,19 @@ var ReflowableView = function(options, reader){
 
         Helpers.triggerLayout(_$iframe);
 
-        _paginationInfo.columnCount = ((_htmlBodyIsVerticalWritingMode ? _$epubHtml[0].scrollHeight : _$epubHtml[0].scrollWidth) + _paginationInfo.columnGap) / (_paginationInfo.columnWidth + _paginationInfo.columnGap);
+        var dim = (_htmlBodyIsVerticalWritingMode ? _$epubHtml[0].scrollHeight : _$epubHtml[0].scrollWidth);
+        if (dim == 0) {
+            console.error("Document dimensions zero?!");
+        }
+
+        _paginationInfo.columnCount = (dim + _paginationInfo.columnGap) / (_paginationInfo.columnWidth + _paginationInfo.columnGap);
         _paginationInfo.columnCount = Math.round(_paginationInfo.columnCount);
+        if (_paginationInfo.columnCount == 0) {
+            console.error("Column count zero?!");
+        }
 
         var totalGaps = (_paginationInfo.columnCount-1) * _paginationInfo.columnGap;
-        var colWidthCheck = ((_htmlBodyIsVerticalWritingMode ? _$epubHtml[0].scrollHeight : _$epubHtml[0].scrollWidth) - totalGaps) / _paginationInfo.columnCount;
+        var colWidthCheck = (dim - totalGaps) / _paginationInfo.columnCount;
         colWidthCheck = Math.round(colWidthCheck);
 
         if (colWidthCheck > _paginationInfo.columnWidth)
@@ -14736,7 +15159,10 @@ var ReflowableView = function(options, reader){
     {
         if (_currentOpacity != -1) return; // already hidden
 
-        _currentOpacity = _$epubHtml.css('opacity');
+        // css('opacity') produces invalid result in Firefox, when iframes are involved and when is called
+        // directly after set, i.e. after showBook(), see: https://github.com/jquery/jquery/issues/2622
+        //_currentOpacity = $epubHtml.css('opacity');
+        _currentOpacity = _$epubHtml[0].style.opacity;
         _$epubHtml.css('opacity', "0");
     }
 
@@ -15683,11 +16109,14 @@ var ReaderView = function (options) {
         });
 
         _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOAD_START, function ($iframe, spineItem) {
+
             Globals.logEvent("CONTENT_DOCUMENT_LOAD_START", "EMIT", "reader_view.js [ " + spineItem.href + " ]");
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
         });
 
         _currentView.on(Globals.Events.CONTENT_DOCUMENT_UNLOADED, function ($iframe, spineItem) {
+            
+            Globals.logEvent("CONTENT_DOCUMENT_UNLOADED", "EMIT", "reader_view.js [ " + spineItem.href + " ]");
             self.emit(Globals.Events.CONTENT_DOCUMENT_UNLOADED, $iframe, spineItem);
         });
 
@@ -15712,7 +16141,9 @@ var ReaderView = function (options) {
         })
 
         _currentView.render();
-        _currentView.setViewSettings(_viewerSettings);
+
+        var docWillChange = true;
+        _currentView.setViewSettings(_viewerSettings, docWillChange);
 
         // we do this to wait until elements are rendered otherwise book is not able to determine view size.
         setTimeout(function () {
@@ -15892,8 +16323,8 @@ var ReaderView = function (options) {
     };
 
     function onMediaPlayerStatusChanged(status) {
+
         Globals.logEvent("MEDIA_OVERLAY_STATUS_CHANGED", "EMIT", "reader_view.js (via MediaOverlayPlayer + AudioPlayer)");
-console.trace(JSON.stringify(status));
         self.emit(Globals.Events.MEDIA_OVERLAY_STATUS_CHANGED, status);
     }
 
@@ -16016,8 +16447,15 @@ console.trace(JSON.stringify(status));
                 initViewForItem(spineItem, function (isViewChanged) {
 
                     if (!isViewChanged) {
-                        _currentView.setViewSettings(_viewerSettings);
+                        var docWillChange = false;
+                        _currentView.setViewSettings(_viewerSettings, docWillChange);
                     }
+
+                    self.once(ReadiumSDK.Events.PAGINATION_CHANGED, function (pageChangeData)
+                    {
+                        var cfi = new BookmarkData(bookMark.idref, bookMark.contentCFI);
+                        self.debugBookmarkData(cfi);
+                    });
 
                     self.openSpineItemElementCfi(bookMark.idref, bookMark.contentCFI, self);
 
@@ -16037,7 +16475,6 @@ console.trace(JSON.stringify(status));
         }
 
         Globals.logEvent("SETTINGS_APPLIED 2 (no view update)", "EMIT", "reader_view.js");
-console.trace(JSON.stringify(settingsData));
         self.emit(Globals.Events.SETTINGS_APPLIED);
     };
 
@@ -16201,7 +16638,8 @@ console.trace(JSON.stringify(settingsData));
         initViewForItem(pageRequest.spineItem, function (isViewChanged) {
 
             if (!isViewChanged) {
-                _currentView.setViewSettings(_viewerSettings);
+                var docWillChange = true;
+                _currentView.setViewSettings(_viewerSettings, docWillChange);
             }
 
             _currentView.openPage(pageRequest, dir);
@@ -16420,6 +16858,54 @@ console.trace(JSON.stringify(settingsData));
         openPage(pageData, 0);
 
         return true;
+    };
+
+    //var cfi = new BookmarkData(bookmark.idref, bookmark.contentCFI);
+    this.debugBookmarkData = function(cfi) {
+
+        if (!ReadiumSDK) return;
+
+        var DEBUG = true; // change this to visualize the CFI range
+        if (!DEBUG) return;
+            
+        var paginationInfo = this.getPaginationInfo();
+        console.log(JSON.stringify(paginationInfo));
+        
+        if (paginationInfo.isFixedLayout) return;
+    
+        try {
+            ReadiumSDK._DEBUG_CfiNavigationLogic.clearDebugOverlays();
+            
+        } catch (error) {
+            //ignore
+        }
+        
+        try {
+            console.log(cfi);
+            
+            var range = this.getDomRangeFromRangeCfi(cfi);
+            console.log(range);
+            
+            var res = ReadiumSDK._DEBUG_CfiNavigationLogic.drawDebugOverlayFromDomRange(range);
+            console.log(res);
+        
+            var cfiFirst = ReadiumSDK.reader.getFirstVisibleCfi();
+            console.log(cfiFirst);
+            
+            var cfiLast  = ReadiumSDK.reader.getLastVisibleCfi();
+            console.log(cfiLast);
+            
+        } catch (error) {
+            //ignore
+        }
+        
+        setTimeout(function() {
+            try {
+                ReadiumSDK._DEBUG_CfiNavigationLogic.clearDebugOverlays();
+            } catch (error) {
+                //ignore
+            }
+        }, 2000);
     };
 
     /**

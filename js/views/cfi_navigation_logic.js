@@ -748,7 +748,7 @@ var CfiNavigationLogic = function(options) {
         }
     }
 
-    var DEBUG = true;
+    var DEBUG = false;
 
     function getVisibleTextRangeOffsetsSelectedByFunc(textNode, pickerFunc, visibleContentOffsets, frameDimensions) {
         visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
@@ -1143,6 +1143,15 @@ var CfiNavigationLogic = function(options) {
             return 0;
         }
         return pageIndex;
+    };
+
+    this.getVerticalOffsetForElement = function ($element) {
+      return this.getVerticalOffsetForPointOnElement($element, 0, 0);
+    };
+
+    this.getVerticalOffsetForPointOnElement = function ($element, x, y) {
+      var elementRect = Helpers.Rect.fromElement($element);
+      return Math.ceil(elementRect.top + y * elementRect.height / 100);
     };
 
     this.getElementById = function (id) {
