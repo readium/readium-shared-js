@@ -197,6 +197,7 @@ var ReflowableView = function(options, reader){
             //create & append iframe to container frame
             renderIframe();
             if (_currentSpineItem) {
+                Globals.logEvent("CONTENT_DOCUMENT_UNLOADED", "EMIT", "reflowable_view.js [ " + _currentSpineItem.href + " ]");
                 self.emit(Globals.Events.CONTENT_DOCUMENT_UNLOADED, _$iframe, _currentSpineItem);
             }
 
@@ -772,7 +773,10 @@ var ReflowableView = function(options, reader){
     {
         if (_currentOpacity != -1) return; // already hidden
 
-        _currentOpacity = _$epubHtml.css('opacity');
+        // css('opacity') produces invalid result in Firefox, when iframes are involved and when is called
+        // directly after set, i.e. after showBook(), see: https://github.com/jquery/jquery/issues/2622
+        //_currentOpacity = $epubHtml.css('opacity');
+        _currentOpacity = _$epubHtml[0].style.opacity;
         _$epubHtml.css('opacity', "0");
     }
 
