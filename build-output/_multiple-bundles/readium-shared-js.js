@@ -6377,7 +6377,6 @@ var IFrameLoader = function(getCurrentResourceFetcher) {
         iframe.onload = function () {
 
             var doc = iframe.contentDocument || iframe.contentWindow.document;
-<<<<<<< HEAD
         
             // $('iframe', doc).each(function(i, child_iframe){
             //     console.debug(child_iframe);
@@ -6448,11 +6447,8 @@ var IFrameLoader = function(getCurrentResourceFetcher) {
                     );
                 }
             }
-            
-            $('svg', doc).load(function(){
-=======
+       
             $('svg', doc).on("load", function(){
->>>>>>> develop
                 console.log('SVG loaded');
             });
             
