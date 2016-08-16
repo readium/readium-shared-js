@@ -16,6 +16,8 @@ define(['readium_shared_js/globals', 'readium_js_plugins', 'jquery'], function (
                 + config.borderColor + '; background-color: ' + config.backgroundColor + ';">'
                 + 'spineItemIdref: ' + spineItem.idref + '</div>';
             $(div).appendTo($iframe[0].contentDocument.documentElement).on('click', function () {
+                
+                Globals.logEvent("exampleEvent", "EMIT", "example_plugin/main.js");
                 self.emit("exampleEvent", api.reader.bookmarkCurrentPage());
             });
         });
