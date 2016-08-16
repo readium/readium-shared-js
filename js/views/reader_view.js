@@ -251,11 +251,14 @@ var ReaderView = function (options) {
         });
 
         _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOAD_START, function ($iframe, spineItem) {
+
             Globals.logEvent("CONTENT_DOCUMENT_LOAD_START", "EMIT", "reader_view.js [ " + spineItem.href + " ]");
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
         });
 
         _currentView.on(Globals.Events.CONTENT_DOCUMENT_UNLOADED, function ($iframe, spineItem) {
+            
+            Globals.logEvent("CONTENT_DOCUMENT_UNLOADED", "EMIT", "reader_view.js [ " + spineItem.href + " ]");
             self.emit(Globals.Events.CONTENT_DOCUMENT_UNLOADED, $iframe, spineItem);
         });
 
@@ -460,8 +463,8 @@ var ReaderView = function (options) {
     };
 
     function onMediaPlayerStatusChanged(status) {
+
         Globals.logEvent("MEDIA_OVERLAY_STATUS_CHANGED", "EMIT", "reader_view.js (via MediaOverlayPlayer + AudioPlayer)");
-console.debug(JSON.stringify(status));
         self.emit(Globals.Events.MEDIA_OVERLAY_STATUS_CHANGED, status);
     }
 
@@ -604,7 +607,6 @@ console.debug(JSON.stringify(status));
         }
 
         Globals.logEvent("SETTINGS_APPLIED 2 (no view update)", "EMIT", "reader_view.js");
-console.debug(JSON.stringify(settingsData));
         self.emit(Globals.Events.SETTINGS_APPLIED);
     };
 
