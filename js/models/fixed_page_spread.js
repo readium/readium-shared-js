@@ -1,4 +1,4 @@
-//  Created by Boris Schneiderman.
+  //  Created by Boris Schneiderman.
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
 //  
 //  Redistribution and use in source and binary forms, with or without modification, 
@@ -25,29 +25,54 @@
 
 define(function() {
 /**
+ * Spread the page 
  *
- * @param {Models.Spine} spine
+ * @class  Models.fixed_page_spread
  * @constructor
+ * @param spine 
+ * @param {bool} isSyntheticSpread 
+ *
  */
 var Spread = function(spine, isSyntheticSpread) {
 
     var self = this;
 
     this.spine = spine;
-
+    
     this.leftItem = undefined;
     this.rightItem = undefined;
     this.centerItem = undefined;
 
     var _isSyntheticSpread = isSyntheticSpread;
 
+    /**
+     * Sets a synthetic spread
+     *
+     * @method     setSyntheticSpread
+     * @param      {Bool} isSyntheticSpread
+     */
+
     this.setSyntheticSpread = function(isSyntheticSpread) {
         _isSyntheticSpread = isSyntheticSpread;
     };
 
+    /**
+     * Checks out if a synthetic spread
+     *
+     * @method     setSyntheticSpread
+     * @param      {Bool} isSyntheticSpread
+     * @return     {Bool} _isSyntheticSpread
+     */
+
     this.isSyntheticSpread = function() {
         return _isSyntheticSpread;
     };
+
+    /**
+     * Sets an item to be opened first
+     *
+     * @method     openFirst
+     */
 
     this.openFirst = function() {
 
@@ -59,6 +84,12 @@ var Spread = function(spine, isSyntheticSpread) {
         }
     };
 
+    /**
+     * Sets an item to be the last opened
+     *
+     * @method     openLast
+     */
+
     this.openLast = function() {
 
         if( this.spine.items.length == 0 ) {
@@ -68,6 +99,13 @@ var Spread = function(spine, isSyntheticSpread) {
             this.openItem(this.spine.last());
         }
     };
+
+    /**
+     * Opens an item
+     *
+     * @method     openFirst
+     * @param      item
+     */
 
     this.openItem = function(item) {
 
@@ -90,12 +128,27 @@ var Spread = function(spine, isSyntheticSpread) {
         }
     };
 
+    /**
+     * Resets the items
+     *
+     * @method     resetItems
+     * @param      item
+     */
+
     function resetItems() {
 
         self.leftItem = undefined;
         self.rightItem = undefined;
         self.centerItem = undefined;
     }
+
+    /**
+     * Sets the item to a position on the screen
+     *
+     * @method     setItemToPosition
+     * @param      item
+     * @param      position
+     */
 
     function setItemToPosition(item, position) {
 
@@ -115,6 +168,14 @@ var Spread = function(spine, isSyntheticSpread) {
         }
     }
 
+    /**
+     * Gets the position of an item
+     *
+     * @method     getItemPosition
+     * @param      item
+     * @return     Spread.POSITION_CENTER or Spread.POSITION_LEFT or Spread.POSITION_RIGHT
+     */
+
     function getItemPosition(item) {
         
         // includes !item.isRenditionSpreadAllowed() ("rendition:spread-none") ==> force center position
@@ -132,6 +193,12 @@ var Spread = function(spine, isSyntheticSpread) {
 
         return Spread.POSITION_CENTER;
     }
+
+    /**
+     * Sets an item to be opened next
+     *
+     * @method     openNext
+     */ 
 
     this.openNext = function() {
 
@@ -151,6 +218,12 @@ var Spread = function(spine, isSyntheticSpread) {
         }
     };
 
+    /**
+     * Opens the previous item
+     *
+     * @method     openPrev
+     */ 
+
     this.openPrev = function() {
 
         var items = this.validItems();
@@ -169,6 +242,13 @@ var Spread = function(spine, isSyntheticSpread) {
         }
     };
 
+    /**
+     * Lists the valid items of the spine
+     *
+     * @method     validItems
+     * @return     {array} arr
+     */ 
+
     this.validItems = function() {
 
         var arr = [];
@@ -183,6 +263,14 @@ var Spread = function(spine, isSyntheticSpread) {
 
         return arr;
     };
+
+    /**
+     * Gets the surrounding items
+     *
+     * @method     getNeighbourItem
+     * @param      item
+     * @return     undefined
+     */ 
 
     function getNeighbourItem(item) {
 

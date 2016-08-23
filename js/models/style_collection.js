@@ -1,4 +1,4 @@
-//  Created by Boris Schneiderman.
+    //  Created by Boris Schneiderman.
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
 //  
 //  Redistribution and use in source and binary forms, with or without modification, 

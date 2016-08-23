@@ -27,14 +27,30 @@
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 define (["jquery", "../helpers"], function($, Helpers) {
 /**
+ *  Searching for the parent folder of a SMIL file
  *
- * @param smil
- * @constructor
+ * @class  Models.SmilIterator
+ * @param {object} smil a smil file helping for synchronisation of audio/video and text
  */
 var SmilIterator = function(smil) {
 
+
     this.smil = smil;
+
+    /**
+     * The path of the SMIL file
+     *
+     * @property currentPar
+     * @type object
+     */
+     
     this.currentPar = undefined;
+
+    /**
+     * Sets a flag indicating that the app handles linear spine items
+     *
+     * @method     reset
+     */
 
     this.reset = function() {
         this.currentPar = findParNode(0, this.smil, false);
@@ -61,7 +77,14 @@ var SmilIterator = function(smil) {
 //            this.next();
 //        }
 //    };
-
+    
+    /**
+     * Returns the id of a text.
+     *
+     * @method     findTextId
+     * @param      {Number} id
+     * @return     {Bool} Returns the result of its research
+     */
     this.findTextId = function(id)
     {
         if (!this.currentPar)
@@ -95,6 +118,7 @@ var SmilIterator = function(smil) {
 
                     parent = parent.parentNode;
                 }
+                //console.log(parent);
 
                 // INNER match
                 //var inside = this.currentPar.element.ownerDocument.getElementById(id);
@@ -111,6 +135,13 @@ var SmilIterator = function(smil) {
         return false;
     }
 
+    /**
+     * Checks if there's something next (?)
+     *
+     * @method     next
+     * @return 
+     */
+
     this.next = function() {
 
         if(!this.currentPar) {
@@ -121,6 +152,13 @@ var SmilIterator = function(smil) {
         this.currentPar = findParNode(this.currentPar.index + 1, this.currentPar.parent, false);
     };
 
+    /**
+     * Checks if there's something previous (?)
+     *
+     * @method     previous
+     * @return 
+     */
+
     this.previous = function() {
 
         if(!this.currentPar) {
@@ -130,6 +168,13 @@ var SmilIterator = function(smil) {
 
         this.currentPar = findParNode(this.currentPar.index - 1, this.currentPar.parent, true);
     };
+
+    /**
+     * Checks if this is the last SMIL file (?)
+     *
+     * @method     isLast
+     * @Return     {Bool} Returns the result of its research
+     */
 
     this.isLast = function() {
 
@@ -146,6 +191,14 @@ var SmilIterator = function(smil) {
         return true;
     }
 
+    /**
+     * Goes to the parent folder of the file.
+     *
+     * @method     goToPar
+     * @param      {Containter} par the parent of the current file
+     * @Return     {Bool} Returns the result of its research
+     */
+
     this.goToPar =  function(par) {
 
         while(this.currentPar) {
@@ -156,6 +209,16 @@ var SmilIterator = function(smil) {
             this.next();
         }
     };
+
+    /**
+     * Researches things by looking through the nodes.
+     *
+     * @method     findParNode
+     * @param      {Number} startIndex ?
+     * @param      {Container} container The container
+     * @param      {method} previous A function looking for the previous item
+     * @Return     {models.Smil_iterator} 
+     */
 
     function findParNode(startIndex, container, previous) {
 

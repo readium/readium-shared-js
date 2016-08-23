@@ -34,14 +34,57 @@ define(function() {
  *
  * @param {Models.Spine} spine
  * @param {boolean} isFixedLayout is fixed or reflowable spine item
+ * @return CurrentPagesInfo
 */
+
 var CurrentPagesInfo = function(spine, isFixedLayout) {
 
 
+    /**
+     * The reading direction
+     *
+     * @property isRightToLeft
+     * @type bool
+     */
+
     this.isRightToLeft = spine.isRightToLeft();
+    
+    /**
+     * Is the ebook fixed layout or not?
+     *
+     * @property isFixedLayout
+     * @type bool
+     */
+
     this.isFixedLayout = isFixedLayout;
+    
+    /**
+     * Counts the number of spine items
+     *
+     * @property spineItemCount
+     * @type number
+     */    
+
     this.spineItemCount = spine.items.length
+    
+    /**
+     * Opens the page
+     *
+     * @property openPages
+     * @type array
+     */
+
     this.openPages = [];
+
+    /**
+     * Checks out if the current file has a parent folder
+     *
+     * @method     addOpenPage
+     * @param      {undefined} spineItemPageIndex
+     * @param      {number} spineItemPageCount
+     * @param      {Cnumber} idref
+     * @param      {undefined} spineItemIndex   
+     */
 
     this.addOpenPage = function(spineItemPageIndex, spineItemPageCount, idref, spineItemIndex) {
         this.openPages.push({spineItemPageIndex: spineItemPageIndex, spineItemPageCount: spineItemPageCount, idref: idref, spineItemIndex: spineItemIndex});
@@ -49,13 +92,34 @@ var CurrentPagesInfo = function(spine, isFixedLayout) {
         this.sort();
     };
 
+    /**
+     * Checks if you can swipe left.
+     *
+     * @method     canGoLeft
+     * @param      {bool} isRightToLeft, canGoNext and canGoPrev   
+     */
+
     this.canGoLeft = function () {
         return this.isRightToLeft ? this.canGoNext() : this.canGoPrev();
     };
 
+    /**
+     * Checks if you can swipe right.
+     *
+     * @method     canGoRight
+     * @param      {bool} isRightToLeft, canGoNext and canGoPrev   
+     */
+
     this.canGoRight = function () {
         return this.isRightToLeft ? this.canGoPrev() : this.canGoNext();
     };
+
+    /**
+     * Checks if you can go to the next page
+     *
+     * @method     canGoNext
+     * @param      {bool} lastOpenPage.spineItemIndex < spine.last().index OR lastOpenPage.spineItemPageIndex < lastOpenPage.spineItemPageCount - 1;
+     */
 
     this.canGoNext = function() {
 
@@ -75,6 +139,13 @@ var CurrentPagesInfo = function(spine, isFixedLayout) {
         return lastOpenPage.spineItemIndex < spine.last().index || lastOpenPage.spineItemPageIndex < lastOpenPage.spineItemPageCount - 1;
     };
 
+    /**
+     * Checks if you can go to the previous page
+     *
+     * @method     canGoPrev
+     * @param      {bool} spine.first().index < firstOpenPage.spineItemIndex || 0 < firstOpenPage.spineItemPageIndex;
+     */
+
     this.canGoPrev = function() {
 
         if(this.openPages.length == 0)
@@ -92,6 +163,13 @@ var CurrentPagesInfo = function(spine, isFixedLayout) {
 
         return spine.first().index < firstOpenPage.spineItemIndex || 0 < firstOpenPage.spineItemPageIndex;
     };
+
+    /**
+     * Sorts the pages
+     *
+     * @method     sort
+     * @return     a.pageIndex - b.pageIndex;
+     */
 
     this.sort = function() {
 

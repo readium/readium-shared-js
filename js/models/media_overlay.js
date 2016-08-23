@@ -27,15 +27,30 @@
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 define(["./smil_model"], function(SmilModel) {
+
 /**
+ * Contains the informations about media overlays
+ *
+ * @class Models.media_overlay
+ *
+ * @constructor
  *
  * @param package
- * @constructor
- */
+ * @param {boolean} isFixedLayout is fixed or reflowable spine item
+ * @return MediaOverlay
+*/
+
 var MediaOverlay = function(package) {
 
     this.package = package;
-    
+
+    /**
+     * Checks out where parallel media overlays are
+     *
+     * @method     parallelAt
+     * @param      {number} timeMilliseconds
+     * @return     undefined   
+     */
 
     this.parallelAt = function(timeMilliseconds)
     {
@@ -59,6 +74,16 @@ var MediaOverlay = function(package) {
         return undefined;
     };
     
+    /**
+     * Calculates the position of the smil data in percent
+     *
+     * @method     parallelAt
+     * @param      {number} percent
+     * @param      {object} smilData
+     * @param      {container} par
+     * @param      {number} timeMilliseconds 
+     */
+
     this.percentToPosition = function(percent, smilData, par, milliseconds)
     {
         if (percent < 0.0 || percent > 100.0)
@@ -97,6 +122,13 @@ var MediaOverlay = function(package) {
         milliseconds.milliseconds = timeMs - (smilDataOffset + smilData.smilData.clipOffset(par.par));
     };
 
+    /**
+     * Estimates the duration of the smil files
+     *
+     * @method     durationMilliseconds_Calculated
+     * @return     {number} total
+     */
+
     this.durationMilliseconds_Calculated = function()
     {
         var total = 0;
@@ -111,6 +143,13 @@ var MediaOverlay = function(package) {
         return total;
     };
     
+    /**
+     * Locates the smilIndex
+     *
+     * @method     smilAt
+     * @return     this.smil_models[smilIndex]
+     */
+
     this.smilAt = function(smilIndex)
     {
         if (smilIndex < 0 || smilIndex >= this.smil_models.length)
@@ -121,6 +160,16 @@ var MediaOverlay = function(package) {
         return this.smil_models[smilIndex];
     }
     
+    /**
+     * Calculates the position of the smil data in percent
+     *
+     * @method     parallelAt
+     * @param      {number} smilIndex
+     * @param      {???} parIndex
+     * @param      {number} milliseconds
+     * @return     {number} percent 
+     */
+
     this.positionToPercent = function(smilIndex, parIndex, milliseconds)
     {
 // console.log(">>>>>>>>>>");
@@ -165,21 +214,79 @@ var MediaOverlay = function(package) {
         
         return percent;
       };
-      
+
+    /**
+     * List of the smil models
+     *
+     * @property smil_models
+     * @type array
+     */
+
     this.smil_models = [];
 
+    /**
+     * List of the skippable smil files
+     *
+     * @property skippables
+     * @type array
+     */
+
     this.skippables = [];
+    
+    /**
+     * List of the escapable smil models
+     *
+     * @property escapables
+     * @type array
+     */
+
     this.escapables = [];
 
+    /**
+     * Duration of the smil files
+     *
+     * @property duration
+     * @type undefined
+     */
+
     this.duration = undefined;
+
+    /**
+     * Narrator?
+     *
+     * @property narrator
+     * @type undefined
+     */
+
     this.narrator = undefined;
 
+    /**
+     * Is the class active?
+     *
+     * @property activeClass
+     * @type undefined
+     */
 
     this.activeClass = undefined;
+
+    /**
+     * is the playback active?
+     *
+     * @property playbackActiveClass
+     * @type undefined
+     */
+
     this.playbackActiveClass = undefined;
 
     this.DEBUG = false;
 
+    /**
+     * Gets smil files by the spine item
+     *
+     * @method     getSmilBySpineItem
+     * @param      {object} spineItem
+     * @return     {number} undefined
+     */
 
     this.getSmilBySpineItem = function (spineItem) {
         if (!spineItem) return undefined;
@@ -214,6 +321,14 @@ var MediaOverlay = function(package) {
     };
     */
 
+    /**
+     * Gets the next smil file
+     *
+     * @method     getNextSmil
+     * @param      {object} smil
+     * @return     this.smil_models[index + 1];
+     */
+
     this.getNextSmil = function(smil) {
 
         var index = this.smil_models.indexOf(smil);
@@ -223,6 +338,14 @@ var MediaOverlay = function(package) {
 
         return this.smil_models[index + 1];
     }
+
+    /**
+     * Gets the previous smil file
+     *
+     * @method     getPreviousSmil
+     * @param      {object} smil
+     * @return     this.smil_models[index - 1];
+     */
 
     this.getPreviousSmil = function(smil) {
 
