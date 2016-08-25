@@ -27,21 +27,68 @@
 
 define(["jquery", "../helpers"], function($, Helpers) {
 /**
- * Setter fot epub Triggers
+ * Setter for epub Triggers
  *
- *
+ * @class Models.Trigger
  * @param domNode
+ * @constructor
  */
 
 var Trigger = function(domNode) {
+    
+    /**
+     * An element from the epub
+     *
+     * @property el
+     * @type 
+     */
+
     var $el = $(domNode);
+    
+    /**
+     * Maps an action to the element
+     *
+     * @property action
+     * @type 
+     */
+
     this.action     = $el.attr("action");
+    
+    /**
+     * Maps a reference to the element
+     *
+     * @property ref
+     * @type 
+     */
+
     this.ref         = $el.attr("ref");
+    
+    /**
+     * Maps an event to the element
+     *
+     * @property event
+     * @type 
+     */
+
     this.event         = $el.attr("ev:event");
+    
+    /**
+     * Maps an event observer to the element
+     *
+     * @property observer
+     * @type 
+     */
+
     this.observer     = $el.attr("ev:observer");
     this.ref         = $el.attr("ref");
 };
-
+/**
+ * Register the triggers
+ *
+ * @class Models.Trigger.register
+ * @param dom
+ * @constructor
+ */
 Trigger.register = function(dom) {
     $('trigger', dom).each(function() {
         var trigger = new Trigger(this);
@@ -49,7 +96,22 @@ Trigger.register = function(dom) {
     });
 };
 
+/**
+ * Subscribes  to the prototyped trigger
+ *
+ * @class Models.Trigger.subscribe
+ * @param dom
+ * @constructor
+ */
+
 Trigger.prototype.subscribe = function(dom) {
+    
+    /**
+     *
+     * @property selector
+     * @type 
+     */
+
     var selector = "#" + this.observer;
     var that = this;
     $(selector, dom).on(this.event, function() {
@@ -57,7 +119,22 @@ Trigger.prototype.subscribe = function(dom) {
     });
 };
 
+/**
+ * Executes the prototyped trigger by using a switch-case
+ *
+ * @class Models.Trigger.execute
+ * @param dom
+ * @constructor
+ */
+
 Trigger.prototype.execute = function(dom) {
+    
+    /**
+     *
+     * @property $target
+     * @type 
+     */
+
     var $target = $( "#" + Helpers.escapeJQuerySelector(this.ref), dom);
     switch(this.action)
     {

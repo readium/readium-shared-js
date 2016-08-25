@@ -24,18 +24,43 @@
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 define(["./style"], function(Style) {
+
 /**
  *
+ * @class Models.StyleCollection
+ * @return StyleCollection
  * @constructor
  */
+
 var StyleCollection = function() {
 
+    /**
+     * Initializing an array to contain the styles
+     *
+     * @property _styles
+     * @type array
+     */
+
     var _styles = [];
+
+    /**
+     * Clears the array containing the styles.
+     *
+     * @method     clear
+     */
 
     this.clear = function() {
         _styles.length = 0;
 
     };
+
+    /**
+     * Finds the style of a selected item
+     *
+     * @method     findStyle
+     * @param      selector
+     * @return     undefined
+     */
 
     this.findStyle = function(selector) {
 
@@ -48,6 +73,15 @@ var StyleCollection = function() {
 
         return undefined;
     };
+
+    /**
+     * Adds a style to the array
+     *
+     * @method     addStyle
+     * @param      selector
+     * @param      declarations
+     * @return     style
+     */
 
     this.addStyle = function(selector, declarations) {
 
@@ -64,6 +98,13 @@ var StyleCollection = function() {
         return style;
     };
 
+    /**
+     * Removes a style from the array
+     *
+     * @method     addStyle
+     * @param      selector
+     */
+
     this.removeStyle = function(selector) {
         
         var count = _styles.length;
@@ -77,9 +118,23 @@ var StyleCollection = function() {
         }
     };
 
+    /**
+     * Get the styles of an epub
+     *
+     * @method     getStyles
+     * @return     {array} _styles
+     */
+
     this.getStyles = function() {
         return _styles;
     };
+
+    /**
+     * Resets the value of the Style var
+     *
+     * @method     getStyles
+     * @return     {array} _styles
+     */
 
     this.resetStyleValues = function() {
 

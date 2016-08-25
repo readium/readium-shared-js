@@ -25,8 +25,9 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 define(["jquery", "underscore"], function($, _) {
-/**
- *
+/** 
+ * This class is empty.
+ * @class Models.Switches
  * @constructor
  */
 var Switches = function() {
@@ -35,7 +36,23 @@ var Switches = function() {
 
 // Description: Parse the epub "switch" tags and hide
 // cases that are not supported
+
+/**
+ *
+ * @class Models.Switches.apply
+ * @param dom
+ * @constructor
+ */
+
 Switches.apply = function(dom) {
+
+   /**
+     * Is the dom supported?
+     *
+     * @method     isSupported
+     * @param      caseNode
+     * @return     _.include(supportedNamespaces, ns.value)
+     */
 
     function isSupported(caseNode) {
 
@@ -51,6 +68,13 @@ Switches.apply = function(dom) {
         var supportedNamespaces = ["http://www.w3.org/1998/Math/MathML"];
         return _.include(supportedNamespaces, ns.value);
     }
+
+    /**
+     * Gets the query and stores it
+     *
+     * @property getQuery
+     * @type query
+     */
 
     var getQuery = ((window.navigator.userAgent.indexOf("Trident") > 0) || (window.navigator.userAgent.indexOf("Edge") > 0))
         ? function (elementName) { return 'epub\\:' + elementName; }

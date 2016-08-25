@@ -26,14 +26,39 @@
 define([], function() {
 /**
  *
+ * @class Models.Style
  * @param selector
  * @param declarations
+ * @return Style
  * @constructor
  */
 var Style = function(selector, declarations) {
 
+    /**
+     * Initializing the selector
+     *
+     * @property selector
+     * @type 
+     */
+
     this.selector = selector;
+
+    /**
+     * Initializing the declarations
+     *
+     * @property selector
+     * @type 
+     */
+
     this.declarations = declarations;
+
+    /**
+     * Set the declarations
+     *
+     * @property setDeclarations
+     * @param declarations
+     * @type 
+     */
 
     this.setDeclarations = function(declarations) {
 
