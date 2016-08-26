@@ -363,7 +363,7 @@ MediaOverlay.fromDTO = function(moDTO, pack) {
     var mo = new MediaOverlay(pack);
 
     if(!moDTO) {
-        console.debug("No Media Overlay.");
+        console.debug("--- No Media Overlay.");
         return mo;
     }
 

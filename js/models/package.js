@@ -23,10 +23,13 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 define(['../helpers','./spine_item','./spine','./media_overlay', './package_data', 'URIjs'], function (Helpers, SpineItem, Spine, MediaOverlay, PackageData, URI) {
+
 /**
+ *  Wrapper of the Package object, created in openBook()
  *
- * @class Package
+ * @class  Models.Package
  * @constructor
+ * @param {Models.PackageData} packageData container for package properties 
  */
 var Package = function(packageData){
 
