@@ -123,8 +123,6 @@ devDependencies:
     
     "es6-collections": 'latest'
 
-    "FontLoader": 'smnh/FontLoader'
-    
     "CSSOM": 'danielweck/CSSOM#gh-pages'
     #"CSSOM": 'NV/CSSOM#gh-pages'
     
