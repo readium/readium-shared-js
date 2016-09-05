@@ -60,9 +60,6 @@ require.config({
         "es6-collections":
             process._RJS_rootDir(1) + '/node_modules/es6-collections/index',
 
-        'FontLoader':
-            process._RJS_rootDir(1) + '/node_modules/FontLoader/FontLoader',
-
         'cssom':
             process._RJS_rootDir(1) + '/node_modules/cssom/build/CSSOM',
 
