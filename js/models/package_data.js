@@ -27,7 +27,7 @@
 define(function() {
 /**
  * This object is not instantiated directly but provided by the host application to the DOMAccess layer in the
- * Views.ReaderView.openBook function
+ * Views.ReaderView.OpenBookData function
  *
  * Provided for reference only
  *

@@ -30,11 +30,11 @@ define (["../helpers"], function(Helpers) {
 var Smil = {};
 
 /**
- * Returns the parent of the SMIL file by checking out the nodes
+ * Wrapper of a SmilNode object
  *
- * @class      SmilNode
- * @param      {String} parent
- * @return     {Container} node 
+ * @class      Smil.SmilNode
+ * @constructor
+ * @param      {Smil.SmilNode} parent Parent node of the new smil node
  */
 
 Smil.SmilNode = function(parent) {
@@ -43,7 +43,12 @@ Smil.SmilNode = function(parent) {
     
     this.id = "";
     
-    //root node is a smil model
+    /**
+     * Finds the smil model object, i.e. the root node of the smil tree
+     *
+     * @method     getSmil
+     * @return     {Smil.SmilModel} node The smil model object
+     */    
     this.getSmil = function() {
 
         var node = this;
@@ -54,11 +59,11 @@ Smil.SmilNode = function(parent) {
         return node;
     };
     /**
-     * Checks out if the current file has a parent folder
+     * Checks if the node given as a parameter is an ancestor of the current node 
      *
      * @method     hasAncestor
-     * @param      {Container} node
-     * @return     {Bool} true or false 
+     * @param      {Smil.SmilNode} node The checked node
+     * @return     {Bool} true if the parameter node is an ancestor
      */
     this.hasAncestor = function(node)
     {
@@ -77,31 +82,33 @@ Smil.SmilNode = function(parent) {
     };
 };
 
+////////////////////////////
+//TimeContainerNode
+
 /**
- * ... 
+ * Wrapper of a time container (smil) node 
  *
- * @class      Models.TimeContainerNode
+ * @class      Smil.TimeContainerNode
  * @constructor
- * @param      {String} parent
- * @return     {Bool} true or false 
+ * @param      {Smil.SmilNode} parent Parent smil node
  */
 
 Smil.TimeContainerNode = function(parent) {
 
     /**
-     * The parent folder
+     * The parent node
      *
      * @property parent
-     * @type string
+     * @type Smil.SmilNode
      */
     
     this.parent = parent;
     
     /**
-     * The children folder
+     * The children nodes
      *
      * @property children
-     * @type Undefined
+     * @type undefined
      */
 
     this.children = undefined;
@@ -110,7 +117,7 @@ Smil.TimeContainerNode = function(parent) {
      * The index
      *
      * @property index
-     * @type Undefined
+     * @type undefined
      */
 
     this.index = undefined;
@@ -119,18 +126,18 @@ Smil.TimeContainerNode = function(parent) {
      * The epub type
      *
      * @property epubtype
-     * @type string
+     * @type String
      */
 
     this.epubtype = "";
 
 
     /**
-     * Checks if the SMIL is scapable.
+     * Checks if the smil node is escapable.
      *
      * @method     isEscapable
      * @param      {Array} userEscapables
-     * @return     {Bool} true or false 
+     * @return     {Bool} true if the smil node is escapable 
      */
 
     this.isEscapable = function(userEscapables)
@@ -164,11 +171,11 @@ Smil.TimeContainerNode = function(parent) {
     };
 
     /**
-     * Checks ???
+     * Checks is the smil node is skippable
      *
-     * @method     userSkippables
+     * @method     isSkippables
      * @param      {Array} userSkippables
-     * @return     {Bool} true or false 
+     * @return     {Bool} true s the smil node is skippable
      */
 
     this.isSkippable = function(userSkippables)
@@ -205,30 +212,33 @@ Smil.TimeContainerNode = function(parent) {
 Smil.TimeContainerNode.prototype = new Smil.SmilNode();
 
 
+////////////////////////////
+//MediaNode
+
 /**
  * Looks for the media parent folder
  *
- * @Class      Model.MediaNode
- * @Constructor
- * @param      {string} parent
+ * @class      Smil.MediaNode
+ * @constructor
+ * @param      {Smil.SmilNode} parent Parent smil node
  */
 
 Smil.MediaNode = function(parent) {
 
     /**
-     * The parent folder
+     * The parent node
      *
      * @property parent
-     * @type string
+     * @type Smil.SmilNode
      */
 
     this.parent = parent;
     
     /**
-     * The source file name
+     * The source locator
      *
      * @property src
-     * @type string
+     * @type String
      */
 
     this.src = "";
@@ -242,75 +252,60 @@ Smil.MediaNode.prototype = new Smil.SmilNode();
 /**
  * Node Sequence
  *
- * @class      Models.SeqNode
+ * @class      Smil.SeqNode
  * @constructor
- * @param      {string} parent
- * @return     Undefined
+ * @param      {Smil.SmilNode} parent Parent smil node
  */
 
 Smil.SeqNode = function(parent) {
 
     /**
-     * The parent folder
+     * The parent node
      *
      * @property parent
-     * @type string
+     * @type Smil.SmilNode
      */
 
     this.parent = parent;
 
     /**
-     * The children folder
+     * The children nodes
      *
      * @property children
-     * @type Undefined
+     * @type Array
      */
 
     this.children = [];
 
     /**
-     * The node type which is a sequence here
+     * The node type (seq)
      *
      * @property nodeType
-     * @type Array
+     * @type String
      */
 
     this.nodeType = "seq";
 
     /**
-     * The text reference which is empty at the moment
+     * The text reference
      *
      * @property textref
-     * @type string
+     * @type String
      */
 
     this.textref = "";
     
     /**
-     * Looks for the media parent folder
+     * Calculates the total duration of audio clips 
      *
      * @method     durationMilliseconds
-     * @return     {Number} total
+     * @return     {Number} 
      */
 
     this.durationMilliseconds = function()
     {
-
-       /**
-        * Assign the current Smil to the var called smilData
-        *
-        * @property smilData
-        * @type Object
-        */
-
+        // returns the smil object
         var smilData = this.getSmil();
-        
-       /**
-        * A duration set to 0
-        *
-        * @property total
-        * @type Number
-        */
 
         var total = 0;
         
@@ -325,8 +320,6 @@ Smil.SeqNode = function(parent) {
                 }
                 if (container.text && (!container.text.manifestItemId || container.text.manifestItemId != smilData.spineItemId))
                 {
-// console.log(container.text);
-// console.log(smilData.spineItemId);
                     continue;
                 }
                 
@@ -338,29 +331,22 @@ Smil.SeqNode = function(parent) {
                 total += container.durationMilliseconds();
             }
         }
-        console.log("Durée totale du SMIL:" + total);
+
         return total;
     };
     
    /**
-     * Checks if there's a clip offset.
+     * Looks for a given parallel node in the current sequence node and its children.
+     *  Returns true if found. 
      *
      * @method     clipOffset
      * @param      {Number} offset
-     * @param      {Container} par
-     * @return     {Bool} True is when the container is "parallel".
+     * @param      {Smil.ParNode} par The reference parallel smil node
+     * @return     {Boolean} 
      */ 
 
     this.clipOffset = function(offset, par)
     {
-
-       /**
-        * Assign the current Smil to the var called smilData
-        *
-        * @property smilData
-        * @type Object
-        */
-
         var smilData = this.getSmil();
         
         for (var i = 0; i < this.children.length; i++)
@@ -401,33 +387,18 @@ Smil.SeqNode = function(parent) {
 
 
    /**
-     * Checks ???
+     * Checks if a parallel smil node exists at a given timecode in the smil sequence node. 
+     * Returns the node or undefined.
      *
      * @method     parallelAt
      * @param      {Number} timeMilliseconds
-     * @return     {Container OR para OR undefined}
+     * @return     {Smil.ParNode}
      */ 
 
     this.parallelAt = function(timeMilliseconds)
     {
-        
-       /**
-        * Assign the current Smil to the var called smilData
-        *
-        * @property smilData
-        * @type Object
-        */
-
         var smilData = this.getSmil();
         
-       /**
-        * Sets the offset duration to 0
-        *
-        * @property offset
-        * @type Number
-        * @return undefinded
-        */
-
         var offset = 0;
 
         for (var i = 0; i < this.children.length; i++)
@@ -436,8 +407,10 @@ Smil.SeqNode = function(parent) {
 
             var container = this.children[i];
             
+            // looks for a winning parallel smil node in a child parallel smil node
             if (container.nodeType === "par")
             {
+                // the parallel node must contain an audio clip and a text node with a proper id
                 if (!container.audio)
                 {
                     continue;
@@ -447,7 +420,7 @@ Smil.SeqNode = function(parent) {
                 {
                     continue;
                 }
-
+                // and the timecode given as a parameter must correspond to the audio clip time range  
                 var clipDur = container.audio.clipDurationMilliseconds();
 
                 if (clipDur > 0 && timeAdjusted <= clipDur)
@@ -457,6 +430,7 @@ Smil.SeqNode = function(parent) {
 
                 offset += clipDur;
             }
+            // looks for a winning parallel smil node in a child sequence smil node
             else if (container.nodeType === "seq")
             {
                 var para = container.parallelAt(timeAdjusted);
@@ -473,12 +447,12 @@ Smil.SeqNode = function(parent) {
     };
 
     /**
-     * Checks ???
+     * Looks for the nth parallel smil node in the current sequence node
      *
      * @method     nthParallel
-     * @param      {???} index
+     * @param      {Number} index
      * @param      {Number} count
-     * @return     {container OR para OR undefined} ???
+     * @return     {Smil.ParNode} 
      */    
 
     this.nthParallel = function(index, count)
@@ -519,18 +493,19 @@ Smil.SeqNode.prototype = new Smil.TimeContainerNode();
 /**
  * Returns the parent of the SMIL file by checking out the nodes
  *
- * @class      ParNode
- * @param      {String} parent
- * @return     undefined OR {String} parent
+ * @class      Smil.ParNode
+ * @constructor
+ * @param      {Smil.SmilNode} parent Parent smil node
+
  */
 
 Smil.ParNode = function(parent) {
 
     /**
-     * The parent folder
+     * The parent node
      *
      * @property parent
-     * @type string
+     * @type Smil.SmilNode
      */
 
     this.parent = parent;
@@ -539,7 +514,7 @@ Smil.ParNode = function(parent) {
      * The children files
      *
      * @property children
-     * @type array
+     * @type Array
      */
 
     this.children = [];
@@ -548,7 +523,7 @@ Smil.ParNode = function(parent) {
      * The Node Type
      *
      * @property nodeType which is equal to "par" here
-     * @type string
+     * @type String
      */
 
     this.nodeType = "par";
@@ -556,16 +531,16 @@ Smil.ParNode = function(parent) {
     /**
      * Some text
      *
-     * @property text which is undefined
-     * @type text
+     * @property text 
+     * @type String
      */
     this.text = undefined;
     
     /**
      * Some audio
      *
-     * @property audio which is undefined 
-     * @type media
+     * @property audio 
+     * @type unknown
      */
     
     this.audio = undefined;
@@ -573,19 +548,19 @@ Smil.ParNode = function(parent) {
     /**
      * An element of the epub archive
      *
-     * @property element which is undefined
+     * @property element 
      * @type unknown
      */
     
     this.element = undefined;    
 
     /**
-     * Getter of the first sequence ancestor by using the epub type
+     * Gets the first ancestor sequence with a given epub type, or undefined.
      *
      * @method     getFirstSeqAncestorWithEpubType
-     * @param      {string} epubtype
-     * @param      {Number} includeSelf
-     * @return     {undefined} undefined
+     * @param      {String} epubtype
+     * @param      {Boolean} includeSelf
+     * @return     {Smil.SmilNode} 
      */       
 
     this.getFirstSeqAncestorWithEpubType = function(epubtype, includeSelf) {
@@ -614,28 +589,28 @@ Smil.ParNode.prototype = new Smil.TimeContainerNode();
 /**
  * Node Sequence
  *
- * @class      Models.SeqNode
+ * @class      Smil.TextNode
  * @constructor
- * @param      {string} parent
- * @return     Undefined
+ * @param      {Smil.SmilNode} parent Parent smil node
+
  */
 
 Smil.TextNode = function(parent) {
 
     /**
-     * The parent folder
+     * The parent node
      *
      * @property parent
-     * @type string
+     * @type Smil.SmilNode
      */
 
     this.parent = parent;
 
     /**
-     * The node type
+     * The node type, set to "text"
      *
      * @property nodeType
-     * @type string which is "text"
+     * @type String 
      */
 
     this.nodeType = "text";
@@ -644,7 +619,7 @@ Smil.TextNode = function(parent) {
      * The source file
      *
      * @property srcFile
-     * @type string which is empty for the moment
+     * @type String
      */
     
     this.srcFile = "";
@@ -653,7 +628,7 @@ Smil.TextNode = function(parent) {
      * A fragment of the source file ID
      *
      * @property srcFragmentId
-     * @type string which is empty for the moment
+     * @type String
      */
 
     this.srcFragmentId = "";
@@ -662,7 +637,7 @@ Smil.TextNode = function(parent) {
      * The ID of the manifest for the current item
      *
      * @property manifestItemId
-     * @type string
+     * @type Number
      */
     
     this.manifestItemId = undefined;
@@ -671,18 +646,9 @@ Smil.TextNode = function(parent) {
      * Updates the ID of the manifest for the current media
      *
      * @method     updateMediaManifestItemId 
-     * @return     {undefined} undefined
      */  
 
-    this.updateMediaManifestItemId = function()
-    {
-
-       /**
-        * Assign the current Smil to the var called smilData
-        *
-        * @property smilData
-        * @type Object
-        */
+    this.updateMediaManifestItemId = function() {
 
         var smilData = this.getSmil();
         
@@ -732,36 +698,36 @@ Smil.TextNode.prototype = new Smil.MediaNode();
 /**
  * Looks for the media parent folder
  *
- * @Class      Model.AudioNode
- * @Constructor
- * @param      {string} parent
+ * @class      Smil.AudioNode
+ * @constructor
+ * @param      {Smil.SmilNode} parent Parent smil node
  */
 
 Smil.AudioNode = function(parent) {
 
     /**
-     * This var contains "parent"
+     * The parent node
      *
      * @property parent
-     * @type string
+     * @type Smil.SmilNode
      */
 
     this.parent = parent;
 
     /**
-     * The node type
+     * The node type, set to "audio"
      *
-     * @property nodeType which is set to "audio"
-     * @type string
+     * @property nodeType 
+     * @type String
      */
 
     this.nodeType = "audio";
 
     /**
-     * Setting the beginning of the audio clip to 0
+     * The clip begin timecode
      *
-     * @property clipBegin which is set to 0
-     * @type number
+     * @property clipBegin 
+     * @type Number
      */
 
     this.clipBegin = 0;
@@ -770,25 +736,25 @@ Smil.AudioNode = function(parent) {
      * The max duration of the audio clip which is almost infinite
      *
      * @property MAX 
-     * @type number which is 1234567890.1
+     * @type Number
      */
 
     this.MAX = 1234567890.1; //Number.MAX_VALUE - 0.1; //Infinity;
     
     /**
-     * Setting the end of the audio clip to the maximum value
+     * The clip end timecode
      *
      * @property clipEnd
-     * @type number
+     * @type Number
      */
 
     this.clipEnd = this.MAX;
     
     /**
-     * The duration of the audio file
+     * Returns the duration of the audio clip
      *
      * @method     clipDurationMilliseconds
-     * @return     {number} _clipEndMilliseconds - clipBeginMilliseconds (which is the total duration)
+     * @return     {Number} 
      */  
 
     this.clipDurationMilliseconds = function()
@@ -811,74 +777,75 @@ Smil.AudioNode.prototype = new Smil.MediaNode();
 //SmilModel
 
 /**
- * Seeks informations about the Smil Model
+ * Wrapper of the SmilModel object
  *
- * @Class      Model.SmilModel
- * @Constructor
+ * @class      Models.SmilModel
+ * @constructor
  */
 
 var SmilModel = function() {
 
     /**
-     * The parent folder
+     * The parent object
      *
      * @property parent
-     * @type string
+     * @type any
      */
 
     this.parent = undefined;
     
     /**
-     * Collection of seq or par smil nodes
+     * The smil model children, i.e. a collection of seq or par smil nodes
      *
      * @property children
-     * @type string
+     * @type Array
      */
     
-    this.children = []; //collection of seq or par smil nodes
+    this.children = []; 
     
     /**
-     * The manifest item ID set to undefined
+     * The manifest item ID
      *
      * @property id
-     * @type number
+     * @type Number
      */
 
-    this.id = undefined; //manifest item id
+    this.id = undefined; 
 
     /**
      * The href of the .smil source file
      *
      * @property href
-     * @type number
+     * @type String
      */
 
-    this.href = undefined; //href of the .smil source file
+    this.href = undefined; 
     
     /**
-     * The duration of the .smil source file set to undefined
+     * The duration of the audio clips
      *
      * @property duration
-     * @type undefined
+     * @type Number
      */
 
     this.duration = undefined;
 
     /**
-     * ??? (supposed to be the size of the file)
+     * The media overlay object
      *
      * @property mo
-     * @type number
+     * @type Models.MediaOverlay
      */
 
     this.mo = undefined;
 
     /**
-     * checks if the smil file is parallel
+     * Checks if a parallel smil node exists at a given timecode in the smil model. 
+     * Returns the node or undefined.
      *
      * @method     parallelAt
      * @param      {Number} timeMillisecond 
-     * @Return     {???} this.children[0].parallelAt(timeMilliseconds) The moment where the smil file is parallel
+     * @return     {Smil.ParNode}
      */
     
     this.parallelAt = function(timeMilliseconds)
@@ -887,11 +854,11 @@ var SmilModel = function() {
     };
 
     /**
-     * ???
+     * Looks for the nth parallel smil node in the current smil model
      *
      * @method     nthParallel
-     * @param      {???} index
-     * @Return     {???} this.children[0].nthParallel(index, count)
+     * @param      {Number} index
+     * @return     {Smil.ParNode} 
      */
 
     this.nthParallel = function(index)
@@ -901,11 +868,12 @@ var SmilModel = function() {
     };
 
     /**
-     * Looks for the offset of the audio clip
+     * Looks for a given parallel node in the current smil model.
+     *  Returns its offset if found. 
      *
      * @method     clipOffset
-     * @param      {???} par
-     * @Return     {number} offset
+     * @param      {Smil.ParNode} par The reference parallel smil node
+     * @return     {Number} offset of the audio clip
      */
 
     this.clipOffset = function(par)
@@ -920,14 +888,12 @@ var SmilModel = function() {
     };
 
     /**
-     * Estimates the duration of the Smil file
+     * Calculates the total audio duration of the smil model
      *
-     * @method     durationMilliseconds_Calculated
-     * @param      
-     * @Return     {number?} this.children[0].durationMilliseconds()
+     * @method     durationMilliseconds_Calculated    
+     * @return     {Number}
      */
 
-    
     this.durationMilliseconds_Calculated = function()
     {
         return this.children[0].durationMilliseconds();
@@ -941,26 +907,31 @@ var SmilModel = function() {
     //     _epubtypeSyncs = [];
     // };
 
+    // local function, helper
     this.hasSync = function(epubtype)
     {
         for (var i = 0; i < _epubtypeSyncs.length; i++)
         {
             if (_epubtypeSyncs[i] === epubtype)
             {
-//console.debug("hasSync OK: ["+epubtype+"]");
                 return true;
             }
         }
         
-//console.debug("hasSync??: ["+epubtype+"] " + _epubtypeSyncs);
         return false;
     };
-    
+
+    /**
+     * Stores epub types given as parameters in the _epubtypeSyncs array
+     * Note: any use of the _epubtypeSyncs array?
+     *
+     * @method     addSync
+     * @param      {String} epubtypes    
+     */
+
     this.addSync = function(epubtypes)
     {
         if (!epubtypes) return;
-        
-//console.debug("addSyncs: "+epubtypes);
 
         var parts = epubtypes.split(' ');
         for (var i = 0; i < parts.length; i++)
@@ -970,8 +941,6 @@ var SmilModel = function() {
             if (epubtype.length > 0 && !this.hasSync(epubtype))
             {
                 _epubtypeSyncs.push(epubtype);
-
-//console.debug("addSync: "+epubtype);
             }
         }
     };
@@ -979,12 +948,13 @@ var SmilModel = function() {
 };
 
 /**
- * Looks for the media parent folder
+ * Static SmilModel.fromSmilDTO method, returns a clean SmilModel object
  *
- * @Class      Model.fromSmilDTO
- * @Constructor
+ * @method      Model.fromSmilDTO
+ * @param      {string} smilDTO
  * @param      {string} parent
- */
+ * @return {Models.SmilModel}
+*/
 
 SmilModel.fromSmilDTO = function(smilDTO, mo) {
 
@@ -993,6 +963,7 @@ SmilModel.fromSmilDTO = function(smilDTO, mo) {
         console.debug("Media Overlay DTO import...");
     }
 
+    // Debug level indenting function
     var indent = 0;
     var getIndent = function()
     {
@@ -1029,15 +1000,7 @@ SmilModel.fromSmilDTO = function(smilDTO, mo) {
         console.log("JS MO duration=" + smilModel.duration);
     }
 
-    /**
-     * Var containing the copied property
-     *
-     * @method     durationMilliseconds_Calculated
-     * @param      {???} property
-     * @param      {string} from the original location
-     * @param      {string} to the destination folder
-     */
-
+    // Safe copy, helper function
     var safeCopyProperty = function(property, from, to, isRequired) {
 
         if((property in from))
@@ -1059,6 +1022,7 @@ SmilModel.fromSmilDTO = function(smilDTO, mo) {
         }
     };
 
+    // smil node creation, helper function
     var createNodeFromDTO = function(nodeDTO, parent) {
 
         var node;
@@ -1120,9 +1084,9 @@ SmilModel.fromSmilDTO = function(smilDTO, mo) {
                 }
             }
 
-////////////////
-var forceTTS = false; // for testing only!
-////////////////
+            ////////////////
+            var forceTTS = false; // for testing only!
+            ////////////////
 
             if (forceTTS || !node.audio)
             {
@@ -1205,6 +1169,7 @@ var forceTTS = false; // for testing only!
 
     };
 
+    // recursive copy of a tree, helper function
     var copyChildren = function(from, to) {
 
         var count = from.children.length;

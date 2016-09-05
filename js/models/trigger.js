@@ -27,67 +27,60 @@
 
 define(["jquery", "../helpers"], function($, Helpers) {
 /**
- * Setter for epub Triggers
+ * Trigger in an epub publication.
  *
  * @class Models.Trigger
- * @param domNode
  * @constructor
+ * @param domNode
  */
 
 var Trigger = function(domNode) {
-    
-    /**
-     * An element from the epub
-     *
-     * @property el
-     * @type 
-     */
 
     var $el = $(domNode);
     
     /**
-     * Maps an action to the element
+     * epub trigger action
      *
      * @property action
-     * @type 
+     * @type String
      */
 
     this.action     = $el.attr("action");
     
     /**
-     * Maps a reference to the element
+     * epub trigger ref
      *
      * @property ref
-     * @type 
+     * @type String
      */
 
     this.ref         = $el.attr("ref");
     
     /**
-     * Maps an event to the element
+     * epub trigger event
      *
      * @property event
-     * @type 
+     * @type String
      */
 
     this.event         = $el.attr("ev:event");
     
     /**
-     * Maps an event observer to the element
+     * epub trigger observer
      *
      * @property observer
-     * @type 
+     * @type String
      */
 
     this.observer     = $el.attr("ev:observer");
     this.ref         = $el.attr("ref");
 };
+
 /**
- * Register the triggers
+ * Static register method
  *
- * @class Models.Trigger.register
+ * @method register
  * @param dom
- * @constructor
  */
 Trigger.register = function(dom) {
     $('trigger', dom).each(function() {
@@ -97,21 +90,14 @@ Trigger.register = function(dom) {
 };
 
 /**
- * Subscribes  to the prototyped trigger
+ * Prototype subscribe method
  *
- * @class Models.Trigger.subscribe
+ * @method subscribe
  * @param dom
- * @constructor
  */
 
 Trigger.prototype.subscribe = function(dom) {
     
-    /**
-     *
-     * @property selector
-     * @type 
-     */
-
     var selector = "#" + this.observer;
     var that = this;
     $(selector, dom).on(this.event, function() {
@@ -120,20 +106,13 @@ Trigger.prototype.subscribe = function(dom) {
 };
 
 /**
- * Executes the prototyped trigger by using a switch-case
+ * Prototype execute method
  *
- * @class Models.Trigger.execute
+ * @method execute
  * @param dom
- * @constructor
  */
 
 Trigger.prototype.execute = function(dom) {
-    
-    /**
-     *
-     * @property $target
-     * @type 
-     */
 
     var $target = $( "#" + Helpers.escapeJQuerySelector(this.ref), dom);
     switch(this.action)
@@ -164,5 +143,6 @@ Trigger.prototype.execute = function(dom) {
             console.log("do not no how to handle trigger " + this.action);
     }
 };
+
     return Trigger;
 });

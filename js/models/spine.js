@@ -29,8 +29,8 @@ define(["./spine_item", "../helpers", "URIjs"], function(SpineItem, Helpers, URI
  *
  * @class  Models.Spine
  * @constructor
- * @param {Models.Package} epubPackage container for parent package properties 
- * @param {Object} spineDTO container for spine properties
+ * @param {Models.Package} epubPackage Parent package properties 
+ * @param {Object} spineDTO Spine data object, container for spine properties
  */
 var Spine = function(epubPackage, spineDTO) {
 
@@ -238,7 +238,7 @@ var Spine = function(epubPackage, spineDTO) {
      *
      * @method     isLastItem
      * @param      {Models.SpineItem} item  a spine item
-     * @return     {Boolean} TRUE if the spine item is the last in the list.
+     * @return     {Boolean} true if the spine item is the last in the list.
     */
     this.isLastItem = function(item) {
 

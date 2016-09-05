@@ -26,7 +26,8 @@
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 define(["jquery", "underscore"], function($, _) {
 /** 
- * This class is empty.
+ * Switches in the epub publication.
+ * 
  * @class Models.Switches
  * @constructor
  */
@@ -39,20 +40,13 @@ var Switches = function() {
 
 /**
  *
- * @class Models.Switches.apply
+ * Static Switches.apply method.
+ * 
+ * @method Switches.apply
  * @param dom
- * @constructor
  */
 
 Switches.apply = function(dom) {
-
-   /**
-     * Is the dom supported?
-     *
-     * @method     isSupported
-     * @param      caseNode
-     * @return     _.include(supportedNamespaces, ns.value)
-     */
 
     function isSupported(caseNode) {
 
@@ -68,13 +62,6 @@ Switches.apply = function(dom) {
         var supportedNamespaces = ["http://www.w3.org/1998/Math/MathML"];
         return _.include(supportedNamespaces, ns.value);
     }
-
-    /**
-     * Gets the query and stores it
-     *
-     * @property getQuery
-     * @type query
-     */
 
     var getQuery = ((window.navigator.userAgent.indexOf("Trident") > 0) || (window.navigator.userAgent.indexOf("Edge") > 0))
         ? function (elementName) { return 'epub\\:' + elementName; }

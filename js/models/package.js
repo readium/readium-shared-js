@@ -64,7 +64,7 @@ var Package = function(packageData){
      * The Media Overlays object
      *
      * @property media_overlay 
-     * @type     Object
+     * @type     Models.MediaOverlay
      *
      */   
     this.media_overlay = undefined;

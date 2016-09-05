@@ -34,17 +34,10 @@ define(["./style"], function(Style) {
 
 var StyleCollection = function() {
 
-    /**
-     * Initializing an array to contain the styles
-     *
-     * @property _styles
-     * @type array
-     */
-
     var _styles = [];
 
     /**
-     * Clears the array containing the styles.
+     * Clears the collection.
      *
      * @method     clear
      */
@@ -59,7 +52,7 @@ var StyleCollection = function() {
      *
      * @method     findStyle
      * @param      selector
-     * @return     undefined
+     * @return     {Models.Style}
      */
 
     this.findStyle = function(selector) {
@@ -75,12 +68,12 @@ var StyleCollection = function() {
     };
 
     /**
-     * Adds a style to the array
+     * Adds a style to the collection
      *
      * @method     addStyle
      * @param      selector
      * @param      declarations
-     * @return     style
+     * @return     {Models.Style}
      */
 
     this.addStyle = function(selector, declarations) {
@@ -99,7 +92,7 @@ var StyleCollection = function() {
     };
 
     /**
-     * Removes a style from the array
+     * Removes a style from the collection
      *
      * @method     addStyle
      * @param      selector
@@ -119,10 +112,10 @@ var StyleCollection = function() {
     };
 
     /**
-     * Get the styles of an epub
+     * Gets all styles
      *
      * @method     getStyles
-     * @return     {array} _styles
+     * @return     {Array}
      */
 
     this.getStyles = function() {
@@ -130,10 +123,9 @@ var StyleCollection = function() {
     };
 
     /**
-     * Resets the value of the Style var
+     * Resets the styles
      *
-     * @method     getStyles
-     * @return     {array} _styles
+     * @method     resetStyleValues
      */
 
     this.resetStyleValues = function() {

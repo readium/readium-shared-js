@@ -33,10 +33,12 @@ define(function() {
  *  firstPage {bool},
  *  lastPage {bool}
  *
+ * @class Models.PageOpenRequest
+ * @constructor
  * @param {Models.SpineItem} spineItem
  * @param {object} [initiator]
  *
- * @constructor
+
  */
 var PageOpenRequest = function(spineItem, initiator) {
 

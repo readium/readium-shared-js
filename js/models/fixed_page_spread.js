@@ -27,10 +27,10 @@ define(function() {
 /**
  * Spread the page 
  *
- * @class  Models.fixed_page_spread
+ * @class  Models.Spread
  * @constructor
  * @param spine 
- * @param {bool} isSyntheticSpread 
+ * @param {Boolean} isSyntheticSpread 
  *
  */
 var Spread = function(spine, isSyntheticSpread) {
@@ -57,7 +57,7 @@ var Spread = function(spine, isSyntheticSpread) {
     };
 
     /**
-     * Checks out if a synthetic spread
+     * Checks out if the spread is synthetic
      *
      * @method     setSyntheticSpread
      * @param      {Bool} isSyntheticSpread
@@ -69,7 +69,7 @@ var Spread = function(spine, isSyntheticSpread) {
     };
 
     /**
-     * Sets an item to be opened first
+     * Opens the first item
      *
      * @method     openFirst
      */
@@ -85,7 +85,7 @@ var Spread = function(spine, isSyntheticSpread) {
     };
 
     /**
-     * Sets an item to be the last opened
+     * Opens the last item
      *
      * @method     openLast
      */
@@ -132,7 +132,6 @@ var Spread = function(spine, isSyntheticSpread) {
      * Resets the items
      *
      * @method     resetItems
-     * @param      item
      */
 
     function resetItems() {
@@ -169,11 +168,11 @@ var Spread = function(spine, isSyntheticSpread) {
     }
 
     /**
-     * Gets the position of an item
+     * Returns the position of an item (left, center or right)
      *
      * @method     getItemPosition
      * @param      item
-     * @return     Spread.POSITION_CENTER or Spread.POSITION_LEFT or Spread.POSITION_RIGHT
+     * @return     {Spread.POSITION_CENTER | Spread.POSITION_LEFT | Spread.POSITION_RIGHT}
      */
 
     function getItemPosition(item) {
@@ -246,7 +245,7 @@ var Spread = function(spine, isSyntheticSpread) {
      * Lists the valid items of the spine
      *
      * @method     validItems
-     * @return     {array} arr
+     * @return     {array} 
      */ 
 
     this.validItems = function() {
@@ -265,11 +264,11 @@ var Spread = function(spine, isSyntheticSpread) {
     };
 
     /**
-     * Gets the surrounding items
+     * Gets the neighbour item (on left or right of the current item)
      *
      * @method     getNeighbourItem
      * @param      item
-     * @return     undefined
+     * @return     item
      */ 
 
     function getNeighbourItem(item) {

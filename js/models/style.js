@@ -25,12 +25,10 @@
 
 define([], function() {
 /**
- *
  * @class Models.Style
+ * @constructor
  * @param selector
  * @param declarations
- * @return Style
- * @constructor
  */
 var Style = function(selector, declarations) {
 
@@ -53,11 +51,10 @@ var Style = function(selector, declarations) {
     this.declarations = declarations;
 
     /**
-     * Set the declarations
+     * Set the declarations array
      *
-     * @property setDeclarations
-     * @param declarations
-     * @type 
+     * @method setDeclarations
+     * @param {Object} declarations
      */
 
     this.setDeclarations = function(declarations) {
