@@ -58,6 +58,9 @@ var ReflowableView = function(options, reader){
     var _$el;
     var _$iframe;
     var _$epubHtml;
+    var _lastPositionCFI;
+
+    var _cfiClassBlackList = ["cfi-marker", "mo-cfi-highlight"];
 
     var _$htmlBody;
 
@@ -199,6 +202,8 @@ var ReflowableView = function(options, reader){
             if (_currentSpineItem) {
                 self.emit(Globals.Events.CONTENT_DOCUMENT_UNLOADED, _$iframe, _currentSpineItem);
             }
+
+            _lastPositionCFI = undefined;
 
             _paginationInfo.pageOffset = 0;
             _paginationInfo.currentSpreadIndex = 0;
@@ -424,7 +429,7 @@ var ReflowableView = function(options, reader){
             try
             {
                 pageIndex = _navigationLogic.getPageForElementCfi(pageRequest.elementCfi,
-                    ["cfi-marker", "mo-cfi-highlight"],
+                    _cfiClassBlackList,
                     [],
                     ["MathJax_Message"]);
                 
@@ -503,6 +508,9 @@ var ReflowableView = function(options, reader){
         redraw();
 
         _.defer(function () {
+
+            _lastPositionCFI = self.getFirstVisibleCfi();
+            console.debug("saving last position ", _lastPositionCFI);
             
             Globals.logEvent("InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED", "EMIT", "reflowable_view.js");
             self.emit(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, {
@@ -737,8 +745,18 @@ var ReflowableView = function(options, reader){
         else {
 
             //we get here on resizing the viewport
+            if (_lastPositionCFI) {
+                console.debug("going to saved position lastPositionCFI", _lastPositionCFI);
+                var pageRequest = new PageOpenRequest(_currentSpineItem, self);
+                pageRequest.setElementCfi(_lastPositionCFI.contentCFI);
+                //var targetElement = this.getElementByCfi(_currentSpineItem, _lastPositionCFI.contentCFI);
+                //console.debug(targetElement);
+                self.openPage(pageRequest)
+            } else {
+                onPaginationChanged(self); // => redraw() => showBook(), so the trick below is not needed                
+            }
 
-            onPaginationChanged(self); // => redraw() => showBook(), so the trick below is not needed
+            //onPaginationChanged(self); // => redraw() => showBook(), so the trick below is not needed 
 
             // //We do this to force re-rendering of the document in the iframe.
             // //There is a bug in WebView control with right to left columns layout - after resizing the window html document
