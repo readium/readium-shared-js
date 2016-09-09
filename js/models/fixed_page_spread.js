@@ -103,7 +103,7 @@ var Spread = function(spine, isSyntheticSpread) {
      * Opens a spine item (FXL page)
      *
      * @method     openItem
-     * @param      {SpineItem} item
+     * @param      {Models.SpineItem} item
      */
 
     this.openItem = function(item) {
@@ -144,7 +144,7 @@ var Spread = function(spine, isSyntheticSpread) {
      * Sets the spine item (FXL page) to a position (left, right or center)
      *
      * @method     setItemToPosition
-     * @param      {SpineItem} item
+     * @param      {Models.SpineItem} item
      * @param      {Spread.POSITION_CENTER | Spread.POSITION_LEFT | Spread.POSITION_RIGHT} position
      */
 
@@ -170,7 +170,7 @@ var Spread = function(spine, isSyntheticSpread) {
      * Returns the position of a spine item / FXL page (left, center or right)
      *
      * @method     getItemPosition
-     * @param      {SpineItem} item
+     * @param      {Models.SpineItem} item
      * @return     {Spread.POSITION_CENTER | Spread.POSITION_LEFT | Spread.POSITION_RIGHT}
      */
 
@@ -266,8 +266,8 @@ var Spread = function(spine, isSyntheticSpread) {
      * Gets the neighbour spine item in the FXL page layout (on left or right of the current item)
      *
      * @method     getNeighbourItem
-     * @param      {SpineItem} item
-     * @return     {SpineItem} item
+     * @param      {Models.SpineItem} item
+     * @return     {Models.SpineItem} item
      */ 
 
     function getNeighbourItem(item) {
