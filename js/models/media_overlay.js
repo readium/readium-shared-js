@@ -78,14 +78,13 @@ var MediaOverlay = function(package) {
     };
     
     /**
-     * Calculates a timecode corresponding to a percent of the total audio duration
-     * Note: never called; no returned value; obsolete?
+     * Calculates a timecode corresponding to a percent of the total audio duration (the function parameters smilData, par, and milliseconds are objects with a single field using the same name)
      *
      * @method     percentToPosition
      * @param      {Number} percent
-     * @param      {Object} smilData
-     * @param      {Smil.ParNode} par
-     * @param      {Number} timeMilliseconds 
+     * @param      {Models.SmilModel} smilData (object with a single field using the same name, used as OUT param)
+     * @param      {Smil.ParNode} par (object with a single field using the same name, used as OUT param)
+     * @param      {Number} milliseconds (object with a single field using the same name, used as OUT param)
      */
 
     this.percentToPosition = function(percent, smilData, par, milliseconds)
@@ -127,7 +126,7 @@ var MediaOverlay = function(package) {
     };
 
     /**
-     * Estimates the total audio duration of the different smil models
+     * Calculates the accumulated audio duration of each smil overlay
      *
      * @method     durationMilliseconds_Calculated
      * @return     {Number} total duration 
@@ -148,7 +147,7 @@ var MediaOverlay = function(package) {
     };
     
     /**
-     * Locates the smil model corresponding to the index given as a parameter.
+     * Returns the smil overlay at the given index
      *
      * @method     smilAt
      * @param      {Number} smilIndex
@@ -167,8 +166,7 @@ var MediaOverlay = function(package) {
     
     /**
      * Calculates a percent of the total audio duration corresponding to a timecode
-     * Note: never called; obsolete?
-     *  
+     * 
      * @method     positionToPercent
      * @param      {Number} smilIndex Index of a smil model
      * @param      {Number} parIndex
@@ -209,7 +207,7 @@ var MediaOverlay = function(package) {
       };
 
     /**
-     * Array of smil models
+     * Array of smil models {Models.SmilModel}
      *
      * @property smil_models
      * @type Array
@@ -254,19 +252,19 @@ var MediaOverlay = function(package) {
     this.narrator = undefined;
 
     /**
-     * Is the class active?
+     * Author-defined name of the CSS "active class" (applied to the document as a whole)
      *
      * @property activeClass
-     * @type unknown
+     * @type String
      */
 
     this.activeClass = undefined;
 
     /**
-     * is the playback active?
+     * Author-defined name of the CSS "playback active class" (applied to a single audio fragment)
      *
      * @property playbackActiveClass
-     * @type unknown
+     * @type String
      */
 
     this.playbackActiveClass = undefined;
@@ -356,7 +354,7 @@ var MediaOverlay = function(package) {
  * Static MediaOverlay.fromDTO method, returns a clean MediaOverlay object
  *
  * @method MediaOverlay.fromDTO
- * @param {Object} moDTO Media overlay data object
+ * @param {Object} moDTO Media overlay data object (raw JSON, as returned by a parser)
  * @param {Models.Package} package EPUB package object
  * @return {Models.MediaOverlay}
 */
@@ -369,8 +367,6 @@ MediaOverlay.fromDTO = function(moDTO, pack) {
         return mo;
     }
 
-    console.log("--- MediaOverlay found in this ebook");
-        
     mo.duration = moDTO.duration;
     if (mo.duration && mo.duration.length && mo.duration.length > 0)
     {
