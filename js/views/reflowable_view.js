@@ -28,7 +28,7 @@
 
 define(["../globals", "jquery", "underscore", "eventEmitter", "../models/bookmark_data", "./cfi_navigation_logic",
     "../models/current_pages_info", "../helpers", "../models/page_open_request",
-    "../models/viewer_settings", "./resize_sensor"],
+    "../models/viewer_settings", "ResizeSensor"],
     function(Globals, $, _, EventEmitter, BookmarkData, CfiNavigationLogic,
              CurrentPagesInfo, Helpers, PageOpenRequest,
              ViewerSettings, ResizeSensor) {

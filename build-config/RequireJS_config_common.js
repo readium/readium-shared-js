@@ -50,6 +50,9 @@ require.config({
         jquerySizes:
             process._RJS_rootDir(1) + '/node_modules/jquery-sizes/lib/jquery.sizes',
 
+        ResizeSensor:
+            process._RJS_rootDir(1) + '/node_modules/css-element-queries/src/ResizeSensor',
+
         domReady:
             process._RJS_rootDir(1) + '/node_modules/domReady/domReady',
 

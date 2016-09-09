@@ -14901,24 +14901,42 @@ define('readium_cfi_js', ['readium_cfi_js/cfi_API'], function (main) { return ma
 
 define('eventEmitter',['require','exports','module'],function (require, exports, module) {'use strict';
 
-var has = Object.prototype.hasOwnProperty;
-
-//
-// We store our EE objects in a plain object whose properties are event names.
-// If `Object.create(null)` is not supported we prefix the event names with a
-// `~` to make sure that the built-in object properties are not overridden or
-// used as an attack vector.
-// We also assume that `Object.create(null)` is available when the event name
-// is an ES6 Symbol.
-//
-var prefix = typeof Object.create !== 'function' ? '~' : false;
+var has = Object.prototype.hasOwnProperty
+  , prefix = '~';
 
 /**
- * Representation of a single EventEmitter function.
+ * Constructor to create a storage for our `EE` objects.
+ * An `Events` instance is a plain object whose properties are event names.
  *
- * @param {Function} fn Event handler to be called.
- * @param {Mixed} context Context for function execution.
- * @param {Boolean} [once=false] Only emit once
+ * @constructor
+ * @api private
+ */
+function Events() {}
+
+//
+// We try to not inherit from `Object.prototype`. In some engines creating an
+// instance in this way is faster than calling `Object.create(null)` directly.
+// If `Object.create(null)` is not supported we prefix the event names with a
+// character to make sure that the built-in object properties are not
+// overridden or used as an attack vector.
+//
+if (Object.create) {
+  Events.prototype = Object.create(null);
+
+  //
+  // This hack is needed because the `__proto__` property is still inherited in
+  // some old browsers like Android 4, iPhone 5.1, Opera 11 and Safari 5.
+  //
+  if (!new Events().__proto__) prefix = false;
+}
+
+/**
+ * Representation of a single event listener.
+ *
+ * @param {Function} fn The listener function.
+ * @param {Mixed} context The context to invoke the listener with.
+ * @param {Boolean} [once=false] Specify if the listener is a one-time listener.
+ * @constructor
  * @api private
  */
 function EE(fn, context, once) {
@@ -14928,21 +14946,16 @@ function EE(fn, context, once) {
 }
 
 /**
- * Minimal EventEmitter interface that is molded against the Node.js
- * EventEmitter interface.
+ * Minimal `EventEmitter` interface that is molded against the Node.js
+ * `EventEmitter` interface.
  *
  * @constructor
  * @api public
  */
-function EventEmitter() { /* Nothing to set */ }
-
-/**
- * Hold the assigned EventEmitters by name.
- *
- * @type {Object}
- * @private
- */
-EventEmitter.prototype._events = undefined;
+function EventEmitter() {
+  this._events = new Events();
+  this._eventsCount = 0;
+}
 
 /**
  * Return an array listing the events for which the emitter has registered
@@ -14952,13 +14965,13 @@ EventEmitter.prototype._events = undefined;
  * @api public
  */
 EventEmitter.prototype.eventNames = function eventNames() {
-  var events = this._events
-    , names = []
+  var names = []
+    , events
     , name;
 
-  if (!events) return names;
+  if (this._eventsCount === 0) return names;
 
-  for (name in events) {
+  for (name in (events = this._events)) {
     if (has.call(events, name)) names.push(prefix ? name.slice(1) : name);
   }
 
@@ -14970,16 +14983,16 @@ EventEmitter.prototype.eventNames = function eventNames() {
 };
 
 /**
- * Return a list of assigned event listeners.
+ * Return the listeners registered for a given event.
  *
- * @param {String} event The events that should be listed.
- * @param {Boolean} exists We only need to know if there are listeners.
+ * @param {String|Symbol} event The event name.
+ * @param {Boolean} exists Only check if there are listeners.
  * @returns {Array|Boolean}
  * @api public
  */
 EventEmitter.prototype.listeners = function listeners(event, exists) {
   var evt = prefix ? prefix + event : event
-    , available = this._events && this._events[evt];
+    , available = this._events[evt];
 
   if (exists) return !!available;
   if (!available) return [];
@@ -14993,23 +15006,23 @@ EventEmitter.prototype.listeners = function listeners(event, exists) {
 };
 
 /**
- * Emit an event to all registered event listeners.
+ * Calls each of the listeners registered for a given event.
  *
- * @param {String} event The name of the event.
- * @returns {Boolean} Indication if we've emitted an event.
+ * @param {String|Symbol} event The event name.
+ * @returns {Boolean} `true` if the event had listeners, else `false`.
  * @api public
  */
 EventEmitter.prototype.emit = function emit(event, a1, a2, a3, a4, a5) {
   var evt = prefix ? prefix + event : event;
 
-  if (!this._events || !this._events[evt]) return false;
+  if (!this._events[evt]) return false;
 
   var listeners = this._events[evt]
     , len = arguments.length
     , args
     , i;
 
-  if ('function' === typeof listeners.fn) {
+  if (listeners.fn) {
     if (listeners.once) this.removeListener(event, listeners.fn, undefined, true);
 
     switch (len) {
@@ -15037,6 +15050,7 @@ EventEmitter.prototype.emit = function emit(event, a1, a2, a3, a4, a5) {
         case 1: listeners[i].fn.call(listeners[i].context); break;
         case 2: listeners[i].fn.call(listeners[i].context, a1); break;
         case 3: listeners[i].fn.call(listeners[i].context, a1, a2); break;
+        case 4: listeners[i].fn.call(listeners[i].context, a1, a2, a3); break;
         default:
           if (!args) for (j = 1, args = new Array(len -1); j < len; j++) {
             args[j - 1] = arguments[j];
@@ -15051,115 +15065,118 @@ EventEmitter.prototype.emit = function emit(event, a1, a2, a3, a4, a5) {
 };
 
 /**
- * Register a new EventListener for the given event.
+ * Add a listener for a given event.
  *
- * @param {String} event Name of the event.
- * @param {Function} fn Callback function.
- * @param {Mixed} [context=this] The context of the function.
+ * @param {String|Symbol} event The event name.
+ * @param {Function} fn The listener function.
+ * @param {Mixed} [context=this] The context to invoke the listener with.
+ * @returns {EventEmitter} `this`.
  * @api public
  */
 EventEmitter.prototype.on = function on(event, fn, context) {
   var listener = new EE(fn, context || this)
     , evt = prefix ? prefix + event : event;
 
-  if (!this._events) this._events = prefix ? {} : Object.create(null);
-  if (!this._events[evt]) this._events[evt] = listener;
-  else {
-    if (!this._events[evt].fn) this._events[evt].push(listener);
-    else this._events[evt] = [
-      this._events[evt], listener
-    ];
-  }
+  if (!this._events[evt]) this._events[evt] = listener, this._eventsCount++;
+  else if (!this._events[evt].fn) this._events[evt].push(listener);
+  else this._events[evt] = [this._events[evt], listener];
 
   return this;
 };
 
 /**
- * Add an EventListener that's only called once.
+ * Add a one-time listener for a given event.
  *
- * @param {String} event Name of the event.
- * @param {Function} fn Callback function.
- * @param {Mixed} [context=this] The context of the function.
+ * @param {String|Symbol} event The event name.
+ * @param {Function} fn The listener function.
+ * @param {Mixed} [context=this] The context to invoke the listener with.
+ * @returns {EventEmitter} `this`.
  * @api public
  */
 EventEmitter.prototype.once = function once(event, fn, context) {
   var listener = new EE(fn, context || this, true)
     , evt = prefix ? prefix + event : event;
 
-  if (!this._events) this._events = prefix ? {} : Object.create(null);
-  if (!this._events[evt]) this._events[evt] = listener;
-  else {
-    if (!this._events[evt].fn) this._events[evt].push(listener);
-    else this._events[evt] = [
-      this._events[evt], listener
-    ];
-  }
+  if (!this._events[evt]) this._events[evt] = listener, this._eventsCount++;
+  else if (!this._events[evt].fn) this._events[evt].push(listener);
+  else this._events[evt] = [this._events[evt], listener];
 
   return this;
 };
 
 /**
- * Remove event listeners.
+ * Remove the listeners of a given event.
  *
- * @param {String} event The event we want to remove.
- * @param {Function} fn The listener that we need to find.
- * @param {Mixed} context Only remove listeners matching this context.
- * @param {Boolean} once Only remove once listeners.
+ * @param {String|Symbol} event The event name.
+ * @param {Function} fn Only remove the listeners that match this function.
+ * @param {Mixed} context Only remove the listeners that have this context.
+ * @param {Boolean} once Only remove one-time listeners.
+ * @returns {EventEmitter} `this`.
  * @api public
  */
 EventEmitter.prototype.removeListener = function removeListener(event, fn, context, once) {
   var evt = prefix ? prefix + event : event;
 
-  if (!this._events || !this._events[evt]) return this;
-
-  var listeners = this._events[evt]
-    , events = [];
-
-  if (fn) {
-    if (listeners.fn) {
-      if (
-           listeners.fn !== fn
-        || (once && !listeners.once)
-        || (context && listeners.context !== context)
-      ) {
-        events.push(listeners);
-      }
-    } else {
-      for (var i = 0, length = listeners.length; i < length; i++) {
-        if (
-             listeners[i].fn !== fn
-          || (once && !listeners[i].once)
-          || (context && listeners[i].context !== context)
-        ) {
-          events.push(listeners[i]);
-        }
-      }
-    }
+  if (!this._events[evt]) return this;
+  if (!fn) {
+    if (--this._eventsCount === 0) this._events = new Events();
+    else delete this._events[evt];
+    return this;
   }
 
-  //
-  // Reset the array, or remove it completely if we have no more listeners.
-  //
-  if (events.length) {
-    this._events[evt] = events.length === 1 ? events[0] : events;
+  var listeners = this._events[evt];
+
+  if (listeners.fn) {
+    if (
+         listeners.fn === fn
+      && (!once || listeners.once)
+      && (!context || listeners.context === context)
+    ) {
+      if (--this._eventsCount === 0) this._events = new Events();
+      else delete this._events[evt];
+    }
   } else {
-    delete this._events[evt];
+    for (var i = 0, events = [], length = listeners.length; i < length; i++) {
+      if (
+           listeners[i].fn !== fn
+        || (once && !listeners[i].once)
+        || (context && listeners[i].context !== context)
+      ) {
+        events.push(listeners[i]);
+      }
+    }
+
+    //
+    // Reset the array, or remove it completely if we have no more listeners.
+    //
+    if (events.length) this._events[evt] = events.length === 1 ? events[0] : events;
+    else if (--this._eventsCount === 0) this._events = new Events();
+    else delete this._events[evt];
   }
 
   return this;
 };
 
 /**
- * Remove all listeners or only the listeners for the specified event.
+ * Remove all listeners, or those of the specified event.
  *
- * @param {String} event The event want to remove all listeners for.
+ * @param {String|Symbol} [event] The event name.
+ * @returns {EventEmitter} `this`.
  * @api public
  */
 EventEmitter.prototype.removeAllListeners = function removeAllListeners(event) {
-  if (!this._events) return this;
+  var evt;
 
-  if (event) delete this._events[prefix ? prefix + event : event];
-  else this._events = prefix ? {} : Object.create(null);
+  if (event) {
+    evt = prefix ? prefix + event : event;
+    if (this._events[evt]) {
+      if (--this._eventsCount === 0) this._events = new Events();
+      else delete this._events[evt];
+    }
+  } else {
+    this._events = new Events();
+    this._eventsCount = 0;
+  }
 
   return this;
 };
@@ -23592,6 +23609,18 @@ var CfiNavigationLogic = function(options) {
         return this.getRootDocument().body || this.getRootElement();
     };
 
+    this.getClassBlacklist = function () {
+        return options.classBlacklist || [];
+    }
+
+    this.getIdBlacklist = function () {
+        return options.idBlacklist || [];
+    }
+
+    this.getElementBlacklist = function () {
+        return options.elementBlacklist || [];
+    }
+
     this.getRootDocument = function () {
         return options.$iframe[0].contentDocument;
     };
@@ -24151,9 +24180,9 @@ var CfiNavigationLogic = function(options) {
 
     this.getCfiForElement = function (element) {
         var cfi = EPUBcfi.Generator.generateElementCFIComponent(element,
-            ["cfi-marker"],
-            [],
-            ["MathJax_Message", "MathJax_SVG_Hidden"]);
+            this.getClassBlacklist(),
+            this.getElementBlacklist(),
+            this.getIdBlacklist());
 
         if (cfi[0] == "!") {
             cfi = cfi.substring(1);
@@ -24483,14 +24512,14 @@ var CfiNavigationLogic = function(options) {
         return EPUBcfi.generateRangeComponent(
             range.startContainer, range.startOffset,
             range.endContainer, range.endOffset,
-            ['cfi-marker'], [], ["MathJax_Message", "MathJax_SVG_Hidden"]);
+            self.getClassBlacklist(), self.getElementBlacklist(), self.getIdBlacklist());
     }
 
     function getRangeTargetNodes(rangeCfi) {
         return EPUBcfi.getRangeTargetElements(
             getWrappedCfiRelativeToContent(rangeCfi),
             self.getRootDocument(),
-            ['cfi-marker'], [], ["MathJax_Message", "MathJax_SVG_Hidden"]);
+            self.getClassBlacklist(), self.getElementBlacklist(), self.getIdBlacklist());
     }
 
     this.getDomRangeFromRangeCfi = function(rangeCfi, rangeCfi2, inclusive) {
@@ -24503,7 +24532,7 @@ var CfiNavigationLogic = function(options) {
                 range.setEnd(rangeInfo.endElement, rangeInfo.endOffset);
             } else {
                 var element = self.getElementByCfi(rangeCfi,
-                    ['cfi-marker'], [], ["MathJax_Message", "MathJax_SVG_Hidden"])[0];
+                    this.getClassBlacklist(), this.getElementBlacklist(), this.getIdBlacklist())[0];
                 range.selectNode(element);
             }
         } else {
@@ -24512,7 +24541,7 @@ var CfiNavigationLogic = function(options) {
                 range.setStart(rangeInfo1.startElement, rangeInfo1.startOffset);
             } else {
                 var startElement = self.getElementByCfi(rangeCfi,
-                    ['cfi-marker'], [], ["MathJax_Message", "MathJax_SVG_Hidden"])[0];
+                    this.getClassBlacklist(), this.getElementBlacklist(), this.getIdBlacklist())[0];
                 range.setStart(startElement, 0);
             }
 
@@ -24525,7 +24554,7 @@ var CfiNavigationLogic = function(options) {
                 }
             } else {
                 var endElement = self.getElementByCfi(rangeCfi2,
-                    ['cfi-marker'], [], ["MathJax_Message", "MathJax_SVG_Hidden"])[0];
+                    this.getClassBlacklist(), this.getElementBlacklist(), this.getIdBlacklist())[0];
                 range.setEnd(endElement, endElement.childNodes.length);
             }
         }
@@ -24608,9 +24637,9 @@ var CfiNavigationLogic = function(options) {
             try {
                 //noinspection JSUnresolvedVariable
                 var nodeResult = EPUBcfi.Interpreter.getRangeTargetElements(wrappedCfi, contentDoc,
-                    ["cfi-marker"],
-                    [],
-                    ["MathJax_Message", "MathJax_SVG_Hidden"]);
+                    this.getClassBlacklist(),
+                    this.getElementBlacklist(),
+                    this.getIdBlacklist());
 
                 if (debugMode) {
                     console.log(nodeResult);
@@ -24643,9 +24672,9 @@ var CfiNavigationLogic = function(options) {
             return {startInfo: startRangeInfo, endInfo: endRangeInfo, clientRect: nodeRangeClientRect}
         } else {
             var $element = self.getElementByCfi(cfi,
-                ["cfi-marker"],
-                [],
-                ["MathJax_Message", "MathJax_SVG_Hidden"]);
+                this.getClassBlacklist(),
+                this.getElementBlacklist(),
+                this.getIdBlacklist());
 
             var visibleContentOffsets = getVisibleContentOffsets();
             return {startInfo: null, endInfo: null, clientRect: getNormalizedBoundingRect($element, visibleContentOffsets)};
@@ -24879,23 +24908,16 @@ var CfiNavigationLogic = function(options) {
     };
 
     function isElementBlacklisted($element) {
-        //TODO: Ok we really need to have a single point of reference for this blacklist
-        var blacklist = {
-            classes: ["cfi-marker", "mo-cfi-highlight"],
-            elements: [], //not looked at
-            ids: ["MathJax_Message", "MathJax_SVG_Hidden"]
-        };
-
         var isBlacklisted = false;
 
-        _.some(blacklist.classes, function (value) {
+        _.some(self.getClassBlacklist(), function (value) {
             if ($element.hasClass(value)) {
                 isBlacklisted = true;
             }
             return isBlacklisted;
         });
 
-        _.some(blacklist.ids, function (value) {
+        _.some(self.getIdBlacklist(), function (value) {
             if ($element.attr("id") === value) {
                 isBlacklisted = true;
             }
@@ -25301,6 +25323,225 @@ var ViewerSettings = function(settingsData) {
     return ViewerSettings;
 });
 
+/**
+ * Copyright Marc J. Schmidt. See the LICENSE file at the top-level
+ * directory of this distribution and at
+ * https://github.com/marcj/css-element-queries/blob/master/LICENSE.
+ */
+;
+(function (root, factory) {
+    if (typeof define === "function" && define.amd) {
+        define('ResizeSensor',factory);
+    } else if (typeof exports === "object") {
+        module.exports = factory();
+    } else {
+        root.ResizeSensor = factory();
+    }
+}(this, function () {
+
+    // Only used for the dirty checking, so the event callback count is limted to max 1 call per fps per sensor.
+    // In combination with the event based resize sensor this saves cpu time, because the sensor is too fast and
+    // would generate too many unnecessary events.
+    var requestAnimationFrame = window.requestAnimationFrame ||
+        window.mozRequestAnimationFrame ||
+        window.webkitRequestAnimationFrame ||
+        function (fn) {
+            return window.setTimeout(fn, 20);
+        };
+
+    /**
+     * Iterate over each of the provided element(s).
+     *
+     * @param {HTMLElement|HTMLElement[]} elements
+     * @param {Function}                  callback
+     */
+    function forEachElement(elements, callback){
+        var elementsType = Object.prototype.toString.call(elements);
+        var isCollectionTyped = ('[object Array]' === elementsType
+            || ('[object NodeList]' === elementsType)
+            || ('[object HTMLCollection]' === elementsType)
+            || ('undefined' !== typeof jQuery && elements instanceof jQuery) //jquery
+            || ('undefined' !== typeof Elements && elements instanceof Elements) //mootools
+        );
+        var i = 0, j = elements.length;
+        if (isCollectionTyped) {
+            for (; i < j; i++) {
+                callback(elements[i]);
+            }
+        } else {
+            callback(elements);
+        }
+    }
+
+    /**
+     * Class for dimension change detection.
+     *
+     * @param {Element|Element[]|Elements|jQuery} element
+     * @param {Function} callback
+     *
+     * @constructor
+     */
+    var ResizeSensor = function(element, callback) {
+        /**
+         *
+         * @constructor
+         */
+        function EventQueue() {
+            var q = [];
+            this.add = function(ev) {
+                q.push(ev);
+            };
+
+            var i, j;
+            this.call = function() {
+                for (i = 0, j = q.length; i < j; i++) {
+                    q[i].call();
+                }
+            };
+
+            this.remove = function(ev) {
+                var newQueue = [];
+                for(i = 0, j = q.length; i < j; i++) {
+                    if(q[i] !== ev) newQueue.push(q[i]);
+                }
+                q = newQueue;
+            }
+
+            this.length = function() {
+                return q.length;
+            }
+        }
+
+        /**
+         * @param {HTMLElement} element
+         * @param {String}      prop
+         * @returns {String|Number}
+         */
+        function getComputedStyle(element, prop) {
+            if (element.currentStyle) {
+                return element.currentStyle[prop];
+            } else if (window.getComputedStyle) {
+                return window.getComputedStyle(element, null).getPropertyValue(prop);
+            } else {
+                return element.style[prop];
+            }
+        }
+
+        /**
+         *
+         * @param {HTMLElement} element
+         * @param {Function}    resized
+         */
+        function attachResizeEvent(element, resized) {
+            if (!element.resizedAttached) {
+                element.resizedAttached = new EventQueue();
+                element.resizedAttached.add(resized);
+            } else if (element.resizedAttached) {
+                element.resizedAttached.add(resized);
+                return;
+            }
+
+            element.resizeSensor = document.createElement('div');
+            element.resizeSensor.className = 'resize-sensor';
+            var style = 'position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: hidden; z-index: -1; visibility: hidden;';
+            var styleChild = 'position: absolute; left: 0; top: 0; transition: 0s;';
+
+            element.resizeSensor.style.cssText = style;
+            element.resizeSensor.innerHTML =
+                '<div class="resize-sensor-expand" style="' + style + '">' +
+                    '<div style="' + styleChild + '" class="resize-sensor-inner"></div>' +
+                '</div>' +
+                '<div class="resize-sensor-shrink" style="' + style + '">' +
+                    '<div style="' + styleChild + ' width: 200%; height: 200%" class="resize-sensor-inner"></div>' +
+                '</div>';
+            element.appendChild(element.resizeSensor);
+
+            if (getComputedStyle(element, 'position') == 'static') {
+                element.style.position = 'relative';
+            }
+
+            var expand = element.resizeSensor.childNodes[0];
+            var expandChild = expand.childNodes[0];
+            var shrink = element.resizeSensor.childNodes[1];
+
+            var reset = function() {
+                expandChild.style.width  = 100000 + 'px';
+                expandChild.style.height = 100000 + 'px';
+
+                expand.scrollLeft = 100000;
+                expand.scrollTop = 100000;
+
+                shrink.scrollLeft = 100000;
+                shrink.scrollTop = 100000;
+            };
+
+            reset();
+            var dirty = false;
+
+            var dirtyChecking = function() {
+                if (dirty && element.resizedAttached) {
+                    element.resizedAttached.call();
+                }
+                dirty = false;
+            };
+
+            requestAnimationFrame(dirtyChecking);
+            var lastWidth, lastHeight;
+            var cachedWidth, cachedHeight; //useful to not query offsetWidth twice
+
+            var onScroll = function() {
+              if ((cachedWidth = element.offsetWidth) != lastWidth || (cachedHeight = element.offsetHeight) != lastHeight) {
+                  dirty = true;
+
+                  lastWidth = cachedWidth;
+                  lastHeight = cachedHeight;
+
+                  requestAnimationFrame(dirtyChecking);
+              }
+              reset();
+            };
+
+            var addEvent = function(el, name, cb) {
+                if (el.attachEvent) {
+                    el.attachEvent('on' + name, cb);
+                } else {
+                    el.addEventListener(name, cb);
+                }
+            };
+
+            addEvent(expand, 'scroll', onScroll);
+            addEvent(shrink, 'scroll', onScroll);
+        }
+
+        forEachElement(element, function(elem){
+            attachResizeEvent(elem, callback);
+        });
+
+        this.detach = function(ev) {
+            ResizeSensor.detach(element, ev);
+        };
+    };
+
+    ResizeSensor.detach = function(element, ev) {
+        forEachElement(element, function(elem){
+            if(elem.resizedAttached && typeof ev == "function"){
+                elem.resizedAttached.remove(ev);
+                if(elem.resizedAttached.length()) return;
+            }
+            if (elem.resizeSensor) {
+                if (elem.contains(elem.resizeSensor)) {
+                    elem.removeChild(elem.resizeSensor);
+                }
+                delete elem.resizeSensor;
+                delete elem.resizedAttached;
+            }
+        });
+    };
+
+    return ResizeSensor;
+
+}));
+
 //  Created by Boris Schneiderman.
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
 //
@@ -25327,8 +25568,8 @@ var ViewerSettings = function(settingsData) {
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-define('readium_shared_js/views/one_page_view',["../globals", "jquery", "underscore", "eventEmitter", "./cfi_navigation_logic", "../helpers", "../models/viewer_settings", "../models/bookmark_data"],
-    function (Globals, $, _, EventEmitter, CfiNavigationLogic, Helpers, ViewerSettings, BookmarkData) {
+define('readium_shared_js/views/one_page_view',["../globals", "jquery", "underscore", "eventEmitter", "./cfi_navigation_logic", "../helpers", "../models/viewer_settings", "../models/bookmark_data", "ResizeSensor"],
+    function (Globals, $, _, EventEmitter, CfiNavigationLogic, Helpers, ViewerSettings, BookmarkData, ResizeSensor) {
 
 /**
  * Renders one page of fixed layout spread
@@ -25678,11 +25919,22 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
             //_$epubHtml.css("overflow", "hidden");
 
+
+
             if (_enableBookStyleOverrides) {
                 self.applyBookStyles();
             }
 
             updateMetaSize();
+
+            var bodyElement = _$epubBody[0];
+            bodyElement.resizeSensor = new ResizeSensor(bodyElement, function() {
+                console.log("OnePageView iframe body resized", $(bodyElement).width(), $(bodyElement).height());
+                var src = _spine.package.resolveRelativeUrl(_currentSpineItem.href);
+                Globals.logEvent("OnePageView.Events.CONTENT_SIZE_CHANGED", "EMIT", "one_page_view.js [ " + _currentSpineItem.href + " -- " + src + " ]");
+                self.emit(OnePageView.Events.CONTENT_SIZE_CHANGED, _$iframe, _currentSpineItem);
+                //updatePagination();
+            });
 
             _pageTransitionHandler.onIFrameLoad();
         }
@@ -26218,7 +26470,10 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         return new CfiNavigationLogic({
             $iframe: _$iframe,
             frameDimensions: getFrameDimensions,
-            visibleContentOffsets: getVisibleContentOffsets
+            visibleContentOffsets: getVisibleContentOffsets,
+            classBlacklist: ["cfi-marker", "mo-cfi-highlight", "resize-sensor", "resize-sensor-expand", "resize-sensor-shrink"],
+            elementBlacklist: [],
+            idBlacklist: ["MathJax_Message", "MathJax_SVG_Hidden"]
         });
     };
 
@@ -26351,7 +26606,8 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 };
 
 OnePageView.Events = {
-    SPINE_ITEM_OPEN_START: "SpineItemOpenStart"
+    SPINE_ITEM_OPEN_START: "SpineItemOpenStart",
+    CONTENT_SIZE_CHANGED: "ContentSizeChanged"
 };
 return OnePageView;
 });
@@ -26402,6 +26658,8 @@ var PageOpenRequest = function(spineItem, initiator) {
     this.spineItemPageIndex = undefined;
     this.elementId = undefined;
     this.elementCfi = undefined;
+    this.firstVisibleCfi = undefined;
+    this.lastVisibleCfi = undefined;
     this.firstPage = false;
     this.lastPage = false;
     this.initiator = initiator;
@@ -26435,11 +26693,20 @@ var PageOpenRequest = function(spineItem, initiator) {
     };
 
     this.setElementCfi = function(elementCfi) {
-
         this.reset();
         this.elementCfi = elementCfi;
     };
 
+    // Used by ReflowView to better keep track of the current page
+    // using just a bookmark to firstVisibleElement makes the current
+    // page gradually shift to the beginning of the chapter. By bookmarking
+    // both the first and last visible elements, we can keep track of the 
+    // "middle" of the visible area.
+    this.setFirstAndLastVisibleCfi = function(firstVisibleCfi, lastVisibleCfi) {
+        this.reset();
+        this.firstVisibleCfi = firstVisibleCfi;
+        this.lastVisibleCfi = lastVisibleCfi;
+    }
 
 };
 
@@ -37938,173 +38205,6 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         }
     }
 
-    function reachStableContentHeight(updateScroll, pageView, iframe, href, fixedLayout, metaWidth, msg, callback)
-    {
-        if (!Helpers.isIframeAlive(iframe))
-        {
-            if (_DEBUG)
-            {
-                console.log("reachStableContentHeight ! win && doc (iFrame disposed?)");
-            }
-
-            if (callback) callback(false);
-            return;
-        }
-
-        var MAX_ATTEMPTS = 10;
-        var TIME_MS = 300;
-
-        var w = iframe.contentWindow;
-        var d = iframe.contentDocument;
-
-        var previousPolledContentHeight = parseInt(Math.round(parseFloat(w.getComputedStyle(d.documentElement).height))); //body can be shorter!;
-
-        var initialContentHeight = previousPolledContentHeight;
-
-        if (updateScroll === 0)
-        {
-            updatePageViewSizeAndAdjustScroll(pageView);
-        }
-        else
-        {
-            updatePageViewSize(pageView);
-        }
-
-        var tryAgainFunc = function(tryAgain)
-        {
-            if (_DEBUG && tryAgain !== MAX_ATTEMPTS)
-            {
-                console.log("tryAgainFunc - " + tryAgain + ": " + href + "  <" + initialContentHeight +" -- "+ previousPolledContentHeight + ">");
-            }
-
-            tryAgain--;
-            if (tryAgain < 0)
-            {
-                if (_DEBUG)
-                {
-                    console.error("tryAgainFunc abort: " + href);
-                }
-
-                if (callback) callback(true);
-                return;
-            }
-
-            setTimeout(function()
-            {
-                try
-                {
-                    if (Helpers.isIframeAlive(iframe))
-                    {
-                        var win = iframe.contentWindow;
-                        var doc = iframe.contentDocument;
-
-                        var iframeHeight = parseInt(Math.round(parseFloat(window.getComputedStyle(iframe).height)));
-
-                        var docHeight = parseInt(Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height))); //body can be shorter!
-
-                        if (previousPolledContentHeight !== docHeight)
-                        {
-                            previousPolledContentHeight = docHeight;
-
-                            tryAgainFunc(tryAgain);
-                            return;
-                        }
-
-                        // CONTENT HEIGHT IS NOW STABILISED
-
-                        var diff = iframeHeight - docHeight;
-                        if (Math.abs(diff) > 4)
-                        {
-                            if (_DEBUG)
-                            {
-                                console.log("$$$ IFRAME HEIGHT ADJUST: " + href + "  [" + diff + "]<" + initialContentHeight + " -- " + previousPolledContentHeight + ">");
-                                console.log(msg);
-                            }
-
-                            if (updateScroll === 0)
-                            {
-                                updatePageViewSizeAndAdjustScroll(pageView);
-                            }
-                            else
-                            {
-                                updatePageViewSize(pageView);
-                            }
-
-                            if (Helpers.isIframeAlive(iframe))
-                            {
-                                var win = iframe.contentWindow;
-                                var doc = iframe.contentDocument;
-
-                                var docHeightAfter = parseInt(Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height))); //body can be shorter!
-                                var iframeHeightAfter = parseInt(Math.round(parseFloat(window.getComputedStyle(iframe).height)));
-
-                                var newdiff = iframeHeightAfter - docHeightAfter;
-                                if (Math.abs(newdiff) > 4)
-                                {
-                                    if (_DEBUG)
-                                    {
-                                        console.error("## IFRAME HEIGHT ADJUST: " + href + "  [" + newdiff + "]<" + initialContentHeight + " -- "+ previousPolledContentHeight + ">");
-                                        console.log(msg);
-                                    }
-
-                                    tryAgainFunc(tryAgain);
-                                    return;
-                                }
-                                else
-                                {
-                                    if (_DEBUG)
-                                    {
-                                        console.log(">> IFRAME HEIGHT ADJUSTED OKAY: " + href + "  ["+diff+"]<" + initialContentHeight + " -- " + previousPolledContentHeight + ">");
-                                        // console.log(msg);
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                if (_DEBUG)
-                                {
-                                    console.log("tryAgainFunc ! win && doc (iFrame disposed?)");
-                                }
-
-                                if (callback) callback(false);
-                                return;
-                            }
-                        }
-                        else
-                        {
-                            //if (_DEBUG)
-                            // console.debug("IFRAME HEIGHT NO NEED ADJUST: " + href);
-                            // console.log(msg);
-                        }
-                    }
-                    else
-                    {
-                        if (_DEBUG)
-                        {
-                            console.log("tryAgainFunc ! win && doc (iFrame disposed?)");
-                        }
-
-                        if (callback) callback(false);
-                        return;
-                    }
-                }
-                catch(ex)
-                {
-                    console.error(ex);
-
-                    if (callback) callback(false);
-                    return;
-                }
-
-                if (callback) callback(true);
-
-            }, TIME_MS);
-        };
-
-        tryAgainFunc(MAX_ATTEMPTS);
-    }
-
-
     function addToTopOf(topView, callback) {
 
         var prevSpineItem = _spine.prevItem(topView.currentSpineItem(), true);
@@ -38155,7 +38255,11 @@ var ScrollView = function (options, isContinuousScroll, reader) {
                             callback(successFlag);
                         };
 
-                        reachStableContentHeight(0, newView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToTopOf", continueCallback); // //onIFrameLoad called before this callback, so okay.
+                        updatePageViewSizeAndAdjustScroll(newView);
+                        onPageViewLoaded(newView, success, $iframe, spineItem, isNewlyLoaded, context);
+                        callback(success);
+                        // No need for complicated reachStableContentHeight any more
+                        //reachStableContentHeight(0, newView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToTopOf", continueCallback); // //onIFrameLoad called before this callback, so okay.
                     }
                     else {
                         console.error("Unable to open 2 " + prevSpineItem.href);
@@ -38200,14 +38304,11 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         newView.loadSpineItem(nexSpineItem, function (success, $iframe, spineItem, isNewlyLoaded, context) {
             if (success) {
 
-                var continueCallback = function (successFlag)
-                {
-                    onPageViewLoaded(newView, success, $iframe, spineItem, isNewlyLoaded, context);
-
-                    callback(successFlag);
-                };
-
-                reachStableContentHeight(2, newView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToBottomOf", continueCallback); // //onIFrameLoad called before this callback, so okay.
+                updatePageViewSize(newView);
+                onPageViewLoaded(newView, success, $iframe, spineItem, isNewlyLoaded, context);
+                callback(success);
+                // No need for complicated reachStableContentHeight any more
+                //reachStableContentHeight(2, newView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToBottomOf", continueCallback); // //onIFrameLoad called before this callback, so okay.
             }
             else {
                 console.error("Unable to load " + nexSpineItem.href);
@@ -38256,15 +38357,6 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         if (!_$contentFrame) {
             return;
         }
-
-        forEachItemView(function (pageView) {
-
-            updatePageViewSize(pageView);
-        }, false);
-
-        onPaginationChanged(self);
-
-        updateTransientViews();
     };
 
     var _viewSettings = undefined;
@@ -38295,6 +38387,18 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
             Globals.logEvent("CONTENT_DOCUMENT_LOAD_START", "EMIT", "scroll_view.js [ " + spineItem.href + " ]");
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
+        });
+
+        pageView.on(OnePageView.Events.CONTENT_SIZE_CHANGED, function($iframe, spineItem) {
+            
+            Globals.logEvent("OnePageView.Events.CONTENT_SIZE_CHANGED", "ON", "scroll_view.js [ " + spineItem.href + " ]");
+            
+            updatePageViewSize(pageView);
+
+            onPaginationChanged(self);
+
+            updateTransientViews();
+
         });
 
         pageView.render();
@@ -38409,16 +38513,11 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
             if (success) {
 
-                var continueCallback = function(successFlag)
-                {
-                    onPageViewLoaded(loadedView, success, $iframe, spineItem, isNewlyLoaded, context);
-
-                    callback(loadedView);
-
-                    //successFlag should always be true as loadedView iFrame cannot be dead at this stage.
-                };
-
-                reachStableContentHeight(1, loadedView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? loadedView.meta_width() : 0, "openPage", continueCallback); // //onIFrameLoad called before this callback, so okay.
+                updatePageViewSize(loadedView);
+                onPageViewLoaded(loadedView, success, $iframe, spineItem, isNewlyLoaded, context);
+                //callback(loadedView);
+                // No need for complicated reachStableContentHeight any more
+                //reachStableContentHeight(1, loadedView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? loadedView.meta_width() : 0, "openPage", continueCallback); // //onIFrameLoad called before this callback, so okay.
             }
             else {
                 console.error("Unable to load " + spineItem.href);
@@ -42876,225 +42975,6 @@ return Package;
 });
 
 
-/**
- * Copyright Marc J. Schmidt. See the LICENSE file at the top-level
- * directory of this distribution and at
- * https://github.com/marcj/css-element-queries/blob/master/LICENSE.
- */
-;
-(function (root, factory) {
-    if (typeof define === "function" && define.amd) {
-        define('readium_shared_js/views/resize_sensor',factory);
-    } else if (typeof exports === "object") {
-        module.exports = factory();
-    } else {
-        root.ResizeSensor = factory();
-    }
-}(this, function () {
-
-    // Only used for the dirty checking, so the event callback count is limted to max 1 call per fps per sensor.
-    // In combination with the event based resize sensor this saves cpu time, because the sensor is too fast and
-    // would generate too many unnecessary events.
-    var requestAnimationFrame = window.requestAnimationFrame ||
-        window.mozRequestAnimationFrame ||
-        window.webkitRequestAnimationFrame ||
-        function (fn) {
-            return window.setTimeout(fn, 20);
-        };
-
-    /**
-     * Iterate over each of the provided element(s).
-     *
-     * @param {HTMLElement|HTMLElement[]} elements
-     * @param {Function}                  callback
-     */
-    function forEachElement(elements, callback){
-        var elementsType = Object.prototype.toString.call(elements);
-        var isCollectionTyped = ('[object Array]' === elementsType
-            || ('[object NodeList]' === elementsType)
-            || ('[object HTMLCollection]' === elementsType)
-            || ('undefined' !== typeof jQuery && elements instanceof jQuery) //jquery
-            || ('undefined' !== typeof Elements && elements instanceof Elements) //mootools
-        );
-        var i = 0, j = elements.length;
-        if (isCollectionTyped) {
-            for (; i < j; i++) {
-                callback(elements[i]);
-            }
-        } else {
-            callback(elements);
-        }
-    }
-
-    /**
-     * Class for dimension change detection.
-     *
-     * @param {Element|Element[]|Elements|jQuery} element
-     * @param {Function} callback
-     *
-     * @constructor
-     */
-    var ResizeSensor = function(element, callback) {
-        /**
-         *
-         * @constructor
-         */
-        function EventQueue() {
-            var q = [];
-            this.add = function(ev) {
-                q.push(ev);
-            };
-
-            var i, j;
-            this.call = function() {
-                for (i = 0, j = q.length; i < j; i++) {
-                    q[i].call();
-                }
-            };
-
-            this.remove = function(ev) {
-                var newQueue = [];
-                for(i = 0, j = q.length; i < j; i++) {
-                    if(q[i] !== ev) newQueue.push(q[i]);
-                }
-                q = newQueue;
-            }
-
-            this.length = function() {
-                return q.length;
-            }
-        }
-
-        /**
-         * @param {HTMLElement} element
-         * @param {String}      prop
-         * @returns {String|Number}
-         */
-        function getComputedStyle(element, prop) {
-            if (element.currentStyle) {
-                return element.currentStyle[prop];
-            } else if (window.getComputedStyle) {
-                return window.getComputedStyle(element, null).getPropertyValue(prop);
-            } else {
-                return element.style[prop];
-            }
-        }
-
-        /**
-         *
-         * @param {HTMLElement} element
-         * @param {Function}    resized
-         */
-        function attachResizeEvent(element, resized) {
-            if (!element.resizedAttached) {
-                element.resizedAttached = new EventQueue();
-                element.resizedAttached.add(resized);
-            } else if (element.resizedAttached) {
-                element.resizedAttached.add(resized);
-                return;
-            }
-
-            element.resizeSensor = document.createElement('div');
-            element.resizeSensor.className = 'resize-sensor';
-            var style = 'position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: hidden; z-index: -1; visibility: hidden;';
-            var styleChild = 'position: absolute; left: 0; top: 0; transition: 0s;';
-
-            element.resizeSensor.style.cssText = style;
-            element.resizeSensor.innerHTML =
-                '<div class="resize-sensor-expand" style="' + style + '">' +
-                    '<div style="' + styleChild + '"></div>' +
-                '</div>' +
-                '<div class="resize-sensor-shrink" style="' + style + '">' +
-                    '<div style="' + styleChild + ' width: 200%; height: 200%"></div>' +
-                '</div>';
-            element.appendChild(element.resizeSensor);
-
-            if (getComputedStyle(element, 'position') == 'static') {
-                element.style.position = 'relative';
-            }
-
-            var expand = element.resizeSensor.childNodes[0];
-            var expandChild = expand.childNodes[0];
-            var shrink = element.resizeSensor.childNodes[1];
-
-            var reset = function() {
-                expandChild.style.width  = 100000 + 'px';
-                expandChild.style.height = 100000 + 'px';
-
-                expand.scrollLeft = 100000;
-                expand.scrollTop = 100000;
-
-                shrink.scrollLeft = 100000;
-                shrink.scrollTop = 100000;
-            };
-
-            reset();
-            var dirty = false;
-
-            var dirtyChecking = function() {
-                if (dirty && element.resizedAttached) {
-                    element.resizedAttached.call();
-                }
-                dirty = false;
-            };
-
-            requestAnimationFrame(dirtyChecking);
-            var lastWidth, lastHeight;
-            var cachedWidth, cachedHeight; //useful to not query offsetWidth twice
-
-            var onScroll = function() {
-              if ((cachedWidth = element.offsetWidth) != lastWidth || (cachedHeight = element.offsetHeight) != lastHeight) {
-                  dirty = true;
-
-                  lastWidth = cachedWidth;
-                  lastHeight = cachedHeight;
-
-                  requestAnimationFrame(dirtyChecking);
-              }
-              reset();
-            };
-
-            var addEvent = function(el, name, cb) {
-                if (el.attachEvent) {
-                    el.attachEvent('on' + name, cb);
-                } else {
-                    el.addEventListener(name, cb);
-                }
-            };
-
-            addEvent(expand, 'scroll', onScroll);
-            addEvent(shrink, 'scroll', onScroll);
-        }
-
-        forEachElement(element, function(elem){
-            attachResizeEvent(elem, callback);
-        });
-
-        this.detach = function(ev) {
-            ResizeSensor.detach(element, ev);
-        };
-    };
-
-    ResizeSensor.detach = function(element, ev) {
-        forEachElement(element, function(elem){
-            if(elem.resizedAttached && typeof ev == "function"){
-                elem.resizedAttached.remove(ev);
-                if(elem.resizedAttached.length()) return;
-            }
-            if (elem.resizeSensor) {
-                if (elem.contains(elem.resizeSensor)) {
-                    elem.removeChild(elem.resizeSensor);
-                }
-                delete elem.resizeSensor;
-                delete elem.resizedAttached;
-            }
-        });
-    };
-
-    return ResizeSensor;
-
-}));
-
 
 //  LauncherOSX
 //
@@ -43125,7 +43005,7 @@ return Package;
 
 define('readium_shared_js/views/reflowable_view',["../globals", "jquery", "underscore", "eventEmitter", "../models/bookmark_data", "./cfi_navigation_logic",
     "../models/current_pages_info", "../helpers", "../models/page_open_request",
-    "../models/viewer_settings", "./resize_sensor"],
+    "../models/viewer_settings", "ResizeSensor"],
     function(Globals, $, _, EventEmitter, BookmarkData, CfiNavigationLogic,
              CurrentPagesInfo, Helpers, PageOpenRequest,
              ViewerSettings, ResizeSensor) {
@@ -43155,9 +43035,11 @@ var ReflowableView = function(options, reader){
     var _$el;
     var _$iframe;
     var _$epubHtml;
-    var _lastPositionCFI;
+    var _lastPageRequest = undefined;
 
-    var _cfiClassBlackList = ["cfi-marker", "mo-cfi-highlight"];
+    var _cfiClassBlacklist = ["cfi-marker", "mo-cfi-highlight", "resize-sensor", "resize-sensor-expand", "resize-sensor-shrink", "resize-sensor-inner"];
+    var _cfiElementBlacklist = [];
+    var _cfiIdBlacklist = ["MathJax_Message", "MathJax_SVG_Hidden"];
 
     var _$htmlBody;
 
@@ -43286,7 +43168,10 @@ var ReflowableView = function(options, reader){
         _navigationLogic = new CfiNavigationLogic({
             $iframe: _$iframe,
             frameDimensions: getFrameDimensions,
-            paginationInfo: _paginationInfo
+            paginationInfo: _paginationInfo,
+            classBlacklist: _cfiClassBlacklist,
+            elementBlacklist: _cfiElementBlacklist,
+            idBlacklist: _cfiIdBlacklist
         });
     }
 
@@ -43300,7 +43185,7 @@ var ReflowableView = function(options, reader){
                 self.emit(Globals.Events.CONTENT_DOCUMENT_UNLOADED, _$iframe, _currentSpineItem);
             }
 
-            _lastPositionCFI = undefined;
+            self.resetCurrentPosition();
 
             _paginationInfo.pageOffset = 0;
             _paginationInfo.currentSpreadIndex = 0;
@@ -43457,7 +43342,7 @@ var ReflowableView = function(options, reader){
 
         var bodyElement = _$htmlBody[0];
         bodyElement.resizeSensor = new ResizeSensor(bodyElement, function() {
-            console.log("ReflowableView iframe body resized", $(bodyElement).width(), $(bodyElement).height());
+            console.debug("ReflowableView content resized", $(bodyElement).width(), $(bodyElement).height());
             updatePagination();
         });
 
@@ -43497,7 +43382,7 @@ var ReflowableView = function(options, reader){
 
     }
 
-    this.openPage = function(pageRequest) {
+    this.openPageInternal = function(pageRequest) {
 
         if(_isWaitingFrameRender) {
             _deferredPageRequest = pageRequest;
@@ -43522,13 +43407,47 @@ var ReflowableView = function(options, reader){
             
             if (pageIndex < 0) pageIndex = 0;
         }
+        else if(pageRequest.firstVisibleCfi && pageRequest.lastVisibleCfi) {
+            var firstPageIndex;
+            var lastPageIndex;
+            try
+            {
+                firstPageIndex = _navigationLogic.getPageForElementCfi(pageRequest.firstVisibleCfi,
+                    _cfiClassBlacklist,
+                    _cfiElementBlacklist,
+                    _cfiIdBlacklist);
+                
+                if (firstPageIndex < 0) firstPageIndex = 0;
+            }
+            catch (e)
+            {
+                firstPageIndex = 0;
+                console.error(e);
+            }
+            try
+            {
+                lastPageIndex = _navigationLogic.getPageForElementCfi(pageRequest.lastVisibleCfi,
+                    _cfiClassBlacklist,
+                    _cfiElementBlacklist,
+                    _cfiIdBlacklist);
+                
+                if (lastPageIndex < 0) lastPageIndex = 0;
+            }
+            catch (e)
+            {
+                lastPageIndex = 0;
+                console.error(e);
+            }
+            // Go to the page in the middle of the two elements
+            pageIndex = Math.round((firstPageIndex + lastPageIndex) / 2);
+        }
         else if(pageRequest.elementCfi) {
             try
             {
                 pageIndex = _navigationLogic.getPageForElementCfi(pageRequest.elementCfi,
-                    _cfiClassBlackList,
-                    [],
-                    ["MathJax_Message"]);
+                    _cfiClassBlacklist,
+                    _cfiElementBlacklist,
+                    _cfiIdBlacklist);
                 
                 if (pageIndex < 0) pageIndex = 0;
             }
@@ -43555,6 +43474,36 @@ var ReflowableView = function(options, reader){
         }
         else {
             console.log('Illegal pageIndex value: ', pageIndex, 'column count is ', _paginationInfo.columnCount);
+        }
+    };
+
+    this.openPage = function(pageRequest) {
+        // Go to request page, it will save the new position in onPaginationChanged
+        this.openPageInternal(pageRequest);
+        // Save it for when pagination is updated
+        _lastPageRequest = pageRequest;
+    };
+
+    this.resetCurrentPosition = function() {
+        _lastPageRequest = undefined;
+    };
+
+    this.saveCurrentPosition = function() {
+        // If there's a deferred page request, there's no point in saving the current position
+        // as it's going to change soon
+        if (_deferredPageRequest) {
+            return;
+        }
+
+        var _firstVisibleCfi = self.getFirstVisibleCfi();
+        var _lastVisibleCfi = self.getLastVisibleCfi();
+        _lastPageRequest = new PageOpenRequest(_currentSpineItem, self);
+        _lastPageRequest.setFirstAndLastVisibleCfi(_firstVisibleCfi.contentCFI, _lastVisibleCfi.contentCFI);
+    };
+
+    this.restoreCurrentPosition = function() {
+        if (_lastPageRequest) {
+            this.openPageInternal(_lastPageRequest);            
         }
     };
 
@@ -43606,8 +43555,9 @@ var ReflowableView = function(options, reader){
 
         _.defer(function () {
 
-            _lastPositionCFI = self.getFirstVisibleCfi();
-            console.debug("saving last position ", _lastPositionCFI);
+            if (_lastPageRequest == undefined) {
+                self.saveCurrentPosition();
+            }
             
             Globals.logEvent("InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED", "EMIT", "reflowable_view.js");
             self.emit(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, {
@@ -43627,6 +43577,9 @@ var ReflowableView = function(options, reader){
         }
 
         if(_paginationInfo.currentSpreadIndex > 0) {
+            // Page will change, the current position is not valid any more
+            // Reset it so it's saved next time onPaginationChanged is called
+            this.resetCurrentPosition();
             _paginationInfo.currentSpreadIndex--;
             onPaginationChanged(initiator);
         }
@@ -43649,6 +43602,9 @@ var ReflowableView = function(options, reader){
         }
 
         if(_paginationInfo.currentSpreadIndex < _paginationInfo.spreadCount - 1) {
+            // Page will change, the current position is not valid any more
+            // Reset it so it's saved next time onPaginationChanged is called
+            this.resetCurrentPosition();
             _paginationInfo.currentSpreadIndex++;
             onPaginationChanged(initiator);
         }
@@ -43841,14 +43797,11 @@ var ReflowableView = function(options, reader){
         }
         else {
 
-            //we get here on resizing the viewport
-            if (_lastPositionCFI) {
-                console.debug("going to saved position lastPositionCFI", _lastPositionCFI);
-                var pageRequest = new PageOpenRequest(_currentSpineItem, self);
-                pageRequest.setElementCfi(_lastPositionCFI.contentCFI);
-                //var targetElement = this.getElementByCfi(_currentSpineItem, _lastPositionCFI.contentCFI);
-                //console.debug(targetElement);
-                self.openPage(pageRequest)
+            // we get here on resizing the viewport
+            if (_lastPageRequest) {
+                // Make sure we stay on the same page after the content or the viewport 
+                // has been resized
+                self.restoreCurrentPosition();
             } else {
                 onPaginationChanged(self); // => redraw() => showBook(), so the trick below is not needed                
             }

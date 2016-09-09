@@ -125,6 +125,8 @@ devDependencies:
 
     "CSSOM": 'danielweck/CSSOM#gh-pages'
     #"CSSOM": 'NV/CSSOM#gh-pages'
+
+    "ResizeSensor": 'olivierkorner/css-element-queries'
     
 
 # Below dependencies are only used for building tasks (above are runtime deps):
