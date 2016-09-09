@@ -46,7 +46,7 @@ var Spread = function(spine, isSyntheticSpread) {
     var _isSyntheticSpread = isSyntheticSpread;
 
     /**
-     * Sets a synthetic spread
+     * Sets whether or not this is a synthetic spread
      *
      * @method     setSyntheticSpread
      * @param      {Bool} isSyntheticSpread
@@ -59,9 +59,8 @@ var Spread = function(spine, isSyntheticSpread) {
     /**
      * Checks out if the spread is synthetic
      *
-     * @method     setSyntheticSpread
-     * @param      {Bool} isSyntheticSpread
-     * @return     {Bool} _isSyntheticSpread
+     * @method     isSyntheticSpread
+     * @return     {Bool} true if this is a 2-page synthetic spread
      */
 
     this.isSyntheticSpread = function() {
@@ -69,7 +68,7 @@ var Spread = function(spine, isSyntheticSpread) {
     };
 
     /**
-     * Opens the first item
+     * Opens the first spine item (FXL page)
      *
      * @method     openFirst
      */
@@ -85,7 +84,7 @@ var Spread = function(spine, isSyntheticSpread) {
     };
 
     /**
-     * Opens the last item
+     * Opens the last spine item (FXL page)
      *
      * @method     openLast
      */
@@ -101,10 +100,10 @@ var Spread = function(spine, isSyntheticSpread) {
     };
 
     /**
-     * Opens an item
+     * Opens a spine item (FXL page)
      *
-     * @method     openFirst
-     * @param      item
+     * @method     openItem
+     * @param      {SpineItem} item
      */
 
     this.openItem = function(item) {
@@ -129,7 +128,7 @@ var Spread = function(spine, isSyntheticSpread) {
     };
 
     /**
-     * Resets the items
+     * Resets the spine items (FXL pages, left + right + center) to undefined
      *
      * @method     resetItems
      */
@@ -142,11 +141,11 @@ var Spread = function(spine, isSyntheticSpread) {
     }
 
     /**
-     * Sets the item to a position on the screen
+     * Sets the spine item (FXL page) to a position (left, right or center)
      *
      * @method     setItemToPosition
-     * @param      item
-     * @param      position
+     * @param      {SpineItem} item
+     * @param      {Spread.POSITION_CENTER | Spread.POSITION_LEFT | Spread.POSITION_RIGHT} position
      */
 
     function setItemToPosition(item, position) {
@@ -168,10 +167,10 @@ var Spread = function(spine, isSyntheticSpread) {
     }
 
     /**
-     * Returns the position of an item (left, center or right)
+     * Returns the position of a spine item / FXL page (left, center or right)
      *
      * @method     getItemPosition
-     * @param      item
+     * @param      {SpineItem} item
      * @return     {Spread.POSITION_CENTER | Spread.POSITION_LEFT | Spread.POSITION_RIGHT}
      */
 
@@ -194,7 +193,7 @@ var Spread = function(spine, isSyntheticSpread) {
     }
 
     /**
-     * Sets an item to be opened next
+     * Opens the next item
      *
      * @method     openNext
      */ 
@@ -242,7 +241,7 @@ var Spread = function(spine, isSyntheticSpread) {
     };
 
     /**
-     * Lists the valid items of the spine
+     * Returns an sorrted array of spine items (as per their order in the spine) that are currently in the FXL page layout
      *
      * @method     validItems
      * @return     {array} 
@@ -264,11 +263,11 @@ var Spread = function(spine, isSyntheticSpread) {
     };
 
     /**
-     * Gets the neighbour item (on left or right of the current item)
+     * Gets the neighbour spine item in the FXL page layout (on left or right of the current item)
      *
      * @method     getNeighbourItem
-     * @param      item
-     * @return     item
+     * @param      {SpineItem} item
+     * @return     {SpineItem} item
      */ 
 
     function getNeighbourItem(item) {
