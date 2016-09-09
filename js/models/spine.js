@@ -74,10 +74,9 @@ var Spine = function(epubPackage, spineDTO) {
         _handleLinear = handleLinear;
     };
 
-    /* private function(isValidLinearItem) */
     function isValidLinearItem(item) {
         return !_handleLinear || item.linear !== "no";
-    };
+    }
 
     /**
      * Checks if a spine item is linear. 
@@ -96,7 +95,7 @@ var Spine = function(epubPackage, spineDTO) {
     };
 
     /**
-     * Checks if the spine direction is right to left.
+     * Checks if the page progression direction is right to left.
      *
      * @method     isRightToLeft
      * @return     {Boolean} 
@@ -107,7 +106,7 @@ var Spine = function(epubPackage, spineDTO) {
     };
 
     /**
-     * Checks if the spine direction is left to right.
+     * Checks if the page progression direction is left to right.
      *
      * @method     isLeftToRight
      * @return     {Boolean} TRUE if the direction is not rtl.
@@ -127,10 +126,8 @@ var Spine = function(epubPackage, spineDTO) {
     function isValidIndex(index) {
 
         return index >= 0 && index < self.items.length;
-    };
+    }
 
-
-    /* private function(lookForPrevValidItem) */
     function lookForPrevValidItem(ix) {
 
         if(!isValidIndex(ix)) {
@@ -144,7 +141,7 @@ var Spine = function(epubPackage, spineDTO) {
         }
 
         return lookForPrevValidItem(item.index - 1);
-    };
+    }
 
     /**
      * Looks for the previous spine item. 
@@ -158,7 +155,6 @@ var Spine = function(epubPackage, spineDTO) {
         return lookForPrevValidItem(item.index - 1);
     };
 
-    /* private function(lookForNextValidItem) */
     function lookForNextValidItem(ix) {
 
         if(!isValidIndex(ix)) {
@@ -172,7 +168,7 @@ var Spine = function(epubPackage, spineDTO) {
         }
 
         return lookForNextValidItem(item.index + 1);
-    };
+    }
 
     /**
      * Looks for the next spine item. 
@@ -181,7 +177,7 @@ var Spine = function(epubPackage, spineDTO) {
      * @param      {Models.SpineItem} item  a spine item
      * @return     {Models.SpineItem} the next spine item or undefined.
     */
-    this.nextItem = function(item){
+    this.nextItem = function(item) {
 
         return lookForNextValidItem(item.index + 1);
     };
@@ -205,7 +201,7 @@ var Spine = function(epubPackage, spineDTO) {
      * @method     first
      * @return     {Models.SpineItem} the first spine item.
     */
-        this.first = function() {
+    this.first = function() {
 
         return lookForNextValidItem(0);
     };
@@ -329,7 +325,7 @@ var Spine = function(epubPackage, spineDTO) {
 
             isFirstPageInSpread = !spineItem.isRenditionSpreadAllowed() || spineItem.page_spread != baseSide;
         }
-    };
+    }
 
     // initialization of the local 'direction' and 'items' array from the spineDTO structure
     if(spineDTO) {
