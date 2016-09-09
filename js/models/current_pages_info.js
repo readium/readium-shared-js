@@ -68,7 +68,7 @@ var CurrentPagesInfo = function(spine, isFixedLayout) {
     this.spineItemCount = spine.items.length
     
     /**
-     * Opens the page
+     * returns an array of open pages, each array item is a data structure (plain JavaScript object) with the following fields: spineItemPageIndex, spineItemPageCount, idref, spineItemIndex (as per the parameters of the addOpenPage() function below)
      *
      * @property openPages
      * @type array
@@ -77,13 +77,13 @@ var CurrentPagesInfo = function(spine, isFixedLayout) {
     this.openPages = [];
 
     /**
-     * Checks out if the current file has a parent folder
+     * Adds an page item to the openPages array
      *
      * @method     addOpenPage
-     * @param      {undefined} spineItemPageIndex
+     * @param      {number} spineItemPageIndex
      * @param      {number} spineItemPageCount
-     * @param      {Cnumber} idref
-     * @param      {undefined} spineItemIndex   
+     * @param      {string} idref
+     * @param      {number} spineItemIndex   
      */
 
     this.addOpenPage = function(spineItemPageIndex, spineItemPageCount, idref, spineItemIndex) {
@@ -93,10 +93,10 @@ var CurrentPagesInfo = function(spine, isFixedLayout) {
     };
 
     /**
-     * Checks if you can swipe left.
+     * Checks if navigation to the page on the left is possible (depending on page-progression-direction: previous page in LTR mode, next page in RTL mode)
      *
      * @method     canGoLeft
-     * @param      {bool} isRightToLeft, canGoNext and canGoPrev   
+     * @return bool true if turning to the left page is possible 
      */
 
     this.canGoLeft = function () {
@@ -104,10 +104,10 @@ var CurrentPagesInfo = function(spine, isFixedLayout) {
     };
 
     /**
-     * Checks if you can swipe right.
+     * Checks if navigation to the page on the right is possible (depending on page-progression-direction: next page in LTR mode, previous page in RTL mode)
      *
      * @method     canGoRight
-     * @param      {bool} isRightToLeft, canGoNext and canGoPrev   
+     * @return bool true if turning to the right page is possible 
      */
 
     this.canGoRight = function () {
@@ -115,10 +115,10 @@ var CurrentPagesInfo = function(spine, isFixedLayout) {
     };
 
     /**
-     * Checks if you can go to the next page
+     * Checks if navigation to the next page is possible (depending on page-progression-direction: right page in LTR mode, left page in RTL mode)
      *
      * @method     canGoNext
-     * @param      {bool} lastOpenPage.spineItemIndex < spine.last().index OR lastOpenPage.spineItemPageIndex < lastOpenPage.spineItemPageCount - 1;
+     * @return bool true if turning to the next page is possible 
      */
 
     this.canGoNext = function() {
@@ -140,10 +140,10 @@ var CurrentPagesInfo = function(spine, isFixedLayout) {
     };
 
     /**
-     * Checks if you can go to the previous page
+     * Checks if navigation to the previous page is possible (depending on page-progression-direction: left page in LTR mode, right page in RTL mode)
      *
      * @method     canGoPrev
-     * @param      {bool} spine.first().index < firstOpenPage.spineItemIndex || 0 < firstOpenPage.spineItemPageIndex;
+     * @return bool true if turning to the previous page is possible 
      */
 
     this.canGoPrev = function() {
@@ -165,10 +165,9 @@ var CurrentPagesInfo = function(spine, isFixedLayout) {
     };
 
     /**
-     * Sorts the pages
+     * Sorts the openPages array based on spineItemIndex and spineItemPageIndex
      *
      * @method     sort
-     * @return     a.pageIndex - b.pageIndex;
      */
 
     this.sort = function() {
@@ -179,7 +178,7 @@ var CurrentPagesInfo = function(spine, isFixedLayout) {
                 return a.spineItemIndex - b.spineItemIndex;
             }
 
-            return a.pageIndex - b.pageIndex;
+            return a.spineItemPageIndex - b.spineItemPageIndex;
 
         });
 
