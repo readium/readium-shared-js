@@ -70,36 +70,48 @@ var Package = function(packageData){
     this.media_overlay = undefined;
     
     /**
-     * The rendition viewport
+     * The rendition viewport (as per the EPUB3 specification)
      *
      * @property rendition_viewport 
-     * @type     String?
+     * @type     String
      *
      */   
     this.rendition_viewport = undefined;
     
     /**
-     * The rendition flow
+     * The rendition flow (as per the EPUB3 specification)
      *
      * @property rendition_flow 
-     * @type     String?
+     * @type     String
      *
      */   
     this.rendition_flow = undefined;
     
     /**
-     * The rendition layout
+     * The rendition layout (as per the EPUB3 specification)
      *
      * @property rendition_layout 
-     * @type     String?
+     * @type     String
      *
      */   
     this.rendition_layout = undefined;
 
-    //TODO: unused yet!
+    /**
+     * The rendition spread (as per the EPUB3 specification)
+     *
+     * @property rendition_spread 
+     * @type     String
+     *
+     */   
     this.rendition_spread = undefined;
 
-    //TODO: unused yet!
+    /**
+     * The rendition orientation (as per the EPUB3 specification)
+     *
+     * @property rendition_orientation 
+     * @type     String
+     *
+     */   
     this.rendition_orientation = undefined;
 
     /**
@@ -206,16 +218,12 @@ var Package = function(packageData){
         return !self.isFixedLayout();
     };
     
-    // initialization of class properties from the packageData parameters
-    console.log('--- packageData: ', packageData);
     if(packageData) {
         
         this.rootUrl = packageData.rootUrl;
         this.rootUrlMO = packageData.rootUrlMO;
 
         this.rendition_viewport = packageData.rendition_viewport;
-
-        console.log('--- rendition_viewport: ', this.rendition_viewport);
 
         this.rendition_layout = packageData.rendition_layout;
 
