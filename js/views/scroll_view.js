@@ -63,6 +63,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
     var _spine = options.spine;
     var _userStyles = options.userStyles;
     var _deferredPageRequest;
+    var _currentPageRequest;
     var _$contentFrame;
     var _$el;
 
@@ -274,8 +275,16 @@ var ScrollView = function (options, isContinuousScroll, reader) {
             && !_isSettingScrollPosition
             && !_isLoadingNewSpineItemOnPageRequest) {
 
+            self.resetCurrentPosition();
+
             updateTransientViews();
             onPaginationChanged(self);
+
+            _.defer(function() {
+                if (!_currentPageRequest) {
+                    self.saveCurrentPosition();
+                }
+            })
 
             var settings = reader.viewerSettings();
             if (!settings.mediaOverlaysPreservePlaybackWhenScroll)
@@ -473,6 +482,31 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         }
     };
 
+    this.resetCurrentPosition = function() {
+        _currentPageRequest = undefined;
+    };
+
+    this.saveCurrentPosition = function() {
+        // If there's a deferred page request, there's no point in saving the current position
+        // as it's going to change soon
+        if (_deferredPageRequest) {
+            return;
+        }
+
+        var _firstVisibleCfi = self.getFirstVisibleCfi();
+        var spineItem = _spine.getItemById(_firstVisibleCfi.idref);
+        if (spineItem) {
+            _currentPageRequest = new PageOpenRequest(spineItem, self);
+            _currentPageRequest.setElementCfi(_firstVisibleCfi.contentCFI);
+        }
+    };
+
+    this.restoreCurrentPosition = function() {
+        if (_currentPageRequest) {
+            this.openPageInternal(_currentPageRequest);            
+        }
+    };
+
     var _viewSettings = undefined;
     this.setViewSettings = function (settings) {
 
@@ -509,6 +543,9 @@ var ScrollView = function (options, isContinuousScroll, reader) {
             updatePageViewSize(pageView);
             onPaginationChanged(self);
             updateTransientViews();
+            if (_currentPageRequest && !_deferredPageRequest) {
+                self.restoreCurrentPosition();                
+            }
         }
         var updatePageViewSizeAndPagination = _.debounce(updatePageViewSizeAndPagination_, 100);
 
@@ -672,7 +709,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
     };
 
 
-    this.openPage = function (pageRequest) {
+    this.openPageInternal = function (pageRequest) {
 
         _stopTransientViewUpdate = true;
 
@@ -721,6 +758,12 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         }
     };
 
+    this.openPage = function(pageRequest) {
+        this.resetCurrentPosition();
+        _currentPageRequest = pageRequest;
+        this.openPageInternal(pageRequest);
+    }
+
     function openPageViewElement(pageView, pageRequest) {
 
         var topOffset = 0;
@@ -767,7 +810,8 @@ var ScrollView = function (options, isContinuousScroll, reader) {
                 return;
             }
 
-            topOffset = sfiNav.getVerticalOffsetForElement($element) + pageRange.top;
+            var elementRange = getElementRange(pageView, $element);
+            topOffset = elementRange.top + pageRange.top;
 
         }
         else if (pageView && pageRequest.elementCfi) {
