@@ -27,21 +27,61 @@
 
 define(["jquery", "../helpers"], function($, Helpers) {
 /**
- * Setter fot epub Triggers
+ * Trigger in an epub publication.
  *
- *
+ * @class Models.Trigger
+ * @constructor
  * @param domNode
  */
 
 var Trigger = function(domNode) {
+
     var $el = $(domNode);
+    
+    /**
+     * epub trigger action
+     *
+     * @property action
+     * @type String
+     */
+
     this.action     = $el.attr("action");
+    
+    /**
+     * epub trigger ref
+     *
+     * @property ref
+     * @type String
+     */
+
     this.ref         = $el.attr("ref");
+    
+    /**
+     * epub trigger event
+     *
+     * @property event
+     * @type String
+     */
+
     this.event         = $el.attr("ev:event");
+    
+    /**
+     * epub trigger observer
+     *
+     * @property observer
+     * @type String
+     */
+
     this.observer     = $el.attr("ev:observer");
     this.ref         = $el.attr("ref");
 };
 
+/**
+ * Static register method
+ *
+ * @method register
+ * @param dom
+ */
 Trigger.register = function(dom) {
     $('trigger', dom).each(function() {
         var trigger = new Trigger(this);
@@ -49,7 +89,15 @@ Trigger.register = function(dom) {
     });
 };
 
+/**
+ * Prototype subscribe method
+ *
+ * @method subscribe
+ * @param dom
+ */
+
 Trigger.prototype.subscribe = function(dom) {
+    
     var selector = "#" + this.observer;
     var that = this;
     $(selector, dom).on(this.event, function() {
@@ -57,7 +105,15 @@ Trigger.prototype.subscribe = function(dom) {
     });
 };
 
+/**
+ * Prototype execute method
+ *
+ * @method execute
+ * @param dom
+ */
+
 Trigger.prototype.execute = function(dom) {
+
     var $target = $( "#" + Helpers.escapeJQuerySelector(this.ref), dom);
     switch(this.action)
     {
@@ -87,5 +143,6 @@ Trigger.prototype.execute = function(dom) {
             console.log("do not no how to handle trigger " + this.action);
     }
 };
+
     return Trigger;
 });
