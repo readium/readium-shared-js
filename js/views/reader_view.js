@@ -375,7 +375,7 @@ var ReaderView = function (options) {
     /**
      * Triggers the process of opening the book and requesting resources specified in the packageData
      *
-     * @param {Views.ReaderView.OpenBookData} openBookData - object with open book data
+     * @param {Views.ReaderView.OpenBookData} openBookData Open book data object
      */
     this.openBook = function (openBookData) {
 
@@ -1220,13 +1220,6 @@ var ReaderView = function (options) {
         _iframeLoader.addIFrameEventListener(eventName, callback, context);
     };
 
-    this.isElementCfiVisible = function (spineIdRef, contentCfi) {
-        if (!_currentView) {
-            return false;
-        }
-        return _currentView.isElementCfiVisible(spineIdRef, contentCfi);
-    };
-
     var BackgroundAudioTrackManager = function (readerView) {
                 
         var _spineItemIframeMap = {};
@@ -1535,7 +1528,7 @@ var ReaderView = function (options) {
      * Resolve a range CFI into an object containing info about it.
      * @param {string} spineIdRef    The spine item idref associated with the content document
      * @param {string} partialCfi    The partial CFI that is the range CFI to resolve
-     * @returns {ReadiumSDK.Models.NodeRangeInfo}
+     * @returns {Models.NodeRangeInfo}
      */
     this.getNodeRangeInfoFromCfi = function (spineIdRef, partialCfi) {
         if (_currentView && spineIdRef && partialCfi) {

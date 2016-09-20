@@ -33,10 +33,12 @@ define(function() {
  *  firstPage {bool},
  *  lastPage {bool}
  *
+ * @class Models.PageOpenRequest
+ * @constructor
  * @param {Models.SpineItem} spineItem
  * @param {object} [initiator]
  *
- * @constructor
+
  */
 var PageOpenRequest = function(spineItem, initiator) {
 
@@ -48,6 +50,12 @@ var PageOpenRequest = function(spineItem, initiator) {
     this.lastPage = false;
     this.initiator = initiator;
 
+    /**
+     * Resets the reading system
+     *
+     * @method     reset
+     */
+
     this.reset = function() {
         this.spineItemPageIndex = undefined;
         this.elementId = undefined;
@@ -56,25 +64,58 @@ var PageOpenRequest = function(spineItem, initiator) {
         this.lastPage = false;
     };
 
+    /**
+     * Sets the first page of the book
+     *
+     * @method     setFirstPage
+     */
+
     this.setFirstPage = function() {
         this.reset();
         this.firstPage = true;
     };
+
+    /**
+     * Sets the last page of the book
+     *
+     * @method     setLastPage
+     */
 
     this.setLastPage = function() {
         this.reset();
         this.lastPage = true;
     };
 
+    /**
+     * Sets the index of the book
+     *
+     * @method     setPageIndex
+     * @param      pageIndex
+     */
+
     this.setPageIndex = function(pageIndex) {
         this.reset();
         this.spineItemPageIndex = pageIndex;
     };
 
+    /**
+     * Sets the ID of the current element
+     *
+     * @method     setElementId
+     * @param      {number} elementId 
+     */
+
     this.setElementId = function(elementId) {
         this.reset();
         this.elementId = elementId;
     };
+    
+    /**
+     * Sets the CFI of the current element
+     *
+     * @method     setElementCfi
+     * @param      elementCfi
+     */
 
     this.setElementCfi = function(elementCfi) {
 
