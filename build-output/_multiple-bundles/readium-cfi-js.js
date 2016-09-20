@@ -2284,7 +2284,6 @@ var obj = {
     //        that has no defined meaning in the spec.)
     //     contentDocument : A DOM representation of the content document to which the partial CFI refers.
     // }
-    // Rationale: This method exists to meet the requirements of the Readium-SDK and should be used with care
     getTextTerminusInfoWithPartialCFI : function (contentDocumentCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
 
         var decodedCFI = decodeURI(contentDocumentCFI);
@@ -2300,9 +2299,39 @@ var obj = {
 
         // Return the element at the end of the CFI
         textOffset = parseInt(CFIAST.cfiString.localPath.termStep.offsetValue);
-        return { textNode : $currElement[0],
-                 textOffset : textOffset
-            };
+        return {
+            textNode: $currElement[0],
+            textOffset: textOffset
+        };
+    },
+
+    // Description: This method will return the element or node (say, a text node) that is the final target of the
+    //   the CFI, along with the text terminus offset.
+    getTextTerminusInfo : function (CFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
+
+        var decodedCFI = decodeURI(CFI);
+        var CFIAST = cfiParser.parse(decodedCFI);
+        var indirectionNode;
+        var indirectionStepNum;
+        var $currElement;
+        var textOffset;
+
+        // Rationale: Since the correct content document for this CFI is already being passed, we can skip to the beginning
+        //   of the indirection step that referenced the content document.
+        // Note: This assumes that indirection steps and index steps conform to an interface: an object with stepLength, idAssertion
+        indirectionStepNum = this.getFirstIndirectionStepNum(CFIAST);
+        indirectionNode = CFIAST.cfiString.localPath.steps[indirectionStepNum];
+        indirectionNode.type = "indexStep";
+
+        // Interpret the rest of the steps
+        $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, indirectionStepNum, $(contentDocument.documentElement, contentDocument), classBlacklist, elementBlacklist, idBlacklist);
+
+        // Return the element at the end of the CFI
+        textOffset = parseInt(CFIAST.cfiString.localPath.termStep.offsetValue);
+        return {
+            textNode: $currElement[0],
+            textOffset: textOffset
+        };
     },
 
     // Description: This function will determine if the input "partial" CFI is expressed as a range
@@ -3060,6 +3089,9 @@ var init = function(cfiParser, cfiInterpreter, cfiInstructions, cfiRuntimeErrors
         },
         hasTextTerminus: function(cfi) {
             return cfiInterpreter.hasTextTerminus(cfi);
+        },
+        getTextTerminusInfo : function (CFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
+            return cfiInterpreter.getTextTerminusInfo(CFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist);
         },
         getTextTerminusInfoWithPartialCFI : function (contentDocumentCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
             return cfiInterpreter.getTextTerminusInfoWithPartialCFI(contentDocumentCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist);
