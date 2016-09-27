@@ -13738,6 +13738,11 @@ EventEmitter.prototype.setMaxListeners = function setMaxListeners() {
 EventEmitter.prefixed = prefix;
 
 //
+// Allow `EventEmitter` to be imported as module namespace.
+//
+EventEmitter.EventEmitter = EventEmitter;
+
+//
 // Expose the module.
 //
 if ('undefined' !== typeof module) {
@@ -14711,7 +14716,7 @@ define("es6-collections", function(){});
  * URI.js - Mutating URLs
  * IPv6 Support
  *
- * Version: 1.18.1
+ * Version: 1.18.2
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -14897,7 +14902,7 @@ define("es6-collections", function(){});
  * URI.js - Mutating URLs
  * Second Level Domain (SLD) Support
  *
- * Version: 1.18.1
+ * Version: 1.18.2
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -15137,7 +15142,7 @@ define("es6-collections", function(){});
 /*!
  * URI.js - Mutating URLs
  *
- * Version: 1.18.1
+ * Version: 1.18.2
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -15207,7 +15212,7 @@ define("es6-collections", function(){});
     return this;
   }
 
-  URI.version = '1.18.1';
+  URI.version = '1.18.2';
 
   var p = URI.prototype;
   var hasOwn = Object.prototype.hasOwnProperty;
@@ -17221,15 +17226,17 @@ define("es6-collections", function(){});
       if (!resolved._parts.query) {
         resolved._parts.query = base._parts.query;
       }
-    } else if (resolved._parts.path.substring(-2) === '..') {
-      resolved._parts.path += '/';
-    }
+    } else {
+      if (resolved._parts.path.substring(-2) === '..') {
+        resolved._parts.path += '/';
+      }
 
-    if (resolved.path().charAt(0) !== '/') {
-      basedir = base.directory();
-      basedir = basedir ? basedir : base.path().indexOf('/') === 0 ? '/' : '';
-      resolved._parts.path = (basedir ? (basedir + '/') : '') + resolved._parts.path;
-      resolved.normalizePath();
+      if (resolved.path().charAt(0) !== '/') {
+        basedir = base.directory();
+        basedir = basedir ? basedir : base.path().indexOf('/') === 0 ? '/' : '';
+        resolved._parts.path = (basedir ? (basedir + '/') : '') + resolved._parts.path;
+        resolved.normalizePath();
+      }
     }
 
     resolved.build();
