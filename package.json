@@ -57,8 +57,8 @@
     "urijs": "danielweck/URI.js",
     "eventemitter3": "latest",
     "es6-collections": "latest",
-    "FontLoader": "smnh/FontLoader",
-    "CSSOM": "danielweck/CSSOM#gh-pages"
+    "CSSOM": "danielweck/CSSOM#gh-pages",
+    "ResizeSensor": "olivierkorner/css-element-queries"
   },
   "scripts": {
     "cson2json": "node ./readium-cfi-js/node_modules/cson/bin/cson2json package.cson > package.json && node readium-cfi-js/readium-build-tools/optimizePackageJsonScripts.js",

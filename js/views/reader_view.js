@@ -1193,19 +1193,7 @@ var ReaderView = function (options) {
     this.handleViewportResize = function (bookmarkToRestore) {
         if (!_currentView) return;
 
-        var bookMark = bookmarkToRestore || _currentView.bookmarkCurrentPage(); // not self! (JSON string)
-
-        if (_currentView.isReflowable && _currentView.isReflowable() && bookMark && bookMark.idref) {
-            var spineItem = _spine.getItemById(bookMark.idref);
-
-            initViewForItem(spineItem, function (isViewChanged) {
-                self.openSpineItemElementCfi(bookMark.idref, bookMark.contentCFI, self);
-                return;
-            });
-        }
-        else {
-            _currentView.onViewportResize();
-        }
+        _currentView.onViewportResize();
     };
 
     /**

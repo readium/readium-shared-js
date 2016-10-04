@@ -63,6 +63,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
     var _spine = options.spine;
     var _userStyles = options.userStyles;
     var _deferredPageRequest;
+    var _currentPageRequest;
     var _$contentFrame;
     var _$el;
 
@@ -274,8 +275,16 @@ var ScrollView = function (options, isContinuousScroll, reader) {
             && !_isSettingScrollPosition
             && !_isLoadingNewSpineItemOnPageRequest) {
 
+            self.resetCurrentPosition();
+
             updateTransientViews();
             onPaginationChanged(self);
+
+            _.defer(function() {
+                if (!_currentPageRequest) {
+                    self.saveCurrentPosition();
+                }
+            })
 
             var settings = reader.viewerSettings();
             if (!settings.mediaOverlaysPreservePlaybackWhenScroll)
@@ -325,173 +334,6 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         }
     }
 
-    function reachStableContentHeight(updateScroll, pageView, iframe, href, fixedLayout, metaWidth, msg, callback)
-    {
-        if (!Helpers.isIframeAlive(iframe))
-        {
-            if (_DEBUG)
-            {
-                console.log("reachStableContentHeight ! win && doc (iFrame disposed?)");
-            }
-
-            if (callback) callback(false);
-            return;
-        }
-
-        var MAX_ATTEMPTS = 10;
-        var TIME_MS = 300;
-
-        var w = iframe.contentWindow;
-        var d = iframe.contentDocument;
-
-        var previousPolledContentHeight = parseInt(Math.round(parseFloat(w.getComputedStyle(d.documentElement).height))); //body can be shorter!;
-
-        var initialContentHeight = previousPolledContentHeight;
-
-        if (updateScroll === 0)
-        {
-            updatePageViewSizeAndAdjustScroll(pageView);
-        }
-        else
-        {
-            updatePageViewSize(pageView);
-        }
-
-        var tryAgainFunc = function(tryAgain)
-        {
-            if (_DEBUG && tryAgain !== MAX_ATTEMPTS)
-            {
-                console.log("tryAgainFunc - " + tryAgain + ": " + href + "  <" + initialContentHeight +" -- "+ previousPolledContentHeight + ">");
-            }
-
-            tryAgain--;
-            if (tryAgain < 0)
-            {
-                if (_DEBUG)
-                {
-                    console.error("tryAgainFunc abort: " + href);
-                }
-
-                if (callback) callback(true);
-                return;
-            }
-
-            setTimeout(function()
-            {
-                try
-                {
-                    if (Helpers.isIframeAlive(iframe))
-                    {
-                        var win = iframe.contentWindow;
-                        var doc = iframe.contentDocument;
-
-                        var iframeHeight = parseInt(Math.round(parseFloat(window.getComputedStyle(iframe).height)));
-
-                        var docHeight = parseInt(Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height))); //body can be shorter!
-
-                        if (previousPolledContentHeight !== docHeight)
-                        {
-                            previousPolledContentHeight = docHeight;
-
-                            tryAgainFunc(tryAgain);
-                            return;
-                        }
-
-                        // CONTENT HEIGHT IS NOW STABILISED
-
-                        var diff = iframeHeight - docHeight;
-                        if (Math.abs(diff) > 4)
-                        {
-                            if (_DEBUG)
-                            {
-                                console.log("$$$ IFRAME HEIGHT ADJUST: " + href + "  [" + diff + "]<" + initialContentHeight + " -- " + previousPolledContentHeight + ">");
-                                console.log(msg);
-                            }
-
-                            if (updateScroll === 0)
-                            {
-                                updatePageViewSizeAndAdjustScroll(pageView);
-                            }
-                            else
-                            {
-                                updatePageViewSize(pageView);
-                            }
-
-                            if (Helpers.isIframeAlive(iframe))
-                            {
-                                var win = iframe.contentWindow;
-                                var doc = iframe.contentDocument;
-
-                                var docHeightAfter = parseInt(Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height))); //body can be shorter!
-                                var iframeHeightAfter = parseInt(Math.round(parseFloat(window.getComputedStyle(iframe).height)));
-
-                                var newdiff = iframeHeightAfter - docHeightAfter;
-                                if (Math.abs(newdiff) > 4)
-                                {
-                                    if (_DEBUG)
-                                    {
-                                        console.error("## IFRAME HEIGHT ADJUST: " + href + "  [" + newdiff + "]<" + initialContentHeight + " -- "+ previousPolledContentHeight + ">");
-                                        console.log(msg);
-                                    }
-
-                                    tryAgainFunc(tryAgain);
-                                    return;
-                                }
-                                else
-                                {
-                                    if (_DEBUG)
-                                    {
-                                        console.log(">> IFRAME HEIGHT ADJUSTED OKAY: " + href + "  ["+diff+"]<" + initialContentHeight + " -- " + previousPolledContentHeight + ">");
-                                        // console.log(msg);
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                if (_DEBUG)
-                                {
-                                    console.log("tryAgainFunc ! win && doc (iFrame disposed?)");
-                                }
-
-                                if (callback) callback(false);
-                                return;
-                            }
-                        }
-                        else
-                        {
-                            //if (_DEBUG)
-                            // console.debug("IFRAME HEIGHT NO NEED ADJUST: " + href);
-                            // console.log(msg);
-                        }
-                    }
-                    else
-                    {
-                        if (_DEBUG)
-                        {
-                            console.log("tryAgainFunc ! win && doc (iFrame disposed?)");
-                        }
-
-                        if (callback) callback(false);
-                        return;
-                    }
-                }
-                catch(ex)
-                {
-                    console.error(ex);
-
-                    if (callback) callback(false);
-                    return;
-                }
-
-                if (callback) callback(true);
-
-            }, TIME_MS);
-        };
-
-        tryAgainFunc(MAX_ATTEMPTS);
-    }
-
-
     function addToTopOf(topView, callback) {
 
         var prevSpineItem = _spine.prevItem(topView.currentSpineItem(), true);
@@ -535,14 +377,12 @@ var ScrollView = function (options, isContinuousScroll, reader) {
                 newView.loadSpineItem(prevSpineItem, function (success, $iframe, spineItem, isNewlyLoaded, context) {
                     if (success) {
 
-                        var continueCallback = function (successFlag)
-                        {
-                            onPageViewLoaded(newView, success, $iframe, spineItem, isNewlyLoaded, context);
-
-                            callback(successFlag);
-                        };
-
-                        reachStableContentHeight(0, newView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToTopOf", continueCallback); // //onIFrameLoad called before this callback, so okay.
+                        updatePageViewSizeAndAdjustScroll(newView);
+                        onPageViewLoaded(newView, success, $iframe, spineItem, isNewlyLoaded, context);
+                        callback(success);
+                        // No need for complicated reachStableContentHeight any more
+                        // Remove this
+                        //reachStableContentHeight(0, newView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToTopOf", continueCallback); // //onIFrameLoad called before this callback, so okay.
                     }
                     else {
                         console.error("Unable to open 2 " + prevSpineItem.href);
@@ -587,14 +427,11 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         newView.loadSpineItem(nexSpineItem, function (success, $iframe, spineItem, isNewlyLoaded, context) {
             if (success) {
 
-                var continueCallback = function (successFlag)
-                {
-                    onPageViewLoaded(newView, success, $iframe, spineItem, isNewlyLoaded, context);
-
-                    callback(successFlag);
-                };
-
-                reachStableContentHeight(2, newView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToBottomOf", continueCallback); // //onIFrameLoad called before this callback, so okay.
+                updatePageViewSize(newView);
+                onPageViewLoaded(newView, success, $iframe, spineItem, isNewlyLoaded, context);
+                callback(success);
+                // No need for complicated reachStableContentHeight any more
+                //reachStableContentHeight(2, newView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToBottomOf", continueCallback); // //onIFrameLoad called before this callback, so okay.
             }
             else {
                 console.error("Unable to load " + nexSpineItem.href);
@@ -643,15 +480,31 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         if (!_$contentFrame) {
             return;
         }
+    };
 
-        forEachItemView(function (pageView) {
+    this.resetCurrentPosition = function() {
+        _currentPageRequest = undefined;
+    };
 
-            updatePageViewSize(pageView);
-        }, false);
+    this.saveCurrentPosition = function() {
+        // If there's a deferred page request, there's no point in saving the current position
+        // as it's going to change soon
+        if (_deferredPageRequest) {
+            return;
+        }
 
-        onPaginationChanged(self);
+        var _firstVisibleCfi = self.getFirstVisibleCfi();
+        var spineItem = _spine.getItemById(_firstVisibleCfi.idref);
+        if (spineItem) {
+            _currentPageRequest = new PageOpenRequest(spineItem, self);
+            _currentPageRequest.setElementCfi(_firstVisibleCfi.contentCFI);
+        }
+    };
 
-        updateTransientViews();
+    this.restoreCurrentPosition = function() {
+        if (_currentPageRequest) {
+            this.openPageInternal(_currentPageRequest);            
+        }
     };
 
     var _viewSettings = undefined;
@@ -687,6 +540,27 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         pageView.on(Globals.Events.CONTENT_DOCUMENT_UNLOADED, function($iframe, spineItem) {
             Globals.logEvent("CONTENT_DOCUMENT_UNLOADED", "ON", "scroll_view.js [ " + spineItem.href + " ]");
             self.emit(Globals.Events.CONTENT_DOCUMENT_UNLOADED, $iframe, spineItem);
+        });
+
+        function updatePageViewSizeAndPagination_() {
+            // Resize the PageView to fit its content and update the pagination
+            // and the adjacent views
+            updatePageViewSize(pageView);
+            onPaginationChanged(self);
+            updateTransientViews();
+            if (_currentPageRequest && !_deferredPageRequest) {
+                self.restoreCurrentPosition();                
+            }
+        }
+        var updatePageViewSizeAndPagination = _.debounce(updatePageViewSizeAndPagination_, 100);
+
+        // Observe the CONTENT_SIZE_CHANGED from the page view so the ScrollView
+        // is notified when the size of the content of the view changes, because
+        // the font or the viewport size has changed
+        pageView.on(OnePageView.Events.CONTENT_SIZE_CHANGED, function($iframe, spineItem) {
+            
+            Globals.logEvent("OnePageView.Events.CONTENT_SIZE_CHANGED", "ON", "scroll_view.js [ " + spineItem.href + " ]");
+            updatePageViewSizeAndPagination();
         });
 
         pageView.render();
@@ -801,16 +675,11 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
             if (success) {
 
-                var continueCallback = function(successFlag)
-                {
-                    onPageViewLoaded(loadedView, success, $iframe, spineItem, isNewlyLoaded, context);
-
-                    callback(loadedView);
-
-                    //successFlag should always be true as loadedView iFrame cannot be dead at this stage.
-                };
-
-                reachStableContentHeight(1, loadedView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? loadedView.meta_width() : 0, "openPage", continueCallback); // //onIFrameLoad called before this callback, so okay.
+                updatePageViewSize(loadedView);
+                onPageViewLoaded(loadedView, success, $iframe, spineItem, isNewlyLoaded, context);
+                //callback(loadedView);
+                // No need for complicated reachStableContentHeight any more
+                //reachStableContentHeight(1, loadedView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? loadedView.meta_width() : 0, "openPage", continueCallback); // //onIFrameLoad called before this callback, so okay.
             }
             else {
                 console.error("Unable to load " + spineItem.href);
@@ -845,7 +714,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
     };
 
 
-    this.openPage = function (pageRequest) {
+    this.openPageInternal = function (pageRequest) {
 
         _stopTransientViewUpdate = true;
 
@@ -894,6 +763,12 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         }
     };
 
+    this.openPage = function(pageRequest) {
+        this.resetCurrentPosition();
+        _currentPageRequest = pageRequest;
+        this.openPageInternal(pageRequest);
+    }
+
     function openPageViewElement(pageView, pageRequest) {
 
         var topOffset = 0;
@@ -940,7 +815,8 @@ var ScrollView = function (options, isContinuousScroll, reader) {
                 return;
             }
 
-            topOffset = sfiNav.getVerticalOffsetForElement($element) + pageRange.top;
+            var elementRange = getElementRange(pageView, $element);
+            topOffset = elementRange.top + pageRange.top;
 
         }
         else if (pageView && pageRequest.elementCfi) {
