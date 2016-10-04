@@ -1,4 +1,4 @@
-//  Created by Boris Schneiderman.
+    //  Created by Boris Schneiderman.
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
 //  
 //  Redistribution and use in source and binary forms, with or without modification, 
@@ -24,18 +24,36 @@
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 define(["./style"], function(Style) {
+
 /**
  *
+ * @class Models.StyleCollection
+ * @return StyleCollection
  * @constructor
  */
+
 var StyleCollection = function() {
 
     var _styles = [];
+
+    /**
+     * Clears the collection.
+     *
+     * @method     clear
+     */
 
     this.clear = function() {
         _styles.length = 0;
 
     };
+
+    /**
+     * Finds the style of a selected item
+     *
+     * @method     findStyle
+     * @param      selector
+     * @return     {Models.Style}
+     */
 
     this.findStyle = function(selector) {
 
@@ -48,6 +66,15 @@ var StyleCollection = function() {
 
         return undefined;
     };
+
+    /**
+     * Adds a style to the collection
+     *
+     * @method     addStyle
+     * @param      selector
+     * @param      declarations
+     * @return     {Models.Style}
+     */
 
     this.addStyle = function(selector, declarations) {
 
@@ -64,6 +91,13 @@ var StyleCollection = function() {
         return style;
     };
 
+    /**
+     * Removes a style from the collection
+     *
+     * @method     addStyle
+     * @param      selector
+     */
+
     this.removeStyle = function(selector) {
         
         var count = _styles.length;
@@ -77,9 +111,22 @@ var StyleCollection = function() {
         }
     };
 
+    /**
+     * Gets all styles
+     *
+     * @method     getStyles
+     * @return     {Array}
+     */
+
     this.getStyles = function() {
         return _styles;
     };
+
+    /**
+     * Resets the styles
+     *
+     * @method     resetStyleValues
+     */
 
     this.resetStyleValues = function() {
 

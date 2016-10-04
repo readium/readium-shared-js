@@ -537,6 +537,11 @@ var ScrollView = function (options, isContinuousScroll, reader) {
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, $iframe, spineItem);
         });
 
+        pageView.on(Globals.Events.CONTENT_DOCUMENT_UNLOADED, function($iframe, spineItem) {
+            Globals.logEvent("CONTENT_DOCUMENT_UNLOADED", "ON", "scroll_view.js [ " + spineItem.href + " ]");
+            self.emit(Globals.Events.CONTENT_DOCUMENT_UNLOADED, $iframe, spineItem);
+        });
+
         function updatePageViewSizeAndPagination_() {
             // Resize the PageView to fit its content and update the pagination
             // and the adjacent views
@@ -1088,7 +1093,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         forEachItemView(function (pageView) {
             if (pageView.currentSpineItem().idref == spineItemIdref) {
 
-                found = pageView.getNavigator().getElementByCfi(spineItemIdref, cfi, classBlacklist, elementBlacklist, idBlacklist);
+                found = pageView.getNavigator().getElementByCfi(cfi, classBlacklist, elementBlacklist, idBlacklist);
                 return false;
             }
 
