@@ -28,10 +28,10 @@
 
 define(["../globals", "jquery", "underscore", "eventEmitter", "../models/bookmark_data", "./cfi_navigation_logic",
     "../models/current_pages_info", "../helpers", "../models/page_open_request",
-    "../models/viewer_settings", "./font_loader"],
+    "../models/viewer_settings", "ResizeSensor"],
     function(Globals, $, _, EventEmitter, BookmarkData, CfiNavigationLogic,
              CurrentPagesInfo, Helpers, PageOpenRequest,
-             ViewerSettings, FontLoader) {
+             ViewerSettings, ResizeSensor) {
 /**
  * Renders reflowable content using CSS columns
  * @param options
@@ -58,6 +58,11 @@ var ReflowableView = function(options, reader){
     var _$el;
     var _$iframe;
     var _$epubHtml;
+    var _lastPageRequest = undefined;
+
+    var _cfiClassBlacklist = ["cfi-marker", "mo-cfi-highlight", "resize-sensor", "resize-sensor-expand", "resize-sensor-shrink", "resize-sensor-inner"];
+    var _cfiElementBlacklist = [];
+    var _cfiIdBlacklist = ["MathJax_Message", "MathJax_SVG_Hidden"];
 
     var _$htmlBody;
 
@@ -155,9 +160,7 @@ var ReflowableView = function(options, reader){
         if (!docWillChange) {
             updateColumnGap();
 
-            updateHtmlFontInfo(function() {
-                updatePagination();
-            });
+            updateHtmlFontInfo();
         }
     };
     
@@ -191,7 +194,10 @@ var ReflowableView = function(options, reader){
         _navigationLogic = new CfiNavigationLogic({
             $iframe: _$iframe,
             frameDimensions: getFrameDimensions,
-            paginationInfo: _paginationInfo
+            paginationInfo: _paginationInfo,
+            classBlacklist: _cfiClassBlacklist,
+            elementBlacklist: _cfiElementBlacklist,
+            idBlacklist: _cfiIdBlacklist
         });
     }
 
@@ -205,6 +211,8 @@ var ReflowableView = function(options, reader){
                 Globals.logEvent("CONTENT_DOCUMENT_UNLOADED", "EMIT", "reflowable_view.js [ " + _currentSpineItem.href + " ]");
                 self.emit(Globals.Events.CONTENT_DOCUMENT_UNLOADED, _$iframe, _currentSpineItem);
             }
+
+            self.resetCurrentPosition();
 
             _paginationInfo.pageOffset = 0;
             _paginationInfo.currentSpreadIndex = 0;
@@ -226,36 +234,12 @@ var ReflowableView = function(options, reader){
         }
     }
 
-    function updateHtmlFontInfo(whenDoneCallback) {
+    function updateHtmlFontInfo() {
 
         if(_$epubHtml) {
 
-            var DEBUG = true;
-
-            if (DEBUG) {
-                //console.log(_$epubHtml.html());
-            }
-
-            var fontLoadCallback = function() {
-
-                if (DEBUG) {
-                    console.trace("FONT LOADER ...");
-                }
-            
-                var fontLoader = new FontLoader(_$iframe, {debug: DEBUG});
-                fontLoader.waitForFonts(function () {
-                    if (DEBUG) {
-                        console.log("FONT LOADED CALLBACK");
-                    }
-                    whenDoneCallback();
-                });
-            };
-
             var _curFont = (_fontSelection == 0 ? {} : reader.fonts[_fontSelection-1]);
-            Helpers.UpdateHtmlFontAttributes(_$epubHtml, _fontSize, _curFont, fontLoadCallback);
-
-        } else {
-            whenDoneCallback();
+            Helpers.UpdateHtmlFontAttributes(_$epubHtml, _fontSize, _curFont, function() {});
         }
     }
 
@@ -268,19 +252,6 @@ var ReflowableView = function(options, reader){
     }
 
     function onIFrameLoad(success) {
-        if (!success) {
-            applyIFrameLoad(success);
-            return;
-        }
-        applyIFrameLoad(success);
-        // DONE IN updateHtmlFontInfo()
-        // var fontLoader = new FontLoader(_$iframe, {debug: true});
-        // fontLoader.waitForFonts(function () {
-        //     applyIFrameLoad(success);
-        // });
-    }
-
-    function applyIFrameLoad(success) {
 
         _isWaitingFrameRender = false;
 
@@ -397,10 +368,13 @@ var ReflowableView = function(options, reader){
 
         updateColumnGap();
 
-        updateHtmlFontInfo(function() {
-            // invokes updatePagination(), triggerLayout() etc.
-            self.applyStyles();
+        var bodyElement = _$htmlBody[0];
+        bodyElement.resizeSensor = new ResizeSensor(bodyElement, function() {
+            console.debug("ReflowableView content resized", $(bodyElement).width(), $(bodyElement).height());
+            updatePagination();
         });
+
+        updateHtmlFontInfo();
     }
 
     this.applyStyles = function() {
@@ -436,7 +410,7 @@ var ReflowableView = function(options, reader){
 
     }
 
-    this.openPage = function(pageRequest) {
+    this.openPageInternal = function(pageRequest) {
 
         if(_isWaitingFrameRender) {
             _deferredPageRequest = pageRequest;
@@ -461,13 +435,47 @@ var ReflowableView = function(options, reader){
             
             if (pageIndex < 0) pageIndex = 0;
         }
+        else if(pageRequest.firstVisibleCfi && pageRequest.lastVisibleCfi) {
+            var firstPageIndex;
+            var lastPageIndex;
+            try
+            {
+                firstPageIndex = _navigationLogic.getPageForElementCfi(pageRequest.firstVisibleCfi,
+                    _cfiClassBlacklist,
+                    _cfiElementBlacklist,
+                    _cfiIdBlacklist);
+                
+                if (firstPageIndex < 0) firstPageIndex = 0;
+            }
+            catch (e)
+            {
+                firstPageIndex = 0;
+                console.error(e);
+            }
+            try
+            {
+                lastPageIndex = _navigationLogic.getPageForElementCfi(pageRequest.lastVisibleCfi,
+                    _cfiClassBlacklist,
+                    _cfiElementBlacklist,
+                    _cfiIdBlacklist);
+                
+                if (lastPageIndex < 0) lastPageIndex = 0;
+            }
+            catch (e)
+            {
+                lastPageIndex = 0;
+                console.error(e);
+            }
+            // Go to the page in the middle of the two elements
+            pageIndex = Math.round((firstPageIndex + lastPageIndex) / 2);
+        }
         else if(pageRequest.elementCfi) {
             try
             {
                 pageIndex = _navigationLogic.getPageForElementCfi(pageRequest.elementCfi,
-                    ["cfi-marker", "mo-cfi-highlight"],
-                    [],
-                    ["MathJax_Message"]);
+                    _cfiClassBlacklist,
+                    _cfiElementBlacklist,
+                    _cfiIdBlacklist);
                 
                 if (pageIndex < 0) pageIndex = 0;
             }
@@ -494,6 +502,36 @@ var ReflowableView = function(options, reader){
         }
         else {
             console.log('Illegal pageIndex value: ', pageIndex, 'column count is ', _paginationInfo.columnCount);
+        }
+    };
+
+    this.openPage = function(pageRequest) {
+        // Go to request page, it will save the new position in onPaginationChanged
+        this.openPageInternal(pageRequest);
+        // Save it for when pagination is updated
+        _lastPageRequest = pageRequest;
+    };
+
+    this.resetCurrentPosition = function() {
+        _lastPageRequest = undefined;
+    };
+
+    this.saveCurrentPosition = function() {
+        // If there's a deferred page request, there's no point in saving the current position
+        // as it's going to change soon
+        if (_deferredPageRequest) {
+            return;
+        }
+
+        var _firstVisibleCfi = self.getFirstVisibleCfi();
+        var _lastVisibleCfi = self.getLastVisibleCfi();
+        _lastPageRequest = new PageOpenRequest(_currentSpineItem, self);
+        _lastPageRequest.setFirstAndLastVisibleCfi(_firstVisibleCfi.contentCFI, _lastVisibleCfi.contentCFI);
+    };
+
+    this.restoreCurrentPosition = function() {
+        if (_lastPageRequest) {
+            this.openPageInternal(_lastPageRequest);            
         }
     };
 
@@ -544,6 +582,10 @@ var ReflowableView = function(options, reader){
         redraw();
 
         _.defer(function () {
+
+            if (_lastPageRequest == undefined) {
+                self.saveCurrentPosition();
+            }
             
             Globals.logEvent("InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED", "EMIT", "reflowable_view.js");
             self.emit(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, {
@@ -563,6 +605,9 @@ var ReflowableView = function(options, reader){
         }
 
         if(_paginationInfo.currentSpreadIndex > 0) {
+            // Page will change, the current position is not valid any more
+            // Reset it so it's saved next time onPaginationChanged is called
+            this.resetCurrentPosition();
             _paginationInfo.currentSpreadIndex--;
             onPaginationChanged(initiator);
         }
@@ -585,6 +630,9 @@ var ReflowableView = function(options, reader){
         }
 
         if(_paginationInfo.currentSpreadIndex < _paginationInfo.spreadCount - 1) {
+            // Page will change, the current position is not valid any more
+            // Reset it so it's saved next time onPaginationChanged is called
+            this.resetCurrentPosition();
             _paginationInfo.currentSpreadIndex++;
             onPaginationChanged(initiator);
         }
@@ -785,9 +833,16 @@ var ReflowableView = function(options, reader){
         }
         else {
 
-            //we get here on resizing the viewport
+            // we get here on resizing the viewport
+            if (_lastPageRequest) {
+                // Make sure we stay on the same page after the content or the viewport 
+                // has been resized
+                self.restoreCurrentPosition();
+            } else {
+                onPaginationChanged(self); // => redraw() => showBook(), so the trick below is not needed                
+            }
 
-            onPaginationChanged(self); // => redraw() => showBook(), so the trick below is not needed
+            //onPaginationChanged(self); // => redraw() => showBook(), so the trick below is not needed 
 
             // //We do this to force re-rendering of the document in the iframe.
             // //There is a bug in WebView control with right to left columns layout - after resizing the window html document

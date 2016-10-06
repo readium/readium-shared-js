@@ -243,6 +243,7 @@ Helpers.Rect.fromElement = function ($element) {
  * @param $epubHtml: The html that is to have font attributes added.
  * @param fontSize: The font size that is to be added to the element at all locations.
  * @param fontObj: The font Object containing at minimum the URL, and fontFamilyName (In fields url and fontFamily) respectively. Pass in null's on the object's fields to signal no font.
+ * @param callback: function invoked when "done", which means that if there are asynchronous operations such as font-face loading via injected stylesheets, then the UpdateHtmlFontAttributes() function returns immediately but the caller should wait for the callback function call if fully-loaded font-face *stylesheets* are required on the caller's side (note that the caller's side may still need to detect *actual font loading*, via the FontLoader API or some sort of ResizeSensor to indicate that the updated font-family has been used to render the document). 
  */
 
 Helpers.UpdateHtmlFontAttributes = function ($epubHtml, fontSize, fontObj, callback) {
@@ -420,7 +421,7 @@ alert("HREF CHANGE: " + dataFontFamily + " != " + fontObj.fontFamily);
         }, 2000);
     }
     else { // REMOVE, NOTHING
-        fontLoadCallback();
+        fontLoadCallback_();
     }
 };
 
