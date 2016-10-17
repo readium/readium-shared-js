@@ -15485,6 +15485,10 @@ var ReflowableView = function(options, reader){
         width: undefined,
         height: undefined
     };
+    var _lastBodySize = {
+        width: undefined,
+        height: undefined
+    }
 
     var _paginationInfo = {
 
@@ -15643,11 +15647,11 @@ var ReflowableView = function(options, reader){
     }
 
     function updateHtmlFontInfo() {
-
+    
         if(_$epubHtml) {
 
             var _curFont = (_fontSelection == 0 ? {} : reader.fonts[_fontSelection-1]);
-            Helpers.UpdateHtmlFontAttributes(_$epubHtml, _fontSize, _curFont, function() {});
+            Helpers.UpdateHtmlFontAttributes(_$epubHtml, _fontSize, _curFont, function() {self.applyStyles();});
         }
     }
 
@@ -15775,13 +15779,6 @@ var ReflowableView = function(options, reader){
         resizeImages();
 
         updateColumnGap();
-
-        var bodyElement = _$htmlBody[0];
-        bodyElement.resizeSensor = new ResizeSensor(bodyElement, function() {
-            console.debug("ReflowableView content resized", $(bodyElement).width(), $(bodyElement).height());
-            updatePagination();
-        });
-
         updateHtmlFontInfo();
     }
 
@@ -16057,8 +16054,7 @@ var ReflowableView = function(options, reader){
     };
 
 
-    function updatePagination() {
-
+    function updatePagination_() {
         // At 100% font-size = 16px (on HTML, not body or descendant markup!)
         var MAXW = _paginationInfo.columnMaxWidth;
         var MINW = _paginationInfo.columnMinWidth;
@@ -16262,7 +16258,13 @@ var ReflowableView = function(options, reader){
             // }, 50);
 
         }
+
+        // Only initializes the resize sensor once the content has been paginated once,
+        // to avoid the pagination process to trigger a resize event during its first
+        // execution, provoking a flicker
+        initResizeSensor();
     }
+    var updatePagination = _.debounce(updatePagination_, 100);
 
 //    function shiftBookOfScreen() {
 //
@@ -16273,6 +16275,31 @@ var ReflowableView = function(options, reader){
 //            _$epubHtml.css("right", (_lastViewPortSize.width + 1000) + "px");
 //        }
 //    }
+
+    function initResizeSensor() {
+        var bodyElement = _$htmlBody[0];
+        if (bodyElement.resizeSensor) {
+            return;
+        }
+
+        // We need to make sure the content has indeed be resized, especially
+        // the first time it is triggered
+        _lastBodySize.width = $(bodyElement).width();
+        _lastBodySize.height = $(bodyElement).height();
+        bodyElement.resizeSensor = new ResizeSensor(bodyElement, function() {
+            console.debug("ReflowableView content resized", $(bodyElement).width(), $(bodyElement).height(), _currentSpineItem.idref);
+            var newBodySize = {
+                width: $(bodyElement).width(),
+                height: $(bodyElement).height()
+            };
+            if (newBodySize.width != _lastBodySize.width || newBodySize.height != _lastBodySize.height) {
+                _lastBodySize.width = newBodySize.width;
+                _lastBodySize.height = newBodySize.height;
+                updatePagination();
+            }
+        });
+
+    }
 
     function hideBook()
     {
