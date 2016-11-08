@@ -371,14 +371,6 @@ Helpers.UpdateHtmlFontAttributes = function ($epubHtml, fontSize, fontObj, callb
                     "rel" : "stylesheet",
                     "type" : "text/css"
                 });
-                if (!('onload' in link[0])) {
-//alert("LINK ONLOAD !?");
-                    var imgTag = $epubHtml[0].ownerDocument.createElement("img");
-                    imgTag.onerror = fontLoadCallback_;
-                    imgTag.src = fontObj.url;
-                } else {
-                    link[0].onload = fontLoadCallback_;
-                }
                 docHead.append(link);
                     
                 link.attr({
@@ -392,14 +384,6 @@ Helpers.UpdateHtmlFontAttributes = function ($epubHtml, fontSize, fontObj, callb
 // TODO: test this! (several font-faces in choice list)
 alert("HREF CHANGE: " + dataFontFamily + " != " + fontObj.fontFamily);
         
-            if (!('onload' in link[0])) {
-//alert("LINK ONLOAD !?");
-                var imgTag = $epubHtml[0].ownerDocument.createElement("img");
-                imgTag.onerror = fontLoadCallback_;
-                imgTag.src = fontObj.url;
-            } else {
-                link[0].onload = fontLoadCallback_;
-            }
             link.attr({
                 "data-fontfamily" : fontObj.fontFamily,
                 "href" : fontObj.url
@@ -418,7 +402,7 @@ alert("HREF CHANGE: " + dataFontFamily + " != " + fontObj.fontFamily);
         // just in case the link@onload does not trigger, we set a timeout
         setTimeout(function(){
             fontLoadCallback_();
-        }, 2000);
+        }, 100);
     }
     else { // REMOVE, NOTHING
         fontLoadCallback_();
