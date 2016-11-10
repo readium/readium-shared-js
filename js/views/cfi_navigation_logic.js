@@ -163,7 +163,7 @@ var CfiNavigationLogic = function(options) {
             return false;
         }
 
-        if (isPaginatedView()) {
+        if (isPaginatedView() && !isVwm) {
             return (rect.left >= 0 && rect.left < frameDimensions.width) || 
                 (!ignorePartiallyVisible && rect.left < 0 && rect.right >= 0);
         } else {
@@ -495,11 +495,12 @@ var CfiNavigationLogic = function(options) {
      * @param {number} topOffset
      */
     function offsetRectangle(rect, leftOffset, topOffset) {
-
-        rect.left += leftOffset;
-        rect.right += leftOffset;
-        rect.top += topOffset;
-        rect.bottom += topOffset;
+        if (!isVerticalWritingMode()){
+            rect.left += leftOffset;
+            rect.right += leftOffset;
+            rect.top += topOffset;
+            rect.bottom += topOffset;
+        }
     }
 
     /**
@@ -766,8 +767,10 @@ var CfiNavigationLogic = function(options) {
         }
         var fragmentCorner = pickerFunc(getTextNodeRectCornerPairs(fragment));
         // Reverse taking into account of visible content offsets
-        fragmentCorner.x -= visibleContentOffsets.left;
-        fragmentCorner.y -= visibleContentOffsets.top;
+        if (!isVerticalWritingMode()){
+            fragmentCorner.x -= visibleContentOffsets.left;
+            fragmentCorner.y -= visibleContentOffsets.top;
+        }
         
         var caretRange = getCaretRangeFromPoint(fragmentCorner.x, fragmentCorner.y);
 
