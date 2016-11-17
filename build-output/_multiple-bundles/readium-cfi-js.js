@@ -153,7 +153,7 @@
         peg$c6 = peg$literalExpectation(",", false),
         peg$c7 = function(stepVal, localPathVal, rangeLocalPath1Val, rangeLocalPath2Val) {
 
-                return { type:"range", path:stepVal, localPath:localPathVal, range1:rangeLocalPath1Val, range2:rangeLocalPath2Val };
+                return { type:"range", path:stepVal, localPath:localPathVal?localPathVal:"", range1:rangeLocalPath1Val, range2:rangeLocalPath2Val };
           },
         peg$c8 = function(stepVal, localPathVal) { 
 
@@ -449,6 +449,9 @@
       s1 = peg$parseindexStep();
       if (s1 !== peg$FAILED) {
         s2 = peg$parselocal_path();
+        if (s2 === peg$FAILED) {
+          s2 = null;
+        }
         if (s2 !== peg$FAILED) {
           if (input.charCodeAt(peg$currPos) === 44) {
             s3 = peg$c5;
