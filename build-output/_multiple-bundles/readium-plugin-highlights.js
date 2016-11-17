@@ -2041,7 +2041,7 @@ var HighlightsManager = function (proxyObj, options) {
         mangleEvent('annotationHoverIn');
         mangleEvent('annotationHoverOut');
 
-        originalEmit.apply(this, args);
+        originalEmit.apply(self, args);
         originalEmit.apply(proxy, args);
     };
 
