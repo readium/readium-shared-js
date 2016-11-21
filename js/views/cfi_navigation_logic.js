@@ -424,6 +424,17 @@ var CfiNavigationLogic = function(options) {
             clientRectList = range.getClientRects();
         } else {
             clientRectList = $el[0].getClientRects();
+
+            // If the element is something like this: <svg:svg ....><svg:image ....></svg:image></svg:svg> then the svg:image does not produce client rectangles; so we move to the
+            // enclosing svg tag and get those rectangles
+            try {
+                if (clientRectList.length === 0 && $el[0].ownerSVGElement) {
+                    clientRectList = $($el[0].ownerSVGElement)[0].getClientRects();
+                }
+            }
+            catch (e) {
+                // silently swallow up the error; apparently we can't get clientRectList s
+            }
         }
 
         // all the separate rectangles (for detecting position of the element
