@@ -408,6 +408,10 @@ var ReaderView = function (options) {
 
         var pageRequestData = undefined;
 
+        if (openBookData.openPageRequest && typeof(openBookData.openPageRequest) === 'function') {
+            openBookData.openPageRequest = openBookData.openPageRequest();
+        }
+
         if (openBookData.openPageRequest) {
 
             if (openBookData.openPageRequest.idref || (openBookData.openPageRequest.contentRefUrl && openBookData.openPageRequest.sourceFileHref)) {
