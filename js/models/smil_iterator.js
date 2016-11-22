@@ -1,8 +1,8 @@
 //  LauncherOSX
 //
 //  Created by Boris Schneiderman.
-// Modified by Daniel Weck
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  Modified by Daniel Weck
+//  Copyright (c) 2016 Readium Foundation and/or its licensees. All rights reserved.
 //  
 //  Redistribution and use in source and binary forms, with or without modification, 
 //  are permitted provided that the following conditions are met:
@@ -27,14 +27,39 @@
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 define (["jquery", "../helpers"], function($, Helpers) {
 /**
+ * Wrapper of a smil iterator object. 
+ * A smil iterator is used by the media overlay player, to move along text areas which have an audio overlay. 
+ * Such areas are specified in the smil model via parallel smil nodes (text + audio).  
  *
- * @param smil
+ * @class  Models.SmilIterator
  * @constructor
+ * @param {Models.SmilModel} smil The current smil model
  */
 var SmilIterator = function(smil) {
 
+   /**
+     * The smil model
+     *
+     * @property smil
+     * @type Models.SmilModel
+     */
     this.smil = smil;
+
+    /**
+     * The current parallel smil node
+     *
+     * @property currentPar
+     * @type object
+     */
+     
     this.currentPar = undefined;
+
+    /**
+     * Resets the iterator. 
+     * In practice, looks for the first parallel smil node in the smil model
+     *
+     * @method     reset
+     */
 
     this.reset = function() {
         this.currentPar = findParNode(0, this.smil, false);
@@ -61,7 +86,15 @@ var SmilIterator = function(smil) {
 //            this.next();
 //        }
 //    };
-
+    
+    /**
+     * Looks for a text smil node identified by the id parameter 
+     * Returns true if the id param identifies a text smil node.
+     *
+     * @method     findTextId
+     * @param      {Number} id A smil node identifier
+     * @return     {Boolean} 
+     */
     this.findTextId = function(id)
     {
         if (!this.currentPar)
@@ -95,6 +128,7 @@ var SmilIterator = function(smil) {
 
                     parent = parent.parentNode;
                 }
+                //console.log(parent);
 
                 // INNER match
                 //var inside = this.currentPar.element.ownerDocument.getElementById(id);
@@ -104,12 +138,18 @@ var SmilIterator = function(smil) {
                     return true;
                 }
             }
-
+            // moves to the next parallel smil node
             this.next();
         }
 
         return false;
     }
+
+    /**
+     * Looks for the next parallel smil node
+     *
+     * @method     next 
+     */
 
     this.next = function() {
 
@@ -121,6 +161,12 @@ var SmilIterator = function(smil) {
         this.currentPar = findParNode(this.currentPar.index + 1, this.currentPar.parent, false);
     };
 
+    /**
+     * Looks for the previous parallel smil node
+     *
+     * @method     previous
+     */
+
     this.previous = function() {
 
         if(!this.currentPar) {
@@ -130,6 +176,13 @@ var SmilIterator = function(smil) {
 
         this.currentPar = findParNode(this.currentPar.index - 1, this.currentPar.parent, true);
     };
+
+    /**
+     * Checks if the current parallel smil node is the last one in the smil model
+     *
+     * @method     isLast
+     * @return     {Bool}
+     */
 
     this.isLast = function() {
 
@@ -146,6 +199,14 @@ var SmilIterator = function(smil) {
         return true;
     }
 
+    /**
+     * Moves to the parallel smil node given as a parameter. 
+     *
+     * @method     goToPar
+     * @param      {Containter} par A parallel smil node
+     * @return     {Boolean} 
+     */
+
     this.goToPar =  function(par) {
 
         while(this.currentPar) {
@@ -156,6 +217,16 @@ var SmilIterator = function(smil) {
             this.next();
         }
     };
+
+    /**
+     * Looks for a parallel smil node in the smil model.
+     *
+     * @method     findParNode
+     * @param      {Number} startIndex Start index inside the container
+     * @param      {Models.SMilModel} container The smil model
+     * @param      {Boolean} previous True if  search among previous nodes
+     * @return     {Smil.ParNode} 
+     */
 
     function findParNode(startIndex, container, previous) {
 

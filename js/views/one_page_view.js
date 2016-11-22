@@ -24,8 +24,8 @@
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-define(["../globals", "jquery", "underscore", "eventEmitter", "./cfi_navigation_logic", "../helpers", "../models/viewer_settings", "../models/bookmark_data"],
-    function (Globals, $, _, EventEmitter, CfiNavigationLogic, Helpers, ViewerSettings, BookmarkData) {
+define(["../globals", "jquery", "underscore", "eventEmitter", "./cfi_navigation_logic", "../helpers", "../models/viewer_settings", "../models/bookmark_data", "ResizeSensor"],
+    function (Globals, $, _, EventEmitter, CfiNavigationLogic, Helpers, ViewerSettings, BookmarkData, ResizeSensor) {
 
 /**
  * Renders one page of fixed layout spread
@@ -375,11 +375,22 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
             //_$epubHtml.css("overflow", "hidden");
 
+
+
             if (_enableBookStyleOverrides) {
                 self.applyBookStyles();
             }
 
             updateMetaSize();
+
+            var bodyElement = _$epubBody[0];
+            bodyElement.resizeSensor = new ResizeSensor(bodyElement, function() {
+                console.log("OnePageView iframe body resized", $(bodyElement).width(), $(bodyElement).height());
+                var src = _spine.package.resolveRelativeUrl(_currentSpineItem.href);
+                Globals.logEvent("OnePageView.Events.CONTENT_SIZE_CHANGED", "EMIT", "one_page_view.js [ " + _currentSpineItem.href + " -- " + src + " ]");
+                self.emit(OnePageView.Events.CONTENT_SIZE_CHANGED, _$iframe, _currentSpineItem);
+                //updatePagination();
+            });
 
             _pageTransitionHandler.onIFrameLoad();
         }
@@ -917,7 +928,10 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         return new CfiNavigationLogic({
             $iframe: _$iframe,
             frameDimensions: getFrameDimensions,
-            visibleContentOffsets: getVisibleContentOffsets
+            visibleContentOffsets: getVisibleContentOffsets,
+            classBlacklist: ["cfi-marker", "mo-cfi-highlight", "resize-sensor", "resize-sensor-expand", "resize-sensor-shrink"],
+            elementBlacklist: [],
+            idBlacklist: ["MathJax_Message", "MathJax_SVG_Hidden"]
         });
     };
 
@@ -1050,7 +1064,8 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 };
 
 OnePageView.Events = {
-    SPINE_ITEM_OPEN_START: "SpineItemOpenStart"
+    SPINE_ITEM_OPEN_START: "SpineItemOpenStart",
+    CONTENT_SIZE_CHANGED: "ContentSizeChanged"
 };
 return OnePageView;
 });
