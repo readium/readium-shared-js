@@ -385,7 +385,7 @@ var ReaderView = function (options) {
 
         _spine = _package.spine;
         if (JSON.parse(localStorage.reader).direction === 'rtl'){
-            _spine.direction = rtl;
+            _spine.direction = 'rtl';
         }
         _spine.handleLinear(true);
 
