@@ -38,7 +38,6 @@ define(["../globals", "jquery", "underscore", "eventEmitter", "../models/bookmar
  * @constructor
  */
 var ReflowableView = function(options, reader){
-
     $.extend(this, new EventEmitter());
 
     var self = this;
@@ -53,6 +52,7 @@ var ReflowableView = function(options, reader){
     var _isWaitingFrameRender = false;
     var _deferredPageRequest;
     var _fontSize = 100;
+    var _fontSelection = 0;
     var _$contentFrame;
     var _navigationLogic;
     var _$el;
@@ -153,8 +153,9 @@ var ReflowableView = function(options, reader){
         _paginationInfo.columnMinWidth = settings.columnMinWidth;
         
         _fontSize = settings.fontSize;
+        _fontSelection = settings.fontSelection;
 
-        updateHtmlFontSize();
+        updateHtmlFontInfo();
         updateColumnGap();
 
         updateViewportSize();
@@ -231,10 +232,11 @@ var ReflowableView = function(options, reader){
         }
     }
 
-    function updateHtmlFontSize() {
+    function updateHtmlFontInfo() {
 
         if(_$epubHtml) {
-            Helpers.UpdateHtmlFontSize(_$epubHtml, _fontSize);
+            var _curFont = (_fontSelection == 0 ? {} : reader.fonts[_fontSelection-1]);
+            Helpers.UpdateHtmlFontAttributes(_$epubHtml, _fontSize,_curFont);
         }
     }
 
@@ -361,7 +363,7 @@ var ReflowableView = function(options, reader){
         self.applyBookStyles();
         resizeImages();
 
-        updateHtmlFontSize();
+        updateHtmlFontInfo();
         updateColumnGap();
 
         var bodyElement = _$htmlBody[0];

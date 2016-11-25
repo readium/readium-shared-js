@@ -238,11 +238,53 @@ Helpers.Rect.fromElement = function ($element) {
 
     return new Helpers.Rect(offsetLeft, offsetTop, offsetWidth, offsetHeight);
 };
+/**
+ *
+ * @param $epubHtml: The html that is to have font attributes added.
+ * @param fontSize: The font size that is to be added to the element at all locations.
+ * @param fontObj: The font Object containing at minimum the URL, and fontFamilyName (In fields url and fontFamily) respectively. Pass in null's on the object's fields to signal no font.
+ */
 
-Helpers.UpdateHtmlFontSize = function ($epubHtml, fontSize) {
+Helpers.UpdateHtmlFontAttributes = function ($epubHtml, fontSize, fontObj) {
+    const NOTHING =0, ADD = 1, REMOVE = 2; //Types for css font family.
 
     var perf = false;
-
+    var changeFontFamily = NOTHING;
+    if(fontObj.fontFamily && fontObj.url){
+        
+        var docHead = $("head", $epubHtml);
+        //Add link attribute if the font name is different.
+        var fontFamily = fontObj.fontFamily;
+        var link = $("#helpers-font-url", docHead);
+        if(!link.length){
+            setTimeout(function(){
+                docHead.append($("<link/>", {
+                    "id" : "helpers-font-url",
+                    "data-fontFamily" : fontFamily,
+                    "rel" : "stylesheet",
+                    "type" : "text/css",
+                    "href" : fontObj.url
+                }));
+            }, 0);  
+            changeFontFamily = ADD;
+        }
+        else if(link.attr("data-fontFamily") != fontFamily){
+            link.attr({
+                "data-fontFamily" : fontFamily,
+                "src" : fontObj.url
+            });
+            changeFontFamily = ADD;
+        }
+        //Otherwise, leave the head alone, it's the same font url.
+    }
+    else{
+        changeFontFamily = REMOVE;
+        var docHead = $("head", $epubHtml);
+        //Remove the whole link, it's default.
+        var link = $("#helpers-font-url", docHead);
+        if(link.length) link[0].remove();
+    }
+    
     // TODO: very slow on Firefox!
     // See https://github.com/readium/readium-shared-js/issues/274
     if (perf) var time1 = window.performance.now();
@@ -251,25 +293,33 @@ Helpers.UpdateHtmlFontSize = function ($epubHtml, fontSize) {
     var win = $epubHtml[0].ownerDocument.defaultView;
     var $textblocks = $('p, div, span, h1, h2, h3, h4, h5, h6, li, blockquote, td, pre', $epubHtml);
     var originalLineHeight;
-
+    
 
     // need to do two passes because it is possible to have nested text blocks.
     // If you change the font size of the parent this will then create an inaccurate
     // font size for any children.
     for (var i = 0; i < $textblocks.length; i++) {
         var ele = $textblocks[i],
-            fontSizeAttr = ele.getAttribute('data-original-font-size');
+            fontSizeAttr = ele.getAttribute('data-original-font-size'),
+            fontFamilyAttr = ele.getAttribute('data-original-font-family');
+
 
         if (!fontSizeAttr) {
             var style = win.getComputedStyle(ele);
             var originalFontSize = parseInt(style.fontSize);
-            originalLineHeight = parseInt(style.lineHeight);
-
+            var originalLineHeight = parseInt(style.lineHeight);
             ele.setAttribute('data-original-font-size', originalFontSize);
+
             // getComputedStyle will not calculate the line-height if the value is 'normal'. In this case parseInt will return NaN
             if (originalLineHeight) {
                 ele.setAttribute('data-original-line-height', originalLineHeight);
             }
+        }
+        
+        if (!fontFamilyAttr) {
+            var style = win.getComputedStyle(ele);
+            var originalFontFamily = style.fontFamily;
+            ele.setAttribute('data-original-font-family', originalFontFamily);
         }
     }
 
@@ -278,6 +328,7 @@ Helpers.UpdateHtmlFontSize = function ($epubHtml, fontSize) {
     for (var i = 0; i < $textblocks.length; i++) {
         var ele = $textblocks[i],
             fontSizeAttr = ele.getAttribute('data-original-font-size'),
+            fontFamilyAttr = ele.getAttribute('data-original-font-family'),
             lineHeightAttr = ele.getAttribute('data-original-line-height'),
             originalFontSize = Number(fontSizeAttr);
 
@@ -288,13 +339,30 @@ Helpers.UpdateHtmlFontSize = function ($epubHtml, fontSize) {
             originalLineHeight = 0;
         }
 
-        $(ele).css("font-size", (originalFontSize * factor) + 'px');
+        switch(changeFontFamily){
+            case NOTHING:
+                break;
+            case ADD:
+                $(ele).css({
+                    "font-size" : (originalFontSize * factor) + 'px',
+                    "font-family" : fontFamily
+                });
+                break;
+            case REMOVE:
+                $(ele).css({
+                    "font-size" : (originalFontSize * factor) + 'px',
+                    "font-family" : fontFamilyAttr
+                });
+        }
         if (originalLineHeight) {
             $(ele).css("line-height", (originalLineHeight * factor) + 'px');
         }
 
     }
-    $epubHtml.css("font-size", fontSize + "%");
+    $epubHtml.css({
+        "font-size" : fontSize + "%",
+        "font-family" : (changeFontFamily == NOTHING ? "" : fontFamily)
+    });
     
     if (perf) {
         var time2 = window.performance.now();
