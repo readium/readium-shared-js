@@ -2169,14 +2169,6 @@ Helpers.UpdateHtmlFontAttributes = function ($epubHtml, fontSize, fontObj, callb
                     "rel" : "stylesheet",
                     "type" : "text/css"
                 });
-                if (!('onload' in link[0])) {
-//alert("LINK ONLOAD !?");
-                    var imgTag = $epubHtml[0].ownerDocument.createElement("img");
-                    imgTag.onerror = fontLoadCallback_;
-                    imgTag.src = fontObj.url;
-                } else {
-                    link[0].onload = fontLoadCallback_;
-                }
                 docHead.append(link);
                     
                 link.attr({
@@ -2190,14 +2182,6 @@ Helpers.UpdateHtmlFontAttributes = function ($epubHtml, fontSize, fontObj, callb
 // TODO: test this! (several font-faces in choice list)
 alert("HREF CHANGE: " + dataFontFamily + " != " + fontObj.fontFamily);
         
-            if (!('onload' in link[0])) {
-//alert("LINK ONLOAD !?");
-                var imgTag = $epubHtml[0].ownerDocument.createElement("img");
-                imgTag.onerror = fontLoadCallback_;
-                imgTag.src = fontObj.url;
-            } else {
-                link[0].onload = fontLoadCallback_;
-            }
             link.attr({
                 "data-fontfamily" : fontObj.fontFamily,
                 "href" : fontObj.url
@@ -2216,7 +2200,7 @@ alert("HREF CHANGE: " + dataFontFamily + " != " + fontObj.fontFamily);
         // just in case the link@onload does not trigger, we set a timeout
         setTimeout(function(){
             fontLoadCallback_();
-        }, 2000);
+        }, 100);
     }
     else { // REMOVE, NOTHING
         fontLoadCallback_();
@@ -2491,12 +2475,12 @@ Helpers.loadTemplate = function (name, params) {
 Helpers.loadTemplate.cache = {
     "fixed_book_frame": '<div id="fixed-book-frame" class="clearfix book-frame fixed-book-frame"></div>',
 
-    "single_page_frame": '<div><div id="scaler"><iframe scrolling="no" class="iframe-fixed"></iframe></div></div>',
+    "single_page_frame": '<div><div id="scaler"><iframe allowfullscreen="allowfullscreen" scrolling="no" class="iframe-fixed"></iframe></div></div>',
     //"single_page_frame" : '<div><iframe scrolling="no" class="iframe-fixed" id="scaler"></iframe></div>',
 
     "scrolled_book_frame": '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"><div id="scrolled-content-frame"></div></div>',
     "reflowable_book_frame": '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"></div>',
-    "reflowable_book_page_frame": '<div id="reflowable-content-frame" class="reflowable-content-frame"><iframe scrolling="no" id="epubContentIframe"></iframe></div>'
+    "reflowable_book_page_frame": '<div id="reflowable-content-frame" class="reflowable-content-frame"><iframe allowfullscreen="allowfullscreen" scrolling="no" id="epubContentIframe"></iframe></div>'
 };
 
 /**
@@ -17000,7 +16984,7 @@ Trigger.prototype.subscribe = function(dom) {
     var selector = "#" + this.observer;
     var that = this;
     $(selector, dom).on(this.event, function() {
-        that.execute(dom);
+        return that.execute(dom);
     });
 };
 
@@ -17040,7 +17024,10 @@ Trigger.prototype.execute = function(dom) {
             break;
         default:
             console.log("do not no how to handle trigger " + this.action);
+            return null;
     }
+    return false;   // do not propagate click event; it was already handled
+
 };
 
     return Trigger;

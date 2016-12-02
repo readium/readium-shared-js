@@ -590,7 +590,7 @@ define("readium-shared-js_all", function(){});
         peg$c6 = peg$literalExpectation(",", false),
         peg$c7 = function(stepVal, localPathVal, rangeLocalPath1Val, rangeLocalPath2Val) {
 
-                return { type:"range", path:stepVal, localPath:localPathVal, range1:rangeLocalPath1Val, range2:rangeLocalPath2Val };
+                return { type:"range", path:stepVal, localPath:localPathVal?localPathVal:"", range1:rangeLocalPath1Val, range2:rangeLocalPath2Val };
           },
         peg$c8 = function(stepVal, localPathVal) { 
 
@@ -886,6 +886,9 @@ define("readium-shared-js_all", function(){});
       s1 = peg$parseindexStep();
       if (s1 !== peg$FAILED) {
         s2 = peg$parselocal_path();
+        if (s2 === peg$FAILED) {
+          s2 = null;
+        }
         if (s2 !== peg$FAILED) {
           if (input.charCodeAt(peg$currPos) === 44) {
             s3 = peg$c5;
@@ -17785,7 +17788,7 @@ var HighlightsManager = function (proxyObj, options) {
         mangleEvent('annotationHoverIn');
         mangleEvent('annotationHoverOut');
 
-        originalEmit.apply(this, args);
+        originalEmit.apply(self, args);
         originalEmit.apply(proxy, args);
     };
 
@@ -19067,7 +19070,7 @@ define("es6-collections", function(){});
  * URI.js - Mutating URLs
  * IPv6 Support
  *
- * Version: 1.18.2
+ * Version: 1.18.3
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -19080,7 +19083,7 @@ define("es6-collections", function(){});
 (function (root, factory) {
   'use strict';
   // https://github.com/umdjs/umd/blob/master/returnExports.js
-  if (typeof exports === 'object') {
+  if (typeof module === 'object' && module.exports) {
     // Node
     module.exports = factory();
   } else if (typeof define === 'function' && define.amd) {
@@ -19253,7 +19256,7 @@ define("es6-collections", function(){});
  * URI.js - Mutating URLs
  * Second Level Domain (SLD) Support
  *
- * Version: 1.18.2
+ * Version: 1.18.3
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -19266,7 +19269,7 @@ define("es6-collections", function(){});
 (function (root, factory) {
   'use strict';
   // https://github.com/umdjs/umd/blob/master/returnExports.js
-  if (typeof exports === 'object') {
+  if (typeof module === 'object' && module.exports) {
     // Node
     module.exports = factory();
   } else if (typeof define === 'function' && define.amd) {
@@ -19493,7 +19496,7 @@ define("es6-collections", function(){});
 /*!
  * URI.js - Mutating URLs
  *
- * Version: 1.18.2
+ * Version: 1.18.3
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -19505,7 +19508,7 @@ define("es6-collections", function(){});
 (function (root, factory) {
   'use strict';
   // https://github.com/umdjs/umd/blob/master/returnExports.js
-  if (typeof exports === 'object') {
+  if (typeof module === 'object' && module.exports) {
     // Node
     module.exports = factory(require('./punycode'), require('./IPv6'), require('./SecondLevelDomains'));
   } else if (typeof define === 'function' && define.amd) {
@@ -19563,7 +19566,7 @@ define("es6-collections", function(){});
     return this;
   }
 
-  URI.version = '1.18.2';
+  URI.version = '1.18.3';
 
   var p = URI.prototype;
   var hasOwn = Object.prototype.hasOwnProperty;
@@ -23315,14 +23318,6 @@ Helpers.UpdateHtmlFontAttributes = function ($epubHtml, fontSize, fontObj, callb
                     "rel" : "stylesheet",
                     "type" : "text/css"
                 });
-                if (!('onload' in link[0])) {
-//alert("LINK ONLOAD !?");
-                    var imgTag = $epubHtml[0].ownerDocument.createElement("img");
-                    imgTag.onerror = fontLoadCallback_;
-                    imgTag.src = fontObj.url;
-                } else {
-                    link[0].onload = fontLoadCallback_;
-                }
                 docHead.append(link);
                     
                 link.attr({
@@ -23336,14 +23331,6 @@ Helpers.UpdateHtmlFontAttributes = function ($epubHtml, fontSize, fontObj, callb
 // TODO: test this! (several font-faces in choice list)
 alert("HREF CHANGE: " + dataFontFamily + " != " + fontObj.fontFamily);
         
-            if (!('onload' in link[0])) {
-//alert("LINK ONLOAD !?");
-                var imgTag = $epubHtml[0].ownerDocument.createElement("img");
-                imgTag.onerror = fontLoadCallback_;
-                imgTag.src = fontObj.url;
-            } else {
-                link[0].onload = fontLoadCallback_;
-            }
             link.attr({
                 "data-fontfamily" : fontObj.fontFamily,
                 "href" : fontObj.url
@@ -23362,7 +23349,7 @@ alert("HREF CHANGE: " + dataFontFamily + " != " + fontObj.fontFamily);
         // just in case the link@onload does not trigger, we set a timeout
         setTimeout(function(){
             fontLoadCallback_();
-        }, 2000);
+        }, 100);
     }
     else { // REMOVE, NOTHING
         fontLoadCallback_();
@@ -23637,12 +23624,12 @@ Helpers.loadTemplate = function (name, params) {
 Helpers.loadTemplate.cache = {
     "fixed_book_frame": '<div id="fixed-book-frame" class="clearfix book-frame fixed-book-frame"></div>',
 
-    "single_page_frame": '<div><div id="scaler"><iframe scrolling="no" class="iframe-fixed"></iframe></div></div>',
+    "single_page_frame": '<div><div id="scaler"><iframe allowfullscreen="allowfullscreen" scrolling="no" class="iframe-fixed"></iframe></div></div>',
     //"single_page_frame" : '<div><iframe scrolling="no" class="iframe-fixed" id="scaler"></iframe></div>',
 
     "scrolled_book_frame": '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"><div id="scrolled-content-frame"></div></div>',
     "reflowable_book_frame": '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"></div>',
-    "reflowable_book_page_frame": '<div id="reflowable-content-frame" class="reflowable-content-frame"><iframe scrolling="no" id="epubContentIframe"></iframe></div>'
+    "reflowable_book_page_frame": '<div id="reflowable-content-frame" class="reflowable-content-frame"><iframe allowfullscreen="allowfullscreen" scrolling="no" id="epubContentIframe"></iframe></div>'
 };
 
 /**
@@ -46022,7 +46009,7 @@ Trigger.prototype.subscribe = function(dom) {
     var selector = "#" + this.observer;
     var that = this;
     $(selector, dom).on(this.event, function() {
-        that.execute(dom);
+        return that.execute(dom);
     });
 };
 
@@ -46062,7 +46049,10 @@ Trigger.prototype.execute = function(dom) {
             break;
         default:
             console.log("do not no how to handle trigger " + this.action);
+            return null;
     }
+    return false;   // do not propagate click event; it was already handled
+
 };
 
     return Trigger;
