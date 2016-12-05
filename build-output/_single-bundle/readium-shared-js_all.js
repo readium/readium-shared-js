@@ -44814,12 +44814,8 @@ var ReflowableView = function(options, reader){
         resizeImages();
 
         updateColumnGap();
-<<<<<<< HEAD
-        updateHtmlFontInfo();
-=======
 
-        self.applyStyles();
->>>>>>> develop
+        updateHtmlFontInfo();
     }
 
     this.applyStyles = function() {
@@ -45095,10 +45091,7 @@ var ReflowableView = function(options, reader){
 
 
     function updatePagination_() {
-<<<<<<< HEAD
-=======
 
->>>>>>> develop
         // At 100% font-size = 16px (on HTML, not body or descendant markup!)
         var MAXW = _paginationInfo.columnMaxWidth;
         var MINW = _paginationInfo.columnMinWidth;
@@ -45307,8 +45300,6 @@ var ReflowableView = function(options, reader){
         // to avoid the pagination process to trigger a resize event during its first
         // execution, provoking a flicker
         initResizeSensor();
-<<<<<<< HEAD
-=======
     }
     var updatePagination = _.debounce(updatePagination_, 100);
 
@@ -45343,11 +45334,8 @@ var ReflowableView = function(options, reader){
                 console.debug("... ignored (identical dimensions).");
             }
         });
-
->>>>>>> develop
     }
-    var updatePagination = _.debounce(updatePagination_, 100);
-
+    
 //    function shiftBookOfScreen() {
 //
 //        if(_spine.isLeftToRight()) {
@@ -45357,31 +45345,6 @@ var ReflowableView = function(options, reader){
 //            _$epubHtml.css("right", (_lastViewPortSize.width + 1000) + "px");
 //        }
 //    }
-
-    function initResizeSensor() {
-        var bodyElement = _$htmlBody[0];
-        if (bodyElement.resizeSensor) {
-            return;
-        }
-
-        // We need to make sure the content has indeed be resized, especially
-        // the first time it is triggered
-        _lastBodySize.width = $(bodyElement).width();
-        _lastBodySize.height = $(bodyElement).height();
-        bodyElement.resizeSensor = new ResizeSensor(bodyElement, function() {
-            console.debug("ReflowableView content resized", $(bodyElement).width(), $(bodyElement).height(), _currentSpineItem.idref);
-            var newBodySize = {
-                width: $(bodyElement).width(),
-                height: $(bodyElement).height()
-            };
-            if (newBodySize.width != _lastBodySize.width || newBodySize.height != _lastBodySize.height) {
-                _lastBodySize.width = newBodySize.width;
-                _lastBodySize.height = newBodySize.height;
-                updatePagination();
-            }
-        });
-
-    }
 
     function hideBook()
     {
