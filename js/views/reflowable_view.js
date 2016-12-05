@@ -82,6 +82,11 @@ var ReflowableView = function(options, reader){
         height: undefined
     }
 
+    var _lastBodySize = {
+         width: undefined,
+         height: undefined
+     };
+
     var _paginationInfo = {
 
         visibleColumnCount : 2,
@@ -371,6 +376,7 @@ var ReflowableView = function(options, reader){
         resizeImages();
 
         updateColumnGap();
+
         updateHtmlFontInfo();
     }
 
@@ -647,6 +653,7 @@ var ReflowableView = function(options, reader){
 
 
     function updatePagination_() {
+
         // At 100% font-size = 16px (on HTML, not body or descendant markup!)
         var MAXW = _paginationInfo.columnMaxWidth;
         var MINW = _paginationInfo.columnMinWidth;
@@ -858,16 +865,6 @@ var ReflowableView = function(options, reader){
     }
     var updatePagination = _.debounce(updatePagination_, 100);
 
-//    function shiftBookOfScreen() {
-//
-//        if(_spine.isLeftToRight()) {
-//            _$epubHtml.css("left", (_lastViewPortSize.width + 1000) + "px");
-//        }
-//        else {
-//            _$epubHtml.css("right", (_lastViewPortSize.width + 1000) + "px");
-//        }
-//    }
-
     function initResizeSensor() {
         var bodyElement = _$htmlBody[0];
         if (bodyElement.resizeSensor) {
@@ -878,20 +875,38 @@ var ReflowableView = function(options, reader){
         // the first time it is triggered
         _lastBodySize.width = $(bodyElement).width();
         _lastBodySize.height = $(bodyElement).height();
+
         bodyElement.resizeSensor = new ResizeSensor(bodyElement, function() {
-            console.debug("ReflowableView content resized", $(bodyElement).width(), $(bodyElement).height(), _currentSpineItem.idref);
+            
             var newBodySize = {
                 width: $(bodyElement).width(),
                 height: $(bodyElement).height()
             };
+
+            console.debug("ReflowableView content resized ...", newBodySize.width, newBodySize.height, _currentSpineItem.idref);
+            
             if (newBodySize.width != _lastBodySize.width || newBodySize.height != _lastBodySize.height) {
                 _lastBodySize.width = newBodySize.width;
                 _lastBodySize.height = newBodySize.height;
+                
+                console.debug("... updating pagination.");
+
                 updatePagination();
+            } else {
+                console.debug("... ignored (identical dimensions).");
             }
         });
-
     }
+    
+//    function shiftBookOfScreen() {
+//
+//        if(_spine.isLeftToRight()) {
+//            _$epubHtml.css("left", (_lastViewPortSize.width + 1000) + "px");
+//        }
+//        else {
+//            _$epubHtml.css("right", (_lastViewPortSize.width + 1000) + "px");
+//        }
+//    }
 
     function hideBook()
     {

@@ -15474,6 +15474,11 @@ var ReflowableView = function(options, reader){
         height: undefined
     }
 
+    var _lastBodySize = {
+         width: undefined,
+         height: undefined
+     };
+
     var _paginationInfo = {
 
         visibleColumnCount : 2,
@@ -15763,7 +15768,12 @@ var ReflowableView = function(options, reader){
         resizeImages();
 
         updateColumnGap();
+<<<<<<< HEAD
         updateHtmlFontInfo();
+=======
+
+        self.applyStyles();
+>>>>>>> develop
     }
 
     this.applyStyles = function() {
@@ -16039,6 +16049,10 @@ var ReflowableView = function(options, reader){
 
 
     function updatePagination_() {
+<<<<<<< HEAD
+=======
+
+>>>>>>> develop
         // At 100% font-size = 16px (on HTML, not body or descendant markup!)
         var MAXW = _paginationInfo.columnMaxWidth;
         var MINW = _paginationInfo.columnMinWidth;
@@ -16247,6 +16261,44 @@ var ReflowableView = function(options, reader){
         // to avoid the pagination process to trigger a resize event during its first
         // execution, provoking a flicker
         initResizeSensor();
+<<<<<<< HEAD
+=======
+    }
+    var updatePagination = _.debounce(updatePagination_, 100);
+
+    function initResizeSensor() {
+        var bodyElement = _$htmlBody[0];
+        if (bodyElement.resizeSensor) {
+            return;
+        }
+
+        // We need to make sure the content has indeed be resized, especially
+        // the first time it is triggered
+        _lastBodySize.width = $(bodyElement).width();
+        _lastBodySize.height = $(bodyElement).height();
+
+        bodyElement.resizeSensor = new ResizeSensor(bodyElement, function() {
+            
+            var newBodySize = {
+                width: $(bodyElement).width(),
+                height: $(bodyElement).height()
+            };
+
+            console.debug("ReflowableView content resized ...", newBodySize.width, newBodySize.height, _currentSpineItem.idref);
+            
+            if (newBodySize.width != _lastBodySize.width || newBodySize.height != _lastBodySize.height) {
+                _lastBodySize.width = newBodySize.width;
+                _lastBodySize.height = newBodySize.height;
+                
+                console.debug("... updating pagination.");
+
+                updatePagination();
+            } else {
+                console.debug("... ignored (identical dimensions).");
+            }
+        });
+
+>>>>>>> develop
     }
     var updatePagination = _.debounce(updatePagination_, 100);
 

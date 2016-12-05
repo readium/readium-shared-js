@@ -19070,7 +19070,7 @@ define("es6-collections", function(){});
  * URI.js - Mutating URLs
  * IPv6 Support
  *
- * Version: 1.18.3
+ * Version: 1.18.4
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -19256,7 +19256,7 @@ define("es6-collections", function(){});
  * URI.js - Mutating URLs
  * Second Level Domain (SLD) Support
  *
- * Version: 1.18.3
+ * Version: 1.18.4
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -19496,7 +19496,7 @@ define("es6-collections", function(){});
 /*!
  * URI.js - Mutating URLs
  *
- * Version: 1.18.3
+ * Version: 1.18.4
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -19566,7 +19566,7 @@ define("es6-collections", function(){});
     return this;
   }
 
-  URI.version = '1.18.3';
+  URI.version = '1.18.4';
 
   var p = URI.prototype;
   var hasOwn = Object.prototype.hasOwnProperty;
@@ -19715,7 +19715,9 @@ define("es6-collections", function(){});
     // everything up to the next whitespace
     end: /[\s\r\n]|$/,
     // trim trailing punctuation captured by end RegExp
-    trim: /[`!()\[\]{};:'".,<>?«»“”„‘’]+$/
+    trim: /[`!()\[\]{};:'".,<>?«»“”„‘’]+$/,
+    // balanced parens inclusion (), [], {}, <>
+    parens: /(\([^\)]*\)|\[[^\]]*\]|\{[^}]*\}|<[^>]*>)/g,
   };
   // http://www.iana.org/assignments/uri-schemes.html
   // http://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers#Well-known_ports
@@ -20437,6 +20439,7 @@ define("es6-collections", function(){});
     var _start = options.start || URI.findUri.start;
     var _end = options.end || URI.findUri.end;
     var _trim = options.trim || URI.findUri.trim;
+    var _parens = options.parens || URI.findUri.parens;
     var _attributeOpen = /[a-z0-9-]=["']?$/i;
 
     _start.lastIndex = 0;
@@ -20456,7 +20459,25 @@ define("es6-collections", function(){});
       }
 
       var end = start + string.slice(start).search(_end);
-      var slice = string.slice(start, end).replace(_trim, '');
+      var slice = string.slice(start, end);
+      // make sure we include well balanced parens
+      var parensEnd = -1;
+      while (true) {
+        var parensMatch = _parens.exec(slice);
+        if (!parensMatch) {
+          break;
+        }
+
+        var parensMatchEnd = parensMatch.index + parensMatch[0].length;
+        parensEnd = Math.max(parensEnd, parensMatchEnd);
+      }
+
+      if (parensEnd > -1) {
+        slice = slice.slice(0, parensEnd) + slice.slice(parensEnd + 1).replace(_trim, '');
+      } else {
+        slice = slice.replace(_trim, '');
+      }
+
       if (options.ignore && options.ignore.test(slice)) {
         continue;
       }
@@ -44499,6 +44520,11 @@ var ReflowableView = function(options, reader){
         height: undefined
     }
 
+    var _lastBodySize = {
+         width: undefined,
+         height: undefined
+     };
+
     var _paginationInfo = {
 
         visibleColumnCount : 2,
@@ -44788,7 +44814,12 @@ var ReflowableView = function(options, reader){
         resizeImages();
 
         updateColumnGap();
+<<<<<<< HEAD
         updateHtmlFontInfo();
+=======
+
+        self.applyStyles();
+>>>>>>> develop
     }
 
     this.applyStyles = function() {
@@ -45064,6 +45095,10 @@ var ReflowableView = function(options, reader){
 
 
     function updatePagination_() {
+<<<<<<< HEAD
+=======
+
+>>>>>>> develop
         // At 100% font-size = 16px (on HTML, not body or descendant markup!)
         var MAXW = _paginationInfo.columnMaxWidth;
         var MINW = _paginationInfo.columnMinWidth;
@@ -45272,6 +45307,44 @@ var ReflowableView = function(options, reader){
         // to avoid the pagination process to trigger a resize event during its first
         // execution, provoking a flicker
         initResizeSensor();
+<<<<<<< HEAD
+=======
+    }
+    var updatePagination = _.debounce(updatePagination_, 100);
+
+    function initResizeSensor() {
+        var bodyElement = _$htmlBody[0];
+        if (bodyElement.resizeSensor) {
+            return;
+        }
+
+        // We need to make sure the content has indeed be resized, especially
+        // the first time it is triggered
+        _lastBodySize.width = $(bodyElement).width();
+        _lastBodySize.height = $(bodyElement).height();
+
+        bodyElement.resizeSensor = new ResizeSensor(bodyElement, function() {
+            
+            var newBodySize = {
+                width: $(bodyElement).width(),
+                height: $(bodyElement).height()
+            };
+
+            console.debug("ReflowableView content resized ...", newBodySize.width, newBodySize.height, _currentSpineItem.idref);
+            
+            if (newBodySize.width != _lastBodySize.width || newBodySize.height != _lastBodySize.height) {
+                _lastBodySize.width = newBodySize.width;
+                _lastBodySize.height = newBodySize.height;
+                
+                console.debug("... updating pagination.");
+
+                updatePagination();
+            } else {
+                console.debug("... ignored (identical dimensions).");
+            }
+        });
+
+>>>>>>> develop
     }
     var updatePagination = _.debounce(updatePagination_, 100);
 
