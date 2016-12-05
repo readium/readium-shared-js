@@ -376,13 +376,10 @@ Helpers.UpdateHtmlFontAttributes = function ($epubHtml, fontSize, fontObj, callb
                 link.attr({
                     "href" : fontObj.url
                 });
-//alert("ADD");
             }, 0);
         }
         else if(dataFontFamily != fontObj.fontFamily){
             changeFontFamily = ADD;
-// TODO: test this! (several font-faces in choice list)
-alert("HREF CHANGE: " + dataFontFamily + " != " + fontObj.fontFamily);
         
             link.attr({
                 "data-fontfamily" : fontObj.fontFamily,
@@ -394,7 +391,6 @@ alert("HREF CHANGE: " + dataFontFamily + " != " + fontObj.fontFamily);
     }
     else{
         changeFontFamily = REMOVE;
-//alert("REMOVE");
         if(link.length) link.remove();
     }
 
