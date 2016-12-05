@@ -11900,7 +11900,7 @@ return jQuery;
  * URI.js - Mutating URLs
  * IPv6 Support
  *
- * Version: 1.18.3
+ * Version: 1.18.4
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -12086,7 +12086,7 @@ return jQuery;
  * URI.js - Mutating URLs
  * Second Level Domain (SLD) Support
  *
- * Version: 1.18.3
+ * Version: 1.18.4
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -12326,7 +12326,7 @@ return jQuery;
 /*!
  * URI.js - Mutating URLs
  *
- * Version: 1.18.3
+ * Version: 1.18.4
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -12396,7 +12396,7 @@ return jQuery;
     return this;
   }
 
-  URI.version = '1.18.3';
+  URI.version = '1.18.4';
 
   var p = URI.prototype;
   var hasOwn = Object.prototype.hasOwnProperty;
@@ -12545,7 +12545,9 @@ return jQuery;
     // everything up to the next whitespace
     end: /[\s\r\n]|$/,
     // trim trailing punctuation captured by end RegExp
-    trim: /[`!()\[\]{};:'".,<>?«»“”„‘’]+$/
+    trim: /[`!()\[\]{};:'".,<>?«»“”„‘’]+$/,
+    // balanced parens inclusion (), [], {}, <>
+    parens: /(\([^\)]*\)|\[[^\]]*\]|\{[^}]*\}|<[^>]*>)/g,
   };
   // http://www.iana.org/assignments/uri-schemes.html
   // http://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers#Well-known_ports
@@ -13267,6 +13269,7 @@ return jQuery;
     var _start = options.start || URI.findUri.start;
     var _end = options.end || URI.findUri.end;
     var _trim = options.trim || URI.findUri.trim;
+    var _parens = options.parens || URI.findUri.parens;
     var _attributeOpen = /[a-z0-9-]=["']?$/i;
 
     _start.lastIndex = 0;
@@ -13286,7 +13289,25 @@ return jQuery;
       }
 
       var end = start + string.slice(start).search(_end);
-      var slice = string.slice(start, end).replace(_trim, '');
+      var slice = string.slice(start, end);
+      // make sure we include well balanced parens
+      var parensEnd = -1;
+      while (true) {
+        var parensMatch = _parens.exec(slice);
+        if (!parensMatch) {
+          break;
+        }
+
+        var parensMatchEnd = parensMatch.index + parensMatch[0].length;
+        parensEnd = Math.max(parensEnd, parensMatchEnd);
+      }
+
+      if (parensEnd > -1) {
+        slice = slice.slice(0, parensEnd) + slice.slice(parensEnd + 1).replace(_trim, '');
+      } else {
+        slice = slice.replace(_trim, '');
+      }
+
       if (options.ignore && options.ignore.test(slice)) {
         continue;
       }
