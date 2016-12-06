@@ -508,19 +508,19 @@ var ScrollView = function (options, isContinuousScroll, reader) {
     };
 
     var _viewSettings = undefined;
-    this.setViewSettings = function (settings) {
+    this.setViewSettings = function (settings, docWillChange) {
 
         _viewSettings = settings;
 
         forEachItemView(function (pageView) {
 
-            pageView.setViewSettings(settings);
+            pageView.setViewSettings(settings, docWillChange);
 
         }, false);
     };
 
     function createPageViewForSpineItem(isTemporaryView) {
-
+        
         options.disablePageTransitions = true; // force
 
         var pageView = new OnePageView(
@@ -564,7 +564,9 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         });
 
         pageView.render();
-        if (_viewSettings) pageView.setViewSettings(_viewSettings);
+
+        var docWillChange = true;
+        if (_viewSettings) pageView.setViewSettings(_viewSettings, docWillChange);
 
         if (!isTemporaryView) {
             pageView.element().data("pageView", pageView);

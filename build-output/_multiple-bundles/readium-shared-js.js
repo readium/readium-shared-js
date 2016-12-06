@@ -2036,79 +2036,174 @@ Helpers.Rect.fromElement = function ($element) {
 
     return new Helpers.Rect(offsetLeft, offsetTop, offsetWidth, offsetHeight);
 };
+/**
+ *
+ * @param $epubHtml: The html that is to have font attributes added.
+ * @param fontSize: The font size that is to be added to the element at all locations.
+ * @param fontObj: The font Object containing at minimum the URL, and fontFamilyName (In fields url and fontFamily) respectively. Pass in null's on the object's fields to signal no font.
+ * @param callback: function invoked when "done", which means that if there are asynchronous operations such as font-face loading via injected stylesheets, then the UpdateHtmlFontAttributes() function returns immediately but the caller should wait for the callback function call if fully-loaded font-face *stylesheets* are required on the caller's side (note that the caller's side may still need to detect *actual font loading*, via the FontLoader API or some sort of ResizeSensor to indicate that the updated font-family has been used to render the document). 
+ */
 
-Helpers.UpdateHtmlFontSize = function ($epubHtml, fontSize) {
-
-    var perf = false;
-
-    // TODO: very slow on Firefox!
-    // See https://github.com/readium/readium-shared-js/issues/274
-    if (perf) var time1 = window.performance.now();
-
-    var factor = fontSize / 100;
-    var win = $epubHtml[0].ownerDocument.defaultView;
-    var $textblocks = $('p, div, span, h1, h2, h3, h4, h5, h6, li, blockquote, td, pre', $epubHtml);
-    var originalLineHeight;
+Helpers.UpdateHtmlFontAttributes = function ($epubHtml, fontSize, fontObj, callback) {
 
 
-    // need to do two passes because it is possible to have nested text blocks.
-    // If you change the font size of the parent this will then create an inaccurate
-    // font size for any children.
-    for (var i = 0; i < $textblocks.length; i++) {
-        var ele = $textblocks[i],
-            fontSizeAttr = ele.getAttribute('data-original-font-size');
+    var FONT_FAMILY_ID = "readium_font_family_link";
 
-        if (!fontSizeAttr) {
+    var docHead = $("head", $epubHtml);
+    var link = $("#" + FONT_FAMILY_ID, docHead);
+
+    const NOTHING = 0, ADD = 1, REMOVE = 2; //Types for css font family.
+    var changeFontFamily = NOTHING;
+
+    var fontLoadCallback = function() {
+            
+        var perf = false;
+
+        // TODO: very slow on Firefox!
+        // See https://github.com/readium/readium-shared-js/issues/274
+        if (perf) var time1 = window.performance.now();
+
+        var factor = fontSize / 100;
+        var win = $epubHtml[0].ownerDocument.defaultView;
+        var $textblocks = $('p, div, span, h1, h2, h3, h4, h5, h6, li, blockquote, td, pre', $epubHtml);
+        
+        // need to do two passes because it is possible to have nested text blocks.
+        // If you change the font size of the parent this will then create an inaccurate
+        // font size for any children.
+        for (var i = 0; i < $textblocks.length; i++) {
+
+            var ele = $textblocks[i];
+            
+            var fontSizeAttr = ele.getAttribute('data-original-font-size');
+            if (fontSizeAttr) {
+                // early exit, original values already set.
+                break;
+            }
+
             var style = win.getComputedStyle(ele);
+            
             var originalFontSize = parseInt(style.fontSize);
-            originalLineHeight = parseInt(style.lineHeight);
-
             ele.setAttribute('data-original-font-size', originalFontSize);
+
+            var originalLineHeight = parseInt(style.lineHeight);
             // getComputedStyle will not calculate the line-height if the value is 'normal'. In this case parseInt will return NaN
             if (originalLineHeight) {
                 ele.setAttribute('data-original-line-height', originalLineHeight);
             }
+            
+            var fontFamilyAttr = ele.getAttribute('data-original-font-family');
+            if (!fontFamilyAttr) {
+                var originalFontFamily = style.fontFamily;
+                if (originalFontFamily) {
+                    ele.setAttribute('data-original-font-family', originalFontFamily);
+                }
+            }
+        }
+
+        for (var i = 0; i < $textblocks.length; i++) {
+            var ele = $textblocks[i];
+
+            // TODO: group the 3x potential $(ele).css() calls below to avoid multiple jQuery style mutations 
+
+            var fontSizeAttr = ele.getAttribute('data-original-font-size');
+            var originalFontSize = Number(fontSizeAttr);
+            $(ele).css("font-size", (originalFontSize * factor) + 'px');
+
+            var lineHeightAttr = ele.getAttribute('data-original-line-height');
+            var originalLineHeight = lineHeightAttr ? Number(lineHeightAttr) : 0;
+            if (originalLineHeight) {
+                $(ele).css("line-height", (originalLineHeight * factor) + 'px');
+            }
+            
+            var fontFamilyAttr = ele.getAttribute('data-original-font-family');
+            switch(changeFontFamily){
+                case NOTHING:
+                    break;
+                case ADD:
+                    $(ele).css("font-family", fontObj.fontFamily);
+                    break;
+                case REMOVE:
+                    $(ele).css("font-family", fontFamilyAttr);
+                    break;
+            }
+        }
+
+        $epubHtml.css("font-size", fontSize + "%");
+        // $epubHtml.css({
+        //     "font-size" : fontSize + "%",
+        //     "font-family" : (changeFontFamily == ADD ? fontFamily : "")
+        // });
+        
+        if (perf) {
+            var time2 = window.performance.now();
+        
+            // Firefox: 80+
+            // Chrome: 4-10
+            // Edge: 15-34
+            // IE: 10-15
+            // https://readium.firebase.com/?epub=..%2Fepub_content%2Faccessible_epub_3&goto=%7B%22idref%22%3A%22id-id2635343%22%2C%22elementCfi%22%3A%22%2F4%2F2%5Bbuilding_a_better_epub%5D%2F10%2F44%2F6%2C%2F1%3A334%2C%2F1%3A335%22%7D
+            
+            var diff = time2-time1;
+            console.log(diff);
+            
+            // setTimeout(function(){
+            //     alert(diff);
+            // }, 2000);
+        }
+
+        callback();
+    };
+    var fontLoadCallback_ = _.once(fontLoadCallback);
+
+    if(fontObj.fontFamily && fontObj.url){
+        var dataFontFamily = link.length ? link.attr("data-fontfamily") : undefined;
+
+        if(!link.length){
+            changeFontFamily = ADD;
+
+            setTimeout(function(){
+                
+                link = $("<link/>", {
+                    "id" : FONT_FAMILY_ID,
+                    "data-fontfamily" : fontObj.fontFamily,
+                    "rel" : "stylesheet",
+                    "type" : "text/css"
+                });
+                docHead.append(link);
+                    
+                link.attr({
+                    "href" : fontObj.url
+                });
+//alert("ADD");
+            }, 0);
+        }
+        else if(dataFontFamily != fontObj.fontFamily){
+            changeFontFamily = ADD;
+// TODO: test this! (several font-faces in choice list)
+alert("HREF CHANGE: " + dataFontFamily + " != " + fontObj.fontFamily);
+        
+            link.attr({
+                "data-fontfamily" : fontObj.fontFamily,
+                "href" : fontObj.url
+            });
+        } else {
+            changeFontFamily = NOTHING;
         }
     }
-
-    // reset variable so the below logic works. All variables in JS are function scoped.
-    originalLineHeight = 0;
-    for (var i = 0; i < $textblocks.length; i++) {
-        var ele = $textblocks[i],
-            fontSizeAttr = ele.getAttribute('data-original-font-size'),
-            lineHeightAttr = ele.getAttribute('data-original-line-height'),
-            originalFontSize = Number(fontSizeAttr);
-
-        if (lineHeightAttr) {
-            originalLineHeight = Number(lineHeightAttr);
-        }
-        else {
-            originalLineHeight = 0;
-        }
-
-        $(ele).css("font-size", (originalFontSize * factor) + 'px');
-        if (originalLineHeight) {
-            $(ele).css("line-height", (originalLineHeight * factor) + 'px');
-        }
-
+    else{
+        changeFontFamily = REMOVE;
+//alert("REMOVE");
+        if(link.length) link.remove();
     }
-    $epubHtml.css("font-size", fontSize + "%");
-    
-    if (perf) {
-        var time2 = window.performance.now();
-    
-        // Firefox: 80+
-        // Chrome: 4-10
-        // Edge: 15-34
-        // IE: 10-15
-        // https://readium.firebase.com/?epub=..%2Fepub_content%2Faccessible_epub_3&goto=%7B%22idref%22%3A%22id-id2635343%22%2C%22elementCfi%22%3A%22%2F4%2F2%5Bbuilding_a_better_epub%5D%2F10%2F44%2F6%2C%2F1%3A334%2C%2F1%3A335%22%7D
-        
-        var diff = time2-time1;
-        console.log(diff);
-        
-        // setTimeout(function(){
-        //     alert(diff);
-        // }, 2000);
+
+    if (changeFontFamily == ADD) {
+        // just in case the link@onload does not trigger, we set a timeout
+        setTimeout(function(){
+            fontLoadCallback_();
+        }, 100);
+    }
+    else { // REMOVE, NOTHING
+        fontLoadCallback_();
     }
 };
 
@@ -4368,7 +4463,15 @@ var ViewerSettings = function(settingsData) {
      */
 
     this.syntheticSpread = "auto";
+
+    /** 
+     *
+     * @property fontSelection
+     * @type number
+     */
     
+    this.fontSelection = 0;
+
     /** 
      *
      * @property fontSize
@@ -4568,6 +4671,7 @@ var ViewerSettings = function(settingsData) {
         mapProperty("columnMaxWidth", settingsData);
         mapProperty("columnMinWidth", settingsData);
         mapProperty("fontSize", settingsData);
+        mapProperty("fontSelection", settingsData);
         mapProperty("mediaOverlaysPreservePlaybackWhenScroll", settingsData);
         mapProperty("mediaOverlaysSkipSkippables", settingsData);
         mapProperty("mediaOverlaysEscapeEscapables", settingsData);
@@ -5185,8 +5289,6 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
             //_$epubHtml.css("overflow", "hidden");
 
-
-
             if (_enableBookStyleOverrides) {
                 self.applyBookStyles();
             }
@@ -5207,11 +5309,11 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
     }
 
     var _viewSettings = undefined;
-    this.setViewSettings = function (settings) {
+    this.setViewSettings = function (settings, docWillChange) {
 
         _viewSettings = settings;
 
-        if (_enableBookStyleOverrides) {
+        if (_enableBookStyleOverrides && !docWillChange) {
             self.applyBookStyles();
         }
 
@@ -5220,12 +5322,13 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         _pageTransitionHandler.updateOptions(settings);
     };
 
-    function updateHtmlFontSize() {
+    function updateHtmlFontInfo() {
 
         if (!_enableBookStyleOverrides) return;
 
         if (_$epubHtml && _viewSettings) {
-            Helpers.UpdateHtmlFontSize(_$epubHtml, _viewSettings.fontSize);
+            var font = (_viewSettings.fontSelection > 0 ? reader.fonts[_viewSettings.fontSelection] : {});
+            Helpers.UpdateHtmlFontAttributes(_$epubHtml, _viewSettings.fontSize, font, function() {});
         }
     }
 
@@ -5235,7 +5338,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
         if (_$epubHtml) {
             Helpers.setStyles(_bookStyles.getStyles(), _$epubHtml);
-            updateHtmlFontSize();
+            updateHtmlFontInfo();
         }
     };
 
@@ -6161,7 +6264,7 @@ var FixedView = function(options, reader){
     };
 
 
-    this.setViewSettings = function(settings) {
+    this.setViewSettings = function(settings, docWillChange) {
         
         _viewSettings = settings;
         
@@ -6169,7 +6272,7 @@ var FixedView = function(options, reader){
 
         var views = getDisplayingViews();
         for(var i = 0, count = views.length; i < count; i++) {
-            views[i].setViewSettings(settings);
+            views[i].setViewSettings(settings, docWillChange);
         }
     };
 
@@ -9895,19 +9998,19 @@ var ScrollView = function (options, isContinuousScroll, reader) {
     };
 
     var _viewSettings = undefined;
-    this.setViewSettings = function (settings) {
+    this.setViewSettings = function (settings, docWillChange) {
 
         _viewSettings = settings;
 
         forEachItemView(function (pageView) {
 
-            pageView.setViewSettings(settings);
+            pageView.setViewSettings(settings, docWillChange);
 
         }, false);
     };
 
     function createPageViewForSpineItem(isTemporaryView) {
-
+        
         options.disablePageTransitions = true; // force
 
         var pageView = new OnePageView(
@@ -9951,7 +10054,9 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         });
 
         pageView.render();
-        if (_viewSettings) pageView.setViewSettings(_viewSettings);
+
+        var docWillChange = true;
+        if (_viewSettings) pageView.setViewSettings(_viewSettings, docWillChange);
 
         if (!isTemporaryView) {
             pageView.element().data("pageView", pageView);
@@ -15325,7 +15430,6 @@ define('readium_shared_js/views/reflowable_view',["../globals", "jquery", "under
  * @constructor
  */
 var ReflowableView = function(options, reader){
-
     $.extend(this, new EventEmitter());
 
     var self = this;
@@ -15340,6 +15444,7 @@ var ReflowableView = function(options, reader){
     var _isWaitingFrameRender = false;
     var _deferredPageRequest;
     var _fontSize = 100;
+    var _fontSelection = 0;
     var _$contentFrame;
     var _navigationLogic;
     var _$el;
@@ -15364,6 +15469,10 @@ var ReflowableView = function(options, reader){
         width: undefined,
         height: undefined
     };
+    var _lastBodySize = {
+        width: undefined,
+        height: undefined
+    }
 
     var _lastBodySize = {
          width: undefined,
@@ -15436,7 +15545,7 @@ var ReflowableView = function(options, reader){
     };
 
     var _viewSettings = undefined;
-    this.setViewSettings = function(settings) {
+    this.setViewSettings = function(settings, docWillChange) {
 
         _viewSettings = settings;
 
@@ -15445,12 +15554,15 @@ var ReflowableView = function(options, reader){
         _paginationInfo.columnMinWidth = settings.columnMinWidth;
         
         _fontSize = settings.fontSize;
-
-        updateHtmlFontSize();
-        updateColumnGap();
+        _fontSelection = settings.fontSelection;
 
         updateViewportSize();
-        updatePagination();
+
+        if (!docWillChange) {
+            updateColumnGap();
+
+            updateHtmlFontInfo();
+        }
     };
     
     function getFrameDimensions() {
@@ -15523,10 +15635,12 @@ var ReflowableView = function(options, reader){
         }
     }
 
-    function updateHtmlFontSize() {
-
+    function updateHtmlFontInfo() {
+    
         if(_$epubHtml) {
-            Helpers.UpdateHtmlFontSize(_$epubHtml, _fontSize);
+
+            var _curFont = (_fontSelection == 0 ? {} : reader.fonts[_fontSelection-1]);
+            Helpers.UpdateHtmlFontAttributes(_$epubHtml, _fontSize, _curFont, function() {self.applyStyles();});
         }
     }
 
@@ -15653,10 +15767,9 @@ var ReflowableView = function(options, reader){
         self.applyBookStyles();
         resizeImages();
 
-        updateHtmlFontSize();
         updateColumnGap();
 
-        self.applyStyles();
+        updateHtmlFontInfo();
     }
 
     this.applyStyles = function() {
@@ -16078,11 +16191,19 @@ var ReflowableView = function(options, reader){
 
         Helpers.triggerLayout(_$iframe);
 
-        _paginationInfo.columnCount = ((_htmlBodyIsVerticalWritingMode ? _$epubHtml[0].scrollHeight : _$epubHtml[0].scrollWidth) + _paginationInfo.columnGap) / (_paginationInfo.columnWidth + _paginationInfo.columnGap);
+        var dim = (_htmlBodyIsVerticalWritingMode ? _$epubHtml[0].scrollHeight : _$epubHtml[0].scrollWidth);
+        if (dim == 0) {
+            console.error("Document dimensions zero?!");
+        }
+
+        _paginationInfo.columnCount = (dim + _paginationInfo.columnGap) / (_paginationInfo.columnWidth + _paginationInfo.columnGap);
         _paginationInfo.columnCount = Math.round(_paginationInfo.columnCount);
+        if (_paginationInfo.columnCount == 0) {
+            console.error("Column count zero?!");
+        }
 
         var totalGaps = (_paginationInfo.columnCount-1) * _paginationInfo.columnGap;
-        var colWidthCheck = ((_htmlBodyIsVerticalWritingMode ? _$epubHtml[0].scrollHeight : _$epubHtml[0].scrollWidth) - totalGaps) / _paginationInfo.columnCount;
+        var colWidthCheck = (dim - totalGaps) / _paginationInfo.columnCount;
         colWidthCheck = Math.round(colWidthCheck);
 
         if (colWidthCheck > _paginationInfo.columnWidth)
@@ -16167,9 +16288,8 @@ var ReflowableView = function(options, reader){
                 console.debug("... ignored (identical dimensions).");
             }
         });
-
     }
-
+    
 //    function shiftBookOfScreen() {
 //
 //        if(_spine.isLeftToRight()) {
@@ -17073,7 +17193,6 @@ define('readium_shared_js/views/reader_view',["../globals", "jquery", "underscor
  * @constructor
  */
 var ReaderView = function (options) {
-
     $.extend(this, new EventEmitter());
 
     var self = this;
@@ -17098,6 +17217,9 @@ var ReaderView = function (options) {
         handleViewportResizeEnd, 250, 1000, self);
 
     $(window).on("resize.ReadiumSDK.readerView", lazyResize);
+
+    this.fonts = options.fonts;
+
 
     if (options.el instanceof $) {
         _$el = options.el;
@@ -17309,7 +17431,9 @@ var ReaderView = function (options) {
         })
 
         _currentView.render();
-        _currentView.setViewSettings(_viewerSettings);
+
+        var docWillChange = true;
+        _currentView.setViewSettings(_viewerSettings, docWillChange);
 
         // we do this to wait until elements are rendered otherwise book is not able to determine view size.
         setTimeout(function () {
@@ -17571,6 +17695,7 @@ var ReaderView = function (options) {
      *
      * @typedef {object} Globals.Views.ReaderView.SettingsData
      * @property {number} fontSize - Font size as percentage
+     * @property {number} fontSelection - Font selection as the number in the list of possible fonts, where 0 is special meaning default.
      * @property {(string|boolean)} syntheticSpread - "auto"|true|false
      * @property {(string|boolean)} scroll - "auto"|true|false
      * @property {boolean} doNotUpdateView - Indicates whether the view should be updated after the settings are applied
@@ -17612,8 +17737,15 @@ var ReaderView = function (options) {
                 initViewForItem(spineItem, function (isViewChanged) {
 
                     if (!isViewChanged) {
-                        _currentView.setViewSettings(_viewerSettings);
+                        var docWillChange = false;
+                        _currentView.setViewSettings(_viewerSettings, docWillChange);
                     }
+
+                    self.once(ReadiumSDK.Events.PAGINATION_CHANGED, function (pageChangeData)
+                    {
+                        var cfi = new BookmarkData(bookMark.idref, bookMark.contentCFI);
+                        self.debugBookmarkData(cfi);
+                    });
 
                     self.openSpineItemElementCfi(bookMark.idref, bookMark.contentCFI, self);
 
@@ -17796,7 +17928,8 @@ var ReaderView = function (options) {
         initViewForItem(pageRequest.spineItem, function (isViewChanged) {
 
             if (!isViewChanged) {
-                _currentView.setViewSettings(_viewerSettings);
+                var docWillChange = true;
+                _currentView.setViewSettings(_viewerSettings, docWillChange);
             }
 
             _currentView.openPage(pageRequest, dir);
@@ -18015,6 +18148,54 @@ var ReaderView = function (options) {
         openPage(pageData, 0);
 
         return true;
+    };
+
+    //var cfi = new BookmarkData(bookmark.idref, bookmark.contentCFI);
+    this.debugBookmarkData = function(cfi) {
+
+        if (!ReadiumSDK) return;
+
+        var DEBUG = true; // change this to visualize the CFI range
+        if (!DEBUG) return;
+            
+        var paginationInfo = this.getPaginationInfo();
+        console.log(JSON.stringify(paginationInfo));
+        
+        if (paginationInfo.isFixedLayout) return;
+    
+        try {
+            ReadiumSDK._DEBUG_CfiNavigationLogic.clearDebugOverlays();
+            
+        } catch (error) {
+            //ignore
+        }
+        
+        try {
+            console.log(cfi);
+            
+            var range = this.getDomRangeFromRangeCfi(cfi);
+            console.log(range);
+            
+            var res = ReadiumSDK._DEBUG_CfiNavigationLogic.drawDebugOverlayFromDomRange(range);
+            console.log(res);
+        
+            var cfiFirst = ReadiumSDK.reader.getFirstVisibleCfi();
+            console.log(cfiFirst);
+            
+            var cfiLast  = ReadiumSDK.reader.getLastVisibleCfi();
+            console.log(cfiLast);
+            
+        } catch (error) {
+            //ignore
+        }
+        
+        setTimeout(function() {
+            try {
+                ReadiumSDK._DEBUG_CfiNavigationLogic.clearDebugOverlays();
+            } catch (error) {
+                //ignore
+            }
+        }, 2000);
     };
 
     /**

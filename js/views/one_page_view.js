@@ -375,8 +375,6 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
             //_$epubHtml.css("overflow", "hidden");
 
-
-
             if (_enableBookStyleOverrides) {
                 self.applyBookStyles();
             }
@@ -397,11 +395,11 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
     }
 
     var _viewSettings = undefined;
-    this.setViewSettings = function (settings) {
+    this.setViewSettings = function (settings, docWillChange) {
 
         _viewSettings = settings;
 
-        if (_enableBookStyleOverrides) {
+        if (_enableBookStyleOverrides && !docWillChange) {
             self.applyBookStyles();
         }
 
@@ -410,12 +408,13 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         _pageTransitionHandler.updateOptions(settings);
     };
 
-    function updateHtmlFontSize() {
+    function updateHtmlFontInfo() {
 
         if (!_enableBookStyleOverrides) return;
 
         if (_$epubHtml && _viewSettings) {
-            Helpers.UpdateHtmlFontSize(_$epubHtml, _viewSettings.fontSize);
+            var font = (_viewSettings.fontSelection > 0 ? reader.fonts[_viewSettings.fontSelection] : {});
+            Helpers.UpdateHtmlFontAttributes(_$epubHtml, _viewSettings.fontSize, font, function() {});
         }
     }
 
@@ -425,7 +424,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
         if (_$epubHtml) {
             Helpers.setStyles(_bookStyles.getStyles(), _$epubHtml);
-            updateHtmlFontSize();
+            updateHtmlFontInfo();
         }
     };
 

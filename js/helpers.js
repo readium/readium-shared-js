@@ -238,79 +238,170 @@ Helpers.Rect.fromElement = function ($element) {
 
     return new Helpers.Rect(offsetLeft, offsetTop, offsetWidth, offsetHeight);
 };
+/**
+ *
+ * @param $epubHtml: The html that is to have font attributes added.
+ * @param fontSize: The font size that is to be added to the element at all locations.
+ * @param fontObj: The font Object containing at minimum the URL, and fontFamilyName (In fields url and fontFamily) respectively. Pass in null's on the object's fields to signal no font.
+ * @param callback: function invoked when "done", which means that if there are asynchronous operations such as font-face loading via injected stylesheets, then the UpdateHtmlFontAttributes() function returns immediately but the caller should wait for the callback function call if fully-loaded font-face *stylesheets* are required on the caller's side (note that the caller's side may still need to detect *actual font loading*, via the FontLoader API or some sort of ResizeSensor to indicate that the updated font-family has been used to render the document). 
+ */
 
-Helpers.UpdateHtmlFontSize = function ($epubHtml, fontSize) {
-
-    var perf = false;
-
-    // TODO: very slow on Firefox!
-    // See https://github.com/readium/readium-shared-js/issues/274
-    if (perf) var time1 = window.performance.now();
-
-    var factor = fontSize / 100;
-    var win = $epubHtml[0].ownerDocument.defaultView;
-    var $textblocks = $('p, div, span, h1, h2, h3, h4, h5, h6, li, blockquote, td, pre', $epubHtml);
-    var originalLineHeight;
+Helpers.UpdateHtmlFontAttributes = function ($epubHtml, fontSize, fontObj, callback) {
 
 
-    // need to do two passes because it is possible to have nested text blocks.
-    // If you change the font size of the parent this will then create an inaccurate
-    // font size for any children.
-    for (var i = 0; i < $textblocks.length; i++) {
-        var ele = $textblocks[i],
-            fontSizeAttr = ele.getAttribute('data-original-font-size');
+    var FONT_FAMILY_ID = "readium_font_family_link";
 
-        if (!fontSizeAttr) {
+    var docHead = $("head", $epubHtml);
+    var link = $("#" + FONT_FAMILY_ID, docHead);
+
+    const NOTHING = 0, ADD = 1, REMOVE = 2; //Types for css font family.
+    var changeFontFamily = NOTHING;
+
+    var fontLoadCallback = function() {
+            
+        var perf = false;
+
+        // TODO: very slow on Firefox!
+        // See https://github.com/readium/readium-shared-js/issues/274
+        if (perf) var time1 = window.performance.now();
+
+        var factor = fontSize / 100;
+        var win = $epubHtml[0].ownerDocument.defaultView;
+        var $textblocks = $('p, div, span, h1, h2, h3, h4, h5, h6, li, blockquote, td, pre', $epubHtml);
+        
+        // need to do two passes because it is possible to have nested text blocks.
+        // If you change the font size of the parent this will then create an inaccurate
+        // font size for any children.
+        for (var i = 0; i < $textblocks.length; i++) {
+
+            var ele = $textblocks[i];
+            
+            var fontSizeAttr = ele.getAttribute('data-original-font-size');
+            if (fontSizeAttr) {
+                // early exit, original values already set.
+                break;
+            }
+
             var style = win.getComputedStyle(ele);
+            
             var originalFontSize = parseInt(style.fontSize);
-            originalLineHeight = parseInt(style.lineHeight);
-
             ele.setAttribute('data-original-font-size', originalFontSize);
+
+            var originalLineHeight = parseInt(style.lineHeight);
             // getComputedStyle will not calculate the line-height if the value is 'normal'. In this case parseInt will return NaN
             if (originalLineHeight) {
                 ele.setAttribute('data-original-line-height', originalLineHeight);
             }
+            
+            var fontFamilyAttr = ele.getAttribute('data-original-font-family');
+            if (!fontFamilyAttr) {
+                var originalFontFamily = style.fontFamily;
+                if (originalFontFamily) {
+                    ele.setAttribute('data-original-font-family', originalFontFamily);
+                }
+            }
+        }
+
+        for (var i = 0; i < $textblocks.length; i++) {
+            var ele = $textblocks[i];
+
+            // TODO: group the 3x potential $(ele).css() calls below to avoid multiple jQuery style mutations 
+
+            var fontSizeAttr = ele.getAttribute('data-original-font-size');
+            var originalFontSize = Number(fontSizeAttr);
+            $(ele).css("font-size", (originalFontSize * factor) + 'px');
+
+            var lineHeightAttr = ele.getAttribute('data-original-line-height');
+            var originalLineHeight = lineHeightAttr ? Number(lineHeightAttr) : 0;
+            if (originalLineHeight) {
+                $(ele).css("line-height", (originalLineHeight * factor) + 'px');
+            }
+            
+            var fontFamilyAttr = ele.getAttribute('data-original-font-family');
+            switch(changeFontFamily){
+                case NOTHING:
+                    break;
+                case ADD:
+                    $(ele).css("font-family", fontObj.fontFamily);
+                    break;
+                case REMOVE:
+                    $(ele).css("font-family", fontFamilyAttr);
+                    break;
+            }
+        }
+
+        $epubHtml.css("font-size", fontSize + "%");
+        // $epubHtml.css({
+        //     "font-size" : fontSize + "%",
+        //     "font-family" : (changeFontFamily == ADD ? fontFamily : "")
+        // });
+        
+        if (perf) {
+            var time2 = window.performance.now();
+        
+            // Firefox: 80+
+            // Chrome: 4-10
+            // Edge: 15-34
+            // IE: 10-15
+            // https://readium.firebase.com/?epub=..%2Fepub_content%2Faccessible_epub_3&goto=%7B%22idref%22%3A%22id-id2635343%22%2C%22elementCfi%22%3A%22%2F4%2F2%5Bbuilding_a_better_epub%5D%2F10%2F44%2F6%2C%2F1%3A334%2C%2F1%3A335%22%7D
+            
+            var diff = time2-time1;
+            console.log(diff);
+            
+            // setTimeout(function(){
+            //     alert(diff);
+            // }, 2000);
+        }
+
+        callback();
+    };
+    var fontLoadCallback_ = _.once(fontLoadCallback);
+
+    if(fontObj.fontFamily && fontObj.url){
+        var dataFontFamily = link.length ? link.attr("data-fontfamily") : undefined;
+
+        if(!link.length){
+            changeFontFamily = ADD;
+
+            setTimeout(function(){
+                
+                link = $("<link/>", {
+                    "id" : FONT_FAMILY_ID,
+                    "data-fontfamily" : fontObj.fontFamily,
+                    "rel" : "stylesheet",
+                    "type" : "text/css"
+                });
+                docHead.append(link);
+                    
+                link.attr({
+                    "href" : fontObj.url
+                });
+            }, 0);
+        }
+        else if(dataFontFamily != fontObj.fontFamily){
+            changeFontFamily = ADD;
+        
+            link.attr({
+                "data-fontfamily" : fontObj.fontFamily,
+                "href" : fontObj.url
+            });
+        } else {
+            changeFontFamily = NOTHING;
         }
     }
-
-    // reset variable so the below logic works. All variables in JS are function scoped.
-    originalLineHeight = 0;
-    for (var i = 0; i < $textblocks.length; i++) {
-        var ele = $textblocks[i],
-            fontSizeAttr = ele.getAttribute('data-original-font-size'),
-            lineHeightAttr = ele.getAttribute('data-original-line-height'),
-            originalFontSize = Number(fontSizeAttr);
-
-        if (lineHeightAttr) {
-            originalLineHeight = Number(lineHeightAttr);
-        }
-        else {
-            originalLineHeight = 0;
-        }
-
-        $(ele).css("font-size", (originalFontSize * factor) + 'px');
-        if (originalLineHeight) {
-            $(ele).css("line-height", (originalLineHeight * factor) + 'px');
-        }
-
+    else{
+        changeFontFamily = REMOVE;
+        if(link.length) link.remove();
     }
-    $epubHtml.css("font-size", fontSize + "%");
-    
-    if (perf) {
-        var time2 = window.performance.now();
-    
-        // Firefox: 80+
-        // Chrome: 4-10
-        // Edge: 15-34
-        // IE: 10-15
-        // https://readium.firebase.com/?epub=..%2Fepub_content%2Faccessible_epub_3&goto=%7B%22idref%22%3A%22id-id2635343%22%2C%22elementCfi%22%3A%22%2F4%2F2%5Bbuilding_a_better_epub%5D%2F10%2F44%2F6%2C%2F1%3A334%2C%2F1%3A335%22%7D
-        
-        var diff = time2-time1;
-        console.log(diff);
-        
-        // setTimeout(function(){
-        //     alert(diff);
-        // }, 2000);
+
+    if (changeFontFamily == ADD) {
+        // just in case the link@onload does not trigger, we set a timeout
+        setTimeout(function(){
+            fontLoadCallback_();
+        }, 100);
+    }
+    else { // REMOVE, NOTHING
+        fontLoadCallback_();
     }
 };
 
