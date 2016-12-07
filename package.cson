@@ -108,7 +108,7 @@ devDependencies:
 # "requirejs", "almond", "jquery"
 
 
-    "jquerySizes": 'bramstein/jsizes'
+    "jquery-sizes": 'bramstein/jsizes'
 
     "domReady": 'requirejs/domReady'
 

@@ -49,7 +49,7 @@
     "http-server": "danielweck/http-server"
   },
   "devDependencies": {
-    "jquerySizes": "bramstein/jsizes",
+    "jquery-sizes": "bramstein/jsizes",
     "domReady": "requirejs/domReady",
     "backbone": "latest",
     "underscore": "latest",
