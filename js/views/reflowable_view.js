@@ -246,9 +246,8 @@ var ReflowableView = function(options, reader){
     function updateHtmlFontInfo() {
     
         if(_$epubHtml) {
-
-            var _curFont = (_fontSelection == 0 ? {} : reader.fonts[_fontSelection-1]);
-            Helpers.UpdateHtmlFontAttributes(_$epubHtml, _fontSize, _curFont, function() {self.applyStyles();});
+            var font = (_fontSelection <= 0 ? {} : reader.fonts[_fontSelection - 1]);
+            Helpers.UpdateHtmlFontAttributes(_$epubHtml, _fontSize, font, function() {self.applyStyles();});
         }
     }
 
