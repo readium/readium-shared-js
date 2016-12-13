@@ -9828,7 +9828,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
             return;
         }
 
-        var tmpView = createPageViewForSpineItem(true);
+        var tmpView = createPageViewForSpineItem(prevSpineItem, true);
 
         // add to the end first to avoid scrolling during load
         var lastView = lastLoadedView();
@@ -9845,7 +9845,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
                 var scrollPos = scrollTop();
 
-                var newView = createPageViewForSpineItem();
+                var newView = createPageViewForSpineItem(prevSpineItem);
                 var originalHeight = range.bottom - range.top;
 
 
@@ -9907,7 +9907,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
         var scrollPos = scrollTop();
 
-        var newView = createPageViewForSpineItem();
+        var newView = createPageViewForSpineItem(nexSpineItem);
         newView.element().insertAfter(bottomView.element());
 
         newView.loadSpineItem(nexSpineItem, function (success, $iframe, spineItem, isNewlyLoaded, context) {
@@ -10005,14 +10005,19 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         }, false);
     };
 
-    function createPageViewForSpineItem(isTemporaryView) {
+    function createPageViewForSpineItem(aSpineItem, isTemporaryView) {
         
         options.disablePageTransitions = true; // force
+
+        var enableBookStyleOverrides = true;
+        if (aSpineItem.isFixedLayout()) {
+            enableBookStyleOverrides = false;
+        }
 
         var pageView = new OnePageView(
             options,
             ["content-doc-frame"],
-            true, //enableBookStyleOverrides
+            enableBookStyleOverrides,
             reader);
 
         pageView.on(OnePageView.Events.SPINE_ITEM_OPEN_START, function($iframe, spineItem) {
@@ -10155,7 +10160,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
         var scrollPos = scrollTop();
 
-        var loadedView = createPageViewForSpineItem();
+        var loadedView = createPageViewForSpineItem(spineItem);
 
         _$contentFrame.append(loadedView.element());
 
