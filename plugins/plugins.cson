@@ -1,7 +1,8 @@
 # You may add the plugins that should be included here.
 plugins: [
   'highlights'
- # 'example'
+  'preloader'
+  'example'
 ]
 
 # you may override this configuration by creating a file called plugins-override.cson, e.g.:
