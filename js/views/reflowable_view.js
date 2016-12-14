@@ -77,15 +77,11 @@ var ReflowableView = function(options, reader){
         width: undefined,
         height: undefined
     };
+
     var _lastBodySize = {
         width: undefined,
         height: undefined
-    }
-
-    var _lastBodySize = {
-         width: undefined,
-         height: undefined
-     };
+    };
 
     var _paginationInfo = {
 
