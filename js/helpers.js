@@ -265,10 +265,52 @@ Helpers.UpdateHtmlFontAttributes = function ($epubHtml, fontSize, fontObj, callb
         // See https://github.com/readium/readium-shared-js/issues/274
         if (perf) var time1 = window.performance.now();
 
+
+
+        if (changeFontFamily != NOTHING) {
+            var fontFamilyStyle = $("style#readium-fontFamily", docHead);
+
+            if (fontFamilyStyle && fontFamilyStyle[0]) {
+                // REMOVE, or ADD (because we remove before re-adding from scratch)
+                docHead[0].removeChild(fontFamilyStyle[0]);
+            }
+            if (changeFontFamily == ADD) {
+                var style = $epubHtml[0].ownerDocument.createElement('style');
+                style.setAttribute("id", "readium-fontFamily");
+                style.appendChild($epubHtml[0].ownerDocument.createTextNode('body * { font-family: "'+fontObj.fontFamily+'" !important; }')); // this technique works for text-align too (e.g. text-align: justify !important;)
+
+                docHead[0].appendChild(style);
+
+                //fontFamilyStyle = $(style);
+            }
+        }
+        
+        // The code below does not work because jQuery $element.css() on html.body somehow "resets" the font: CSS directive by removing it entirely (font-family: works with !important, but unfortunately further deep inside the DOM there may be CSS applied with the font: directive, which somehow seems to take precedence! ... as shown in Chrome's developer tools)
+        // ...thus why we use the above routine instead, to insert a new head>style element
+        // // var doc = $epubHtml[0].ownerDocument;
+        // // var body = doc.body;
+        // var $body = $("body", $epubHtml);
+        // // $body.css({
+        // //     "font-size" : fontSize + "%",
+        // //     "font-family" : ""
+        // // });
+        // $body.css("font-family", "");
+        // if (changeFontFamily == ADD) {
+            
+        //     var existing = $body.attr("style");
+        //     $body[0].setAttribute("style",
+        //         existing + " ; font-family: '" + fontObj.fontFamily + "' !important ;" + " ; font: regular 100% '" + fontObj.fontFamily + "' !important ;");
+        // }
+        
+
         var factor = fontSize / 100;
         var win = $epubHtml[0].ownerDocument.defaultView;
-        var $textblocks = $('p, div, span, h1, h2, h3, h4, h5, h6, li, blockquote, td, pre', $epubHtml);
-        
+
+        // TODO: is this a complete list? Is there a better way to do this?
+        //https://github.com/readium/readium-shared-js/issues/336
+        // Note that font-family is handled differently, using an injected stylesheet with a catch-all selector that pushes an "!important" CSS value in the document's cascade.
+        var $textblocks = $('p, div, span, h1, h2, h3, h4, h5, h6, li, blockquote, td, pre, dt, dd, code, a', $epubHtml); // excludes section, body etc.
+
         // need to do two passes because it is possible to have nested text blocks.
         // If you change the font size of the parent this will then create an inaccurate
         // font size for any children.
@@ -293,13 +335,13 @@ Helpers.UpdateHtmlFontAttributes = function ($epubHtml, fontSize, fontObj, callb
                 ele.setAttribute('data-original-line-height', originalLineHeight);
             }
             
-            var fontFamilyAttr = ele.getAttribute('data-original-font-family');
-            if (!fontFamilyAttr) {
-                var originalFontFamily = style.fontFamily;
-                if (originalFontFamily) {
-                    ele.setAttribute('data-original-font-family', originalFontFamily);
-                }
-            }
+            // var fontFamilyAttr = ele.getAttribute('data-original-font-family');
+            // if (!fontFamilyAttr) {
+            //     var originalFontFamily = style.fontFamily;
+            //     if (originalFontFamily) {
+            //         ele.setAttribute('data-original-font-family', originalFontFamily);
+            //     }
+            // }
         }
 
         for (var i = 0; i < $textblocks.length; i++) {
@@ -317,24 +359,22 @@ Helpers.UpdateHtmlFontAttributes = function ($epubHtml, fontSize, fontObj, callb
                 $(ele).css("line-height", (originalLineHeight * factor) + 'px');
             }
             
-            var fontFamilyAttr = ele.getAttribute('data-original-font-family');
-            switch(changeFontFamily){
-                case NOTHING:
-                    break;
-                case ADD:
-                    $(ele).css("font-family", fontObj.fontFamily);
-                    break;
-                case REMOVE:
-                    $(ele).css("font-family", fontFamilyAttr);
-                    break;
-            }
+            // var fontFamilyAttr = ele.getAttribute('data-original-font-family');
+            // switch(changeFontFamily){
+            //     case NOTHING:
+            //         break;
+            //     case ADD:
+            //         $(ele).css("font-family", fontObj.fontFamily);
+            //         break;
+            //     case REMOVE:
+            //         $(ele).css("font-family", fontFamilyAttr);
+            //         break;
+            // }
         }
 
         $epubHtml.css("font-size", fontSize + "%");
-        // $epubHtml.css({
-        //     "font-size" : fontSize + "%",
-        //     "font-family" : (changeFontFamily == ADD ? fontFamily : "")
-        // });
+
+        
         
         if (perf) {
             var time2 = window.performance.now();
