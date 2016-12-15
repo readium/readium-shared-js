@@ -277,7 +277,7 @@ Helpers.UpdateHtmlFontAttributes = function ($epubHtml, fontSize, fontObj, callb
             if (changeFontFamily == ADD) {
                 var style = $epubHtml[0].ownerDocument.createElement('style');
                 style.setAttribute("id", "readium-fontFamily");
-                style.appendChild($epubHtml[0].ownerDocument.createTextNode('body * { font-family: "'+fontObj.fontFamily+'" !important; }')); // this technique works for text-align too (e.g. text-align: justify !important;)
+                style.appendChild($epubHtml[0].ownerDocument.createTextNode('html * { font-family: "'+fontObj.fontFamily+'" !important; }')); // this technique works for text-align too (e.g. text-align: justify !important;)
 
                 docHead[0].appendChild(style);
 
@@ -301,7 +301,7 @@ Helpers.UpdateHtmlFontAttributes = function ($epubHtml, fontSize, fontObj, callb
         //     $body[0].setAttribute("style",
         //         existing + " ; font-family: '" + fontObj.fontFamily + "' !important ;" + " ; font: regular 100% '" + fontObj.fontFamily + "' !important ;");
         // }
-        
+
 
         var factor = fontSize / 100;
         var win = $epubHtml[0].ownerDocument.defaultView;
@@ -734,16 +734,49 @@ Helpers.setStyles = function (styles, $element) {
         return;
     }
 
+    var styling = "";
+    var elementIsDocument = ($element && $element.createTextNode) ? true : false;
+
     for (var i = 0; i < count; i++) {
         var style = styles[i];
         if (style.selector) {
-            $(style.selector, $element).css(style.declarations);
+            if (elementIsDocument) {
+                for (var prop in style.declarations) {
+                    if (style.declarations.hasOwnProperty(prop)) {
+                        // backgroundColor => background-color
+                        var prop_ = prop.replace(/[A-Z]/g, function(a) {return '-' + a.toLowerCase()});
+                        styling += prop_ + ": " + style.declarations[prop] + " !important; ";
+                    }
+                }
+                
+            } else { // HTML element
+                $(style.selector, $element).css(style.declarations);
+            }
         }
         else {
             $element.css(style.declarations);
         }
     }
 
+    if (elementIsDocument) { // HTML document
+
+        var doc = $element;
+
+        var bookStyleElement = $("style#readium-bookStyles", doc.head);
+
+        if (bookStyleElement && bookStyleElement[0]) {
+            // we remove before re-adding from scratch
+            doc.head.removeChild(bookStyleElement[0]);
+        }
+        
+        var styleElement = doc.createElement('style');
+        styleElement.setAttribute("id", "readium-bookStyles");
+        styleElement.appendChild(doc.createTextNode('html *, html *::after, html *::before { ' + styling + ' }'));
+
+        doc.head.appendChild(styleElement);
+
+        //bookStyleElement = $(styleElement);
+    }
 };
 
 /**

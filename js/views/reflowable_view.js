@@ -391,8 +391,8 @@ var ReflowableView = function(options, reader){
 
     this.applyBookStyles = function() {
 
-        if(_$epubHtml) {
-            Helpers.setStyles(_bookStyles.getStyles(), _$epubHtml);
+        if(_$epubHtml) { // implies _$iframe
+            Helpers.setStyles(_bookStyles.getStyles(), _$iframe[0].contentDocument); //_$epubHtml
         }
     };
 

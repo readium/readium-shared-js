@@ -849,7 +849,12 @@ var ReaderView = function (options) {
         var count = styles.length;
 
         for (var i = 0; i < count; i++) {
-            _bookStyles.addStyle(styles[i].selector, styles[i].declarations);
+            if (styles[i].declarations) {
+                _bookStyles.addStyle(styles[i].selector, styles[i].declarations);
+            }
+            else {
+                _bookStyles.removeStyle(styles[i].selector);
+            }
         }
 
         if (_currentView) {
