@@ -2532,27 +2532,46 @@ Helpers.setStyles = function (styles, $element) {
         return;
     }
 
-    var styling = "";
+    var stylingGlobal = "";
+    var stylings = [];
     var elementIsDocument = ($element && $element.createTextNode) ? true : false;
 
     for (var i = 0; i < count; i++) {
         var style = styles[i];
-        if (style.selector) {
-            if (elementIsDocument) {
+
+        if (elementIsDocument) {
+            if (!style.selector || style.selector == "" || style.selector == "html" || style.selector == "body" || style.selector == "*") {
                 for (var prop in style.declarations) {
                     if (style.declarations.hasOwnProperty(prop)) {
                         // backgroundColor => background-color
                         var prop_ = prop.replace(/[A-Z]/g, function(a) {return '-' + a.toLowerCase()});
-                        styling += prop_ + ": " + style.declarations[prop] + " !important; ";
+
+                        stylingGlobal += prop_ + ": " + style.declarations[prop] + " !important; ";
                     }
                 }
-                
-            } else { // HTML element
+            } else {
+                //$(style.selector, $($element.doumentElement)).css(style.declarations);
+
+                var cssProperties = "";
+
+                for (var prop in style.declarations) {
+                    if (style.declarations.hasOwnProperty(prop)) {
+                        // backgroundColor => background-color
+                        var prop_ = prop.replace(/[A-Z]/g, function(a) {return '-' + a.toLowerCase()});
+                        cssProperties += prop_ + ": " + style.declarations[prop] + " !important; ";
+                    }
+                }
+
+                stylings.push({selector: style.selector, cssProps: cssProperties});
+            }
+            
+        } else { // HTML element
+            if (style.selector) {
                 $(style.selector, $element).css(style.declarations);
             }
-        }
-        else {
-            $element.css(style.declarations);
+            else {
+                $element.css(style.declarations);
+            }
         }
     }
 
@@ -2567,13 +2586,30 @@ Helpers.setStyles = function (styles, $element) {
             doc.head.removeChild(bookStyleElement[0]);
         }
         
-        var styleElement = doc.createElement('style');
-        styleElement.setAttribute("id", "readium-bookStyles");
-        styleElement.appendChild(doc.createTextNode('html *, html *::after, html *::before { ' + styling + ' }'));
+        var cssStylesheet = "";
 
-        doc.head.appendChild(styleElement);
+        if (stylingGlobal.length > 0) {
+            cssStylesheet += ' body, body::after, body::before, body *, body *::after, body *::before { ' + stylingGlobal + ' } ';
+        }
 
-        //bookStyleElement = $(styleElement);
+        if (stylings.length > 0) {
+            for (var i = 0; i < stylings.length; i++) {
+                var styling = stylings[i];
+
+                cssStylesheet += ' ' + styling.selector + ' { ' + styling.cssProps + ' } ';
+            }
+        }
+
+        if (cssStylesheet.length > 0) {
+
+            var styleElement = doc.createElement('style');
+            styleElement.setAttribute("id", "readium-bookStyles");
+            styleElement.appendChild(doc.createTextNode(cssStylesheet));
+
+            doc.head.appendChild(styleElement);
+
+            //bookStyleElement = $(styleElement);
+        }
     }
 };
 
