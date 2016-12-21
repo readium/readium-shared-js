@@ -19556,6 +19556,12 @@ define("es6-collections", function(){});
       }
     }
 
+    if (url === null) {
+      if (_urlSupplied) {
+        throw new TypeError('null is not a valid argument for URI');
+      }
+    }
+
     this.href(url);
 
     // resolve to base according to http://dvcs.w3.org/hg/url/raw-file/tip/Overview.html#constructor
@@ -25984,6 +25990,10 @@ var ViewerSettings = function(settingsData) {
     }
 }(this, function () {
 
+    //Make sure it does not throw in a SSR (Server Side Rendering) situation
+    if (typeof window === "undefined") {
+        return null;
+    }
     // Only used for the dirty checking, so the event callback count is limted to max 1 call per fps per sensor.
     // In combination with the event based resize sensor this saves cpu time, because the sensor is too fast and
     // would generate too many unnecessary events.
@@ -26005,6 +26015,7 @@ var ViewerSettings = function(settingsData) {
         var isCollectionTyped = ('[object Array]' === elementsType
             || ('[object NodeList]' === elementsType)
             || ('[object HTMLCollection]' === elementsType)
+            || ('[object Object]' === elementsType)
             || ('undefined' !== typeof jQuery && elements instanceof jQuery) //jquery
             || ('undefined' !== typeof Elements && elements instanceof Elements) //mootools
         );
@@ -26108,10 +26119,13 @@ var ViewerSettings = function(settingsData) {
             var expand = element.resizeSensor.childNodes[0];
             var expandChild = expand.childNodes[0];
             var shrink = element.resizeSensor.childNodes[1];
+            var dirty, rafId, newWidth, newHeight;
+            var lastWidth = element.offsetWidth;
+            var lastHeight = element.offsetHeight;
 
             var reset = function() {
-                expandChild.style.width  = 100000 + 'px';
-                expandChild.style.height = 100000 + 'px';
+                expandChild.style.width = '100000px';
+                expandChild.style.height = '100000px';
 
                 expand.scrollLeft = 100000;
                 expand.scrollTop = 100000;
@@ -26121,29 +26135,30 @@ var ViewerSettings = function(settingsData) {
             };
 
             reset();
-            var dirty = false;
 
-            var dirtyChecking = function() {
-                if (dirty && element.resizedAttached) {
+            var onResized = function() {
+                rafId = 0;
+
+                if (!dirty) return;
+
+                lastWidth = newWidth;
+                lastHeight = newHeight;
+
+                if (element.resizedAttached) {
                     element.resizedAttached.call();
                 }
-                dirty = false;
             };
 
-            requestAnimationFrame(dirtyChecking);
-            var lastWidth, lastHeight;
-            var cachedWidth, cachedHeight; //useful to not query offsetWidth twice
-
             var onScroll = function() {
-              if ((cachedWidth = element.offsetWidth) != lastWidth || (cachedHeight = element.offsetHeight) != lastHeight) {
-                  dirty = true;
+                newWidth = element.offsetWidth;
+                newHeight = element.offsetHeight;
+                dirty = newWidth != lastWidth || newHeight != lastHeight;
 
-                  lastWidth = cachedWidth;
-                  lastHeight = cachedHeight;
+                if (dirty && !rafId) {
+                    rafId = requestAnimationFrame(onResized);
+                }
 
-                  requestAnimationFrame(dirtyChecking);
-              }
-              reset();
+                reset();
             };
 
             var addEvent = function(el, name, cb) {
@@ -26602,7 +26617,11 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         if (!_enableBookStyleOverrides) return;
 
         if (_$epubHtml && _viewSettings) {
-            var font = (_viewSettings.fontSelection <= 0 ? {} : reader.fonts[_viewSettings.fontSelection - 1]);
+            var i = _viewSettings.fontSelection;
+            var useDefault = !reader.fonts || !reader.fonts.length || i <= 0 || (i-1) >= reader.fonts.length;
+            var font = (useDefault ?
+                        {} :
+                        reader.fonts[i - 1]);
             Helpers.UpdateHtmlFontAttributes(_$epubHtml, _viewSettings.fontSize, font, function() {});
         }
     }
@@ -44790,7 +44809,11 @@ var ReflowableView = function(options, reader){
     function updateHtmlFontInfo() {
     
         if(_$epubHtml) {
-            var font = (_fontSelection <= 0 ? {} : reader.fonts[_fontSelection - 1]);
+            var i = _fontSelection;
+            var useDefault = !reader.fonts || !reader.fonts.length || i <= 0 || (i-1) >= reader.fonts.length;
+            var font = (useDefault ?
+                        {} :
+                        reader.fonts[i - 1]);
             Helpers.UpdateHtmlFontAttributes(_$epubHtml, _fontSize, font, function() {self.applyStyles();});
         }
     }
