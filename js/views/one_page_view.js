@@ -413,7 +413,11 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         if (!_enableBookStyleOverrides) return;
 
         if (_$epubHtml && _viewSettings) {
-            var font = (_viewSettings.fontSelection <= 0 ? {} : reader.fonts[_viewSettings.fontSelection - 1]);
+            var i = _viewSettings.fontSelection;
+            var useDefault = !reader.fonts || !reader.fonts.length || i <= 0 || (i-1) >= reader.fonts.length;
+            var font = (useDefault ?
+                        {} :
+                        reader.fonts[i - 1]);
             Helpers.UpdateHtmlFontAttributes(_$epubHtml, _viewSettings.fontSize, font, function() {});
         }
     }
