@@ -4209,7 +4209,7 @@ var ViewerSettings = function(settingsData) {
     
     this.mediaOverlaysSynchronizationGranularity = "";
 
-    this.mediaOverlaysAutomaticPageTurn = true;
+    this.mediaOverlaysAutomaticPageTurn = false;
 
     this.enableGPUHardwareAccelerationCSS3D = false;
 
