@@ -57,7 +57,7 @@
     "urijs": "danielweck/URI.js",
     "eventemitter3": "latest",
     "es6-collections": "latest",
-    "CSSOM": "danielweck/CSSOM#gh-pages",
+    "cssom": "danielweck/CSSOM#gh-pages",
     "ResizeSensor": "danielweck/css-element-queries"
   },
   "scripts": {
