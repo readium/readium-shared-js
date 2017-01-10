@@ -1177,6 +1177,7 @@ function($, _, Class, TextLineInferrer, HighlightView, HighlightBorderView, High
                     point.y > rect.top && point.y < rect.bottom;
             };
 
+            // e is a jQuery event wrapper (use e.originalEvent to access the raw object)
             that.boundHighlightCallback = function(e) {
                 var scale = calculateScale();
                 var mouseIsInside = false;
@@ -1185,7 +1186,7 @@ function($, _, Class, TextLineInferrer, HighlightView, HighlightBorderView, High
                 var y = e.pageY;
 
                 if (e.type === 'touchend') {
-                    var lastTouch = _.last(e.changedTouches);
+                    var lastTouch = _.last(e.originalEvent.changedTouches);
                     x = lastTouch.pageX;
                     y = lastTouch.pageY;
                 }
