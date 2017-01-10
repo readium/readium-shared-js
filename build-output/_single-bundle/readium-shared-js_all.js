@@ -11927,6 +11927,8 @@ if (typeof define == 'function' && typeof define.amd == 'object') {
 
 (function(global) {
 
+var _matchesLocalNameOrElement = global.EPUBcfi._matchesLocalNameOrElement;
+
 var init = function($, cfiRuntimeErrors) {
     
 var obj = {
@@ -11975,13 +11977,13 @@ var obj = {
 
         // TODO: This check must be expanded to all the different types of indirection step
         // Only expects iframes, at the moment
-        if ($currNode === undefined || !$currNode.is("iframe")) {
+        if ($currNode === undefined || !_matchesLocalNameOrElement($currNode[0], 'iframe')) {
 
             throw cfiRuntimeErrors.NodeTypeError($currNode, "expected an iframe element");
         }
 
         // Check node type; only iframe indirection is handled, at the moment
-        if ($currNode.is("iframe")) {
+        if (_matchesLocalNameOrElement($currNode[0], 'iframe')) {
 
             // Get content
             $contentDocument = $currNode.contents();
@@ -12234,7 +12236,7 @@ var obj = {
                     // For each type of element
                     $.each(elementBlacklist, function (index, value) {
 
-                        if ($currElement.is(value)) {
+                        if (_matchesLocalNameOrElement($currElement[0], value)) {
                             includeInList = false;
 
                             // Break this loop
@@ -12316,6 +12318,8 @@ if (typeof define == 'function' && typeof define.amd == 'object') {
 //  prior written permission.
 
 (function(global) {
+
+var _matchesLocalNameOrElement = global.EPUBcfi._matchesLocalNameOrElement;
 
 var init = function($, cfiParser, cfiInstructions, cfiRuntimeErrors) {
 
@@ -12728,8 +12732,7 @@ var obj = {
             }
 
             // Found the content document href referenced by the spine item
-            if ($currElement.is("itemref")) {
-
+            if (_matchesLocalNameOrElement($currElement[0], "itemref")) {
                 return cfiInstructions.retrieveItemRefHref($currElement, $packageDocument);
             }
         }
@@ -12791,6 +12794,8 @@ if (typeof define == 'function' && typeof define.amd == 'object') {
 //  prior written permission.
 
 (function(global) {
+
+var _matchesLocalNameOrElement = global.EPUBcfi._matchesLocalNameOrElement;
 
 var init = function($, cfiInstructions, cfiRuntimeErrors) {
     
@@ -12931,7 +12936,7 @@ var obj = {
                 this.validateStartTextNode(rangeStartElement);
                 // Generate terminating offset and range 1
                 range1OffsetStep = this.createCFITextNodeStep($(rangeStartElement), startOffset, classBlacklist, elementBlacklist, idBlacklist);
-                if($(rangeStartElement).parent().is(commonAncestor)){
+                if ($(rangeStartElement).parent()[0].isSameNode(commonAncestor)) {
                     range1CFI = range1OffsetStep;
                 } else {
                     range1CFI = this.createCFIElementSteps($(rangeStartElement).parent(), commonAncestor, classBlacklist, elementBlacklist, idBlacklist) + range1OffsetStep;    
@@ -12945,7 +12950,7 @@ var obj = {
                 this.validateStartTextNode(rangeEndElement);
                 // Generate terminating offset and range 2
                 range2OffsetStep = this.createCFITextNodeStep($(rangeEndElement), endOffset, classBlacklist, elementBlacklist, idBlacklist);
-                if($(rangeEndElement).parent().is(commonAncestor)){
+                if ($(rangeEndElement).parent()[0].isSameNode(commonAncestor)) {
                     range2CFI = range2OffsetStep;
                 } else {
                     range2CFI = this.createCFIElementSteps($(rangeEndElement).parent(), commonAncestor, classBlacklist, elementBlacklist, idBlacklist) + range2OffsetStep;    
@@ -13228,7 +13233,7 @@ var obj = {
         //   Also need to check if the current node is the top-level element. This can occur if the start node is also the
         //   top level element.
         $parentNode = $currNode.parent();
-        if ($parentNode.is(topLevelElement) || $currNode.is(topLevelElement)) {
+        if (_matchesLocalNameOrElement($parentNode[0], topLevelElement) || _matchesLocalNameOrElement($currNode[0], topLevelElement)) {
             
             // If the top level node is a type from which an indirection step, add an indirection step character (!)
             // REFACTORING CANDIDATE: It is possible that this should be changed to: if (topLevelElement = 'package') do
@@ -13377,6 +13382,13 @@ var init = function(cfiParser, cfiInterpreter, cfiInstructions, cfiRuntimeErrors
         },
         injectElementAtOffset : function ($textNodeList, textOffset, elementToInject) {
             return cfiInstructions.injectCFIMarkerIntoText($textNodeList, textOffset, elementToInject);
+        },
+        _matchesLocalNameOrElement: function (element, otherNameOrElement) {
+            if (typeof otherNameOrElement === 'string') {
+                return element.localName === otherNameOrElement;
+            } else {
+                return element.isSameNode(otherNameOrElement);
+            }
         }
     };
 
@@ -46732,6 +46744,10 @@ var ReaderView = function (options) {
         }
 
         var pageRequestData = undefined;
+
+        if (openBookData.openPageRequest && typeof(openBookData.openPageRequest) === 'function') {
+            openBookData.openPageRequest = openBookData.openPageRequest();
+        }
 
         if (openBookData.openPageRequest) {
 
