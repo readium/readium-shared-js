@@ -722,6 +722,7 @@ var BookmarkData = function(idref, contentCFI) {
      * @property idref
      * @type {string}
      */
+
     this.idref = idref;
 
     /**
@@ -729,12 +730,14 @@ var BookmarkData = function(idref, contentCFI) {
      * @property contentCFI
      * @type {string}
      */
+    
     this.contentCFI = contentCFI;
 
     /**
      * serialize to string
      * @return JSON string representation
      */
+    
     this.toString = function(){
         return JSON.stringify(self);
     }
@@ -788,14 +791,57 @@ define('readium_shared_js/models/current_pages_info',[],function() {
  *
  * @param {Models.Spine} spine
  * @param {boolean} isFixedLayout is fixed or reflowable spine item
+ * @return CurrentPagesInfo
 */
+
 var CurrentPagesInfo = function(spine, isFixedLayout) {
 
 
+    /**
+     * The reading direction
+     *
+     * @property isRightToLeft
+     * @type bool
+     */
+
     this.isRightToLeft = spine.isRightToLeft();
+    
+    /**
+     * Is the ebook fixed layout or not?
+     *
+     * @property isFixedLayout
+     * @type bool
+     */
+
     this.isFixedLayout = isFixedLayout;
+    
+    /**
+     * Counts the number of spine items
+     *
+     * @property spineItemCount
+     * @type number
+     */    
+
     this.spineItemCount = spine.items.length
+    
+    /**
+     * returns an array of open pages, each array item is a data structure (plain JavaScript object) with the following fields: spineItemPageIndex, spineItemPageCount, idref, spineItemIndex (as per the parameters of the addOpenPage() function below)
+     *
+     * @property openPages
+     * @type array
+     */
+
     this.openPages = [];
+
+    /**
+     * Adds an page item to the openPages array
+     *
+     * @method     addOpenPage
+     * @param      {number} spineItemPageIndex
+     * @param      {number} spineItemPageCount
+     * @param      {string} idref
+     * @param      {number} spineItemIndex   
+     */
 
     this.addOpenPage = function(spineItemPageIndex, spineItemPageCount, idref, spineItemIndex) {
         this.openPages.push({spineItemPageIndex: spineItemPageIndex, spineItemPageCount: spineItemPageCount, idref: idref, spineItemIndex: spineItemIndex});
@@ -803,13 +849,34 @@ var CurrentPagesInfo = function(spine, isFixedLayout) {
         this.sort();
     };
 
+    /**
+     * Checks if navigation to the page on the left is possible (depending on page-progression-direction: previous page in LTR mode, next page in RTL mode)
+     *
+     * @method     canGoLeft
+     * @return bool true if turning to the left page is possible 
+     */
+
     this.canGoLeft = function () {
         return this.isRightToLeft ? this.canGoNext() : this.canGoPrev();
     };
 
+    /**
+     * Checks if navigation to the page on the right is possible (depending on page-progression-direction: next page in LTR mode, previous page in RTL mode)
+     *
+     * @method     canGoRight
+     * @return bool true if turning to the right page is possible 
+     */
+
     this.canGoRight = function () {
         return this.isRightToLeft ? this.canGoPrev() : this.canGoNext();
     };
+
+    /**
+     * Checks if navigation to the next page is possible (depending on page-progression-direction: right page in LTR mode, left page in RTL mode)
+     *
+     * @method     canGoNext
+     * @return bool true if turning to the next page is possible 
+     */
 
     this.canGoNext = function() {
 
@@ -829,6 +896,13 @@ var CurrentPagesInfo = function(spine, isFixedLayout) {
         return lastOpenPage.spineItemIndex < spine.last().index || lastOpenPage.spineItemPageIndex < lastOpenPage.spineItemPageCount - 1;
     };
 
+    /**
+     * Checks if navigation to the previous page is possible (depending on page-progression-direction: left page in LTR mode, right page in RTL mode)
+     *
+     * @method     canGoPrev
+     * @return bool true if turning to the previous page is possible 
+     */
+
     this.canGoPrev = function() {
 
         if(this.openPages.length == 0)
@@ -847,6 +921,12 @@ var CurrentPagesInfo = function(spine, isFixedLayout) {
         return spine.first().index < firstOpenPage.spineItemIndex || 0 < firstOpenPage.spineItemPageIndex;
     };
 
+    /**
+     * Sorts the openPages array based on spineItemIndex and spineItemPageIndex
+     *
+     * @method     sort
+     */
+
     this.sort = function() {
 
         this.openPages.sort(function(a, b) {
@@ -855,7 +935,7 @@ var CurrentPagesInfo = function(spine, isFixedLayout) {
                 return a.spineItemIndex - b.spineItemIndex;
             }
 
-            return a.pageIndex - b.pageIndex;
+            return a.spineItemPageIndex - b.spineItemPageIndex;
 
         });
 
@@ -865,7 +945,7 @@ var CurrentPagesInfo = function(spine, isFixedLayout) {
 
 return CurrentPagesInfo;
 });
-//  Created by Boris Schneiderman.
+  //  Created by Boris Schneiderman.
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
 //  
 //  Redistribution and use in source and binary forms, with or without modification, 
@@ -892,29 +972,53 @@ return CurrentPagesInfo;
 
 define('readium_shared_js/models/fixed_page_spread',[],function() {
 /**
+ * Spread the page 
  *
- * @param {Models.Spine} spine
+ * @class  Models.Spread
  * @constructor
+ * @param spine 
+ * @param {Boolean} isSyntheticSpread 
+ *
  */
 var Spread = function(spine, isSyntheticSpread) {
 
     var self = this;
 
     this.spine = spine;
-
+    
     this.leftItem = undefined;
     this.rightItem = undefined;
     this.centerItem = undefined;
 
     var _isSyntheticSpread = isSyntheticSpread;
 
+    /**
+     * Sets whether or not this is a synthetic spread
+     *
+     * @method     setSyntheticSpread
+     * @param      {Bool} isSyntheticSpread
+     */
+
     this.setSyntheticSpread = function(isSyntheticSpread) {
         _isSyntheticSpread = isSyntheticSpread;
     };
 
+    /**
+     * Checks out if the spread is synthetic
+     *
+     * @method     isSyntheticSpread
+     * @return     {Bool} true if this is a 2-page synthetic spread
+     */
+
     this.isSyntheticSpread = function() {
         return _isSyntheticSpread;
     };
+
+    /**
+     * Opens the first spine item (FXL page)
+     *
+     * @method     openFirst
+     */
 
     this.openFirst = function() {
 
@@ -926,6 +1030,12 @@ var Spread = function(spine, isSyntheticSpread) {
         }
     };
 
+    /**
+     * Opens the last spine item (FXL page)
+     *
+     * @method     openLast
+     */
+
     this.openLast = function() {
 
         if( this.spine.items.length == 0 ) {
@@ -935,6 +1045,13 @@ var Spread = function(spine, isSyntheticSpread) {
             this.openItem(this.spine.last());
         }
     };
+
+    /**
+     * Opens a spine item (FXL page)
+     *
+     * @method     openItem
+     * @param      {Models.SpineItem} item
+     */
 
     this.openItem = function(item) {
 
@@ -957,12 +1074,26 @@ var Spread = function(spine, isSyntheticSpread) {
         }
     };
 
+    /**
+     * Resets the spine items (FXL pages, left + right + center) to undefined
+     *
+     * @method     resetItems
+     */
+
     function resetItems() {
 
         self.leftItem = undefined;
         self.rightItem = undefined;
         self.centerItem = undefined;
     }
+
+    /**
+     * Sets the spine item (FXL page) to a position (left, right or center)
+     *
+     * @method     setItemToPosition
+     * @param      {Models.SpineItem} item
+     * @param      {Spread.POSITION_CENTER | Spread.POSITION_LEFT | Spread.POSITION_RIGHT} position
+     */
 
     function setItemToPosition(item, position) {
 
@@ -982,6 +1113,14 @@ var Spread = function(spine, isSyntheticSpread) {
         }
     }
 
+    /**
+     * Returns the position of a spine item / FXL page (left, center or right)
+     *
+     * @method     getItemPosition
+     * @param      {Models.SpineItem} item
+     * @return     {Spread.POSITION_CENTER | Spread.POSITION_LEFT | Spread.POSITION_RIGHT}
+     */
+
     function getItemPosition(item) {
         
         // includes !item.isRenditionSpreadAllowed() ("rendition:spread-none") ==> force center position
@@ -999,6 +1138,12 @@ var Spread = function(spine, isSyntheticSpread) {
 
         return Spread.POSITION_CENTER;
     }
+
+    /**
+     * Opens the next item
+     *
+     * @method     openNext
+     */ 
 
     this.openNext = function() {
 
@@ -1018,6 +1163,12 @@ var Spread = function(spine, isSyntheticSpread) {
         }
     };
 
+    /**
+     * Opens the previous item
+     *
+     * @method     openPrev
+     */ 
+
     this.openPrev = function() {
 
         var items = this.validItems();
@@ -1036,6 +1187,13 @@ var Spread = function(spine, isSyntheticSpread) {
         }
     };
 
+    /**
+     * Returns an sorrted array of spine items (as per their order in the spine) that are currently in the FXL page layout
+     *
+     * @method     validItems
+     * @return     {array} 
+     */ 
+
     this.validItems = function() {
 
         var arr = [];
@@ -1050,6 +1208,14 @@ var Spread = function(spine, isSyntheticSpread) {
 
         return arr;
     };
+
+    /**
+     * Gets the neighbour spine item in the FXL page layout (on left or right of the current item)
+     *
+     * @method     getNeighbourItem
+     * @param      {Models.SpineItem} item
+     * @return     {Models.SpineItem} item
+     */ 
 
     function getNeighbourItem(item) {
 
@@ -1073,7 +1239,7 @@ Spread.POSITION_CENTER = "center";
 return Spread;
 });
 //  Created by Boris Schneiderman.
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  Copyright (c) 2016 Readium Foundation and/or its licensees. All rights reserved.
 //  
 //  Redistribution and use in source and binary forms, with or without modification, 
 //  are permitted provided that the following conditions are met:
@@ -1104,9 +1270,9 @@ define('readium_shared_js/models/spine_item',[], function() {
  *
  * @class  Models.SpineItem
  * @constructor
- * @param itemData spine item properties container
- * @param {Number} index
- * @param {Models.Spine} spine
+ * @param itemData container for spine item properties
+ * @param {Number} index index of this spine item in the parent spine 
+ * @param {Models.Spine} spine parent spine
  *
  */
 var SpineItem = function(itemData, index, spine){
@@ -1118,7 +1284,7 @@ var SpineItem = function(itemData, index, spine){
      * manifest item that the spine item references
      *
      * @property idref
-     * @type {String}
+     * @type String
      * @default  None
      */
     this.idref = itemData.idref;
@@ -1174,7 +1340,7 @@ var SpineItem = function(itemData, index, spine){
     this.rendition_spread = itemData.rendition_spread;
 
     /**
-     * A sring specifying desired orientation for ALL spine items. Possible values are
+     * A string specifying desired orientation for ALL spine items. Possible values are
      * rendition-orientation-*, which can be none, landscape, portrait, both or auto
      *
      * Note: Not yet implemented.
@@ -1223,7 +1389,7 @@ var SpineItem = function(itemData, index, spine){
     this.media_type = itemData.media_type;
 
     /**
-     * The index of this spine item in the spine itself.
+     * The index of this spine item in the parent spine .
      * 
      * @property index
      * @type     String
@@ -1235,17 +1401,38 @@ var SpineItem = function(itemData, index, spine){
      * The object which is the actual spine of which this spineItem is a child.
      *
      * @property spine
-     * @type     String
+     * @type     Models.Spine
      * @default  None
      */
     this.spine = spine;
 
     validateSpread();
 
+    /**
+     * Sets a new page spread and checks its validity
+     *
+     * @method     setSpread
+     * @param      {String} spread  the new page spread 
+     */
     this.setSpread = function(spread) {
         this.page_spread = spread;
 
         validateSpread();
+    };
+
+    /* private method (validateSpread) */
+    function validateSpread() {
+
+        if(!self.page_spread) {
+            return;
+        }
+
+        if( self.page_spread != SpineItem.SPREAD_LEFT &&
+            self.page_spread != SpineItem.SPREAD_RIGHT &&
+            self.page_spread != SpineItem.SPREAD_CENTER ) {
+
+            console.error(self.page_spread + " is not a recognized spread type");
+        }
     };
 
     /**
@@ -1259,25 +1446,6 @@ var SpineItem = function(itemData, index, spine){
         var rendition_spread = self.getRenditionSpread();
         return !rendition_spread || rendition_spread != SpineItem.RENDITION_SPREAD_NONE;
     };
-
-    /**
-     * Checks to see if the value for the page-spread attribute is valid
-     *
-     * @method     validateSpread
-     */
-    function validateSpread() {
-
-        if(!self.page_spread) {
-            return;
-        }
-
-        if( self.page_spread != SpineItem.SPREAD_LEFT &&
-            self.page_spread != SpineItem.SPREAD_RIGHT &&
-            self.page_spread != SpineItem.SPREAD_CENTER ) {
-
-            console.error(self.page_spread + " is not a recognized spread type");
-        }
-    }
 
     /**
      * Checks to see if this spineItem explicitly specifies SPREAD_LEFT
@@ -1868,79 +2036,210 @@ Helpers.Rect.fromElement = function ($element) {
 
     return new Helpers.Rect(offsetLeft, offsetTop, offsetWidth, offsetHeight);
 };
+/**
+ *
+ * @param $epubHtml: The html that is to have font attributes added.
+ * @param fontSize: The font size that is to be added to the element at all locations.
+ * @param fontObj: The font Object containing at minimum the URL, and fontFamilyName (In fields url and fontFamily) respectively. Pass in null's on the object's fields to signal no font.
+ * @param callback: function invoked when "done", which means that if there are asynchronous operations such as font-face loading via injected stylesheets, then the UpdateHtmlFontAttributes() function returns immediately but the caller should wait for the callback function call if fully-loaded font-face *stylesheets* are required on the caller's side (note that the caller's side may still need to detect *actual font loading*, via the FontLoader API or some sort of ResizeSensor to indicate that the updated font-family has been used to render the document). 
+ */
 
-Helpers.UpdateHtmlFontSize = function ($epubHtml, fontSize) {
-
-    var perf = false;
-
-    // TODO: very slow on Firefox!
-    // See https://github.com/readium/readium-shared-js/issues/274
-    if (perf) var time1 = window.performance.now();
-
-    var factor = fontSize / 100;
-    var win = $epubHtml[0].ownerDocument.defaultView;
-    var $textblocks = $('p, div, span, h1, h2, h3, h4, h5, h6, li, blockquote, td, pre', $epubHtml);
-    var originalLineHeight;
+Helpers.UpdateHtmlFontAttributes = function ($epubHtml, fontSize, fontObj, callback) {
 
 
-    // need to do two passes because it is possible to have nested text blocks.
-    // If you change the font size of the parent this will then create an inaccurate
-    // font size for any children.
-    for (var i = 0; i < $textblocks.length; i++) {
-        var ele = $textblocks[i],
-            fontSizeAttr = ele.getAttribute('data-original-font-size');
+    var FONT_FAMILY_ID = "readium_font_family_link";
 
-        if (!fontSizeAttr) {
+    var docHead = $("head", $epubHtml);
+    var link = $("#" + FONT_FAMILY_ID, docHead);
+
+    const NOTHING = 0, ADD = 1, REMOVE = 2; //Types for css font family.
+    var changeFontFamily = NOTHING;
+
+    var fontLoadCallback = function() {
+            
+        var perf = false;
+
+        // TODO: very slow on Firefox!
+        // See https://github.com/readium/readium-shared-js/issues/274
+        if (perf) var time1 = window.performance.now();
+
+
+
+        if (changeFontFamily != NOTHING) {
+            var fontFamilyStyle = $("style#readium-fontFamily", docHead);
+
+            if (fontFamilyStyle && fontFamilyStyle[0]) {
+                // REMOVE, or ADD (because we remove before re-adding from scratch)
+                docHead[0].removeChild(fontFamilyStyle[0]);
+            }
+            if (changeFontFamily == ADD) {
+                var style = $epubHtml[0].ownerDocument.createElement('style');
+                style.setAttribute("id", "readium-fontFamily");
+                style.appendChild($epubHtml[0].ownerDocument.createTextNode('html * { font-family: "'+fontObj.fontFamily+'" !important; }')); // this technique works for text-align too (e.g. text-align: justify !important;)
+
+                docHead[0].appendChild(style);
+
+                //fontFamilyStyle = $(style);
+            }
+        }
+        
+        // The code below does not work because jQuery $element.css() on html.body somehow "resets" the font: CSS directive by removing it entirely (font-family: works with !important, but unfortunately further deep inside the DOM there may be CSS applied with the font: directive, which somehow seems to take precedence! ... as shown in Chrome's developer tools)
+        // ...thus why we use the above routine instead, to insert a new head>style element
+        // // var doc = $epubHtml[0].ownerDocument;
+        // // var body = doc.body;
+        // var $body = $("body", $epubHtml);
+        // // $body.css({
+        // //     "font-size" : fontSize + "%",
+        // //     "font-family" : ""
+        // // });
+        // $body.css("font-family", "");
+        // if (changeFontFamily == ADD) {
+            
+        //     var existing = $body.attr("style");
+        //     $body[0].setAttribute("style",
+        //         existing + " ; font-family: '" + fontObj.fontFamily + "' !important ;" + " ; font: regular 100% '" + fontObj.fontFamily + "' !important ;");
+        // }
+
+
+        var factor = fontSize / 100;
+        var win = $epubHtml[0].ownerDocument.defaultView;
+
+        // TODO: is this a complete list? Is there a better way to do this?
+        //https://github.com/readium/readium-shared-js/issues/336
+        // Note that font-family is handled differently, using an injected stylesheet with a catch-all selector that pushes an "!important" CSS value in the document's cascade.
+        var $textblocks = $('p, div, span, h1, h2, h3, h4, h5, h6, li, blockquote, td, pre, dt, dd, code, a', $epubHtml); // excludes section, body etc.
+
+        // need to do two passes because it is possible to have nested text blocks.
+        // If you change the font size of the parent this will then create an inaccurate
+        // font size for any children.
+        for (var i = 0; i < $textblocks.length; i++) {
+
+            var ele = $textblocks[i];
+            
+            var fontSizeAttr = ele.getAttribute('data-original-font-size');
+            if (fontSizeAttr) {
+                // early exit, original values already set.
+                break;
+            }
+
             var style = win.getComputedStyle(ele);
+            
             var originalFontSize = parseInt(style.fontSize);
-            originalLineHeight = parseInt(style.lineHeight);
-
             ele.setAttribute('data-original-font-size', originalFontSize);
+
+            var originalLineHeight = parseInt(style.lineHeight);
             // getComputedStyle will not calculate the line-height if the value is 'normal'. In this case parseInt will return NaN
             if (originalLineHeight) {
                 ele.setAttribute('data-original-line-height', originalLineHeight);
             }
+            
+            // var fontFamilyAttr = ele.getAttribute('data-original-font-family');
+            // if (!fontFamilyAttr) {
+            //     var originalFontFamily = style.fontFamily;
+            //     if (originalFontFamily) {
+            //         ele.setAttribute('data-original-font-family', originalFontFamily);
+            //     }
+            // }
+        }
+
+        for (var i = 0; i < $textblocks.length; i++) {
+            var ele = $textblocks[i];
+
+            // TODO: group the 3x potential $(ele).css() calls below to avoid multiple jQuery style mutations 
+
+            var fontSizeAttr = ele.getAttribute('data-original-font-size');
+            var originalFontSize = Number(fontSizeAttr);
+            $(ele).css("font-size", (originalFontSize * factor) + 'px');
+
+            var lineHeightAttr = ele.getAttribute('data-original-line-height');
+            var originalLineHeight = lineHeightAttr ? Number(lineHeightAttr) : 0;
+            if (originalLineHeight) {
+                $(ele).css("line-height", (originalLineHeight * factor) + 'px');
+            }
+            
+            // var fontFamilyAttr = ele.getAttribute('data-original-font-family');
+            // switch(changeFontFamily){
+            //     case NOTHING:
+            //         break;
+            //     case ADD:
+            //         $(ele).css("font-family", fontObj.fontFamily);
+            //         break;
+            //     case REMOVE:
+            //         $(ele).css("font-family", fontFamilyAttr);
+            //         break;
+            // }
+        }
+
+        $epubHtml.css("font-size", fontSize + "%");
+
+        
+        
+        if (perf) {
+            var time2 = window.performance.now();
+        
+            // Firefox: 80+
+            // Chrome: 4-10
+            // Edge: 15-34
+            // IE: 10-15
+            // https://readium.firebase.com/?epub=..%2Fepub_content%2Faccessible_epub_3&goto=%7B%22idref%22%3A%22id-id2635343%22%2C%22elementCfi%22%3A%22%2F4%2F2%5Bbuilding_a_better_epub%5D%2F10%2F44%2F6%2C%2F1%3A334%2C%2F1%3A335%22%7D
+            
+            var diff = time2-time1;
+            console.log(diff);
+            
+            // setTimeout(function(){
+            //     alert(diff);
+            // }, 2000);
+        }
+
+        callback();
+    };
+    var fontLoadCallback_ = _.once(fontLoadCallback);
+
+    if(fontObj.fontFamily && fontObj.url){
+        var dataFontFamily = link.length ? link.attr("data-fontfamily") : undefined;
+
+        if(!link.length){
+            changeFontFamily = ADD;
+
+            setTimeout(function(){
+                
+                link = $("<link/>", {
+                    "id" : FONT_FAMILY_ID,
+                    "data-fontfamily" : fontObj.fontFamily,
+                    "rel" : "stylesheet",
+                    "type" : "text/css"
+                });
+                docHead.append(link);
+                    
+                link.attr({
+                    "href" : fontObj.url
+                });
+            }, 0);
+        }
+        else if(dataFontFamily != fontObj.fontFamily){
+            changeFontFamily = ADD;
+        
+            link.attr({
+                "data-fontfamily" : fontObj.fontFamily,
+                "href" : fontObj.url
+            });
+        } else {
+            changeFontFamily = NOTHING;
         }
     }
-
-    // reset variable so the below logic works. All variables in JS are function scoped.
-    originalLineHeight = 0;
-    for (var i = 0; i < $textblocks.length; i++) {
-        var ele = $textblocks[i],
-            fontSizeAttr = ele.getAttribute('data-original-font-size'),
-            lineHeightAttr = ele.getAttribute('data-original-line-height'),
-            originalFontSize = Number(fontSizeAttr);
-
-        if (lineHeightAttr) {
-            originalLineHeight = Number(lineHeightAttr);
-        }
-        else {
-            originalLineHeight = 0;
-        }
-
-        $(ele).css("font-size", (originalFontSize * factor) + 'px');
-        if (originalLineHeight) {
-            $(ele).css("line-height", (originalLineHeight * factor) + 'px');
-        }
-
+    else{
+        changeFontFamily = REMOVE;
+        if(link.length) link.remove();
     }
-    $epubHtml.css("font-size", fontSize + "%");
-    
-    if (perf) {
-        var time2 = window.performance.now();
-    
-        // Firefox: 80+
-        // Chrome: 4-10
-        // Edge: 15-34
-        // IE: 10-15
-        // https://readium.firebase.com/?epub=..%2Fepub_content%2Faccessible_epub_3&goto=%7B%22idref%22%3A%22id-id2635343%22%2C%22elementCfi%22%3A%22%2F4%2F2%5Bbuilding_a_better_epub%5D%2F10%2F44%2F6%2C%2F1%3A334%2C%2F1%3A335%22%7D
-        
-        var diff = time2-time1;
-        console.log(diff);
-        
-        // setTimeout(function(){
-        //     alert(diff);
-        // }, 2000);
+
+    if (changeFontFamily == ADD) {
+        // just in case the link@onload does not trigger, we set a timeout
+        setTimeout(function(){
+            fontLoadCallback_();
+        }, 100);
+    }
+    else { // REMOVE, NOTHING
+        fontLoadCallback_();
     }
 };
 
@@ -2212,12 +2511,12 @@ Helpers.loadTemplate = function (name, params) {
 Helpers.loadTemplate.cache = {
     "fixed_book_frame": '<div id="fixed-book-frame" class="clearfix book-frame fixed-book-frame"></div>',
 
-    "single_page_frame": '<div><div id="scaler"><iframe scrolling="no" class="iframe-fixed"></iframe></div></div>',
+    "single_page_frame": '<div><div id="scaler"><iframe allowfullscreen="allowfullscreen" scrolling="no" class="iframe-fixed"></iframe></div></div>',
     //"single_page_frame" : '<div><iframe scrolling="no" class="iframe-fixed" id="scaler"></iframe></div>',
 
     "scrolled_book_frame": '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"><div id="scrolled-content-frame"></div></div>',
     "reflowable_book_frame": '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"></div>',
-    "reflowable_book_page_frame": '<div id="reflowable-content-frame" class="reflowable-content-frame"><iframe scrolling="no" id="epubContentIframe"></iframe></div>'
+    "reflowable_book_page_frame": '<div id="reflowable-content-frame" class="reflowable-content-frame"><iframe allowfullscreen="allowfullscreen" scrolling="no" id="epubContentIframe"></iframe></div>'
 };
 
 /**
@@ -2233,16 +2532,85 @@ Helpers.setStyles = function (styles, $element) {
         return;
     }
 
+    var stylingGlobal = "";
+    var stylings = [];
+    var elementIsDocument = ($element && $element.createTextNode) ? true : false;
+
     for (var i = 0; i < count; i++) {
         var style = styles[i];
-        if (style.selector) {
-            $(style.selector, $element).css(style.declarations);
-        }
-        else {
-            $element.css(style.declarations);
+
+        if (elementIsDocument) {
+            if (!style.selector || style.selector == "" || style.selector == "html" || style.selector == "body" || style.selector == "*") {
+                for (var prop in style.declarations) {
+                    if (style.declarations.hasOwnProperty(prop)) {
+                        // backgroundColor => background-color
+                        var prop_ = prop.replace(/[A-Z]/g, function(a) {return '-' + a.toLowerCase()});
+
+                        stylingGlobal += prop_ + ": " + style.declarations[prop] + " !important; ";
+                    }
+                }
+            } else {
+                //$(style.selector, $($element.doumentElement)).css(style.declarations);
+
+                var cssProperties = "";
+
+                for (var prop in style.declarations) {
+                    if (style.declarations.hasOwnProperty(prop)) {
+                        // backgroundColor => background-color
+                        var prop_ = prop.replace(/[A-Z]/g, function(a) {return '-' + a.toLowerCase()});
+                        cssProperties += prop_ + ": " + style.declarations[prop] + " !important; ";
+                    }
+                }
+
+                stylings.push({selector: style.selector, cssProps: cssProperties});
+            }
+            
+        } else { // HTML element
+            if (style.selector) {
+                $(style.selector, $element).css(style.declarations);
+            }
+            else {
+                $element.css(style.declarations);
+            }
         }
     }
 
+    if (elementIsDocument) { // HTML document
+
+        var doc = $element;
+
+        var bookStyleElement = $("style#readium-bookStyles", doc.head);
+
+        if (bookStyleElement && bookStyleElement[0]) {
+            // we remove before re-adding from scratch
+            doc.head.removeChild(bookStyleElement[0]);
+        }
+        
+        var cssStylesheet = "";
+
+        if (stylingGlobal.length > 0) {
+            cssStylesheet += ' body, body::after, body::before, body *, body *::after, body *::before { ' + stylingGlobal + ' } ';
+        }
+
+        if (stylings.length > 0) {
+            for (var i = 0; i < stylings.length; i++) {
+                var styling = stylings[i];
+
+                cssStylesheet += ' ' + styling.selector + ' { ' + styling.cssProps + ' } ';
+            }
+        }
+
+        if (cssStylesheet.length > 0) {
+
+            var styleElement = doc.createElement('style');
+            styleElement.setAttribute("id", "readium-bookStyles");
+            styleElement.appendChild(doc.createTextNode(cssStylesheet));
+
+            doc.head.appendChild(styleElement);
+
+            //bookStyleElement = $(styleElement);
+        }
+    }
 };
 
 /**
@@ -2556,6 +2924,18 @@ var CfiNavigationLogic = function(options) {
         // In SVG documents the root element can be considered the body.
         return this.getRootDocument().body || this.getRootElement();
     };
+
+    this.getClassBlacklist = function () {
+        return options.classBlacklist || [];
+    }
+
+    this.getIdBlacklist = function () {
+        return options.idBlacklist || [];
+    }
+
+    this.getElementBlacklist = function () {
+        return options.elementBlacklist || [];
+    }
 
     this.getRootDocument = function () {
         return options.$iframe[0].contentDocument;
@@ -3116,9 +3496,9 @@ var CfiNavigationLogic = function(options) {
 
     this.getCfiForElement = function (element) {
         var cfi = EPUBcfi.Generator.generateElementCFIComponent(element,
-            ["cfi-marker"],
-            [],
-            ["MathJax_Message", "MathJax_SVG_Hidden"]);
+            this.getClassBlacklist(),
+            this.getElementBlacklist(),
+            this.getIdBlacklist());
 
         if (cfi[0] == "!") {
             cfi = cfi.substring(1);
@@ -3448,14 +3828,14 @@ var CfiNavigationLogic = function(options) {
         return EPUBcfi.generateRangeComponent(
             range.startContainer, range.startOffset,
             range.endContainer, range.endOffset,
-            ['cfi-marker'], [], ["MathJax_Message", "MathJax_SVG_Hidden"]);
+            self.getClassBlacklist(), self.getElementBlacklist(), self.getIdBlacklist());
     }
 
     function getRangeTargetNodes(rangeCfi) {
         return EPUBcfi.getRangeTargetElements(
             getWrappedCfiRelativeToContent(rangeCfi),
             self.getRootDocument(),
-            ['cfi-marker'], [], ["MathJax_Message", "MathJax_SVG_Hidden"]);
+            self.getClassBlacklist(), self.getElementBlacklist(), self.getIdBlacklist());
     }
 
     this.getDomRangeFromRangeCfi = function(rangeCfi, rangeCfi2, inclusive) {
@@ -3468,7 +3848,7 @@ var CfiNavigationLogic = function(options) {
                 range.setEnd(rangeInfo.endElement, rangeInfo.endOffset);
             } else {
                 var element = self.getElementByCfi(rangeCfi,
-                    ['cfi-marker'], [], ["MathJax_Message", "MathJax_SVG_Hidden"])[0];
+                    this.getClassBlacklist(), this.getElementBlacklist(), this.getIdBlacklist())[0];
                 range.selectNode(element);
             }
         } else {
@@ -3477,7 +3857,7 @@ var CfiNavigationLogic = function(options) {
                 range.setStart(rangeInfo1.startElement, rangeInfo1.startOffset);
             } else {
                 var startElement = self.getElementByCfi(rangeCfi,
-                    ['cfi-marker'], [], ["MathJax_Message", "MathJax_SVG_Hidden"])[0];
+                    this.getClassBlacklist(), this.getElementBlacklist(), this.getIdBlacklist())[0];
                 range.setStart(startElement, 0);
             }
 
@@ -3490,7 +3870,7 @@ var CfiNavigationLogic = function(options) {
                 }
             } else {
                 var endElement = self.getElementByCfi(rangeCfi2,
-                    ['cfi-marker'], [], ["MathJax_Message", "MathJax_SVG_Hidden"])[0];
+                    this.getClassBlacklist(), this.getElementBlacklist(), this.getIdBlacklist())[0];
                 range.setEnd(endElement, endElement.childNodes.length);
             }
         }
@@ -3573,9 +3953,9 @@ var CfiNavigationLogic = function(options) {
             try {
                 //noinspection JSUnresolvedVariable
                 var nodeResult = EPUBcfi.Interpreter.getRangeTargetElements(wrappedCfi, contentDoc,
-                    ["cfi-marker"],
-                    [],
-                    ["MathJax_Message", "MathJax_SVG_Hidden"]);
+                    this.getClassBlacklist(),
+                    this.getElementBlacklist(),
+                    this.getIdBlacklist());
 
                 if (debugMode) {
                     console.log(nodeResult);
@@ -3608,9 +3988,9 @@ var CfiNavigationLogic = function(options) {
             return {startInfo: startRangeInfo, endInfo: endRangeInfo, clientRect: nodeRangeClientRect}
         } else {
             var $element = self.getElementByCfi(cfi,
-                ["cfi-marker"],
-                [],
-                ["MathJax_Message", "MathJax_SVG_Hidden"]);
+                this.getClassBlacklist(),
+                this.getElementBlacklist(),
+                this.getIdBlacklist());
 
             var visibleContentOffsets = getVisibleContentOffsets();
             return {startInfo: null, endInfo: null, clientRect: getNormalizedBoundingRect($element, visibleContentOffsets)};
@@ -3853,23 +4233,16 @@ var CfiNavigationLogic = function(options) {
     };
 
     function isElementBlacklisted($element) {
-        //TODO: Ok we really need to have a single point of reference for this blacklist
-        var blacklist = {
-            classes: ["cfi-marker", "mo-cfi-highlight"],
-            elements: [], //not looked at
-            ids: ["MathJax_Message", "MathJax_SVG_Hidden"]
-        };
-
         var isBlacklisted = false;
 
-        _.some(blacklist.classes, function (value) {
+        _.some(self.getClassBlacklist(), function (value) {
             if ($element.hasClass(value)) {
                 isBlacklisted = true;
             }
             return isBlacklisted;
         });
 
-        _.some(blacklist.ids, function (value) {
+        _.some(self.getIdBlacklist(), function (value) {
             if ($element.attr("id") === value) {
                 isBlacklisted = true;
             }
@@ -4188,36 +4561,169 @@ var ViewerSettings = function(settingsData) {
 
     var self = this;
 
+    /** Set to "auto"
+     *
+     * @property syntheticSpread
+     * @type 
+     */
+
     this.syntheticSpread = "auto";
+
+    /** 
+     *
+     * @property fontSelection
+     * @type number
+     */
+    
+    this.fontSelection = 0;
+
+    /** 
+     *
+     * @property fontSize
+     * @type number
+     */
+
     this.fontSize = 100;
+
+    /** 
+     *
+     * @property columnGap
+     * @type number
+     */
+
     this.columnGap = 20;
     
+    /** 
+     *
+     * @property columnMaxWidth
+     * @type number
+     */
+
     this.columnMaxWidth = 700;
+
+    /** 
+     *
+     * @property columnMinWidth
+     * @type number
+     */
+
     this.columnMinWidth = 400;
+
+    /** 
+     *
+     * @property mediaOverlaysPreservePlaybackWhenScroll
+     * @type bool
+     */
 
     this.mediaOverlaysPreservePlaybackWhenScroll = false;
 
+    /** 
+     *
+     * @property mediaOverlaysSkipSkippables
+     * @type bool
+     */
+
     this.mediaOverlaysSkipSkippables = false;
+
+    /** 
+     *
+     * @property mediaOverlaysEscapables
+     * @type bool
+     */
+
     this.mediaOverlaysEscapeEscapables = true;
 
+    /** 
+     *
+     * @property mediaOverlaysSkippables
+     * @type array
+     */
+
     this.mediaOverlaysSkippables = [];
+    
+    /** 
+     *
+     * @property mediaOverlaysEscapables
+     * @type array
+     */
+
     this.mediaOverlaysEscapables = [];
+
+    /** 
+     *
+     * @property mediaOverlaysEnableClick
+     * @type bool
+     */
     
     this.mediaOverlaysEnableClick = true;
+
+    /** 
+     *
+     * @property mediaOverlaysRate
+     * @type number
+     */
+
     this.mediaOverlaysRate = 1;
+
+    /** 
+     *
+     * @property mediaOverlaysVolume
+     * @type number
+     */
+
     this.mediaOverlaysVolume = 100;
+
+    /** 
+     *
+     * @property mediaOverlaysSynchronizationGranularity
+     * @type string
+     */
     
     this.mediaOverlaysSynchronizationGranularity = "";
 
+    /** 
+     *
+     * @property mediaOverlaysAutomaticPageTurn
+     * @type bool
+     */    
+
     this.mediaOverlaysAutomaticPageTurn = true;
+
+    /** 
+     *
+     * @property enableGPUHardwareAccelerationCSS3D
+     * @type bool
+     */    
+
 
     this.enableGPUHardwareAccelerationCSS3D = false;
 
     // -1 ==> disable
     // [0...n] ==> index of transition in pre-defined array
-    this.pageTransition = -1;
     
+    /** 
+     *
+     * @property pageTransition
+     * @type number
+     */        
+
+    this.pageTransition = -1;
+ 
+    /** 
+     *
+     * @property scroll
+     * @type string
+     */        
+
     this.scroll = "auto";
+
+    /**
+     * Builds an array
+     *
+     * @method     buildArray
+     * @param      {string} str
+     * @return     {array} retArr
+     */
 
     function buildArray(str)
     {
@@ -4234,6 +4740,15 @@ var ViewerSettings = function(settingsData) {
         return retArr;
     }
 
+    /**
+     * Maps the properties to the settings
+     *
+     * @method     mapProperty
+     * @param      {string} propName
+     * @param      settingsData
+     * @param      functionToApply
+     */
+
     function mapProperty(propName, settingsData, functionToApply) {
 
         if(settingsData[propName] !== undefined) {
@@ -4248,12 +4763,20 @@ var ViewerSettings = function(settingsData) {
 
     }
 
+    /**
+     * Updates the settings' new values
+     *
+     * @method     update
+     * @param      settingsData
+     */
+
     this.update = function(settingsData) {
 
         mapProperty("columnGap", settingsData);
         mapProperty("columnMaxWidth", settingsData);
         mapProperty("columnMinWidth", settingsData);
         mapProperty("fontSize", settingsData);
+        mapProperty("fontSelection", settingsData);
         mapProperty("mediaOverlaysPreservePlaybackWhenScroll", settingsData);
         mapProperty("mediaOverlaysSkipSkippables", settingsData);
         mapProperty("mediaOverlaysEscapeEscapables", settingsData);
@@ -4274,6 +4797,234 @@ var ViewerSettings = function(settingsData) {
 };
     return ViewerSettings;
 });
+
+/**
+ * Copyright Marc J. Schmidt. See the LICENSE file at the top-level
+ * directory of this distribution and at
+ * https://github.com/marcj/css-element-queries/blob/master/LICENSE.
+ */
+;
+(function (root, factory) {
+    if (typeof define === "function" && define.amd) {
+        define('ResizeSensor',factory);
+    } else if (typeof exports === "object") {
+        module.exports = factory();
+    } else {
+        root.ResizeSensor = factory();
+    }
+}(this, function () {
+
+    //Make sure it does not throw in a SSR (Server Side Rendering) situation
+    if (typeof window === "undefined") {
+        return null;
+    }
+    // Only used for the dirty checking, so the event callback count is limted to max 1 call per fps per sensor.
+    // In combination with the event based resize sensor this saves cpu time, because the sensor is too fast and
+    // would generate too many unnecessary events.
+    var requestAnimationFrame = window.requestAnimationFrame ||
+        window.mozRequestAnimationFrame ||
+        window.webkitRequestAnimationFrame ||
+        function (fn) {
+            return window.setTimeout(fn, 20);
+        };
+
+    /**
+     * Iterate over each of the provided element(s).
+     *
+     * @param {HTMLElement|HTMLElement[]} elements
+     * @param {Function}                  callback
+     */
+    function forEachElement(elements, callback){
+        var elementsType = Object.prototype.toString.call(elements);
+        var isCollectionTyped = ('[object Array]' === elementsType
+            || ('[object NodeList]' === elementsType)
+            || ('[object HTMLCollection]' === elementsType)
+            || ('[object Object]' === elementsType)
+            || ('undefined' !== typeof jQuery && elements instanceof jQuery) //jquery
+            || ('undefined' !== typeof Elements && elements instanceof Elements) //mootools
+        );
+        var i = 0, j = elements.length;
+        if (isCollectionTyped) {
+            for (; i < j; i++) {
+                callback(elements[i]);
+            }
+        } else {
+            callback(elements);
+        }
+    }
+
+    /**
+     * Class for dimension change detection.
+     *
+     * @param {Element|Element[]|Elements|jQuery} element
+     * @param {Function} callback
+     *
+     * @constructor
+     */
+    var ResizeSensor = function(element, callback) {
+        /**
+         *
+         * @constructor
+         */
+        function EventQueue() {
+            var q = [];
+            this.add = function(ev) {
+                q.push(ev);
+            };
+
+            var i, j;
+            this.call = function() {
+                for (i = 0, j = q.length; i < j; i++) {
+                    q[i].call();
+                }
+            };
+
+            this.remove = function(ev) {
+                var newQueue = [];
+                for(i = 0, j = q.length; i < j; i++) {
+                    if(q[i] !== ev) newQueue.push(q[i]);
+                }
+                q = newQueue;
+            }
+
+            this.length = function() {
+                return q.length;
+            }
+        }
+
+        /**
+         * @param {HTMLElement} element
+         * @param {String}      prop
+         * @returns {String|Number}
+         */
+        function getComputedStyle(element, prop) {
+            if (element.currentStyle) {
+                return element.currentStyle[prop];
+            } else if (window.getComputedStyle) {
+                return window.getComputedStyle(element, null).getPropertyValue(prop);
+            } else {
+                return element.style[prop];
+            }
+        }
+
+        /**
+         *
+         * @param {HTMLElement} element
+         * @param {Function}    resized
+         */
+        function attachResizeEvent(element, resized) {
+            if (!element.resizedAttached) {
+                element.resizedAttached = new EventQueue();
+                element.resizedAttached.add(resized);
+            } else if (element.resizedAttached) {
+                element.resizedAttached.add(resized);
+                return;
+            }
+
+            element.resizeSensor = document.createElement('div');
+            element.resizeSensor.className = 'resize-sensor';
+            var style = 'position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: hidden; z-index: -1; visibility: hidden;';
+            var styleChild = 'position: absolute; left: 0; top: 0; transition: 0s;';
+
+            element.resizeSensor.style.cssText = style;
+            element.resizeSensor.innerHTML =
+                '<div class="resize-sensor-expand" style="' + style + '">' +
+                    '<div style="' + styleChild + '" class="resize-sensor-inner"></div>' +
+                '</div>' +
+                '<div class="resize-sensor-shrink" style="' + style + '">' +
+                    '<div style="' + styleChild + ' width: 200%; height: 200%" class="resize-sensor-inner"></div>' +
+                '</div>';
+            element.appendChild(element.resizeSensor);
+
+            if (getComputedStyle(element, 'position') == 'static') {
+                element.style.position = 'relative';
+            }
+
+            var expand = element.resizeSensor.childNodes[0];
+            var expandChild = expand.childNodes[0];
+            var shrink = element.resizeSensor.childNodes[1];
+            var dirty, rafId, newWidth, newHeight;
+            var lastWidth = element.offsetWidth;
+            var lastHeight = element.offsetHeight;
+
+            var reset = function() {
+                expandChild.style.width = '100000px';
+                expandChild.style.height = '100000px';
+
+                expand.scrollLeft = 100000;
+                expand.scrollTop = 100000;
+
+                shrink.scrollLeft = 100000;
+                shrink.scrollTop = 100000;
+            };
+
+            reset();
+
+            var onResized = function() {
+                rafId = 0;
+
+                if (!dirty) return;
+
+                lastWidth = newWidth;
+                lastHeight = newHeight;
+
+                if (element.resizedAttached) {
+                    element.resizedAttached.call();
+                }
+            };
+
+            var onScroll = function() {
+                newWidth = element.offsetWidth;
+                newHeight = element.offsetHeight;
+                dirty = newWidth != lastWidth || newHeight != lastHeight;
+
+                if (dirty && !rafId) {
+                    rafId = requestAnimationFrame(onResized);
+                }
+
+                reset();
+            };
+
+            var addEvent = function(el, name, cb) {
+                if (el.attachEvent) {
+                    el.attachEvent('on' + name, cb);
+                } else {
+                    el.addEventListener(name, cb);
+                }
+            };
+
+            addEvent(expand, 'scroll', onScroll);
+            addEvent(shrink, 'scroll', onScroll);
+        }
+
+        forEachElement(element, function(elem){
+            attachResizeEvent(elem, callback);
+        });
+
+        this.detach = function(ev) {
+            ResizeSensor.detach(element, ev);
+        };
+    };
+
+    ResizeSensor.detach = function(element, ev) {
+        forEachElement(element, function(elem){
+            if(elem.resizedAttached && typeof ev == "function"){
+                elem.resizedAttached.remove(ev);
+                if(elem.resizedAttached.length()) return;
+            }
+            if (elem.resizeSensor) {
+                if (elem.contains(elem.resizeSensor)) {
+                    elem.removeChild(elem.resizeSensor);
+                }
+                delete elem.resizeSensor;
+                delete elem.resizedAttached;
+            }
+        });
+    };
+
+    return ResizeSensor;
+
+}));
 
 //  Created by Boris Schneiderman.
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
@@ -4301,8 +5052,8 @@ var ViewerSettings = function(settingsData) {
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-define('readium_shared_js/views/one_page_view',["../globals", "jquery", "underscore", "eventEmitter", "./cfi_navigation_logic", "../helpers", "../models/viewer_settings", "../models/bookmark_data"],
-    function (Globals, $, _, EventEmitter, CfiNavigationLogic, Helpers, ViewerSettings, BookmarkData) {
+define('readium_shared_js/views/one_page_view',["../globals", "jquery", "underscore", "eventEmitter", "./cfi_navigation_logic", "../helpers", "../models/viewer_settings", "../models/bookmark_data", "ResizeSensor"],
+    function (Globals, $, _, EventEmitter, CfiNavigationLogic, Helpers, ViewerSettings, BookmarkData, ResizeSensor) {
 
 /**
  * Renders one page of fixed layout spread
@@ -4658,16 +5409,25 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
             updateMetaSize();
 
+            var bodyElement = _$epubBody[0];
+            bodyElement.resizeSensor = new ResizeSensor(bodyElement, function() {
+                console.log("OnePageView iframe body resized", $(bodyElement).width(), $(bodyElement).height());
+                var src = _spine.package.resolveRelativeUrl(_currentSpineItem.href);
+                Globals.logEvent("OnePageView.Events.CONTENT_SIZE_CHANGED", "EMIT", "one_page_view.js [ " + _currentSpineItem.href + " -- " + src + " ]");
+                self.emit(OnePageView.Events.CONTENT_SIZE_CHANGED, _$iframe, _currentSpineItem);
+                //updatePagination();
+            });
+
             _pageTransitionHandler.onIFrameLoad();
         }
     }
 
     var _viewSettings = undefined;
-    this.setViewSettings = function (settings) {
+    this.setViewSettings = function (settings, docWillChange) {
 
         _viewSettings = settings;
 
-        if (_enableBookStyleOverrides) {
+        if (_enableBookStyleOverrides && !docWillChange) {
             self.applyBookStyles();
         }
 
@@ -4676,12 +5436,17 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         _pageTransitionHandler.updateOptions(settings);
     };
 
-    function updateHtmlFontSize() {
+    function updateHtmlFontInfo() {
 
         if (!_enableBookStyleOverrides) return;
 
         if (_$epubHtml && _viewSettings) {
-            Helpers.UpdateHtmlFontSize(_$epubHtml, _viewSettings.fontSize);
+            var i = _viewSettings.fontSelection;
+            var useDefault = !reader.fonts || !reader.fonts.length || i <= 0 || (i-1) >= reader.fonts.length;
+            var font = (useDefault ?
+                        {} :
+                        reader.fonts[i - 1]);
+            Helpers.UpdateHtmlFontAttributes(_$epubHtml, _viewSettings.fontSize, font, function() {});
         }
     }
 
@@ -4691,7 +5456,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
         if (_$epubHtml) {
             Helpers.setStyles(_bookStyles.getStyles(), _$epubHtml);
-            updateHtmlFontSize();
+            updateHtmlFontInfo();
         }
     };
 
@@ -5194,7 +5959,10 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         return new CfiNavigationLogic({
             $iframe: _$iframe,
             frameDimensions: getFrameDimensions,
-            visibleContentOffsets: getVisibleContentOffsets
+            visibleContentOffsets: getVisibleContentOffsets,
+            classBlacklist: ["cfi-marker", "mo-cfi-highlight", "resize-sensor", "resize-sensor-expand", "resize-sensor-shrink"],
+            elementBlacklist: [],
+            idBlacklist: ["MathJax_Message", "MathJax_SVG_Hidden"]
         });
     };
 
@@ -5327,7 +6095,8 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 };
 
 OnePageView.Events = {
-    SPINE_ITEM_OPEN_START: "SpineItemOpenStart"
+    SPINE_ITEM_OPEN_START: "SpineItemOpenStart",
+    CONTENT_SIZE_CHANGED: "ContentSizeChanged"
 };
 return OnePageView;
 });
@@ -5367,10 +6136,12 @@ define('readium_shared_js/models/page_open_request',[],function() {
  *  firstPage {bool},
  *  lastPage {bool}
  *
+ * @class Models.PageOpenRequest
+ * @constructor
  * @param {Models.SpineItem} spineItem
  * @param {object} [initiator]
  *
- * @constructor
+
  */
 var PageOpenRequest = function(spineItem, initiator) {
 
@@ -5378,9 +6149,17 @@ var PageOpenRequest = function(spineItem, initiator) {
     this.spineItemPageIndex = undefined;
     this.elementId = undefined;
     this.elementCfi = undefined;
+    this.firstVisibleCfi = undefined;
+    this.lastVisibleCfi = undefined;
     this.firstPage = false;
     this.lastPage = false;
     this.initiator = initiator;
+
+    /**
+     * Resets the reading system
+     *
+     * @method     reset
+     */
 
     this.reset = function() {
         this.spineItemPageIndex = undefined;
@@ -5390,32 +6169,74 @@ var PageOpenRequest = function(spineItem, initiator) {
         this.lastPage = false;
     };
 
+    /**
+     * Sets the first page of the book
+     *
+     * @method     setFirstPage
+     */
+
     this.setFirstPage = function() {
         this.reset();
         this.firstPage = true;
     };
+
+    /**
+     * Sets the last page of the book
+     *
+     * @method     setLastPage
+     */
 
     this.setLastPage = function() {
         this.reset();
         this.lastPage = true;
     };
 
+    /**
+     * Sets the index of the book
+     *
+     * @method     setPageIndex
+     * @param      pageIndex
+     */
+
     this.setPageIndex = function(pageIndex) {
         this.reset();
         this.spineItemPageIndex = pageIndex;
     };
 
+    /**
+     * Sets the ID of the current element
+     *
+     * @method     setElementId
+     * @param      {number} elementId 
+     */
+
     this.setElementId = function(elementId) {
         this.reset();
         this.elementId = elementId;
     };
+    
+    /**
+     * Sets the CFI of the current element
+     *
+     * @method     setElementCfi
+     * @param      elementCfi
+     */
 
     this.setElementCfi = function(elementCfi) {
-
         this.reset();
         this.elementCfi = elementCfi;
     };
 
+    // Used by ReflowView to better keep track of the current page
+    // using just a bookmark to firstVisibleElement makes the current
+    // page gradually shift to the beginning of the chapter. By bookmarking
+    // both the first and last visible elements, we can keep track of the 
+    // "middle" of the visible area.
+    this.setFirstAndLastVisibleCfi = function(firstVisibleCfi, lastVisibleCfi) {
+        this.reset();
+        this.firstVisibleCfi = firstVisibleCfi;
+        this.lastVisibleCfi = lastVisibleCfi;
+    }
 
 };
 
@@ -5561,7 +6382,7 @@ var FixedView = function(options, reader){
     };
 
 
-    this.setViewSettings = function(settings) {
+    this.setViewSettings = function(settings, docWillChange) {
         
         _viewSettings = settings;
         
@@ -5569,7 +6390,7 @@ var FixedView = function(options, reader){
 
         var views = getDisplayingViews();
         for(var i = 0, count = views.length; i < count; i++) {
-            views[i].setViewSettings(settings);
+            views[i].setViewSettings(settings, docWillChange);
         }
     };
 
@@ -6663,8 +7484,8 @@ return InternalLinksSupport;
 //  LauncherOSX
 //
 //  Created by Boris Schneiderman.
-// Modified by Daniel Weck
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  Modified by Daniel Weck
+//  Copyright (c) 2016 Readium Foundation and/or its licensees. All rights reserved.
 //  
 //  Redistribution and use in source and binary forms, with or without modification, 
 //  are permitted provided that the following conditions are met:
@@ -6689,14 +7510,39 @@ return InternalLinksSupport;
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 define ('readium_shared_js/models/smil_iterator',["jquery", "../helpers"], function($, Helpers) {
 /**
+ * Wrapper of a smil iterator object. 
+ * A smil iterator is used by the media overlay player, to move along text areas which have an audio overlay. 
+ * Such areas are specified in the smil model via parallel smil nodes (text + audio).  
  *
- * @param smil
+ * @class  Models.SmilIterator
  * @constructor
+ * @param {Models.SmilModel} smil The current smil model
  */
 var SmilIterator = function(smil) {
 
+   /**
+     * The smil model
+     *
+     * @property smil
+     * @type Models.SmilModel
+     */
     this.smil = smil;
+
+    /**
+     * The current parallel smil node
+     *
+     * @property currentPar
+     * @type object
+     */
+     
     this.currentPar = undefined;
+
+    /**
+     * Resets the iterator. 
+     * In practice, looks for the first parallel smil node in the smil model
+     *
+     * @method     reset
+     */
 
     this.reset = function() {
         this.currentPar = findParNode(0, this.smil, false);
@@ -6723,7 +7569,15 @@ var SmilIterator = function(smil) {
 //            this.next();
 //        }
 //    };
-
+    
+    /**
+     * Looks for a text smil node identified by the id parameter 
+     * Returns true if the id param identifies a text smil node.
+     *
+     * @method     findTextId
+     * @param      {Number} id A smil node identifier
+     * @return     {Boolean} 
+     */
     this.findTextId = function(id)
     {
         if (!this.currentPar)
@@ -6757,6 +7611,7 @@ var SmilIterator = function(smil) {
 
                     parent = parent.parentNode;
                 }
+                //console.log(parent);
 
                 // INNER match
                 //var inside = this.currentPar.element.ownerDocument.getElementById(id);
@@ -6766,12 +7621,18 @@ var SmilIterator = function(smil) {
                     return true;
                 }
             }
-
+            // moves to the next parallel smil node
             this.next();
         }
 
         return false;
     }
+
+    /**
+     * Looks for the next parallel smil node
+     *
+     * @method     next 
+     */
 
     this.next = function() {
 
@@ -6783,6 +7644,12 @@ var SmilIterator = function(smil) {
         this.currentPar = findParNode(this.currentPar.index + 1, this.currentPar.parent, false);
     };
 
+    /**
+     * Looks for the previous parallel smil node
+     *
+     * @method     previous
+     */
+
     this.previous = function() {
 
         if(!this.currentPar) {
@@ -6792,6 +7659,13 @@ var SmilIterator = function(smil) {
 
         this.currentPar = findParNode(this.currentPar.index - 1, this.currentPar.parent, true);
     };
+
+    /**
+     * Checks if the current parallel smil node is the last one in the smil model
+     *
+     * @method     isLast
+     * @return     {Bool}
+     */
 
     this.isLast = function() {
 
@@ -6808,6 +7682,14 @@ var SmilIterator = function(smil) {
         return true;
     }
 
+    /**
+     * Moves to the parallel smil node given as a parameter. 
+     *
+     * @method     goToPar
+     * @param      {Containter} par A parallel smil node
+     * @return     {Boolean} 
+     */
+
     this.goToPar =  function(par) {
 
         while(this.currentPar) {
@@ -6818,6 +7700,16 @@ var SmilIterator = function(smil) {
             this.next();
         }
     };
+
+    /**
+     * Looks for a parallel smil node in the smil model.
+     *
+     * @method     findParNode
+     * @param      {Number} startIndex Start index inside the container
+     * @param      {Models.SMilModel} container The smil model
+     * @param      {Boolean} previous True if  search among previous nodes
+     * @return     {Smil.ParNode} 
+     */
 
     function findParNode(startIndex, container, previous) {
 
@@ -7051,8 +7943,8 @@ console.log("MO CLICKED LINK");
 
                                     var range = rangy.createRange(elem.ownerDocument); //createNativeRange
                                     range.setStartAndEnd(
-                                        infoStart.textNode[0], infoStart.textOffset,
-                                        infoEnd.textNode[0], infoEnd.textOffset
+                                        infoStart.textNode, infoStart.textOffset,
+                                        infoEnd.textNode, infoEnd.textOffset
                                     );
         
                                     if (range.isPointInRange(pos.node, pos.offset))
@@ -7262,7 +8154,7 @@ console.debug("MO readaloud attr: " + readaloud);
                 ["MathJax_Message"]);
 //console.log(infoEnd);
 
-                                    var cfiTextParent = infoStart.textNode[0].parentNode;
+                                    var cfiTextParent = infoStart.textNode.parentNode;
 
                                     iter.currentPar.cfi = {
                                         smilTextSrcCfi: iter.currentPar.text.srcFragmentId,
@@ -8454,8 +9346,8 @@ var MediaOverlayElementHighlighter = function(reader) {
 //console.log(infoEnd);
             
             _rangyRange.setStartAndEnd(
-                infoStart.textNode[0], infoStart.textOffset,
-                infoEnd.textNode[0], infoEnd.textOffset
+                infoStart.textNode, infoStart.textOffset,
+                infoEnd.textNode, infoEnd.textOffset
             );
             
             if (false && // we use CssClassApplier instead, because surroundContents() has no trivial undoSurroundContents() function (inc. text nodes normalisation, etc.)
@@ -8779,6 +9671,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
     var _spine = options.spine;
     var _userStyles = options.userStyles;
     var _deferredPageRequest;
+    var _currentPageRequest;
     var _$contentFrame;
     var _$el;
 
@@ -8990,8 +9883,16 @@ var ScrollView = function (options, isContinuousScroll, reader) {
             && !_isSettingScrollPosition
             && !_isLoadingNewSpineItemOnPageRequest) {
 
+            self.resetCurrentPosition();
+
             updateTransientViews();
             onPaginationChanged(self);
+
+            _.defer(function() {
+                if (!_currentPageRequest) {
+                    self.saveCurrentPosition();
+                }
+            })
 
             var settings = reader.viewerSettings();
             if (!settings.mediaOverlaysPreservePlaybackWhenScroll)
@@ -9041,173 +9942,6 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         }
     }
 
-    function reachStableContentHeight(updateScroll, pageView, iframe, href, fixedLayout, metaWidth, msg, callback)
-    {
-        if (!Helpers.isIframeAlive(iframe))
-        {
-            if (_DEBUG)
-            {
-                console.log("reachStableContentHeight ! win && doc (iFrame disposed?)");
-            }
-
-            if (callback) callback(false);
-            return;
-        }
-
-        var MAX_ATTEMPTS = 10;
-        var TIME_MS = 300;
-
-        var w = iframe.contentWindow;
-        var d = iframe.contentDocument;
-
-        var previousPolledContentHeight = parseInt(Math.round(parseFloat(w.getComputedStyle(d.documentElement).height))); //body can be shorter!;
-
-        var initialContentHeight = previousPolledContentHeight;
-
-        if (updateScroll === 0)
-        {
-            updatePageViewSizeAndAdjustScroll(pageView);
-        }
-        else
-        {
-            updatePageViewSize(pageView);
-        }
-
-        var tryAgainFunc = function(tryAgain)
-        {
-            if (_DEBUG && tryAgain !== MAX_ATTEMPTS)
-            {
-                console.log("tryAgainFunc - " + tryAgain + ": " + href + "  <" + initialContentHeight +" -- "+ previousPolledContentHeight + ">");
-            }
-
-            tryAgain--;
-            if (tryAgain < 0)
-            {
-                if (_DEBUG)
-                {
-                    console.error("tryAgainFunc abort: " + href);
-                }
-
-                if (callback) callback(true);
-                return;
-            }
-
-            setTimeout(function()
-            {
-                try
-                {
-                    if (Helpers.isIframeAlive(iframe))
-                    {
-                        var win = iframe.contentWindow;
-                        var doc = iframe.contentDocument;
-
-                        var iframeHeight = parseInt(Math.round(parseFloat(window.getComputedStyle(iframe).height)));
-
-                        var docHeight = parseInt(Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height))); //body can be shorter!
-
-                        if (previousPolledContentHeight !== docHeight)
-                        {
-                            previousPolledContentHeight = docHeight;
-
-                            tryAgainFunc(tryAgain);
-                            return;
-                        }
-
-                        // CONTENT HEIGHT IS NOW STABILISED
-
-                        var diff = iframeHeight - docHeight;
-                        if (Math.abs(diff) > 4)
-                        {
-                            if (_DEBUG)
-                            {
-                                console.log("$$$ IFRAME HEIGHT ADJUST: " + href + "  [" + diff + "]<" + initialContentHeight + " -- " + previousPolledContentHeight + ">");
-                                console.log(msg);
-                            }
-
-                            if (updateScroll === 0)
-                            {
-                                updatePageViewSizeAndAdjustScroll(pageView);
-                            }
-                            else
-                            {
-                                updatePageViewSize(pageView);
-                            }
-
-                            if (Helpers.isIframeAlive(iframe))
-                            {
-                                var win = iframe.contentWindow;
-                                var doc = iframe.contentDocument;
-
-                                var docHeightAfter = parseInt(Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height))); //body can be shorter!
-                                var iframeHeightAfter = parseInt(Math.round(parseFloat(window.getComputedStyle(iframe).height)));
-
-                                var newdiff = iframeHeightAfter - docHeightAfter;
-                                if (Math.abs(newdiff) > 4)
-                                {
-                                    if (_DEBUG)
-                                    {
-                                        console.error("## IFRAME HEIGHT ADJUST: " + href + "  [" + newdiff + "]<" + initialContentHeight + " -- "+ previousPolledContentHeight + ">");
-                                        console.log(msg);
-                                    }
-
-                                    tryAgainFunc(tryAgain);
-                                    return;
-                                }
-                                else
-                                {
-                                    if (_DEBUG)
-                                    {
-                                        console.log(">> IFRAME HEIGHT ADJUSTED OKAY: " + href + "  ["+diff+"]<" + initialContentHeight + " -- " + previousPolledContentHeight + ">");
-                                        // console.log(msg);
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                if (_DEBUG)
-                                {
-                                    console.log("tryAgainFunc ! win && doc (iFrame disposed?)");
-                                }
-
-                                if (callback) callback(false);
-                                return;
-                            }
-                        }
-                        else
-                        {
-                            //if (_DEBUG)
-                            // console.debug("IFRAME HEIGHT NO NEED ADJUST: " + href);
-                            // console.log(msg);
-                        }
-                    }
-                    else
-                    {
-                        if (_DEBUG)
-                        {
-                            console.log("tryAgainFunc ! win && doc (iFrame disposed?)");
-                        }
-
-                        if (callback) callback(false);
-                        return;
-                    }
-                }
-                catch(ex)
-                {
-                    console.error(ex);
-
-                    if (callback) callback(false);
-                    return;
-                }
-
-                if (callback) callback(true);
-
-            }, TIME_MS);
-        };
-
-        tryAgainFunc(MAX_ATTEMPTS);
-    }
-
-
     function addToTopOf(topView, callback) {
 
         var prevSpineItem = _spine.prevItem(topView.currentSpineItem(), true);
@@ -9216,7 +9950,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
             return;
         }
 
-        var tmpView = createPageViewForSpineItem(true);
+        var tmpView = createPageViewForSpineItem(prevSpineItem, true);
 
         // add to the end first to avoid scrolling during load
         var lastView = lastLoadedView();
@@ -9233,7 +9967,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
                 var scrollPos = scrollTop();
 
-                var newView = createPageViewForSpineItem();
+                var newView = createPageViewForSpineItem(prevSpineItem);
                 var originalHeight = range.bottom - range.top;
 
 
@@ -9251,14 +9985,12 @@ var ScrollView = function (options, isContinuousScroll, reader) {
                 newView.loadSpineItem(prevSpineItem, function (success, $iframe, spineItem, isNewlyLoaded, context) {
                     if (success) {
 
-                        var continueCallback = function (successFlag)
-                        {
-                            onPageViewLoaded(newView, success, $iframe, spineItem, isNewlyLoaded, context);
-
-                            callback(successFlag);
-                        };
-
-                        reachStableContentHeight(0, newView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToTopOf", continueCallback); // //onIFrameLoad called before this callback, so okay.
+                        updatePageViewSizeAndAdjustScroll(newView);
+                        onPageViewLoaded(newView, success, $iframe, spineItem, isNewlyLoaded, context);
+                        callback(success);
+                        // No need for complicated reachStableContentHeight any more
+                        // Remove this
+                        //reachStableContentHeight(0, newView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToTopOf", continueCallback); // //onIFrameLoad called before this callback, so okay.
                     }
                     else {
                         console.error("Unable to open 2 " + prevSpineItem.href);
@@ -9297,20 +10029,17 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
         var scrollPos = scrollTop();
 
-        var newView = createPageViewForSpineItem();
+        var newView = createPageViewForSpineItem(nexSpineItem);
         newView.element().insertAfter(bottomView.element());
 
         newView.loadSpineItem(nexSpineItem, function (success, $iframe, spineItem, isNewlyLoaded, context) {
             if (success) {
 
-                var continueCallback = function (successFlag)
-                {
-                    onPageViewLoaded(newView, success, $iframe, spineItem, isNewlyLoaded, context);
-
-                    callback(successFlag);
-                };
-
-                reachStableContentHeight(2, newView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToBottomOf", continueCallback); // //onIFrameLoad called before this callback, so okay.
+                updatePageViewSize(newView);
+                onPageViewLoaded(newView, success, $iframe, spineItem, isNewlyLoaded, context);
+                callback(success);
+                // No need for complicated reachStableContentHeight any more
+                //reachStableContentHeight(2, newView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToBottomOf", continueCallback); // //onIFrameLoad called before this callback, so okay.
             }
             else {
                 console.error("Unable to load " + nexSpineItem.href);
@@ -9359,37 +10088,58 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         if (!_$contentFrame) {
             return;
         }
+    };
 
-        forEachItemView(function (pageView) {
+    this.resetCurrentPosition = function() {
+        _currentPageRequest = undefined;
+    };
 
-            updatePageViewSize(pageView);
-        }, false);
+    this.saveCurrentPosition = function() {
+        // If there's a deferred page request, there's no point in saving the current position
+        // as it's going to change soon
+        if (_deferredPageRequest) {
+            return;
+        }
 
-        onPaginationChanged(self);
+        var _firstVisibleCfi = self.getFirstVisibleCfi();
+        var spineItem = _spine.getItemById(_firstVisibleCfi.idref);
+        if (spineItem) {
+            _currentPageRequest = new PageOpenRequest(spineItem, self);
+            _currentPageRequest.setElementCfi(_firstVisibleCfi.contentCFI);
+        }
+    };
 
-        updateTransientViews();
+    this.restoreCurrentPosition = function() {
+        if (_currentPageRequest) {
+            this.openPageInternal(_currentPageRequest);            
+        }
     };
 
     var _viewSettings = undefined;
-    this.setViewSettings = function (settings) {
+    this.setViewSettings = function (settings, docWillChange) {
 
         _viewSettings = settings;
 
         forEachItemView(function (pageView) {
 
-            pageView.setViewSettings(settings);
+            pageView.setViewSettings(settings, docWillChange);
 
         }, false);
     };
 
-    function createPageViewForSpineItem(isTemporaryView) {
-
+    function createPageViewForSpineItem(aSpineItem, isTemporaryView) {
+        
         options.disablePageTransitions = true; // force
+
+        var enableBookStyleOverrides = true;
+        if (aSpineItem.isFixedLayout()) {
+            enableBookStyleOverrides = false;
+        }
 
         var pageView = new OnePageView(
             options,
             ["content-doc-frame"],
-            true, //enableBookStyleOverrides
+            enableBookStyleOverrides,
             reader);
 
         pageView.on(OnePageView.Events.SPINE_ITEM_OPEN_START, function($iframe, spineItem) {
@@ -9405,8 +10155,31 @@ var ScrollView = function (options, isContinuousScroll, reader) {
             self.emit(Globals.Events.CONTENT_DOCUMENT_UNLOADED, $iframe, spineItem);
         });
 
+        function updatePageViewSizeAndPagination_() {
+            // Resize the PageView to fit its content and update the pagination
+            // and the adjacent views
+            updatePageViewSize(pageView);
+            onPaginationChanged(self);
+            updateTransientViews();
+            if (_currentPageRequest && !_deferredPageRequest) {
+                self.restoreCurrentPosition();                
+            }
+        }
+        var updatePageViewSizeAndPagination = _.debounce(updatePageViewSizeAndPagination_, 100);
+
+        // Observe the CONTENT_SIZE_CHANGED from the page view so the ScrollView
+        // is notified when the size of the content of the view changes, because
+        // the font or the viewport size has changed
+        pageView.on(OnePageView.Events.CONTENT_SIZE_CHANGED, function($iframe, spineItem) {
+            
+            Globals.logEvent("OnePageView.Events.CONTENT_SIZE_CHANGED", "ON", "scroll_view.js [ " + spineItem.href + " ]");
+            updatePageViewSizeAndPagination();
+        });
+
         pageView.render();
-        if (_viewSettings) pageView.setViewSettings(_viewSettings);
+
+        var docWillChange = true;
+        if (_viewSettings) pageView.setViewSettings(_viewSettings, docWillChange);
 
         if (!isTemporaryView) {
             pageView.element().data("pageView", pageView);
@@ -9509,7 +10282,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
         var scrollPos = scrollTop();
 
-        var loadedView = createPageViewForSpineItem();
+        var loadedView = createPageViewForSpineItem(spineItem);
 
         _$contentFrame.append(loadedView.element());
 
@@ -9517,16 +10290,11 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
             if (success) {
 
-                var continueCallback = function(successFlag)
-                {
-                    onPageViewLoaded(loadedView, success, $iframe, spineItem, isNewlyLoaded, context);
-
-                    callback(loadedView);
-
-                    //successFlag should always be true as loadedView iFrame cannot be dead at this stage.
-                };
-
-                reachStableContentHeight(1, loadedView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? loadedView.meta_width() : 0, "openPage", continueCallback); // //onIFrameLoad called before this callback, so okay.
+                updatePageViewSize(loadedView);
+                onPageViewLoaded(loadedView, success, $iframe, spineItem, isNewlyLoaded, context);
+                //callback(loadedView);
+                // No need for complicated reachStableContentHeight any more
+                //reachStableContentHeight(1, loadedView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? loadedView.meta_width() : 0, "openPage", continueCallback); // //onIFrameLoad called before this callback, so okay.
             }
             else {
                 console.error("Unable to load " + spineItem.href);
@@ -9561,7 +10329,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
     };
 
 
-    this.openPage = function (pageRequest) {
+    this.openPageInternal = function (pageRequest) {
 
         _stopTransientViewUpdate = true;
 
@@ -9610,6 +10378,12 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         }
     };
 
+    this.openPage = function(pageRequest) {
+        this.resetCurrentPosition();
+        _currentPageRequest = pageRequest;
+        this.openPageInternal(pageRequest);
+    }
+
     function openPageViewElement(pageView, pageRequest) {
 
         var topOffset = 0;
@@ -9656,7 +10430,8 @@ var ScrollView = function (options, isContinuousScroll, reader) {
                 return;
             }
 
-            topOffset = sfiNav.getVerticalOffsetForElement($element) + pageRange.top;
+            var elementRange = getElementRange(pageView, $element);
+            topOffset = elementRange.top + pageRange.top;
 
         }
         else if (pageView && pageRequest.elementCfi) {
@@ -10859,11 +11634,11 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
 
                 if (rangy)
                 {
-                    //infoStart.textNode[0].parentNode.ownerDocument
+                    //infoStart.textNode.parentNode.ownerDocument
                     var range = rangy.createRange(doc); //createNativeRange
                     range.setStartAndEnd(
-                        infoStart.textNode[0], infoStart.textOffset,
-                        infoEnd.textNode[0], infoEnd.textOffset
+                        infoStart.textNode, infoStart.textOffset,
+                        infoEnd.textNode, infoEnd.textOffset
                     );
                     _currentTTS = range.toString(); //.text()
                 }
@@ -12444,7 +13219,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 });
 
 //  Created by Boris Schneiderman.
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  Copyright (c) 2016 Readium Foundation and/or its licensees. All rights reserved.
 //  
 //  Redistribution and use in source and binary forms, with or without modification, 
 //  are permitted provided that the following conditions are met:
@@ -12470,38 +13245,51 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
 define('readium_shared_js/models/spine',["./spine_item", "../helpers", "URIjs"], function(SpineItem, Helpers, URI) {
 /**
- *  Wrapper of the spine object received from hosting application
+ *  Wrapper of the Spine object received from the host application
  *
- *  @class  Models.Spine
+ * @class  Models.Spine
+ * @constructor
+ * @param {Models.Package} epubPackage Parent package properties 
+ * @param {Object} spineDTO Spine data object, container for spine properties
  */
-
 var Spine = function(epubPackage, spineDTO) {
 
     var self = this;
 
-    /*
-     * Collection of spine items
+    /**
+     * The collection of spine items
+     *
      * @property items
-     * @type {Array}
+     * @type Array
      */
     this.items = [];
 
-    /*
-     * Page progression direction ltr|rtl|default
+    /**
+     * The page progression direction ltr|rtl|default
+     *
      * @property direction
-     * @type {string}
+     * @type String
+     * @default "ltr"
      */
     this.direction = "ltr";
 
-    /*
-     * @property package
-     * @type {Models.Package}
+    /**
+     * The container for parent package properties
+     *
+     * @property package  
+     * @type Models.Package
      *
      */
     this.package = epubPackage;
 
     var _handleLinear = false;
 
+    /**
+     * Sets a flag indicating that the app handles linear spine items
+     *
+     * @method     handleLinear
+     * @param      {Boolean} handleLinear  boolean flag
+     */
     this.handleLinear = function(handleLinear) {
         _handleLinear = handleLinear;
     };
@@ -12510,7 +13298,13 @@ var Spine = function(epubPackage, spineDTO) {
         return !_handleLinear || item.linear !== "no";
     }
 
-
+    /**
+     * Checks if a spine item is linear. 
+     *
+     * @method     isValidLinearItem
+     * @param      {Number} index  index of a spine item
+     * @return     {Boolean} TRUE if the app does not handle linear items or if the item is linear.
+    */
     this.isValidLinearItem = function(index) {
         
         if(!isValidIndex(index)) {
@@ -12520,6 +13314,62 @@ var Spine = function(epubPackage, spineDTO) {
         return isValidLinearItem(this.item(index));
     };
 
+    /**
+     * Checks if the page progression direction is right to left.
+     *
+     * @method     isRightToLeft
+     * @return     {Boolean} 
+     */
+    this.isRightToLeft = function() {
+
+        return self.direction == "rtl";
+    };
+
+    /**
+     * Checks if the page progression direction is left to right.
+     *
+     * @method     isLeftToRight
+     * @return     {Boolean} TRUE if the direction is not rtl.
+     */
+    this.isLeftToRight = function() {
+
+        return !self.isRightToLeft();
+    };
+
+    /**
+     * Checks if an spine item index is valid. 
+     *
+     * @method     isValidIndex
+     * @param      {Number} index  the index of the expected spine item
+     * @return     {Boolean} TRUE is the index is valid.
+    */
+    function isValidIndex(index) {
+
+        return index >= 0 && index < self.items.length;
+    }
+
+    function lookForPrevValidItem(ix) {
+
+        if(!isValidIndex(ix)) {
+            return undefined;
+        }
+
+        var item = self.items[ix];
+
+        if(isValidLinearItem(item)) {
+            return item;
+        }
+
+        return lookForPrevValidItem(item.index - 1);
+    }
+
+    /**
+     * Looks for the previous spine item. 
+     *
+     * @method     prevItem
+     * @param      {Models.SpineItem} item  a spine item
+     * @return     {Models.SpineItem} the previous spine item or undefined.
+    */
     this.prevItem = function(item) {
 
         return lookForPrevValidItem(item.index - 1);
@@ -12540,58 +13390,85 @@ var Spine = function(epubPackage, spineDTO) {
         return lookForNextValidItem(item.index + 1);
     }
 
-    function lookForPrevValidItem(ix) {
-
-        if(!isValidIndex(ix)) {
-            return undefined;
-        }
-
-        var item = self.items[ix];
-
-        if(isValidLinearItem(item)) {
-            return item;
-        }
-
-        return lookForPrevValidItem(item.index - 1);
-    }
-
-    this.nextItem = function(item){
+    /**
+     * Looks for the next spine item. 
+     *
+     * @method     nextItem
+     * @param      {Models.SpineItem} item  a spine item
+     * @return     {Models.SpineItem} the next spine item or undefined.
+    */
+    this.nextItem = function(item) {
 
         return lookForNextValidItem(item.index + 1);
     };
 
+    /**
+     * Gets the relative URL of a spine item. 
+     *
+     * @method     getItemUrl
+     * @param      {Models.SpineItem} item  the spine item
+     * @return     {String} the relative URL of the spine item.
+    */
     this.getItemUrl = function(item) {
 
         return self.package.resolveRelativeUrl(item.href);
 
     };
 
-    function isValidIndex(index) {
-
-        return index >= 0 && index < self.items.length;
-    }
-
+    /**
+     * Returns the first spine item. 
+     *
+     * @method     first
+     * @return     {Models.SpineItem} the first spine item.
+    */
     this.first = function() {
 
         return lookForNextValidItem(0);
     };
 
+    /**
+     * Returns the last spine item. 
+     *
+     * @method     last
+     * @return     {Models.SpineItem} the last spine item.
+    */
     this.last = function() {
 
         return lookForPrevValidItem(this.items.length - 1);
     };
 
+    /**
+     * Checks if a spine item is the first in the spine. 
+     *
+     * @method     isFirstItem
+     * @param      {Models.SpineItem} item  a spine item
+     * @return     {Boolean} TRUE if the spine item is the first in the list.
+    */
     this.isFirstItem = function(item) {
 
         return self.first() === item;
     };
 
+    /**
+     * Checks if a spine item is the last in the spine. 
+     *
+     * @method     isLastItem
+     * @param      {Models.SpineItem} item  a spine item
+     * @return     {Boolean} true if the spine item is the last in the list.
+    */
     this.isLastItem = function(item) {
 
         return self.last() === item;
     };
 
-    this.item = function(index) {
+    /**
+     * Returns a spine item by its index. 
+     *
+     * @method     item
+     * @param      {Number} index  the index of the expected spine item
+     * @return     {Models.SpineItem} the expected spine item or undefined.
+    */
+   this.item = function(index) {
         
         if (isValidIndex(index))
             return self.items[index];
@@ -12599,16 +13476,13 @@ var Spine = function(epubPackage, spineDTO) {
         return undefined;
     };
 
-    this.isRightToLeft = function() {
-
-        return self.direction == "rtl";
-    };
-
-    this.isLeftToRight = function() {
-
-        return !self.isRightToLeft();
-    };
-
+    /**
+     * Returns a spine item by its id.
+     *
+     * @method     getItemById
+     * @param      {Number} idref  the id of the expected spine item
+     * @return     {Models.SpineItem} the expected spine item or undefined.
+     */
     this.getItemById = function(idref) {
 
         var length = self.items.length;
@@ -12623,12 +13497,14 @@ var Spine = function(epubPackage, spineDTO) {
         return undefined;
     };
 
+    /**
+     * Returns a spine item by its href.
+     *
+     * @method     getItemByHref
+     * @param      {String} href  the URL of the expected spine item
+     * @return     {Models.SpineItem} the expected spine item or undefined.
+     */
     this.getItemByHref = function(href) {
-
-        // var href1 = Helpers.ResolveContentRef(self.items[i].href, self.package.rootUrl + "/pack.opf");
-        // var href1 = self.package.resolveRelativeUrl(href);
-        //var href1 = new URI(href).absoluteTo(self.package.rootUrl).pathname();
-        //var href1 = new URI(self.package.resolveRelativeUrl(href)).relativeTo(self.package.rootUrl).pathname();
         
         var href1 = new URI(self.package.resolveRelativeUrl(href)).normalizePathname().pathname();
         
@@ -12638,7 +13514,6 @@ var Spine = function(epubPackage, spineDTO) {
             
             var href2 = new URI(self.package.resolveRelativeUrl(self.items[i].href)).normalizePathname().pathname();
             
-            //if(self.items[i].href == href) {
             if(href1 == href2) {
                 return self.items[i];
             }
@@ -12647,6 +13522,11 @@ var Spine = function(epubPackage, spineDTO) {
         return undefined;
     };
 
+    /**
+     * Updates every spine item spread, if not already defined.
+     *
+     * @method     updateSpineItemsSpread
+     */
     function updateSpineItemsSpread() {
 
         var len = self.items.length;
@@ -12667,6 +13547,7 @@ var Spine = function(epubPackage, spineDTO) {
         }
     }
 
+    // initialization of the local 'direction' and 'items' array from the spineDTO structure
     if(spineDTO) {
 
         if(spineDTO.direction) {
@@ -12715,12 +13596,15 @@ var Spine = function(epubPackage, spineDTO) {
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 define ('readium_shared_js/models/smil_model',["../helpers"], function(Helpers) {
 
-/**
- *
- * @param parent
- * @constructor
- */
 var Smil = {};
+
+/**
+ * Wrapper of a SmilNode object
+ *
+ * @class      Smil.SmilNode
+ * @constructor
+ * @param      {Smil.SmilNode} parent Parent node of the new smil node
+ */
 
 Smil.SmilNode = function(parent) {
 
@@ -12728,7 +13612,12 @@ Smil.SmilNode = function(parent) {
     
     this.id = "";
     
-    //root node is a smil model
+    /**
+     * Finds the smil model object, i.e. the root node of the smil tree
+     *
+     * @method     getSmil
+     * @return     {Smil.SmilModel} node The smil model object
+     */    
     this.getSmil = function() {
 
         var node = this;
@@ -12738,7 +13627,13 @@ Smil.SmilNode = function(parent) {
 
         return node;
     };
-    
+    /**
+     * Checks if the node given as a parameter is an ancestor of the current node 
+     *
+     * @method     hasAncestor
+     * @param      {Smil.SmilNode} node The checked node
+     * @return     {Bool} true if the parameter node is an ancestor
+     */
     this.hasAncestor = function(node)
     {
         var parent = this.parent;
@@ -12756,14 +13651,63 @@ Smil.SmilNode = function(parent) {
     };
 };
 
+////////////////////////////
+//TimeContainerNode
+
+/**
+ * Wrapper of a time container (smil) node 
+ *
+ * @class      Smil.TimeContainerNode
+ * @constructor
+ * @param      {Smil.SmilNode} parent Parent smil node
+ */
+
 Smil.TimeContainerNode = function(parent) {
 
+    /**
+     * The parent node
+     *
+     * @property parent
+     * @type Smil.SmilNode
+     */
+    
     this.parent = parent;
     
+    /**
+     * The children nodes
+     *
+     * @property children
+     * @type undefined
+     */
+
     this.children = undefined;
+    
+    /**
+     * The index
+     *
+     * @property index
+     * @type undefined
+     */
+
     this.index = undefined;
     
+    /**
+     * The epub type
+     *
+     * @property epubtype
+     * @type String
+     */
+
     this.epubtype = "";
+
+
+    /**
+     * Checks if the smil node is escapable.
+     *
+     * @method     isEscapable
+     * @param      {Array} userEscapables
+     * @return     {Bool} true if the smil node is escapable 
+     */
 
     this.isEscapable = function(userEscapables)
     {
@@ -12794,6 +13738,14 @@ Smil.TimeContainerNode = function(parent) {
 
         return false;
     };
+
+    /**
+     * Checks is the smil node is skippable
+     *
+     * @method     isSkippables
+     * @param      {Array} userSkippables
+     * @return     {Bool} true s the smil node is skippable
+     */
 
     this.isSkippable = function(userSkippables)
     {
@@ -12828,13 +13780,36 @@ Smil.TimeContainerNode = function(parent) {
 
 Smil.TimeContainerNode.prototype = new Smil.SmilNode();
 
-//////////////////////////
+
+////////////////////////////
 //MediaNode
+
+/**
+ * Looks for the media parent folder
+ *
+ * @class      Smil.MediaNode
+ * @constructor
+ * @param      {Smil.SmilNode} parent Parent smil node
+ */
 
 Smil.MediaNode = function(parent) {
 
+    /**
+     * The parent node
+     *
+     * @property parent
+     * @type Smil.SmilNode
+     */
+
     this.parent = parent;
     
+    /**
+     * The source locator
+     *
+     * @property src
+     * @type String
+     */
+
     this.src = "";
 };
 
@@ -12843,18 +13818,64 @@ Smil.MediaNode.prototype = new Smil.SmilNode();
 ////////////////////////////
 //SeqNode
 
+/**
+ * Node Sequence
+ *
+ * @class      Smil.SeqNode
+ * @constructor
+ * @param      {Smil.SmilNode} parent Parent smil node
+ */
+
 Smil.SeqNode = function(parent) {
 
+    /**
+     * The parent node
+     *
+     * @property parent
+     * @type Smil.SmilNode
+     */
+
     this.parent = parent;
-    
+
+    /**
+     * The children nodes
+     *
+     * @property children
+     * @type Array
+     */
+
     this.children = [];
+
+    /**
+     * The node type (seq)
+     *
+     * @property nodeType
+     * @type String
+     */
+
     this.nodeType = "seq";
+
+    /**
+     * The text reference
+     *
+     * @property textref
+     * @type String
+     */
+
     this.textref = "";
     
+    /**
+     * Calculates the total duration of audio clips 
+     *
+     * @method     durationMilliseconds
+     * @return     {Number} 
+     */
+
     this.durationMilliseconds = function()
     {
+        // returns the smil object
         var smilData = this.getSmil();
-            
+
         var total = 0;
         
         for (var i = 0; i < this.children.length; i++)
@@ -12868,8 +13889,6 @@ Smil.SeqNode = function(parent) {
                 }
                 if (container.text && (!container.text.manifestItemId || container.text.manifestItemId != smilData.spineItemId))
                 {
-// console.log(container.text);
-// console.log(smilData.spineItemId);
                     continue;
                 }
                 
@@ -12885,6 +13904,16 @@ Smil.SeqNode = function(parent) {
         return total;
     };
     
+   /**
+     * Looks for a given parallel node in the current sequence node and its children.
+     *  Returns true if found. 
+     *
+     * @method     clipOffset
+     * @param      {Number} offset
+     * @param      {Smil.ParNode} par The reference parallel smil node
+     * @return     {Boolean} 
+     */ 
+
     this.clipOffset = function(offset, par)
     {
         var smilData = this.getSmil();
@@ -12925,6 +13954,16 @@ Smil.SeqNode = function(parent) {
         return false;
     };
 
+
+   /**
+     * Checks if a parallel smil node exists at a given timecode in the smil sequence node. 
+     * Returns the node or undefined.
+     *
+     * @method     parallelAt
+     * @param      {Number} timeMilliseconds
+     * @return     {Smil.ParNode}
+     */ 
+
     this.parallelAt = function(timeMilliseconds)
     {
         var smilData = this.getSmil();
@@ -12937,8 +13976,10 @@ Smil.SeqNode = function(parent) {
 
             var container = this.children[i];
             
+            // looks for a winning parallel smil node in a child parallel smil node
             if (container.nodeType === "par")
             {
+                // the parallel node must contain an audio clip and a text node with a proper id
                 if (!container.audio)
                 {
                     continue;
@@ -12948,7 +13989,7 @@ Smil.SeqNode = function(parent) {
                 {
                     continue;
                 }
-
+                // and the timecode given as a parameter must correspond to the audio clip time range  
                 var clipDur = container.audio.clipDurationMilliseconds();
 
                 if (clipDur > 0 && timeAdjusted <= clipDur)
@@ -12958,6 +13999,7 @@ Smil.SeqNode = function(parent) {
 
                 offset += clipDur;
             }
+            // looks for a winning parallel smil node in a child sequence smil node
             else if (container.nodeType === "seq")
             {
                 var para = container.parallelAt(timeAdjusted);
@@ -12972,6 +14014,15 @@ Smil.SeqNode = function(parent) {
 
         return undefined;
     };
+
+    /**
+     * Looks for the nth parallel smil node in the current sequence node
+     *
+     * @method     nthParallel
+     * @param      {Number} index
+     * @param      {Number} count
+     * @return     {Smil.ParNode} 
+     */    
 
     this.nthParallel = function(index, count)
     {
@@ -13008,16 +14059,78 @@ Smil.SeqNode.prototype = new Smil.TimeContainerNode();
 //////////////////////////
 //ParNode
 
+/**
+ * Returns the parent of the SMIL file by checking out the nodes
+ *
+ * @class      Smil.ParNode
+ * @constructor
+ * @param      {Smil.SmilNode} parent Parent smil node
+
+ */
+
 Smil.ParNode = function(parent) {
+
+    /**
+     * The parent node
+     *
+     * @property parent
+     * @type Smil.SmilNode
+     */
 
     this.parent = parent;
     
+    /**
+     * The children files
+     *
+     * @property children
+     * @type Array
+     */
+
     this.children = [];
-    this.nodeType = "par";
-    this.text = undefined;
-    this.audio = undefined;
-    this.element = undefined;
     
+    /**
+     * The Node Type
+     *
+     * @property nodeType which is equal to "par" here
+     * @type String
+     */
+
+    this.nodeType = "par";
+
+    /**
+     * Some text
+     *
+     * @property text 
+     * @type String
+     */
+    this.text = undefined;
+    
+    /**
+     * Some audio
+     *
+     * @property audio 
+     * @type unknown
+     */
+    
+    this.audio = undefined;
+
+    /**
+     * An element of the epub archive
+     *
+     * @property element 
+     * @type unknown
+     */
+    
+    this.element = undefined;    
+
+    /**
+     * Gets the first ancestor sequence with a given epub type, or undefined.
+     *
+     * @method     getFirstSeqAncestorWithEpubType
+     * @param      {String} epubtype
+     * @param      {Boolean} includeSelf
+     * @return     {Smil.SmilNode} 
+     */       
 
     this.getFirstSeqAncestorWithEpubType = function(epubtype, includeSelf) {
         if (!epubtype) return undefined;
@@ -13042,18 +14155,70 @@ Smil.ParNode.prototype = new Smil.TimeContainerNode();
 //////////////////////////
 //TextNode
 
+/**
+ * Node Sequence
+ *
+ * @class      Smil.TextNode
+ * @constructor
+ * @param      {Smil.SmilNode} parent Parent smil node
+
+ */
+
 Smil.TextNode = function(parent) {
+
+    /**
+     * The parent node
+     *
+     * @property parent
+     * @type Smil.SmilNode
+     */
 
     this.parent = parent;
 
+    /**
+     * The node type, set to "text"
+     *
+     * @property nodeType
+     * @type String 
+     */
+
     this.nodeType = "text";
+
+    /**
+     * The source file
+     *
+     * @property srcFile
+     * @type String
+     */
+    
     this.srcFile = "";
+    
+    /**
+     * A fragment of the source file ID
+     *
+     * @property srcFragmentId
+     * @type String
+     */
+
     this.srcFragmentId = "";
     
+    /**
+     * The ID of the manifest for the current item
+     *
+     * @property manifestItemId
+     * @type Number
+     */
     
     this.manifestItemId = undefined;
-    this.updateMediaManifestItemId = function()
-    {
+    
+    /**
+     * Updates the ID of the manifest for the current media
+     *
+     * @method     updateMediaManifestItemId 
+     */  
+
+    this.updateMediaManifestItemId = function() {
+
         var smilData = this.getSmil();
         
         if (!smilData.href || !smilData.href.length)
@@ -13099,17 +14264,67 @@ Smil.TextNode.prototype = new Smil.MediaNode();
 ///////////////////////////
 //AudioNode
 
+/**
+ * Looks for the media parent folder
+ *
+ * @class      Smil.AudioNode
+ * @constructor
+ * @param      {Smil.SmilNode} parent Parent smil node
+ */
+
 Smil.AudioNode = function(parent) {
+
+    /**
+     * The parent node
+     *
+     * @property parent
+     * @type Smil.SmilNode
+     */
 
     this.parent = parent;
 
+    /**
+     * The node type, set to "audio"
+     *
+     * @property nodeType 
+     * @type String
+     */
+
     this.nodeType = "audio";
+
+    /**
+     * The clip begin timecode
+     *
+     * @property clipBegin 
+     * @type Number
+     */
 
     this.clipBegin = 0;
 
+    /**
+     * The max duration of the audio clip which is almost infinite
+     *
+     * @property MAX 
+     * @type Number
+     */
+
     this.MAX = 1234567890.1; //Number.MAX_VALUE - 0.1; //Infinity;
+    
+    /**
+     * The clip end timecode
+     *
+     * @property clipEnd
+     * @type Number
+     */
+
     this.clipEnd = this.MAX;
     
+    /**
+     * Returns the duration of the audio clip
+     *
+     * @method     clipDurationMilliseconds
+     * @return     {Number} 
+     */  
 
     this.clipDurationMilliseconds = function()
     {
@@ -13130,28 +14345,105 @@ Smil.AudioNode.prototype = new Smil.MediaNode();
 //////////////////////////////
 //SmilModel
 
+/**
+ * Wrapper of the SmilModel object
+ *
+ * @class      Models.SmilModel
+ * @constructor
+ */
+
 var SmilModel = function() {
+
+    /**
+     * The parent object
+     *
+     * @property parent
+     * @type any
+     */
 
     this.parent = undefined;
     
+    /**
+     * The smil model children, i.e. a collection of seq or par smil nodes
+     *
+     * @property children
+     * @type Array
+     */
     
+    this.children = []; 
     
-    this.children = []; //collection of seq or par smil nodes
-    this.id = undefined; //manifest item id
-    this.href = undefined; //href of the .smil source file
+    /**
+     * The manifest item ID
+     *
+     * @property id
+     * @type Number
+     */
+
+    this.id = undefined; 
+
+    /**
+     * The href of the .smil source file
+     *
+     * @property href
+     * @type String
+     */
+
+    this.href = undefined; 
+    
+    /**
+     * The duration of the audio clips
+     *
+     * @property duration
+     * @type Number
+     */
+
     this.duration = undefined;
+
+    /**
+     * The media overlay object
+     *
+     * @property mo
+     * @type Models.MediaOverlay
+     */
+
     this.mo = undefined;
+
+    /**
+     * Checks if a parallel smil node exists at a given timecode in the smil model. 
+     * Returns the node or undefined.
+     *
+     * @method     parallelAt
+     * @param      {Number} timeMillisecond 
+     * @return     {Smil.ParNode}
+     */
     
     this.parallelAt = function(timeMilliseconds)
     {
         return this.children[0].parallelAt(timeMilliseconds);
     };
 
+    /**
+     * Looks for the nth parallel smil node in the current smil model
+     *
+     * @method     nthParallel
+     * @param      {Number} index
+     * @return     {Smil.ParNode} 
+     */
+
     this.nthParallel = function(index)
     {
         var count = {count: -1};
         return this.children[0].nthParallel(index, count);
     };
+
+    /**
+     * Looks for a given parallel node in the current smil model.
+     *  Returns its offset if found. 
+     *
+     * @method     clipOffset
+     * @param      {Smil.ParNode} par The reference parallel smil node
+     * @return     {Number} offset of the audio clip
+     */
 
     this.clipOffset = function(par)
     {
@@ -13163,7 +14455,14 @@ var SmilModel = function() {
 
         return 0;
     };
-    
+
+    /**
+     * Calculates the total audio duration of the smil model
+     *
+     * @method     durationMilliseconds_Calculated    
+     * @return     {Number}
+     */
+
     this.durationMilliseconds_Calculated = function()
     {
         return this.children[0].durationMilliseconds();
@@ -13177,26 +14476,31 @@ var SmilModel = function() {
     //     _epubtypeSyncs = [];
     // };
 
+    // local function, helper
     this.hasSync = function(epubtype)
     {
         for (var i = 0; i < _epubtypeSyncs.length; i++)
         {
             if (_epubtypeSyncs[i] === epubtype)
             {
-//console.debug("hasSync OK: ["+epubtype+"]");
                 return true;
             }
         }
         
-//console.debug("hasSync??: ["+epubtype+"] " + _epubtypeSyncs);
         return false;
     };
-    
+
+    /**
+     * Stores epub types given as parameters in the _epubtypeSyncs array
+     * Note: any use of the _epubtypeSyncs array?
+     *
+     * @method     addSync
+     * @param      {String} epubtypes    
+     */
+
     this.addSync = function(epubtypes)
     {
         if (!epubtypes) return;
-        
-//console.debug("addSyncs: "+epubtypes);
 
         var parts = epubtypes.split(' ');
         for (var i = 0; i < parts.length; i++)
@@ -13206,13 +14510,20 @@ var SmilModel = function() {
             if (epubtype.length > 0 && !this.hasSync(epubtype))
             {
                 _epubtypeSyncs.push(epubtype);
-
-//console.debug("addSync: "+epubtype);
             }
         }
     };
     
 };
+
+/**
+ * Static SmilModel.fromSmilDTO method, returns a clean SmilModel object
+ *
+ * @method      Model.fromSmilDTO
+ * @param      {string} smilDTO
+ * @param      {string} parent
+ * @return {Models.SmilModel}
+*/
 
 SmilModel.fromSmilDTO = function(smilDTO, mo) {
 
@@ -13221,6 +14532,7 @@ SmilModel.fromSmilDTO = function(smilDTO, mo) {
         console.debug("Media Overlay DTO import...");
     }
 
+    // Debug level indenting function
     var indent = 0;
     var getIndent = function()
     {
@@ -13257,6 +14569,7 @@ SmilModel.fromSmilDTO = function(smilDTO, mo) {
         console.log("JS MO duration=" + smilModel.duration);
     }
 
+    // Safe copy, helper function
     var safeCopyProperty = function(property, from, to, isRequired) {
 
         if((property in from))
@@ -13278,6 +14591,7 @@ SmilModel.fromSmilDTO = function(smilDTO, mo) {
         }
     };
 
+    // smil node creation, helper function
     var createNodeFromDTO = function(nodeDTO, parent) {
 
         var node;
@@ -13339,9 +14653,9 @@ SmilModel.fromSmilDTO = function(smilDTO, mo) {
                 }
             }
 
-////////////////
-var forceTTS = false; // for testing only!
-////////////////
+            ////////////////
+            var forceTTS = false; // for testing only!
+            ////////////////
 
             if (forceTTS || !node.audio)
             {
@@ -13424,6 +14738,7 @@ var forceTTS = false; // for testing only!
 
     };
 
+    // recursive copy of a tree, helper function
     var copyChildren = function(from, to) {
 
         var count = from.children.length;
@@ -13474,15 +14789,33 @@ return SmilModel;
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 define('readium_shared_js/models/media_overlay',["./smil_model"], function(SmilModel) {
+
 /**
+ * Wrapper of the MediaOverlay object
  *
- * @param package
+ * @class Models.MediaOverlay
  * @constructor
- */
+ * @param {Models.Package} package EPUB package
+*/
+
 var MediaOverlay = function(package) {
 
+    /**
+     * The parent package object
+     *
+     * @property package
+     * @type Models.Package
+     */    
     this.package = package;
-    
+
+    /**
+     * Checks if a parallel smil node exists at a given timecode. 
+     * Returns the first corresponding node found in a smil model found, or undefined.
+     *
+     * @method     parallelAt
+     * @param      {number} timeMilliseconds
+     * @return     {Smil.ParNode}  
+     */
 
     this.parallelAt = function(timeMilliseconds)
     {
@@ -13506,6 +14839,16 @@ var MediaOverlay = function(package) {
         return undefined;
     };
     
+    /**
+     * Calculates a timecode corresponding to a percent of the total audio duration (the function parameters smilData, par, and milliseconds are objects with a single field using the same name)
+     *
+     * @method     percentToPosition
+     * @param      {Number} percent
+     * @param      {Models.SmilModel} smilData (object with a single field using the same name, used as OUT param)
+     * @param      {Smil.ParNode} par (object with a single field using the same name, used as OUT param)
+     * @param      {Number} milliseconds (object with a single field using the same name, used as OUT param)
+     */
+
     this.percentToPosition = function(percent, smilData, par, milliseconds)
     {
         if (percent < 0.0 || percent > 100.0)
@@ -13544,6 +14887,13 @@ var MediaOverlay = function(package) {
         milliseconds.milliseconds = timeMs - (smilDataOffset + smilData.smilData.clipOffset(par.par));
     };
 
+    /**
+     * Calculates the accumulated audio duration of each smil overlay
+     *
+     * @method     durationMilliseconds_Calculated
+     * @return     {Number} total duration 
+     */
+
     this.durationMilliseconds_Calculated = function()
     {
         var total = 0;
@@ -13558,6 +14908,14 @@ var MediaOverlay = function(package) {
         return total;
     };
     
+    /**
+     * Returns the smil overlay at the given index
+     *
+     * @method     smilAt
+     * @param      {Number} smilIndex
+     * @return     {Models.SmilModel}
+     */
+
     this.smilAt = function(smilIndex)
     {
         if (smilIndex < 0 || smilIndex >= this.smil_models.length)
@@ -13568,14 +14926,19 @@ var MediaOverlay = function(package) {
         return this.smil_models[smilIndex];
     }
     
+    /**
+     * Calculates a percent of the total audio duration corresponding to a timecode
+     * 
+     * @method     positionToPercent
+     * @param      {Number} smilIndex Index of a smil model
+     * @param      {Number} parIndex
+     * @param      {Number} milliseconds
+     * @return     {Number} percent 
+     */
+
     this.positionToPercent = function(smilIndex, parIndex, milliseconds)
     {
-// console.log(">>>>>>>>>>");
-// console.log(milliseconds);
-// console.log(smilIndex);
-// console.log(parIndex);
-// console.log("-------");
-                
+           
         if (smilIndex >= this.smil_models.length)
         {
             return -1.0;
@@ -13587,8 +14950,6 @@ var MediaOverlay = function(package) {
             var sd = this.smil_models[i];
             smilDataOffset += sd.durationMilliseconds_Calculated();
         }
-
-//console.log(smilDataOffset);
         
         var smilData = this.smil_models[smilIndex];
 
@@ -13599,34 +14960,87 @@ var MediaOverlay = function(package) {
         }
 
         var offset = smilDataOffset + smilData.clipOffset(par) + milliseconds;
-
-//console.log(offset);
         
         var total = this.durationMilliseconds_Calculated();
 
-///console.log(total);
-
         var percent = (offset / total) * 100;
-
-//console.log("<<<<<<<<<<< " + percent);
         
         return percent;
       };
-      
+
+    /**
+     * Array of smil models {Models.SmilModel}
+     *
+     * @property smil_models
+     * @type Array
+     */
+
     this.smil_models = [];
 
+    /**
+     * List of the skippable smil items
+     *
+     * @property skippables
+     * @type Array
+     */
+
     this.skippables = [];
+    
+    /**
+     * List of the escapable smil items
+     *
+     * @property escapables
+     * @type Array
+     */
+
     this.escapables = [];
 
+    /**
+     * Duration of the smil audio
+     *
+     * @property duration
+     * @type Number
+     */
+
     this.duration = undefined;
+
+    /**
+     * Narrator
+     *
+     * @property narrator
+     * @type String
+     */
+
     this.narrator = undefined;
 
+    /**
+     * Author-defined name of the CSS "active class" (applied to the document as a whole)
+     *
+     * @property activeClass
+     * @type String
+     */
 
     this.activeClass = undefined;
+
+    /**
+     * Author-defined name of the CSS "playback active class" (applied to a single audio fragment)
+     *
+     * @property playbackActiveClass
+     * @type String
+     */
+
     this.playbackActiveClass = undefined;
 
+    // Debug messages, must be false in production!
     this.DEBUG = false;
 
+    /**
+     * Returns the smil model corresponding to a spine item, or undefined if not found.
+     *
+     * @method     getSmilBySpineItem
+     * @param      {Models.SpineItem} spineItem
+     * @return     {Models.SmilModel} 
+     */
 
     this.getSmilBySpineItem = function (spineItem) {
         if (!spineItem) return undefined;
@@ -13661,6 +15075,14 @@ var MediaOverlay = function(package) {
     };
     */
 
+    /**
+     * Returns the next smil model
+     *
+     * @method     getNextSmil
+     * @param      {Models.SmilModel} smil The current smil model
+     * @return     {Models.SmilModel} 
+     */
+
     this.getNextSmil = function(smil) {
 
         var index = this.smil_models.indexOf(smil);
@@ -13670,6 +15092,14 @@ var MediaOverlay = function(package) {
 
         return this.smil_models[index + 1];
     }
+
+    /**
+     * Returns the previous smil model
+     *
+     * @method     getPreviousSmil
+     * @param      {Models.SmilModel} smil The current smil model
+     * @return     {Models.SmilModel} 
+     */
 
     this.getPreviousSmil = function(smil) {
 
@@ -13682,18 +15112,23 @@ var MediaOverlay = function(package) {
     }
 };
 
+/**
+ * Static MediaOverlay.fromDTO method, returns a clean MediaOverlay object
+ *
+ * @method MediaOverlay.fromDTO
+ * @param {Object} moDTO Media overlay data object (raw JSON, as returned by a parser)
+ * @param {Models.Package} package EPUB package object
+ * @return {Models.MediaOverlay}
+*/
+
 MediaOverlay.fromDTO = function(moDTO, pack) {
 
     var mo = new MediaOverlay(pack);
 
     if(!moDTO) {
-        console.debug("No Media Overlay.");
         return mo;
     }
 
-    // if (mo.DEBUG)
-    //     console.debug(JSON.stringify(moDTO));
-        
     mo.duration = moDTO.duration;
     if (mo.duration && mo.duration.length && mo.duration.length > 0)
     {
@@ -13733,9 +15168,6 @@ MediaOverlay.fromDTO = function(moDTO, pack) {
 
     for(var i = 0; i < count; i++) {
         mo.skippables.push(moDTO.skippables[i]);
-
-        //if (mo.DEBUG)
-        //    console.debug("Media Overlay SKIPPABLE: " + mo.skippables[i]);
     }
 
     count = moDTO.escapables.length;
@@ -13745,8 +15177,6 @@ MediaOverlay.fromDTO = function(moDTO, pack) {
     for(var i = 0; i < count; i++) {
         mo.escapables.push(moDTO.escapables[i]);
 
-        //if (mo.DEBUG)
-        //    console.debug("Media Overlay ESCAPABLE: " + mo.escapables[i]);
     }
 
     return mo;
@@ -13758,7 +15188,7 @@ return MediaOverlay;
 
 
 //  Created by Boris Schneiderman.
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  Copyright (c) 2016 Readium Foundation and/or its licensees. All rights reserved.
 //  
 //  Redistribution and use in source and binary forms, with or without modification, 
 //  are permitted provided that the following conditions are met:
@@ -13786,7 +15216,7 @@ return MediaOverlay;
 define('readium_shared_js/models/package_data',[],function() {
 /**
  * This object is not instantiated directly but provided by the host application to the DOMAccess layer in the
- * Views.ReaderView.openBook function
+ * Views.ReaderView.OpenBookData function
  *
  * Provided for reference only
  *
@@ -13795,24 +15225,35 @@ define('readium_shared_js/models/package_data',[],function() {
 var PackageData = {
 
     /**
-     * @property rootUrl Url of the package file
-     * @type {string}
+     * The Url of the package file
+     *
+     * @property rootUrl 
+     * @type {String}
      *
      */
     rootUrl: "",
     /**
-     * @property rootUrl Url of the package file, to prefix Media Overlays SMIL audio references
-     * @type {string}
+     * The Url of the package file, to prefix Media Overlays SMIL audio references
+     *
+     * @property rootUrlMO 
+     * @type {String}
      *
      */
     rootUrlMO: "",
     /**
+     * The rendering layout; expected values are "reflowable"|"pre-paginated"
      *
-     * @property rendering_layout expected values "reflowable"|rendering_layout="pre-paginated"
-     * @type {string}
+     * @property rendering_layout 
+     * @type {String}
      */
     rendering_layout: "",
 
+    /**
+     * The spine properties
+     *
+     * @property spine 
+     * @type {Object}
+     */
     spine: {
 
         direction: "ltr",
@@ -13830,7 +15271,7 @@ var PackageData = {
 return PackageData;
 });
 //  Created by Boris Schneiderman.
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  Copyright (c) 2016 Readium Foundation and/or its licensees. All rights reserved.
 //  
 //  Redistribution and use in source and binary forms, with or without modification, 
 //  are permitted provided that the following conditions are met:
@@ -13854,34 +15295,104 @@ return PackageData;
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 define('readium_shared_js/models/package',['../helpers','./spine_item','./spine','./media_overlay', './package_data', 'URIjs'], function (Helpers, SpineItem, Spine, MediaOverlay, PackageData, URI) {
+
 /**
+ *  Wrapper of the Package object, created in openBook()
  *
- * @class Package
+ * @class  Models.Package
  * @constructor
+ * @param {Models.PackageData} packageData container for package properties 
  */
 var Package = function(packageData){
 
     var self = this;
-
+    
+    /**
+     * The associated spine object
+     *
+     * @property spine
+     * @type     Models.Spine
+     */
     this.spine = undefined;
-    
+
+    /**
+     * The root URL of the package file
+     *
+     * @property rootUrl
+     * @type     String
+     */
     this.rootUrl = undefined;
+
+    /**
+     * The root URL of the package file, to prefix Media Overlays SMIL audio references
+     *
+     * @property rootUrlMO 
+     * @type     String
+     *
+     */
     this.rootUrlMO = undefined;
-    
+ 
+    /**
+     * The Media Overlays object
+     *
+     * @property media_overlay 
+     * @type     Models.MediaOverlay
+     *
+     */   
     this.media_overlay = undefined;
     
+    /**
+     * The rendition viewport (as per the EPUB3 specification)
+     *
+     * @property rendition_viewport 
+     * @type     String
+     *
+     */   
     this.rendition_viewport = undefined;
     
+    /**
+     * The rendition flow (as per the EPUB3 specification)
+     *
+     * @property rendition_flow 
+     * @type     String
+     *
+     */   
     this.rendition_flow = undefined;
     
+    /**
+     * The rendition layout (as per the EPUB3 specification)
+     *
+     * @property rendition_layout 
+     * @type     String
+     *
+     */   
     this.rendition_layout = undefined;
 
-    //TODO: unused yet!
+    /**
+     * The rendition spread (as per the EPUB3 specification)
+     *
+     * @property rendition_spread 
+     * @type     String
+     *
+     */   
     this.rendition_spread = undefined;
 
-    //TODO: unused yet!
+    /**
+     * The rendition orientation (as per the EPUB3 specification)
+     *
+     * @property rendition_orientation 
+     * @type     String
+     *
+     */   
     this.rendition_orientation = undefined;
 
+    /**
+     * Returns a resolved relative Url, Media Overlay variant.
+     *
+     * @method     resolveRelativeUrlMO
+     * @param      {String} relativeUrl  the relative URL to resolve
+     * @return     {String} the resolved relative URL.
+     */
     this.resolveRelativeUrlMO = function(relativeUrl) {
         
         var relativeUrlUri = undefined;
@@ -13917,6 +15428,13 @@ var Package = function(packageData){
         return self.resolveRelativeUrl(relativeUrl);
     };
 
+    /**
+     * Returns a resolved relative Url.
+     *
+     * @method     resolveRelativeUrl
+     * @param      {String} relativeUrl  the relative URL to resolve
+     * @return     {String} the resolved relative URL.
+     */
     this.resolveRelativeUrl = function(relativeUrl) {
 
         var relativeUrlUri = undefined;
@@ -13952,15 +15470,26 @@ var Package = function(packageData){
         return relativeUrl;
     };
 
+    /**
+     * Checks if the package is Fixed Layout.
+     *
+     * @method     isFixedLayout
+     * @return     {Boolean} TRUE if the package is Fixed Layout.
+     */
     this.isFixedLayout = function() {
         return self.rendition_layout === SpineItem.RENDITION_LAYOUT_PREPAGINATED;
     };
 
+    /**
+     * Checks if the package is Reflowable.
+     *
+     * @method     isReflowable
+     * @return     {Boolean} TRUE if the package is Reflowable (i.e. not Fixed Layout).
+     */
     this.isReflowable = function() {
         return !self.isFixedLayout();
     };
     
-
     if(packageData) {
         
         this.rootUrl = packageData.rootUrl;
@@ -13983,243 +15512,6 @@ var Package = function(packageData){
 return Package;
 });
 
-
-//  Created by Juan Corona <juanc@evidentpoint.com>
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
-//
-//  Redistribution and use in source and binary forms, with or without modification,
-//  are permitted provided that the following conditions are met:
-//  1. Redistributions of source code must retain the above copyright notice, this
-//  list of conditions and the following disclaimer.
-//  2. Redistributions in binary form must reproduce the above copyright notice,
-//  this list of conditions and the following disclaimer in the documentation and/or
-//  other materials provided with the distribution.
-//  3. Neither the name of the organization nor the names of its contributors may be
-//  used to endorse or promote products derived from this software without specific
-//  prior written permission.
-//
-//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
-//  OF THE POSSIBILITY OF SUCH DAMAGE.
-
-//TODO: This could be made into a plugin in the future.
-// A plugin would be ideal because we can make a light-weight alternative that doesn't need the FontLoader shim and the CSSOM parser.
-define('readium_shared_js/views/font_loader',["jquery", "underscore", "FontLoader", "cssom"], function($, _, FontLoader, CSSOM) {
-
-var FontLoaderFallback = function(document, options) {
-    var debug = options.debug;
-
-    var getRestrictedCssRules = function (styleSheet, callback) {
-        $.get(styleSheet.href).done(function(data) {
-            callback(CSSOM.parse(data).cssRules);
-        }).fail(function() {
-            callback(null);
-        });
-    };
-
-    var getUsedFonts = function(callback) {
-        var styleSheets = document.styleSheets;
-        var fontFamilies = [];
-        var fontFamilyRules = [];
-
-        // if no style sheets are found return immediately
-        if (!styleSheets || styleSheets.length <= 0) {
-            callback([]);
-            return;
-        }
-
-        var getFontFamilyFromRule = function(rule) {
-            if (rule.style && (rule.style.getPropertyValue || rule.style.fontFamily)) {
-                return rule.style.getPropertyValue("font-family") || rule.style.fontFamily;
-            }
-        }
-
-        var returnUsedFonts = function() {
-            if (debug) {
-                console.log(fontFamilies);
-            }
-            var usedFontFamilies = [];
-            _.each(fontFamilyRules, function(rule) {
-                var usedFontFamily = _.find(fontFamilies, function(family) {
-                    var fontFamily = getFontFamilyFromRule(rule);
-                    if (fontFamily && ~fontFamily.indexOf(family[1])) {
-                        return true;
-                    }
-                });
-
-                if (usedFontFamily && rule.selectorText && !_.contains(usedFontFamilies, usedFontFamily[0]) && document.querySelector(rule.selectorText)) {
-                    usedFontFamilies.push(usedFontFamily[0]);
-                }
-            });
-
-            if (debug) {
-                console.log(usedFontFamilies);
-            }
-
-            callback(usedFontFamilies);
-        };
-
-        var processedCount = 0;
-        var processCssRules = function(cssRules) {
-            _.each(cssRules, function(rule) {
-                var fontFamily = getFontFamilyFromRule(rule);
-                if (fontFamily) {
-                    if (rule.type === CSSRule.FONT_FACE_RULE) {
-                        fontFamilies.push([fontFamily.replace(/(^['"]|['"]$)/g, '').replace(/\\(['"])/g, '$1'), fontFamily]);
-                    } else {
-                        fontFamilyRules.push(rule);
-                    }
-                }
-            });
-
-            processedCount++;
-
-            if (processedCount >= styleSheets.length) {
-                returnUsedFonts();
-            }
-        };
-
-        _.each(styleSheets, function(styleSheet) {
-            var cssRules;
-            // Firefox (and possibly IE as well) throw a security exception if the CSS was loaded from a different domain.
-            // Other browsers just have null as the value of cssRules for that case.
-            try {
-                cssRules = styleSheet.cssRules || styleSheet.rules;
-            } catch (ignored) {}
-
-            if (!cssRules) {
-                getRestrictedCssRules(styleSheet, processCssRules);
-            } else {
-                processCssRules(cssRules);
-            }
-        });
-    };
-
-    return function(callback) {
-        callback = _.once(callback);
-        var loadCount = 0;
-
-        getUsedFonts(function(usedFontFamilies){
-            var fontLoader = new FontLoader(usedFontFamilies, {
-                "fontsLoaded": function(error) {
-                    if (debug) {
-                        if (error !== null) {
-                            // Reached the timeout but not all fonts were loaded
-                            console.log("font loader: " + error.message, error.notLoadedFonts);
-                        } else {
-                            // All fonts were loaded
-                            console.log("font loader: all fonts were loaded");
-                        }
-                    }
-                    callback();
-                },
-                "fontLoaded": function(font) {
-                    loadCount++;
-                    if (debug) {
-                        console.log("font loaded: " + font.family);
-                    }
-                    if (usedFontFamilies.length > options.minLoadCount && (loadCount / usedFontFamilies.length) >= options.minLoadRatio) {
-
-                        if (debug) {
-                            console.log('font loader: early callback');
-                        }
-                        callback();
-                    }
-                }
-            }, options.timeout, document);
-
-            fontLoader.loadFonts();
-        });
-    };
-};
-
-var FontLoaderNative = function(document, options) {
-    var debug = options.debug;
-
-    return function(callback) {
-        callback = _.once(callback);
-        var loadCount = 0;
-
-        var fontFaceCount = document.fonts.size;
-        var fontLoaded = function(font) {
-            loadCount++;
-            if (debug) {
-                console.log("(native) font loaded: " + font.family);
-            }
-            if (fontFaceCount > options.minLoadCount && (loadCount / fontFaceCount) >= options.minLoadRatio) {
-
-                if (debug) {
-                    console.log('(native) font loader: early callback');
-                }
-                callback();
-            }
-        }
-
-        var fontIterator = function(font) {
-            font.loaded.then(function() {
-                fontLoaded(font);
-            });
-        };
-
-        // For some reason (at this time) Chrome's implementation has a .forEach
-        // but it is not Array-like. This is opposite with Firefox's though.
-        if (document.fonts.forEach) {
-            document.fonts.forEach(fontIterator);
-        } else {
-            _.each(document.fonts, fontIterator);
-        }
-        var fontsReady = document.fonts.ready;
-        // In older implementations (chromium 35 for example) this is a method not a property
-        if (_.isFunction(fontsReady)) {
-            fontsReady = fontsReady.call(document.fonts);
-        }
-        fontsReady.then(function() {
-            if (debug) {
-                // All fonts were loaded
-                console.log("(native) font loader: all fonts were loaded");
-            }
-            callback();
-        });
-
-        window.setTimeout(function() {
-            if (debug && loadCount !== fontFaceCount) {
-                console.log('(native) font loader: timeout, not all fonts loaded/required');
-            } else if (debug) {
-                console.log('(native) font loader: timeout');
-            }
-            callback();
-        }, options.timeout);
-    }
-}
-
-var FontLoaderWrapper = function($iframe, options) {
-    options = options || {};
-
-    options.debug = options.debug || false;
-    options.timeout = options.timeout || 1500;
-    options.minLoadCount = options.minLoadCount || 3;
-    options.minLoadRatio = options.minLoadRatio || 0.75;
-
-    var document = $iframe[0].contentDocument;
-
-    // For browsers without CSS Font Loading Module
-    var fallbackNeeded = !document.fonts;
-
-    var fontLoader = fallbackNeeded ? FontLoaderFallback : FontLoaderNative;
-
-    this.waitForFonts = fontLoader(document, options);
-};
-
-return FontLoaderWrapper;
-
-});
 
 
 //  LauncherOSX
@@ -14251,17 +15543,16 @@ return FontLoaderWrapper;
 
 define('readium_shared_js/views/reflowable_view',["../globals", "jquery", "underscore", "eventEmitter", "../models/bookmark_data", "./cfi_navigation_logic",
     "../models/current_pages_info", "../helpers", "../models/page_open_request",
-    "../models/viewer_settings", "./font_loader"],
+    "../models/viewer_settings", "ResizeSensor"],
     function(Globals, $, _, EventEmitter, BookmarkData, CfiNavigationLogic,
              CurrentPagesInfo, Helpers, PageOpenRequest,
-             ViewerSettings, FontLoader) {
+             ViewerSettings, ResizeSensor) {
 /**
  * Renders reflowable content using CSS columns
  * @param options
  * @constructor
  */
 var ReflowableView = function(options, reader){
-
     $.extend(this, new EventEmitter());
 
     var self = this;
@@ -14276,11 +15567,17 @@ var ReflowableView = function(options, reader){
     var _isWaitingFrameRender = false;
     var _deferredPageRequest;
     var _fontSize = 100;
+    var _fontSelection = 0;
     var _$contentFrame;
     var _navigationLogic;
     var _$el;
     var _$iframe;
     var _$epubHtml;
+    var _lastPageRequest = undefined;
+
+    var _cfiClassBlacklist = ["cfi-marker", "mo-cfi-highlight", "resize-sensor", "resize-sensor-expand", "resize-sensor-shrink", "resize-sensor-inner"];
+    var _cfiElementBlacklist = [];
+    var _cfiIdBlacklist = ["MathJax_Message", "MathJax_SVG_Hidden"];
 
     var _$htmlBody;
 
@@ -14292,6 +15589,11 @@ var ReflowableView = function(options, reader){
     var _currentOpacity = -1;
 
     var _lastViewPortSize = {
+        width: undefined,
+        height: undefined
+    };
+
+    var _lastBodySize = {
         width: undefined,
         height: undefined
     };
@@ -14362,7 +15664,7 @@ var ReflowableView = function(options, reader){
     };
 
     var _viewSettings = undefined;
-    this.setViewSettings = function(settings) {
+    this.setViewSettings = function(settings, docWillChange) {
 
         _viewSettings = settings;
 
@@ -14371,12 +15673,15 @@ var ReflowableView = function(options, reader){
         _paginationInfo.columnMinWidth = settings.columnMinWidth;
         
         _fontSize = settings.fontSize;
-
-        updateHtmlFontSize();
-        updateColumnGap();
+        _fontSelection = settings.fontSelection;
 
         updateViewportSize();
-        updatePagination();
+
+        if (!docWillChange) {
+            updateColumnGap();
+
+            updateHtmlFontInfo();
+        }
     };
     
     function getFrameDimensions() {
@@ -14409,7 +15714,10 @@ var ReflowableView = function(options, reader){
         _navigationLogic = new CfiNavigationLogic({
             $iframe: _$iframe,
             frameDimensions: getFrameDimensions,
-            paginationInfo: _paginationInfo
+            paginationInfo: _paginationInfo,
+            classBlacklist: _cfiClassBlacklist,
+            elementBlacklist: _cfiElementBlacklist,
+            idBlacklist: _cfiIdBlacklist
         });
     }
 
@@ -14423,6 +15731,8 @@ var ReflowableView = function(options, reader){
                 Globals.logEvent("CONTENT_DOCUMENT_UNLOADED", "EMIT", "reflowable_view.js [ " + _currentSpineItem.href + " ]");
                 self.emit(Globals.Events.CONTENT_DOCUMENT_UNLOADED, _$iframe, _currentSpineItem);
             }
+
+            self.resetCurrentPosition();
 
             _paginationInfo.pageOffset = 0;
             _paginationInfo.currentSpreadIndex = 0;
@@ -14444,10 +15754,15 @@ var ReflowableView = function(options, reader){
         }
     }
 
-    function updateHtmlFontSize() {
-
+    function updateHtmlFontInfo() {
+    
         if(_$epubHtml) {
-            Helpers.UpdateHtmlFontSize(_$epubHtml, _fontSize);
+            var i = _fontSelection;
+            var useDefault = !reader.fonts || !reader.fonts.length || i <= 0 || (i-1) >= reader.fonts.length;
+            var font = (useDefault ?
+                        {} :
+                        reader.fonts[i - 1]);
+            Helpers.UpdateHtmlFontAttributes(_$epubHtml, _fontSize, font, function() {self.applyStyles();});
         }
     }
 
@@ -14460,17 +15775,6 @@ var ReflowableView = function(options, reader){
     }
 
     function onIFrameLoad(success) {
-        if (!success) {
-            applyIFrameLoad(success);
-            return;
-        }
-        var fontLoader = new FontLoader(_$iframe);
-        fontLoader.waitForFonts(function () {
-            applyIFrameLoad(success);
-        });
-    }
-
-    function applyIFrameLoad(success) {
 
         _isWaitingFrameRender = false;
 
@@ -14585,11 +15889,9 @@ var ReflowableView = function(options, reader){
         self.applyBookStyles();
         resizeImages();
 
-        updateHtmlFontSize();
         updateColumnGap();
 
-
-        self.applyStyles();
+        updateHtmlFontInfo();
     }
 
     this.applyStyles = function() {
@@ -14608,8 +15910,8 @@ var ReflowableView = function(options, reader){
 
     this.applyBookStyles = function() {
 
-        if(_$epubHtml) {
-            Helpers.setStyles(_bookStyles.getStyles(), _$epubHtml);
+        if(_$epubHtml) { // implies _$iframe
+            Helpers.setStyles(_bookStyles.getStyles(), _$iframe[0].contentDocument); //_$epubHtml
         }
     };
 
@@ -14625,7 +15927,7 @@ var ReflowableView = function(options, reader){
 
     }
 
-    this.openPage = function(pageRequest) {
+    this.openPageInternal = function(pageRequest) {
 
         if(_isWaitingFrameRender) {
             _deferredPageRequest = pageRequest;
@@ -14650,13 +15952,47 @@ var ReflowableView = function(options, reader){
             
             if (pageIndex < 0) pageIndex = 0;
         }
+        else if(pageRequest.firstVisibleCfi && pageRequest.lastVisibleCfi) {
+            var firstPageIndex;
+            var lastPageIndex;
+            try
+            {
+                firstPageIndex = _navigationLogic.getPageForElementCfi(pageRequest.firstVisibleCfi,
+                    _cfiClassBlacklist,
+                    _cfiElementBlacklist,
+                    _cfiIdBlacklist);
+                
+                if (firstPageIndex < 0) firstPageIndex = 0;
+            }
+            catch (e)
+            {
+                firstPageIndex = 0;
+                console.error(e);
+            }
+            try
+            {
+                lastPageIndex = _navigationLogic.getPageForElementCfi(pageRequest.lastVisibleCfi,
+                    _cfiClassBlacklist,
+                    _cfiElementBlacklist,
+                    _cfiIdBlacklist);
+                
+                if (lastPageIndex < 0) lastPageIndex = 0;
+            }
+            catch (e)
+            {
+                lastPageIndex = 0;
+                console.error(e);
+            }
+            // Go to the page in the middle of the two elements
+            pageIndex = Math.round((firstPageIndex + lastPageIndex) / 2);
+        }
         else if(pageRequest.elementCfi) {
             try
             {
                 pageIndex = _navigationLogic.getPageForElementCfi(pageRequest.elementCfi,
-                    ["cfi-marker", "mo-cfi-highlight"],
-                    [],
-                    ["MathJax_Message"]);
+                    _cfiClassBlacklist,
+                    _cfiElementBlacklist,
+                    _cfiIdBlacklist);
                 
                 if (pageIndex < 0) pageIndex = 0;
             }
@@ -14683,6 +16019,36 @@ var ReflowableView = function(options, reader){
         }
         else {
             console.log('Illegal pageIndex value: ', pageIndex, 'column count is ', _paginationInfo.columnCount);
+        }
+    };
+
+    this.openPage = function(pageRequest) {
+        // Go to request page, it will save the new position in onPaginationChanged
+        this.openPageInternal(pageRequest);
+        // Save it for when pagination is updated
+        _lastPageRequest = pageRequest;
+    };
+
+    this.resetCurrentPosition = function() {
+        _lastPageRequest = undefined;
+    };
+
+    this.saveCurrentPosition = function() {
+        // If there's a deferred page request, there's no point in saving the current position
+        // as it's going to change soon
+        if (_deferredPageRequest) {
+            return;
+        }
+
+        var _firstVisibleCfi = self.getFirstVisibleCfi();
+        var _lastVisibleCfi = self.getLastVisibleCfi();
+        _lastPageRequest = new PageOpenRequest(_currentSpineItem, self);
+        _lastPageRequest.setFirstAndLastVisibleCfi(_firstVisibleCfi.contentCFI, _lastVisibleCfi.contentCFI);
+    };
+
+    this.restoreCurrentPosition = function() {
+        if (_lastPageRequest) {
+            this.openPageInternal(_lastPageRequest);            
         }
     };
 
@@ -14733,6 +16099,10 @@ var ReflowableView = function(options, reader){
         redraw();
 
         _.defer(function () {
+
+            if (_lastPageRequest == undefined) {
+                self.saveCurrentPosition();
+            }
             
             Globals.logEvent("InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED", "EMIT", "reflowable_view.js");
             self.emit(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, {
@@ -14752,6 +16122,9 @@ var ReflowableView = function(options, reader){
         }
 
         if(_paginationInfo.currentSpreadIndex > 0) {
+            // Page will change, the current position is not valid any more
+            // Reset it so it's saved next time onPaginationChanged is called
+            this.resetCurrentPosition();
             _paginationInfo.currentSpreadIndex--;
             onPaginationChanged(initiator);
         }
@@ -14774,6 +16147,9 @@ var ReflowableView = function(options, reader){
         }
 
         if(_paginationInfo.currentSpreadIndex < _paginationInfo.spreadCount - 1) {
+            // Page will change, the current position is not valid any more
+            // Reset it so it's saved next time onPaginationChanged is called
+            this.resetCurrentPosition();
             _paginationInfo.currentSpreadIndex++;
             onPaginationChanged(initiator);
         }
@@ -14790,7 +16166,7 @@ var ReflowableView = function(options, reader){
     };
 
 
-    function updatePagination() {
+    function updatePagination_() {
 
         // At 100% font-size = 16px (on HTML, not body or descendant markup!)
         var MAXW = _paginationInfo.columnMaxWidth;
@@ -14937,11 +16313,19 @@ var ReflowableView = function(options, reader){
 
         Helpers.triggerLayout(_$iframe);
 
-        _paginationInfo.columnCount = ((_htmlBodyIsVerticalWritingMode ? _$epubHtml[0].scrollHeight : _$epubHtml[0].scrollWidth) + _paginationInfo.columnGap) / (_paginationInfo.columnWidth + _paginationInfo.columnGap);
+        var dim = (_htmlBodyIsVerticalWritingMode ? _$epubHtml[0].scrollHeight : _$epubHtml[0].scrollWidth);
+        if (dim == 0) {
+            console.error("Document dimensions zero?!");
+        }
+
+        _paginationInfo.columnCount = (dim + _paginationInfo.columnGap) / (_paginationInfo.columnWidth + _paginationInfo.columnGap);
         _paginationInfo.columnCount = Math.round(_paginationInfo.columnCount);
+        if (_paginationInfo.columnCount == 0) {
+            console.error("Column count zero?!");
+        }
 
         var totalGaps = (_paginationInfo.columnCount-1) * _paginationInfo.columnGap;
-        var colWidthCheck = ((_htmlBodyIsVerticalWritingMode ? _$epubHtml[0].scrollHeight : _$epubHtml[0].scrollWidth) - totalGaps) / _paginationInfo.columnCount;
+        var colWidthCheck = (dim - totalGaps) / _paginationInfo.columnCount;
         colWidthCheck = Math.round(colWidthCheck);
 
         if (colWidthCheck > _paginationInfo.columnWidth)
@@ -14966,9 +16350,16 @@ var ReflowableView = function(options, reader){
         }
         else {
 
-            //we get here on resizing the viewport
+            // we get here on resizing the viewport
+            if (_lastPageRequest) {
+                // Make sure we stay on the same page after the content or the viewport 
+                // has been resized
+                self.restoreCurrentPosition();
+            } else {
+                onPaginationChanged(self); // => redraw() => showBook(), so the trick below is not needed                
+            }
 
-            onPaginationChanged(self); // => redraw() => showBook(), so the trick below is not needed
+            //onPaginationChanged(self); // => redraw() => showBook(), so the trick below is not needed 
 
             // //We do this to force re-rendering of the document in the iframe.
             // //There is a bug in WebView control with right to left columns layout - after resizing the window html document
@@ -14980,8 +16371,47 @@ var ReflowableView = function(options, reader){
             // }, 50);
 
         }
-    }
 
+        // Only initializes the resize sensor once the content has been paginated once,
+        // to avoid the pagination process to trigger a resize event during its first
+        // execution, provoking a flicker
+        initResizeSensor();
+    }
+    var updatePagination = _.debounce(updatePagination_, 100);
+
+    function initResizeSensor() {
+        var bodyElement = _$htmlBody[0];
+        if (bodyElement.resizeSensor) {
+            return;
+        }
+
+        // We need to make sure the content has indeed be resized, especially
+        // the first time it is triggered
+        _lastBodySize.width = $(bodyElement).width();
+        _lastBodySize.height = $(bodyElement).height();
+
+        bodyElement.resizeSensor = new ResizeSensor(bodyElement, function() {
+            
+            var newBodySize = {
+                width: $(bodyElement).width(),
+                height: $(bodyElement).height()
+            };
+
+            console.debug("ReflowableView content resized ...", newBodySize.width, newBodySize.height, _currentSpineItem.idref);
+            
+            if (newBodySize.width != _lastBodySize.width || newBodySize.height != _lastBodySize.height) {
+                _lastBodySize.width = newBodySize.width;
+                _lastBodySize.height = newBodySize.height;
+                
+                console.debug("... updating pagination.");
+
+                updatePagination();
+            } else {
+                console.debug("... ignored (identical dimensions).");
+            }
+        });
+    }
+    
 //    function shiftBookOfScreen() {
 //
 //        if(_spine.isLeftToRight()) {
@@ -15293,15 +16723,37 @@ var ReflowableView = function(options, reader){
 
 define('readium_shared_js/models/style',[], function() {
 /**
- *
+ * @class Models.Style
+ * @constructor
  * @param selector
  * @param declarations
- * @constructor
  */
 var Style = function(selector, declarations) {
 
+    /**
+     * Initializing the selector
+     *
+     * @property selector
+     * @type 
+     */
+
     this.selector = selector;
+
+    /**
+     * Initializing the declarations
+     *
+     * @property selector
+     * @type 
+     */
+
     this.declarations = declarations;
+
+    /**
+     * Set the declarations array
+     *
+     * @method setDeclarations
+     * @param {Object} declarations
+     */
 
     this.setDeclarations = function(declarations) {
 
@@ -15316,7 +16768,7 @@ var Style = function(selector, declarations) {
     return Style;
 });
 
-//  Created by Boris Schneiderman.
+    //  Created by Boris Schneiderman.
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
 //  
 //  Redistribution and use in source and binary forms, with or without modification, 
@@ -15342,18 +16794,36 @@ var Style = function(selector, declarations) {
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 define('readium_shared_js/models/style_collection',["./style"], function(Style) {
+
 /**
  *
+ * @class Models.StyleCollection
+ * @return StyleCollection
  * @constructor
  */
+
 var StyleCollection = function() {
 
     var _styles = [];
+
+    /**
+     * Clears the collection.
+     *
+     * @method     clear
+     */
 
     this.clear = function() {
         _styles.length = 0;
 
     };
+
+    /**
+     * Finds the style of a selected item
+     *
+     * @method     findStyle
+     * @param      selector
+     * @return     {Models.Style}
+     */
 
     this.findStyle = function(selector) {
 
@@ -15366,6 +16836,15 @@ var StyleCollection = function() {
 
         return undefined;
     };
+
+    /**
+     * Adds a style to the collection
+     *
+     * @method     addStyle
+     * @param      selector
+     * @param      declarations
+     * @return     {Models.Style}
+     */
 
     this.addStyle = function(selector, declarations) {
 
@@ -15382,6 +16861,13 @@ var StyleCollection = function() {
         return style;
     };
 
+    /**
+     * Removes a style from the collection
+     *
+     * @method     addStyle
+     * @param      selector
+     */
+
     this.removeStyle = function(selector) {
         
         var count = _styles.length;
@@ -15395,9 +16881,22 @@ var StyleCollection = function() {
         }
     };
 
+    /**
+     * Gets all styles
+     *
+     * @method     getStyles
+     * @return     {Array}
+     */
+
     this.getStyles = function() {
         return _styles;
     };
+
+    /**
+     * Resets the styles
+     *
+     * @method     resetStyleValues
+     */
 
     this.resetStyleValues = function() {
 
@@ -15447,8 +16946,10 @@ var StyleCollection = function() {
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 define('readium_shared_js/models/switches',["jquery", "underscore"], function($, _) {
-/**
- *
+/** 
+ * Switches in the epub publication.
+ * 
+ * @class Models.Switches
  * @constructor
  */
 var Switches = function() {
@@ -15457,6 +16958,15 @@ var Switches = function() {
 
 // Description: Parse the epub "switch" tags and hide
 // cases that are not supported
+
+/**
+ *
+ * Static Switches.apply method.
+ * 
+ * @method Switches.apply
+ * @param dom
+ */
+
 Switches.apply = function(dom) {
 
     function isSupported(caseNode) {
@@ -15537,21 +17047,61 @@ Switches.apply = function(dom) {
 
 define('readium_shared_js/models/trigger',["jquery", "../helpers"], function($, Helpers) {
 /**
- * Setter fot epub Triggers
+ * Trigger in an epub publication.
  *
- *
+ * @class Models.Trigger
+ * @constructor
  * @param domNode
  */
 
 var Trigger = function(domNode) {
+
     var $el = $(domNode);
+    
+    /**
+     * epub trigger action
+     *
+     * @property action
+     * @type String
+     */
+
     this.action     = $el.attr("action");
+    
+    /**
+     * epub trigger ref
+     *
+     * @property ref
+     * @type String
+     */
+
     this.ref         = $el.attr("ref");
+    
+    /**
+     * epub trigger event
+     *
+     * @property event
+     * @type String
+     */
+
     this.event         = $el.attr("ev:event");
+    
+    /**
+     * epub trigger observer
+     *
+     * @property observer
+     * @type String
+     */
+
     this.observer     = $el.attr("ev:observer");
     this.ref         = $el.attr("ref");
 };
 
+/**
+ * Static register method
+ *
+ * @method register
+ * @param dom
+ */
 Trigger.register = function(dom) {
     $('trigger', dom).each(function() {
         var trigger = new Trigger(this);
@@ -15559,15 +17109,31 @@ Trigger.register = function(dom) {
     });
 };
 
+/**
+ * Prototype subscribe method
+ *
+ * @method subscribe
+ * @param dom
+ */
+
 Trigger.prototype.subscribe = function(dom) {
+    
     var selector = "#" + this.observer;
     var that = this;
     $(selector, dom).on(this.event, function() {
-        that.execute(dom);
+        return that.execute(dom);
     });
 };
 
+/**
+ * Prototype execute method
+ *
+ * @method execute
+ * @param dom
+ */
+
 Trigger.prototype.execute = function(dom) {
+
     var $target = $( "#" + Helpers.escapeJQuerySelector(this.ref), dom);
     switch(this.action)
     {
@@ -15595,13 +17161,17 @@ Trigger.prototype.execute = function(dom) {
             break;
         default:
             console.log("do not no how to handle trigger " + this.action);
+            return null;
     }
+    return false;   // do not propagate click event; it was already handled
+
 };
+
     return Trigger;
 });
 
 //  Created by Juan Corona
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  Copyright (c) 2016 Readium Foundation and/or its licensees. All rights reserved.
 //
 //  Redistribution and use in source and binary forms, with or without modification,
 //  are permitted provided that the following conditions are met:
@@ -15628,30 +17198,35 @@ Trigger.prototype.execute = function(dom) {
 define('readium_shared_js/models/node_range_info',[],function () {
 
     /**
-     * @class ReadiumSDK.Models.NodeRangePositionInfo
+     * @class Models.NodeRangePositionInfo
      * @constructor
+     * @param {Node} node The actual DOM node
+     * @param {Number} offest The position offsetf for the node
      */
     var NodeRangePositionInfo = function (node, offset) {
 
         /**
          * The actual DOM node
          * @property node
-         * @type {Node}
+         * @type Node
          */
         this.node = node;
 
         /**
          * The position offsetf for the node
          * @property offset
-         * @type {Number}
+         * @type Number
          */
         this.offset = offset;
 
     };
 
     /**
-     * @class ReadiumSDK.Models.NodeRangeInfo
+     * @class Models.NodeRangeInfo
      * @constructor
+     * @param {ClientRect} clientRect
+     * @param {Models.NodeRangePositionInfo} startInfo
+     * @param {Models.NodeRangePositionInfo} endInfo
      */
     var NodeRangeInfo = function (clientRect, startInfo, endInfo) {
 
@@ -15659,21 +17234,21 @@ define('readium_shared_js/models/node_range_info',[],function () {
         /**
          * Client rectangle information for the range content bounds
          * @property clientRect
-         * @type {ClientRect}
+         * @type ClientRect
          */
         this.clientRect = clientRect;
 
         /**
          * Node and position information providing where and which node the range starts with
          * @property startInfo
-         * @type {ReadiumSDK.Models.NodeRangePositionInfo}
+         * @type Models.NodeRangePositionInfo
          */
         this.startInfo = startInfo;
 
         /**
          * Node and position information providing where and which node the range ends with
          * @property endInfo
-         * @type {ReadiumSDK.Models.NodeRangePositionInfo}
+         * @type Models.NodeRangePositionInfo
          */
         this.endInfo = endInfo;
 
@@ -15966,7 +17541,6 @@ define('readium_shared_js/views/reader_view',["../globals", "jquery", "underscor
  * @constructor
  */
 var ReaderView = function (options) {
-
     $.extend(this, new EventEmitter());
 
     var self = this;
@@ -15991,6 +17565,9 @@ var ReaderView = function (options) {
         handleViewportResizeEnd, 250, 1000, self);
 
     $(window).on("resize.ReadiumSDK.readerView", lazyResize);
+
+    this.fonts = options.fonts;
+
 
     if (options.el instanceof $) {
         _$el = options.el;
@@ -16202,7 +17779,9 @@ var ReaderView = function (options) {
         })
 
         _currentView.render();
-        _currentView.setViewSettings(_viewerSettings);
+
+        var docWillChange = true;
+        _currentView.setViewSettings(_viewerSettings, docWillChange);
 
         // we do this to wait until elements are rendered otherwise book is not able to determine view size.
         setTimeout(function () {
@@ -16303,7 +17882,7 @@ var ReaderView = function (options) {
     /**
      * Triggers the process of opening the book and requesting resources specified in the packageData
      *
-     * @param {Views.ReaderView.OpenBookData} openBookData - object with open book data
+     * @param {Views.ReaderView.OpenBookData} openBookData Open book data object
      */
     this.openBook = function (openBookData) {
 
@@ -16342,6 +17921,7 @@ var ReaderView = function (options) {
         
         var pageRequestData = undefined;
 
+<<<<<<< HEAD
         if(openBookData.openPageRequest) {
             
             if (_multipleRenditions) {
@@ -16350,6 +17930,14 @@ var ReaderView = function (options) {
         }
         
         if(openBookData.openPageRequest) {
+=======
+        if (openBookData.openPageRequest && typeof(openBookData.openPageRequest) === 'function') {
+            openBookData.openPageRequest = openBookData.openPageRequest();
+        }
+
+        if (openBookData.openPageRequest) {
+
+>>>>>>> develop
             if (openBookData.openPageRequest.idref || (openBookData.openPageRequest.contentRefUrl && openBookData.openPageRequest.sourceFileHref)) {
                 pageRequestData = openBookData.openPageRequest;
             }
@@ -16485,6 +18073,7 @@ var ReaderView = function (options) {
      *
      * @typedef {object} Globals.Views.ReaderView.SettingsData
      * @property {number} fontSize - Font size as percentage
+     * @property {number} fontSelection - Font selection as the number in the list of possible fonts, where 0 is special meaning default.
      * @property {(string|boolean)} syntheticSpread - "auto"|true|false
      * @property {(string|boolean)} scroll - "auto"|true|false
      * @property {boolean} doNotUpdateView - Indicates whether the view should be updated after the settings are applied
@@ -16526,8 +18115,15 @@ var ReaderView = function (options) {
                 initViewForItem(spineItem, function (isViewChanged) {
 
                     if (!isViewChanged) {
-                        _currentView.setViewSettings(_viewerSettings);
+                        var docWillChange = false;
+                        _currentView.setViewSettings(_viewerSettings, docWillChange);
                     }
+
+                    self.once(ReadiumSDK.Events.PAGINATION_CHANGED, function (pageChangeData)
+                    {
+                        var cfi = new BookmarkData(bookMark.idref, bookMark.contentCFI);
+                        self.debugBookmarkData(cfi);
+                    });
 
                     self.openSpineItemElementCfi(bookMark.idref, bookMark.contentCFI, self);
 
@@ -16710,7 +18306,8 @@ var ReaderView = function (options) {
         initViewForItem(pageRequest.spineItem, function (isViewChanged) {
 
             if (!isViewChanged) {
-                _currentView.setViewSettings(_viewerSettings);
+                var docWillChange = true;
+                _currentView.setViewSettings(_viewerSettings, docWillChange);
             }
 
             _currentView.openPage(pageRequest, dir);
@@ -16776,7 +18373,12 @@ var ReaderView = function (options) {
         var count = styles.length;
 
         for (var i = 0; i < count; i++) {
-            _bookStyles.addStyle(styles[i].selector, styles[i].declarations);
+            if (styles[i].declarations) {
+                _bookStyles.addStyle(styles[i].selector, styles[i].declarations);
+            }
+            else {
+                _bookStyles.removeStyle(styles[i].selector);
+            }
         }
 
         if (_currentView) {
@@ -16929,6 +18531,54 @@ var ReaderView = function (options) {
         openPage(pageData, 0);
 
         return true;
+    };
+
+    //var cfi = new BookmarkData(bookmark.idref, bookmark.contentCFI);
+    this.debugBookmarkData = function(cfi) {
+
+        if (!ReadiumSDK) return;
+
+        var DEBUG = true; // change this to visualize the CFI range
+        if (!DEBUG) return;
+            
+        var paginationInfo = this.getPaginationInfo();
+        console.log(JSON.stringify(paginationInfo));
+        
+        if (paginationInfo.isFixedLayout) return;
+    
+        try {
+            ReadiumSDK._DEBUG_CfiNavigationLogic.clearDebugOverlays();
+            
+        } catch (error) {
+            //ignore
+        }
+        
+        try {
+            console.log(cfi);
+            
+            var range = this.getDomRangeFromRangeCfi(cfi);
+            console.log(range);
+            
+            var res = ReadiumSDK._DEBUG_CfiNavigationLogic.drawDebugOverlayFromDomRange(range);
+            console.log(res);
+        
+            var cfiFirst = ReadiumSDK.reader.getFirstVisibleCfi();
+            console.log(cfiFirst);
+            
+            var cfiLast  = ReadiumSDK.reader.getLastVisibleCfi();
+            console.log(cfiLast);
+            
+        } catch (error) {
+            //ignore
+        }
+        
+        setTimeout(function() {
+            try {
+                ReadiumSDK._DEBUG_CfiNavigationLogic.clearDebugOverlays();
+            } catch (error) {
+                //ignore
+            }
+        }, 2000);
     };
 
     /**
@@ -17133,19 +18783,7 @@ var ReaderView = function (options) {
     this.handleViewportResize = function (bookmarkToRestore) {
         if (!_currentView) return;
 
-        var bookMark = bookmarkToRestore || _currentView.bookmarkCurrentPage(); // not self! (JSON string)
-
-        if (_currentView.isReflowable && _currentView.isReflowable() && bookMark && bookMark.idref) {
-            var spineItem = _spine.getItemById(bookMark.idref);
-
-            initViewForItem(spineItem, function (isViewChanged) {
-                self.openSpineItemElementCfi(bookMark.idref, bookMark.contentCFI, self);
-                return;
-            });
-        }
-        else {
-            _currentView.onViewportResize();
-        }
+        _currentView.onViewportResize();
     };
 
     /**
@@ -17158,13 +18796,6 @@ var ReaderView = function (options) {
      */
     this.addIFrameEventListener = function (eventName, callback, context) {
         _iframeLoader.addIFrameEventListener(eventName, callback, context);
-    };
-
-    this.isElementCfiVisible = function (spineIdRef, contentCfi) {
-        if (!_currentView) {
-            return false;
-        }
-        return _currentView.isElementCfiVisible(spineIdRef, contentCfi);
     };
 
     var BackgroundAudioTrackManager = function (readerView) {
@@ -17474,7 +19105,7 @@ var ReaderView = function (options) {
      * Resolve a range CFI into an object containing info about it.
      * @param {string} spineIdRef    The spine item idref associated with the content document
      * @param {string} partialCfi    The partial CFI that is the range CFI to resolve
-     * @returns {ReadiumSDK.Models.NodeRangeInfo}
+     * @returns {Models.NodeRangeInfo}
      */
     this.getNodeRangeInfoFromCfi = function (spineIdRef, partialCfi) {
         if (_currentView && spineIdRef && partialCfi) {

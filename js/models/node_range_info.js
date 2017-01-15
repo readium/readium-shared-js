@@ -1,5 +1,5 @@
 //  Created by Juan Corona
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  Copyright (c) 2016 Readium Foundation and/or its licensees. All rights reserved.
 //
 //  Redistribution and use in source and binary forms, with or without modification,
 //  are permitted provided that the following conditions are met:
@@ -26,30 +26,35 @@
 define(function () {
 
     /**
-     * @class ReadiumSDK.Models.NodeRangePositionInfo
+     * @class Models.NodeRangePositionInfo
      * @constructor
+     * @param {Node} node The actual DOM node
+     * @param {Number} offest The position offsetf for the node
      */
     var NodeRangePositionInfo = function (node, offset) {
 
         /**
          * The actual DOM node
          * @property node
-         * @type {Node}
+         * @type Node
          */
         this.node = node;
 
         /**
          * The position offsetf for the node
          * @property offset
-         * @type {Number}
+         * @type Number
          */
         this.offset = offset;
 
     };
 
     /**
-     * @class ReadiumSDK.Models.NodeRangeInfo
+     * @class Models.NodeRangeInfo
      * @constructor
+     * @param {ClientRect} clientRect
+     * @param {Models.NodeRangePositionInfo} startInfo
+     * @param {Models.NodeRangePositionInfo} endInfo
      */
     var NodeRangeInfo = function (clientRect, startInfo, endInfo) {
 
@@ -57,21 +62,21 @@ define(function () {
         /**
          * Client rectangle information for the range content bounds
          * @property clientRect
-         * @type {ClientRect}
+         * @type ClientRect
          */
         this.clientRect = clientRect;
 
         /**
          * Node and position information providing where and which node the range starts with
          * @property startInfo
-         * @type {ReadiumSDK.Models.NodeRangePositionInfo}
+         * @type Models.NodeRangePositionInfo
          */
         this.startInfo = startInfo;
 
         /**
          * Node and position information providing where and which node the range ends with
          * @property endInfo
-         * @type {ReadiumSDK.Models.NodeRangePositionInfo}
+         * @type Models.NodeRangePositionInfo
          */
         this.endInfo = endInfo;
 

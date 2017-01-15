@@ -90,7 +90,11 @@ files: [
 #####################################################################
 dependencies:
 
-    "parallelshell": 'latest'
+    #"parallelshell": 'latest'
+    "concurrently": 'latest'
+
+    "npm-run-all": 'latest'
+
 
     "opener": 'latest'
 
@@ -108,7 +112,7 @@ devDependencies:
 # "requirejs", "almond", "jquery"
 
 
-    "jquerySizes": 'bramstein/jsizes'
+    "jquery-sizes": 'bramstein/jsizes'
 
     "domReady": 'requirejs/domReady'
 
@@ -123,10 +127,10 @@ devDependencies:
     
     "es6-collections": 'latest'
 
-    "FontLoader": 'smnh/FontLoader'
-    
-    "CSSOM": 'danielweck/CSSOM#gh-pages'
+    "cssom": 'danielweck/CSSOM#gh-pages'
     #"CSSOM": 'NV/CSSOM#gh-pages'
+
+    "ResizeSensor": 'danielweck/css-element-queries'
     
 
 # Below dependencies are only used for building tasks (above are runtime deps):
@@ -327,11 +331,11 @@ scripts:
 
         echo > open_webbrowser.js
         &&
-        parallelshell
-            \"npm run dowatch\"
-            \"npm run httpServe\"
+        run-p
+            \"dowatch\"
+            \"httpServe\"
     '
-# \"npm run live-reload\"
+# \"live-reload\"
 
 #=====================
 #### BLOCKING! (CTRL-C) [http]
