@@ -40971,7 +40971,7 @@ return Package;
             }
             this._sizeWatchers = [];
 
-            if (this._testContainer !== null) {
+            if (this._testContainer !== null && this._testContainer.parentNode != null) {
                 this._testContainer.parentNode.removeChild(this._testContainer);
             }
 
