@@ -127,8 +127,8 @@ devDependencies:
     
     "es6-collections": 'latest'
 
-    "cssom": 'danielweck/CSSOM#gh-pages'
-    #"CSSOM": 'NV/CSSOM#gh-pages'
+    "cssom": 'danielweck/CSSOM'
+    #"CSSOM": 'NV/CSSOM'
 
     "ResizeSensor": 'danielweck/css-element-queries'
     
