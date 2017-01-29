@@ -21067,7 +21067,7 @@ define("es6-collections", function(){});
       return v === undefined ? '' : this;
     }
 
-    if (v === undefined || v === true) {
+    if (typeof v !== 'string') {
       if (!this._parts.path || this._parts.path === '/') {
         return '';
       }
@@ -39499,7 +39499,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
             }
             
             var domRangeAsRange = getDomRangeAsRange(pageView, domRange);
-            if (isRangeIsVisibleOnScreen(pageView, domRangeAsRange, 60)) {
+            if (isRangeIsVisibleOnScreen(domRangeAsRange, 60)) {
                 //TODO refactoring required
                 // this is artificial call because MO player waits for this event to continue playing.
                 onPaginationChanged(pageRequest.initiator, pageRequest.spineItem, pageRequest.elementId);

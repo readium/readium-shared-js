@@ -10446,7 +10446,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
             }
             
             var domRangeAsRange = getDomRangeAsRange(pageView, domRange);
-            if (isRangeIsVisibleOnScreen(pageView, domRangeAsRange, 60)) {
+            if (isRangeIsVisibleOnScreen(domRangeAsRange, 60)) {
                 //TODO refactoring required
                 // this is artificial call because MO player waits for this event to continue playing.
                 onPaginationChanged(pageRequest.initiator, pageRequest.spineItem, pageRequest.elementId);
