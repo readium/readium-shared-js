@@ -1,5 +1,5 @@
 //  Created by Boris Schneiderman.
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  Copyright (c) 2016 Readium Foundation and/or its licensees. All rights reserved.
 //  
 //  Redistribution and use in source and binary forms, with or without modification, 
 //  are permitted provided that the following conditions are met:
@@ -30,9 +30,9 @@ define([], function() {
  *
  * @class  Models.SpineItem
  * @constructor
- * @param itemData spine item properties container
- * @param {Number} index
- * @param {Models.Spine} spine
+ * @param itemData container for spine item properties
+ * @param {Number} index index of this spine item in the parent spine 
+ * @param {Models.Spine} spine parent spine
  *
  */
 var SpineItem = function(itemData, index, spine){
@@ -44,7 +44,7 @@ var SpineItem = function(itemData, index, spine){
      * manifest item that the spine item references
      *
      * @property idref
-     * @type {String}
+     * @type String
      * @default  None
      */
     this.idref = itemData.idref;
@@ -100,7 +100,7 @@ var SpineItem = function(itemData, index, spine){
     this.rendition_spread = itemData.rendition_spread;
 
     /**
-     * A sring specifying desired orientation for ALL spine items. Possible values are
+     * A string specifying desired orientation for ALL spine items. Possible values are
      * rendition-orientation-*, which can be none, landscape, portrait, both or auto
      *
      * Note: Not yet implemented.
@@ -149,7 +149,7 @@ var SpineItem = function(itemData, index, spine){
     this.media_type = itemData.media_type;
 
     /**
-     * The index of this spine item in the spine itself.
+     * The index of this spine item in the parent spine .
      * 
      * @property index
      * @type     String
@@ -161,17 +161,38 @@ var SpineItem = function(itemData, index, spine){
      * The object which is the actual spine of which this spineItem is a child.
      *
      * @property spine
-     * @type     String
+     * @type     Models.Spine
      * @default  None
      */
     this.spine = spine;
 
     validateSpread();
 
+    /**
+     * Sets a new page spread and checks its validity
+     *
+     * @method     setSpread
+     * @param      {String} spread  the new page spread 
+     */
     this.setSpread = function(spread) {
         this.page_spread = spread;
 
         validateSpread();
+    };
+
+    /* private method (validateSpread) */
+    function validateSpread() {
+
+        if(!self.page_spread) {
+            return;
+        }
+
+        if( self.page_spread != SpineItem.SPREAD_LEFT &&
+            self.page_spread != SpineItem.SPREAD_RIGHT &&
+            self.page_spread != SpineItem.SPREAD_CENTER ) {
+
+            console.error(self.page_spread + " is not a recognized spread type");
+        }
     };
 
     /**
@@ -185,25 +206,6 @@ var SpineItem = function(itemData, index, spine){
         var rendition_spread = self.getRenditionSpread();
         return !rendition_spread || rendition_spread != SpineItem.RENDITION_SPREAD_NONE;
     };
-
-    /**
-     * Checks to see if the value for the page-spread attribute is valid
-     *
-     * @method     validateSpread
-     */
-    function validateSpread() {
-
-        if(!self.page_spread) {
-            return;
-        }
-
-        if( self.page_spread != SpineItem.SPREAD_LEFT &&
-            self.page_spread != SpineItem.SPREAD_RIGHT &&
-            self.page_spread != SpineItem.SPREAD_CENTER ) {
-
-            console.error(self.page_spread + " is not a recognized spread type");
-        }
-    }
 
     /**
      * Checks to see if this spineItem explicitly specifies SPREAD_LEFT

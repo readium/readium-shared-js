@@ -50,6 +50,9 @@ require.config({
         jquerySizes:
             process._RJS_rootDir(1) + '/node_modules/jquery-sizes/lib/jquery.sizes',
 
+        ResizeSensor:
+            process._RJS_rootDir(1) + '/node_modules/css-element-queries/src/ResizeSensor',
+
         domReady:
             process._RJS_rootDir(1) + '/node_modules/domReady/domReady',
 
@@ -59,9 +62,6 @@ require.config({
         
         "es6-collections":
             process._RJS_rootDir(1) + '/node_modules/es6-collections/index',
-
-        'FontLoader':
-            process._RJS_rootDir(1) + '/node_modules/FontLoader/FontLoader',
 
         'cssom':
             process._RJS_rootDir(1) + '/node_modules/cssom/build/CSSOM',

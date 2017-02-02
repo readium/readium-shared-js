@@ -25,8 +25,10 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 define(["jquery", "underscore"], function($, _) {
-/**
- *
+/** 
+ * Switches in the epub publication.
+ * 
+ * @class Models.Switches
  * @constructor
  */
 var Switches = function() {
@@ -35,6 +37,15 @@ var Switches = function() {
 
 // Description: Parse the epub "switch" tags and hide
 // cases that are not supported
+
+/**
+ *
+ * Static Switches.apply method.
+ * 
+ * @method Switches.apply
+ * @param dom
+ */
+
 Switches.apply = function(dom) {
 
     function isSupported(caseNode) {
