@@ -4814,11 +4814,11 @@ var ViewerSettings = function(settingsData) {
     }
 }(this, function () {
 
-    //Make sure it does not throw in a SSR (Server Side Rendering) situation
+    // Make sure it does not throw in a SSR (Server Side Rendering) situation
     if (typeof window === "undefined") {
         return null;
     }
-    // Only used for the dirty checking, so the event callback count is limted to max 1 call per fps per sensor.
+    // Only used for the dirty checking, so the event callback count is limited to max 1 call per fps per sensor.
     // In combination with the event based resize sensor this saves cpu time, because the sensor is too fast and
     // would generate too many unnecessary events.
     var requestAnimationFrame = window.requestAnimationFrame ||
@@ -4900,11 +4900,12 @@ var ViewerSettings = function(settingsData) {
         function getComputedStyle(element, prop) {
             if (element.currentStyle) {
                 return element.currentStyle[prop];
-            } else if (window.getComputedStyle) {
-                return window.getComputedStyle(element, null).getPropertyValue(prop);
-            } else {
-                return element.style[prop];
             }
+            if (window.getComputedStyle) {
+                return window.getComputedStyle(element, null).getPropertyValue(prop);
+            }
+
+            return element.style[prop];
         }
 
         /**
@@ -4913,13 +4914,13 @@ var ViewerSettings = function(settingsData) {
          * @param {Function}    resized
          */
         function attachResizeEvent(element, resized) {
-            if (!element.resizedAttached) {
-                element.resizedAttached = new EventQueue();
-                element.resizedAttached.add(resized);
-            } else if (element.resizedAttached) {
+            if (element.resizedAttached) {
                 element.resizedAttached.add(resized);
                 return;
             }
+
+            element.resizedAttached = new EventQueue();
+            element.resizedAttached.add(resized);
 
             element.resizeSensor = document.createElement('div');
             element.resizeSensor.className = 'resize-sensor';
