@@ -58,7 +58,7 @@
     "eventemitter3": "latest",
     "es6-collections": "latest",
     "cssom": "danielweck/CSSOM",
-    "ResizeSensor": "danielweck/css-element-queries"
+    "css-element-queries": "danielweck/css-element-queries"
   },
   "scripts": {
     "cson2json": "node ./readium-cfi-js/node_modules/cson/bin/cson2json package.cson > package.json && node readium-cfi-js/readium-build-tools/optimizePackageJsonScripts.js",
