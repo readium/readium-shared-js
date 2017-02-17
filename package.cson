@@ -130,7 +130,7 @@ devDependencies:
     "cssom": 'danielweck/CSSOM'
     #"CSSOM": 'NV/CSSOM'
 
-    "ResizeSensor": 'danielweck/css-element-queries'
+    "css-element-queries": 'danielweck/css-element-queries'
     
 
 # Below dependencies are only used for building tasks (above are runtime deps):
