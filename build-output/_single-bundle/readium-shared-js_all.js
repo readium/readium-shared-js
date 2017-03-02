@@ -19071,7 +19071,7 @@ define("es6-collections", function(){});
  * URI.js - Mutating URLs
  * IPv6 Support
  *
- * Version: 1.18.7
+ * Version: 1.18.8
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -19257,7 +19257,7 @@ define("es6-collections", function(){});
  * URI.js - Mutating URLs
  * Second Level Domain (SLD) Support
  *
- * Version: 1.18.7
+ * Version: 1.18.8
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -19497,7 +19497,7 @@ define("es6-collections", function(){});
 /*!
  * URI.js - Mutating URLs
  *
- * Version: 1.18.7
+ * Version: 1.18.8
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -19573,7 +19573,7 @@ define("es6-collections", function(){});
     return this;
   }
 
-  URI.version = '1.18.7';
+  URI.version = '1.18.8';
 
   var p = URI.prototype;
   var hasOwn = Object.prototype.hasOwnProperty;
@@ -21597,7 +21597,10 @@ define("es6-collections", function(){});
     //
     // Readium patch >>
 
-    if (!resolved._parts.protocol) {
+    if (resolved._parts.protocol) {
+      // Directly returns even if this._parts.hostname is empty.
+      return resolved;
+    } else {
       resolved._parts.protocol = base._parts.protocol;
     }
 
@@ -27144,7 +27147,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             $iframe: _$iframe,
             frameDimensions: getFrameDimensions,
             visibleContentOffsets: getVisibleContentOffsets,
-            classBlacklist: ["cfi-marker", "mo-cfi-highlight", "resize-sensor", "resize-sensor-expand", "resize-sensor-shrink"],
+            classBlacklist: ["cfi-marker", "mo-cfi-highlight", "resize-sensor", "resize-sensor-expand", "resize-sensor-shrink", "resize-sensor-inner"],
             elementBlacklist: [],
             idBlacklist: ["MathJax_Message", "MathJax_SVG_Hidden"]
         });
