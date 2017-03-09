@@ -19071,7 +19071,7 @@ define("es6-collections", function(){});
  * URI.js - Mutating URLs
  * IPv6 Support
  *
- * Version: 1.18.8
+ * Version: 1.18.9
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -19257,7 +19257,7 @@ define("es6-collections", function(){});
  * URI.js - Mutating URLs
  * Second Level Domain (SLD) Support
  *
- * Version: 1.18.8
+ * Version: 1.18.9
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -19497,7 +19497,7 @@ define("es6-collections", function(){});
 /*!
  * URI.js - Mutating URLs
  *
- * Version: 1.18.8
+ * Version: 1.18.9
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -19573,7 +19573,7 @@ define("es6-collections", function(){});
     return this;
   }
 
-  URI.version = '1.18.8';
+  URI.version = '1.18.9';
 
   var p = URI.prototype;
   var hasOwn = Object.prototype.hasOwnProperty;
