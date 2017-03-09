@@ -4,7 +4,7 @@
     "readium-cfi-js/node_modules/almond/almond.js",
     "readium-cfi-js/gen/cfi_parser_gen.js",
     "readium-cfi-js/node_modules/jquery/dist/jquery.js",
-    "node_modules/underscore/underscore.js",
+    "readium-cfi-js/node_modules/underscore/underscore.js",
     "readium-cfi-js/js/cfi_runtime_errors.js",
     "readium-cfi-js/js/cfi_instructions.js",
     "readium-cfi-js/js/cfi_interpreter.js",
