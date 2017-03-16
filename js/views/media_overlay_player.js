@@ -1769,10 +1769,11 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         {
             if (!_audioPlayer.play())
             {
-                console.log("Audio player was dead, reactivating...");
-
+                console.log("Audio player was dead...");
+                /*
                 this.reset();
                 this.toggleMediaOverlay();
+                */
                 return;
             }
         }

@@ -4210,6 +4210,7 @@ var ViewerSettings = function(settingsData) {
     this.mediaOverlaysSynchronizationGranularity = "";
 
     this.mediaOverlaysAutomaticPageTurn = false;
+    this.mediaOverlaysAutomaticPlay = true;
 
     this.enableGPUHardwareAccelerationCSS3D = false;
 
@@ -4264,6 +4265,7 @@ var ViewerSettings = function(settingsData) {
         mapProperty("mediaOverlaysVolume", settingsData);
         mapProperty("mediaOverlaysSynchronizationGranularity", settingsData);
         mapProperty("mediaOverlaysAutomaticPageTurn", settingsData);
+        mapProperty("mediaOverlaysAutomaticPlay", settingsData);
         mapProperty("scroll", settingsData);
         mapProperty("syntheticSpread", settingsData);
         mapProperty("pageTransition", settingsData);
@@ -6906,11 +6908,10 @@ var MediaOverlayDataInjector = function (mediaOverlay, mediaOverlayPlayer) {
 
                 var touchClickMOEventHandler = function (event)
                 {
-                    //console.debug("MO TOUCH-DOWN: "+event.type);
-                    
+                    //console.debug("MO TOUCH-DOWN: " + event.type);
                     var elem = $(this)[0]; // body
-                    elem = event.target; // body descendant
 
+                    elem = event.target; // body descendant
                     if (!elem)
                     {
                         mediaOverlayPlayer.touchInit();
@@ -7084,12 +7085,19 @@ console.log("MO CLICKED LINK");
 
                         if (el && el != elem && el.nodeName.toLowerCase() === "body" && par && !par.getSmil().id)
                         {
-//console.debug("MO CLICKED BLANK BODY");
+                            //console.debug("MO CLICKED BLANK BODY");
                             mediaOverlayPlayer.touchInit();
                             return true;
                         }
-
-                        mediaOverlayPlayer.playUserPar(par);
+                        //console.debug("MO CLICKED: isPlaying()" + mediaOverlayPlayer.isPlaying());
+                        if (mediaOverlayPlayer.isPlaying())
+                        {
+                            mediaOverlayPlayer.pause();
+                        }
+                        else
+                        {
+                            mediaOverlayPlayer.playUserPar(par);
+                        }
                         return true;
                     }
                     else
@@ -7122,9 +7130,12 @@ console.debug("MO readaloud attr: " + readaloud);
                 
                 if ('ontouchstart' in document.documentElement)
                 {
-                  $body[0].addEventListener("touchstart", touchClickMOEventHandler_, false);
+                    $body[0].addEventListener("touchstart", touchClickMOEventHandler_, false);
                 }
-                $body[0].addEventListener("mousedown", touchClickMOEventHandler_, false);
+                else
+                {
+                    $body[0].addEventListener("mousedown", touchClickMOEventHandler_, false);
+                }
 
                 //var clickEvent = 'ontouchstart' in document.documentElement ? 'touchstart' : 'click';
                 //$body.bind(clickEvent, touchClickMOEventHandler);
@@ -12058,10 +12069,11 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         {
             if (!_audioPlayer.play())
             {
-                console.log("Audio player was dead, reactivating...");
-
+                console.log("Audio player was dead...");
+                /*
                 this.reset();
                 this.toggleMediaOverlay();
+                */
                 return;
             }
         }
@@ -15941,6 +15953,10 @@ var ReaderView = function (options) {
 
             Globals.logEvent("CONTENT_DOCUMENT_LOADED", "EMIT", "reader_view.js [ " + spineItem.href + " ]");
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
+            if (_viewerSettings.mediaOverlaysAutomaticPlay)
+            {
+                _mediaOverlayPlayer.toggleMediaOverlay();
+            }
         });
 
         _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOAD_START, function ($iframe, spineItem) {

@@ -248,6 +248,10 @@ var ReaderView = function (options) {
 
             Globals.logEvent("CONTENT_DOCUMENT_LOADED", "EMIT", "reader_view.js [ " + spineItem.href + " ]");
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
+            if (_viewerSettings.mediaOverlaysAutomaticPlay)
+            {
+                _mediaOverlayPlayer.toggleMediaOverlay();
+            }
         });
 
         _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOAD_START, function ($iframe, spineItem) {
