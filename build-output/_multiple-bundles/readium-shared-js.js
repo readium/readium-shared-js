@@ -7849,8 +7849,10 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
                 {
                     console.debug("this.playFile() SAME SRC");
                 }
-    
-                this.pause();
+                if (Math.abs(seekBegin - _audioElement.currentTime) >= 0.3)
+                {
+                    this.pause();
+                }
     
                 _currentSmilSrc = smilSrc;
                 _currentEpubSrc = epubSrc;
