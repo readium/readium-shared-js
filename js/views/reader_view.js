@@ -378,14 +378,19 @@ var ReaderView = function (options) {
      * @param {Views.ReaderView.OpenBookData} openBookData - object with open book data
      */
     this.openBook = function (openBookData) {
-
+        //取得個別書籍的設定（翻頁方向等）
+        var bookSetting = localStorage[MooReaderApp.BOOKINFO.cid];
+        bookSetting = bookSetting ? JSON.parse(bookSetting) : '';
         var packageData = openBookData.package ? openBookData.package : openBookData;
 
         _package = new Package(packageData);
 
         _spine = _package.spine;
-        if (JSON.parse(localStorage.reader).direction === 'rtl'){
+        // 判斷使用者設定翻頁方向時需要
+        if (bookSetting.direction === 'rtl'){
             _spine.direction = 'rtl';
+        }else if (bookSetting.direction === 'ltr'){
+            _spine.direction = 'ltr';
         }
         _spine.handleLinear(true);
 
