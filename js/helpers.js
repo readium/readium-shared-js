@@ -305,6 +305,10 @@ Helpers.UpdateHtmlFontAttributes = function ($epubHtml, fontSize, fontObj, callb
 
         var factor = fontSize / 100;
         var win = $epubHtml[0].ownerDocument.defaultView;
+        if (!win) {
+            console.log("NIL $epubHtml[0].ownerDocument.defaultView");
+            return;
+        }
 
         // TODO: is this a complete list? Is there a better way to do this?
         //https://github.com/readium/readium-shared-js/issues/336
