@@ -132,17 +132,26 @@ var SmilIterator = function(smil) {
     };
 
     this.isLast = function() {
-
-        if(!this.currentPar) {
+        if (!this.currentPar) {
             console.debug("Par iterator is out of range");
+
             return;
         }
-
-        if (findParNode(this.currentPar.index + 1, this.currentPar.parent, false))
-        {
+        if (findParNode(this.currentPar.index + 1, this.currentPar.parent, false)) {
             return false;
         }
+        return true;
+    }
 
+    this.isFirst = function() {
+        if (!this.currentPar) {
+            console.debug("Par iterator is out of range");
+
+            return;
+        }
+        if (findParNode(this.currentPar.index - 1, this.currentPar.parent, true)) {
+            return false;
+        }
         return true;
     }
 
