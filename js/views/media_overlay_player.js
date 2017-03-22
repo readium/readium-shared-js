@@ -646,10 +646,23 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
                         _smilIterator.next();
                     }
                 }
+                var needToOpenContentUrl = true;
+                var paginationInfo = reader.getPaginationInfo();
 
-//console.debug("openContentUrl (nextSmil): " + _smilIterator.currentPar.text.src + " -- " + _smilIterator.smil.href);
-
-                reader.openContentUrl(_smilIterator.currentPar.text.src, _smilIterator.smil.href, self);
+                if (paginationInfo.openPages.length > 0) {
+                    for (var i = 0; i < paginationInfo.openPages.length; i++) {
+                        if (_smilIterator.currentPar.text.manifestItemId === paginationInfo.openPages[i].idref) {
+                            needToOpenContentUrl = false;
+                            break;
+                        }
+                    }
+                }
+                if (needToOpenContentUrl) {
+                    //console.debug("nextSmil: openContentUrl: " + _smilIterator.currentPar.text.src + " -- " + _smilIterator.smil.href);
+                    reader.openContentUrl(_smilIterator.currentPar.text.src, _smilIterator.smil.href, self);
+                } else {
+                    playCurrentPar();
+                }
             }
         }
         else
