@@ -57,15 +57,15 @@ var CfiNavigationLogic = function(options) {
 
     this.getClassBlacklist = function () {
         return options.classBlacklist || [];
-    }
+    };
 
     this.getIdBlacklist = function () {
         return options.idBlacklist || [];
-    }
+    };
 
     this.getElementBlacklist = function () {
         return options.elementBlacklist || [];
-    }
+    };
 
     this.getRootDocument = function () {
         return options.$iframe[0].contentDocument;
@@ -87,10 +87,6 @@ var CfiNavigationLogic = function(options) {
         return normalizeRectangle(range.getBoundingClientRect(),0,0);
     }
 
-    function getElementClientRect($element) {
-        return normalizeRectangle($element[0].getBoundingClientRect(),0,0);
-    }
-
     function getNodeRangeClientRect(startNode, startOffset, endNode, endOffset) {
         var range = createRange();
         range.setStart(startNode, startOffset ? startOffset : 0);
@@ -107,14 +103,21 @@ var CfiNavigationLogic = function(options) {
         
         var range = createRange();
         range.selectNode(node);
+        return getRangeClientRectList(range, visibleContentOffsets);
+    }
+
+    function getRangeClientRectList(range, visibleContentOffsets) {
+        visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
+
+        //noinspection JSUnresolvedFunction
         return _.map(range.getClientRects(), function (rect) {
             return normalizeRectangle(rect, visibleContentOffsets.left, visibleContentOffsets.top);
         });
     }
 
     function getFrameDimensions() {
-        if (options.frameDimensions) {
-            return options.frameDimensions();
+        if (options.frameDimensionsGetter) {
+            return options.frameDimensionsGetter();
         }
         
         console.error('CfiNavigationLogic: No frame dimensions specified!');
@@ -154,17 +157,16 @@ var CfiNavigationLogic = function(options) {
 
     /**
      * @private
-     * Checks whether or not a (fully adjusted) rectangle is at least partly visible
+     * Checks whether or not a (fully adjusted) rectangle is visible
      *
      * @param {Object} rect
+     * @param {boolean} [ignorePartiallyVisible]
      * @param {Object} [frameDimensions]
-     * @param {boolean} [isVwm]           isVerticalWritingMode
      * @returns {boolean}
      */
-    function isRectVisible(rect, ignorePartiallyVisible, frameDimensions, isVwm) {
+    function isRectVisible(rect, ignorePartiallyVisible, frameDimensions) {
 
         frameDimensions = frameDimensions || getFrameDimensions();
-        isVwm = isVwm || isVerticalWritingMode();
 
         //Text nodes without printable text dont have client rectangles
         if (!rect) {
@@ -176,10 +178,10 @@ var CfiNavigationLogic = function(options) {
         }
 
         if (isPaginatedView()) {
-            return (rect.left >= 0 && rect.left < frameDimensions.width) || 
+            return (rect.left >= 0 && rect.left < frameDimensions.width) ||
                 (!ignorePartiallyVisible && rect.left < 0 && rect.right >= 0);
         } else {
-            return (rect.top >= 0 && rect.top < frameDimensions.height) || 
+            return (rect.top >= 0 && rect.top < frameDimensions.height) ||
                 (!ignorePartiallyVisible && rect.top < 0 && rect.bottom >= 0);
         }
 
@@ -205,20 +207,28 @@ var CfiNavigationLogic = function(options) {
      * @private
      *
      * Retrieves _current_ offset of a viewport
-     * (related to the beginning of the chapter)
+     * (relational to the beginning of the chapter)
      *
      * @returns {Object}
      */
     function getVisibleContentOffsets() {
-        if (options.visibleContentOffsets) {
-            return options.visibleContentOffsets();
+        if (options.visibleContentOffsetsGetter) {
+            return options.visibleContentOffsetsGetter();
         }
 
-        if (isVerticalWritingMode()) {
-            return {
-                top: (options.paginationInfo ? options.paginationInfo.pageOffset : 0),
-                left: 0
-            };
+        if (isVerticalWritingMode() && options.paginationOffsetsGetter) {
+            return options.paginationOffsetsGetter();
+        }
+
+        return {
+            top: 0,
+            left: 0
+        };
+    }
+
+    function getPaginationOffsets() {
+        if (options.paginationOffsetsGetter) {
+            return options.paginationOffsetsGetter();
         }
         
         // CAUSES REGRESSION BUGS !! TODO FIXME
@@ -244,8 +254,8 @@ var CfiNavigationLogic = function(options) {
      * (no need to use those in normalization)
      *
      * @param {jQuery} $element
-     * @param {Object} _props
      * @param {boolean} shouldCalculateVisibilityPercentage
+     * @param {Object} [visibleContentOffsets]
      * @param {Object} [frameDimensions]
      * @returns {number|null}
      *      0 for non-visible elements,
@@ -280,6 +290,9 @@ var CfiNavigationLogic = function(options) {
                 if (shouldCalculateVisibilityPercentage && adjustedRect.top < 0) {
                     visibilityPercentage =
                         Math.floor(100 * (adjustedRect.height + adjustedRect.top) / adjustedRect.height);
+                } else if (shouldCalculateVisibilityPercentage && adjustedRect.bottom > frameDimensions.height) {
+                    visibilityPercentage =
+                        Math.floor(100 * (frameDimensions.height - adjustedRect.top) / adjustedRect.height);
                 } else {
                     visibilityPercentage = 100;
                 }
@@ -306,10 +319,9 @@ var CfiNavigationLogic = function(options) {
      * Calculations are based on rectangles retrieved with getClientRects() method.
      *
      * @param {jQuery} $element
-     * @param {number} spatialVerticalOffset
      * @returns {number|null}
      */
-    function findPageByRectangles($element, spatialVerticalOffset) {
+    function findPageByRectangles($element) {
 
         var visibleContentOffsets = getVisibleContentOffsets();
         //////////////////////
@@ -338,29 +350,23 @@ var CfiNavigationLogic = function(options) {
             return null;
         }
 
-        return calculatePageIndexByRectangles(clientRectangles, spatialVerticalOffset);
+        return calculatePageIndexByRectangles(clientRectangles);
     }
 
     /**
      * @private
      * Calculate a page index (0-based) for given client rectangles.
      *
-     * @param {object} clientRectangles
-     * @param {number} [spatialVerticalOffset]
+     * @param {object[]} clientRectangles
      * @param {object} [frameDimensions]
-     * @param {object} [columnFullWidth]
+     * @param {number} [columnFullWidth]
      * @returns {number|null}
      */
-    function calculatePageIndexByRectangles(clientRectangles, spatialVerticalOffset, frameDimensions, columnFullWidth) {
+    function calculatePageIndexByRectangles(clientRectangles, frameDimensions, columnFullWidth) {
         var isRtl = isPageProgressionRightToLeft();
         var isVwm = isVerticalWritingMode();
         columnFullWidth = columnFullWidth || getColumnFullWidth();
         frameDimensions = frameDimensions || getFrameDimensions();
-
-        if (spatialVerticalOffset) {
-            trimRectanglesByVertOffset(clientRectangles, spatialVerticalOffset,
-                frameDimensions, columnFullWidth, isRtl, isVwm);
-        }
 
         var firstRectangle = _.first(clientRectangles);
         if (clientRectangles.length === 1) {
@@ -378,13 +384,6 @@ var CfiNavigationLogic = function(options) {
                 leftOffset = (columnFullWidth * (options.paginationInfo ? options.paginationInfo.visibleColumnCount : 1)) - leftOffset;
             }
             pageIndex = Math.floor(leftOffset / columnFullWidth);
-        }
-
-        if (pageIndex < 0) {
-            pageIndex = 0;
-        }
-        else if (pageIndex >= (options.paginationInfo ? options.paginationInfo.columnCount : 1)) {
-            pageIndex = (options.paginationInfo ? (options.paginationInfo.columnCount - 1) : 0);
         }
 
         return pageIndex;
@@ -449,7 +448,7 @@ var CfiNavigationLogic = function(options) {
      *
      * @param {jQuery} $el
      * @param {Object} [visibleContentOffsets]
-     * @returns {Object}
+     * @returns {Object[]}
      */
     function getNormalizedRectangles($el, visibleContentOffsets) {
 
@@ -463,8 +462,10 @@ var CfiNavigationLogic = function(options) {
         if (isTextNode) {
             var range = createRange();
             range.selectNode($el[0]);
+            //noinspection JSUnresolvedFunction
             clientRectList = range.getClientRects();
         } else {
+            //noinspection JSUnresolvedFunction
             clientRectList = $el[0].getClientRects();
         }
 
@@ -509,7 +510,7 @@ var CfiNavigationLogic = function(options) {
      * Converts TextRectangle object into a plain object,
      * taking content offsets (=scrolls, position shifts etc.) into account
      *
-     * @param {TextRectangle} textRect
+     * @param {Object} textRect
      * @param {number} leftOffset
      * @param {number} topOffset
      * @returns {Object}
@@ -592,65 +593,11 @@ var CfiNavigationLogic = function(options) {
         // (i.e., is the first visible one).
         if (shouldLookForFirstVisibleColumn) {
             while (rect.bottom >= frameDimensions.height) {
-                if (isRectVisible(rect, false, frameDimensions, isVwm)) {
+                if (isRectVisible(rect, false, frameDimensions)) {
                     break;
                 }
                 offsetRectangle(rect, columnFullWidth, -frameDimensions.height);
             }
-        }
-    }
-
-    /**
-     * @private
-     * Trims the rectangle(s) representing the given element.
-     *
-     * @param {Array} rects
-     * @param {number} verticalOffset
-     * @param {number} frameDimensions
-     * @param {number} columnFullWidth
-     * @param {boolean} isRtl
-     * @param {boolean} isVwm               isVerticalWritingMode
-     */
-    function trimRectanglesByVertOffset(
-            rects, verticalOffset, frameDimensions, columnFullWidth, isRtl, isVwm) {
-
-        frameDimensions = frameDimensions || getFrameDimensions();
-        columnFullWidth = columnFullWidth || getColumnFullWidth();
-        isRtl = isRtl || isPageProgressionRightToLeft();
-        isVwm = isVwm || isVerticalWritingMode();
-
-        //TODO: Support vertical writing mode
-        if (isVwm) {
-            return;
-        }
-
-        var totalHeight = _.reduce(rects, function(prev, cur) {
-            return prev + cur.height;
-        }, 0);
-
-        var heightToHide = totalHeight * verticalOffset / 100;
-        if (rects.length > 1) {
-            var heightAccum = 0;
-            do {
-                heightAccum += rects[0].height;
-                if (heightAccum > heightToHide) {
-                    break;
-                }
-                rects.shift();
-            } while (rects.length > 1);
-        }
-        else {
-            // rebase to the last possible column
-            // (so that adding to top will be properly processed later)
-            if (isRtl) {
-                columnFullWidth *= -1;
-            }
-            while (rects[0].bottom >= frameDimensions.height) {
-                offsetRectangle(rects[0], columnFullWidth, -frameDimensions.height);
-            }
-
-            rects[0].top += heightToHide;
-            rects[0].height -= heightToHide;
         }
     }
 
@@ -785,7 +732,7 @@ var CfiNavigationLogic = function(options) {
             return [{x: x, y: rect.top}, {x: x, y: rect.bottom}];
         } else {
             var y = rect.top + (rect.height / 2);
-            var result = [{x: rect.left, y: y}, {x: rect.right, y: y}]
+            var result = [{x: rect.left, y: y}, {x: rect.right, y: y}];
             return isPageProgressionRightToLeft() ? result.reverse() : result;
         }
     }
@@ -825,7 +772,6 @@ var CfiNavigationLogic = function(options) {
                     caretRange = {
                         startContainer: textNode,
                         endContainer: textNode,
-                        startOffset: startOrEnd === 0 ? 0 : textNode.nodeValue.length,
                         startOffset: startOrEnd === 0 ? 0 : textNode.nodeValue.length
                     };
                     if (DEBUG) console.log('ieTextRangeWorkaround #1:', caretRange);
@@ -993,7 +939,7 @@ var CfiNavigationLogic = function(options) {
 
     function getRangeTargetNodes(rangeCfi) {
         return EPUBcfi.getRangeTargetElements(
-            getWrappedCfiRelativeToContent(rangeCfi),
+            getWrappedCfi(rangeCfi),
             self.getRootDocument(),
             self.getClassBlacklist(), self.getElementBlacklist(), self.getIdBlacklist());
     }
@@ -1042,21 +988,14 @@ var CfiNavigationLogic = function(options) {
     };
 
     function getWrappedCfi(partialCfi) {
-        return "epubcfi(" + partialCfi + ")";
-    }
-
-    function getWrappedCfiRelativeToContent(partialCfi) {
         return "epubcfi(/99!" + partialCfi + ")";
     }
 
     this.isRangeCfi = function (partialCfi) {
-        return EPUBcfi.Interpreter.isRangeCfi(getWrappedCfi(partialCfi)) || EPUBcfi.Interpreter.isRangeCfi(getWrappedCfiRelativeToContent(partialCfi));
+        return EPUBcfi.Interpreter.isRangeCfi(getWrappedCfi(partialCfi));
     };
 
-    this.getPageForElementCfi = function (cfi, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var cfiParts = splitCfi(cfi);
-        var partialCfi = cfiParts.cfi;
+    this.getPageIndexForCfi = function (partialCfi, classBlacklist, elementBlacklist, idBlacklist) {
 
         if (this.isRangeCfi(partialCfi)) {
             //if given a range cfi the exact page index needs to be calculated by getting node info from the range cfi
@@ -1065,16 +1004,13 @@ var CfiNavigationLogic = function(options) {
             return findPageBySingleRectangle(nodeRangeInfoFromCfi.clientRect);
         }
 
-        var $element = getElementByPartialCfi(cfiParts.cfi, classBlacklist, elementBlacklist, idBlacklist);
+        var $element = getElementByPartialCfi(partialCfi, classBlacklist, elementBlacklist, idBlacklist);
 
         if (!$element) {
             return -1;
         }
 
-        var pageIndex = this.getPageForPointOnElement($element, cfiParts.x, cfiParts.y);
-
-        return pageIndex;
-
+        return this.getPageIndexForElement($element);
     };
 
     function getElementByPartialCfi(cfi, classBlacklist, elementBlacklist, idBlacklist) {
@@ -1085,7 +1021,7 @@ var CfiNavigationLogic = function(options) {
 
         try {
             //noinspection JSUnresolvedVariable
-            var $element = EPUBcfi.getTargetElementWithPartialCFI(wrappedCfi, contentDoc, classBlacklist, elementBlacklist, idBlacklist);
+            var $element = EPUBcfi.getTargetElement(wrappedCfi, contentDoc, classBlacklist, elementBlacklist, idBlacklist);
 
         } catch (ex) {
             //EPUBcfi.Interpreter can throw a SyntaxError
@@ -1108,7 +1044,7 @@ var CfiNavigationLogic = function(options) {
     this.getNodeRangeInfoFromCfi = function (cfi) {
         var contentDoc = self.getRootDocument();
         if (self.isRangeCfi(cfi)) {
-            var wrappedCfi = getWrappedCfiRelativeToContent(cfi);
+            var wrappedCfi = getWrappedCfi(cfi);
 
             try {
                 //noinspection JSUnresolvedVariable
@@ -1166,34 +1102,18 @@ var CfiNavigationLogic = function(options) {
         }
     };
 
-    this.getElementByCfi = function (cfi, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var cfiParts = splitCfi(cfi);
-        return getElementByPartialCfi(cfiParts.cfi, classBlacklist, elementBlacklist, idBlacklist);
+    this.getElementByCfi = function (partialCfi, classBlacklist, elementBlacklist, idBlacklist) {
+        return getElementByPartialCfi(partialCfi, classBlacklist, elementBlacklist, idBlacklist);
     };
 
-    this.getPageForElement = function ($element) {
+    this.getPageIndexForElement = function ($element) {
 
-        return this.getPageForPointOnElement($element, 0, 0);
-    };
-
-    this.getPageForPointOnElement = function ($element, x, y) {
-
-        var pageIndex = findPageByRectangles($element, y);
+        var pageIndex = findPageByRectangles($element);
         if (pageIndex === null) {
             console.warn('Impossible to locate a hidden element: ', $element);
             return 0;
         }
         return pageIndex;
-    };
-
-    this.getVerticalOffsetForElement = function ($element) {
-      return this.getVerticalOffsetForPointOnElement($element, 0, 0);
-    };
-
-    this.getVerticalOffsetForPointOnElement = function ($element, x, y) {
-      var elementRect = Helpers.Rect.fromElement($element);
-      return Math.ceil(elementRect.top + y * elementRect.height / 100);
     };
 
     this.getElementById = function (id) {
@@ -1210,47 +1130,15 @@ var CfiNavigationLogic = function(options) {
         return $element;
     };
 
-    this.getPageForElementId = function (id) {
+    this.getPageIndexForElementId = function (id) {
 
         var $element = this.getElementById(id);
         if (!$element) {
             return -1;
         }
 
-        return this.getPageForElement($element);
+        return this.getPageIndexForElement($element);
     };
-
-    function splitCfi(cfi) {
-
-        var ret = {
-            cfi: "",
-            x: 0,
-            y: 0
-        };
-
-        var ix = cfi.indexOf("@");
-
-        if (ix != -1) {
-            var terminus = cfi.substring(ix + 1);
-
-            var colIx = terminus.indexOf(":");
-            if (colIx != -1) {
-                ret.x = parseInt(terminus.substr(0, colIx));
-                ret.y = parseInt(terminus.substr(colIx + 1));
-            }
-            else {
-                console.log("Unexpected terminating step format");
-            }
-
-            ret.cfi = cfi.substring(0, ix);
-        }
-        else {
-
-            ret.cfi = cfi;
-        }
-
-        return ret;
-    }
 
     // returns raw DOM element (not $ jQuery-wrapped)
     this.getFirstVisibleMediaOverlayElement = function(visibleContentOffsets) {
@@ -1308,8 +1196,7 @@ var CfiNavigationLogic = function(options) {
     };
 
     this.getAllElementsWithFilter = function (filterFunction) {
-        var $elements = this.getElementsWithFilter($(this.getBodyElement()), filterFunction);
-        return $elements;
+        return this.getElementsWithFilter($(this.getBodyElement()), filterFunction);
     };
 
     this.getAllVisibleElementsWithSelector = function (selector, visibleContentOffset) {
@@ -1318,8 +1205,7 @@ var CfiNavigationLogic = function(options) {
         $.each(elements, function () {
             $newElements.push($(this));
         });
-        var visibleElements = this.getVisibleElements($newElements, visibleContentOffset);
-        return visibleElements;
+        return this.getVisibleElements($newElements, visibleContentOffset);
     };
 
     this.getVisibleElements = function ($elements, visibleContentOffsets, frameDimensions) {
@@ -1431,10 +1317,12 @@ var CfiNavigationLogic = function(options) {
             }
         }
 
+        //noinspection JSUnresolvedVariable,JSCheckFunctionSignatures
         var nodeIterator = document.createNodeIterator(
             $root[0],
             NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
             function() {
+                //noinspection JSUnresolvedVariable
                 return NodeFilter.FILTER_ACCEPT;
             },
             false
@@ -1527,44 +1415,6 @@ var CfiNavigationLogic = function(options) {
         _cache._invalidate();
     };
 
-
-    // dmitry debug
-    // dmitry debug
-    // dmitry debug
-    // dmitry debug
-    // dmitry debug
-    // dmitry debug
-
-    var parseContentCfi = function(cont) {
-        return cont.replace(/\[(.*?)\]/, "").split(/[\/,:]/).map(function(n) { return parseInt(n); }).filter(Boolean);
-    };
-
-    var contentCfiComparator = function(cont1, cont2) {
-        cont1 = this.parseContentCfi(cont1);
-        cont2 = this.parseContentCfi(cont2);
-
-        //compare cont arrays looking for differences
-        for (var i=0; i<cont1.length; i++) {
-            if (cont1[i] > cont2[i]) {
-                return 1;
-            }
-            else if (cont1[i] < cont2[i]) {
-                return -1;
-            }
-        }
-
-        //no differences found, so confirm that cont2 did not have values we didn't check
-        if (cont1.length < cont2.length) {
-            return -1;
-        }
-
-        //cont arrays are identical
-        return 0;
-    };
-
-
-    // end dmitry debug
-
     //if (debugMode) {
 
         var $debugOverlays = [];
@@ -1617,19 +1467,11 @@ var CfiNavigationLogic = function(options) {
         }
 
         function drawDebugOverlayFromRect(rect) {
-            var leftOffset, topOffset;
-
-            if (isVerticalWritingMode()) {
-                leftOffset = 0;
-                topOffset = -getPaginationLeftOffset();
-            } else {
-                leftOffset = -getPaginationLeftOffset();
-                topOffset = 0;
-            }
+            var offsets = getPaginationOffsets();
 
             addOverlayRect({
-                left: rect.left + leftOffset,
-                top: rect.top + topOffset,
+                left: rect.left + offsets.left,
+                top: rect.top + offsets.top,
                 width: rect.width,
                 height: rect.height
             }, true, self.getRootDocument());
@@ -1649,24 +1491,11 @@ var CfiNavigationLogic = function(options) {
             drawDebugOverlayFromRect(getNodeClientRect(node));
         }
 
-        function getPaginationLeftOffset() {
-
-            var $htmlElement = $("html", self.getRootDocument());
-            var offsetLeftPixels = $htmlElement.css(isVerticalWritingMode() ? "top" : (isPageProgressionRightToLeft() ? "right" : "left"));
-            var offsetLeft = parseInt(offsetLeftPixels.replace("px", ""));
-            if (isNaN(offsetLeft)) {
-                //for fixed layouts, $htmlElement.css("left") has no numerical value
-                offsetLeft = 0;
-            }
-            if (isPageProgressionRightToLeft() && !isVerticalWritingMode()) return -offsetLeft; 
-            return offsetLeft;
-        }
-
         function clearDebugOverlays() {
             _.each($debugOverlays, function($el){
                 $el.remove();
             });
-            $debugOverlays.clear();
+            $debugOverlays = [];
         }
 
         ReadiumSDK._DEBUG_CfiNavigationLogic = {

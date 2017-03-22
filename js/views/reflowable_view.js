@@ -176,6 +176,27 @@ var ReflowableView = function(options, reader){
         };
     }
 
+    function getPageOffset() {
+        if (_paginationInfo.rightToLeft && !_paginationInfo.isVerticalWritingMode) {
+            return -_paginationInfo.pageOffset;
+        }
+        return _paginationInfo.pageOffset;
+    }
+
+    function getPaginationOffsets() {
+        var offset = getPageOffset();
+        if (_paginationInfo.isVerticalWritingMode) {
+            return {
+                top: offset,
+                left: 0
+            };
+        }
+        return {
+            top: 0,
+            left: offset
+        };
+    }
+
     function renderIframe() {
         if (_$contentFrame) {
             //destroy old contentFrame
@@ -198,8 +219,9 @@ var ReflowableView = function(options, reader){
 
         _navigationLogic = new CfiNavigationLogic({
             $iframe: _$iframe,
-            frameDimensions: getFrameDimensions,
+            frameDimensionsGetter: getFrameDimensions,
             paginationInfo: _paginationInfo,
+            paginationOffsetsGetter: getPaginationOffsets,
             classBlacklist: _cfiClassBlacklist,
             elementBlacklist: _cfiElementBlacklist,
             idBlacklist: _cfiIdBlacklist
@@ -433,7 +455,7 @@ var ReflowableView = function(options, reader){
             pageIndex = pageRequest.spineItemPageIndex;
         }
         else if(pageRequest.elementId) {
-            pageIndex = _navigationLogic.getPageForElementId(pageRequest.elementId);
+            pageIndex = _navigationLogic.getPageIndexForElementId(pageRequest.elementId);
             
             if (pageIndex < 0) pageIndex = 0;
         }
@@ -442,7 +464,7 @@ var ReflowableView = function(options, reader){
             var lastPageIndex;
             try
             {
-                firstPageIndex = _navigationLogic.getPageForElementCfi(pageRequest.firstVisibleCfi,
+                firstPageIndex = _navigationLogic.getPageIndexForCfi(pageRequest.firstVisibleCfi,
                     _cfiClassBlacklist,
                     _cfiElementBlacklist,
                     _cfiIdBlacklist);
@@ -456,7 +478,7 @@ var ReflowableView = function(options, reader){
             }
             try
             {
-                lastPageIndex = _navigationLogic.getPageForElementCfi(pageRequest.lastVisibleCfi,
+                lastPageIndex = _navigationLogic.getPageIndexForCfi(pageRequest.lastVisibleCfi,
                     _cfiClassBlacklist,
                     _cfiElementBlacklist,
                     _cfiIdBlacklist);
@@ -474,7 +496,7 @@ var ReflowableView = function(options, reader){
         else if(pageRequest.elementCfi) {
             try
             {
-                pageIndex = _navigationLogic.getPageForElementCfi(pageRequest.elementCfi,
+                pageIndex = _navigationLogic.getPageIndexForCfi(pageRequest.elementCfi,
                     _cfiClassBlacklist,
                     _cfiElementBlacklist,
                     _cfiIdBlacklist);
