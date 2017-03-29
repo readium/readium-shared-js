@@ -761,8 +761,8 @@ var CfiNavigationLogic = function (options) {
 
             //Split Ratio depends whether we are searching for the lastCFI or first CFI, last CFI will most likely be near the end of the given view , so we allocate the spliting to be 60/40
             // 40/60 for firstCFI
-
-            var outputRange = getTextRangeOffset(splitRange(nodeRange, parseFloat(50)), visibleContentOffsets, pickerFunc([0, 1]),
+            var splitRatio = pickerFunc([0,1]) == 0 ? 40 : 60;
+            var outputRange = getTextRangeOffset(splitRange(nodeRange, parseFloat(splitRatio)), visibleContentOffsets, pickerFunc([0, 1]),
                 function (rect) {
                     return (isVerticalWritingMode() ? rect.height : rect.width) && isRectVisible(rect, false, frameDimensions);
                 });
@@ -783,6 +783,9 @@ var CfiNavigationLogic = function (options) {
 
             var currRange = startingSet;
             var count = 1 ;
+            //split ratio determined by directionBit
+            var splitRatio = directionBit ==0 ? 40 :60;
+
 
             //begin iterative binary search, each iteration will check Range length and visibility
             // if current range has visible fragments we check the range length
@@ -792,11 +795,11 @@ var CfiNavigationLogic = function (options) {
                 if(currRange.length <= 1) { return currRange;}
                 var currTextNodeFragments = getRangeClientRectList(currRange[directionBit], visibleContentOffsets);
                 if (fragmentVisible(currTextNodeFragments, filterfunc)) {
-                    currRange = splitRange(currRange[directionBit], parseFloat(50));
+                    currRange = splitRange(currRange[directionBit], parseFloat(splitRatio));
                 }
                     // No visible fragment Look in other half
                  else {
-                    currRange = splitRange(currRange[changeDirection(directionBit)], parseFloat(50));
+                    currRange = splitRange(currRange[changeDirection(directionBit)], parseFloat(splitRatio));
                  }
             }
             console.log(count);
