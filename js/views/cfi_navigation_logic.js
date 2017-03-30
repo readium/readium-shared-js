@@ -761,7 +761,7 @@ var CfiNavigationLogic = function (options) {
             var nodeRange = createRangeFromNode(textNode);
             // split the range into two halves
             var nodeClientRects = getRangeClientRectList(nodeRange,visibleContentOffsets);
-            //console.log(heightOfRect(nodeRange));
+            rectTopHash(nodeClientRects);
              //Split Ratio depends swhether we are searching for the lastCFI or first CFI, last CFI will most likely be near the end of the given view , so we allocate the spliting to be 60/40
             // 40/60 for firstCFI
             var splitRatio = deterministicSplit(nodeClientRects);
