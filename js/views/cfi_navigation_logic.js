@@ -116,7 +116,9 @@ var CfiNavigationLogic = function (options) {
         visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
 
         //noinspection JSUnresolvedFunction
+       // console.log(range.getClientRects().length);
         return _.map(range.getClientRects(), function (rect) {
+           // console.log(rect);
             return normalizeRectangle(rect, visibleContentOffsets.left, visibleContentOffsets.top);
         });
     }
@@ -758,10 +760,11 @@ var CfiNavigationLogic = function (options) {
             // Create a Range around targeted textNode
             var nodeRange = createRangeFromNode(textNode);
             // split the range into two halves
-
-            //Split Ratio depends whether we are searching for the lastCFI or first CFI, last CFI will most likely be near the end of the given view , so we allocate the spliting to be 60/40
+            var nodeClientRects = getRangeClientRectList(nodeRange,visibleContentOffsets);
+            //console.log(heightOfRect(nodeRange));
+             //Split Ratio depends swhether we are searching for the lastCFI or first CFI, last CFI will most likely be near the end of the given view , so we allocate the spliting to be 60/40
             // 40/60 for firstCFI
-            var splitRatio = pickerFunc([0,1]) == 0 ? 40 : 60;
+            var splitRatio = deterministicSplit(nodeClientRects);
             var outputRange = getTextRangeOffset(splitRange(nodeRange, parseFloat(splitRatio)), visibleContentOffsets, pickerFunc([0, 1]),
                 function (rect) {
                     return (isVerticalWritingMode() ? rect.height : rect.width) && isRectVisible(rect, false, frameDimensions);
@@ -771,6 +774,55 @@ var CfiNavigationLogic = function (options) {
 
         }
 
+
+        function deterministicSplit (rectList) {
+            // Calculate total cumulate Height for both visible portions and invisible portions and find the split
+            var visibleRects = _.filter(rectList,function (rect) {
+                return (isVerticalWritingMode() ? rect.height : rect.width) && isRectVisible(rect, false, getFrameDimensions());
+            });
+            var visibleRectHeight = calculateCumulativeHeight(visibleRects);
+            var totalHeight = calculateCumulativeHeight(rectList);
+            if (visibleRectHeight == totalHeight ){
+                // either all visible or its a 50/50 split
+                return 50;
+            } else {
+                return (Math.floor(parseFloat(visibleRectHeight/totalHeight) * 100));
+            }
+
+        }
+
+        function rectTopHash (rectList) {
+            // sort the rectangles by top value
+
+            var sortedList = rectList.sort(function (a,b) { return (a.top < b.top );});
+            console.log(sortedList);
+
+
+        }
+
+
+
+
+
+        function calculateCumulativeHeight (rectList) {
+
+            if (rectList.length <= 0) {
+                return 0;
+            }
+            else {
+                var height = 0;
+                var line = -1;
+                for (var x = 0; x <= rectList.length - 1; x++) {
+                    if (line != rectList[x].top || line == -1) {
+                        //its a new line since top has changed
+                        line = rectList[x].top;
+                        //we update the height ;
+                        height = height + rectList[x].height;
+                    }
+                }
+                return height;
+            }
+        }
 
         // reverses a directionBit
         function changeDirection (directionBit) {
@@ -791,9 +843,11 @@ var CfiNavigationLogic = function (options) {
             // if current range has visible fragments we check the range length
             // if not visible check the other half.
             while (currRange.length !=1) {
+                console.log(count);
                 count ++;
                 if(currRange.length <= 1) { return currRange;}
                 var currTextNodeFragments = getRangeClientRectList(currRange[directionBit], visibleContentOffsets);
+
                 if (fragmentVisible(currTextNodeFragments, filterfunc)) {
                     currRange = splitRange(currRange[directionBit], parseFloat(splitRatio));
                 }
@@ -802,7 +856,7 @@ var CfiNavigationLogic = function (options) {
                     currRange = splitRange(currRange[changeDirection(directionBit)], parseFloat(splitRatio));
                  }
             }
-            console.log(count);
+
             return currRange[0];
         }
 
