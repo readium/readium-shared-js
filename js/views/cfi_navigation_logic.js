@@ -791,20 +791,17 @@ var CfiNavigationLogic = function (options) {
         function rectTopHash (rectList) {
             // sort the rectangles by top value
             var sortedList = rectList.sort(function (a,b) { return (a.top < b.top );});
-            console.log(sortedList);
             var lineMap =[];
             for ( rect in sortedList ){
                     var key = rect.top;
                     if (lineMap[key] == null) {
                     lineMap[key] = [rect.height];
                 } else {
-                    console.log(lineMap[key]);
                     var currentLine = lineMap[key];
                     currentLine.push(rect.height);
                     lineMap[key] = currentLine;
                 }
             }
-            console.log(lineMap);
         }
 
         function calculateCumulativeHeight (rectList) {
