@@ -53,7 +53,6 @@
     "jquery-sizes": "bramstein/jsizes",
     "domReady": "requirejs/domReady",
     "backbone": "latest",
-    "underscore": "latest",
     "urijs": "danielweck/URI.js",
     "eventemitter3": "latest",
     "es6-collections": "latest",

@@ -118,7 +118,8 @@ devDependencies:
 
     "backbone": 'latest'
 
-    "underscore": 'latest'
+# now included in readium-cfi-js
+#    "underscore": 'latest'
 
     "urijs": 'danielweck/URI.js'
     #"urijs": 'latest'
