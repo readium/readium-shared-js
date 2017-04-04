@@ -705,44 +705,25 @@ var CfiNavigationLogic = function (options) {
             return generateCfiFromDomRange(range);
         };
 
-        function getTextNodeRectCornerPairs(rect) {
-            //
-            //    top left             top right
-            //    ╲                   ╱
-            //  ── ▒T▒E▒X▒T▒ ▒R▒E▒C▒T▒ ──
-            //
-            // top left corner & top right corner
-            // but for y coord use the mid point between top and bottom
-
-            if (isVerticalWritingMode()) {
-                var x = rect.right - (rect.width / 2);
-                return [{x: x, y: rect.top}, {x: x, y: rect.bottom}];
-            } else {
-                var y = rect.top + (rect.height / 2);
-                var result = [{x: rect.left, y: y}, {x: rect.right, y: y}];
-                return isPageProgressionRightToLeft() ? result.reverse() : result;
-            }
-        }
-
         var DEBUG = false;
 
-        function determineSplit (Range,division) {
-           var percent = parseFloat(division)/parseFloat(100);
-           var length =  Math.round((Range.endOffset - Range.startOffset )* percent);
-           return length;
-
+        function determineSplit(range, division) {
+            var percent = division / 100;
+            return Math.round((range.endOffset - range.startOffset ) * percent);
         }
 
-        function splitRange(Range, division) {
-            if ( Range.endOffset-Range.startOffset == 1){return [Range];}
-            var length = determineSplit(Range,parseFloat(division));
-            var textNode = Range.startContainer;
-            var leftNodeRange = Range.cloneRange();
-            leftNodeRange.setStart(textNode, Range.startOffset);
-            leftNodeRange.setEnd(textNode, Range.startOffset + length);
-            var rightNodeRange = Range.cloneRange();
-            rightNodeRange.setStart(textNode, Range.startOffset + length);
-            rightNodeRange.setEnd(textNode, Range.endOffset);
+        function splitRange(range, division) {
+            if (range.endOffset - range.startOffset === 1) {
+                return [range];
+            }
+            var length = determineSplit(range, parseFloat(division));
+            var textNode = range.startContainer;
+            var leftNodeRange = range.cloneRange();
+            leftNodeRange.setStart(textNode, range.startOffset);
+            leftNodeRange.setEnd(textNode, range.startOffset + length);
+            var rightNodeRange = range.cloneRange();
+            rightNodeRange.setStart(textNode, range.startOffset + length);
+            rightNodeRange.setEnd(textNode, range.endOffset);
 
             return [leftNodeRange, rightNodeRange];
 
@@ -753,92 +734,82 @@ var CfiNavigationLogic = function (options) {
             visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
 
             var nodeRange = createRangeFromNode(textNode);
-            var nodeClientRects = getRangeClientRectList(nodeRange,visibleContentOffsets);
-            // 40/60 for firstCFI
-            var splitRatio = deterministicSplit(nodeClientRects,pickerFunc([0,1]));
-            var outputRange = getTextRangeOffset(splitRange(nodeRange, parseFloat(splitRatio)), visibleContentOffsets ,pickerFunc([0, 1]), splitRatio,
+            var nodeClientRects = getRangeClientRectList(nodeRange, visibleContentOffsets);
+            var splitRatio = deterministicSplit(nodeClientRects, pickerFunc([0, 1]));
+            return getTextRangeOffset(splitRange(nodeRange, parseFloat(splitRatio)), visibleContentOffsets,
+                pickerFunc([0, 1]), splitRatio,
                 function (rect) {
                     return (isVerticalWritingMode() ? rect.height : rect.width) && isRectVisible(rect, false, frameDimensions);
                 });
-            return outputRange;
         }
 
-
-        function deterministicSplit (rectList,directionBit) {
-            var split = 0 ;
-            // Calculate total cumulate Height for both visible portions and invisible portions and find the split
-            var visibleRects = _.filter(rectList,function (rect) {
+        function deterministicSplit(rectList, directionBit) {
+            var split = 0;
+            // Calculate total cumulative Height for both visible portions and invisible portions and find the split
+            var visibleRects = _.filter(rectList, function (rect) {
                 return (isVerticalWritingMode() ? rect.height : rect.width) && isRectVisible(rect, false, getFrameDimensions());
             });
             var visibleRectHeight = calculateCumulativeHeight(visibleRects);
             var invisibleRectHeight = totalHeight - visibleRectHeight;
             var totalHeight = calculateCumulativeHeight(rectList);
 
-            if (visibleRectHeight == totalHeight ){
-                // either all visible or its a 50/50 split
-                if (directionBit == 0) {
-                    return 45;
-                }else {
-                    return 55;
-                }
+            if (visibleRectHeight === totalHeight) {
+                // either all visible or split
+                // heuristic: slight bias to increase likelihood of hits
+                return directionBit ? 55 : 45;
             } else {
-                split =  ((parseFloat(visibleRectHeight/totalHeight) * 100));
-                return invisibleRectHeight > visibleRectHeight ? split+5 : split -5;
+                split = parseFloat(visibleRectHeight / totalHeight) * 100;
+                return invisibleRectHeight > visibleRectHeight ? split + 5 : split - 5;
             }
         }
 
         function rectTopHash (rectList) {
             // sort the rectangles by top value
-            var sortedList = rectList.sort(function (a,b) { return (a.top < b.top );});
-            var lineMap =[];
-            for ( rect in sortedList ){
-                    var key = rect.top;
-                    if (lineMap[key] == null) {
+            var sortedList = rectList.sort(function (a, b) {
+                return a.top < b.top;
+            });
+            var lineMap = [];
+            _.each(sortedList, function (rect) {
+                var key = rect.top;
+                if (!lineMap[key]) {
                     lineMap[key] = [rect.height];
                 } else {
                     var currentLine = lineMap[key];
                     currentLine.push(rect.height);
                     lineMap[key] = currentLine;
                 }
-            }
+            });
         }
 
         function calculateCumulativeHeight (rectList) {
             var lineMap = rectTopHash(rectList);
             var height = 0;
-            for (line in lineMap){
-                height = height + Math.max.apply(null,line);
-            }
+            _.each(lineMap, function (line) {
+                height = height + Math.max.apply(null, line);
+            });
             return height;
         }
 
-        // reverses a directionBit
-        function changeDirection (directionBit) {
-            if (directionBit == 1 ) {return 0;}
-            else { return 1;}
-
-        }
-
-        function getTextRangeOffset(startingSet, visibleContentOffsets, directionBit,splitRatio, filterfunc) {
+        function getTextRangeOffset(startingSet, visibleContentOffsets, directionBit,splitRatio, filterFunc) {
 
             var currRange = startingSet;
             //begin iterative binary search, each iteration will check Range length and visibility
             while (currRange.length !=1) {
                 var currTextNodeFragments = getRangeClientRectList(currRange[directionBit], visibleContentOffsets);
-                if (fragmentVisible(currTextNodeFragments, filterfunc)) {
+                if (hasVisibleFragments(currTextNodeFragments, filterFunc)) {
                     currRange = splitRange(currRange[directionBit], parseFloat(splitRatio));
                 }
-                    // No visible fragment Look in other half
-                 else {
-                    currRange = splitRange(currRange[changeDirection(directionBit)], parseFloat(splitRatio));
-                 }
+                // No visible fragment Look in other half
+                else {
+                    currRange = splitRange(currRange[directionBit ? 0 : 1], parseFloat(splitRatio));
+                }
             }
             return currRange[0];
         }
 
-        function fragmentVisible(fragments,filterfunc) {
-            var visibleFragments = _.filter(fragments,filterfunc);
-            return visibleFragments.length ? true : false;
+        function hasVisibleFragments(fragments, filterFunc) {
+            var visibleFragments = _.filter(fragments, filterFunc);
+            return !!visibleFragments.length;
         }
 
         function findVisibleLeafNodeCfi(leafNodeList, pickerFunc, targetLeafNode, visibleContentOffsets, frameDimensions, startingParent) {
@@ -879,9 +850,7 @@ var CfiNavigationLogic = function (options) {
                     //let's try again with the next node in the list
                     return findVisibleLeafNodeCfi(leafNodeList, pickerFunc, visibleLeafNode, visibleContentOffsets, frameDimensions, startingParent);
                 }
-                var textCFI = generateCfiFromDomRange(visibleRange);
-                return textCFI;
-            // we need to also check for medai elements as a cfi
+                return generateCfiFromDomRange(visibleRange);
             } else {
                 //if not then generate a CFI for the element
                 return self.getCfiForElement(element);
