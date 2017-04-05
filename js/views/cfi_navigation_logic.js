@@ -795,11 +795,12 @@ var CfiNavigationLogic = function (options) {
             return height;
         }
 
-        function getTextRangeOffset(startingSet, visibleContentOffsets, directionBit,splitRatio, filterFunc) {
-
+        function getTextRangeOffset(startingSet, visibleContentOffsets, directionBit, splitRatio, filterFunc) {
+            var runCount = 0;
             var currRange = startingSet;
             //begin iterative binary search, each iteration will check Range length and visibility
-            while (currRange.length !=1) {
+            while (currRange.length !== 1) {
+                runCount++;
                 var currTextNodeFragments = getRangeClientRectList(currRange[directionBit], visibleContentOffsets);
                 if (hasVisibleFragments(currTextNodeFragments, filterFunc)) {
                     currRange = splitRange(currRange[directionBit], parseFloat(splitRatio));
@@ -809,6 +810,7 @@ var CfiNavigationLogic = function (options) {
                     currRange = splitRange(currRange[directionBit ? 0 : 1], parseFloat(splitRatio));
                 }
             }
+            if (DEBUG) console.debug('getVisibleTextRangeOffsets:getTextRangeOffset:runCount', runCount);
             return currRange[0];
         }
 
