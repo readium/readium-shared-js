@@ -719,7 +719,7 @@ var CfiNavigationLogic = function (options) {
             if (range.endOffset - range.startOffset === 1) {
                 return [range];
             }
-            var length = determineSplit(range, parseFloat(division));
+            var length = determineSplit(range, division);
             var textNode = range.startContainer;
             var leftNodeRange = range.cloneRange();
             leftNodeRange.setStart(textNode, range.startOffset);
@@ -739,7 +739,7 @@ var CfiNavigationLogic = function (options) {
             var nodeRange = createRangeFromNode(textNode);
             var nodeClientRects = getRangeClientRectList(nodeRange, visibleContentOffsets);
             var splitRatio = deterministicSplit(nodeClientRects, pickerFunc([0, 1]));
-            return getTextRangeOffset(splitRange(nodeRange, parseFloat(splitRatio)), visibleContentOffsets,
+            return getTextRangeOffset(splitRange(nodeRange, splitRatio), visibleContentOffsets,
                 pickerFunc([0, 1]), splitRatio,
                 function (rect) {
                     return (isVerticalWritingMode() ? rect.height : rect.width) && isRectVisible(rect, false, frameDimensions);
@@ -761,7 +761,7 @@ var CfiNavigationLogic = function (options) {
                 // heuristic: slight bias to increase likelihood of hits
                 return directionBit ? 55 : 45;
             } else {
-                split = parseFloat(visibleRectHeight / totalHeight) * 100;
+                split = 100 * (visibleRectHeight / totalHeight);
                 return invisibleRectHeight > visibleRectHeight ? split + 5 : split - 5;
             }
         }
@@ -801,11 +801,11 @@ var CfiNavigationLogic = function (options) {
                 runCount++;
                 var currTextNodeFragments = getRangeClientRectList(currRange[directionBit], visibleContentOffsets);
                 if (hasVisibleFragments(currTextNodeFragments, filterFunc)) {
-                    currRange = splitRange(currRange[directionBit], parseFloat(splitRatio));
+                    currRange = splitRange(currRange[directionBit], splitRatio);
                 }
                 // No visible fragment Look in other half
                 else {
-                    currRange = splitRange(currRange[directionBit ? 0 : 1], parseFloat(splitRatio));
+                    currRange = splitRange(currRange[directionBit ? 0 : 1], splitRatio);
                 }
             }
             if (DEBUG) console.debug('getVisibleTextRangeOffsets:getTextRangeOffset:runCount', runCount);
