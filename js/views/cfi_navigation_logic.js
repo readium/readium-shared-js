@@ -41,7 +41,7 @@ var CfiNavigationLogic = function (options) {
     var self = this;
     options = options || {};
 
-    var debugMode = ReadiumSDK.DEBUG_MODE;
+    var DEBUG = ReadiumSDK.DEBUG_MODE;
 
     this.getRootElement = function () {
 
@@ -661,7 +661,7 @@ var CfiNavigationLogic = function (options) {
                     commonAncestorContainer: range.commonAncestorContainer
                 };
 
-                if (debugMode) {
+                if (DEBUG) {
                     drawDebugOverlayFromDomRange(wrappedRange);
                 }
 
@@ -709,8 +709,6 @@ var CfiNavigationLogic = function (options) {
             }
             return generateCfiFromDomRange(range);
         };
-
-        var DEBUG = false;
 
         function determineSplit(range, division) {
             var percent = division / 100;
@@ -1010,7 +1008,7 @@ var CfiNavigationLogic = function (options) {
                         this.getElementBlacklist(),
                         this.getIdBlacklist());
 
-                    if (debugMode) {
+                    if (DEBUG) {
                         console.log(nodeResult);
                     }
                 } catch (ex) {
@@ -1033,7 +1031,7 @@ var CfiNavigationLogic = function (options) {
                             endRangeInfo.offset)
                         : null;
 
-                if (debugMode) {
+                if (DEBUG) {
                     console.log(nodeRangeClientRect);
                     addOverlayRect(nodeRangeClientRect, 'purple', contentDoc);
                 }
@@ -1374,7 +1372,7 @@ var CfiNavigationLogic = function (options) {
             _cache._invalidate();
         };
 
-        //if (debugMode) {
+        //if (DEBUG) {
 
         var $debugOverlays = [];
 
