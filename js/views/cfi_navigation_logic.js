@@ -293,13 +293,18 @@ var CfiNavigationLogic = function (options) {
                 }
 
                 if (isRectVisible(adjustedRect, false, frameDimensions)) {
-                    //it might still be partially visible in webkit
                     if (shouldCalculateVisibilityPercentage && adjustedRect.top < 0) {
                         visibilityPercentage =
                             Math.floor(100 * (adjustedRect.height + adjustedRect.top) / adjustedRect.height);
                     } else if (shouldCalculateVisibilityPercentage && adjustedRect.bottom > frameDimensions.height) {
                         visibilityPercentage =
                             Math.floor(100 * (frameDimensions.height - adjustedRect.top) / adjustedRect.height);
+                    } else if (shouldCalculateVisibilityPercentage && adjustedRect.left < 0 && adjustedRect.right > 0) {
+                        visibilityPercentage =
+                            Math.floor(100 * adjustedRect.right / adjustedRect.width);
+                    } else if (shouldCalculateVisibilityPercentage && adjustedRect.left < 0 && adjustedRect.right > 0) {
+                        visibilityPercentage =
+                            Math.floor(100 * adjustedRect.right / adjustedRect.width);
                     } else {
                         visibilityPercentage = 100;
                     }
