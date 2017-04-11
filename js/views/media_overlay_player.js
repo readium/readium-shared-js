@@ -2116,18 +2116,24 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
             self.reset();
             return;
         }
-
         var zPar = moData.par ? moData.par : moData.pars[0];
         var parSmil = zPar.getSmil();
-        if(!_smilIterator || _smilIterator.smil != parSmil)
-        {
-            _smilIterator = new SmilIterator(parSmil);
-        }
-        else
-        {
-            _smilIterator.reset();
-        }
+        var doNotResetSmli = false;
 
+        if (!_smilIterator || _smilIterator.smil != parSmil) {
+            _smilIterator = new SmilIterator(parSmil);
+        } else {
+            if (playingPar.text.manifestItemId === _smilIterator.currentPar.text.manifestItemId) {
+                doNotResetSmli = true;
+            } else {
+                _smilIterator.reset();
+            }
+        }
+        if (doNotResetSmli) {
+            self.play();
+
+            return;
+        }
         _smilIterator.goToPar(zPar);
         
         if (!_smilIterator.currentPar && id)
@@ -2165,6 +2171,10 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
     {
         _autoNextSmil = autoNext;
     };
+
+    this.wasPausedBecauseNoAutoNextSmil = function() {
+        return _wasPausedBecauseNoAutoNextSmil;
+    }
 };
     return MediaOverlayPlayer;
 });

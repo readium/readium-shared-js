@@ -248,9 +248,10 @@ var ReaderView = function (options) {
 
             Globals.logEvent("CONTENT_DOCUMENT_LOADED", "EMIT", "reader_view.js [ " + spineItem.href + " ]");
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
-            if (_viewerSettings.mediaOverlaysAutomaticPlay)
-            {
-                _mediaOverlayPlayer.toggleMediaOverlay();
+            //console.log("initViewForItem: CONTENT_DOCUMENT_LOADED: isPlayingMediaOverlay() = " + self.isPlayingMediaOverlay() +
+            //        ", _mediaOverlayPlayer.wasPausedBecauseNoAutoNextSmil() = " + _mediaOverlayPlayer.wasPausedBecauseNoAutoNextSmil());
+            if (_viewerSettings.mediaOverlaysAutomaticPlay && !self.isPlayingMediaOverlay() && !_mediaOverlayPlayer.wasPausedBecauseNoAutoNextSmil()) {
+                self.toggleMediaOverlay();
             }
         });
 
