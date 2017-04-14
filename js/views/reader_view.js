@@ -782,6 +782,8 @@ var ReaderView = function (options) {
         });
     }
 
+    this.goToPage = openPage;
+
 
     /**
      * Opens page index of the spine item with idref provided

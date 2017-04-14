@@ -46,7 +46,9 @@
   "dependencies": {
     "parallelshell": "latest",
     "opener": "latest",
-    "http-server": "danielweck/http-server"
+    "http-server": "danielweck/http-server",
+	  "vue": "2.2.1",
+    "html2canvas": "latest"
   },
   "devDependencies": {
     "jquerySizes": "bramstein/jsizes",
