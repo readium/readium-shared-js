@@ -25,56 +25,53 @@ define(["../models/page_open_request", "vue", "underscore", "html2canvas"], func
         item_count: function() {
           return this.item_list.length
         },
+      },
+      updated: function() {
+        // console.error("updated!!! scrubber_index = "+this.scrubber_index);
+        if (this.needUpdate) {
+          this.updateScrollView()
+        }
+      },
+      watch: {
+        seen: function(val) {
+          if (val === true) {
+            this.needUpdate = true
+          }
+        }
+      },
+      methods: {
         item_width: function() {
           if (this.$refs.scrubber_scroller.childNodes.length > 0) {
             return this.$refs.scrubber_scroller.childNodes[0].clientWidth
           } else {
             return 0
           }
-        }
-      },
-      updated() {
-        // console.error("updated!!! scrubber_index = "+this.scrubber_index);
-        if (this.needUpdate) {
-          this.updateScrollView()
-          this.needUpdate = false
-        }
-      },
-      watch: {
-        seen: function(val) {
-          if (val === true) {
-            this.needUpdate = true;
-          }
-        }
-      },
-      methods: {
+        },
         updateScrubber: function(event) {
-          console.log('updateScrubber')
-          console.log(this.item_width)
           this.updateScrollView()
-          this.goToPage(this.scrubber_index);
+          this.goToPage(this.scrubber_index)
         },
         onScrubberScroll: function(event) {
-          console.error(event);
-          console.error("onScrubberScroll### scrubber_index = "+this.scrubber_index);
-          this.scrubber_index = this.$refs.scrubber_scroller.scrollLeft / this.item_width;
+          if (this.needUpdate) {
+            this.needUpdate = false
+          } else {
+            this.scrubber_index = this.$refs.scrubber_scroller.scrollLeft / this.item_width()
+          }
         },
         onScroll: function(event) {
           this.updateScrollView()
         },
         updateScrollView: function() {
-          console.error("updateScrollView scrubber_index = "+this.scrubber_index);
-          this.scrubber_left = this.scrubber_index * this.item_width;
-          console.error("updateScrollView this.scrubber_left = "+this.scrubber_left);
-          this.$refs.scrubber_scroller.scrollLeft = this.scrubber_left;
-          // this.$forceUpdate();
+          var lastChild = this.$refs.scrubber_scroller.childNodes[this.$refs.scrubber_scroller.childNodes.length - 1]
+          lastChild.style.marginRight = this.$refs.scrubber_scroller.clientWidth - this.item_width()
+          this.scrubber_left = this.scrubber_index * this.item_width()
+          this.$refs.scrubber_scroller.scrollLeft = this.scrubber_left
         },
         goToPage: function(index) {
-          console.log('goToPage value = '+index)
-          var nextSpineItem = ReadiumSDK.reader.spine().items[index];
-          var openPageRequest = new PageOpenRequest(nextSpineItem, ReadiumSDK.reader);
-          openPageRequest.setFirstPage();
-          ReadiumSDK.reader.goToPage(openPageRequest, 2);
+          var nextSpineItem = ReadiumSDK.reader.spine().items[index]
+          var openPageRequest = new PageOpenRequest(nextSpineItem, ReadiumSDK.reader)
+          openPageRequest.setFirstPage()
+          ReadiumSDK.reader.goToPage(openPageRequest, 2)
         },
         onSelect: function(src) {
           var index = _.indexOf(this.item_list.map(function(item) {return item.src}), src)
