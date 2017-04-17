@@ -44,20 +44,20 @@
     "README.md"
   ],
   "dependencies": {
-    "parallelshell": "latest",
-    "opener": "latest",
+    "parallelshell": "2.0.0",
+    "opener": "1.4.3",
     "http-server": "danielweck/http-server",
-	  "vue": "2.2.1",
-    "html2canvas": "latest"
+    "vue": "2.2.1",
+    "html2canvas": "0.5.0-beta4"
   },
   "devDependencies": {
     "jquerySizes": "bramstein/jsizes",
     "domReady": "requirejs/domReady",
-    "backbone": "latest",
-    "underscore": "latest",
+    "backbone": "1.3.3",
+    "underscore": "1.8.3",
     "urijs": "danielweck/URI.js",
-    "eventemitter3": "latest",
-    "es6-collections": "latest",
+    "eventemitter3": "2.0.3",
+    "es6-collections": "0.5.6",
     "FontLoader": "smnh/FontLoader",
     "CSSOM": "danielweck/CSSOM#gh-pages"
   },
