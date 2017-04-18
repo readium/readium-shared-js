@@ -19,7 +19,8 @@ define(["../models/page_open_request", "vue", "underscore", "html2canvas"], func
         ],
         scrubber_left:0,
         seen: false,
-        needUpdate: true
+        needUpdate: true,
+        show_image_scrubber: true
       },
       computed: {
         item_count: function() {
@@ -48,7 +49,9 @@ define(["../models/page_open_request", "vue", "underscore", "html2canvas"], func
           }
         },
         updateScrubber: function(event) {
-          this.updateScrollView()
+          if (this.show_image_scrubber) {
+            this.updateScrollView()
+          }
           this.goToPage(this.scrubber_index)
         },
         onScrubberScroll: function(event) {
