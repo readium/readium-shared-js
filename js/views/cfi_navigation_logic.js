@@ -870,17 +870,21 @@ var CfiNavigationLogic = function (options) {
 
         // get an array of visible text elements and then select one based on the func supplied
         // and generate a CFI for the first visible text subrange.
-        function getVisibleTextRangeCfiForTextElementSelectedByFunc(pickerFunc, visibleContentOffsets, frameDimensions) {
-            var visibleLeafNodeList = self.getVisibleLeafNodes(visibleContentOffsets, frameDimensions);
-            return findVisibleLeafNodeCfi(visibleLeafNodeList, pickerFunc, null, visibleContentOffsets, frameDimensions);
-        }
+        //function getVisibleTextRangeCfiForTextElementSelectedByFunc(pickerFunc, visibleContentOffsets, frameDimensions) {
+            //var visibleLeafNodeList = self.getVisibleLeafNodes(visibleContentOffsets, frameDimensions);
+            //var visibleLeafNodeList = [self.findFirstVisibleElement(visibleContentOffsets, frameDimensions)];
+            //var visibleLeafNodeList = [self.findFirstVisibleElementTx(visibleContentOffsets, frameDimensions)];
+            //return findVisibleLeafNodeCfi(visibleLeafNodeList, pickerFunc, null, visibleContentOffsets, frameDimensions);
+        //}
 
         function getLastVisibleTextRangeCfi(visibleContentOffsets, frameDimensions) {
-            return getVisibleTextRangeCfiForTextElementSelectedByFunc(_.last, visibleContentOffsets, frameDimensions);
+            var visibleLeafNodeList = [self.findLastVisibleElementTx(visibleContentOffsets, frameDimensions)];
+            return findVisibleLeafNodeCfi(visibleLeafNodeList, _.last, null, visibleContentOffsets, frameDimensions);
         }
 
         function getFirstVisibleTextRangeCfi(visibleContentOffsets, frameDimensions) {
-            return getVisibleTextRangeCfiForTextElementSelectedByFunc(_.first, visibleContentOffsets, frameDimensions);
+            var visibleLeafNodeList = [self.findFirstVisibleElementTx(visibleContentOffsets, frameDimensions)];
+            return findVisibleLeafNodeCfi(visibleLeafNodeList, _.first, null, visibleContentOffsets, frameDimensions);
         }
 
         this.getFirstVisibleCfi = function (visibleContentOffsets, frameDimensions) {
@@ -1480,13 +1484,252 @@ var CfiNavigationLogic = function (options) {
             visibleTextRangeOffsetsRunsAvg: function () {
                 var arr = window.top._DEBUG_visibleTextRangeOffsetsRuns;
                 return arr.reduce(function (a, b) {
-                        return a + b;
-                    }) / arr.length;
+                    return a + b;
+                }) / arr.length;             
             }
         };
 
         //
         // }
+
+        this.findFirstVisibleElementTx = function (visibleContentOffsets, frameDimensions) {
+            
+            var firstVisibleElement;
+            var percentVisible = 0;
+            var textNode;
+
+            var treeWalker = document.createTreeWalker(
+                this.getBodyElement(),
+                NodeFilter.SHOW_ELEMENT,
+                function(node) {
+                    if (isElementBlacklisted($(node)))
+                        return NodeFilter.FILTER_REJECT;
+
+                    var visibilityResult = checkVisibilityByRectangles($(node), true, visibleContentOffsets, frameDimensions);
+                    return visibilityResult ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+                },
+                false
+                );
+
+            while (treeWalker.nextNode()) {
+                var node = treeWalker.currentNode;
+                var hasChildElements = false;
+                var hasChildTextNodes = false;
+                for (var i=0; i<node.childNodes.length; i++) {
+                    var childNode = node.childNodes[i];
+                    if (childNode.nodeType === Node.ELEMENT_NODE) {
+                        hasChildElements = true;
+                        break;
+                    }
+                    if (childNode.nodeType === Node.TEXT_NODE)
+                        hasChildTextNodes = true;
+                }
+
+                // potentially stop tree traversal when first element hit with no child element nodes
+                if (!hasChildElements) {
+                    // case 1: image
+                    if (node.nodeName.toLowerCase() === 'img') {
+                        firstVisibleElement = node;
+                        percentVisible = 100; // unused
+                        break;    
+                    }
+                    
+                    // case 2: valid text node
+                    if (hasChildTextNodes) {
+                        for (var i=0; i<node.childNodes.length; ++i) {
+                            var childNode = node.childNodes[i];
+                            if (childNode.nodeType === Node.TEXT_NODE && isValidTextNode(childNode)) {
+                                var visibilityResult = checkVisibilityByRectangles($(childNode), true, visibleContentOffsets, frameDimensions);
+                                if (visibilityResult) {
+                                    firstVisibleElement = node;
+                                    textNode = childNode;
+                                    percentVisible = visibilityResult;
+                                    break;
+                                }
+                            }
+                        }
+                        if (firstVisibleElement)
+                            break;
+                    }
+                }
+            }
+
+            return {
+                element: firstVisibleElement,
+                textNode: textNode,
+                percentVisible: percentVisible
+            };
+        };
+
+        this.findLastVisibleElementTx = function (visibleContentOffsets, frameDimensions) {
+
+            //if (!isPaginatedView()) {
+            //    visibleContentOffsets = getVisibleContentOffsets();
+            //    frameDimensions = {};
+            //}
+
+            var firstVisibleElement;
+            var percentVisible = 0;
+            var textNode;
+
+            var treeWalker = document.createTreeWalker(
+                this.getBodyElement(),
+                NodeFilter.SHOW_ELEMENT,
+                function(node) {
+                    if (isElementBlacklisted($(node)))
+                        return NodeFilter.FILTER_REJECT;
+
+                    var visibilityResult = checkVisibilityByRectangles($(node), true, visibleContentOffsets, frameDimensions);
+                    return visibilityResult ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+                },
+                false
+                );
+
+            while (treeWalker.lastChild()) { }
+
+            do {
+                var node = treeWalker.currentNode;
+                var hasChildElements = false;
+                var hasChildTextNodes = false;
+                for (var i=node.childNodes.length-1; i>=0; i--) {
+                    var childNode = node.childNodes[i];
+                    if (childNode.nodeType === Node.ELEMENT_NODE) {
+                        hasChildElements = true;
+                        break;
+                    }
+                    if (childNode.nodeType === Node.TEXT_NODE)
+                        hasChildTextNodes = true;
+                }
+
+                // potentially stop tree traversal when first element hit with no child element nodes
+                if (!hasChildElements) {
+                    // case 1: image
+                    if (node.nodeName.toLowerCase() === 'img') {
+                        firstVisibleElement = node;
+                        percentVisible = 100; // unused
+                        break;    
+                    }
+                    
+                    // case 2: valid text node
+                    if (hasChildTextNodes) {
+                        for (var i=node.childNodes.length-1; i>=0; i--) {
+                            var childNode = node.childNodes[i];
+                            if (childNode.nodeType === Node.TEXT_NODE && isValidTextNode(childNode)) {
+                                var visibilityResult = checkVisibilityByRectangles($(childNode), true, visibleContentOffsets, frameDimensions);
+                                if (visibilityResult) {
+                                    firstVisibleElement = node;
+                                    textNode = childNode;
+                                    percentVisible = visibilityResult;
+                                    break;
+                                }
+                            }
+                        }
+                        if (firstVisibleElement)
+                            break;
+                    }
+                }
+            } while (treeWalker.previousNode());
+
+            return {
+                element: firstVisibleElement,
+                textNode: textNode,
+                percentVisible: percentVisible
+            };
+        };
+
+
+        // BEGIN FRANKENSTEIN
+        //we look for text and images
+        this.findFirstVisibleElement = function (visibleContentOffsets, frameDimensions) {
+
+            // if (typeof props !== 'object') {
+            //     // compatibility with legacy code, `props` is `topOffset` actually
+            //     props = { top: props };
+            // }
+
+            var $elements;
+            var $firstVisibleTextNode = null;
+            var percentOfElementHeight = 0;
+            var textNode = null;
+
+            $elements = $("body", this.getRootElement()).find(":not(iframe)").contents().filter(function () {
+                return isValidTextNode(this) || this.nodeName.toLowerCase() === 'img';
+            });
+
+            // Find the first visible text node
+            $.each($elements, function() {
+
+                var $element;
+
+                if(this.nodeType === Node.TEXT_NODE)  { //text node
+                    $element = $(this).parent();
+                    textNode = $element[0];
+                }
+                else {
+                    $element = $(this); //image
+                    textNode = null;
+                }
+
+                var visibilityResult = false;
+                if (isPaginatedView()) {
+                    visibilityResult = checkVisibilityByRectangles($element, true, visibleContentOffsets, frameDimensions);
+                } else {
+                    visibilityResult = checkVisibilityByVerticalOffsets($element, visibleContentOffsets, true);
+                }
+                
+                if (visibilityResult) {
+                    $firstVisibleTextNode = $element;
+                    percentOfElementHeight = 100 - visibilityResult;
+                    return false;
+                }
+                return true;
+            });
+
+            return {
+                element: ($firstVisibleTextNode && $firstVisibleTextNode.length > 0) ? $firstVisibleTextNode[0] : null, 
+                textNode: textNode,
+                percentVisible: percentOfElementHeight
+            };
+        };
+
+        // Old (offsetTop-based) algorithm, useful in top-to-bottom layouts
+        function checkVisibilityByVerticalOffsets($element, visibleContentOffsets, shouldCalculateVisibilityOffset) {
+
+            var elementRect = Helpers.Rect.fromElement($element);
+            if (_.isNaN(elementRect.left)) {
+                // this is actually a point element, doesnt have a bounding rectangle
+                var position = $element.position();
+                elementRect = new Helpers.Rect(position.left, position.top, 0, 0);
+            }
+            var topOffset = (-1) * (visibleContentOffsets.top || 0);
+            var isBelowVisibleTop = elementRect.bottom() > topOffset;
+            var isAboveVisibleBottom = visibleContentOffsets.bottom !== undefined
+                ? elementRect.top < visibleContentOffsets.bottom
+                : true; //this check always passed, if corresponding offset isn't set
+
+            var percentOfElementHeight = 0;
+            if (isBelowVisibleTop && isAboveVisibleBottom) { // element is visible
+                if (!shouldCalculateVisibilityOffset) {
+                    return 100;
+                }
+                else if (elementRect.top <= topOffset) {
+                    percentOfElementHeight = Math.ceil(
+                        100 * (topOffset - elementRect.top) / elementRect.height
+                    );
+
+                    // below goes another algorithm, which has been used in getVisibleElements pattern,
+                    // but it seems to be a bit incorrect
+                    // (as spatial offset should be measured at the first visible point of the element):
+                    //
+                    // var visibleTop = Math.max(elementRect.top, visibleContentOffsets.top);
+                    // var visibleBottom = Math.min(elementRect.bottom(), visibleContentOffsets.bottom);
+                    // var visibleHeight = visibleBottom - visibleTop;
+                    // var percentVisible = Math.round((visibleHeight / elementRect.height) * 100);
+                }
+                return 100 - percentOfElementHeight;
+            }
+            return 0; // element isn't visible
+        }
 
     }
 return CfiNavigationLogic;
