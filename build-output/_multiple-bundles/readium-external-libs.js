@@ -11900,7 +11900,7 @@ return jQuery;
  * URI.js - Mutating URLs
  * IPv6 Support
  *
- * Version: 1.18.4
+ * Version: 1.18.10
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -12086,7 +12086,7 @@ return jQuery;
  * URI.js - Mutating URLs
  * Second Level Domain (SLD) Support
  *
- * Version: 1.18.4
+ * Version: 1.18.10
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -12257,7 +12257,12 @@ return jQuery;
       'ye':' co com gov ltd me net org plc ',
       'yu':' ac co edu gov org ',
       'za':' ac agric alt bourse city co cybernet db edu gov grondar iaccess imt inca landesign law mil net ngo nis nom olivetti org pix school tm web ',
-      'zm':' ac co com edu gov net org sch '
+      'zm':' ac co com edu gov net org sch ',
+      // https://en.wikipedia.org/wiki/CentralNic#Second-level_domains
+      'com': 'ar br cn de eu gb gr hu jpn kr no qc ru sa se uk us uy za ',
+      'net': 'gb jp se uk ',
+      'org': 'ae',
+      'de': 'com '
     },
     // gorhill 2013-10-25: Using indexOf() instead Regexp(). Significant boost
     // in both performance and memory footprint. No initialization required.
@@ -12326,7 +12331,7 @@ return jQuery;
 /*!
  * URI.js - Mutating URLs
  *
- * Version: 1.18.4
+ * Version: 1.18.10
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -12402,7 +12407,7 @@ return jQuery;
     return this;
   }
 
-  URI.version = '1.18.4';
+  URI.version = '1.18.10';
 
   var p = URI.prototype;
   var hasOwn = Object.prototype.hasOwnProperty;
@@ -13309,9 +13314,15 @@ return jQuery;
       }
 
       if (parensEnd > -1) {
-        slice = slice.slice(0, parensEnd) + slice.slice(parensEnd + 1).replace(_trim, '');
+        slice = slice.slice(0, parensEnd) + slice.slice(parensEnd).replace(_trim, '');
       } else {
         slice = slice.replace(_trim, '');
+      }
+
+      if (slice.length <= match[0].length) {
+        // the extract only contains the starting marker of a URI,
+        // e.g. "www" or "http://"
+        continue;
       }
 
       if (options.ignore && options.ignore.test(slice)) {
@@ -14420,7 +14431,10 @@ return jQuery;
     //
     // Readium patch >>
 
-    if (!resolved._parts.protocol) {
+    if (resolved._parts.protocol) {
+      // Directly returns even if this._parts.hostname is empty.
+      return resolved;
+    } else {
       resolved._parts.protocol = base._parts.protocol;
     }
 

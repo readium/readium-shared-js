@@ -5,7 +5,7 @@
   "._": "as this would overwrite / update the JSON, not the master CSON!",
   "*/": "----------------------------------------------------------------------------",
   "name": "readium-shared-js",
-  "version": "0.25.0",
+  "version": "0.26.0-alpha",
   "engines": {
     "node": ">=0.12",
     "npm": ">2.10"
@@ -53,12 +53,11 @@
     "jquery-sizes": "bramstein/jsizes",
     "domReady": "requirejs/domReady",
     "backbone": "latest",
-    "underscore": "latest",
     "urijs": "danielweck/URI.js",
     "eventemitter3": "latest",
     "es6-collections": "latest",
     "cssom": "danielweck/CSSOM",
-    "ResizeSensor": "danielweck/css-element-queries"
+    "css-element-queries": "danielweck/css-element-queries"
   },
   "scripts": {
     "cson2json": "node ./readium-cfi-js/node_modules/cson/bin/cson2json package.cson > package.json && node readium-cfi-js/readium-build-tools/optimizePackageJsonScripts.js",

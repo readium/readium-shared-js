@@ -1297,15 +1297,16 @@ var CfiNavigationLogic = function(options) {
         var visibleElements = [];
 
         _.each($elements, function ($node) {
-            var isTextNode = ($node[0].nodeType === Node.TEXT_NODE);
-            var $element = isTextNode ? $node.parent() : $node;
+            var node = $node[0];
+            var isTextNode = (node.nodeType === Node.TEXT_NODE);
+            var element = isTextNode ? node.parentElement : node;
             var visibilityPercentage = checkVisibilityByRectangles(
                 $node, true, visibleContentOffsets, frameDimensions);
 
             if (visibilityPercentage) {
                 visibleElements.push({
-                    element: $element[0], // DOM Element is pushed
-                    textNode: isTextNode ? $node[0] : null,
+                    element: element, // DOM Element is pushed
+                    textNode: isTextNode ? node : null,
                     percentVisible: visibilityPercentage
                 });
             }
@@ -1362,23 +1363,25 @@ var CfiNavigationLogic = function(options) {
         return $elements;
     };
 
-    function isElementBlacklisted($element) {
+    function isElementBlacklisted(element) {
         var isBlacklisted = false;
+        var classAttribute = element.className;
+        var classList = classAttribute ? classAttribute.split(' ') : [];
+        var id = element.id;
 
-        _.some(self.getClassBlacklist(), function (value) {
-            if ($element.hasClass(value)) {
-                isBlacklisted = true;
-            }
-            return isBlacklisted;
-        });
+        var classBlacklist = self.getClassBlacklist();
+        if (classList.length === 1 && _.contains(classBlacklist, classList[0])) {
+            isBlacklisted = true;
+            return;
+        } else if (classList.length && _.intersection(classBlacklist, classList).length) {
+            isBlacklisted = true;
+            return;
+        }
 
-        _.some(self.getIdBlacklist(), function (value) {
-            if ($element.attr("id") === value) {
-                isBlacklisted = true;
-            }
-            return isBlacklisted;
-        });
-
+        if (id && id.length && _.contains(self.getIdBlacklist(), id)) {
+            isBlacklisted = true;
+            return;
+        }
 
         return isBlacklisted;
     }
@@ -1407,10 +1410,9 @@ var CfiNavigationLogic = function(options) {
         while ((node = nodeIterator.nextNode())) {
             var isLeafNode = node.nodeType === Node.ELEMENT_NODE && !node.childElementCount && !isValidTextNodeContent(node.textContent);
             if (isLeafNode || isValidTextNode(node)){
-                var $node = $(node);
-                var $element = (node.nodeType === Node.TEXT_NODE) ? $node.parent() : $node;
-                if (!isElementBlacklisted($element)) {
-                    $leafNodeElements.push($node);
+                var element = (node.nodeType === Node.TEXT_NODE) ? node.parentElement : node;
+                if (!isElementBlacklisted(element)) {
+                    $leafNodeElements.push($(node));
                 }
             }
         }
@@ -1438,7 +1440,7 @@ var CfiNavigationLogic = function(options) {
         // If we don't do this, we may get a reference to a node that doesn't get rendered
         // (such as for example a node that has tab character and a bunch of spaces)
         // this is would be bad! ask me why.
-        return text.replace(/[\s\n\r\t]/g, "").length > 0;
+        return !!text.trim().length;
     }
 
     this.getElements = function (selector) {

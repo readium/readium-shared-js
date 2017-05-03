@@ -2103,6 +2103,10 @@ Helpers.UpdateHtmlFontAttributes = function ($epubHtml, fontSize, fontObj, callb
 
         var factor = fontSize / 100;
         var win = $epubHtml[0].ownerDocument.defaultView;
+        if (!win) {
+            console.log("NIL $epubHtml[0].ownerDocument.defaultView");
+            return;
+        }
 
         // TODO: is this a complete list? Is there a better way to do this?
         //https://github.com/readium/readium-shared-js/issues/336
@@ -4167,15 +4171,16 @@ var CfiNavigationLogic = function(options) {
         var visibleElements = [];
 
         _.each($elements, function ($node) {
-            var isTextNode = ($node[0].nodeType === Node.TEXT_NODE);
-            var $element = isTextNode ? $node.parent() : $node;
+            var node = $node[0];
+            var isTextNode = (node.nodeType === Node.TEXT_NODE);
+            var element = isTextNode ? node.parentElement : node;
             var visibilityPercentage = checkVisibilityByRectangles(
                 $node, true, visibleContentOffsets, frameDimensions);
 
             if (visibilityPercentage) {
                 visibleElements.push({
-                    element: $element[0], // DOM Element is pushed
-                    textNode: isTextNode ? $node[0] : null,
+                    element: element, // DOM Element is pushed
+                    textNode: isTextNode ? node : null,
                     percentVisible: visibilityPercentage
                 });
             }
@@ -4232,23 +4237,25 @@ var CfiNavigationLogic = function(options) {
         return $elements;
     };
 
-    function isElementBlacklisted($element) {
+    function isElementBlacklisted(element) {
         var isBlacklisted = false;
+        var classAttribute = element.className;
+        var classList = classAttribute ? classAttribute.split(' ') : [];
+        var id = element.id;
 
-        _.some(self.getClassBlacklist(), function (value) {
-            if ($element.hasClass(value)) {
-                isBlacklisted = true;
-            }
-            return isBlacklisted;
-        });
+        var classBlacklist = self.getClassBlacklist();
+        if (classList.length === 1 && _.contains(classBlacklist, classList[0])) {
+            isBlacklisted = true;
+            return;
+        } else if (classList.length && _.intersection(classBlacklist, classList).length) {
+            isBlacklisted = true;
+            return;
+        }
 
-        _.some(self.getIdBlacklist(), function (value) {
-            if ($element.attr("id") === value) {
-                isBlacklisted = true;
-            }
-            return isBlacklisted;
-        });
-
+        if (id && id.length && _.contains(self.getIdBlacklist(), id)) {
+            isBlacklisted = true;
+            return;
+        }
 
         return isBlacklisted;
     }
@@ -4277,10 +4284,9 @@ var CfiNavigationLogic = function(options) {
         while ((node = nodeIterator.nextNode())) {
             var isLeafNode = node.nodeType === Node.ELEMENT_NODE && !node.childElementCount && !isValidTextNodeContent(node.textContent);
             if (isLeafNode || isValidTextNode(node)){
-                var $node = $(node);
-                var $element = (node.nodeType === Node.TEXT_NODE) ? $node.parent() : $node;
-                if (!isElementBlacklisted($element)) {
-                    $leafNodeElements.push($node);
+                var element = (node.nodeType === Node.TEXT_NODE) ? node.parentElement : node;
+                if (!isElementBlacklisted(element)) {
+                    $leafNodeElements.push($(node));
                 }
             }
         }
@@ -4308,7 +4314,7 @@ var CfiNavigationLogic = function(options) {
         // If we don't do this, we may get a reference to a node that doesn't get rendered
         // (such as for example a node that has tab character and a bunch of spaces)
         // this is would be bad! ask me why.
-        return text.replace(/[\s\n\r\t]/g, "").length > 0;
+        return !!text.trim().length;
     }
 
     this.getElements = function (selector) {
@@ -4814,11 +4820,11 @@ var ViewerSettings = function(settingsData) {
     }
 }(this, function () {
 
-    //Make sure it does not throw in a SSR (Server Side Rendering) situation
+    // Make sure it does not throw in a SSR (Server Side Rendering) situation
     if (typeof window === "undefined") {
         return null;
     }
-    // Only used for the dirty checking, so the event callback count is limted to max 1 call per fps per sensor.
+    // Only used for the dirty checking, so the event callback count is limited to max 1 call per fps per sensor.
     // In combination with the event based resize sensor this saves cpu time, because the sensor is too fast and
     // would generate too many unnecessary events.
     var requestAnimationFrame = window.requestAnimationFrame ||
@@ -4900,11 +4906,12 @@ var ViewerSettings = function(settingsData) {
         function getComputedStyle(element, prop) {
             if (element.currentStyle) {
                 return element.currentStyle[prop];
-            } else if (window.getComputedStyle) {
-                return window.getComputedStyle(element, null).getPropertyValue(prop);
-            } else {
-                return element.style[prop];
             }
+            if (window.getComputedStyle) {
+                return window.getComputedStyle(element, null).getPropertyValue(prop);
+            }
+
+            return element.style[prop];
         }
 
         /**
@@ -4913,13 +4920,13 @@ var ViewerSettings = function(settingsData) {
          * @param {Function}    resized
          */
         function attachResizeEvent(element, resized) {
-            if (!element.resizedAttached) {
-                element.resizedAttached = new EventQueue();
-                element.resizedAttached.add(resized);
-            } else if (element.resizedAttached) {
+            if (element.resizedAttached) {
                 element.resizedAttached.add(resized);
                 return;
             }
+
+            element.resizedAttached = new EventQueue();
+            element.resizedAttached.add(resized);
 
             element.resizeSensor = document.createElement('div');
             element.resizeSensor.className = 'resize-sensor';
@@ -5084,6 +5091,11 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
     var _isIframeLoaded = false;
 
     var _$scaler;
+
+    var _lastBodySize = {
+        width: undefined,
+        height: undefined
+    };
 
     var PageTransitionHandler = function (opts) {
         var PageTransition = function (begin, end) {
@@ -5397,37 +5409,77 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             _$epubHtml = $("html", epubContentDocument);
             if (!_$epubHtml || _$epubHtml.length == 0) {
                 _$epubHtml = $("svg", epubContentDocument);
+                _$epubBody = undefined;
             } else {
                 _$epubBody = $("body", _$epubHtml);
             }
 
             //_$epubHtml.css("overflow", "hidden");
 
-            if (_enableBookStyleOverrides) {
+            if (_enableBookStyleOverrides) { // not fixed layout (reflowable in scroll view)
                 self.applyBookStyles();
             }
 
             updateMetaSize();
 
-            var bodyElement = _$epubBody[0];
-            bodyElement.resizeSensor = new ResizeSensor(bodyElement, function() {
-                console.log("OnePageView iframe body resized", $(bodyElement).width(), $(bodyElement).height());
-                var src = _spine.package.resolveRelativeUrl(_currentSpineItem.href);
-                Globals.logEvent("OnePageView.Events.CONTENT_SIZE_CHANGED", "EMIT", "one_page_view.js [ " + _currentSpineItem.href + " -- " + src + " ]");
-                self.emit(OnePageView.Events.CONTENT_SIZE_CHANGED, _$iframe, _currentSpineItem);
-                //updatePagination();
-            });
+            initResizeSensor();
 
             _pageTransitionHandler.onIFrameLoad();
         }
     }
 
+    function initResizeSensor() {
+
+        if (_$epubBody // undefined with SVG spine items
+            && _enableBookStyleOverrides // not fixed layout (reflowable in scroll view)
+            ) {
+
+            var bodyElement = _$epubBody[0];
+            if (bodyElement.resizeSensor) {
+                return;
+            }
+
+            // We need to make sure the content has indeed be resized, especially
+            // the first time it is triggered
+            _lastBodySize.width = $(bodyElement).width();
+            _lastBodySize.height = $(bodyElement).height();
+
+            bodyElement.resizeSensor = new ResizeSensor(bodyElement, function() {
+
+                var newBodySize = {
+                    width: $(bodyElement).width(),
+                    height: $(bodyElement).height()
+                };
+
+                console.debug("OnePageView content resized ...", newBodySize.width, newBodySize.height, _currentSpineItem.idref);
+                
+                if (newBodySize.width != _lastBodySize.width || newBodySize.height != _lastBodySize.height) {
+                    _lastBodySize.width = newBodySize.width;
+                    _lastBodySize.height = newBodySize.height;
+
+                    console.debug("... updating pagination.");
+
+                    var src = _spine.package.resolveRelativeUrl(_currentSpineItem.href);
+
+                    Globals.logEvent("OnePageView.Events.CONTENT_SIZE_CHANGED", "EMIT", "one_page_view.js [ " + _currentSpineItem.href + " -- " + src + " ]");
+                    
+                    self.emit(OnePageView.Events.CONTENT_SIZE_CHANGED, _$iframe, _currentSpineItem);
+                    
+                    //updatePagination();
+                } else {
+                    console.debug("... ignored (identical dimensions).");
+                }
+            });
+        }
+    }
+    
     var _viewSettings = undefined;
     this.setViewSettings = function (settings, docWillChange) {
 
         _viewSettings = settings;
 
-        if (_enableBookStyleOverrides && !docWillChange) {
+        if (_enableBookStyleOverrides  // not fixed layout (reflowable in scroll view)
+            && !docWillChange) {
             self.applyBookStyles();
         }
 
@@ -5438,7 +5490,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
     function updateHtmlFontInfo() {
 
-        if (!_enableBookStyleOverrides) return;
+        if (!_enableBookStyleOverrides) return;  // fixed layout (not reflowable in scroll view)
 
         if (_$epubHtml && _viewSettings) {
             var i = _viewSettings.fontSelection;
@@ -5452,7 +5504,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
     this.applyBookStyles = function () {
 
-        if (!_enableBookStyleOverrides) return;
+        if (!_enableBookStyleOverrides) return;  // fixed layout (not reflowable in scroll view)
 
         if (_$epubHtml) {
             Helpers.setStyles(_bookStyles.getStyles(), _$epubHtml);
@@ -5462,6 +5514,8 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
     //this is called by scroll_view for fixed spine item
     this.scaleToWidth = function (width) {
+
+        if (_enableBookStyleOverrides) return;  // not fixed layout (reflowable in scroll view)
 
         if (_meta_size.width <= 0) return; // resize event too early!
 
@@ -5570,6 +5624,8 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
     this.transformContentImmediate = function (scale, left, top) {
 
+        if (_enableBookStyleOverrides) return;  // not fixed layout (reflowable in scroll view)
+
         var elWidth = Math.ceil(_meta_size.width * scale);
         var elHeight = Math.floor(_meta_size.height * scale);
 
@@ -5595,7 +5651,9 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             enable3D = true;
         }
         
-        if (reader.needsFixedLayoutScalerWorkAround()) {
+        if (_$epubBody // not SVG spine item (otherwise fails in Safari OSX)
+            && reader.needsFixedLayoutScalerWorkAround()) {
+
             var css1 = Helpers.CSSTransformString({scale: scale, enable3D: enable3D});
             
             // See https://github.com/readium/readium-shared-js/issues/285 
@@ -5603,7 +5661,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             css1["min-height"] = _meta_size.height;
             
             _$epubHtml.css(css1);
-            
+
             // Ensures content dimensions matches viewport meta (authors / production tools should do this in their CSS...but unfortunately some don't).
             if (_$epubBody && _$epubBody.length) {
                 _$epubBody.css({width:_meta_size.width, height:_meta_size.height});
@@ -5621,7 +5679,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             css["height"] = _meta_size.height;
             _$scaler.css(css);
         }
-                
+
         // Chrome workaround: otherwise text is sometimes invisible (probably a rendering glitch due to the 3D transform graphics backend?)
         //_$epubHtml.css("visibility", "hidden"); // "flashing" in two-page spread mode is annoying :(
         _$epubHtml.css("opacity", "0.999");
@@ -5649,6 +5707,8 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
         _meta_size.width = 0;
         _meta_size.height = 0;
+
+        if (_enableBookStyleOverrides) return; // not fixed layout (reflowable in scroll view)
 
         var size = undefined;
 
@@ -5960,7 +6020,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             $iframe: _$iframe,
             frameDimensions: getFrameDimensions,
             visibleContentOffsets: getVisibleContentOffsets,
-            classBlacklist: ["cfi-marker", "mo-cfi-highlight", "resize-sensor", "resize-sensor-expand", "resize-sensor-shrink"],
+            classBlacklist: ["cfi-marker", "mo-cfi-highlight", "resize-sensor", "resize-sensor-expand", "resize-sensor-shrink", "resize-sensor-inner"],
             elementBlacklist: [],
             idBlacklist: ["MathJax_Message", "MathJax_SVG_Hidden"]
         });

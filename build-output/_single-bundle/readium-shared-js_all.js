@@ -11795,5623 +11795,6 @@ if ( !noGlobal ) {
 return jQuery;
 }));
 
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
-//  
-//  Redistribution and use in source and binary forms, with or without modification, 
-//  are permitted provided that the following conditions are met:
-//  1. Redistributions of source code must retain the above copyright notice, this 
-//  list of conditions and the following disclaimer.
-//  2. Redistributions in binary form must reproduce the above copyright notice, 
-//  this list of conditions and the following disclaimer in the documentation and/or 
-//  other materials provided with the distribution.
-//  3. Neither the name of the organization nor the names of its contributors may be 
-//  used to endorse or promote products derived from this software without specific 
-//  prior written permission.
-
-(function(global) {
-
-
-// Description: This is a set of runtime errors that the CFI interpreter can throw. 
-// Rationale: These error types extend the basic javascript error object so error things like the stack trace are 
-//   included with the runtime errors. 
-
-// REFACTORING CANDIDATE: This type of error may not be required in the long run. The parser should catch any syntax errors, 
-//   provided it is error-free, and as such, the AST should never really have any node type errors, which are essentially errors
-//   in the structure of the AST. This error should probably be refactored out when the grammar and interpreter are more stable.
-
-var obj = {
-
-NodeTypeError: function (node, message) {
-
-    function NodeTypeError () {
-
-        this.node = node;
-    }
-
-    NodeTypeError.prototype = new Error(message);
-    NodeTypeError.constructor = NodeTypeError;
-
-    return new NodeTypeError();
-},
-
-// REFACTORING CANDIDATE: Might make sense to include some more specifics about the out-of-rangeyness.
-OutOfRangeError: function (targetIndex, maxIndex, message) {
-
-    function OutOfRangeError () {
-
-        this.targetIndex = targetIndex;
-        this.maxIndex = maxIndex;
-    }
-
-    OutOfRangeError.prototype = new Error(message);
-    OutOfRangeError.constructor = OutOfRangeError()
-
-    return new OutOfRangeError();
-},
-
-// REFACTORING CANDIDATE: This is a bit too general to be useful. When I have a better understanding of the type of errors
-//   that can occur with the various terminus conditions, it'll make more sense to revisit this. 
-TerminusError: function (terminusType, terminusCondition, message) {
-
-    function TerminusError () {
-
-        this.terminusType = terminusType;
-        this.terminusCondition = terminusCondition;
-    }
-
-    TerminusError.prototype = new Error(message);
-    TerminusError.constructor = TerminusError();
-
-    return new TerminusError();
-},
-
-CFIAssertionError: function (expectedAssertion, targetElementAssertion, message) {
-
-    function CFIAssertionError () {
-
-        this.expectedAssertion = expectedAssertion;
-        this.targetElementAssertion = targetElementAssertion;
-    }
-
-    CFIAssertionError.prototype = new Error(message);
-    CFIAssertionError.constructor = CFIAssertionError();
-
-    return new CFIAssertionError();
-}
-
-};
-
-
-
-
-
-
-
-
-
-
-if (typeof define == 'function' && typeof define.amd == 'object') {
-    console.log("RequireJS ... cfi_errors");
-    
-    define('readium_cfi_js/cfi_runtime_errors',[],
-    function () {
-        return obj;
-    });
-} else {
-    console.log("!RequireJS ... cfi_errors");
-    
-    if (!global["EPUBcfi"]) {
-        throw new Error("EPUBcfi not initialised on global object?! (window or this context)");
-    }
-    
-    global.EPUBcfi.NodeTypeError = obj.NodeTypeError;
-    global.EPUBcfi.OutOfRangeError = obj.OutOfRangeError;
-    global.EPUBcfi.TerminusError = obj.TerminusError;
-    global.EPUBcfi.CFIAssertionError = obj.CFIAssertionError;
-}
-
-})(typeof window !== "undefined" ? window : this);
-
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
-//  
-//  Redistribution and use in source and binary forms, with or without modification, 
-//  are permitted provided that the following conditions are met:
-//  1. Redistributions of source code must retain the above copyright notice, this 
-//  list of conditions and the following disclaimer.
-//  2. Redistributions in binary form must reproduce the above copyright notice, 
-//  this list of conditions and the following disclaimer in the documentation and/or 
-//  other materials provided with the distribution.
-//  3. Neither the name of the organization nor the names of its contributors may be 
-//  used to endorse or promote products derived from this software without specific 
-//  prior written permission.
-
-(function(global) {
-
-var init = function($, cfiRuntimeErrors) {
-    
-var obj = {
-
-// Description: This model contains the implementation for "instructions" included in the EPUB CFI domain specific language (DSL). 
-//   Lexing and parsing a CFI produces a set of executable instructions for processing a CFI (represented in the AST). 
-//   This object contains a set of functions that implement each of the executable instructions in the AST. 
-
-    // ------------------------------------------------------------------------------------ //
-    //  "PUBLIC" METHODS (THE API)                                                          //
-    // ------------------------------------------------------------------------------------ //
-
-    // Description: Follows a step
-    // Rationale: The use of children() is important here, as this jQuery method returns a tree of xml nodes, EXCLUDING
-    //   CDATA and text nodes. When we index into the set of child elements, we are assuming that text nodes have been 
-    //   excluded.
-    // REFACTORING CANDIDATE: This should be called "followIndexStep"
-    getNextNode : function (CFIStepValue, $currNode, classBlacklist, elementBlacklist, idBlacklist) {
-
-        // Find the jquery index for the current node
-        var $targetNode;
-        if (CFIStepValue % 2 == 0) {
-
-            $targetNode = this.elementNodeStep(CFIStepValue, $currNode, classBlacklist, elementBlacklist, idBlacklist);
-        }
-        else {
-
-            $targetNode = this.inferTargetTextNode(CFIStepValue, $currNode, classBlacklist, elementBlacklist, idBlacklist);
-        }
-
-        return $targetNode;
-    },
-
-    // Description: This instruction executes an indirection step, where a resource is retrieved using a 
-    //   link contained on a attribute of the target element. The attribute that contains the link differs
-    //   depending on the target. 
-    // Note: Iframe indirection will (should) fail if the iframe is not from the same domain as its containing script due to 
-    //   the cross origin security policy
-    followIndirectionStep : function (CFIStepValue, $currNode, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var that = this;
-        var $contentDocument; 
-        var $blacklistExcluded;
-        var $startElement;
-        var $targetNode;
-
-        // TODO: This check must be expanded to all the different types of indirection step
-        // Only expects iframes, at the moment
-        if ($currNode === undefined || !$currNode.is("iframe")) {
-
-            throw cfiRuntimeErrors.NodeTypeError($currNode, "expected an iframe element");
-        }
-
-        // Check node type; only iframe indirection is handled, at the moment
-        if ($currNode.is("iframe")) {
-
-            // Get content
-            $contentDocument = $currNode.contents();
-
-            // Go to the first XHTML element, which will be the first child of the top-level document object
-            $blacklistExcluded = this.applyBlacklist($contentDocument.children(), classBlacklist, elementBlacklist, idBlacklist);
-            $startElement = $($blacklistExcluded[0]);
-
-            // Follow an index step
-            $targetNode = this.getNextNode(CFIStepValue, $startElement, classBlacklist, elementBlacklist, idBlacklist);
-
-            // Return that shit!
-            return $targetNode; 
-        }
-
-        // TODO: Other types of indirection
-        // TODO: $targetNode.is("embed")) : src
-        // TODO: ($targetNode.is("object")) : data
-        // TODO: ($targetNode.is("image") || $targetNode.is("xlink:href")) : xlink:href
-    },
-
-    // Description: Injects an element at the specified text node
-    // Arguments: a cfi text termination string, a jquery object to the current node
-    // REFACTORING CANDIDATE: Rename this to indicate that it injects into a text terminus
-    textTermination : function ($currNode, textOffset, elementToInject) {
-
-        var $injectedElement;
-        // Get the first node, this should be a text node
-        if ($currNode === undefined) {
-
-            throw cfiRuntimeErrors.NodeTypeError($currNode, "expected a terminating node, or node list");
-        } 
-        else if ($currNode.length === 0) {
-
-            throw cfiRuntimeErrors.TerminusError("Text", "Text offset:" + textOffset, "no nodes found for termination condition");
-        }
-
-        $injectedElement = this.injectCFIMarkerIntoText($currNode, textOffset, elementToInject);
-        return $injectedElement;
-    },
-
-    // Description: Checks that the id assertion for the node target matches that on 
-    //   the found node. 
-    targetIdMatchesIdAssertion : function ($foundNode, idAssertion) {
-
-        if ($foundNode.attr("id") === idAssertion) {
-
-            return true;
-        }
-        else {
-
-            return false;
-        }
-    },
-
-    // ------------------------------------------------------------------------------------ //
-    //  "PRIVATE" HELPERS                                                                   //
-    // ------------------------------------------------------------------------------------ //
-
-    // Description: Step reference for xml element node. Expected that CFIStepValue is an even integer
-    elementNodeStep : function (CFIStepValue, $currNode, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var $targetNode;
-        var $blacklistExcluded;
-        var numElements;
-        var jqueryTargetNodeIndex = (CFIStepValue / 2) - 1;
-
-        $blacklistExcluded = this.applyBlacklist($currNode.children(), classBlacklist, elementBlacklist, idBlacklist);
-        numElements = $blacklistExcluded.length;
-
-        if (this.indexOutOfRange(jqueryTargetNodeIndex, numElements)) {
-
-            throw cfiRuntimeErrors.OutOfRangeError(jqueryTargetNodeIndex, numElements - 1, "");
-        }
-
-        $targetNode = $($blacklistExcluded[jqueryTargetNodeIndex]);
-        return $targetNode;
-    },
-
-    retrieveItemRefHref : function ($itemRefElement, $packageDocument) {
-
-        return $("#" + $itemRefElement.attr("idref"), $packageDocument).attr("href");
-    },
-
-    indexOutOfRange : function (targetIndex, numChildElements) {
-
-        return (targetIndex > numChildElements - 1) ? true : false;
-    },
-
-    // Rationale: In order to inject an element into a specific position, access to the parent object 
-    //   is required. This is obtained with the jquery parent() method. An alternative would be to 
-    //   pass in the parent with a filtered list containing only children that are part of the target text node.
-    injectCFIMarkerIntoText : function ($textNodeList, textOffset, elementToInject) {
-        var document = $textNodeList[0].ownerDocument;
-
-        var nodeNum;
-        var currNodeLength;
-        var currTextPosition = 0;
-        var nodeOffset;
-        var originalText;
-        var $injectedNode;
-        var $newTextNode;
-        // The iteration counter may be incorrect here (should be $textNodeList.length - 1 ??)
-        for (nodeNum = 0; nodeNum <= $textNodeList.length; nodeNum++) {
-
-            if ($textNodeList[nodeNum].nodeType === Node.TEXT_NODE) {
-
-                currNodeMaxIndex = $textNodeList[nodeNum].nodeValue.length  + currTextPosition;
-                nodeOffset = textOffset - currTextPosition;
-
-                if (currNodeMaxIndex > textOffset) {
-
-                    // This node is going to be split and the components re-inserted
-                    originalText = $textNodeList[nodeNum].nodeValue;    
-
-                    // Before part
-                    $textNodeList[nodeNum].nodeValue = originalText.slice(0, nodeOffset);
-
-                    // Injected element
-                    $injectedNode = $(elementToInject).insertAfter($textNodeList.eq(nodeNum));
-
-                    // After part
-                    $newTextNode = $(document.createTextNode(originalText.slice(nodeOffset, originalText.length)));
-                    $($newTextNode).insertAfter($injectedNode);
-
-                    return $injectedNode;
-                } else if (currNodeMaxIndex == textOffset){
-                    $injectedNode = $(elementToInject).insertAfter($textNodeList.eq(nodeNum));
-                    return $injectedNode;
-                }
-                else {
-                    currTextPosition = currNodeMaxIndex;
-                }
-            } else if($textNodeList[nodeNum].nodeType === Node.COMMENT_NODE){
-                currNodeMaxIndex = $textNodeList[nodeNum].nodeValue.length + 7 + currTextPosition;
-                currTextPosition = currNodeMaxIndex;
-            } else if($textNodeList[nodeNum].nodeType === Node.PROCESSING_INSTRUCTION_NODE){
-                currNodeMaxIndex = $textNodeList[nodeNum].nodeValue.length + $textNodeList[nodeNum].target.length + 5
-                currTextPosition = currNodeMaxIndex;
-            }
-        }
-
-        throw cfiRuntimeErrors.TerminusError("Text", "Text offset:" + textOffset, "The offset exceeded the length of the text");
-    },
-
-    // Rationale: In order to inject an element into a specific position, access to the parent object 
-    //   is required. This is obtained with the jquery parent() method. An alternative would be to 
-    //   pass in the parent with a filtered list containing only children that are part of the target text node.
-
-    // Description: This method finds a target text node and then injects an element into the appropriate node
-    // Rationale: The possibility that cfi marker elements have been injected into a text node at some point previous to 
-    //   this method being called (and thus splitting the original text node into two separate text nodes) necessitates that
-    //   the set of nodes that compromised the original target text node are inferred and returned.
-    // Notes: Passed a current node. This node should have a set of elements under it. This will include at least one text node, 
-    //   element nodes (maybe), or possibly a mix. 
-    // REFACTORING CANDIDATE: This method is pretty long (and confusing). Worth investigating to see if it can be refactored into something clearer.
-    inferTargetTextNode : function (CFIStepValue, $currNode, classBlacklist, elementBlacklist, idBlacklist) {
-        
-        var $elementsWithoutMarkers;
-        var currLogicalTextNodeIndex;
-        var targetLogicalTextNodeIndex;
-        var nodeNum;
-        var $targetTextNodeList;
-        var prevNodeWasTextNode;
-
-        // Remove any cfi marker elements from the set of elements. 
-        // Rationale: A filtering function is used, as simply using a class selector with jquery appears to 
-        //   result in behaviour where text nodes are also filtered out, along with the class element being filtered.
-        $elementsWithoutMarkers = this.applyBlacklist($currNode.contents(), classBlacklist, elementBlacklist, idBlacklist);
-
-        // Convert CFIStepValue to logical index; assumes odd integer for the step value
-        targetLogicalTextNodeIndex = ((parseInt(CFIStepValue) + 1) / 2) - 1;
-
-        // Set text node position counter
-        currLogicalTextNodeIndex = 0;
-        prevNodeWasTextNode = false;
-        $targetTextNodeList = $elementsWithoutMarkers.filter(
-            function () {
-
-                if (currLogicalTextNodeIndex === targetLogicalTextNodeIndex) {
-
-                    // If it's a text node
-                    if (this.nodeType === Node.TEXT_NODE || this.nodeType === Node.COMMENT_NODE || this.nodeType === Node.PROCESSING_INSTRUCTION_NODE) {
-                        prevNodeWasTextNode = true;
-                        return true;
-                    }
-                    // Rationale: The logical text node position is only incremented once a group of text nodes (a single logical
-                    //   text node) has been passed by the loop. 
-                    else if (prevNodeWasTextNode && (this.nodeType !== Node.TEXT_NODE)) {
-                        currLogicalTextNodeIndex++;
-                        prevNodeWasTextNode = false;
-                        return false;
-                    }
-                }
-                // Don't return any elements
-                else {
-
-                    if (this.nodeType === Node.TEXT_NODE || this.nodeType === Node.COMMENT_NODE || this.nodeType === Node.PROCESSING_INSTRUCTION_NODE) {
-                        prevNodeWasTextNode = true;
-                    }else if (!prevNodeWasTextNode && this.nodeType === Node.ELEMENT_NODE){
-                        currLogicalTextNodeIndex++;
-                        prevNodeWasTextNode = true;
-                    }
-                    else if (prevNodeWasTextNode && (this.nodeType !== Node.TEXT_NODE) && (this !== $elementsWithoutMarkers.lastChild)) {
-                        currLogicalTextNodeIndex++;
-                        prevNodeWasTextNode = false;
-                    }
-
-                    return false;
-                }
-            }
-        );
-
-        // The filtering above should have counted the number of "logical" text nodes; this can be used to 
-        // detect out of range errors
-        if ($targetTextNodeList.length === 0) {
-            throw cfiRuntimeErrors.OutOfRangeError(targetLogicalTextNodeIndex, currLogicalTextNodeIndex, "Index out of range");
-        }
-
-        // return the text node list
-        return $targetTextNodeList;
-    },
-
-    applyBlacklist : function ($elements, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var $filteredElements;
-
-        $filteredElements = $elements.filter(
-            function () {
-
-                var $currElement = $(this);
-                var includeInList = true;
-
-                if (classBlacklist) {
-
-                    // Filter each element with the class type
-                    $.each(classBlacklist, function (index, value) {
-
-                        if ($currElement.hasClass(value)) {
-                            includeInList = false;
-
-                            // Break this loop
-                            return false;
-                        }
-                    });
-                }
-
-                if (elementBlacklist) {
-                    
-                    // For each type of element
-                    $.each(elementBlacklist, function (index, value) {
-
-                        if ($currElement.is(value)) {
-                            includeInList = false;
-
-                            // Break this loop
-                            return false;
-                        }
-                    });
-                }
-
-                if (idBlacklist) {
-                    
-                    // For each type of element
-                    $.each(idBlacklist, function (index, value) {
-
-                        if ($currElement.attr("id") === value) {
-                            includeInList = false;
-
-                            // Break this loop
-                            return false;
-                        }
-                    });
-                }
-
-                return includeInList;
-            }
-        );
-
-        return $filteredElements;
-    }
-};
-
-return obj;
-}
-
-
-
-
-
-
-
-
-
-
-if (typeof define == 'function' && typeof define.amd == 'object') {
-    console.log("RequireJS ... cfi_instructions");
-    
-    define('readium_cfi_js/cfi_instructions',['jquery', './cfi_runtime_errors'],
-    function ($, cfiRuntimeErrors) {
-        return init($, cfiRuntimeErrors);
-    });
-} else {
-    console.log("!RequireJS ... cfi_instructions");
-    
-    if (!global["EPUBcfi"]) {
-        throw new Error("EPUBcfi not initialised on global object?! (window or this context)");
-    }
-    global.EPUBcfi.CFIInstructions = 
-    init($,
-        {
-            NodeTypeError: global.EPUBcfi.NodeTypeError,
-            OutOfRangeError: global.EPUBcfi.OutOfRangeError,
-            TerminusError: global.EPUBcfi.TerminusError,
-            CFIAssertionError: global.EPUBcfi.CFIAssertionError
-        });
-}
-
-})(typeof window !== "undefined" ? window : this);
-
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
-//
-//  Redistribution and use in source and binary forms, with or without modification,
-//  are permitted provided that the following conditions are met:
-//  1. Redistributions of source code must retain the above copyright notice, this
-//  list of conditions and the following disclaimer.
-//  2. Redistributions in binary form must reproduce the above copyright notice,
-//  this list of conditions and the following disclaimer in the documentation and/or
-//  other materials provided with the distribution.
-//  3. Neither the name of the organization nor the names of its contributors may be
-//  used to endorse or promote products derived from this software without specific
-//  prior written permission.
-
-(function(global) {
-
-var init = function($, cfiParser, cfiInstructions, cfiRuntimeErrors) {
-
-    if (typeof cfiParser === "undefined") {
-        throw new Error("UNDEFINED?! cfiParser");
-    }
-
-    if (typeof cfiInstructions === "undefined") {
-        throw new Error("UNDEFINED?! cfiInstructions");
-    }
-
-    if (typeof cfiRuntimeErrors === "undefined") {
-        throw new Error("UNDEFINED?! cfiRuntimeErrors");
-    }
-
-var obj = {
-
-// Description: This is an interpreter that inteprets an Abstract Syntax Tree (AST) for a CFI. The result of executing the interpreter
-//   is to inject an element, or set of elements, into an EPUB content document (which is just an XHTML document). These element(s) will
-//   represent the position or area in the EPUB referenced by a CFI.
-// Rationale: The AST is a clean and readable expression of the step-terminus structure of a CFI. Although building an interpreter adds to the
-//   CFI infrastructure, it provides a number of benefits. First, it emphasizes a clear separation of concerns between lexing/parsing a
-//   CFI, which involves some complexity related to escaped and special characters, and the execution of the underlying set of steps
-//   represented by the CFI. Second, it will be easier to extend the interpreter to account for new/altered CFI steps (say for references
-//   to vector objects or multiple CFIs) than if lexing, parsing and interpretation were all handled in a single step. Finally, Readium's objective is
-//   to demonstrate implementation of the EPUB 3.0 spec. An implementation with a strong separation of concerns that conforms to
-//   well-understood patterns for DSL processing should be easier to communicate, analyze and understand.
-// REFACTORING CANDIDATE: node type errors shouldn't really be possible if the CFI syntax is correct and the parser is error free.
-//   Might want to make the script die in those instances, once the grammar and interpreter are more stable.
-// REFACTORING CANDIDATE: The use of the 'nodeType' property is confusing as this is a DOM node property and the two are unrelated.
-//   Whoops. There shouldn't be any interference, however, I think this should be changed.
-
-    // ------------------------------------------------------------------------------------ //
-    //  "PUBLIC" METHODS (THE API)                                                          //
-    // ------------------------------------------------------------------------------------ //
-
-    // Description: Find the content document referenced by the spine item. This should be the spine item
-    //   referenced by the first indirection step in the CFI.
-    // Rationale: This method is a part of the API so that the reading system can "interact" the content document
-    //   pointed to by a CFI. If this is not a separate step, the processing of the CFI must be tightly coupled with
-    //   the reading system, as it stands now.
-    getContentDocHref : function (CFI, packageDocument, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var $packageDocument = $(packageDocument);
-        var decodedCFI = decodeURI(CFI);
-        var CFIAST = cfiParser.parse(decodedCFI);
-
-        if (!CFIAST || CFIAST.type !== "CFIAST") {
-            throw cfiRuntimeErrors.NodeTypeError(CFIAST, "expected CFI AST root node");
-        }
-
-        // Interpet the path node (the package document step)
-        var $packageElement = $($("package", $packageDocument)[0]);
-        var $currElement = this.interpretIndexStepNode(CFIAST.cfiString.path, $packageElement, classBlacklist, elementBlacklist, idBlacklist);
-        foundHref = this.searchLocalPathForHref($currElement, $packageDocument, CFIAST.cfiString.localPath, classBlacklist, elementBlacklist, idBlacklist);
-
-        if (foundHref) {
-            return foundHref;
-        }
-        else {
-            return undefined;
-        }
-    },
-
-    // Description: Inject an arbitrary html element into a position in a content document referenced by a CFI
-    injectElement : function (CFI, contentDocument, elementToInject, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var decodedCFI = decodeURI(CFI);
-        var CFIAST = cfiParser.parse(decodedCFI);
-        var indirectionNode;
-        var indirectionStepNum;
-        var $currElement;
-
-        // Rationale: Since the correct content document for this CFI is already being passed, we can skip to the beginning
-        //   of the indirection step that referenced the content document.
-        // Note: This assumes that indirection steps and index steps conform to an interface: an object with stepLength, idAssertion
-        indirectionStepNum = this.getFirstIndirectionStepNum(CFIAST);
-        indirectionNode = CFIAST.cfiString.localPath.steps[indirectionStepNum];
-        indirectionNode.type = "indexStep";
-
-        // Interpret the rest of the steps
-        $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, indirectionStepNum, $(contentDocument.documentElement, contentDocument), classBlacklist, elementBlacklist, idBlacklist);
-
-        // TODO: detect what kind of terminus; for now, text node termini are the only kind implemented
-        $currElement = this.interpretTextTerminusNode(CFIAST.cfiString.localPath.termStep, $currElement, elementToInject);
-
-        // Return the element that was injected into
-        return $currElement;
-    },
-
-    // Description: Inject an arbitrary html element into a position in a content document referenced by a CFI
-    injectRangeElements : function (rangeCFI, contentDocument, startElementToInject, endElementToInject, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var decodedCFI = decodeURI(rangeCFI);
-        var CFIAST = cfiParser.parse(decodedCFI);
-        var indirectionNode;
-        var indirectionStepNum;
-        var $currElement;
-        var $range1TargetElement;
-        var $range2TargetElement;
-
-        // Rationale: Since the correct content document for this CFI is already being passed, we can skip to the beginning
-        //   of the indirection step that referenced the content document.
-        // Note: This assumes that indirection steps and index steps conform to an interface: an object with stepLength, idAssertion
-        indirectionStepNum = this.getFirstIndirectionStepNum(CFIAST);
-        indirectionNode = CFIAST.cfiString.localPath.steps[indirectionStepNum];
-        indirectionNode.type = "indexStep";
-
-        // Interpret the rest of the steps in the first local path
-        $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, indirectionStepNum, $(contentDocument.documentElement, contentDocument), classBlacklist, elementBlacklist, idBlacklist);
-
-        // Interpret the first range local_path
-        $range1TargetElement = this.interpretLocalPath(CFIAST.cfiString.range1, 0, $currElement, classBlacklist, elementBlacklist, idBlacklist);
-        $range1TargetElement = this.interpretTextTerminusNode(CFIAST.cfiString.range1.termStep, $range1TargetElement, startElementToInject);
-
-        // Interpret the second range local_path
-        $range2TargetElement = this.interpretLocalPath(CFIAST.cfiString.range2, 0, $currElement, classBlacklist, elementBlacklist, idBlacklist);
-        $range2TargetElement = this.interpretTextTerminusNode(CFIAST.cfiString.range2.termStep, $range2TargetElement, endElementToInject);
-
-        // Return the element that was injected into
-        return {
-            startElement : $range1TargetElement[0],
-            endElement : $range2TargetElement[0]
-        };
-    },
-
-    // Description: This method will return the element or node (say, a text node) that is the final target of the
-    //   the CFI.
-    getTargetElement : function (CFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var decodedCFI = decodeURI(CFI);
-        var CFIAST = cfiParser.parse(decodedCFI);
-        var indirectionNode;
-        var indirectionStepNum;
-        var $currElement;
-
-        // Rationale: Since the correct content document for this CFI is already being passed, we can skip to the beginning
-        //   of the indirection step that referenced the content document.
-        // Note: This assumes that indirection steps and index steps conform to an interface: an object with stepLength, idAssertion
-        indirectionStepNum = this.getFirstIndirectionStepNum(CFIAST);
-        indirectionNode = CFIAST.cfiString.localPath.steps[indirectionStepNum];
-        indirectionNode.type = "indexStep";
-
-        // Interpret the rest of the steps
-        $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, indirectionStepNum, $(contentDocument.documentElement, contentDocument), classBlacklist, elementBlacklist, idBlacklist);
-
-        // Return the element at the end of the CFI
-        return $currElement;
-    },
-
-    // Description: This method will return the start and end elements (along with their char offsets) that are the final targets of the range CFI.
-    getRangeTargetElements : function (rangeCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var decodedCFI = decodeURI(rangeCFI);
-        var CFIAST = cfiParser.parse(decodedCFI);
-        var indirectionNode;
-        var indirectionStepNum;
-        var $currElement;
-        var $range1TargetElement;
-        var $range2TargetElement;
-
-        // Rationale: Since the correct content document for this CFI is already being passed, we can skip to the beginning
-        //   of the indirection step that referenced the content document.
-        // Note: This assumes that indirection steps and index steps conform to an interface: an object with stepLength, idAssertion
-        indirectionStepNum = this.getFirstIndirectionStepNum(CFIAST);
-        indirectionNode = CFIAST.cfiString.localPath.steps[indirectionStepNum];
-        indirectionNode.type = "indexStep";
-
-        // Interpret the rest of the steps
-        $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, indirectionStepNum, $(contentDocument.documentElement, contentDocument), classBlacklist, elementBlacklist, idBlacklist);
-
-        // Interpret first range local_path
-        $range1TargetElement = this.interpretLocalPath(CFIAST.cfiString.range1, 0, $currElement, classBlacklist, elementBlacklist, idBlacklist);
-
-        // Interpret second range local_path
-        $range2TargetElement = this.interpretLocalPath(CFIAST.cfiString.range2, 0, $currElement, classBlacklist, elementBlacklist, idBlacklist);
-
-        // Get the start and end character offsets
-        var startOffset = parseInt(CFIAST.cfiString.range1.termStep.offsetValue) || undefined;
-        var endOffset = parseInt(CFIAST.cfiString.range2.termStep.offsetValue) || undefined;
-
-        // Return the element (and char offsets) at the end of the CFI
-        return {
-            startElement: $range1TargetElement[0],
-            startOffset: startOffset,
-            endElement: $range2TargetElement[0],
-            endOffset: endOffset
-        };
-    },
-
-    // Description: This method allows a "partial" CFI to be used to reference a target in a content document, without a
-    //   package document CFI component.
-    // Arguments: {
-    //     contentDocumentCFI : This is a partial CFI that represents a path in a content document only. This partial must be
-    //        syntactically valid, even though it references a path starting at the top of a content document (which is a CFI that
-    //        that has no defined meaning in the spec.)
-    //     contentDocument : A DOM representation of the content document to which the partial CFI refers.
-    // }
-    // Rationale: This method exists to meet the requirements of the Readium-SDK and should be used with care
-    getTargetElementWithPartialCFI : function (contentDocumentCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var decodedCFI = decodeURI(contentDocumentCFI);
-        var CFIAST = cfiParser.parse(decodedCFI);
-        var indirectionNode;
-
-        // Interpret the path node
-        var $currElement = this.interpretIndexStepNode(CFIAST.cfiString.path, $(contentDocument.documentElement, contentDocument), classBlacklist, elementBlacklist, idBlacklist);
-
-        // Interpret the rest of the steps
-        $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, 0, $currElement, classBlacklist, elementBlacklist, idBlacklist);
-
-        // Return the element at the end of the CFI
-        return $currElement;
-    },
-
-    // Description: This method allows a "partial" CFI to be used, with a content document, to return the text node and offset
-    //    referenced by the partial CFI.
-    // Arguments: {
-    //     contentDocumentCFI : This is a partial CFI that represents a path in a content document only. This partial must be
-    //        syntactically valid, even though it references a path starting at the top of a content document (which is a CFI that
-    //        that has no defined meaning in the spec.)
-    //     contentDocument : A DOM representation of the content document to which the partial CFI refers.
-    // }
-    getTextTerminusInfoWithPartialCFI : function (contentDocumentCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var decodedCFI = decodeURI(contentDocumentCFI);
-        var CFIAST = cfiParser.parse(decodedCFI);
-        var indirectionNode;
-        var textOffset;
-
-        // Interpret the path node
-        var $currElement = this.interpretIndexStepNode(CFIAST.cfiString.path, $(contentDocument.documentElement, contentDocument), classBlacklist, elementBlacklist, idBlacklist);
-
-        // Interpret the rest of the steps
-        $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, 0, $currElement, classBlacklist, elementBlacklist, idBlacklist);
-
-        // Return the element at the end of the CFI
-        textOffset = parseInt(CFIAST.cfiString.localPath.termStep.offsetValue);
-        return {
-            textNode: $currElement[0],
-            textOffset: textOffset
-        };
-    },
-
-    // Description: This method will return the element or node (say, a text node) that is the final target of the
-    //   the CFI, along with the text terminus offset.
-    getTextTerminusInfo : function (CFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var decodedCFI = decodeURI(CFI);
-        var CFIAST = cfiParser.parse(decodedCFI);
-        var indirectionNode;
-        var indirectionStepNum;
-        var $currElement;
-        var textOffset;
-
-        // Rationale: Since the correct content document for this CFI is already being passed, we can skip to the beginning
-        //   of the indirection step that referenced the content document.
-        // Note: This assumes that indirection steps and index steps conform to an interface: an object with stepLength, idAssertion
-        indirectionStepNum = this.getFirstIndirectionStepNum(CFIAST);
-        indirectionNode = CFIAST.cfiString.localPath.steps[indirectionStepNum];
-        indirectionNode.type = "indexStep";
-
-        // Interpret the rest of the steps
-        $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, indirectionStepNum, $(contentDocument.documentElement, contentDocument), classBlacklist, elementBlacklist, idBlacklist);
-
-        // Return the element at the end of the CFI
-        textOffset = parseInt(CFIAST.cfiString.localPath.termStep.offsetValue);
-        return {
-            textNode: $currElement[0],
-            textOffset: textOffset
-        };
-    },
-
-    // Description: This function will determine if the input "partial" CFI is expressed as a range
-    isRangeCfi: function (cfi) {
-        var CFIAST = cfiParser.parse(cfi);
-        return CFIAST.cfiString.range1 ? true : false;
-    },
-
-    // Description: This function will determine if the input "partial" CFI has a text terminus step
-    hasTextTerminus: function (cfi) {
-        var CFIAST = cfiParser.parse(cfi);
-        return CFIAST.cfiString.localPath.termStep ? true : false;
-    },
-
-    // ------------------------------------------------------------------------------------ //
-    //  "PRIVATE" HELPERS                                                                   //
-    // ------------------------------------------------------------------------------------ //
-
-    getFirstIndirectionStepNum : function (CFIAST) {
-
-        // Find the first indirection step in the local path; follow it like a regular step, as the step in the content document it
-        //   references is already loaded and has been passed to this method
-        var stepNum = 0;
-        for (stepNum; stepNum <= CFIAST.cfiString.localPath.steps.length - 1 ; stepNum++) {
-
-            nextStepNode = CFIAST.cfiString.localPath.steps[stepNum];
-            if (nextStepNode.type === "indirectionStep") {
-                return stepNum;
-            }
-        }
-    },
-
-    // REFACTORING CANDIDATE: cfiString node and start step num could be merged into one argument, by simply passing the
-    //   starting step... probably a good idea, this would make the meaning of this method clearer.
-    interpretLocalPath : function (localPathNode, startStepNum, $currElement, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var stepNum = startStepNum;
-        var nextStepNode;
-        for (stepNum; stepNum <= localPathNode.steps.length - 1 ; stepNum++) {
-
-            nextStepNode = localPathNode.steps[stepNum];
-            if (nextStepNode.type === "indexStep") {
-
-                $currElement = this.interpretIndexStepNode(nextStepNode, $currElement, classBlacklist, elementBlacklist, idBlacklist);
-            }
-            else if (nextStepNode.type === "indirectionStep") {
-
-                $currElement = this.interpretIndirectionStepNode(nextStepNode, $currElement, classBlacklist, elementBlacklist, idBlacklist);
-            }
-        }
-
-        return $currElement;
-    },
-
-    interpretIndexStepNode : function (indexStepNode, $currElement, classBlacklist, elementBlacklist, idBlacklist) {
-
-        // Check node type; throw error if wrong type
-        if (indexStepNode === undefined || indexStepNode.type !== "indexStep") {
-
-            throw cfiRuntimeErrors.NodeTypeError(indexStepNode, "expected index step node");
-        }
-
-        // Index step
-        var $stepTarget = cfiInstructions.getNextNode(indexStepNode.stepLength, $currElement, classBlacklist, elementBlacklist, idBlacklist);
-
-        // Check the id assertion, if it exists
-        if (indexStepNode.idAssertion) {
-
-            if (!cfiInstructions.targetIdMatchesIdAssertion($stepTarget, indexStepNode.idAssertion)) {
-
-                throw cfiRuntimeErrors.CFIAssertionError(indexStepNode.idAssertion, $stepTarget.attr('id'), "Id assertion failed");
-            }
-        }
-
-        return $stepTarget;
-    },
-
-    interpretIndirectionStepNode : function (indirectionStepNode, $currElement, classBlacklist, elementBlacklist, idBlacklist) {
-
-        // Check node type; throw error if wrong type
-        if (indirectionStepNode === undefined || indirectionStepNode.type !== "indirectionStep") {
-
-            throw cfiRuntimeErrors.NodeTypeError(indirectionStepNode, "expected indirection step node");
-        }
-
-        // Indirection step
-        var $stepTarget = cfiInstructions.followIndirectionStep(
-            indirectionStepNode.stepLength,
-            $currElement,
-            classBlacklist,
-            elementBlacklist);
-
-        // Check the id assertion, if it exists
-        if (indirectionStepNode.idAssertion) {
-
-            if (!cfiInstructions.targetIdMatchesIdAssertion($stepTarget, indirectionStepNode.idAssertion)) {
-
-                throw cfiRuntimeErrors.CFIAssertionError(indirectionStepNode.idAssertion, $stepTarget.attr('id'), "Id assertion failed");
-            }
-        }
-
-        return $stepTarget;
-    },
-
-    // REFACTORING CANDIDATE: The logic here assumes that a user will always want to use this terminus
-    //   to inject content into the found node. This will not always be the case, and different types of interpretation
-    //   are probably desired.
-    interpretTextTerminusNode : function (terminusNode, $currElement, elementToInject) {
-
-        if (terminusNode === undefined || terminusNode.type !== "textTerminus") {
-
-            throw cfiRuntimeErrors.NodeTypeError(terminusNode, "expected text terminus node");
-        }
-
-        var $injectedElement = cfiInstructions.textTermination(
-            $currElement,
-            terminusNode.offsetValue,
-            elementToInject
-            );
-
-        return $injectedElement;
-    },
-
-    searchLocalPathForHref : function ($currElement, $packageDocument, localPathNode, classBlacklist, elementBlacklist, idBlacklist) {
-
-        // Interpret the first local_path node, which is a set of steps and and a terminus condition
-        var stepNum = 0;
-        var nextStepNode;
-        for (stepNum = 0 ; stepNum <= localPathNode.steps.length - 1 ; stepNum++) {
-
-            nextStepNode = localPathNode.steps[stepNum];
-            if (nextStepNode.type === "indexStep") {
-
-                $currElement = this.interpretIndexStepNode(nextStepNode, $currElement, classBlacklist, elementBlacklist, idBlacklist);
-            }
-            else if (nextStepNode.type === "indirectionStep") {
-
-                $currElement = this.interpretIndirectionStepNode(nextStepNode, $currElement, classBlacklist, elementBlacklist, idBlacklist);
-            }
-
-            // Found the content document href referenced by the spine item
-            if ($currElement.is("itemref")) {
-
-                return cfiInstructions.retrieveItemRefHref($currElement, $packageDocument);
-            }
-        }
-
-        return undefined;
-    }
-};
-
-return obj;
-}
-
-
-
-
-
-
-
-
-
-
-if (typeof define == 'function' && typeof define.amd == 'object') {
-    console.log("RequireJS ... cfi_interpreter");
-
-    define('readium_cfi_js/cfi_interpreter',['jquery', 'readium_cfi_js/cfi_parser', './cfi_instructions', './cfi_runtime_errors'],
-    function ($, cfiParser, cfiInstructions, cfiRuntimeErrors) {
-        return init($, cfiParser, cfiInstructions, cfiRuntimeErrors);
-    });
-} else {
-    console.log("!RequireJS ... cfi_interpreter");
-
-    if (!global["EPUBcfi"]) {
-        throw new Error("EPUBcfi not initialised on global object?! (window or this context)");
-    }
-    global.EPUBcfi.Interpreter =
-    init($,
-        global.EPUBcfi.Parser,
-        global.EPUBcfi.CFIInstructions,
-        {
-            NodeTypeError: global.EPUBcfi.NodeTypeError,
-            OutOfRangeError: global.EPUBcfi.OutOfRangeError,
-            TerminusError: global.EPUBcfi.TerminusError,
-            CFIAssertionError: global.EPUBcfi.CFIAssertionError
-        });
-}
-
-})(typeof window !== "undefined" ? window : this);
-
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
-//  
-//  Redistribution and use in source and binary forms, with or without modification, 
-//  are permitted provided that the following conditions are met:
-//  1. Redistributions of source code must retain the above copyright notice, this 
-//  list of conditions and the following disclaimer.
-//  2. Redistributions in binary form must reproduce the above copyright notice, 
-//  this list of conditions and the following disclaimer in the documentation and/or 
-//  other materials provided with the distribution.
-//  3. Neither the name of the organization nor the names of its contributors may be 
-//  used to endorse or promote products derived from this software without specific 
-//  prior written permission.
-
-(function(global) {
-
-var init = function($, cfiInstructions, cfiRuntimeErrors) {
-    
-    if (typeof cfiInstructions === "undefined") {
-        throw new Error("UNDEFINED?! cfiInstructions");
-    }
-    
-    if (typeof cfiRuntimeErrors === "undefined") {
-        throw new Error("UNDEFINED?! cfiRuntimeErrors");
-    }
-    
-var obj = {
-
-    // ------------------------------------------------------------------------------------ //
-    //  "PUBLIC" METHODS (THE API)                                                          //
-    // ------------------------------------------------------------------------------------ //
-
-    generateCharOffsetRangeComponent : function (rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist) {
-        var document = rangeStartElement.ownerDocument;
-
-        var docRange;
-        var commonAncestor;
-        var $rangeStartParent;
-        var $rangeEndParent;
-        var range1OffsetStep;
-        var range1CFI;
-        var range2OffsetStep;
-        var range2CFI;
-        var commonCFIComponent;
-
-        this.validateStartTextNode(rangeStartElement);
-        this.validateStartTextNode(rangeEndElement);
-
-        // Parent element is the same
-        if ($(rangeStartElement).parent()[0] === $(rangeEndElement).parent()[0]) {
-            range1OffsetStep = this.createCFITextNodeStep($(rangeStartElement), startOffset, classBlacklist, elementBlacklist, idBlacklist);
-            range2OffsetStep = this.createCFITextNodeStep($(rangeEndElement), endOffset, classBlacklist, elementBlacklist, idBlacklist);          
-            commonCFIComponent = this.createCFIElementSteps($(rangeStartElement).parent(), "html", classBlacklist, elementBlacklist, idBlacklist);
-            return commonCFIComponent.substring(1, commonCFIComponent.length) + "," + range1OffsetStep + "," + range2OffsetStep;
-        }
-        else {
-
-            // Create a document range to find the common ancestor
-            docRange = document.createRange();
-            docRange.setStart(rangeStartElement, startOffset);
-            docRange.setEnd(rangeEndElement, endOffset);
-            commonAncestor = docRange.commonAncestorContainer;
-
-            // Generate terminating offset and range 1
-            range1OffsetStep = this.createCFITextNodeStep($(rangeStartElement), startOffset, classBlacklist, elementBlacklist, idBlacklist);
-            $rangeStartParent = $(rangeStartElement).parent();
-            if ($rangeStartParent[0] === commonAncestor) {
-              // rangeStartElement is a text child node of the commonAncestor, so it's CFI sub-path is only the text node step:
-              range1CFI = range1OffsetStep;
-            } else {
-              range1CFI = this.createCFIElementSteps($rangeStartParent, commonAncestor, classBlacklist, elementBlacklist, idBlacklist) + range1OffsetStep;
-            }
-
-            // Generate terminating offset and range 2
-            range2OffsetStep = this.createCFITextNodeStep($(rangeEndElement), endOffset, classBlacklist, elementBlacklist, idBlacklist);
-            $rangeEndParent = $(rangeEndElement).parent();
-            if ($rangeEndParent[0] === commonAncestor) {
-              // rangeEndElement is a text child node of the commonAncestor, so it's CFI sub-path is only the text node step:
-              range2CFI = range2OffsetStep;
-            } else {
-              range2CFI = this.createCFIElementSteps($rangeEndParent, commonAncestor, classBlacklist, elementBlacklist, idBlacklist) + range2OffsetStep;
-            }
-
-            // Generate shared component
-            commonCFIComponent = this.createCFIElementSteps($(commonAncestor), "html", classBlacklist, elementBlacklist, idBlacklist);
-
-            // Return the result
-            return commonCFIComponent.substring(1, commonCFIComponent.length) + "," + range1CFI + "," + range2CFI;
-        }
-    },
-
-    generateElementRangeComponent : function (rangeStartElement, rangeEndElement, classBlacklist, elementBlacklist, idBlacklist) {
-        var document = rangeStartElement.ownerDocument;
-
-        var docRange;
-        var commonAncestor;
-        var range1CFI;
-        var range2CFI;
-        var commonCFIComponent;
-
-        this.validateStartElement(rangeStartElement);
-        this.validateStartElement(rangeEndElement);
-
-        if (rangeStartElement === rangeEndElement) {
-            throw new Error("Start and end element cannot be the same for a CFI range");
-        }
-
-        // Create a document range to find the common ancestor
-        docRange = document.createRange();
-        docRange.setStart(rangeStartElement, 0);
-        docRange.setEnd(rangeEndElement, rangeEndElement.childNodes.length);
-        commonAncestor = docRange.commonAncestorContainer;
-
-        // Generate range 1
-        range1CFI = this.createCFIElementSteps($(rangeStartElement), commonAncestor, classBlacklist, elementBlacklist, idBlacklist);
-
-        // Generate range 2
-        range2CFI = this.createCFIElementSteps($(rangeEndElement), commonAncestor, classBlacklist, elementBlacklist, idBlacklist);
-
-        // Generate shared component
-        commonCFIComponent = this.createCFIElementSteps($(commonAncestor), "html", classBlacklist, elementBlacklist, idBlacklist);
-
-        // Return the result
-        return commonCFIComponent.substring(1, commonCFIComponent.length) + "," + range1CFI + "," + range2CFI;
-    },
-
-    generateRangeComponent : function (rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist) {
-        var document = rangeStartElement.ownerDocument;
-
-        if(rangeStartElement.nodeType === Node.ELEMENT_NODE && rangeEndElement.nodeType === Node.ELEMENT_NODE){
-            return this.generateElementRangeComponent(rangeStartElement, rangeEndElement, classBlacklist, elementBlacklist, idBlacklist);
-        } else if(rangeStartElement.nodeType === Node.TEXT_NODE && rangeEndElement.nodeType === Node.TEXT_NODE){
-            return this.generateCharOffsetRangeComponent(rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist);
-        } else {
-            var docRange;
-            var range1CFI;
-            var range1OffsetStep;
-            var range2CFI;
-            var range2OffsetStep;
-            var commonAncestor;
-            var commonCFIComponent;
-
-            // Create a document range to find the common ancestor
-            docRange = document.createRange();
-            docRange.setStart(rangeStartElement, startOffset);
-            docRange.setEnd(rangeEndElement, endOffset);
-            commonAncestor = docRange.commonAncestorContainer;
-
-            if(rangeStartElement.nodeType === Node.ELEMENT_NODE){
-                this.validateStartElement(rangeStartElement);
-                range1CFI = this.createCFIElementSteps($(rangeStartElement), commonAncestor, classBlacklist, elementBlacklist, idBlacklist);
-            } else {
-                this.validateStartTextNode(rangeStartElement);
-                // Generate terminating offset and range 1
-                range1OffsetStep = this.createCFITextNodeStep($(rangeStartElement), startOffset, classBlacklist, elementBlacklist, idBlacklist);
-                if($(rangeStartElement).parent().is(commonAncestor)){
-                    range1CFI = range1OffsetStep;
-                } else {
-                    range1CFI = this.createCFIElementSteps($(rangeStartElement).parent(), commonAncestor, classBlacklist, elementBlacklist, idBlacklist) + range1OffsetStep;    
-                }
-            }
-
-            if(rangeEndElement.nodeType === Node.ELEMENT_NODE){
-                this.validateStartElement(rangeEndElement);
-                range2CFI = this.createCFIElementSteps($(rangeEndElement), commonAncestor, classBlacklist, elementBlacklist, idBlacklist);
-            } else {
-                this.validateStartTextNode(rangeEndElement);
-                // Generate terminating offset and range 2
-                range2OffsetStep = this.createCFITextNodeStep($(rangeEndElement), endOffset, classBlacklist, elementBlacklist, idBlacklist);
-                if($(rangeEndElement).parent().is(commonAncestor)){
-                    range2CFI = range2OffsetStep;
-                } else {
-                    range2CFI = this.createCFIElementSteps($(rangeEndElement).parent(), commonAncestor, classBlacklist, elementBlacklist, idBlacklist) + range2OffsetStep;    
-                }                
-            }
-
-            // Generate shared component
-            commonCFIComponent = this.createCFIElementSteps($(commonAncestor), "html", classBlacklist, elementBlacklist, idBlacklist);
-
-            // Return the result
-            return commonCFIComponent.substring(1, commonCFIComponent.length) + "," + range1CFI + "," + range2CFI;
-        }
-    },
-
-    // Description: Generates a character offset CFI 
-    // Arguments: The text node that contains the offset referenced by the cfi, the offset value, the name of the 
-    //   content document that contains the text node, the package document for this EPUB.
-    generateCharacterOffsetCFIComponent : function (startTextNode, characterOffset, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var textNodeStep;
-        var contentDocCFI;
-        var $itemRefStartNode;
-        var packageDocCFI;
-
-        this.validateStartTextNode(startTextNode, characterOffset);
-
-        // Create the text node step
-        textNodeStep = this.createCFITextNodeStep($(startTextNode), characterOffset, classBlacklist, elementBlacklist, idBlacklist);
-
-        // Call the recursive method to create all the steps up to the head element of the content document (the "html" element)
-        contentDocCFI = this.createCFIElementSteps($(startTextNode).parent(), "html", classBlacklist, elementBlacklist, idBlacklist) + textNodeStep;
-        return contentDocCFI.substring(1, contentDocCFI.length);
-    },
-
-    generateElementCFIComponent : function (startElement, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var contentDocCFI;
-        var $itemRefStartNode;
-        var packageDocCFI;
-
-        this.validateStartElement(startElement);
-
-        // Call the recursive method to create all the steps up to the head element of the content document (the "html" element)
-        contentDocCFI = this.createCFIElementSteps($(startElement), "html", classBlacklist, elementBlacklist, idBlacklist);
-
-        // Remove the ! 
-        return contentDocCFI.substring(1, contentDocCFI.length);
-    },
-
-    generatePackageDocumentCFIComponent : function (contentDocumentName, packageDocument, classBlacklist, elementBlacklist, idBlacklist) {
-
-        this.validateContentDocumentName(contentDocumentName);
-        this.validatePackageDocument(packageDocument, contentDocumentName);
-
-        // Get the start node (itemref element) that references the content document
-        $itemRefStartNode = $("itemref[idref='" + contentDocumentName + "']", $(packageDocument));
-
-        // Create the steps up to the top element of the package document (the "package" element)
-        packageDocCFIComponent = this.createCFIElementSteps($itemRefStartNode, "package", classBlacklist, elementBlacklist, idBlacklist);
-
-        // Append an !; this assumes that a CFI content document CFI component will be appended at some point
-        return packageDocCFIComponent + "!";
-    },
-
-    generatePackageDocumentCFIComponentWithSpineIndex : function (spineIndex, packageDocument, classBlacklist, elementBlacklist, idBlacklist) {
-
-        // Get the start node (itemref element) that references the content document
-        $itemRefStartNode = $($("spine", packageDocument).children()[spineIndex]);
-
-        // Create the steps up to the top element of the package document (the "package" element)
-        packageDocCFIComponent = this.createCFIElementSteps($itemRefStartNode, "package", classBlacklist, elementBlacklist, idBlacklist);
-
-        // Append an !; this assumes that a CFI content document CFI component will be appended at some point
-        return packageDocCFIComponent + "!";
-    },
-
-    generateCompleteCFI : function (packageDocumentCFIComponent, contentDocumentCFIComponent) {
-
-        return "epubcfi(" + packageDocumentCFIComponent + contentDocumentCFIComponent + ")";  
-    },
-
-    // ------------------------------------------------------------------------------------ //
-    //  "PRIVATE" HELPERS                                                                   //
-    // ------------------------------------------------------------------------------------ //
-
-    validateStartTextNode : function (startTextNode, characterOffset) {
-        
-        // Check that the text node to start from IS a text node
-        if (!startTextNode) {
-            throw new cfiRuntimeErrors.NodeTypeError(startTextNode, "Cannot generate a character offset from a starting point that is not a text node");
-        } else if (startTextNode.nodeType != 3) {
-            throw new cfiRuntimeErrors.NodeTypeError(startTextNode, "Cannot generate a character offset from a starting point that is not a text node");
-        }
-
-        // Check that the character offset is within a valid range for the text node supplied
-        if (characterOffset < 0) {
-            throw new cfiRuntimeErrors.OutOfRangeError(characterOffset, 0, "Character offset cannot be less than 0");
-        }
-        else if (characterOffset > startTextNode.nodeValue.length) {
-            throw new cfiRuntimeErrors.OutOfRangeError(characterOffset, startTextNode.nodeValue.length - 1, "character offset cannot be greater than the length of the text node");
-        }
-    },
-
-    validateStartElement : function (startElement) {
-
-        if (!startElement) {
-            throw new cfiRuntimeErrors.NodeTypeError(startElement, "CFI target element is undefined");
-        }
-
-        if (!(startElement.nodeType && startElement.nodeType === 1)) {
-            throw new cfiRuntimeErrors.NodeTypeError(startElement, "CFI target element is not an HTML element");
-        }
-    },
-
-    validateContentDocumentName : function (contentDocumentName) {
-
-        // Check that the idref for the content document has been provided
-        if (!contentDocumentName) {
-            throw new Error("The idref for the content document, as found in the spine, must be supplied");
-        }
-    },
-
-    validatePackageDocument : function (packageDocument, contentDocumentName) {
-        
-        // Check that the package document is non-empty and contains an itemref element for the supplied idref
-        if (!packageDocument) {
-            throw new Error("A package document must be supplied to generate a CFI");
-        }
-        else if ($($("itemref[idref='" + contentDocumentName + "']", packageDocument)[0]).length === 0) {
-            throw new Error("The idref of the content document could not be found in the spine");
-        }
-    },
-
-    // Description: Creates a CFI terminating step to a text node, with a character offset
-    // REFACTORING CANDIDATE: Some of the parts of this method could be refactored into their own methods
-    createCFITextNodeStep : function ($startTextNode, characterOffset, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var $parentNode;
-        var $contentsExcludingMarkers;
-        var CFIIndex;
-        var indexOfTextNode;
-        var preAssertion;
-        var preAssertionStartIndex;
-        var textLength;
-        var postAssertion;
-        var postAssertionEndIndex;
-
-        // Find text node position in the set of child elements, ignoring any blacklisted elements 
-        $parentNode = $startTextNode.parent();
-        $contentsExcludingMarkers = cfiInstructions.applyBlacklist($parentNode.contents(), classBlacklist, elementBlacklist, idBlacklist);
-
-        // Find the text node index in the parent list, inferring nodes that were originally a single text node
-        var prevNodeWasTextNode;
-        var indexOfFirstInSequence;
-        var textNodeOnlyIndex = 0;
-        var characterOffsetSinceUnsplit = 0;
-        var finalCharacterOffsetInSequence = 0;
-        $.each($contentsExcludingMarkers, 
-            function (index) {
-
-            // If this is a text node, check if it matches and return the current index
-            if (this.nodeType === Node.TEXT_NODE || !prevNodeWasTextNode) {
-
-                if (this.nodeType === Node.TEXT_NODE) {
-                    if (this === $startTextNode[0]) {
-
-                        // Set index as the first in the adjacent sequence of text nodes, or as the index of the current node if this 
-                        //   node is a standard one sandwiched between two element nodes. 
-                        if (prevNodeWasTextNode) {
-                            indexOfTextNode = indexOfFirstInSequence;
-                            finalCharacterOffsetInSequence = characterOffsetSinceUnsplit;
-                        } else {
-                            indexOfTextNode = textNodeOnlyIndex;
-                        }
-                        
-                        // Break out of .each loop
-                        return false; 
-                    }
-
-                    // Save this index as the first in sequence of adjacent text nodes, if it is not already set by this point
-                    prevNodeWasTextNode = true;
-                    characterOffsetSinceUnsplit = characterOffsetSinceUnsplit + this.length;
-                    if (indexOfFirstInSequence === undefined) {
-                        indexOfFirstInSequence = textNodeOnlyIndex;
-                        textNodeOnlyIndex = textNodeOnlyIndex + 1;
-                    }
-                } else if (this.nodeType === Node.ELEMENT_NODE) {
-                    textNodeOnlyIndex = textNodeOnlyIndex + 1;
-                } else if (this.nodeType === Node.COMMENT_NODE) {
-                    prevNodeWasTextNode = true;
-                    characterOffsetSinceUnsplit = characterOffsetSinceUnsplit + this.length + 7; // 7 is the size of the html comment tag <!--[comment]-->
-                    if (indexOfFirstInSequence === undefined) {
-                        indexOfFirstInSequence = textNodeOnlyIndex;
-                    }
-                } else if (this.nodeType === Node.PROCESSING_INSTRUCTION_NODE) {
-                    prevNodeWasTextNode = true;
-                    characterOffsetSinceUnsplit = characterOffsetSinceUnsplit + this.data.length + this.target.length + 5; // 5 is the size of the instruction processing tag including the required space between the target and the data <?[target] [data]?>
-                    if (indexOfFirstInSequence === undefined) {
-                        indexOfFirstInSequence = textNodeOnlyIndex;
-                    }
-                }
-            }
-            // This node is not a text node
-            else if (this.nodeType === Node.ELEMENT_NODE) {
-                prevNodeWasTextNode = false;
-                indexOfFirstInSequence = undefined;
-                characterOffsetSinceUnsplit  = 0;
-            } else if (this.nodeType === Node.COMMENT_NODE) {
-                characterOffsetSinceUnsplit = characterOffsetSinceUnsplit + this.length + 7; // <!--[comment]-->
-            } else if (this.nodeType === Node.PROCESSING_INSTRUCTION_NODE) {
-                characterOffsetSinceUnsplit = characterOffsetSinceUnsplit + this.data.length + this.target.length + 5; // <?[target] [data]?>
-            }
-        });
-
-        // Convert the text node index to a CFI odd-integer representation
-        CFIIndex = (indexOfTextNode * 2) + 1;
-
-        // TODO: text assertions are not in the grammar yet, I think, or they're just causing problems. This has
-        //   been temporarily removed. 
-
-        // Add pre- and post- text assertions
-        // preAssertionStartIndex = (characterOffset - 3 >= 0) ? characterOffset - 3 : 0;
-        // preAssertion = $startTextNode[0].nodeValue.substring(preAssertionStartIndex, characterOffset);
-
-        // textLength = $startTextNode[0].nodeValue.length;
-        // postAssertionEndIndex = (characterOffset + 3 <= textLength) ? characterOffset + 3 : textLength;
-        // postAssertion = $startTextNode[0].nodeValue.substring(characterOffset, postAssertionEndIndex);
-
-        // Gotta infer the correct character offset, as well
-
-        // Return the constructed CFI text node step
-        return "/" + CFIIndex + ":" + (finalCharacterOffsetInSequence + characterOffset);
-         // + "[" + preAssertion + "," + postAssertion + "]";
-    },
-
-    createCFIElementSteps : function ($currNode, topLevelElement, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var $blacklistExcluded;
-        var $parentNode;
-        var currNodePosition;
-        var CFIPosition;
-        var idAssertion;
-        var elementStep; 
-
-
-
-        // per https://github.com/readium/readium-cfi-js/issues/28
-        // if the currentNode is the same as top level element, we're looking at a text node 
-        // that's a direct child of "topLevelElement" so we don't need to include it in the element step.
-        if ($currNode[0] === topLevelElement) {
-            return "";
-        }
-
-        // Find position of current node in parent list
-        $blacklistExcluded = cfiInstructions.applyBlacklist($currNode.parent().children(), classBlacklist, elementBlacklist, idBlacklist);
-        $.each($blacklistExcluded, 
-            function (index, value) {
-
-                if (this === $currNode[0]) {
-
-                    currNodePosition = index;
-
-                    // Break loop
-                    return false;
-                }
-        });
-
-        // Convert position to the CFI even-integer representation
-        CFIPosition = (currNodePosition + 1) * 2;
-
-        // Create CFI step with id assertion, if the element has an id
-        if ($currNode.attr("id")) {
-            elementStep = "/" + CFIPosition + "[" + $currNode.attr("id") + "]";
-        }
-        else {
-            elementStep = "/" + CFIPosition;
-        }
-
-        // If a parent is an html element return the (last) step for this content document, otherwise, continue.
-        //   Also need to check if the current node is the top-level element. This can occur if the start node is also the
-        //   top level element.
-        $parentNode = $currNode.parent();
-        if ($parentNode.is(topLevelElement) || $currNode.is(topLevelElement)) {
-            
-            // If the top level node is a type from which an indirection step, add an indirection step character (!)
-            // REFACTORING CANDIDATE: It is possible that this should be changed to: if (topLevelElement = 'package') do
-            //   not return an indirection character. Every other type of top-level element may require an indirection
-            //   step to navigate to, thus requiring that ! is always prepended. 
-            if (topLevelElement === 'html') {
-                return "!" + elementStep;
-            }
-            else {
-                return elementStep;
-            }
-        }
-        else {
-            return this.createCFIElementSteps($parentNode, topLevelElement, classBlacklist, elementBlacklist, idBlacklist) + elementStep;
-        }
-    }
-};
-
-return obj;
-}
-
-
-
-
-
-
-
-if (typeof define == 'function' && typeof define.amd == 'object') {
-    console.log("RequireJS ... cfi_generator");
-    
-    define('readium_cfi_js/cfi_generator',['jquery', './cfi_instructions', './cfi_runtime_errors'],
-    function ($, cfiInstructions, cfiRuntimeErrors) {
-        return init($, cfiInstructions, cfiRuntimeErrors);
-    });
-} else {
-    console.log("!RequireJS ... cfi_generator");
-    
-    if (!global["EPUBcfi"]) {
-        throw new Error("EPUBcfi not initialised on global object?! (window or this context)");
-    }
-    global.EPUBcfi.Generator = 
-    init($,
-        global.EPUBcfi.CFIInstructions,
-        {
-            NodeTypeError: global.EPUBcfi.NodeTypeError,
-            OutOfRangeError: global.EPUBcfi.OutOfRangeError,
-            TerminusError: global.EPUBcfi.TerminusError,
-            CFIAssertionError: global.EPUBcfi.CFIAssertionError
-        });
-}
-
-})(typeof window !== "undefined" ? window : this);
-
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
-//
-//  Redistribution and use in source and binary forms, with or without modification,
-//  are permitted provided that the following conditions are met:
-//  1. Redistributions of source code must retain the above copyright notice, this
-//  list of conditions and the following disclaimer.
-//  2. Redistributions in binary form must reproduce the above copyright notice,
-//  this list of conditions and the following disclaimer in the documentation and/or
-//  other materials provided with the distribution.
-//  3. Neither the name of the organization nor the names of its contributors may be
-//  used to endorse or promote products derived from this software without specific
-//  prior written permission.
-
-(function(global) {
-
-var init = function(cfiParser, cfiInterpreter, cfiInstructions, cfiRuntimeErrors, cfiGenerator) {
-
-    if (typeof cfiParser === "undefined") {
-        throw new Error("UNDEFINED?! cfiParser");
-    }
-
-    if (typeof cfiInterpreter === "undefined") {
-        throw new Error("UNDEFINED?! cfiInterpreter");
-    }
-
-    if (typeof cfiInstructions === "undefined") {
-        throw new Error("UNDEFINED?! cfiInstructions");
-    }
-
-    if (typeof cfiRuntimeErrors === "undefined") {
-        throw new Error("UNDEFINED?! cfiRuntimeErrors");
-    }
-
-    if (typeof cfiGenerator === "undefined") {
-        throw new Error("UNDEFINED?! cfiGenerator");
-    }
-
-    var obj = {
-
-        getContentDocHref : function (CFI, packageDocument) {
-            return cfiInterpreter.getContentDocHref(CFI, packageDocument);
-        },
-        injectElement : function (CFI, contentDocument, elementToInject, classBlacklist, elementBlacklist, idBlacklist) {
-            return cfiInterpreter.injectElement(CFI, contentDocument, elementToInject, classBlacklist, elementBlacklist, idBlacklist);
-        },
-        getTargetElement : function (CFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
-            return cfiInterpreter.getTargetElement(CFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist);
-        },
-        getTargetElementWithPartialCFI : function (contentDocumentCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
-            return cfiInterpreter.getTargetElementWithPartialCFI(contentDocumentCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist);
-        },
-        injectRangeElements : function (rangeCFI, contentDocument, startElementToInject, endElementToInject, classBlacklist, elementBlacklist, idBlacklist) {
-            return cfiInterpreter.injectRangeElements(rangeCFI, contentDocument, startElementToInject, endElementToInject, classBlacklist, elementBlacklist, idBlacklist);
-        },
-        getRangeTargetElements : function (rangeCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
-            return cfiInterpreter.getRangeTargetElements(rangeCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist);
-        },
-        isRangeCfi : function (cfi) {
-            return cfiInterpreter.isRangeCfi(cfi);
-        },
-        hasTextTerminus: function(cfi) {
-            return cfiInterpreter.hasTextTerminus(cfi);
-        },
-        getTextTerminusInfo : function (CFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
-            return cfiInterpreter.getTextTerminusInfo(CFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist);
-        },
-        getTextTerminusInfoWithPartialCFI : function (contentDocumentCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
-            return cfiInterpreter.getTextTerminusInfoWithPartialCFI(contentDocumentCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist);
-        },
-        generateCharacterOffsetCFIComponent : function (startTextNode, characterOffset, classBlacklist, elementBlacklist, idBlacklist) {
-            return cfiGenerator.generateCharacterOffsetCFIComponent(startTextNode, characterOffset, classBlacklist, elementBlacklist, idBlacklist);
-        },
-        generateElementCFIComponent : function (startElement, classBlacklist, elementBlacklist, idBlacklist) {
-            return cfiGenerator.generateElementCFIComponent(startElement, classBlacklist, elementBlacklist, idBlacklist);
-        },
-        generatePackageDocumentCFIComponent : function (contentDocumentName, packageDocument, classBlacklist, elementBlacklist, idBlacklist) {
-            return cfiGenerator.generatePackageDocumentCFIComponent(contentDocumentName, packageDocument, classBlacklist, elementBlacklist, idBlacklist);
-        },
-        generatePackageDocumentCFIComponentWithSpineIndex : function (spineIndex, packageDocument, classBlacklist, elementBlacklist, idBlacklist) {
-            return cfiGenerator.generatePackageDocumentCFIComponentWithSpineIndex(spineIndex, packageDocument, classBlacklist, elementBlacklist, idBlacklist);
-        },
-        generateCompleteCFI : function (packageDocumentCFIComponent, contentDocumentCFIComponent) {
-            return cfiGenerator.generateCompleteCFI(packageDocumentCFIComponent, contentDocumentCFIComponent);
-        },
-        generateCharOffsetRangeComponent : function (rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist) {
-            return cfiGenerator.generateCharOffsetRangeComponent(rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist);
-        },
-        generateElementRangeComponent : function (rangeStartElement, rangeEndElement, classBlacklist, elementBlacklist, idBlacklist) {
-            return cfiGenerator.generateElementRangeComponent(rangeStartElement, rangeEndElement, classBlacklist, elementBlacklist, idBlacklist);
-        },
-        generateRangeComponent : function (rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist) {
-            return cfiGenerator.generateRangeComponent(rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist);
-        },
-        injectElementAtOffset : function ($textNodeList, textOffset, elementToInject) {
-            return cfiInstructions.injectCFIMarkerIntoText($textNodeList, textOffset, elementToInject);
-        }
-    };
-
-
-    // TODO: remove global (should not be necessary in properly-configured RequireJS build!)
-    // ...but we leave it here as a "legacy" mechanism to access the CFI lib functionality
-    // -----
-    obj.CFIInstructions = cfiInstructions;
-    obj.Parser = cfiParser;
-    obj.Interpreter = cfiInterpreter;
-    obj.Generator = cfiGenerator;
-
-    obj.NodeTypeError= cfiRuntimeErrors.NodeTypeError;
-    obj.OutOfRangeError = cfiRuntimeErrors.OutOfRangeError;
-    obj.TerminusError = cfiRuntimeErrors.TerminusError;
-    obj.CFIAssertionError = cfiRuntimeErrors.CFIAssertionError;
-
-    global.EPUBcfi = obj;
-    // -----
-
-    console.log("#######################################");
-    // console.log(global.EPUBcfi);
-    // console.log("#######################################");
-
-    return obj;
-}
-
-
-
-
-
-
-if (typeof define == 'function' && typeof define.amd == 'object') {
-    console.log("RequireJS ... cfi_API");
-
-    define('readium_cfi_js/cfi_API',['readium_cfi_js/cfi_parser', './cfi_interpreter', './cfi_instructions', './cfi_runtime_errors', './cfi_generator'],
-    function (cfiParser, cfiInterpreter, cfiInstructions, cfiRuntimeErrors, cfiGenerator) {
-
-        return init(cfiParser, cfiInterpreter, cfiInstructions, cfiRuntimeErrors, cfiGenerator);
-    });
-} else {
-    console.log("!RequireJS ... cfi_API");
-
-    if (!global["EPUBcfi"]) {
-        throw new Error("EPUBcfi not initialised on global object?! (window or this context)");
-    }
-
-    init(global.EPUBcfi.Parser,
-        global.EPUBcfi.Interpreter,
-        global.EPUBcfi.CFIInstructions,
-        {
-            NodeTypeError: global.EPUBcfi.NodeTypeError,
-            OutOfRangeError: global.EPUBcfi.OutOfRangeError,
-            TerminusError: global.EPUBcfi.TerminusError,
-            CFIAssertionError: global.EPUBcfi.CFIAssertionError
-        },
-        global.EPUBcfi.Generator);
-}
-
-})(typeof window !== "undefined" ? window : this);
-
-define('readium_cfi_js', ['readium_cfi_js/cfi_API'], function (main) { return main; });
-
-define('eventEmitter',['require','exports','module'],function (require, exports, module) {'use strict';
-
-var has = Object.prototype.hasOwnProperty
-  , prefix = '~';
-
-/**
- * Constructor to create a storage for our `EE` objects.
- * An `Events` instance is a plain object whose properties are event names.
- *
- * @constructor
- * @api private
- */
-function Events() {}
-
-//
-// We try to not inherit from `Object.prototype`. In some engines creating an
-// instance in this way is faster than calling `Object.create(null)` directly.
-// If `Object.create(null)` is not supported we prefix the event names with a
-// character to make sure that the built-in object properties are not
-// overridden or used as an attack vector.
-//
-if (Object.create) {
-  Events.prototype = Object.create(null);
-
-  //
-  // This hack is needed because the `__proto__` property is still inherited in
-  // some old browsers like Android 4, iPhone 5.1, Opera 11 and Safari 5.
-  //
-  if (!new Events().__proto__) prefix = false;
-}
-
-/**
- * Representation of a single event listener.
- *
- * @param {Function} fn The listener function.
- * @param {Mixed} context The context to invoke the listener with.
- * @param {Boolean} [once=false] Specify if the listener is a one-time listener.
- * @constructor
- * @api private
- */
-function EE(fn, context, once) {
-  this.fn = fn;
-  this.context = context;
-  this.once = once || false;
-}
-
-/**
- * Minimal `EventEmitter` interface that is molded against the Node.js
- * `EventEmitter` interface.
- *
- * @constructor
- * @api public
- */
-function EventEmitter() {
-  this._events = new Events();
-  this._eventsCount = 0;
-}
-
-/**
- * Return an array listing the events for which the emitter has registered
- * listeners.
- *
- * @returns {Array}
- * @api public
- */
-EventEmitter.prototype.eventNames = function eventNames() {
-  var names = []
-    , events
-    , name;
-
-  if (this._eventsCount === 0) return names;
-
-  for (name in (events = this._events)) {
-    if (has.call(events, name)) names.push(prefix ? name.slice(1) : name);
-  }
-
-  if (Object.getOwnPropertySymbols) {
-    return names.concat(Object.getOwnPropertySymbols(events));
-  }
-
-  return names;
-};
-
-/**
- * Return the listeners registered for a given event.
- *
- * @param {String|Symbol} event The event name.
- * @param {Boolean} exists Only check if there are listeners.
- * @returns {Array|Boolean}
- * @api public
- */
-EventEmitter.prototype.listeners = function listeners(event, exists) {
-  var evt = prefix ? prefix + event : event
-    , available = this._events[evt];
-
-  if (exists) return !!available;
-  if (!available) return [];
-  if (available.fn) return [available.fn];
-
-  for (var i = 0, l = available.length, ee = new Array(l); i < l; i++) {
-    ee[i] = available[i].fn;
-  }
-
-  return ee;
-};
-
-/**
- * Calls each of the listeners registered for a given event.
- *
- * @param {String|Symbol} event The event name.
- * @returns {Boolean} `true` if the event had listeners, else `false`.
- * @api public
- */
-EventEmitter.prototype.emit = function emit(event, a1, a2, a3, a4, a5) {
-  var evt = prefix ? prefix + event : event;
-
-  if (!this._events[evt]) return false;
-
-  var listeners = this._events[evt]
-    , len = arguments.length
-    , args
-    , i;
-
-  if (listeners.fn) {
-    if (listeners.once) this.removeListener(event, listeners.fn, undefined, true);
-
-    switch (len) {
-      case 1: return listeners.fn.call(listeners.context), true;
-      case 2: return listeners.fn.call(listeners.context, a1), true;
-      case 3: return listeners.fn.call(listeners.context, a1, a2), true;
-      case 4: return listeners.fn.call(listeners.context, a1, a2, a3), true;
-      case 5: return listeners.fn.call(listeners.context, a1, a2, a3, a4), true;
-      case 6: return listeners.fn.call(listeners.context, a1, a2, a3, a4, a5), true;
-    }
-
-    for (i = 1, args = new Array(len -1); i < len; i++) {
-      args[i - 1] = arguments[i];
-    }
-
-    listeners.fn.apply(listeners.context, args);
-  } else {
-    var length = listeners.length
-      , j;
-
-    for (i = 0; i < length; i++) {
-      if (listeners[i].once) this.removeListener(event, listeners[i].fn, undefined, true);
-
-      switch (len) {
-        case 1: listeners[i].fn.call(listeners[i].context); break;
-        case 2: listeners[i].fn.call(listeners[i].context, a1); break;
-        case 3: listeners[i].fn.call(listeners[i].context, a1, a2); break;
-        case 4: listeners[i].fn.call(listeners[i].context, a1, a2, a3); break;
-        default:
-          if (!args) for (j = 1, args = new Array(len -1); j < len; j++) {
-            args[j - 1] = arguments[j];
-          }
-
-          listeners[i].fn.apply(listeners[i].context, args);
-      }
-    }
-  }
-
-  return true;
-};
-
-/**
- * Add a listener for a given event.
- *
- * @param {String|Symbol} event The event name.
- * @param {Function} fn The listener function.
- * @param {Mixed} [context=this] The context to invoke the listener with.
- * @returns {EventEmitter} `this`.
- * @api public
- */
-EventEmitter.prototype.on = function on(event, fn, context) {
-  var listener = new EE(fn, context || this)
-    , evt = prefix ? prefix + event : event;
-
-  if (!this._events[evt]) this._events[evt] = listener, this._eventsCount++;
-  else if (!this._events[evt].fn) this._events[evt].push(listener);
-  else this._events[evt] = [this._events[evt], listener];
-
-  return this;
-};
-
-/**
- * Add a one-time listener for a given event.
- *
- * @param {String|Symbol} event The event name.
- * @param {Function} fn The listener function.
- * @param {Mixed} [context=this] The context to invoke the listener with.
- * @returns {EventEmitter} `this`.
- * @api public
- */
-EventEmitter.prototype.once = function once(event, fn, context) {
-  var listener = new EE(fn, context || this, true)
-    , evt = prefix ? prefix + event : event;
-
-  if (!this._events[evt]) this._events[evt] = listener, this._eventsCount++;
-  else if (!this._events[evt].fn) this._events[evt].push(listener);
-  else this._events[evt] = [this._events[evt], listener];
-
-  return this;
-};
-
-/**
- * Remove the listeners of a given event.
- *
- * @param {String|Symbol} event The event name.
- * @param {Function} fn Only remove the listeners that match this function.
- * @param {Mixed} context Only remove the listeners that have this context.
- * @param {Boolean} once Only remove one-time listeners.
- * @returns {EventEmitter} `this`.
- * @api public
- */
-EventEmitter.prototype.removeListener = function removeListener(event, fn, context, once) {
-  var evt = prefix ? prefix + event : event;
-
-  if (!this._events[evt]) return this;
-  if (!fn) {
-    if (--this._eventsCount === 0) this._events = new Events();
-    else delete this._events[evt];
-    return this;
-  }
-
-  var listeners = this._events[evt];
-
-  if (listeners.fn) {
-    if (
-         listeners.fn === fn
-      && (!once || listeners.once)
-      && (!context || listeners.context === context)
-    ) {
-      if (--this._eventsCount === 0) this._events = new Events();
-      else delete this._events[evt];
-    }
-  } else {
-    for (var i = 0, events = [], length = listeners.length; i < length; i++) {
-      if (
-           listeners[i].fn !== fn
-        || (once && !listeners[i].once)
-        || (context && listeners[i].context !== context)
-      ) {
-        events.push(listeners[i]);
-      }
-    }
-
-    //
-    // Reset the array, or remove it completely if we have no more listeners.
-    //
-    if (events.length) this._events[evt] = events.length === 1 ? events[0] : events;
-    else if (--this._eventsCount === 0) this._events = new Events();
-    else delete this._events[evt];
-  }
-
-  return this;
-};
-
-/**
- * Remove all listeners, or those of the specified event.
- *
- * @param {String|Symbol} [event] The event name.
- * @returns {EventEmitter} `this`.
- * @api public
- */
-EventEmitter.prototype.removeAllListeners = function removeAllListeners(event) {
-  var evt;
-
-  if (event) {
-    evt = prefix ? prefix + event : event;
-    if (this._events[evt]) {
-      if (--this._eventsCount === 0) this._events = new Events();
-      else delete this._events[evt];
-    }
-  } else {
-    this._events = new Events();
-    this._eventsCount = 0;
-  }
-
-  return this;
-};
-
-//
-// Alias methods names because people roll like that.
-//
-EventEmitter.prototype.off = EventEmitter.prototype.removeListener;
-EventEmitter.prototype.addListener = EventEmitter.prototype.on;
-
-//
-// This function doesn't apply anymore.
-//
-EventEmitter.prototype.setMaxListeners = function setMaxListeners() {
-  return this;
-};
-
-//
-// Expose the prefix.
-//
-EventEmitter.prefixed = prefix;
-
-//
-// Allow `EventEmitter` to be imported as module namespace.
-//
-EventEmitter.EventEmitter = EventEmitter;
-
-//
-// Expose the module.
-//
-if ('undefined' !== typeof module) {
-  module.exports = EventEmitter;
-}
-
-});
-
-//  LauncherOSX
-//
-//  Created by Boris Schneiderman.
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
-//  
-//  Redistribution and use in source and binary forms, with or without modification, 
-//  are permitted provided that the following conditions are met:
-//  1. Redistributions of source code must retain the above copyright notice, this 
-//  list of conditions and the following disclaimer.
-//  2. Redistributions in binary form must reproduce the above copyright notice, 
-//  this list of conditions and the following disclaimer in the documentation and/or 
-//  other materials provided with the distribution.
-//  3. Neither the name of the organization nor the names of its contributors may be 
-//  used to endorse or promote products derived from this software without specific 
-//  prior written permission.
-//  
-//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
-//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
-//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
-//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
-//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
-//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
-//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
-//  OF THE POSSIBILITY OF SUCH DAMAGE.
-
-define('readium_shared_js/globals',['jquery','eventEmitter'], function($, EventEmitter) {
-    
-    var DEBUG = false;
-    
-/**
- * Top level ReadiumSDK namespace
- * @namespace
- */
-var Globals = {
-
-    /**
-     * Current version of the JS SDK
-     * @static
-     * @return {string} version
-     */
-    version: function () {
-        return "0.8.0";
-    },
-    /**
-     * @namespace
-     */
-    Views: {
-        /**
-         * Landscape Orientation
-         */
-        ORIENTATION_LANDSCAPE: "orientation_landscape",
-        /**
-         * Portrait Orientation
-         */
-        ORIENTATION_PORTRAIT: "orientation_portrait"
-    },
-    /**
-     * @namespace
-     */
-    Events: {
-        /**
-         * @event
-         */
-        READER_INITIALIZED: "ReaderInitialized",
-        /**
-         * This gets triggered on every page turnover. It includes spine information and such.
-         * @event
-         */
-        PAGINATION_CHANGED: "PaginationChanged",
-        /**
-         * @event
-         */
-        SETTINGS_APPLIED: "SettingsApplied",
-        /**
-         * @event
-         */
-        FXL_VIEW_RESIZED: "FXLViewResized",
-        /**
-         * @event
-         */
-        READER_VIEW_CREATED: "ReaderViewCreated",
-        /**
-         * @event
-         */
-        READER_VIEW_DESTROYED: "ReaderViewDestroyed",
-        /**
-         * @event
-         */
-        CONTENT_DOCUMENT_LOAD_START: "ContentDocumentLoadStart",
-        /**
-         * @event
-         */
-        CONTENT_DOCUMENT_LOADED: "ContentDocumentLoaded",
-        /**
-         * @event
-         */
-        CONTENT_DOCUMENT_UNLOADED: "ContentDocumentUnloaded",
-        /**
-         * @event
-         */
-        MEDIA_OVERLAY_STATUS_CHANGED: "MediaOverlayStatusChanged",
-        /**
-         * @event
-         */
-        MEDIA_OVERLAY_TTS_SPEAK: "MediaOverlayTTSSpeak",
-        /**
-         * @event
-         */
-        MEDIA_OVERLAY_TTS_STOP: "MediaOverlayTTSStop",
-        /**
-         * @event
-         */
-        PLUGINS_LOADED: "PluginsLoaded"
-    },
-    /**
-     * Internal Events
-     *
-     * @desc Should not be triggered outside of {@link Views.ReaderView}.
-     * @namespace
-     */
-    InternalEvents: {
-        /**
-         * @event
-         */
-        CURRENT_VIEW_PAGINATION_CHANGED: "CurrentViewPaginationChanged",
-    },
-    
-    logEvent: function(eventName, eventType, eventSource) {
-        if (DEBUG) {
-            console.debug("#### ReadiumSDK.Events." + eventName + " - "+eventType+" - " + eventSource);
-        }
-    }
-};
-$.extend(Globals, new EventEmitter());
-
-return Globals;
-
-});
-
-//This is default implementation of reading system object that will be available for the publication's javascript to analyze at runtime
-//To extend/modify/replace this object reading system should subscribe Globals.Events.READER_INITIALIZED and apply changes in reaction to this event
-navigator.epubReadingSystem = {
-    name: "",
-    version: "0.0.0",
-    layoutStyle: "paginated",
-
-    hasFeature: function (feature, version) {
-
-        // for now all features must be version 1.0 so fail fast if the user has asked for something else
-        if (version && version !== "1.0") {
-            return false;
-        }
-
-        if (feature === "dom-manipulation") {
-            // Scripts may make structural changes to the document???s DOM (applies to spine-level scripting only).
-            return true;
-        }
-        if (feature === "layout-changes") {
-            // Scripts may modify attributes and CSS styles that affect content layout (applies to spine-level scripting only).
-            return true;
-        }
-        if (feature === "touch-events") {
-            // The device supports touch events and the Reading System passes touch events to the content.
-            return false;
-        }
-        if (feature === "mouse-events") {
-            // The device supports mouse events and the Reading System passes mouse events to the content.
-            return true;
-        }
-        if (feature === "keyboard-events") {
-            // The device supports keyboard events and the Reading System passes keyboard events to the content.
-            return true;
-        }
-
-        if (feature === "spine-scripting") {
-            //Spine-level scripting is supported.
-            return true;
-        }
-
-        return false;
-    }
-};
-/*
-This code is required to IE for console shim
-*/
-(function(){
-    "use strict";
-    if (!console["debug"]) console.debug = console.log;
-    if (!console["info"]) console.info = console.log;
-    if (!console["warn"]) console.warn = console.log;
-    if (!console["error"]) console.error = console.log;
-})();
-define("console_shim", function(){});
-
-(function (exports) {'use strict';
-  //shared pointer
-  var i;
-  //shortcuts
-  var defineProperty = Object.defineProperty, is = function(a,b) { return (a === b) || (a !== a && b !== b) };
-
-
-  //Polyfill global objects
-  if (typeof WeakMap == 'undefined') {
-    exports.WeakMap = createCollection({
-      // WeakMap#delete(key:void*):boolean
-      'delete': sharedDelete,
-      // WeakMap#clear():
-      clear: sharedClear,
-      // WeakMap#get(key:void*):void*
-      get: sharedGet,
-      // WeakMap#has(key:void*):boolean
-      has: mapHas,
-      // WeakMap#set(key:void*, value:void*):void
-      set: sharedSet
-    }, true);
-  }
-
-  if (typeof Map == 'undefined' || typeof ((new Map).values) !== 'function' || !(new Map).values().next) {
-    exports.Map = createCollection({
-      // WeakMap#delete(key:void*):boolean
-      'delete': sharedDelete,
-      //:was Map#get(key:void*[, d3fault:void*]):void*
-      // Map#has(key:void*):boolean
-      has: mapHas,
-      // Map#get(key:void*):boolean
-      get: sharedGet,
-      // Map#set(key:void*, value:void*):void
-      set: sharedSet,
-      // Map#keys(void):Iterator
-      keys: sharedKeys,
-      // Map#values(void):Iterator
-      values: sharedValues,
-      // Map#entries(void):Iterator
-      entries: mapEntries,
-      // Map#forEach(callback:Function, context:void*):void ==> callback.call(context, key, value, mapObject) === not in specs`
-      forEach: sharedForEach,
-      // Map#clear():
-      clear: sharedClear
-    });
-  }
-
-  if (typeof Set == 'undefined' || typeof ((new Set).values) !== 'function' || !(new Set).values().next) {
-    exports.Set = createCollection({
-      // Set#has(value:void*):boolean
-      has: setHas,
-      // Set#add(value:void*):boolean
-      add: sharedAdd,
-      // Set#delete(key:void*):boolean
-      'delete': sharedDelete,
-      // Set#clear():
-      clear: sharedClear,
-      // Set#keys(void):Iterator
-      keys: sharedValues, // specs actually say "the same function object as the initial value of the values property"
-      // Set#values(void):Iterator
-      values: sharedValues,
-      // Set#entries(void):Iterator
-      entries: setEntries,
-      // Set#forEach(callback:Function, context:void*):void ==> callback.call(context, value, index) === not in specs
-      forEach: sharedForEach
-    });
-  }
-
-  if (typeof WeakSet == 'undefined') {
-    exports.WeakSet = createCollection({
-      // WeakSet#delete(key:void*):boolean
-      'delete': sharedDelete,
-      // WeakSet#add(value:void*):boolean
-      add: sharedAdd,
-      // WeakSet#clear():
-      clear: sharedClear,
-      // WeakSet#has(value:void*):boolean
-      has: setHas
-    }, true);
-  }
-
-
-  /**
-   * ES6 collection constructor
-   * @return {Function} a collection class
-   */
-  function createCollection(proto, objectOnly){
-    function Collection(a){
-      if (!this || this.constructor !== Collection) return new Collection(a);
-      this._keys = [];
-      this._values = [];
-      this._itp = []; // iteration pointers
-      this.objectOnly = objectOnly;
-
-      //parse initial iterable argument passed
-      if (a) init.call(this, a);
-    }
-
-    //define size for non object-only collections
-    if (!objectOnly) {
-      defineProperty(proto, 'size', {
-        get: sharedSize
-      });
-    }
-
-    //set prototype
-    proto.constructor = Collection;
-    Collection.prototype = proto;
-
-    return Collection;
-  }
-
-
-  /** parse initial iterable argument passed */
-  function init(a){
-    var i;
-    //init Set argument, like `[1,2,3,{}]`
-    if (this.add)
-      a.forEach(this.add, this);
-    //init Map argument like `[[1,2], [{}, 4]]`
-    else
-      a.forEach(function(a){this.set(a[0],a[1])}, this);
-  }
-
-
-  /** delete */
-  function sharedDelete(key) {
-    if (this.has(key)) {
-      this._keys.splice(i, 1);
-      this._values.splice(i, 1);
-      // update iteration pointers
-      this._itp.forEach(function(p) { if (i < p[0]) p[0]--; });
-    }
-    // Aurora here does it while Canary doesn't
-    return -1 < i;
-  };
-
-  function sharedGet(key) {
-    return this.has(key) ? this._values[i] : undefined;
-  }
-
-  function has(list, key) {
-    if (this.objectOnly && key !== Object(key))
-      throw new TypeError("Invalid value used as weak collection key");
-    //NaN or 0 passed
-    if (key != key || key === 0) for (i = list.length; i-- && !is(list[i], key);){}
-    else i = list.indexOf(key);
-    return -1 < i;
-  }
-
-  function setHas(value) {
-    return has.call(this, this._values, value);
-  }
-
-  function mapHas(value) {
-    return has.call(this, this._keys, value);
-  }
-
-  /** @chainable */
-  function sharedSet(key, value) {
-    this.has(key) ?
-      this._values[i] = value
-      :
-      this._values[this._keys.push(key) - 1] = value
-    ;
-    return this;
-  }
-
-  /** @chainable */
-  function sharedAdd(value) {
-    if (!this.has(value)) this._values.push(value);
-    return this;
-  }
-
-  function sharedClear() {
-    (this._keys || 0).length =
-    this._values.length = 0;
-  }
-
-  /** keys, values, and iterate related methods */
-  function sharedKeys() {
-    return sharedIterator(this._itp, this._keys);
-  }
-
-  function sharedValues() {
-    return sharedIterator(this._itp, this._values);
-  }
-
-  function mapEntries() {
-    return sharedIterator(this._itp, this._keys, this._values);
-  }
-
-  function setEntries() {
-    return sharedIterator(this._itp, this._values, this._values);
-  }
-
-  function sharedIterator(itp, array, array2) {
-    var p = [0], done = false;
-    itp.push(p);
-    return {
-      next: function() {
-        var v, k = p[0];
-        if (!done && k < array.length) {
-          v = array2 ? [array[k], array2[k]]: array[k];
-          p[0]++;
-        } else {
-          done = true;
-          itp.splice(itp.indexOf(p), 1);
-        }
-        return { done: done, value: v };
-      }
-    };
-  }
-
-  function sharedSize() {
-    return this._values.length;
-  }
-
-  function sharedForEach(callback, context) {
-    var it = this.entries();
-    for (;;) {
-      var r = it.next();
-      if (r.done) break;
-      callback.call(context, r.value[1], r.value[0], this);
-    }
-  }
-
-})(typeof exports != 'undefined' && typeof global != 'undefined' ? global : window );
-
-define("es6-collections", function(){});
-
-/*! https://mths.be/punycode v1.4.0 by @mathias */
-;(function(root) {
-
-	/** Detect free variables */
-	var freeExports = typeof exports == 'object' && exports &&
-		!exports.nodeType && exports;
-	var freeModule = typeof module == 'object' && module &&
-		!module.nodeType && module;
-	var freeGlobal = typeof global == 'object' && global;
-	if (
-		freeGlobal.global === freeGlobal ||
-		freeGlobal.window === freeGlobal ||
-		freeGlobal.self === freeGlobal
-	) {
-		root = freeGlobal;
-	}
-
-	/**
-	 * The `punycode` object.
-	 * @name punycode
-	 * @type Object
-	 */
-	var punycode,
-
-	/** Highest positive signed 32-bit float value */
-	maxInt = 2147483647, // aka. 0x7FFFFFFF or 2^31-1
-
-	/** Bootstring parameters */
-	base = 36,
-	tMin = 1,
-	tMax = 26,
-	skew = 38,
-	damp = 700,
-	initialBias = 72,
-	initialN = 128, // 0x80
-	delimiter = '-', // '\x2D'
-
-	/** Regular expressions */
-	regexPunycode = /^xn--/,
-	regexNonASCII = /[^\x20-\x7E]/, // unprintable ASCII chars + non-ASCII chars
-	regexSeparators = /[\x2E\u3002\uFF0E\uFF61]/g, // RFC 3490 separators
-
-	/** Error messages */
-	errors = {
-		'overflow': 'Overflow: input needs wider integers to process',
-		'not-basic': 'Illegal input >= 0x80 (not a basic code point)',
-		'invalid-input': 'Invalid input'
-	},
-
-	/** Convenience shortcuts */
-	baseMinusTMin = base - tMin,
-	floor = Math.floor,
-	stringFromCharCode = String.fromCharCode,
-
-	/** Temporary variable */
-	key;
-
-	/*--------------------------------------------------------------------------*/
-
-	/**
-	 * A generic error utility function.
-	 * @private
-	 * @param {String} type The error type.
-	 * @returns {Error} Throws a `RangeError` with the applicable error message.
-	 */
-	function error(type) {
-		throw new RangeError(errors[type]);
-	}
-
-	/**
-	 * A generic `Array#map` utility function.
-	 * @private
-	 * @param {Array} array The array to iterate over.
-	 * @param {Function} callback The function that gets called for every array
-	 * item.
-	 * @returns {Array} A new array of values returned by the callback function.
-	 */
-	function map(array, fn) {
-		var length = array.length;
-		var result = [];
-		while (length--) {
-			result[length] = fn(array[length]);
-		}
-		return result;
-	}
-
-	/**
-	 * A simple `Array#map`-like wrapper to work with domain name strings or email
-	 * addresses.
-	 * @private
-	 * @param {String} domain The domain name or email address.
-	 * @param {Function} callback The function that gets called for every
-	 * character.
-	 * @returns {Array} A new string of characters returned by the callback
-	 * function.
-	 */
-	function mapDomain(string, fn) {
-		var parts = string.split('@');
-		var result = '';
-		if (parts.length > 1) {
-			// In email addresses, only the domain name should be punycoded. Leave
-			// the local part (i.e. everything up to `@`) intact.
-			result = parts[0] + '@';
-			string = parts[1];
-		}
-		// Avoid `split(regex)` for IE8 compatibility. See #17.
-		string = string.replace(regexSeparators, '\x2E');
-		var labels = string.split('.');
-		var encoded = map(labels, fn).join('.');
-		return result + encoded;
-	}
-
-	/**
-	 * Creates an array containing the numeric code points of each Unicode
-	 * character in the string. While JavaScript uses UCS-2 internally,
-	 * this function will convert a pair of surrogate halves (each of which
-	 * UCS-2 exposes as separate characters) into a single code point,
-	 * matching UTF-16.
-	 * @see `punycode.ucs2.encode`
-	 * @see <https://mathiasbynens.be/notes/javascript-encoding>
-	 * @memberOf punycode.ucs2
-	 * @name decode
-	 * @param {String} string The Unicode input string (UCS-2).
-	 * @returns {Array} The new array of code points.
-	 */
-	function ucs2decode(string) {
-		var output = [],
-		    counter = 0,
-		    length = string.length,
-		    value,
-		    extra;
-		while (counter < length) {
-			value = string.charCodeAt(counter++);
-			if (value >= 0xD800 && value <= 0xDBFF && counter < length) {
-				// high surrogate, and there is a next character
-				extra = string.charCodeAt(counter++);
-				if ((extra & 0xFC00) == 0xDC00) { // low surrogate
-					output.push(((value & 0x3FF) << 10) + (extra & 0x3FF) + 0x10000);
-				} else {
-					// unmatched surrogate; only append this code unit, in case the next
-					// code unit is the high surrogate of a surrogate pair
-					output.push(value);
-					counter--;
-				}
-			} else {
-				output.push(value);
-			}
-		}
-		return output;
-	}
-
-	/**
-	 * Creates a string based on an array of numeric code points.
-	 * @see `punycode.ucs2.decode`
-	 * @memberOf punycode.ucs2
-	 * @name encode
-	 * @param {Array} codePoints The array of numeric code points.
-	 * @returns {String} The new Unicode string (UCS-2).
-	 */
-	function ucs2encode(array) {
-		return map(array, function(value) {
-			var output = '';
-			if (value > 0xFFFF) {
-				value -= 0x10000;
-				output += stringFromCharCode(value >>> 10 & 0x3FF | 0xD800);
-				value = 0xDC00 | value & 0x3FF;
-			}
-			output += stringFromCharCode(value);
-			return output;
-		}).join('');
-	}
-
-	/**
-	 * Converts a basic code point into a digit/integer.
-	 * @see `digitToBasic()`
-	 * @private
-	 * @param {Number} codePoint The basic numeric code point value.
-	 * @returns {Number} The numeric value of a basic code point (for use in
-	 * representing integers) in the range `0` to `base - 1`, or `base` if
-	 * the code point does not represent a value.
-	 */
-	function basicToDigit(codePoint) {
-		if (codePoint - 48 < 10) {
-			return codePoint - 22;
-		}
-		if (codePoint - 65 < 26) {
-			return codePoint - 65;
-		}
-		if (codePoint - 97 < 26) {
-			return codePoint - 97;
-		}
-		return base;
-	}
-
-	/**
-	 * Converts a digit/integer into a basic code point.
-	 * @see `basicToDigit()`
-	 * @private
-	 * @param {Number} digit The numeric value of a basic code point.
-	 * @returns {Number} The basic code point whose value (when used for
-	 * representing integers) is `digit`, which needs to be in the range
-	 * `0` to `base - 1`. If `flag` is non-zero, the uppercase form is
-	 * used; else, the lowercase form is used. The behavior is undefined
-	 * if `flag` is non-zero and `digit` has no uppercase form.
-	 */
-	function digitToBasic(digit, flag) {
-		//  0..25 map to ASCII a..z or A..Z
-		// 26..35 map to ASCII 0..9
-		return digit + 22 + 75 * (digit < 26) - ((flag != 0) << 5);
-	}
-
-	/**
-	 * Bias adaptation function as per section 3.4 of RFC 3492.
-	 * https://tools.ietf.org/html/rfc3492#section-3.4
-	 * @private
-	 */
-	function adapt(delta, numPoints, firstTime) {
-		var k = 0;
-		delta = firstTime ? floor(delta / damp) : delta >> 1;
-		delta += floor(delta / numPoints);
-		for (/* no initialization */; delta > baseMinusTMin * tMax >> 1; k += base) {
-			delta = floor(delta / baseMinusTMin);
-		}
-		return floor(k + (baseMinusTMin + 1) * delta / (delta + skew));
-	}
-
-	/**
-	 * Converts a Punycode string of ASCII-only symbols to a string of Unicode
-	 * symbols.
-	 * @memberOf punycode
-	 * @param {String} input The Punycode string of ASCII-only symbols.
-	 * @returns {String} The resulting string of Unicode symbols.
-	 */
-	function decode(input) {
-		// Don't use UCS-2
-		var output = [],
-		    inputLength = input.length,
-		    out,
-		    i = 0,
-		    n = initialN,
-		    bias = initialBias,
-		    basic,
-		    j,
-		    index,
-		    oldi,
-		    w,
-		    k,
-		    digit,
-		    t,
-		    /** Cached calculation results */
-		    baseMinusT;
-
-		// Handle the basic code points: let `basic` be the number of input code
-		// points before the last delimiter, or `0` if there is none, then copy
-		// the first basic code points to the output.
-
-		basic = input.lastIndexOf(delimiter);
-		if (basic < 0) {
-			basic = 0;
-		}
-
-		for (j = 0; j < basic; ++j) {
-			// if it's not a basic code point
-			if (input.charCodeAt(j) >= 0x80) {
-				error('not-basic');
-			}
-			output.push(input.charCodeAt(j));
-		}
-
-		// Main decoding loop: start just after the last delimiter if any basic code
-		// points were copied; start at the beginning otherwise.
-
-		for (index = basic > 0 ? basic + 1 : 0; index < inputLength; /* no final expression */) {
-
-			// `index` is the index of the next character to be consumed.
-			// Decode a generalized variable-length integer into `delta`,
-			// which gets added to `i`. The overflow checking is easier
-			// if we increase `i` as we go, then subtract off its starting
-			// value at the end to obtain `delta`.
-			for (oldi = i, w = 1, k = base; /* no condition */; k += base) {
-
-				if (index >= inputLength) {
-					error('invalid-input');
-				}
-
-				digit = basicToDigit(input.charCodeAt(index++));
-
-				if (digit >= base || digit > floor((maxInt - i) / w)) {
-					error('overflow');
-				}
-
-				i += digit * w;
-				t = k <= bias ? tMin : (k >= bias + tMax ? tMax : k - bias);
-
-				if (digit < t) {
-					break;
-				}
-
-				baseMinusT = base - t;
-				if (w > floor(maxInt / baseMinusT)) {
-					error('overflow');
-				}
-
-				w *= baseMinusT;
-
-			}
-
-			out = output.length + 1;
-			bias = adapt(i - oldi, out, oldi == 0);
-
-			// `i` was supposed to wrap around from `out` to `0`,
-			// incrementing `n` each time, so we'll fix that now:
-			if (floor(i / out) > maxInt - n) {
-				error('overflow');
-			}
-
-			n += floor(i / out);
-			i %= out;
-
-			// Insert `n` at position `i` of the output
-			output.splice(i++, 0, n);
-
-		}
-
-		return ucs2encode(output);
-	}
-
-	/**
-	 * Converts a string of Unicode symbols (e.g. a domain name label) to a
-	 * Punycode string of ASCII-only symbols.
-	 * @memberOf punycode
-	 * @param {String} input The string of Unicode symbols.
-	 * @returns {String} The resulting Punycode string of ASCII-only symbols.
-	 */
-	function encode(input) {
-		var n,
-		    delta,
-		    handledCPCount,
-		    basicLength,
-		    bias,
-		    j,
-		    m,
-		    q,
-		    k,
-		    t,
-		    currentValue,
-		    output = [],
-		    /** `inputLength` will hold the number of code points in `input`. */
-		    inputLength,
-		    /** Cached calculation results */
-		    handledCPCountPlusOne,
-		    baseMinusT,
-		    qMinusT;
-
-		// Convert the input in UCS-2 to Unicode
-		input = ucs2decode(input);
-
-		// Cache the length
-		inputLength = input.length;
-
-		// Initialize the state
-		n = initialN;
-		delta = 0;
-		bias = initialBias;
-
-		// Handle the basic code points
-		for (j = 0; j < inputLength; ++j) {
-			currentValue = input[j];
-			if (currentValue < 0x80) {
-				output.push(stringFromCharCode(currentValue));
-			}
-		}
-
-		handledCPCount = basicLength = output.length;
-
-		// `handledCPCount` is the number of code points that have been handled;
-		// `basicLength` is the number of basic code points.
-
-		// Finish the basic string - if it is not empty - with a delimiter
-		if (basicLength) {
-			output.push(delimiter);
-		}
-
-		// Main encoding loop:
-		while (handledCPCount < inputLength) {
-
-			// All non-basic code points < n have been handled already. Find the next
-			// larger one:
-			for (m = maxInt, j = 0; j < inputLength; ++j) {
-				currentValue = input[j];
-				if (currentValue >= n && currentValue < m) {
-					m = currentValue;
-				}
-			}
-
-			// Increase `delta` enough to advance the decoder's <n,i> state to <m,0>,
-			// but guard against overflow
-			handledCPCountPlusOne = handledCPCount + 1;
-			if (m - n > floor((maxInt - delta) / handledCPCountPlusOne)) {
-				error('overflow');
-			}
-
-			delta += (m - n) * handledCPCountPlusOne;
-			n = m;
-
-			for (j = 0; j < inputLength; ++j) {
-				currentValue = input[j];
-
-				if (currentValue < n && ++delta > maxInt) {
-					error('overflow');
-				}
-
-				if (currentValue == n) {
-					// Represent delta as a generalized variable-length integer
-					for (q = delta, k = base; /* no condition */; k += base) {
-						t = k <= bias ? tMin : (k >= bias + tMax ? tMax : k - bias);
-						if (q < t) {
-							break;
-						}
-						qMinusT = q - t;
-						baseMinusT = base - t;
-						output.push(
-							stringFromCharCode(digitToBasic(t + qMinusT % baseMinusT, 0))
-						);
-						q = floor(qMinusT / baseMinusT);
-					}
-
-					output.push(stringFromCharCode(digitToBasic(q, 0)));
-					bias = adapt(delta, handledCPCountPlusOne, handledCPCount == basicLength);
-					delta = 0;
-					++handledCPCount;
-				}
-			}
-
-			++delta;
-			++n;
-
-		}
-		return output.join('');
-	}
-
-	/**
-	 * Converts a Punycode string representing a domain name or an email address
-	 * to Unicode. Only the Punycoded parts of the input will be converted, i.e.
-	 * it doesn't matter if you call it on a string that has already been
-	 * converted to Unicode.
-	 * @memberOf punycode
-	 * @param {String} input The Punycoded domain name or email address to
-	 * convert to Unicode.
-	 * @returns {String} The Unicode representation of the given Punycode
-	 * string.
-	 */
-	function toUnicode(input) {
-		return mapDomain(input, function(string) {
-			return regexPunycode.test(string)
-				? decode(string.slice(4).toLowerCase())
-				: string;
-		});
-	}
-
-	/**
-	 * Converts a Unicode string representing a domain name or an email address to
-	 * Punycode. Only the non-ASCII parts of the domain name will be converted,
-	 * i.e. it doesn't matter if you call it with a domain that's already in
-	 * ASCII.
-	 * @memberOf punycode
-	 * @param {String} input The domain name or email address to convert, as a
-	 * Unicode string.
-	 * @returns {String} The Punycode representation of the given domain name or
-	 * email address.
-	 */
-	function toASCII(input) {
-		return mapDomain(input, function(string) {
-			return regexNonASCII.test(string)
-				? 'xn--' + encode(string)
-				: string;
-		});
-	}
-
-	/*--------------------------------------------------------------------------*/
-
-	/** Define the public API */
-	punycode = {
-		/**
-		 * A string representing the current Punycode.js version number.
-		 * @memberOf punycode
-		 * @type String
-		 */
-		'version': '1.3.2',
-		/**
-		 * An object of methods to convert from JavaScript's internal character
-		 * representation (UCS-2) to Unicode code points, and back.
-		 * @see <https://mathiasbynens.be/notes/javascript-encoding>
-		 * @memberOf punycode
-		 * @type Object
-		 */
-		'ucs2': {
-			'decode': ucs2decode,
-			'encode': ucs2encode
-		},
-		'decode': decode,
-		'encode': encode,
-		'toASCII': toASCII,
-		'toUnicode': toUnicode
-	};
-
-	/** Expose `punycode` */
-	// Some AMD build optimizers, like r.js, check for specific condition patterns
-	// like the following:
-	if (
-		typeof define == 'function' &&
-		typeof define.amd == 'object' &&
-		define.amd
-	) {
-		define('punycode', [],function() {
-			return punycode;
-		});
-	} else if (freeExports && freeModule) {
-		if (module.exports == freeExports) {
-			// in Node.js, io.js, or RingoJS v0.8.0+
-			freeModule.exports = punycode;
-		} else {
-			// in Narwhal or RingoJS v0.7.0-
-			for (key in punycode) {
-				punycode.hasOwnProperty(key) && (freeExports[key] = punycode[key]);
-			}
-		}
-	} else {
-		// in Rhino or a web browser
-		root.punycode = punycode;
-	}
-
-}(this));
-
-/*!
- * URI.js - Mutating URLs
- * IPv6 Support
- *
- * Version: 1.18.4
- *
- * Author: Rodney Rehm
- * Web: http://medialize.github.io/URI.js/
- *
- * Licensed under
- *   MIT License http://www.opensource.org/licenses/mit-license
- *
- */
-
-(function (root, factory) {
-  'use strict';
-  // https://github.com/umdjs/umd/blob/master/returnExports.js
-  if (typeof module === 'object' && module.exports) {
-    // Node
-    module.exports = factory();
-  } else if (typeof define === 'function' && define.amd) {
-    // AMD. Register as an anonymous module.
-    define('IPv6',factory);
-  } else {
-    // Browser globals (root is window)
-    root.IPv6 = factory(root);
-  }
-}(this, function (root) {
-  'use strict';
-
-  /*
-  var _in = "fe80:0000:0000:0000:0204:61ff:fe9d:f156";
-  var _out = IPv6.best(_in);
-  var _expected = "fe80::204:61ff:fe9d:f156";
-
-  console.log(_in, _out, _expected, _out === _expected);
-  */
-
-  // save current IPv6 variable, if any
-  var _IPv6 = root && root.IPv6;
-
-  function bestPresentation(address) {
-    // based on:
-    // Javascript to test an IPv6 address for proper format, and to
-    // present the "best text representation" according to IETF Draft RFC at
-    // http://tools.ietf.org/html/draft-ietf-6man-text-addr-representation-04
-    // 8 Feb 2010 Rich Brown, Dartware, LLC
-    // Please feel free to use this code as long as you provide a link to
-    // http://www.intermapper.com
-    // http://intermapper.com/support/tools/IPV6-Validator.aspx
-    // http://download.dartware.com/thirdparty/ipv6validator.js
-
-    var _address = address.toLowerCase();
-    var segments = _address.split(':');
-    var length = segments.length;
-    var total = 8;
-
-    // trim colons (:: or ::a:b:c… or …a:b:c::)
-    if (segments[0] === '' && segments[1] === '' && segments[2] === '') {
-      // must have been ::
-      // remove first two items
-      segments.shift();
-      segments.shift();
-    } else if (segments[0] === '' && segments[1] === '') {
-      // must have been ::xxxx
-      // remove the first item
-      segments.shift();
-    } else if (segments[length - 1] === '' && segments[length - 2] === '') {
-      // must have been xxxx::
-      segments.pop();
-    }
-
-    length = segments.length;
-
-    // adjust total segments for IPv4 trailer
-    if (segments[length - 1].indexOf('.') !== -1) {
-      // found a "." which means IPv4
-      total = 7;
-    }
-
-    // fill empty segments them with "0000"
-    var pos;
-    for (pos = 0; pos < length; pos++) {
-      if (segments[pos] === '') {
-        break;
-      }
-    }
-
-    if (pos < total) {
-      segments.splice(pos, 1, '0000');
-      while (segments.length < total) {
-        segments.splice(pos, 0, '0000');
-      }
-    }
-
-    // strip leading zeros
-    var _segments;
-    for (var i = 0; i < total; i++) {
-      _segments = segments[i].split('');
-      for (var j = 0; j < 3 ; j++) {
-        if (_segments[0] === '0' && _segments.length > 1) {
-          _segments.splice(0,1);
-        } else {
-          break;
-        }
-      }
-
-      segments[i] = _segments.join('');
-    }
-
-    // find longest sequence of zeroes and coalesce them into one segment
-    var best = -1;
-    var _best = 0;
-    var _current = 0;
-    var current = -1;
-    var inzeroes = false;
-    // i; already declared
-
-    for (i = 0; i < total; i++) {
-      if (inzeroes) {
-        if (segments[i] === '0') {
-          _current += 1;
-        } else {
-          inzeroes = false;
-          if (_current > _best) {
-            best = current;
-            _best = _current;
-          }
-        }
-      } else {
-        if (segments[i] === '0') {
-          inzeroes = true;
-          current = i;
-          _current = 1;
-        }
-      }
-    }
-
-    if (_current > _best) {
-      best = current;
-      _best = _current;
-    }
-
-    if (_best > 1) {
-      segments.splice(best, _best, '');
-    }
-
-    length = segments.length;
-
-    // assemble remaining segments
-    var result = '';
-    if (segments[0] === '')  {
-      result = ':';
-    }
-
-    for (i = 0; i < length; i++) {
-      result += segments[i];
-      if (i === length - 1) {
-        break;
-      }
-
-      result += ':';
-    }
-
-    if (segments[length - 1] === '') {
-      result += ':';
-    }
-
-    return result;
-  }
-
-  function noConflict() {
-    /*jshint validthis: true */
-    if (root.IPv6 === this) {
-      root.IPv6 = _IPv6;
-    }
-  
-    return this;
-  }
-
-  return {
-    best: bestPresentation,
-    noConflict: noConflict
-  };
-}));
-
-/*!
- * URI.js - Mutating URLs
- * Second Level Domain (SLD) Support
- *
- * Version: 1.18.4
- *
- * Author: Rodney Rehm
- * Web: http://medialize.github.io/URI.js/
- *
- * Licensed under
- *   MIT License http://www.opensource.org/licenses/mit-license
- *
- */
-
-(function (root, factory) {
-  'use strict';
-  // https://github.com/umdjs/umd/blob/master/returnExports.js
-  if (typeof module === 'object' && module.exports) {
-    // Node
-    module.exports = factory();
-  } else if (typeof define === 'function' && define.amd) {
-    // AMD. Register as an anonymous module.
-    define('SecondLevelDomains',factory);
-  } else {
-    // Browser globals (root is window)
-    root.SecondLevelDomains = factory(root);
-  }
-}(this, function (root) {
-  'use strict';
-
-  // save current SecondLevelDomains variable, if any
-  var _SecondLevelDomains = root && root.SecondLevelDomains;
-
-  var SLD = {
-    // list of known Second Level Domains
-    // converted list of SLDs from https://github.com/gavingmiller/second-level-domains
-    // ----
-    // publicsuffix.org is more current and actually used by a couple of browsers internally.
-    // downside is it also contains domains like "dyndns.org" - which is fine for the security
-    // issues browser have to deal with (SOP for cookies, etc) - but is way overboard for URI.js
-    // ----
-    list: {
-      'ac':' com gov mil net org ',
-      'ae':' ac co gov mil name net org pro sch ',
-      'af':' com edu gov net org ',
-      'al':' com edu gov mil net org ',
-      'ao':' co ed gv it og pb ',
-      'ar':' com edu gob gov int mil net org tur ',
-      'at':' ac co gv or ',
-      'au':' asn com csiro edu gov id net org ',
-      'ba':' co com edu gov mil net org rs unbi unmo unsa untz unze ',
-      'bb':' biz co com edu gov info net org store tv ',
-      'bh':' biz cc com edu gov info net org ',
-      'bn':' com edu gov net org ',
-      'bo':' com edu gob gov int mil net org tv ',
-      'br':' adm adv agr am arq art ato b bio blog bmd cim cng cnt com coop ecn edu eng esp etc eti far flog fm fnd fot fst g12 ggf gov imb ind inf jor jus lel mat med mil mus net nom not ntr odo org ppg pro psc psi qsl rec slg srv tmp trd tur tv vet vlog wiki zlg ',
-      'bs':' com edu gov net org ',
-      'bz':' du et om ov rg ',
-      'ca':' ab bc mb nb nf nl ns nt nu on pe qc sk yk ',
-      'ck':' biz co edu gen gov info net org ',
-      'cn':' ac ah bj com cq edu fj gd gov gs gx gz ha hb he hi hl hn jl js jx ln mil net nm nx org qh sc sd sh sn sx tj tw xj xz yn zj ',
-      'co':' com edu gov mil net nom org ',
-      'cr':' ac c co ed fi go or sa ',
-      'cy':' ac biz com ekloges gov ltd name net org parliament press pro tm ',
-      'do':' art com edu gob gov mil net org sld web ',
-      'dz':' art asso com edu gov net org pol ',
-      'ec':' com edu fin gov info med mil net org pro ',
-      'eg':' com edu eun gov mil name net org sci ',
-      'er':' com edu gov ind mil net org rochest w ',
-      'es':' com edu gob nom org ',
-      'et':' biz com edu gov info name net org ',
-      'fj':' ac biz com info mil name net org pro ',
-      'fk':' ac co gov net nom org ',
-      'fr':' asso com f gouv nom prd presse tm ',
-      'gg':' co net org ',
-      'gh':' com edu gov mil org ',
-      'gn':' ac com gov net org ',
-      'gr':' com edu gov mil net org ',
-      'gt':' com edu gob ind mil net org ',
-      'gu':' com edu gov net org ',
-      'hk':' com edu gov idv net org ',
-      'hu':' 2000 agrar bolt casino city co erotica erotika film forum games hotel info ingatlan jogasz konyvelo lakas media news org priv reklam sex shop sport suli szex tm tozsde utazas video ',
-      'id':' ac co go mil net or sch web ',
-      'il':' ac co gov idf k12 muni net org ',
-      'in':' ac co edu ernet firm gen gov i ind mil net nic org res ',
-      'iq':' com edu gov i mil net org ',
-      'ir':' ac co dnssec gov i id net org sch ',
-      'it':' edu gov ',
-      'je':' co net org ',
-      'jo':' com edu gov mil name net org sch ',
-      'jp':' ac ad co ed go gr lg ne or ',
-      'ke':' ac co go info me mobi ne or sc ',
-      'kh':' com edu gov mil net org per ',
-      'ki':' biz com de edu gov info mob net org tel ',
-      'km':' asso com coop edu gouv k medecin mil nom notaires pharmaciens presse tm veterinaire ',
-      'kn':' edu gov net org ',
-      'kr':' ac busan chungbuk chungnam co daegu daejeon es gangwon go gwangju gyeongbuk gyeonggi gyeongnam hs incheon jeju jeonbuk jeonnam k kg mil ms ne or pe re sc seoul ulsan ',
-      'kw':' com edu gov net org ',
-      'ky':' com edu gov net org ',
-      'kz':' com edu gov mil net org ',
-      'lb':' com edu gov net org ',
-      'lk':' assn com edu gov grp hotel int ltd net ngo org sch soc web ',
-      'lr':' com edu gov net org ',
-      'lv':' asn com conf edu gov id mil net org ',
-      'ly':' com edu gov id med net org plc sch ',
-      'ma':' ac co gov m net org press ',
-      'mc':' asso tm ',
-      'me':' ac co edu gov its net org priv ',
-      'mg':' com edu gov mil nom org prd tm ',
-      'mk':' com edu gov inf name net org pro ',
-      'ml':' com edu gov net org presse ',
-      'mn':' edu gov org ',
-      'mo':' com edu gov net org ',
-      'mt':' com edu gov net org ',
-      'mv':' aero biz com coop edu gov info int mil museum name net org pro ',
-      'mw':' ac co com coop edu gov int museum net org ',
-      'mx':' com edu gob net org ',
-      'my':' com edu gov mil name net org sch ',
-      'nf':' arts com firm info net other per rec store web ',
-      'ng':' biz com edu gov mil mobi name net org sch ',
-      'ni':' ac co com edu gob mil net nom org ',
-      'np':' com edu gov mil net org ',
-      'nr':' biz com edu gov info net org ',
-      'om':' ac biz co com edu gov med mil museum net org pro sch ',
-      'pe':' com edu gob mil net nom org sld ',
-      'ph':' com edu gov i mil net ngo org ',
-      'pk':' biz com edu fam gob gok gon gop gos gov net org web ',
-      'pl':' art bialystok biz com edu gda gdansk gorzow gov info katowice krakow lodz lublin mil net ngo olsztyn org poznan pwr radom slupsk szczecin torun warszawa waw wroc wroclaw zgora ',
-      'pr':' ac biz com edu est gov info isla name net org pro prof ',
-      'ps':' com edu gov net org plo sec ',
-      'pw':' belau co ed go ne or ',
-      'ro':' arts com firm info nom nt org rec store tm www ',
-      'rs':' ac co edu gov in org ',
-      'sb':' com edu gov net org ',
-      'sc':' com edu gov net org ',
-      'sh':' co com edu gov net nom org ',
-      'sl':' com edu gov net org ',
-      'st':' co com consulado edu embaixada gov mil net org principe saotome store ',
-      'sv':' com edu gob org red ',
-      'sz':' ac co org ',
-      'tr':' av bbs bel biz com dr edu gen gov info k12 name net org pol tel tsk tv web ',
-      'tt':' aero biz cat co com coop edu gov info int jobs mil mobi museum name net org pro tel travel ',
-      'tw':' club com ebiz edu game gov idv mil net org ',
-      'mu':' ac co com gov net or org ',
-      'mz':' ac co edu gov org ',
-      'na':' co com ',
-      'nz':' ac co cri geek gen govt health iwi maori mil net org parliament school ',
-      'pa':' abo ac com edu gob ing med net nom org sld ',
-      'pt':' com edu gov int net nome org publ ',
-      'py':' com edu gov mil net org ',
-      'qa':' com edu gov mil net org ',
-      're':' asso com nom ',
-      'ru':' ac adygeya altai amur arkhangelsk astrakhan bashkiria belgorod bir bryansk buryatia cbg chel chelyabinsk chita chukotka chuvashia com dagestan e-burg edu gov grozny int irkutsk ivanovo izhevsk jar joshkar-ola kalmykia kaluga kamchatka karelia kazan kchr kemerovo khabarovsk khakassia khv kirov koenig komi kostroma kranoyarsk kuban kurgan kursk lipetsk magadan mari mari-el marine mil mordovia mosreg msk murmansk nalchik net nnov nov novosibirsk nsk omsk orenburg org oryol penza perm pp pskov ptz rnd ryazan sakhalin samara saratov simbirsk smolensk spb stavropol stv surgut tambov tatarstan tom tomsk tsaritsyn tsk tula tuva tver tyumen udm udmurtia ulan-ude vladikavkaz vladimir vladivostok volgograd vologda voronezh vrn vyatka yakutia yamal yekaterinburg yuzhno-sakhalinsk ',
-      'rw':' ac co com edu gouv gov int mil net ',
-      'sa':' com edu gov med net org pub sch ',
-      'sd':' com edu gov info med net org tv ',
-      'se':' a ac b bd c d e f g h i k l m n o org p parti pp press r s t tm u w x y z ',
-      'sg':' com edu gov idn net org per ',
-      'sn':' art com edu gouv org perso univ ',
-      'sy':' com edu gov mil net news org ',
-      'th':' ac co go in mi net or ',
-      'tj':' ac biz co com edu go gov info int mil name net nic org test web ',
-      'tn':' agrinet com defense edunet ens fin gov ind info intl mincom nat net org perso rnrt rns rnu tourism ',
-      'tz':' ac co go ne or ',
-      'ua':' biz cherkassy chernigov chernovtsy ck cn co com crimea cv dn dnepropetrovsk donetsk dp edu gov if in ivano-frankivsk kh kharkov kherson khmelnitskiy kiev kirovograd km kr ks kv lg lugansk lutsk lviv me mk net nikolaev od odessa org pl poltava pp rovno rv sebastopol sumy te ternopil uzhgorod vinnica vn zaporizhzhe zhitomir zp zt ',
-      'ug':' ac co go ne or org sc ',
-      'uk':' ac bl british-library co cym gov govt icnet jet lea ltd me mil mod national-library-scotland nel net nhs nic nls org orgn parliament plc police sch scot soc ',
-      'us':' dni fed isa kids nsn ',
-      'uy':' com edu gub mil net org ',
-      've':' co com edu gob info mil net org web ',
-      'vi':' co com k12 net org ',
-      'vn':' ac biz com edu gov health info int name net org pro ',
-      'ye':' co com gov ltd me net org plc ',
-      'yu':' ac co edu gov org ',
-      'za':' ac agric alt bourse city co cybernet db edu gov grondar iaccess imt inca landesign law mil net ngo nis nom olivetti org pix school tm web ',
-      'zm':' ac co com edu gov net org sch '
-    },
-    // gorhill 2013-10-25: Using indexOf() instead Regexp(). Significant boost
-    // in both performance and memory footprint. No initialization required.
-    // http://jsperf.com/uri-js-sld-regex-vs-binary-search/4
-    // Following methods use lastIndexOf() rather than array.split() in order
-    // to avoid any memory allocations.
-    has: function(domain) {
-      var tldOffset = domain.lastIndexOf('.');
-      if (tldOffset <= 0 || tldOffset >= (domain.length-1)) {
-        return false;
-      }
-      var sldOffset = domain.lastIndexOf('.', tldOffset-1);
-      if (sldOffset <= 0 || sldOffset >= (tldOffset-1)) {
-        return false;
-      }
-      var sldList = SLD.list[domain.slice(tldOffset+1)];
-      if (!sldList) {
-        return false;
-      }
-      return sldList.indexOf(' ' + domain.slice(sldOffset+1, tldOffset) + ' ') >= 0;
-    },
-    is: function(domain) {
-      var tldOffset = domain.lastIndexOf('.');
-      if (tldOffset <= 0 || tldOffset >= (domain.length-1)) {
-        return false;
-      }
-      var sldOffset = domain.lastIndexOf('.', tldOffset-1);
-      if (sldOffset >= 0) {
-        return false;
-      }
-      var sldList = SLD.list[domain.slice(tldOffset+1)];
-      if (!sldList) {
-        return false;
-      }
-      return sldList.indexOf(' ' + domain.slice(0, tldOffset) + ' ') >= 0;
-    },
-    get: function(domain) {
-      var tldOffset = domain.lastIndexOf('.');
-      if (tldOffset <= 0 || tldOffset >= (domain.length-1)) {
-        return null;
-      }
-      var sldOffset = domain.lastIndexOf('.', tldOffset-1);
-      if (sldOffset <= 0 || sldOffset >= (tldOffset-1)) {
-        return null;
-      }
-      var sldList = SLD.list[domain.slice(tldOffset+1)];
-      if (!sldList) {
-        return null;
-      }
-      if (sldList.indexOf(' ' + domain.slice(sldOffset+1, tldOffset) + ' ') < 0) {
-        return null;
-      }
-      return domain.slice(sldOffset+1);
-    },
-    noConflict: function(){
-      if (root.SecondLevelDomains === this) {
-        root.SecondLevelDomains = _SecondLevelDomains;
-      }
-      return this;
-    }
-  };
-
-  return SLD;
-}));
-
-/*!
- * URI.js - Mutating URLs
- *
- * Version: 1.18.4
- *
- * Author: Rodney Rehm
- * Web: http://medialize.github.io/URI.js/
- *
- * Licensed under
- *   MIT License http://www.opensource.org/licenses/mit-license
- *
- */
-(function (root, factory) {
-  'use strict';
-  // https://github.com/umdjs/umd/blob/master/returnExports.js
-  if (typeof module === 'object' && module.exports) {
-    // Node
-    module.exports = factory(require('./punycode'), require('./IPv6'), require('./SecondLevelDomains'));
-  } else if (typeof define === 'function' && define.amd) {
-    // AMD. Register as an anonymous module.
-    define('URIjs',['./punycode', './IPv6', './SecondLevelDomains'], factory);
-  } else {
-    // Browser globals (root is window)
-    root.URI = factory(root.punycode, root.IPv6, root.SecondLevelDomains, root);
-  }
-}(this, function (punycode, IPv6, SLD, root) {
-  'use strict';
-  /*global location, escape, unescape */
-  // FIXME: v2.0.0 renamce non-camelCase properties to uppercase
-  /*jshint camelcase: false */
-
-  // save current URI variable, if any
-  var _URI = root && root.URI;
-
-  function URI(url, base) {
-    var _urlSupplied = arguments.length >= 1;
-    var _baseSupplied = arguments.length >= 2;
-
-    // Allow instantiation without the 'new' keyword
-    if (!(this instanceof URI)) {
-      if (_urlSupplied) {
-        if (_baseSupplied) {
-          return new URI(url, base);
-        }
-
-        return new URI(url);
-      }
-
-      return new URI();
-    }
-
-    if (url === undefined) {
-      if (_urlSupplied) {
-        throw new TypeError('undefined is not a valid argument for URI');
-      }
-
-      if (typeof location !== 'undefined') {
-        url = location.href + '';
-      } else {
-        url = '';
-      }
-    }
-
-    if (url === null) {
-      if (_urlSupplied) {
-        throw new TypeError('null is not a valid argument for URI');
-      }
-    }
-
-    this.href(url);
-
-    // resolve to base according to http://dvcs.w3.org/hg/url/raw-file/tip/Overview.html#constructor
-    if (base !== undefined) {
-      return this.absoluteTo(base);
-    }
-
-    return this;
-  }
-
-  URI.version = '1.18.4';
-
-  var p = URI.prototype;
-  var hasOwn = Object.prototype.hasOwnProperty;
-
-  function escapeRegEx(string) {
-    // https://github.com/medialize/URI.js/commit/85ac21783c11f8ccab06106dba9735a31a86924d#commitcomment-821963
-    return string.replace(/([.*+?^=!:${}()|[\]\/\\])/g, '\\$1');
-  }
-
-  function getType(value) {
-    // IE8 doesn't return [Object Undefined] but [Object Object] for undefined value
-    if (value === undefined) {
-      return 'Undefined';
-    }
-
-    return String(Object.prototype.toString.call(value)).slice(8, -1);
-  }
-
-  function isArray(obj) {
-    return getType(obj) === 'Array';
-  }
-
-  function filterArrayValues(data, value) {
-    var lookup = {};
-    var i, length;
-
-    if (getType(value) === 'RegExp') {
-      lookup = null;
-    } else if (isArray(value)) {
-      for (i = 0, length = value.length; i < length; i++) {
-        lookup[value[i]] = true;
-      }
-    } else {
-      lookup[value] = true;
-    }
-
-    for (i = 0, length = data.length; i < length; i++) {
-      /*jshint laxbreak: true */
-      var _match = lookup && lookup[data[i]] !== undefined
-        || !lookup && value.test(data[i]);
-      /*jshint laxbreak: false */
-      if (_match) {
-        data.splice(i, 1);
-        length--;
-        i--;
-      }
-    }
-
-    return data;
-  }
-
-  function arrayContains(list, value) {
-    var i, length;
-
-    // value may be string, number, array, regexp
-    if (isArray(value)) {
-      // Note: this can be optimized to O(n) (instead of current O(m * n))
-      for (i = 0, length = value.length; i < length; i++) {
-        if (!arrayContains(list, value[i])) {
-          return false;
-        }
-      }
-
-      return true;
-    }
-
-    var _type = getType(value);
-    for (i = 0, length = list.length; i < length; i++) {
-      if (_type === 'RegExp') {
-        if (typeof list[i] === 'string' && list[i].match(value)) {
-          return true;
-        }
-      } else if (list[i] === value) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  function arraysEqual(one, two) {
-    if (!isArray(one) || !isArray(two)) {
-      return false;
-    }
-
-    // arrays can't be equal if they have different amount of content
-    if (one.length !== two.length) {
-      return false;
-    }
-
-    one.sort();
-    two.sort();
-
-    for (var i = 0, l = one.length; i < l; i++) {
-      if (one[i] !== two[i]) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  function trimSlashes(text) {
-    var trim_expression = /^\/+|\/+$/g;
-    return text.replace(trim_expression, '');
-  }
-
-  URI._parts = function() {
-    return {
-      protocol: null,
-      username: null,
-      password: null,
-      hostname: null,
-      urn: null,
-      port: null,
-      path: null,
-      query: null,
-      fragment: null,
-      // state
-      duplicateQueryParameters: URI.duplicateQueryParameters,
-      escapeQuerySpace: URI.escapeQuerySpace
-    };
-  };
-  // state: allow duplicate query parameters (a=1&a=1)
-  URI.duplicateQueryParameters = false;
-  // state: replaces + with %20 (space in query strings)
-  URI.escapeQuerySpace = true;
-  // static properties
-  URI.protocol_expression = /^[a-z][a-z0-9.+-]*$/i;
-  URI.idn_expression = /[^a-z0-9\.-]/i;
-  URI.punycode_expression = /(xn--)/i;
-  // well, 333.444.555.666 matches, but it sure ain't no IPv4 - do we care?
-  URI.ip4_expression = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
-  // credits to Rich Brown
-  // source: http://forums.intermapper.com/viewtopic.php?p=1096#1096
-  // specification: http://www.ietf.org/rfc/rfc4291.txt
-  URI.ip6_expression = /^\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?\s*$/;
-  // expression used is "gruber revised" (@gruber v2) determined to be the
-  // best solution in a regex-golf we did a couple of ages ago at
-  // * http://mathiasbynens.be/demo/url-regex
-  // * http://rodneyrehm.de/t/url-regex.html
-  URI.find_uri_expression = /\b((?:[a-z][\w-]+:(?:\/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}\/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?«»“”‘’]))/ig;
-  URI.findUri = {
-    // valid "scheme://" or "www."
-    start: /\b(?:([a-z][a-z0-9.+-]*:\/\/)|www\.)/gi,
-    // everything up to the next whitespace
-    end: /[\s\r\n]|$/,
-    // trim trailing punctuation captured by end RegExp
-    trim: /[`!()\[\]{};:'".,<>?«»“”„‘’]+$/,
-    // balanced parens inclusion (), [], {}, <>
-    parens: /(\([^\)]*\)|\[[^\]]*\]|\{[^}]*\}|<[^>]*>)/g,
-  };
-  // http://www.iana.org/assignments/uri-schemes.html
-  // http://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers#Well-known_ports
-  URI.defaultPorts = {
-    http: '80',
-    https: '443',
-    ftp: '21',
-    gopher: '70',
-    ws: '80',
-    wss: '443'
-  };
-  // allowed hostname characters according to RFC 3986
-  // ALPHA DIGIT "-" "." "_" "~" "!" "$" "&" "'" "(" ")" "*" "+" "," ";" "=" %encoded
-  // I've never seen a (non-IDN) hostname other than: ALPHA DIGIT . -
-  URI.invalid_hostname_characters = /[^a-zA-Z0-9\.-]/;
-  // map DOM Elements to their URI attribute
-  URI.domAttributes = {
-    'a': 'href',
-    'blockquote': 'cite',
-    'link': 'href',
-    'base': 'href',
-    'script': 'src',
-    'form': 'action',
-    'img': 'src',
-    'area': 'href',
-    'iframe': 'src',
-    'embed': 'src',
-    'source': 'src',
-    'track': 'src',
-    'input': 'src', // but only if type="image"
-    'audio': 'src',
-    'video': 'src'
-  };
-  URI.getDomAttribute = function(node) {
-    if (!node || !node.nodeName) {
-      return undefined;
-    }
-
-    var nodeName = node.nodeName.toLowerCase();
-    // <input> should only expose src for type="image"
-    if (nodeName === 'input' && node.type !== 'image') {
-      return undefined;
-    }
-
-    return URI.domAttributes[nodeName];
-  };
-
-  function escapeForDumbFirefox36(value) {
-    // https://github.com/medialize/URI.js/issues/91
-    return escape(value);
-  }
-
-  // encoding / decoding according to RFC3986
-  function strictEncodeURIComponent(string) {
-    // see https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/encodeURIComponent
-    return encodeURIComponent(string)
-      .replace(/[!'()*]/g, escapeForDumbFirefox36)
-      .replace(/\*/g, '%2A');
-  }
-  URI.encode = strictEncodeURIComponent;
-  URI.decode = decodeURIComponent;
-  URI.iso8859 = function() {
-    URI.encode = escape;
-    URI.decode = unescape;
-  };
-  URI.unicode = function() {
-    URI.encode = strictEncodeURIComponent;
-    URI.decode = decodeURIComponent;
-  };
-  URI.characters = {
-    pathname: {
-      encode: {
-        // RFC3986 2.1: For consistency, URI producers and normalizers should
-        // use uppercase hexadecimal digits for all percent-encodings.
-        expression: /%(24|26|2B|2C|3B|3D|3A|40)/ig,
-        map: {
-          // -._~!'()*
-          '%24': '$',
-          '%26': '&',
-          '%2B': '+',
-          '%2C': ',',
-          '%3B': ';',
-          '%3D': '=',
-          '%3A': ':',
-          '%40': '@'
-        }
-      },
-      decode: {
-        expression: /[\/\?#]/g,
-        map: {
-          '/': '%2F',
-          '?': '%3F',
-          '#': '%23'
-        }
-      }
-    },
-    reserved: {
-      encode: {
-        // RFC3986 2.1: For consistency, URI producers and normalizers should
-        // use uppercase hexadecimal digits for all percent-encodings.
-        expression: /%(21|23|24|26|27|28|29|2A|2B|2C|2F|3A|3B|3D|3F|40|5B|5D)/ig,
-        map: {
-          // gen-delims
-          '%3A': ':',
-          '%2F': '/',
-          '%3F': '?',
-          '%23': '#',
-          '%5B': '[',
-          '%5D': ']',
-          '%40': '@',
-          // sub-delims
-          '%21': '!',
-          '%24': '$',
-          '%26': '&',
-          '%27': '\'',
-          '%28': '(',
-          '%29': ')',
-          '%2A': '*',
-          '%2B': '+',
-          '%2C': ',',
-          '%3B': ';',
-          '%3D': '='
-        }
-      }
-    },
-    urnpath: {
-      // The characters under `encode` are the characters called out by RFC 2141 as being acceptable
-      // for usage in a URN. RFC2141 also calls out "-", ".", and "_" as acceptable characters, but
-      // these aren't encoded by encodeURIComponent, so we don't have to call them out here. Also
-      // note that the colon character is not featured in the encoding map; this is because URI.js
-      // gives the colons in URNs semantic meaning as the delimiters of path segements, and so it
-      // should not appear unencoded in a segment itself.
-      // See also the note above about RFC3986 and capitalalized hex digits.
-      encode: {
-        expression: /%(21|24|27|28|29|2A|2B|2C|3B|3D|40)/ig,
-        map: {
-          '%21': '!',
-          '%24': '$',
-          '%27': '\'',
-          '%28': '(',
-          '%29': ')',
-          '%2A': '*',
-          '%2B': '+',
-          '%2C': ',',
-          '%3B': ';',
-          '%3D': '=',
-          '%40': '@'
-        }
-      },
-      // These characters are the characters called out by RFC2141 as "reserved" characters that
-      // should never appear in a URN, plus the colon character (see note above).
-      decode: {
-        expression: /[\/\?#:]/g,
-        map: {
-          '/': '%2F',
-          '?': '%3F',
-          '#': '%23',
-          ':': '%3A'
-        }
-      }
-    }
-  };
-  URI.encodeQuery = function(string, escapeQuerySpace) {
-    var escaped = URI.encode(string + '');
-    if (escapeQuerySpace === undefined) {
-      escapeQuerySpace = URI.escapeQuerySpace;
-    }
-
-    return escapeQuerySpace ? escaped.replace(/%20/g, '+') : escaped;
-  };
-  URI.decodeQuery = function(string, escapeQuerySpace) {
-    string += '';
-    if (escapeQuerySpace === undefined) {
-      escapeQuerySpace = URI.escapeQuerySpace;
-    }
-
-    try {
-      return URI.decode(escapeQuerySpace ? string.replace(/\+/g, '%20') : string);
-    } catch(e) {
-      // we're not going to mess with weird encodings,
-      // give up and return the undecoded original string
-      // see https://github.com/medialize/URI.js/issues/87
-      // see https://github.com/medialize/URI.js/issues/92
-      return string;
-    }
-  };
-  // generate encode/decode path functions
-  var _parts = {'encode':'encode', 'decode':'decode'};
-  var _part;
-  var generateAccessor = function(_group, _part) {
-    return function(string) {
-      try {
-        return URI[_part](string + '').replace(URI.characters[_group][_part].expression, function(c) {
-          return URI.characters[_group][_part].map[c];
-        });
-      } catch (e) {
-        // we're not going to mess with weird encodings,
-        // give up and return the undecoded original string
-        // see https://github.com/medialize/URI.js/issues/87
-        // see https://github.com/medialize/URI.js/issues/92
-        return string;
-      }
-    };
-  };
-
-  for (_part in _parts) {
-    URI[_part + 'PathSegment'] = generateAccessor('pathname', _parts[_part]);
-    URI[_part + 'UrnPathSegment'] = generateAccessor('urnpath', _parts[_part]);
-  }
-
-  var generateSegmentedPathFunction = function(_sep, _codingFuncName, _innerCodingFuncName) {
-    return function(string) {
-      // Why pass in names of functions, rather than the function objects themselves? The
-      // definitions of some functions (but in particular, URI.decode) will occasionally change due
-      // to URI.js having ISO8859 and Unicode modes. Passing in the name and getting it will ensure
-      // that the functions we use here are "fresh".
-      var actualCodingFunc;
-      if (!_innerCodingFuncName) {
-        actualCodingFunc = URI[_codingFuncName];
-      } else {
-        actualCodingFunc = function(string) {
-          return URI[_codingFuncName](URI[_innerCodingFuncName](string));
-        };
-      }
-
-      var segments = (string + '').split(_sep);
-
-      for (var i = 0, length = segments.length; i < length; i++) {
-        segments[i] = actualCodingFunc(segments[i]);
-      }
-
-      return segments.join(_sep);
-    };
-  };
-
-  // This takes place outside the above loop because we don't want, e.g., encodeUrnPath functions.
-  URI.decodePath = generateSegmentedPathFunction('/', 'decodePathSegment');
-  URI.decodeUrnPath = generateSegmentedPathFunction(':', 'decodeUrnPathSegment');
-  URI.recodePath = generateSegmentedPathFunction('/', 'encodePathSegment', 'decode');
-  URI.recodeUrnPath = generateSegmentedPathFunction(':', 'encodeUrnPathSegment', 'decode');
-
-  URI.encodeReserved = generateAccessor('reserved', 'encode');
-
-  URI.parse = function(string, parts) {
-    var pos;
-    if (!parts) {
-      parts = {};
-    }
-    // [protocol"://"[username[":"password]"@"]hostname[":"port]"/"?][path]["?"querystring]["#"fragment]
-
-    // extract fragment
-    pos = string.indexOf('#');
-    if (pos > -1) {
-      // escaping?
-      parts.fragment = string.substring(pos + 1) || null;
-      string = string.substring(0, pos);
-    }
-
-    // extract query
-    pos = string.indexOf('?');
-    if (pos > -1) {
-      // escaping?
-      parts.query = string.substring(pos + 1) || null;
-      string = string.substring(0, pos);
-    }
-
-    // extract protocol
-    if (string.substring(0, 2) === '//') {
-      // relative-scheme
-      parts.protocol = null;
-      string = string.substring(2);
-      // extract "user:pass@host:port"
-      string = URI.parseAuthority(string, parts);
-    } else {
-      pos = string.indexOf(':');
-      if (pos > -1) {
-        parts.protocol = string.substring(0, pos) || null;
-        if (parts.protocol && !parts.protocol.match(URI.protocol_expression)) {
-          // : may be within the path
-          parts.protocol = undefined;
-        } else if (string.substring(pos + 1, pos + 3) === '//') {
-          string = string.substring(pos + 3);
-
-          // extract "user:pass@host:port"
-          string = URI.parseAuthority(string, parts);
-        } else {
-          string = string.substring(pos + 1);
-          parts.urn = true;
-        }
-      }
-    }
-
-    // what's left must be the path
-    parts.path = string;
-
-    // and we're done
-    return parts;
-  };
-  URI.parseHost = function(string, parts) {
-    // Copy chrome, IE, opera backslash-handling behavior.
-    // Back slashes before the query string get converted to forward slashes
-    // See: https://github.com/joyent/node/blob/386fd24f49b0e9d1a8a076592a404168faeecc34/lib/url.js#L115-L124
-    // See: https://code.google.com/p/chromium/issues/detail?id=25916
-    // https://github.com/medialize/URI.js/pull/233
-    string = string.replace(/\\/g, '/');
-
-    // extract host:port
-    var pos = string.indexOf('/');
-    var bracketPos;
-    var t;
-
-    if (pos === -1) {
-      pos = string.length;
-    }
-
-    if (string.charAt(0) === '[') {
-      // IPv6 host - http://tools.ietf.org/html/draft-ietf-6man-text-addr-representation-04#section-6
-      // I claim most client software breaks on IPv6 anyways. To simplify things, URI only accepts
-      // IPv6+port in the format [2001:db8::1]:80 (for the time being)
-      bracketPos = string.indexOf(']');
-      parts.hostname = string.substring(1, bracketPos) || null;
-      parts.port = string.substring(bracketPos + 2, pos) || null;
-      if (parts.port === '/') {
-        parts.port = null;
-      }
-    } else {
-      var firstColon = string.indexOf(':');
-      var firstSlash = string.indexOf('/');
-      var nextColon = string.indexOf(':', firstColon + 1);
-      if (nextColon !== -1 && (firstSlash === -1 || nextColon < firstSlash)) {
-        // IPv6 host contains multiple colons - but no port
-        // this notation is actually not allowed by RFC 3986, but we're a liberal parser
-        parts.hostname = string.substring(0, pos) || null;
-        parts.port = null;
-      } else {
-        t = string.substring(0, pos).split(':');
-        parts.hostname = t[0] || null;
-        parts.port = t[1] || null;
-      }
-    }
-
-    if (parts.hostname && string.substring(pos).charAt(0) !== '/') {
-      pos++;
-      string = '/' + string;
-    }
-
-    return string.substring(pos) || '/';
-  };
-  URI.parseAuthority = function(string, parts) {
-    string = URI.parseUserinfo(string, parts);
-    return URI.parseHost(string, parts);
-  };
-  URI.parseUserinfo = function(string, parts) {
-    // extract username:password
-    var firstSlash = string.indexOf('/');
-    var pos = string.lastIndexOf('@', firstSlash > -1 ? firstSlash : string.length - 1);
-    var t;
-
-    // authority@ must come before /path
-    if (pos > -1 && (firstSlash === -1 || pos < firstSlash)) {
-      t = string.substring(0, pos).split(':');
-      parts.username = t[0] ? URI.decode(t[0]) : null;
-      t.shift();
-      parts.password = t[0] ? URI.decode(t.join(':')) : null;
-      string = string.substring(pos + 1);
-    } else {
-      parts.username = null;
-      parts.password = null;
-    }
-
-    return string;
-  };
-  URI.parseQuery = function(string, escapeQuerySpace) {
-    if (!string) {
-      return {};
-    }
-
-    // throw out the funky business - "?"[name"="value"&"]+
-    string = string.replace(/&+/g, '&').replace(/^\?*&*|&+$/g, '');
-
-    if (!string) {
-      return {};
-    }
-
-    var items = {};
-    var splits = string.split('&');
-    var length = splits.length;
-    var v, name, value;
-
-    for (var i = 0; i < length; i++) {
-      v = splits[i].split('=');
-      name = URI.decodeQuery(v.shift(), escapeQuerySpace);
-      // no "=" is null according to http://dvcs.w3.org/hg/url/raw-file/tip/Overview.html#collect-url-parameters
-      value = v.length ? URI.decodeQuery(v.join('='), escapeQuerySpace) : null;
-
-      if (hasOwn.call(items, name)) {
-        if (typeof items[name] === 'string' || items[name] === null) {
-          items[name] = [items[name]];
-        }
-
-        items[name].push(value);
-      } else {
-        items[name] = value;
-      }
-    }
-
-    return items;
-  };
-
-  URI.build = function(parts) {
-    var t = '';
-
-    if (parts.protocol) {
-      t += parts.protocol + ':';
-    }
-
-    if (!parts.urn && (t || parts.hostname)) {
-      t += '//';
-    }
-
-    t += (URI.buildAuthority(parts) || '');
-
-    if (typeof parts.path === 'string') {
-      if (parts.path.charAt(0) !== '/' && typeof parts.hostname === 'string') {
-        t += '/';
-      }
-
-      t += parts.path;
-    }
-
-    if (typeof parts.query === 'string' && parts.query) {
-      t += '?' + parts.query;
-    }
-
-    if (typeof parts.fragment === 'string' && parts.fragment) {
-      t += '#' + parts.fragment;
-    }
-    return t;
-  };
-  URI.buildHost = function(parts) {
-    var t = '';
-
-    if (!parts.hostname) {
-      return '';
-    } else if (URI.ip6_expression.test(parts.hostname)) {
-      t += '[' + parts.hostname + ']';
-    } else {
-      t += parts.hostname;
-    }
-
-    if (parts.port) {
-      t += ':' + parts.port;
-    }
-
-    return t;
-  };
-  URI.buildAuthority = function(parts) {
-    return URI.buildUserinfo(parts) + URI.buildHost(parts);
-  };
-  URI.buildUserinfo = function(parts) {
-    var t = '';
-
-    if (parts.username) {
-      t += URI.encode(parts.username);
-    }
-
-    if (parts.password) {
-      t += ':' + URI.encode(parts.password);
-    }
-
-    if (t) {
-      t += '@';
-    }
-
-    return t;
-  };
-  URI.buildQuery = function(data, duplicateQueryParameters, escapeQuerySpace) {
-    // according to http://tools.ietf.org/html/rfc3986 or http://labs.apache.org/webarch/uri/rfc/rfc3986.html
-    // being »-._~!$&'()*+,;=:@/?« %HEX and alnum are allowed
-    // the RFC explicitly states ?/foo being a valid use case, no mention of parameter syntax!
-    // URI.js treats the query string as being application/x-www-form-urlencoded
-    // see http://www.w3.org/TR/REC-html40/interact/forms.html#form-content-type
-
-    var t = '';
-    var unique, key, i, length;
-    for (key in data) {
-      if (hasOwn.call(data, key) && key) {
-        if (isArray(data[key])) {
-          unique = {};
-          for (i = 0, length = data[key].length; i < length; i++) {
-            if (data[key][i] !== undefined && unique[data[key][i] + ''] === undefined) {
-              t += '&' + URI.buildQueryParameter(key, data[key][i], escapeQuerySpace);
-              if (duplicateQueryParameters !== true) {
-                unique[data[key][i] + ''] = true;
-              }
-            }
-          }
-        } else if (data[key] !== undefined) {
-          t += '&' + URI.buildQueryParameter(key, data[key], escapeQuerySpace);
-        }
-      }
-    }
-
-    return t.substring(1);
-  };
-  URI.buildQueryParameter = function(name, value, escapeQuerySpace) {
-    // http://www.w3.org/TR/REC-html40/interact/forms.html#form-content-type -- application/x-www-form-urlencoded
-    // don't append "=" for null values, according to http://dvcs.w3.org/hg/url/raw-file/tip/Overview.html#url-parameter-serialization
-    return URI.encodeQuery(name, escapeQuerySpace) + (value !== null ? '=' + URI.encodeQuery(value, escapeQuerySpace) : '');
-  };
-
-  URI.addQuery = function(data, name, value) {
-    if (typeof name === 'object') {
-      for (var key in name) {
-        if (hasOwn.call(name, key)) {
-          URI.addQuery(data, key, name[key]);
-        }
-      }
-    } else if (typeof name === 'string') {
-      if (data[name] === undefined) {
-        data[name] = value;
-        return;
-      } else if (typeof data[name] === 'string') {
-        data[name] = [data[name]];
-      }
-
-      if (!isArray(value)) {
-        value = [value];
-      }
-
-      data[name] = (data[name] || []).concat(value);
-    } else {
-      throw new TypeError('URI.addQuery() accepts an object, string as the name parameter');
-    }
-  };
-  URI.removeQuery = function(data, name, value) {
-    var i, length, key;
-
-    if (isArray(name)) {
-      for (i = 0, length = name.length; i < length; i++) {
-        data[name[i]] = undefined;
-      }
-    } else if (getType(name) === 'RegExp') {
-      for (key in data) {
-        if (name.test(key)) {
-          data[key] = undefined;
-        }
-      }
-    } else if (typeof name === 'object') {
-      for (key in name) {
-        if (hasOwn.call(name, key)) {
-          URI.removeQuery(data, key, name[key]);
-        }
-      }
-    } else if (typeof name === 'string') {
-      if (value !== undefined) {
-        if (getType(value) === 'RegExp') {
-          if (!isArray(data[name]) && value.test(data[name])) {
-            data[name] = undefined;
-          } else {
-            data[name] = filterArrayValues(data[name], value);
-          }
-        } else if (data[name] === String(value) && (!isArray(value) || value.length === 1)) {
-          data[name] = undefined;
-        } else if (isArray(data[name])) {
-          data[name] = filterArrayValues(data[name], value);
-        }
-      } else {
-        data[name] = undefined;
-      }
-    } else {
-      throw new TypeError('URI.removeQuery() accepts an object, string, RegExp as the first parameter');
-    }
-  };
-  URI.hasQuery = function(data, name, value, withinArray) {
-    switch (getType(name)) {
-      case 'String':
-        // Nothing to do here
-        break;
-
-      case 'RegExp':
-        for (var key in data) {
-          if (hasOwn.call(data, key)) {
-            if (name.test(key) && (value === undefined || URI.hasQuery(data, key, value))) {
-              return true;
-            }
-          }
-        }
-
-        return false;
-
-      case 'Object':
-        for (var _key in name) {
-          if (hasOwn.call(name, _key)) {
-            if (!URI.hasQuery(data, _key, name[_key])) {
-              return false;
-            }
-          }
-        }
-
-        return true;
-
-      default:
-        throw new TypeError('URI.hasQuery() accepts a string, regular expression or object as the name parameter');
-    }
-
-    switch (getType(value)) {
-      case 'Undefined':
-        // true if exists (but may be empty)
-        return name in data; // data[name] !== undefined;
-
-      case 'Boolean':
-        // true if exists and non-empty
-        var _booly = Boolean(isArray(data[name]) ? data[name].length : data[name]);
-        return value === _booly;
-
-      case 'Function':
-        // allow complex comparison
-        return !!value(data[name], name, data);
-
-      case 'Array':
-        if (!isArray(data[name])) {
-          return false;
-        }
-
-        var op = withinArray ? arrayContains : arraysEqual;
-        return op(data[name], value);
-
-      case 'RegExp':
-        if (!isArray(data[name])) {
-          return Boolean(data[name] && data[name].match(value));
-        }
-
-        if (!withinArray) {
-          return false;
-        }
-
-        return arrayContains(data[name], value);
-
-      case 'Number':
-        value = String(value);
-        /* falls through */
-      case 'String':
-        if (!isArray(data[name])) {
-          return data[name] === value;
-        }
-
-        if (!withinArray) {
-          return false;
-        }
-
-        return arrayContains(data[name], value);
-
-      default:
-        throw new TypeError('URI.hasQuery() accepts undefined, boolean, string, number, RegExp, Function as the value parameter');
-    }
-  };
-
-
-  URI.joinPaths = function() {
-    var input = [];
-    var segments = [];
-    var nonEmptySegments = 0;
-
-    for (var i = 0; i < arguments.length; i++) {
-      var url = new URI(arguments[i]);
-      input.push(url);
-      var _segments = url.segment();
-      for (var s = 0; s < _segments.length; s++) {
-        if (typeof _segments[s] === 'string') {
-          segments.push(_segments[s]);
-        }
-
-        if (_segments[s]) {
-          nonEmptySegments++;
-        }
-      }
-    }
-
-    if (!segments.length || !nonEmptySegments) {
-      return new URI('');
-    }
-
-    var uri = new URI('').segment(segments);
-
-    if (input[0].path() === '' || input[0].path().slice(0, 1) === '/') {
-      uri.path('/' + uri.path());
-    }
-
-    return uri.normalize();
-  };
-
-  URI.commonPath = function(one, two) {
-    var length = Math.min(one.length, two.length);
-    var pos;
-
-    // find first non-matching character
-    for (pos = 0; pos < length; pos++) {
-      if (one.charAt(pos) !== two.charAt(pos)) {
-        pos--;
-        break;
-      }
-    }
-
-    if (pos < 1) {
-      return one.charAt(0) === two.charAt(0) && one.charAt(0) === '/' ? '/' : '';
-    }
-
-    // revert to last /
-    if (one.charAt(pos) !== '/' || two.charAt(pos) !== '/') {
-      pos = one.substring(0, pos).lastIndexOf('/');
-    }
-
-    return one.substring(0, pos + 1);
-  };
-
-  URI.withinString = function(string, callback, options) {
-    options || (options = {});
-    var _start = options.start || URI.findUri.start;
-    var _end = options.end || URI.findUri.end;
-    var _trim = options.trim || URI.findUri.trim;
-    var _parens = options.parens || URI.findUri.parens;
-    var _attributeOpen = /[a-z0-9-]=["']?$/i;
-
-    _start.lastIndex = 0;
-    while (true) {
-      var match = _start.exec(string);
-      if (!match) {
-        break;
-      }
-
-      var start = match.index;
-      if (options.ignoreHtml) {
-        // attribut(e=["']?$)
-        var attributeOpen = string.slice(Math.max(start - 3, 0), start);
-        if (attributeOpen && _attributeOpen.test(attributeOpen)) {
-          continue;
-        }
-      }
-
-      var end = start + string.slice(start).search(_end);
-      var slice = string.slice(start, end);
-      // make sure we include well balanced parens
-      var parensEnd = -1;
-      while (true) {
-        var parensMatch = _parens.exec(slice);
-        if (!parensMatch) {
-          break;
-        }
-
-        var parensMatchEnd = parensMatch.index + parensMatch[0].length;
-        parensEnd = Math.max(parensEnd, parensMatchEnd);
-      }
-
-      if (parensEnd > -1) {
-        slice = slice.slice(0, parensEnd) + slice.slice(parensEnd + 1).replace(_trim, '');
-      } else {
-        slice = slice.replace(_trim, '');
-      }
-
-      if (options.ignore && options.ignore.test(slice)) {
-        continue;
-      }
-
-      end = start + slice.length;
-      var result = callback(slice, start, end, string);
-      if (result === undefined) {
-        _start.lastIndex = end;
-        continue;
-      }
-
-      result = String(result);
-      string = string.slice(0, start) + result + string.slice(end);
-      _start.lastIndex = start + result.length;
-    }
-
-    _start.lastIndex = 0;
-    return string;
-  };
-
-  URI.ensureValidHostname = function(v) {
-    // Theoretically URIs allow percent-encoding in Hostnames (according to RFC 3986)
-    // they are not part of DNS and therefore ignored by URI.js
-
-    if (v.match(URI.invalid_hostname_characters)) {
-      // test punycode
-      if (!punycode) {
-        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-] and Punycode.js is not available');
-      }
-
-      if (punycode.toASCII(v).match(URI.invalid_hostname_characters)) {
-        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-]');
-      }
-    }
-  };
-
-  // noConflict
-  URI.noConflict = function(removeAll) {
-    if (removeAll) {
-      var unconflicted = {
-        URI: this.noConflict()
-      };
-
-      if (root.URITemplate && typeof root.URITemplate.noConflict === 'function') {
-        unconflicted.URITemplate = root.URITemplate.noConflict();
-      }
-
-      if (root.IPv6 && typeof root.IPv6.noConflict === 'function') {
-        unconflicted.IPv6 = root.IPv6.noConflict();
-      }
-
-      if (root.SecondLevelDomains && typeof root.SecondLevelDomains.noConflict === 'function') {
-        unconflicted.SecondLevelDomains = root.SecondLevelDomains.noConflict();
-      }
-
-      return unconflicted;
-    } else if (root.URI === this) {
-      root.URI = _URI;
-    }
-
-    return this;
-  };
-
-  p.build = function(deferBuild) {
-    if (deferBuild === true) {
-      this._deferred_build = true;
-    } else if (deferBuild === undefined || this._deferred_build) {
-      this._string = URI.build(this._parts);
-      this._deferred_build = false;
-    }
-
-    return this;
-  };
-
-  p.clone = function() {
-    return new URI(this);
-  };
-
-  p.valueOf = p.toString = function() {
-    return this.build(false)._string;
-  };
-
-
-  function generateSimpleAccessor(_part){
-    return function(v, build) {
-      if (v === undefined) {
-        return this._parts[_part] || '';
-      } else {
-        this._parts[_part] = v || null;
-        this.build(!build);
-        return this;
-      }
-    };
-  }
-
-  function generatePrefixAccessor(_part, _key){
-    return function(v, build) {
-      if (v === undefined) {
-        return this._parts[_part] || '';
-      } else {
-        if (v !== null) {
-          v = v + '';
-          if (v.charAt(0) === _key) {
-            v = v.substring(1);
-          }
-        }
-
-        this._parts[_part] = v;
-        this.build(!build);
-        return this;
-      }
-    };
-  }
-
-  p.protocol = generateSimpleAccessor('protocol');
-  p.username = generateSimpleAccessor('username');
-  p.password = generateSimpleAccessor('password');
-  p.hostname = generateSimpleAccessor('hostname');
-  p.port = generateSimpleAccessor('port');
-  p.query = generatePrefixAccessor('query', '?');
-  p.fragment = generatePrefixAccessor('fragment', '#');
-
-  p.search = function(v, build) {
-    var t = this.query(v, build);
-    return typeof t === 'string' && t.length ? ('?' + t) : t;
-  };
-  p.hash = function(v, build) {
-    var t = this.fragment(v, build);
-    return typeof t === 'string' && t.length ? ('#' + t) : t;
-  };
-
-  p.pathname = function(v, build) {
-    if (v === undefined || v === true) {
-      var res = this._parts.path || (this._parts.hostname ? '/' : '');
-      return v ? (this._parts.urn ? URI.decodeUrnPath : URI.decodePath)(res) : res;
-    } else {
-      if (this._parts.urn) {
-        this._parts.path = v ? URI.recodeUrnPath(v) : '';
-      } else {
-        this._parts.path = v ? URI.recodePath(v) : '/';
-      }
-      this.build(!build);
-      return this;
-    }
-  };
-  p.path = p.pathname;
-  p.href = function(href, build) {
-    var key;
-
-    if (href === undefined) {
-      return this.toString();
-    }
-
-    this._string = '';
-    this._parts = URI._parts();
-
-    var _URI = href instanceof URI;
-    var _object = typeof href === 'object' && (href.hostname || href.path || href.pathname);
-    if (href.nodeName) {
-      var attribute = URI.getDomAttribute(href);
-      href = href[attribute] || '';
-      _object = false;
-    }
-
-    // window.location is reported to be an object, but it's not the sort
-    // of object we're looking for:
-    // * location.protocol ends with a colon
-    // * location.query != object.search
-    // * location.hash != object.fragment
-    // simply serializing the unknown object should do the trick
-    // (for location, not for everything...)
-    if (!_URI && _object && href.pathname !== undefined) {
-      href = href.toString();
-    }
-
-    if (typeof href === 'string' || href instanceof String) {
-      this._parts = URI.parse(String(href), this._parts);
-    } else if (_URI || _object) {
-      var src = _URI ? href._parts : href;
-      for (key in src) {
-        if (hasOwn.call(this._parts, key)) {
-          this._parts[key] = src[key];
-        }
-      }
-    } else {
-      throw new TypeError('invalid input');
-    }
-
-    this.build(!build);
-    return this;
-  };
-
-  // identification accessors
-  p.is = function(what) {
-    var ip = false;
-    var ip4 = false;
-    var ip6 = false;
-    var name = false;
-    var sld = false;
-    var idn = false;
-    var punycode = false;
-    var relative = !this._parts.urn;
-
-    if (this._parts.hostname) {
-      relative = false;
-      ip4 = URI.ip4_expression.test(this._parts.hostname);
-      ip6 = URI.ip6_expression.test(this._parts.hostname);
-      ip = ip4 || ip6;
-      name = !ip;
-      sld = name && SLD && SLD.has(this._parts.hostname);
-      idn = name && URI.idn_expression.test(this._parts.hostname);
-      punycode = name && URI.punycode_expression.test(this._parts.hostname);
-    }
-
-    switch (what.toLowerCase()) {
-      case 'relative':
-        return relative;
-
-      case 'absolute':
-        return !relative;
-
-      // hostname identification
-      case 'domain':
-      case 'name':
-        return name;
-
-      case 'sld':
-        return sld;
-
-      case 'ip':
-        return ip;
-
-      case 'ip4':
-      case 'ipv4':
-      case 'inet4':
-        return ip4;
-
-      case 'ip6':
-      case 'ipv6':
-      case 'inet6':
-        return ip6;
-
-      case 'idn':
-        return idn;
-
-      case 'url':
-        return !this._parts.urn;
-
-      case 'urn':
-        return !!this._parts.urn;
-
-      case 'punycode':
-        return punycode;
-    }
-
-    return null;
-  };
-
-  // component specific input validation
-  var _protocol = p.protocol;
-  var _port = p.port;
-  var _hostname = p.hostname;
-
-  p.protocol = function(v, build) {
-    if (v !== undefined) {
-      if (v) {
-        // accept trailing ://
-        v = v.replace(/:(\/\/)?$/, '');
-
-        if (!v.match(URI.protocol_expression)) {
-          throw new TypeError('Protocol "' + v + '" contains characters other than [A-Z0-9.+-] or doesn\'t start with [A-Z]');
-        }
-      }
-    }
-    return _protocol.call(this, v, build);
-  };
-  p.scheme = p.protocol;
-  p.port = function(v, build) {
-    if (this._parts.urn) {
-      return v === undefined ? '' : this;
-    }
-
-    if (v !== undefined) {
-      if (v === 0) {
-        v = null;
-      }
-
-      if (v) {
-        v += '';
-        if (v.charAt(0) === ':') {
-          v = v.substring(1);
-        }
-
-        if (v.match(/[^0-9]/)) {
-          throw new TypeError('Port "' + v + '" contains characters other than [0-9]');
-        }
-      }
-    }
-    return _port.call(this, v, build);
-  };
-  p.hostname = function(v, build) {
-    if (this._parts.urn) {
-      return v === undefined ? '' : this;
-    }
-
-    if (v !== undefined) {
-      var x = {};
-      var res = URI.parseHost(v, x);
-      if (res !== '/') {
-        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-]');
-      }
-
-      v = x.hostname;
-    }
-    return _hostname.call(this, v, build);
-  };
-
-  // compound accessors
-  p.origin = function(v, build) {
-    if (this._parts.urn) {
-      return v === undefined ? '' : this;
-    }
-
-    if (v === undefined) {
-      var protocol = this.protocol();
-      var authority = this.authority();
-      if (!authority) {
-        return '';
-      }
-
-      return (protocol ? protocol + '://' : '') + this.authority();
-    } else {
-      var origin = URI(v);
-      this
-        .protocol(origin.protocol())
-        .authority(origin.authority())
-        .build(!build);
-      return this;
-    }
-  };
-  p.host = function(v, build) {
-    if (this._parts.urn) {
-      return v === undefined ? '' : this;
-    }
-
-    if (v === undefined) {
-      return this._parts.hostname ? URI.buildHost(this._parts) : '';
-    } else {
-      var res = URI.parseHost(v, this._parts);
-      if (res !== '/') {
-        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-]');
-      }
-
-      this.build(!build);
-      return this;
-    }
-  };
-  p.authority = function(v, build) {
-    if (this._parts.urn) {
-      return v === undefined ? '' : this;
-    }
-
-    if (v === undefined) {
-      return this._parts.hostname ? URI.buildAuthority(this._parts) : '';
-    } else {
-      var res = URI.parseAuthority(v, this._parts);
-      if (res !== '/') {
-        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-]');
-      }
-
-      this.build(!build);
-      return this;
-    }
-  };
-  p.userinfo = function(v, build) {
-    if (this._parts.urn) {
-      return v === undefined ? '' : this;
-    }
-
-    if (v === undefined) {
-      var t = URI.buildUserinfo(this._parts);
-      return t ? t.substring(0, t.length -1) : t;
-    } else {
-      if (v[v.length-1] !== '@') {
-        v += '@';
-      }
-
-      URI.parseUserinfo(v, this._parts);
-      this.build(!build);
-      return this;
-    }
-  };
-  p.resource = function(v, build) {
-    var parts;
-
-    if (v === undefined) {
-      return this.path() + this.search() + this.hash();
-    }
-
-    parts = URI.parse(v);
-    this._parts.path = parts.path;
-    this._parts.query = parts.query;
-    this._parts.fragment = parts.fragment;
-    this.build(!build);
-    return this;
-  };
-
-  // fraction accessors
-  p.subdomain = function(v, build) {
-    if (this._parts.urn) {
-      return v === undefined ? '' : this;
-    }
-
-    // convenience, return "www" from "www.example.org"
-    if (v === undefined) {
-      if (!this._parts.hostname || this.is('IP')) {
-        return '';
-      }
-
-      // grab domain and add another segment
-      var end = this._parts.hostname.length - this.domain().length - 1;
-      return this._parts.hostname.substring(0, end) || '';
-    } else {
-      var e = this._parts.hostname.length - this.domain().length;
-      var sub = this._parts.hostname.substring(0, e);
-      var replace = new RegExp('^' + escapeRegEx(sub));
-
-      if (v && v.charAt(v.length - 1) !== '.') {
-        v += '.';
-      }
-
-      if (v) {
-        URI.ensureValidHostname(v);
-      }
-
-      this._parts.hostname = this._parts.hostname.replace(replace, v);
-      this.build(!build);
-      return this;
-    }
-  };
-  p.domain = function(v, build) {
-    if (this._parts.urn) {
-      return v === undefined ? '' : this;
-    }
-
-    if (typeof v === 'boolean') {
-      build = v;
-      v = undefined;
-    }
-
-    // convenience, return "example.org" from "www.example.org"
-    if (v === undefined) {
-      if (!this._parts.hostname || this.is('IP')) {
-        return '';
-      }
-
-      // if hostname consists of 1 or 2 segments, it must be the domain
-      var t = this._parts.hostname.match(/\./g);
-      if (t && t.length < 2) {
-        return this._parts.hostname;
-      }
-
-      // grab tld and add another segment
-      var end = this._parts.hostname.length - this.tld(build).length - 1;
-      end = this._parts.hostname.lastIndexOf('.', end -1) + 1;
-      return this._parts.hostname.substring(end) || '';
-    } else {
-      if (!v) {
-        throw new TypeError('cannot set domain empty');
-      }
-
-      URI.ensureValidHostname(v);
-
-      if (!this._parts.hostname || this.is('IP')) {
-        this._parts.hostname = v;
-      } else {
-        var replace = new RegExp(escapeRegEx(this.domain()) + '$');
-        this._parts.hostname = this._parts.hostname.replace(replace, v);
-      }
-
-      this.build(!build);
-      return this;
-    }
-  };
-  p.tld = function(v, build) {
-    if (this._parts.urn) {
-      return v === undefined ? '' : this;
-    }
-
-    if (typeof v === 'boolean') {
-      build = v;
-      v = undefined;
-    }
-
-    // return "org" from "www.example.org"
-    if (v === undefined) {
-      if (!this._parts.hostname || this.is('IP')) {
-        return '';
-      }
-
-      var pos = this._parts.hostname.lastIndexOf('.');
-      var tld = this._parts.hostname.substring(pos + 1);
-
-      if (build !== true && SLD && SLD.list[tld.toLowerCase()]) {
-        return SLD.get(this._parts.hostname) || tld;
-      }
-
-      return tld;
-    } else {
-      var replace;
-
-      if (!v) {
-        throw new TypeError('cannot set TLD empty');
-      } else if (v.match(/[^a-zA-Z0-9-]/)) {
-        if (SLD && SLD.is(v)) {
-          replace = new RegExp(escapeRegEx(this.tld()) + '$');
-          this._parts.hostname = this._parts.hostname.replace(replace, v);
-        } else {
-          throw new TypeError('TLD "' + v + '" contains characters other than [A-Z0-9]');
-        }
-      } else if (!this._parts.hostname || this.is('IP')) {
-        throw new ReferenceError('cannot set TLD on non-domain host');
-      } else {
-        replace = new RegExp(escapeRegEx(this.tld()) + '$');
-        this._parts.hostname = this._parts.hostname.replace(replace, v);
-      }
-
-      this.build(!build);
-      return this;
-    }
-  };
-  p.directory = function(v, build) {
-    if (this._parts.urn) {
-      return v === undefined ? '' : this;
-    }
-
-    if (v === undefined || v === true) {
-      if (!this._parts.path && !this._parts.hostname) {
-        return '';
-      }
-
-      if (this._parts.path === '/') {
-        return '/';
-      }
-
-      var end = this._parts.path.length - this.filename().length - 1;
-      var res = this._parts.path.substring(0, end) || (this._parts.hostname ? '/' : '');
-
-      return v ? URI.decodePath(res) : res;
-
-    } else {
-      var e = this._parts.path.length - this.filename().length;
-      var directory = this._parts.path.substring(0, e);
-      var replace = new RegExp('^' + escapeRegEx(directory));
-
-      // fully qualifier directories begin with a slash
-      if (!this.is('relative')) {
-        if (!v) {
-          v = '/';
-        }
-
-        if (v.charAt(0) !== '/') {
-          v = '/' + v;
-        }
-      }
-
-      // directories always end with a slash
-      if (v && v.charAt(v.length - 1) !== '/') {
-        v += '/';
-      }
-
-      v = URI.recodePath(v);
-      this._parts.path = this._parts.path.replace(replace, v);
-      this.build(!build);
-      return this;
-    }
-  };
-  p.filename = function(v, build) {
-    if (this._parts.urn) {
-      return v === undefined ? '' : this;
-    }
-
-    if (typeof v !== 'string') {
-      if (!this._parts.path || this._parts.path === '/') {
-        return '';
-      }
-
-      var pos = this._parts.path.lastIndexOf('/');
-      var res = this._parts.path.substring(pos+1);
-
-      return v ? URI.decodePathSegment(res) : res;
-    } else {
-      var mutatedDirectory = false;
-
-      if (v.charAt(0) === '/') {
-        v = v.substring(1);
-      }
-
-      if (v.match(/\.?\//)) {
-        mutatedDirectory = true;
-      }
-
-      var replace = new RegExp(escapeRegEx(this.filename()) + '$');
-      v = URI.recodePath(v);
-      this._parts.path = this._parts.path.replace(replace, v);
-
-      if (mutatedDirectory) {
-        this.normalizePath(build);
-      } else {
-        this.build(!build);
-      }
-
-      return this;
-    }
-  };
-  p.suffix = function(v, build) {
-    if (this._parts.urn) {
-      return v === undefined ? '' : this;
-    }
-
-    if (v === undefined || v === true) {
-      if (!this._parts.path || this._parts.path === '/') {
-        return '';
-      }
-
-      var filename = this.filename();
-      var pos = filename.lastIndexOf('.');
-      var s, res;
-
-      if (pos === -1) {
-        return '';
-      }
-
-      // suffix may only contain alnum characters (yup, I made this up.)
-      s = filename.substring(pos+1);
-      res = (/^[a-z0-9%]+$/i).test(s) ? s : '';
-      return v ? URI.decodePathSegment(res) : res;
-    } else {
-      if (v.charAt(0) === '.') {
-        v = v.substring(1);
-      }
-
-      var suffix = this.suffix();
-      var replace;
-
-      if (!suffix) {
-        if (!v) {
-          return this;
-        }
-
-        this._parts.path += '.' + URI.recodePath(v);
-      } else if (!v) {
-        replace = new RegExp(escapeRegEx('.' + suffix) + '$');
-      } else {
-        replace = new RegExp(escapeRegEx(suffix) + '$');
-      }
-
-      if (replace) {
-        v = URI.recodePath(v);
-        this._parts.path = this._parts.path.replace(replace, v);
-      }
-
-      this.build(!build);
-      return this;
-    }
-  };
-  p.segment = function(segment, v, build) {
-    var separator = this._parts.urn ? ':' : '/';
-    var path = this.path();
-    var absolute = path.substring(0, 1) === '/';
-    var segments = path.split(separator);
-
-    if (segment !== undefined && typeof segment !== 'number') {
-      build = v;
-      v = segment;
-      segment = undefined;
-    }
-
-    if (segment !== undefined && typeof segment !== 'number') {
-      throw new Error('Bad segment "' + segment + '", must be 0-based integer');
-    }
-
-    if (absolute) {
-      segments.shift();
-    }
-
-    if (segment < 0) {
-      // allow negative indexes to address from the end
-      segment = Math.max(segments.length + segment, 0);
-    }
-
-    if (v === undefined) {
-      /*jshint laxbreak: true */
-      return segment === undefined
-        ? segments
-        : segments[segment];
-      /*jshint laxbreak: false */
-    } else if (segment === null || segments[segment] === undefined) {
-      if (isArray(v)) {
-        segments = [];
-        // collapse empty elements within array
-        for (var i=0, l=v.length; i < l; i++) {
-          if (!v[i].length && (!segments.length || !segments[segments.length -1].length)) {
-            continue;
-          }
-
-          if (segments.length && !segments[segments.length -1].length) {
-            segments.pop();
-          }
-
-          segments.push(trimSlashes(v[i]));
-        }
-      } else if (v || typeof v === 'string') {
-        v = trimSlashes(v);
-        if (segments[segments.length -1] === '') {
-          // empty trailing elements have to be overwritten
-          // to prevent results such as /foo//bar
-          segments[segments.length -1] = v;
-        } else {
-          segments.push(v);
-        }
-      }
-    } else {
-      if (v) {
-        segments[segment] = trimSlashes(v);
-      } else {
-        segments.splice(segment, 1);
-      }
-    }
-
-    if (absolute) {
-      segments.unshift('');
-    }
-
-    return this.path(segments.join(separator), build);
-  };
-  p.segmentCoded = function(segment, v, build) {
-    var segments, i, l;
-
-    if (typeof segment !== 'number') {
-      build = v;
-      v = segment;
-      segment = undefined;
-    }
-
-    if (v === undefined) {
-      segments = this.segment(segment, v, build);
-      if (!isArray(segments)) {
-        segments = segments !== undefined ? URI.decode(segments) : undefined;
-      } else {
-        for (i = 0, l = segments.length; i < l; i++) {
-          segments[i] = URI.decode(segments[i]);
-        }
-      }
-
-      return segments;
-    }
-
-    if (!isArray(v)) {
-      v = (typeof v === 'string' || v instanceof String) ? URI.encode(v) : v;
-    } else {
-      for (i = 0, l = v.length; i < l; i++) {
-        v[i] = URI.encode(v[i]);
-      }
-    }
-
-    return this.segment(segment, v, build);
-  };
-
-  // mutating query string
-  var q = p.query;
-  p.query = function(v, build) {
-    if (v === true) {
-      return URI.parseQuery(this._parts.query, this._parts.escapeQuerySpace);
-    } else if (typeof v === 'function') {
-      var data = URI.parseQuery(this._parts.query, this._parts.escapeQuerySpace);
-      var result = v.call(this, data);
-      this._parts.query = URI.buildQuery(result || data, this._parts.duplicateQueryParameters, this._parts.escapeQuerySpace);
-      this.build(!build);
-      return this;
-    } else if (v !== undefined && typeof v !== 'string') {
-      this._parts.query = URI.buildQuery(v, this._parts.duplicateQueryParameters, this._parts.escapeQuerySpace);
-      this.build(!build);
-      return this;
-    } else {
-      return q.call(this, v, build);
-    }
-  };
-  p.setQuery = function(name, value, build) {
-    var data = URI.parseQuery(this._parts.query, this._parts.escapeQuerySpace);
-
-    if (typeof name === 'string' || name instanceof String) {
-      data[name] = value !== undefined ? value : null;
-    } else if (typeof name === 'object') {
-      for (var key in name) {
-        if (hasOwn.call(name, key)) {
-          data[key] = name[key];
-        }
-      }
-    } else {
-      throw new TypeError('URI.addQuery() accepts an object, string as the name parameter');
-    }
-
-    this._parts.query = URI.buildQuery(data, this._parts.duplicateQueryParameters, this._parts.escapeQuerySpace);
-    if (typeof name !== 'string') {
-      build = value;
-    }
-
-    this.build(!build);
-    return this;
-  };
-  p.addQuery = function(name, value, build) {
-    var data = URI.parseQuery(this._parts.query, this._parts.escapeQuerySpace);
-    URI.addQuery(data, name, value === undefined ? null : value);
-    this._parts.query = URI.buildQuery(data, this._parts.duplicateQueryParameters, this._parts.escapeQuerySpace);
-    if (typeof name !== 'string') {
-      build = value;
-    }
-
-    this.build(!build);
-    return this;
-  };
-  p.removeQuery = function(name, value, build) {
-    var data = URI.parseQuery(this._parts.query, this._parts.escapeQuerySpace);
-    URI.removeQuery(data, name, value);
-    this._parts.query = URI.buildQuery(data, this._parts.duplicateQueryParameters, this._parts.escapeQuerySpace);
-    if (typeof name !== 'string') {
-      build = value;
-    }
-
-    this.build(!build);
-    return this;
-  };
-  p.hasQuery = function(name, value, withinArray) {
-    var data = URI.parseQuery(this._parts.query, this._parts.escapeQuerySpace);
-    return URI.hasQuery(data, name, value, withinArray);
-  };
-  p.setSearch = p.setQuery;
-  p.addSearch = p.addQuery;
-  p.removeSearch = p.removeQuery;
-  p.hasSearch = p.hasQuery;
-
-  // sanitizing URLs
-  p.normalize = function() {
-    if (this._parts.urn) {
-      return this
-        .normalizeProtocol(false)
-        .normalizePath(false)
-        .normalizeQuery(false)
-        .normalizeFragment(false)
-        .build();
-    }
-
-    return this
-      .normalizeProtocol(false)
-      .normalizeHostname(false)
-      .normalizePort(false)
-      .normalizePath(false)
-      .normalizeQuery(false)
-      .normalizeFragment(false)
-      .build();
-  };
-  p.normalizeProtocol = function(build) {
-    if (typeof this._parts.protocol === 'string') {
-      this._parts.protocol = this._parts.protocol.toLowerCase();
-      this.build(!build);
-    }
-
-    return this;
-  };
-  p.normalizeHostname = function(build) {
-    if (this._parts.hostname) {
-      if (this.is('IDN') && punycode) {
-        this._parts.hostname = punycode.toASCII(this._parts.hostname);
-      } else if (this.is('IPv6') && IPv6) {
-        this._parts.hostname = IPv6.best(this._parts.hostname);
-      }
-
-      this._parts.hostname = this._parts.hostname.toLowerCase();
-      this.build(!build);
-    }
-
-    return this;
-  };
-  p.normalizePort = function(build) {
-    // remove port of it's the protocol's default
-    if (typeof this._parts.protocol === 'string' && this._parts.port === URI.defaultPorts[this._parts.protocol]) {
-      this._parts.port = null;
-      this.build(!build);
-    }
-
-    return this;
-  };
-  p.normalizePath = function(build) {
-    var _path = this._parts.path;
-    if (!_path) {
-      return this;
-    }
-
-    if (this._parts.urn) {
-      this._parts.path = URI.recodeUrnPath(this._parts.path);
-      this.build(!build);
-      return this;
-    }
-
-    if (this._parts.path === '/') {
-      return this;
-    }
-
-    _path = URI.recodePath(_path);
-
-    var _was_relative;
-    var _leadingParents = '';
-    var _parent, _pos;
-
-    // handle relative paths
-    if (_path.charAt(0) !== '/') {
-      _was_relative = true;
-      _path = '/' + _path;
-    }
-
-    // handle relative files (as opposed to directories)
-    if (_path.slice(-3) === '/..' || _path.slice(-2) === '/.') {
-      _path += '/';
-    }
-
-    // resolve simples
-    _path = _path
-      .replace(/(\/(\.\/)+)|(\/\.$)/g, '/')
-      .replace(/\/{2,}/g, '/');
-
-    // remember leading parents
-    if (_was_relative) {
-      _leadingParents = _path.substring(1).match(/^(\.\.\/)+/) || '';
-      if (_leadingParents) {
-        _leadingParents = _leadingParents[0];
-      }
-    }
-
-    // resolve parents
-    while (true) {
-      _parent = _path.search(/\/\.\.(\/|$)/);
-      if (_parent === -1) {
-        // no more ../ to resolve
-        break;
-      } else if (_parent === 0) {
-        // top level cannot be relative, skip it
-        _path = _path.substring(3);
-        continue;
-      }
-
-      _pos = _path.substring(0, _parent).lastIndexOf('/');
-      if (_pos === -1) {
-        _pos = _parent;
-      }
-      _path = _path.substring(0, _pos) + _path.substring(_parent + 3);
-    }
-
-    // revert to relative
-    if (_was_relative && this.is('relative')) {
-      _path = _leadingParents + _path.substring(1);
-    }
-
-    this._parts.path = _path;
-    this.build(!build);
-    return this;
-  };
-  p.normalizePathname = p.normalizePath;
-  p.normalizeQuery = function(build) {
-    if (typeof this._parts.query === 'string') {
-      if (!this._parts.query.length) {
-        this._parts.query = null;
-      } else {
-        this.query(URI.parseQuery(this._parts.query, this._parts.escapeQuerySpace));
-      }
-
-      this.build(!build);
-    }
-
-    return this;
-  };
-  p.normalizeFragment = function(build) {
-    if (!this._parts.fragment) {
-      this._parts.fragment = null;
-      this.build(!build);
-    }
-
-    return this;
-  };
-  p.normalizeSearch = p.normalizeQuery;
-  p.normalizeHash = p.normalizeFragment;
-
-  p.iso8859 = function() {
-    // expect unicode input, iso8859 output
-    var e = URI.encode;
-    var d = URI.decode;
-
-    URI.encode = escape;
-    URI.decode = decodeURIComponent;
-    try {
-      this.normalize();
-    } finally {
-      URI.encode = e;
-      URI.decode = d;
-    }
-    return this;
-  };
-
-  p.unicode = function() {
-    // expect iso8859 input, unicode output
-    var e = URI.encode;
-    var d = URI.decode;
-
-    URI.encode = strictEncodeURIComponent;
-    URI.decode = unescape;
-    try {
-      this.normalize();
-    } finally {
-      URI.encode = e;
-      URI.decode = d;
-    }
-    return this;
-  };
-
-  p.readable = function() {
-    var uri = this.clone();
-    // removing username, password, because they shouldn't be displayed according to RFC 3986
-    uri.username('').password('').normalize();
-    var t = '';
-    if (uri._parts.protocol) {
-      t += uri._parts.protocol + '://';
-    }
-
-    if (uri._parts.hostname) {
-      if (uri.is('punycode') && punycode) {
-        t += punycode.toUnicode(uri._parts.hostname);
-        if (uri._parts.port) {
-          t += ':' + uri._parts.port;
-        }
-      } else {
-        t += uri.host();
-      }
-    }
-
-    if (uri._parts.hostname && uri._parts.path && uri._parts.path.charAt(0) !== '/') {
-      t += '/';
-    }
-
-    t += uri.path(true);
-    if (uri._parts.query) {
-      var q = '';
-      for (var i = 0, qp = uri._parts.query.split('&'), l = qp.length; i < l; i++) {
-        var kv = (qp[i] || '').split('=');
-        q += '&' + URI.decodeQuery(kv[0], this._parts.escapeQuerySpace)
-          .replace(/&/g, '%26');
-
-        if (kv[1] !== undefined) {
-          q += '=' + URI.decodeQuery(kv[1], this._parts.escapeQuerySpace)
-            .replace(/&/g, '%26');
-        }
-      }
-      t += '?' + q.substring(1);
-    }
-
-    t += URI.decodeQuery(uri.hash(), true);
-    return t;
-  };
-
-  // resolving relative and absolute URLs
-  p.absoluteTo = function(base) {
-    var resolved = this.clone();
-    var properties = ['protocol', 'username', 'password', 'hostname', 'port'];
-    var basedir, i, p;
-
-    if (!(base instanceof URI)) {
-      base = new URI(base);
-    }
-
-    // << Readium patch
-    // "filesystem:chrome-extension:"
-    //
-    
-    if (this._parts.protocol == 'filesystem') {
-
-      return resolved;
-    }
-
-    if (base._parts.protocol == 'filesystem') {
-
-      var uri = this.absoluteTo(base._parts.path);
-
-      if (base._parts.path.indexOf("chrome-extension:") !== -1 || base._parts.path.indexOf("http:") !== -1 || base._parts.path.indexOf("https:") !== -1) {
-
-        return new URI('filesystem:' + uri.toString());
-      }
-
-      return uri;
-    }
-
-    if (this._parts.urn) {
-      throw new Error('URNs do not have any generally defined hierarchical components');
-    }
-
-    //
-    // Readium patch >>
-
-    if (!resolved._parts.protocol) {
-      resolved._parts.protocol = base._parts.protocol;
-    }
-
-    if (this._parts.hostname) {
-      return resolved;
-    }
-
-    for (i = 0; (p = properties[i]); i++) {
-      resolved._parts[p] = base._parts[p];
-    }
-
-    if (!resolved._parts.path) {
-      resolved._parts.path = base._parts.path;
-      if (!resolved._parts.query) {
-        resolved._parts.query = base._parts.query;
-      }
-    } else {
-      if (resolved._parts.path.substring(-2) === '..') {
-        resolved._parts.path += '/';
-      }
-
-      if (resolved.path().charAt(0) !== '/') {
-        basedir = base.directory();
-        basedir = basedir ? basedir : base.path().indexOf('/') === 0 ? '/' : '';
-        resolved._parts.path = (basedir ? (basedir + '/') : '') + resolved._parts.path;
-        resolved.normalizePath();
-      }
-    }
-
-    resolved.build();
-    return resolved;
-  };
-  p.relativeTo = function(base) {
-    var relative = this.clone().normalize();
-    var relativeParts, baseParts, common, relativePath, basePath;
-
-    if (relative._parts.urn) {
-      throw new Error('URNs do not have any generally defined hierarchical components');
-    }
-
-    base = new URI(base).normalize();
-    relativeParts = relative._parts;
-    baseParts = base._parts;
-    relativePath = relative.path();
-    basePath = base.path();
-
-    if (relativePath.charAt(0) !== '/') {
-      throw new Error('URI is already relative');
-    }
-
-    if (basePath.charAt(0) !== '/') {
-      throw new Error('Cannot calculate a URI relative to another relative URI');
-    }
-
-    if (relativeParts.protocol === baseParts.protocol) {
-      relativeParts.protocol = null;
-    }
-
-    if (relativeParts.username !== baseParts.username || relativeParts.password !== baseParts.password) {
-      return relative.build();
-    }
-
-    if (relativeParts.protocol !== null || relativeParts.username !== null || relativeParts.password !== null) {
-      return relative.build();
-    }
-
-    if (relativeParts.hostname === baseParts.hostname && relativeParts.port === baseParts.port) {
-      relativeParts.hostname = null;
-      relativeParts.port = null;
-    } else {
-      return relative.build();
-    }
-
-    if (relativePath === basePath) {
-      relativeParts.path = '';
-      return relative.build();
-    }
-
-    // determine common sub path
-    common = URI.commonPath(relativePath, basePath);
-
-    // If the paths have nothing in common, return a relative URL with the absolute path.
-    if (!common) {
-      return relative.build();
-    }
-
-    var parents = baseParts.path
-      .substring(common.length)
-      .replace(/[^\/]*$/, '')
-      .replace(/.*?\//g, '../');
-
-    relativeParts.path = (parents + relativeParts.path.substring(common.length)) || './';
-
-    return relative.build();
-  };
-
-  // comparing URIs
-  p.equals = function(uri) {
-    var one = this.clone();
-    var two = new URI(uri);
-    var one_map = {};
-    var two_map = {};
-    var checked = {};
-    var one_query, two_query, key;
-
-    one.normalize();
-    two.normalize();
-
-    // exact match
-    if (one.toString() === two.toString()) {
-      return true;
-    }
-
-    // extract query string
-    one_query = one.query();
-    two_query = two.query();
-    one.query('');
-    two.query('');
-
-    // definitely not equal if not even non-query parts match
-    if (one.toString() !== two.toString()) {
-      return false;
-    }
-
-    // query parameters have the same length, even if they're permuted
-    if (one_query.length !== two_query.length) {
-      return false;
-    }
-
-    one_map = URI.parseQuery(one_query, this._parts.escapeQuerySpace);
-    two_map = URI.parseQuery(two_query, this._parts.escapeQuerySpace);
-
-    for (key in one_map) {
-      if (hasOwn.call(one_map, key)) {
-        if (!isArray(one_map[key])) {
-          if (one_map[key] !== two_map[key]) {
-            return false;
-          }
-        } else if (!arraysEqual(one_map[key], two_map[key])) {
-          return false;
-        }
-
-        checked[key] = true;
-      }
-    }
-
-    for (key in two_map) {
-      if (hasOwn.call(two_map, key)) {
-        if (!checked[key]) {
-          // two contains a parameter not present in one
-          return false;
-        }
-      }
-    }
-
-    return true;
-  };
-
-  // state
-  p.duplicateQueryParameters = function(v) {
-    this._parts.duplicateQueryParameters = !!v;
-    return this;
-  };
-
-  p.escapeQuerySpace = function(v) {
-    this._parts.escapeQuerySpace = !!v;
-    return this;
-  };
-
-  return URI;
-}));
-
 //     Underscore.js 1.8.3
 //     http://underscorejs.org
 //     (c) 2009-2015 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -18961,6 +13344,1957 @@ define("es6-collections", function(){});
   }
 }.call(this));
 
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  
+//  Redistribution and use in source and binary forms, with or without modification, 
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this 
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice, 
+//  this list of conditions and the following disclaimer in the documentation and/or 
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be 
+//  used to endorse or promote products derived from this software without specific 
+//  prior written permission.
+
+(function(global) {
+
+
+// Description: This is a set of runtime errors that the CFI interpreter can throw. 
+// Rationale: These error types extend the basic javascript error object so error things like the stack trace are 
+//   included with the runtime errors. 
+
+// REFACTORING CANDIDATE: This type of error may not be required in the long run. The parser should catch any syntax errors, 
+//   provided it is error-free, and as such, the AST should never really have any node type errors, which are essentially errors
+//   in the structure of the AST. This error should probably be refactored out when the grammar and interpreter are more stable.
+
+var obj = {
+
+NodeTypeError: function (node, message) {
+
+    function NodeTypeError () {
+
+        this.node = node;
+    }
+
+    NodeTypeError.prototype = new Error(message);
+    NodeTypeError.constructor = NodeTypeError;
+
+    return new NodeTypeError();
+},
+
+// REFACTORING CANDIDATE: Might make sense to include some more specifics about the out-of-rangeyness.
+OutOfRangeError: function (targetIndex, maxIndex, message) {
+
+    function OutOfRangeError () {
+
+        this.targetIndex = targetIndex;
+        this.maxIndex = maxIndex;
+    }
+
+    OutOfRangeError.prototype = new Error(message);
+    OutOfRangeError.constructor = OutOfRangeError()
+
+    return new OutOfRangeError();
+},
+
+// REFACTORING CANDIDATE: This is a bit too general to be useful. When I have a better understanding of the type of errors
+//   that can occur with the various terminus conditions, it'll make more sense to revisit this. 
+TerminusError: function (terminusType, terminusCondition, message) {
+
+    function TerminusError () {
+
+        this.terminusType = terminusType;
+        this.terminusCondition = terminusCondition;
+    }
+
+    TerminusError.prototype = new Error(message);
+    TerminusError.constructor = TerminusError();
+
+    return new TerminusError();
+},
+
+CFIAssertionError: function (expectedAssertion, targetElementAssertion, message) {
+
+    function CFIAssertionError () {
+
+        this.expectedAssertion = expectedAssertion;
+        this.targetElementAssertion = targetElementAssertion;
+    }
+
+    CFIAssertionError.prototype = new Error(message);
+    CFIAssertionError.constructor = CFIAssertionError();
+
+    return new CFIAssertionError();
+}
+
+};
+
+
+
+
+
+
+
+
+
+
+if (typeof define == 'function' && typeof define.amd == 'object') {
+    console.log("RequireJS ... cfi_errors");
+    
+    define('readium_cfi_js/cfi_runtime_errors',[],
+    function () {
+        return obj;
+    });
+} else {
+    console.log("!RequireJS ... cfi_errors");
+    
+    if (!global["EPUBcfi"]) {
+        throw new Error("EPUBcfi not initialised on global object?! (window or this context)");
+    }
+    
+    global.EPUBcfi.NodeTypeError = obj.NodeTypeError;
+    global.EPUBcfi.OutOfRangeError = obj.OutOfRangeError;
+    global.EPUBcfi.TerminusError = obj.TerminusError;
+    global.EPUBcfi.CFIAssertionError = obj.CFIAssertionError;
+}
+
+})(typeof window !== "undefined" ? window : this);
+
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  
+//  Redistribution and use in source and binary forms, with or without modification, 
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this 
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice, 
+//  this list of conditions and the following disclaimer in the documentation and/or 
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be 
+//  used to endorse or promote products derived from this software without specific 
+//  prior written permission.
+
+(function(global) {
+
+var init = function($, _, cfiRuntimeErrors) {
+    
+var obj = {
+
+// Description: This model contains the implementation for "instructions" included in the EPUB CFI domain specific language (DSL). 
+//   Lexing and parsing a CFI produces a set of executable instructions for processing a CFI (represented in the AST). 
+//   This object contains a set of functions that implement each of the executable instructions in the AST. 
+
+    // ------------------------------------------------------------------------------------ //
+    //  "PUBLIC" METHODS (THE API)                                                          //
+    // ------------------------------------------------------------------------------------ //
+
+    // Description: Follows a step
+    // Rationale: The use of children() is important here, as this jQuery method returns a tree of xml nodes, EXCLUDING
+    //   CDATA and text nodes. When we index into the set of child elements, we are assuming that text nodes have been 
+    //   excluded.
+    // REFACTORING CANDIDATE: This should be called "followIndexStep"
+    getNextNode : function (CFIStepValue, $currNode, classBlacklist, elementBlacklist, idBlacklist) {
+
+        // Find the jquery index for the current node
+        var $targetNode;
+        if (CFIStepValue % 2 == 0) {
+
+            $targetNode = this.elementNodeStep(CFIStepValue, $currNode, classBlacklist, elementBlacklist, idBlacklist);
+        }
+        else {
+
+            $targetNode = this.inferTargetTextNode(CFIStepValue, $currNode, classBlacklist, elementBlacklist, idBlacklist);
+        }
+
+        return $targetNode;
+    },
+
+    // Description: This instruction executes an indirection step, where a resource is retrieved using a 
+    //   link contained on a attribute of the target element. The attribute that contains the link differs
+    //   depending on the target. 
+    // Note: Iframe indirection will (should) fail if the iframe is not from the same domain as its containing script due to 
+    //   the cross origin security policy
+    followIndirectionStep : function (CFIStepValue, $currNode, classBlacklist, elementBlacklist, idBlacklist) {
+
+        var that = this;
+        var $contentDocument; 
+        var $blacklistExcluded;
+        var $startElement;
+        var $targetNode;
+
+        // TODO: This check must be expanded to all the different types of indirection step
+        // Only expects iframes, at the moment
+        if ($currNode === undefined || !this._matchesLocalNameOrElement($currNode[0], 'iframe')) {
+
+            throw cfiRuntimeErrors.NodeTypeError($currNode, "expected an iframe element");
+        }
+
+        // Check node type; only iframe indirection is handled, at the moment
+        if (this._matchesLocalNameOrElement($currNode[0], 'iframe')) {
+
+            // Get content
+            $contentDocument = $currNode.contents();
+
+            // Go to the first XHTML element, which will be the first child of the top-level document object
+            $blacklistExcluded = this.applyBlacklist($contentDocument.children(), classBlacklist, elementBlacklist, idBlacklist);
+            $startElement = $($blacklistExcluded[0]);
+
+            // Follow an index step
+            $targetNode = this.getNextNode(CFIStepValue, $startElement, classBlacklist, elementBlacklist, idBlacklist);
+
+            // Return that shit!
+            return $targetNode; 
+        }
+
+        // TODO: Other types of indirection
+        // TODO: $targetNode.is("embed")) : src
+        // TODO: ($targetNode.is("object")) : data
+        // TODO: ($targetNode.is("image") || $targetNode.is("xlink:href")) : xlink:href
+    },
+
+    // Description: Injects an element at the specified text node
+    // Arguments: a cfi text termination string, a jquery object to the current node
+    // REFACTORING CANDIDATE: Rename this to indicate that it injects into a text terminus
+    textTermination : function ($currNode, textOffset, elementToInject) {
+
+        var $injectedElement;
+        // Get the first node, this should be a text node
+        if ($currNode === undefined) {
+
+            throw cfiRuntimeErrors.NodeTypeError($currNode, "expected a terminating node, or node list");
+        } 
+        else if ($currNode.length === 0) {
+
+            throw cfiRuntimeErrors.TerminusError("Text", "Text offset:" + textOffset, "no nodes found for termination condition");
+        }
+
+        $injectedElement = this.injectCFIMarkerIntoText($currNode, textOffset, elementToInject);
+        return $injectedElement;
+    },
+
+    // Description: Checks that the id assertion for the node target matches that on 
+    //   the found node. 
+    targetIdMatchesIdAssertion : function ($foundNode, idAssertion) {
+
+        if ($foundNode.attr("id") === idAssertion) {
+
+            return true;
+        }
+        else {
+
+            return false;
+        }
+    },
+
+    // ------------------------------------------------------------------------------------ //
+    //  "PRIVATE" HELPERS                                                                   //
+    // ------------------------------------------------------------------------------------ //
+
+    // Description: Step reference for xml element node. Expected that CFIStepValue is an even integer
+    elementNodeStep : function (CFIStepValue, $currNode, classBlacklist, elementBlacklist, idBlacklist) {
+
+        var $targetNode;
+        var $blacklistExcluded;
+        var numElements;
+        var jqueryTargetNodeIndex = (CFIStepValue / 2) - 1;
+
+        $blacklistExcluded = this.applyBlacklist($currNode.children(), classBlacklist, elementBlacklist, idBlacklist);
+        numElements = $blacklistExcluded.length;
+
+        if (this.indexOutOfRange(jqueryTargetNodeIndex, numElements)) {
+
+            throw cfiRuntimeErrors.OutOfRangeError(jqueryTargetNodeIndex, numElements - 1, "");
+        }
+
+        $targetNode = $($blacklistExcluded[jqueryTargetNodeIndex]);
+        return $targetNode;
+    },
+
+    retrieveItemRefHref : function ($itemRefElement, $packageDocument) {
+
+        return $("#" + $itemRefElement.attr("idref"), $packageDocument).attr("href");
+    },
+
+    indexOutOfRange : function (targetIndex, numChildElements) {
+
+        return (targetIndex > numChildElements - 1) ? true : false;
+    },
+
+    // Rationale: In order to inject an element into a specific position, access to the parent object 
+    //   is required. This is obtained with the jquery parent() method. An alternative would be to 
+    //   pass in the parent with a filtered list containing only children that are part of the target text node.
+    injectCFIMarkerIntoText : function ($textNodeList, textOffset, elementToInject) {
+        var document = $textNodeList[0].ownerDocument;
+
+        var nodeNum;
+        var currNodeLength;
+        var currTextPosition = 0;
+        var nodeOffset;
+        var originalText;
+        var $injectedNode;
+        var $newTextNode;
+        // The iteration counter may be incorrect here (should be $textNodeList.length - 1 ??)
+        for (nodeNum = 0; nodeNum <= $textNodeList.length; nodeNum++) {
+
+            if ($textNodeList[nodeNum].nodeType === Node.TEXT_NODE) {
+
+                currNodeMaxIndex = $textNodeList[nodeNum].nodeValue.length  + currTextPosition;
+                nodeOffset = textOffset - currTextPosition;
+
+                if (currNodeMaxIndex > textOffset) {
+
+                    // This node is going to be split and the components re-inserted
+                    originalText = $textNodeList[nodeNum].nodeValue;    
+
+                    // Before part
+                    $textNodeList[nodeNum].nodeValue = originalText.slice(0, nodeOffset);
+
+                    // Injected element
+                    $injectedNode = $(elementToInject).insertAfter($textNodeList.eq(nodeNum));
+
+                    // After part
+                    $newTextNode = $(document.createTextNode(originalText.slice(nodeOffset, originalText.length)));
+                    $($newTextNode).insertAfter($injectedNode);
+
+                    return $injectedNode;
+                } else if (currNodeMaxIndex == textOffset){
+                    $injectedNode = $(elementToInject).insertAfter($textNodeList.eq(nodeNum));
+                    return $injectedNode;
+                }
+                else {
+                    currTextPosition = currNodeMaxIndex;
+                }
+            } else if($textNodeList[nodeNum].nodeType === Node.COMMENT_NODE){
+                currNodeMaxIndex = $textNodeList[nodeNum].nodeValue.length + 7 + currTextPosition;
+                currTextPosition = currNodeMaxIndex;
+            } else if($textNodeList[nodeNum].nodeType === Node.PROCESSING_INSTRUCTION_NODE){
+                currNodeMaxIndex = $textNodeList[nodeNum].nodeValue.length + $textNodeList[nodeNum].target.length + 5
+                currTextPosition = currNodeMaxIndex;
+            }
+        }
+
+        throw cfiRuntimeErrors.TerminusError("Text", "Text offset:" + textOffset, "The offset exceeded the length of the text");
+    },
+
+    // Rationale: In order to inject an element into a specific position, access to the parent object 
+    //   is required. This is obtained with the jquery parent() method. An alternative would be to 
+    //   pass in the parent with a filtered list containing only children that are part of the target text node.
+
+    // Description: This method finds a target text node and then injects an element into the appropriate node
+    // Rationale: The possibility that cfi marker elements have been injected into a text node at some point previous to 
+    //   this method being called (and thus splitting the original text node into two separate text nodes) necessitates that
+    //   the set of nodes that compromised the original target text node are inferred and returned.
+    // Notes: Passed a current node. This node should have a set of elements under it. This will include at least one text node, 
+    //   element nodes (maybe), or possibly a mix. 
+    // REFACTORING CANDIDATE: This method is pretty long (and confusing). Worth investigating to see if it can be refactored into something clearer.
+    inferTargetTextNode : function (CFIStepValue, $currNode, classBlacklist, elementBlacklist, idBlacklist) {
+        
+        var $elementsWithoutMarkers;
+        var currLogicalTextNodeIndex;
+        var targetLogicalTextNodeIndex;
+        var nodeNum;
+        var $targetTextNodeList;
+        var prevNodeWasTextNode;
+
+        // Remove any cfi marker elements from the set of elements. 
+        // Rationale: A filtering function is used, as simply using a class selector with jquery appears to 
+        //   result in behaviour where text nodes are also filtered out, along with the class element being filtered.
+        $elementsWithoutMarkers = this.applyBlacklist($currNode.contents(), classBlacklist, elementBlacklist, idBlacklist);
+
+        // Convert CFIStepValue to logical index; assumes odd integer for the step value
+        targetLogicalTextNodeIndex = ((parseInt(CFIStepValue) + 1) / 2) - 1;
+
+        // Set text node position counter
+        currLogicalTextNodeIndex = 0;
+        prevNodeWasTextNode = false;
+        $targetTextNodeList = $elementsWithoutMarkers.filter(
+            function () {
+
+                if (currLogicalTextNodeIndex === targetLogicalTextNodeIndex) {
+
+                    // If it's a text node
+                    if (this.nodeType === Node.TEXT_NODE || this.nodeType === Node.COMMENT_NODE || this.nodeType === Node.PROCESSING_INSTRUCTION_NODE) {
+                        prevNodeWasTextNode = true;
+                        return true;
+                    }
+                    // Rationale: The logical text node position is only incremented once a group of text nodes (a single logical
+                    //   text node) has been passed by the loop. 
+                    else if (prevNodeWasTextNode && (this.nodeType !== Node.TEXT_NODE)) {
+                        currLogicalTextNodeIndex++;
+                        prevNodeWasTextNode = false;
+                        return false;
+                    }
+                }
+                // Don't return any elements
+                else {
+
+                    if (this.nodeType === Node.TEXT_NODE || this.nodeType === Node.COMMENT_NODE || this.nodeType === Node.PROCESSING_INSTRUCTION_NODE) {
+                        prevNodeWasTextNode = true;
+                    }else if (!prevNodeWasTextNode && this.nodeType === Node.ELEMENT_NODE){
+                        currLogicalTextNodeIndex++;
+                        prevNodeWasTextNode = true;
+                    }
+                    else if (prevNodeWasTextNode && (this.nodeType !== Node.TEXT_NODE) && (this !== $elementsWithoutMarkers.lastChild)) {
+                        currLogicalTextNodeIndex++;
+                        prevNodeWasTextNode = false;
+                    }
+
+                    return false;
+                }
+            }
+        );
+
+        // The filtering above should have counted the number of "logical" text nodes; this can be used to 
+        // detect out of range errors
+        if ($targetTextNodeList.length === 0) {
+            throw cfiRuntimeErrors.OutOfRangeError(targetLogicalTextNodeIndex, currLogicalTextNodeIndex, "Index out of range");
+        }
+
+        // return the text node list
+        return $targetTextNodeList;
+    },
+
+    applyBlacklist : function ($elements, classBlacklist, elementBlacklist, idBlacklist) {
+        var self = this;
+        var $filteredElements;
+
+        $filteredElements = $elements.filter(
+            function () {
+
+                var element = this;
+
+                if (classBlacklist && classBlacklist.length) {
+                    var classList = self._getClassNameArray(element);
+                    if (classList.length === 1 && _.contains(classBlacklist, classList[0])) {
+                        return false;
+                    } else if (classList.length && _.intersection(classBlacklist, classList).length) {
+                        return false;
+                    }
+                }
+
+                if (elementBlacklist && elementBlacklist.length) {
+                    if (element.tagName) {
+                        var isElementBlacklisted = _.find(elementBlacklist, function (blacklistedTag) {
+                            blacklistedTag = blacklistedTag.toLowerCase();
+                            return self._matchesLocalNameOrElement(element, blacklistedTag)
+                        });
+                        if (isElementBlacklisted) {
+                            return false;
+                        }
+                    }
+                }
+
+                if (idBlacklist && idBlacklist.length) {
+                    var id = element.id;
+                    if (id && id.length && _.contains(idBlacklist, id)) {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+        );
+
+        return $filteredElements;
+    },
+
+    _matchesLocalNameOrElement: function (element, otherNameOrElement) {
+        if (typeof otherNameOrElement === 'string') {
+            return (element.localName || element.nodeName) === otherNameOrElement;
+        } else {
+            return element === otherNameOrElement;
+        }
+    },
+
+    _getClassNameArray: function (element) {
+        var className = element.className;
+        if (typeof className === 'string') {
+            return className.split(/\s/);
+        } else if (typeof className === 'object' && 'baseVal' in className) {
+            return className.baseVal.split(/\s/);
+        } else {
+            return [];
+        }
+    }
+};
+
+return obj;
+}
+
+
+
+
+
+
+
+
+
+
+if (typeof define == 'function' && typeof define.amd == 'object') {
+    console.log("RequireJS ... cfi_instructions");
+    
+    define('readium_cfi_js/cfi_instructions',['jquery', 'underscore', './cfi_runtime_errors'],
+    function ($, _, cfiRuntimeErrors) {
+        return init($, _, cfiRuntimeErrors);
+    });
+} else {
+    console.log("!RequireJS ... cfi_instructions");
+    
+    if (!global["EPUBcfi"]) {
+        throw new Error("EPUBcfi not initialised on global object?! (window or this context)");
+    }
+    global.EPUBcfi.CFIInstructions = 
+    init($, _,
+        {
+            NodeTypeError: global.EPUBcfi.NodeTypeError,
+            OutOfRangeError: global.EPUBcfi.OutOfRangeError,
+            TerminusError: global.EPUBcfi.TerminusError,
+            CFIAssertionError: global.EPUBcfi.CFIAssertionError
+        });
+}
+
+})(typeof window !== "undefined" ? window : this);
+
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//
+//  Redistribution and use in source and binary forms, with or without modification,
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice,
+//  this list of conditions and the following disclaimer in the documentation and/or
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be
+//  used to endorse or promote products derived from this software without specific
+//  prior written permission.
+
+(function(global) {
+
+var init = function($, cfiParser, cfiInstructions, cfiRuntimeErrors) {
+
+    if (typeof cfiParser === "undefined") {
+        throw new Error("UNDEFINED?! cfiParser");
+    }
+
+    if (typeof cfiInstructions === "undefined") {
+        throw new Error("UNDEFINED?! cfiInstructions");
+    }
+
+    if (typeof cfiRuntimeErrors === "undefined") {
+        throw new Error("UNDEFINED?! cfiRuntimeErrors");
+    }
+
+var obj = {
+
+// Description: This is an interpreter that inteprets an Abstract Syntax Tree (AST) for a CFI. The result of executing the interpreter
+//   is to inject an element, or set of elements, into an EPUB content document (which is just an XHTML document). These element(s) will
+//   represent the position or area in the EPUB referenced by a CFI.
+// Rationale: The AST is a clean and readable expression of the step-terminus structure of a CFI. Although building an interpreter adds to the
+//   CFI infrastructure, it provides a number of benefits. First, it emphasizes a clear separation of concerns between lexing/parsing a
+//   CFI, which involves some complexity related to escaped and special characters, and the execution of the underlying set of steps
+//   represented by the CFI. Second, it will be easier to extend the interpreter to account for new/altered CFI steps (say for references
+//   to vector objects or multiple CFIs) than if lexing, parsing and interpretation were all handled in a single step. Finally, Readium's objective is
+//   to demonstrate implementation of the EPUB 3.0 spec. An implementation with a strong separation of concerns that conforms to
+//   well-understood patterns for DSL processing should be easier to communicate, analyze and understand.
+// REFACTORING CANDIDATE: node type errors shouldn't really be possible if the CFI syntax is correct and the parser is error free.
+//   Might want to make the script die in those instances, once the grammar and interpreter are more stable.
+// REFACTORING CANDIDATE: The use of the 'nodeType' property is confusing as this is a DOM node property and the two are unrelated.
+//   Whoops. There shouldn't be any interference, however, I think this should be changed.
+
+    // ------------------------------------------------------------------------------------ //
+    //  "PUBLIC" METHODS (THE API)                                                          //
+    // ------------------------------------------------------------------------------------ //
+
+    // Description: Find the content document referenced by the spine item. This should be the spine item
+    //   referenced by the first indirection step in the CFI.
+    // Rationale: This method is a part of the API so that the reading system can "interact" the content document
+    //   pointed to by a CFI. If this is not a separate step, the processing of the CFI must be tightly coupled with
+    //   the reading system, as it stands now.
+    getContentDocHref : function (CFI, packageDocument, classBlacklist, elementBlacklist, idBlacklist) {
+
+        var $packageDocument = $(packageDocument);
+        var decodedCFI = decodeURI(CFI);
+        var CFIAST = cfiParser.parse(decodedCFI);
+
+        if (!CFIAST || CFIAST.type !== "CFIAST") {
+            throw cfiRuntimeErrors.NodeTypeError(CFIAST, "expected CFI AST root node");
+        }
+
+        // Interpet the path node (the package document step)
+        var $packageElement = $($("package", $packageDocument)[0]);
+        var $currElement = this.interpretIndexStepNode(CFIAST.cfiString.path, $packageElement, classBlacklist, elementBlacklist, idBlacklist);
+        foundHref = this.searchLocalPathForHref($currElement, $packageDocument, CFIAST.cfiString.localPath, classBlacklist, elementBlacklist, idBlacklist);
+
+        if (foundHref) {
+            return foundHref;
+        }
+        else {
+            return undefined;
+        }
+    },
+
+    // Description: Inject an arbitrary html element into a position in a content document referenced by a CFI
+    injectElement : function (CFI, contentDocument, elementToInject, classBlacklist, elementBlacklist, idBlacklist) {
+
+        var decodedCFI = decodeURI(CFI);
+        var CFIAST = cfiParser.parse(decodedCFI);
+        var indirectionNode;
+        var indirectionStepNum;
+        var $currElement;
+
+        // Rationale: Since the correct content document for this CFI is already being passed, we can skip to the beginning
+        //   of the indirection step that referenced the content document.
+        // Note: This assumes that indirection steps and index steps conform to an interface: an object with stepLength, idAssertion
+        indirectionStepNum = this.getFirstIndirectionStepNum(CFIAST);
+        indirectionNode = CFIAST.cfiString.localPath.steps[indirectionStepNum];
+        indirectionNode.type = "indexStep";
+
+        // Interpret the rest of the steps
+        $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, indirectionStepNum, $(contentDocument.documentElement, contentDocument), classBlacklist, elementBlacklist, idBlacklist);
+
+        // TODO: detect what kind of terminus; for now, text node termini are the only kind implemented
+        $currElement = this.interpretTextTerminusNode(CFIAST.cfiString.localPath.termStep, $currElement, elementToInject);
+
+        // Return the element that was injected into
+        return $currElement;
+    },
+
+    // Description: Inject an arbitrary html element into a position in a content document referenced by a CFI
+    injectRangeElements : function (rangeCFI, contentDocument, startElementToInject, endElementToInject, classBlacklist, elementBlacklist, idBlacklist) {
+
+        var decodedCFI = decodeURI(rangeCFI);
+        var CFIAST = cfiParser.parse(decodedCFI);
+        var indirectionNode;
+        var indirectionStepNum;
+        var $currElement;
+        var $range1TargetElement;
+        var $range2TargetElement;
+
+        // Rationale: Since the correct content document for this CFI is already being passed, we can skip to the beginning
+        //   of the indirection step that referenced the content document.
+        // Note: This assumes that indirection steps and index steps conform to an interface: an object with stepLength, idAssertion
+        indirectionStepNum = this.getFirstIndirectionStepNum(CFIAST);
+        indirectionNode = CFIAST.cfiString.localPath.steps[indirectionStepNum];
+        indirectionNode.type = "indexStep";
+
+        // Interpret the rest of the steps in the first local path
+        $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, indirectionStepNum, $(contentDocument.documentElement, contentDocument), classBlacklist, elementBlacklist, idBlacklist);
+
+        // Interpret the first range local_path
+        $range1TargetElement = this.interpretLocalPath(CFIAST.cfiString.range1, 0, $currElement, classBlacklist, elementBlacklist, idBlacklist);
+        $range1TargetElement = this.interpretTextTerminusNode(CFIAST.cfiString.range1.termStep, $range1TargetElement, startElementToInject);
+
+        // Interpret the second range local_path
+        $range2TargetElement = this.interpretLocalPath(CFIAST.cfiString.range2, 0, $currElement, classBlacklist, elementBlacklist, idBlacklist);
+        $range2TargetElement = this.interpretTextTerminusNode(CFIAST.cfiString.range2.termStep, $range2TargetElement, endElementToInject);
+
+        // Return the element that was injected into
+        return {
+            startElement : $range1TargetElement[0],
+            endElement : $range2TargetElement[0]
+        };
+    },
+
+    // Description: This method will return the element or node (say, a text node) that is the final target of the
+    //   the CFI.
+    getTargetElement : function (CFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
+
+        var decodedCFI = decodeURI(CFI);
+        var CFIAST = cfiParser.parse(decodedCFI);
+        var indirectionNode;
+        var indirectionStepNum;
+        var $currElement;
+
+        // Rationale: Since the correct content document for this CFI is already being passed, we can skip to the beginning
+        //   of the indirection step that referenced the content document.
+        // Note: This assumes that indirection steps and index steps conform to an interface: an object with stepLength, idAssertion
+        indirectionStepNum = this.getFirstIndirectionStepNum(CFIAST);
+        indirectionNode = CFIAST.cfiString.localPath.steps[indirectionStepNum];
+        indirectionNode.type = "indexStep";
+
+        // Interpret the rest of the steps
+        $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, indirectionStepNum, $(contentDocument.documentElement, contentDocument), classBlacklist, elementBlacklist, idBlacklist);
+
+        // Return the element at the end of the CFI
+        return $currElement;
+    },
+
+    // Description: This method will return the start and end elements (along with their char offsets) that are the final targets of the range CFI.
+    getRangeTargetElements : function (rangeCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
+
+        var decodedCFI = decodeURI(rangeCFI);
+        var CFIAST = cfiParser.parse(decodedCFI);
+        var indirectionNode;
+        var indirectionStepNum;
+        var $currElement;
+        var $range1TargetElement;
+        var $range2TargetElement;
+
+        // Rationale: Since the correct content document for this CFI is already being passed, we can skip to the beginning
+        //   of the indirection step that referenced the content document.
+        // Note: This assumes that indirection steps and index steps conform to an interface: an object with stepLength, idAssertion
+        indirectionStepNum = this.getFirstIndirectionStepNum(CFIAST);
+        indirectionNode = CFIAST.cfiString.localPath.steps[indirectionStepNum];
+        indirectionNode.type = "indexStep";
+
+        // Interpret the rest of the steps
+        $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, indirectionStepNum, $(contentDocument.documentElement, contentDocument), classBlacklist, elementBlacklist, idBlacklist);
+
+        // Interpret first range local_path
+        $range1TargetElement = this.interpretLocalPath(CFIAST.cfiString.range1, 0, $currElement, classBlacklist, elementBlacklist, idBlacklist);
+
+        // Interpret second range local_path
+        $range2TargetElement = this.interpretLocalPath(CFIAST.cfiString.range2, 0, $currElement, classBlacklist, elementBlacklist, idBlacklist);
+
+        // Get the start and end character offsets
+        var startOffset = parseInt(CFIAST.cfiString.range1.termStep.offsetValue) || undefined;
+        var endOffset = parseInt(CFIAST.cfiString.range2.termStep.offsetValue) || undefined;
+
+        // Return the element (and char offsets) at the end of the CFI
+        return {
+            startElement: $range1TargetElement[0],
+            startOffset: startOffset,
+            endElement: $range2TargetElement[0],
+            endOffset: endOffset
+        };
+    },
+
+    // Description: This method allows a "partial" CFI to be used to reference a target in a content document, without a
+    //   package document CFI component.
+    // Arguments: {
+    //     contentDocumentCFI : This is a partial CFI that represents a path in a content document only. This partial must be
+    //        syntactically valid, even though it references a path starting at the top of a content document (which is a CFI that
+    //        that has no defined meaning in the spec.)
+    //     contentDocument : A DOM representation of the content document to which the partial CFI refers.
+    // }
+    // Rationale: This method exists to meet the requirements of the Readium-SDK and should be used with care
+    getTargetElementWithPartialCFI : function (contentDocumentCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
+
+        var decodedCFI = decodeURI(contentDocumentCFI);
+        var CFIAST = cfiParser.parse(decodedCFI);
+        var indirectionNode;
+
+        // Interpret the path node
+        var $currElement = this.interpretIndexStepNode(CFIAST.cfiString.path, $(contentDocument.documentElement, contentDocument), classBlacklist, elementBlacklist, idBlacklist);
+
+        // Interpret the rest of the steps
+        $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, 0, $currElement, classBlacklist, elementBlacklist, idBlacklist);
+
+        // Return the element at the end of the CFI
+        return $currElement;
+    },
+
+    // Description: This method allows a "partial" CFI to be used, with a content document, to return the text node and offset
+    //    referenced by the partial CFI.
+    // Arguments: {
+    //     contentDocumentCFI : This is a partial CFI that represents a path in a content document only. This partial must be
+    //        syntactically valid, even though it references a path starting at the top of a content document (which is a CFI that
+    //        that has no defined meaning in the spec.)
+    //     contentDocument : A DOM representation of the content document to which the partial CFI refers.
+    // }
+    getTextTerminusInfoWithPartialCFI : function (contentDocumentCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
+
+        var decodedCFI = decodeURI(contentDocumentCFI);
+        var CFIAST = cfiParser.parse(decodedCFI);
+        var indirectionNode;
+        var textOffset;
+
+        // Interpret the path node
+        var $currElement = this.interpretIndexStepNode(CFIAST.cfiString.path, $(contentDocument.documentElement, contentDocument), classBlacklist, elementBlacklist, idBlacklist);
+
+        // Interpret the rest of the steps
+        $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, 0, $currElement, classBlacklist, elementBlacklist, idBlacklist);
+
+        // Return the element at the end of the CFI
+        textOffset = parseInt(CFIAST.cfiString.localPath.termStep.offsetValue);
+        return {
+            textNode: $currElement[0],
+            textOffset: textOffset
+        };
+    },
+
+    // Description: This method will return the element or node (say, a text node) that is the final target of the
+    //   the CFI, along with the text terminus offset.
+    getTextTerminusInfo : function (CFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
+
+        var decodedCFI = decodeURI(CFI);
+        var CFIAST = cfiParser.parse(decodedCFI);
+        var indirectionNode;
+        var indirectionStepNum;
+        var $currElement;
+        var textOffset;
+
+        // Rationale: Since the correct content document for this CFI is already being passed, we can skip to the beginning
+        //   of the indirection step that referenced the content document.
+        // Note: This assumes that indirection steps and index steps conform to an interface: an object with stepLength, idAssertion
+        indirectionStepNum = this.getFirstIndirectionStepNum(CFIAST);
+        indirectionNode = CFIAST.cfiString.localPath.steps[indirectionStepNum];
+        indirectionNode.type = "indexStep";
+
+        // Interpret the rest of the steps
+        $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, indirectionStepNum, $(contentDocument.documentElement, contentDocument), classBlacklist, elementBlacklist, idBlacklist);
+
+        // Return the element at the end of the CFI
+        textOffset = parseInt(CFIAST.cfiString.localPath.termStep.offsetValue);
+        return {
+            textNode: $currElement[0],
+            textOffset: textOffset
+        };
+    },
+
+    // Description: This function will determine if the input "partial" CFI is expressed as a range
+    isRangeCfi: function (cfi) {
+        var CFIAST = cfiParser.parse(cfi);
+        return CFIAST.cfiString.range1 ? true : false;
+    },
+
+    // Description: This function will determine if the input "partial" CFI has a text terminus step
+    hasTextTerminus: function (cfi) {
+        var CFIAST = cfiParser.parse(cfi);
+        return CFIAST.cfiString.localPath.termStep ? true : false;
+    },
+
+    // ------------------------------------------------------------------------------------ //
+    //  "PRIVATE" HELPERS                                                                   //
+    // ------------------------------------------------------------------------------------ //
+
+    getFirstIndirectionStepNum : function (CFIAST) {
+
+        // Find the first indirection step in the local path; follow it like a regular step, as the step in the content document it
+        //   references is already loaded and has been passed to this method
+        var stepNum = 0;
+        for (stepNum; stepNum <= CFIAST.cfiString.localPath.steps.length - 1 ; stepNum++) {
+
+            nextStepNode = CFIAST.cfiString.localPath.steps[stepNum];
+            if (nextStepNode.type === "indirectionStep") {
+                return stepNum;
+            }
+        }
+    },
+
+    // REFACTORING CANDIDATE: cfiString node and start step num could be merged into one argument, by simply passing the
+    //   starting step... probably a good idea, this would make the meaning of this method clearer.
+    interpretLocalPath : function (localPathNode, startStepNum, $currElement, classBlacklist, elementBlacklist, idBlacklist) {
+
+        var stepNum = startStepNum;
+        var nextStepNode;
+        for (stepNum; stepNum <= localPathNode.steps.length - 1 ; stepNum++) {
+
+            nextStepNode = localPathNode.steps[stepNum];
+            if (nextStepNode.type === "indexStep") {
+
+                $currElement = this.interpretIndexStepNode(nextStepNode, $currElement, classBlacklist, elementBlacklist, idBlacklist);
+            }
+            else if (nextStepNode.type === "indirectionStep") {
+
+                $currElement = this.interpretIndirectionStepNode(nextStepNode, $currElement, classBlacklist, elementBlacklist, idBlacklist);
+            }
+        }
+
+        return $currElement;
+    },
+
+    interpretIndexStepNode : function (indexStepNode, $currElement, classBlacklist, elementBlacklist, idBlacklist) {
+
+        // Check node type; throw error if wrong type
+        if (indexStepNode === undefined || indexStepNode.type !== "indexStep") {
+
+            throw cfiRuntimeErrors.NodeTypeError(indexStepNode, "expected index step node");
+        }
+
+        // Index step
+        var $stepTarget = cfiInstructions.getNextNode(indexStepNode.stepLength, $currElement, classBlacklist, elementBlacklist, idBlacklist);
+
+        // Check the id assertion, if it exists
+        if (indexStepNode.idAssertion) {
+
+            if (!cfiInstructions.targetIdMatchesIdAssertion($stepTarget, indexStepNode.idAssertion)) {
+
+                throw cfiRuntimeErrors.CFIAssertionError(indexStepNode.idAssertion, $stepTarget.attr('id'), "Id assertion failed");
+            }
+        }
+
+        return $stepTarget;
+    },
+
+    interpretIndirectionStepNode : function (indirectionStepNode, $currElement, classBlacklist, elementBlacklist, idBlacklist) {
+
+        // Check node type; throw error if wrong type
+        if (indirectionStepNode === undefined || indirectionStepNode.type !== "indirectionStep") {
+
+            throw cfiRuntimeErrors.NodeTypeError(indirectionStepNode, "expected indirection step node");
+        }
+
+        // Indirection step
+        var $stepTarget = cfiInstructions.followIndirectionStep(
+            indirectionStepNode.stepLength,
+            $currElement,
+            classBlacklist,
+            elementBlacklist);
+
+        // Check the id assertion, if it exists
+        if (indirectionStepNode.idAssertion) {
+
+            if (!cfiInstructions.targetIdMatchesIdAssertion($stepTarget, indirectionStepNode.idAssertion)) {
+
+                throw cfiRuntimeErrors.CFIAssertionError(indirectionStepNode.idAssertion, $stepTarget.attr('id'), "Id assertion failed");
+            }
+        }
+
+        return $stepTarget;
+    },
+
+    // REFACTORING CANDIDATE: The logic here assumes that a user will always want to use this terminus
+    //   to inject content into the found node. This will not always be the case, and different types of interpretation
+    //   are probably desired.
+    interpretTextTerminusNode : function (terminusNode, $currElement, elementToInject) {
+
+        if (terminusNode === undefined || terminusNode.type !== "textTerminus") {
+
+            throw cfiRuntimeErrors.NodeTypeError(terminusNode, "expected text terminus node");
+        }
+
+        var $injectedElement = cfiInstructions.textTermination(
+            $currElement,
+            terminusNode.offsetValue,
+            elementToInject
+            );
+
+        return $injectedElement;
+    },
+
+    searchLocalPathForHref : function ($currElement, $packageDocument, localPathNode, classBlacklist, elementBlacklist, idBlacklist) {
+
+        // Interpret the first local_path node, which is a set of steps and and a terminus condition
+        var stepNum = 0;
+        var nextStepNode;
+        for (stepNum = 0 ; stepNum <= localPathNode.steps.length - 1 ; stepNum++) {
+
+            nextStepNode = localPathNode.steps[stepNum];
+            if (nextStepNode.type === "indexStep") {
+
+                $currElement = this.interpretIndexStepNode(nextStepNode, $currElement, classBlacklist, elementBlacklist, idBlacklist);
+            }
+            else if (nextStepNode.type === "indirectionStep") {
+
+                $currElement = this.interpretIndirectionStepNode(nextStepNode, $currElement, classBlacklist, elementBlacklist, idBlacklist);
+            }
+
+            // Found the content document href referenced by the spine item
+            if (cfiInstructions._matchesLocalNameOrElement($currElement[0], "itemref")) {
+                return cfiInstructions.retrieveItemRefHref($currElement, $packageDocument);
+            }
+        }
+
+        return undefined;
+    }
+};
+
+return obj;
+}
+
+
+
+
+
+
+
+
+
+
+if (typeof define == 'function' && typeof define.amd == 'object') {
+    console.log("RequireJS ... cfi_interpreter");
+
+    define('readium_cfi_js/cfi_interpreter',['jquery', 'readium_cfi_js/cfi_parser', './cfi_instructions', './cfi_runtime_errors'],
+    function ($, cfiParser, cfiInstructions, cfiRuntimeErrors) {
+        return init($, cfiParser, cfiInstructions, cfiRuntimeErrors);
+    });
+} else {
+    console.log("!RequireJS ... cfi_interpreter");
+
+    if (!global["EPUBcfi"]) {
+        throw new Error("EPUBcfi not initialised on global object?! (window or this context)");
+    }
+    global.EPUBcfi.Interpreter =
+    init($,
+        global.EPUBcfi.Parser,
+        global.EPUBcfi.CFIInstructions,
+        {
+            NodeTypeError: global.EPUBcfi.NodeTypeError,
+            OutOfRangeError: global.EPUBcfi.OutOfRangeError,
+            TerminusError: global.EPUBcfi.TerminusError,
+            CFIAssertionError: global.EPUBcfi.CFIAssertionError
+        });
+}
+
+})(typeof window !== "undefined" ? window : this);
+
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  
+//  Redistribution and use in source and binary forms, with or without modification, 
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this 
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice, 
+//  this list of conditions and the following disclaimer in the documentation and/or 
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be 
+//  used to endorse or promote products derived from this software without specific 
+//  prior written permission.
+
+(function(global) {
+
+var init = function($, cfiInstructions, cfiRuntimeErrors) {
+
+    if (typeof cfiInstructions === "undefined") {
+        throw new Error("UNDEFINED?! cfiInstructions");
+    }
+    
+    if (typeof cfiRuntimeErrors === "undefined") {
+        throw new Error("UNDEFINED?! cfiRuntimeErrors");
+    }
+    
+var obj = {
+
+    // ------------------------------------------------------------------------------------ //
+    //  "PUBLIC" METHODS (THE API)                                                          //
+    // ------------------------------------------------------------------------------------ //
+
+    generateCharOffsetRangeComponent : function (rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist) {
+        var document = rangeStartElement.ownerDocument;
+
+        var docRange;
+        var commonAncestor;
+        var $rangeStartParent;
+        var $rangeEndParent;
+        var range1OffsetStep;
+        var range1CFI;
+        var range2OffsetStep;
+        var range2CFI;
+        var commonCFIComponent;
+
+        this.validateStartTextNode(rangeStartElement);
+        this.validateStartTextNode(rangeEndElement);
+
+        // Parent element is the same
+        if ($(rangeStartElement).parent()[0] === $(rangeEndElement).parent()[0]) {
+            range1OffsetStep = this.createCFITextNodeStep($(rangeStartElement), startOffset, classBlacklist, elementBlacklist, idBlacklist);
+            range2OffsetStep = this.createCFITextNodeStep($(rangeEndElement), endOffset, classBlacklist, elementBlacklist, idBlacklist);          
+            commonCFIComponent = this.createCFIElementSteps($(rangeStartElement).parent(), document.documentElement, classBlacklist, elementBlacklist, idBlacklist);
+            return commonCFIComponent + "," + range1OffsetStep + "," + range2OffsetStep;
+        }
+        else {
+
+            // Create a document range to find the common ancestor
+            docRange = document.createRange();
+            docRange.setStart(rangeStartElement, startOffset);
+            docRange.setEnd(rangeEndElement, endOffset);
+            commonAncestor = docRange.commonAncestorContainer;
+
+            // Generate terminating offset and range 1
+            range1OffsetStep = this.createCFITextNodeStep($(rangeStartElement), startOffset, classBlacklist, elementBlacklist, idBlacklist);
+            $rangeStartParent = $(rangeStartElement).parent();
+            if ($rangeStartParent[0] === commonAncestor) {
+              // rangeStartElement is a text child node of the commonAncestor, so it's CFI sub-path is only the text node step:
+              range1CFI = range1OffsetStep;
+            } else {
+              range1CFI = this.createCFIElementSteps($rangeStartParent, commonAncestor, classBlacklist, elementBlacklist, idBlacklist) + range1OffsetStep;
+            }
+
+            // Generate terminating offset and range 2
+            range2OffsetStep = this.createCFITextNodeStep($(rangeEndElement), endOffset, classBlacklist, elementBlacklist, idBlacklist);
+            $rangeEndParent = $(rangeEndElement).parent();
+            if ($rangeEndParent[0] === commonAncestor) {
+              // rangeEndElement is a text child node of the commonAncestor, so it's CFI sub-path is only the text node step:
+              range2CFI = range2OffsetStep;
+            } else {
+              range2CFI = this.createCFIElementSteps($rangeEndParent, commonAncestor, classBlacklist, elementBlacklist, idBlacklist) + range2OffsetStep;
+            }
+
+            // Generate shared component
+            commonCFIComponent = this.createCFIElementSteps($(commonAncestor), document.documentElement, classBlacklist, elementBlacklist, idBlacklist);
+
+            // Return the result
+            return commonCFIComponent + "," + range1CFI + "," + range2CFI;
+        }
+    },
+
+    generateElementRangeComponent : function (rangeStartElement, rangeEndElement, classBlacklist, elementBlacklist, idBlacklist) {
+        var docRange;
+        var commonAncestor;
+        var range1CFI;
+        var range2CFI;
+        var commonCFIComponent;
+
+        this.validateStartElement(rangeStartElement);
+        this.validateStartElement(rangeEndElement);
+
+        var document = rangeStartElement.ownerDocument;
+
+        if (rangeStartElement === rangeEndElement) {
+            throw new Error("Start and end element cannot be the same for a CFI range");
+        }
+
+        // Create a document range to find the common ancestor
+        docRange = document.createRange();
+        docRange.setStart(rangeStartElement, 0);
+        docRange.setEnd(rangeEndElement, rangeEndElement.childNodes.length);
+        commonAncestor = docRange.commonAncestorContainer;
+
+        // Generate range 1
+        range1CFI = this.createCFIElementSteps($(rangeStartElement), commonAncestor, classBlacklist, elementBlacklist, idBlacklist);
+
+        // Generate range 2
+        range2CFI = this.createCFIElementSteps($(rangeEndElement), commonAncestor, classBlacklist, elementBlacklist, idBlacklist);
+
+        // Generate shared component
+        commonCFIComponent = this.createCFIElementSteps($(commonAncestor), document.documentElement, classBlacklist, elementBlacklist, idBlacklist);
+
+        // Return the result
+        return commonCFIComponent + "," + range1CFI + "," + range2CFI;
+    },
+
+    generateRangeComponent : function (rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist) {
+        this.validateTargetElement(rangeStartElement);
+        this.validateTargetElement(rangeEndElement);
+
+        var document = rangeStartElement.ownerDocument;
+
+        if(rangeStartElement.nodeType === Node.ELEMENT_NODE && rangeEndElement.nodeType === Node.ELEMENT_NODE){
+            return this.generateElementRangeComponent(rangeStartElement, rangeEndElement, classBlacklist, elementBlacklist, idBlacklist);
+        } else if(rangeStartElement.nodeType === Node.TEXT_NODE && rangeEndElement.nodeType === Node.TEXT_NODE){
+            return this.generateCharOffsetRangeComponent(rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist);
+        } else {
+            var docRange;
+            var range1CFI;
+            var range1OffsetStep;
+            var range2CFI;
+            var range2OffsetStep;
+            var commonAncestor;
+            var commonCFIComponent;
+
+            // Create a document range to find the common ancestor
+            docRange = document.createRange();
+            docRange.setStart(rangeStartElement, startOffset);
+            docRange.setEnd(rangeEndElement, endOffset);
+            commonAncestor = docRange.commonAncestorContainer;
+
+            if(rangeStartElement.nodeType === Node.ELEMENT_NODE){
+                this.validateStartElement(rangeStartElement);
+                range1CFI = this.createCFIElementSteps($(rangeStartElement), commonAncestor, classBlacklist, elementBlacklist, idBlacklist);
+            } else {
+                this.validateStartTextNode(rangeStartElement);
+                // Generate terminating offset and range 1
+                range1OffsetStep = this.createCFITextNodeStep($(rangeStartElement), startOffset, classBlacklist, elementBlacklist, idBlacklist);
+                if ($(rangeStartElement).parent()[0] === commonAncestor) {
+                    range1CFI = range1OffsetStep;
+                } else {
+                    range1CFI = this.createCFIElementSteps($(rangeStartElement).parent(), commonAncestor, classBlacklist, elementBlacklist, idBlacklist) + range1OffsetStep;    
+                }
+            }
+
+            if(rangeEndElement.nodeType === Node.ELEMENT_NODE){
+                this.validateStartElement(rangeEndElement);
+                range2CFI = this.createCFIElementSteps($(rangeEndElement), commonAncestor, classBlacklist, elementBlacklist, idBlacklist);
+            } else {
+                this.validateStartTextNode(rangeEndElement);
+                // Generate terminating offset and range 2
+                range2OffsetStep = this.createCFITextNodeStep($(rangeEndElement), endOffset, classBlacklist, elementBlacklist, idBlacklist);
+                if ($(rangeEndElement).parent()[0] === commonAncestor) {
+                    range2CFI = range2OffsetStep;
+                } else {
+                    range2CFI = this.createCFIElementSteps($(rangeEndElement).parent(), commonAncestor, classBlacklist, elementBlacklist, idBlacklist) + range2OffsetStep;    
+                }                
+            }
+
+            // Generate shared component
+            commonCFIComponent = this.createCFIElementSteps($(commonAncestor), document.documentElement, classBlacklist, elementBlacklist, idBlacklist);
+
+            // Return the result
+            return commonCFIComponent + "," + range1CFI + "," + range2CFI;
+        }
+    },
+
+    // Description: Generates a character offset CFI 
+    // Arguments: The text node that contains the offset referenced by the cfi, the offset value, the name of the 
+    //   content document that contains the text node, the package document for this EPUB.
+    generateCharacterOffsetCFIComponent : function (startTextNode, characterOffset, classBlacklist, elementBlacklist, idBlacklist) {
+        var textNodeStep;
+        var contentDocCFI;
+        var $itemRefStartNode;
+        var packageDocCFI;
+
+        this.validateStartTextNode(startTextNode, characterOffset);
+
+        // Create the text node step
+        textNodeStep = this.createCFITextNodeStep($(startTextNode), characterOffset, classBlacklist, elementBlacklist, idBlacklist);
+
+        // Call the recursive method to create all the steps up to the head element of the content document (typically the "html" element, or the "svg" element)
+        contentDocCFI = this.createCFIElementSteps($(startTextNode).parent(), startTextNode.ownerDocument.documentElement, classBlacklist, elementBlacklist, idBlacklist) + textNodeStep;
+        return contentDocCFI;
+    },
+
+    generateElementCFIComponent : function (startElement, classBlacklist, elementBlacklist, idBlacklist) {
+        var contentDocCFI;
+        var $itemRefStartNode;
+        var packageDocCFI;
+
+        this.validateStartElement(startElement);
+
+        // Call the recursive method to create all the steps up to the head element of the content document (typically the "html" element, or the "svg" element)
+        contentDocCFI = this.createCFIElementSteps($(startElement), startElement.ownerDocument.documentElement, classBlacklist, elementBlacklist, idBlacklist);
+
+        return contentDocCFI;
+    },
+
+    generatePackageDocumentCFIComponent : function (contentDocumentName, packageDocument, classBlacklist, elementBlacklist, idBlacklist) {
+
+        this.validateContentDocumentName(contentDocumentName);
+        this.validatePackageDocument(packageDocument, contentDocumentName);
+
+        // Get the start node (itemref element) that references the content document
+        $itemRefStartNode = $("itemref[idref='" + contentDocumentName + "']", $(packageDocument));
+
+        // Create the steps up to the top element of the package document (the "package" element)
+        packageDocCFIComponent = this.createCFIElementSteps($itemRefStartNode, "package", classBlacklist, elementBlacklist, idBlacklist);
+
+        // Append an !; this assumes that a CFI content document CFI component will be appended at some point
+        return packageDocCFIComponent + "!";
+    },
+
+    generatePackageDocumentCFIComponentWithSpineIndex : function (spineIndex, packageDocument, classBlacklist, elementBlacklist, idBlacklist) {
+
+        // Get the start node (itemref element) that references the content document
+        $itemRefStartNode = $($("spine", packageDocument).children()[spineIndex]);
+
+        // Create the steps up to the top element of the package document (the "package" element)
+        packageDocCFIComponent = this.createCFIElementSteps($itemRefStartNode, "package", classBlacklist, elementBlacklist, idBlacklist);
+
+        // Append an !; this assumes that a CFI content document CFI component will be appended at some point
+        return packageDocCFIComponent + "!";
+    },
+
+    generateCompleteCFI : function (packageDocumentCFIComponent, contentDocumentCFIComponent) {
+
+        return "epubcfi(" + packageDocumentCFIComponent + contentDocumentCFIComponent + ")";  
+    },
+
+    // ------------------------------------------------------------------------------------ //
+    //  "PRIVATE" HELPERS                                                                   //
+    // ------------------------------------------------------------------------------------ //
+
+    validateStartTextNode : function (startTextNode, characterOffset) {
+        
+        // Check that the text node to start from IS a text node
+        if (!startTextNode) {
+            throw new cfiRuntimeErrors.NodeTypeError(startTextNode, "Cannot generate a character offset from a starting point that is not a text node");
+        } else if (startTextNode.nodeType != 3) {
+            throw new cfiRuntimeErrors.NodeTypeError(startTextNode, "Cannot generate a character offset from a starting point that is not a text node");
+        }
+
+        // Check that the character offset is within a valid range for the text node supplied
+        if (characterOffset < 0) {
+            throw new cfiRuntimeErrors.OutOfRangeError(characterOffset, 0, "Character offset cannot be less than 0");
+        }
+        else if (characterOffset > startTextNode.nodeValue.length) {
+            throw new cfiRuntimeErrors.OutOfRangeError(characterOffset, startTextNode.nodeValue.length - 1, "character offset cannot be greater than the length of the text node");
+        }
+    },
+
+    validateStartElement : function (startElement) {
+
+        this.validateTargetElement(startElement);
+
+        if (!(startElement.nodeType && startElement.nodeType === 1)) {
+            throw new cfiRuntimeErrors.NodeTypeError(startElement, "CFI target element is not an HTML element");
+        }
+    },
+
+    validateTargetElement : function (startElement) {
+
+        if (!startElement) {
+            throw new cfiRuntimeErrors.NodeTypeError(startElement, "CFI target element is undefined");
+        }
+    },
+
+    validateContentDocumentName : function (contentDocumentName) {
+
+        // Check that the idref for the content document has been provided
+        if (!contentDocumentName) {
+            throw new Error("The idref for the content document, as found in the spine, must be supplied");
+        }
+    },
+
+    validatePackageDocument : function (packageDocument, contentDocumentName) {
+        
+        // Check that the package document is non-empty and contains an itemref element for the supplied idref
+        if (!packageDocument) {
+            throw new Error("A package document must be supplied to generate a CFI");
+        }
+        else if ($($("itemref[idref='" + contentDocumentName + "']", packageDocument)[0]).length === 0) {
+            throw new Error("The idref of the content document could not be found in the spine");
+        }
+    },
+
+    // Description: Creates a CFI terminating step to a text node, with a character offset
+    // REFACTORING CANDIDATE: Some of the parts of this method could be refactored into their own methods
+    createCFITextNodeStep : function ($startTextNode, characterOffset, classBlacklist, elementBlacklist, idBlacklist) {
+
+        var $parentNode;
+        var $contentsExcludingMarkers;
+        var CFIIndex;
+        var indexOfTextNode;
+        var preAssertion;
+        var preAssertionStartIndex;
+        var textLength;
+        var postAssertion;
+        var postAssertionEndIndex;
+
+        // Find text node position in the set of child elements, ignoring any blacklisted elements 
+        $parentNode = $startTextNode.parent();
+        $contentsExcludingMarkers = cfiInstructions.applyBlacklist($parentNode.contents(), classBlacklist, elementBlacklist, idBlacklist);
+
+        // Find the text node index in the parent list, inferring nodes that were originally a single text node
+        var prevNodeWasTextNode;
+        var indexOfFirstInSequence;
+        var textNodeOnlyIndex = 0;
+        var characterOffsetSinceUnsplit = 0;
+        var finalCharacterOffsetInSequence = 0;
+        $.each($contentsExcludingMarkers, 
+            function (index) {
+
+            // If this is a text node, check if it matches and return the current index
+            if (this.nodeType === Node.TEXT_NODE || !prevNodeWasTextNode) {
+
+                if (this.nodeType === Node.TEXT_NODE) {
+                    if (this === $startTextNode[0]) {
+
+                        // Set index as the first in the adjacent sequence of text nodes, or as the index of the current node if this 
+                        //   node is a standard one sandwiched between two element nodes. 
+                        if (prevNodeWasTextNode) {
+                            indexOfTextNode = indexOfFirstInSequence;
+                            finalCharacterOffsetInSequence = characterOffsetSinceUnsplit;
+                        } else {
+                            indexOfTextNode = textNodeOnlyIndex;
+                        }
+                        
+                        // Break out of .each loop
+                        return false; 
+                    }
+
+                    // Save this index as the first in sequence of adjacent text nodes, if it is not already set by this point
+                    prevNodeWasTextNode = true;
+                    characterOffsetSinceUnsplit = characterOffsetSinceUnsplit + this.length;
+                    if (indexOfFirstInSequence === undefined) {
+                        indexOfFirstInSequence = textNodeOnlyIndex;
+                        textNodeOnlyIndex = textNodeOnlyIndex + 1;
+                    }
+                } else if (this.nodeType === Node.ELEMENT_NODE) {
+                    textNodeOnlyIndex = textNodeOnlyIndex + 1;
+                } else if (this.nodeType === Node.COMMENT_NODE) {
+                    prevNodeWasTextNode = true;
+                    characterOffsetSinceUnsplit = characterOffsetSinceUnsplit + this.length + 7; // 7 is the size of the html comment tag <!--[comment]-->
+                    if (indexOfFirstInSequence === undefined) {
+                        indexOfFirstInSequence = textNodeOnlyIndex;
+                    }
+                } else if (this.nodeType === Node.PROCESSING_INSTRUCTION_NODE) {
+                    prevNodeWasTextNode = true;
+                    characterOffsetSinceUnsplit = characterOffsetSinceUnsplit + this.data.length + this.target.length + 5; // 5 is the size of the instruction processing tag including the required space between the target and the data <?[target] [data]?>
+                    if (indexOfFirstInSequence === undefined) {
+                        indexOfFirstInSequence = textNodeOnlyIndex;
+                    }
+                }
+            }
+            // This node is not a text node
+            else if (this.nodeType === Node.ELEMENT_NODE) {
+                prevNodeWasTextNode = false;
+                indexOfFirstInSequence = undefined;
+                characterOffsetSinceUnsplit  = 0;
+            } else if (this.nodeType === Node.COMMENT_NODE) {
+                characterOffsetSinceUnsplit = characterOffsetSinceUnsplit + this.length + 7; // <!--[comment]-->
+            } else if (this.nodeType === Node.PROCESSING_INSTRUCTION_NODE) {
+                characterOffsetSinceUnsplit = characterOffsetSinceUnsplit + this.data.length + this.target.length + 5; // <?[target] [data]?>
+            }
+        });
+
+        // Convert the text node index to a CFI odd-integer representation
+        CFIIndex = (indexOfTextNode * 2) + 1;
+
+        // TODO: text assertions are not in the grammar yet, I think, or they're just causing problems. This has
+        //   been temporarily removed. 
+
+        // Add pre- and post- text assertions
+        // preAssertionStartIndex = (characterOffset - 3 >= 0) ? characterOffset - 3 : 0;
+        // preAssertion = $startTextNode[0].nodeValue.substring(preAssertionStartIndex, characterOffset);
+
+        // textLength = $startTextNode[0].nodeValue.length;
+        // postAssertionEndIndex = (characterOffset + 3 <= textLength) ? characterOffset + 3 : textLength;
+        // postAssertion = $startTextNode[0].nodeValue.substring(characterOffset, postAssertionEndIndex);
+
+        // Gotta infer the correct character offset, as well
+
+        // Return the constructed CFI text node step
+        return "/" + CFIIndex + ":" + (finalCharacterOffsetInSequence + characterOffset);
+         // + "[" + preAssertion + "," + postAssertion + "]";
+    },
+
+    createCFIElementSteps : function ($currNode, topLevelElement, classBlacklist, elementBlacklist, idBlacklist) {
+
+        var $blacklistExcluded;
+        var $parentNode;
+        var currNodePosition;
+        var CFIPosition;
+        var idAssertion;
+        var elementStep;
+
+        // Find position of current node in parent list
+        $blacklistExcluded = cfiInstructions.applyBlacklist($currNode.parent().children(), classBlacklist, elementBlacklist, idBlacklist);
+        $.each($blacklistExcluded, 
+            function (index, value) {
+
+                if (this === $currNode[0]) {
+
+                    currNodePosition = index;
+
+                    // Break loop
+                    return false;
+                }
+        });
+
+        // Convert position to the CFI even-integer representation
+        CFIPosition = (currNodePosition + 1) * 2;
+
+        // Create CFI step with id assertion, if the element has an id
+        if ($currNode.attr("id")) {
+            elementStep = "/" + CFIPosition + "[" + $currNode.attr("id") + "]";
+        }
+        else {
+            elementStep = "/" + CFIPosition;
+        }
+
+        // If a parent is an html element return the (last) step for this content document, otherwise, continue.
+        //   Also need to check if the current node is the top-level element. This can occur if the start node is also the
+        //   top level element.
+        $parentNode = $currNode.parent();
+        if (typeof topLevelElement === 'string' &&
+            cfiInstructions._matchesLocalNameOrElement($parentNode[0], topLevelElement) ||
+            cfiInstructions._matchesLocalNameOrElement($currNode[0], topLevelElement)) {
+            return elementStep;
+        } else if ($parentNode[0] === topLevelElement || $currNode[0] === topLevelElement) {
+            return elementStep;
+        } else {
+            return this.createCFIElementSteps($parentNode, topLevelElement, classBlacklist, elementBlacklist, idBlacklist) + elementStep;
+        }
+    }
+};
+
+return obj;
+}
+
+
+
+
+
+
+
+if (typeof define == 'function' && typeof define.amd == 'object') {
+    console.log("RequireJS ... cfi_generator");
+    
+    define('readium_cfi_js/cfi_generator',['jquery', './cfi_instructions', './cfi_runtime_errors'],
+    function ($, cfiInstructions, cfiRuntimeErrors) {
+        return init($, cfiInstructions, cfiRuntimeErrors);
+    });
+} else {
+    console.log("!RequireJS ... cfi_generator");
+    
+    if (!global["EPUBcfi"]) {
+        throw new Error("EPUBcfi not initialised on global object?! (window or this context)");
+    }
+    global.EPUBcfi.Generator = 
+    init($,
+        global.EPUBcfi.CFIInstructions,
+        {
+            NodeTypeError: global.EPUBcfi.NodeTypeError,
+            OutOfRangeError: global.EPUBcfi.OutOfRangeError,
+            TerminusError: global.EPUBcfi.TerminusError,
+            CFIAssertionError: global.EPUBcfi.CFIAssertionError
+        });
+}
+
+})(typeof window !== "undefined" ? window : this);
+
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//
+//  Redistribution and use in source and binary forms, with or without modification,
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice,
+//  this list of conditions and the following disclaimer in the documentation and/or
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be
+//  used to endorse or promote products derived from this software without specific
+//  prior written permission.
+
+(function(global) {
+
+var init = function(cfiParser, cfiInterpreter, cfiInstructions, cfiRuntimeErrors, cfiGenerator) {
+
+    if (typeof cfiParser === "undefined") {
+        throw new Error("UNDEFINED?! cfiParser");
+    }
+
+    if (typeof cfiInterpreter === "undefined") {
+        throw new Error("UNDEFINED?! cfiInterpreter");
+    }
+
+    if (typeof cfiInstructions === "undefined") {
+        throw new Error("UNDEFINED?! cfiInstructions");
+    }
+
+    if (typeof cfiRuntimeErrors === "undefined") {
+        throw new Error("UNDEFINED?! cfiRuntimeErrors");
+    }
+
+    if (typeof cfiGenerator === "undefined") {
+        throw new Error("UNDEFINED?! cfiGenerator");
+    }
+
+    var obj = {
+
+        getContentDocHref : function (CFI, packageDocument) {
+            return cfiInterpreter.getContentDocHref(CFI, packageDocument);
+        },
+        injectElement : function (CFI, contentDocument, elementToInject, classBlacklist, elementBlacklist, idBlacklist) {
+            return cfiInterpreter.injectElement(CFI, contentDocument, elementToInject, classBlacklist, elementBlacklist, idBlacklist);
+        },
+        getTargetElement : function (CFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
+            return cfiInterpreter.getTargetElement(CFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist);
+        },
+        getTargetElementWithPartialCFI : function (contentDocumentCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
+            return cfiInterpreter.getTargetElementWithPartialCFI(contentDocumentCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist);
+        },
+        injectRangeElements : function (rangeCFI, contentDocument, startElementToInject, endElementToInject, classBlacklist, elementBlacklist, idBlacklist) {
+            return cfiInterpreter.injectRangeElements(rangeCFI, contentDocument, startElementToInject, endElementToInject, classBlacklist, elementBlacklist, idBlacklist);
+        },
+        getRangeTargetElements : function (rangeCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
+            return cfiInterpreter.getRangeTargetElements(rangeCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist);
+        },
+        isRangeCfi : function (cfi) {
+            return cfiInterpreter.isRangeCfi(cfi);
+        },
+        hasTextTerminus: function(cfi) {
+            return cfiInterpreter.hasTextTerminus(cfi);
+        },
+        getTextTerminusInfo : function (CFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
+            return cfiInterpreter.getTextTerminusInfo(CFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist);
+        },
+        getTextTerminusInfoWithPartialCFI : function (contentDocumentCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
+            return cfiInterpreter.getTextTerminusInfoWithPartialCFI(contentDocumentCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist);
+        },
+        generateCharacterOffsetCFIComponent : function (startTextNode, characterOffset, classBlacklist, elementBlacklist, idBlacklist) {
+            return cfiGenerator.generateCharacterOffsetCFIComponent(startTextNode, characterOffset, classBlacklist, elementBlacklist, idBlacklist);
+        },
+        generateElementCFIComponent : function (startElement, classBlacklist, elementBlacklist, idBlacklist) {
+            return cfiGenerator.generateElementCFIComponent(startElement, classBlacklist, elementBlacklist, idBlacklist);
+        },
+        generatePackageDocumentCFIComponent : function (contentDocumentName, packageDocument, classBlacklist, elementBlacklist, idBlacklist) {
+            return cfiGenerator.generatePackageDocumentCFIComponent(contentDocumentName, packageDocument, classBlacklist, elementBlacklist, idBlacklist);
+        },
+        generatePackageDocumentCFIComponentWithSpineIndex : function (spineIndex, packageDocument, classBlacklist, elementBlacklist, idBlacklist) {
+            return cfiGenerator.generatePackageDocumentCFIComponentWithSpineIndex(spineIndex, packageDocument, classBlacklist, elementBlacklist, idBlacklist);
+        },
+        generateCompleteCFI : function (packageDocumentCFIComponent, contentDocumentCFIComponent) {
+            return cfiGenerator.generateCompleteCFI(packageDocumentCFIComponent, contentDocumentCFIComponent);
+        },
+        generateCharOffsetRangeComponent : function (rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist) {
+            return cfiGenerator.generateCharOffsetRangeComponent(rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist);
+        },
+        generateElementRangeComponent : function (rangeStartElement, rangeEndElement, classBlacklist, elementBlacklist, idBlacklist) {
+            return cfiGenerator.generateElementRangeComponent(rangeStartElement, rangeEndElement, classBlacklist, elementBlacklist, idBlacklist);
+        },
+        generateRangeComponent : function (rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist) {
+            return cfiGenerator.generateRangeComponent(rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist);
+        },
+        injectElementAtOffset : function ($textNodeList, textOffset, elementToInject) {
+            return cfiInstructions.injectCFIMarkerIntoText($textNodeList, textOffset, elementToInject);
+        }
+    };
+
+
+    // TODO: remove global (should not be necessary in properly-configured RequireJS build!)
+    // ...but we leave it here as a "legacy" mechanism to access the CFI lib functionality
+    // -----
+    obj.CFIInstructions = cfiInstructions;
+    obj.Parser = cfiParser;
+    obj.Interpreter = cfiInterpreter;
+    obj.Generator = cfiGenerator;
+
+    obj.NodeTypeError= cfiRuntimeErrors.NodeTypeError;
+    obj.OutOfRangeError = cfiRuntimeErrors.OutOfRangeError;
+    obj.TerminusError = cfiRuntimeErrors.TerminusError;
+    obj.CFIAssertionError = cfiRuntimeErrors.CFIAssertionError;
+
+    global.EPUBcfi = obj;
+    // -----
+
+    console.log("#######################################");
+    // console.log(global.EPUBcfi);
+    // console.log("#######################################");
+
+    return obj;
+}
+
+
+
+
+
+
+if (typeof define == 'function' && typeof define.amd == 'object') {
+    console.log("RequireJS ... cfi_API");
+
+    define('readium_cfi_js/cfi_API',['readium_cfi_js/cfi_parser', './cfi_interpreter', './cfi_instructions', './cfi_runtime_errors', './cfi_generator'],
+    function (cfiParser, cfiInterpreter, cfiInstructions, cfiRuntimeErrors, cfiGenerator) {
+
+        return init(cfiParser, cfiInterpreter, cfiInstructions, cfiRuntimeErrors, cfiGenerator);
+    });
+} else {
+    console.log("!RequireJS ... cfi_API");
+
+    if (!global["EPUBcfi"]) {
+        throw new Error("EPUBcfi not initialised on global object?! (window or this context)");
+    }
+
+    init(global.EPUBcfi.Parser,
+        global.EPUBcfi.Interpreter,
+        global.EPUBcfi.CFIInstructions,
+        {
+            NodeTypeError: global.EPUBcfi.NodeTypeError,
+            OutOfRangeError: global.EPUBcfi.OutOfRangeError,
+            TerminusError: global.EPUBcfi.TerminusError,
+            CFIAssertionError: global.EPUBcfi.CFIAssertionError
+        },
+        global.EPUBcfi.Generator);
+}
+
+})(typeof window !== "undefined" ? window : this);
+
+define('readium_cfi_js', ['readium_cfi_js/cfi_API'], function (main) { return main; });
+
+define('eventEmitter',['require','exports','module'],function (require, exports, module) {'use strict';
+
+var has = Object.prototype.hasOwnProperty
+  , prefix = '~';
+
+/**
+ * Constructor to create a storage for our `EE` objects.
+ * An `Events` instance is a plain object whose properties are event names.
+ *
+ * @constructor
+ * @api private
+ */
+function Events() {}
+
+//
+// We try to not inherit from `Object.prototype`. In some engines creating an
+// instance in this way is faster than calling `Object.create(null)` directly.
+// If `Object.create(null)` is not supported we prefix the event names with a
+// character to make sure that the built-in object properties are not
+// overridden or used as an attack vector.
+//
+if (Object.create) {
+  Events.prototype = Object.create(null);
+
+  //
+  // This hack is needed because the `__proto__` property is still inherited in
+  // some old browsers like Android 4, iPhone 5.1, Opera 11 and Safari 5.
+  //
+  if (!new Events().__proto__) prefix = false;
+}
+
+/**
+ * Representation of a single event listener.
+ *
+ * @param {Function} fn The listener function.
+ * @param {Mixed} context The context to invoke the listener with.
+ * @param {Boolean} [once=false] Specify if the listener is a one-time listener.
+ * @constructor
+ * @api private
+ */
+function EE(fn, context, once) {
+  this.fn = fn;
+  this.context = context;
+  this.once = once || false;
+}
+
+/**
+ * Minimal `EventEmitter` interface that is molded against the Node.js
+ * `EventEmitter` interface.
+ *
+ * @constructor
+ * @api public
+ */
+function EventEmitter() {
+  this._events = new Events();
+  this._eventsCount = 0;
+}
+
+/**
+ * Return an array listing the events for which the emitter has registered
+ * listeners.
+ *
+ * @returns {Array}
+ * @api public
+ */
+EventEmitter.prototype.eventNames = function eventNames() {
+  var names = []
+    , events
+    , name;
+
+  if (this._eventsCount === 0) return names;
+
+  for (name in (events = this._events)) {
+    if (has.call(events, name)) names.push(prefix ? name.slice(1) : name);
+  }
+
+  if (Object.getOwnPropertySymbols) {
+    return names.concat(Object.getOwnPropertySymbols(events));
+  }
+
+  return names;
+};
+
+/**
+ * Return the listeners registered for a given event.
+ *
+ * @param {String|Symbol} event The event name.
+ * @param {Boolean} exists Only check if there are listeners.
+ * @returns {Array|Boolean}
+ * @api public
+ */
+EventEmitter.prototype.listeners = function listeners(event, exists) {
+  var evt = prefix ? prefix + event : event
+    , available = this._events[evt];
+
+  if (exists) return !!available;
+  if (!available) return [];
+  if (available.fn) return [available.fn];
+
+  for (var i = 0, l = available.length, ee = new Array(l); i < l; i++) {
+    ee[i] = available[i].fn;
+  }
+
+  return ee;
+};
+
+/**
+ * Calls each of the listeners registered for a given event.
+ *
+ * @param {String|Symbol} event The event name.
+ * @returns {Boolean} `true` if the event had listeners, else `false`.
+ * @api public
+ */
+EventEmitter.prototype.emit = function emit(event, a1, a2, a3, a4, a5) {
+  var evt = prefix ? prefix + event : event;
+
+  if (!this._events[evt]) return false;
+
+  var listeners = this._events[evt]
+    , len = arguments.length
+    , args
+    , i;
+
+  if (listeners.fn) {
+    if (listeners.once) this.removeListener(event, listeners.fn, undefined, true);
+
+    switch (len) {
+      case 1: return listeners.fn.call(listeners.context), true;
+      case 2: return listeners.fn.call(listeners.context, a1), true;
+      case 3: return listeners.fn.call(listeners.context, a1, a2), true;
+      case 4: return listeners.fn.call(listeners.context, a1, a2, a3), true;
+      case 5: return listeners.fn.call(listeners.context, a1, a2, a3, a4), true;
+      case 6: return listeners.fn.call(listeners.context, a1, a2, a3, a4, a5), true;
+    }
+
+    for (i = 1, args = new Array(len -1); i < len; i++) {
+      args[i - 1] = arguments[i];
+    }
+
+    listeners.fn.apply(listeners.context, args);
+  } else {
+    var length = listeners.length
+      , j;
+
+    for (i = 0; i < length; i++) {
+      if (listeners[i].once) this.removeListener(event, listeners[i].fn, undefined, true);
+
+      switch (len) {
+        case 1: listeners[i].fn.call(listeners[i].context); break;
+        case 2: listeners[i].fn.call(listeners[i].context, a1); break;
+        case 3: listeners[i].fn.call(listeners[i].context, a1, a2); break;
+        case 4: listeners[i].fn.call(listeners[i].context, a1, a2, a3); break;
+        default:
+          if (!args) for (j = 1, args = new Array(len -1); j < len; j++) {
+            args[j - 1] = arguments[j];
+          }
+
+          listeners[i].fn.apply(listeners[i].context, args);
+      }
+    }
+  }
+
+  return true;
+};
+
+/**
+ * Add a listener for a given event.
+ *
+ * @param {String|Symbol} event The event name.
+ * @param {Function} fn The listener function.
+ * @param {Mixed} [context=this] The context to invoke the listener with.
+ * @returns {EventEmitter} `this`.
+ * @api public
+ */
+EventEmitter.prototype.on = function on(event, fn, context) {
+  var listener = new EE(fn, context || this)
+    , evt = prefix ? prefix + event : event;
+
+  if (!this._events[evt]) this._events[evt] = listener, this._eventsCount++;
+  else if (!this._events[evt].fn) this._events[evt].push(listener);
+  else this._events[evt] = [this._events[evt], listener];
+
+  return this;
+};
+
+/**
+ * Add a one-time listener for a given event.
+ *
+ * @param {String|Symbol} event The event name.
+ * @param {Function} fn The listener function.
+ * @param {Mixed} [context=this] The context to invoke the listener with.
+ * @returns {EventEmitter} `this`.
+ * @api public
+ */
+EventEmitter.prototype.once = function once(event, fn, context) {
+  var listener = new EE(fn, context || this, true)
+    , evt = prefix ? prefix + event : event;
+
+  if (!this._events[evt]) this._events[evt] = listener, this._eventsCount++;
+  else if (!this._events[evt].fn) this._events[evt].push(listener);
+  else this._events[evt] = [this._events[evt], listener];
+
+  return this;
+};
+
+/**
+ * Remove the listeners of a given event.
+ *
+ * @param {String|Symbol} event The event name.
+ * @param {Function} fn Only remove the listeners that match this function.
+ * @param {Mixed} context Only remove the listeners that have this context.
+ * @param {Boolean} once Only remove one-time listeners.
+ * @returns {EventEmitter} `this`.
+ * @api public
+ */
+EventEmitter.prototype.removeListener = function removeListener(event, fn, context, once) {
+  var evt = prefix ? prefix + event : event;
+
+  if (!this._events[evt]) return this;
+  if (!fn) {
+    if (--this._eventsCount === 0) this._events = new Events();
+    else delete this._events[evt];
+    return this;
+  }
+
+  var listeners = this._events[evt];
+
+  if (listeners.fn) {
+    if (
+         listeners.fn === fn
+      && (!once || listeners.once)
+      && (!context || listeners.context === context)
+    ) {
+      if (--this._eventsCount === 0) this._events = new Events();
+      else delete this._events[evt];
+    }
+  } else {
+    for (var i = 0, events = [], length = listeners.length; i < length; i++) {
+      if (
+           listeners[i].fn !== fn
+        || (once && !listeners[i].once)
+        || (context && listeners[i].context !== context)
+      ) {
+        events.push(listeners[i]);
+      }
+    }
+
+    //
+    // Reset the array, or remove it completely if we have no more listeners.
+    //
+    if (events.length) this._events[evt] = events.length === 1 ? events[0] : events;
+    else if (--this._eventsCount === 0) this._events = new Events();
+    else delete this._events[evt];
+  }
+
+  return this;
+};
+
+/**
+ * Remove all listeners, or those of the specified event.
+ *
+ * @param {String|Symbol} [event] The event name.
+ * @returns {EventEmitter} `this`.
+ * @api public
+ */
+EventEmitter.prototype.removeAllListeners = function removeAllListeners(event) {
+  var evt;
+
+  if (event) {
+    evt = prefix ? prefix + event : event;
+    if (this._events[evt]) {
+      if (--this._eventsCount === 0) this._events = new Events();
+      else delete this._events[evt];
+    }
+  } else {
+    this._events = new Events();
+    this._eventsCount = 0;
+  }
+
+  return this;
+};
+
+//
+// Alias methods names because people roll like that.
+//
+EventEmitter.prototype.off = EventEmitter.prototype.removeListener;
+EventEmitter.prototype.addListener = EventEmitter.prototype.on;
+
+//
+// This function doesn't apply anymore.
+//
+EventEmitter.prototype.setMaxListeners = function setMaxListeners() {
+  return this;
+};
+
+//
+// Expose the prefix.
+//
+EventEmitter.prefixed = prefix;
+
+//
+// Allow `EventEmitter` to be imported as module namespace.
+//
+EventEmitter.EventEmitter = EventEmitter;
+
+//
+// Expose the module.
+//
+if ('undefined' !== typeof module) {
+  module.exports = EventEmitter;
+}
+
+});
+
 //
 //  Created by Juan Corona
 //  Based on original proposal by Mickaël Menu
@@ -19148,6 +15482,6294 @@ define('readium_js_plugins',["jquery", "underscore", "eventEmitter"], function (
     return instance;
 });
 
+//  LauncherOSX
+//
+//  Created by Boris Schneiderman.
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  
+//  Redistribution and use in source and binary forms, with or without modification, 
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this 
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice, 
+//  this list of conditions and the following disclaimer in the documentation and/or 
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be 
+//  used to endorse or promote products derived from this software without specific 
+//  prior written permission.
+//  
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
+
+define('readium_shared_js/globals',['jquery','eventEmitter'], function($, EventEmitter) {
+    
+    var DEBUG = false;
+    
+/**
+ * Top level ReadiumSDK namespace
+ * @namespace
+ */
+var Globals = {
+
+    /**
+     * Current version of the JS SDK
+     * @static
+     * @return {string} version
+     */
+    version: function () {
+        return "0.8.0";
+    },
+    /**
+     * @namespace
+     */
+    Views: {
+        /**
+         * Landscape Orientation
+         */
+        ORIENTATION_LANDSCAPE: "orientation_landscape",
+        /**
+         * Portrait Orientation
+         */
+        ORIENTATION_PORTRAIT: "orientation_portrait"
+    },
+    /**
+     * @namespace
+     */
+    Events: {
+        /**
+         * @event
+         */
+        READER_INITIALIZED: "ReaderInitialized",
+        /**
+         * This gets triggered on every page turnover. It includes spine information and such.
+         * @event
+         */
+        PAGINATION_CHANGED: "PaginationChanged",
+        /**
+         * @event
+         */
+        SETTINGS_APPLIED: "SettingsApplied",
+        /**
+         * @event
+         */
+        FXL_VIEW_RESIZED: "FXLViewResized",
+        /**
+         * @event
+         */
+        READER_VIEW_CREATED: "ReaderViewCreated",
+        /**
+         * @event
+         */
+        READER_VIEW_DESTROYED: "ReaderViewDestroyed",
+        /**
+         * @event
+         */
+        CONTENT_DOCUMENT_LOAD_START: "ContentDocumentLoadStart",
+        /**
+         * @event
+         */
+        CONTENT_DOCUMENT_LOADED: "ContentDocumentLoaded",
+        /**
+         * @event
+         */
+        CONTENT_DOCUMENT_UNLOADED: "ContentDocumentUnloaded",
+        /**
+         * @event
+         */
+        MEDIA_OVERLAY_STATUS_CHANGED: "MediaOverlayStatusChanged",
+        /**
+         * @event
+         */
+        MEDIA_OVERLAY_TTS_SPEAK: "MediaOverlayTTSSpeak",
+        /**
+         * @event
+         */
+        MEDIA_OVERLAY_TTS_STOP: "MediaOverlayTTSStop",
+        /**
+         * @event
+         */
+        PLUGINS_LOADED: "PluginsLoaded"
+    },
+    /**
+     * Internal Events
+     *
+     * @desc Should not be triggered outside of {@link Views.ReaderView}.
+     * @namespace
+     */
+    InternalEvents: {
+        /**
+         * @event
+         */
+        CURRENT_VIEW_PAGINATION_CHANGED: "CurrentViewPaginationChanged",
+    },
+    
+    logEvent: function(eventName, eventType, eventSource) {
+        if (DEBUG) {
+            console.debug("#### ReadiumSDK.Events." + eventName + " - "+eventType+" - " + eventSource);
+        }
+    }
+};
+$.extend(Globals, new EventEmitter());
+
+return Globals;
+
+});
+
+//This is default implementation of reading system object that will be available for the publication's javascript to analyze at runtime
+//To extend/modify/replace this object reading system should subscribe Globals.Events.READER_INITIALIZED and apply changes in reaction to this event
+navigator.epubReadingSystem = {
+    name: "",
+    version: "0.0.0",
+    layoutStyle: "paginated",
+
+    hasFeature: function (feature, version) {
+
+        // for now all features must be version 1.0 so fail fast if the user has asked for something else
+        if (version && version !== "1.0") {
+            return false;
+        }
+
+        if (feature === "dom-manipulation") {
+            // Scripts may make structural changes to the document???s DOM (applies to spine-level scripting only).
+            return true;
+        }
+        if (feature === "layout-changes") {
+            // Scripts may modify attributes and CSS styles that affect content layout (applies to spine-level scripting only).
+            return true;
+        }
+        if (feature === "touch-events") {
+            // The device supports touch events and the Reading System passes touch events to the content.
+            return false;
+        }
+        if (feature === "mouse-events") {
+            // The device supports mouse events and the Reading System passes mouse events to the content.
+            return true;
+        }
+        if (feature === "keyboard-events") {
+            // The device supports keyboard events and the Reading System passes keyboard events to the content.
+            return true;
+        }
+
+        if (feature === "spine-scripting") {
+            //Spine-level scripting is supported.
+            return true;
+        }
+
+        return false;
+    }
+};
+/* Simple JavaScript Inheritance
+ * By John Resig http://ejohn.org/
+ * MIT Licensed.
+ */
+// Inspired by base2 and Prototype
+define('readium_plugin_highlights/lib/class',[],function() {
+
+    var initializing = false,
+        fnTest = /xyz/.test(function() {
+            xyz;
+        }) ? /\b_super\b/ : /.*/;
+
+    // The base Class implementation (does nothing)
+    var Class = function() {};
+
+    // Create a new Class that inherits from this class
+    Class.extend = function(prop) {
+        var _super = this.prototype;
+
+        // Instantiate a base class (but only create the instance,
+        // don't run the init constructor)
+        initializing = true;
+        var prototype = new this();
+        initializing = false;
+
+        // Copy the properties over onto the new prototype
+        for (var name in prop) {
+            // Check if we're overwriting an existing function
+            prototype[name] = typeof prop[name] == "function" &&
+                typeof _super[name] == "function" && fnTest.test(prop[name]) ?
+                (function(name, fn) {
+                    return function() {
+                        var tmp = this._super;
+
+                        // Add a new ._super() method that is the same method
+                        // but on the super-class
+                        this._super = _super[name];
+
+                        // The method only need to be bound temporarily, so we
+                        // remove it when we're done executing
+                        var ret = fn.apply(this, arguments);
+                        this._super = tmp;
+
+                        return ret;
+                    };
+                })(name, prop[name]) :
+                prop[name];
+        }
+
+        // The dummy class constructor
+        function Class() {
+            // All construction is actually done in the init method
+            if (!initializing && this.init)
+                this.init.apply(this, arguments);
+        }
+
+        // Populate our constructed prototype object
+        Class.prototype = prototype;
+
+        // Enforce the constructor to be what we expect
+        Class.prototype.constructor = Class;
+
+        // And make this class extendable
+        Class.extend = arguments.callee;
+
+        return Class;
+    };
+
+    return Class;
+});
+
+define('readium_plugin_highlights/helpers',[],function() {
+    var HighlightHelpers = {
+        getMatrix: function($obj) {
+            var matrix = $obj.css("-webkit-transform") ||
+                $obj.css("-moz-transform") ||
+                $obj.css("-ms-transform") ||
+                $obj.css("-o-transform") ||
+                $obj.css("transform");
+            return matrix === "none" ? undefined : matrix;
+        },
+        getScaleFromMatrix: function(matrix) {
+            var matrixRegex = /matrix\((-?\d*\.?\d+),\s*0,\s*0,\s*(-?\d*\.?\d+),\s*0,\s*0\)/,
+                matches = matrix.match(matrixRegex);
+            return matches[1];
+        }
+    };
+
+    return HighlightHelpers;
+});
+
+define('readium_plugin_highlights/models/text_line_inferrer',["../lib/class"], function(Class) {
+    var TextLineInferrer = Class.extend({
+
+        init: function(options) {
+            this.lineHorizontalThreshold = options.lineHorizontalThreshold || 0;
+            this.lineHorizontalLimit = options.lineHorizontalLimit || 0;
+        },
+
+        // ----------------- PUBLIC INTERFACE --------------------------------------------------------------
+
+        inferLines: function(rectTextList) {
+            var inferredLines = [];
+            var numRects = rectTextList.length;
+            var numLines = 0;
+            var currLine;
+            var currRect;
+            var currRectTextObj;
+            var rectAppended;
+
+            // Iterate through each rect
+            for (var currRectNum = 0; currRectNum <= numRects - 1; currRectNum++) {
+                currRectTextObj = rectTextList[currRectNum];
+                currRect = currRectTextObj.rect;
+                // Check if the rect can be added to any of the current lines
+                rectAppended = false;
+
+                if (inferredLines.length > 0) {
+                    currLine = inferredLines[inferredLines.length - 1];
+
+                    if (this.includeRectInLine(currLine.line, currRect.top, currRect.left,
+                            currRect.width, currRect.height)) {
+                        rectAppended = this.expandLine(currLine.line, currRect.left, currRect.top,
+                            currRect.width, currRect.height);
+
+                        currLine.data.push(currRectTextObj);
+                    }
+                }
+
+                if (!rectAppended) {
+                    inferredLines.push({
+                        data: [currRectTextObj],
+                        line: this.createNewLine(currRect.left, currRect.top,
+                            currRect.width, currRect.height)
+                    });
+                    // Update the number of lines, so we're not using .length on every iteration
+                    numLines = numLines + 1;
+                }
+            }
+            return inferredLines;
+        },
+
+
+        // ----------------- PRIVATE HELPERS ---------------------------------------------------------------
+
+        includeRectInLine: function(currLine, rectTop, rectLeft, rectWidth, rectHeight) {
+            // is on an existing line : based on vertical position
+            if (this.rectIsWithinLineVertically(rectTop, rectHeight, currLine.maxTop, currLine.maxBottom)) {
+                if (this.rectIsWithinLineHorizontally(rectLeft, rectWidth, currLine.left,
+                        currLine.width, currLine.avgHeight)) {
+                    return true;
+                }
+            }
+            return false;
+        },
+
+        rectIsWithinLineVertically: function(rectTop, rectHeight, currLineMaxTop, currLineMaxBottom) {
+            var rectBottom = rectTop + rectHeight;
+            var lineHeight = currLineMaxBottom - currLineMaxTop;
+            var lineHeightAdjustment = (lineHeight * 0.75) / 2;
+            var rectHeightAdjustment = (rectHeight * 0.75) / 2;
+
+            rectTop = rectTop + rectHeightAdjustment;
+            rectBottom = rectBottom - rectHeightAdjustment;
+            currLineMaxTop = currLineMaxTop + lineHeightAdjustment;
+            currLineMaxBottom = currLineMaxBottom - lineHeightAdjustment;
+
+            if (rectTop === currLineMaxTop && rectBottom === currLineMaxBottom) {
+                return true;
+            } else if (rectTop < currLineMaxTop && rectBottom < currLineMaxBottom &&
+                rectBottom > currLineMaxTop) {
+                return true;
+            } else if (rectTop > currLineMaxTop && rectBottom > currLineMaxBottom &&
+                rectTop < currLineMaxBottom) {
+                return true;
+            } else if (rectTop > currLineMaxTop && rectBottom < currLineMaxBottom) {
+                return true;
+            } else if (rectTop < currLineMaxTop && rectBottom > currLineMaxBottom) {
+                return true;
+            } else {
+                return false;
+            }
+        },
+
+        rectIsWithinLineHorizontally: function(rectLeft, rectWidth, currLineLeft, currLineWidth,
+            currLineAvgHeight) {
+            var lineGapHeuristic = 2 * currLineAvgHeight;
+            var rectRight = rectLeft + rectWidth;
+            var currLineRight = rectLeft + currLineWidth;
+
+            if ((currLineLeft - rectRight) > lineGapHeuristic) {
+                return false;
+            } else if ((rectLeft - currLineRight) > lineGapHeuristic) {
+                return false;
+            } else {
+                return true;
+            }
+        },
+
+        createNewLine: function(rectLeft, rectTop, rectWidth, rectHeight) {
+            var maxBottom = rectTop + rectHeight;
+
+            return {
+                left: rectLeft,
+                startTop: rectTop,
+                width: rectWidth,
+                avgHeight: rectHeight,
+                maxTop: rectTop,
+                maxBottom: maxBottom,
+                numRects: 1
+            };
+        },
+
+        expandLine: function(currLine, rectLeft, rectTop, rectWidth, rectHeight) {
+            var lineOldRight = currLine.left + currLine.width;
+
+            // Update all the properties of the current line with rect dimensions
+            var rectRight = rectLeft + rectWidth;
+            var rectBottom = rectTop + rectHeight;
+            var numRectsPlusOne = currLine.numRects + 1;
+
+            // Average height calculation
+            var currSumHeights = currLine.avgHeight * currLine.numRects;
+            var avgHeight = Math.ceil((currSumHeights + rectHeight) / numRectsPlusOne);
+            currLine.avgHeight = avgHeight;
+            currLine.numRects = numRectsPlusOne;
+
+            // Expand the line vertically
+            currLine = this.expandLineVertically(currLine, rectTop, rectBottom);
+            currLine = this.expandLineHorizontally(currLine, rectLeft, rectRight);
+
+            return currLine;
+        },
+
+        expandLineVertically: function(currLine, rectTop, rectBottom) {
+            if (rectTop < currLine.maxTop) {
+                currLine.maxTop = rectTop;
+            }
+            if (rectBottom > currLine.maxBottom) {
+                currLine.maxBottom = rectBottom;
+            }
+
+            return currLine;
+        },
+
+        expandLineHorizontally: function(currLine, rectLeft, rectRight) {
+            var newLineLeft = currLine.left <= rectLeft ? currLine.left : rectLeft;
+            var lineRight = currLine.left + currLine.width;
+            var newLineRight = lineRight >= rectRight ? lineRight : rectRight;
+            var newLineWidth = newLineRight - newLineLeft;
+
+            //cancel the expansion if the line is going to expand outside a horizontal limit
+            //this is used to prevent lines from spanning multiple columns in a two column epub view
+            var horizontalThreshold = this.lineHorizontalThreshold;
+            var horizontalLimit = this.lineHorizontalLimit;
+
+            var leftBoundary = Math.floor(newLineLeft / horizontalLimit) * horizontalLimit;
+            var centerBoundary = leftBoundary + horizontalThreshold;
+            var rightBoundary = leftBoundary + horizontalLimit;
+            if ((newLineLeft > leftBoundary && newLineRight > centerBoundary && newLineLeft < centerBoundary) || (newLineLeft > centerBoundary && newLineRight > rightBoundary)) {
+                return undefined;
+            }
+
+            currLine.left = newLineLeft;
+            currLine.width = newLineWidth;
+
+            return currLine;
+        }
+    });
+
+    return TextLineInferrer;
+});
+
+// https://github.com/heygrady/Units
+//
+// Copyright (c) 2013 Grady Kuhnline
+//
+// MIT License
+//
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
+// the following conditions:
+//
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+define('readium_plugin_highlights/lib/length',[],function() {
+    return function(document) {
+        "use strict";
+
+        // create a test element
+        var testElem = document.createElement('test'),
+            docElement = document.documentElement,
+            defaultView = document.defaultView,
+            getComputedStyle = defaultView && defaultView.getComputedStyle,
+            computedValueBug,
+            runit = /^(-?[\d+\.\-]+)([a-z]+|%)$/i,
+            convert = {},
+            conversions = [1 / 25.4, 1 / 2.54, 1 / 72, 1 / 6],
+            units = ['mm', 'cm', 'pt', 'pc', 'in', 'mozmm'],
+            i = 6; // units.length
+
+        // add the test element to the dom
+        docElement.appendChild(testElem);
+
+        // test for the WebKit getComputedStyle bug
+        // @see http://bugs.jquery.com/ticket/10639
+        if (getComputedStyle) {
+            // add a percentage margin and measure it
+            testElem.style.marginTop = '1%';
+            computedValueBug = getComputedStyle(testElem).marginTop === '1%';
+        }
+
+        // pre-calculate absolute unit conversions
+        while (i--) {
+            convert[units[i] + "toPx"] = conversions[i] ? conversions[i] * convert.inToPx : toPx(testElem, '1' + units[i]);
+        }
+
+        // remove the test element from the DOM and delete it
+        docElement.removeChild(testElem);
+        testElem = undefined;
+
+        // convert a value to pixels
+        function toPx(elem, value, prop, force) {
+            // use width as the default property, or specify your own
+            prop = prop || 'width';
+
+            var style,
+                inlineValue,
+                ret,
+                unit = (value.match(runit) || [])[2],
+                conversion = unit === 'px' ? 1 : convert[unit + 'toPx'],
+                rem = /r?em/i;
+
+            if (conversion || rem.test(unit) && !force) {
+                // calculate known conversions immediately
+                // find the correct element for absolute units or rem or fontSize + em or em
+                elem = conversion ? elem : unit === 'rem' ? docElement : prop === 'fontSize' ? elem.parentNode || elem : elem;
+
+                // use the pre-calculated conversion or fontSize of the element for rem and em
+                conversion = conversion || parseFloat(curCSS(elem, 'fontSize'));
+
+                // multiply the value by the conversion
+                ret = parseFloat(value) // conversion;
+            } else {
+                // begin "the awesome hack by Dean Edwards"
+                // @see http://erik.eae.net/archives/2007/07/27/18.54.15/#comment-102291
+
+                // remember the current style
+                style = elem.style;
+                inlineValue = style[prop];
+
+                // set the style on the target element
+                try {
+                    style[prop] = value;
+                } catch (e) {
+                    // IE 8 and below throw an exception when setting unsupported units
+                    return 0;
+                }
+
+                // read the computed value
+                // if style is nothing we probably set an unsupported unit
+                ret = !style[prop] ? 0 : parseFloat(curCSS(elem, prop));
+
+                // reset the style back to what it was or blank it out
+                style[prop] = inlineValue !== undefined ? inlineValue : null;
+            }
+
+            // return a number
+            return ret;
+        }
+
+        // return the computed value of a CSS property
+        function curCSS(elem, prop) {
+            var value,
+                pixel,
+                unit,
+                rvpos = /^top|bottom/,
+                outerProp = ["paddingTop", "paddingBottom", "borderTop", "borderBottom"],
+                innerHeight,
+                parent,
+                i = 4; // outerProp.length
+
+            if (getComputedStyle) {
+                // FireFox, Chrome/Safari, Opera and IE9+
+                value = getComputedStyle(elem)[prop];
+            } else if (pixel = elem.style['pixel' + prop.charAt(0).toUpperCase() + prop.slice(1)]) {
+                // IE and Opera support pixel shortcuts for top, bottom, left, right, height, width
+                // WebKit supports pixel shortcuts only when an absolute unit is used
+                value = pixel + 'px';
+            } else if (prop === 'fontSize') {
+                // correct IE issues with font-size
+                // @see http://bugs.jquery.com/ticket/760
+                value = toPx(elem, '1em', 'left', 1) + 'px';
+            } else {
+                // IE 8 and below return the specified style
+                value = elem.currentStyle[prop];
+            }
+
+            // check the unit
+            unit = (value.match(runit) || [])[2];
+            if (unit === '%' && computedValueBug) {
+                // WebKit won't convert percentages for top, bottom, left, right, margin and text-indent
+                if (rvpos.test(prop)) {
+                    // Top and bottom require measuring the innerHeight of the parent.
+                    innerHeight = (parent = elem.parentNode || elem).offsetHeight;
+                    while (i--) {
+                        innerHeight -= parseFloat(curCSS(parent, outerProp[i]));
+                    }
+                    value = parseFloat(value) / 100 // innerHeight + 'px';
+                } else {
+                    // This fixes margin, left, right and text-indent
+                    // @see https://bugs.webkit.org/show_bug.cgi?id=29084
+                    // @see http://bugs.jquery.com/ticket/10639
+                    value = toPx(elem, value);
+                }
+            } else if ((value === 'auto' || (unit && unit !== 'px')) && getComputedStyle) {
+                // WebKit and Opera will return auto in some cases
+                // Firefox will pass back an unaltered value when it can't be set, like top on a static element
+                value = 0;
+            } else if (unit && unit !== 'px' && !getComputedStyle) {
+                // IE 8 and below won't convert units for us
+                // try to convert using a prop that will return pixels
+                // this will be accurate for everything (except font-size and some percentages)
+                value = toPx(elem, value) + 'px';
+            }
+            return value;
+        }
+
+        // export the conversion function
+        return {
+            toPx: toPx
+        };
+    };
+});
+
+define('readium_plugin_highlights/models/copied_text_styles',[],function() {
+    return [
+        "color",
+        "font-family",
+        "font-size",
+        "font-weight",
+        "font-style",
+        //"line-height",
+        "text-decoration",
+        "text-transform",
+        "text-shadow",
+        "letter-spacing",
+
+        "text-rendering",
+        "font-kerning",
+        "font-language-override",
+        "font-size-adjust",
+        "font-stretch",
+        "font-synthesis",
+        "font-variant",
+        "font-variant-alternates",
+        "font-variant-caps",
+        "font-variant-east-asian",
+        "font-variant-ligatures",
+        "font-variant-numeric",
+        "font-variant-position",
+        "-webkit-font-smoothing ",
+
+        "-ms-writing-mode",
+        "-webkit-writing-mode",
+        "-moz-writing-mode",
+        "-ms-writing-mode",
+        "writing-mode",
+
+        "-webkit-text-orientation",
+        "-moz-text-orientation",
+        "-ms-text-orientation",
+        "text-orientation: mixed"
+    ];
+});
+
+define('readium_plugin_highlights/views/view',["jquery", "underscore", "../lib/class", "../lib/length", "../models/text_line_inferrer", "../models/copied_text_styles"],
+function($, _, Class, Length, TextLineInferrer, CopiedTextStyles) {
+    // This is not a backbone view.
+
+    var HighlightView = Class.extend({
+        // this is an element that highlight will be associated with, it is not styled at this point
+        template: "<div class=\"rd-highlight\"></div>",
+
+        init: function(context, options) {
+            this.context = context;
+
+            this.lengthLib = new Length(this.context.document);
+
+            this.highlight = {
+                id: options.id,
+                CFI: options.CFI,
+                type: options.type,
+                top: options.top,
+                left: options.left,
+                height: options.height,
+                width: options.width,
+                styles: options.styles,
+                contentRenderData: options.contentRenderData
+            };
+
+            this.swipeThreshold = 10;
+            this.swipeVelocity = 0.65; // in px/ms
+        },
+
+        render: function() {
+            this.$el = $(this.template, this.context.document);
+            this.$el.attr('data-id', this.highlight.id);
+            this.updateStyles();
+            this.renderContent();
+            return this.$el;
+        },
+
+        remove: function() {
+            this.highlight = null;
+            this.context = null;
+            this.$el.remove();
+        },
+
+
+
+        resetPosition: function(top, left, height, width) {
+            _.assign(this.highlight, {
+                top: top,
+                left: left,
+                height: height,
+                width: width
+            });
+            this.setCSS();
+        },
+
+        setStyles: function(styles) {
+            this.highlight.styles = styles;
+            this.updateStyles();
+        },
+
+        update: function(type, styles) {
+            // save old type
+            var oldType = this.highlight.type;
+
+            _.assign(this.highlight, {
+                type: type,
+                styles: styles
+            });
+
+            // we need to fully restyle view elements
+            // remove all the "inline" styles
+            this.$el.removeAttr("style");
+
+            // remove class applied by "type"
+            this.$el.removeClass(oldType);
+
+            this.updateStyles();
+        },
+
+        updateStyles: function() {
+            this.setBaseHighlight();
+            this.setCSS();
+        },
+
+        // Will return null or false if :first-line/letter would not apply to the first text node child
+        getFirstTextNodeChild: function(elem) {
+            for (var i = 0; i < elem.childNodes.length; i++) {
+                var child = elem.childNodes[i];
+                if (child.nodeType === Node.TEXT_NODE) {
+                    return child;
+                }
+
+                if (child.nodeType === Node.ELEMENT_NODE) {
+                    var doc = child.ownerDocument;
+                    var style = doc.defaultView.getComputedStyle(child);
+                    // If it's not an element we can definitely ignore
+                    if ((style['position'] !== 'absolute' && style['position'] !== 'fixed') &&
+                        style['float'] === 'none' && style['display'] !== 'none') {
+                        if (style['display'] === 'inline') {
+                            var result = this.getFirstTextNodeChild(child);
+                            if (result) {
+                                return result;
+                            } else if (result === false) {
+                                return false;
+                            }
+                        } else {
+                            return false;
+                        }
+                    }
+                }
+            }
+            return null;
+        },
+
+        // Returns the styles which apply to the first line of the specified element, or null if there aren't any
+        // Assumes that the specified argument is a block element
+        getFirstLineStyles: function(elem) {
+            var win = elem.ownerDocument.defaultView;
+            if (!win.getMatchedCSSRules) {
+                // Without getMatchingCSSRules, we can't get first-line styles
+                return null;
+            }
+            while (elem) {
+                var styles = win.getMatchedCSSRules(elem, 'first-line');
+                if (styles) {
+                    return styles[0].style;
+                }
+
+                // Go through previous siblings, return null if there's a non-empty text node, or an element that's
+                // not display: none; - both of these prevent :first-line styles from the parents from applying
+                var sibling = elem;
+                while (sibling = sibling.previousSibling) {
+                    if (sibling.nodeType === Node.ELEMENT_NODE) {
+                        var siblingStyles = win.getComputedStyle(sibling);
+                        if (siblingStyles['display'] !== 'none') {
+                            return null;
+                        }
+                    } else if (sibling.nodeType === Node.TEXT_NODE && sibling.textContent.match(/\S/)) {
+                        return null;
+                    }
+                };
+                elem = elem.parentNode;
+            }
+        },
+
+        renderContent: function() {
+            var that = this;
+            var renderData = this.highlight.contentRenderData;
+            if (renderData) {
+                _.each(renderData.data, function(data) {
+                    var $ancestor = $(data.ancestorEl);
+                    var $blockAncestor = $(data.blockAncestorEl);
+                    var document = data.ancestorEl.ownerDocument;
+
+                    var el = document.createElement("div");
+                    el.style.position = 'absolute';
+                    el.style.top = (data.rect.top - renderData.top) + "px";
+                    el.style.left = (data.rect.left - renderData.left) + "px";
+                    el.style.width = (data.rect.width + 1) + "px";
+                    el.style.height = data.rect.height + "px";
+
+                    var copyStyles = function(copyFrom, copyTo) {
+                        _.each(CopiedTextStyles, function(styleName) {
+                            var style = copyFrom[styleName];
+                            if (style) {
+                                copyTo[styleName] = style;
+                            }
+                        });
+                    };
+
+                    var copiedStyles = $ancestor.data("rd-copied-text-styles");
+                    if (!copiedStyles) {
+                        copiedStyles = {};
+                        var computedStyle = document.defaultView.getComputedStyle(data.ancestorEl);
+                        copyStyles(computedStyle, copiedStyles);
+                        $ancestor.data("rd-copied-text-styles", copiedStyles);
+                    }
+
+                    var copiedFirstLineStyles = $blockAncestor.data("rd-copied-first-line-styles");
+                    if (copiedFirstLineStyles === undefined) {
+                        copiedFirstLineStyles = null;
+                        var firstLineStyles = that.getFirstLineStyles(data.blockAncestorEl);
+                        if (firstLineStyles) {
+                            copiedFirstLineStyles = {};
+                            copyStyles(firstLineStyles, copiedFirstLineStyles);
+                            // Delete text-transform because it doesn't apply in Chrome on :first-line
+                            delete copiedFirstLineStyles['text-transform'];
+                            _.each(["font-size", "letter-spacing"], function(styleName) {
+                                if (copiedFirstLineStyles[styleName]) {
+                                    copiedFirstLineStyles[styleName] = that.lengthLib.toPx(data.ancestorEl, copiedFirstLineStyles[styleName]) + "px";
+                                }
+                            });
+                        }
+                        $blockAncestor.data("rd-copied-first-line-styles", copiedFirstLineStyles);
+                    }
+
+                    if (copiedFirstLineStyles) {
+                        var textNode = that.getFirstTextNodeChild(data.blockAncestorEl);
+                        var range = document.createRange();
+                        range.setStart(textNode, 0);
+                        range.setEnd(data.node, data.startOffset + 1);
+                        var rects = range.getClientRects();
+                        var inferrer = new TextLineInferrer({
+                            lineHorizontalThreshold: $("body", document).clientWidth,
+                            lineHorizontalLimit: document.defaultView.innerWidth
+                        });
+                        if (inferrer.inferLines(_.map(rects, function(rect) {
+                                return {
+                                    rect: rect
+                                }
+                            })).length > 1) {
+                            copiedFirstLineStyles = null;
+                        }
+                    }
+
+                    _.each(copiedStyles, function(style, styleName) {
+                        style = copiedFirstLineStyles ? copiedFirstLineStyles[styleName] || style : style;
+                        el.style[styleName] = style;
+                    });
+                    el.style["line-height"] = data.rect.height + "px";
+
+                    el.appendChild(document.createTextNode(data.text));
+                    that.$el[0].appendChild(el);
+                });
+                processedElements = null;
+                computedStyles = null;
+            }
+        },
+
+        setCSS: function() {
+            // set highlight's absolute position
+            this.$el.css({
+                "position": "absolute",
+                "top": this.highlight.top + "px",
+                "left": this.highlight.left + "px",
+                "height": this.highlight.height + "px",
+                "width": this.highlight.width + "px"
+            });
+
+            // apply styles, if any
+            var styles = this.highlight.styles || {};
+            try {
+                this.$el.css(styles);
+            } catch (ex) {
+                console.log('EpubAnnotations: invalid css styles');
+            }
+        },
+
+        setBaseHighlight: function(removeFocus) {
+            var type = this.highlight.type;
+            this.$el.addClass(type);
+            this.$el.removeClass("hover-" + type);
+            if (removeFocus) {
+                this.$el.removeClass("focused-" + type);
+            }
+        },
+
+        setHoverHighlight: function() {
+            var type = this.highlight.type;
+            this.$el.addClass("hover-" + type);
+            this.$el.removeClass(type);
+        },
+
+        setFocusedHighlight: function() {
+            var type = this.highlight.type;
+            this.$el.addClass("focused-" + type);
+            this.$el.removeClass(type).removeClass("hover-" + type);
+        },
+
+        setVisibility: function(value) {
+            if (value) {
+                this.$el.css('display', '');
+            } else {
+                this.$el.css('display', 'none');
+            }
+        },
+
+    });
+
+    return HighlightView;
+});
+
+define('readium_plugin_highlights/views/border_view',["./view"], function(HighlightView) {
+
+    // This is not a backbone view.
+
+    var HighlightBorderView = HighlightView.extend({
+
+        template: "<div class=\"rd-highlight-border\"></div>",
+
+        setCSS: function() {
+
+            this.$el.css({
+                backgroundClip: 'padding-box',
+                borderStyle: 'solid',
+                borderWidth: '5px',
+                boxSizing: "border-box"
+            });
+            this._super();
+        },
+
+        setBaseHighlight: function() {
+
+            this.$el.addClass("highlight-border");
+            this.$el.removeClass("hover-highlight-border").removeClass("focused-highlight-border");
+        },
+
+        setHoverHighlight: function() {
+
+            this.$el.addClass("hover-highlight-border");
+            this.$el.removeClass("highlight-border");
+        },
+
+        setFocusedHighlight: function() {
+            this.$el.addClass('focused-highlight-border');
+            this.$el.removeClass('highlight-border').removeClass('hover-highlight-border');
+        }
+    });
+
+    return HighlightBorderView;
+});
+
+define('readium_plugin_highlights/models/group',["jquery", "underscore", "../lib/class", "./text_line_inferrer", "../views/view", "../views/border_view", "../helpers"],
+function($, _, Class, TextLineInferrer, HighlightView, HighlightBorderView, HighlightHelpers) {
+
+    var debouncedTrigger = _.debounce(
+        function(fn, eventName) {
+            fn(eventName);
+        }, 10);
+
+    var HighlightGroup = Class.extend({
+
+        init: function(context, options) {
+            this.context = context;
+
+            this.highlightViews = [];
+
+            this.CFI = options.CFI;
+            this.selectedNodes = options.selectedNodes;
+            this.offsetTopAddition = options.offsetTopAddition;
+            this.offsetLeftAddition = options.offsetLeftAddition;
+            this.styles = options.styles;
+            this.id = options.id;
+            this.type = options.type;
+            this.scale = options.scale;
+            this.selectionText = options.selectionText;
+            this.visible = options.visible;
+            this.rangeInfo = options.rangeInfo;
+
+            this.constructHighlightViews();
+        },
+
+        onHighlightEvent: function(event, type) {
+            var that = this;
+            var documentFrame = this.context.iframe;
+            var topView = this.context.manager;
+            var triggerEvent = _.partial(topView.trigger, _, that.type,
+                that.CFI, that.id, event, documentFrame);
+
+            if (type === "click" || type === "touchend") {
+                debouncedTrigger(triggerEvent, "annotationClicked");
+
+            } else if (type === "contextmenu") {
+                triggerEvent("annotationRightClicked");
+
+            } else if (type === "mousemove") {
+                triggerEvent("annotationMouseMove");
+
+            } else if (type === "mouseenter") {
+                triggerEvent("annotationHoverIn");
+
+            } else if (type === "mouseleave") {
+                triggerEvent("annotationHoverOut");
+
+            } else if (type === "mousedown") {
+                // prevent selection when right clicking
+                var preventEvent = function(event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    documentFrame.contentDocument.removeEventListener(event.type, preventEvent);
+                };
+                if (event.button === 2) {
+                    event.preventDefault();
+                    documentFrame.contentDocument.addEventListener("selectstart", preventEvent);
+                    documentFrame.contentDocument.addEventListener("mouseup", preventEvent);
+                    documentFrame.contentDocument.addEventListener("click", preventEvent);
+                    documentFrame.contentDocument.addEventListener("contextmenu", preventEvent);
+                }
+            }
+
+            // "mouseenter" and "mouseleave" events not only trigger corresponding named event, but also
+            // affect the appearance
+            if (type === "mouseenter" || type === "mouseleave") {
+                // Change appearance of highlightViews constituting this highlight group
+                // do not iterate over secondary highlight views (hightlightViewsSecondary)
+                _.each(this.highlightViews, function(highlightView) {
+
+                    if (type === "mouseenter") {
+                        highlightView.setHoverHighlight();
+                    } else if (type === "mouseleave") {
+                        highlightView.setBaseHighlight(false);
+                    }
+                });
+            }
+
+        },
+
+        normalizeRectangle: function(rect) {
+            return {
+                left: rect.left,
+                right: rect.right,
+                top: rect.top,
+                bottom: rect.bottom,
+                width: rect.right - rect.left,
+                height: rect.bottom - rect.top
+            };
+        },
+
+        // produces an event string corresponding to "pointer events" that we want to monitor on the
+        // bound HL container. We are adding namespace to the event names in order to be able to
+        // remove them by specifying <eventname>.<namespace> only, rather than classic callback function
+        getBoundHighlightContainerEvents: function() {
+            // these are the event names that we handle in "onHighlightEvent"
+            var boundHighlightContainerEvents = ["click", "touchstart", "touchend", "touchmove", "contextmenu",
+                "mouseenter", "mouseleave", "mousemove", "mousedown"
+            ];
+            var namespace = ".rdjsam-" + this.id;
+            return boundHighlightContainerEvents.map(function(e) {
+                return e + namespace;
+            }).join(" ");
+        },
+
+        getFirstBlockParent: function(elem) {
+            var win = elem.ownerDocument.defaultView;
+            do {
+                var style = win.getComputedStyle(elem);
+                if (style['display'] !== 'inline') {
+                    return elem;
+                }
+            } while (elem = elem.parentNode);
+        },
+
+        // construct view for each rectangle constituting HL group
+        constructHighlightViews: function() {
+            var that = this;
+            if (!this.visible)
+                return;
+
+            var rectTextList = [];
+
+            // this is an array of elements (not Node.TEXT_NODE) that are part of HL group
+            // they will presented as HighlightBorderView
+            var rectElementList = [];
+            var inferrer;
+            var inferredLines;
+            var allContainerRects = [];
+            var hoverThreshold = 2; // Pixels to expand each rect on each side, for hovering/clicking purposes
+            var rangeInfo = this.rangeInfo;
+            var selectedNodes = this.selectedNodes;
+            var includeMedia = this.includeMedia;
+            var contentDocumentFrame = this.context.iframe;
+            var highlightStyles = this.styles;
+            var cloneTextMode = highlightStyles ? highlightStyles['-rd-highlight-mode'] === 'clone-text' : false;
+
+            function pushToRectTextList(range) {
+                var match,
+                    rangeText = range.toString(),
+                    rects = [],
+                    node = range.startContainer,
+                    ancestor = range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE ? range.commonAncestorContainer : range.commonAncestorContainer.parentNode,
+                    blockAncestor = that.getFirstBlockParent(ancestor),
+                    baseOffset = range.startOffset,
+                    rgx = /\S+/g;
+
+                if (cloneTextMode) {
+                    while (match = rgx.exec(rangeText)) {
+                        var startOffset = baseOffset + rgx.lastIndex - match[0].length,
+                            endOffset = baseOffset + rgx.lastIndex;
+                        range.setStart(node, startOffset);
+                        range.setEnd(node, endOffset);
+                        var clientRects = range.getClientRects();
+                        var curRect = 0;
+                        var curStart = startOffset;
+                        var curEnd = curStart;
+                        while (curRect < clientRects.length) {
+                            var saveRect = false;
+                            if (clientRects[curRect].width === 0 || clientRects[curRect].height === 0) {
+                                curRect++;
+                                continue;
+                            }
+                            if (curRect === clientRects.length - 1) {
+                                curEnd = endOffset;
+                                saveRect = true;
+                            } else {
+                                curEnd++;
+                                range.setStart(node, curStart);
+                                range.setEnd(node, curEnd);
+                                var tempRects = range.getClientRects();
+                                var tempRect = tempRects[0];
+                                // Skip over empty first rect if there is one
+                                if (tempRects.length > 1 && (tempRect.width === 0 || tempRect.height === 0)) {
+                                    tempRect = tempRects[1];
+                                }
+                                var differences = 0;
+                                _.each(["top", "left", "bottom", "right"], function(prop) {
+                                    differences += (tempRects[0][prop] !== clientRects[curRect][prop] ? 1 : 0);
+                                });
+                                if (differences === 0) {
+                                    saveRect = true;
+                                }
+                            }
+                            if (saveRect) {
+                                rects.push({
+                                    rect: clientRects[curRect],
+                                    text: node.textContent.substring(curStart, curEnd),
+                                    node: node,
+                                    startOffset: curStart
+                                });
+                                curRect++;
+                                curStart = curEnd;
+                            }
+                        }
+                    }
+                } else {
+                    _.each(range.getClientRects(), function(rect) {
+                        rects.push({
+                            rect: rect,
+                            text: rangeText
+                        });
+                    });
+                }
+                _.each(rects, function(rect) {
+                    var normalizedRect = that.normalizeRectangle(rect.rect);
+
+                    //filter out empty rectangles
+                    if (normalizedRect.width === 0 || normalizedRect.height === 0) {
+                        return;
+                    }
+
+                    // push both rect and ancestor in the list
+                    rectTextList.push({
+                        rect: normalizedRect,
+                        text: rect.text,
+                        ancestorEl: ancestor,
+                        blockAncestorEl: blockAncestor,
+                        node: rect.node,
+                        startOffset: rect.startOffset
+                    });
+                });
+            }
+
+            // if range is within one node
+            if (rangeInfo && rangeInfo.startNode === rangeInfo.endNode) {
+                var node = rangeInfo.startNode;
+                var range = that.context.document.createRange();
+                range.setStart(node, rangeInfo.startOffset);
+                range.setEnd(node, rangeInfo.endOffset);
+
+                // we are only interested in TEXT_NODE
+                if (node.nodeType === Node.TEXT_NODE) {
+                    // get client rectangles for the range and push them into rectTextList
+                    pushToRectTextList(range);
+                    selectedNodes = [];
+                }
+            }
+
+            // multi-node range, for each selected node
+            _.each(selectedNodes, function(node) {
+                // create new Range
+                var range = that.context.document.createRange();
+                if (node.nodeType === Node.TEXT_NODE) {
+                    if (rangeInfo && node === rangeInfo.startNode && rangeInfo.startOffset !== 0) {
+                        range.setStart(node, rangeInfo.startOffset);
+                        range.setEnd(node, node.length);
+                    } else if (rangeInfo && node === rangeInfo.endNode && rangeInfo.endOffset !== 0) {
+                        range.setStart(node, 0);
+                        range.setEnd(node, rangeInfo.endOffset);
+                    } else {
+                        range.selectNodeContents(node);
+                    }
+
+                    // for each client rectangle
+                    pushToRectTextList(range);
+                } else if (node.nodeType === Node.ELEMENT_NODE && includeMedia) {
+                    // non-text node element
+                    // if we support this elements in the HL group
+                    if (_.contains(["img", "video", "audio"], node.tagName.toLowerCase())) {
+                        // set the Range to contain the node and its contents and push rectangle to the list
+                        range.selectNode(node);
+                        rectElementList.push(range.getBoundingClientRect());
+                    }
+                }
+            });
+
+            var $html = $(that.context.document.documentElement);
+
+            function calculateScale() {
+                var scale = that.scale;
+                //is there a transform scale for the content document?
+                var matrix = HighlightHelpers.getMatrix($html);
+                if (!matrix && (that.context.isIe9 || that.context.isIe10)) {
+                    //if there's no transform scale then set the scale as the IE zoom factor
+                    scale = (window.screen.deviceXDPI / 96); //96dpi == 100% scale
+                } else if (matrix) {
+                    scale = HighlightHelpers.getScaleFromMatrix(matrix);
+                }
+                return scale;
+            }
+
+            var scale = calculateScale();
+
+            inferrer = new TextLineInferrer({
+                lineHorizontalThreshold: $("body", $html).clientWidth,
+                lineHorizontalLimit: contentDocumentFrame.contentWindow.innerWidth
+            });
+
+            // only take "rect" property when inferring lines
+            inferredLines = inferrer.inferLines(rectTextList);
+            _.each(inferredLines, function(line, index) {
+                var renderData = line.data;
+                //console.log(line.data);
+                line = line.line;
+                var highlightTop = (line.startTop + that.offsetTopAddition) / scale;
+                var highlightLeft = (line.left + that.offsetLeftAddition) / scale;
+                var highlightHeight = line.avgHeight / scale;
+                var highlightWidth = line.width / scale;
+                allContainerRects.push({
+                    top: highlightTop - hoverThreshold,
+                    left: highlightLeft - hoverThreshold,
+                    bottom: highlightTop + highlightHeight + hoverThreshold * 2,
+                    right: highlightLeft + highlightWidth + hoverThreshold * 2,
+                });
+
+                var highlightView = new HighlightView(that.context, {
+                    id: that.id,
+                    CFI: that.CFI,
+                    type: that.type,
+                    top: highlightTop,
+                    left: highlightLeft,
+                    height: highlightHeight,
+                    width: highlightWidth,
+                    styles: _.extend({
+                        "z-index": "1000",
+                        "pointer-events": "none"
+                    }, highlightStyles),
+                    contentRenderData: cloneTextMode ? {
+                        data: renderData,
+                        top: line.startTop,
+                        left: line.left
+                    } : null
+                });
+
+                that.highlightViews.push(highlightView);
+            });
+
+            // deal with non TEXT_NODE elements
+            _.each(rectElementList, function(rect) {
+                var highlightTop = (rect.top + that.offsetTopAddition) / scale;
+                var highlightLeft = (rect.left + that.offsetLeftAddition) / scale;
+                var highlightHeight = rect.height / scale;
+                var highlightWidth = rect.width / scale;
+                allContainerRects.push({
+                    top: highlightTop - hoverThreshold,
+                    left: highlightLeft - hoverThreshold,
+                    bottom: highlightTop + highlightHeight + hoverThreshold * 2,
+                    right: highlightLeft + highlightWidth + hoverThreshold * 2,
+                });
+
+                var highlightView = new HighlightBorderView(this.context, {
+                    highlightId: that.id,
+                    CFI: that.CFI,
+                    top: highlightTop,
+                    left: highlightLeft,
+                    height: highlightHeight,
+                    width: highlightWidth,
+                    styles: highlightStyles
+                });
+
+                that.highlightViews.push(highlightView);
+            });
+
+            // this is a flag indicating if mouse is currently within the boundary of HL group
+            var mouseEntered = false;
+
+            // helper function to test if a point is within a rectangle
+            function pointRectangleIntersection(point, rect) {
+                return point.x > rect.left && point.x < rect.right &&
+                    point.y > rect.top && point.y < rect.bottom;
+            };
+
+            // e is a jQuery event wrapper (use e.originalEvent to access the raw object)
+            that.boundHighlightCallback = function(e) {
+                var scale = calculateScale();
+                var mouseIsInside = false;
+
+                var x = e.pageX;
+                var y = e.pageY;
+
+                if (e.type === 'touchend') {
+                    var lastTouch = _.last(e.originalEvent.changedTouches);
+                    x = lastTouch.pageX;
+                    y = lastTouch.pageY;
+                }
+
+                var point = {
+                    x: (x + that.offsetLeftAddition) / scale,
+                    y: (y + that.offsetTopAddition) / scale
+                };
+
+                _.each(allContainerRects, function(rect) {
+
+                    if (pointRectangleIntersection(point, rect)) {
+                        mouseIsInside = true;
+                        // if event is "click" and there is an active selection
+                        if (e.type === "click") {
+                            var sel = e.target.ownerDocument.getSelection();
+                            // had to add this check to make sure that rangeCount is not 0
+                            if (sel && sel.rangeCount && !sel.getRangeAt(0).collapsed) {
+                                //do not trigger a click when there is an active selection
+                                return;
+                            }
+                        }
+
+                        var isTouchEvent = e.type.indexOf('touch') !== -1;
+
+                        if (isTouchEvent) {
+                            // call "normal" event handler for HL group to touch capable devices
+                            that.onHighlightEvent(e, e.type);
+                        }
+
+                        // if this is the first time we are mouse entering in the area
+                        if (!mouseEntered) {
+                            // regardless of the actual event type we want highlightGroupCallback process "mouseenter"
+                            that.onHighlightEvent(e, "mouseenter");
+
+                            // set flag indicating that we are in HL group confines
+                            mouseEntered = true;
+                            return;
+                        } else if (!isTouchEvent) {
+                            // call "normal" event handler for HL group to desktop devices
+                            that.onHighlightEvent(e, e.type);
+                        }
+                    }
+                });
+
+                if (!mouseIsInside && mouseEntered) {
+                    // set flag indicating that we left HL group confines
+                    mouseEntered = false;
+                    that.onHighlightEvent(e, "mouseleave");
+                }
+            };
+            that.boundHighlightElement = $html;
+            $html.on(this.getBoundHighlightContainerEvents(), that.boundHighlightCallback);
+        },
+
+        resetHighlights: function(viewportElement, offsetTop, offsetLeft) {
+            this.offsetTopAddition = offsetTop;
+            this.offsetLeftAddition = offsetLeft;
+            this.destroyCurrentHighlights();
+            this.constructHighlightViews();
+            this.renderHighlights(viewportElement);
+        },
+
+        destroyCurrentHighlights: function() {
+            var that = this;
+            _.each(this.highlightViews, function(highlightView) {
+                highlightView.remove();
+            });
+
+            var events = that.getBoundHighlightContainerEvents();
+            var $el = this.boundHighlightElement;
+            if ($el) {
+                $el.off(events, this.boundHighlightCallback);
+            }
+
+            this.boundHighlightCallback = null;
+            this.boundHighlightElement = null;
+
+            this.highlightViews.length = 0;
+        },
+
+        renderHighlights: function(viewportElement) {
+            // higlight group is live, it just doesn't need to be visible, yet.
+            if (!this.visible) {
+                return;
+            }
+
+            _.each(this.highlightViews, function(view, index) {
+                $(viewportElement).append(view.render());
+            });
+        },
+
+        toInfo: function() {
+            // get array of rectangles for all the HightligtViews
+            var rectangleArray = [];
+            var offsetTopAddition = this.offsetTopAddition;
+            var offsetLeftAddition = this.offsetLeftAddition;
+            var scale = this.scale;
+            _.each(this.highlightViews, function(view, index) {
+                var hl = view.highlight;
+                rectangleArray.push({
+                    top: (hl.top - offsetTopAddition) * scale,
+                    left: (hl.left - offsetLeftAddition) * scale,
+                    height: hl.height * scale,
+                    width: hl.width * scale
+                });
+            });
+
+            return {
+                id: this.id,
+                type: this.type,
+                CFI: this.CFI,
+                rectangleArray: rectangleArray,
+                selectedText: this.selectionText
+            };
+        },
+
+        setStyles: function(styles) {
+            this.styles = styles;
+            _.each(this.highlightViews, function(view, index) {
+                view.setStyles(styles);
+            });
+        },
+
+        update: function(type, styles) {
+            this.type = type;
+            this.styles = styles;
+
+            // for each View of the HightlightGroup
+            _.each(this.highlightViews, function(view, index) {
+                view.update(type, styles);
+            });
+        },
+
+        setState: function(state, value) {
+            _.each(this.highlightViews, function(view, index) {
+                if (state === "hover") {
+                    if (value) {
+                        view.setHoverHighlight();
+                    } else {
+                        view.setBaseHighlight(false);
+                    }
+                } else if (state === "visible") {
+                    view.setVisibility(value);
+                } else if (state === "focused") {
+                    if (value) {
+                        view.setFocusedHighlight();
+                    } else {
+                        view.setBaseHighlight(true);
+                    }
+
+                }
+            });
+        }
+    });
+
+    return HighlightGroup;
+});
+
+define('readium_plugin_highlights/controller',["jquery", "underscore", "./lib/class", "./helpers", "./models/group"],
+function($, _, Class, HighlightHelpers, HighlightGroup) {
+    var HighlightsController = Class.extend({
+
+        highlights: [],
+        annotationHash: {},
+        offsetTopAddition: 0,
+        offsetLeftAddition: 0,
+        readerBoundElement: undefined,
+        scale: 0,
+
+        init: function(context, options) {
+            this.context = context;
+
+            this.epubCFI = EPUBcfi;
+            this.readerBoundElement = this.context.document.documentElement;
+
+            if (options.getVisibleCfiRangeFn) {
+                this.getVisibleCfiRange = options.getVisibleCfiRangeFn;
+            }
+
+            // inject annotation CSS into iframe
+            if (this.context.cssUrl) {
+                this._injectAnnotationCSS(this.context.cssUrl);
+            }
+
+            // emit an event when user selects some text.
+            var that = this;
+            this.context.document.addEventListener("mouseup", function(event) {
+                var range = that._getCurrentSelectionRange();
+                if (range === undefined) {
+                    return;
+                }
+                if (range.startOffset - range.endOffset) {
+                    that.context.manager.trigger("textSelectionEvent", event, range, that.context.iframe);
+                }
+            });
+
+            if (!rangy.initialized) {
+                rangy.init();
+            }
+        },
+
+        getVisibleCfiRange: function() {
+            // returns {firstVisibleCfi: <>, lastVisibleCfi: <>}
+            // implemented in Readium.ReaderView, passed in via options
+        },
+
+        // ------------------------------------------------------------------------------------ //
+        //  "PUBLIC" METHODS (THE API)                                                          //
+        // ------------------------------------------------------------------------------------ //
+
+        redraw: function() {
+            var that = this;
+
+            var leftAddition = -this._getPaginationLeftOffset();
+            
+            var isVerticalWritingMode = this.context.paginationInfo().isVerticalWritingMode;
+
+            var visibleCfiRange = this.getVisibleCfiRange();
+
+            // Highlights
+            _.each(this.highlights, function(highlightGroup) {
+                var visible = true;
+
+                if (visibleCfiRange &&
+                    visibleCfiRange.firstVisibleCfi &&
+                    visibleCfiRange.firstVisibleCfi.contentCFI &&
+                    visibleCfiRange.lastVisibleCfi &&
+                    visibleCfiRange.lastVisibleCfi.contentCFI) {
+
+                    visible = that._cfiIsBetweenTwoCfis(
+                        highlightGroup.CFI,
+                        visibleCfiRange.firstVisibleCfi.contentCFI,
+                        visibleCfiRange.lastVisibleCfi.contentCFI);
+                }
+                highlightGroup.visible = visible;
+                highlightGroup.resetHighlights(that.readerBoundElement,
+                    isVerticalWritingMode ? leftAddition : 0,
+                    isVerticalWritingMode ? 0 : leftAddition
+                    );
+
+            });
+        },
+
+        getHighlight: function(id) {
+            var highlight = this.annotationHash[id];
+            if (highlight) {
+                return highlight.toInfo();
+            } else {
+                return undefined;
+            }
+        },
+
+        getHighlights: function() {
+            var highlights = [];
+            _.each(this.highlights, function(highlight) {
+                highlights.push(highlight.toInfo());
+            });
+            return highlights;
+        },
+
+        removeHighlight: function(annotationId) {
+            var annotationHash = this.annotationHash;
+            var highlights = this.highlights;
+
+            delete annotationHash[annotationId];
+
+            highlights = _.reject(highlights, function(highlightGroup) {
+                if (highlightGroup.id == annotationId) {
+                    highlightGroup.destroyCurrentHighlights();
+                    return true;
+                } else {
+                    return false;
+                }
+            });
+
+            this.highlights = highlights;
+        },
+
+        removeHighlightsByType: function(type) {
+            var annotationHash = this.annotationHash;
+            var highlights = this.highlights;
+
+            // the returned list only contains HLs for which the function returns false
+            highlights = _.reject(highlights, function(highlightGroup) {
+                if (highlightGroup.type === type) {
+                    delete annotationHash[highlightGroup.id];
+                    highlightGroup.destroyCurrentHighlights();
+                    return true;
+                } else {
+                    return false;
+                }
+            });
+
+            this.highlights = highlights;
+        },
+
+        // generate unique prefix for HL ids
+        generateIdPrefix: function() {
+            var idPrefix = 'xxxxxxxx'.replace(/[x]/g, function(c) {
+                var r = Math.random() * 16 | 0;
+                return r.toString(16);
+            });
+            idPrefix += "_";
+            return idPrefix;
+        },
+
+
+        // takes partial CFI as parameter
+        addHighlight: function(CFI, id, type, styles) {
+            var CFIRangeInfo;
+            var range;
+            var rangeStartNode;
+            var rangeEndNode;
+            var selectedElements;
+            var leftAddition;
+
+            var contentDoc = this.context.document;
+            //get transform scale of content document
+            var scale = 1.0;
+            var matrix = HighlightHelpers.getMatrix($('html', contentDoc));
+            if (matrix) {
+                scale = HighlightHelpers.getScaleFromMatrix(matrix);
+            }
+
+            //create a dummy test div to determine if the browser provides
+            // client rectangles that take transform scaling into consideration
+            var $div = $('<div style="font-size: 50px; position: absolute; background: red; top:-9001px;">##</div>');
+            $(contentDoc.documentElement).append($div);
+            range = contentDoc.createRange();
+            range.selectNode($div[0]);
+            var renderedWidth = this._normalizeRectangle(range.getBoundingClientRect()).width;
+            var clientWidth = $div[0].clientWidth;
+            $div.remove();
+            var renderedVsClientWidthFactor = renderedWidth / clientWidth;
+            if (renderedVsClientWidthFactor === 1) {
+                //browser doesn't provide scaled client rectangles (firefox)
+                scale = 1;
+            } else if (this.context.isIe9 || this.context.isIe10) {
+                //use the test scale factor as our scale value for IE 9/10
+                scale = renderedVsClientWidthFactor;
+            }
+            this.scale = scale;
+
+            // form fake full CFI to satisfy getRangeTargetNodes
+            var arbitraryPackageDocCFI = "/99!"
+            var fullFakeCFI = "epubcfi(" + arbitraryPackageDocCFI + CFI + ")";
+            if (this.epubCFI.Interpreter.isRangeCfi(fullFakeCFI)) {
+                CFIRangeInfo = this.epubCFI.getRangeTargetElements(fullFakeCFI, contentDoc, ["cfi-marker", "cfi-blacklist", "mo-cfi-highlight"], [], ["MathJax_Message", "MathJax_SVG_Hidden"]);
+
+                var startNode = CFIRangeInfo.startElement,
+                    endNode = CFIRangeInfo.endElement;
+                range = rangy.createRange(contentDoc);
+                if (startNode.length < CFIRangeInfo.startOffset) {
+                    //this is a workaround
+                    // "Uncaught IndexSizeError: Index or size was negative, or greater than the allowed value." errors
+                    // the range cfi generator outputs a cfi like /4/2,/1:125,/16
+                    // can't explain, investigating..
+                    CFIRangeInfo.startOffset = startNode.length;
+                }
+                range.setStart(startNode, CFIRangeInfo.startOffset);
+                range.setEnd(endNode, CFIRangeInfo.endOffset);
+                selectedElements = range.getNodes();
+            } else {
+                var element = this.epubCFI.getTargetElement(fullFakeCFI, contentDoc, ["cfi-marker", "cfi-blacklist", "mo-cfi-highlight"], [], ["MathJax_Message", "MathJax_SVG_Hidden"]);
+                selectedElements = [element ? element[0] : null];
+                range = null;
+            }
+
+            leftAddition = -this._getPaginationLeftOffset();
+
+            var isVerticalWritingMode = this.context.paginationInfo().isVerticalWritingMode;
+
+            this._addHighlightHelper(
+                CFI, id, type, styles, selectedElements, range,
+                startNode, endNode,
+                isVerticalWritingMode ? leftAddition : 0,
+                isVerticalWritingMode ? 0 : leftAddition
+                );
+
+            return {
+                selectedElements: selectedElements,
+                CFI: CFI
+            };
+        },
+
+
+        // this returns a partial CFI only!!
+        getCurrentSelectionCFI: function() {
+            var currentSelection = this._getCurrentSelectionRange();
+            var CFI;
+            if (currentSelection) {
+                selectionInfo = this._getSelectionInfo(currentSelection);
+                CFI = selectionInfo.CFI;
+            }
+
+            return CFI;
+        },
+
+        // this returns a partial CFI only!!
+        getCurrentSelectionOffsetCFI: function() {
+            var currentSelection = this._getCurrentSelectionRange();
+
+            var CFI;
+            if (currentSelection) {
+                CFI = this._generateCharOffsetCFI(currentSelection);
+            }
+            return CFI;
+        },
+
+        addSelectionHighlight: function(id, type, styles, clearSelection) {
+            var CFI = this.getCurrentSelectionCFI();
+            if (CFI) {
+
+                // if clearSelection is true
+                if (clearSelection) {
+                    var iframeDocument = this.context.document;
+                    if (iframeDocument.getSelection) {
+                        var currentSelection = iframeDocument.getSelection();
+                        currentSelection.collapseToStart();
+                    }
+                }
+                return this.addHighlight(CFI, id, type, styles);
+            } else {
+                throw new Error("Nothing selected");
+            }
+        },
+
+        updateAnnotation: function(id, type, styles) {
+            var annotationViews = this.annotationHash[id];
+            if (annotationViews) {
+                annotationViews.update(type, styles);
+            }
+            return annotationViews;
+        },
+
+        replaceAnnotation: function(id, cfi, type, styles) {
+            var annotationViews = this.annotationHash[id];
+            if (annotationViews) {
+                // remove an existing annotatio
+                this.removeHighlight(id);
+
+                // create a new HL
+                this.addHighlight(cfi, id, type, styles);
+            }
+            return annotationViews;
+        },
+
+        updateAnnotationView: function(id, styles) {
+            var annotationViews = this.annotationHash[id];
+            if (annotationViews) {
+                annotationViews.setStyles(styles);
+            }
+            return annotationViews;
+        },
+
+        setAnnotationViewState: function(id, state, value) {
+            var annotationViews = this.annotationHash[id];
+            if (annotationViews) {
+                annotationViews.setState(state, value);
+            }
+            return annotationViews;
+        },
+
+        setAnnotationViewStateForAll: function(state, value) {
+            var annotationViews = this.annotationHash;
+            _.each(annotationViews, function(annotationView) {
+                annotationView.setState(state, value);
+            });
+        },
+
+        // ------------------------------------------------------------------------------------ //
+        //  "PRIVATE" HELPERS                                                                   //
+        // ------------------------------------------------------------------------------------ //
+
+
+
+        //return an array of all numbers in the content cfi
+        _parseContentCfi: function(cont) {
+            return cont.replace(/\[(.*?)\]/, "").split(/[\/,:]/).map(function(n) {
+                return parseInt(n);
+            }).filter(Boolean);
+        },
+
+        _contentCfiComparator: function(cont1, cont2) {
+            cont1 = this._parseContentCfi(cont1);
+            cont2 = this._parseContentCfi(cont2);
+
+            //compare cont arrays looking for differences
+            for (var i = 0; i < cont1.length; i++) {
+                if (cont1[i] > cont2[i]) {
+                    return 1;
+                } else if (cont1[i] < cont2[i]) {
+                    return -1;
+                }
+            }
+
+            //no differences found, so confirm that cont2 did not have values we didn't check
+            if (cont1.length < cont2.length) {
+                return -1;
+            }
+
+            //cont arrays are identical
+            return 0;
+        },
+
+        // determine if a given Cfi falls between two other cfis.2
+        _cfiIsBetweenTwoCfis: function(cfi, firstVisibleCfi, lastVisibleCfi) {
+            if (!firstVisibleCfi || !lastVisibleCfi) {
+                return null;
+            }
+            var first = this._contentCfiComparator(cfi, firstVisibleCfi);
+            var second = this._contentCfiComparator(cfi, lastVisibleCfi);
+            return first >= 0 && second <= 0;
+        },
+
+        _addHighlightHelper: function(CFI, annotationId, type, styles, highlightedNodes,
+            range, startNode, endNode, offsetTop, offsetLeft) {
+            if (!offsetTop) {
+                offsetTop = this.offsetTopAddition;
+            }
+            if (!offsetLeft) {
+                offsetLeft = this.offsetLeftAddition;
+            }
+
+            var visible;
+            // check if the options specify lastVisibleCfi/firstVisibleCfi. If they don't fall back to displaying the highlights anyway.
+            var visibleCfiRange = this.getVisibleCfiRange();
+            if (visibleCfiRange &&
+                visibleCfiRange.firstVisibleCfi &&
+                visibleCfiRange.firstVisibleCfi.contentCFI &&
+                visibleCfiRange.lastVisibleCfi &&
+                visibleCfiRange.lastVisibleCfi.contentCFI) {
+                visible = this._cfiIsBetweenTwoCfis(CFI, visibleCfiRange.firstVisibleCfi.contentCFI, visibleCfiRange.lastVisibleCfi.contentCFI);
+            } else {
+                visible = true;
+            }
+
+            annotationId = annotationId.toString();
+            if (this.annotationHash[annotationId]) {
+                throw new Error("That annotation id already exists; annotation not added");
+            }
+
+            var highlightGroup = new HighlightGroup(this.context, {
+                CFI: CFI,
+                selectedNodes: highlightedNodes,
+                offsetTopAddition: offsetTop,
+                offsetLeftAddition: offsetLeft,
+                styles: styles,
+                id: annotationId,
+                type: type,
+                scale: this.scale,
+                selectionText: range ? range.toString() : "",
+                visible: visible,
+                rangeInfo: range ? {
+                    startNode: startNode,
+                    startOffset: range.startOffset,
+                    endNode: endNode,
+                    endOffset: range.endOffset
+                } : null
+            });
+
+            this.annotationHash[annotationId] = highlightGroup;
+            this.highlights.push(highlightGroup);
+
+
+            highlightGroup.renderHighlights(this.readerBoundElement);
+        },
+
+        _normalizeRectangle: function(rect) {
+            return {
+                left: rect.left,
+                right: rect.right,
+                top: rect.top,
+                bottom: rect.bottom,
+                width: rect.right - rect.left,
+                height: rect.bottom - rect.top
+            };
+        },
+
+        _getSelectionInfo: function(selectedRange, elementType) {
+            // Generate CFI for selected text
+            var CFI = this._generateRangeCFI(selectedRange);
+            var intervalState = {
+                startElementFound: false,
+                endElementFound: false
+            };
+            var selectedElements = [];
+
+            if (!elementType) {
+                var elementType = ["text"];
+            }
+
+            this._findSelectedElements(
+                selectedRange.commonAncestorContainer,
+                selectedRange.startContainer,
+                selectedRange.endContainer,
+                intervalState,
+                selectedElements,
+                elementType
+            );
+
+            // Return a list of selected text nodes and the CFI
+            return {
+                CFI: CFI,
+                selectedElements: selectedElements
+            };
+        },
+
+        _generateRangeCFI: function(selectedRange) {
+            var startNode = selectedRange.startContainer;
+            var endNode = selectedRange.endContainer;
+            var commonAncestor = selectedRange.commonAncestorContainer;
+            var startOffset;
+            var endOffset;
+            var rangeCFIComponent;
+
+            startOffset = selectedRange.startOffset;
+            endOffset = selectedRange.endOffset;
+
+            rangeCFIComponent = this.epubCFI.generateRangeComponent(
+                startNode,
+                startOffset,
+                endNode,
+                endOffset, ["cfi-marker", "cfi-blacklist", "mo-cfi-highlight"], [], ["MathJax_Message", "MathJax_SVG_Hidden"]
+            );
+            return rangeCFIComponent;
+        },
+
+        _generateCharOffsetCFI: function(selectedRange) {
+            // Character offset
+            var startNode = selectedRange.startContainer;
+            var startOffset = selectedRange.startOffset;
+            var charOffsetCFI;
+
+            if (startNode.nodeType === Node.TEXT_NODE) {
+                charOffsetCFI = this.epubCFI.generateCharacterOffsetCFIComponent(
+                    startNode,
+                    startOffset, ["cfi-marker", "cfi-blacklist", "mo-cfi-highlight"], [], ["MathJax_Message", "MathJax_SVG_Hidden"]
+                );
+            }
+            return charOffsetCFI;
+        },
+
+        // REFACTORING CANDIDATE: Convert this to jquery
+        _findSelectedElements: function(
+            currElement, startElement, endElement, intervalState, selectedElements, elementTypes) {
+
+            if (currElement === startElement) {
+                intervalState.startElementFound = true;
+            }
+
+            if (intervalState.startElementFound === true) {
+                this._addElement(currElement, selectedElements, elementTypes);
+            }
+
+            if (currElement === endElement) {
+                intervalState.endElementFound = true;
+                return;
+            }
+
+            if (currElement.firstChild) {
+                this._findSelectedElements(currElement.firstChild, startElement, endElement,
+                    intervalState, selectedElements, elementTypes);
+                if (intervalState.endElementFound) {
+                    return;
+                }
+            }
+
+            if (currElement.nextSibling) {
+                this._findSelectedElements(currElement.nextSibling, startElement, endElement,
+                    intervalState, selectedElements, elementTypes);
+                if (intervalState.endElementFound) {
+                    return;
+                }
+            }
+        },
+
+        _addElement: function(currElement, selectedElements, elementTypes) {
+            // Check if the node is one of the types
+            _.each(elementTypes, function(elementType) {
+
+                if (elementType === "text") {
+                    if (currElement.nodeType === Node.TEXT_NODE) {
+                        selectedElements.push(currElement);
+                    }
+                } else {
+                    if ($(currElement).is(elementType)) {
+                        selectedElements.push(currElement);
+                    }
+                }
+            });
+        },
+
+        // Rationale: This is a cross-browser method to get the currently selected text
+        _getCurrentSelectionRange: function() {
+            var currentSelection;
+            var iframeDocument = this.context.document;
+            if (iframeDocument.getSelection) {
+
+                currentSelection = iframeDocument.getSelection();
+                if (!currentSelection || currentSelection.rangeCount === 0) {
+                    return undefined;
+                }
+
+                var range = currentSelection.getRangeAt(0);
+
+                if (range.toString() !== '') {
+                    return range;
+                } else {
+                    return undefined;
+                }
+            } else if (iframeDocument.selection) {
+                return iframeDocument.selection.createRange();
+            } else {
+                return undefined;
+            }
+        },
+
+        _getPaginationLeftOffset: function() {
+        
+            var $htmlElement = $(this.context.document.documentElement);
+            if (!$htmlElement || !$htmlElement.length) {
+                // if there is no html element, we might be dealing with a fxl with a svg spine item
+                return 0;
+            }
+
+            var offsetLeftPixels = $htmlElement.css(this.context.paginationInfo().isVerticalWritingMode ? "top" : (this.context.isRTL ? "right" : "left"));
+            var offsetLeft = parseInt(offsetLeftPixels.replace("px", ""));
+            if (isNaN(offsetLeft)) {
+                //for fixed layouts, $htmlElement.css("left") has no numerical value
+                offsetLeft = 0;
+            }
+            
+            if (this.context.isRTL && !this.context.paginationInfo().isVerticalWritingMode) return -offsetLeft;
+             
+            return offsetLeft;
+        },
+
+        _injectAnnotationCSS: function(annotationCSSUrl) {
+            var doc = this.context.document;
+            setTimeout(function(){
+                var $contentDocHead = $("head", doc);
+                $contentDocHead.append(
+                    $("<link/>", {
+                        rel: "stylesheet",
+                        href: annotationCSSUrl,
+                        type: "text/css"
+                    })
+                );
+            }, 0);
+        }
+    });
+
+    return HighlightsController;
+});
+
+//  Created by Boris Schneiderman.
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  
+//  Redistribution and use in source and binary forms, with or without modification, 
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this 
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice, 
+//  this list of conditions and the following disclaimer in the documentation and/or 
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be 
+//  used to endorse or promote products derived from this software without specific 
+//  prior written permission.
+//  
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
+
+define('readium_shared_js/models/bookmark_data',[],function() {
+/**
+ * @class Models.BookmarkData
+ */
+var BookmarkData = function(idref, contentCFI) {
+
+    var self = this;
+
+    /**
+     * spine item idref
+     * @property idref
+     * @type {string}
+     */
+
+    this.idref = idref;
+
+    /**
+     * cfi of the first visible element
+     * @property contentCFI
+     * @type {string}
+     */
+    
+    this.contentCFI = contentCFI;
+
+    /**
+     * serialize to string
+     * @return JSON string representation
+     */
+    
+    this.toString = function(){
+        return JSON.stringify(self);
+    }
+
+};
+
+/**
+ * Deserialize from string
+ * @param str
+ * @returns {ReadiumSDK.Models.BookmarkData}
+ */
+BookmarkData.fromString = function(str) {
+    var obj = JSON.parse(str);
+    return new BookmarkData(obj.idref,obj.contentCFI);
+};
+return BookmarkData;
+});
+//  Created by Dmitry Markushevich (dmitrym@evidentpoint.com)
+//
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//
+//  Redistribution and use in source and binary forms, with or without modification,
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice,
+//  this list of conditions and the following disclaimer in the documentation and/or
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be
+//  used to endorse or promote products derived from this software without specific
+//  prior written permission.
+//
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
+
+define('readium_plugin_highlights/manager',['jquery', 'underscore', 'eventEmitter', './controller', './helpers', 'readium_shared_js/models/bookmark_data'], function($, _, EventEmitter, HighlightsController, HighlightHelpers, BookmarkData) {
+
+var defaultContext = {};
+
+//determine if browser is IE9 or IE10
+var div = document.createElement("div");
+div.innerHTML = "<!--[if IE 9]><i></i><![endif]-->";
+defaultContext.isIe9 = (div.getElementsByTagName("i").length == 1);
+// IE10 introduced a prefixed version of PointerEvent, but not unprefixed.
+defaultContext.isIe10 = window.MSPointerEvent && !window.PointerEvent;
+
+/**
+ *
+ * @param proxyObj
+ * @param options
+ * @constructor
+ */
+var HighlightsManager = function (proxyObj, options) {
+
+    var self = this;
+
+    // live annotations contains references to the annotation _module_ for visible spines
+    var liveAnnotations = {};
+    var spines = {};
+    var proxy = proxyObj;
+    var annotationCSSUrl = options.annotationCSSUrl;
+
+    if (!annotationCSSUrl) {
+        console.warn("WARNING! Annotations CSS not supplied. Highlighting might not work.");
+    }
+
+    _.extend(this, new EventEmitter());
+
+    // this.on("all", function() {
+    // });
+    //TODO: EventEmitter3 does not support "all" or "*" (catch-all event sink)
+    //https://github.com/primus/eventemitter3/blob/master/index.js#L61
+    //...so instead we patch trigger() and emit() (which are synonymous, see Bootstrapper.js EventEmitter.prototype.trigger = EventEmitter.prototype.emit;)
+
+    var originalEmit = self['emit'];
+
+    var triggerEmitPatch = function() {
+        var args = Array.prototype.slice.call(arguments);
+        // mangle annotationClicked event. What really needs to happen is, the annotation_module needs to return a
+        // bare Cfi, and this class should append the idref.
+        var mangleEvent = function(annotationEvent){
+            if (args.length && args[0] === annotationEvent) {
+                for (var spineIndex in liveAnnotations)
+                {
+                    var contentDocumentFrame = args[5];
+                    var jQueryEvent = args[4];
+                    if (typeof jQueryEvent.clientX === 'undefined') {
+                        jQueryEvent.clientX = jQueryEvent.pageX;
+                        jQueryEvent.clientY = jQueryEvent.pageY;
+                    }
+
+                    var annotationId = args[3];
+                    var partialCfi = args[2];
+                    var type = args[1];
+                    if (liveAnnotations[spineIndex].getHighlight(annotationId)) {
+                        var idref = spines[spineIndex].idref;
+                        args = [annotationEvent, type, idref, partialCfi, annotationId, jQueryEvent, contentDocumentFrame];
+                    }
+                }
+            }
+        }
+        mangleEvent('annotationClicked');
+        mangleEvent('annotationTouched');
+        mangleEvent('annotationRightClicked');
+        mangleEvent('annotationHoverIn');
+        mangleEvent('annotationHoverOut');
+
+        originalEmit.apply(self, args);
+        originalEmit.apply(proxy, args);
+    };
+
+    this.trigger = triggerEmitPatch;
+    this.emit = triggerEmitPatch;
+
+    this.attachAnnotations = function($iframe, spineItem, loadedSpineItems) {
+        var iframe = $iframe[0];
+
+        var context = _.extend({
+            document: iframe.contentDocument,
+            window: iframe.contentWindow,
+            iframe: iframe,
+            manager: self,
+            cssUrl: annotationCSSUrl,
+            isFixedLayout: spineItem.isFixedLayout(),
+            isRTL: spineItem.spine.isRightToLeft(),
+            paginationInfo: function() { return spineItem.paginationInfo; }
+            
+        }, defaultContext);
+
+        liveAnnotations[spineItem.index] = new HighlightsController(context, {getVisibleCfiRangeFn: options.getVisibleCfiRangeFn});
+        spines[spineItem.index] = spineItem;
+
+        // check to see which spine indicies can be culled depending on the currently loaded spine items
+        for(var spineIndex in liveAnnotations) {
+            if (liveAnnotations.hasOwnProperty(spineIndex) && !_.contains(loadedSpineItems, spines[spineIndex])) {
+                delete liveAnnotations[spineIndex];
+            }
+        }
+    };
+
+    this.getCurrentSelectionCfi = function() {
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            var partialCfi = annotationsForView.getCurrentSelectionCFI();
+            if (partialCfi) {
+                return {"idref":spines[spine].idref, "cfi":partialCfi};
+            }
+        }
+        return undefined;
+    };
+
+    this.addSelectionHighlight = function(id, type, styles, clearSelection) {
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            if (annotationsForView.getCurrentSelectionCFI()) {
+                var annotation = annotationsForView.addSelectionHighlight(
+                    id, type, styles, clearSelection);
+                return new BookmarkData(spines[spine].idref, annotation.CFI);
+            }
+        }
+        return undefined;
+    };
+
+    this.addHighlight = function(spineIdRef, partialCfi, id, type, styles) {
+        for(var spine in liveAnnotations) {
+            if (spines[spine].idref === spineIdRef) {
+                var annotationsForView = liveAnnotations[spine];
+                var annotation = annotationsForView.addHighlight(partialCfi, id, type, styles);
+                if (annotation) {
+                    return new BookmarkData(spineIdRef, annotation.CFI);
+                }
+            }
+        }
+        return undefined;
+    };
+
+    this.removeHighlight = function(id) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result  = annotationsForView.removeHighlight(id);
+        }
+        return result;
+    };
+
+    this.removeHighlightsByType = function(type) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result  = annotationsForView.removeHighlightsByType(type);
+        }
+        return result;
+    };
+
+    this.getHighlight = function(id) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result  = annotationsForView.getHighlight(id);
+            if (result !== undefined)
+				return result;
+        }
+        return result;
+    };
+
+    this.updateAnnotation = function(id, type, styles) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result = annotationsForView.updateAnnotation(id, type, styles);
+            if(result) {
+                break;
+            }
+        }
+        return result;
+    };
+
+    this.replaceAnnotation = function(id, cfi, type, styles) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result = annotationsForView.replaceAnnotation(id, cfi, type, styles);
+            if(result) {
+                break;
+            }
+        }
+        return result;
+    };
+
+    // redraw gets called on pagination change, so for progressive rendering we may have to add annotations that were previously not visible.
+    this.redrawAnnotations = function(){
+        for(var spine in liveAnnotations) {
+            liveAnnotations[spine].redraw();
+        }
+    };
+
+    this.updateAnnotationView = function(id, styles) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result = annotationsForView.updateAnnotationView(id,styles);
+            if(result){
+                break;
+            }
+        }
+        return result;
+    };
+
+    this.setAnnotationViewState = function(id, state, value) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result = annotationsForView.setAnnotationViewState(id, state, value);
+            if(result){
+                break;
+            }
+        }
+        return result;
+    };
+
+    this.setAnnotationViewStateForAll = function(state, value) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result = annotationsForView.setAnnotationViewStateForAll(state, value);
+            if(result){
+                break;
+            }
+        }
+        return result;
+    };
+
+    this.cfiIsBetweenTwoCfis = function (cfi, lowBoundaryCfi, highBoundaryCfi) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result = annotationsForView.cfiIsBetweenTwoCfis(cfi, lowBoundaryCfi, highBoundaryCfi);
+            if(result){
+                break;
+            }
+        }
+        return result;
+    };
+
+    this.contentCfiComparator = function(contCfi1, contCfi2) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result = annotationsForView.contentCfiComparator(contCfi1, contCfi2);
+            if(result){
+                break;
+            }
+        }
+        return result;
+    };
+
+    function getElementFromViewElement(element) {
+        //TODO JC: yuck, we get two different collection structures from non fixed and fixed views.. must refactor..
+        return element.element ? element.element : element;
+    }
+
+    this.getAnnotationMidpoints = function($elementSpineItemCollection){
+        var output = [];
+
+        _.each($elementSpineItemCollection, function (item){
+            var annotations = [];
+
+            var lastId = null;
+
+            var baseOffset = {top: 0, left: 0};
+            if (item.elements && item.elements.length > 0) {
+                var firstElement = getElementFromViewElement(item.elements[0]);
+                var offsetElement = firstElement.ownerDocument.defaultView.frameElement.parentElement;
+                baseOffset = {top: offsetElement.offsetTop, left: offsetElement.offsetLeft};
+            }
+
+            _.each(item.elements, function(element){
+
+                var $element = $(getElementFromViewElement(element));
+                var elementId = $element.attr('data-id');
+
+                if(!elementId){
+                    console.warn('AnnotationsManager:getAnnotationMidpoints: Got an annotation element with no ID??')
+                    return;
+                }
+                if (elementId === lastId) return;
+                lastId = elementId;
+
+                //calculate position offsets with scaling
+                var scale = 1;
+                //figure out a better way to get the html parent from an element..
+                var $html = $element.parent();
+                //get transformation scale from content document
+                var matrix = HighlightHelpers.getMatrix($html);
+                if (matrix) {
+                    scale = HighlightHelpers.getScaleFromMatrix(matrix);
+                }
+                var offset = $element.offset();
+                offset.top += baseOffset.top + ($element.height() / 2);
+                offset.left += baseOffset.left;
+                if(scale !== 1){
+                    offset = {top: (offset.top * scale)*(1/scale), left: offset.left };
+                }
+                var $highlighted = {id: elementId, position: offset, lineHeight: parseInt($element.css('line-height'),10)};
+                annotations.push($highlighted)
+            });
+
+            output.push({annotations:annotations, spineItem: item.spineItem});
+        });
+
+        return output;
+    };
+
+    this.getAnnotationsElementSelector = function () {
+        return 'div.rd-highlight, div.rd-highlight-border';
+    };
+
+};
+
+return HighlightsManager;
+});
+
+define('readium_plugin_highlights/main',['readium_js_plugins', 'readium_shared_js/globals', './manager'], function (Plugins, Globals, HighlightsManager) {
+    var config = {};
+
+    Plugins.register("highlights", function (api) {
+        var reader = api.reader, _highlightsManager, _initialized = false, _initializedLate = false;
+
+        var self = this;
+
+        function isInitialized() {
+            if (!_initialized) {
+                api.plugin.warn('Not initialized!')
+            }
+            return _initialized;
+        }
+
+        this.initialize = function (options) {
+            options = options || {};
+
+            setTimeout(isInitialized, 1000);
+
+            if (_initialized) {
+                api.plugin.warn('Already initialized!');
+                return;
+            }
+
+            if (reader.getFirstVisibleCfi && reader.getLastVisibleCfi && !options.getVisibleCfiRangeFn) {
+                options.getVisibleCfiRangeFn = function () {
+                    return {firstVisibleCfi: reader.getFirstVisibleCfi(), lastVisibleCfi: reader.getLastVisibleCfi()};
+                };
+            }
+
+            _highlightsManager = new HighlightsManager(self, options);
+
+            if (_initializedLate) {
+                api.plugin.warn('Unable to attach to currently loaded content document.\n' +
+                'Initialize the plugin before loading a content document.');
+            }
+
+            _initialized = true;
+        };
+
+        this.getHighlightsManager = function() {
+            return _highlightsManager;
+        };
+
+        /**
+         * Returns current selection partial Cfi, useful for workflows that need to check whether the user has selected something.
+         *
+         * @returns {object | undefined} partial cfi object or undefined if nothing is selected
+         */
+        this.getCurrentSelectionCfi = function() {
+            return _highlightsManager.getCurrentSelectionCfi();
+        };
+
+        /**
+         * Creates a higlight based on given parameters
+         *
+         * @param {string} spineIdRef		Spine idref that defines the partial Cfi
+         * @param {string} cfi				Partial CFI (withouth the indirection step) relative to the spine index
+         * @param {string} id				Id of the highlight. must be unique
+         * @param {string} type 			Name of the class selector rule in annotations stylesheet.
+         * 									The style of the class will be applied to the created hightlight
+         * @param {object} styles			Object representing CSS properties to be applied to the highlight.
+         * 									e.g., to apply background color pass in: {'background-color': 'green'}
+         *
+         * @returns {object | undefined} partial cfi object of the created highlight
+         */
+        this.addHighlight = function(spineIdRef, cfi, id, type, styles) {
+            return _highlightsManager.addHighlight(spineIdRef, cfi, id, type, styles);
+        };
+
+        /**
+         * Creates a higlight based on the current selection
+         *
+         * @param {string} id id of the highlight. must be unique
+         * @param {string} type - name of the class selector rule in annotations.css file.
+         * @param {object} styles - object representing CSS properties to be applied to the highlight.
+         * e.g., to apply background color pass this {'background-color': 'green'}
+         * @param {boolean} clearSelection - set to true to clear the current selection
+         * after it is highlighted
+         *
+         * @returns {object | undefined} partial cfi object of the created highlight
+         */
+        this.addSelectionHighlight =  function(id, type, styles, clearSelection) {
+            return _highlightsManager.addSelectionHighlight(id, type, styles, clearSelection);
+        };
+
+        /**
+         * Removes a given highlight
+         *
+         * @param {string} id  The id associated with the highlight.
+         *
+         * @returns {undefined}
+         *
+         */
+        this.removeHighlight = function(id) {
+            return _highlightsManager.removeHighlight(id);
+        };
+
+        /**
+         * Removes highlights of a given type
+         *
+         * @param {string} type type of the highlight.
+         *
+         * @returns {undefined}
+         *
+         */
+        this.removeHighlightsByType = function(type) {
+            return _highlightsManager.removeHighlightsByType(type);
+        };
+
+        /**
+         * Client Rectangle
+         * @typedef {object} ReadiumSDK.Views.ReaderView.ClientRect
+         * @property {number} top
+         * @property {number} left
+         * @property {number} height
+         * @property {number} width
+         */
+
+        /**
+         * Highlight Info
+         *
+         * @typedef {object} ReadiumSDK.Views.ReaderView.HighlightInfo
+         * @property {string} id - unique id of the highlight
+         * @property {string} type - highlight type (css class)
+         * @property {string} CFI - partial CFI range of the highlight
+         * @property {ReadiumSDK.Views.ReaderView.ClientRect[]} rectangleArray - array of rectangles consituting the highlight
+         * @property {string} selectedText - concatenation of highlight nodes' text
+         */
+
+        /**
+         * Gets given highlight
+         *
+         * @param {string} id id of the highlight.
+         *
+         * @returns {ReadiumSDK.Views.ReaderView.HighlightInfo} Object describing the highlight
+         */
+        this.getHighlight = function(id) {
+            return _highlightsManager.getHighlight(id);
+        };
+
+        /**
+         * Update annotation by the id, reapplies CSS styles to the existing annotaion
+         *
+         * @param {string} id id of the annotation.
+         * @property {string} type - annotation type (name of css class)
+         * @param {object} styles - object representing CSS properties to be applied to the annotation.
+         * e.g., to apply background color pass this {'background-color': 'green'}.
+         */
+        this.updateAnnotation = function(id, type, styles) {
+            _highlightsManager.updateAnnotation(id, type, styles);
+        };
+
+        /**
+         * Replace annotation with this id. Current annotation is removed and a new one is created.
+         *
+         * @param {string} id id of the annotation.
+         * @property {string} cfi - partial CFI range of the annotation
+         * @property {string} type - annotation type (name of css class)
+         * @param {object} styles - object representing CSS properties to be applied to the annotation.
+         * e.g., to apply background color pass this {'background-color': 'green'}.
+         */
+        this.replaceAnnotation = function(id, cfi, type, styles) {
+            _highlightsManager.replaceAnnotation(id, cfi, type, styles);
+        };
+
+
+        /**
+         * Redraws all annotations
+         */
+        this.redrawAnnotations = function() {
+            _highlightsManager.redrawAnnotations();
+        };
+
+        /**
+         * Updates an annotation to use the supplied styles
+         *
+         * @param {string} id
+         * @param {string} styles
+         */
+        this.updateAnnotationView = function(id, styles) {
+            _highlightsManager.updateAnnotationView(id, styles);
+        };
+
+        /**
+         * Updates an annotation view state, such as whether its hovered in or not.
+         * @param {string} id       The id associated with the highlight.
+         * @param {string} state    The state type to be updated
+         * @param {string} value    The state value to apply to the highlight
+         * @returns {undefined}
+         */
+        this.setAnnotationViewState = function(id, state, value) {
+            return _highlightsManager.setAnnotationViewState(id, state, value);
+        };
+
+        /**
+         * Updates an annotation view state for all views.
+         * @param {string} state    The state type to be updated
+         * @param {string} value    The state value to apply to the highlights
+         * @returns {undefined}
+         */
+        this.setAnnotationViewStateForAll = function (state, value) {
+            return _highlightsManager.setAnnotationViewStateForAll(state, value);
+        };
+
+        /**
+         * Gets a list of the visible midpoint positions of all annotations
+         *
+         * @returns {HTMLElement[]}
+         */
+        this.getVisibleAnnotationMidpoints = function () {
+            if (reader.getVisibleElements) {
+                var $visibleElements = reader.getVisibleElements(_highlightsManager.getAnnotationsElementSelector(), true);
+
+                var elementMidpoints = _highlightsManager.getAnnotationMidpoints($visibleElements);
+                return elementMidpoints || [];
+            } else {
+                // FIXME: Expose the getVisibleElements call from the reader's internal views.
+                console.warn('getAnnotationMidpoints won\'t work with this version of Readium');
+            }
+        };
+
+        reader.on(Globals.Events.CONTENT_DOCUMENT_LOADED, function ($iframe, spineItem) {
+            if (_initialized) {
+                _highlightsManager.attachAnnotations($iframe, spineItem, reader.getLoadedSpineItems());
+            } else {
+                _initializedLate = true;
+            }
+        });
+
+        ////FIXME: JCCR mj8: this is sometimes faulty, consider removal
+        //// automatically redraw annotations.
+        //reader.on(ReadiumSDK.Events.PAGINATION_CHANGED, _.debounce(function () {
+        //    self.redrawAnnotations();
+        //}, 10, true));
+
+
+
+    });
+
+    return config;
+});
+
+define('readium_plugin_highlights', ['readium_plugin_highlights/main'], function (main) { return main; });
+
+/*
+This code is required to IE for console shim
+*/
+(function(){
+    "use strict";
+    if (!console["debug"]) console.debug = console.log;
+    if (!console["info"]) console.info = console.log;
+    if (!console["warn"]) console.warn = console.log;
+    if (!console["error"]) console.error = console.log;
+})();
+define("console_shim", function(){});
+
+(function (exports) {'use strict';
+  //shared pointer
+  var i;
+  //shortcuts
+  var defineProperty = Object.defineProperty, is = function(a,b) { return (a === b) || (a !== a && b !== b) };
+
+
+  //Polyfill global objects
+  if (typeof WeakMap == 'undefined') {
+    exports.WeakMap = createCollection({
+      // WeakMap#delete(key:void*):boolean
+      'delete': sharedDelete,
+      // WeakMap#clear():
+      clear: sharedClear,
+      // WeakMap#get(key:void*):void*
+      get: sharedGet,
+      // WeakMap#has(key:void*):boolean
+      has: mapHas,
+      // WeakMap#set(key:void*, value:void*):void
+      set: sharedSet
+    }, true);
+  }
+
+  if (typeof Map == 'undefined' || typeof ((new Map).values) !== 'function' || !(new Map).values().next) {
+    exports.Map = createCollection({
+      // WeakMap#delete(key:void*):boolean
+      'delete': sharedDelete,
+      //:was Map#get(key:void*[, d3fault:void*]):void*
+      // Map#has(key:void*):boolean
+      has: mapHas,
+      // Map#get(key:void*):boolean
+      get: sharedGet,
+      // Map#set(key:void*, value:void*):void
+      set: sharedSet,
+      // Map#keys(void):Iterator
+      keys: sharedKeys,
+      // Map#values(void):Iterator
+      values: sharedValues,
+      // Map#entries(void):Iterator
+      entries: mapEntries,
+      // Map#forEach(callback:Function, context:void*):void ==> callback.call(context, key, value, mapObject) === not in specs`
+      forEach: sharedForEach,
+      // Map#clear():
+      clear: sharedClear
+    });
+  }
+
+  if (typeof Set == 'undefined' || typeof ((new Set).values) !== 'function' || !(new Set).values().next) {
+    exports.Set = createCollection({
+      // Set#has(value:void*):boolean
+      has: setHas,
+      // Set#add(value:void*):boolean
+      add: sharedAdd,
+      // Set#delete(key:void*):boolean
+      'delete': sharedDelete,
+      // Set#clear():
+      clear: sharedClear,
+      // Set#keys(void):Iterator
+      keys: sharedValues, // specs actually say "the same function object as the initial value of the values property"
+      // Set#values(void):Iterator
+      values: sharedValues,
+      // Set#entries(void):Iterator
+      entries: setEntries,
+      // Set#forEach(callback:Function, context:void*):void ==> callback.call(context, value, index) === not in specs
+      forEach: sharedForEach
+    });
+  }
+
+  if (typeof WeakSet == 'undefined') {
+    exports.WeakSet = createCollection({
+      // WeakSet#delete(key:void*):boolean
+      'delete': sharedDelete,
+      // WeakSet#add(value:void*):boolean
+      add: sharedAdd,
+      // WeakSet#clear():
+      clear: sharedClear,
+      // WeakSet#has(value:void*):boolean
+      has: setHas
+    }, true);
+  }
+
+
+  /**
+   * ES6 collection constructor
+   * @return {Function} a collection class
+   */
+  function createCollection(proto, objectOnly){
+    function Collection(a){
+      if (!this || this.constructor !== Collection) return new Collection(a);
+      this._keys = [];
+      this._values = [];
+      this._itp = []; // iteration pointers
+      this.objectOnly = objectOnly;
+
+      //parse initial iterable argument passed
+      if (a) init.call(this, a);
+    }
+
+    //define size for non object-only collections
+    if (!objectOnly) {
+      defineProperty(proto, 'size', {
+        get: sharedSize
+      });
+    }
+
+    //set prototype
+    proto.constructor = Collection;
+    Collection.prototype = proto;
+
+    return Collection;
+  }
+
+
+  /** parse initial iterable argument passed */
+  function init(a){
+    var i;
+    //init Set argument, like `[1,2,3,{}]`
+    if (this.add)
+      a.forEach(this.add, this);
+    //init Map argument like `[[1,2], [{}, 4]]`
+    else
+      a.forEach(function(a){this.set(a[0],a[1])}, this);
+  }
+
+
+  /** delete */
+  function sharedDelete(key) {
+    if (this.has(key)) {
+      this._keys.splice(i, 1);
+      this._values.splice(i, 1);
+      // update iteration pointers
+      this._itp.forEach(function(p) { if (i < p[0]) p[0]--; });
+    }
+    // Aurora here does it while Canary doesn't
+    return -1 < i;
+  };
+
+  function sharedGet(key) {
+    return this.has(key) ? this._values[i] : undefined;
+  }
+
+  function has(list, key) {
+    if (this.objectOnly && key !== Object(key))
+      throw new TypeError("Invalid value used as weak collection key");
+    //NaN or 0 passed
+    if (key != key || key === 0) for (i = list.length; i-- && !is(list[i], key);){}
+    else i = list.indexOf(key);
+    return -1 < i;
+  }
+
+  function setHas(value) {
+    return has.call(this, this._values, value);
+  }
+
+  function mapHas(value) {
+    return has.call(this, this._keys, value);
+  }
+
+  /** @chainable */
+  function sharedSet(key, value) {
+    this.has(key) ?
+      this._values[i] = value
+      :
+      this._values[this._keys.push(key) - 1] = value
+    ;
+    return this;
+  }
+
+  /** @chainable */
+  function sharedAdd(value) {
+    if (!this.has(value)) this._values.push(value);
+    return this;
+  }
+
+  function sharedClear() {
+    (this._keys || 0).length =
+    this._values.length = 0;
+  }
+
+  /** keys, values, and iterate related methods */
+  function sharedKeys() {
+    return sharedIterator(this._itp, this._keys);
+  }
+
+  function sharedValues() {
+    return sharedIterator(this._itp, this._values);
+  }
+
+  function mapEntries() {
+    return sharedIterator(this._itp, this._keys, this._values);
+  }
+
+  function setEntries() {
+    return sharedIterator(this._itp, this._values, this._values);
+  }
+
+  function sharedIterator(itp, array, array2) {
+    var p = [0], done = false;
+    itp.push(p);
+    return {
+      next: function() {
+        var v, k = p[0];
+        if (!done && k < array.length) {
+          v = array2 ? [array[k], array2[k]]: array[k];
+          p[0]++;
+        } else {
+          done = true;
+          itp.splice(itp.indexOf(p), 1);
+        }
+        return { done: done, value: v };
+      }
+    };
+  }
+
+  function sharedSize() {
+    return this._values.length;
+  }
+
+  function sharedForEach(callback, context) {
+    var it = this.entries();
+    for (;;) {
+      var r = it.next();
+      if (r.done) break;
+      callback.call(context, r.value[1], r.value[0], this);
+    }
+  }
+
+})(typeof exports != 'undefined' && typeof global != 'undefined' ? global : window );
+
+define("es6-collections", function(){});
+
+/*! https://mths.be/punycode v1.4.0 by @mathias */
+;(function(root) {
+
+	/** Detect free variables */
+	var freeExports = typeof exports == 'object' && exports &&
+		!exports.nodeType && exports;
+	var freeModule = typeof module == 'object' && module &&
+		!module.nodeType && module;
+	var freeGlobal = typeof global == 'object' && global;
+	if (
+		freeGlobal.global === freeGlobal ||
+		freeGlobal.window === freeGlobal ||
+		freeGlobal.self === freeGlobal
+	) {
+		root = freeGlobal;
+	}
+
+	/**
+	 * The `punycode` object.
+	 * @name punycode
+	 * @type Object
+	 */
+	var punycode,
+
+	/** Highest positive signed 32-bit float value */
+	maxInt = 2147483647, // aka. 0x7FFFFFFF or 2^31-1
+
+	/** Bootstring parameters */
+	base = 36,
+	tMin = 1,
+	tMax = 26,
+	skew = 38,
+	damp = 700,
+	initialBias = 72,
+	initialN = 128, // 0x80
+	delimiter = '-', // '\x2D'
+
+	/** Regular expressions */
+	regexPunycode = /^xn--/,
+	regexNonASCII = /[^\x20-\x7E]/, // unprintable ASCII chars + non-ASCII chars
+	regexSeparators = /[\x2E\u3002\uFF0E\uFF61]/g, // RFC 3490 separators
+
+	/** Error messages */
+	errors = {
+		'overflow': 'Overflow: input needs wider integers to process',
+		'not-basic': 'Illegal input >= 0x80 (not a basic code point)',
+		'invalid-input': 'Invalid input'
+	},
+
+	/** Convenience shortcuts */
+	baseMinusTMin = base - tMin,
+	floor = Math.floor,
+	stringFromCharCode = String.fromCharCode,
+
+	/** Temporary variable */
+	key;
+
+	/*--------------------------------------------------------------------------*/
+
+	/**
+	 * A generic error utility function.
+	 * @private
+	 * @param {String} type The error type.
+	 * @returns {Error} Throws a `RangeError` with the applicable error message.
+	 */
+	function error(type) {
+		throw new RangeError(errors[type]);
+	}
+
+	/**
+	 * A generic `Array#map` utility function.
+	 * @private
+	 * @param {Array} array The array to iterate over.
+	 * @param {Function} callback The function that gets called for every array
+	 * item.
+	 * @returns {Array} A new array of values returned by the callback function.
+	 */
+	function map(array, fn) {
+		var length = array.length;
+		var result = [];
+		while (length--) {
+			result[length] = fn(array[length]);
+		}
+		return result;
+	}
+
+	/**
+	 * A simple `Array#map`-like wrapper to work with domain name strings or email
+	 * addresses.
+	 * @private
+	 * @param {String} domain The domain name or email address.
+	 * @param {Function} callback The function that gets called for every
+	 * character.
+	 * @returns {Array} A new string of characters returned by the callback
+	 * function.
+	 */
+	function mapDomain(string, fn) {
+		var parts = string.split('@');
+		var result = '';
+		if (parts.length > 1) {
+			// In email addresses, only the domain name should be punycoded. Leave
+			// the local part (i.e. everything up to `@`) intact.
+			result = parts[0] + '@';
+			string = parts[1];
+		}
+		// Avoid `split(regex)` for IE8 compatibility. See #17.
+		string = string.replace(regexSeparators, '\x2E');
+		var labels = string.split('.');
+		var encoded = map(labels, fn).join('.');
+		return result + encoded;
+	}
+
+	/**
+	 * Creates an array containing the numeric code points of each Unicode
+	 * character in the string. While JavaScript uses UCS-2 internally,
+	 * this function will convert a pair of surrogate halves (each of which
+	 * UCS-2 exposes as separate characters) into a single code point,
+	 * matching UTF-16.
+	 * @see `punycode.ucs2.encode`
+	 * @see <https://mathiasbynens.be/notes/javascript-encoding>
+	 * @memberOf punycode.ucs2
+	 * @name decode
+	 * @param {String} string The Unicode input string (UCS-2).
+	 * @returns {Array} The new array of code points.
+	 */
+	function ucs2decode(string) {
+		var output = [],
+		    counter = 0,
+		    length = string.length,
+		    value,
+		    extra;
+		while (counter < length) {
+			value = string.charCodeAt(counter++);
+			if (value >= 0xD800 && value <= 0xDBFF && counter < length) {
+				// high surrogate, and there is a next character
+				extra = string.charCodeAt(counter++);
+				if ((extra & 0xFC00) == 0xDC00) { // low surrogate
+					output.push(((value & 0x3FF) << 10) + (extra & 0x3FF) + 0x10000);
+				} else {
+					// unmatched surrogate; only append this code unit, in case the next
+					// code unit is the high surrogate of a surrogate pair
+					output.push(value);
+					counter--;
+				}
+			} else {
+				output.push(value);
+			}
+		}
+		return output;
+	}
+
+	/**
+	 * Creates a string based on an array of numeric code points.
+	 * @see `punycode.ucs2.decode`
+	 * @memberOf punycode.ucs2
+	 * @name encode
+	 * @param {Array} codePoints The array of numeric code points.
+	 * @returns {String} The new Unicode string (UCS-2).
+	 */
+	function ucs2encode(array) {
+		return map(array, function(value) {
+			var output = '';
+			if (value > 0xFFFF) {
+				value -= 0x10000;
+				output += stringFromCharCode(value >>> 10 & 0x3FF | 0xD800);
+				value = 0xDC00 | value & 0x3FF;
+			}
+			output += stringFromCharCode(value);
+			return output;
+		}).join('');
+	}
+
+	/**
+	 * Converts a basic code point into a digit/integer.
+	 * @see `digitToBasic()`
+	 * @private
+	 * @param {Number} codePoint The basic numeric code point value.
+	 * @returns {Number} The numeric value of a basic code point (for use in
+	 * representing integers) in the range `0` to `base - 1`, or `base` if
+	 * the code point does not represent a value.
+	 */
+	function basicToDigit(codePoint) {
+		if (codePoint - 48 < 10) {
+			return codePoint - 22;
+		}
+		if (codePoint - 65 < 26) {
+			return codePoint - 65;
+		}
+		if (codePoint - 97 < 26) {
+			return codePoint - 97;
+		}
+		return base;
+	}
+
+	/**
+	 * Converts a digit/integer into a basic code point.
+	 * @see `basicToDigit()`
+	 * @private
+	 * @param {Number} digit The numeric value of a basic code point.
+	 * @returns {Number} The basic code point whose value (when used for
+	 * representing integers) is `digit`, which needs to be in the range
+	 * `0` to `base - 1`. If `flag` is non-zero, the uppercase form is
+	 * used; else, the lowercase form is used. The behavior is undefined
+	 * if `flag` is non-zero and `digit` has no uppercase form.
+	 */
+	function digitToBasic(digit, flag) {
+		//  0..25 map to ASCII a..z or A..Z
+		// 26..35 map to ASCII 0..9
+		return digit + 22 + 75 * (digit < 26) - ((flag != 0) << 5);
+	}
+
+	/**
+	 * Bias adaptation function as per section 3.4 of RFC 3492.
+	 * https://tools.ietf.org/html/rfc3492#section-3.4
+	 * @private
+	 */
+	function adapt(delta, numPoints, firstTime) {
+		var k = 0;
+		delta = firstTime ? floor(delta / damp) : delta >> 1;
+		delta += floor(delta / numPoints);
+		for (/* no initialization */; delta > baseMinusTMin * tMax >> 1; k += base) {
+			delta = floor(delta / baseMinusTMin);
+		}
+		return floor(k + (baseMinusTMin + 1) * delta / (delta + skew));
+	}
+
+	/**
+	 * Converts a Punycode string of ASCII-only symbols to a string of Unicode
+	 * symbols.
+	 * @memberOf punycode
+	 * @param {String} input The Punycode string of ASCII-only symbols.
+	 * @returns {String} The resulting string of Unicode symbols.
+	 */
+	function decode(input) {
+		// Don't use UCS-2
+		var output = [],
+		    inputLength = input.length,
+		    out,
+		    i = 0,
+		    n = initialN,
+		    bias = initialBias,
+		    basic,
+		    j,
+		    index,
+		    oldi,
+		    w,
+		    k,
+		    digit,
+		    t,
+		    /** Cached calculation results */
+		    baseMinusT;
+
+		// Handle the basic code points: let `basic` be the number of input code
+		// points before the last delimiter, or `0` if there is none, then copy
+		// the first basic code points to the output.
+
+		basic = input.lastIndexOf(delimiter);
+		if (basic < 0) {
+			basic = 0;
+		}
+
+		for (j = 0; j < basic; ++j) {
+			// if it's not a basic code point
+			if (input.charCodeAt(j) >= 0x80) {
+				error('not-basic');
+			}
+			output.push(input.charCodeAt(j));
+		}
+
+		// Main decoding loop: start just after the last delimiter if any basic code
+		// points were copied; start at the beginning otherwise.
+
+		for (index = basic > 0 ? basic + 1 : 0; index < inputLength; /* no final expression */) {
+
+			// `index` is the index of the next character to be consumed.
+			// Decode a generalized variable-length integer into `delta`,
+			// which gets added to `i`. The overflow checking is easier
+			// if we increase `i` as we go, then subtract off its starting
+			// value at the end to obtain `delta`.
+			for (oldi = i, w = 1, k = base; /* no condition */; k += base) {
+
+				if (index >= inputLength) {
+					error('invalid-input');
+				}
+
+				digit = basicToDigit(input.charCodeAt(index++));
+
+				if (digit >= base || digit > floor((maxInt - i) / w)) {
+					error('overflow');
+				}
+
+				i += digit * w;
+				t = k <= bias ? tMin : (k >= bias + tMax ? tMax : k - bias);
+
+				if (digit < t) {
+					break;
+				}
+
+				baseMinusT = base - t;
+				if (w > floor(maxInt / baseMinusT)) {
+					error('overflow');
+				}
+
+				w *= baseMinusT;
+
+			}
+
+			out = output.length + 1;
+			bias = adapt(i - oldi, out, oldi == 0);
+
+			// `i` was supposed to wrap around from `out` to `0`,
+			// incrementing `n` each time, so we'll fix that now:
+			if (floor(i / out) > maxInt - n) {
+				error('overflow');
+			}
+
+			n += floor(i / out);
+			i %= out;
+
+			// Insert `n` at position `i` of the output
+			output.splice(i++, 0, n);
+
+		}
+
+		return ucs2encode(output);
+	}
+
+	/**
+	 * Converts a string of Unicode symbols (e.g. a domain name label) to a
+	 * Punycode string of ASCII-only symbols.
+	 * @memberOf punycode
+	 * @param {String} input The string of Unicode symbols.
+	 * @returns {String} The resulting Punycode string of ASCII-only symbols.
+	 */
+	function encode(input) {
+		var n,
+		    delta,
+		    handledCPCount,
+		    basicLength,
+		    bias,
+		    j,
+		    m,
+		    q,
+		    k,
+		    t,
+		    currentValue,
+		    output = [],
+		    /** `inputLength` will hold the number of code points in `input`. */
+		    inputLength,
+		    /** Cached calculation results */
+		    handledCPCountPlusOne,
+		    baseMinusT,
+		    qMinusT;
+
+		// Convert the input in UCS-2 to Unicode
+		input = ucs2decode(input);
+
+		// Cache the length
+		inputLength = input.length;
+
+		// Initialize the state
+		n = initialN;
+		delta = 0;
+		bias = initialBias;
+
+		// Handle the basic code points
+		for (j = 0; j < inputLength; ++j) {
+			currentValue = input[j];
+			if (currentValue < 0x80) {
+				output.push(stringFromCharCode(currentValue));
+			}
+		}
+
+		handledCPCount = basicLength = output.length;
+
+		// `handledCPCount` is the number of code points that have been handled;
+		// `basicLength` is the number of basic code points.
+
+		// Finish the basic string - if it is not empty - with a delimiter
+		if (basicLength) {
+			output.push(delimiter);
+		}
+
+		// Main encoding loop:
+		while (handledCPCount < inputLength) {
+
+			// All non-basic code points < n have been handled already. Find the next
+			// larger one:
+			for (m = maxInt, j = 0; j < inputLength; ++j) {
+				currentValue = input[j];
+				if (currentValue >= n && currentValue < m) {
+					m = currentValue;
+				}
+			}
+
+			// Increase `delta` enough to advance the decoder's <n,i> state to <m,0>,
+			// but guard against overflow
+			handledCPCountPlusOne = handledCPCount + 1;
+			if (m - n > floor((maxInt - delta) / handledCPCountPlusOne)) {
+				error('overflow');
+			}
+
+			delta += (m - n) * handledCPCountPlusOne;
+			n = m;
+
+			for (j = 0; j < inputLength; ++j) {
+				currentValue = input[j];
+
+				if (currentValue < n && ++delta > maxInt) {
+					error('overflow');
+				}
+
+				if (currentValue == n) {
+					// Represent delta as a generalized variable-length integer
+					for (q = delta, k = base; /* no condition */; k += base) {
+						t = k <= bias ? tMin : (k >= bias + tMax ? tMax : k - bias);
+						if (q < t) {
+							break;
+						}
+						qMinusT = q - t;
+						baseMinusT = base - t;
+						output.push(
+							stringFromCharCode(digitToBasic(t + qMinusT % baseMinusT, 0))
+						);
+						q = floor(qMinusT / baseMinusT);
+					}
+
+					output.push(stringFromCharCode(digitToBasic(q, 0)));
+					bias = adapt(delta, handledCPCountPlusOne, handledCPCount == basicLength);
+					delta = 0;
+					++handledCPCount;
+				}
+			}
+
+			++delta;
+			++n;
+
+		}
+		return output.join('');
+	}
+
+	/**
+	 * Converts a Punycode string representing a domain name or an email address
+	 * to Unicode. Only the Punycoded parts of the input will be converted, i.e.
+	 * it doesn't matter if you call it on a string that has already been
+	 * converted to Unicode.
+	 * @memberOf punycode
+	 * @param {String} input The Punycoded domain name or email address to
+	 * convert to Unicode.
+	 * @returns {String} The Unicode representation of the given Punycode
+	 * string.
+	 */
+	function toUnicode(input) {
+		return mapDomain(input, function(string) {
+			return regexPunycode.test(string)
+				? decode(string.slice(4).toLowerCase())
+				: string;
+		});
+	}
+
+	/**
+	 * Converts a Unicode string representing a domain name or an email address to
+	 * Punycode. Only the non-ASCII parts of the domain name will be converted,
+	 * i.e. it doesn't matter if you call it with a domain that's already in
+	 * ASCII.
+	 * @memberOf punycode
+	 * @param {String} input The domain name or email address to convert, as a
+	 * Unicode string.
+	 * @returns {String} The Punycode representation of the given domain name or
+	 * email address.
+	 */
+	function toASCII(input) {
+		return mapDomain(input, function(string) {
+			return regexNonASCII.test(string)
+				? 'xn--' + encode(string)
+				: string;
+		});
+	}
+
+	/*--------------------------------------------------------------------------*/
+
+	/** Define the public API */
+	punycode = {
+		/**
+		 * A string representing the current Punycode.js version number.
+		 * @memberOf punycode
+		 * @type String
+		 */
+		'version': '1.3.2',
+		/**
+		 * An object of methods to convert from JavaScript's internal character
+		 * representation (UCS-2) to Unicode code points, and back.
+		 * @see <https://mathiasbynens.be/notes/javascript-encoding>
+		 * @memberOf punycode
+		 * @type Object
+		 */
+		'ucs2': {
+			'decode': ucs2decode,
+			'encode': ucs2encode
+		},
+		'decode': decode,
+		'encode': encode,
+		'toASCII': toASCII,
+		'toUnicode': toUnicode
+	};
+
+	/** Expose `punycode` */
+	// Some AMD build optimizers, like r.js, check for specific condition patterns
+	// like the following:
+	if (
+		typeof define == 'function' &&
+		typeof define.amd == 'object' &&
+		define.amd
+	) {
+		define('punycode', [],function() {
+			return punycode;
+		});
+	} else if (freeExports && freeModule) {
+		if (module.exports == freeExports) {
+			// in Node.js, io.js, or RingoJS v0.8.0+
+			freeModule.exports = punycode;
+		} else {
+			// in Narwhal or RingoJS v0.7.0-
+			for (key in punycode) {
+				punycode.hasOwnProperty(key) && (freeExports[key] = punycode[key]);
+			}
+		}
+	} else {
+		// in Rhino or a web browser
+		root.punycode = punycode;
+	}
+
+}(this));
+
+/*!
+ * URI.js - Mutating URLs
+ * IPv6 Support
+ *
+ * Version: 1.18.10
+ *
+ * Author: Rodney Rehm
+ * Web: http://medialize.github.io/URI.js/
+ *
+ * Licensed under
+ *   MIT License http://www.opensource.org/licenses/mit-license
+ *
+ */
+
+(function (root, factory) {
+  'use strict';
+  // https://github.com/umdjs/umd/blob/master/returnExports.js
+  if (typeof module === 'object' && module.exports) {
+    // Node
+    module.exports = factory();
+  } else if (typeof define === 'function' && define.amd) {
+    // AMD. Register as an anonymous module.
+    define('IPv6',factory);
+  } else {
+    // Browser globals (root is window)
+    root.IPv6 = factory(root);
+  }
+}(this, function (root) {
+  'use strict';
+
+  /*
+  var _in = "fe80:0000:0000:0000:0204:61ff:fe9d:f156";
+  var _out = IPv6.best(_in);
+  var _expected = "fe80::204:61ff:fe9d:f156";
+
+  console.log(_in, _out, _expected, _out === _expected);
+  */
+
+  // save current IPv6 variable, if any
+  var _IPv6 = root && root.IPv6;
+
+  function bestPresentation(address) {
+    // based on:
+    // Javascript to test an IPv6 address for proper format, and to
+    // present the "best text representation" according to IETF Draft RFC at
+    // http://tools.ietf.org/html/draft-ietf-6man-text-addr-representation-04
+    // 8 Feb 2010 Rich Brown, Dartware, LLC
+    // Please feel free to use this code as long as you provide a link to
+    // http://www.intermapper.com
+    // http://intermapper.com/support/tools/IPV6-Validator.aspx
+    // http://download.dartware.com/thirdparty/ipv6validator.js
+
+    var _address = address.toLowerCase();
+    var segments = _address.split(':');
+    var length = segments.length;
+    var total = 8;
+
+    // trim colons (:: or ::a:b:c… or …a:b:c::)
+    if (segments[0] === '' && segments[1] === '' && segments[2] === '') {
+      // must have been ::
+      // remove first two items
+      segments.shift();
+      segments.shift();
+    } else if (segments[0] === '' && segments[1] === '') {
+      // must have been ::xxxx
+      // remove the first item
+      segments.shift();
+    } else if (segments[length - 1] === '' && segments[length - 2] === '') {
+      // must have been xxxx::
+      segments.pop();
+    }
+
+    length = segments.length;
+
+    // adjust total segments for IPv4 trailer
+    if (segments[length - 1].indexOf('.') !== -1) {
+      // found a "." which means IPv4
+      total = 7;
+    }
+
+    // fill empty segments them with "0000"
+    var pos;
+    for (pos = 0; pos < length; pos++) {
+      if (segments[pos] === '') {
+        break;
+      }
+    }
+
+    if (pos < total) {
+      segments.splice(pos, 1, '0000');
+      while (segments.length < total) {
+        segments.splice(pos, 0, '0000');
+      }
+    }
+
+    // strip leading zeros
+    var _segments;
+    for (var i = 0; i < total; i++) {
+      _segments = segments[i].split('');
+      for (var j = 0; j < 3 ; j++) {
+        if (_segments[0] === '0' && _segments.length > 1) {
+          _segments.splice(0,1);
+        } else {
+          break;
+        }
+      }
+
+      segments[i] = _segments.join('');
+    }
+
+    // find longest sequence of zeroes and coalesce them into one segment
+    var best = -1;
+    var _best = 0;
+    var _current = 0;
+    var current = -1;
+    var inzeroes = false;
+    // i; already declared
+
+    for (i = 0; i < total; i++) {
+      if (inzeroes) {
+        if (segments[i] === '0') {
+          _current += 1;
+        } else {
+          inzeroes = false;
+          if (_current > _best) {
+            best = current;
+            _best = _current;
+          }
+        }
+      } else {
+        if (segments[i] === '0') {
+          inzeroes = true;
+          current = i;
+          _current = 1;
+        }
+      }
+    }
+
+    if (_current > _best) {
+      best = current;
+      _best = _current;
+    }
+
+    if (_best > 1) {
+      segments.splice(best, _best, '');
+    }
+
+    length = segments.length;
+
+    // assemble remaining segments
+    var result = '';
+    if (segments[0] === '')  {
+      result = ':';
+    }
+
+    for (i = 0; i < length; i++) {
+      result += segments[i];
+      if (i === length - 1) {
+        break;
+      }
+
+      result += ':';
+    }
+
+    if (segments[length - 1] === '') {
+      result += ':';
+    }
+
+    return result;
+  }
+
+  function noConflict() {
+    /*jshint validthis: true */
+    if (root.IPv6 === this) {
+      root.IPv6 = _IPv6;
+    }
+  
+    return this;
+  }
+
+  return {
+    best: bestPresentation,
+    noConflict: noConflict
+  };
+}));
+
+/*!
+ * URI.js - Mutating URLs
+ * Second Level Domain (SLD) Support
+ *
+ * Version: 1.18.10
+ *
+ * Author: Rodney Rehm
+ * Web: http://medialize.github.io/URI.js/
+ *
+ * Licensed under
+ *   MIT License http://www.opensource.org/licenses/mit-license
+ *
+ */
+
+(function (root, factory) {
+  'use strict';
+  // https://github.com/umdjs/umd/blob/master/returnExports.js
+  if (typeof module === 'object' && module.exports) {
+    // Node
+    module.exports = factory();
+  } else if (typeof define === 'function' && define.amd) {
+    // AMD. Register as an anonymous module.
+    define('SecondLevelDomains',factory);
+  } else {
+    // Browser globals (root is window)
+    root.SecondLevelDomains = factory(root);
+  }
+}(this, function (root) {
+  'use strict';
+
+  // save current SecondLevelDomains variable, if any
+  var _SecondLevelDomains = root && root.SecondLevelDomains;
+
+  var SLD = {
+    // list of known Second Level Domains
+    // converted list of SLDs from https://github.com/gavingmiller/second-level-domains
+    // ----
+    // publicsuffix.org is more current and actually used by a couple of browsers internally.
+    // downside is it also contains domains like "dyndns.org" - which is fine for the security
+    // issues browser have to deal with (SOP for cookies, etc) - but is way overboard for URI.js
+    // ----
+    list: {
+      'ac':' com gov mil net org ',
+      'ae':' ac co gov mil name net org pro sch ',
+      'af':' com edu gov net org ',
+      'al':' com edu gov mil net org ',
+      'ao':' co ed gv it og pb ',
+      'ar':' com edu gob gov int mil net org tur ',
+      'at':' ac co gv or ',
+      'au':' asn com csiro edu gov id net org ',
+      'ba':' co com edu gov mil net org rs unbi unmo unsa untz unze ',
+      'bb':' biz co com edu gov info net org store tv ',
+      'bh':' biz cc com edu gov info net org ',
+      'bn':' com edu gov net org ',
+      'bo':' com edu gob gov int mil net org tv ',
+      'br':' adm adv agr am arq art ato b bio blog bmd cim cng cnt com coop ecn edu eng esp etc eti far flog fm fnd fot fst g12 ggf gov imb ind inf jor jus lel mat med mil mus net nom not ntr odo org ppg pro psc psi qsl rec slg srv tmp trd tur tv vet vlog wiki zlg ',
+      'bs':' com edu gov net org ',
+      'bz':' du et om ov rg ',
+      'ca':' ab bc mb nb nf nl ns nt nu on pe qc sk yk ',
+      'ck':' biz co edu gen gov info net org ',
+      'cn':' ac ah bj com cq edu fj gd gov gs gx gz ha hb he hi hl hn jl js jx ln mil net nm nx org qh sc sd sh sn sx tj tw xj xz yn zj ',
+      'co':' com edu gov mil net nom org ',
+      'cr':' ac c co ed fi go or sa ',
+      'cy':' ac biz com ekloges gov ltd name net org parliament press pro tm ',
+      'do':' art com edu gob gov mil net org sld web ',
+      'dz':' art asso com edu gov net org pol ',
+      'ec':' com edu fin gov info med mil net org pro ',
+      'eg':' com edu eun gov mil name net org sci ',
+      'er':' com edu gov ind mil net org rochest w ',
+      'es':' com edu gob nom org ',
+      'et':' biz com edu gov info name net org ',
+      'fj':' ac biz com info mil name net org pro ',
+      'fk':' ac co gov net nom org ',
+      'fr':' asso com f gouv nom prd presse tm ',
+      'gg':' co net org ',
+      'gh':' com edu gov mil org ',
+      'gn':' ac com gov net org ',
+      'gr':' com edu gov mil net org ',
+      'gt':' com edu gob ind mil net org ',
+      'gu':' com edu gov net org ',
+      'hk':' com edu gov idv net org ',
+      'hu':' 2000 agrar bolt casino city co erotica erotika film forum games hotel info ingatlan jogasz konyvelo lakas media news org priv reklam sex shop sport suli szex tm tozsde utazas video ',
+      'id':' ac co go mil net or sch web ',
+      'il':' ac co gov idf k12 muni net org ',
+      'in':' ac co edu ernet firm gen gov i ind mil net nic org res ',
+      'iq':' com edu gov i mil net org ',
+      'ir':' ac co dnssec gov i id net org sch ',
+      'it':' edu gov ',
+      'je':' co net org ',
+      'jo':' com edu gov mil name net org sch ',
+      'jp':' ac ad co ed go gr lg ne or ',
+      'ke':' ac co go info me mobi ne or sc ',
+      'kh':' com edu gov mil net org per ',
+      'ki':' biz com de edu gov info mob net org tel ',
+      'km':' asso com coop edu gouv k medecin mil nom notaires pharmaciens presse tm veterinaire ',
+      'kn':' edu gov net org ',
+      'kr':' ac busan chungbuk chungnam co daegu daejeon es gangwon go gwangju gyeongbuk gyeonggi gyeongnam hs incheon jeju jeonbuk jeonnam k kg mil ms ne or pe re sc seoul ulsan ',
+      'kw':' com edu gov net org ',
+      'ky':' com edu gov net org ',
+      'kz':' com edu gov mil net org ',
+      'lb':' com edu gov net org ',
+      'lk':' assn com edu gov grp hotel int ltd net ngo org sch soc web ',
+      'lr':' com edu gov net org ',
+      'lv':' asn com conf edu gov id mil net org ',
+      'ly':' com edu gov id med net org plc sch ',
+      'ma':' ac co gov m net org press ',
+      'mc':' asso tm ',
+      'me':' ac co edu gov its net org priv ',
+      'mg':' com edu gov mil nom org prd tm ',
+      'mk':' com edu gov inf name net org pro ',
+      'ml':' com edu gov net org presse ',
+      'mn':' edu gov org ',
+      'mo':' com edu gov net org ',
+      'mt':' com edu gov net org ',
+      'mv':' aero biz com coop edu gov info int mil museum name net org pro ',
+      'mw':' ac co com coop edu gov int museum net org ',
+      'mx':' com edu gob net org ',
+      'my':' com edu gov mil name net org sch ',
+      'nf':' arts com firm info net other per rec store web ',
+      'ng':' biz com edu gov mil mobi name net org sch ',
+      'ni':' ac co com edu gob mil net nom org ',
+      'np':' com edu gov mil net org ',
+      'nr':' biz com edu gov info net org ',
+      'om':' ac biz co com edu gov med mil museum net org pro sch ',
+      'pe':' com edu gob mil net nom org sld ',
+      'ph':' com edu gov i mil net ngo org ',
+      'pk':' biz com edu fam gob gok gon gop gos gov net org web ',
+      'pl':' art bialystok biz com edu gda gdansk gorzow gov info katowice krakow lodz lublin mil net ngo olsztyn org poznan pwr radom slupsk szczecin torun warszawa waw wroc wroclaw zgora ',
+      'pr':' ac biz com edu est gov info isla name net org pro prof ',
+      'ps':' com edu gov net org plo sec ',
+      'pw':' belau co ed go ne or ',
+      'ro':' arts com firm info nom nt org rec store tm www ',
+      'rs':' ac co edu gov in org ',
+      'sb':' com edu gov net org ',
+      'sc':' com edu gov net org ',
+      'sh':' co com edu gov net nom org ',
+      'sl':' com edu gov net org ',
+      'st':' co com consulado edu embaixada gov mil net org principe saotome store ',
+      'sv':' com edu gob org red ',
+      'sz':' ac co org ',
+      'tr':' av bbs bel biz com dr edu gen gov info k12 name net org pol tel tsk tv web ',
+      'tt':' aero biz cat co com coop edu gov info int jobs mil mobi museum name net org pro tel travel ',
+      'tw':' club com ebiz edu game gov idv mil net org ',
+      'mu':' ac co com gov net or org ',
+      'mz':' ac co edu gov org ',
+      'na':' co com ',
+      'nz':' ac co cri geek gen govt health iwi maori mil net org parliament school ',
+      'pa':' abo ac com edu gob ing med net nom org sld ',
+      'pt':' com edu gov int net nome org publ ',
+      'py':' com edu gov mil net org ',
+      'qa':' com edu gov mil net org ',
+      're':' asso com nom ',
+      'ru':' ac adygeya altai amur arkhangelsk astrakhan bashkiria belgorod bir bryansk buryatia cbg chel chelyabinsk chita chukotka chuvashia com dagestan e-burg edu gov grozny int irkutsk ivanovo izhevsk jar joshkar-ola kalmykia kaluga kamchatka karelia kazan kchr kemerovo khabarovsk khakassia khv kirov koenig komi kostroma kranoyarsk kuban kurgan kursk lipetsk magadan mari mari-el marine mil mordovia mosreg msk murmansk nalchik net nnov nov novosibirsk nsk omsk orenburg org oryol penza perm pp pskov ptz rnd ryazan sakhalin samara saratov simbirsk smolensk spb stavropol stv surgut tambov tatarstan tom tomsk tsaritsyn tsk tula tuva tver tyumen udm udmurtia ulan-ude vladikavkaz vladimir vladivostok volgograd vologda voronezh vrn vyatka yakutia yamal yekaterinburg yuzhno-sakhalinsk ',
+      'rw':' ac co com edu gouv gov int mil net ',
+      'sa':' com edu gov med net org pub sch ',
+      'sd':' com edu gov info med net org tv ',
+      'se':' a ac b bd c d e f g h i k l m n o org p parti pp press r s t tm u w x y z ',
+      'sg':' com edu gov idn net org per ',
+      'sn':' art com edu gouv org perso univ ',
+      'sy':' com edu gov mil net news org ',
+      'th':' ac co go in mi net or ',
+      'tj':' ac biz co com edu go gov info int mil name net nic org test web ',
+      'tn':' agrinet com defense edunet ens fin gov ind info intl mincom nat net org perso rnrt rns rnu tourism ',
+      'tz':' ac co go ne or ',
+      'ua':' biz cherkassy chernigov chernovtsy ck cn co com crimea cv dn dnepropetrovsk donetsk dp edu gov if in ivano-frankivsk kh kharkov kherson khmelnitskiy kiev kirovograd km kr ks kv lg lugansk lutsk lviv me mk net nikolaev od odessa org pl poltava pp rovno rv sebastopol sumy te ternopil uzhgorod vinnica vn zaporizhzhe zhitomir zp zt ',
+      'ug':' ac co go ne or org sc ',
+      'uk':' ac bl british-library co cym gov govt icnet jet lea ltd me mil mod national-library-scotland nel net nhs nic nls org orgn parliament plc police sch scot soc ',
+      'us':' dni fed isa kids nsn ',
+      'uy':' com edu gub mil net org ',
+      've':' co com edu gob info mil net org web ',
+      'vi':' co com k12 net org ',
+      'vn':' ac biz com edu gov health info int name net org pro ',
+      'ye':' co com gov ltd me net org plc ',
+      'yu':' ac co edu gov org ',
+      'za':' ac agric alt bourse city co cybernet db edu gov grondar iaccess imt inca landesign law mil net ngo nis nom olivetti org pix school tm web ',
+      'zm':' ac co com edu gov net org sch ',
+      // https://en.wikipedia.org/wiki/CentralNic#Second-level_domains
+      'com': 'ar br cn de eu gb gr hu jpn kr no qc ru sa se uk us uy za ',
+      'net': 'gb jp se uk ',
+      'org': 'ae',
+      'de': 'com '
+    },
+    // gorhill 2013-10-25: Using indexOf() instead Regexp(). Significant boost
+    // in both performance and memory footprint. No initialization required.
+    // http://jsperf.com/uri-js-sld-regex-vs-binary-search/4
+    // Following methods use lastIndexOf() rather than array.split() in order
+    // to avoid any memory allocations.
+    has: function(domain) {
+      var tldOffset = domain.lastIndexOf('.');
+      if (tldOffset <= 0 || tldOffset >= (domain.length-1)) {
+        return false;
+      }
+      var sldOffset = domain.lastIndexOf('.', tldOffset-1);
+      if (sldOffset <= 0 || sldOffset >= (tldOffset-1)) {
+        return false;
+      }
+      var sldList = SLD.list[domain.slice(tldOffset+1)];
+      if (!sldList) {
+        return false;
+      }
+      return sldList.indexOf(' ' + domain.slice(sldOffset+1, tldOffset) + ' ') >= 0;
+    },
+    is: function(domain) {
+      var tldOffset = domain.lastIndexOf('.');
+      if (tldOffset <= 0 || tldOffset >= (domain.length-1)) {
+        return false;
+      }
+      var sldOffset = domain.lastIndexOf('.', tldOffset-1);
+      if (sldOffset >= 0) {
+        return false;
+      }
+      var sldList = SLD.list[domain.slice(tldOffset+1)];
+      if (!sldList) {
+        return false;
+      }
+      return sldList.indexOf(' ' + domain.slice(0, tldOffset) + ' ') >= 0;
+    },
+    get: function(domain) {
+      var tldOffset = domain.lastIndexOf('.');
+      if (tldOffset <= 0 || tldOffset >= (domain.length-1)) {
+        return null;
+      }
+      var sldOffset = domain.lastIndexOf('.', tldOffset-1);
+      if (sldOffset <= 0 || sldOffset >= (tldOffset-1)) {
+        return null;
+      }
+      var sldList = SLD.list[domain.slice(tldOffset+1)];
+      if (!sldList) {
+        return null;
+      }
+      if (sldList.indexOf(' ' + domain.slice(sldOffset+1, tldOffset) + ' ') < 0) {
+        return null;
+      }
+      return domain.slice(sldOffset+1);
+    },
+    noConflict: function(){
+      if (root.SecondLevelDomains === this) {
+        root.SecondLevelDomains = _SecondLevelDomains;
+      }
+      return this;
+    }
+  };
+
+  return SLD;
+}));
+
+/*!
+ * URI.js - Mutating URLs
+ *
+ * Version: 1.18.10
+ *
+ * Author: Rodney Rehm
+ * Web: http://medialize.github.io/URI.js/
+ *
+ * Licensed under
+ *   MIT License http://www.opensource.org/licenses/mit-license
+ *
+ */
+(function (root, factory) {
+  'use strict';
+  // https://github.com/umdjs/umd/blob/master/returnExports.js
+  if (typeof module === 'object' && module.exports) {
+    // Node
+    module.exports = factory(require('./punycode'), require('./IPv6'), require('./SecondLevelDomains'));
+  } else if (typeof define === 'function' && define.amd) {
+    // AMD. Register as an anonymous module.
+    define('URIjs',['./punycode', './IPv6', './SecondLevelDomains'], factory);
+  } else {
+    // Browser globals (root is window)
+    root.URI = factory(root.punycode, root.IPv6, root.SecondLevelDomains, root);
+  }
+}(this, function (punycode, IPv6, SLD, root) {
+  'use strict';
+  /*global location, escape, unescape */
+  // FIXME: v2.0.0 renamce non-camelCase properties to uppercase
+  /*jshint camelcase: false */
+
+  // save current URI variable, if any
+  var _URI = root && root.URI;
+
+  function URI(url, base) {
+    var _urlSupplied = arguments.length >= 1;
+    var _baseSupplied = arguments.length >= 2;
+
+    // Allow instantiation without the 'new' keyword
+    if (!(this instanceof URI)) {
+      if (_urlSupplied) {
+        if (_baseSupplied) {
+          return new URI(url, base);
+        }
+
+        return new URI(url);
+      }
+
+      return new URI();
+    }
+
+    if (url === undefined) {
+      if (_urlSupplied) {
+        throw new TypeError('undefined is not a valid argument for URI');
+      }
+
+      if (typeof location !== 'undefined') {
+        url = location.href + '';
+      } else {
+        url = '';
+      }
+    }
+
+    if (url === null) {
+      if (_urlSupplied) {
+        throw new TypeError('null is not a valid argument for URI');
+      }
+    }
+
+    this.href(url);
+
+    // resolve to base according to http://dvcs.w3.org/hg/url/raw-file/tip/Overview.html#constructor
+    if (base !== undefined) {
+      return this.absoluteTo(base);
+    }
+
+    return this;
+  }
+
+  URI.version = '1.18.10';
+
+  var p = URI.prototype;
+  var hasOwn = Object.prototype.hasOwnProperty;
+
+  function escapeRegEx(string) {
+    // https://github.com/medialize/URI.js/commit/85ac21783c11f8ccab06106dba9735a31a86924d#commitcomment-821963
+    return string.replace(/([.*+?^=!:${}()|[\]\/\\])/g, '\\$1');
+  }
+
+  function getType(value) {
+    // IE8 doesn't return [Object Undefined] but [Object Object] for undefined value
+    if (value === undefined) {
+      return 'Undefined';
+    }
+
+    return String(Object.prototype.toString.call(value)).slice(8, -1);
+  }
+
+  function isArray(obj) {
+    return getType(obj) === 'Array';
+  }
+
+  function filterArrayValues(data, value) {
+    var lookup = {};
+    var i, length;
+
+    if (getType(value) === 'RegExp') {
+      lookup = null;
+    } else if (isArray(value)) {
+      for (i = 0, length = value.length; i < length; i++) {
+        lookup[value[i]] = true;
+      }
+    } else {
+      lookup[value] = true;
+    }
+
+    for (i = 0, length = data.length; i < length; i++) {
+      /*jshint laxbreak: true */
+      var _match = lookup && lookup[data[i]] !== undefined
+        || !lookup && value.test(data[i]);
+      /*jshint laxbreak: false */
+      if (_match) {
+        data.splice(i, 1);
+        length--;
+        i--;
+      }
+    }
+
+    return data;
+  }
+
+  function arrayContains(list, value) {
+    var i, length;
+
+    // value may be string, number, array, regexp
+    if (isArray(value)) {
+      // Note: this can be optimized to O(n) (instead of current O(m * n))
+      for (i = 0, length = value.length; i < length; i++) {
+        if (!arrayContains(list, value[i])) {
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    var _type = getType(value);
+    for (i = 0, length = list.length; i < length; i++) {
+      if (_type === 'RegExp') {
+        if (typeof list[i] === 'string' && list[i].match(value)) {
+          return true;
+        }
+      } else if (list[i] === value) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  function arraysEqual(one, two) {
+    if (!isArray(one) || !isArray(two)) {
+      return false;
+    }
+
+    // arrays can't be equal if they have different amount of content
+    if (one.length !== two.length) {
+      return false;
+    }
+
+    one.sort();
+    two.sort();
+
+    for (var i = 0, l = one.length; i < l; i++) {
+      if (one[i] !== two[i]) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  function trimSlashes(text) {
+    var trim_expression = /^\/+|\/+$/g;
+    return text.replace(trim_expression, '');
+  }
+
+  URI._parts = function() {
+    return {
+      protocol: null,
+      username: null,
+      password: null,
+      hostname: null,
+      urn: null,
+      port: null,
+      path: null,
+      query: null,
+      fragment: null,
+      // state
+      duplicateQueryParameters: URI.duplicateQueryParameters,
+      escapeQuerySpace: URI.escapeQuerySpace
+    };
+  };
+  // state: allow duplicate query parameters (a=1&a=1)
+  URI.duplicateQueryParameters = false;
+  // state: replaces + with %20 (space in query strings)
+  URI.escapeQuerySpace = true;
+  // static properties
+  URI.protocol_expression = /^[a-z][a-z0-9.+-]*$/i;
+  URI.idn_expression = /[^a-z0-9\.-]/i;
+  URI.punycode_expression = /(xn--)/i;
+  // well, 333.444.555.666 matches, but it sure ain't no IPv4 - do we care?
+  URI.ip4_expression = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
+  // credits to Rich Brown
+  // source: http://forums.intermapper.com/viewtopic.php?p=1096#1096
+  // specification: http://www.ietf.org/rfc/rfc4291.txt
+  URI.ip6_expression = /^\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?\s*$/;
+  // expression used is "gruber revised" (@gruber v2) determined to be the
+  // best solution in a regex-golf we did a couple of ages ago at
+  // * http://mathiasbynens.be/demo/url-regex
+  // * http://rodneyrehm.de/t/url-regex.html
+  URI.find_uri_expression = /\b((?:[a-z][\w-]+:(?:\/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}\/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?«»“”‘’]))/ig;
+  URI.findUri = {
+    // valid "scheme://" or "www."
+    start: /\b(?:([a-z][a-z0-9.+-]*:\/\/)|www\.)/gi,
+    // everything up to the next whitespace
+    end: /[\s\r\n]|$/,
+    // trim trailing punctuation captured by end RegExp
+    trim: /[`!()\[\]{};:'".,<>?«»“”„‘’]+$/,
+    // balanced parens inclusion (), [], {}, <>
+    parens: /(\([^\)]*\)|\[[^\]]*\]|\{[^}]*\}|<[^>]*>)/g,
+  };
+  // http://www.iana.org/assignments/uri-schemes.html
+  // http://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers#Well-known_ports
+  URI.defaultPorts = {
+    http: '80',
+    https: '443',
+    ftp: '21',
+    gopher: '70',
+    ws: '80',
+    wss: '443'
+  };
+  // allowed hostname characters according to RFC 3986
+  // ALPHA DIGIT "-" "." "_" "~" "!" "$" "&" "'" "(" ")" "*" "+" "," ";" "=" %encoded
+  // I've never seen a (non-IDN) hostname other than: ALPHA DIGIT . -
+  URI.invalid_hostname_characters = /[^a-zA-Z0-9\.-]/;
+  // map DOM Elements to their URI attribute
+  URI.domAttributes = {
+    'a': 'href',
+    'blockquote': 'cite',
+    'link': 'href',
+    'base': 'href',
+    'script': 'src',
+    'form': 'action',
+    'img': 'src',
+    'area': 'href',
+    'iframe': 'src',
+    'embed': 'src',
+    'source': 'src',
+    'track': 'src',
+    'input': 'src', // but only if type="image"
+    'audio': 'src',
+    'video': 'src'
+  };
+  URI.getDomAttribute = function(node) {
+    if (!node || !node.nodeName) {
+      return undefined;
+    }
+
+    var nodeName = node.nodeName.toLowerCase();
+    // <input> should only expose src for type="image"
+    if (nodeName === 'input' && node.type !== 'image') {
+      return undefined;
+    }
+
+    return URI.domAttributes[nodeName];
+  };
+
+  function escapeForDumbFirefox36(value) {
+    // https://github.com/medialize/URI.js/issues/91
+    return escape(value);
+  }
+
+  // encoding / decoding according to RFC3986
+  function strictEncodeURIComponent(string) {
+    // see https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/encodeURIComponent
+    return encodeURIComponent(string)
+      .replace(/[!'()*]/g, escapeForDumbFirefox36)
+      .replace(/\*/g, '%2A');
+  }
+  URI.encode = strictEncodeURIComponent;
+  URI.decode = decodeURIComponent;
+  URI.iso8859 = function() {
+    URI.encode = escape;
+    URI.decode = unescape;
+  };
+  URI.unicode = function() {
+    URI.encode = strictEncodeURIComponent;
+    URI.decode = decodeURIComponent;
+  };
+  URI.characters = {
+    pathname: {
+      encode: {
+        // RFC3986 2.1: For consistency, URI producers and normalizers should
+        // use uppercase hexadecimal digits for all percent-encodings.
+        expression: /%(24|26|2B|2C|3B|3D|3A|40)/ig,
+        map: {
+          // -._~!'()*
+          '%24': '$',
+          '%26': '&',
+          '%2B': '+',
+          '%2C': ',',
+          '%3B': ';',
+          '%3D': '=',
+          '%3A': ':',
+          '%40': '@'
+        }
+      },
+      decode: {
+        expression: /[\/\?#]/g,
+        map: {
+          '/': '%2F',
+          '?': '%3F',
+          '#': '%23'
+        }
+      }
+    },
+    reserved: {
+      encode: {
+        // RFC3986 2.1: For consistency, URI producers and normalizers should
+        // use uppercase hexadecimal digits for all percent-encodings.
+        expression: /%(21|23|24|26|27|28|29|2A|2B|2C|2F|3A|3B|3D|3F|40|5B|5D)/ig,
+        map: {
+          // gen-delims
+          '%3A': ':',
+          '%2F': '/',
+          '%3F': '?',
+          '%23': '#',
+          '%5B': '[',
+          '%5D': ']',
+          '%40': '@',
+          // sub-delims
+          '%21': '!',
+          '%24': '$',
+          '%26': '&',
+          '%27': '\'',
+          '%28': '(',
+          '%29': ')',
+          '%2A': '*',
+          '%2B': '+',
+          '%2C': ',',
+          '%3B': ';',
+          '%3D': '='
+        }
+      }
+    },
+    urnpath: {
+      // The characters under `encode` are the characters called out by RFC 2141 as being acceptable
+      // for usage in a URN. RFC2141 also calls out "-", ".", and "_" as acceptable characters, but
+      // these aren't encoded by encodeURIComponent, so we don't have to call them out here. Also
+      // note that the colon character is not featured in the encoding map; this is because URI.js
+      // gives the colons in URNs semantic meaning as the delimiters of path segements, and so it
+      // should not appear unencoded in a segment itself.
+      // See also the note above about RFC3986 and capitalalized hex digits.
+      encode: {
+        expression: /%(21|24|27|28|29|2A|2B|2C|3B|3D|40)/ig,
+        map: {
+          '%21': '!',
+          '%24': '$',
+          '%27': '\'',
+          '%28': '(',
+          '%29': ')',
+          '%2A': '*',
+          '%2B': '+',
+          '%2C': ',',
+          '%3B': ';',
+          '%3D': '=',
+          '%40': '@'
+        }
+      },
+      // These characters are the characters called out by RFC2141 as "reserved" characters that
+      // should never appear in a URN, plus the colon character (see note above).
+      decode: {
+        expression: /[\/\?#:]/g,
+        map: {
+          '/': '%2F',
+          '?': '%3F',
+          '#': '%23',
+          ':': '%3A'
+        }
+      }
+    }
+  };
+  URI.encodeQuery = function(string, escapeQuerySpace) {
+    var escaped = URI.encode(string + '');
+    if (escapeQuerySpace === undefined) {
+      escapeQuerySpace = URI.escapeQuerySpace;
+    }
+
+    return escapeQuerySpace ? escaped.replace(/%20/g, '+') : escaped;
+  };
+  URI.decodeQuery = function(string, escapeQuerySpace) {
+    string += '';
+    if (escapeQuerySpace === undefined) {
+      escapeQuerySpace = URI.escapeQuerySpace;
+    }
+
+    try {
+      return URI.decode(escapeQuerySpace ? string.replace(/\+/g, '%20') : string);
+    } catch(e) {
+      // we're not going to mess with weird encodings,
+      // give up and return the undecoded original string
+      // see https://github.com/medialize/URI.js/issues/87
+      // see https://github.com/medialize/URI.js/issues/92
+      return string;
+    }
+  };
+  // generate encode/decode path functions
+  var _parts = {'encode':'encode', 'decode':'decode'};
+  var _part;
+  var generateAccessor = function(_group, _part) {
+    return function(string) {
+      try {
+        return URI[_part](string + '').replace(URI.characters[_group][_part].expression, function(c) {
+          return URI.characters[_group][_part].map[c];
+        });
+      } catch (e) {
+        // we're not going to mess with weird encodings,
+        // give up and return the undecoded original string
+        // see https://github.com/medialize/URI.js/issues/87
+        // see https://github.com/medialize/URI.js/issues/92
+        return string;
+      }
+    };
+  };
+
+  for (_part in _parts) {
+    URI[_part + 'PathSegment'] = generateAccessor('pathname', _parts[_part]);
+    URI[_part + 'UrnPathSegment'] = generateAccessor('urnpath', _parts[_part]);
+  }
+
+  var generateSegmentedPathFunction = function(_sep, _codingFuncName, _innerCodingFuncName) {
+    return function(string) {
+      // Why pass in names of functions, rather than the function objects themselves? The
+      // definitions of some functions (but in particular, URI.decode) will occasionally change due
+      // to URI.js having ISO8859 and Unicode modes. Passing in the name and getting it will ensure
+      // that the functions we use here are "fresh".
+      var actualCodingFunc;
+      if (!_innerCodingFuncName) {
+        actualCodingFunc = URI[_codingFuncName];
+      } else {
+        actualCodingFunc = function(string) {
+          return URI[_codingFuncName](URI[_innerCodingFuncName](string));
+        };
+      }
+
+      var segments = (string + '').split(_sep);
+
+      for (var i = 0, length = segments.length; i < length; i++) {
+        segments[i] = actualCodingFunc(segments[i]);
+      }
+
+      return segments.join(_sep);
+    };
+  };
+
+  // This takes place outside the above loop because we don't want, e.g., encodeUrnPath functions.
+  URI.decodePath = generateSegmentedPathFunction('/', 'decodePathSegment');
+  URI.decodeUrnPath = generateSegmentedPathFunction(':', 'decodeUrnPathSegment');
+  URI.recodePath = generateSegmentedPathFunction('/', 'encodePathSegment', 'decode');
+  URI.recodeUrnPath = generateSegmentedPathFunction(':', 'encodeUrnPathSegment', 'decode');
+
+  URI.encodeReserved = generateAccessor('reserved', 'encode');
+
+  URI.parse = function(string, parts) {
+    var pos;
+    if (!parts) {
+      parts = {};
+    }
+    // [protocol"://"[username[":"password]"@"]hostname[":"port]"/"?][path]["?"querystring]["#"fragment]
+
+    // extract fragment
+    pos = string.indexOf('#');
+    if (pos > -1) {
+      // escaping?
+      parts.fragment = string.substring(pos + 1) || null;
+      string = string.substring(0, pos);
+    }
+
+    // extract query
+    pos = string.indexOf('?');
+    if (pos > -1) {
+      // escaping?
+      parts.query = string.substring(pos + 1) || null;
+      string = string.substring(0, pos);
+    }
+
+    // extract protocol
+    if (string.substring(0, 2) === '//') {
+      // relative-scheme
+      parts.protocol = null;
+      string = string.substring(2);
+      // extract "user:pass@host:port"
+      string = URI.parseAuthority(string, parts);
+    } else {
+      pos = string.indexOf(':');
+      if (pos > -1) {
+        parts.protocol = string.substring(0, pos) || null;
+        if (parts.protocol && !parts.protocol.match(URI.protocol_expression)) {
+          // : may be within the path
+          parts.protocol = undefined;
+        } else if (string.substring(pos + 1, pos + 3) === '//') {
+          string = string.substring(pos + 3);
+
+          // extract "user:pass@host:port"
+          string = URI.parseAuthority(string, parts);
+        } else {
+          string = string.substring(pos + 1);
+          parts.urn = true;
+        }
+      }
+    }
+
+    // what's left must be the path
+    parts.path = string;
+
+    // and we're done
+    return parts;
+  };
+  URI.parseHost = function(string, parts) {
+    // Copy chrome, IE, opera backslash-handling behavior.
+    // Back slashes before the query string get converted to forward slashes
+    // See: https://github.com/joyent/node/blob/386fd24f49b0e9d1a8a076592a404168faeecc34/lib/url.js#L115-L124
+    // See: https://code.google.com/p/chromium/issues/detail?id=25916
+    // https://github.com/medialize/URI.js/pull/233
+    string = string.replace(/\\/g, '/');
+
+    // extract host:port
+    var pos = string.indexOf('/');
+    var bracketPos;
+    var t;
+
+    if (pos === -1) {
+      pos = string.length;
+    }
+
+    if (string.charAt(0) === '[') {
+      // IPv6 host - http://tools.ietf.org/html/draft-ietf-6man-text-addr-representation-04#section-6
+      // I claim most client software breaks on IPv6 anyways. To simplify things, URI only accepts
+      // IPv6+port in the format [2001:db8::1]:80 (for the time being)
+      bracketPos = string.indexOf(']');
+      parts.hostname = string.substring(1, bracketPos) || null;
+      parts.port = string.substring(bracketPos + 2, pos) || null;
+      if (parts.port === '/') {
+        parts.port = null;
+      }
+    } else {
+      var firstColon = string.indexOf(':');
+      var firstSlash = string.indexOf('/');
+      var nextColon = string.indexOf(':', firstColon + 1);
+      if (nextColon !== -1 && (firstSlash === -1 || nextColon < firstSlash)) {
+        // IPv6 host contains multiple colons - but no port
+        // this notation is actually not allowed by RFC 3986, but we're a liberal parser
+        parts.hostname = string.substring(0, pos) || null;
+        parts.port = null;
+      } else {
+        t = string.substring(0, pos).split(':');
+        parts.hostname = t[0] || null;
+        parts.port = t[1] || null;
+      }
+    }
+
+    if (parts.hostname && string.substring(pos).charAt(0) !== '/') {
+      pos++;
+      string = '/' + string;
+    }
+
+    return string.substring(pos) || '/';
+  };
+  URI.parseAuthority = function(string, parts) {
+    string = URI.parseUserinfo(string, parts);
+    return URI.parseHost(string, parts);
+  };
+  URI.parseUserinfo = function(string, parts) {
+    // extract username:password
+    var firstSlash = string.indexOf('/');
+    var pos = string.lastIndexOf('@', firstSlash > -1 ? firstSlash : string.length - 1);
+    var t;
+
+    // authority@ must come before /path
+    if (pos > -1 && (firstSlash === -1 || pos < firstSlash)) {
+      t = string.substring(0, pos).split(':');
+      parts.username = t[0] ? URI.decode(t[0]) : null;
+      t.shift();
+      parts.password = t[0] ? URI.decode(t.join(':')) : null;
+      string = string.substring(pos + 1);
+    } else {
+      parts.username = null;
+      parts.password = null;
+    }
+
+    return string;
+  };
+  URI.parseQuery = function(string, escapeQuerySpace) {
+    if (!string) {
+      return {};
+    }
+
+    // throw out the funky business - "?"[name"="value"&"]+
+    string = string.replace(/&+/g, '&').replace(/^\?*&*|&+$/g, '');
+
+    if (!string) {
+      return {};
+    }
+
+    var items = {};
+    var splits = string.split('&');
+    var length = splits.length;
+    var v, name, value;
+
+    for (var i = 0; i < length; i++) {
+      v = splits[i].split('=');
+      name = URI.decodeQuery(v.shift(), escapeQuerySpace);
+      // no "=" is null according to http://dvcs.w3.org/hg/url/raw-file/tip/Overview.html#collect-url-parameters
+      value = v.length ? URI.decodeQuery(v.join('='), escapeQuerySpace) : null;
+
+      if (hasOwn.call(items, name)) {
+        if (typeof items[name] === 'string' || items[name] === null) {
+          items[name] = [items[name]];
+        }
+
+        items[name].push(value);
+      } else {
+        items[name] = value;
+      }
+    }
+
+    return items;
+  };
+
+  URI.build = function(parts) {
+    var t = '';
+
+    if (parts.protocol) {
+      t += parts.protocol + ':';
+    }
+
+    if (!parts.urn && (t || parts.hostname)) {
+      t += '//';
+    }
+
+    t += (URI.buildAuthority(parts) || '');
+
+    if (typeof parts.path === 'string') {
+      if (parts.path.charAt(0) !== '/' && typeof parts.hostname === 'string') {
+        t += '/';
+      }
+
+      t += parts.path;
+    }
+
+    if (typeof parts.query === 'string' && parts.query) {
+      t += '?' + parts.query;
+    }
+
+    if (typeof parts.fragment === 'string' && parts.fragment) {
+      t += '#' + parts.fragment;
+    }
+    return t;
+  };
+  URI.buildHost = function(parts) {
+    var t = '';
+
+    if (!parts.hostname) {
+      return '';
+    } else if (URI.ip6_expression.test(parts.hostname)) {
+      t += '[' + parts.hostname + ']';
+    } else {
+      t += parts.hostname;
+    }
+
+    if (parts.port) {
+      t += ':' + parts.port;
+    }
+
+    return t;
+  };
+  URI.buildAuthority = function(parts) {
+    return URI.buildUserinfo(parts) + URI.buildHost(parts);
+  };
+  URI.buildUserinfo = function(parts) {
+    var t = '';
+
+    if (parts.username) {
+      t += URI.encode(parts.username);
+    }
+
+    if (parts.password) {
+      t += ':' + URI.encode(parts.password);
+    }
+
+    if (t) {
+      t += '@';
+    }
+
+    return t;
+  };
+  URI.buildQuery = function(data, duplicateQueryParameters, escapeQuerySpace) {
+    // according to http://tools.ietf.org/html/rfc3986 or http://labs.apache.org/webarch/uri/rfc/rfc3986.html
+    // being »-._~!$&'()*+,;=:@/?« %HEX and alnum are allowed
+    // the RFC explicitly states ?/foo being a valid use case, no mention of parameter syntax!
+    // URI.js treats the query string as being application/x-www-form-urlencoded
+    // see http://www.w3.org/TR/REC-html40/interact/forms.html#form-content-type
+
+    var t = '';
+    var unique, key, i, length;
+    for (key in data) {
+      if (hasOwn.call(data, key) && key) {
+        if (isArray(data[key])) {
+          unique = {};
+          for (i = 0, length = data[key].length; i < length; i++) {
+            if (data[key][i] !== undefined && unique[data[key][i] + ''] === undefined) {
+              t += '&' + URI.buildQueryParameter(key, data[key][i], escapeQuerySpace);
+              if (duplicateQueryParameters !== true) {
+                unique[data[key][i] + ''] = true;
+              }
+            }
+          }
+        } else if (data[key] !== undefined) {
+          t += '&' + URI.buildQueryParameter(key, data[key], escapeQuerySpace);
+        }
+      }
+    }
+
+    return t.substring(1);
+  };
+  URI.buildQueryParameter = function(name, value, escapeQuerySpace) {
+    // http://www.w3.org/TR/REC-html40/interact/forms.html#form-content-type -- application/x-www-form-urlencoded
+    // don't append "=" for null values, according to http://dvcs.w3.org/hg/url/raw-file/tip/Overview.html#url-parameter-serialization
+    return URI.encodeQuery(name, escapeQuerySpace) + (value !== null ? '=' + URI.encodeQuery(value, escapeQuerySpace) : '');
+  };
+
+  URI.addQuery = function(data, name, value) {
+    if (typeof name === 'object') {
+      for (var key in name) {
+        if (hasOwn.call(name, key)) {
+          URI.addQuery(data, key, name[key]);
+        }
+      }
+    } else if (typeof name === 'string') {
+      if (data[name] === undefined) {
+        data[name] = value;
+        return;
+      } else if (typeof data[name] === 'string') {
+        data[name] = [data[name]];
+      }
+
+      if (!isArray(value)) {
+        value = [value];
+      }
+
+      data[name] = (data[name] || []).concat(value);
+    } else {
+      throw new TypeError('URI.addQuery() accepts an object, string as the name parameter');
+    }
+  };
+  URI.removeQuery = function(data, name, value) {
+    var i, length, key;
+
+    if (isArray(name)) {
+      for (i = 0, length = name.length; i < length; i++) {
+        data[name[i]] = undefined;
+      }
+    } else if (getType(name) === 'RegExp') {
+      for (key in data) {
+        if (name.test(key)) {
+          data[key] = undefined;
+        }
+      }
+    } else if (typeof name === 'object') {
+      for (key in name) {
+        if (hasOwn.call(name, key)) {
+          URI.removeQuery(data, key, name[key]);
+        }
+      }
+    } else if (typeof name === 'string') {
+      if (value !== undefined) {
+        if (getType(value) === 'RegExp') {
+          if (!isArray(data[name]) && value.test(data[name])) {
+            data[name] = undefined;
+          } else {
+            data[name] = filterArrayValues(data[name], value);
+          }
+        } else if (data[name] === String(value) && (!isArray(value) || value.length === 1)) {
+          data[name] = undefined;
+        } else if (isArray(data[name])) {
+          data[name] = filterArrayValues(data[name], value);
+        }
+      } else {
+        data[name] = undefined;
+      }
+    } else {
+      throw new TypeError('URI.removeQuery() accepts an object, string, RegExp as the first parameter');
+    }
+  };
+  URI.hasQuery = function(data, name, value, withinArray) {
+    switch (getType(name)) {
+      case 'String':
+        // Nothing to do here
+        break;
+
+      case 'RegExp':
+        for (var key in data) {
+          if (hasOwn.call(data, key)) {
+            if (name.test(key) && (value === undefined || URI.hasQuery(data, key, value))) {
+              return true;
+            }
+          }
+        }
+
+        return false;
+
+      case 'Object':
+        for (var _key in name) {
+          if (hasOwn.call(name, _key)) {
+            if (!URI.hasQuery(data, _key, name[_key])) {
+              return false;
+            }
+          }
+        }
+
+        return true;
+
+      default:
+        throw new TypeError('URI.hasQuery() accepts a string, regular expression or object as the name parameter');
+    }
+
+    switch (getType(value)) {
+      case 'Undefined':
+        // true if exists (but may be empty)
+        return name in data; // data[name] !== undefined;
+
+      case 'Boolean':
+        // true if exists and non-empty
+        var _booly = Boolean(isArray(data[name]) ? data[name].length : data[name]);
+        return value === _booly;
+
+      case 'Function':
+        // allow complex comparison
+        return !!value(data[name], name, data);
+
+      case 'Array':
+        if (!isArray(data[name])) {
+          return false;
+        }
+
+        var op = withinArray ? arrayContains : arraysEqual;
+        return op(data[name], value);
+
+      case 'RegExp':
+        if (!isArray(data[name])) {
+          return Boolean(data[name] && data[name].match(value));
+        }
+
+        if (!withinArray) {
+          return false;
+        }
+
+        return arrayContains(data[name], value);
+
+      case 'Number':
+        value = String(value);
+        /* falls through */
+      case 'String':
+        if (!isArray(data[name])) {
+          return data[name] === value;
+        }
+
+        if (!withinArray) {
+          return false;
+        }
+
+        return arrayContains(data[name], value);
+
+      default:
+        throw new TypeError('URI.hasQuery() accepts undefined, boolean, string, number, RegExp, Function as the value parameter');
+    }
+  };
+
+
+  URI.joinPaths = function() {
+    var input = [];
+    var segments = [];
+    var nonEmptySegments = 0;
+
+    for (var i = 0; i < arguments.length; i++) {
+      var url = new URI(arguments[i]);
+      input.push(url);
+      var _segments = url.segment();
+      for (var s = 0; s < _segments.length; s++) {
+        if (typeof _segments[s] === 'string') {
+          segments.push(_segments[s]);
+        }
+
+        if (_segments[s]) {
+          nonEmptySegments++;
+        }
+      }
+    }
+
+    if (!segments.length || !nonEmptySegments) {
+      return new URI('');
+    }
+
+    var uri = new URI('').segment(segments);
+
+    if (input[0].path() === '' || input[0].path().slice(0, 1) === '/') {
+      uri.path('/' + uri.path());
+    }
+
+    return uri.normalize();
+  };
+
+  URI.commonPath = function(one, two) {
+    var length = Math.min(one.length, two.length);
+    var pos;
+
+    // find first non-matching character
+    for (pos = 0; pos < length; pos++) {
+      if (one.charAt(pos) !== two.charAt(pos)) {
+        pos--;
+        break;
+      }
+    }
+
+    if (pos < 1) {
+      return one.charAt(0) === two.charAt(0) && one.charAt(0) === '/' ? '/' : '';
+    }
+
+    // revert to last /
+    if (one.charAt(pos) !== '/' || two.charAt(pos) !== '/') {
+      pos = one.substring(0, pos).lastIndexOf('/');
+    }
+
+    return one.substring(0, pos + 1);
+  };
+
+  URI.withinString = function(string, callback, options) {
+    options || (options = {});
+    var _start = options.start || URI.findUri.start;
+    var _end = options.end || URI.findUri.end;
+    var _trim = options.trim || URI.findUri.trim;
+    var _parens = options.parens || URI.findUri.parens;
+    var _attributeOpen = /[a-z0-9-]=["']?$/i;
+
+    _start.lastIndex = 0;
+    while (true) {
+      var match = _start.exec(string);
+      if (!match) {
+        break;
+      }
+
+      var start = match.index;
+      if (options.ignoreHtml) {
+        // attribut(e=["']?$)
+        var attributeOpen = string.slice(Math.max(start - 3, 0), start);
+        if (attributeOpen && _attributeOpen.test(attributeOpen)) {
+          continue;
+        }
+      }
+
+      var end = start + string.slice(start).search(_end);
+      var slice = string.slice(start, end);
+      // make sure we include well balanced parens
+      var parensEnd = -1;
+      while (true) {
+        var parensMatch = _parens.exec(slice);
+        if (!parensMatch) {
+          break;
+        }
+
+        var parensMatchEnd = parensMatch.index + parensMatch[0].length;
+        parensEnd = Math.max(parensEnd, parensMatchEnd);
+      }
+
+      if (parensEnd > -1) {
+        slice = slice.slice(0, parensEnd) + slice.slice(parensEnd).replace(_trim, '');
+      } else {
+        slice = slice.replace(_trim, '');
+      }
+
+      if (slice.length <= match[0].length) {
+        // the extract only contains the starting marker of a URI,
+        // e.g. "www" or "http://"
+        continue;
+      }
+
+      if (options.ignore && options.ignore.test(slice)) {
+        continue;
+      }
+
+      end = start + slice.length;
+      var result = callback(slice, start, end, string);
+      if (result === undefined) {
+        _start.lastIndex = end;
+        continue;
+      }
+
+      result = String(result);
+      string = string.slice(0, start) + result + string.slice(end);
+      _start.lastIndex = start + result.length;
+    }
+
+    _start.lastIndex = 0;
+    return string;
+  };
+
+  URI.ensureValidHostname = function(v) {
+    // Theoretically URIs allow percent-encoding in Hostnames (according to RFC 3986)
+    // they are not part of DNS and therefore ignored by URI.js
+
+    if (v.match(URI.invalid_hostname_characters)) {
+      // test punycode
+      if (!punycode) {
+        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-] and Punycode.js is not available');
+      }
+
+      if (punycode.toASCII(v).match(URI.invalid_hostname_characters)) {
+        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-]');
+      }
+    }
+  };
+
+  // noConflict
+  URI.noConflict = function(removeAll) {
+    if (removeAll) {
+      var unconflicted = {
+        URI: this.noConflict()
+      };
+
+      if (root.URITemplate && typeof root.URITemplate.noConflict === 'function') {
+        unconflicted.URITemplate = root.URITemplate.noConflict();
+      }
+
+      if (root.IPv6 && typeof root.IPv6.noConflict === 'function') {
+        unconflicted.IPv6 = root.IPv6.noConflict();
+      }
+
+      if (root.SecondLevelDomains && typeof root.SecondLevelDomains.noConflict === 'function') {
+        unconflicted.SecondLevelDomains = root.SecondLevelDomains.noConflict();
+      }
+
+      return unconflicted;
+    } else if (root.URI === this) {
+      root.URI = _URI;
+    }
+
+    return this;
+  };
+
+  p.build = function(deferBuild) {
+    if (deferBuild === true) {
+      this._deferred_build = true;
+    } else if (deferBuild === undefined || this._deferred_build) {
+      this._string = URI.build(this._parts);
+      this._deferred_build = false;
+    }
+
+    return this;
+  };
+
+  p.clone = function() {
+    return new URI(this);
+  };
+
+  p.valueOf = p.toString = function() {
+    return this.build(false)._string;
+  };
+
+
+  function generateSimpleAccessor(_part){
+    return function(v, build) {
+      if (v === undefined) {
+        return this._parts[_part] || '';
+      } else {
+        this._parts[_part] = v || null;
+        this.build(!build);
+        return this;
+      }
+    };
+  }
+
+  function generatePrefixAccessor(_part, _key){
+    return function(v, build) {
+      if (v === undefined) {
+        return this._parts[_part] || '';
+      } else {
+        if (v !== null) {
+          v = v + '';
+          if (v.charAt(0) === _key) {
+            v = v.substring(1);
+          }
+        }
+
+        this._parts[_part] = v;
+        this.build(!build);
+        return this;
+      }
+    };
+  }
+
+  p.protocol = generateSimpleAccessor('protocol');
+  p.username = generateSimpleAccessor('username');
+  p.password = generateSimpleAccessor('password');
+  p.hostname = generateSimpleAccessor('hostname');
+  p.port = generateSimpleAccessor('port');
+  p.query = generatePrefixAccessor('query', '?');
+  p.fragment = generatePrefixAccessor('fragment', '#');
+
+  p.search = function(v, build) {
+    var t = this.query(v, build);
+    return typeof t === 'string' && t.length ? ('?' + t) : t;
+  };
+  p.hash = function(v, build) {
+    var t = this.fragment(v, build);
+    return typeof t === 'string' && t.length ? ('#' + t) : t;
+  };
+
+  p.pathname = function(v, build) {
+    if (v === undefined || v === true) {
+      var res = this._parts.path || (this._parts.hostname ? '/' : '');
+      return v ? (this._parts.urn ? URI.decodeUrnPath : URI.decodePath)(res) : res;
+    } else {
+      if (this._parts.urn) {
+        this._parts.path = v ? URI.recodeUrnPath(v) : '';
+      } else {
+        this._parts.path = v ? URI.recodePath(v) : '/';
+      }
+      this.build(!build);
+      return this;
+    }
+  };
+  p.path = p.pathname;
+  p.href = function(href, build) {
+    var key;
+
+    if (href === undefined) {
+      return this.toString();
+    }
+
+    this._string = '';
+    this._parts = URI._parts();
+
+    var _URI = href instanceof URI;
+    var _object = typeof href === 'object' && (href.hostname || href.path || href.pathname);
+    if (href.nodeName) {
+      var attribute = URI.getDomAttribute(href);
+      href = href[attribute] || '';
+      _object = false;
+    }
+
+    // window.location is reported to be an object, but it's not the sort
+    // of object we're looking for:
+    // * location.protocol ends with a colon
+    // * location.query != object.search
+    // * location.hash != object.fragment
+    // simply serializing the unknown object should do the trick
+    // (for location, not for everything...)
+    if (!_URI && _object && href.pathname !== undefined) {
+      href = href.toString();
+    }
+
+    if (typeof href === 'string' || href instanceof String) {
+      this._parts = URI.parse(String(href), this._parts);
+    } else if (_URI || _object) {
+      var src = _URI ? href._parts : href;
+      for (key in src) {
+        if (hasOwn.call(this._parts, key)) {
+          this._parts[key] = src[key];
+        }
+      }
+    } else {
+      throw new TypeError('invalid input');
+    }
+
+    this.build(!build);
+    return this;
+  };
+
+  // identification accessors
+  p.is = function(what) {
+    var ip = false;
+    var ip4 = false;
+    var ip6 = false;
+    var name = false;
+    var sld = false;
+    var idn = false;
+    var punycode = false;
+    var relative = !this._parts.urn;
+
+    if (this._parts.hostname) {
+      relative = false;
+      ip4 = URI.ip4_expression.test(this._parts.hostname);
+      ip6 = URI.ip6_expression.test(this._parts.hostname);
+      ip = ip4 || ip6;
+      name = !ip;
+      sld = name && SLD && SLD.has(this._parts.hostname);
+      idn = name && URI.idn_expression.test(this._parts.hostname);
+      punycode = name && URI.punycode_expression.test(this._parts.hostname);
+    }
+
+    switch (what.toLowerCase()) {
+      case 'relative':
+        return relative;
+
+      case 'absolute':
+        return !relative;
+
+      // hostname identification
+      case 'domain':
+      case 'name':
+        return name;
+
+      case 'sld':
+        return sld;
+
+      case 'ip':
+        return ip;
+
+      case 'ip4':
+      case 'ipv4':
+      case 'inet4':
+        return ip4;
+
+      case 'ip6':
+      case 'ipv6':
+      case 'inet6':
+        return ip6;
+
+      case 'idn':
+        return idn;
+
+      case 'url':
+        return !this._parts.urn;
+
+      case 'urn':
+        return !!this._parts.urn;
+
+      case 'punycode':
+        return punycode;
+    }
+
+    return null;
+  };
+
+  // component specific input validation
+  var _protocol = p.protocol;
+  var _port = p.port;
+  var _hostname = p.hostname;
+
+  p.protocol = function(v, build) {
+    if (v !== undefined) {
+      if (v) {
+        // accept trailing ://
+        v = v.replace(/:(\/\/)?$/, '');
+
+        if (!v.match(URI.protocol_expression)) {
+          throw new TypeError('Protocol "' + v + '" contains characters other than [A-Z0-9.+-] or doesn\'t start with [A-Z]');
+        }
+      }
+    }
+    return _protocol.call(this, v, build);
+  };
+  p.scheme = p.protocol;
+  p.port = function(v, build) {
+    if (this._parts.urn) {
+      return v === undefined ? '' : this;
+    }
+
+    if (v !== undefined) {
+      if (v === 0) {
+        v = null;
+      }
+
+      if (v) {
+        v += '';
+        if (v.charAt(0) === ':') {
+          v = v.substring(1);
+        }
+
+        if (v.match(/[^0-9]/)) {
+          throw new TypeError('Port "' + v + '" contains characters other than [0-9]');
+        }
+      }
+    }
+    return _port.call(this, v, build);
+  };
+  p.hostname = function(v, build) {
+    if (this._parts.urn) {
+      return v === undefined ? '' : this;
+    }
+
+    if (v !== undefined) {
+      var x = {};
+      var res = URI.parseHost(v, x);
+      if (res !== '/') {
+        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-]');
+      }
+
+      v = x.hostname;
+    }
+    return _hostname.call(this, v, build);
+  };
+
+  // compound accessors
+  p.origin = function(v, build) {
+    if (this._parts.urn) {
+      return v === undefined ? '' : this;
+    }
+
+    if (v === undefined) {
+      var protocol = this.protocol();
+      var authority = this.authority();
+      if (!authority) {
+        return '';
+      }
+
+      return (protocol ? protocol + '://' : '') + this.authority();
+    } else {
+      var origin = URI(v);
+      this
+        .protocol(origin.protocol())
+        .authority(origin.authority())
+        .build(!build);
+      return this;
+    }
+  };
+  p.host = function(v, build) {
+    if (this._parts.urn) {
+      return v === undefined ? '' : this;
+    }
+
+    if (v === undefined) {
+      return this._parts.hostname ? URI.buildHost(this._parts) : '';
+    } else {
+      var res = URI.parseHost(v, this._parts);
+      if (res !== '/') {
+        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-]');
+      }
+
+      this.build(!build);
+      return this;
+    }
+  };
+  p.authority = function(v, build) {
+    if (this._parts.urn) {
+      return v === undefined ? '' : this;
+    }
+
+    if (v === undefined) {
+      return this._parts.hostname ? URI.buildAuthority(this._parts) : '';
+    } else {
+      var res = URI.parseAuthority(v, this._parts);
+      if (res !== '/') {
+        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-]');
+      }
+
+      this.build(!build);
+      return this;
+    }
+  };
+  p.userinfo = function(v, build) {
+    if (this._parts.urn) {
+      return v === undefined ? '' : this;
+    }
+
+    if (v === undefined) {
+      var t = URI.buildUserinfo(this._parts);
+      return t ? t.substring(0, t.length -1) : t;
+    } else {
+      if (v[v.length-1] !== '@') {
+        v += '@';
+      }
+
+      URI.parseUserinfo(v, this._parts);
+      this.build(!build);
+      return this;
+    }
+  };
+  p.resource = function(v, build) {
+    var parts;
+
+    if (v === undefined) {
+      return this.path() + this.search() + this.hash();
+    }
+
+    parts = URI.parse(v);
+    this._parts.path = parts.path;
+    this._parts.query = parts.query;
+    this._parts.fragment = parts.fragment;
+    this.build(!build);
+    return this;
+  };
+
+  // fraction accessors
+  p.subdomain = function(v, build) {
+    if (this._parts.urn) {
+      return v === undefined ? '' : this;
+    }
+
+    // convenience, return "www" from "www.example.org"
+    if (v === undefined) {
+      if (!this._parts.hostname || this.is('IP')) {
+        return '';
+      }
+
+      // grab domain and add another segment
+      var end = this._parts.hostname.length - this.domain().length - 1;
+      return this._parts.hostname.substring(0, end) || '';
+    } else {
+      var e = this._parts.hostname.length - this.domain().length;
+      var sub = this._parts.hostname.substring(0, e);
+      var replace = new RegExp('^' + escapeRegEx(sub));
+
+      if (v && v.charAt(v.length - 1) !== '.') {
+        v += '.';
+      }
+
+      if (v) {
+        URI.ensureValidHostname(v);
+      }
+
+      this._parts.hostname = this._parts.hostname.replace(replace, v);
+      this.build(!build);
+      return this;
+    }
+  };
+  p.domain = function(v, build) {
+    if (this._parts.urn) {
+      return v === undefined ? '' : this;
+    }
+
+    if (typeof v === 'boolean') {
+      build = v;
+      v = undefined;
+    }
+
+    // convenience, return "example.org" from "www.example.org"
+    if (v === undefined) {
+      if (!this._parts.hostname || this.is('IP')) {
+        return '';
+      }
+
+      // if hostname consists of 1 or 2 segments, it must be the domain
+      var t = this._parts.hostname.match(/\./g);
+      if (t && t.length < 2) {
+        return this._parts.hostname;
+      }
+
+      // grab tld and add another segment
+      var end = this._parts.hostname.length - this.tld(build).length - 1;
+      end = this._parts.hostname.lastIndexOf('.', end -1) + 1;
+      return this._parts.hostname.substring(end) || '';
+    } else {
+      if (!v) {
+        throw new TypeError('cannot set domain empty');
+      }
+
+      URI.ensureValidHostname(v);
+
+      if (!this._parts.hostname || this.is('IP')) {
+        this._parts.hostname = v;
+      } else {
+        var replace = new RegExp(escapeRegEx(this.domain()) + '$');
+        this._parts.hostname = this._parts.hostname.replace(replace, v);
+      }
+
+      this.build(!build);
+      return this;
+    }
+  };
+  p.tld = function(v, build) {
+    if (this._parts.urn) {
+      return v === undefined ? '' : this;
+    }
+
+    if (typeof v === 'boolean') {
+      build = v;
+      v = undefined;
+    }
+
+    // return "org" from "www.example.org"
+    if (v === undefined) {
+      if (!this._parts.hostname || this.is('IP')) {
+        return '';
+      }
+
+      var pos = this._parts.hostname.lastIndexOf('.');
+      var tld = this._parts.hostname.substring(pos + 1);
+
+      if (build !== true && SLD && SLD.list[tld.toLowerCase()]) {
+        return SLD.get(this._parts.hostname) || tld;
+      }
+
+      return tld;
+    } else {
+      var replace;
+
+      if (!v) {
+        throw new TypeError('cannot set TLD empty');
+      } else if (v.match(/[^a-zA-Z0-9-]/)) {
+        if (SLD && SLD.is(v)) {
+          replace = new RegExp(escapeRegEx(this.tld()) + '$');
+          this._parts.hostname = this._parts.hostname.replace(replace, v);
+        } else {
+          throw new TypeError('TLD "' + v + '" contains characters other than [A-Z0-9]');
+        }
+      } else if (!this._parts.hostname || this.is('IP')) {
+        throw new ReferenceError('cannot set TLD on non-domain host');
+      } else {
+        replace = new RegExp(escapeRegEx(this.tld()) + '$');
+        this._parts.hostname = this._parts.hostname.replace(replace, v);
+      }
+
+      this.build(!build);
+      return this;
+    }
+  };
+  p.directory = function(v, build) {
+    if (this._parts.urn) {
+      return v === undefined ? '' : this;
+    }
+
+    if (v === undefined || v === true) {
+      if (!this._parts.path && !this._parts.hostname) {
+        return '';
+      }
+
+      if (this._parts.path === '/') {
+        return '/';
+      }
+
+      var end = this._parts.path.length - this.filename().length - 1;
+      var res = this._parts.path.substring(0, end) || (this._parts.hostname ? '/' : '');
+
+      return v ? URI.decodePath(res) : res;
+
+    } else {
+      var e = this._parts.path.length - this.filename().length;
+      var directory = this._parts.path.substring(0, e);
+      var replace = new RegExp('^' + escapeRegEx(directory));
+
+      // fully qualifier directories begin with a slash
+      if (!this.is('relative')) {
+        if (!v) {
+          v = '/';
+        }
+
+        if (v.charAt(0) !== '/') {
+          v = '/' + v;
+        }
+      }
+
+      // directories always end with a slash
+      if (v && v.charAt(v.length - 1) !== '/') {
+        v += '/';
+      }
+
+      v = URI.recodePath(v);
+      this._parts.path = this._parts.path.replace(replace, v);
+      this.build(!build);
+      return this;
+    }
+  };
+  p.filename = function(v, build) {
+    if (this._parts.urn) {
+      return v === undefined ? '' : this;
+    }
+
+    if (typeof v !== 'string') {
+      if (!this._parts.path || this._parts.path === '/') {
+        return '';
+      }
+
+      var pos = this._parts.path.lastIndexOf('/');
+      var res = this._parts.path.substring(pos+1);
+
+      return v ? URI.decodePathSegment(res) : res;
+    } else {
+      var mutatedDirectory = false;
+
+      if (v.charAt(0) === '/') {
+        v = v.substring(1);
+      }
+
+      if (v.match(/\.?\//)) {
+        mutatedDirectory = true;
+      }
+
+      var replace = new RegExp(escapeRegEx(this.filename()) + '$');
+      v = URI.recodePath(v);
+      this._parts.path = this._parts.path.replace(replace, v);
+
+      if (mutatedDirectory) {
+        this.normalizePath(build);
+      } else {
+        this.build(!build);
+      }
+
+      return this;
+    }
+  };
+  p.suffix = function(v, build) {
+    if (this._parts.urn) {
+      return v === undefined ? '' : this;
+    }
+
+    if (v === undefined || v === true) {
+      if (!this._parts.path || this._parts.path === '/') {
+        return '';
+      }
+
+      var filename = this.filename();
+      var pos = filename.lastIndexOf('.');
+      var s, res;
+
+      if (pos === -1) {
+        return '';
+      }
+
+      // suffix may only contain alnum characters (yup, I made this up.)
+      s = filename.substring(pos+1);
+      res = (/^[a-z0-9%]+$/i).test(s) ? s : '';
+      return v ? URI.decodePathSegment(res) : res;
+    } else {
+      if (v.charAt(0) === '.') {
+        v = v.substring(1);
+      }
+
+      var suffix = this.suffix();
+      var replace;
+
+      if (!suffix) {
+        if (!v) {
+          return this;
+        }
+
+        this._parts.path += '.' + URI.recodePath(v);
+      } else if (!v) {
+        replace = new RegExp(escapeRegEx('.' + suffix) + '$');
+      } else {
+        replace = new RegExp(escapeRegEx(suffix) + '$');
+      }
+
+      if (replace) {
+        v = URI.recodePath(v);
+        this._parts.path = this._parts.path.replace(replace, v);
+      }
+
+      this.build(!build);
+      return this;
+    }
+  };
+  p.segment = function(segment, v, build) {
+    var separator = this._parts.urn ? ':' : '/';
+    var path = this.path();
+    var absolute = path.substring(0, 1) === '/';
+    var segments = path.split(separator);
+
+    if (segment !== undefined && typeof segment !== 'number') {
+      build = v;
+      v = segment;
+      segment = undefined;
+    }
+
+    if (segment !== undefined && typeof segment !== 'number') {
+      throw new Error('Bad segment "' + segment + '", must be 0-based integer');
+    }
+
+    if (absolute) {
+      segments.shift();
+    }
+
+    if (segment < 0) {
+      // allow negative indexes to address from the end
+      segment = Math.max(segments.length + segment, 0);
+    }
+
+    if (v === undefined) {
+      /*jshint laxbreak: true */
+      return segment === undefined
+        ? segments
+        : segments[segment];
+      /*jshint laxbreak: false */
+    } else if (segment === null || segments[segment] === undefined) {
+      if (isArray(v)) {
+        segments = [];
+        // collapse empty elements within array
+        for (var i=0, l=v.length; i < l; i++) {
+          if (!v[i].length && (!segments.length || !segments[segments.length -1].length)) {
+            continue;
+          }
+
+          if (segments.length && !segments[segments.length -1].length) {
+            segments.pop();
+          }
+
+          segments.push(trimSlashes(v[i]));
+        }
+      } else if (v || typeof v === 'string') {
+        v = trimSlashes(v);
+        if (segments[segments.length -1] === '') {
+          // empty trailing elements have to be overwritten
+          // to prevent results such as /foo//bar
+          segments[segments.length -1] = v;
+        } else {
+          segments.push(v);
+        }
+      }
+    } else {
+      if (v) {
+        segments[segment] = trimSlashes(v);
+      } else {
+        segments.splice(segment, 1);
+      }
+    }
+
+    if (absolute) {
+      segments.unshift('');
+    }
+
+    return this.path(segments.join(separator), build);
+  };
+  p.segmentCoded = function(segment, v, build) {
+    var segments, i, l;
+
+    if (typeof segment !== 'number') {
+      build = v;
+      v = segment;
+      segment = undefined;
+    }
+
+    if (v === undefined) {
+      segments = this.segment(segment, v, build);
+      if (!isArray(segments)) {
+        segments = segments !== undefined ? URI.decode(segments) : undefined;
+      } else {
+        for (i = 0, l = segments.length; i < l; i++) {
+          segments[i] = URI.decode(segments[i]);
+        }
+      }
+
+      return segments;
+    }
+
+    if (!isArray(v)) {
+      v = (typeof v === 'string' || v instanceof String) ? URI.encode(v) : v;
+    } else {
+      for (i = 0, l = v.length; i < l; i++) {
+        v[i] = URI.encode(v[i]);
+      }
+    }
+
+    return this.segment(segment, v, build);
+  };
+
+  // mutating query string
+  var q = p.query;
+  p.query = function(v, build) {
+    if (v === true) {
+      return URI.parseQuery(this._parts.query, this._parts.escapeQuerySpace);
+    } else if (typeof v === 'function') {
+      var data = URI.parseQuery(this._parts.query, this._parts.escapeQuerySpace);
+      var result = v.call(this, data);
+      this._parts.query = URI.buildQuery(result || data, this._parts.duplicateQueryParameters, this._parts.escapeQuerySpace);
+      this.build(!build);
+      return this;
+    } else if (v !== undefined && typeof v !== 'string') {
+      this._parts.query = URI.buildQuery(v, this._parts.duplicateQueryParameters, this._parts.escapeQuerySpace);
+      this.build(!build);
+      return this;
+    } else {
+      return q.call(this, v, build);
+    }
+  };
+  p.setQuery = function(name, value, build) {
+    var data = URI.parseQuery(this._parts.query, this._parts.escapeQuerySpace);
+
+    if (typeof name === 'string' || name instanceof String) {
+      data[name] = value !== undefined ? value : null;
+    } else if (typeof name === 'object') {
+      for (var key in name) {
+        if (hasOwn.call(name, key)) {
+          data[key] = name[key];
+        }
+      }
+    } else {
+      throw new TypeError('URI.addQuery() accepts an object, string as the name parameter');
+    }
+
+    this._parts.query = URI.buildQuery(data, this._parts.duplicateQueryParameters, this._parts.escapeQuerySpace);
+    if (typeof name !== 'string') {
+      build = value;
+    }
+
+    this.build(!build);
+    return this;
+  };
+  p.addQuery = function(name, value, build) {
+    var data = URI.parseQuery(this._parts.query, this._parts.escapeQuerySpace);
+    URI.addQuery(data, name, value === undefined ? null : value);
+    this._parts.query = URI.buildQuery(data, this._parts.duplicateQueryParameters, this._parts.escapeQuerySpace);
+    if (typeof name !== 'string') {
+      build = value;
+    }
+
+    this.build(!build);
+    return this;
+  };
+  p.removeQuery = function(name, value, build) {
+    var data = URI.parseQuery(this._parts.query, this._parts.escapeQuerySpace);
+    URI.removeQuery(data, name, value);
+    this._parts.query = URI.buildQuery(data, this._parts.duplicateQueryParameters, this._parts.escapeQuerySpace);
+    if (typeof name !== 'string') {
+      build = value;
+    }
+
+    this.build(!build);
+    return this;
+  };
+  p.hasQuery = function(name, value, withinArray) {
+    var data = URI.parseQuery(this._parts.query, this._parts.escapeQuerySpace);
+    return URI.hasQuery(data, name, value, withinArray);
+  };
+  p.setSearch = p.setQuery;
+  p.addSearch = p.addQuery;
+  p.removeSearch = p.removeQuery;
+  p.hasSearch = p.hasQuery;
+
+  // sanitizing URLs
+  p.normalize = function() {
+    if (this._parts.urn) {
+      return this
+        .normalizeProtocol(false)
+        .normalizePath(false)
+        .normalizeQuery(false)
+        .normalizeFragment(false)
+        .build();
+    }
+
+    return this
+      .normalizeProtocol(false)
+      .normalizeHostname(false)
+      .normalizePort(false)
+      .normalizePath(false)
+      .normalizeQuery(false)
+      .normalizeFragment(false)
+      .build();
+  };
+  p.normalizeProtocol = function(build) {
+    if (typeof this._parts.protocol === 'string') {
+      this._parts.protocol = this._parts.protocol.toLowerCase();
+      this.build(!build);
+    }
+
+    return this;
+  };
+  p.normalizeHostname = function(build) {
+    if (this._parts.hostname) {
+      if (this.is('IDN') && punycode) {
+        this._parts.hostname = punycode.toASCII(this._parts.hostname);
+      } else if (this.is('IPv6') && IPv6) {
+        this._parts.hostname = IPv6.best(this._parts.hostname);
+      }
+
+      this._parts.hostname = this._parts.hostname.toLowerCase();
+      this.build(!build);
+    }
+
+    return this;
+  };
+  p.normalizePort = function(build) {
+    // remove port of it's the protocol's default
+    if (typeof this._parts.protocol === 'string' && this._parts.port === URI.defaultPorts[this._parts.protocol]) {
+      this._parts.port = null;
+      this.build(!build);
+    }
+
+    return this;
+  };
+  p.normalizePath = function(build) {
+    var _path = this._parts.path;
+    if (!_path) {
+      return this;
+    }
+
+    if (this._parts.urn) {
+      this._parts.path = URI.recodeUrnPath(this._parts.path);
+      this.build(!build);
+      return this;
+    }
+
+    if (this._parts.path === '/') {
+      return this;
+    }
+
+    _path = URI.recodePath(_path);
+
+    var _was_relative;
+    var _leadingParents = '';
+    var _parent, _pos;
+
+    // handle relative paths
+    if (_path.charAt(0) !== '/') {
+      _was_relative = true;
+      _path = '/' + _path;
+    }
+
+    // handle relative files (as opposed to directories)
+    if (_path.slice(-3) === '/..' || _path.slice(-2) === '/.') {
+      _path += '/';
+    }
+
+    // resolve simples
+    _path = _path
+      .replace(/(\/(\.\/)+)|(\/\.$)/g, '/')
+      .replace(/\/{2,}/g, '/');
+
+    // remember leading parents
+    if (_was_relative) {
+      _leadingParents = _path.substring(1).match(/^(\.\.\/)+/) || '';
+      if (_leadingParents) {
+        _leadingParents = _leadingParents[0];
+      }
+    }
+
+    // resolve parents
+    while (true) {
+      _parent = _path.search(/\/\.\.(\/|$)/);
+      if (_parent === -1) {
+        // no more ../ to resolve
+        break;
+      } else if (_parent === 0) {
+        // top level cannot be relative, skip it
+        _path = _path.substring(3);
+        continue;
+      }
+
+      _pos = _path.substring(0, _parent).lastIndexOf('/');
+      if (_pos === -1) {
+        _pos = _parent;
+      }
+      _path = _path.substring(0, _pos) + _path.substring(_parent + 3);
+    }
+
+    // revert to relative
+    if (_was_relative && this.is('relative')) {
+      _path = _leadingParents + _path.substring(1);
+    }
+
+    this._parts.path = _path;
+    this.build(!build);
+    return this;
+  };
+  p.normalizePathname = p.normalizePath;
+  p.normalizeQuery = function(build) {
+    if (typeof this._parts.query === 'string') {
+      if (!this._parts.query.length) {
+        this._parts.query = null;
+      } else {
+        this.query(URI.parseQuery(this._parts.query, this._parts.escapeQuerySpace));
+      }
+
+      this.build(!build);
+    }
+
+    return this;
+  };
+  p.normalizeFragment = function(build) {
+    if (!this._parts.fragment) {
+      this._parts.fragment = null;
+      this.build(!build);
+    }
+
+    return this;
+  };
+  p.normalizeSearch = p.normalizeQuery;
+  p.normalizeHash = p.normalizeFragment;
+
+  p.iso8859 = function() {
+    // expect unicode input, iso8859 output
+    var e = URI.encode;
+    var d = URI.decode;
+
+    URI.encode = escape;
+    URI.decode = decodeURIComponent;
+    try {
+      this.normalize();
+    } finally {
+      URI.encode = e;
+      URI.decode = d;
+    }
+    return this;
+  };
+
+  p.unicode = function() {
+    // expect iso8859 input, unicode output
+    var e = URI.encode;
+    var d = URI.decode;
+
+    URI.encode = strictEncodeURIComponent;
+    URI.decode = unescape;
+    try {
+      this.normalize();
+    } finally {
+      URI.encode = e;
+      URI.decode = d;
+    }
+    return this;
+  };
+
+  p.readable = function() {
+    var uri = this.clone();
+    // removing username, password, because they shouldn't be displayed according to RFC 3986
+    uri.username('').password('').normalize();
+    var t = '';
+    if (uri._parts.protocol) {
+      t += uri._parts.protocol + '://';
+    }
+
+    if (uri._parts.hostname) {
+      if (uri.is('punycode') && punycode) {
+        t += punycode.toUnicode(uri._parts.hostname);
+        if (uri._parts.port) {
+          t += ':' + uri._parts.port;
+        }
+      } else {
+        t += uri.host();
+      }
+    }
+
+    if (uri._parts.hostname && uri._parts.path && uri._parts.path.charAt(0) !== '/') {
+      t += '/';
+    }
+
+    t += uri.path(true);
+    if (uri._parts.query) {
+      var q = '';
+      for (var i = 0, qp = uri._parts.query.split('&'), l = qp.length; i < l; i++) {
+        var kv = (qp[i] || '').split('=');
+        q += '&' + URI.decodeQuery(kv[0], this._parts.escapeQuerySpace)
+          .replace(/&/g, '%26');
+
+        if (kv[1] !== undefined) {
+          q += '=' + URI.decodeQuery(kv[1], this._parts.escapeQuerySpace)
+            .replace(/&/g, '%26');
+        }
+      }
+      t += '?' + q.substring(1);
+    }
+
+    t += URI.decodeQuery(uri.hash(), true);
+    return t;
+  };
+
+  // resolving relative and absolute URLs
+  p.absoluteTo = function(base) {
+    var resolved = this.clone();
+    var properties = ['protocol', 'username', 'password', 'hostname', 'port'];
+    var basedir, i, p;
+
+    if (!(base instanceof URI)) {
+      base = new URI(base);
+    }
+
+    // << Readium patch
+    // "filesystem:chrome-extension:"
+    //
+    
+    if (this._parts.protocol == 'filesystem') {
+
+      return resolved;
+    }
+
+    if (base._parts.protocol == 'filesystem') {
+
+      var uri = this.absoluteTo(base._parts.path);
+
+      if (base._parts.path.indexOf("chrome-extension:") !== -1 || base._parts.path.indexOf("http:") !== -1 || base._parts.path.indexOf("https:") !== -1) {
+
+        return new URI('filesystem:' + uri.toString());
+      }
+
+      return uri;
+    }
+
+    if (this._parts.urn) {
+      throw new Error('URNs do not have any generally defined hierarchical components');
+    }
+
+    //
+    // Readium patch >>
+
+    if (resolved._parts.protocol) {
+      // Directly returns even if this._parts.hostname is empty.
+      return resolved;
+    } else {
+      resolved._parts.protocol = base._parts.protocol;
+    }
+
+    if (this._parts.hostname) {
+      return resolved;
+    }
+
+    for (i = 0; (p = properties[i]); i++) {
+      resolved._parts[p] = base._parts[p];
+    }
+
+    if (!resolved._parts.path) {
+      resolved._parts.path = base._parts.path;
+      if (!resolved._parts.query) {
+        resolved._parts.query = base._parts.query;
+      }
+    } else {
+      if (resolved._parts.path.substring(-2) === '..') {
+        resolved._parts.path += '/';
+      }
+
+      if (resolved.path().charAt(0) !== '/') {
+        basedir = base.directory();
+        basedir = basedir ? basedir : base.path().indexOf('/') === 0 ? '/' : '';
+        resolved._parts.path = (basedir ? (basedir + '/') : '') + resolved._parts.path;
+        resolved.normalizePath();
+      }
+    }
+
+    resolved.build();
+    return resolved;
+  };
+  p.relativeTo = function(base) {
+    var relative = this.clone().normalize();
+    var relativeParts, baseParts, common, relativePath, basePath;
+
+    if (relative._parts.urn) {
+      throw new Error('URNs do not have any generally defined hierarchical components');
+    }
+
+    base = new URI(base).normalize();
+    relativeParts = relative._parts;
+    baseParts = base._parts;
+    relativePath = relative.path();
+    basePath = base.path();
+
+    if (relativePath.charAt(0) !== '/') {
+      throw new Error('URI is already relative');
+    }
+
+    if (basePath.charAt(0) !== '/') {
+      throw new Error('Cannot calculate a URI relative to another relative URI');
+    }
+
+    if (relativeParts.protocol === baseParts.protocol) {
+      relativeParts.protocol = null;
+    }
+
+    if (relativeParts.username !== baseParts.username || relativeParts.password !== baseParts.password) {
+      return relative.build();
+    }
+
+    if (relativeParts.protocol !== null || relativeParts.username !== null || relativeParts.password !== null) {
+      return relative.build();
+    }
+
+    if (relativeParts.hostname === baseParts.hostname && relativeParts.port === baseParts.port) {
+      relativeParts.hostname = null;
+      relativeParts.port = null;
+    } else {
+      return relative.build();
+    }
+
+    if (relativePath === basePath) {
+      relativeParts.path = '';
+      return relative.build();
+    }
+
+    // determine common sub path
+    common = URI.commonPath(relativePath, basePath);
+
+    // If the paths have nothing in common, return a relative URL with the absolute path.
+    if (!common) {
+      return relative.build();
+    }
+
+    var parents = baseParts.path
+      .substring(common.length)
+      .replace(/[^\/]*$/, '')
+      .replace(/.*?\//g, '../');
+
+    relativeParts.path = (parents + relativeParts.path.substring(common.length)) || './';
+
+    return relative.build();
+  };
+
+  // comparing URIs
+  p.equals = function(uri) {
+    var one = this.clone();
+    var two = new URI(uri);
+    var one_map = {};
+    var two_map = {};
+    var checked = {};
+    var one_query, two_query, key;
+
+    one.normalize();
+    two.normalize();
+
+    // exact match
+    if (one.toString() === two.toString()) {
+      return true;
+    }
+
+    // extract query string
+    one_query = one.query();
+    two_query = two.query();
+    one.query('');
+    two.query('');
+
+    // definitely not equal if not even non-query parts match
+    if (one.toString() !== two.toString()) {
+      return false;
+    }
+
+    // query parameters have the same length, even if they're permuted
+    if (one_query.length !== two_query.length) {
+      return false;
+    }
+
+    one_map = URI.parseQuery(one_query, this._parts.escapeQuerySpace);
+    two_map = URI.parseQuery(two_query, this._parts.escapeQuerySpace);
+
+    for (key in one_map) {
+      if (hasOwn.call(one_map, key)) {
+        if (!isArray(one_map[key])) {
+          if (one_map[key] !== two_map[key]) {
+            return false;
+          }
+        } else if (!arraysEqual(one_map[key], two_map[key])) {
+          return false;
+        }
+
+        checked[key] = true;
+      }
+    }
+
+    for (key in two_map) {
+      if (hasOwn.call(two_map, key)) {
+        if (!checked[key]) {
+          // two contains a parameter not present in one
+          return false;
+        }
+      }
+    }
+
+    return true;
+  };
+
+  // state
+  p.duplicateQueryParameters = function(v) {
+    this._parts.duplicateQueryParameters = !!v;
+    return this;
+  };
+
+  p.escapeQuerySpace = function(v) {
+    this._parts.escapeQuerySpace = !!v;
+    return this;
+  };
+
+  return URI;
+}));
+
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
 //
 //  Redistribution and use in source and binary forms, with or without modification,
@@ -19232,77 +21854,6 @@ define('readium_shared_js/globalsSetup',['./globals', 'jquery', 'console_shim', 
 
 define('readium_shared_js', ['readium_shared_js/globalsSetup'], function (main) { return main; });
 
-//  Created by Boris Schneiderman.
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
-//  
-//  Redistribution and use in source and binary forms, with or without modification, 
-//  are permitted provided that the following conditions are met:
-//  1. Redistributions of source code must retain the above copyright notice, this 
-//  list of conditions and the following disclaimer.
-//  2. Redistributions in binary form must reproduce the above copyright notice, 
-//  this list of conditions and the following disclaimer in the documentation and/or 
-//  other materials provided with the distribution.
-//  3. Neither the name of the organization nor the names of its contributors may be 
-//  used to endorse or promote products derived from this software without specific 
-//  prior written permission.
-//  
-//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
-//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
-//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
-//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
-//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
-//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
-//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
-//  OF THE POSSIBILITY OF SUCH DAMAGE.
-
-define('readium_shared_js/models/bookmark_data',[],function() {
-/**
- * @class Models.BookmarkData
- */
-var BookmarkData = function(idref, contentCFI) {
-
-    var self = this;
-
-    /**
-     * spine item idref
-     * @property idref
-     * @type {string}
-     */
-
-    this.idref = idref;
-
-    /**
-     * cfi of the first visible element
-     * @property contentCFI
-     * @type {string}
-     */
-    
-    this.contentCFI = contentCFI;
-
-    /**
-     * serialize to string
-     * @return JSON string representation
-     */
-    
-    this.toString = function(){
-        return JSON.stringify(self);
-    }
-
-};
-
-/**
- * Deserialize from string
- * @param str
- * @returns {ReadiumSDK.Models.BookmarkData}
- */
-BookmarkData.fromString = function(str) {
-    var obj = JSON.parse(str);
-    return new BookmarkData(obj.idref,obj.contentCFI);
-};
-return BookmarkData;
-});
 //  Created by Boris Schneiderman.
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
 //  
@@ -20735,6 +23286,10 @@ Helpers.UpdateHtmlFontAttributes = function ($epubHtml, fontSize, fontObj, callb
 
         var factor = fontSize / 100;
         var win = $epubHtml[0].ownerDocument.defaultView;
+        if (!win) {
+            console.log("NIL $epubHtml[0].ownerDocument.defaultView");
+            return;
+        }
 
         // TODO: is this a complete list? Is there a better way to do this?
         //https://github.com/readium/readium-shared-js/issues/336
@@ -22799,15 +25354,16 @@ var CfiNavigationLogic = function(options) {
         var visibleElements = [];
 
         _.each($elements, function ($node) {
-            var isTextNode = ($node[0].nodeType === Node.TEXT_NODE);
-            var $element = isTextNode ? $node.parent() : $node;
+            var node = $node[0];
+            var isTextNode = (node.nodeType === Node.TEXT_NODE);
+            var element = isTextNode ? node.parentElement : node;
             var visibilityPercentage = checkVisibilityByRectangles(
                 $node, true, visibleContentOffsets, frameDimensions);
 
             if (visibilityPercentage) {
                 visibleElements.push({
-                    element: $element[0], // DOM Element is pushed
-                    textNode: isTextNode ? $node[0] : null,
+                    element: element, // DOM Element is pushed
+                    textNode: isTextNode ? node : null,
                     percentVisible: visibilityPercentage
                 });
             }
@@ -22864,23 +25420,25 @@ var CfiNavigationLogic = function(options) {
         return $elements;
     };
 
-    function isElementBlacklisted($element) {
+    function isElementBlacklisted(element) {
         var isBlacklisted = false;
+        var classAttribute = element.className;
+        var classList = classAttribute ? classAttribute.split(' ') : [];
+        var id = element.id;
 
-        _.some(self.getClassBlacklist(), function (value) {
-            if ($element.hasClass(value)) {
-                isBlacklisted = true;
-            }
-            return isBlacklisted;
-        });
+        var classBlacklist = self.getClassBlacklist();
+        if (classList.length === 1 && _.contains(classBlacklist, classList[0])) {
+            isBlacklisted = true;
+            return;
+        } else if (classList.length && _.intersection(classBlacklist, classList).length) {
+            isBlacklisted = true;
+            return;
+        }
 
-        _.some(self.getIdBlacklist(), function (value) {
-            if ($element.attr("id") === value) {
-                isBlacklisted = true;
-            }
-            return isBlacklisted;
-        });
-
+        if (id && id.length && _.contains(self.getIdBlacklist(), id)) {
+            isBlacklisted = true;
+            return;
+        }
 
         return isBlacklisted;
     }
@@ -22909,10 +25467,9 @@ var CfiNavigationLogic = function(options) {
         while ((node = nodeIterator.nextNode())) {
             var isLeafNode = node.nodeType === Node.ELEMENT_NODE && !node.childElementCount && !isValidTextNodeContent(node.textContent);
             if (isLeafNode || isValidTextNode(node)){
-                var $node = $(node);
-                var $element = (node.nodeType === Node.TEXT_NODE) ? $node.parent() : $node;
-                if (!isElementBlacklisted($element)) {
-                    $leafNodeElements.push($node);
+                var element = (node.nodeType === Node.TEXT_NODE) ? node.parentElement : node;
+                if (!isElementBlacklisted(element)) {
+                    $leafNodeElements.push($(node));
                 }
             }
         }
@@ -22940,7 +25497,7 @@ var CfiNavigationLogic = function(options) {
         // If we don't do this, we may get a reference to a node that doesn't get rendered
         // (such as for example a node that has tab character and a bunch of spaces)
         // this is would be bad! ask me why.
-        return text.replace(/[\s\n\r\t]/g, "").length > 0;
+        return !!text.trim().length;
     }
 
     this.getElements = function (selector) {
@@ -23446,11 +26003,11 @@ var ViewerSettings = function(settingsData) {
     }
 }(this, function () {
 
-    //Make sure it does not throw in a SSR (Server Side Rendering) situation
+    // Make sure it does not throw in a SSR (Server Side Rendering) situation
     if (typeof window === "undefined") {
         return null;
     }
-    // Only used for the dirty checking, so the event callback count is limted to max 1 call per fps per sensor.
+    // Only used for the dirty checking, so the event callback count is limited to max 1 call per fps per sensor.
     // In combination with the event based resize sensor this saves cpu time, because the sensor is too fast and
     // would generate too many unnecessary events.
     var requestAnimationFrame = window.requestAnimationFrame ||
@@ -23532,11 +26089,12 @@ var ViewerSettings = function(settingsData) {
         function getComputedStyle(element, prop) {
             if (element.currentStyle) {
                 return element.currentStyle[prop];
-            } else if (window.getComputedStyle) {
-                return window.getComputedStyle(element, null).getPropertyValue(prop);
-            } else {
-                return element.style[prop];
             }
+            if (window.getComputedStyle) {
+                return window.getComputedStyle(element, null).getPropertyValue(prop);
+            }
+
+            return element.style[prop];
         }
 
         /**
@@ -23545,13 +26103,13 @@ var ViewerSettings = function(settingsData) {
          * @param {Function}    resized
          */
         function attachResizeEvent(element, resized) {
-            if (!element.resizedAttached) {
-                element.resizedAttached = new EventQueue();
-                element.resizedAttached.add(resized);
-            } else if (element.resizedAttached) {
+            if (element.resizedAttached) {
                 element.resizedAttached.add(resized);
                 return;
             }
+
+            element.resizedAttached = new EventQueue();
+            element.resizedAttached.add(resized);
 
             element.resizeSensor = document.createElement('div');
             element.resizeSensor.className = 'resize-sensor';
@@ -23716,6 +26274,11 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
     var _isIframeLoaded = false;
 
     var _$scaler;
+
+    var _lastBodySize = {
+        width: undefined,
+        height: undefined
+    };
 
     var PageTransitionHandler = function (opts) {
         var PageTransition = function (begin, end) {
@@ -24029,37 +26592,77 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             _$epubHtml = $("html", epubContentDocument);
             if (!_$epubHtml || _$epubHtml.length == 0) {
                 _$epubHtml = $("svg", epubContentDocument);
+                _$epubBody = undefined;
             } else {
                 _$epubBody = $("body", _$epubHtml);
             }
 
             //_$epubHtml.css("overflow", "hidden");
 
-            if (_enableBookStyleOverrides) {
+            if (_enableBookStyleOverrides) { // not fixed layout (reflowable in scroll view)
                 self.applyBookStyles();
             }
 
             updateMetaSize();
 
-            var bodyElement = _$epubBody[0];
-            bodyElement.resizeSensor = new ResizeSensor(bodyElement, function() {
-                console.log("OnePageView iframe body resized", $(bodyElement).width(), $(bodyElement).height());
-                var src = _spine.package.resolveRelativeUrl(_currentSpineItem.href);
-                Globals.logEvent("OnePageView.Events.CONTENT_SIZE_CHANGED", "EMIT", "one_page_view.js [ " + _currentSpineItem.href + " -- " + src + " ]");
-                self.emit(OnePageView.Events.CONTENT_SIZE_CHANGED, _$iframe, _currentSpineItem);
-                //updatePagination();
-            });
+            initResizeSensor();
 
             _pageTransitionHandler.onIFrameLoad();
         }
     }
 
+    function initResizeSensor() {
+
+        if (_$epubBody // undefined with SVG spine items
+            && _enableBookStyleOverrides // not fixed layout (reflowable in scroll view)
+            ) {
+
+            var bodyElement = _$epubBody[0];
+            if (bodyElement.resizeSensor) {
+                return;
+            }
+
+            // We need to make sure the content has indeed be resized, especially
+            // the first time it is triggered
+            _lastBodySize.width = $(bodyElement).width();
+            _lastBodySize.height = $(bodyElement).height();
+
+            bodyElement.resizeSensor = new ResizeSensor(bodyElement, function() {
+
+                var newBodySize = {
+                    width: $(bodyElement).width(),
+                    height: $(bodyElement).height()
+                };
+
+                console.debug("OnePageView content resized ...", newBodySize.width, newBodySize.height, _currentSpineItem.idref);
+                
+                if (newBodySize.width != _lastBodySize.width || newBodySize.height != _lastBodySize.height) {
+                    _lastBodySize.width = newBodySize.width;
+                    _lastBodySize.height = newBodySize.height;
+
+                    console.debug("... updating pagination.");
+
+                    var src = _spine.package.resolveRelativeUrl(_currentSpineItem.href);
+
+                    Globals.logEvent("OnePageView.Events.CONTENT_SIZE_CHANGED", "EMIT", "one_page_view.js [ " + _currentSpineItem.href + " -- " + src + " ]");
+                    
+                    self.emit(OnePageView.Events.CONTENT_SIZE_CHANGED, _$iframe, _currentSpineItem);
+                    
+                    //updatePagination();
+                } else {
+                    console.debug("... ignored (identical dimensions).");
+                }
+            });
+        }
+    }
+    
     var _viewSettings = undefined;
     this.setViewSettings = function (settings, docWillChange) {
 
         _viewSettings = settings;
 
-        if (_enableBookStyleOverrides && !docWillChange) {
+        if (_enableBookStyleOverrides  // not fixed layout (reflowable in scroll view)
+            && !docWillChange) {
             self.applyBookStyles();
         }
 
@@ -24070,7 +26673,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
     function updateHtmlFontInfo() {
 
-        if (!_enableBookStyleOverrides) return;
+        if (!_enableBookStyleOverrides) return;  // fixed layout (not reflowable in scroll view)
 
         if (_$epubHtml && _viewSettings) {
             var i = _viewSettings.fontSelection;
@@ -24084,7 +26687,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
     this.applyBookStyles = function () {
 
-        if (!_enableBookStyleOverrides) return;
+        if (!_enableBookStyleOverrides) return;  // fixed layout (not reflowable in scroll view)
 
         if (_$epubHtml) {
             Helpers.setStyles(_bookStyles.getStyles(), _$epubHtml);
@@ -24094,6 +26697,8 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
     //this is called by scroll_view for fixed spine item
     this.scaleToWidth = function (width) {
+
+        if (_enableBookStyleOverrides) return;  // not fixed layout (reflowable in scroll view)
 
         if (_meta_size.width <= 0) return; // resize event too early!
 
@@ -24202,6 +26807,8 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
     this.transformContentImmediate = function (scale, left, top) {
 
+        if (_enableBookStyleOverrides) return;  // not fixed layout (reflowable in scroll view)
+
         var elWidth = Math.ceil(_meta_size.width * scale);
         var elHeight = Math.floor(_meta_size.height * scale);
 
@@ -24227,7 +26834,9 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             enable3D = true;
         }
         
-        if (reader.needsFixedLayoutScalerWorkAround()) {
+        if (_$epubBody // not SVG spine item (otherwise fails in Safari OSX)
+            && reader.needsFixedLayoutScalerWorkAround()) {
+
             var css1 = Helpers.CSSTransformString({scale: scale, enable3D: enable3D});
             
             // See https://github.com/readium/readium-shared-js/issues/285 
@@ -24235,7 +26844,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             css1["min-height"] = _meta_size.height;
             
             _$epubHtml.css(css1);
-            
+
             // Ensures content dimensions matches viewport meta (authors / production tools should do this in their CSS...but unfortunately some don't).
             if (_$epubBody && _$epubBody.length) {
                 _$epubBody.css({width:_meta_size.width, height:_meta_size.height});
@@ -24253,7 +26862,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             css["height"] = _meta_size.height;
             _$scaler.css(css);
         }
-                
+
         // Chrome workaround: otherwise text is sometimes invisible (probably a rendering glitch due to the 3D transform graphics backend?)
         //_$epubHtml.css("visibility", "hidden"); // "flashing" in two-page spread mode is annoying :(
         _$epubHtml.css("opacity", "0.999");
@@ -24281,6 +26890,8 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
         _meta_size.width = 0;
         _meta_size.height = 0;
+
+        if (_enableBookStyleOverrides) return; // not fixed layout (reflowable in scroll view)
 
         var size = undefined;
 
@@ -24592,7 +27203,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             $iframe: _$iframe,
             frameDimensions: getFrameDimensions,
             visibleContentOffsets: getVisibleContentOffsets,
-            classBlacklist: ["cfi-marker", "mo-cfi-highlight", "resize-sensor", "resize-sensor-expand", "resize-sensor-shrink"],
+            classBlacklist: ["cfi-marker", "mo-cfi-highlight", "resize-sensor", "resize-sensor-expand", "resize-sensor-shrink", "resize-sensor-inner"],
             elementBlacklist: [],
             idBlacklist: ["MathJax_Message", "MathJax_SVG_Hidden"]
         });
@@ -45527,6 +48138,6 @@ return ReaderView;
 });
 
 
-require(["readium_cfi_js/cfi_API", "readium_shared_js/globalsSetup"]);
+require(["readium_cfi_js/cfi_API", "readium_plugin_highlights", "readium_shared_js/globalsSetup"]);
 
 //# sourceMappingURL=readium-shared-js_all.js.map

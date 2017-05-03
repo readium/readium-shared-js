@@ -32,8 +32,9 @@ require.config({
         "readium_js_plugins":
             process._RJS_rootDir(1) + '/js/plugins_controller',
 
-        underscore:
-            process._RJS_rootDir(1) + '/node_modules/underscore/underscore',
+// now included in readium-cfi-js
+//        underscore:
+//            process._RJS_rootDir(1) + '/node_modules/underscore/underscore',
 
         URIjs:
             process._RJS_rootDir(1) + '/node_modules/urijs/src/URI',
