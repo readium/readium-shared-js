@@ -5,6 +5,7 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:2.3.0'
+        classpath 'org.ajoberstar:gradle-git:+'
     }
 }
 
@@ -21,6 +22,40 @@ configurations {
     jniLibs
 }
 
-dependencies {
+apply plugin: 'org.ajoberstar.grgit'
+
+task addTag{
+    doLast{
+        grgit.tag.add{
+            name = version
+            message = "release of ${version}"
+        }    
+    }
+}
+
+task addJSs{
+    doLast{
+        grgit.add(patterns: ['build-output'])
+    }
+}
+
+task gitCommit(dependsOn: addJSs){
+    doLast{
+        grgit.commit{
+            message = "NO-JIRA: commit new generated JS files, ${version}"
+        }
+    }
+}
+
+task pushToRemote(dependsOn: gitCommit){
+    doLast{
+        grgit.push()
+    }
+}
+
+task pushTags(dependsOn: addTag){
+    doLast{
+        grgit.push(tags:true)
+    }
 }
 
