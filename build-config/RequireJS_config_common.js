@@ -56,7 +56,7 @@ require.config({
         eventEmitter:
             process._RJS_rootDir(1) + '/node_modules/eventemitter3/_rjs/index',
         //see prepare:patch npm build task (converts CommonJS to AMD => define(function(require, exports, module) { .... });)
-        
+
         "es6-collections":
             process._RJS_rootDir(1) + '/node_modules/es6-collections/index',
 
@@ -65,6 +65,12 @@ require.config({
 
         'cssom':
             process._RJS_rootDir(1) + '/node_modules/cssom/build/CSSOM',
+
+        'vue':
+            process._RJS_rootDir(1) + '/node_modules/vue/dist/vue',
+
+        'html2canvas':
+            process._RJS_rootDir(1) + '/node_modules/html2canvas/dist/html2canvas',
 
         // ------ LIBs
 

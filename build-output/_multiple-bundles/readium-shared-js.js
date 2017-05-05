@@ -4209,7 +4209,8 @@ var ViewerSettings = function(settingsData) {
     
     this.mediaOverlaysSynchronizationGranularity = "";
 
-    this.mediaOverlaysAutomaticPageTurn = true;
+    this.mediaOverlaysAutomaticPageTurn = false;
+    this.mediaOverlaysAutomaticPlay = true;
 
     this.enableGPUHardwareAccelerationCSS3D = false;
 
@@ -4264,6 +4265,7 @@ var ViewerSettings = function(settingsData) {
         mapProperty("mediaOverlaysVolume", settingsData);
         mapProperty("mediaOverlaysSynchronizationGranularity", settingsData);
         mapProperty("mediaOverlaysAutomaticPageTurn", settingsData);
+        mapProperty("mediaOverlaysAutomaticPlay", settingsData);
         mapProperty("scroll", settingsData);
         mapProperty("syntheticSpread", settingsData);
         mapProperty("pageTransition", settingsData);
@@ -6794,17 +6796,26 @@ var SmilIterator = function(smil) {
     };
 
     this.isLast = function() {
-
-        if(!this.currentPar) {
+        if (!this.currentPar) {
             console.debug("Par iterator is out of range");
+
             return;
         }
-
-        if (findParNode(this.currentPar.index + 1, this.currentPar.parent, false))
-        {
+        if (findParNode(this.currentPar.index + 1, this.currentPar.parent, false)) {
             return false;
         }
+        return true;
+    }
 
+    this.isFirst = function() {
+        if (!this.currentPar) {
+            console.debug("Par iterator is out of range");
+
+            return;
+        }
+        if (findParNode(this.currentPar.index - 1, this.currentPar.parent, true)) {
+            return false;
+        }
         return true;
     }
 
@@ -6906,11 +6917,10 @@ var MediaOverlayDataInjector = function (mediaOverlay, mediaOverlayPlayer) {
 
                 var touchClickMOEventHandler = function (event)
                 {
-                    //console.debug("MO TOUCH-DOWN: "+event.type);
-                    
+                    //console.debug("MO TOUCH-DOWN: " + event.type);
                     var elem = $(this)[0]; // body
-                    elem = event.target; // body descendant
 
+                    elem = event.target; // body descendant
                     if (!elem)
                     {
                         mediaOverlayPlayer.touchInit();
@@ -7084,12 +7094,19 @@ console.log("MO CLICKED LINK");
 
                         if (el && el != elem && el.nodeName.toLowerCase() === "body" && par && !par.getSmil().id)
                         {
-//console.debug("MO CLICKED BLANK BODY");
+                            //console.debug("MO CLICKED BLANK BODY");
                             mediaOverlayPlayer.touchInit();
                             return true;
                         }
-
-                        mediaOverlayPlayer.playUserPar(par);
+                        //console.debug("MO CLICKED: isPlaying()" + mediaOverlayPlayer.isPlaying());
+                        if (mediaOverlayPlayer.isPlaying())
+                        {
+                            mediaOverlayPlayer.pause();
+                        }
+                        else
+                        {
+                            mediaOverlayPlayer.playUserPar(par);
+                        }
                         return true;
                     }
                     else
@@ -7122,9 +7139,12 @@ console.debug("MO readaloud attr: " + readaloud);
                 
                 if ('ontouchstart' in document.documentElement)
                 {
-                  $body[0].addEventListener("touchstart", touchClickMOEventHandler_, false);
+                    $body[0].addEventListener("touchstart", touchClickMOEventHandler_, false);
                 }
-                $body[0].addEventListener("mousedown", touchClickMOEventHandler_, false);
+                else
+                {
+                    $body[0].addEventListener("mousedown", touchClickMOEventHandler_, false);
+                }
 
                 //var clickEvent = 'ontouchstart' in document.documentElement ? 'touchstart' : 'click';
                 //$body.bind(clickEvent, touchClickMOEventHandler);
@@ -7838,8 +7858,10 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
                 {
                     console.debug("this.playFile() SAME SRC");
                 }
-    
-                this.pause();
+                if (Math.abs(seekBegin - _audioElement.currentTime) >= 0.3)
+                {
+                    this.pause();
+                }
     
                 _currentSmilSrc = smilSrc;
                 _currentEpubSrc = epubSrc;
@@ -10935,10 +10957,23 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
                         _smilIterator.next();
                     }
                 }
+                var needToOpenContentUrl = true;
+                var paginationInfo = reader.getPaginationInfo();
 
-//console.debug("openContentUrl (nextSmil): " + _smilIterator.currentPar.text.src + " -- " + _smilIterator.smil.href);
-
-                reader.openContentUrl(_smilIterator.currentPar.text.src, _smilIterator.smil.href, self);
+                if (paginationInfo.openPages.length > 0) {
+                    for (var i = 0; i < paginationInfo.openPages.length; i++) {
+                        if (_smilIterator.currentPar.text.manifestItemId === paginationInfo.openPages[i].idref) {
+                            needToOpenContentUrl = false;
+                            break;
+                        }
+                    }
+                }
+                if (needToOpenContentUrl) {
+                    //console.debug("nextSmil: openContentUrl: " + _smilIterator.currentPar.text.src + " -- " + _smilIterator.smil.href);
+                    reader.openContentUrl(_smilIterator.currentPar.text.src, _smilIterator.smil.href, self);
+                } else {
+                    playCurrentPar();
+                }
             }
         }
         else
@@ -12058,10 +12093,11 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         {
             if (!_audioPlayer.play())
             {
-                console.log("Audio player was dead, reactivating...");
-
+                console.log("Audio player was dead...");
+                /*
                 this.reset();
                 this.toggleMediaOverlay();
+                */
                 return;
             }
         }
@@ -12391,18 +12427,24 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
             self.reset();
             return;
         }
-
         var zPar = moData.par ? moData.par : moData.pars[0];
         var parSmil = zPar.getSmil();
-        if(!_smilIterator || _smilIterator.smil != parSmil)
-        {
+        var doNotResetSmli = false;
+
+        if (!_smilIterator || _smilIterator.smil != parSmil) {
             _smilIterator = new SmilIterator(parSmil);
+        } else {
+            if (playingPar.text.manifestItemId === _smilIterator.currentPar.text.manifestItemId) {
+                doNotResetSmli = true;
+            } else {
+                _smilIterator.reset();
+            }
         }
-        else
-        {
-            _smilIterator.reset();
+        if (doNotResetSmli) {
+            self.play();
+
+            return;
         }
-        
         _smilIterator.goToPar(zPar);
         
         if (!_smilIterator.currentPar && id)
@@ -12410,13 +12452,14 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
             _smilIterator.reset();
             _smilIterator.findTextId(id);
         }
-        
         if (!_smilIterator.currentPar)
         {
             self.reset();
             return;
         }
-
+        while (!_smilIterator.isFirst()) {
+            _smilIterator.previous();
+        }
         if (wasPlaying && playingPar && playingPar === _smilIterator.currentPar)
         {
             self.play();
@@ -12439,6 +12482,10 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
     {
         _autoNextSmil = autoNext;
     };
+
+    this.wasPausedBecauseNoAutoNextSmil = function() {
+        return _wasPausedBecauseNoAutoNextSmil;
+    }
 };
     return MediaOverlayPlayer;
 });
@@ -15941,6 +15988,11 @@ var ReaderView = function (options) {
 
             Globals.logEvent("CONTENT_DOCUMENT_LOADED", "EMIT", "reader_view.js [ " + spineItem.href + " ]");
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
+            //console.log("initViewForItem: CONTENT_DOCUMENT_LOADED: isPlayingMediaOverlay() = " + self.isPlayingMediaOverlay() +
+            //        ", _mediaOverlayPlayer.wasPausedBecauseNoAutoNextSmil() = " + _mediaOverlayPlayer.wasPausedBecauseNoAutoNextSmil());
+            if (_viewerSettings.mediaOverlaysAutomaticPlay && !self.isPlayingMediaOverlay() && !_mediaOverlayPlayer.wasPausedBecauseNoAutoNextSmil()) {
+                self.toggleMediaOverlay();
+            }
         });
 
         _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOAD_START, function ($iframe, spineItem) {
@@ -16469,6 +16521,8 @@ var ReaderView = function (options) {
             _currentView.openPage(pageRequest, dir);
         });
     }
+
+    this.goToPage = openPage;
 
 
     /**

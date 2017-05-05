@@ -1,0 +1,58 @@
+/*
+ * NOTE:
+ * Define the following constants in ~/.gradle/gradle.properties
+ *
+ * NOOKREPO_DEPLOYMENT_USERNAME=username
+ * NOOKREPO_DEPLOYMENT_PASSWORD=password
+ * NOOKREPO_DEPLOYMENT_URL=http://dnjnookrepo.barnesandnoble.com:8081/nexus/content/repositories
+ *
+ */
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+}
+
+apply plugin: 'maven'
+apply from: 'build.gradle'
+
+//mark debug part because at moment we only have release version
+//task distDebug(type: Zip) {
+//    from(new File(buildDir, 'ndk/debug/lib')) { include('**/*.so') }
+//    from(new File(projectDir, 'jni/book2png/src')) { include('pdfnative.h') into('include') }
+//    baseName = "${artifactId}-${appTarget}-debug"
+//    destinationDir = new File(buildDir, 'distributions')
+//    classifier = "debug"
+//}
+
+task distRelease(type: Zip) {
+    from ('build-output'){
+        include '*/*'
+    }
+    baseName="readuim-js"
+}
+
+task dist(dependsOn: [distRelease])
+
+artifacts {
+    //archives distDebug
+    archives distRelease
+}
+//
+uploadArchives {
+    repositories.mavenDeployer {
+        repository(url: NOOKREPO_DEPLOYMENT_URL + "/releases") {
+            authentication(userName: NOOKREPO_DEPLOYMENT_USERNAME, password: NOOKREPO_DEPLOYMENT_PASSWORD)
+        }
+        snapshotRepository(url: NOOKREPO_DEPLOYMENT_URL + "/snapshots") {
+            authentication(userName: NOOKREPO_DEPLOYMENT_USERNAME, password: NOOKREPO_DEPLOYMENT_PASSWORD)
+        }
+        pom.artifactId = artifactId
+        pom.groupId = groupId
+        pom.version = version
+    }
+}
+
+
+uploadArchives.dependsOn dist

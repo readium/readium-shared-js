@@ -53,11 +53,10 @@ var MediaOverlayDataInjector = function (mediaOverlay, mediaOverlayPlayer) {
 
                 var touchClickMOEventHandler = function (event)
                 {
-                    //console.debug("MO TOUCH-DOWN: "+event.type);
-                    
+                    //console.debug("MO TOUCH-DOWN: " + event.type);
                     var elem = $(this)[0]; // body
-                    elem = event.target; // body descendant
 
+                    elem = event.target; // body descendant
                     if (!elem)
                     {
                         mediaOverlayPlayer.touchInit();
@@ -231,12 +230,19 @@ console.log("MO CLICKED LINK");
 
                         if (el && el != elem && el.nodeName.toLowerCase() === "body" && par && !par.getSmil().id)
                         {
-//console.debug("MO CLICKED BLANK BODY");
+                            //console.debug("MO CLICKED BLANK BODY");
                             mediaOverlayPlayer.touchInit();
                             return true;
                         }
-
-                        mediaOverlayPlayer.playUserPar(par);
+                        //console.debug("MO CLICKED: isPlaying()" + mediaOverlayPlayer.isPlaying());
+                        if (mediaOverlayPlayer.isPlaying())
+                        {
+                            mediaOverlayPlayer.pause();
+                        }
+                        else
+                        {
+                            mediaOverlayPlayer.playUserPar(par);
+                        }
                         return true;
                     }
                     else
@@ -269,9 +275,12 @@ console.debug("MO readaloud attr: " + readaloud);
                 
                 if ('ontouchstart' in document.documentElement)
                 {
-                  $body[0].addEventListener("touchstart", touchClickMOEventHandler_, false);
+                    $body[0].addEventListener("touchstart", touchClickMOEventHandler_, false);
                 }
-                $body[0].addEventListener("mousedown", touchClickMOEventHandler_, false);
+                else
+                {
+                    $body[0].addEventListener("mousedown", touchClickMOEventHandler_, false);
+                }
 
                 //var clickEvent = 'ontouchstart' in document.documentElement ? 'touchstart' : 'click';
                 //$body.bind(clickEvent, touchClickMOEventHandler);

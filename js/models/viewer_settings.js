@@ -54,7 +54,8 @@ var ViewerSettings = function(settingsData) {
     
     this.mediaOverlaysSynchronizationGranularity = "";
 
-    this.mediaOverlaysAutomaticPageTurn = true;
+    this.mediaOverlaysAutomaticPageTurn = false;
+    this.mediaOverlaysAutomaticPlay = true;
 
     this.enableGPUHardwareAccelerationCSS3D = false;
 
@@ -109,6 +110,7 @@ var ViewerSettings = function(settingsData) {
         mapProperty("mediaOverlaysVolume", settingsData);
         mapProperty("mediaOverlaysSynchronizationGranularity", settingsData);
         mapProperty("mediaOverlaysAutomaticPageTurn", settingsData);
+        mapProperty("mediaOverlaysAutomaticPlay", settingsData);
         mapProperty("scroll", settingsData);
         mapProperty("syntheticSpread", settingsData);
         mapProperty("pageTransition", settingsData);
