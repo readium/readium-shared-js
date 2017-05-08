@@ -21,18 +21,14 @@ buildscript {
 apply plugin: 'maven'
 apply from: 'build.gradle'
 
-//mark debug part because at moment we only have release version
-//task distDebug(type: Zip) {
-//    from(new File(buildDir, 'ndk/debug/lib')) { include('**/*.so') }
-//    from(new File(projectDir, 'jni/book2png/src')) { include('pdfnative.h') into('include') }
-//    baseName = "${artifactId}-${appTarget}-debug"
-//    destinationDir = new File(buildDir, 'distributions')
-//    classifier = "debug"
-//}
-
 task distRelease(type: Zip) {
-    from ('build-output'){
+    from ('build-output') {
         include '*/*'
+        into 'build-output'
+    }
+    from ('shared_resources') {
+        include '*/*'
+        into 'shared_resources'
     }
     baseName="readuim-js"
 }
@@ -40,10 +36,9 @@ task distRelease(type: Zip) {
 task dist(dependsOn: [distRelease])
 
 artifacts {
-    //archives distDebug
     archives distRelease
 }
-//
+
 uploadArchives {
     repositories.mavenDeployer {
         repository(url: NOOKREPO_DEPLOYMENT_URL + "/releases") {
@@ -57,6 +52,5 @@ uploadArchives {
         pom.version = version
     }
 }
-
 
 uploadArchives.dependsOn dist
