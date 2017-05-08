@@ -22,15 +22,16 @@ apply plugin: 'maven'
 apply from: 'build.gradle'
 
 task distRelease(type: Zip) {
+    baseName="readuim-js"
+
     from ('build-output') {
         include '*/**'
-        into 'build-output'
+        into "${baseName}/build-output"
     }
     from ('shared_resources') {
         include '*/**'
-        into 'shared_resources'
+        into "${baseName}/shared_resources"
     }
-    baseName="readuim-js"
 }
 
 task dist(dependsOn: [distRelease])
