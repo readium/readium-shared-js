@@ -8,7 +8,7 @@ echo "Path:"
 echo "${pwd}"
 echo "------"
 
-JS_FILE="${pwd}/build-output/epubReadingSystem.js"
+JS_FILE="${pwd}/shared_resources/js/epubReadingSystem.js"
 test -z "${CONTENTS_FOLDER_PATH}" || JS_FILE="${TARGET_BUILD_DIR}/${CONTENTS_FOLDER_PATH}/epubReadingSystem.js"
 echo "Javascript output:"
 echo "${JS_FILE}"
