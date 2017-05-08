@@ -23,11 +23,11 @@ apply from: 'build.gradle'
 
 task distRelease(type: Zip) {
     from ('build-output') {
-        include '*/*'
+        include '*/**'
         into 'build-output'
     }
     from ('shared_resources') {
-        include '*/*'
+        include '*/**'
         into 'shared_resources'
     }
     baseName="readuim-js"
