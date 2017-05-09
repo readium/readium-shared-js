@@ -19,10 +19,9 @@ buildscript {
 }
 
 apply plugin: 'maven'
-apply from: 'build.gradle'
 
 task distRelease(type: Zip) {
-    baseName="readuim-js"
+    baseName=artifactId
 
     from ('build-output') {
         include '*/**'
