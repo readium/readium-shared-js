@@ -9,3 +9,7 @@ http.log
 api-docs
 .idea
 *.swp
+
+.gradle
+shared_resources/js/epubReadingSystem.js
+build

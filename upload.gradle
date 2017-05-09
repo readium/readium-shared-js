@@ -12,34 +12,33 @@ buildscript {
     repositories {
         mavenCentral()
     }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:2.3.0'
+        classpath 'org.ajoberstar:gradle-git:+'
+    }
 }
 
 apply plugin: 'maven'
-apply from: 'build.gradle'
-
-//mark debug part because at moment we only have release version
-//task distDebug(type: Zip) {
-//    from(new File(buildDir, 'ndk/debug/lib')) { include('**/*.so') }
-//    from(new File(projectDir, 'jni/book2png/src')) { include('pdfnative.h') into('include') }
-//    baseName = "${artifactId}-${appTarget}-debug"
-//    destinationDir = new File(buildDir, 'distributions')
-//    classifier = "debug"
-//}
 
 task distRelease(type: Zip) {
-    from ('build-output'){
-        include '*/*'
+    baseName=artifactId
+
+    from ('build-output') {
+        include '*/**'
+        into "${baseName}/build-output"
     }
-    baseName="readuim-js"
+    from ('shared_resources') {
+        include '*/**'
+        into "${baseName}/shared_resources"
+    }
 }
 
 task dist(dependsOn: [distRelease])
 
 artifacts {
-    //archives distDebug
     archives distRelease
 }
-//
+
 uploadArchives {
     repositories.mavenDeployer {
         repository(url: NOOKREPO_DEPLOYMENT_URL + "/releases") {
@@ -53,6 +52,5 @@ uploadArchives {
         pom.version = version
     }
 }
-
 
 uploadArchives.dependsOn dist
