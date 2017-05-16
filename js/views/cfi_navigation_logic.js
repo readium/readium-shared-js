@@ -187,6 +187,28 @@ var CfiNavigationLogic = function(options) {
 
     /**
      * @private
+     * Helper function because of #386, node.parentElement returns null for text nodes on IE
+     * 
+     * @returns { node } parentElement
+     */
+    function getParentElement(node) {
+        if (node.parentElement) {
+            return node.parentElement;
+        } else {
+            // IE 10 & IE 11
+            if (node.parentNode) {
+                if (node.parentNode.nodeType === 1) {
+                    return node.parentNode;
+                } else {
+                    // walk up dom
+                    return getParentElement(node.parentNode)
+                }
+            }
+        }
+    }
+
+    /**
+     * @private
      * Retrieves _current_ full width of a column (including its gap)
      *
      * @returns {number} Full width of a column in pixels
@@ -1299,7 +1321,7 @@ var CfiNavigationLogic = function(options) {
         _.each($elements, function ($node) {
             var node = $node[0];
             var isTextNode = (node.nodeType === Node.TEXT_NODE);
-            var element = isTextNode ? node.parentElement : node;
+            var element = isTextNode ? getParentElement(node) : node;
             var visibilityPercentage = checkVisibilityByRectangles(
                 $node, true, visibleContentOffsets, frameDimensions);
 
@@ -1410,7 +1432,7 @@ var CfiNavigationLogic = function(options) {
         while ((node = nodeIterator.nextNode())) {
             var isLeafNode = node.nodeType === Node.ELEMENT_NODE && !node.childElementCount && !isValidTextNodeContent(node.textContent);
             if (isLeafNode || isValidTextNode(node)){
-                var element = (node.nodeType === Node.TEXT_NODE) ? node.parentElement : node;
+                var element = (node.nodeType === Node.TEXT_NODE) ? getParentElement(node) : node;
                 if (!isElementBlacklisted(element)) {
                     $leafNodeElements.push($(node));
                 }
