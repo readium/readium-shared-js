@@ -4920,6 +4920,7 @@ var ViewerSettings = function(settingsData) {
          * @param {Function}    resized
          */
         function attachResizeEvent(element, resized) {
+            if (!element) return;
             if (element.resizedAttached) {
                 element.resizedAttached.add(resized);
                 return;
@@ -5015,6 +5016,7 @@ var ViewerSettings = function(settingsData) {
 
     ResizeSensor.detach = function(element, ev) {
         forEachElement(element, function(elem){
+            if (!elem) return
             if(elem.resizedAttached && typeof ev == "function"){
                 elem.resizedAttached.remove(ev);
                 if(elem.resizedAttached.length()) return;
