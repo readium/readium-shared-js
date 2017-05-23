@@ -53,6 +53,7 @@ var ReflowableView = function(options, reader){
     var _isWaitingFrameRender = false;
     var _deferredPageRequest;
     var _fontSize = 100;
+    var _lineHeight = 100;
     var _$contentFrame;
     var _navigationLogic;
     var _$el;
@@ -140,15 +141,15 @@ var ReflowableView = function(options, reader){
 
     var _viewSettings = undefined;
     this.setViewSettings = function(settings) {
-
         _viewSettings = settings;
 
         _paginationInfo.columnGap = settings.columnGap;
         _paginationInfo.columnMaxWidth = settings.columnMaxWidth;
         _paginationInfo.columnMinWidth = settings.columnMinWidth;
-
+        _lineHeight = settings.lineHeight;
         _fontSize = settings.fontSize;
 
+        updateHtmlLineHeight();
         updateHtmlFontSize();
         updateColumnGap();
 
@@ -221,6 +222,12 @@ var ReflowableView = function(options, reader){
         }
     }
 
+    function updateHtmlLineHeight() {
+        if(_$epubHtml){
+            Helpers.UpdateHtmlLineHeight(_$epubHtml, _lineHeight);
+        }
+    }
+
     function updateHtmlFontSize() {
 
         if(_$epubHtml) {
@@ -248,7 +255,6 @@ var ReflowableView = function(options, reader){
     }
 
     function applyIFrameLoad(success) {
-
         _isWaitingFrameRender = false;
 
         //while we where loading frame new request came
@@ -269,7 +275,7 @@ var ReflowableView = function(options, reader){
         var epubContentDocument = _$iframe[0].contentDocument;
         _$epubHtml = $("html", epubContentDocument);
         _$htmlBody = $("body", _$epubHtml);
-        if (MooReaderApp.SETTING.direction === 'rtl'){
+        if (MooReaderApp.SETTING.writingMode === 'vertical'){
             _$epubHtml.find('head').append('<style>'+
                 'html,body{'+
                     '-webkit-writing-mode: vertical-rl !important;'+
@@ -282,7 +288,7 @@ var ReflowableView = function(options, reader){
                 'transform: skewY(5deg);'+
                 '}'+
             '</style>');
-        }else if (MooReaderApp.SETTING.direction === 'ltr'){
+        }else if (MooReaderApp.SETTING.writingMode === 'horizontal'){
             _$epubHtml.find('head').append('<style>'+
                 'html,body{'+
                     '-webkit-writing-mode: horizontal-tb !important;'+
@@ -389,7 +395,7 @@ var ReflowableView = function(options, reader){
 
         self.applyBookStyles();
         resizeImages();
-
+        updateHtmlLineHeight();
         updateHtmlFontSize();
         updateColumnGap();
 
@@ -419,7 +425,6 @@ var ReflowableView = function(options, reader){
     };
 
     function openDeferredElement() {
-
         if(!_deferredPageRequest) {
             return;
         }
@@ -532,7 +537,6 @@ var ReflowableView = function(options, reader){
     }
 
     function onPaginationChanged_(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
-
         _paginationInfo.pageOffset = (_paginationInfo.columnWidth + _paginationInfo.columnGap) * _paginationInfo.visibleColumnCount * _paginationInfo.currentSpreadIndex;
 
         redraw();

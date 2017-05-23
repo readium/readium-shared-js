@@ -94,6 +94,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         _$contentFrame.css("-webkit-overflow-scrolling", "touch");
         _$contentFrame.css("width", "100%");
         _$contentFrame.css("height", "100%");
+        _$contentFrame.css("padding", "0 20px");
         _$contentFrame.css("position", "relative");
 
         var settings = reader.viewerSettings();
@@ -794,7 +795,8 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         var scrollPos = scrollTop();
 
         var loadedView = createPageViewForSpineItem();
-
+        console.log('loadedView',loadedView);
+        console.log('loadedView:element',loadedView.element());
         _$contentFrame.append(loadedView.element());
 
         loadedView.loadSpineItem(spineItem, function (success, $iframe, spineItem, isNewlyLoaded, context) {
@@ -1215,6 +1217,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         var found = undefined;
 
         forEachItemView(function (pageView) {
+            console.log('currentSpineItem:',pageView.currentSpineItem());
             if (pageView.currentSpineItem().idref == spineItemIdref) {
 
                 found = pageView.getNavigator().getElementByCfi(cfi, classBlacklist, elementBlacklist, idBlacklist);
@@ -1531,6 +1534,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         rangeCfi2 = rangeCfi2 || {};
 
         return callOnVisiblePageView(function (pageView) {
+            console.log('pageView',pageView);
             if (pageView.currentSpineItem().idref === rangeCfi.idref) {
                 return pageView.getDomRangeFromRangeCfi(rangeCfi.contentCFI, rangeCfi2.contentCFI, inclusive);
             }

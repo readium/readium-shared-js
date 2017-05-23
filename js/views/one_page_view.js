@@ -175,7 +175,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         _pageTransitions.push(_pageTransition_SWING); // 3
 
         var _disablePageTransitions = opts.disablePageTransitions || false;
-                
+
         // TODO: page transitions are broken, sp we disable them to avoid nasty visual artefacts
         _disablePageTransitions = true;
 
@@ -336,13 +336,13 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
     this.remove = function () {
         this.clear();
-        
+
         _currentSpineItem = undefined;
-        
+
         if (_$el && _$el[0]) {
             _$el.remove();
         }
-        
+
         _$el = undefined;
         _$scaler = undefined;
         _$iframe = undefined;
@@ -350,7 +350,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
     this.clear = function () {
         _isIframeLoaded = false;
-        
+
         if (_$iframe && _$iframe[0]) {
             _$iframe[0].src = "";
         }
@@ -372,7 +372,34 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             } else {
                 _$epubBody = $("body", _$epubHtml);
             }
-
+            //以下是readmoo新增的
+            if (MooReaderApp.SETTING.writingMode === 'vertical'){
+                _$epubHtml.find('head').append('<style>'+
+                    'html,body{'+
+                        '-webkit-writing-mode: vertical-rl !important;'+
+                        '-moz-writing-mode: vertical-rl !important;'+
+                        '-ms-writing-mode: vertical-rl !important;'+
+                        '-o-writing-mode: vertical-rl !important;'+
+                        '-epub-writing-mode: vertical-rl !important;'+
+                        'writing-mode: vertical-rl !important;}'+
+                    '.highlight-rect{'+
+                    'transform: skewY(5deg);'+
+                    '}'+
+                '</style>');
+            }else if (MooReaderApp.SETTING.writingMode === 'horizontal'){
+                _$epubHtml.find('head').append('<style>'+
+                    'html,body{'+
+                        '-webkit-writing-mode: horizontal-tb !important;'+
+                        '-moz-writing-mode: horizontal-tb !important;'+
+                        '-ms-writing-mode: horizontal-tb !important;'+
+                        '-o-writing-mode: horizontal-tb !important;'+
+                        '-epub-writing-mode: horizontal-tb !important;'+
+                        'writing-mode: horizontal-tb !important;}'+
+                    '.highlight-rect{'+
+                    'transform: skewX(5deg);'+
+                    '}'+
+                '</style>');
+            }
             //_$epubHtml.css("overflow", "hidden");
 
             if (_enableBookStyleOverrides) {
@@ -399,6 +426,14 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         _pageTransitionHandler.updateOptions(settings);
     };
 
+    function updateHtmlLineHeight() {
+
+        if (!_enableBookStyleOverrides) return;
+
+        if (_$epubHtml && _viewSettings) {
+            Helpers.UpdateHtmlLineHeight(_$epubHtml, _viewSettings.lineHeight);
+        }
+    }
     function updateHtmlFontSize() {
 
         if (!_enableBookStyleOverrides) return;
@@ -414,6 +449,10 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
         if (_$epubHtml) {
             Helpers.setStyles(_bookStyles.getStyles(), _$epubHtml);
+            if (_currentSpineItem.isFixedLayout()){
+                return;
+            }
+            updateHtmlLineHeight();
             updateHtmlFontSize();
         }
     };
@@ -552,16 +591,16 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         if (settings.enableGPUHardwareAccelerationCSS3D) {
             enable3D = true;
         }
-        
+
         if (reader.needsFixedLayoutScalerWorkAround()) {
             var css1 = Helpers.CSSTransformString({scale: scale, enable3D: enable3D});
-            
-            // See https://github.com/readium/readium-shared-js/issues/285 
+
+            // See https://github.com/readium/readium-shared-js/issues/285
             css1["min-width"] = _meta_size.width;
             css1["min-height"] = _meta_size.height;
-            
+
             _$epubHtml.css(css1);
-            
+
             // Ensures content dimensions matches viewport meta (authors / production tools should do this in their CSS...but unfortunately some don't).
             if (_$epubBody && _$epubBody.length) {
                 _$epubBody.css({width:_meta_size.width, height:_meta_size.height});
@@ -579,7 +618,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             css["height"] = _meta_size.height;
             _$scaler.css(css);
         }
-                
+
         // Chrome workaround: otherwise text is sometimes invisible (probably a rendering glitch due to the 3D transform graphics backend?)
         //_$epubHtml.css("visibility", "hidden"); // "flashing" in two-page spread mode is annoying :(
         _$epubHtml.css("opacity", "0.999");
@@ -590,7 +629,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             //_$epubHtml.css("visibility", "visible");
             _$epubHtml.css("opacity", "1");
         }, 0);
-        
+
         // TODO: the CSS transitions do not work anymore, tested on Firefox and Chrome.
         // The line of code below still needs to be invoked, but the logic in _pageTransitionHandler probably need adjusting to work around the animation timing issue.
         // PS: opacity=1 above seems to interfere with the fade-in transition, probably a browser issue with mixing inner-iframe effects with effects applied to the iframe parent/ancestors.
@@ -785,7 +824,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
     function onUnload (spineItem) {
         if (spineItem) {
-            
+
             Globals.logEvent("CONTENT_DOCUMENT_UNLOADED", "EMIT", "one_page_view.js [ " + spineItem.href + " ]");
             self.emit(Globals.Events.CONTENT_DOCUMENT_UNLOADED, _$iframe, spineItem);
         }
@@ -813,7 +852,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
             Globals.logEvent("OnePageView.Events.SPINE_ITEM_OPEN_START", "EMIT", "one_page_view.js [ " + spineItem.href + " -- " + src + " ]");
             self.emit(OnePageView.Events.SPINE_ITEM_OPEN_START, _$iframe, _currentSpineItem);
-            
+
             _iframeLoader.loadIframe(_$iframe[0], src, function (success) {
 
                 if (success && callback) {
@@ -905,14 +944,14 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             left: 0
         };
     }
-    
+
     function getFrameDimensions() {
         return {
             width: _$el.parent()[0].clientWidth,
             height: _$el.parent()[0].clientHeight
         };
     }
-    
+
     this.getNavigator = function () {
         return new CfiNavigationLogic({
             $iframe: _$iframe,

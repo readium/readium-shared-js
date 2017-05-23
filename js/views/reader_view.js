@@ -47,7 +47,6 @@ define(["../globals", "jquery", "underscore", "eventEmitter", "./fixed_view", ".
  * @constructor
  */
 var ReaderView = function (options) {
-
     $.extend(this, new EventEmitter());
 
     var self = this;
@@ -55,6 +54,9 @@ var ReaderView = function (options) {
     var _package = undefined;
     var _spine = undefined;
     var _viewerSettings = new ViewerSettings({});
+    if (options.viewerSetting){
+        _viewerSettings.update(options.viewerSetting);
+    }
     //styles applied to the container divs
     var _userStyles = new StyleCollection();
     //styles applied to the content documents
@@ -105,7 +107,6 @@ var ReaderView = function (options) {
      */
     this.createViewForType = function (viewType, options) {
         var createdView;
-
         // NOTE: _$el == options.$viewport
         _$el.css("overflow", "hidden");
 
@@ -166,7 +167,17 @@ var ReaderView = function (options) {
 
     //based on https://docs.google.com/spreadsheet/ccc?key=0AoPMUkQhc4wcdDI0anFvWm96N0xRT184ZE96MXFRdFE&usp=drive_web#gid=0 document
     function deduceDesiredViewType(spineItem) {
-
+        if (spineItem.isReflowable() && MooReaderApp.SETTING.writingMode === 'vertical'){
+            _viewerSettings.scroll = 'auto';
+            return ReaderView.VIEW_TYPE_COLUMNIZED;
+        }if (spineItem.isReflowable() && spineItem.spine.direction === 'rtl'){
+            _viewerSettings.scroll = 'auto';
+            return ReaderView.VIEW_TYPE_COLUMNIZED;
+        }
+        if (spineItem.paginationInfo && spineItem.paginationInfo.isVerticalWritingMode){
+            _viewerSettings.scroll = 'auto';
+            return ReaderView.VIEW_TYPE_COLUMNIZED;
+        }
         //check settings
         if (_viewerSettings.scroll == "scroll-doc") {
             return ReaderView.VIEW_TYPE_SCROLLED_DOC;
@@ -195,11 +206,11 @@ var ReaderView = function (options) {
 
     // returns true is view changed
     function initViewForItem(spineItem, callback) {
-
         var desiredViewType = deduceDesiredViewType(spineItem);
 
         if (_currentView) {
-
+            console.log('getCurrentViewType',self.getCurrentViewType());
+            console.log('desiredViewType',desiredViewType);
             if (self.getCurrentViewType() == desiredViewType) {
                 callback(false);
                 return;
@@ -227,7 +238,7 @@ var ReaderView = function (options) {
 
 
         _currentView = self.createViewForType(desiredViewType, viewCreationParams);
-
+        console.log('_currentView',_currentView);
         Globals.logEvent("READER_VIEW_CREATED", "EMIT", "reader_view.js");
         self.emit(Globals.Events.READER_VIEW_CREATED, desiredViewType);
 
@@ -387,9 +398,9 @@ var ReaderView = function (options) {
 
         _spine = _package.spine;
         // 判斷使用者設定翻頁方向時需要
-        if (bookSetting.direction === 'rtl'){
+        if (bookSetting.writingMode === 'vertical'){
             _spine.direction = 'rtl';
-        }else if (bookSetting.direction === 'ltr'){
+        }else if (bookSetting.writingMode === 'horizontal'){
             _spine.direction = 'ltr';
         }
         _spine.handleLinear(true);
@@ -566,7 +577,8 @@ var ReaderView = function (options) {
      * @fires Globals.Events.SETTINGS_APPLIED
      */
     this.updateSettings = function (settingsData) {
-
+        console.trace();
+        console.log('updateSettings', settingsData);
 //console.debug("UpdateSettings: " + JSON.stringify(settingsData));
 
         _viewerSettings.update(settingsData);
@@ -576,9 +588,9 @@ var ReaderView = function (options) {
         }
 
         if (_currentView && !settingsData.doNotUpdateView) {
-
+            console.log('before bookmark');
             var bookMark = _currentView.bookmarkCurrentPage();
-
+            console.log('after boookmark', bookMark);
             if (bookMark && bookMark.idref) {
 
                 var wasPlaying = false;
@@ -742,7 +754,7 @@ var ReaderView = function (options) {
      * @param {object} initiator optional
      */
     this.openPageIndex = function (pageIndex, initiator) {
-
+        console.log('openpageIndex', pageIndex, initiator);
         if (!_currentView) {
             return false;
         }
@@ -776,7 +788,7 @@ var ReaderView = function (options) {
     function openPage(pageRequest, dir) {
 
         initViewForItem(pageRequest.spineItem, function (isViewChanged) {
-
+            console.log('isViewChanged',isViewChanged);
             if (!isViewChanged) {
                 _currentView.setViewSettings(_viewerSettings);
             }
