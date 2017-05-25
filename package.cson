@@ -33,11 +33,12 @@
 
 name: "readium-shared-js"
 
-version: "0.25.0-alpha"
+version: "0.27.0-alpha"
 
 engines:
-    node: ">=0.12"
-    npm: ">2.10"
+    node: ">=4"
+    npm: ">=2"
+    yarn: ">=0.23"
 
 description: "Readium - shared javascript module"
 
@@ -118,7 +119,8 @@ devDependencies:
 
     "backbone": 'latest'
 
-    "underscore": 'latest'
+# now included in readium-cfi-js
+#    "underscore": 'latest'
 
     "urijs": 'danielweck/URI.js'
     #"urijs": 'latest'
@@ -127,10 +129,10 @@ devDependencies:
     
     "es6-collections": 'latest'
 
-    "cssom": 'danielweck/CSSOM#gh-pages'
-    #"CSSOM": 'NV/CSSOM#gh-pages'
+    "cssom": 'danielweck/CSSOM'
+    #"CSSOM": 'NV/CSSOM'
 
-    "ResizeSensor": 'danielweck/css-element-queries'
+    "css-element-queries": 'danielweck/css-element-queries'
     
 
 # Below dependencies are only used for building tasks (above are runtime deps):
@@ -153,7 +155,7 @@ scripts:
 
 
 #=====================
-    'prepare': '
+    'prepare:all': '
 
         npm run
             prepare:submodule
@@ -169,11 +171,42 @@ scripts:
     'prepare:local': '
 
         npm outdated
-        &&
+        ;
         npm install
         &&
         npm update
         &&
+        npm run prepare:local:common
+    '
+
+#=====================
+    'prepare:yarn:all': '
+
+        yarn run
+            prepare:yarn:submodule
+        &&
+        yarn run
+            prepare:yarn:local
+        &&
+        yarn run
+            prepare:patch
+    '
+
+#=====================
+    'prepare:yarn:local': '
+
+        yarn outdated
+        ;
+        yarn install
+        &&
+        yarn upgrade
+        &&
+        yarn run prepare:local:common
+    '
+
+#=====================
+    'prepare:local:common': '
+
         node
             readium-cfi-js/readium-build-tools/gitHubForksUpdater.js
     '
@@ -183,7 +216,19 @@ scripts:
 
         cd readium-cfi-js
         &&
-        npm run prepare
+        npm run prepare:all
+        &&
+        cd ..
+        &&
+        ls
+    '
+
+#=====================
+    'prepare:yarn:submodule': '
+
+        cd readium-cfi-js
+        &&
+        yarn run prepare:yarn:all
         &&
         cd ..
         &&
@@ -204,6 +249,8 @@ scripts:
 #=====================
     clean: '
 
+        yarn --version
+        ;
         node --version
         &&
         npm --version

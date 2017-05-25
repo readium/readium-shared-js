@@ -11900,7 +11900,7 @@ return jQuery;
  * URI.js - Mutating URLs
  * IPv6 Support
  *
- * Version: 1.18.4
+ * Version: 1.18.10
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -12086,7 +12086,7 @@ return jQuery;
  * URI.js - Mutating URLs
  * Second Level Domain (SLD) Support
  *
- * Version: 1.18.4
+ * Version: 1.18.10
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -12257,7 +12257,12 @@ return jQuery;
       'ye':' co com gov ltd me net org plc ',
       'yu':' ac co edu gov org ',
       'za':' ac agric alt bourse city co cybernet db edu gov grondar iaccess imt inca landesign law mil net ngo nis nom olivetti org pix school tm web ',
-      'zm':' ac co com edu gov net org sch '
+      'zm':' ac co com edu gov net org sch ',
+      // https://en.wikipedia.org/wiki/CentralNic#Second-level_domains
+      'com': 'ar br cn de eu gb gr hu jpn kr no qc ru sa se uk us uy za ',
+      'net': 'gb jp se uk ',
+      'org': 'ae',
+      'de': 'com '
     },
     // gorhill 2013-10-25: Using indexOf() instead Regexp(). Significant boost
     // in both performance and memory footprint. No initialization required.
@@ -12326,7 +12331,7 @@ return jQuery;
 /*!
  * URI.js - Mutating URLs
  *
- * Version: 1.18.4
+ * Version: 1.18.10
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -12402,7 +12407,7 @@ return jQuery;
     return this;
   }
 
-  URI.version = '1.18.4';
+  URI.version = '1.18.10';
 
   var p = URI.prototype;
   var hasOwn = Object.prototype.hasOwnProperty;
@@ -13309,9 +13314,15 @@ return jQuery;
       }
 
       if (parensEnd > -1) {
-        slice = slice.slice(0, parensEnd) + slice.slice(parensEnd + 1).replace(_trim, '');
+        slice = slice.slice(0, parensEnd) + slice.slice(parensEnd).replace(_trim, '');
       } else {
         slice = slice.replace(_trim, '');
+      }
+
+      if (slice.length <= match[0].length) {
+        // the extract only contains the starting marker of a URI,
+        // e.g. "www" or "http://"
+        continue;
       }
 
       if (options.ignore && options.ignore.test(slice)) {
@@ -13896,7 +13907,7 @@ return jQuery;
       return v === undefined ? '' : this;
     }
 
-    if (v === undefined || v === true) {
+    if (typeof v !== 'string') {
       if (!this._parts.path || this._parts.path === '/') {
         return '';
       }
@@ -14420,7 +14431,10 @@ return jQuery;
     //
     // Readium patch >>
 
-    if (!resolved._parts.protocol) {
+    if (resolved._parts.protocol) {
+      // Directly returns even if this._parts.hostname is empty.
+      return resolved;
+    } else {
       resolved._parts.protocol = base._parts.protocol;
     }
 
@@ -22931,7 +22945,7 @@ CSSOM.CSSStyleDeclaration.prototype = {
 			this[this.length] = name;
 			this.length++;
 		}
-		this[name] = value;
+		this[name] = value + "";
 		this._importants[name] = priority;
 	},
 
@@ -23467,6 +23481,34 @@ Object.defineProperty(CSSOM.CSSFontFaceRule.prototype, "cssText", {
   get: function() {
     return "@font-face {" + this.style.cssText + "}";
   }
+});
+
+
+
+/**
+ * @constructor
+ * @see http://www.w3.org/TR/shadow-dom/#host-at-rule
+ */
+CSSOM.CSSHostRule = function CSSHostRule() {
+	CSSOM.CSSRule.call(this);
+	this.cssRules = [];
+};
+
+CSSOM.CSSHostRule.prototype = new CSSOM.CSSRule();
+CSSOM.CSSHostRule.prototype.constructor = CSSOM.CSSHostRule;
+CSSOM.CSSHostRule.prototype.type = 1001;
+//FIXME
+//CSSOM.CSSHostRule.prototype.insertRule = CSSStyleSheet.prototype.insertRule;
+//CSSOM.CSSHostRule.prototype.deleteRule = CSSStyleSheet.prototype.deleteRule;
+
+Object.defineProperty(CSSOM.CSSHostRule.prototype, "cssText", {
+	get: function() {
+		var cssTexts = [];
+		for (var i=0, length=this.cssRules.length; i < length; i++) {
+			cssTexts.push(this.cssRules[i].cssText);
+		}
+		return "@host {" + cssTexts.join("") + "}";
+	}
 });
 
 
@@ -24091,10 +24133,12 @@ CSSOM.parse = function parse(token) {
 
 	var index;
 	var buffer = "";
+	var valueParenthesisDepth = 0;
 
 	var SIGNIFICANT_WHITESPACE = {
 		"selector": true,
 		"value": true,
+		"value-parenthesis": true,
 		"atRule": true,
 		"importRule-begin": true,
 		"importRule": true,
@@ -24110,7 +24154,7 @@ CSSOM.parse = function parse(token) {
 	// @type CSSMediaRule|CSSKeyframesRule|CSSDocumentRule
 	var parentRule;
 
-	var name, priority="", styleRule, mediaRule, importRule, fontFaceRule, keyframesRule, documentRule;
+	var name, priority="", styleRule, mediaRule, importRule, fontFaceRule, keyframesRule, documentRule, hostRule;
 
 	var atKeyframesRegExp = /@(-(?:\w+-)+)?keyframes/g;
 
@@ -24216,6 +24260,13 @@ CSSOM.parse = function parse(token) {
 				i += "media".length;
 				buffer = "";
 				break;
+			} else if (token.indexOf("@host", i) === i) {
+				state = "hostRule-begin";
+				i += "host".length;
+				hostRule = new CSSOM.CSSHostRule();
+				hostRule.__starts = i;
+				buffer = "";
+				break;
 			} else if (token.indexOf("@import", i) === i) {
 				state = "importRule-begin";
 				i += "import".length;
@@ -24256,6 +24307,11 @@ CSSOM.parse = function parse(token) {
 				mediaRule.media.mediaText = buffer.trim();
 				currentScope = parentRule = mediaRule;
 				mediaRule.parentStyleSheet = styleSheet;
+				buffer = "";
+				state = "before-selector";
+			} else if (state === "hostRule-begin") {
+				currentScope = parentRule = hostRule;
+				hostRule.parentStyleSheet = styleSheet;
 				buffer = "";
 				state = "before-selector";
 			} else if (state === "fontFaceRule-begin") {
@@ -24318,8 +24374,14 @@ CSSOM.parse = function parse(token) {
 					}
 				} else {
 					state = 'value-parenthesis';
+					//always ensure this is reset to 1 on transition
+					//from value to value-parenthesis
+					valueParenthesisDepth = 1;
 					buffer += character;
 				}
+			} else if (state === 'value-parenthesis') {
+				valueParenthesisDepth++;
+				buffer += character;
 			} else {
 				buffer += character;
 			}
@@ -24327,7 +24389,8 @@ CSSOM.parse = function parse(token) {
 
 		case ")":
 			if (state === 'value-parenthesis') {
-				state = 'value';
+				valueParenthesisDepth--;
+				if (valueParenthesisDepth === 0) state = 'value';
 			}
 			buffer += character;
 			break;
