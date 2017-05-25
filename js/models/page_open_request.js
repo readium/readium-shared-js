@@ -46,6 +46,8 @@ var PageOpenRequest = function(spineItem, initiator) {
     this.spineItemPageIndex = undefined;
     this.elementId = undefined;
     this.elementCfi = undefined;
+    this.firstVisibleCfi = undefined;
+    this.lastVisibleCfi = undefined;
     this.firstPage = false;
     this.lastPage = false;
     this.initiator = initiator;
@@ -118,11 +120,20 @@ var PageOpenRequest = function(spineItem, initiator) {
      */
 
     this.setElementCfi = function(elementCfi) {
-
         this.reset();
         this.elementCfi = elementCfi;
     };
 
+    // Used by ReflowView to better keep track of the current page
+    // using just a bookmark to firstVisibleElement makes the current
+    // page gradually shift to the beginning of the chapter. By bookmarking
+    // both the first and last visible elements, we can keep track of the 
+    // "middle" of the visible area.
+    this.setFirstAndLastVisibleCfi = function(firstVisibleCfi, lastVisibleCfi) {
+        this.reset();
+        this.firstVisibleCfi = firstVisibleCfi;
+        this.lastVisibleCfi = lastVisibleCfi;
+    }
 
 };
 

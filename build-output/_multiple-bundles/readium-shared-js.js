@@ -2061,79 +2061,214 @@ Helpers.Rect.fromElement = function ($element) {
 
     return new Helpers.Rect(offsetLeft, offsetTop, offsetWidth, offsetHeight);
 };
+/**
+ *
+ * @param $epubHtml: The html that is to have font attributes added.
+ * @param fontSize: The font size that is to be added to the element at all locations.
+ * @param fontObj: The font Object containing at minimum the URL, and fontFamilyName (In fields url and fontFamily) respectively. Pass in null's on the object's fields to signal no font.
+ * @param callback: function invoked when "done", which means that if there are asynchronous operations such as font-face loading via injected stylesheets, then the UpdateHtmlFontAttributes() function returns immediately but the caller should wait for the callback function call if fully-loaded font-face *stylesheets* are required on the caller's side (note that the caller's side may still need to detect *actual font loading*, via the FontLoader API or some sort of ResizeSensor to indicate that the updated font-family has been used to render the document). 
+ */
 
-Helpers.UpdateHtmlFontSize = function ($epubHtml, fontSize) {
-
-    var perf = false;
-
-    // TODO: very slow on Firefox!
-    // See https://github.com/readium/readium-shared-js/issues/274
-    if (perf) var time1 = window.performance.now();
-
-    var factor = fontSize / 100;
-    var win = $epubHtml[0].ownerDocument.defaultView;
-    var $textblocks = $('p, div, span, h1, h2, h3, h4, h5, h6, li, blockquote, td, pre', $epubHtml);
-    var originalLineHeight;
+Helpers.UpdateHtmlFontAttributes = function ($epubHtml, fontSize, fontObj, callback) {
 
 
-    // need to do two passes because it is possible to have nested text blocks.
-    // If you change the font size of the parent this will then create an inaccurate
-    // font size for any children.
-    for (var i = 0; i < $textblocks.length; i++) {
-        var ele = $textblocks[i],
-            fontSizeAttr = ele.getAttribute('data-original-font-size');
+    var FONT_FAMILY_ID = "readium_font_family_link";
 
-        if (!fontSizeAttr) {
+    var docHead = $("head", $epubHtml);
+    var link = $("#" + FONT_FAMILY_ID, docHead);
+
+    const NOTHING = 0, ADD = 1, REMOVE = 2; //Types for css font family.
+    var changeFontFamily = NOTHING;
+
+    var fontLoadCallback = function() {
+            
+        var perf = false;
+
+        // TODO: very slow on Firefox!
+        // See https://github.com/readium/readium-shared-js/issues/274
+        if (perf) var time1 = window.performance.now();
+
+
+
+        if (changeFontFamily != NOTHING) {
+            var fontFamilyStyle = $("style#readium-fontFamily", docHead);
+
+            if (fontFamilyStyle && fontFamilyStyle[0]) {
+                // REMOVE, or ADD (because we remove before re-adding from scratch)
+                docHead[0].removeChild(fontFamilyStyle[0]);
+            }
+            if (changeFontFamily == ADD) {
+                var style = $epubHtml[0].ownerDocument.createElement('style');
+                style.setAttribute("id", "readium-fontFamily");
+                style.appendChild($epubHtml[0].ownerDocument.createTextNode('html * { font-family: "'+fontObj.fontFamily+'" !important; }')); // this technique works for text-align too (e.g. text-align: justify !important;)
+
+                docHead[0].appendChild(style);
+
+                //fontFamilyStyle = $(style);
+            }
+        }
+        
+        // The code below does not work because jQuery $element.css() on html.body somehow "resets" the font: CSS directive by removing it entirely (font-family: works with !important, but unfortunately further deep inside the DOM there may be CSS applied with the font: directive, which somehow seems to take precedence! ... as shown in Chrome's developer tools)
+        // ...thus why we use the above routine instead, to insert a new head>style element
+        // // var doc = $epubHtml[0].ownerDocument;
+        // // var body = doc.body;
+        // var $body = $("body", $epubHtml);
+        // // $body.css({
+        // //     "font-size" : fontSize + "%",
+        // //     "font-family" : ""
+        // // });
+        // $body.css("font-family", "");
+        // if (changeFontFamily == ADD) {
+            
+        //     var existing = $body.attr("style");
+        //     $body[0].setAttribute("style",
+        //         existing + " ; font-family: '" + fontObj.fontFamily + "' !important ;" + " ; font: regular 100% '" + fontObj.fontFamily + "' !important ;");
+        // }
+
+
+        var factor = fontSize / 100;
+        var win = $epubHtml[0].ownerDocument.defaultView;
+        if (!win) {
+            console.log("NIL $epubHtml[0].ownerDocument.defaultView");
+            return;
+        }
+
+        // TODO: is this a complete list? Is there a better way to do this?
+        //https://github.com/readium/readium-shared-js/issues/336
+        // Note that font-family is handled differently, using an injected stylesheet with a catch-all selector that pushes an "!important" CSS value in the document's cascade.
+        var $textblocks = $('p, div, span, h1, h2, h3, h4, h5, h6, li, blockquote, td, pre, dt, dd, code, a', $epubHtml); // excludes section, body etc.
+
+        // need to do two passes because it is possible to have nested text blocks.
+        // If you change the font size of the parent this will then create an inaccurate
+        // font size for any children.
+        for (var i = 0; i < $textblocks.length; i++) {
+
+            var ele = $textblocks[i];
+            
+            var fontSizeAttr = ele.getAttribute('data-original-font-size');
+            if (fontSizeAttr) {
+                // early exit, original values already set.
+                break;
+            }
+
             var style = win.getComputedStyle(ele);
+            
             var originalFontSize = parseInt(style.fontSize);
-            originalLineHeight = parseInt(style.lineHeight);
-
             ele.setAttribute('data-original-font-size', originalFontSize);
+
+            var originalLineHeight = parseInt(style.lineHeight);
             // getComputedStyle will not calculate the line-height if the value is 'normal'. In this case parseInt will return NaN
             if (originalLineHeight) {
                 ele.setAttribute('data-original-line-height', originalLineHeight);
             }
+            
+            // var fontFamilyAttr = ele.getAttribute('data-original-font-family');
+            // if (!fontFamilyAttr) {
+            //     var originalFontFamily = style.fontFamily;
+            //     if (originalFontFamily) {
+            //         ele.setAttribute('data-original-font-family', originalFontFamily);
+            //     }
+            // }
+        }
+
+        for (var i = 0; i < $textblocks.length; i++) {
+            var ele = $textblocks[i];
+
+            // TODO: group the 3x potential $(ele).css() calls below to avoid multiple jQuery style mutations 
+
+            var fontSizeAttr = ele.getAttribute('data-original-font-size');
+            var originalFontSize = Number(fontSizeAttr);
+            $(ele).css("font-size", (originalFontSize * factor) + 'px');
+
+            var lineHeightAttr = ele.getAttribute('data-original-line-height');
+            var originalLineHeight = lineHeightAttr ? Number(lineHeightAttr) : 0;
+            if (originalLineHeight) {
+                $(ele).css("line-height", (originalLineHeight * factor) + 'px');
+            }
+            
+            // var fontFamilyAttr = ele.getAttribute('data-original-font-family');
+            // switch(changeFontFamily){
+            //     case NOTHING:
+            //         break;
+            //     case ADD:
+            //         $(ele).css("font-family", fontObj.fontFamily);
+            //         break;
+            //     case REMOVE:
+            //         $(ele).css("font-family", fontFamilyAttr);
+            //         break;
+            // }
+        }
+
+        $epubHtml.css("font-size", fontSize + "%");
+
+        
+        
+        if (perf) {
+            var time2 = window.performance.now();
+        
+            // Firefox: 80+
+            // Chrome: 4-10
+            // Edge: 15-34
+            // IE: 10-15
+            // https://readium.firebase.com/?epub=..%2Fepub_content%2Faccessible_epub_3&goto=%7B%22idref%22%3A%22id-id2635343%22%2C%22elementCfi%22%3A%22%2F4%2F2%5Bbuilding_a_better_epub%5D%2F10%2F44%2F6%2C%2F1%3A334%2C%2F1%3A335%22%7D
+            
+            var diff = time2-time1;
+            console.log(diff);
+            
+            // setTimeout(function(){
+            //     alert(diff);
+            // }, 2000);
+        }
+
+        callback();
+    };
+    var fontLoadCallback_ = _.once(fontLoadCallback);
+
+    if(fontObj.fontFamily && fontObj.url){
+        var dataFontFamily = link.length ? link.attr("data-fontfamily") : undefined;
+
+        if(!link.length){
+            changeFontFamily = ADD;
+
+            setTimeout(function(){
+                
+                link = $("<link/>", {
+                    "id" : FONT_FAMILY_ID,
+                    "data-fontfamily" : fontObj.fontFamily,
+                    "rel" : "stylesheet",
+                    "type" : "text/css"
+                });
+                docHead.append(link);
+                    
+                link.attr({
+                    "href" : fontObj.url
+                });
+            }, 0);
+        }
+        else if(dataFontFamily != fontObj.fontFamily){
+            changeFontFamily = ADD;
+        
+            link.attr({
+                "data-fontfamily" : fontObj.fontFamily,
+                "href" : fontObj.url
+            });
+        } else {
+            changeFontFamily = NOTHING;
         }
     }
-
-    // reset variable so the below logic works. All variables in JS are function scoped.
-    originalLineHeight = 0;
-    for (var i = 0; i < $textblocks.length; i++) {
-        var ele = $textblocks[i],
-            fontSizeAttr = ele.getAttribute('data-original-font-size'),
-            lineHeightAttr = ele.getAttribute('data-original-line-height'),
-            originalFontSize = Number(fontSizeAttr);
-
-        if (lineHeightAttr) {
-            originalLineHeight = Number(lineHeightAttr);
-        }
-        else {
-            originalLineHeight = 0;
-        }
-
-        $(ele).css("font-size", (originalFontSize * factor) + 'px');
-        if (originalLineHeight) {
-            $(ele).css("line-height", (originalLineHeight * factor) + 'px');
-        }
-
+    else{
+        changeFontFamily = REMOVE;
+        if(link.length) link.remove();
     }
-    $epubHtml.css("font-size", fontSize + "%");
-    
-    if (perf) {
-        var time2 = window.performance.now();
-    
-        // Firefox: 80+
-        // Chrome: 4-10
-        // Edge: 15-34
-        // IE: 10-15
-        // https://readium.firebase.com/?epub=..%2Fepub_content%2Faccessible_epub_3&goto=%7B%22idref%22%3A%22id-id2635343%22%2C%22elementCfi%22%3A%22%2F4%2F2%5Bbuilding_a_better_epub%5D%2F10%2F44%2F6%2C%2F1%3A334%2C%2F1%3A335%22%7D
-        
-        var diff = time2-time1;
-        console.log(diff);
-        
-        // setTimeout(function(){
-        //     alert(diff);
-        // }, 2000);
+
+    if (changeFontFamily == ADD) {
+        // just in case the link@onload does not trigger, we set a timeout
+        setTimeout(function(){
+            fontLoadCallback_();
+        }, 100);
+    }
+    else { // REMOVE, NOTHING
+        fontLoadCallback_();
     }
 };
 
@@ -2405,12 +2540,12 @@ Helpers.loadTemplate = function (name, params) {
 Helpers.loadTemplate.cache = {
     "fixed_book_frame": '<div id="fixed-book-frame" class="clearfix book-frame fixed-book-frame"></div>',
 
-    "single_page_frame": '<div><div id="scaler"><iframe scrolling="no" class="iframe-fixed"></iframe></div></div>',
+    "single_page_frame": '<div><div id="scaler"><iframe allowfullscreen="allowfullscreen" scrolling="no" class="iframe-fixed"></iframe></div></div>',
     //"single_page_frame" : '<div><iframe scrolling="no" class="iframe-fixed" id="scaler"></iframe></div>',
 
     "scrolled_book_frame": '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"><div id="scrolled-content-frame"></div></div>',
     "reflowable_book_frame": '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"></div>',
-    "reflowable_book_page_frame": '<div id="reflowable-content-frame" class="reflowable-content-frame"><iframe scrolling="no" id="epubContentIframe"></iframe></div>'
+    "reflowable_book_page_frame": '<div id="reflowable-content-frame" class="reflowable-content-frame"><iframe allowfullscreen="allowfullscreen" scrolling="no" id="epubContentIframe"></iframe></div>'
 };
 
 /**
@@ -2426,16 +2561,85 @@ Helpers.setStyles = function (styles, $element) {
         return;
     }
 
+    var stylingGlobal = "";
+    var stylings = [];
+    var elementIsDocument = ($element && $element.createTextNode) ? true : false;
+
     for (var i = 0; i < count; i++) {
         var style = styles[i];
-        if (style.selector) {
-            $(style.selector, $element).css(style.declarations);
-        }
-        else {
-            $element.css(style.declarations);
+
+        if (elementIsDocument) {
+            if (!style.selector || style.selector == "" || style.selector == "html" || style.selector == "body" || style.selector == "*") {
+                for (var prop in style.declarations) {
+                    if (style.declarations.hasOwnProperty(prop)) {
+                        // backgroundColor => background-color
+                        var prop_ = prop.replace(/[A-Z]/g, function(a) {return '-' + a.toLowerCase()});
+
+                        stylingGlobal += prop_ + ": " + style.declarations[prop] + " !important; ";
+                    }
+                }
+            } else {
+                //$(style.selector, $($element.doumentElement)).css(style.declarations);
+
+                var cssProperties = "";
+
+                for (var prop in style.declarations) {
+                    if (style.declarations.hasOwnProperty(prop)) {
+                        // backgroundColor => background-color
+                        var prop_ = prop.replace(/[A-Z]/g, function(a) {return '-' + a.toLowerCase()});
+                        cssProperties += prop_ + ": " + style.declarations[prop] + " !important; ";
+                    }
+                }
+
+                stylings.push({selector: style.selector, cssProps: cssProperties});
+            }
+            
+        } else { // HTML element
+            if (style.selector) {
+                $(style.selector, $element).css(style.declarations);
+            }
+            else {
+                $element.css(style.declarations);
+            }
         }
     }
 
+    if (elementIsDocument) { // HTML document
+
+        var doc = $element;
+
+        var bookStyleElement = $("style#readium-bookStyles", doc.head);
+
+        if (bookStyleElement && bookStyleElement[0]) {
+            // we remove before re-adding from scratch
+            doc.head.removeChild(bookStyleElement[0]);
+        }
+        
+        var cssStylesheet = "";
+
+        if (stylingGlobal.length > 0) {
+            cssStylesheet += ' body, body::after, body::before, body *, body *::after, body *::before { ' + stylingGlobal + ' } ';
+        }
+
+        if (stylings.length > 0) {
+            for (var i = 0; i < stylings.length; i++) {
+                var styling = stylings[i];
+
+                cssStylesheet += ' ' + styling.selector + ' { ' + styling.cssProps + ' } ';
+            }
+        }
+
+        if (cssStylesheet.length > 0) {
+
+            var styleElement = doc.createElement('style');
+            styleElement.setAttribute("id", "readium-bookStyles");
+            styleElement.appendChild(doc.createTextNode(cssStylesheet));
+
+            doc.head.appendChild(styleElement);
+
+            //bookStyleElement = $(styleElement);
+        }
+    }
 };
 
 /**
@@ -2749,6 +2953,18 @@ var CfiNavigationLogic = function(options) {
         // In SVG documents the root element can be considered the body.
         return this.getRootDocument().body || this.getRootElement();
     };
+
+    this.getClassBlacklist = function () {
+        return options.classBlacklist || [];
+    }
+
+    this.getIdBlacklist = function () {
+        return options.idBlacklist || [];
+    }
+
+    this.getElementBlacklist = function () {
+        return options.elementBlacklist || [];
+    }
 
     this.getRootDocument = function () {
         return options.$iframe[0].contentDocument;
@@ -3309,9 +3525,9 @@ var CfiNavigationLogic = function(options) {
 
     this.getCfiForElement = function (element) {
         var cfi = EPUBcfi.Generator.generateElementCFIComponent(element,
-            ["cfi-marker"],
-            [],
-            ["MathJax_Message", "MathJax_SVG_Hidden"]);
+            this.getClassBlacklist(),
+            this.getElementBlacklist(),
+            this.getIdBlacklist());
 
         if (cfi[0] == "!") {
             cfi = cfi.substring(1);
@@ -3641,14 +3857,14 @@ var CfiNavigationLogic = function(options) {
         return EPUBcfi.generateRangeComponent(
             range.startContainer, range.startOffset,
             range.endContainer, range.endOffset,
-            ['cfi-marker'], [], ["MathJax_Message", "MathJax_SVG_Hidden"]);
+            self.getClassBlacklist(), self.getElementBlacklist(), self.getIdBlacklist());
     }
 
     function getRangeTargetNodes(rangeCfi) {
         return EPUBcfi.getRangeTargetElements(
             getWrappedCfiRelativeToContent(rangeCfi),
             self.getRootDocument(),
-            ['cfi-marker'], [], ["MathJax_Message", "MathJax_SVG_Hidden"]);
+            self.getClassBlacklist(), self.getElementBlacklist(), self.getIdBlacklist());
     }
 
     this.getDomRangeFromRangeCfi = function(rangeCfi, rangeCfi2, inclusive) {
@@ -3661,7 +3877,7 @@ var CfiNavigationLogic = function(options) {
                 range.setEnd(rangeInfo.endElement, rangeInfo.endOffset);
             } else {
                 var element = self.getElementByCfi(rangeCfi,
-                    ['cfi-marker'], [], ["MathJax_Message", "MathJax_SVG_Hidden"])[0];
+                    this.getClassBlacklist(), this.getElementBlacklist(), this.getIdBlacklist())[0];
                 range.selectNode(element);
             }
         } else {
@@ -3670,7 +3886,7 @@ var CfiNavigationLogic = function(options) {
                 range.setStart(rangeInfo1.startElement, rangeInfo1.startOffset);
             } else {
                 var startElement = self.getElementByCfi(rangeCfi,
-                    ['cfi-marker'], [], ["MathJax_Message", "MathJax_SVG_Hidden"])[0];
+                    this.getClassBlacklist(), this.getElementBlacklist(), this.getIdBlacklist())[0];
                 range.setStart(startElement, 0);
             }
 
@@ -3683,7 +3899,7 @@ var CfiNavigationLogic = function(options) {
                 }
             } else {
                 var endElement = self.getElementByCfi(rangeCfi2,
-                    ['cfi-marker'], [], ["MathJax_Message", "MathJax_SVG_Hidden"])[0];
+                    this.getClassBlacklist(), this.getElementBlacklist(), this.getIdBlacklist())[0];
                 range.setEnd(endElement, endElement.childNodes.length);
             }
         }
@@ -3766,9 +3982,9 @@ var CfiNavigationLogic = function(options) {
             try {
                 //noinspection JSUnresolvedVariable
                 var nodeResult = EPUBcfi.Interpreter.getRangeTargetElements(wrappedCfi, contentDoc,
-                    ["cfi-marker"],
-                    [],
-                    ["MathJax_Message", "MathJax_SVG_Hidden"]);
+                    this.getClassBlacklist(),
+                    this.getElementBlacklist(),
+                    this.getIdBlacklist());
 
                 if (debugMode) {
                     console.log(nodeResult);
@@ -3801,9 +4017,9 @@ var CfiNavigationLogic = function(options) {
             return {startInfo: startRangeInfo, endInfo: endRangeInfo, clientRect: nodeRangeClientRect}
         } else {
             var $element = self.getElementByCfi(cfi,
-                ["cfi-marker"],
-                [],
-                ["MathJax_Message", "MathJax_SVG_Hidden"]);
+                this.getClassBlacklist(),
+                this.getElementBlacklist(),
+                this.getIdBlacklist());
 
             var visibleContentOffsets = getVisibleContentOffsets();
             return {startInfo: null, endInfo: null, clientRect: getNormalizedBoundingRect($element, visibleContentOffsets)};
@@ -3980,15 +4196,16 @@ var CfiNavigationLogic = function(options) {
         var visibleElements = [];
 
         _.each($elements, function ($node) {
-            var isTextNode = ($node[0].nodeType === Node.TEXT_NODE);
-            var $element = isTextNode ? $node.parent() : $node;
+            var node = $node[0];
+            var isTextNode = (node.nodeType === Node.TEXT_NODE);
+            var element = isTextNode ? node.parentElement : node;
             var visibilityPercentage = checkVisibilityByRectangles(
                 $node, true, visibleContentOffsets, frameDimensions);
 
             if (visibilityPercentage) {
                 visibleElements.push({
-                    element: $element[0], // DOM Element is pushed
-                    textNode: isTextNode ? $node[0] : null,
+                    element: element, // DOM Element is pushed
+                    textNode: isTextNode ? node : null,
                     percentVisible: visibilityPercentage
                 });
             }
@@ -4045,30 +4262,25 @@ var CfiNavigationLogic = function(options) {
         return $elements;
     };
 
-    function isElementBlacklisted($element) {
-        //TODO: Ok we really need to have a single point of reference for this blacklist
-        var blacklist = {
-            classes: ["cfi-marker", "mo-cfi-highlight"],
-            elements: [], //not looked at
-            ids: ["MathJax_Message", "MathJax_SVG_Hidden"]
-        };
-
+    function isElementBlacklisted(element) {
         var isBlacklisted = false;
+        var classAttribute = element.className;
+        var classList = classAttribute ? classAttribute.split(' ') : [];
+        var id = element.id;
 
-        _.some(blacklist.classes, function (value) {
-            if ($element.hasClass(value)) {
-                isBlacklisted = true;
-            }
-            return isBlacklisted;
-        });
+        var classBlacklist = self.getClassBlacklist();
+        if (classList.length === 1 && _.contains(classBlacklist, classList[0])) {
+            isBlacklisted = true;
+            return;
+        } else if (classList.length && _.intersection(classBlacklist, classList).length) {
+            isBlacklisted = true;
+            return;
+        }
 
-        _.some(blacklist.ids, function (value) {
-            if ($element.attr("id") === value) {
-                isBlacklisted = true;
-            }
-            return isBlacklisted;
-        });
-
+        if (id && id.length && _.contains(self.getIdBlacklist(), id)) {
+            isBlacklisted = true;
+            return;
+        }
 
         return isBlacklisted;
     }
@@ -4097,10 +4309,9 @@ var CfiNavigationLogic = function(options) {
         while ((node = nodeIterator.nextNode())) {
             var isLeafNode = node.nodeType === Node.ELEMENT_NODE && !node.childElementCount && !isValidTextNodeContent(node.textContent);
             if (isLeafNode || isValidTextNode(node)){
-                var $node = $(node);
-                var $element = (node.nodeType === Node.TEXT_NODE) ? $node.parent() : $node;
-                if (!isElementBlacklisted($element)) {
-                    $leafNodeElements.push($node);
+                var element = (node.nodeType === Node.TEXT_NODE) ? node.parentElement : node;
+                if (!isElementBlacklisted(element)) {
+                    $leafNodeElements.push($(node));
                 }
             }
         }
@@ -4128,7 +4339,7 @@ var CfiNavigationLogic = function(options) {
         // If we don't do this, we may get a reference to a node that doesn't get rendered
         // (such as for example a node that has tab character and a bunch of spaces)
         // this is would be bad! ask me why.
-        return text.replace(/[\s\n\r\t]/g, "").length > 0;
+        return !!text.trim().length;
     }
 
     this.getElements = function (selector) {
@@ -4388,7 +4599,15 @@ var ViewerSettings = function(settingsData) {
      */
 
     this.syntheticSpread = "auto";
+
+    /** 
+     *
+     * @property fontSelection
+     * @type number
+     */
     
+    this.fontSelection = 0;
+
     /** 
      *
      * @property fontSize
@@ -4588,6 +4807,7 @@ var ViewerSettings = function(settingsData) {
         mapProperty("columnMaxWidth", settingsData);
         mapProperty("columnMinWidth", settingsData);
         mapProperty("fontSize", settingsData);
+        mapProperty("fontSelection", settingsData);
         mapProperty("mediaOverlaysPreservePlaybackWhenScroll", settingsData);
         mapProperty("mediaOverlaysSkipSkippables", settingsData);
         mapProperty("mediaOverlaysEscapeEscapables", settingsData);
@@ -4608,6 +4828,237 @@ var ViewerSettings = function(settingsData) {
 };
     return ViewerSettings;
 });
+
+/**
+ * Copyright Marc J. Schmidt. See the LICENSE file at the top-level
+ * directory of this distribution and at
+ * https://github.com/marcj/css-element-queries/blob/master/LICENSE.
+ */
+;
+(function (root, factory) {
+    if (typeof define === "function" && define.amd) {
+        define('ResizeSensor',factory);
+    } else if (typeof exports === "object") {
+        module.exports = factory();
+    } else {
+        root.ResizeSensor = factory();
+    }
+}(this, function () {
+
+    // Make sure it does not throw in a SSR (Server Side Rendering) situation
+    if (typeof window === "undefined") {
+        return null;
+    }
+    // Only used for the dirty checking, so the event callback count is limited to max 1 call per fps per sensor.
+    // In combination with the event based resize sensor this saves cpu time, because the sensor is too fast and
+    // would generate too many unnecessary events.
+    var requestAnimationFrame = window.requestAnimationFrame ||
+        window.mozRequestAnimationFrame ||
+        window.webkitRequestAnimationFrame ||
+        function (fn) {
+            return window.setTimeout(fn, 20);
+        };
+
+    /**
+     * Iterate over each of the provided element(s).
+     *
+     * @param {HTMLElement|HTMLElement[]} elements
+     * @param {Function}                  callback
+     */
+    function forEachElement(elements, callback){
+        var elementsType = Object.prototype.toString.call(elements);
+        var isCollectionTyped = ('[object Array]' === elementsType
+            || ('[object NodeList]' === elementsType)
+            || ('[object HTMLCollection]' === elementsType)
+            || ('[object Object]' === elementsType)
+            || ('undefined' !== typeof jQuery && elements instanceof jQuery) //jquery
+            || ('undefined' !== typeof Elements && elements instanceof Elements) //mootools
+        );
+        var i = 0, j = elements.length;
+        if (isCollectionTyped) {
+            for (; i < j; i++) {
+                callback(elements[i]);
+            }
+        } else {
+            callback(elements);
+        }
+    }
+
+    /**
+     * Class for dimension change detection.
+     *
+     * @param {Element|Element[]|Elements|jQuery} element
+     * @param {Function} callback
+     *
+     * @constructor
+     */
+    var ResizeSensor = function(element, callback) {
+        /**
+         *
+         * @constructor
+         */
+        function EventQueue() {
+            var q = [];
+            this.add = function(ev) {
+                q.push(ev);
+            };
+
+            var i, j;
+            this.call = function() {
+                for (i = 0, j = q.length; i < j; i++) {
+                    q[i].call();
+                }
+            };
+
+            this.remove = function(ev) {
+                var newQueue = [];
+                for(i = 0, j = q.length; i < j; i++) {
+                    if(q[i] !== ev) newQueue.push(q[i]);
+                }
+                q = newQueue;
+            }
+
+            this.length = function() {
+                return q.length;
+            }
+        }
+
+        /**
+         * @param {HTMLElement} element
+         * @param {String}      prop
+         * @returns {String|Number}
+         */
+        function getComputedStyle(element, prop) {
+            if (element.currentStyle) {
+                return element.currentStyle[prop];
+            }
+            if (window.getComputedStyle) {
+                return window.getComputedStyle(element, null).getPropertyValue(prop);
+            }
+
+            return element.style[prop];
+        }
+
+        /**
+         *
+         * @param {HTMLElement} element
+         * @param {Function}    resized
+         */
+        function attachResizeEvent(element, resized) {
+            if (!element) return;
+            if (element.resizedAttached) {
+                element.resizedAttached.add(resized);
+                return;
+            }
+
+            element.resizedAttached = new EventQueue();
+            element.resizedAttached.add(resized);
+
+            element.resizeSensor = document.createElement('div');
+            element.resizeSensor.className = 'resize-sensor';
+            var style = 'position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: hidden; z-index: -1; visibility: hidden;';
+            var styleChild = 'position: absolute; left: 0; top: 0; transition: 0s;';
+
+            element.resizeSensor.style.cssText = style;
+            element.resizeSensor.innerHTML =
+                '<div class="resize-sensor-expand" style="' + style + '">' +
+                    '<div style="' + styleChild + '" class="resize-sensor-inner"></div>' +
+                '</div>' +
+                '<div class="resize-sensor-shrink" style="' + style + '">' +
+                    '<div style="' + styleChild + ' width: 200%; height: 200%" class="resize-sensor-inner"></div>' +
+                '</div>';
+            element.appendChild(element.resizeSensor);
+
+            if (getComputedStyle(element, 'position') == 'static') {
+                element.style.position = 'relative';
+            }
+
+            var expand = element.resizeSensor.childNodes[0];
+            var expandChild = expand.childNodes[0];
+            var shrink = element.resizeSensor.childNodes[1];
+            var dirty, rafId, newWidth, newHeight;
+            var lastWidth = element.offsetWidth;
+            var lastHeight = element.offsetHeight;
+
+            var reset = function() {
+                expandChild.style.width = '100000px';
+                expandChild.style.height = '100000px';
+
+                expand.scrollLeft = 100000;
+                expand.scrollTop = 100000;
+
+                shrink.scrollLeft = 100000;
+                shrink.scrollTop = 100000;
+            };
+
+            reset();
+
+            var onResized = function() {
+                rafId = 0;
+
+                if (!dirty) return;
+
+                lastWidth = newWidth;
+                lastHeight = newHeight;
+
+                if (element.resizedAttached) {
+                    element.resizedAttached.call();
+                }
+            };
+
+            var onScroll = function() {
+                newWidth = element.offsetWidth;
+                newHeight = element.offsetHeight;
+                dirty = newWidth != lastWidth || newHeight != lastHeight;
+
+                if (dirty && !rafId) {
+                    rafId = requestAnimationFrame(onResized);
+                }
+
+                reset();
+            };
+
+            var addEvent = function(el, name, cb) {
+                if (el.attachEvent) {
+                    el.attachEvent('on' + name, cb);
+                } else {
+                    el.addEventListener(name, cb);
+                }
+            };
+
+            addEvent(expand, 'scroll', onScroll);
+            addEvent(shrink, 'scroll', onScroll);
+        }
+
+        forEachElement(element, function(elem){
+            attachResizeEvent(elem, callback);
+        });
+
+        this.detach = function(ev) {
+            ResizeSensor.detach(element, ev);
+        };
+    };
+
+    ResizeSensor.detach = function(element, ev) {
+        forEachElement(element, function(elem){
+            if (!elem) return
+            if(elem.resizedAttached && typeof ev == "function"){
+                elem.resizedAttached.remove(ev);
+                if(elem.resizedAttached.length()) return;
+            }
+            if (elem.resizeSensor) {
+                if (elem.contains(elem.resizeSensor)) {
+                    elem.removeChild(elem.resizeSensor);
+                }
+                delete elem.resizeSensor;
+                delete elem.resizedAttached;
+            }
+        });
+    };
+
+    return ResizeSensor;
+
+}));
 
 //  Created by Boris Schneiderman.
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
@@ -4635,8 +5086,8 @@ var ViewerSettings = function(settingsData) {
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-define('readium_shared_js/views/one_page_view',["../globals", "jquery", "underscore", "eventEmitter", "./cfi_navigation_logic", "../helpers", "../models/viewer_settings", "../models/bookmark_data"],
-    function (Globals, $, _, EventEmitter, CfiNavigationLogic, Helpers, ViewerSettings, BookmarkData) {
+define('readium_shared_js/views/one_page_view',["../globals", "jquery", "underscore", "eventEmitter", "./cfi_navigation_logic", "../helpers", "../models/viewer_settings", "../models/bookmark_data", "ResizeSensor"],
+    function (Globals, $, _, EventEmitter, CfiNavigationLogic, Helpers, ViewerSettings, BookmarkData, ResizeSensor) {
 
 /**
  * Renders one page of fixed layout spread
@@ -4667,6 +5118,11 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
     var _isIframeLoaded = false;
 
     var _$scaler;
+
+    var _lastBodySize = {
+        width: undefined,
+        height: undefined
+    };
 
     var PageTransitionHandler = function (opts) {
         var PageTransition = function (begin, end) {
@@ -4980,28 +5436,77 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             _$epubHtml = $("html", epubContentDocument);
             if (!_$epubHtml || _$epubHtml.length == 0) {
                 _$epubHtml = $("svg", epubContentDocument);
+                _$epubBody = undefined;
             } else {
                 _$epubBody = $("body", _$epubHtml);
             }
 
             //_$epubHtml.css("overflow", "hidden");
 
-            if (_enableBookStyleOverrides) {
+            if (_enableBookStyleOverrides) { // not fixed layout (reflowable in scroll view)
                 self.applyBookStyles();
             }
 
             updateMetaSize();
 
+            initResizeSensor();
+
             _pageTransitionHandler.onIFrameLoad();
         }
     }
 
+    function initResizeSensor() {
+
+        if (_$epubBody // undefined with SVG spine items
+            && _enableBookStyleOverrides // not fixed layout (reflowable in scroll view)
+            ) {
+
+            var bodyElement = _$epubBody[0];
+            if (bodyElement.resizeSensor) {
+                return;
+            }
+
+            // We need to make sure the content has indeed be resized, especially
+            // the first time it is triggered
+            _lastBodySize.width = $(bodyElement).width();
+            _lastBodySize.height = $(bodyElement).height();
+
+            bodyElement.resizeSensor = new ResizeSensor(bodyElement, function() {
+
+                var newBodySize = {
+                    width: $(bodyElement).width(),
+                    height: $(bodyElement).height()
+                };
+
+                console.debug("OnePageView content resized ...", newBodySize.width, newBodySize.height, _currentSpineItem.idref);
+                
+                if (newBodySize.width != _lastBodySize.width || newBodySize.height != _lastBodySize.height) {
+                    _lastBodySize.width = newBodySize.width;
+                    _lastBodySize.height = newBodySize.height;
+
+                    console.debug("... updating pagination.");
+
+                    var src = _spine.package.resolveRelativeUrl(_currentSpineItem.href);
+
+                    Globals.logEvent("OnePageView.Events.CONTENT_SIZE_CHANGED", "EMIT", "one_page_view.js [ " + _currentSpineItem.href + " -- " + src + " ]");
+                    
+                    self.emit(OnePageView.Events.CONTENT_SIZE_CHANGED, _$iframe, _currentSpineItem);
+                    
+                    //updatePagination();
+                } else {
+                    console.debug("... ignored (identical dimensions).");
+                }
+            });
+        }
+    }
+    
     var _viewSettings = undefined;
-    this.setViewSettings = function (settings) {
+    this.setViewSettings = function (settings, docWillChange) {
 
         _viewSettings = settings;
 
-        if (_enableBookStyleOverrides) {
+        if (_enableBookStyleOverrides  // not fixed layout (reflowable in scroll view)
+            && !docWillChange) {
             self.applyBookStyles();
         }
 
@@ -5010,27 +5515,34 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         _pageTransitionHandler.updateOptions(settings);
     };
 
-    function updateHtmlFontSize() {
+    function updateHtmlFontInfo() {
 
-        if (!_enableBookStyleOverrides) return;
+        if (!_enableBookStyleOverrides) return;  // fixed layout (not reflowable in scroll view)
 
         if (_$epubHtml && _viewSettings) {
-            Helpers.UpdateHtmlFontSize(_$epubHtml, _viewSettings.fontSize);
+            var i = _viewSettings.fontSelection;
+            var useDefault = !reader.fonts || !reader.fonts.length || i <= 0 || (i-1) >= reader.fonts.length;
+            var font = (useDefault ?
+                        {} :
+                        reader.fonts[i - 1]);
+            Helpers.UpdateHtmlFontAttributes(_$epubHtml, _viewSettings.fontSize, font, function() {});
         }
     }
 
     this.applyBookStyles = function () {
 
-        if (!_enableBookStyleOverrides) return;
+        if (!_enableBookStyleOverrides) return;  // fixed layout (not reflowable in scroll view)
 
         if (_$epubHtml) {
             Helpers.setStyles(_bookStyles.getStyles(), _$epubHtml);
-            updateHtmlFontSize();
+            updateHtmlFontInfo();
         }
     };
 
     //this is called by scroll_view for fixed spine item
     this.scaleToWidth = function (width) {
+
+        if (_enableBookStyleOverrides) return;  // not fixed layout (reflowable in scroll view)
 
         if (_meta_size.width <= 0) return; // resize event too early!
 
@@ -5139,6 +5651,8 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
     this.transformContentImmediate = function (scale, left, top) {
 
+        if (_enableBookStyleOverrides) return;  // not fixed layout (reflowable in scroll view)
+
         var elWidth = Math.ceil(_meta_size.width * scale);
         var elHeight = Math.floor(_meta_size.height * scale);
 
@@ -5164,7 +5678,9 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             enable3D = true;
         }
         
-        if (reader.needsFixedLayoutScalerWorkAround()) {
+        if (_$epubBody // not SVG spine item (otherwise fails in Safari OSX)
+            && reader.needsFixedLayoutScalerWorkAround()) {
+
             var css1 = Helpers.CSSTransformString({scale: scale, enable3D: enable3D});
             
             // See https://github.com/readium/readium-shared-js/issues/285 
@@ -5172,7 +5688,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             css1["min-height"] = _meta_size.height;
             
             _$epubHtml.css(css1);
-            
+
             // Ensures content dimensions matches viewport meta (authors / production tools should do this in their CSS...but unfortunately some don't).
             if (_$epubBody && _$epubBody.length) {
                 _$epubBody.css({width:_meta_size.width, height:_meta_size.height});
@@ -5190,7 +5706,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             css["height"] = _meta_size.height;
             _$scaler.css(css);
         }
-                
+
         // Chrome workaround: otherwise text is sometimes invisible (probably a rendering glitch due to the 3D transform graphics backend?)
         //_$epubHtml.css("visibility", "hidden"); // "flashing" in two-page spread mode is annoying :(
         _$epubHtml.css("opacity", "0.999");
@@ -5218,6 +5734,8 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
         _meta_size.width = 0;
         _meta_size.height = 0;
+
+        if (_enableBookStyleOverrides) return; // not fixed layout (reflowable in scroll view)
 
         var size = undefined;
 
@@ -5528,7 +6046,10 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         return new CfiNavigationLogic({
             $iframe: _$iframe,
             frameDimensions: getFrameDimensions,
-            visibleContentOffsets: getVisibleContentOffsets
+            visibleContentOffsets: getVisibleContentOffsets,
+            classBlacklist: ["cfi-marker", "mo-cfi-highlight", "resize-sensor", "resize-sensor-expand", "resize-sensor-shrink", "resize-sensor-inner"],
+            elementBlacklist: [],
+            idBlacklist: ["MathJax_Message", "MathJax_SVG_Hidden"]
         });
     };
 
@@ -5661,7 +6182,8 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 };
 
 OnePageView.Events = {
-    SPINE_ITEM_OPEN_START: "SpineItemOpenStart"
+    SPINE_ITEM_OPEN_START: "SpineItemOpenStart",
+    CONTENT_SIZE_CHANGED: "ContentSizeChanged"
 };
 return OnePageView;
 });
@@ -5714,6 +6236,8 @@ var PageOpenRequest = function(spineItem, initiator) {
     this.spineItemPageIndex = undefined;
     this.elementId = undefined;
     this.elementCfi = undefined;
+    this.firstVisibleCfi = undefined;
+    this.lastVisibleCfi = undefined;
     this.firstPage = false;
     this.lastPage = false;
     this.initiator = initiator;
@@ -5786,11 +6310,20 @@ var PageOpenRequest = function(spineItem, initiator) {
      */
 
     this.setElementCfi = function(elementCfi) {
-
         this.reset();
         this.elementCfi = elementCfi;
     };
 
+    // Used by ReflowView to better keep track of the current page
+    // using just a bookmark to firstVisibleElement makes the current
+    // page gradually shift to the beginning of the chapter. By bookmarking
+    // both the first and last visible elements, we can keep track of the 
+    // "middle" of the visible area.
+    this.setFirstAndLastVisibleCfi = function(firstVisibleCfi, lastVisibleCfi) {
+        this.reset();
+        this.firstVisibleCfi = firstVisibleCfi;
+        this.lastVisibleCfi = lastVisibleCfi;
+    }
 
 };
 
@@ -5936,7 +6469,7 @@ var FixedView = function(options, reader){
     };
 
 
-    this.setViewSettings = function(settings) {
+    this.setViewSettings = function(settings, docWillChange) {
         
         _viewSettings = settings;
         
@@ -5944,7 +6477,7 @@ var FixedView = function(options, reader){
 
         var views = getDisplayingViews();
         for(var i = 0, count = views.length; i < count; i++) {
-            views[i].setViewSettings(settings);
+            views[i].setViewSettings(settings, docWillChange);
         }
     };
 
@@ -9225,6 +9758,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
     var _spine = options.spine;
     var _userStyles = options.userStyles;
     var _deferredPageRequest;
+    var _currentPageRequest;
     var _$contentFrame;
     var _$el;
 
@@ -9436,8 +9970,16 @@ var ScrollView = function (options, isContinuousScroll, reader) {
             && !_isSettingScrollPosition
             && !_isLoadingNewSpineItemOnPageRequest) {
 
+            self.resetCurrentPosition();
+
             updateTransientViews();
             onPaginationChanged(self);
+
+            _.defer(function() {
+                if (!_currentPageRequest) {
+                    self.saveCurrentPosition();
+                }
+            })
 
             var settings = reader.viewerSettings();
             if (!settings.mediaOverlaysPreservePlaybackWhenScroll)
@@ -9487,173 +10029,6 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         }
     }
 
-    function reachStableContentHeight(updateScroll, pageView, iframe, href, fixedLayout, metaWidth, msg, callback)
-    {
-        if (!Helpers.isIframeAlive(iframe))
-        {
-            if (_DEBUG)
-            {
-                console.log("reachStableContentHeight ! win && doc (iFrame disposed?)");
-            }
-
-            if (callback) callback(false);
-            return;
-        }
-
-        var MAX_ATTEMPTS = 10;
-        var TIME_MS = 300;
-
-        var w = iframe.contentWindow;
-        var d = iframe.contentDocument;
-
-        var previousPolledContentHeight = parseInt(Math.round(parseFloat(w.getComputedStyle(d.documentElement).height))); //body can be shorter!;
-
-        var initialContentHeight = previousPolledContentHeight;
-
-        if (updateScroll === 0)
-        {
-            updatePageViewSizeAndAdjustScroll(pageView);
-        }
-        else
-        {
-            updatePageViewSize(pageView);
-        }
-
-        var tryAgainFunc = function(tryAgain)
-        {
-            if (_DEBUG && tryAgain !== MAX_ATTEMPTS)
-            {
-                console.log("tryAgainFunc - " + tryAgain + ": " + href + "  <" + initialContentHeight +" -- "+ previousPolledContentHeight + ">");
-            }
-
-            tryAgain--;
-            if (tryAgain < 0)
-            {
-                if (_DEBUG)
-                {
-                    console.error("tryAgainFunc abort: " + href);
-                }
-
-                if (callback) callback(true);
-                return;
-            }
-
-            setTimeout(function()
-            {
-                try
-                {
-                    if (Helpers.isIframeAlive(iframe))
-                    {
-                        var win = iframe.contentWindow;
-                        var doc = iframe.contentDocument;
-
-                        var iframeHeight = parseInt(Math.round(parseFloat(window.getComputedStyle(iframe).height)));
-
-                        var docHeight = parseInt(Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height))); //body can be shorter!
-
-                        if (previousPolledContentHeight !== docHeight)
-                        {
-                            previousPolledContentHeight = docHeight;
-
-                            tryAgainFunc(tryAgain);
-                            return;
-                        }
-
-                        // CONTENT HEIGHT IS NOW STABILISED
-
-                        var diff = iframeHeight - docHeight;
-                        if (Math.abs(diff) > 4)
-                        {
-                            if (_DEBUG)
-                            {
-                                console.log("$$$ IFRAME HEIGHT ADJUST: " + href + "  [" + diff + "]<" + initialContentHeight + " -- " + previousPolledContentHeight + ">");
-                                console.log(msg);
-                            }
-
-                            if (updateScroll === 0)
-                            {
-                                updatePageViewSizeAndAdjustScroll(pageView);
-                            }
-                            else
-                            {
-                                updatePageViewSize(pageView);
-                            }
-
-                            if (Helpers.isIframeAlive(iframe))
-                            {
-                                var win = iframe.contentWindow;
-                                var doc = iframe.contentDocument;
-
-                                var docHeightAfter = parseInt(Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height))); //body can be shorter!
-                                var iframeHeightAfter = parseInt(Math.round(parseFloat(window.getComputedStyle(iframe).height)));
-
-                                var newdiff = iframeHeightAfter - docHeightAfter;
-                                if (Math.abs(newdiff) > 4)
-                                {
-                                    if (_DEBUG)
-                                    {
-                                        console.error("## IFRAME HEIGHT ADJUST: " + href + "  [" + newdiff + "]<" + initialContentHeight + " -- "+ previousPolledContentHeight + ">");
-                                        console.log(msg);
-                                    }
-
-                                    tryAgainFunc(tryAgain);
-                                    return;
-                                }
-                                else
-                                {
-                                    if (_DEBUG)
-                                    {
-                                        console.log(">> IFRAME HEIGHT ADJUSTED OKAY: " + href + "  ["+diff+"]<" + initialContentHeight + " -- " + previousPolledContentHeight + ">");
-                                        // console.log(msg);
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                if (_DEBUG)
-                                {
-                                    console.log("tryAgainFunc ! win && doc (iFrame disposed?)");
-                                }
-
-                                if (callback) callback(false);
-                                return;
-                            }
-                        }
-                        else
-                        {
-                            //if (_DEBUG)
-                            // console.debug("IFRAME HEIGHT NO NEED ADJUST: " + href);
-                            // console.log(msg);
-                        }
-                    }
-                    else
-                    {
-                        if (_DEBUG)
-                        {
-                            console.log("tryAgainFunc ! win && doc (iFrame disposed?)");
-                        }
-
-                        if (callback) callback(false);
-                        return;
-                    }
-                }
-                catch(ex)
-                {
-                    console.error(ex);
-
-                    if (callback) callback(false);
-                    return;
-                }
-
-                if (callback) callback(true);
-
-            }, TIME_MS);
-        };
-
-        tryAgainFunc(MAX_ATTEMPTS);
-    }
-
-
     function addToTopOf(topView, callback) {
 
         var prevSpineItem = _spine.prevItem(topView.currentSpineItem(), true);
@@ -9662,7 +10037,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
             return;
         }
 
-        var tmpView = createPageViewForSpineItem(true);
+        var tmpView = createPageViewForSpineItem(prevSpineItem, true);
 
         // add to the end first to avoid scrolling during load
         var lastView = lastLoadedView();
@@ -9679,7 +10054,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
                 var scrollPos = scrollTop();
 
-                var newView = createPageViewForSpineItem();
+                var newView = createPageViewForSpineItem(prevSpineItem);
                 var originalHeight = range.bottom - range.top;
 
 
@@ -9697,14 +10072,12 @@ var ScrollView = function (options, isContinuousScroll, reader) {
                 newView.loadSpineItem(prevSpineItem, function (success, $iframe, spineItem, isNewlyLoaded, context) {
                     if (success) {
 
-                        var continueCallback = function (successFlag)
-                        {
-                            onPageViewLoaded(newView, success, $iframe, spineItem, isNewlyLoaded, context);
-
-                            callback(successFlag);
-                        };
-
-                        reachStableContentHeight(0, newView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToTopOf", continueCallback); // //onIFrameLoad called before this callback, so okay.
+                        updatePageViewSizeAndAdjustScroll(newView);
+                        onPageViewLoaded(newView, success, $iframe, spineItem, isNewlyLoaded, context);
+                        callback(success);
+                        // No need for complicated reachStableContentHeight any more
+                        // Remove this
+                        //reachStableContentHeight(0, newView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToTopOf", continueCallback); // //onIFrameLoad called before this callback, so okay.
                     }
                     else {
                         console.error("Unable to open 2 " + prevSpineItem.href);
@@ -9743,20 +10116,17 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
         var scrollPos = scrollTop();
 
-        var newView = createPageViewForSpineItem();
+        var newView = createPageViewForSpineItem(nexSpineItem);
         newView.element().insertAfter(bottomView.element());
 
         newView.loadSpineItem(nexSpineItem, function (success, $iframe, spineItem, isNewlyLoaded, context) {
             if (success) {
 
-                var continueCallback = function (successFlag)
-                {
-                    onPageViewLoaded(newView, success, $iframe, spineItem, isNewlyLoaded, context);
-
-                    callback(successFlag);
-                };
-
-                reachStableContentHeight(2, newView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToBottomOf", continueCallback); // //onIFrameLoad called before this callback, so okay.
+                updatePageViewSize(newView);
+                onPageViewLoaded(newView, success, $iframe, spineItem, isNewlyLoaded, context);
+                callback(success);
+                // No need for complicated reachStableContentHeight any more
+                //reachStableContentHeight(2, newView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToBottomOf", continueCallback); // //onIFrameLoad called before this callback, so okay.
             }
             else {
                 console.error("Unable to load " + nexSpineItem.href);
@@ -9805,37 +10175,58 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         if (!_$contentFrame) {
             return;
         }
+    };
 
-        forEachItemView(function (pageView) {
+    this.resetCurrentPosition = function() {
+        _currentPageRequest = undefined;
+    };
 
-            updatePageViewSize(pageView);
-        }, false);
+    this.saveCurrentPosition = function() {
+        // If there's a deferred page request, there's no point in saving the current position
+        // as it's going to change soon
+        if (_deferredPageRequest) {
+            return;
+        }
 
-        onPaginationChanged(self);
+        var _firstVisibleCfi = self.getFirstVisibleCfi();
+        var spineItem = _spine.getItemById(_firstVisibleCfi.idref);
+        if (spineItem) {
+            _currentPageRequest = new PageOpenRequest(spineItem, self);
+            _currentPageRequest.setElementCfi(_firstVisibleCfi.contentCFI);
+        }
+    };
 
-        updateTransientViews();
+    this.restoreCurrentPosition = function() {
+        if (_currentPageRequest) {
+            this.openPageInternal(_currentPageRequest);            
+        }
     };
 
     var _viewSettings = undefined;
-    this.setViewSettings = function (settings) {
+    this.setViewSettings = function (settings, docWillChange) {
 
         _viewSettings = settings;
 
         forEachItemView(function (pageView) {
 
-            pageView.setViewSettings(settings);
+            pageView.setViewSettings(settings, docWillChange);
 
         }, false);
     };
 
-    function createPageViewForSpineItem(isTemporaryView) {
-
+    function createPageViewForSpineItem(aSpineItem, isTemporaryView) {
+        
         options.disablePageTransitions = true; // force
+
+        var enableBookStyleOverrides = true;
+        if (aSpineItem.isFixedLayout()) {
+            enableBookStyleOverrides = false;
+        }
 
         var pageView = new OnePageView(
             options,
             ["content-doc-frame"],
-            true, //enableBookStyleOverrides
+            enableBookStyleOverrides,
             reader);
 
         pageView.on(OnePageView.Events.SPINE_ITEM_OPEN_START, function($iframe, spineItem) {
@@ -9851,8 +10242,31 @@ var ScrollView = function (options, isContinuousScroll, reader) {
             self.emit(Globals.Events.CONTENT_DOCUMENT_UNLOADED, $iframe, spineItem);
         });
 
+        function updatePageViewSizeAndPagination_() {
+            // Resize the PageView to fit its content and update the pagination
+            // and the adjacent views
+            updatePageViewSize(pageView);
+            onPaginationChanged(self);
+            updateTransientViews();
+            if (_currentPageRequest && !_deferredPageRequest) {
+                self.restoreCurrentPosition();                
+            }
+        }
+        var updatePageViewSizeAndPagination = _.debounce(updatePageViewSizeAndPagination_, 100);
+
+        // Observe the CONTENT_SIZE_CHANGED from the page view so the ScrollView
+        // is notified when the size of the content of the view changes, because
+        // the font or the viewport size has changed
+        pageView.on(OnePageView.Events.CONTENT_SIZE_CHANGED, function($iframe, spineItem) {
+            
+            Globals.logEvent("OnePageView.Events.CONTENT_SIZE_CHANGED", "ON", "scroll_view.js [ " + spineItem.href + " ]");
+            updatePageViewSizeAndPagination();
+        });
+
         pageView.render();
-        if (_viewSettings) pageView.setViewSettings(_viewSettings);
+
+        var docWillChange = true;
+        if (_viewSettings) pageView.setViewSettings(_viewSettings, docWillChange);
 
         if (!isTemporaryView) {
             pageView.element().data("pageView", pageView);
@@ -9955,7 +10369,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
         var scrollPos = scrollTop();
 
-        var loadedView = createPageViewForSpineItem();
+        var loadedView = createPageViewForSpineItem(spineItem);
 
         _$contentFrame.append(loadedView.element());
 
@@ -9963,16 +10377,11 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
             if (success) {
 
-                var continueCallback = function(successFlag)
-                {
-                    onPageViewLoaded(loadedView, success, $iframe, spineItem, isNewlyLoaded, context);
-
-                    callback(loadedView);
-
-                    //successFlag should always be true as loadedView iFrame cannot be dead at this stage.
-                };
-
-                reachStableContentHeight(1, loadedView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? loadedView.meta_width() : 0, "openPage", continueCallback); // //onIFrameLoad called before this callback, so okay.
+                updatePageViewSize(loadedView);
+                onPageViewLoaded(loadedView, success, $iframe, spineItem, isNewlyLoaded, context);
+                //callback(loadedView);
+                // No need for complicated reachStableContentHeight any more
+                //reachStableContentHeight(1, loadedView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? loadedView.meta_width() : 0, "openPage", continueCallback); // //onIFrameLoad called before this callback, so okay.
             }
             else {
                 console.error("Unable to load " + spineItem.href);
@@ -10007,7 +10416,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
     };
 
 
-    this.openPage = function (pageRequest) {
+    this.openPageInternal = function (pageRequest) {
 
         _stopTransientViewUpdate = true;
 
@@ -10056,6 +10465,12 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         }
     };
 
+    this.openPage = function(pageRequest) {
+        this.resetCurrentPosition();
+        _currentPageRequest = pageRequest;
+        this.openPageInternal(pageRequest);
+    }
+
     function openPageViewElement(pageView, pageRequest) {
 
         var topOffset = 0;
@@ -10102,7 +10517,8 @@ var ScrollView = function (options, isContinuousScroll, reader) {
                 return;
             }
 
-            topOffset = sfiNav.getVerticalOffsetForElement($element) + pageRange.top;
+            var elementRange = getElementRange(pageView, $element);
+            topOffset = elementRange.top + pageRange.top;
 
         }
         else if (pageView && pageRequest.elementCfi) {
@@ -10117,7 +10533,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
             }
             
             var domRangeAsRange = getDomRangeAsRange(pageView, domRange);
-            if (isRangeIsVisibleOnScreen(pageView, domRangeAsRange, 60)) {
+            if (isRangeIsVisibleOnScreen(domRangeAsRange, 60)) {
                 //TODO refactoring required
                 // this is artificial call because MO player waits for this event to continue playing.
                 onPaginationChanged(pageRequest.initiator, pageRequest.spineItem, pageRequest.elementId);
@@ -15184,243 +15600,6 @@ return Package;
 });
 
 
-//  Created by Juan Corona <juanc@evidentpoint.com>
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
-//
-//  Redistribution and use in source and binary forms, with or without modification,
-//  are permitted provided that the following conditions are met:
-//  1. Redistributions of source code must retain the above copyright notice, this
-//  list of conditions and the following disclaimer.
-//  2. Redistributions in binary form must reproduce the above copyright notice,
-//  this list of conditions and the following disclaimer in the documentation and/or
-//  other materials provided with the distribution.
-//  3. Neither the name of the organization nor the names of its contributors may be
-//  used to endorse or promote products derived from this software without specific
-//  prior written permission.
-//
-//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
-//  OF THE POSSIBILITY OF SUCH DAMAGE.
-
-//TODO: This could be made into a plugin in the future.
-// A plugin would be ideal because we can make a light-weight alternative that doesn't need the FontLoader shim and the CSSOM parser.
-define('readium_shared_js/views/font_loader',["jquery", "underscore", "FontLoader", "cssom"], function($, _, FontLoader, CSSOM) {
-
-var FontLoaderFallback = function(document, options) {
-    var debug = options.debug;
-
-    var getRestrictedCssRules = function (styleSheet, callback) {
-        $.get(styleSheet.href).done(function(data) {
-            callback(CSSOM.parse(data).cssRules);
-        }).fail(function() {
-            callback(null);
-        });
-    };
-
-    var getUsedFonts = function(callback) {
-        var styleSheets = document.styleSheets;
-        var fontFamilies = [];
-        var fontFamilyRules = [];
-
-        // if no style sheets are found return immediately
-        if (!styleSheets || styleSheets.length <= 0) {
-            callback([]);
-            return;
-        }
-
-        var getFontFamilyFromRule = function(rule) {
-            if (rule.style && (rule.style.getPropertyValue || rule.style.fontFamily)) {
-                return rule.style.getPropertyValue("font-family") || rule.style.fontFamily;
-            }
-        }
-
-        var returnUsedFonts = function() {
-            if (debug) {
-                console.log(fontFamilies);
-            }
-            var usedFontFamilies = [];
-            _.each(fontFamilyRules, function(rule) {
-                var usedFontFamily = _.find(fontFamilies, function(family) {
-                    var fontFamily = getFontFamilyFromRule(rule);
-                    if (fontFamily && ~fontFamily.indexOf(family[1])) {
-                        return true;
-                    }
-                });
-
-                if (usedFontFamily && rule.selectorText && !_.contains(usedFontFamilies, usedFontFamily[0]) && document.querySelector(rule.selectorText)) {
-                    usedFontFamilies.push(usedFontFamily[0]);
-                }
-            });
-
-            if (debug) {
-                console.log(usedFontFamilies);
-            }
-
-            callback(usedFontFamilies);
-        };
-
-        var processedCount = 0;
-        var processCssRules = function(cssRules) {
-            _.each(cssRules, function(rule) {
-                var fontFamily = getFontFamilyFromRule(rule);
-                if (fontFamily) {
-                    if (rule.type === CSSRule.FONT_FACE_RULE) {
-                        fontFamilies.push([fontFamily.replace(/(^['"]|['"]$)/g, '').replace(/\\(['"])/g, '$1'), fontFamily]);
-                    } else {
-                        fontFamilyRules.push(rule);
-                    }
-                }
-            });
-
-            processedCount++;
-
-            if (processedCount >= styleSheets.length) {
-                returnUsedFonts();
-            }
-        };
-
-        _.each(styleSheets, function(styleSheet) {
-            var cssRules;
-            // Firefox (and possibly IE as well) throw a security exception if the CSS was loaded from a different domain.
-            // Other browsers just have null as the value of cssRules for that case.
-            try {
-                cssRules = styleSheet.cssRules || styleSheet.rules;
-            } catch (ignored) {}
-
-            if (!cssRules) {
-                getRestrictedCssRules(styleSheet, processCssRules);
-            } else {
-                processCssRules(cssRules);
-            }
-        });
-    };
-
-    return function(callback) {
-        callback = _.once(callback);
-        var loadCount = 0;
-
-        getUsedFonts(function(usedFontFamilies){
-            var fontLoader = new FontLoader(usedFontFamilies, {
-                "fontsLoaded": function(error) {
-                    if (debug) {
-                        if (error !== null) {
-                            // Reached the timeout but not all fonts were loaded
-                            console.log("font loader: " + error.message, error.notLoadedFonts);
-                        } else {
-                            // All fonts were loaded
-                            console.log("font loader: all fonts were loaded");
-                        }
-                    }
-                    callback();
-                },
-                "fontLoaded": function(font) {
-                    loadCount++;
-                    if (debug) {
-                        console.log("font loaded: " + font.family);
-                    }
-                    if (usedFontFamilies.length > options.minLoadCount && (loadCount / usedFontFamilies.length) >= options.minLoadRatio) {
-
-                        if (debug) {
-                            console.log('font loader: early callback');
-                        }
-                        callback();
-                    }
-                }
-            }, options.timeout, document);
-
-            fontLoader.loadFonts();
-        });
-    };
-};
-
-var FontLoaderNative = function(document, options) {
-    var debug = options.debug;
-
-    return function(callback) {
-        callback = _.once(callback);
-        var loadCount = 0;
-
-        var fontFaceCount = document.fonts.size;
-        var fontLoaded = function(font) {
-            loadCount++;
-            if (debug) {
-                console.log("(native) font loaded: " + font.family);
-            }
-            if (fontFaceCount > options.minLoadCount && (loadCount / fontFaceCount) >= options.minLoadRatio) {
-
-                if (debug) {
-                    console.log('(native) font loader: early callback');
-                }
-                callback();
-            }
-        }
-
-        var fontIterator = function(font) {
-            font.loaded.then(function() {
-                fontLoaded(font);
-            });
-        };
-
-        // For some reason (at this time) Chrome's implementation has a .forEach
-        // but it is not Array-like. This is opposite with Firefox's though.
-        if (document.fonts.forEach) {
-            document.fonts.forEach(fontIterator);
-        } else {
-            _.each(document.fonts, fontIterator);
-        }
-        var fontsReady = document.fonts.ready;
-        // In older implementations (chromium 35 for example) this is a method not a property
-        if (_.isFunction(fontsReady)) {
-            fontsReady = fontsReady.call(document.fonts);
-        }
-        fontsReady.then(function() {
-            if (debug) {
-                // All fonts were loaded
-                console.log("(native) font loader: all fonts were loaded");
-            }
-            callback();
-        });
-
-        window.setTimeout(function() {
-            if (debug && loadCount !== fontFaceCount) {
-                console.log('(native) font loader: timeout, not all fonts loaded/required');
-            } else if (debug) {
-                console.log('(native) font loader: timeout');
-            }
-            callback();
-        }, options.timeout);
-    }
-}
-
-var FontLoaderWrapper = function($iframe, options) {
-    options = options || {};
-
-    options.debug = options.debug || false;
-    options.timeout = options.timeout || 1500;
-    options.minLoadCount = options.minLoadCount || 3;
-    options.minLoadRatio = options.minLoadRatio || 0.75;
-
-    var document = $iframe[0].contentDocument;
-
-    // For browsers without CSS Font Loading Module
-    var fallbackNeeded = !document.fonts;
-
-    var fontLoader = fallbackNeeded ? FontLoaderFallback : FontLoaderNative;
-
-    this.waitForFonts = fontLoader(document, options);
-};
-
-return FontLoaderWrapper;
-
-});
-
 
 //  LauncherOSX
 //
@@ -15451,17 +15630,16 @@ return FontLoaderWrapper;
 
 define('readium_shared_js/views/reflowable_view',["../globals", "jquery", "underscore", "eventEmitter", "../models/bookmark_data", "./cfi_navigation_logic",
     "../models/current_pages_info", "../helpers", "../models/page_open_request",
-    "../models/viewer_settings", "./font_loader"],
+    "../models/viewer_settings", "ResizeSensor"],
     function(Globals, $, _, EventEmitter, BookmarkData, CfiNavigationLogic,
              CurrentPagesInfo, Helpers, PageOpenRequest,
-             ViewerSettings, FontLoader) {
+             ViewerSettings, ResizeSensor) {
 /**
  * Renders reflowable content using CSS columns
  * @param options
  * @constructor
  */
 var ReflowableView = function(options, reader){
-
     $.extend(this, new EventEmitter());
 
     var self = this;
@@ -15476,11 +15654,17 @@ var ReflowableView = function(options, reader){
     var _isWaitingFrameRender = false;
     var _deferredPageRequest;
     var _fontSize = 100;
+    var _fontSelection = 0;
     var _$contentFrame;
     var _navigationLogic;
     var _$el;
     var _$iframe;
     var _$epubHtml;
+    var _lastPageRequest = undefined;
+
+    var _cfiClassBlacklist = ["cfi-marker", "mo-cfi-highlight", "resize-sensor", "resize-sensor-expand", "resize-sensor-shrink", "resize-sensor-inner"];
+    var _cfiElementBlacklist = [];
+    var _cfiIdBlacklist = ["MathJax_Message", "MathJax_SVG_Hidden"];
 
     var _$htmlBody;
 
@@ -15492,6 +15676,11 @@ var ReflowableView = function(options, reader){
     var _currentOpacity = -1;
 
     var _lastViewPortSize = {
+        width: undefined,
+        height: undefined
+    };
+
+    var _lastBodySize = {
         width: undefined,
         height: undefined
     };
@@ -15562,7 +15751,7 @@ var ReflowableView = function(options, reader){
     };
 
     var _viewSettings = undefined;
-    this.setViewSettings = function(settings) {
+    this.setViewSettings = function(settings, docWillChange) {
 
         _viewSettings = settings;
 
@@ -15571,12 +15760,15 @@ var ReflowableView = function(options, reader){
         _paginationInfo.columnMinWidth = settings.columnMinWidth;
         
         _fontSize = settings.fontSize;
-
-        updateHtmlFontSize();
-        updateColumnGap();
+        _fontSelection = settings.fontSelection;
 
         updateViewportSize();
-        updatePagination();
+
+        if (!docWillChange) {
+            updateColumnGap();
+
+            updateHtmlFontInfo();
+        }
     };
     
     function getFrameDimensions() {
@@ -15609,7 +15801,10 @@ var ReflowableView = function(options, reader){
         _navigationLogic = new CfiNavigationLogic({
             $iframe: _$iframe,
             frameDimensions: getFrameDimensions,
-            paginationInfo: _paginationInfo
+            paginationInfo: _paginationInfo,
+            classBlacklist: _cfiClassBlacklist,
+            elementBlacklist: _cfiElementBlacklist,
+            idBlacklist: _cfiIdBlacklist
         });
     }
 
@@ -15623,6 +15818,8 @@ var ReflowableView = function(options, reader){
                 Globals.logEvent("CONTENT_DOCUMENT_UNLOADED", "EMIT", "reflowable_view.js [ " + _currentSpineItem.href + " ]");
                 self.emit(Globals.Events.CONTENT_DOCUMENT_UNLOADED, _$iframe, _currentSpineItem);
             }
+
+            self.resetCurrentPosition();
 
             _paginationInfo.pageOffset = 0;
             _paginationInfo.currentSpreadIndex = 0;
@@ -15644,10 +15841,15 @@ var ReflowableView = function(options, reader){
         }
     }
 
-    function updateHtmlFontSize() {
-
+    function updateHtmlFontInfo() {
+    
         if(_$epubHtml) {
-            Helpers.UpdateHtmlFontSize(_$epubHtml, _fontSize);
+            var i = _fontSelection;
+            var useDefault = !reader.fonts || !reader.fonts.length || i <= 0 || (i-1) >= reader.fonts.length;
+            var font = (useDefault ?
+                        {} :
+                        reader.fonts[i - 1]);
+            Helpers.UpdateHtmlFontAttributes(_$epubHtml, _fontSize, font, function() {self.applyStyles();});
         }
     }
 
@@ -15660,17 +15862,6 @@ var ReflowableView = function(options, reader){
     }
 
     function onIFrameLoad(success) {
-        if (!success) {
-            applyIFrameLoad(success);
-            return;
-        }
-        var fontLoader = new FontLoader(_$iframe);
-        fontLoader.waitForFonts(function () {
-            applyIFrameLoad(success);
-        });
-    }
-
-    function applyIFrameLoad(success) {
 
         _isWaitingFrameRender = false;
 
@@ -15785,11 +15976,9 @@ var ReflowableView = function(options, reader){
         self.applyBookStyles();
         resizeImages();
 
-        updateHtmlFontSize();
         updateColumnGap();
 
-
-        self.applyStyles();
+        updateHtmlFontInfo();
     }
 
     this.applyStyles = function() {
@@ -15808,8 +15997,8 @@ var ReflowableView = function(options, reader){
 
     this.applyBookStyles = function() {
 
-        if(_$epubHtml) {
-            Helpers.setStyles(_bookStyles.getStyles(), _$epubHtml);
+        if(_$epubHtml) { // implies _$iframe
+            Helpers.setStyles(_bookStyles.getStyles(), _$iframe[0].contentDocument); //_$epubHtml
         }
     };
 
@@ -15825,7 +16014,7 @@ var ReflowableView = function(options, reader){
 
     }
 
-    this.openPage = function(pageRequest) {
+    this.openPageInternal = function(pageRequest) {
 
         if(_isWaitingFrameRender) {
             _deferredPageRequest = pageRequest;
@@ -15850,13 +16039,47 @@ var ReflowableView = function(options, reader){
             
             if (pageIndex < 0) pageIndex = 0;
         }
+        else if(pageRequest.firstVisibleCfi && pageRequest.lastVisibleCfi) {
+            var firstPageIndex;
+            var lastPageIndex;
+            try
+            {
+                firstPageIndex = _navigationLogic.getPageForElementCfi(pageRequest.firstVisibleCfi,
+                    _cfiClassBlacklist,
+                    _cfiElementBlacklist,
+                    _cfiIdBlacklist);
+                
+                if (firstPageIndex < 0) firstPageIndex = 0;
+            }
+            catch (e)
+            {
+                firstPageIndex = 0;
+                console.error(e);
+            }
+            try
+            {
+                lastPageIndex = _navigationLogic.getPageForElementCfi(pageRequest.lastVisibleCfi,
+                    _cfiClassBlacklist,
+                    _cfiElementBlacklist,
+                    _cfiIdBlacklist);
+                
+                if (lastPageIndex < 0) lastPageIndex = 0;
+            }
+            catch (e)
+            {
+                lastPageIndex = 0;
+                console.error(e);
+            }
+            // Go to the page in the middle of the two elements
+            pageIndex = Math.round((firstPageIndex + lastPageIndex) / 2);
+        }
         else if(pageRequest.elementCfi) {
             try
             {
                 pageIndex = _navigationLogic.getPageForElementCfi(pageRequest.elementCfi,
-                    ["cfi-marker", "mo-cfi-highlight"],
-                    [],
-                    ["MathJax_Message"]);
+                    _cfiClassBlacklist,
+                    _cfiElementBlacklist,
+                    _cfiIdBlacklist);
                 
                 if (pageIndex < 0) pageIndex = 0;
             }
@@ -15883,6 +16106,36 @@ var ReflowableView = function(options, reader){
         }
         else {
             console.log('Illegal pageIndex value: ', pageIndex, 'column count is ', _paginationInfo.columnCount);
+        }
+    };
+
+    this.openPage = function(pageRequest) {
+        // Go to request page, it will save the new position in onPaginationChanged
+        this.openPageInternal(pageRequest);
+        // Save it for when pagination is updated
+        _lastPageRequest = pageRequest;
+    };
+
+    this.resetCurrentPosition = function() {
+        _lastPageRequest = undefined;
+    };
+
+    this.saveCurrentPosition = function() {
+        // If there's a deferred page request, there's no point in saving the current position
+        // as it's going to change soon
+        if (_deferredPageRequest) {
+            return;
+        }
+
+        var _firstVisibleCfi = self.getFirstVisibleCfi();
+        var _lastVisibleCfi = self.getLastVisibleCfi();
+        _lastPageRequest = new PageOpenRequest(_currentSpineItem, self);
+        _lastPageRequest.setFirstAndLastVisibleCfi(_firstVisibleCfi.contentCFI, _lastVisibleCfi.contentCFI);
+    };
+
+    this.restoreCurrentPosition = function() {
+        if (_lastPageRequest) {
+            this.openPageInternal(_lastPageRequest);            
         }
     };
 
@@ -15933,6 +16186,10 @@ var ReflowableView = function(options, reader){
         redraw();
 
         _.defer(function () {
+
+            if (_lastPageRequest == undefined) {
+                self.saveCurrentPosition();
+            }
             
             Globals.logEvent("InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED", "EMIT", "reflowable_view.js");
             self.emit(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, {
@@ -15952,6 +16209,9 @@ var ReflowableView = function(options, reader){
         }
 
         if(_paginationInfo.currentSpreadIndex > 0) {
+            // Page will change, the current position is not valid any more
+            // Reset it so it's saved next time onPaginationChanged is called
+            this.resetCurrentPosition();
             _paginationInfo.currentSpreadIndex--;
             onPaginationChanged(initiator);
         }
@@ -15974,6 +16234,9 @@ var ReflowableView = function(options, reader){
         }
 
         if(_paginationInfo.currentSpreadIndex < _paginationInfo.spreadCount - 1) {
+            // Page will change, the current position is not valid any more
+            // Reset it so it's saved next time onPaginationChanged is called
+            this.resetCurrentPosition();
             _paginationInfo.currentSpreadIndex++;
             onPaginationChanged(initiator);
         }
@@ -15990,7 +16253,7 @@ var ReflowableView = function(options, reader){
     };
 
 
-    function updatePagination() {
+    function updatePagination_() {
 
         // At 100% font-size = 16px (on HTML, not body or descendant markup!)
         var MAXW = _paginationInfo.columnMaxWidth;
@@ -16137,11 +16400,19 @@ var ReflowableView = function(options, reader){
 
         Helpers.triggerLayout(_$iframe);
 
-        _paginationInfo.columnCount = ((_htmlBodyIsVerticalWritingMode ? _$epubHtml[0].scrollHeight : _$epubHtml[0].scrollWidth) + _paginationInfo.columnGap) / (_paginationInfo.columnWidth + _paginationInfo.columnGap);
+        var dim = (_htmlBodyIsVerticalWritingMode ? _$epubHtml[0].scrollHeight : _$epubHtml[0].scrollWidth);
+        if (dim == 0) {
+            console.error("Document dimensions zero?!");
+        }
+
+        _paginationInfo.columnCount = (dim + _paginationInfo.columnGap) / (_paginationInfo.columnWidth + _paginationInfo.columnGap);
         _paginationInfo.columnCount = Math.round(_paginationInfo.columnCount);
+        if (_paginationInfo.columnCount == 0) {
+            console.error("Column count zero?!");
+        }
 
         var totalGaps = (_paginationInfo.columnCount-1) * _paginationInfo.columnGap;
-        var colWidthCheck = ((_htmlBodyIsVerticalWritingMode ? _$epubHtml[0].scrollHeight : _$epubHtml[0].scrollWidth) - totalGaps) / _paginationInfo.columnCount;
+        var colWidthCheck = (dim - totalGaps) / _paginationInfo.columnCount;
         colWidthCheck = Math.round(colWidthCheck);
 
         if (colWidthCheck > _paginationInfo.columnWidth)
@@ -16166,9 +16437,16 @@ var ReflowableView = function(options, reader){
         }
         else {
 
-            //we get here on resizing the viewport
+            // we get here on resizing the viewport
+            if (_lastPageRequest) {
+                // Make sure we stay on the same page after the content or the viewport 
+                // has been resized
+                self.restoreCurrentPosition();
+            } else {
+                onPaginationChanged(self); // => redraw() => showBook(), so the trick below is not needed                
+            }
 
-            onPaginationChanged(self); // => redraw() => showBook(), so the trick below is not needed
+            //onPaginationChanged(self); // => redraw() => showBook(), so the trick below is not needed 
 
             // //We do this to force re-rendering of the document in the iframe.
             // //There is a bug in WebView control with right to left columns layout - after resizing the window html document
@@ -16180,8 +16458,47 @@ var ReflowableView = function(options, reader){
             // }, 50);
 
         }
-    }
 
+        // Only initializes the resize sensor once the content has been paginated once,
+        // to avoid the pagination process to trigger a resize event during its first
+        // execution, provoking a flicker
+        initResizeSensor();
+    }
+    var updatePagination = _.debounce(updatePagination_, 100);
+
+    function initResizeSensor() {
+        var bodyElement = _$htmlBody[0];
+        if (bodyElement.resizeSensor) {
+            return;
+        }
+
+        // We need to make sure the content has indeed be resized, especially
+        // the first time it is triggered
+        _lastBodySize.width = $(bodyElement).width();
+        _lastBodySize.height = $(bodyElement).height();
+
+        bodyElement.resizeSensor = new ResizeSensor(bodyElement, function() {
+            
+            var newBodySize = {
+                width: $(bodyElement).width(),
+                height: $(bodyElement).height()
+            };
+
+            console.debug("ReflowableView content resized ...", newBodySize.width, newBodySize.height, _currentSpineItem.idref);
+            
+            if (newBodySize.width != _lastBodySize.width || newBodySize.height != _lastBodySize.height) {
+                _lastBodySize.width = newBodySize.width;
+                _lastBodySize.height = newBodySize.height;
+                
+                console.debug("... updating pagination.");
+
+                updatePagination();
+            } else {
+                console.debug("... ignored (identical dimensions).");
+            }
+        });
+    }
+    
 //    function shiftBookOfScreen() {
 //
 //        if(_spine.isLeftToRight()) {
@@ -16891,7 +17208,7 @@ Trigger.prototype.subscribe = function(dom) {
     var selector = "#" + this.observer;
     var that = this;
     $(selector, dom).on(this.event, function() {
-        that.execute(dom);
+        return that.execute(dom);
     });
 };
 
@@ -16931,7 +17248,10 @@ Trigger.prototype.execute = function(dom) {
             break;
         default:
             console.log("do not no how to handle trigger " + this.action);
+            return null;
     }
+    return false;   // do not propagate click event; it was already handled
+
 };
 
     return Trigger;
@@ -17082,7 +17402,6 @@ define('readium_shared_js/views/reader_view',["../globals", "jquery", "underscor
  * @constructor
  */
 var ReaderView = function (options) {
-
     $.extend(this, new EventEmitter());
 
     var self = this;
@@ -17107,6 +17426,9 @@ var ReaderView = function (options) {
         handleViewportResizeEnd, 250, 1000, self);
 
     $(window).on("resize.ReadiumSDK.readerView", lazyResize);
+
+    this.fonts = options.fonts;
+
 
     if (options.el instanceof $) {
         _$el = options.el;
@@ -17318,7 +17640,9 @@ var ReaderView = function (options) {
         })
 
         _currentView.render();
-        _currentView.setViewSettings(_viewerSettings);
+
+        var docWillChange = true;
+        _currentView.setViewSettings(_viewerSettings, docWillChange);
 
         // we do this to wait until elements are rendered otherwise book is not able to determine view size.
         setTimeout(function () {
@@ -17442,6 +17766,10 @@ var ReaderView = function (options) {
         }
 
         var pageRequestData = undefined;
+
+        if (openBookData.openPageRequest && typeof(openBookData.openPageRequest) === 'function') {
+            openBookData.openPageRequest = openBookData.openPageRequest();
+        }
 
         if (openBookData.openPageRequest) {
 
@@ -17580,6 +17908,7 @@ var ReaderView = function (options) {
      *
      * @typedef {object} Globals.Views.ReaderView.SettingsData
      * @property {number} fontSize - Font size as percentage
+     * @property {number} fontSelection - Font selection as the number in the list of possible fonts, where 0 is special meaning default.
      * @property {(string|boolean)} syntheticSpread - "auto"|true|false
      * @property {(string|boolean)} scroll - "auto"|true|false
      * @property {boolean} doNotUpdateView - Indicates whether the view should be updated after the settings are applied
@@ -17621,8 +17950,15 @@ var ReaderView = function (options) {
                 initViewForItem(spineItem, function (isViewChanged) {
 
                     if (!isViewChanged) {
-                        _currentView.setViewSettings(_viewerSettings);
+                        var docWillChange = false;
+                        _currentView.setViewSettings(_viewerSettings, docWillChange);
                     }
+
+                    self.once(ReadiumSDK.Events.PAGINATION_CHANGED, function (pageChangeData)
+                    {
+                        var cfi = new BookmarkData(bookMark.idref, bookMark.contentCFI);
+                        self.debugBookmarkData(cfi);
+                    });
 
                     self.openSpineItemElementCfi(bookMark.idref, bookMark.contentCFI, self);
 
@@ -17805,7 +18141,8 @@ var ReaderView = function (options) {
         initViewForItem(pageRequest.spineItem, function (isViewChanged) {
 
             if (!isViewChanged) {
-                _currentView.setViewSettings(_viewerSettings);
+                var docWillChange = true;
+                _currentView.setViewSettings(_viewerSettings, docWillChange);
             }
 
             _currentView.openPage(pageRequest, dir);
@@ -17871,7 +18208,12 @@ var ReaderView = function (options) {
         var count = styles.length;
 
         for (var i = 0; i < count; i++) {
-            _bookStyles.addStyle(styles[i].selector, styles[i].declarations);
+            if (styles[i].declarations) {
+                _bookStyles.addStyle(styles[i].selector, styles[i].declarations);
+            }
+            else {
+                _bookStyles.removeStyle(styles[i].selector);
+            }
         }
 
         if (_currentView) {
@@ -18024,6 +18366,54 @@ var ReaderView = function (options) {
         openPage(pageData, 0);
 
         return true;
+    };
+
+    //var cfi = new BookmarkData(bookmark.idref, bookmark.contentCFI);
+    this.debugBookmarkData = function(cfi) {
+
+        if (!ReadiumSDK) return;
+
+        var DEBUG = true; // change this to visualize the CFI range
+        if (!DEBUG) return;
+            
+        var paginationInfo = this.getPaginationInfo();
+        console.log(JSON.stringify(paginationInfo));
+        
+        if (paginationInfo.isFixedLayout) return;
+    
+        try {
+            ReadiumSDK._DEBUG_CfiNavigationLogic.clearDebugOverlays();
+            
+        } catch (error) {
+            //ignore
+        }
+        
+        try {
+            console.log(cfi);
+            
+            var range = this.getDomRangeFromRangeCfi(cfi);
+            console.log(range);
+            
+            var res = ReadiumSDK._DEBUG_CfiNavigationLogic.drawDebugOverlayFromDomRange(range);
+            console.log(res);
+        
+            var cfiFirst = ReadiumSDK.reader.getFirstVisibleCfi();
+            console.log(cfiFirst);
+            
+            var cfiLast  = ReadiumSDK.reader.getLastVisibleCfi();
+            console.log(cfiLast);
+            
+        } catch (error) {
+            //ignore
+        }
+        
+        setTimeout(function() {
+            try {
+                ReadiumSDK._DEBUG_CfiNavigationLogic.clearDebugOverlays();
+            } catch (error) {
+                //ignore
+            }
+        }, 2000);
     };
 
     /**
@@ -18228,19 +18618,7 @@ var ReaderView = function (options) {
     this.handleViewportResize = function (bookmarkToRestore) {
         if (!_currentView) return;
 
-        var bookMark = bookmarkToRestore || _currentView.bookmarkCurrentPage(); // not self! (JSON string)
-
-        if (_currentView.isReflowable && _currentView.isReflowable() && bookMark && bookMark.idref) {
-            var spineItem = _spine.getItemById(bookMark.idref);
-
-            initViewForItem(spineItem, function (isViewChanged) {
-                self.openSpineItemElementCfi(bookMark.idref, bookMark.contentCFI, self);
-                return;
-            });
-        }
-        else {
-            _currentView.onViewportResize();
-        }
+        _currentView.onViewportResize();
     };
 
     /**

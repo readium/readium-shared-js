@@ -40,7 +40,15 @@ var ViewerSettings = function(settingsData) {
      */
 
     this.syntheticSpread = "auto";
+
+    /** 
+     *
+     * @property fontSelection
+     * @type number
+     */
     
+    this.fontSelection = 0;
+
     /** 
      *
      * @property fontSize
@@ -240,6 +248,7 @@ var ViewerSettings = function(settingsData) {
         mapProperty("columnMaxWidth", settingsData);
         mapProperty("columnMinWidth", settingsData);
         mapProperty("fontSize", settingsData);
+        mapProperty("fontSelection", settingsData);
         mapProperty("mediaOverlaysPreservePlaybackWhenScroll", settingsData);
         mapProperty("mediaOverlaysSkipSkippables", settingsData);
         mapProperty("mediaOverlaysEscapeEscapables", settingsData);
