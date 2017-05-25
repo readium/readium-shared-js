@@ -228,7 +228,7 @@ scripts:
 
         cd readium-cfi-js
         &&
-        npm run prepare:yarn:all
+        yarn run prepare:yarn:all
         &&
         cd ..
         &&
