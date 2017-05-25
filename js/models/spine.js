@@ -1,5 +1,5 @@
 //  Created by Boris Schneiderman.
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  Copyright (c) 2016 Readium Foundation and/or its licensees. All rights reserved.
 //  
 //  Redistribution and use in source and binary forms, with or without modification, 
 //  are permitted provided that the following conditions are met:
@@ -25,38 +25,51 @@
 
 define(["./spine_item", "../helpers", "URIjs"], function(SpineItem, Helpers, URI) {
 /**
- *  Wrapper of the spine object received from hosting application
+ *  Wrapper of the Spine object received from the host application
  *
- *  @class  Models.Spine
+ * @class  Models.Spine
+ * @constructor
+ * @param {Models.Package} epubPackage Parent package properties 
+ * @param {Object} spineDTO Spine data object, container for spine properties
  */
-
 var Spine = function(epubPackage, spineDTO) {
 
     var self = this;
 
-    /*
-     * Collection of spine items
+    /**
+     * The collection of spine items
+     *
      * @property items
-     * @type {Array}
+     * @type Array
      */
     this.items = [];
 
-    /*
-     * Page progression direction ltr|rtl|default
+    /**
+     * The page progression direction ltr|rtl|default
+     *
      * @property direction
-     * @type {string}
+     * @type String
+     * @default "ltr"
      */
     this.direction = "ltr";
 
-    /*
-     * @property package
-     * @type {Models.Package}
+    /**
+     * The container for parent package properties
+     *
+     * @property package  
+     * @type Models.Package
      *
      */
     this.package = epubPackage;
 
     var _handleLinear = true;
 
+    /**
+     * Sets a flag indicating that the app handles linear spine items
+     *
+     * @method     handleLinear
+     * @param      {Boolean} handleLinear  boolean flag
+     */
     this.handleLinear = function(handleLinear) {
         _handleLinear = handleLinear;
     };
@@ -65,7 +78,13 @@ var Spine = function(epubPackage, spineDTO) {
         return !_handleLinear || item.linear !== "no";
     }
 
-
+    /**
+     * Checks if a spine item is linear. 
+     *
+     * @method     isValidLinearItem
+     * @param      {Number} index  index of a spine item
+     * @return     {Boolean} TRUE if the app does not handle linear items or if the item is linear.
+    */
     this.isValidLinearItem = function(index) {
         
         if(!isValidIndex(index)) {
@@ -75,6 +94,62 @@ var Spine = function(epubPackage, spineDTO) {
         return isValidLinearItem(this.item(index));
     };
 
+    /**
+     * Checks if the page progression direction is right to left.
+     *
+     * @method     isRightToLeft
+     * @return     {Boolean} 
+     */
+    this.isRightToLeft = function() {
+
+        return self.direction == "rtl";
+    };
+
+    /**
+     * Checks if the page progression direction is left to right.
+     *
+     * @method     isLeftToRight
+     * @return     {Boolean} TRUE if the direction is not rtl.
+     */
+    this.isLeftToRight = function() {
+
+        return !self.isRightToLeft();
+    };
+
+    /**
+     * Checks if an spine item index is valid. 
+     *
+     * @method     isValidIndex
+     * @param      {Number} index  the index of the expected spine item
+     * @return     {Boolean} TRUE is the index is valid.
+    */
+    function isValidIndex(index) {
+
+        return index >= 0 && index < self.items.length;
+    }
+
+    function lookForPrevValidItem(ix) {
+
+        if(!isValidIndex(ix)) {
+            return undefined;
+        }
+
+        var item = self.items[ix];
+
+        if(isValidLinearItem(item)) {
+            return item;
+        }
+
+        return lookForPrevValidItem(item.index - 1);
+    }
+
+    /**
+     * Looks for the previous spine item. 
+     *
+     * @method     prevItem
+     * @param      {Models.SpineItem} item  a spine item
+     * @return     {Models.SpineItem} the previous spine item or undefined.
+    */
     this.prevItem = function(item) {
 
         return lookForPrevValidItem(item.index - 1);
@@ -95,58 +170,85 @@ var Spine = function(epubPackage, spineDTO) {
         return lookForNextValidItem(item.index + 1);
     }
 
-    function lookForPrevValidItem(ix) {
-
-        if(!isValidIndex(ix)) {
-            return undefined;
-        }
-
-        var item = self.items[ix];
-
-        if(isValidLinearItem(item)) {
-            return item;
-        }
-
-        return lookForPrevValidItem(item.index - 1);
-    }
-
-    this.nextItem = function(item){
+    /**
+     * Looks for the next spine item. 
+     *
+     * @method     nextItem
+     * @param      {Models.SpineItem} item  a spine item
+     * @return     {Models.SpineItem} the next spine item or undefined.
+    */
+    this.nextItem = function(item) {
 
         return lookForNextValidItem(item.index + 1);
     };
 
+    /**
+     * Gets the relative URL of a spine item. 
+     *
+     * @method     getItemUrl
+     * @param      {Models.SpineItem} item  the spine item
+     * @return     {String} the relative URL of the spine item.
+    */
     this.getItemUrl = function(item) {
 
         return self.package.resolveRelativeUrl(item.href);
 
     };
 
-    function isValidIndex(index) {
-
-        return index >= 0 && index < self.items.length;
-    }
-
+    /**
+     * Returns the first spine item. 
+     *
+     * @method     first
+     * @return     {Models.SpineItem} the first spine item.
+    */
     this.first = function() {
 
         return lookForNextValidItem(0);
     };
 
+    /**
+     * Returns the last spine item. 
+     *
+     * @method     last
+     * @return     {Models.SpineItem} the last spine item.
+    */
     this.last = function() {
 
         return lookForPrevValidItem(this.items.length - 1);
     };
 
+    /**
+     * Checks if a spine item is the first in the spine. 
+     *
+     * @method     isFirstItem
+     * @param      {Models.SpineItem} item  a spine item
+     * @return     {Boolean} TRUE if the spine item is the first in the list.
+    */
     this.isFirstItem = function(item) {
 
         return self.first() === item;
     };
 
+    /**
+     * Checks if a spine item is the last in the spine. 
+     *
+     * @method     isLastItem
+     * @param      {Models.SpineItem} item  a spine item
+     * @return     {Boolean} true if the spine item is the last in the list.
+    */
     this.isLastItem = function(item) {
 
         return self.last() === item;
     };
 
-    this.item = function(index) {
+    /**
+     * Returns a spine item by its index. 
+     *
+     * @method     item
+     * @param      {Number} index  the index of the expected spine item
+     * @return     {Models.SpineItem} the expected spine item or undefined.
+    */
+   this.item = function(index) {
         
         if (isValidIndex(index))
             return self.items[index];
@@ -154,16 +256,13 @@ var Spine = function(epubPackage, spineDTO) {
         return undefined;
     };
 
-    this.isRightToLeft = function() {
-
-        return self.direction == "rtl";
-    };
-
-    this.isLeftToRight = function() {
-
-        return !self.isRightToLeft();
-    };
-
+    /**
+     * Returns a spine item by its id.
+     *
+     * @method     getItemById
+     * @param      {Number} idref  the id of the expected spine item
+     * @return     {Models.SpineItem} the expected spine item or undefined.
+     */
     this.getItemById = function(idref) {
 
         var length = self.items.length;
@@ -178,12 +277,14 @@ var Spine = function(epubPackage, spineDTO) {
         return undefined;
     };
 
+    /**
+     * Returns a spine item by its href.
+     *
+     * @method     getItemByHref
+     * @param      {String} href  the URL of the expected spine item
+     * @return     {Models.SpineItem} the expected spine item or undefined.
+     */
     this.getItemByHref = function(href) {
-
-        // var href1 = Helpers.ResolveContentRef(self.items[i].href, self.package.rootUrl + "/pack.opf");
-        // var href1 = self.package.resolveRelativeUrl(href);
-        //var href1 = new URI(href).absoluteTo(self.package.rootUrl).pathname();
-        //var href1 = new URI(self.package.resolveRelativeUrl(href)).relativeTo(self.package.rootUrl).pathname();
         
         var href1 = new URI(self.package.resolveRelativeUrl(href)).normalizePathname().pathname();
         
@@ -193,7 +294,6 @@ var Spine = function(epubPackage, spineDTO) {
             
             var href2 = new URI(self.package.resolveRelativeUrl(self.items[i].href)).normalizePathname().pathname();
             
-            //if(self.items[i].href == href) {
             if(href1 == href2) {
                 return self.items[i];
             }
@@ -202,6 +302,11 @@ var Spine = function(epubPackage, spineDTO) {
         return undefined;
     };
 
+    /**
+     * Updates every spine item spread, if not already defined.
+     *
+     * @method     updateSpineItemsSpread
+     */
     function updateSpineItemsSpread() {
 
         var len = self.items.length;
@@ -222,6 +327,7 @@ var Spine = function(epubPackage, spineDTO) {
         }
     }
 
+    // initialization of the local 'direction' and 'items' array from the spineDTO structure
     if(spineDTO) {
 
         if(spineDTO.direction) {

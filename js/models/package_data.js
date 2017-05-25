@@ -1,5 +1,5 @@
 //  Created by Boris Schneiderman.
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  Copyright (c) 2016 Readium Foundation and/or its licensees. All rights reserved.
 //  
 //  Redistribution and use in source and binary forms, with or without modification, 
 //  are permitted provided that the following conditions are met:
@@ -27,7 +27,7 @@
 define(function() {
 /**
  * This object is not instantiated directly but provided by the host application to the DOMAccess layer in the
- * Views.ReaderView.openBook function
+ * Views.ReaderView.OpenBookData function
  *
  * Provided for reference only
  *
@@ -36,24 +36,35 @@ define(function() {
 var PackageData = {
 
     /**
-     * @property rootUrl Url of the package file
-     * @type {string}
+     * The Url of the package file
+     *
+     * @property rootUrl 
+     * @type {String}
      *
      */
     rootUrl: "",
     /**
-     * @property rootUrl Url of the package file, to prefix Media Overlays SMIL audio references
-     * @type {string}
+     * The Url of the package file, to prefix Media Overlays SMIL audio references
+     *
+     * @property rootUrlMO 
+     * @type {String}
      *
      */
     rootUrlMO: "",
     /**
+     * The rendering layout; expected values are "reflowable"|"pre-paginated"
      *
-     * @property rendering_layout expected values "reflowable"|rendering_layout="pre-paginated"
-     * @type {string}
+     * @property rendering_layout 
+     * @type {String}
      */
     rendering_layout: "",
 
+    /**
+     * The spine properties
+     *
+     * @property spine 
+     * @type {Object}
+     */
     spine: {
 
         direction: "ltr",
