@@ -5,10 +5,11 @@
   "._": "as this would overwrite / update the JSON, not the master CSON!",
   "*/": "----------------------------------------------------------------------------",
   "name": "readium-shared-js",
-  "version": "0.25.0-alpha",
+  "version": "0.27.0-alpha",
   "engines": {
-    "node": ">=0.12",
-    "npm": ">2.10"
+    "node": ">=4",
+    "npm": ">=2",
+    "yarn": ">=0.23"
   },
   "description": "Readium - shared javascript module",
   "keywords": [
@@ -44,28 +45,32 @@
     "README.md"
   ],
   "dependencies": {
-    "parallelshell": "latest",
-    "opener": "latest",
-    "http-server": "danielweck/http-server"
+    "concurrently": "latest",
+    "http-server": "danielweck/http-server",
+    "npm-run-all": "latest",
+    "opener": "latest"
   },
   "devDependencies": {
-    "jquerySizes": "bramstein/jsizes",
-    "domReady": "requirejs/domReady",
     "backbone": "latest",
-    "underscore": "latest",
-    "urijs": "danielweck/URI.js",
-    "eventemitter3": "latest",
+    "css-element-queries": "danielweck/css-element-queries",
+    "cssom": "danielweck/CSSOM",
+    "domReady": "requirejs/domReady",
     "es6-collections": "latest",
-    "FontLoader": "smnh/FontLoader",
-    "CSSOM": "danielweck/CSSOM#gh-pages"
+    "eventemitter3": "latest",
+    "jquery-sizes": "bramstein/jsizes",
+    "urijs": "danielweck/URI.js"
   },
   "scripts": {
     "cson2json": "node ./readium-cfi-js/node_modules/cson/bin/cson2json package.cson > package.json && node readium-cfi-js/readium-build-tools/optimizePackageJsonScripts.js",
-    "prepare": "npm run prepare:submodule && npm run prepare:local && npm run prepare:patch",
-    "prepare:local": "npm outdated && npm install && npm update && node readium-cfi-js/readium-build-tools/gitHubForksUpdater.js",
-    "prepare:submodule": "cd readium-cfi-js && npm run prepare && cd .. && ls",
+    "prepare:all": "npm run prepare:submodule && npm run prepare:local && npm run prepare:patch",
+    "prepare:local": "npm outdated ; npm install && npm update && npm run prepare:local:common",
+    "prepare:yarn:all": "yarn run prepare:yarn:submodule && yarn run prepare:yarn:local && yarn run prepare:patch",
+    "prepare:yarn:local": "yarn outdated ; yarn install && yarn upgrade && yarn run prepare:local:common",
+    "prepare:local:common": "node readium-cfi-js/readium-build-tools/gitHubForksUpdater.js",
+    "prepare:submodule": "cd readium-cfi-js && npm run prepare:all && cd .. && ls",
+    "prepare:yarn:submodule": "cd readium-cfi-js && yarn run prepare:yarn:all && cd .. && ls",
     "prepare:patch": "node ./readium-cfi-js/node_modules/rimraf/bin.js node_modules/eventemitter3/_rjs/** && node readium-cfi-js/node_modules/requirejs/bin/r.js -convert node_modules/eventemitter3/ node_modules/eventemitter3/_rjs/",
-    "clean": "node --version && npm --version && node ./readium-cfi-js/node_modules/rimraf/bin.js build-output/* && node ./readium-cfi-js/node_modules/rimraf/bin.js api-docs/*",
+    "clean": "yarn --version ; node --version && npm --version && node ./readium-cfi-js/node_modules/rimraf/bin.js build-output/* && node ./readium-cfi-js/node_modules/rimraf/bin.js api-docs/*",
     "apidocs": "node ./readium-cfi-js/node_modules/yuidocjs/lib/cli.js -N -C -c yuidocs.json",
     "prebuild": "npm run clean",
     "build": "npm run build:styles && npm run build:scripts",
@@ -78,7 +83,7 @@
     "build:scripts:single": "node ./readium-cfi-js/node_modules/requirejs/bin/r.js -o ./readium-cfi-js/readium-build-tools/RequireJS_config.js --rjs_bundle=single",
     "prebuild:styles": "node ./readium-cfi-js/node_modules/mkdirp/bin/cmd.js build-output/css/",
     "build:styles": "node ./readium-cfi-js/node_modules/cpy-cli/cli.js static/sdk.css build-output/css/",
-    "http:watch": "echo > open_webbrowser.js && parallelshell \"npm run dowatch\" \"npm run httpServe\"",
+    "http:watch": "echo > open_webbrowser.js && run-p \"dowatch\" \"httpServe\"",
     "http": "npm run genPluginsConfig && npm run httpServe",
     "dowatch": "node ./readium-cfi-js/node_modules/watch/cli.js \"npm run build && node readium-cfi-js/readium-build-tools/webbrowser.js && node ./readium-cfi-js/node_modules/rimraf/bin.js open_webbrowser.js\" dev/ js/ plugins/ readium-cfi-js/js/",
     "httpServe": "node readium-cfi-js/readium-build-tools/http-server.js -LOGFILE http.log -OPEN /dev/ -a 127.0.0.1 -p 9090 --cors ."

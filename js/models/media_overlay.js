@@ -27,15 +27,33 @@
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 define(["./smil_model"], function(SmilModel) {
+
 /**
+ * Wrapper of the MediaOverlay object
  *
- * @param package
+ * @class Models.MediaOverlay
  * @constructor
- */
+ * @param {Models.Package} package EPUB package
+*/
+
 var MediaOverlay = function(package) {
 
+    /**
+     * The parent package object
+     *
+     * @property package
+     * @type Models.Package
+     */    
     this.package = package;
-    
+
+    /**
+     * Checks if a parallel smil node exists at a given timecode. 
+     * Returns the first corresponding node found in a smil model found, or undefined.
+     *
+     * @method     parallelAt
+     * @param      {number} timeMilliseconds
+     * @return     {Smil.ParNode}  
+     */
 
     this.parallelAt = function(timeMilliseconds)
     {
@@ -59,6 +77,16 @@ var MediaOverlay = function(package) {
         return undefined;
     };
     
+    /**
+     * Calculates a timecode corresponding to a percent of the total audio duration (the function parameters smilData, par, and milliseconds are objects with a single field using the same name)
+     *
+     * @method     percentToPosition
+     * @param      {Number} percent
+     * @param      {Models.SmilModel} smilData (object with a single field using the same name, used as OUT param)
+     * @param      {Smil.ParNode} par (object with a single field using the same name, used as OUT param)
+     * @param      {Number} milliseconds (object with a single field using the same name, used as OUT param)
+     */
+
     this.percentToPosition = function(percent, smilData, par, milliseconds)
     {
         if (percent < 0.0 || percent > 100.0)
@@ -97,6 +125,13 @@ var MediaOverlay = function(package) {
         milliseconds.milliseconds = timeMs - (smilDataOffset + smilData.smilData.clipOffset(par.par));
     };
 
+    /**
+     * Calculates the accumulated audio duration of each smil overlay
+     *
+     * @method     durationMilliseconds_Calculated
+     * @return     {Number} total duration 
+     */
+
     this.durationMilliseconds_Calculated = function()
     {
         var total = 0;
@@ -111,6 +146,14 @@ var MediaOverlay = function(package) {
         return total;
     };
     
+    /**
+     * Returns the smil overlay at the given index
+     *
+     * @method     smilAt
+     * @param      {Number} smilIndex
+     * @return     {Models.SmilModel}
+     */
+
     this.smilAt = function(smilIndex)
     {
         if (smilIndex < 0 || smilIndex >= this.smil_models.length)
@@ -121,14 +164,19 @@ var MediaOverlay = function(package) {
         return this.smil_models[smilIndex];
     }
     
+    /**
+     * Calculates a percent of the total audio duration corresponding to a timecode
+     * 
+     * @method     positionToPercent
+     * @param      {Number} smilIndex Index of a smil model
+     * @param      {Number} parIndex
+     * @param      {Number} milliseconds
+     * @return     {Number} percent 
+     */
+
     this.positionToPercent = function(smilIndex, parIndex, milliseconds)
     {
-// console.log(">>>>>>>>>>");
-// console.log(milliseconds);
-// console.log(smilIndex);
-// console.log(parIndex);
-// console.log("-------");
-                
+           
         if (smilIndex >= this.smil_models.length)
         {
             return -1.0;
@@ -140,8 +188,6 @@ var MediaOverlay = function(package) {
             var sd = this.smil_models[i];
             smilDataOffset += sd.durationMilliseconds_Calculated();
         }
-
-//console.log(smilDataOffset);
         
         var smilData = this.smil_models[smilIndex];
 
@@ -152,34 +198,87 @@ var MediaOverlay = function(package) {
         }
 
         var offset = smilDataOffset + smilData.clipOffset(par) + milliseconds;
-
-//console.log(offset);
         
         var total = this.durationMilliseconds_Calculated();
 
-///console.log(total);
-
         var percent = (offset / total) * 100;
-
-//console.log("<<<<<<<<<<< " + percent);
         
         return percent;
       };
-      
+
+    /**
+     * Array of smil models {Models.SmilModel}
+     *
+     * @property smil_models
+     * @type Array
+     */
+
     this.smil_models = [];
 
+    /**
+     * List of the skippable smil items
+     *
+     * @property skippables
+     * @type Array
+     */
+
     this.skippables = [];
+    
+    /**
+     * List of the escapable smil items
+     *
+     * @property escapables
+     * @type Array
+     */
+
     this.escapables = [];
 
+    /**
+     * Duration of the smil audio
+     *
+     * @property duration
+     * @type Number
+     */
+
     this.duration = undefined;
+
+    /**
+     * Narrator
+     *
+     * @property narrator
+     * @type String
+     */
+
     this.narrator = undefined;
 
+    /**
+     * Author-defined name of the CSS "active class" (applied to the document as a whole)
+     *
+     * @property activeClass
+     * @type String
+     */
 
     this.activeClass = undefined;
+
+    /**
+     * Author-defined name of the CSS "playback active class" (applied to a single audio fragment)
+     *
+     * @property playbackActiveClass
+     * @type String
+     */
+
     this.playbackActiveClass = undefined;
 
+    // Debug messages, must be false in production!
     this.DEBUG = false;
 
+    /**
+     * Returns the smil model corresponding to a spine item, or undefined if not found.
+     *
+     * @method     getSmilBySpineItem
+     * @param      {Models.SpineItem} spineItem
+     * @return     {Models.SmilModel} 
+     */
 
     this.getSmilBySpineItem = function (spineItem) {
         if (!spineItem) return undefined;
@@ -214,6 +313,14 @@ var MediaOverlay = function(package) {
     };
     */
 
+    /**
+     * Returns the next smil model
+     *
+     * @method     getNextSmil
+     * @param      {Models.SmilModel} smil The current smil model
+     * @return     {Models.SmilModel} 
+     */
+
     this.getNextSmil = function(smil) {
 
         var index = this.smil_models.indexOf(smil);
@@ -223,6 +330,14 @@ var MediaOverlay = function(package) {
 
         return this.smil_models[index + 1];
     }
+
+    /**
+     * Returns the previous smil model
+     *
+     * @method     getPreviousSmil
+     * @param      {Models.SmilModel} smil The current smil model
+     * @return     {Models.SmilModel} 
+     */
 
     this.getPreviousSmil = function(smil) {
 
@@ -235,18 +350,23 @@ var MediaOverlay = function(package) {
     }
 };
 
+/**
+ * Static MediaOverlay.fromDTO method, returns a clean MediaOverlay object
+ *
+ * @method MediaOverlay.fromDTO
+ * @param {Object} moDTO Media overlay data object (raw JSON, as returned by a parser)
+ * @param {Models.Package} package EPUB package object
+ * @return {Models.MediaOverlay}
+*/
+
 MediaOverlay.fromDTO = function(moDTO, pack) {
 
     var mo = new MediaOverlay(pack);
 
     if(!moDTO) {
-        console.debug("No Media Overlay.");
         return mo;
     }
 
-    // if (mo.DEBUG)
-    //     console.debug(JSON.stringify(moDTO));
-        
     mo.duration = moDTO.duration;
     if (mo.duration && mo.duration.length && mo.duration.length > 0)
     {
@@ -286,9 +406,6 @@ MediaOverlay.fromDTO = function(moDTO, pack) {
 
     for(var i = 0; i < count; i++) {
         mo.skippables.push(moDTO.skippables[i]);
-
-        //if (mo.DEBUG)
-        //    console.debug("Media Overlay SKIPPABLE: " + mo.skippables[i]);
     }
 
     count = moDTO.escapables.length;
@@ -298,8 +415,6 @@ MediaOverlay.fromDTO = function(moDTO, pack) {
     for(var i = 0; i < count; i++) {
         mo.escapables.push(moDTO.escapables[i]);
 
-        //if (mo.DEBUG)
-        //    console.debug("Media Overlay ESCAPABLE: " + mo.escapables[i]);
     }
 
     return mo;

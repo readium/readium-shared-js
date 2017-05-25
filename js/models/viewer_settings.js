@@ -35,36 +35,169 @@ var ViewerSettings = function(settingsData) {
     
     this.epubPopupFootnotes = true;
 
+    /** Set to "auto"
+     *
+     * @property syntheticSpread
+     * @type 
+     */
+
     this.syntheticSpread = "auto";
+
+    /** 
+     *
+     * @property fontSelection
+     * @type number
+     */
+    
+    this.fontSelection = 0;
+
+    /** 
+     *
+     * @property fontSize
+     * @type number
+     */
+
     this.fontSize = 100;
+
+    /** 
+     *
+     * @property columnGap
+     * @type number
+     */
+
     this.columnGap = 20;
     
+    /** 
+     *
+     * @property columnMaxWidth
+     * @type number
+     */
+
     this.columnMaxWidth = 700;
+
+    /** 
+     *
+     * @property columnMinWidth
+     * @type number
+     */
+
     this.columnMinWidth = 400;
+
+    /** 
+     *
+     * @property mediaOverlaysPreservePlaybackWhenScroll
+     * @type bool
+     */
 
     this.mediaOverlaysPreservePlaybackWhenScroll = false;
 
+    /** 
+     *
+     * @property mediaOverlaysSkipSkippables
+     * @type bool
+     */
+
     this.mediaOverlaysSkipSkippables = false;
+
+    /** 
+     *
+     * @property mediaOverlaysEscapables
+     * @type bool
+     */
+
     this.mediaOverlaysEscapeEscapables = true;
 
+    /** 
+     *
+     * @property mediaOverlaysSkippables
+     * @type array
+     */
+
     this.mediaOverlaysSkippables = [];
+    
+    /** 
+     *
+     * @property mediaOverlaysEscapables
+     * @type array
+     */
+
     this.mediaOverlaysEscapables = [];
+
+    /** 
+     *
+     * @property mediaOverlaysEnableClick
+     * @type bool
+     */
     
     this.mediaOverlaysEnableClick = true;
+
+    /** 
+     *
+     * @property mediaOverlaysRate
+     * @type number
+     */
+
     this.mediaOverlaysRate = 1;
+
+    /** 
+     *
+     * @property mediaOverlaysVolume
+     * @type number
+     */
+
     this.mediaOverlaysVolume = 100;
+
+    /** 
+     *
+     * @property mediaOverlaysSynchronizationGranularity
+     * @type string
+     */
     
     this.mediaOverlaysSynchronizationGranularity = "";
 
+    /** 
+     *
+     * @property mediaOverlaysAutomaticPageTurn
+     * @type bool
+     */    
+
     this.mediaOverlaysAutomaticPageTurn = true;
+
+    /** 
+     *
+     * @property enableGPUHardwareAccelerationCSS3D
+     * @type bool
+     */    
+
 
     this.enableGPUHardwareAccelerationCSS3D = false;
 
     // -1 ==> disable
     // [0...n] ==> index of transition in pre-defined array
-    this.pageTransition = -1;
     
+    /** 
+     *
+     * @property pageTransition
+     * @type number
+     */        
+
+    this.pageTransition = -1;
+ 
+    /** 
+     *
+     * @property scroll
+     * @type string
+     */        
+
     this.scroll = "auto";
+
+    /**
+     * Builds an array
+     *
+     * @method     buildArray
+     * @param      {string} str
+     * @return     {array} retArr
+     */
 
     function buildArray(str)
     {
@@ -81,6 +214,15 @@ var ViewerSettings = function(settingsData) {
         return retArr;
     }
 
+    /**
+     * Maps the properties to the settings
+     *
+     * @method     mapProperty
+     * @param      {string} propName
+     * @param      settingsData
+     * @param      functionToApply
+     */
+
     function mapProperty(propName, settingsData, functionToApply) {
 
         if(settingsData[propName] !== undefined) {
@@ -95,6 +237,13 @@ var ViewerSettings = function(settingsData) {
 
     }
 
+    /**
+     * Updates the settings' new values
+     *
+     * @method     update
+     * @param      settingsData
+     */
+
     this.update = function(settingsData) {
 
         mapProperty("epubPopupFootnotes", settingsData);
@@ -102,6 +251,7 @@ var ViewerSettings = function(settingsData) {
         mapProperty("columnMaxWidth", settingsData);
         mapProperty("columnMinWidth", settingsData);
         mapProperty("fontSize", settingsData);
+        mapProperty("fontSelection", settingsData);
         mapProperty("mediaOverlaysPreservePlaybackWhenScroll", settingsData);
         mapProperty("mediaOverlaysSkipSkippables", settingsData);
         mapProperty("mediaOverlaysEscapeEscapables", settingsData);
