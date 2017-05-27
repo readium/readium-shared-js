@@ -162,9 +162,6 @@ scripts:
         &&
         npm run
             prepare:local
-        &&
-        npm run
-            prepare:patch
     '
 
 #=====================
@@ -187,9 +184,6 @@ scripts:
         &&
         yarn run
             prepare:yarn:local
-        &&
-        yarn run
-            prepare:patch
     '
 
 #=====================
@@ -207,6 +201,9 @@ scripts:
 #=====================
     'prepare:local:common': '
 
+        npm run
+            prepare:patch
+        &&
         node
             readium-cfi-js/readium-build-tools/gitHubForksUpdater.js
     '
