@@ -1500,9 +1500,12 @@ var CfiNavigationLogic = function (options) {
 
             var treeWalker = document.createTreeWalker(
                 this.getBodyElement(),
-                NodeFilter.SHOW_ELEMENT,
+                NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
                 function(node) {
-                    if (isElementBlacklisted($(node)))
+                    if (node.nodeType === Node.ELEMENT_NODE && isElementBlacklisted($(node)))
+                        return NodeFilter.FILTER_REJECT;
+
+                    if (node.nodeType === Node.TEXT_NODE && !isValidTextNode(node))
                         return NodeFilter.FILTER_REJECT;
 
                     var visibilityResult = checkVisibilityByRectangles($(node), true, visibleContentOffsets, frameDimensions);
@@ -1513,9 +1516,18 @@ var CfiNavigationLogic = function (options) {
 
             while (treeWalker.nextNode()) {
                 var node = treeWalker.currentNode;
+
+                if (node.nodeType === Node.TEXT_NODE) {
+                    firstVisibleElement = node.parentNode;
+                    textNode = node;
+                    percentVisible = 100; // not really used, assume this value unless otherwise
+                    break;
+                }
+
                 var hasChildElements = false;
                 var hasChildTextNodes = false;
-                for (var i=0; i<node.childNodes.length; i++) {
+
+                for (var i = node.childNodes.length - 1; i >= 0; i--) {
                     var childNode = node.childNodes[i];
                     if (childNode.nodeType === Node.ELEMENT_NODE) {
                         hasChildElements = true;
@@ -1526,31 +1538,24 @@ var CfiNavigationLogic = function (options) {
                 }
 
                 // potentially stop tree traversal when first element hit with no child element nodes
-                if (!hasChildElements) {
-                    // case 1: image
-                    if (node.nodeName.toLowerCase() === 'img') {
-                        firstVisibleElement = node;
-                        percentVisible = 100; // unused
-                        break;    
-                    }
-                    
-                    // case 2: valid text node
-                    if (hasChildTextNodes) {
-                        for (var i=0; i<node.childNodes.length; ++i) {
-                            var childNode = node.childNodes[i];
-                            if (childNode.nodeType === Node.TEXT_NODE && isValidTextNode(childNode)) {
-                                var visibilityResult = checkVisibilityByRectangles($(childNode), true, visibleContentOffsets, frameDimensions);
-                                if (visibilityResult) {
-                                    firstVisibleElement = node;
-                                    textNode = childNode;
-                                    percentVisible = visibilityResult;
-                                    break;
-                                }
+                if (!hasChildElements && hasChildTextNodes) {
+                    for (var i=node.childNodes.length-1; i>=0; i--) {
+                        var childNode = node.childNodes[i];
+                        if (childNode.nodeType === Node.TEXT_NODE && isValidTextNode(childNode)) {
+                            var visibilityResult = checkVisibilityByRectangles($(childNode), true, visibleContentOffsets, frameDimensions);
+                            if (visibilityResult) {
+                                firstVisibleElement = node;
+                                textNode = childNode;
+                                percentVisible = visibilityResult;
+                                break;
                             }
                         }
-                        if (firstVisibleElement)
-                            break;
                     }
+                } else if (!hasChildElements) {
+                    firstVisibleElement = node;
+                    percentVisible = 100;
+                    textNode = null;
+                    break;
                 }
             }
 
@@ -1574,9 +1579,12 @@ var CfiNavigationLogic = function (options) {
 
             var treeWalker = document.createTreeWalker(
                 this.getBodyElement(),
-                NodeFilter.SHOW_ELEMENT,
+                NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
                 function(node) {
-                    if (isElementBlacklisted($(node)))
+                    if (node.nodeType === Node.ELEMENT_NODE && isElementBlacklisted($(node)))
+                        return NodeFilter.FILTER_REJECT;
+
+                    if (node.nodeType === Node.TEXT_NODE && !isValidTextNode(node))
                         return NodeFilter.FILTER_REJECT;
 
                     var visibilityResult = checkVisibilityByRectangles($(node), true, visibleContentOffsets, frameDimensions);
@@ -1589,9 +1597,18 @@ var CfiNavigationLogic = function (options) {
 
             do {
                 var node = treeWalker.currentNode;
+
+                if (node.nodeType === Node.TEXT_NODE) {
+                    firstVisibleElement = node.parentNode;
+                    textNode = node;
+                    percentVisible = 100; // not really used, assume this value unless otherwise
+                    break;
+                }
+
                 var hasChildElements = false;
                 var hasChildTextNodes = false;
-                for (var i=node.childNodes.length-1; i>=0; i--) {
+
+                for (var i = node.childNodes.length - 1; i >= 0; i--) {
                     var childNode = node.childNodes[i];
                     if (childNode.nodeType === Node.ELEMENT_NODE) {
                         hasChildElements = true;
@@ -1602,31 +1619,24 @@ var CfiNavigationLogic = function (options) {
                 }
 
                 // potentially stop tree traversal when first element hit with no child element nodes
-                if (!hasChildElements) {
-                    // case 1: image
-                    if (node.nodeName.toLowerCase() === 'img') {
-                        firstVisibleElement = node;
-                        percentVisible = 100; // unused
-                        break;    
-                    }
-                    
-                    // case 2: valid text node
-                    if (hasChildTextNodes) {
-                        for (var i=node.childNodes.length-1; i>=0; i--) {
-                            var childNode = node.childNodes[i];
-                            if (childNode.nodeType === Node.TEXT_NODE && isValidTextNode(childNode)) {
-                                var visibilityResult = checkVisibilityByRectangles($(childNode), true, visibleContentOffsets, frameDimensions);
-                                if (visibilityResult) {
-                                    firstVisibleElement = node;
-                                    textNode = childNode;
-                                    percentVisible = visibilityResult;
-                                    break;
-                                }
+                if (!hasChildElements && hasChildTextNodes) {
+                    for (var i=node.childNodes.length-1; i>=0; i--) {
+                        var childNode = node.childNodes[i];
+                        if (childNode.nodeType === Node.TEXT_NODE && isValidTextNode(childNode)) {
+                            var visibilityResult = checkVisibilityByRectangles($(childNode), true, visibleContentOffsets, frameDimensions);
+                            if (visibilityResult) {
+                                firstVisibleElement = node;
+                                textNode = childNode;
+                                percentVisible = visibilityResult;
+                                break;
                             }
                         }
-                        if (firstVisibleElement)
-                            break;
                     }
+                } else if (!hasChildElements) {
+                    firstVisibleElement = node;
+                    percentVisible = 100;
+                    textNode = null;
+                    break;
                 }
             } while (treeWalker.previousNode());
 
