@@ -974,9 +974,16 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
     }
     
     function getFrameDimensions() {
+        if (reader.needsFixedLayoutScalerWorkAround()) {
+            var parentEl = _$el.parent()[0];
+            return {
+                width: parentEl.clientWidth,
+                height: parentEl.clientHeight
+            };
+        }
         return {
-            width: _$el.parent()[0].clientWidth,
-            height: _$el.parent()[0].clientHeight
+            width: _meta_size.width,
+            height: _meta_size.height
         };
     }
     
