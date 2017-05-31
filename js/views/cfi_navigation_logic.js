@@ -520,7 +520,9 @@ var CfiNavigationLogic = function (options) {
                 width: textRect.right - textRect.left,
                 height: textRect.bottom - textRect.top
             };
-            offsetRectangle(plainRectObject, leftOffset, topOffset);
+            if (leftOffset && topOffset) {
+                offsetRectangle(plainRectObject, leftOffset, topOffset);
+            }
             return plainRectObject;
         }
 
@@ -896,10 +898,18 @@ var CfiNavigationLogic = function (options) {
         };
 
         function generateCfiFromDomRange(range) {
-            return EPUBcfi.generateRangeComponent(
-                range.startContainer, range.startOffset,
-                range.endContainer, range.endOffset,
-                self.getClassBlacklist(), self.getElementBlacklist(), self.getIdBlacklist());
+            if (range.collapsed && range.startContainer.nodeType === Node.TEXT_NODE) {
+                return EPUBcfi.generateCharacterOffsetCFIComponent(
+                    range.startContainer, range.startOffset,
+                    ['cfi-marker'], [], ["MathJax_Message", "MathJax_SVG_Hidden"]);
+            } else if (range.collapsed) {
+                return self.getCfiForElement(range.startContainer);
+            } else {
+                return EPUBcfi.generateRangeComponent(
+                    range.startContainer, range.startOffset,
+                    range.endContainer, range.endOffset,
+                    self.getClassBlacklist(), self.getElementBlacklist(), self.getIdBlacklist());
+            }
         }
 
         function getRangeTargetNodes(rangeCfi) {
