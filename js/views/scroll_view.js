@@ -1354,37 +1354,24 @@ var ScrollView = function (options, isContinuousScroll, reader) {
     function getFirstOrLastVisibleCfi(pickerFunc) {
         var pageViews = getVisiblePageViews();
         var selectedPageView = pickerFunc(pageViews);
-        var pageViewTopOffset = selectedPageView.element().position().top;
+        var pageViewTopOffset =selectedPageView.element().position().top;
         var visibleContentOffsets, frameDimensions;
-        
-        var setupFunctions = [
-            function () {
-                visibleContentOffsets = {
-                    top: pageViewTopOffset,
-                    left: 0
-                };
-            },
-            function() {
-                var height = selectedPageView.element().height();
-                
-                if (pageViewTopOffset >= 0) {
-                    height = viewHeight() - pageViewTopOffset;
-                }
 
-                frameDimensions = {
-                    width: selectedPageView.element().width(),
-                    height: height
-                };
-                
-                visibleContentOffsets = {
-                    top: 0,
-                    left: 0
-                };
-            }
-        ];
+        visibleContentOffsets = {
+            top:  Math.min(0, pageViewTopOffset),
+            left: 0
+        };
+
+        var height = Math.min(selectedPageView.element().height(), viewHeight());
+
+        if (pageViewTopOffset >= 0) {
+            height = height - pageViewTopOffset;
+        }
         
-        //invoke setup function
-        pickerFunc(setupFunctions)();
+        frameDimensions = {
+            width: selectedPageView.element().width(),
+            height: height
+        };
         
         var cfiFunctions = [
             selectedPageView.getFirstVisibleCfi,
