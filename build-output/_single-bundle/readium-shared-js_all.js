@@ -21731,12 +21731,18 @@ var CfiNavigationLogic = function(options) {
                 top: (options.paginationInfo ? options.paginationInfo.pageOffset : 0),
                 left: 0
             };
+        } else {
+            return {
+                top: 0,
+                left: (options.paginationInfo ? options.paginationInfo.pageOffset : 0)
+                //* (isPageProgressionRightToLeft() ? -1 : 1)
+            };
         }
 
-        return {
-            top: 0,
-            left: 0
-        };
+        // return {
+        //     top: 0,
+        //     left: 0
+        // };
     }
 
     /**
