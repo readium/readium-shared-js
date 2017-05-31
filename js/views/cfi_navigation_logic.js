@@ -468,7 +468,7 @@ var CfiNavigationLogic = function (options) {
             // split between several columns)
             var clientRectangles = [];
             for (var i = 0, l = clientRectList.length; i < l; ++i) {
-                if (clientRectList[i].height > 0) {
+                if (clientRectList[i].height > 0 || clientRectList.length === 1) {
                     // Firefox sometimes gets it wrong,
                     // adding literally empty (height = 0) client rectangle preceding the real one,
                     // that empty client rectanle shouldn't be retrieved
@@ -584,7 +584,7 @@ var CfiNavigationLogic = function (options) {
                 offsetRectangle(rect, -columnFullWidth, frameDimensions.height);
             }
 
-            // ... then, if necessary (for visifindTextRangeOffsetRecursivelity offset checks),
+            // ... then, if necessary (for visibility offset checks),
             // each column is tried again (now in reverse order)
             // the loop will be stopped when the column is aligned with a viewport
             // (i.e., is the first visible one).
@@ -912,21 +912,14 @@ var CfiNavigationLogic = function (options) {
             }
         }
 
-        function getRangeTargetNodes(rangeCfi) {
-            return EPUBcfi.getRangeTargetElements(
-                getWrappedCfi(rangeCfi),
-                self.getRootDocument(),
-                self.getClassBlacklist(), self.getElementBlacklist(), self.getIdBlacklist());
-        }
-
         this.getDomRangeFromRangeCfi = function (rangeCfi, rangeCfi2, inclusive) {
             var range = createRange();
 
             if (!rangeCfi2) {
                 if (self.isRangeCfi(rangeCfi)) {
-                    var rangeInfo = getRangeTargetNodes(rangeCfi);
-                    range.setStart(rangeInfo.startElement, rangeInfo.startOffset);
-                    range.setEnd(rangeInfo.endElement, rangeInfo.endOffset);
+                    var rangeInfo = self.getNodeRangeInfoFromCfi(rangeCfi);
+                    range.setStart(rangeInfo.startInfo.node, rangeInfo.startInfo.offset);
+                    range.setEnd(rangeInfo.endInfo.node, rangeInfo.endInfo.offset);
                 } else {
                     var element = self.getElementByCfi(rangeCfi,
                         this.getClassBlacklist(), this.getElementBlacklist(), this.getIdBlacklist())[0];
@@ -934,8 +927,8 @@ var CfiNavigationLogic = function (options) {
                 }
             } else {
                 if (self.isRangeCfi(rangeCfi)) {
-                    var rangeInfo1 = getRangeTargetNodes(rangeCfi);
-                    range.setStart(rangeInfo1.startElement, rangeInfo1.startOffset);
+                    var rangeInfo1 = self.getNodeRangeInfoFromCfi(rangeCfi);
+                    range.setStart(rangeInfo1.startInfo.node, rangeInfo1.startInfo.offset);
                 } else {
                     var startElement = self.getElementByCfi(rangeCfi,
                         this.getClassBlacklist(), this.getElementBlacklist(), this.getIdBlacklist())[0];
@@ -943,11 +936,11 @@ var CfiNavigationLogic = function (options) {
                 }
 
                 if (self.isRangeCfi(rangeCfi2)) {
-                    var rangeInfo2 = getRangeTargetNodes(rangeCfi2);
+                    var rangeInfo2 = self.getNodeRangeInfoFromCfi(rangeCfi2);
                     if (inclusive) {
-                        range.setEnd(rangeInfo2.endElement, rangeInfo2.endOffset);
+                        range.setEnd(rangeInfo2.endInfo.node, rangeInfo2.endInfo.offset);
                     } else {
-                        range.setEnd(rangeInfo2.startElement, rangeInfo2.startOffset);
+                        range.setEnd(rangeInfo2.startInfo.node, rangeInfo2.startInfo.offset);
                     }
                 } else {
                     var endElement = self.getElementByCfi(rangeCfi2,
@@ -967,8 +960,16 @@ var CfiNavigationLogic = function (options) {
         }
 
         this.isRangeCfi = function (partialCfi) {
-            return EPUBcfi.Interpreter.isRangeCfi(getWrappedCfi(partialCfi));
+            return _isRangeCfi(partialCfi) || _hasTextTerminus(partialCfi);
         };
+
+        function _isRangeCfi(partialCfi) {
+            return EPUBcfi.Interpreter.isRangeCfi(getWrappedCfi(partialCfi));
+        }
+
+        function _hasTextTerminus(partialCfi) {
+            return EPUBcfi.Interpreter.hasTextTerminus(getWrappedCfi(partialCfi));
+        }
 
         this.getPageIndexForCfi = function (partialCfi, classBlacklist, elementBlacklist, idBlacklist) {
 
@@ -1018,8 +1019,9 @@ var CfiNavigationLogic = function (options) {
 
         this.getNodeRangeInfoFromCfi = function (cfi) {
             var contentDoc = self.getRootDocument();
-            if (self.isRangeCfi(cfi)) {
-                var wrappedCfi = getWrappedCfi(cfi);
+
+            var wrappedCfi = getWrappedCfi(cfi);
+            if (_isRangeCfi(cfi)) {
 
                 try {
                     //noinspection JSUnresolvedVariable
@@ -1056,7 +1058,41 @@ var CfiNavigationLogic = function (options) {
                     addOverlayRect(nodeRangeClientRect, 'purple', contentDoc);
                 }
 
-                return {startInfo: startRangeInfo, endInfo: endRangeInfo, clientRect: nodeRangeClientRect}
+                return {startInfo: startRangeInfo, endInfo: endRangeInfo, clientRect: nodeRangeClientRect};
+            } else if (_hasTextTerminus(cfi)) {
+
+                try {
+                    //noinspection JSUnresolvedVariable
+                    var textTerminusResult = EPUBcfi.Interpreter.getTextTerminusInfo(wrappedCfi, contentDoc,
+                        this.getClassBlacklist(),
+                        this.getElementBlacklist(),
+                        this.getIdBlacklist());
+
+                    if (_DEBUG) {
+                        console.log(textTerminusResult);
+                    }
+                } catch (ex) {
+                    //EPUBcfi.Interpreter can throw a SyntaxError
+                }
+
+                if (!textTerminusResult) {
+                    console.log("Can't find node for text term CFI: " + cfi);
+                    return undefined;
+                }
+
+                var textTermRangeInfo = {node: textTerminusResult.textNode, offset: textTerminusResult.textOffset};
+                var textTermClientRect =
+                    getNodeRangeClientRect(
+                        textTermRangeInfo.node,
+                        textTermRangeInfo.offset,
+                        textTermRangeInfo.node,
+                        textTermRangeInfo.offset);
+                if (_DEBUG) {
+                    console.log(textTermClientRect);
+                    addOverlayRect(textTermClientRect, 'purple', contentDoc);
+                }
+
+                return {startInfo: textTermRangeInfo, endInfo: textTermRangeInfo, clientRect: textTermClientRect};
             } else {
                 var $element = self.getElementByCfi(cfi,
                     this.getClassBlacklist(),
