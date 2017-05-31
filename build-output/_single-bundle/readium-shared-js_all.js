@@ -22878,6 +22878,12 @@ var CfiNavigationLogic = function(options) {
     function isElementBlacklisted(element) {
         var isBlacklisted = false;
         var classAttribute = element.className;
+        // check for SVGAnimatedString
+        if (classAttribute && typeof classAttribute.animVal !== "undefined") {
+            classAttribute = classAttribute.animVal;
+        } else if (classAttribute && typeof classAttribute.baseVal !== "undefined") {
+            classAttribute = classAttribute.baseVal;
+        }
         var classList = classAttribute ? classAttribute.split(' ') : [];
         var id = element.id;
 
