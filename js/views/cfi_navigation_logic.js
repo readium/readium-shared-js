@@ -1117,6 +1117,53 @@ var CfiNavigationLogic = function (options) {
             }
         };
 
+        this.getNearestCfiFromElement = function (element) {
+            var collapseToStart;
+            var chosenNode;
+            var isTextNode;
+
+            var siblingTextNodesAndSelf = _.filter(element.parentElement.childNodes, function (n) {
+                return n === element || isValidTextNode(n);
+            });
+
+            var indexOfSelf = siblingTextNodesAndSelf.indexOf(element);
+            var nearestNode = siblingTextNodesAndSelf[indexOfSelf - 1];
+            if (!nearestNode) {
+                nearestNode = siblingTextNodesAndSelf[indexOfSelf + 1];
+                collapseToStart = true;
+            }
+            if (!nearestNode) {
+                nearestNode = _.last(this.getLeafNodeElements($(element.previousElementSibling)));
+                if (!nearestNode) {
+                    collapseToStart = true;
+                    nearestNode = _.first(this.getLeafNodeElements($(element.nextElementSibling)));
+                }
+            }
+
+            // Prioritize text node use
+            if (isValidTextNode(nearestNode)) {
+                chosenNode = nearestNode;
+                isTextNode = true;
+            } else if (isElementNode(nearestNode)) {
+                chosenNode = nearestNode;
+            } else if (isElementNode(element.previousElementSibling)) {
+                chosenNode = element.previousElementSibling;
+            } else if (isElementNode(element.nextElementSibling)) {
+                chosenNode = element.nextElementSibling;
+            } else {
+                chosenNode = element.parentElement;
+            }
+
+            if (isTextNode) {
+                var range = chosenNode.ownerDocument.createRange();
+                range.selectNodeContents(chosenNode);
+                range.collapse(collapseToStart);
+                return this.getRangeCfiFromDomRange(range);
+            } else {
+                return this.getCfiForElement(chosenNode);
+            }
+        };
+
         this.getElementByCfi = function (partialCfi, classBlacklist, elementBlacklist, idBlacklist) {
             return getElementByPartialCfi(partialCfi, classBlacklist, elementBlacklist, idBlacklist);
         };
@@ -1125,8 +1172,8 @@ var CfiNavigationLogic = function (options) {
 
             var pageIndex = findPageByRectangles($element);
             if (pageIndex === null) {
-                console.warn('Impossible to locate a hidden element: ', $element);
-                return 0;
+                //Attempted to locate a hidden element, try a fallback with best guess
+                return findPageByRectangles(this.getNearestCfiFromElement($element[0]));
             }
             return pageIndex;
         };
@@ -1361,8 +1408,19 @@ var CfiNavigationLogic = function (options) {
             return $leafNodeElements;
         };
 
-        function isValidTextNode(node) {
+        function isElementNode(node) {
+            if (!node) {
+                return false;
+            }
+            else {
+                return node.nodeType === Node.ELEMENT_NODE;
+            }
+        }
 
+        function isValidTextNode(node) {
+            if (!node) {
+                return false;
+            }
             if (node.nodeType === Node.TEXT_NODE) {
 
                 return isValidTextNodeContent(node.nodeValue);

@@ -1407,6 +1407,10 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         });
     };
 
+    function createBookmarkFromCfi(currentSpineItem, cfi){
+        return new BookmarkData(currentSpineItem.idref, cfi);
+    }
+
     this.getRangeCfiFromDomRange = function (domRange) {
         return callOnVisiblePageView(function (pageView) {
             return pageView.getRangeCfiFromDomRange(domRange);
@@ -1437,9 +1441,11 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         });
     };
 
-    function createBookmarkFromCfi(currentSpineItem, cfi){
-        return new BookmarkData(currentSpineItem.idref, cfi);
-    }
+    this.getNearestCfiFromElement = function (element) {
+        return callOnVisiblePageView(function (pageView) {
+            return pageView.getNearestCfiFromElement(element);
+        });
+    };
 };
 
 return ScrollView;
