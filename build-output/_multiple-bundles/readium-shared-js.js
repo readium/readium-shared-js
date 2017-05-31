@@ -4249,27 +4249,36 @@ var ViewerSettings = function(settingsData) {
 
     }
 
+    function booleanMapper(value) {
+        if (value === "0" || value.toLowerCase() === "false" || value.toLowerCase() === "no") {
+            return false;
+        } else if (value === "1" || value.toLowerCase() == "true" || value.toLowerCase === "yes") {
+            return true;
+        }
+        return undefined;
+    }
+
     this.update = function(settingsData) {
 
         mapProperty("columnGap", settingsData);
         mapProperty("columnMaxWidth", settingsData);
         mapProperty("columnMinWidth", settingsData);
         mapProperty("fontSize", settingsData);
-        mapProperty("mediaOverlaysPreservePlaybackWhenScroll", settingsData);
-        mapProperty("mediaOverlaysSkipSkippables", settingsData);
-        mapProperty("mediaOverlaysEscapeEscapables", settingsData);
+        mapProperty("mediaOverlaysPreservePlaybackWhenScroll", settingsData, booleanMapper);
+        mapProperty("mediaOverlaysSkipSkippables", settingsData, booleanMapper);
+        mapProperty("mediaOverlaysEscapeEscapables", settingsData, booleanMapper);
         mapProperty("mediaOverlaysSkippables", settingsData, buildArray);
         mapProperty("mediaOverlaysEscapables", settingsData, buildArray);
-        mapProperty("mediaOverlaysEnableClick", settingsData);
+        mapProperty("mediaOverlaysEnableClick", settingsData, booleanMapper);
         mapProperty("mediaOverlaysRate", settingsData);
         mapProperty("mediaOverlaysVolume", settingsData);
         mapProperty("mediaOverlaysSynchronizationGranularity", settingsData);
-        mapProperty("mediaOverlaysAutomaticPageTurn", settingsData);
-        mapProperty("mediaOverlaysAutomaticPlay", settingsData);
+        mapProperty("mediaOverlaysAutomaticPageTurn", settingsData, booleanMapper);
+        mapProperty("mediaOverlaysAutomaticPlay", settingsData, booleanMapper);
         mapProperty("scroll", settingsData);
         mapProperty("syntheticSpread", settingsData);
         mapProperty("pageTransition", settingsData);
-        mapProperty("enableGPUHardwareAccelerationCSS3D", settingsData);
+        mapProperty("enableGPUHardwareAccelerationCSS3D", settingsData, booleanMapper);
     };
 
     this.update(settingsData);
