@@ -187,7 +187,7 @@ var CfiNavigationLogic = function (options) {
             return false;
         }
 
-        if (isPaginatedView()) {
+        if (isPaginatedView() && !isVerticalWritingMode()) {
             return (rect.left >= 0 && rect.left < frameDimensions.width) ||
                 (!ignorePartiallyVisible && rect.left < 0 && rect.right > 0);
         } else {
