@@ -457,14 +457,14 @@ var ReflowableView = function(options, reader){
             pageIndex = pageRequest.spineItemPageIndex;
         }
         else if(pageRequest.elementId) {
-            pageIndex = _paginationInfo.currentPageIndex + _navigationLogic.getPageIndexForElementId(pageRequest.elementId);
+            pageIndex = _paginationInfo.currentPageIndex + _navigationLogic.getPageIndexDeltaForElementId(pageRequest.elementId);
         }
         else if(pageRequest.firstVisibleCfi && pageRequest.lastVisibleCfi) {
             var firstPageIndex;
             var lastPageIndex;
             try
             {
-                firstPageIndex = _navigationLogic.getPageIndexForCfi(pageRequest.firstVisibleCfi,
+                firstPageIndex = _navigationLogic.getPageIndexDeltaForCfi(pageRequest.firstVisibleCfi,
                     _cfiClassBlacklist,
                     _cfiElementBlacklist,
                     _cfiIdBlacklist);
@@ -476,7 +476,7 @@ var ReflowableView = function(options, reader){
             }
             try
             {
-                lastPageIndex = _navigationLogic.getPageIndexForCfi(pageRequest.lastVisibleCfi,
+                lastPageIndex = _navigationLogic.getPageIndexDeltaForCfi(pageRequest.lastVisibleCfi,
                     _cfiClassBlacklist,
                     _cfiElementBlacklist,
                     _cfiIdBlacklist);
@@ -492,7 +492,7 @@ var ReflowableView = function(options, reader){
         else if(pageRequest.elementCfi) {
             try
             {
-                pageIndex = _paginationInfo.currentPageIndex + _navigationLogic.getPageIndexForCfi(pageRequest.elementCfi,
+                pageIndex = _paginationInfo.currentPageIndex + _navigationLogic.getPageIndexDeltaForCfi(pageRequest.elementCfi,
                     _cfiClassBlacklist,
                     _cfiElementBlacklist,
                     _cfiIdBlacklist);
