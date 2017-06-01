@@ -372,13 +372,13 @@ var CfiNavigationLogic = function (options) {
 
             if (isVwm) {
                 var topOffset = firstRectangle.top;
-                pageIndex = Math.floor(topOffset / frameDimensions.height);
+                pageIndex = Math.round(topOffset / frameDimensions.height);
             } else {
                 var leftOffset = firstRectangle.left;
                 if (isRtl) {
                     leftOffset = (columnFullWidth * (options.paginationInfo ? options.paginationInfo.visibleColumnCount : 1)) - leftOffset;
                 }
-                pageIndex = Math.floor(leftOffset / columnFullWidth);
+                pageIndex = Math.round(leftOffset / columnFullWidth);
             }
 
             return pageIndex;
