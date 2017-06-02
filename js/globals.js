@@ -112,7 +112,11 @@ var Globals = {
         /**
          * @event
          */
-        PLUGINS_LOADED: "PluginsLoaded"
+        PLUGINS_LOADED: "PluginsLoaded",
+        /**
+         * @event
+         */
+        USER_DID_TAP: "UserDidTap"
     },
     /**
      * Internal Events

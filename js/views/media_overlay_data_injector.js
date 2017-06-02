@@ -31,15 +31,16 @@ define (["jquery", "underscore", "../helpers", "../models/smil_iterator", "rangy
  */
 var MediaOverlayDataInjector = function (mediaOverlay, mediaOverlayPlayer) {
 
-    this.attachMediaOverlayData = function ($iframe, spineItem, mediaOverlaySettings) {
-
+    this.attachMediaOverlayData = function ($iframe, spineItem, mediaOverlaySettings, tapEmitter) {
         var contentDocElement = $iframe[0].contentDocument.documentElement;
+        var $body = $("body", contentDocElement);
 
         if (!spineItem.media_overlay_id && mediaOverlay.smil_models.length === 0) {
+            if ($body.length > 0) {
+                Helpers.addTapEventHandler($body[0], tapEmitter);
+            }
             return;
         }
-
-        var $body = $("body", contentDocElement);
         if ($body.length == 0) {
             console.error("! BODY ???");
         }
@@ -51,24 +52,25 @@ var MediaOverlayDataInjector = function (mediaOverlay, mediaOverlayPlayer) {
             else {
                 $body.data("mediaOverlayClick", {ping: "pong"});
 
-                var touchClickMOEventHandler = function (event)
-                {
-                    //console.debug("MO TOUCH-DOWN: " + event.type);
+                var tapMOEventHandler = function(event) {
+                    //console.debug("MO TOUCH-END");
+
                     var elem = $(this)[0]; // body
 
                     elem = event.target; // body descendant
                     if (!elem)
                     {
                         mediaOverlayPlayer.touchInit();
+                        if (tapEmitter) {
+                            tapEmitter();
+                        }
                         return true;
                     }
-
-//console.debug("MO CLICK: " + elem.id);
-
+                    //console.debug("MO CLICK: " + elem.id);
                     var data = undefined;
                     var el = elem;
-
                     var inLink = false;
+
                     if (el.nodeName.toLowerCase() === "a")
                     {
                         inLink = true;
@@ -96,14 +98,17 @@ var MediaOverlayDataInjector = function (mediaOverlay, mediaOverlayPlayer) {
 
                         if (!mediaOverlaySettings.mediaOverlaysEnableClick)
                         {
-console.log("MO CLICK DISABLED");
+                            console.log("MO CLICK DISABLED");
                             mediaOverlayPlayer.touchInit();
+                            if (tapEmitter) {
+                                tapEmitter();
+                            }
                             return true;
                         }
 
                         if (inLink)
                         {
-console.log("MO CLICKED LINK");
+                            console.log("MO CLICKED LINK");
                             mediaOverlayPlayer.touchInit();
                             return true;
                         }
@@ -232,6 +237,9 @@ console.log("MO CLICKED LINK");
                         {
                             //console.debug("MO CLICKED BLANK BODY");
                             mediaOverlayPlayer.touchInit();
+                            if (tapEmitter) {
+                                tapEmitter();
+                            }
                             return true;
                         }
                         //console.debug("MO CLICKED: isPlaying()" + mediaOverlayPlayer.isPlaying());
@@ -254,9 +262,9 @@ console.log("MO CLICKED LINK");
                         }
                         if (readaloud)
                         {
-console.debug("MO readaloud attr: " + readaloud);
-
+                            //console.debug("MO readaloud attr: " + readaloud);
                             var isPlaying = mediaOverlayPlayer.isPlaying();
+
                             if (readaloud === "start" && !isPlaying ||
                                 readaloud === "stop" && isPlaying ||
                                 readaloud === "startstop")
@@ -266,22 +274,13 @@ console.debug("MO readaloud attr: " + readaloud);
                             }
                         }
                     }
-
                     mediaOverlayPlayer.touchInit();
+                    if (tapEmitter) {
+                        tapEmitter();
+                    }
                     return true;
                 };
-
-                var touchClickMOEventHandler_ = _.debounce(touchClickMOEventHandler, 200);
-                
-                if ('ontouchstart' in document.documentElement)
-                {
-                    $body[0].addEventListener("touchstart", touchClickMOEventHandler_, false);
-                }
-                else
-                {
-                    $body[0].addEventListener("mousedown", touchClickMOEventHandler_, false);
-                }
-
+                Helpers.addTapEventHandler($body[0], tapMOEventHandler);
                 //var clickEvent = 'ontouchstart' in document.documentElement ? 'touchstart' : 'click';
                 //$body.bind(clickEvent, touchClickMOEventHandler);
             }

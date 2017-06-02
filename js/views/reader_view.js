@@ -225,7 +225,10 @@ var ReaderView = function (options) {
             iframeLoader: _iframeLoader
         };
 
-
+        Helpers.addTapEventHandler(_$el[0], function(e) {
+            self.emit(Globals.Events.USER_DID_TAP);
+            return true;
+        });
         _currentView = self.createViewForType(desiredViewType, viewCreationParams);
         
         Globals.logEvent("READER_VIEW_CREATED", "EMIT", "reader_view.js");
@@ -238,7 +241,9 @@ var ReaderView = function (options) {
             if (!Helpers.isIframeAlive($iframe[0])) return;
 
             // performance degrades with large DOM (e.g. word-level text-audio sync)
-            _mediaOverlayDataInjector.attachMediaOverlayData($iframe, spineItem, _viewerSettings);
+            _mediaOverlayDataInjector.attachMediaOverlayData($iframe, spineItem, _viewerSettings, function() {
+                self.emit(Globals.Events.USER_DID_TAP);
+            });
 
             _internalLinksSupport.processLinkElements($iframe, spineItem);
 

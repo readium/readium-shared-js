@@ -867,5 +867,48 @@ Helpers.polyfillCaretRangeFromPoint = function(document) {
     }
 };
 
+Helpers.addTapEventHandler = function($body, reportClicked) {
+    var startPageX = 0;
+    var startPageY = 0;
+    var longTapped = false;
+    var tapTimer = undefined;
+    var touchStartEventHandler = function(event) {
+        var touch = event.touches[0];
+
+        longTapped = false;
+        startPageX = touch.pageX;
+        startPageY = touch.pageY;
+        tapTimer = setTimeout(function() {
+            longTapped = true;
+        }, 1500);
+        //console.debug("TOUCH-START (" + startPageX + ", " + startPageY + ")");
+    };
+    var touchMoveEventHandler = function(event) {
+        event.preventDefault();
+        //console.debug("TOUCH-MOVE (" + event.touches[0].pageX + ", " + event.touches[0].pageY + ")");
+    }
+    var touchEndEventHandler = function(event) {
+        var touch = event.changedTouches[0];
+        var tapped = (Math.abs(touch.pageX - startPageX) <= 25) && (Math.abs(touch.pageY - startPageY) <= 25);
+
+        clearTimeout(tapTimer);
+        //console.debug("TOUCH-END (" +  + touch.pageX + ", " + touch.pageY + "), tapped? " + tapped + ", longTapped? " + longTapped);
+        if (tapped && !longTapped) {
+            return reportClicked(event);
+        }
+        return true;
+    };
+
+    if ('ontouchstart' in document.documentElement) {
+        $body.addEventListener("touchstart", touchStartEventHandler, false);
+        $body.addEventListener("touchmove", touchMoveEventHandler, false);
+        $body.addEventListener("touchend", touchEndEventHandler, false);
+    } else {
+        $body.addEventListener("mousedown", touchStartEventHandler, false);
+        $body.addEventListener("mousemove", touchMoveEventHandler, false);
+        $body.addEventListener("mouseup", touchEndEventHandler, false);
+    }
+};
+
 return Helpers;
 });
