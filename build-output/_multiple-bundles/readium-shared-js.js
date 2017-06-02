@@ -112,7 +112,11 @@ var Globals = {
         /**
          * @event
          */
-        PLUGINS_LOADED: "PluginsLoaded"
+        PLUGINS_LOADED: "PluginsLoaded",
+        /**
+         * @event
+         */
+        USER_DID_TAP: "UserDidTap"
     },
     /**
      * Internal Events
@@ -2494,6 +2498,49 @@ Helpers.polyfillCaretRangeFromPoint = function(document) {
                 }
             }
         }
+    }
+};
+
+Helpers.addTapEventHandler = function($body, reportClicked) {
+    var startPageX = 0;
+    var startPageY = 0;
+    var longTapped = false;
+    var tapTimer = undefined;
+    var touchStartEventHandler = function(event) {
+        var touch = event.touches[0];
+
+        longTapped = false;
+        startPageX = touch.pageX;
+        startPageY = touch.pageY;
+        tapTimer = setTimeout(function() {
+            longTapped = true;
+        }, 1500);
+        //console.debug("TOUCH-START (" + startPageX + ", " + startPageY + ")");
+    };
+    var touchMoveEventHandler = function(event) {
+        event.preventDefault();
+        //console.debug("TOUCH-MOVE (" + event.touches[0].pageX + ", " + event.touches[0].pageY + ")");
+    }
+    var touchEndEventHandler = function(event) {
+        var touch = event.changedTouches[0];
+        var tapped = (Math.abs(touch.pageX - startPageX) <= 25) && (Math.abs(touch.pageY - startPageY) <= 25);
+
+        clearTimeout(tapTimer);
+        //console.debug("TOUCH-END (" +  + touch.pageX + ", " + touch.pageY + "), tapped? " + tapped + ", longTapped? " + longTapped);
+        if (tapped && !longTapped) {
+            return reportClicked(event);
+        }
+        return true;
+    };
+
+    if ('ontouchstart' in document.documentElement) {
+        $body.addEventListener("touchstart", touchStartEventHandler, false);
+        $body.addEventListener("touchmove", touchMoveEventHandler, false);
+        $body.addEventListener("touchend", touchEndEventHandler, false);
+    } else {
+        $body.addEventListener("mousedown", touchStartEventHandler, false);
+        $body.addEventListener("mousemove", touchMoveEventHandler, false);
+        $body.addEventListener("mouseup", touchEndEventHandler, false);
     }
 };
 
@@ -6904,15 +6951,16 @@ define ('readium_shared_js/views/media_overlay_data_injector',["jquery", "unders
  */
 var MediaOverlayDataInjector = function (mediaOverlay, mediaOverlayPlayer) {
 
-    this.attachMediaOverlayData = function ($iframe, spineItem, mediaOverlaySettings) {
-
+    this.attachMediaOverlayData = function ($iframe, spineItem, mediaOverlaySettings, tapEmitter) {
         var contentDocElement = $iframe[0].contentDocument.documentElement;
+        var $body = $("body", contentDocElement);
 
         if (!spineItem.media_overlay_id && mediaOverlay.smil_models.length === 0) {
+            if ($body.length > 0) {
+                Helpers.addTapEventHandler($body[0], tapEmitter);
+            }
             return;
         }
-
-        var $body = $("body", contentDocElement);
         if ($body.length == 0) {
             console.error("! BODY ???");
         }
@@ -6924,24 +6972,25 @@ var MediaOverlayDataInjector = function (mediaOverlay, mediaOverlayPlayer) {
             else {
                 $body.data("mediaOverlayClick", {ping: "pong"});
 
-                var touchClickMOEventHandler = function (event)
-                {
-                    //console.debug("MO TOUCH-DOWN: " + event.type);
+                var tapMOEventHandler = function(event) {
+                    //console.debug("MO TOUCH-END");
+
                     var elem = $(this)[0]; // body
 
                     elem = event.target; // body descendant
                     if (!elem)
                     {
                         mediaOverlayPlayer.touchInit();
+                        if (tapEmitter) {
+                            tapEmitter();
+                        }
                         return true;
                     }
-
-//console.debug("MO CLICK: " + elem.id);
-
+                    //console.debug("MO CLICK: " + elem.id);
                     var data = undefined;
                     var el = elem;
-
                     var inLink = false;
+
                     if (el.nodeName.toLowerCase() === "a")
                     {
                         inLink = true;
@@ -6969,14 +7018,17 @@ var MediaOverlayDataInjector = function (mediaOverlay, mediaOverlayPlayer) {
 
                         if (!mediaOverlaySettings.mediaOverlaysEnableClick)
                         {
-console.log("MO CLICK DISABLED");
+                            console.log("MO CLICK DISABLED");
                             mediaOverlayPlayer.touchInit();
+                            if (tapEmitter) {
+                                tapEmitter();
+                            }
                             return true;
                         }
 
                         if (inLink)
                         {
-console.log("MO CLICKED LINK");
+                            console.log("MO CLICKED LINK");
                             mediaOverlayPlayer.touchInit();
                             return true;
                         }
@@ -7105,6 +7157,9 @@ console.log("MO CLICKED LINK");
                         {
                             //console.debug("MO CLICKED BLANK BODY");
                             mediaOverlayPlayer.touchInit();
+                            if (tapEmitter) {
+                                tapEmitter();
+                            }
                             return true;
                         }
                         //console.debug("MO CLICKED: isPlaying()" + mediaOverlayPlayer.isPlaying());
@@ -7127,9 +7182,9 @@ console.log("MO CLICKED LINK");
                         }
                         if (readaloud)
                         {
-console.debug("MO readaloud attr: " + readaloud);
-
+                            //console.debug("MO readaloud attr: " + readaloud);
                             var isPlaying = mediaOverlayPlayer.isPlaying();
+
                             if (readaloud === "start" && !isPlaying ||
                                 readaloud === "stop" && isPlaying ||
                                 readaloud === "startstop")
@@ -7139,22 +7194,13 @@ console.debug("MO readaloud attr: " + readaloud);
                             }
                         }
                     }
-
                     mediaOverlayPlayer.touchInit();
+                    if (tapEmitter) {
+                        tapEmitter();
+                    }
                     return true;
                 };
-
-                var touchClickMOEventHandler_ = _.debounce(touchClickMOEventHandler, 200);
-                
-                if ('ontouchstart' in document.documentElement)
-                {
-                    $body[0].addEventListener("touchstart", touchClickMOEventHandler_, false);
-                }
-                else
-                {
-                    $body[0].addEventListener("mousedown", touchClickMOEventHandler_, false);
-                }
-
+                Helpers.addTapEventHandler($body[0], tapMOEventHandler);
                 //var clickEvent = 'ontouchstart' in document.documentElement ? 'touchstart' : 'click';
                 //$body.bind(clickEvent, touchClickMOEventHandler);
             }
@@ -15974,7 +16020,10 @@ var ReaderView = function (options) {
             iframeLoader: _iframeLoader
         };
 
-
+        Helpers.addTapEventHandler(_$el[0], function(e) {
+            self.emit(Globals.Events.USER_DID_TAP);
+            return true;
+        });
         _currentView = self.createViewForType(desiredViewType, viewCreationParams);
         
         Globals.logEvent("READER_VIEW_CREATED", "EMIT", "reader_view.js");
@@ -15987,7 +16036,9 @@ var ReaderView = function (options) {
             if (!Helpers.isIframeAlive($iframe[0])) return;
 
             // performance degrades with large DOM (e.g. word-level text-audio sync)
-            _mediaOverlayDataInjector.attachMediaOverlayData($iframe, spineItem, _viewerSettings);
+            _mediaOverlayDataInjector.attachMediaOverlayData($iframe, spineItem, _viewerSettings, function() {
+                self.emit(Globals.Events.USER_DID_TAP);
+            });
 
             _internalLinksSupport.processLinkElements($iframe, spineItem);
 
