@@ -5,10 +5,7 @@ body {
 
 input[type=range] {
     -webkit-appearance: none;
-}
-
-#viewport {
-    position: relative;
+    margin: 0px;
 }
 
 #overlay {
