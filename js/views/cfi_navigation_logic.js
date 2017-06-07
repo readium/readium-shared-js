@@ -1387,7 +1387,7 @@ var CfiNavigationLogic = function(options) {
 
     function isElementBlacklisted(element) {
         var isBlacklisted = false;
-        var classAttribute = element.className;
+        var classAttribute = element.getAttribute("class");
         var classList = classAttribute ? classAttribute.split(' ') : [];
         var id = element.id;
 
