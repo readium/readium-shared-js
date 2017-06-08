@@ -162,19 +162,18 @@ scripts:
         &&
         npm run
             prepare:local
-        &&
-        npm run
-            prepare:patch
     '
 
 #=====================
     'prepare:local': '
 
-        npm outdated
-        ;
-        npm install
+        npm outdated || echo outdated
         &&
-        npm update
+        npm install --no-save --only=prod
+        &&
+        npm install --no-save --only=dev
+        &&
+        npm update --no-save
         &&
         npm run prepare:local:common
     '
@@ -187,16 +186,13 @@ scripts:
         &&
         yarn run
             prepare:yarn:local
-        &&
-        yarn run
-            prepare:patch
     '
 
 #=====================
     'prepare:yarn:local': '
 
-        yarn outdated
-        ;
+        yarn outdated || echo outdated
+        &&
         yarn install
         &&
         yarn upgrade
@@ -207,6 +203,9 @@ scripts:
 #=====================
     'prepare:local:common': '
 
+        npm run
+            prepare:patch
+        &&
         node
             readium-cfi-js/readium-build-tools/gitHubForksUpdater.js
     '
@@ -250,7 +249,7 @@ scripts:
     clean: '
 
         yarn --version
-        ;
+        &&
         node --version
         &&
         npm --version
