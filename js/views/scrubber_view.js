@@ -1,5 +1,5 @@
-define(["../globals", "underscore", "../helpers", "../models/page_open_request", "vue", "html2canvas"],
-function(Globals, _, Helpers, PageOpenRequest, Vue, H2C) {
+define(["../globals", "underscore", "../helpers", "../models/page_open_request", "../models/spine_item", "vue", "html2canvas"],
+function(Globals, _, Helpers, PageOpenRequest, SpineItem, Vue, H2C) {
     var ScrubberView = function() {
 
         Vue.component('scrubber-item', {
@@ -57,6 +57,12 @@ function(Globals, _, Helpers, PageOpenRequest, Vue, H2C) {
                     }
                     return 0;
                 },
+                isLandscape: function() {
+                    var rendition_spread = ReadiumSDK.reader.package().rendition_spread;
+                    var isLandscape = Helpers.getOrientation($('#viewport')) === Globals.Views.ORIENTATION_LANDSCAPE;
+
+                    return rendition_spread === SpineItem.RENDITION_SPREAD_BOTH || isLandscape;
+                },
                 updateScrubber: function(event) {
                     if (this.show_image_scrubber) {
                         this.updateScrollView();
@@ -69,9 +75,8 @@ function(Globals, _, Helpers, PageOpenRequest, Vue, H2C) {
                         this.needUpdate = false;
                     } else if (this.$refs.scrubber_scroller !== undefined) {
                         var scrollerLeft = this.$refs.scrubber_scroller.scrollLeft;
-                        var isLandscape = Helpers.getOrientation($('#viewport')) === Globals.Views.ORIENTATION_LANDSCAPE;
 
-                        if (isLandscape) {
+                        if (this.isLandscape()) {
                             if (scrollerLeft > this.itemWidth()) {
                                 scrollerLeft -= this.itemWidth();
                                 this.scrubber_index = Math.floor(scrollerLeft / this.twoPagesItemWidth()) * 2 + 1;
@@ -89,11 +94,10 @@ function(Globals, _, Helpers, PageOpenRequest, Vue, H2C) {
                 },
                 onSelect: function(src) {
                     var index = _.indexOf(this.item_list.map(function(item) { return item.src }), src);
-                    var isLandscape = Helpers.getOrientation($('#viewport')) === Globals.Views.ORIENTATION_LANDSCAPE;
 
                     //console.log("onSelect: scrubber_index = " + index);
                     this.goToPage(index);
-                    if (isLandscape) {
+                    if (this.isLandscape()) {
                         this.scrubber_index = index;
                     } else {
                         this.scrubber_index = (index > 0) ? (index % 2 == 0 ? index - 1 : index) : index;
@@ -105,7 +109,8 @@ function(Globals, _, Helpers, PageOpenRequest, Vue, H2C) {
                         return;
                     }
                     var lastChild = this.$refs.scrubber_scroller.childNodes[this.$refs.scrubber_scroller.childNodes.length - 1];
-                    var isLandscape = Helpers.getOrientation($('#viewport')) === Globals.Views.ORIENTATION_LANDSCAPE;
+                    var isLandscape = this.isLandscape();
+                    var isViewportPortrait = Helpers.getOrientation($('#viewport')) === Globals.Views.ORIENTATION_PORTRAIT;
 
                     $.each(this.$refs.scrubber_scroller.childNodes, function(index, node) {
                         if (index > 0) {
@@ -117,11 +122,11 @@ function(Globals, _, Helpers, PageOpenRequest, Vue, H2C) {
                         }
                     });
                     lastChild.style.marginRight = this.$refs.scrubber_scroller.clientWidth - this.itemWidth();
-                    if (isLandscape) {
+                    if (this.isLandscape()) {
                         if (this.scrubber_index > 0) {
                             this.scrubber_left = this.itemWidth() +
                                     (Math.floor((this.scrubber_index - 1) / 2) * this.twoPagesItemWidth()) -
-                                    (this.twoPagesItemWidth() / 2);
+                                    (isViewportPortrait ? (this.twoPagesItemWidth() / 4) : (this.twoPagesItemWidth() / 2));
                         } else {
                             this.scrubber_left = 0;
                         }
