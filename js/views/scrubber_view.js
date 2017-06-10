@@ -95,13 +95,13 @@ function(Globals, _, Helpers, PageOpenRequest, SpineItem, Vue, H2C) {
                 onSelect: function(src) {
                     var index = _.indexOf(this.item_list.map(function(item) { return item.src }), src);
 
-                    //console.log("onSelect: scrubber_index = " + index);
                     this.goToPage(index);
-                    if (this.isLandscape()) {
+                    if (!this.isLandscape()) {
                         this.scrubber_index = index;
                     } else {
                         this.scrubber_index = (index > 0) ? (index % 2 == 0 ? index - 1 : index) : index;
                     }
+                    //console.log("onSelect: index = " + index + ", scrubber_index = " + this.scrubber_index);
                     this.needUpdate = true;
                 },
                 updateScrollView: function() {
