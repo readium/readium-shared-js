@@ -2,7 +2,6 @@ buildscript {
     repositories {
         mavenCentral()
         maven { url "https://oss.sonatype.org/content/groups/public"}
-        maven { url "http://dl.bintray.com/ajoberstar/maven" }
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:2.3.0'
@@ -17,6 +16,7 @@ repositories {
         url 'http://dnjnookrepo.barnesandnoble.com:8081/nexus/content/repositories/public'
         artifactUrls 'http://dnjpanexus02.barnesandnoble.com/content/groups/public'
     }
+    maven { url "http://dl.bintray.com/ajoberstar/maven" }
 }
 
 configurations {
