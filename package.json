@@ -5,7 +5,7 @@
   "._": "as this would overwrite / update the JSON, not the master CSON!",
   "*/": "----------------------------------------------------------------------------",
   "name": "readium-shared-js",
-  "version": "0.27.0",
+  "version": "0.28.0-alpha",
   "engines": {
     "node": ">=4",
     "npm": ">=2",
@@ -46,19 +46,19 @@
   ],
   "dependencies": {
     "concurrently": "latest",
+    "http-server": "danielweck/http-server",
     "npm-run-all": "latest",
-    "opener": "latest",
-    "http-server": "danielweck/http-server"
+    "opener": "latest"
   },
   "devDependencies": {
-    "jquery-sizes": "bramstein/jsizes",
-    "domReady": "requirejs/domReady",
     "backbone": "latest",
-    "urijs": "danielweck/URI.js",
-    "eventemitter3": "latest",
-    "es6-collections": "latest",
+    "css-element-queries": "danielweck/css-element-queries",
     "cssom": "danielweck/CSSOM",
-    "css-element-queries": "danielweck/css-element-queries"
+    "domReady": "requirejs/domReady",
+    "es6-collections": "latest",
+    "eventemitter3": "latest",
+    "jquery-sizes": "bramstein/jsizes",
+    "urijs": "danielweck/URI.js"
   },
   "scripts": {
     "cson2json": "node ./readium-cfi-js/node_modules/cson/bin/cson2json package.cson > package.json && node readium-cfi-js/readium-build-tools/optimizePackageJsonScripts.js",
