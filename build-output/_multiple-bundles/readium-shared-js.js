@@ -3094,6 +3094,16 @@ var CfiNavigationLogic = function(options) {
                 left: 0
             };
         }
+        
+        // CAUSES REGRESSION BUGS !! TODO FIXME
+        // https://github.com/readium/readium-shared-js/issues/384#issuecomment-305145129
+        // else {
+        //     return {
+        //         top: 0,
+        //         left: (options.paginationInfo ? options.paginationInfo.pageOffset : 0)
+        //         //* (isPageProgressionRightToLeft() ? -1 : 1)
+        //     };
+        // }
 
         return {
             top: 0,
@@ -3176,6 +3186,26 @@ var CfiNavigationLogic = function(options) {
     function findPageByRectangles($element, spatialVerticalOffset) {
 
         var visibleContentOffsets = getVisibleContentOffsets();
+        //////////////////////
+        // ABOVE CAUSES REGRESSION BUGS !! TODO FIXME
+        // https://github.com/readium/readium-shared-js/issues/384#issuecomment-305145129
+        if (options.visibleContentOffsets) {
+            visibleContentOffsets = options.visibleContentOffsets();
+        }
+        if (isVerticalWritingMode()) {
+            visibleContentOffsets = {
+                top: (options.paginationInfo ? options.paginationInfo.pageOffset : 0),
+                left: 0
+            };
+        }
+        else { // THIS IS ENABLED ONLY FOR findPageByRectangles(), to fix the pageIndex computation. TODO FIXME!
+            visibleContentOffsets = {
+                top: 0,
+                left: (options.paginationInfo ? options.paginationInfo.pageOffset : 0)
+                //* (isPageProgressionRightToLeft() ? -1 : 1)
+            };
+        }
+        //////////////////////
 
         var clientRectangles = getNormalizedRectangles($element, visibleContentOffsets);
         if (clientRectangles.length === 0) { // elements with display:none, etc.
@@ -4240,6 +4270,12 @@ var CfiNavigationLogic = function(options) {
     function isElementBlacklisted(element) {
         var isBlacklisted = false;
         var classAttribute = element.className;
+        // check for SVGAnimatedString
+        if (classAttribute && typeof classAttribute.animVal !== "undefined") {
+            classAttribute = classAttribute.animVal;
+        } else if (classAttribute && typeof classAttribute.baseVal !== "undefined") {
+            classAttribute = classAttribute.baseVal;
+        }
         var classList = classAttribute ? classAttribute.split(' ') : [];
         var id = element.id;
 
@@ -4899,27 +4935,12 @@ var ViewerSettings = function(settingsData) {
         }
 
         /**
-         * @param {HTMLElement} element
-         * @param {String}      prop
-         * @returns {String|Number}
-         */
-        function getComputedStyle(element, prop) {
-            if (element.currentStyle) {
-                return element.currentStyle[prop];
-            }
-            if (window.getComputedStyle) {
-                return window.getComputedStyle(element, null).getPropertyValue(prop);
-            }
-
-            return element.style[prop];
-        }
-
-        /**
          *
          * @param {HTMLElement} element
          * @param {Function}    resized
          */
         function attachResizeEvent(element, resized) {
+            if (!element) return;
             if (element.resizedAttached) {
                 element.resizedAttached.add(resized);
                 return;
@@ -4943,7 +4964,7 @@ var ViewerSettings = function(settingsData) {
                 '</div>';
             element.appendChild(element.resizeSensor);
 
-            if (getComputedStyle(element, 'position') == 'static') {
+            if (element.resizeSensor.offsetParent !== element) {
                 element.style.position = 'relative';
             }
 
@@ -5015,6 +5036,7 @@ var ViewerSettings = function(settingsData) {
 
     ResizeSensor.detach = function(element, ev) {
         forEachElement(element, function(elem){
+            if (!elem) return
             if(elem.resizedAttached && typeof ev == "function"){
                 elem.resizedAttached.remove(ev);
                 if(elem.resizedAttached.length()) return;
