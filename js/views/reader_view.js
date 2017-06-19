@@ -1198,7 +1198,7 @@ var ReaderView = function (options) {
     function handleViewportResizeEnd() {
         //same as doing one final tick for now
         handleViewportResizeTick();
-
+        self.emit(Globals.Events.VIEWPORT_DID_RESIZE);
         if (_resizeMOWasPlaying) self.playMediaOverlay();
     }
 

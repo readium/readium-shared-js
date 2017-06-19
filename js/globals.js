@@ -116,7 +116,11 @@ var Globals = {
         /**
          * @event
          */
-        USER_DID_TAP: "UserDidTap"
+        USER_DID_TAP: "UserDidTap",
+        /**
+         * @event
+         */
+        VIEWPORT_DID_RESIZE: "ViewportDidResize"
     },
     /**
      * Internal Events
