@@ -116,7 +116,11 @@ var Globals = {
         /**
          * @event
          */
-        USER_DID_TAP: "UserDidTap"
+        USER_DID_TAP: "UserDidTap",
+        /**
+         * @event
+         */
+        VIEWPORT_DID_RESIZE: "ViewportDidResize"
     },
     /**
      * Internal Events
@@ -16997,7 +17001,7 @@ var ReaderView = function (options) {
     function handleViewportResizeEnd() {
         //same as doing one final tick for now
         handleViewportResizeTick();
-
+        self.emit(Globals.Events.VIEWPORT_DID_RESIZE);
         if (_resizeMOWasPlaying) self.playMediaOverlay();
     }
 
