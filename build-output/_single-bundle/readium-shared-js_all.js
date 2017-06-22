@@ -61928,23 +61928,22 @@ function(Globals, _, Helpers, PageOpenRequest, SpineItem, Vue, H2C) {
                 },
             },
             updated: function() {
-                //console.error("updated!!! scrubber_index = " + this.scrubber_index);
-                //console.debug("updated: needUpdate? " + this.needUpdate);
+                //console.debug("updated: scrubber_index = " + this.scrubber_index + ", needUpdate? " + this.needUpdate);
                 if (this.needUpdate) {
                     this.updateScrollView();
                 }
             },
             watch: {
                 seen: function(val) {
-                    //console.log("seen: val? " + val);
-                    if (val === true) {
-                        this.needUpdate = true;
-                    }
+                    //console.debug("seen: val? " + val);
+                    this.needUpdate = val;
                 }
             },
             methods: {
                 itemWidth: function() {
                     if (this.$refs.scrubber_scroller.childNodes.length > 0) {
+                        // FIXME: The width might be incorrect when the thumbnail is not loaded
+                        //console.debug("itemWidth = " + this.$refs.scrubber_scroller.childNodes[0].clientWidth);
                         return this.$refs.scrubber_scroller.childNodes[0].clientWidth;
                     }
                     return 0;
@@ -62007,6 +62006,7 @@ function(Globals, _, Helpers, PageOpenRequest, SpineItem, Vue, H2C) {
                     if (this.$refs.scrubber_scroller === undefined) {
                         return;
                     }
+                    //console.debug("updateScrollView: scrubber_index = " + this.scrubber_index);
                     var lastChild = this.$refs.scrubber_scroller.childNodes[this.$refs.scrubber_scroller.childNodes.length - 1];
                     var isLandscape = this.isLandscape();
                     var isViewportPortrait = Helpers.getOrientation($('#viewport')) === Globals.Views.ORIENTATION_PORTRAIT;
@@ -62033,7 +62033,7 @@ function(Globals, _, Helpers, PageOpenRequest, SpineItem, Vue, H2C) {
                         this.scrubber_left = (this.scrubber_index == 0 ? this.scrubber_index : this.scrubber_index - 1) * this.itemWidth();
                     }
                     this.$refs.scrubber_scroller.scrollLeft = this.scrubber_left;
-                    //console.log("updateScrollView: scrubber_left = " + this.scrubber_left);
+                    //console.debug("updateScrollView: scrubber_left = " + this.scrubber_left);
                 },
                 goToPage: function(index) {
                     var nextSpineItem = ReadiumSDK.reader.spine().items[index];
