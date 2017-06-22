@@ -1170,10 +1170,17 @@ var CfiNavigationLogic = function (options) {
 
         this.getPageIndexDeltaForElement = function ($element) {
 
+            // first try to get delta by rectangles
             var pageIndex = findPageIndexDeltaByRectangles($element);
+
+            // for hidden elements (e.g., page breaks) there are no rectangles
             if (pageIndex === null) {
-                //Attempted to locate a hidden element, try a fallback with best guess
-                return findPageIndexDeltaByRectangles(this.getNearestCfiFromElement($element[0]));
+
+                // get CFI of the nearest (to hidden) element, and then get CFI's element
+                var nearestVisibleElement = this.getElementByCfi(this.getNearestCfiFromElement($element[0]));
+
+                // find page index by rectangles again, for the nearest element
+                return findPageIndexDeltaByRectangles(nearestVisibleElement);
             }
             return pageIndex;
         };
