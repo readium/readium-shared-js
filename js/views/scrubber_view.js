@@ -4,7 +4,7 @@ function(Globals, _, Helpers, PageOpenRequest, SpineItem, Vue, H2C) {
 
         Vue.component('scrubber-item', {
             props: ['item'],
-            template: '<div class="scrubber_item"><img class="scruber_item_img" v-bind:src=item.src v-on:click="click" alt=""></div>',
+            template: '<div class="scrubber_item"><img class="scrubber_item_img" v-bind:src=item.src v-on:click="click" alt=""></div>',
             methods: {
                 click: function(event) {
                     this.$emit('click', this.item.src);
@@ -16,8 +16,7 @@ function(Globals, _, Helpers, PageOpenRequest, SpineItem, Vue, H2C) {
             el: '#scrubber',
             data: {
                 scrubber_index: 0,
-                item_list: [
-                ],
+                item_list: [],
                 scrubber_left: 0,
                 seen: false,
                 needUpdate: true,
