@@ -62,10 +62,11 @@ function(Globals, _, Helpers, PageOpenRequest, SpineItem, Vue, H2C) {
                     return rendition_spread === SpineItem.RENDITION_SPREAD_BOTH || isLandscape;
                 },
                 updateScrubber: function(event) {
+                    //console.debug("updateScrubber");
                     if (this.show_image_scrubber) {
                         this.updateScrollView();
                     }
-                    this.goToPage(this.scrubber_index);
+                    //this.goToPage(this.scrubber_index);
                 },
                 onScrubberScroll: function(event) {
                     //console.debug("onScrubberScroll: needUpdate? " + this.needUpdate);
@@ -163,8 +164,27 @@ function(Globals, _, Helpers, PageOpenRequest, SpineItem, Vue, H2C) {
             }
         });
 
+        this.updateIndexAndScrollView = function(paginationInfo) {
+            // TODO: Need to add implementations for reflowable content
+            if (paginationInfo.isFixedLayout) {
+                var index = this.scrubber.scrubber_index;
+                var openPages = paginationInfo.openPages;
+
+                if (index != openPages[0].spineItemIndex || (openPages.length > 1 && index != openPages[1].spineItemIndex)) {
+                    this.scrubber.scrubber_index = paginationInfo.openPages[0].spineItemIndex;
+                }
+                if (this.scrubber.seen) {
+                    this.scrubber.updateScrollView();
+                }
+            }
+        };
+
         ReadiumSDK.reader.on(Globals.Events.FXL_VIEW_RESIZED, function() {
-            this.scrubber.updateScrollView();
+            this.updateIndexAndScrollView(ReadiumSDK.reader.getPaginationInfo());
+        }, this);
+
+        ReadiumSDK.reader.on(Globals.Events.PAGINATION_CHANGED, function(pageChangeData) {
+            this.updateIndexAndScrollView(pageChangeData.paginationInfo);
         }, this);
     };
 
