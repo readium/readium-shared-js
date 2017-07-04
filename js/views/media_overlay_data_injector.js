@@ -202,8 +202,8 @@ var MediaOverlayDataInjector = function (mediaOverlay, mediaOverlayPlayer) {
 
                                     var range = rangy.createRange(elem.ownerDocument); //createNativeRange
                                     range.setStartAndEnd(
-                                        infoStart.textNode[0], infoStart.textOffset,
-                                        infoEnd.textNode[0], infoEnd.textOffset
+                                        infoStart.textNode, infoStart.textOffset,
+                                        infoEnd.textNode, infoEnd.textOffset
                                     );
         
                                     if (range.isPointInRange(pos.node, pos.offset))
@@ -417,7 +417,7 @@ var MediaOverlayDataInjector = function (mediaOverlay, mediaOverlayPlayer) {
                 ["MathJax_Message"]);
 //console.log(infoEnd);
 
-                                    var cfiTextParent = infoStart.textNode[0].parentNode;
+                                    var cfiTextParent = infoStart.textNode.parentNode;
 
                                     iter.currentPar.cfi = {
                                         smilTextSrcCfi: iter.currentPar.text.srcFragmentId,

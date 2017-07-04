@@ -570,11 +570,11 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
 
                 if (rangy)
                 {
-                    //infoStart.textNode[0].parentNode.ownerDocument
+                    //infoStart.textNode.parentNode.ownerDocument
                     var range = rangy.createRange(doc); //createNativeRange
                     range.setStartAndEnd(
-                        infoStart.textNode[0], infoStart.textOffset,
-                        infoEnd.textNode[0], infoEnd.textOffset
+                        infoStart.textNode, infoStart.textOffset,
+                        infoEnd.textNode, infoEnd.textOffset
                     );
                     _currentTTS = range.toString(); //.text()
                 }

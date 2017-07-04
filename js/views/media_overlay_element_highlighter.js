@@ -302,8 +302,8 @@ var MediaOverlayElementHighlighter = function(reader) {
 //console.log(infoEnd);
             
             _rangyRange.setStartAndEnd(
-                infoStart.textNode[0], infoStart.textOffset,
-                infoEnd.textNode[0], infoEnd.textOffset
+                infoStart.textNode, infoStart.textOffset,
+                infoEnd.textNode, infoEnd.textOffset
             );
             
             if (false && // we use CssClassApplier instead, because surroundContents() has no trivial undoSurroundContents() function (inc. text nodes normalisation, etc.)

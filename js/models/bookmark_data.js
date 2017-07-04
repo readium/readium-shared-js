@@ -36,6 +36,7 @@ var BookmarkData = function(idref, contentCFI) {
      * @property idref
      * @type {string}
      */
+
     this.idref = idref;
 
     /**
@@ -43,12 +44,14 @@ var BookmarkData = function(idref, contentCFI) {
      * @property contentCFI
      * @type {string}
      */
+    
     this.contentCFI = contentCFI;
 
     /**
      * serialize to string
      * @return JSON string representation
      */
+    
     this.toString = function(){
         return JSON.stringify(self);
     }
