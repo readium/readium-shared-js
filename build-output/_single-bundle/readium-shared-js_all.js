@@ -590,7 +590,7 @@ define("readium-shared-js_all", function(){});
         peg$c6 = peg$literalExpectation(",", false),
         peg$c7 = function(stepVal, localPathVal, rangeLocalPath1Val, rangeLocalPath2Val) {
 
-                return { type:"range", path:stepVal, localPath:localPathVal, range1:rangeLocalPath1Val, range2:rangeLocalPath2Val };
+                return { type:"range", path:stepVal, localPath:localPathVal?localPathVal:"", range1:rangeLocalPath1Val, range2:rangeLocalPath2Val };
           },
         peg$c8 = function(stepVal, localPathVal) { 
 
@@ -886,6 +886,9 @@ define("readium-shared-js_all", function(){});
       s1 = peg$parseindexStep();
       if (s1 !== peg$FAILED) {
         s2 = peg$parselocal_path();
+        if (s2 === peg$FAILED) {
+          s2 = null;
+        }
         if (s2 !== peg$FAILED) {
           if (input.charCodeAt(peg$currPos) === 44) {
             s3 = peg$c5;
@@ -11792,1619 +11795,6 @@ if ( !noGlobal ) {
 return jQuery;
 }));
 
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
-//  
-//  Redistribution and use in source and binary forms, with or without modification, 
-//  are permitted provided that the following conditions are met:
-//  1. Redistributions of source code must retain the above copyright notice, this 
-//  list of conditions and the following disclaimer.
-//  2. Redistributions in binary form must reproduce the above copyright notice, 
-//  this list of conditions and the following disclaimer in the documentation and/or 
-//  other materials provided with the distribution.
-//  3. Neither the name of the organization nor the names of its contributors may be 
-//  used to endorse or promote products derived from this software without specific 
-//  prior written permission.
-
-(function(global) {
-
-
-// Description: This is a set of runtime errors that the CFI interpreter can throw. 
-// Rationale: These error types extend the basic javascript error object so error things like the stack trace are 
-//   included with the runtime errors. 
-
-// REFACTORING CANDIDATE: This type of error may not be required in the long run. The parser should catch any syntax errors, 
-//   provided it is error-free, and as such, the AST should never really have any node type errors, which are essentially errors
-//   in the structure of the AST. This error should probably be refactored out when the grammar and interpreter are more stable.
-
-var obj = {
-
-NodeTypeError: function (node, message) {
-
-    function NodeTypeError () {
-
-        this.node = node;
-    }
-
-    NodeTypeError.prototype = new Error(message);
-    NodeTypeError.constructor = NodeTypeError;
-
-    return new NodeTypeError();
-},
-
-// REFACTORING CANDIDATE: Might make sense to include some more specifics about the out-of-rangeyness.
-OutOfRangeError: function (targetIndex, maxIndex, message) {
-
-    function OutOfRangeError () {
-
-        this.targetIndex = targetIndex;
-        this.maxIndex = maxIndex;
-    }
-
-    OutOfRangeError.prototype = new Error(message);
-    OutOfRangeError.constructor = OutOfRangeError()
-
-    return new OutOfRangeError();
-},
-
-// REFACTORING CANDIDATE: This is a bit too general to be useful. When I have a better understanding of the type of errors
-//   that can occur with the various terminus conditions, it'll make more sense to revisit this. 
-TerminusError: function (terminusType, terminusCondition, message) {
-
-    function TerminusError () {
-
-        this.terminusType = terminusType;
-        this.terminusCondition = terminusCondition;
-    }
-
-    TerminusError.prototype = new Error(message);
-    TerminusError.constructor = TerminusError();
-
-    return new TerminusError();
-},
-
-CFIAssertionError: function (expectedAssertion, targetElementAssertion, message) {
-
-    function CFIAssertionError () {
-
-        this.expectedAssertion = expectedAssertion;
-        this.targetElementAssertion = targetElementAssertion;
-    }
-
-    CFIAssertionError.prototype = new Error(message);
-    CFIAssertionError.constructor = CFIAssertionError();
-
-    return new CFIAssertionError();
-}
-
-};
-
-
-
-
-
-
-
-
-
-
-if (typeof define == 'function' && typeof define.amd == 'object') {
-    console.log("RequireJS ... cfi_errors");
-    
-    define('readium_cfi_js/cfi_runtime_errors',[],
-    function () {
-        return obj;
-    });
-} else {
-    console.log("!RequireJS ... cfi_errors");
-    
-    if (!global["EPUBcfi"]) {
-        throw new Error("EPUBcfi not initialised on global object?! (window or this context)");
-    }
-    
-    global.EPUBcfi.NodeTypeError = obj.NodeTypeError;
-    global.EPUBcfi.OutOfRangeError = obj.OutOfRangeError;
-    global.EPUBcfi.TerminusError = obj.TerminusError;
-    global.EPUBcfi.CFIAssertionError = obj.CFIAssertionError;
-}
-
-})(typeof window !== "undefined" ? window : this);
-
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
-//  
-//  Redistribution and use in source and binary forms, with or without modification, 
-//  are permitted provided that the following conditions are met:
-//  1. Redistributions of source code must retain the above copyright notice, this 
-//  list of conditions and the following disclaimer.
-//  2. Redistributions in binary form must reproduce the above copyright notice, 
-//  this list of conditions and the following disclaimer in the documentation and/or 
-//  other materials provided with the distribution.
-//  3. Neither the name of the organization nor the names of its contributors may be 
-//  used to endorse or promote products derived from this software without specific 
-//  prior written permission.
-
-(function(global) {
-
-var init = function($, cfiRuntimeErrors) {
-    
-var obj = {
-
-// Description: This model contains the implementation for "instructions" included in the EPUB CFI domain specific language (DSL). 
-//   Lexing and parsing a CFI produces a set of executable instructions for processing a CFI (represented in the AST). 
-//   This object contains a set of functions that implement each of the executable instructions in the AST. 
-
-    // ------------------------------------------------------------------------------------ //
-    //  "PUBLIC" METHODS (THE API)                                                          //
-    // ------------------------------------------------------------------------------------ //
-
-    // Description: Follows a step
-    // Rationale: The use of children() is important here, as this jQuery method returns a tree of xml nodes, EXCLUDING
-    //   CDATA and text nodes. When we index into the set of child elements, we are assuming that text nodes have been 
-    //   excluded.
-    // REFACTORING CANDIDATE: This should be called "followIndexStep"
-    getNextNode : function (CFIStepValue, $currNode, classBlacklist, elementBlacklist, idBlacklist) {
-
-        // Find the jquery index for the current node
-        var $targetNode;
-        if (CFIStepValue % 2 == 0) {
-
-            $targetNode = this.elementNodeStep(CFIStepValue, $currNode, classBlacklist, elementBlacklist, idBlacklist);
-        }
-        else {
-
-            $targetNode = this.inferTargetTextNode(CFIStepValue, $currNode, classBlacklist, elementBlacklist, idBlacklist);
-        }
-
-        return $targetNode;
-    },
-
-    // Description: This instruction executes an indirection step, where a resource is retrieved using a 
-    //   link contained on a attribute of the target element. The attribute that contains the link differs
-    //   depending on the target. 
-    // Note: Iframe indirection will (should) fail if the iframe is not from the same domain as its containing script due to 
-    //   the cross origin security policy
-    followIndirectionStep : function (CFIStepValue, $currNode, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var that = this;
-        var $contentDocument; 
-        var $blacklistExcluded;
-        var $startElement;
-        var $targetNode;
-
-        // TODO: This check must be expanded to all the different types of indirection step
-        // Only expects iframes, at the moment
-        if ($currNode === undefined || !$currNode.is("iframe")) {
-
-            throw cfiRuntimeErrors.NodeTypeError($currNode, "expected an iframe element");
-        }
-
-        // Check node type; only iframe indirection is handled, at the moment
-        if ($currNode.is("iframe")) {
-
-            // Get content
-            $contentDocument = $currNode.contents();
-
-            // Go to the first XHTML element, which will be the first child of the top-level document object
-            $blacklistExcluded = this.applyBlacklist($contentDocument.children(), classBlacklist, elementBlacklist, idBlacklist);
-            $startElement = $($blacklistExcluded[0]);
-
-            // Follow an index step
-            $targetNode = this.getNextNode(CFIStepValue, $startElement, classBlacklist, elementBlacklist, idBlacklist);
-
-            // Return that shit!
-            return $targetNode; 
-        }
-
-        // TODO: Other types of indirection
-        // TODO: $targetNode.is("embed")) : src
-        // TODO: ($targetNode.is("object")) : data
-        // TODO: ($targetNode.is("image") || $targetNode.is("xlink:href")) : xlink:href
-    },
-
-    // Description: Injects an element at the specified text node
-    // Arguments: a cfi text termination string, a jquery object to the current node
-    // REFACTORING CANDIDATE: Rename this to indicate that it injects into a text terminus
-    textTermination : function ($currNode, textOffset, elementToInject) {
-
-        var $injectedElement;
-        // Get the first node, this should be a text node
-        if ($currNode === undefined) {
-
-            throw cfiRuntimeErrors.NodeTypeError($currNode, "expected a terminating node, or node list");
-        } 
-        else if ($currNode.length === 0) {
-
-            throw cfiRuntimeErrors.TerminusError("Text", "Text offset:" + textOffset, "no nodes found for termination condition");
-        }
-
-        $injectedElement = this.injectCFIMarkerIntoText($currNode, textOffset, elementToInject);
-        return $injectedElement;
-    },
-
-    // Description: Checks that the id assertion for the node target matches that on 
-    //   the found node. 
-    targetIdMatchesIdAssertion : function ($foundNode, idAssertion) {
-
-        if ($foundNode.attr("id") === idAssertion) {
-
-            return true;
-        }
-        else {
-
-            return false;
-        }
-    },
-
-    // ------------------------------------------------------------------------------------ //
-    //  "PRIVATE" HELPERS                                                                   //
-    // ------------------------------------------------------------------------------------ //
-
-    // Description: Step reference for xml element node. Expected that CFIStepValue is an even integer
-    elementNodeStep : function (CFIStepValue, $currNode, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var $targetNode;
-        var $blacklistExcluded;
-        var numElements;
-        var jqueryTargetNodeIndex = (CFIStepValue / 2) - 1;
-
-        $blacklistExcluded = this.applyBlacklist($currNode.children(), classBlacklist, elementBlacklist, idBlacklist);
-        numElements = $blacklistExcluded.length;
-
-        if (this.indexOutOfRange(jqueryTargetNodeIndex, numElements)) {
-
-            throw cfiRuntimeErrors.OutOfRangeError(jqueryTargetNodeIndex, numElements - 1, "");
-        }
-
-        $targetNode = $($blacklistExcluded[jqueryTargetNodeIndex]);
-        return $targetNode;
-    },
-
-    retrieveItemRefHref : function ($itemRefElement, $packageDocument) {
-
-        return $("#" + $itemRefElement.attr("idref"), $packageDocument).attr("href");
-    },
-
-    indexOutOfRange : function (targetIndex, numChildElements) {
-
-        return (targetIndex > numChildElements - 1) ? true : false;
-    },
-
-    // Rationale: In order to inject an element into a specific position, access to the parent object 
-    //   is required. This is obtained with the jquery parent() method. An alternative would be to 
-    //   pass in the parent with a filtered list containing only children that are part of the target text node.
-    injectCFIMarkerIntoText : function ($textNodeList, textOffset, elementToInject) {
-        var document = $textNodeList[0].ownerDocument;
-
-        var nodeNum;
-        var currNodeLength;
-        var currTextPosition = 0;
-        var nodeOffset;
-        var originalText;
-        var $injectedNode;
-        var $newTextNode;
-        // The iteration counter may be incorrect here (should be $textNodeList.length - 1 ??)
-        for (nodeNum = 0; nodeNum <= $textNodeList.length; nodeNum++) {
-
-            if ($textNodeList[nodeNum].nodeType === Node.TEXT_NODE) {
-
-                currNodeMaxIndex = $textNodeList[nodeNum].nodeValue.length  + currTextPosition;
-                nodeOffset = textOffset - currTextPosition;
-
-                if (currNodeMaxIndex > textOffset) {
-
-                    // This node is going to be split and the components re-inserted
-                    originalText = $textNodeList[nodeNum].nodeValue;    
-
-                    // Before part
-                    $textNodeList[nodeNum].nodeValue = originalText.slice(0, nodeOffset);
-
-                    // Injected element
-                    $injectedNode = $(elementToInject).insertAfter($textNodeList.eq(nodeNum));
-
-                    // After part
-                    $newTextNode = $(document.createTextNode(originalText.slice(nodeOffset, originalText.length)));
-                    $($newTextNode).insertAfter($injectedNode);
-
-                    return $injectedNode;
-                } else if (currNodeMaxIndex == textOffset){
-                    $injectedNode = $(elementToInject).insertAfter($textNodeList.eq(nodeNum));
-                    return $injectedNode;
-                }
-                else {
-                    currTextPosition = currNodeMaxIndex;
-                }
-            } else if($textNodeList[nodeNum].nodeType === Node.COMMENT_NODE){
-                currNodeMaxIndex = $textNodeList[nodeNum].nodeValue.length + 7 + currTextPosition;
-                currTextPosition = currNodeMaxIndex;
-            } else if($textNodeList[nodeNum].nodeType === Node.PROCESSING_INSTRUCTION_NODE){
-                currNodeMaxIndex = $textNodeList[nodeNum].nodeValue.length + $textNodeList[nodeNum].target.length + 5
-                currTextPosition = currNodeMaxIndex;
-            }
-        }
-
-        throw cfiRuntimeErrors.TerminusError("Text", "Text offset:" + textOffset, "The offset exceeded the length of the text");
-    },
-
-    // Rationale: In order to inject an element into a specific position, access to the parent object 
-    //   is required. This is obtained with the jquery parent() method. An alternative would be to 
-    //   pass in the parent with a filtered list containing only children that are part of the target text node.
-
-    // Description: This method finds a target text node and then injects an element into the appropriate node
-    // Rationale: The possibility that cfi marker elements have been injected into a text node at some point previous to 
-    //   this method being called (and thus splitting the original text node into two separate text nodes) necessitates that
-    //   the set of nodes that compromised the original target text node are inferred and returned.
-    // Notes: Passed a current node. This node should have a set of elements under it. This will include at least one text node, 
-    //   element nodes (maybe), or possibly a mix. 
-    // REFACTORING CANDIDATE: This method is pretty long (and confusing). Worth investigating to see if it can be refactored into something clearer.
-    inferTargetTextNode : function (CFIStepValue, $currNode, classBlacklist, elementBlacklist, idBlacklist) {
-        
-        var $elementsWithoutMarkers;
-        var currLogicalTextNodeIndex;
-        var targetLogicalTextNodeIndex;
-        var nodeNum;
-        var $targetTextNodeList;
-        var prevNodeWasTextNode;
-
-        // Remove any cfi marker elements from the set of elements. 
-        // Rationale: A filtering function is used, as simply using a class selector with jquery appears to 
-        //   result in behaviour where text nodes are also filtered out, along with the class element being filtered.
-        $elementsWithoutMarkers = this.applyBlacklist($currNode.contents(), classBlacklist, elementBlacklist, idBlacklist);
-
-        // Convert CFIStepValue to logical index; assumes odd integer for the step value
-        targetLogicalTextNodeIndex = ((parseInt(CFIStepValue) + 1) / 2) - 1;
-
-        // Set text node position counter
-        currLogicalTextNodeIndex = 0;
-        prevNodeWasTextNode = false;
-        $targetTextNodeList = $elementsWithoutMarkers.filter(
-            function () {
-
-                if (currLogicalTextNodeIndex === targetLogicalTextNodeIndex) {
-
-                    // If it's a text node
-                    if (this.nodeType === Node.TEXT_NODE || this.nodeType === Node.COMMENT_NODE || this.nodeType === Node.PROCESSING_INSTRUCTION_NODE) {
-                        prevNodeWasTextNode = true;
-                        return true;
-                    }
-                    // Rationale: The logical text node position is only incremented once a group of text nodes (a single logical
-                    //   text node) has been passed by the loop. 
-                    else if (prevNodeWasTextNode && (this.nodeType !== Node.TEXT_NODE)) {
-                        currLogicalTextNodeIndex++;
-                        prevNodeWasTextNode = false;
-                        return false;
-                    }
-                }
-                // Don't return any elements
-                else {
-
-                    if (this.nodeType === Node.TEXT_NODE || this.nodeType === Node.COMMENT_NODE || this.nodeType === Node.PROCESSING_INSTRUCTION_NODE) {
-                        prevNodeWasTextNode = true;
-                    }else if (!prevNodeWasTextNode && this.nodeType === Node.ELEMENT_NODE){
-                        currLogicalTextNodeIndex++;
-                        prevNodeWasTextNode = true;
-                    }
-                    else if (prevNodeWasTextNode && (this.nodeType !== Node.TEXT_NODE) && (this !== $elementsWithoutMarkers.lastChild)) {
-                        currLogicalTextNodeIndex++;
-                        prevNodeWasTextNode = false;
-                    }
-
-                    return false;
-                }
-            }
-        );
-
-        // The filtering above should have counted the number of "logical" text nodes; this can be used to 
-        // detect out of range errors
-        if ($targetTextNodeList.length === 0) {
-            throw cfiRuntimeErrors.OutOfRangeError(targetLogicalTextNodeIndex, currLogicalTextNodeIndex, "Index out of range");
-        }
-
-        // return the text node list
-        return $targetTextNodeList;
-    },
-
-    applyBlacklist : function ($elements, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var $filteredElements;
-
-        $filteredElements = $elements.filter(
-            function () {
-
-                var $currElement = $(this);
-                var includeInList = true;
-
-                if (classBlacklist) {
-
-                    // Filter each element with the class type
-                    $.each(classBlacklist, function (index, value) {
-
-                        if ($currElement.hasClass(value)) {
-                            includeInList = false;
-
-                            // Break this loop
-                            return false;
-                        }
-                    });
-                }
-
-                if (elementBlacklist) {
-                    
-                    // For each type of element
-                    $.each(elementBlacklist, function (index, value) {
-
-                        if ($currElement.is(value)) {
-                            includeInList = false;
-
-                            // Break this loop
-                            return false;
-                        }
-                    });
-                }
-
-                if (idBlacklist) {
-                    
-                    // For each type of element
-                    $.each(idBlacklist, function (index, value) {
-
-                        if ($currElement.attr("id") === value) {
-                            includeInList = false;
-
-                            // Break this loop
-                            return false;
-                        }
-                    });
-                }
-
-                return includeInList;
-            }
-        );
-
-        return $filteredElements;
-    }
-};
-
-return obj;
-}
-
-
-
-
-
-
-
-
-
-
-if (typeof define == 'function' && typeof define.amd == 'object') {
-    console.log("RequireJS ... cfi_instructions");
-    
-    define('readium_cfi_js/cfi_instructions',['jquery', './cfi_runtime_errors'],
-    function ($, cfiRuntimeErrors) {
-        return init($, cfiRuntimeErrors);
-    });
-} else {
-    console.log("!RequireJS ... cfi_instructions");
-    
-    if (!global["EPUBcfi"]) {
-        throw new Error("EPUBcfi not initialised on global object?! (window or this context)");
-    }
-    global.EPUBcfi.CFIInstructions = 
-    init($,
-        {
-            NodeTypeError: global.EPUBcfi.NodeTypeError,
-            OutOfRangeError: global.EPUBcfi.OutOfRangeError,
-            TerminusError: global.EPUBcfi.TerminusError,
-            CFIAssertionError: global.EPUBcfi.CFIAssertionError
-        });
-}
-
-})(typeof window !== "undefined" ? window : this);
-
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
-//
-//  Redistribution and use in source and binary forms, with or without modification,
-//  are permitted provided that the following conditions are met:
-//  1. Redistributions of source code must retain the above copyright notice, this
-//  list of conditions and the following disclaimer.
-//  2. Redistributions in binary form must reproduce the above copyright notice,
-//  this list of conditions and the following disclaimer in the documentation and/or
-//  other materials provided with the distribution.
-//  3. Neither the name of the organization nor the names of its contributors may be
-//  used to endorse or promote products derived from this software without specific
-//  prior written permission.
-
-(function(global) {
-
-var init = function($, cfiParser, cfiInstructions, cfiRuntimeErrors) {
-
-    if (typeof cfiParser === "undefined") {
-        throw new Error("UNDEFINED?! cfiParser");
-    }
-
-    if (typeof cfiInstructions === "undefined") {
-        throw new Error("UNDEFINED?! cfiInstructions");
-    }
-
-    if (typeof cfiRuntimeErrors === "undefined") {
-        throw new Error("UNDEFINED?! cfiRuntimeErrors");
-    }
-
-var obj = {
-
-// Description: This is an interpreter that inteprets an Abstract Syntax Tree (AST) for a CFI. The result of executing the interpreter
-//   is to inject an element, or set of elements, into an EPUB content document (which is just an XHTML document). These element(s) will
-//   represent the position or area in the EPUB referenced by a CFI.
-// Rationale: The AST is a clean and readable expression of the step-terminus structure of a CFI. Although building an interpreter adds to the
-//   CFI infrastructure, it provides a number of benefits. First, it emphasizes a clear separation of concerns between lexing/parsing a
-//   CFI, which involves some complexity related to escaped and special characters, and the execution of the underlying set of steps
-//   represented by the CFI. Second, it will be easier to extend the interpreter to account for new/altered CFI steps (say for references
-//   to vector objects or multiple CFIs) than if lexing, parsing and interpretation were all handled in a single step. Finally, Readium's objective is
-//   to demonstrate implementation of the EPUB 3.0 spec. An implementation with a strong separation of concerns that conforms to
-//   well-understood patterns for DSL processing should be easier to communicate, analyze and understand.
-// REFACTORING CANDIDATE: node type errors shouldn't really be possible if the CFI syntax is correct and the parser is error free.
-//   Might want to make the script die in those instances, once the grammar and interpreter are more stable.
-// REFACTORING CANDIDATE: The use of the 'nodeType' property is confusing as this is a DOM node property and the two are unrelated.
-//   Whoops. There shouldn't be any interference, however, I think this should be changed.
-
-    // ------------------------------------------------------------------------------------ //
-    //  "PUBLIC" METHODS (THE API)                                                          //
-    // ------------------------------------------------------------------------------------ //
-
-    // Description: Find the content document referenced by the spine item. This should be the spine item
-    //   referenced by the first indirection step in the CFI.
-    // Rationale: This method is a part of the API so that the reading system can "interact" the content document
-    //   pointed to by a CFI. If this is not a separate step, the processing of the CFI must be tightly coupled with
-    //   the reading system, as it stands now.
-    getContentDocHref : function (CFI, packageDocument, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var $packageDocument = $(packageDocument);
-        var decodedCFI = decodeURI(CFI);
-        var CFIAST = cfiParser.parse(decodedCFI);
-
-        if (!CFIAST || CFIAST.type !== "CFIAST") {
-            throw cfiRuntimeErrors.NodeTypeError(CFIAST, "expected CFI AST root node");
-        }
-
-        // Interpet the path node (the package document step)
-        var $packageElement = $($("package", $packageDocument)[0]);
-        var $currElement = this.interpretIndexStepNode(CFIAST.cfiString.path, $packageElement, classBlacklist, elementBlacklist, idBlacklist);
-        foundHref = this.searchLocalPathForHref($currElement, $packageDocument, CFIAST.cfiString.localPath, classBlacklist, elementBlacklist, idBlacklist);
-
-        if (foundHref) {
-            return foundHref;
-        }
-        else {
-            return undefined;
-        }
-    },
-
-    // Description: Inject an arbitrary html element into a position in a content document referenced by a CFI
-    injectElement : function (CFI, contentDocument, elementToInject, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var decodedCFI = decodeURI(CFI);
-        var CFIAST = cfiParser.parse(decodedCFI);
-        var indirectionNode;
-        var indirectionStepNum;
-        var $currElement;
-
-        // Rationale: Since the correct content document for this CFI is already being passed, we can skip to the beginning
-        //   of the indirection step that referenced the content document.
-        // Note: This assumes that indirection steps and index steps conform to an interface: an object with stepLength, idAssertion
-        indirectionStepNum = this.getFirstIndirectionStepNum(CFIAST);
-        indirectionNode = CFIAST.cfiString.localPath.steps[indirectionStepNum];
-        indirectionNode.type = "indexStep";
-
-        // Interpret the rest of the steps
-        $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, indirectionStepNum, $(contentDocument.documentElement, contentDocument), classBlacklist, elementBlacklist, idBlacklist);
-
-        // TODO: detect what kind of terminus; for now, text node termini are the only kind implemented
-        $currElement = this.interpretTextTerminusNode(CFIAST.cfiString.localPath.termStep, $currElement, elementToInject);
-
-        // Return the element that was injected into
-        return $currElement;
-    },
-
-    // Description: Inject an arbitrary html element into a position in a content document referenced by a CFI
-    injectRangeElements : function (rangeCFI, contentDocument, startElementToInject, endElementToInject, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var decodedCFI = decodeURI(rangeCFI);
-        var CFIAST = cfiParser.parse(decodedCFI);
-        var indirectionNode;
-        var indirectionStepNum;
-        var $currElement;
-        var $range1TargetElement;
-        var $range2TargetElement;
-
-        // Rationale: Since the correct content document for this CFI is already being passed, we can skip to the beginning
-        //   of the indirection step that referenced the content document.
-        // Note: This assumes that indirection steps and index steps conform to an interface: an object with stepLength, idAssertion
-        indirectionStepNum = this.getFirstIndirectionStepNum(CFIAST);
-        indirectionNode = CFIAST.cfiString.localPath.steps[indirectionStepNum];
-        indirectionNode.type = "indexStep";
-
-        // Interpret the rest of the steps in the first local path
-        $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, indirectionStepNum, $(contentDocument.documentElement, contentDocument), classBlacklist, elementBlacklist, idBlacklist);
-
-        // Interpret the first range local_path
-        $range1TargetElement = this.interpretLocalPath(CFIAST.cfiString.range1, 0, $currElement, classBlacklist, elementBlacklist, idBlacklist);
-        $range1TargetElement = this.interpretTextTerminusNode(CFIAST.cfiString.range1.termStep, $range1TargetElement, startElementToInject);
-
-        // Interpret the second range local_path
-        $range2TargetElement = this.interpretLocalPath(CFIAST.cfiString.range2, 0, $currElement, classBlacklist, elementBlacklist, idBlacklist);
-        $range2TargetElement = this.interpretTextTerminusNode(CFIAST.cfiString.range2.termStep, $range2TargetElement, endElementToInject);
-
-        // Return the element that was injected into
-        return {
-            startElement : $range1TargetElement[0],
-            endElement : $range2TargetElement[0]
-        };
-    },
-
-    // Description: This method will return the element or node (say, a text node) that is the final target of the
-    //   the CFI.
-    getTargetElement : function (CFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var decodedCFI = decodeURI(CFI);
-        var CFIAST = cfiParser.parse(decodedCFI);
-        var indirectionNode;
-        var indirectionStepNum;
-        var $currElement;
-
-        // Rationale: Since the correct content document for this CFI is already being passed, we can skip to the beginning
-        //   of the indirection step that referenced the content document.
-        // Note: This assumes that indirection steps and index steps conform to an interface: an object with stepLength, idAssertion
-        indirectionStepNum = this.getFirstIndirectionStepNum(CFIAST);
-        indirectionNode = CFIAST.cfiString.localPath.steps[indirectionStepNum];
-        indirectionNode.type = "indexStep";
-
-        // Interpret the rest of the steps
-        $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, indirectionStepNum, $(contentDocument.documentElement, contentDocument), classBlacklist, elementBlacklist, idBlacklist);
-
-        // Return the element at the end of the CFI
-        return $currElement;
-    },
-
-    // Description: This method will return the start and end elements (along with their char offsets) that are the final targets of the range CFI.
-    getRangeTargetElements : function (rangeCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var decodedCFI = decodeURI(rangeCFI);
-        var CFIAST = cfiParser.parse(decodedCFI);
-        var indirectionNode;
-        var indirectionStepNum;
-        var $currElement;
-        var $range1TargetElement;
-        var $range2TargetElement;
-
-        // Rationale: Since the correct content document for this CFI is already being passed, we can skip to the beginning
-        //   of the indirection step that referenced the content document.
-        // Note: This assumes that indirection steps and index steps conform to an interface: an object with stepLength, idAssertion
-        indirectionStepNum = this.getFirstIndirectionStepNum(CFIAST);
-        indirectionNode = CFIAST.cfiString.localPath.steps[indirectionStepNum];
-        indirectionNode.type = "indexStep";
-
-        // Interpret the rest of the steps
-        $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, indirectionStepNum, $(contentDocument.documentElement, contentDocument), classBlacklist, elementBlacklist, idBlacklist);
-
-        // Interpret first range local_path
-        $range1TargetElement = this.interpretLocalPath(CFIAST.cfiString.range1, 0, $currElement, classBlacklist, elementBlacklist, idBlacklist);
-
-        // Interpret second range local_path
-        $range2TargetElement = this.interpretLocalPath(CFIAST.cfiString.range2, 0, $currElement, classBlacklist, elementBlacklist, idBlacklist);
-
-        // Get the start and end character offsets
-        var startOffset = parseInt(CFIAST.cfiString.range1.termStep.offsetValue) || undefined;
-        var endOffset = parseInt(CFIAST.cfiString.range2.termStep.offsetValue) || undefined;
-
-        // Return the element (and char offsets) at the end of the CFI
-        return {
-            startElement: $range1TargetElement[0],
-            startOffset: startOffset,
-            endElement: $range2TargetElement[0],
-            endOffset: endOffset
-        };
-    },
-
-    // Description: This method allows a "partial" CFI to be used to reference a target in a content document, without a
-    //   package document CFI component.
-    // Arguments: {
-    //     contentDocumentCFI : This is a partial CFI that represents a path in a content document only. This partial must be
-    //        syntactically valid, even though it references a path starting at the top of a content document (which is a CFI that
-    //        that has no defined meaning in the spec.)
-    //     contentDocument : A DOM representation of the content document to which the partial CFI refers.
-    // }
-    // Rationale: This method exists to meet the requirements of the Readium-SDK and should be used with care
-    getTargetElementWithPartialCFI : function (contentDocumentCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var decodedCFI = decodeURI(contentDocumentCFI);
-        var CFIAST = cfiParser.parse(decodedCFI);
-        var indirectionNode;
-
-        // Interpret the path node
-        var $currElement = this.interpretIndexStepNode(CFIAST.cfiString.path, $(contentDocument.documentElement, contentDocument), classBlacklist, elementBlacklist, idBlacklist);
-
-        // Interpret the rest of the steps
-        $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, 0, $currElement, classBlacklist, elementBlacklist, idBlacklist);
-
-        // Return the element at the end of the CFI
-        return $currElement;
-    },
-
-    // Description: This method allows a "partial" CFI to be used, with a content document, to return the text node and offset
-    //    referenced by the partial CFI.
-    // Arguments: {
-    //     contentDocumentCFI : This is a partial CFI that represents a path in a content document only. This partial must be
-    //        syntactically valid, even though it references a path starting at the top of a content document (which is a CFI that
-    //        that has no defined meaning in the spec.)
-    //     contentDocument : A DOM representation of the content document to which the partial CFI refers.
-    // }
-    // Rationale: This method exists to meet the requirements of the Readium-SDK and should be used with care
-    getTextTerminusInfoWithPartialCFI : function (contentDocumentCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var decodedCFI = decodeURI(contentDocumentCFI);
-        var CFIAST = cfiParser.parse(decodedCFI);
-        var indirectionNode;
-        var textOffset;
-
-        // Interpret the path node
-        var $currElement = this.interpretIndexStepNode(CFIAST.cfiString.path, $(contentDocument.documentElement, contentDocument), classBlacklist, elementBlacklist, idBlacklist);
-
-        // Interpret the rest of the steps
-        $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, 0, $currElement, classBlacklist, elementBlacklist, idBlacklist);
-
-        // Return the element at the end of the CFI
-        textOffset = parseInt(CFIAST.cfiString.localPath.termStep.offsetValue);
-        return { textNode : $currElement[0],
-                 textOffset : textOffset
-            };
-    },
-
-    // Description: This function will determine if the input "partial" CFI is expressed as a range
-    isRangeCfi: function (cfi) {
-        var CFIAST = cfiParser.parse(cfi);
-        return CFIAST.cfiString.range1 ? true : false;
-    },
-
-    // Description: This function will determine if the input "partial" CFI has a text terminus step
-    hasTextTerminus: function (cfi) {
-        var CFIAST = cfiParser.parse(cfi);
-        return CFIAST.cfiString.localPath.termStep ? true : false;
-    },
-
-    // ------------------------------------------------------------------------------------ //
-    //  "PRIVATE" HELPERS                                                                   //
-    // ------------------------------------------------------------------------------------ //
-
-    getFirstIndirectionStepNum : function (CFIAST) {
-
-        // Find the first indirection step in the local path; follow it like a regular step, as the step in the content document it
-        //   references is already loaded and has been passed to this method
-        var stepNum = 0;
-        for (stepNum; stepNum <= CFIAST.cfiString.localPath.steps.length - 1 ; stepNum++) {
-
-            nextStepNode = CFIAST.cfiString.localPath.steps[stepNum];
-            if (nextStepNode.type === "indirectionStep") {
-                return stepNum;
-            }
-        }
-    },
-
-    // REFACTORING CANDIDATE: cfiString node and start step num could be merged into one argument, by simply passing the
-    //   starting step... probably a good idea, this would make the meaning of this method clearer.
-    interpretLocalPath : function (localPathNode, startStepNum, $currElement, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var stepNum = startStepNum;
-        var nextStepNode;
-        for (stepNum; stepNum <= localPathNode.steps.length - 1 ; stepNum++) {
-
-            nextStepNode = localPathNode.steps[stepNum];
-            if (nextStepNode.type === "indexStep") {
-
-                $currElement = this.interpretIndexStepNode(nextStepNode, $currElement, classBlacklist, elementBlacklist, idBlacklist);
-            }
-            else if (nextStepNode.type === "indirectionStep") {
-
-                $currElement = this.interpretIndirectionStepNode(nextStepNode, $currElement, classBlacklist, elementBlacklist, idBlacklist);
-            }
-        }
-
-        return $currElement;
-    },
-
-    interpretIndexStepNode : function (indexStepNode, $currElement, classBlacklist, elementBlacklist, idBlacklist) {
-
-        // Check node type; throw error if wrong type
-        if (indexStepNode === undefined || indexStepNode.type !== "indexStep") {
-
-            throw cfiRuntimeErrors.NodeTypeError(indexStepNode, "expected index step node");
-        }
-
-        // Index step
-        var $stepTarget = cfiInstructions.getNextNode(indexStepNode.stepLength, $currElement, classBlacklist, elementBlacklist, idBlacklist);
-
-        // Check the id assertion, if it exists
-        if (indexStepNode.idAssertion) {
-
-            if (!cfiInstructions.targetIdMatchesIdAssertion($stepTarget, indexStepNode.idAssertion)) {
-
-                throw cfiRuntimeErrors.CFIAssertionError(indexStepNode.idAssertion, $stepTarget.attr('id'), "Id assertion failed");
-            }
-        }
-
-        return $stepTarget;
-    },
-
-    interpretIndirectionStepNode : function (indirectionStepNode, $currElement, classBlacklist, elementBlacklist, idBlacklist) {
-
-        // Check node type; throw error if wrong type
-        if (indirectionStepNode === undefined || indirectionStepNode.type !== "indirectionStep") {
-
-            throw cfiRuntimeErrors.NodeTypeError(indirectionStepNode, "expected indirection step node");
-        }
-
-        // Indirection step
-        var $stepTarget = cfiInstructions.followIndirectionStep(
-            indirectionStepNode.stepLength,
-            $currElement,
-            classBlacklist,
-            elementBlacklist);
-
-        // Check the id assertion, if it exists
-        if (indirectionStepNode.idAssertion) {
-
-            if (!cfiInstructions.targetIdMatchesIdAssertion($stepTarget, indirectionStepNode.idAssertion)) {
-
-                throw cfiRuntimeErrors.CFIAssertionError(indirectionStepNode.idAssertion, $stepTarget.attr('id'), "Id assertion failed");
-            }
-        }
-
-        return $stepTarget;
-    },
-
-    // REFACTORING CANDIDATE: The logic here assumes that a user will always want to use this terminus
-    //   to inject content into the found node. This will not always be the case, and different types of interpretation
-    //   are probably desired.
-    interpretTextTerminusNode : function (terminusNode, $currElement, elementToInject) {
-
-        if (terminusNode === undefined || terminusNode.type !== "textTerminus") {
-
-            throw cfiRuntimeErrors.NodeTypeError(terminusNode, "expected text terminus node");
-        }
-
-        var $injectedElement = cfiInstructions.textTermination(
-            $currElement,
-            terminusNode.offsetValue,
-            elementToInject
-            );
-
-        return $injectedElement;
-    },
-
-    searchLocalPathForHref : function ($currElement, $packageDocument, localPathNode, classBlacklist, elementBlacklist, idBlacklist) {
-
-        // Interpret the first local_path node, which is a set of steps and and a terminus condition
-        var stepNum = 0;
-        var nextStepNode;
-        for (stepNum = 0 ; stepNum <= localPathNode.steps.length - 1 ; stepNum++) {
-
-            nextStepNode = localPathNode.steps[stepNum];
-            if (nextStepNode.type === "indexStep") {
-
-                $currElement = this.interpretIndexStepNode(nextStepNode, $currElement, classBlacklist, elementBlacklist, idBlacklist);
-            }
-            else if (nextStepNode.type === "indirectionStep") {
-
-                $currElement = this.interpretIndirectionStepNode(nextStepNode, $currElement, classBlacklist, elementBlacklist, idBlacklist);
-            }
-
-            // Found the content document href referenced by the spine item
-            if ($currElement.is("itemref")) {
-
-                return cfiInstructions.retrieveItemRefHref($currElement, $packageDocument);
-            }
-        }
-
-        return undefined;
-    }
-};
-
-return obj;
-}
-
-
-
-
-
-
-
-
-
-
-if (typeof define == 'function' && typeof define.amd == 'object') {
-    console.log("RequireJS ... cfi_interpreter");
-
-    define('readium_cfi_js/cfi_interpreter',['jquery', 'readium_cfi_js/cfi_parser', './cfi_instructions', './cfi_runtime_errors'],
-    function ($, cfiParser, cfiInstructions, cfiRuntimeErrors) {
-        return init($, cfiParser, cfiInstructions, cfiRuntimeErrors);
-    });
-} else {
-    console.log("!RequireJS ... cfi_interpreter");
-
-    if (!global["EPUBcfi"]) {
-        throw new Error("EPUBcfi not initialised on global object?! (window or this context)");
-    }
-    global.EPUBcfi.Interpreter =
-    init($,
-        global.EPUBcfi.Parser,
-        global.EPUBcfi.CFIInstructions,
-        {
-            NodeTypeError: global.EPUBcfi.NodeTypeError,
-            OutOfRangeError: global.EPUBcfi.OutOfRangeError,
-            TerminusError: global.EPUBcfi.TerminusError,
-            CFIAssertionError: global.EPUBcfi.CFIAssertionError
-        });
-}
-
-})(typeof window !== "undefined" ? window : this);
-
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
-//  
-//  Redistribution and use in source and binary forms, with or without modification, 
-//  are permitted provided that the following conditions are met:
-//  1. Redistributions of source code must retain the above copyright notice, this 
-//  list of conditions and the following disclaimer.
-//  2. Redistributions in binary form must reproduce the above copyright notice, 
-//  this list of conditions and the following disclaimer in the documentation and/or 
-//  other materials provided with the distribution.
-//  3. Neither the name of the organization nor the names of its contributors may be 
-//  used to endorse or promote products derived from this software without specific 
-//  prior written permission.
-
-(function(global) {
-
-var init = function($, cfiInstructions, cfiRuntimeErrors) {
-    
-    if (typeof cfiInstructions === "undefined") {
-        throw new Error("UNDEFINED?! cfiInstructions");
-    }
-    
-    if (typeof cfiRuntimeErrors === "undefined") {
-        throw new Error("UNDEFINED?! cfiRuntimeErrors");
-    }
-    
-var obj = {
-
-    // ------------------------------------------------------------------------------------ //
-    //  "PUBLIC" METHODS (THE API)                                                          //
-    // ------------------------------------------------------------------------------------ //
-
-    generateCharOffsetRangeComponent : function (rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist) {
-        var document = rangeStartElement.ownerDocument;
-
-        var docRange;
-        var commonAncestor;
-        var $rangeStartParent;
-        var $rangeEndParent;
-        var range1OffsetStep;
-        var range1CFI;
-        var range2OffsetStep;
-        var range2CFI;
-        var commonCFIComponent;
-
-        this.validateStartTextNode(rangeStartElement);
-        this.validateStartTextNode(rangeEndElement);
-
-        // Parent element is the same
-        if ($(rangeStartElement).parent()[0] === $(rangeEndElement).parent()[0]) {
-            range1OffsetStep = this.createCFITextNodeStep($(rangeStartElement), startOffset, classBlacklist, elementBlacklist, idBlacklist);
-            range2OffsetStep = this.createCFITextNodeStep($(rangeEndElement), endOffset, classBlacklist, elementBlacklist, idBlacklist);          
-            commonCFIComponent = this.createCFIElementSteps($(rangeStartElement).parent(), "html", classBlacklist, elementBlacklist, idBlacklist);
-            return commonCFIComponent.substring(1, commonCFIComponent.length) + "," + range1OffsetStep + "," + range2OffsetStep;
-        }
-        else {
-
-            // Create a document range to find the common ancestor
-            docRange = document.createRange();
-            docRange.setStart(rangeStartElement, startOffset);
-            docRange.setEnd(rangeEndElement, endOffset);
-            commonAncestor = docRange.commonAncestorContainer;
-
-            // Generate terminating offset and range 1
-            range1OffsetStep = this.createCFITextNodeStep($(rangeStartElement), startOffset, classBlacklist, elementBlacklist, idBlacklist);
-            $rangeStartParent = $(rangeStartElement).parent();
-            if ($rangeStartParent[0] === commonAncestor) {
-              // rangeStartElement is a text child node of the commonAncestor, so it's CFI sub-path is only the text node step:
-              range1CFI = range1OffsetStep;
-            } else {
-              range1CFI = this.createCFIElementSteps($rangeStartParent, commonAncestor, classBlacklist, elementBlacklist, idBlacklist) + range1OffsetStep;
-            }
-
-            // Generate terminating offset and range 2
-            range2OffsetStep = this.createCFITextNodeStep($(rangeEndElement), endOffset, classBlacklist, elementBlacklist, idBlacklist);
-            $rangeEndParent = $(rangeEndElement).parent();
-            if ($rangeEndParent[0] === commonAncestor) {
-              // rangeEndElement is a text child node of the commonAncestor, so it's CFI sub-path is only the text node step:
-              range2CFI = range2OffsetStep;
-            } else {
-              range2CFI = this.createCFIElementSteps($rangeEndParent, commonAncestor, classBlacklist, elementBlacklist, idBlacklist) + range2OffsetStep;
-            }
-
-            // Generate shared component
-            commonCFIComponent = this.createCFIElementSteps($(commonAncestor), "html", classBlacklist, elementBlacklist, idBlacklist);
-
-            // Return the result
-            return commonCFIComponent.substring(1, commonCFIComponent.length) + "," + range1CFI + "," + range2CFI;
-        }
-    },
-
-    generateElementRangeComponent : function (rangeStartElement, rangeEndElement, classBlacklist, elementBlacklist, idBlacklist) {
-        var document = rangeStartElement.ownerDocument;
-
-        var docRange;
-        var commonAncestor;
-        var range1CFI;
-        var range2CFI;
-        var commonCFIComponent;
-
-        this.validateStartElement(rangeStartElement);
-        this.validateStartElement(rangeEndElement);
-
-        if (rangeStartElement === rangeEndElement) {
-            throw new Error("Start and end element cannot be the same for a CFI range");
-        }
-
-        // Create a document range to find the common ancestor
-        docRange = document.createRange();
-        docRange.setStart(rangeStartElement, 0);
-        docRange.setEnd(rangeEndElement, rangeEndElement.childNodes.length);
-        commonAncestor = docRange.commonAncestorContainer;
-
-        // Generate range 1
-        range1CFI = this.createCFIElementSteps($(rangeStartElement), commonAncestor, classBlacklist, elementBlacklist, idBlacklist);
-
-        // Generate range 2
-        range2CFI = this.createCFIElementSteps($(rangeEndElement), commonAncestor, classBlacklist, elementBlacklist, idBlacklist);
-
-        // Generate shared component
-        commonCFIComponent = this.createCFIElementSteps($(commonAncestor), "html", classBlacklist, elementBlacklist, idBlacklist);
-
-        // Return the result
-        return commonCFIComponent.substring(1, commonCFIComponent.length) + "," + range1CFI + "," + range2CFI;
-    },
-
-    generateRangeComponent : function (rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist) {
-        var document = rangeStartElement.ownerDocument;
-
-        if(rangeStartElement.nodeType === Node.ELEMENT_NODE && rangeEndElement.nodeType === Node.ELEMENT_NODE){
-            return this.generateElementRangeComponent(rangeStartElement, rangeEndElement, classBlacklist, elementBlacklist, idBlacklist);
-        } else if(rangeStartElement.nodeType === Node.TEXT_NODE && rangeEndElement.nodeType === Node.TEXT_NODE){
-            return this.generateCharOffsetRangeComponent(rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist);
-        } else {
-            var docRange;
-            var range1CFI;
-            var range1OffsetStep;
-            var range2CFI;
-            var range2OffsetStep;
-            var commonAncestor;
-            var commonCFIComponent;
-
-            // Create a document range to find the common ancestor
-            docRange = document.createRange();
-            docRange.setStart(rangeStartElement, startOffset);
-            docRange.setEnd(rangeEndElement, endOffset);
-            commonAncestor = docRange.commonAncestorContainer;
-
-            if(rangeStartElement.nodeType === Node.ELEMENT_NODE){
-                this.validateStartElement(rangeStartElement);
-                range1CFI = this.createCFIElementSteps($(rangeStartElement), commonAncestor, classBlacklist, elementBlacklist, idBlacklist);
-            } else {
-                this.validateStartTextNode(rangeStartElement);
-                // Generate terminating offset and range 1
-                range1OffsetStep = this.createCFITextNodeStep($(rangeStartElement), startOffset, classBlacklist, elementBlacklist, idBlacklist);
-                if($(rangeStartElement).parent().is(commonAncestor)){
-                    range1CFI = range1OffsetStep;
-                } else {
-                    range1CFI = this.createCFIElementSteps($(rangeStartElement).parent(), commonAncestor, classBlacklist, elementBlacklist, idBlacklist) + range1OffsetStep;    
-                }
-            }
-
-            if(rangeEndElement.nodeType === Node.ELEMENT_NODE){
-                this.validateStartElement(rangeEndElement);
-                range2CFI = this.createCFIElementSteps($(rangeEndElement), commonAncestor, classBlacklist, elementBlacklist, idBlacklist);
-            } else {
-                this.validateStartTextNode(rangeEndElement);
-                // Generate terminating offset and range 2
-                range2OffsetStep = this.createCFITextNodeStep($(rangeEndElement), endOffset, classBlacklist, elementBlacklist, idBlacklist);
-                if($(rangeEndElement).parent().is(commonAncestor)){
-                    range2CFI = range2OffsetStep;
-                } else {
-                    range2CFI = this.createCFIElementSteps($(rangeEndElement).parent(), commonAncestor, classBlacklist, elementBlacklist, idBlacklist) + range2OffsetStep;    
-                }                
-            }
-
-            // Generate shared component
-            commonCFIComponent = this.createCFIElementSteps($(commonAncestor), "html", classBlacklist, elementBlacklist, idBlacklist);
-
-            // Return the result
-            return commonCFIComponent.substring(1, commonCFIComponent.length) + "," + range1CFI + "," + range2CFI;
-        }
-    },
-
-    // Description: Generates a character offset CFI 
-    // Arguments: The text node that contains the offset referenced by the cfi, the offset value, the name of the 
-    //   content document that contains the text node, the package document for this EPUB.
-    generateCharacterOffsetCFIComponent : function (startTextNode, characterOffset, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var textNodeStep;
-        var contentDocCFI;
-        var $itemRefStartNode;
-        var packageDocCFI;
-
-        this.validateStartTextNode(startTextNode, characterOffset);
-
-        // Create the text node step
-        textNodeStep = this.createCFITextNodeStep($(startTextNode), characterOffset, classBlacklist, elementBlacklist, idBlacklist);
-
-        // Call the recursive method to create all the steps up to the head element of the content document (the "html" element)
-        contentDocCFI = this.createCFIElementSteps($(startTextNode).parent(), "html", classBlacklist, elementBlacklist, idBlacklist) + textNodeStep;
-        return contentDocCFI.substring(1, contentDocCFI.length);
-    },
-
-    generateElementCFIComponent : function (startElement, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var contentDocCFI;
-        var $itemRefStartNode;
-        var packageDocCFI;
-
-        this.validateStartElement(startElement);
-
-        // Call the recursive method to create all the steps up to the head element of the content document (the "html" element)
-        contentDocCFI = this.createCFIElementSteps($(startElement), "html", classBlacklist, elementBlacklist, idBlacklist);
-
-        // Remove the ! 
-        return contentDocCFI.substring(1, contentDocCFI.length);
-    },
-
-    generatePackageDocumentCFIComponent : function (contentDocumentName, packageDocument, classBlacklist, elementBlacklist, idBlacklist) {
-
-        this.validateContentDocumentName(contentDocumentName);
-        this.validatePackageDocument(packageDocument, contentDocumentName);
-
-        // Get the start node (itemref element) that references the content document
-        $itemRefStartNode = $("itemref[idref='" + contentDocumentName + "']", $(packageDocument));
-
-        // Create the steps up to the top element of the package document (the "package" element)
-        packageDocCFIComponent = this.createCFIElementSteps($itemRefStartNode, "package", classBlacklist, elementBlacklist, idBlacklist);
-
-        // Append an !; this assumes that a CFI content document CFI component will be appended at some point
-        return packageDocCFIComponent + "!";
-    },
-
-    generatePackageDocumentCFIComponentWithSpineIndex : function (spineIndex, packageDocument, classBlacklist, elementBlacklist, idBlacklist) {
-
-        // Get the start node (itemref element) that references the content document
-        $itemRefStartNode = $($("spine", packageDocument).children()[spineIndex]);
-
-        // Create the steps up to the top element of the package document (the "package" element)
-        packageDocCFIComponent = this.createCFIElementSteps($itemRefStartNode, "package", classBlacklist, elementBlacklist, idBlacklist);
-
-        // Append an !; this assumes that a CFI content document CFI component will be appended at some point
-        return packageDocCFIComponent + "!";
-    },
-
-    generateCompleteCFI : function (packageDocumentCFIComponent, contentDocumentCFIComponent) {
-
-        return "epubcfi(" + packageDocumentCFIComponent + contentDocumentCFIComponent + ")";  
-    },
-
-    // ------------------------------------------------------------------------------------ //
-    //  "PRIVATE" HELPERS                                                                   //
-    // ------------------------------------------------------------------------------------ //
-
-    validateStartTextNode : function (startTextNode, characterOffset) {
-        
-        // Check that the text node to start from IS a text node
-        if (!startTextNode) {
-            throw new cfiRuntimeErrors.NodeTypeError(startTextNode, "Cannot generate a character offset from a starting point that is not a text node");
-        } else if (startTextNode.nodeType != 3) {
-            throw new cfiRuntimeErrors.NodeTypeError(startTextNode, "Cannot generate a character offset from a starting point that is not a text node");
-        }
-
-        // Check that the character offset is within a valid range for the text node supplied
-        if (characterOffset < 0) {
-            throw new cfiRuntimeErrors.OutOfRangeError(characterOffset, 0, "Character offset cannot be less than 0");
-        }
-        else if (characterOffset > startTextNode.nodeValue.length) {
-            throw new cfiRuntimeErrors.OutOfRangeError(characterOffset, startTextNode.nodeValue.length - 1, "character offset cannot be greater than the length of the text node");
-        }
-    },
-
-    validateStartElement : function (startElement) {
-
-        if (!startElement) {
-            throw new cfiRuntimeErrors.NodeTypeError(startElement, "CFI target element is undefined");
-        }
-
-        if (!(startElement.nodeType && startElement.nodeType === 1)) {
-            throw new cfiRuntimeErrors.NodeTypeError(startElement, "CFI target element is not an HTML element");
-        }
-    },
-
-    validateContentDocumentName : function (contentDocumentName) {
-
-        // Check that the idref for the content document has been provided
-        if (!contentDocumentName) {
-            throw new Error("The idref for the content document, as found in the spine, must be supplied");
-        }
-    },
-
-    validatePackageDocument : function (packageDocument, contentDocumentName) {
-        
-        // Check that the package document is non-empty and contains an itemref element for the supplied idref
-        if (!packageDocument) {
-            throw new Error("A package document must be supplied to generate a CFI");
-        }
-        else if ($($("itemref[idref='" + contentDocumentName + "']", packageDocument)[0]).length === 0) {
-            throw new Error("The idref of the content document could not be found in the spine");
-        }
-    },
-
-    // Description: Creates a CFI terminating step to a text node, with a character offset
-    // REFACTORING CANDIDATE: Some of the parts of this method could be refactored into their own methods
-    createCFITextNodeStep : function ($startTextNode, characterOffset, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var $parentNode;
-        var $contentsExcludingMarkers;
-        var CFIIndex;
-        var indexOfTextNode;
-        var preAssertion;
-        var preAssertionStartIndex;
-        var textLength;
-        var postAssertion;
-        var postAssertionEndIndex;
-
-        // Find text node position in the set of child elements, ignoring any blacklisted elements 
-        $parentNode = $startTextNode.parent();
-        $contentsExcludingMarkers = cfiInstructions.applyBlacklist($parentNode.contents(), classBlacklist, elementBlacklist, idBlacklist);
-
-        // Find the text node index in the parent list, inferring nodes that were originally a single text node
-        var prevNodeWasTextNode;
-        var indexOfFirstInSequence;
-        var textNodeOnlyIndex = 0;
-        var characterOffsetSinceUnsplit = 0;
-        var finalCharacterOffsetInSequence = 0;
-        $.each($contentsExcludingMarkers, 
-            function (index) {
-
-            // If this is a text node, check if it matches and return the current index
-            if (this.nodeType === Node.TEXT_NODE || !prevNodeWasTextNode) {
-
-                if (this.nodeType === Node.TEXT_NODE) {
-                    if (this === $startTextNode[0]) {
-
-                        // Set index as the first in the adjacent sequence of text nodes, or as the index of the current node if this 
-                        //   node is a standard one sandwiched between two element nodes. 
-                        if (prevNodeWasTextNode) {
-                            indexOfTextNode = indexOfFirstInSequence;
-                            finalCharacterOffsetInSequence = characterOffsetSinceUnsplit;
-                        } else {
-                            indexOfTextNode = textNodeOnlyIndex;
-                        }
-                        
-                        // Break out of .each loop
-                        return false; 
-                    }
-
-                    // Save this index as the first in sequence of adjacent text nodes, if it is not already set by this point
-                    prevNodeWasTextNode = true;
-                    characterOffsetSinceUnsplit = characterOffsetSinceUnsplit + this.length;
-                    if (indexOfFirstInSequence === undefined) {
-                        indexOfFirstInSequence = textNodeOnlyIndex;
-                        textNodeOnlyIndex = textNodeOnlyIndex + 1;
-                    }
-                } else if (this.nodeType === Node.ELEMENT_NODE) {
-                    textNodeOnlyIndex = textNodeOnlyIndex + 1;
-                } else if (this.nodeType === Node.COMMENT_NODE) {
-                    prevNodeWasTextNode = true;
-                    characterOffsetSinceUnsplit = characterOffsetSinceUnsplit + this.length + 7; // 7 is the size of the html comment tag <!--[comment]-->
-                    if (indexOfFirstInSequence === undefined) {
-                        indexOfFirstInSequence = textNodeOnlyIndex;
-                    }
-                } else if (this.nodeType === Node.PROCESSING_INSTRUCTION_NODE) {
-                    prevNodeWasTextNode = true;
-                    characterOffsetSinceUnsplit = characterOffsetSinceUnsplit + this.data.length + this.target.length + 5; // 5 is the size of the instruction processing tag including the required space between the target and the data <?[target] [data]?>
-                    if (indexOfFirstInSequence === undefined) {
-                        indexOfFirstInSequence = textNodeOnlyIndex;
-                    }
-                }
-            }
-            // This node is not a text node
-            else if (this.nodeType === Node.ELEMENT_NODE) {
-                prevNodeWasTextNode = false;
-                indexOfFirstInSequence = undefined;
-                characterOffsetSinceUnsplit  = 0;
-            } else if (this.nodeType === Node.COMMENT_NODE) {
-                characterOffsetSinceUnsplit = characterOffsetSinceUnsplit + this.length + 7; // <!--[comment]-->
-            } else if (this.nodeType === Node.PROCESSING_INSTRUCTION_NODE) {
-                characterOffsetSinceUnsplit = characterOffsetSinceUnsplit + this.data.length + this.target.length + 5; // <?[target] [data]?>
-            }
-        });
-
-        // Convert the text node index to a CFI odd-integer representation
-        CFIIndex = (indexOfTextNode * 2) + 1;
-
-        // TODO: text assertions are not in the grammar yet, I think, or they're just causing problems. This has
-        //   been temporarily removed. 
-
-        // Add pre- and post- text assertions
-        // preAssertionStartIndex = (characterOffset - 3 >= 0) ? characterOffset - 3 : 0;
-        // preAssertion = $startTextNode[0].nodeValue.substring(preAssertionStartIndex, characterOffset);
-
-        // textLength = $startTextNode[0].nodeValue.length;
-        // postAssertionEndIndex = (characterOffset + 3 <= textLength) ? characterOffset + 3 : textLength;
-        // postAssertion = $startTextNode[0].nodeValue.substring(characterOffset, postAssertionEndIndex);
-
-        // Gotta infer the correct character offset, as well
-
-        // Return the constructed CFI text node step
-        return "/" + CFIIndex + ":" + (finalCharacterOffsetInSequence + characterOffset);
-         // + "[" + preAssertion + "," + postAssertion + "]";
-    },
-
-    createCFIElementSteps : function ($currNode, topLevelElement, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var $blacklistExcluded;
-        var $parentNode;
-        var currNodePosition;
-        var CFIPosition;
-        var idAssertion;
-        var elementStep; 
-
-
-
-        // per https://github.com/readium/readium-cfi-js/issues/28
-        // if the currentNode is the same as top level element, we're looking at a text node 
-        // that's a direct child of "topLevelElement" so we don't need to include it in the element step.
-        if ($currNode[0] === topLevelElement) {
-            return "";
-        }
-
-        // Find position of current node in parent list
-        $blacklistExcluded = cfiInstructions.applyBlacklist($currNode.parent().children(), classBlacklist, elementBlacklist, idBlacklist);
-        $.each($blacklistExcluded, 
-            function (index, value) {
-
-                if (this === $currNode[0]) {
-
-                    currNodePosition = index;
-
-                    // Break loop
-                    return false;
-                }
-        });
-
-        // Convert position to the CFI even-integer representation
-        CFIPosition = (currNodePosition + 1) * 2;
-
-        // Create CFI step with id assertion, if the element has an id
-        if ($currNode.attr("id")) {
-            elementStep = "/" + CFIPosition + "[" + $currNode.attr("id") + "]";
-        }
-        else {
-            elementStep = "/" + CFIPosition;
-        }
-
-        // If a parent is an html element return the (last) step for this content document, otherwise, continue.
-        //   Also need to check if the current node is the top-level element. This can occur if the start node is also the
-        //   top level element.
-        $parentNode = $currNode.parent();
-        if ($parentNode.is(topLevelElement) || $currNode.is(topLevelElement)) {
-            
-            // If the top level node is a type from which an indirection step, add an indirection step character (!)
-            // REFACTORING CANDIDATE: It is possible that this should be changed to: if (topLevelElement = 'package') do
-            //   not return an indirection character. Every other type of top-level element may require an indirection
-            //   step to navigate to, thus requiring that ! is always prepended. 
-            if (topLevelElement === 'html') {
-                return "!" + elementStep;
-            }
-            else {
-                return elementStep;
-            }
-        }
-        else {
-            return this.createCFIElementSteps($parentNode, topLevelElement, classBlacklist, elementBlacklist, idBlacklist) + elementStep;
-        }
-    }
-};
-
-return obj;
-}
-
-
-
-
-
-
-
-if (typeof define == 'function' && typeof define.amd == 'object') {
-    console.log("RequireJS ... cfi_generator");
-    
-    define('readium_cfi_js/cfi_generator',['jquery', './cfi_instructions', './cfi_runtime_errors'],
-    function ($, cfiInstructions, cfiRuntimeErrors) {
-        return init($, cfiInstructions, cfiRuntimeErrors);
-    });
-} else {
-    console.log("!RequireJS ... cfi_generator");
-    
-    if (!global["EPUBcfi"]) {
-        throw new Error("EPUBcfi not initialised on global object?! (window or this context)");
-    }
-    global.EPUBcfi.Generator = 
-    init($,
-        global.EPUBcfi.CFIInstructions,
-        {
-            NodeTypeError: global.EPUBcfi.NodeTypeError,
-            OutOfRangeError: global.EPUBcfi.OutOfRangeError,
-            TerminusError: global.EPUBcfi.TerminusError,
-            CFIAssertionError: global.EPUBcfi.CFIAssertionError
-        });
-}
-
-})(typeof window !== "undefined" ? window : this);
-
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
-//
-//  Redistribution and use in source and binary forms, with or without modification,
-//  are permitted provided that the following conditions are met:
-//  1. Redistributions of source code must retain the above copyright notice, this
-//  list of conditions and the following disclaimer.
-//  2. Redistributions in binary form must reproduce the above copyright notice,
-//  this list of conditions and the following disclaimer in the documentation and/or
-//  other materials provided with the distribution.
-//  3. Neither the name of the organization nor the names of its contributors may be
-//  used to endorse or promote products derived from this software without specific
-//  prior written permission.
-
-(function(global) {
-
-var init = function(cfiParser, cfiInterpreter, cfiInstructions, cfiRuntimeErrors, cfiGenerator) {
-
-    if (typeof cfiParser === "undefined") {
-        throw new Error("UNDEFINED?! cfiParser");
-    }
-
-    if (typeof cfiInterpreter === "undefined") {
-        throw new Error("UNDEFINED?! cfiInterpreter");
-    }
-
-    if (typeof cfiInstructions === "undefined") {
-        throw new Error("UNDEFINED?! cfiInstructions");
-    }
-
-    if (typeof cfiRuntimeErrors === "undefined") {
-        throw new Error("UNDEFINED?! cfiRuntimeErrors");
-    }
-
-    if (typeof cfiGenerator === "undefined") {
-        throw new Error("UNDEFINED?! cfiGenerator");
-    }
-
-    var obj = {
-
-        getContentDocHref : function (CFI, packageDocument) {
-            return cfiInterpreter.getContentDocHref(CFI, packageDocument);
-        },
-        injectElement : function (CFI, contentDocument, elementToInject, classBlacklist, elementBlacklist, idBlacklist) {
-            return cfiInterpreter.injectElement(CFI, contentDocument, elementToInject, classBlacklist, elementBlacklist, idBlacklist);
-        },
-        getTargetElement : function (CFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
-            return cfiInterpreter.getTargetElement(CFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist);
-        },
-        getTargetElementWithPartialCFI : function (contentDocumentCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
-            return cfiInterpreter.getTargetElementWithPartialCFI(contentDocumentCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist);
-        },
-        injectRangeElements : function (rangeCFI, contentDocument, startElementToInject, endElementToInject, classBlacklist, elementBlacklist, idBlacklist) {
-            return cfiInterpreter.injectRangeElements(rangeCFI, contentDocument, startElementToInject, endElementToInject, classBlacklist, elementBlacklist, idBlacklist);
-        },
-        getRangeTargetElements : function (rangeCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
-            return cfiInterpreter.getRangeTargetElements(rangeCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist);
-        },
-        isRangeCfi : function (cfi) {
-            return cfiInterpreter.isRangeCfi(cfi);
-        },
-        hasTextTerminus: function(cfi) {
-            return cfiInterpreter.hasTextTerminus(cfi);
-        },
-        getTextTerminusInfoWithPartialCFI : function (contentDocumentCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
-            return cfiInterpreter.getTextTerminusInfoWithPartialCFI(contentDocumentCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist);
-        },
-        generateCharacterOffsetCFIComponent : function (startTextNode, characterOffset, classBlacklist, elementBlacklist, idBlacklist) {
-            return cfiGenerator.generateCharacterOffsetCFIComponent(startTextNode, characterOffset, classBlacklist, elementBlacklist, idBlacklist);
-        },
-        generateElementCFIComponent : function (startElement, classBlacklist, elementBlacklist, idBlacklist) {
-            return cfiGenerator.generateElementCFIComponent(startElement, classBlacklist, elementBlacklist, idBlacklist);
-        },
-        generatePackageDocumentCFIComponent : function (contentDocumentName, packageDocument, classBlacklist, elementBlacklist, idBlacklist) {
-            return cfiGenerator.generatePackageDocumentCFIComponent(contentDocumentName, packageDocument, classBlacklist, elementBlacklist, idBlacklist);
-        },
-        generatePackageDocumentCFIComponentWithSpineIndex : function (spineIndex, packageDocument, classBlacklist, elementBlacklist, idBlacklist) {
-            return cfiGenerator.generatePackageDocumentCFIComponentWithSpineIndex(spineIndex, packageDocument, classBlacklist, elementBlacklist, idBlacklist);
-        },
-        generateCompleteCFI : function (packageDocumentCFIComponent, contentDocumentCFIComponent) {
-            return cfiGenerator.generateCompleteCFI(packageDocumentCFIComponent, contentDocumentCFIComponent);
-        },
-        generateCharOffsetRangeComponent : function (rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist) {
-            return cfiGenerator.generateCharOffsetRangeComponent(rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist);
-        },
-        generateElementRangeComponent : function (rangeStartElement, rangeEndElement, classBlacklist, elementBlacklist, idBlacklist) {
-            return cfiGenerator.generateElementRangeComponent(rangeStartElement, rangeEndElement, classBlacklist, elementBlacklist, idBlacklist);
-        },
-        generateRangeComponent : function (rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist) {
-            return cfiGenerator.generateRangeComponent(rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist);
-        },
-        injectElementAtOffset : function ($textNodeList, textOffset, elementToInject) {
-            return cfiInstructions.injectCFIMarkerIntoText($textNodeList, textOffset, elementToInject);
-        }
-    };
-
-
-    // TODO: remove global (should not be necessary in properly-configured RequireJS build!)
-    // ...but we leave it here as a "legacy" mechanism to access the CFI lib functionality
-    // -----
-    obj.CFIInstructions = cfiInstructions;
-    obj.Parser = cfiParser;
-    obj.Interpreter = cfiInterpreter;
-    obj.Generator = cfiGenerator;
-
-    obj.NodeTypeError= cfiRuntimeErrors.NodeTypeError;
-    obj.OutOfRangeError = cfiRuntimeErrors.OutOfRangeError;
-    obj.TerminusError = cfiRuntimeErrors.TerminusError;
-    obj.CFIAssertionError = cfiRuntimeErrors.CFIAssertionError;
-
-    global.EPUBcfi = obj;
-    // -----
-
-    console.log("#######################################");
-    // console.log(global.EPUBcfi);
-    // console.log("#######################################");
-
-    return obj;
-}
-
-
-
-
-
-
-if (typeof define == 'function' && typeof define.amd == 'object') {
-    console.log("RequireJS ... cfi_API");
-
-    define('readium_cfi_js/cfi_API',['readium_cfi_js/cfi_parser', './cfi_interpreter', './cfi_instructions', './cfi_runtime_errors', './cfi_generator'],
-    function (cfiParser, cfiInterpreter, cfiInstructions, cfiRuntimeErrors, cfiGenerator) {
-
-        return init(cfiParser, cfiInterpreter, cfiInstructions, cfiRuntimeErrors, cfiGenerator);
-    });
-} else {
-    console.log("!RequireJS ... cfi_API");
-
-    if (!global["EPUBcfi"]) {
-        throw new Error("EPUBcfi not initialised on global object?! (window or this context)");
-    }
-
-    init(global.EPUBcfi.Parser,
-        global.EPUBcfi.Interpreter,
-        global.EPUBcfi.CFIInstructions,
-        {
-            NodeTypeError: global.EPUBcfi.NodeTypeError,
-            OutOfRangeError: global.EPUBcfi.OutOfRangeError,
-            TerminusError: global.EPUBcfi.TerminusError,
-            CFIAssertionError: global.EPUBcfi.CFIAssertionError
-        },
-        global.EPUBcfi.Generator);
-}
-
-})(typeof window !== "undefined" ? window : this);
-
-define('readium_cfi_js', ['readium_cfi_js/cfi_API'], function (main) { return main; });
-
 //     Underscore.js 1.8.3
 //     http://underscorejs.org
 //     (c) 2009-2015 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -14953,6 +13343,1643 @@ define('readium_cfi_js', ['readium_cfi_js/cfi_API'], function (main) { return ma
     });
   }
 }.call(this));
+
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  
+//  Redistribution and use in source and binary forms, with or without modification, 
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this 
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice, 
+//  this list of conditions and the following disclaimer in the documentation and/or 
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be 
+//  used to endorse or promote products derived from this software without specific 
+//  prior written permission.
+
+(function(global) {
+
+
+// Description: This is a set of runtime errors that the CFI interpreter can throw. 
+// Rationale: These error types extend the basic javascript error object so error things like the stack trace are 
+//   included with the runtime errors. 
+
+// REFACTORING CANDIDATE: This type of error may not be required in the long run. The parser should catch any syntax errors, 
+//   provided it is error-free, and as such, the AST should never really have any node type errors, which are essentially errors
+//   in the structure of the AST. This error should probably be refactored out when the grammar and interpreter are more stable.
+
+var obj = {
+
+NodeTypeError: function (node, message) {
+
+    function NodeTypeError () {
+
+        this.node = node;
+    }
+
+    NodeTypeError.prototype = new Error(message);
+    NodeTypeError.constructor = NodeTypeError;
+
+    return new NodeTypeError();
+},
+
+// REFACTORING CANDIDATE: Might make sense to include some more specifics about the out-of-rangeyness.
+OutOfRangeError: function (targetIndex, maxIndex, message) {
+
+    function OutOfRangeError () {
+
+        this.targetIndex = targetIndex;
+        this.maxIndex = maxIndex;
+    }
+
+    OutOfRangeError.prototype = new Error(message);
+    OutOfRangeError.constructor = OutOfRangeError()
+
+    return new OutOfRangeError();
+},
+
+// REFACTORING CANDIDATE: This is a bit too general to be useful. When I have a better understanding of the type of errors
+//   that can occur with the various terminus conditions, it'll make more sense to revisit this. 
+TerminusError: function (terminusType, terminusCondition, message) {
+
+    function TerminusError () {
+
+        this.terminusType = terminusType;
+        this.terminusCondition = terminusCondition;
+    }
+
+    TerminusError.prototype = new Error(message);
+    TerminusError.constructor = TerminusError();
+
+    return new TerminusError();
+},
+
+CFIAssertionError: function (expectedAssertion, targetElementAssertion, message) {
+
+    function CFIAssertionError () {
+
+        this.expectedAssertion = expectedAssertion;
+        this.targetElementAssertion = targetElementAssertion;
+    }
+
+    CFIAssertionError.prototype = new Error(message);
+    CFIAssertionError.constructor = CFIAssertionError();
+
+    return new CFIAssertionError();
+}
+
+};
+
+
+
+
+
+
+
+
+
+
+if (typeof define == 'function' && typeof define.amd == 'object') {
+    console.log("RequireJS ... cfi_errors");
+    
+    define('readium_cfi_js/cfi_runtime_errors',[],
+    function () {
+        return obj;
+    });
+} else {
+    console.log("!RequireJS ... cfi_errors");
+    
+    if (!global["EPUBcfi"]) {
+        throw new Error("EPUBcfi not initialised on global object?! (window or this context)");
+    }
+    
+    global.EPUBcfi.NodeTypeError = obj.NodeTypeError;
+    global.EPUBcfi.OutOfRangeError = obj.OutOfRangeError;
+    global.EPUBcfi.TerminusError = obj.TerminusError;
+    global.EPUBcfi.CFIAssertionError = obj.CFIAssertionError;
+}
+
+})(typeof window !== "undefined" ? window : this);
+
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  
+//  Redistribution and use in source and binary forms, with or without modification, 
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this 
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice, 
+//  this list of conditions and the following disclaimer in the documentation and/or 
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be 
+//  used to endorse or promote products derived from this software without specific 
+//  prior written permission.
+
+(function(global) {
+
+var init = function($, _, cfiRuntimeErrors) {
+    
+var obj = {
+
+// Description: This model contains the implementation for "instructions" included in the EPUB CFI domain specific language (DSL). 
+//   Lexing and parsing a CFI produces a set of executable instructions for processing a CFI (represented in the AST). 
+//   This object contains a set of functions that implement each of the executable instructions in the AST. 
+
+    // ------------------------------------------------------------------------------------ //
+    //  "PUBLIC" METHODS (THE API)                                                          //
+    // ------------------------------------------------------------------------------------ //
+
+    // Description: Follows a step
+    // Rationale: The use of children() is important here, as this jQuery method returns a tree of xml nodes, EXCLUDING
+    //   CDATA and text nodes. When we index into the set of child elements, we are assuming that text nodes have been 
+    //   excluded.
+    // REFACTORING CANDIDATE: This should be called "followIndexStep"
+    getNextNode : function (CFIStepValue, $currNode, classBlacklist, elementBlacklist, idBlacklist) {
+
+        // Find the jquery index for the current node
+        var $targetNode;
+        if (CFIStepValue % 2 == 0) {
+
+            $targetNode = this.elementNodeStep(CFIStepValue, $currNode, classBlacklist, elementBlacklist, idBlacklist);
+        }
+        else {
+
+            $targetNode = this.inferTargetTextNode(CFIStepValue, $currNode, classBlacklist, elementBlacklist, idBlacklist);
+        }
+
+        return $targetNode;
+    },
+
+    // Description: This instruction executes an indirection step, where a resource is retrieved using a 
+    //   link contained on a attribute of the target element. The attribute that contains the link differs
+    //   depending on the target. 
+    // Note: Iframe indirection will (should) fail if the iframe is not from the same domain as its containing script due to 
+    //   the cross origin security policy
+    followIndirectionStep : function (CFIStepValue, $currNode, classBlacklist, elementBlacklist, idBlacklist) {
+
+        var that = this;
+        var $contentDocument; 
+        var $blacklistExcluded;
+        var $startElement;
+        var $targetNode;
+
+        // TODO: This check must be expanded to all the different types of indirection step
+        // Only expects iframes, at the moment
+        if ($currNode === undefined || !this._matchesLocalNameOrElement($currNode[0], 'iframe')) {
+
+            throw cfiRuntimeErrors.NodeTypeError($currNode, "expected an iframe element");
+        }
+
+        // Check node type; only iframe indirection is handled, at the moment
+        if (this._matchesLocalNameOrElement($currNode[0], 'iframe')) {
+
+            // Get content
+            $contentDocument = $currNode.contents();
+
+            // Go to the first XHTML element, which will be the first child of the top-level document object
+            $blacklistExcluded = this.applyBlacklist($contentDocument.children(), classBlacklist, elementBlacklist, idBlacklist);
+            $startElement = $($blacklistExcluded[0]);
+
+            // Follow an index step
+            $targetNode = this.getNextNode(CFIStepValue, $startElement, classBlacklist, elementBlacklist, idBlacklist);
+
+            // Return that shit!
+            return $targetNode; 
+        }
+
+        // TODO: Other types of indirection
+        // TODO: $targetNode.is("embed")) : src
+        // TODO: ($targetNode.is("object")) : data
+        // TODO: ($targetNode.is("image") || $targetNode.is("xlink:href")) : xlink:href
+    },
+
+    // Description: Injects an element at the specified text node
+    // Arguments: a cfi text termination string, a jquery object to the current node
+    // REFACTORING CANDIDATE: Rename this to indicate that it injects into a text terminus
+    textTermination : function ($currNode, textOffset, elementToInject) {
+
+        var $injectedElement;
+        // Get the first node, this should be a text node
+        if ($currNode === undefined) {
+
+            throw cfiRuntimeErrors.NodeTypeError($currNode, "expected a terminating node, or node list");
+        } 
+        else if ($currNode.length === 0) {
+
+            throw cfiRuntimeErrors.TerminusError("Text", "Text offset:" + textOffset, "no nodes found for termination condition");
+        }
+
+        $injectedElement = this.injectCFIMarkerIntoText($currNode, textOffset, elementToInject);
+        return $injectedElement;
+    },
+
+    // Description: Checks that the id assertion for the node target matches that on 
+    //   the found node. 
+    targetIdMatchesIdAssertion : function ($foundNode, idAssertion) {
+
+        if ($foundNode.attr("id") === idAssertion) {
+
+            return true;
+        }
+        else {
+
+            return false;
+        }
+    },
+
+    // ------------------------------------------------------------------------------------ //
+    //  "PRIVATE" HELPERS                                                                   //
+    // ------------------------------------------------------------------------------------ //
+
+    // Description: Step reference for xml element node. Expected that CFIStepValue is an even integer
+    elementNodeStep : function (CFIStepValue, $currNode, classBlacklist, elementBlacklist, idBlacklist) {
+
+        var $targetNode;
+        var $blacklistExcluded;
+        var numElements;
+        var jqueryTargetNodeIndex = (CFIStepValue / 2) - 1;
+
+        $blacklistExcluded = this.applyBlacklist($currNode.children(), classBlacklist, elementBlacklist, idBlacklist);
+        numElements = $blacklistExcluded.length;
+
+        if (this.indexOutOfRange(jqueryTargetNodeIndex, numElements)) {
+
+            throw cfiRuntimeErrors.OutOfRangeError(jqueryTargetNodeIndex, numElements - 1, "");
+        }
+
+        $targetNode = $($blacklistExcluded[jqueryTargetNodeIndex]);
+        return $targetNode;
+    },
+
+    retrieveItemRefHref : function ($itemRefElement, $packageDocument) {
+
+        return $("#" + $itemRefElement.attr("idref"), $packageDocument).attr("href");
+    },
+
+    indexOutOfRange : function (targetIndex, numChildElements) {
+
+        return (targetIndex > numChildElements - 1) ? true : false;
+    },
+
+    // Rationale: In order to inject an element into a specific position, access to the parent object 
+    //   is required. This is obtained with the jquery parent() method. An alternative would be to 
+    //   pass in the parent with a filtered list containing only children that are part of the target text node.
+    injectCFIMarkerIntoText : function ($textNodeList, textOffset, elementToInject) {
+        var document = $textNodeList[0].ownerDocument;
+
+        var nodeNum;
+        var currNodeLength;
+        var currTextPosition = 0;
+        var nodeOffset;
+        var originalText;
+        var $injectedNode;
+        var $newTextNode;
+        // The iteration counter may be incorrect here (should be $textNodeList.length - 1 ??)
+        for (nodeNum = 0; nodeNum <= $textNodeList.length; nodeNum++) {
+
+            if ($textNodeList[nodeNum].nodeType === Node.TEXT_NODE) {
+
+                currNodeMaxIndex = $textNodeList[nodeNum].nodeValue.length  + currTextPosition;
+                nodeOffset = textOffset - currTextPosition;
+
+                if (currNodeMaxIndex > textOffset) {
+
+                    // This node is going to be split and the components re-inserted
+                    originalText = $textNodeList[nodeNum].nodeValue;    
+
+                    // Before part
+                    $textNodeList[nodeNum].nodeValue = originalText.slice(0, nodeOffset);
+
+                    // Injected element
+                    $injectedNode = $(elementToInject).insertAfter($textNodeList.eq(nodeNum));
+
+                    // After part
+                    $newTextNode = $(document.createTextNode(originalText.slice(nodeOffset, originalText.length)));
+                    $($newTextNode).insertAfter($injectedNode);
+
+                    return $injectedNode;
+                } else if (currNodeMaxIndex == textOffset){
+                    $injectedNode = $(elementToInject).insertAfter($textNodeList.eq(nodeNum));
+                    return $injectedNode;
+                }
+                else {
+                    currTextPosition = currNodeMaxIndex;
+                }
+            } else if($textNodeList[nodeNum].nodeType === Node.COMMENT_NODE){
+                currNodeMaxIndex = $textNodeList[nodeNum].nodeValue.length + 7 + currTextPosition;
+                currTextPosition = currNodeMaxIndex;
+            } else if($textNodeList[nodeNum].nodeType === Node.PROCESSING_INSTRUCTION_NODE){
+                currNodeMaxIndex = $textNodeList[nodeNum].nodeValue.length + $textNodeList[nodeNum].target.length + 5
+                currTextPosition = currNodeMaxIndex;
+            }
+        }
+
+        throw cfiRuntimeErrors.TerminusError("Text", "Text offset:" + textOffset, "The offset exceeded the length of the text");
+    },
+
+    // Rationale: In order to inject an element into a specific position, access to the parent object 
+    //   is required. This is obtained with the jquery parent() method. An alternative would be to 
+    //   pass in the parent with a filtered list containing only children that are part of the target text node.
+
+    // Description: This method finds a target text node and then injects an element into the appropriate node
+    // Rationale: The possibility that cfi marker elements have been injected into a text node at some point previous to 
+    //   this method being called (and thus splitting the original text node into two separate text nodes) necessitates that
+    //   the set of nodes that compromised the original target text node are inferred and returned.
+    // Notes: Passed a current node. This node should have a set of elements under it. This will include at least one text node, 
+    //   element nodes (maybe), or possibly a mix. 
+    // REFACTORING CANDIDATE: This method is pretty long (and confusing). Worth investigating to see if it can be refactored into something clearer.
+    inferTargetTextNode : function (CFIStepValue, $currNode, classBlacklist, elementBlacklist, idBlacklist) {
+        
+        var $elementsWithoutMarkers;
+        var currLogicalTextNodeIndex;
+        var targetLogicalTextNodeIndex;
+        var nodeNum;
+        var $targetTextNodeList;
+        var prevNodeWasTextNode;
+
+        // Remove any cfi marker elements from the set of elements. 
+        // Rationale: A filtering function is used, as simply using a class selector with jquery appears to 
+        //   result in behaviour where text nodes are also filtered out, along with the class element being filtered.
+        $elementsWithoutMarkers = this.applyBlacklist($currNode.contents(), classBlacklist, elementBlacklist, idBlacklist);
+
+        // Convert CFIStepValue to logical index; assumes odd integer for the step value
+        targetLogicalTextNodeIndex = ((parseInt(CFIStepValue) + 1) / 2) - 1;
+
+        // Set text node position counter
+        currLogicalTextNodeIndex = 0;
+        prevNodeWasTextNode = false;
+        $targetTextNodeList = $elementsWithoutMarkers.filter(
+            function () {
+
+                if (currLogicalTextNodeIndex === targetLogicalTextNodeIndex) {
+
+                    // If it's a text node
+                    if (this.nodeType === Node.TEXT_NODE || this.nodeType === Node.COMMENT_NODE || this.nodeType === Node.PROCESSING_INSTRUCTION_NODE) {
+                        prevNodeWasTextNode = true;
+                        return true;
+                    }
+                    // Rationale: The logical text node position is only incremented once a group of text nodes (a single logical
+                    //   text node) has been passed by the loop. 
+                    else if (prevNodeWasTextNode && (this.nodeType !== Node.TEXT_NODE)) {
+                        currLogicalTextNodeIndex++;
+                        prevNodeWasTextNode = false;
+                        return false;
+                    }
+                }
+                // Don't return any elements
+                else {
+
+                    if (this.nodeType === Node.TEXT_NODE || this.nodeType === Node.COMMENT_NODE || this.nodeType === Node.PROCESSING_INSTRUCTION_NODE) {
+                        prevNodeWasTextNode = true;
+                    }else if (!prevNodeWasTextNode && this.nodeType === Node.ELEMENT_NODE){
+                        currLogicalTextNodeIndex++;
+                        prevNodeWasTextNode = true;
+                    }
+                    else if (prevNodeWasTextNode && (this.nodeType !== Node.TEXT_NODE) && (this !== $elementsWithoutMarkers.lastChild)) {
+                        currLogicalTextNodeIndex++;
+                        prevNodeWasTextNode = false;
+                    }
+
+                    return false;
+                }
+            }
+        );
+
+        // The filtering above should have counted the number of "logical" text nodes; this can be used to 
+        // detect out of range errors
+        if ($targetTextNodeList.length === 0) {
+            throw cfiRuntimeErrors.OutOfRangeError(targetLogicalTextNodeIndex, currLogicalTextNodeIndex, "Index out of range");
+        }
+
+        // return the text node list
+        return $targetTextNodeList;
+    },
+
+    applyBlacklist : function ($elements, classBlacklist, elementBlacklist, idBlacklist) {
+        var self = this;
+        var $filteredElements;
+
+        $filteredElements = $elements.filter(
+            function () {
+
+                var element = this;
+
+                if (classBlacklist && classBlacklist.length) {
+                    var classList = self._getClassNameArray(element);
+                    if (classList.length === 1 && _.contains(classBlacklist, classList[0])) {
+                        return false;
+                    } else if (classList.length && _.intersection(classBlacklist, classList).length) {
+                        return false;
+                    }
+                }
+
+                if (elementBlacklist && elementBlacklist.length) {
+                    if (element.tagName) {
+                        var isElementBlacklisted = _.find(elementBlacklist, function (blacklistedTag) {
+                            blacklistedTag = blacklistedTag.toLowerCase();
+                            return self._matchesLocalNameOrElement(element, blacklistedTag)
+                        });
+                        if (isElementBlacklisted) {
+                            return false;
+                        }
+                    }
+                }
+
+                if (idBlacklist && idBlacklist.length) {
+                    var id = element.id;
+                    if (id && id.length && _.contains(idBlacklist, id)) {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+        );
+
+        return $filteredElements;
+    },
+
+    _matchesLocalNameOrElement: function (element, otherNameOrElement) {
+        if (typeof otherNameOrElement === 'string') {
+            return (element.localName || element.nodeName) === otherNameOrElement;
+        } else {
+            return element === otherNameOrElement;
+        }
+    },
+
+    _getClassNameArray: function (element) {
+        var className = element.className;
+        if (typeof className === 'string') {
+            return className.split(/\s/);
+        } else if (typeof className === 'object' && 'baseVal' in className) {
+            return className.baseVal.split(/\s/);
+        } else {
+            return [];
+        }
+    }
+};
+
+return obj;
+}
+
+
+
+
+
+
+
+
+
+
+if (typeof define == 'function' && typeof define.amd == 'object') {
+    console.log("RequireJS ... cfi_instructions");
+    
+    define('readium_cfi_js/cfi_instructions',['jquery', 'underscore', './cfi_runtime_errors'],
+    function ($, _, cfiRuntimeErrors) {
+        return init($, _, cfiRuntimeErrors);
+    });
+} else {
+    console.log("!RequireJS ... cfi_instructions");
+    
+    if (!global["EPUBcfi"]) {
+        throw new Error("EPUBcfi not initialised on global object?! (window or this context)");
+    }
+    global.EPUBcfi.CFIInstructions = 
+    init($, _,
+        {
+            NodeTypeError: global.EPUBcfi.NodeTypeError,
+            OutOfRangeError: global.EPUBcfi.OutOfRangeError,
+            TerminusError: global.EPUBcfi.TerminusError,
+            CFIAssertionError: global.EPUBcfi.CFIAssertionError
+        });
+}
+
+})(typeof window !== "undefined" ? window : this);
+
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//
+//  Redistribution and use in source and binary forms, with or without modification,
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice,
+//  this list of conditions and the following disclaimer in the documentation and/or
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be
+//  used to endorse or promote products derived from this software without specific
+//  prior written permission.
+
+(function(global) {
+
+var init = function($, cfiParser, cfiInstructions, cfiRuntimeErrors) {
+
+    if (typeof cfiParser === "undefined") {
+        throw new Error("UNDEFINED?! cfiParser");
+    }
+
+    if (typeof cfiInstructions === "undefined") {
+        throw new Error("UNDEFINED?! cfiInstructions");
+    }
+
+    if (typeof cfiRuntimeErrors === "undefined") {
+        throw new Error("UNDEFINED?! cfiRuntimeErrors");
+    }
+
+var obj = {
+
+// Description: This is an interpreter that inteprets an Abstract Syntax Tree (AST) for a CFI. The result of executing the interpreter
+//   is to inject an element, or set of elements, into an EPUB content document (which is just an XHTML document). These element(s) will
+//   represent the position or area in the EPUB referenced by a CFI.
+// Rationale: The AST is a clean and readable expression of the step-terminus structure of a CFI. Although building an interpreter adds to the
+//   CFI infrastructure, it provides a number of benefits. First, it emphasizes a clear separation of concerns between lexing/parsing a
+//   CFI, which involves some complexity related to escaped and special characters, and the execution of the underlying set of steps
+//   represented by the CFI. Second, it will be easier to extend the interpreter to account for new/altered CFI steps (say for references
+//   to vector objects or multiple CFIs) than if lexing, parsing and interpretation were all handled in a single step. Finally, Readium's objective is
+//   to demonstrate implementation of the EPUB 3.0 spec. An implementation with a strong separation of concerns that conforms to
+//   well-understood patterns for DSL processing should be easier to communicate, analyze and understand.
+// REFACTORING CANDIDATE: node type errors shouldn't really be possible if the CFI syntax is correct and the parser is error free.
+//   Might want to make the script die in those instances, once the grammar and interpreter are more stable.
+// REFACTORING CANDIDATE: The use of the 'nodeType' property is confusing as this is a DOM node property and the two are unrelated.
+//   Whoops. There shouldn't be any interference, however, I think this should be changed.
+
+    // ------------------------------------------------------------------------------------ //
+    //  "PUBLIC" METHODS (THE API)                                                          //
+    // ------------------------------------------------------------------------------------ //
+
+    // Description: Find the content document referenced by the spine item. This should be the spine item
+    //   referenced by the first indirection step in the CFI.
+    // Rationale: This method is a part of the API so that the reading system can "interact" the content document
+    //   pointed to by a CFI. If this is not a separate step, the processing of the CFI must be tightly coupled with
+    //   the reading system, as it stands now.
+    getContentDocHref : function (CFI, packageDocument, classBlacklist, elementBlacklist, idBlacklist) {
+
+        var $packageDocument = $(packageDocument);
+        var decodedCFI = decodeURI(CFI);
+        var CFIAST = cfiParser.parse(decodedCFI);
+
+        if (!CFIAST || CFIAST.type !== "CFIAST") {
+            throw cfiRuntimeErrors.NodeTypeError(CFIAST, "expected CFI AST root node");
+        }
+
+        // Interpet the path node (the package document step)
+        var $packageElement = $($("package", $packageDocument)[0]);
+        var $currElement = this.interpretIndexStepNode(CFIAST.cfiString.path, $packageElement, classBlacklist, elementBlacklist, idBlacklist);
+        foundHref = this.searchLocalPathForHref($currElement, $packageDocument, CFIAST.cfiString.localPath, classBlacklist, elementBlacklist, idBlacklist);
+
+        if (foundHref) {
+            return foundHref;
+        }
+        else {
+            return undefined;
+        }
+    },
+
+    // Description: Inject an arbitrary html element into a position in a content document referenced by a CFI
+    injectElement : function (CFI, contentDocument, elementToInject, classBlacklist, elementBlacklist, idBlacklist) {
+
+        var decodedCFI = decodeURI(CFI);
+        var CFIAST = cfiParser.parse(decodedCFI);
+        var indirectionNode;
+        var indirectionStepNum;
+        var $currElement;
+
+        // Rationale: Since the correct content document for this CFI is already being passed, we can skip to the beginning
+        //   of the indirection step that referenced the content document.
+        // Note: This assumes that indirection steps and index steps conform to an interface: an object with stepLength, idAssertion
+        indirectionStepNum = this.getFirstIndirectionStepNum(CFIAST);
+        indirectionNode = CFIAST.cfiString.localPath.steps[indirectionStepNum];
+        indirectionNode.type = "indexStep";
+
+        // Interpret the rest of the steps
+        $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, indirectionStepNum, $(contentDocument.documentElement, contentDocument), classBlacklist, elementBlacklist, idBlacklist);
+
+        // TODO: detect what kind of terminus; for now, text node termini are the only kind implemented
+        $currElement = this.interpretTextTerminusNode(CFIAST.cfiString.localPath.termStep, $currElement, elementToInject);
+
+        // Return the element that was injected into
+        return $currElement;
+    },
+
+    // Description: Inject an arbitrary html element into a position in a content document referenced by a CFI
+    injectRangeElements : function (rangeCFI, contentDocument, startElementToInject, endElementToInject, classBlacklist, elementBlacklist, idBlacklist) {
+
+        var decodedCFI = decodeURI(rangeCFI);
+        var CFIAST = cfiParser.parse(decodedCFI);
+        var indirectionNode;
+        var indirectionStepNum;
+        var $currElement;
+        var $range1TargetElement;
+        var $range2TargetElement;
+
+        // Rationale: Since the correct content document for this CFI is already being passed, we can skip to the beginning
+        //   of the indirection step that referenced the content document.
+        // Note: This assumes that indirection steps and index steps conform to an interface: an object with stepLength, idAssertion
+        indirectionStepNum = this.getFirstIndirectionStepNum(CFIAST);
+        indirectionNode = CFIAST.cfiString.localPath.steps[indirectionStepNum];
+        indirectionNode.type = "indexStep";
+
+        // Interpret the rest of the steps in the first local path
+        $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, indirectionStepNum, $(contentDocument.documentElement, contentDocument), classBlacklist, elementBlacklist, idBlacklist);
+
+        // Interpret the first range local_path
+        $range1TargetElement = this.interpretLocalPath(CFIAST.cfiString.range1, 0, $currElement, classBlacklist, elementBlacklist, idBlacklist);
+        $range1TargetElement = this.interpretTextTerminusNode(CFIAST.cfiString.range1.termStep, $range1TargetElement, startElementToInject);
+
+        // Interpret the second range local_path
+        $range2TargetElement = this.interpretLocalPath(CFIAST.cfiString.range2, 0, $currElement, classBlacklist, elementBlacklist, idBlacklist);
+        $range2TargetElement = this.interpretTextTerminusNode(CFIAST.cfiString.range2.termStep, $range2TargetElement, endElementToInject);
+
+        // Return the element that was injected into
+        return {
+            startElement : $range1TargetElement[0],
+            endElement : $range2TargetElement[0]
+        };
+    },
+
+    // Description: This method will return the element or node (say, a text node) that is the final target of the
+    //   the CFI.
+    getTargetElement : function (CFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
+
+        var decodedCFI = decodeURI(CFI);
+        var CFIAST = cfiParser.parse(decodedCFI);
+        var indirectionNode;
+        var indirectionStepNum;
+        var $currElement;
+
+        // Rationale: Since the correct content document for this CFI is already being passed, we can skip to the beginning
+        //   of the indirection step that referenced the content document.
+        // Note: This assumes that indirection steps and index steps conform to an interface: an object with stepLength, idAssertion
+        indirectionStepNum = this.getFirstIndirectionStepNum(CFIAST);
+        indirectionNode = CFIAST.cfiString.localPath.steps[indirectionStepNum];
+        indirectionNode.type = "indexStep";
+
+        // Interpret the rest of the steps
+        $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, indirectionStepNum, $(contentDocument.documentElement, contentDocument), classBlacklist, elementBlacklist, idBlacklist);
+
+        // Return the element at the end of the CFI
+        return $currElement;
+    },
+
+    // Description: This method will return the start and end elements (along with their char offsets) that are the final targets of the range CFI.
+    getRangeTargetElements : function (rangeCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
+
+        var decodedCFI = decodeURI(rangeCFI);
+        var CFIAST = cfiParser.parse(decodedCFI);
+        var indirectionNode;
+        var indirectionStepNum;
+        var $currElement;
+        var $range1TargetElement;
+        var $range2TargetElement;
+
+        // Rationale: Since the correct content document for this CFI is already being passed, we can skip to the beginning
+        //   of the indirection step that referenced the content document.
+        // Note: This assumes that indirection steps and index steps conform to an interface: an object with stepLength, idAssertion
+        indirectionStepNum = this.getFirstIndirectionStepNum(CFIAST);
+        indirectionNode = CFIAST.cfiString.localPath.steps[indirectionStepNum];
+        indirectionNode.type = "indexStep";
+
+        // Interpret the rest of the steps
+        $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, indirectionStepNum, $(contentDocument.documentElement, contentDocument), classBlacklist, elementBlacklist, idBlacklist);
+
+        // Interpret first range local_path
+        $range1TargetElement = this.interpretLocalPath(CFIAST.cfiString.range1, 0, $currElement, classBlacklist, elementBlacklist, idBlacklist);
+
+        // Interpret second range local_path
+        $range2TargetElement = this.interpretLocalPath(CFIAST.cfiString.range2, 0, $currElement, classBlacklist, elementBlacklist, idBlacklist);
+
+        // Get the start and end character offsets
+        var startOffset = parseInt(CFIAST.cfiString.range1.termStep.offsetValue) || undefined;
+        var endOffset = parseInt(CFIAST.cfiString.range2.termStep.offsetValue) || undefined;
+
+        // Return the element (and char offsets) at the end of the CFI
+        return {
+            startElement: $range1TargetElement[0],
+            startOffset: startOffset,
+            endElement: $range2TargetElement[0],
+            endOffset: endOffset
+        };
+    },
+
+    // Description: This method allows a "partial" CFI to be used to reference a target in a content document, without a
+    //   package document CFI component.
+    // Arguments: {
+    //     contentDocumentCFI : This is a partial CFI that represents a path in a content document only. This partial must be
+    //        syntactically valid, even though it references a path starting at the top of a content document (which is a CFI that
+    //        that has no defined meaning in the spec.)
+    //     contentDocument : A DOM representation of the content document to which the partial CFI refers.
+    // }
+    // Rationale: This method exists to meet the requirements of the Readium-SDK and should be used with care
+    getTargetElementWithPartialCFI : function (contentDocumentCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
+
+        var decodedCFI = decodeURI(contentDocumentCFI);
+        var CFIAST = cfiParser.parse(decodedCFI);
+        var indirectionNode;
+
+        // Interpret the path node
+        var $currElement = this.interpretIndexStepNode(CFIAST.cfiString.path, $(contentDocument.documentElement, contentDocument), classBlacklist, elementBlacklist, idBlacklist);
+
+        // Interpret the rest of the steps
+        $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, 0, $currElement, classBlacklist, elementBlacklist, idBlacklist);
+
+        // Return the element at the end of the CFI
+        return $currElement;
+    },
+
+    // Description: This method allows a "partial" CFI to be used, with a content document, to return the text node and offset
+    //    referenced by the partial CFI.
+    // Arguments: {
+    //     contentDocumentCFI : This is a partial CFI that represents a path in a content document only. This partial must be
+    //        syntactically valid, even though it references a path starting at the top of a content document (which is a CFI that
+    //        that has no defined meaning in the spec.)
+    //     contentDocument : A DOM representation of the content document to which the partial CFI refers.
+    // }
+    getTextTerminusInfoWithPartialCFI : function (contentDocumentCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
+
+        var decodedCFI = decodeURI(contentDocumentCFI);
+        var CFIAST = cfiParser.parse(decodedCFI);
+        var indirectionNode;
+        var textOffset;
+
+        // Interpret the path node
+        var $currElement = this.interpretIndexStepNode(CFIAST.cfiString.path, $(contentDocument.documentElement, contentDocument), classBlacklist, elementBlacklist, idBlacklist);
+
+        // Interpret the rest of the steps
+        $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, 0, $currElement, classBlacklist, elementBlacklist, idBlacklist);
+
+        // Return the element at the end of the CFI
+        textOffset = parseInt(CFIAST.cfiString.localPath.termStep.offsetValue);
+        return {
+            textNode: $currElement[0],
+            textOffset: textOffset
+        };
+    },
+
+    // Description: This method will return the element or node (say, a text node) that is the final target of the
+    //   the CFI, along with the text terminus offset.
+    getTextTerminusInfo : function (CFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
+
+        var decodedCFI = decodeURI(CFI);
+        var CFIAST = cfiParser.parse(decodedCFI);
+        var indirectionNode;
+        var indirectionStepNum;
+        var $currElement;
+        var textOffset;
+
+        // Rationale: Since the correct content document for this CFI is already being passed, we can skip to the beginning
+        //   of the indirection step that referenced the content document.
+        // Note: This assumes that indirection steps and index steps conform to an interface: an object with stepLength, idAssertion
+        indirectionStepNum = this.getFirstIndirectionStepNum(CFIAST);
+        indirectionNode = CFIAST.cfiString.localPath.steps[indirectionStepNum];
+        indirectionNode.type = "indexStep";
+
+        // Interpret the rest of the steps
+        $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, indirectionStepNum, $(contentDocument.documentElement, contentDocument), classBlacklist, elementBlacklist, idBlacklist);
+
+        // Return the element at the end of the CFI
+        textOffset = parseInt(CFIAST.cfiString.localPath.termStep.offsetValue);
+        return {
+            textNode: $currElement[0],
+            textOffset: textOffset
+        };
+    },
+
+    // Description: This function will determine if the input "partial" CFI is expressed as a range
+    isRangeCfi: function (cfi) {
+        var CFIAST = cfiParser.parse(cfi);
+        return CFIAST.cfiString.range1 ? true : false;
+    },
+
+    // Description: This function will determine if the input "partial" CFI has a text terminus step
+    hasTextTerminus: function (cfi) {
+        var CFIAST = cfiParser.parse(cfi);
+        return CFIAST.cfiString.localPath.termStep ? true : false;
+    },
+
+    // ------------------------------------------------------------------------------------ //
+    //  "PRIVATE" HELPERS                                                                   //
+    // ------------------------------------------------------------------------------------ //
+
+    getFirstIndirectionStepNum : function (CFIAST) {
+
+        // Find the first indirection step in the local path; follow it like a regular step, as the step in the content document it
+        //   references is already loaded and has been passed to this method
+        var stepNum = 0;
+        for (stepNum; stepNum <= CFIAST.cfiString.localPath.steps.length - 1 ; stepNum++) {
+
+            nextStepNode = CFIAST.cfiString.localPath.steps[stepNum];
+            if (nextStepNode.type === "indirectionStep") {
+                return stepNum;
+            }
+        }
+    },
+
+    // REFACTORING CANDIDATE: cfiString node and start step num could be merged into one argument, by simply passing the
+    //   starting step... probably a good idea, this would make the meaning of this method clearer.
+    interpretLocalPath : function (localPathNode, startStepNum, $currElement, classBlacklist, elementBlacklist, idBlacklist) {
+
+        var stepNum = startStepNum;
+        var nextStepNode;
+        for (stepNum; stepNum <= localPathNode.steps.length - 1 ; stepNum++) {
+
+            nextStepNode = localPathNode.steps[stepNum];
+            if (nextStepNode.type === "indexStep") {
+
+                $currElement = this.interpretIndexStepNode(nextStepNode, $currElement, classBlacklist, elementBlacklist, idBlacklist);
+            }
+            else if (nextStepNode.type === "indirectionStep") {
+
+                $currElement = this.interpretIndirectionStepNode(nextStepNode, $currElement, classBlacklist, elementBlacklist, idBlacklist);
+            }
+        }
+
+        return $currElement;
+    },
+
+    interpretIndexStepNode : function (indexStepNode, $currElement, classBlacklist, elementBlacklist, idBlacklist) {
+
+        // Check node type; throw error if wrong type
+        if (indexStepNode === undefined || indexStepNode.type !== "indexStep") {
+
+            throw cfiRuntimeErrors.NodeTypeError(indexStepNode, "expected index step node");
+        }
+
+        // Index step
+        var $stepTarget = cfiInstructions.getNextNode(indexStepNode.stepLength, $currElement, classBlacklist, elementBlacklist, idBlacklist);
+
+        // Check the id assertion, if it exists
+        if (indexStepNode.idAssertion) {
+
+            if (!cfiInstructions.targetIdMatchesIdAssertion($stepTarget, indexStepNode.idAssertion)) {
+
+                throw cfiRuntimeErrors.CFIAssertionError(indexStepNode.idAssertion, $stepTarget.attr('id'), "Id assertion failed");
+            }
+        }
+
+        return $stepTarget;
+    },
+
+    interpretIndirectionStepNode : function (indirectionStepNode, $currElement, classBlacklist, elementBlacklist, idBlacklist) {
+
+        // Check node type; throw error if wrong type
+        if (indirectionStepNode === undefined || indirectionStepNode.type !== "indirectionStep") {
+
+            throw cfiRuntimeErrors.NodeTypeError(indirectionStepNode, "expected indirection step node");
+        }
+
+        // Indirection step
+        var $stepTarget = cfiInstructions.followIndirectionStep(
+            indirectionStepNode.stepLength,
+            $currElement,
+            classBlacklist,
+            elementBlacklist);
+
+        // Check the id assertion, if it exists
+        if (indirectionStepNode.idAssertion) {
+
+            if (!cfiInstructions.targetIdMatchesIdAssertion($stepTarget, indirectionStepNode.idAssertion)) {
+
+                throw cfiRuntimeErrors.CFIAssertionError(indirectionStepNode.idAssertion, $stepTarget.attr('id'), "Id assertion failed");
+            }
+        }
+
+        return $stepTarget;
+    },
+
+    // REFACTORING CANDIDATE: The logic here assumes that a user will always want to use this terminus
+    //   to inject content into the found node. This will not always be the case, and different types of interpretation
+    //   are probably desired.
+    interpretTextTerminusNode : function (terminusNode, $currElement, elementToInject) {
+
+        if (terminusNode === undefined || terminusNode.type !== "textTerminus") {
+
+            throw cfiRuntimeErrors.NodeTypeError(terminusNode, "expected text terminus node");
+        }
+
+        var $injectedElement = cfiInstructions.textTermination(
+            $currElement,
+            terminusNode.offsetValue,
+            elementToInject
+            );
+
+        return $injectedElement;
+    },
+
+    searchLocalPathForHref : function ($currElement, $packageDocument, localPathNode, classBlacklist, elementBlacklist, idBlacklist) {
+
+        // Interpret the first local_path node, which is a set of steps and and a terminus condition
+        var stepNum = 0;
+        var nextStepNode;
+        for (stepNum = 0 ; stepNum <= localPathNode.steps.length - 1 ; stepNum++) {
+
+            nextStepNode = localPathNode.steps[stepNum];
+            if (nextStepNode.type === "indexStep") {
+
+                $currElement = this.interpretIndexStepNode(nextStepNode, $currElement, classBlacklist, elementBlacklist, idBlacklist);
+            }
+            else if (nextStepNode.type === "indirectionStep") {
+
+                $currElement = this.interpretIndirectionStepNode(nextStepNode, $currElement, classBlacklist, elementBlacklist, idBlacklist);
+            }
+
+            // Found the content document href referenced by the spine item
+            if (cfiInstructions._matchesLocalNameOrElement($currElement[0], "itemref")) {
+                return cfiInstructions.retrieveItemRefHref($currElement, $packageDocument);
+            }
+        }
+
+        return undefined;
+    }
+};
+
+return obj;
+}
+
+
+
+
+
+
+
+
+
+
+if (typeof define == 'function' && typeof define.amd == 'object') {
+    console.log("RequireJS ... cfi_interpreter");
+
+    define('readium_cfi_js/cfi_interpreter',['jquery', 'readium_cfi_js/cfi_parser', './cfi_instructions', './cfi_runtime_errors'],
+    function ($, cfiParser, cfiInstructions, cfiRuntimeErrors) {
+        return init($, cfiParser, cfiInstructions, cfiRuntimeErrors);
+    });
+} else {
+    console.log("!RequireJS ... cfi_interpreter");
+
+    if (!global["EPUBcfi"]) {
+        throw new Error("EPUBcfi not initialised on global object?! (window or this context)");
+    }
+    global.EPUBcfi.Interpreter =
+    init($,
+        global.EPUBcfi.Parser,
+        global.EPUBcfi.CFIInstructions,
+        {
+            NodeTypeError: global.EPUBcfi.NodeTypeError,
+            OutOfRangeError: global.EPUBcfi.OutOfRangeError,
+            TerminusError: global.EPUBcfi.TerminusError,
+            CFIAssertionError: global.EPUBcfi.CFIAssertionError
+        });
+}
+
+})(typeof window !== "undefined" ? window : this);
+
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  
+//  Redistribution and use in source and binary forms, with or without modification, 
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this 
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice, 
+//  this list of conditions and the following disclaimer in the documentation and/or 
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be 
+//  used to endorse or promote products derived from this software without specific 
+//  prior written permission.
+
+(function(global) {
+
+var init = function($, cfiInstructions, cfiRuntimeErrors) {
+
+    if (typeof cfiInstructions === "undefined") {
+        throw new Error("UNDEFINED?! cfiInstructions");
+    }
+    
+    if (typeof cfiRuntimeErrors === "undefined") {
+        throw new Error("UNDEFINED?! cfiRuntimeErrors");
+    }
+    
+var obj = {
+
+    // ------------------------------------------------------------------------------------ //
+    //  "PUBLIC" METHODS (THE API)                                                          //
+    // ------------------------------------------------------------------------------------ //
+
+    generateCharOffsetRangeComponent : function (rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist) {
+        var document = rangeStartElement.ownerDocument;
+
+        var docRange;
+        var commonAncestor;
+        var $rangeStartParent;
+        var $rangeEndParent;
+        var range1OffsetStep;
+        var range1CFI;
+        var range2OffsetStep;
+        var range2CFI;
+        var commonCFIComponent;
+
+        this.validateStartTextNode(rangeStartElement);
+        this.validateStartTextNode(rangeEndElement);
+
+        // Parent element is the same
+        if ($(rangeStartElement).parent()[0] === $(rangeEndElement).parent()[0]) {
+            range1OffsetStep = this.createCFITextNodeStep($(rangeStartElement), startOffset, classBlacklist, elementBlacklist, idBlacklist);
+            range2OffsetStep = this.createCFITextNodeStep($(rangeEndElement), endOffset, classBlacklist, elementBlacklist, idBlacklist);          
+            commonCFIComponent = this.createCFIElementSteps($(rangeStartElement).parent(), document.documentElement, classBlacklist, elementBlacklist, idBlacklist);
+            return commonCFIComponent + "," + range1OffsetStep + "," + range2OffsetStep;
+        }
+        else {
+
+            // Create a document range to find the common ancestor
+            docRange = document.createRange();
+            docRange.setStart(rangeStartElement, startOffset);
+            docRange.setEnd(rangeEndElement, endOffset);
+            commonAncestor = docRange.commonAncestorContainer;
+
+            // Generate terminating offset and range 1
+            range1OffsetStep = this.createCFITextNodeStep($(rangeStartElement), startOffset, classBlacklist, elementBlacklist, idBlacklist);
+            $rangeStartParent = $(rangeStartElement).parent();
+            if ($rangeStartParent[0] === commonAncestor) {
+              // rangeStartElement is a text child node of the commonAncestor, so it's CFI sub-path is only the text node step:
+              range1CFI = range1OffsetStep;
+            } else {
+              range1CFI = this.createCFIElementSteps($rangeStartParent, commonAncestor, classBlacklist, elementBlacklist, idBlacklist) + range1OffsetStep;
+            }
+
+            // Generate terminating offset and range 2
+            range2OffsetStep = this.createCFITextNodeStep($(rangeEndElement), endOffset, classBlacklist, elementBlacklist, idBlacklist);
+            $rangeEndParent = $(rangeEndElement).parent();
+            if ($rangeEndParent[0] === commonAncestor) {
+              // rangeEndElement is a text child node of the commonAncestor, so it's CFI sub-path is only the text node step:
+              range2CFI = range2OffsetStep;
+            } else {
+              range2CFI = this.createCFIElementSteps($rangeEndParent, commonAncestor, classBlacklist, elementBlacklist, idBlacklist) + range2OffsetStep;
+            }
+
+            // Generate shared component
+            commonCFIComponent = this.createCFIElementSteps($(commonAncestor), document.documentElement, classBlacklist, elementBlacklist, idBlacklist);
+
+            // Return the result
+            return commonCFIComponent + "," + range1CFI + "," + range2CFI;
+        }
+    },
+
+    generateElementRangeComponent : function (rangeStartElement, rangeEndElement, classBlacklist, elementBlacklist, idBlacklist) {
+        var docRange;
+        var commonAncestor;
+        var range1CFI;
+        var range2CFI;
+        var commonCFIComponent;
+
+        this.validateStartElement(rangeStartElement);
+        this.validateStartElement(rangeEndElement);
+
+        var document = rangeStartElement.ownerDocument;
+
+        if (rangeStartElement === rangeEndElement) {
+            throw new Error("Start and end element cannot be the same for a CFI range");
+        }
+
+        // Create a document range to find the common ancestor
+        docRange = document.createRange();
+        docRange.setStart(rangeStartElement, 0);
+        docRange.setEnd(rangeEndElement, rangeEndElement.childNodes.length);
+        commonAncestor = docRange.commonAncestorContainer;
+
+        // Generate range 1
+        range1CFI = this.createCFIElementSteps($(rangeStartElement), commonAncestor, classBlacklist, elementBlacklist, idBlacklist);
+
+        // Generate range 2
+        range2CFI = this.createCFIElementSteps($(rangeEndElement), commonAncestor, classBlacklist, elementBlacklist, idBlacklist);
+
+        // Generate shared component
+        commonCFIComponent = this.createCFIElementSteps($(commonAncestor), document.documentElement, classBlacklist, elementBlacklist, idBlacklist);
+
+        // Return the result
+        return commonCFIComponent + "," + range1CFI + "," + range2CFI;
+    },
+
+    generateRangeComponent : function (rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist) {
+        this.validateTargetElement(rangeStartElement);
+        this.validateTargetElement(rangeEndElement);
+
+        var document = rangeStartElement.ownerDocument;
+
+        if(rangeStartElement.nodeType === Node.ELEMENT_NODE && rangeEndElement.nodeType === Node.ELEMENT_NODE){
+            return this.generateElementRangeComponent(rangeStartElement, rangeEndElement, classBlacklist, elementBlacklist, idBlacklist);
+        } else if(rangeStartElement.nodeType === Node.TEXT_NODE && rangeEndElement.nodeType === Node.TEXT_NODE){
+            return this.generateCharOffsetRangeComponent(rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist);
+        } else {
+            var docRange;
+            var range1CFI;
+            var range1OffsetStep;
+            var range2CFI;
+            var range2OffsetStep;
+            var commonAncestor;
+            var commonCFIComponent;
+
+            // Create a document range to find the common ancestor
+            docRange = document.createRange();
+            docRange.setStart(rangeStartElement, startOffset);
+            docRange.setEnd(rangeEndElement, endOffset);
+            commonAncestor = docRange.commonAncestorContainer;
+
+            if(rangeStartElement.nodeType === Node.ELEMENT_NODE){
+                this.validateStartElement(rangeStartElement);
+                range1CFI = this.createCFIElementSteps($(rangeStartElement), commonAncestor, classBlacklist, elementBlacklist, idBlacklist);
+            } else {
+                this.validateStartTextNode(rangeStartElement);
+                // Generate terminating offset and range 1
+                range1OffsetStep = this.createCFITextNodeStep($(rangeStartElement), startOffset, classBlacklist, elementBlacklist, idBlacklist);
+                if ($(rangeStartElement).parent()[0] === commonAncestor) {
+                    range1CFI = range1OffsetStep;
+                } else {
+                    range1CFI = this.createCFIElementSteps($(rangeStartElement).parent(), commonAncestor, classBlacklist, elementBlacklist, idBlacklist) + range1OffsetStep;    
+                }
+            }
+
+            if(rangeEndElement.nodeType === Node.ELEMENT_NODE){
+                this.validateStartElement(rangeEndElement);
+                range2CFI = this.createCFIElementSteps($(rangeEndElement), commonAncestor, classBlacklist, elementBlacklist, idBlacklist);
+            } else {
+                this.validateStartTextNode(rangeEndElement);
+                // Generate terminating offset and range 2
+                range2OffsetStep = this.createCFITextNodeStep($(rangeEndElement), endOffset, classBlacklist, elementBlacklist, idBlacklist);
+                if ($(rangeEndElement).parent()[0] === commonAncestor) {
+                    range2CFI = range2OffsetStep;
+                } else {
+                    range2CFI = this.createCFIElementSteps($(rangeEndElement).parent(), commonAncestor, classBlacklist, elementBlacklist, idBlacklist) + range2OffsetStep;    
+                }                
+            }
+
+            // Generate shared component
+            commonCFIComponent = this.createCFIElementSteps($(commonAncestor), document.documentElement, classBlacklist, elementBlacklist, idBlacklist);
+
+            // Return the result
+            return commonCFIComponent + "," + range1CFI + "," + range2CFI;
+        }
+    },
+
+    // Description: Generates a character offset CFI 
+    // Arguments: The text node that contains the offset referenced by the cfi, the offset value, the name of the 
+    //   content document that contains the text node, the package document for this EPUB.
+    generateCharacterOffsetCFIComponent : function (startTextNode, characterOffset, classBlacklist, elementBlacklist, idBlacklist) {
+        var textNodeStep;
+        var contentDocCFI;
+        var $itemRefStartNode;
+        var packageDocCFI;
+
+        this.validateStartTextNode(startTextNode, characterOffset);
+
+        // Create the text node step
+        textNodeStep = this.createCFITextNodeStep($(startTextNode), characterOffset, classBlacklist, elementBlacklist, idBlacklist);
+
+        // Call the recursive method to create all the steps up to the head element of the content document (typically the "html" element, or the "svg" element)
+        contentDocCFI = this.createCFIElementSteps($(startTextNode).parent(), startTextNode.ownerDocument.documentElement, classBlacklist, elementBlacklist, idBlacklist) + textNodeStep;
+        return contentDocCFI;
+    },
+
+    generateElementCFIComponent : function (startElement, classBlacklist, elementBlacklist, idBlacklist) {
+        var contentDocCFI;
+        var $itemRefStartNode;
+        var packageDocCFI;
+
+        this.validateStartElement(startElement);
+
+        // Call the recursive method to create all the steps up to the head element of the content document (typically the "html" element, or the "svg" element)
+        contentDocCFI = this.createCFIElementSteps($(startElement), startElement.ownerDocument.documentElement, classBlacklist, elementBlacklist, idBlacklist);
+
+        return contentDocCFI;
+    },
+
+    generatePackageDocumentCFIComponent : function (contentDocumentName, packageDocument, classBlacklist, elementBlacklist, idBlacklist) {
+
+        this.validateContentDocumentName(contentDocumentName);
+        this.validatePackageDocument(packageDocument, contentDocumentName);
+
+        // Get the start node (itemref element) that references the content document
+        $itemRefStartNode = $("itemref[idref='" + contentDocumentName + "']", $(packageDocument));
+
+        // Create the steps up to the top element of the package document (the "package" element)
+        packageDocCFIComponent = this.createCFIElementSteps($itemRefStartNode, "package", classBlacklist, elementBlacklist, idBlacklist);
+
+        // Append an !; this assumes that a CFI content document CFI component will be appended at some point
+        return packageDocCFIComponent + "!";
+    },
+
+    generatePackageDocumentCFIComponentWithSpineIndex : function (spineIndex, packageDocument, classBlacklist, elementBlacklist, idBlacklist) {
+
+        // Get the start node (itemref element) that references the content document
+        $itemRefStartNode = $($("spine", packageDocument).children()[spineIndex]);
+
+        // Create the steps up to the top element of the package document (the "package" element)
+        packageDocCFIComponent = this.createCFIElementSteps($itemRefStartNode, "package", classBlacklist, elementBlacklist, idBlacklist);
+
+        // Append an !; this assumes that a CFI content document CFI component will be appended at some point
+        return packageDocCFIComponent + "!";
+    },
+
+    generateCompleteCFI : function (packageDocumentCFIComponent, contentDocumentCFIComponent) {
+
+        return "epubcfi(" + packageDocumentCFIComponent + contentDocumentCFIComponent + ")";  
+    },
+
+    // ------------------------------------------------------------------------------------ //
+    //  "PRIVATE" HELPERS                                                                   //
+    // ------------------------------------------------------------------------------------ //
+
+    validateStartTextNode : function (startTextNode, characterOffset) {
+        
+        // Check that the text node to start from IS a text node
+        if (!startTextNode) {
+            throw new cfiRuntimeErrors.NodeTypeError(startTextNode, "Cannot generate a character offset from a starting point that is not a text node");
+        } else if (startTextNode.nodeType != 3) {
+            throw new cfiRuntimeErrors.NodeTypeError(startTextNode, "Cannot generate a character offset from a starting point that is not a text node");
+        }
+
+        // Check that the character offset is within a valid range for the text node supplied
+        if (characterOffset < 0) {
+            throw new cfiRuntimeErrors.OutOfRangeError(characterOffset, 0, "Character offset cannot be less than 0");
+        }
+        else if (characterOffset > startTextNode.nodeValue.length) {
+            throw new cfiRuntimeErrors.OutOfRangeError(characterOffset, startTextNode.nodeValue.length - 1, "character offset cannot be greater than the length of the text node");
+        }
+    },
+
+    validateStartElement : function (startElement) {
+
+        this.validateTargetElement(startElement);
+
+        if (!(startElement.nodeType && startElement.nodeType === 1)) {
+            throw new cfiRuntimeErrors.NodeTypeError(startElement, "CFI target element is not an HTML element");
+        }
+    },
+
+    validateTargetElement : function (startElement) {
+
+        if (!startElement) {
+            throw new cfiRuntimeErrors.NodeTypeError(startElement, "CFI target element is undefined");
+        }
+    },
+
+    validateContentDocumentName : function (contentDocumentName) {
+
+        // Check that the idref for the content document has been provided
+        if (!contentDocumentName) {
+            throw new Error("The idref for the content document, as found in the spine, must be supplied");
+        }
+    },
+
+    validatePackageDocument : function (packageDocument, contentDocumentName) {
+        
+        // Check that the package document is non-empty and contains an itemref element for the supplied idref
+        if (!packageDocument) {
+            throw new Error("A package document must be supplied to generate a CFI");
+        }
+        else if ($($("itemref[idref='" + contentDocumentName + "']", packageDocument)[0]).length === 0) {
+            throw new Error("The idref of the content document could not be found in the spine");
+        }
+    },
+
+    // Description: Creates a CFI terminating step to a text node, with a character offset
+    // REFACTORING CANDIDATE: Some of the parts of this method could be refactored into their own methods
+    createCFITextNodeStep : function ($startTextNode, characterOffset, classBlacklist, elementBlacklist, idBlacklist) {
+
+        var $parentNode;
+        var $contentsExcludingMarkers;
+        var CFIIndex;
+        var indexOfTextNode;
+        var preAssertion;
+        var preAssertionStartIndex;
+        var textLength;
+        var postAssertion;
+        var postAssertionEndIndex;
+
+        // Find text node position in the set of child elements, ignoring any blacklisted elements 
+        $parentNode = $startTextNode.parent();
+        $contentsExcludingMarkers = cfiInstructions.applyBlacklist($parentNode.contents(), classBlacklist, elementBlacklist, idBlacklist);
+
+        // Find the text node index in the parent list, inferring nodes that were originally a single text node
+        var prevNodeWasTextNode;
+        var indexOfFirstInSequence;
+        var textNodeOnlyIndex = 0;
+        var characterOffsetSinceUnsplit = 0;
+        var finalCharacterOffsetInSequence = 0;
+        $.each($contentsExcludingMarkers, 
+            function (index) {
+
+            // If this is a text node, check if it matches and return the current index
+            if (this.nodeType === Node.TEXT_NODE || !prevNodeWasTextNode) {
+
+                if (this.nodeType === Node.TEXT_NODE) {
+                    if (this === $startTextNode[0]) {
+
+                        // Set index as the first in the adjacent sequence of text nodes, or as the index of the current node if this 
+                        //   node is a standard one sandwiched between two element nodes. 
+                        if (prevNodeWasTextNode) {
+                            indexOfTextNode = indexOfFirstInSequence;
+                            finalCharacterOffsetInSequence = characterOffsetSinceUnsplit;
+                        } else {
+                            indexOfTextNode = textNodeOnlyIndex;
+                        }
+                        
+                        // Break out of .each loop
+                        return false; 
+                    }
+
+                    // Save this index as the first in sequence of adjacent text nodes, if it is not already set by this point
+                    prevNodeWasTextNode = true;
+                    characterOffsetSinceUnsplit = characterOffsetSinceUnsplit + this.length;
+                    if (indexOfFirstInSequence === undefined) {
+                        indexOfFirstInSequence = textNodeOnlyIndex;
+                        textNodeOnlyIndex = textNodeOnlyIndex + 1;
+                    }
+                } else if (this.nodeType === Node.ELEMENT_NODE) {
+                    textNodeOnlyIndex = textNodeOnlyIndex + 1;
+                } else if (this.nodeType === Node.COMMENT_NODE) {
+                    prevNodeWasTextNode = true;
+                    characterOffsetSinceUnsplit = characterOffsetSinceUnsplit + this.length + 7; // 7 is the size of the html comment tag <!--[comment]-->
+                    if (indexOfFirstInSequence === undefined) {
+                        indexOfFirstInSequence = textNodeOnlyIndex;
+                    }
+                } else if (this.nodeType === Node.PROCESSING_INSTRUCTION_NODE) {
+                    prevNodeWasTextNode = true;
+                    characterOffsetSinceUnsplit = characterOffsetSinceUnsplit + this.data.length + this.target.length + 5; // 5 is the size of the instruction processing tag including the required space between the target and the data <?[target] [data]?>
+                    if (indexOfFirstInSequence === undefined) {
+                        indexOfFirstInSequence = textNodeOnlyIndex;
+                    }
+                }
+            }
+            // This node is not a text node
+            else if (this.nodeType === Node.ELEMENT_NODE) {
+                prevNodeWasTextNode = false;
+                indexOfFirstInSequence = undefined;
+                characterOffsetSinceUnsplit  = 0;
+            } else if (this.nodeType === Node.COMMENT_NODE) {
+                characterOffsetSinceUnsplit = characterOffsetSinceUnsplit + this.length + 7; // <!--[comment]-->
+            } else if (this.nodeType === Node.PROCESSING_INSTRUCTION_NODE) {
+                characterOffsetSinceUnsplit = characterOffsetSinceUnsplit + this.data.length + this.target.length + 5; // <?[target] [data]?>
+            }
+        });
+
+        // Convert the text node index to a CFI odd-integer representation
+        CFIIndex = (indexOfTextNode * 2) + 1;
+
+        // TODO: text assertions are not in the grammar yet, I think, or they're just causing problems. This has
+        //   been temporarily removed. 
+
+        // Add pre- and post- text assertions
+        // preAssertionStartIndex = (characterOffset - 3 >= 0) ? characterOffset - 3 : 0;
+        // preAssertion = $startTextNode[0].nodeValue.substring(preAssertionStartIndex, characterOffset);
+
+        // textLength = $startTextNode[0].nodeValue.length;
+        // postAssertionEndIndex = (characterOffset + 3 <= textLength) ? characterOffset + 3 : textLength;
+        // postAssertion = $startTextNode[0].nodeValue.substring(characterOffset, postAssertionEndIndex);
+
+        // Gotta infer the correct character offset, as well
+
+        // Return the constructed CFI text node step
+        return "/" + CFIIndex + ":" + (finalCharacterOffsetInSequence + characterOffset);
+         // + "[" + preAssertion + "," + postAssertion + "]";
+    },
+
+    createCFIElementSteps : function ($currNode, topLevelElement, classBlacklist, elementBlacklist, idBlacklist) {
+
+        var $blacklistExcluded;
+        var $parentNode;
+        var currNodePosition;
+        var CFIPosition;
+        var idAssertion;
+        var elementStep;
+
+        // Find position of current node in parent list
+        $blacklistExcluded = cfiInstructions.applyBlacklist($currNode.parent().children(), classBlacklist, elementBlacklist, idBlacklist);
+        $.each($blacklistExcluded, 
+            function (index, value) {
+
+                if (this === $currNode[0]) {
+
+                    currNodePosition = index;
+
+                    // Break loop
+                    return false;
+                }
+        });
+
+        // Convert position to the CFI even-integer representation
+        CFIPosition = (currNodePosition + 1) * 2;
+
+        // Create CFI step with id assertion, if the element has an id
+        if ($currNode.attr("id")) {
+            elementStep = "/" + CFIPosition + "[" + $currNode.attr("id") + "]";
+        }
+        else {
+            elementStep = "/" + CFIPosition;
+        }
+
+        // If a parent is an html element return the (last) step for this content document, otherwise, continue.
+        //   Also need to check if the current node is the top-level element. This can occur if the start node is also the
+        //   top level element.
+        $parentNode = $currNode.parent();
+        if (typeof topLevelElement === 'string' &&
+            cfiInstructions._matchesLocalNameOrElement($parentNode[0], topLevelElement) ||
+            cfiInstructions._matchesLocalNameOrElement($currNode[0], topLevelElement)) {
+            return elementStep;
+        } else if ($parentNode[0] === topLevelElement || $currNode[0] === topLevelElement) {
+            return elementStep;
+        } else {
+            return this.createCFIElementSteps($parentNode, topLevelElement, classBlacklist, elementBlacklist, idBlacklist) + elementStep;
+        }
+    }
+};
+
+return obj;
+}
+
+
+
+
+
+
+
+if (typeof define == 'function' && typeof define.amd == 'object') {
+    console.log("RequireJS ... cfi_generator");
+    
+    define('readium_cfi_js/cfi_generator',['jquery', './cfi_instructions', './cfi_runtime_errors'],
+    function ($, cfiInstructions, cfiRuntimeErrors) {
+        return init($, cfiInstructions, cfiRuntimeErrors);
+    });
+} else {
+    console.log("!RequireJS ... cfi_generator");
+    
+    if (!global["EPUBcfi"]) {
+        throw new Error("EPUBcfi not initialised on global object?! (window or this context)");
+    }
+    global.EPUBcfi.Generator = 
+    init($,
+        global.EPUBcfi.CFIInstructions,
+        {
+            NodeTypeError: global.EPUBcfi.NodeTypeError,
+            OutOfRangeError: global.EPUBcfi.OutOfRangeError,
+            TerminusError: global.EPUBcfi.TerminusError,
+            CFIAssertionError: global.EPUBcfi.CFIAssertionError
+        });
+}
+
+})(typeof window !== "undefined" ? window : this);
+
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//
+//  Redistribution and use in source and binary forms, with or without modification,
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice,
+//  this list of conditions and the following disclaimer in the documentation and/or
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be
+//  used to endorse or promote products derived from this software without specific
+//  prior written permission.
+
+(function(global) {
+
+var init = function(cfiParser, cfiInterpreter, cfiInstructions, cfiRuntimeErrors, cfiGenerator) {
+
+    if (typeof cfiParser === "undefined") {
+        throw new Error("UNDEFINED?! cfiParser");
+    }
+
+    if (typeof cfiInterpreter === "undefined") {
+        throw new Error("UNDEFINED?! cfiInterpreter");
+    }
+
+    if (typeof cfiInstructions === "undefined") {
+        throw new Error("UNDEFINED?! cfiInstructions");
+    }
+
+    if (typeof cfiRuntimeErrors === "undefined") {
+        throw new Error("UNDEFINED?! cfiRuntimeErrors");
+    }
+
+    if (typeof cfiGenerator === "undefined") {
+        throw new Error("UNDEFINED?! cfiGenerator");
+    }
+
+    var obj = {
+
+        getContentDocHref : function (CFI, packageDocument) {
+            return cfiInterpreter.getContentDocHref(CFI, packageDocument);
+        },
+        injectElement : function (CFI, contentDocument, elementToInject, classBlacklist, elementBlacklist, idBlacklist) {
+            return cfiInterpreter.injectElement(CFI, contentDocument, elementToInject, classBlacklist, elementBlacklist, idBlacklist);
+        },
+        getTargetElement : function (CFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
+            return cfiInterpreter.getTargetElement(CFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist);
+        },
+        getTargetElementWithPartialCFI : function (contentDocumentCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
+            return cfiInterpreter.getTargetElementWithPartialCFI(contentDocumentCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist);
+        },
+        injectRangeElements : function (rangeCFI, contentDocument, startElementToInject, endElementToInject, classBlacklist, elementBlacklist, idBlacklist) {
+            return cfiInterpreter.injectRangeElements(rangeCFI, contentDocument, startElementToInject, endElementToInject, classBlacklist, elementBlacklist, idBlacklist);
+        },
+        getRangeTargetElements : function (rangeCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
+            return cfiInterpreter.getRangeTargetElements(rangeCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist);
+        },
+        isRangeCfi : function (cfi) {
+            return cfiInterpreter.isRangeCfi(cfi);
+        },
+        hasTextTerminus: function(cfi) {
+            return cfiInterpreter.hasTextTerminus(cfi);
+        },
+        getTextTerminusInfo : function (CFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
+            return cfiInterpreter.getTextTerminusInfo(CFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist);
+        },
+        getTextTerminusInfoWithPartialCFI : function (contentDocumentCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
+            return cfiInterpreter.getTextTerminusInfoWithPartialCFI(contentDocumentCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist);
+        },
+        generateCharacterOffsetCFIComponent : function (startTextNode, characterOffset, classBlacklist, elementBlacklist, idBlacklist) {
+            return cfiGenerator.generateCharacterOffsetCFIComponent(startTextNode, characterOffset, classBlacklist, elementBlacklist, idBlacklist);
+        },
+        generateElementCFIComponent : function (startElement, classBlacklist, elementBlacklist, idBlacklist) {
+            return cfiGenerator.generateElementCFIComponent(startElement, classBlacklist, elementBlacklist, idBlacklist);
+        },
+        generatePackageDocumentCFIComponent : function (contentDocumentName, packageDocument, classBlacklist, elementBlacklist, idBlacklist) {
+            return cfiGenerator.generatePackageDocumentCFIComponent(contentDocumentName, packageDocument, classBlacklist, elementBlacklist, idBlacklist);
+        },
+        generatePackageDocumentCFIComponentWithSpineIndex : function (spineIndex, packageDocument, classBlacklist, elementBlacklist, idBlacklist) {
+            return cfiGenerator.generatePackageDocumentCFIComponentWithSpineIndex(spineIndex, packageDocument, classBlacklist, elementBlacklist, idBlacklist);
+        },
+        generateCompleteCFI : function (packageDocumentCFIComponent, contentDocumentCFIComponent) {
+            return cfiGenerator.generateCompleteCFI(packageDocumentCFIComponent, contentDocumentCFIComponent);
+        },
+        generateCharOffsetRangeComponent : function (rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist) {
+            return cfiGenerator.generateCharOffsetRangeComponent(rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist);
+        },
+        generateElementRangeComponent : function (rangeStartElement, rangeEndElement, classBlacklist, elementBlacklist, idBlacklist) {
+            return cfiGenerator.generateElementRangeComponent(rangeStartElement, rangeEndElement, classBlacklist, elementBlacklist, idBlacklist);
+        },
+        generateRangeComponent : function (rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist) {
+            return cfiGenerator.generateRangeComponent(rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist);
+        },
+        injectElementAtOffset : function ($textNodeList, textOffset, elementToInject) {
+            return cfiInstructions.injectCFIMarkerIntoText($textNodeList, textOffset, elementToInject);
+        }
+    };
+
+
+    // TODO: remove global (should not be necessary in properly-configured RequireJS build!)
+    // ...but we leave it here as a "legacy" mechanism to access the CFI lib functionality
+    // -----
+    obj.CFIInstructions = cfiInstructions;
+    obj.Parser = cfiParser;
+    obj.Interpreter = cfiInterpreter;
+    obj.Generator = cfiGenerator;
+
+    obj.NodeTypeError= cfiRuntimeErrors.NodeTypeError;
+    obj.OutOfRangeError = cfiRuntimeErrors.OutOfRangeError;
+    obj.TerminusError = cfiRuntimeErrors.TerminusError;
+    obj.CFIAssertionError = cfiRuntimeErrors.CFIAssertionError;
+
+    global.EPUBcfi = obj;
+    // -----
+
+    console.log("#######################################");
+    // console.log(global.EPUBcfi);
+    // console.log("#######################################");
+
+    return obj;
+}
+
+
+
+
+
+
+if (typeof define == 'function' && typeof define.amd == 'object') {
+    console.log("RequireJS ... cfi_API");
+
+    define('readium_cfi_js/cfi_API',['readium_cfi_js/cfi_parser', './cfi_interpreter', './cfi_instructions', './cfi_runtime_errors', './cfi_generator'],
+    function (cfiParser, cfiInterpreter, cfiInstructions, cfiRuntimeErrors, cfiGenerator) {
+
+        return init(cfiParser, cfiInterpreter, cfiInstructions, cfiRuntimeErrors, cfiGenerator);
+    });
+} else {
+    console.log("!RequireJS ... cfi_API");
+
+    if (!global["EPUBcfi"]) {
+        throw new Error("EPUBcfi not initialised on global object?! (window or this context)");
+    }
+
+    init(global.EPUBcfi.Parser,
+        global.EPUBcfi.Interpreter,
+        global.EPUBcfi.CFIInstructions,
+        {
+            NodeTypeError: global.EPUBcfi.NodeTypeError,
+            OutOfRangeError: global.EPUBcfi.OutOfRangeError,
+            TerminusError: global.EPUBcfi.TerminusError,
+            CFIAssertionError: global.EPUBcfi.CFIAssertionError
+        },
+        global.EPUBcfi.Generator);
+}
+
+})(typeof window !== "undefined" ? window : this);
+
+define('readium_cfi_js', ['readium_cfi_js/cfi_API'], function (main) { return main; });
 
 define('eventEmitter',['require','exports','module'],function (require, exports, module) {'use strict';
 
@@ -16826,6 +16853,7 @@ function($, _, Class, TextLineInferrer, HighlightView, HighlightBorderView, High
                     point.y > rect.top && point.y < rect.bottom;
             };
 
+            // e is a jQuery event wrapper (use e.originalEvent to access the raw object)
             that.boundHighlightCallback = function(e) {
                 var scale = calculateScale();
                 var mouseIsInside = false;
@@ -16834,7 +16862,7 @@ function($, _, Class, TextLineInferrer, HighlightView, HighlightBorderView, High
                 var y = e.pageY;
 
                 if (e.type === 'touchend') {
-                    var lastTouch = _.last(e.changedTouches);
+                    var lastTouch = _.last(e.originalEvent.changedTouches);
                     x = lastTouch.pageX;
                     y = lastTouch.pageY;
                 }
@@ -17630,6 +17658,7 @@ var BookmarkData = function(idref, contentCFI) {
      * @property idref
      * @type {string}
      */
+
     this.idref = idref;
 
     /**
@@ -17637,12 +17666,14 @@ var BookmarkData = function(idref, contentCFI) {
      * @property contentCFI
      * @type {string}
      */
+    
     this.contentCFI = contentCFI;
 
     /**
      * serialize to string
      * @return JSON string representation
      */
+    
     this.toString = function(){
         return JSON.stringify(self);
     }
@@ -17758,7 +17789,7 @@ var HighlightsManager = function (proxyObj, options) {
         mangleEvent('annotationHoverIn');
         mangleEvent('annotationHoverOut');
 
-        originalEmit.apply(this, args);
+        originalEmit.apply(self, args);
         originalEmit.apply(proxy, args);
     };
 
@@ -21867,14 +21898,57 @@ define('readium_shared_js/models/current_pages_info',[],function() {
  *
  * @param {Models.Spine} spine
  * @param {boolean} isFixedLayout is fixed or reflowable spine item
+ * @return CurrentPagesInfo
 */
+
 var CurrentPagesInfo = function(spine, isFixedLayout) {
 
 
+    /**
+     * The reading direction
+     *
+     * @property isRightToLeft
+     * @type bool
+     */
+
     this.isRightToLeft = spine.isRightToLeft();
+    
+    /**
+     * Is the ebook fixed layout or not?
+     *
+     * @property isFixedLayout
+     * @type bool
+     */
+
     this.isFixedLayout = isFixedLayout;
+    
+    /**
+     * Counts the number of spine items
+     *
+     * @property spineItemCount
+     * @type number
+     */    
+
     this.spineItemCount = spine.items.length
+    
+    /**
+     * returns an array of open pages, each array item is a data structure (plain JavaScript object) with the following fields: spineItemPageIndex, spineItemPageCount, idref, spineItemIndex (as per the parameters of the addOpenPage() function below)
+     *
+     * @property openPages
+     * @type array
+     */
+
     this.openPages = [];
+
+    /**
+     * Adds an page item to the openPages array
+     *
+     * @method     addOpenPage
+     * @param      {number} spineItemPageIndex
+     * @param      {number} spineItemPageCount
+     * @param      {string} idref
+     * @param      {number} spineItemIndex   
+     */
 
     this.addOpenPage = function(spineItemPageIndex, spineItemPageCount, idref, spineItemIndex) {
         this.openPages.push({spineItemPageIndex: spineItemPageIndex, spineItemPageCount: spineItemPageCount, idref: idref, spineItemIndex: spineItemIndex});
@@ -21882,13 +21956,34 @@ var CurrentPagesInfo = function(spine, isFixedLayout) {
         this.sort();
     };
 
+    /**
+     * Checks if navigation to the page on the left is possible (depending on page-progression-direction: previous page in LTR mode, next page in RTL mode)
+     *
+     * @method     canGoLeft
+     * @return bool true if turning to the left page is possible 
+     */
+
     this.canGoLeft = function () {
         return this.isRightToLeft ? this.canGoNext() : this.canGoPrev();
     };
 
+    /**
+     * Checks if navigation to the page on the right is possible (depending on page-progression-direction: next page in LTR mode, previous page in RTL mode)
+     *
+     * @method     canGoRight
+     * @return bool true if turning to the right page is possible 
+     */
+
     this.canGoRight = function () {
         return this.isRightToLeft ? this.canGoPrev() : this.canGoNext();
     };
+
+    /**
+     * Checks if navigation to the next page is possible (depending on page-progression-direction: right page in LTR mode, left page in RTL mode)
+     *
+     * @method     canGoNext
+     * @return bool true if turning to the next page is possible 
+     */
 
     this.canGoNext = function() {
 
@@ -21908,6 +22003,13 @@ var CurrentPagesInfo = function(spine, isFixedLayout) {
         return lastOpenPage.spineItemIndex < spine.last().index || lastOpenPage.spineItemPageIndex < lastOpenPage.spineItemPageCount - 1;
     };
 
+    /**
+     * Checks if navigation to the previous page is possible (depending on page-progression-direction: left page in LTR mode, right page in RTL mode)
+     *
+     * @method     canGoPrev
+     * @return bool true if turning to the previous page is possible 
+     */
+
     this.canGoPrev = function() {
 
         if(this.openPages.length == 0)
@@ -21926,6 +22028,12 @@ var CurrentPagesInfo = function(spine, isFixedLayout) {
         return spine.first().index < firstOpenPage.spineItemIndex || 0 < firstOpenPage.spineItemPageIndex;
     };
 
+    /**
+     * Sorts the openPages array based on spineItemIndex and spineItemPageIndex
+     *
+     * @method     sort
+     */
+
     this.sort = function() {
 
         this.openPages.sort(function(a, b) {
@@ -21934,7 +22042,7 @@ var CurrentPagesInfo = function(spine, isFixedLayout) {
                 return a.spineItemIndex - b.spineItemIndex;
             }
 
-            return a.pageIndex - b.pageIndex;
+            return a.spineItemPageIndex - b.spineItemPageIndex;
 
         });
 
@@ -21944,7 +22052,7 @@ var CurrentPagesInfo = function(spine, isFixedLayout) {
 
 return CurrentPagesInfo;
 });
-//  Created by Boris Schneiderman.
+  //  Created by Boris Schneiderman.
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
 //  
 //  Redistribution and use in source and binary forms, with or without modification, 
@@ -21971,29 +22079,53 @@ return CurrentPagesInfo;
 
 define('readium_shared_js/models/fixed_page_spread',[],function() {
 /**
+ * Spread the page 
  *
- * @param {Models.Spine} spine
+ * @class  Models.Spread
  * @constructor
+ * @param spine 
+ * @param {Boolean} isSyntheticSpread 
+ *
  */
 var Spread = function(spine, isSyntheticSpread) {
 
     var self = this;
 
     this.spine = spine;
-
+    
     this.leftItem = undefined;
     this.rightItem = undefined;
     this.centerItem = undefined;
 
     var _isSyntheticSpread = isSyntheticSpread;
 
+    /**
+     * Sets whether or not this is a synthetic spread
+     *
+     * @method     setSyntheticSpread
+     * @param      {Bool} isSyntheticSpread
+     */
+
     this.setSyntheticSpread = function(isSyntheticSpread) {
         _isSyntheticSpread = isSyntheticSpread;
     };
 
+    /**
+     * Checks out if the spread is synthetic
+     *
+     * @method     isSyntheticSpread
+     * @return     {Bool} true if this is a 2-page synthetic spread
+     */
+
     this.isSyntheticSpread = function() {
         return _isSyntheticSpread;
     };
+
+    /**
+     * Opens the first spine item (FXL page)
+     *
+     * @method     openFirst
+     */
 
     this.openFirst = function() {
 
@@ -22005,6 +22137,12 @@ var Spread = function(spine, isSyntheticSpread) {
         }
     };
 
+    /**
+     * Opens the last spine item (FXL page)
+     *
+     * @method     openLast
+     */
+
     this.openLast = function() {
 
         if( this.spine.items.length == 0 ) {
@@ -22014,6 +22152,13 @@ var Spread = function(spine, isSyntheticSpread) {
             this.openItem(this.spine.last());
         }
     };
+
+    /**
+     * Opens a spine item (FXL page)
+     *
+     * @method     openItem
+     * @param      {Models.SpineItem} item
+     */
 
     this.openItem = function(item) {
 
@@ -22036,12 +22181,26 @@ var Spread = function(spine, isSyntheticSpread) {
         }
     };
 
+    /**
+     * Resets the spine items (FXL pages, left + right + center) to undefined
+     *
+     * @method     resetItems
+     */
+
     function resetItems() {
 
         self.leftItem = undefined;
         self.rightItem = undefined;
         self.centerItem = undefined;
     }
+
+    /**
+     * Sets the spine item (FXL page) to a position (left, right or center)
+     *
+     * @method     setItemToPosition
+     * @param      {Models.SpineItem} item
+     * @param      {Spread.POSITION_CENTER | Spread.POSITION_LEFT | Spread.POSITION_RIGHT} position
+     */
 
     function setItemToPosition(item, position) {
 
@@ -22061,6 +22220,14 @@ var Spread = function(spine, isSyntheticSpread) {
         }
     }
 
+    /**
+     * Returns the position of a spine item / FXL page (left, center or right)
+     *
+     * @method     getItemPosition
+     * @param      {Models.SpineItem} item
+     * @return     {Spread.POSITION_CENTER | Spread.POSITION_LEFT | Spread.POSITION_RIGHT}
+     */
+
     function getItemPosition(item) {
         
         // includes !item.isRenditionSpreadAllowed() ("rendition:spread-none") ==> force center position
@@ -22078,6 +22245,12 @@ var Spread = function(spine, isSyntheticSpread) {
 
         return Spread.POSITION_CENTER;
     }
+
+    /**
+     * Opens the next item
+     *
+     * @method     openNext
+     */ 
 
     this.openNext = function() {
 
@@ -22097,6 +22270,12 @@ var Spread = function(spine, isSyntheticSpread) {
         }
     };
 
+    /**
+     * Opens the previous item
+     *
+     * @method     openPrev
+     */ 
+
     this.openPrev = function() {
 
         var items = this.validItems();
@@ -22115,6 +22294,13 @@ var Spread = function(spine, isSyntheticSpread) {
         }
     };
 
+    /**
+     * Returns an sorrted array of spine items (as per their order in the spine) that are currently in the FXL page layout
+     *
+     * @method     validItems
+     * @return     {array} 
+     */ 
+
     this.validItems = function() {
 
         var arr = [];
@@ -22129,6 +22315,14 @@ var Spread = function(spine, isSyntheticSpread) {
 
         return arr;
     };
+
+    /**
+     * Gets the neighbour spine item in the FXL page layout (on left or right of the current item)
+     *
+     * @method     getNeighbourItem
+     * @param      {Models.SpineItem} item
+     * @return     {Models.SpineItem} item
+     */ 
 
     function getNeighbourItem(item) {
 
@@ -22236,7 +22430,7 @@ define("jquerySizes", ["jquery"], (function (global) {
 }(this)));
 
 //  Created by Boris Schneiderman.
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  Copyright (c) 2016 Readium Foundation and/or its licensees. All rights reserved.
 //  
 //  Redistribution and use in source and binary forms, with or without modification, 
 //  are permitted provided that the following conditions are met:
@@ -22267,9 +22461,9 @@ define('readium_shared_js/models/spine_item',[], function() {
  *
  * @class  Models.SpineItem
  * @constructor
- * @param itemData spine item properties container
- * @param {Number} index
- * @param {Models.Spine} spine
+ * @param itemData container for spine item properties
+ * @param {Number} index index of this spine item in the parent spine 
+ * @param {Models.Spine} spine parent spine
  *
  */
 var SpineItem = function(itemData, index, spine){
@@ -22281,7 +22475,7 @@ var SpineItem = function(itemData, index, spine){
      * manifest item that the spine item references
      *
      * @property idref
-     * @type {String}
+     * @type String
      * @default  None
      */
     this.idref = itemData.idref;
@@ -22337,7 +22531,7 @@ var SpineItem = function(itemData, index, spine){
     this.rendition_spread = itemData.rendition_spread;
 
     /**
-     * A sring specifying desired orientation for ALL spine items. Possible values are
+     * A string specifying desired orientation for ALL spine items. Possible values are
      * rendition-orientation-*, which can be none, landscape, portrait, both or auto
      *
      * Note: Not yet implemented.
@@ -22386,7 +22580,7 @@ var SpineItem = function(itemData, index, spine){
     this.media_type = itemData.media_type;
 
     /**
-     * The index of this spine item in the spine itself.
+     * The index of this spine item in the parent spine .
      * 
      * @property index
      * @type     String
@@ -22398,17 +22592,38 @@ var SpineItem = function(itemData, index, spine){
      * The object which is the actual spine of which this spineItem is a child.
      *
      * @property spine
-     * @type     String
+     * @type     Models.Spine
      * @default  None
      */
     this.spine = spine;
 
     validateSpread();
 
+    /**
+     * Sets a new page spread and checks its validity
+     *
+     * @method     setSpread
+     * @param      {String} spread  the new page spread 
+     */
     this.setSpread = function(spread) {
         this.page_spread = spread;
 
         validateSpread();
+    };
+
+    /* private method (validateSpread) */
+    function validateSpread() {
+
+        if(!self.page_spread) {
+            return;
+        }
+
+        if( self.page_spread != SpineItem.SPREAD_LEFT &&
+            self.page_spread != SpineItem.SPREAD_RIGHT &&
+            self.page_spread != SpineItem.SPREAD_CENTER ) {
+
+            console.error(self.page_spread + " is not a recognized spread type");
+        }
     };
 
     /**
@@ -22422,25 +22637,6 @@ var SpineItem = function(itemData, index, spine){
         var rendition_spread = self.getRenditionSpread();
         return !rendition_spread || rendition_spread != SpineItem.RENDITION_SPREAD_NONE;
     };
-
-    /**
-     * Checks to see if the value for the page-spread attribute is valid
-     *
-     * @method     validateSpread
-     */
-    function validateSpread() {
-
-        if(!self.page_spread) {
-            return;
-        }
-
-        if( self.page_spread != SpineItem.SPREAD_LEFT &&
-            self.page_spread != SpineItem.SPREAD_RIGHT &&
-            self.page_spread != SpineItem.SPREAD_CENTER ) {
-
-            console.error(self.page_spread + " is not a recognized spread type");
-        }
-    }
 
     /**
      * Checks to see if this spineItem explicitly specifies SPREAD_LEFT
@@ -23031,79 +23227,214 @@ Helpers.Rect.fromElement = function ($element) {
 
     return new Helpers.Rect(offsetLeft, offsetTop, offsetWidth, offsetHeight);
 };
+/**
+ *
+ * @param $epubHtml: The html that is to have font attributes added.
+ * @param fontSize: The font size that is to be added to the element at all locations.
+ * @param fontObj: The font Object containing at minimum the URL, and fontFamilyName (In fields url and fontFamily) respectively. Pass in null's on the object's fields to signal no font.
+ * @param callback: function invoked when "done", which means that if there are asynchronous operations such as font-face loading via injected stylesheets, then the UpdateHtmlFontAttributes() function returns immediately but the caller should wait for the callback function call if fully-loaded font-face *stylesheets* are required on the caller's side (note that the caller's side may still need to detect *actual font loading*, via the FontLoader API or some sort of ResizeSensor to indicate that the updated font-family has been used to render the document). 
+ */
 
-Helpers.UpdateHtmlFontSize = function ($epubHtml, fontSize) {
-
-    var perf = false;
-
-    // TODO: very slow on Firefox!
-    // See https://github.com/readium/readium-shared-js/issues/274
-    if (perf) var time1 = window.performance.now();
-
-    var factor = fontSize / 100;
-    var win = $epubHtml[0].ownerDocument.defaultView;
-    var $textblocks = $('p, div, span, h1, h2, h3, h4, h5, h6, li, blockquote, td, pre', $epubHtml);
-    var originalLineHeight;
+Helpers.UpdateHtmlFontAttributes = function ($epubHtml, fontSize, fontObj, callback) {
 
 
-    // need to do two passes because it is possible to have nested text blocks.
-    // If you change the font size of the parent this will then create an inaccurate
-    // font size for any children.
-    for (var i = 0; i < $textblocks.length; i++) {
-        var ele = $textblocks[i],
-            fontSizeAttr = ele.getAttribute('data-original-font-size');
+    var FONT_FAMILY_ID = "readium_font_family_link";
 
-        if (!fontSizeAttr) {
+    var docHead = $("head", $epubHtml);
+    var link = $("#" + FONT_FAMILY_ID, docHead);
+
+    const NOTHING = 0, ADD = 1, REMOVE = 2; //Types for css font family.
+    var changeFontFamily = NOTHING;
+
+    var fontLoadCallback = function() {
+            
+        var perf = false;
+
+        // TODO: very slow on Firefox!
+        // See https://github.com/readium/readium-shared-js/issues/274
+        if (perf) var time1 = window.performance.now();
+
+
+
+        if (changeFontFamily != NOTHING) {
+            var fontFamilyStyle = $("style#readium-fontFamily", docHead);
+
+            if (fontFamilyStyle && fontFamilyStyle[0]) {
+                // REMOVE, or ADD (because we remove before re-adding from scratch)
+                docHead[0].removeChild(fontFamilyStyle[0]);
+            }
+            if (changeFontFamily == ADD) {
+                var style = $epubHtml[0].ownerDocument.createElement('style');
+                style.setAttribute("id", "readium-fontFamily");
+                style.appendChild($epubHtml[0].ownerDocument.createTextNode('html * { font-family: "'+fontObj.fontFamily+'" !important; }')); // this technique works for text-align too (e.g. text-align: justify !important;)
+
+                docHead[0].appendChild(style);
+
+                //fontFamilyStyle = $(style);
+            }
+        }
+        
+        // The code below does not work because jQuery $element.css() on html.body somehow "resets" the font: CSS directive by removing it entirely (font-family: works with !important, but unfortunately further deep inside the DOM there may be CSS applied with the font: directive, which somehow seems to take precedence! ... as shown in Chrome's developer tools)
+        // ...thus why we use the above routine instead, to insert a new head>style element
+        // // var doc = $epubHtml[0].ownerDocument;
+        // // var body = doc.body;
+        // var $body = $("body", $epubHtml);
+        // // $body.css({
+        // //     "font-size" : fontSize + "%",
+        // //     "font-family" : ""
+        // // });
+        // $body.css("font-family", "");
+        // if (changeFontFamily == ADD) {
+            
+        //     var existing = $body.attr("style");
+        //     $body[0].setAttribute("style",
+        //         existing + " ; font-family: '" + fontObj.fontFamily + "' !important ;" + " ; font: regular 100% '" + fontObj.fontFamily + "' !important ;");
+        // }
+
+
+        var factor = fontSize / 100;
+        var win = $epubHtml[0].ownerDocument.defaultView;
+        if (!win) {
+            console.log("NIL $epubHtml[0].ownerDocument.defaultView");
+            return;
+        }
+
+        // TODO: is this a complete list? Is there a better way to do this?
+        //https://github.com/readium/readium-shared-js/issues/336
+        // Note that font-family is handled differently, using an injected stylesheet with a catch-all selector that pushes an "!important" CSS value in the document's cascade.
+        var $textblocks = $('p, div, span, h1, h2, h3, h4, h5, h6, li, blockquote, td, pre, dt, dd, code, a', $epubHtml); // excludes section, body etc.
+
+        // need to do two passes because it is possible to have nested text blocks.
+        // If you change the font size of the parent this will then create an inaccurate
+        // font size for any children.
+        for (var i = 0; i < $textblocks.length; i++) {
+
+            var ele = $textblocks[i];
+            
+            var fontSizeAttr = ele.getAttribute('data-original-font-size');
+            if (fontSizeAttr) {
+                // early exit, original values already set.
+                break;
+            }
+
             var style = win.getComputedStyle(ele);
+            
             var originalFontSize = parseInt(style.fontSize);
-            originalLineHeight = parseInt(style.lineHeight);
-
             ele.setAttribute('data-original-font-size', originalFontSize);
+
+            var originalLineHeight = parseInt(style.lineHeight);
             // getComputedStyle will not calculate the line-height if the value is 'normal'. In this case parseInt will return NaN
             if (originalLineHeight) {
                 ele.setAttribute('data-original-line-height', originalLineHeight);
             }
+            
+            // var fontFamilyAttr = ele.getAttribute('data-original-font-family');
+            // if (!fontFamilyAttr) {
+            //     var originalFontFamily = style.fontFamily;
+            //     if (originalFontFamily) {
+            //         ele.setAttribute('data-original-font-family', originalFontFamily);
+            //     }
+            // }
+        }
+
+        for (var i = 0; i < $textblocks.length; i++) {
+            var ele = $textblocks[i];
+
+            // TODO: group the 3x potential $(ele).css() calls below to avoid multiple jQuery style mutations 
+
+            var fontSizeAttr = ele.getAttribute('data-original-font-size');
+            var originalFontSize = Number(fontSizeAttr);
+            $(ele).css("font-size", (originalFontSize * factor) + 'px');
+
+            var lineHeightAttr = ele.getAttribute('data-original-line-height');
+            var originalLineHeight = lineHeightAttr ? Number(lineHeightAttr) : 0;
+            if (originalLineHeight) {
+                $(ele).css("line-height", (originalLineHeight * factor) + 'px');
+            }
+            
+            // var fontFamilyAttr = ele.getAttribute('data-original-font-family');
+            // switch(changeFontFamily){
+            //     case NOTHING:
+            //         break;
+            //     case ADD:
+            //         $(ele).css("font-family", fontObj.fontFamily);
+            //         break;
+            //     case REMOVE:
+            //         $(ele).css("font-family", fontFamilyAttr);
+            //         break;
+            // }
+        }
+
+        $epubHtml.css("font-size", fontSize + "%");
+
+        
+        
+        if (perf) {
+            var time2 = window.performance.now();
+        
+            // Firefox: 80+
+            // Chrome: 4-10
+            // Edge: 15-34
+            // IE: 10-15
+            // https://readium.firebase.com/?epub=..%2Fepub_content%2Faccessible_epub_3&goto=%7B%22idref%22%3A%22id-id2635343%22%2C%22elementCfi%22%3A%22%2F4%2F2%5Bbuilding_a_better_epub%5D%2F10%2F44%2F6%2C%2F1%3A334%2C%2F1%3A335%22%7D
+            
+            var diff = time2-time1;
+            console.log(diff);
+            
+            // setTimeout(function(){
+            //     alert(diff);
+            // }, 2000);
+        }
+
+        callback();
+    };
+    var fontLoadCallback_ = _.once(fontLoadCallback);
+
+    if(fontObj.fontFamily && fontObj.url){
+        var dataFontFamily = link.length ? link.attr("data-fontfamily") : undefined;
+
+        if(!link.length){
+            changeFontFamily = ADD;
+
+            setTimeout(function(){
+                
+                link = $("<link/>", {
+                    "id" : FONT_FAMILY_ID,
+                    "data-fontfamily" : fontObj.fontFamily,
+                    "rel" : "stylesheet",
+                    "type" : "text/css"
+                });
+                docHead.append(link);
+                    
+                link.attr({
+                    "href" : fontObj.url
+                });
+            }, 0);
+        }
+        else if(dataFontFamily != fontObj.fontFamily){
+            changeFontFamily = ADD;
+        
+            link.attr({
+                "data-fontfamily" : fontObj.fontFamily,
+                "href" : fontObj.url
+            });
+        } else {
+            changeFontFamily = NOTHING;
         }
     }
-
-    // reset variable so the below logic works. All variables in JS are function scoped.
-    originalLineHeight = 0;
-    for (var i = 0; i < $textblocks.length; i++) {
-        var ele = $textblocks[i],
-            fontSizeAttr = ele.getAttribute('data-original-font-size'),
-            lineHeightAttr = ele.getAttribute('data-original-line-height'),
-            originalFontSize = Number(fontSizeAttr);
-
-        if (lineHeightAttr) {
-            originalLineHeight = Number(lineHeightAttr);
-        }
-        else {
-            originalLineHeight = 0;
-        }
-
-        $(ele).css("font-size", (originalFontSize * factor) + 'px');
-        if (originalLineHeight) {
-            $(ele).css("line-height", (originalLineHeight * factor) + 'px');
-        }
-
+    else{
+        changeFontFamily = REMOVE;
+        if(link.length) link.remove();
     }
-    $epubHtml.css("font-size", fontSize + "%");
-    
-    if (perf) {
-        var time2 = window.performance.now();
-    
-        // Firefox: 80+
-        // Chrome: 4-10
-        // Edge: 15-34
-        // IE: 10-15
-        // https://readium.firebase.com/?epub=..%2Fepub_content%2Faccessible_epub_3&goto=%7B%22idref%22%3A%22id-id2635343%22%2C%22elementCfi%22%3A%22%2F4%2F2%5Bbuilding_a_better_epub%5D%2F10%2F44%2F6%2C%2F1%3A334%2C%2F1%3A335%22%7D
-        
-        var diff = time2-time1;
-        console.log(diff);
-        
-        // setTimeout(function(){
-        //     alert(diff);
-        // }, 2000);
+
+    if (changeFontFamily == ADD) {
+        // just in case the link@onload does not trigger, we set a timeout
+        setTimeout(function(){
+            fontLoadCallback_();
+        }, 100);
+    }
+    else { // REMOVE, NOTHING
+        fontLoadCallback_();
     }
 };
 
@@ -23375,12 +23706,12 @@ Helpers.loadTemplate = function (name, params) {
 Helpers.loadTemplate.cache = {
     "fixed_book_frame": '<div id="fixed-book-frame" class="clearfix book-frame fixed-book-frame"></div>',
 
-    "single_page_frame": '<div><div id="scaler"><iframe scrolling="no" class="iframe-fixed"></iframe></div></div>',
+    "single_page_frame": '<div><div id="scaler"><iframe allowfullscreen="allowfullscreen" scrolling="no" class="iframe-fixed"></iframe></div></div>',
     //"single_page_frame" : '<div><iframe scrolling="no" class="iframe-fixed" id="scaler"></iframe></div>',
 
     "scrolled_book_frame": '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"><div id="scrolled-content-frame"></div></div>',
     "reflowable_book_frame": '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"></div>',
-    "reflowable_book_page_frame": '<div id="reflowable-content-frame" class="reflowable-content-frame"><iframe scrolling="no" id="epubContentIframe"></iframe></div>'
+    "reflowable_book_page_frame": '<div id="reflowable-content-frame" class="reflowable-content-frame"><iframe allowfullscreen="allowfullscreen" scrolling="no" id="epubContentIframe"></iframe></div>'
 };
 
 /**
@@ -23396,16 +23727,85 @@ Helpers.setStyles = function (styles, $element) {
         return;
     }
 
+    var stylingGlobal = "";
+    var stylings = [];
+    var elementIsDocument = ($element && $element.createTextNode) ? true : false;
+
     for (var i = 0; i < count; i++) {
         var style = styles[i];
-        if (style.selector) {
-            $(style.selector, $element).css(style.declarations);
-        }
-        else {
-            $element.css(style.declarations);
+
+        if (elementIsDocument) {
+            if (!style.selector || style.selector == "" || style.selector == "html" || style.selector == "body" || style.selector == "*") {
+                for (var prop in style.declarations) {
+                    if (style.declarations.hasOwnProperty(prop)) {
+                        // backgroundColor => background-color
+                        var prop_ = prop.replace(/[A-Z]/g, function(a) {return '-' + a.toLowerCase()});
+
+                        stylingGlobal += prop_ + ": " + style.declarations[prop] + " !important; ";
+                    }
+                }
+            } else {
+                //$(style.selector, $($element.doumentElement)).css(style.declarations);
+
+                var cssProperties = "";
+
+                for (var prop in style.declarations) {
+                    if (style.declarations.hasOwnProperty(prop)) {
+                        // backgroundColor => background-color
+                        var prop_ = prop.replace(/[A-Z]/g, function(a) {return '-' + a.toLowerCase()});
+                        cssProperties += prop_ + ": " + style.declarations[prop] + " !important; ";
+                    }
+                }
+
+                stylings.push({selector: style.selector, cssProps: cssProperties});
+            }
+            
+        } else { // HTML element
+            if (style.selector) {
+                $(style.selector, $element).css(style.declarations);
+            }
+            else {
+                $element.css(style.declarations);
+            }
         }
     }
 
+    if (elementIsDocument) { // HTML document
+
+        var doc = $element;
+
+        var bookStyleElement = $("style#readium-bookStyles", doc.head);
+
+        if (bookStyleElement && bookStyleElement[0]) {
+            // we remove before re-adding from scratch
+            doc.head.removeChild(bookStyleElement[0]);
+        }
+        
+        var cssStylesheet = "";
+
+        if (stylingGlobal.length > 0) {
+            cssStylesheet += ' body, body::after, body::before, body *, body *::after, body *::before { ' + stylingGlobal + ' } ';
+        }
+
+        if (stylings.length > 0) {
+            for (var i = 0; i < stylings.length; i++) {
+                var styling = stylings[i];
+
+                cssStylesheet += ' ' + styling.selector + ' { ' + styling.cssProps + ' } ';
+            }
+        }
+
+        if (cssStylesheet.length > 0) {
+
+            var styleElement = doc.createElement('style');
+            styleElement.setAttribute("id", "readium-bookStyles");
+            styleElement.appendChild(doc.createTextNode(cssStylesheet));
+
+            doc.head.appendChild(styleElement);
+
+            //bookStyleElement = $(styleElement);
+        }
+    }
 };
 
 /**
@@ -23767,6 +24167,18 @@ var CfiNavigationLogic = function(options) {
         return this.getRootDocument().body || this.getRootElement();
     };
 
+    this.getClassBlacklist = function () {
+        return options.classBlacklist || [];
+    }
+
+    this.getIdBlacklist = function () {
+        return options.idBlacklist || [];
+    }
+
+    this.getElementBlacklist = function () {
+        return options.elementBlacklist || [];
+    }
+
     this.getRootDocument = function () {
         return options.$iframe[0].contentDocument;
     };
@@ -23920,6 +24332,16 @@ var CfiNavigationLogic = function(options) {
                 left: 0
             };
         }
+        
+        // CAUSES REGRESSION BUGS !! TODO FIXME
+        // https://github.com/readium/readium-shared-js/issues/384#issuecomment-305145129
+        // else {
+        //     return {
+        //         top: 0,
+        //         left: (options.paginationInfo ? options.paginationInfo.pageOffset : 0)
+        //         //* (isPageProgressionRightToLeft() ? -1 : 1)
+        //     };
+        // }
 
         return {
             top: 0,
@@ -24002,6 +24424,26 @@ var CfiNavigationLogic = function(options) {
     function findPageByRectangles($element, spatialVerticalOffset) {
 
         var visibleContentOffsets = getVisibleContentOffsets();
+        //////////////////////
+        // ABOVE CAUSES REGRESSION BUGS !! TODO FIXME
+        // https://github.com/readium/readium-shared-js/issues/384#issuecomment-305145129
+        if (options.visibleContentOffsets) {
+            visibleContentOffsets = options.visibleContentOffsets();
+        }
+        if (isVerticalWritingMode()) {
+            visibleContentOffsets = {
+                top: (options.paginationInfo ? options.paginationInfo.pageOffset : 0),
+                left: 0
+            };
+        }
+        else { // THIS IS ENABLED ONLY FOR findPageByRectangles(), to fix the pageIndex computation. TODO FIXME!
+            visibleContentOffsets = {
+                top: 0,
+                left: (options.paginationInfo ? options.paginationInfo.pageOffset : 0)
+                //* (isPageProgressionRightToLeft() ? -1 : 1)
+            };
+        }
+        //////////////////////
 
         var clientRectangles = getNormalizedRectangles($element, visibleContentOffsets);
         if (clientRectangles.length === 0) { // elements with display:none, etc.
@@ -24326,9 +24768,9 @@ var CfiNavigationLogic = function(options) {
 
     this.getCfiForElement = function (element) {
         var cfi = EPUBcfi.Generator.generateElementCFIComponent(element,
-            ["cfi-marker"],
-            [],
-            ["MathJax_Message", "MathJax_SVG_Hidden"]);
+            this.getClassBlacklist(),
+            this.getElementBlacklist(),
+            this.getIdBlacklist());
 
         if (cfi[0] == "!") {
             cfi = cfi.substring(1);
@@ -24658,14 +25100,14 @@ var CfiNavigationLogic = function(options) {
         return EPUBcfi.generateRangeComponent(
             range.startContainer, range.startOffset,
             range.endContainer, range.endOffset,
-            ['cfi-marker'], [], ["MathJax_Message", "MathJax_SVG_Hidden"]);
+            self.getClassBlacklist(), self.getElementBlacklist(), self.getIdBlacklist());
     }
 
     function getRangeTargetNodes(rangeCfi) {
         return EPUBcfi.getRangeTargetElements(
             getWrappedCfiRelativeToContent(rangeCfi),
             self.getRootDocument(),
-            ['cfi-marker'], [], ["MathJax_Message", "MathJax_SVG_Hidden"]);
+            self.getClassBlacklist(), self.getElementBlacklist(), self.getIdBlacklist());
     }
 
     this.getDomRangeFromRangeCfi = function(rangeCfi, rangeCfi2, inclusive) {
@@ -24678,7 +25120,7 @@ var CfiNavigationLogic = function(options) {
                 range.setEnd(rangeInfo.endElement, rangeInfo.endOffset);
             } else {
                 var element = self.getElementByCfi(rangeCfi,
-                    ['cfi-marker'], [], ["MathJax_Message", "MathJax_SVG_Hidden"])[0];
+                    this.getClassBlacklist(), this.getElementBlacklist(), this.getIdBlacklist())[0];
                 range.selectNode(element);
             }
         } else {
@@ -24687,7 +25129,7 @@ var CfiNavigationLogic = function(options) {
                 range.setStart(rangeInfo1.startElement, rangeInfo1.startOffset);
             } else {
                 var startElement = self.getElementByCfi(rangeCfi,
-                    ['cfi-marker'], [], ["MathJax_Message", "MathJax_SVG_Hidden"])[0];
+                    this.getClassBlacklist(), this.getElementBlacklist(), this.getIdBlacklist())[0];
                 range.setStart(startElement, 0);
             }
 
@@ -24700,7 +25142,7 @@ var CfiNavigationLogic = function(options) {
                 }
             } else {
                 var endElement = self.getElementByCfi(rangeCfi2,
-                    ['cfi-marker'], [], ["MathJax_Message", "MathJax_SVG_Hidden"])[0];
+                    this.getClassBlacklist(), this.getElementBlacklist(), this.getIdBlacklist())[0];
                 range.setEnd(endElement, endElement.childNodes.length);
             }
         }
@@ -24783,9 +25225,9 @@ var CfiNavigationLogic = function(options) {
             try {
                 //noinspection JSUnresolvedVariable
                 var nodeResult = EPUBcfi.Interpreter.getRangeTargetElements(wrappedCfi, contentDoc,
-                    ["cfi-marker"],
-                    [],
-                    ["MathJax_Message", "MathJax_SVG_Hidden"]);
+                    this.getClassBlacklist(),
+                    this.getElementBlacklist(),
+                    this.getIdBlacklist());
 
                 if (debugMode) {
                     console.log(nodeResult);
@@ -24818,9 +25260,9 @@ var CfiNavigationLogic = function(options) {
             return {startInfo: startRangeInfo, endInfo: endRangeInfo, clientRect: nodeRangeClientRect}
         } else {
             var $element = self.getElementByCfi(cfi,
-                ["cfi-marker"],
-                [],
-                ["MathJax_Message", "MathJax_SVG_Hidden"]);
+                this.getClassBlacklist(),
+                this.getElementBlacklist(),
+                this.getIdBlacklist());
 
             var visibleContentOffsets = getVisibleContentOffsets();
             return {startInfo: null, endInfo: null, clientRect: getNormalizedBoundingRect($element, visibleContentOffsets)};
@@ -24997,15 +25439,16 @@ var CfiNavigationLogic = function(options) {
         var visibleElements = [];
 
         _.each($elements, function ($node) {
-            var isTextNode = ($node[0].nodeType === Node.TEXT_NODE);
-            var $element = isTextNode ? $node.parent() : $node;
+            var node = $node[0];
+            var isTextNode = (node.nodeType === Node.TEXT_NODE);
+            var element = isTextNode ? node.parentElement : node;
             var visibilityPercentage = checkVisibilityByRectangles(
                 $node, true, visibleContentOffsets, frameDimensions);
 
             if (visibilityPercentage) {
                 visibleElements.push({
-                    element: $element[0], // DOM Element is pushed
-                    textNode: isTextNode ? $node[0] : null,
+                    element: element, // DOM Element is pushed
+                    textNode: isTextNode ? node : null,
                     percentVisible: visibilityPercentage
                 });
             }
@@ -25062,30 +25505,31 @@ var CfiNavigationLogic = function(options) {
         return $elements;
     };
 
-    function isElementBlacklisted($element) {
-        //TODO: Ok we really need to have a single point of reference for this blacklist
-        var blacklist = {
-            classes: ["cfi-marker", "mo-cfi-highlight"],
-            elements: [], //not looked at
-            ids: ["MathJax_Message", "MathJax_SVG_Hidden"]
-        };
-
+    function isElementBlacklisted(element) {
         var isBlacklisted = false;
+        var classAttribute = element.className;
+        // check for SVGAnimatedString
+        if (classAttribute && typeof classAttribute.animVal !== "undefined") {
+            classAttribute = classAttribute.animVal;
+        } else if (classAttribute && typeof classAttribute.baseVal !== "undefined") {
+            classAttribute = classAttribute.baseVal;
+        }
+        var classList = classAttribute ? classAttribute.split(' ') : [];
+        var id = element.id;
 
-        _.some(blacklist.classes, function (value) {
-            if ($element.hasClass(value)) {
-                isBlacklisted = true;
-            }
-            return isBlacklisted;
-        });
+        var classBlacklist = self.getClassBlacklist();
+        if (classList.length === 1 && _.contains(classBlacklist, classList[0])) {
+            isBlacklisted = true;
+            return;
+        } else if (classList.length && _.intersection(classBlacklist, classList).length) {
+            isBlacklisted = true;
+            return;
+        }
 
-        _.some(blacklist.ids, function (value) {
-            if ($element.attr("id") === value) {
-                isBlacklisted = true;
-            }
-            return isBlacklisted;
-        });
-
+        if (id && id.length && _.contains(self.getIdBlacklist(), id)) {
+            isBlacklisted = true;
+            return;
+        }
 
         return isBlacklisted;
     }
@@ -25114,10 +25558,9 @@ var CfiNavigationLogic = function(options) {
         while ((node = nodeIterator.nextNode())) {
             var isLeafNode = node.nodeType === Node.ELEMENT_NODE && !node.childElementCount && !isValidTextNodeContent(node.textContent);
             if (isLeafNode || isValidTextNode(node)){
-                var $node = $(node);
-                var $element = (node.nodeType === Node.TEXT_NODE) ? $node.parent() : $node;
-                if (!isElementBlacklisted($element)) {
-                    $leafNodeElements.push($node);
+                var element = (node.nodeType === Node.TEXT_NODE) ? node.parentElement : node;
+                if (!isElementBlacklisted(element)) {
+                    $leafNodeElements.push($(node));
                 }
             }
         }
@@ -25145,7 +25588,7 @@ var CfiNavigationLogic = function(options) {
         // If we don't do this, we may get a reference to a node that doesn't get rendered
         // (such as for example a node that has tab character and a bunch of spaces)
         // this is would be bad! ask me why.
-        return text.replace(/[\s\n\r\t]/g, "").length > 0;
+        return !!text.trim().length;
     }
 
     this.getElements = function (selector) {
@@ -25398,37 +25841,171 @@ var ViewerSettings = function(settingsData) {
 
     var self = this;
 
+    /** Set to "auto"
+     *
+     * @property syntheticSpread
+     * @type 
+     */
+
     this.syntheticSpread = "auto";
+
+    /** 
+     *
+     * @property fontSelection
+     * @type number
+     */
+    
+    this.fontSelection = 0;
+
+    /** 
+     *
+     * @property fontSize
+     * @type number
+     */
+
     this.fontSize = 100;
+
+    /** 
+     *
+     * @property columnGap
+     * @type number
+     */
+
     this.columnGap = 20;
     
+    /** 
+     *
+     * @property columnMaxWidth
+     * @type number
+     */
+
     this.columnMaxWidth = 700;
+
+    /** 
+     *
+     * @property columnMinWidth
+     * @type number
+     */
+
     this.columnMinWidth = 400;
+
+    /** 
+     *
+     * @property mediaOverlaysPreservePlaybackWhenScroll
+     * @type bool
+     */
 
     this.mediaOverlaysPreservePlaybackWhenScroll = false;
 
+    /** 
+     *
+     * @property mediaOverlaysSkipSkippables
+     * @type bool
+     */
+
     this.mediaOverlaysSkipSkippables = false;
+
+    /** 
+     *
+     * @property mediaOverlaysEscapables
+     * @type bool
+     */
+
     this.mediaOverlaysEscapeEscapables = true;
 
+    /** 
+     *
+     * @property mediaOverlaysSkippables
+     * @type array
+     */
+
     this.mediaOverlaysSkippables = [];
+    
+    /** 
+     *
+     * @property mediaOverlaysEscapables
+     * @type array
+     */
+
     this.mediaOverlaysEscapables = [];
+
+    /** 
+     *
+     * @property mediaOverlaysEnableClick
+     * @type bool
+     */
     
     this.mediaOverlaysEnableClick = true;
+
+    /** 
+     *
+     * @property mediaOverlaysRate
+     * @type number
+     */
+
     this.mediaOverlaysRate = 1;
+
+    /** 
+     *
+     * @property mediaOverlaysVolume
+     * @type number
+     */
+
     this.mediaOverlaysVolume = 100;
+
+    /** 
+     *
+     * @property mediaOverlaysSynchronizationGranularity
+     * @type string
+     */
     
     this.mediaOverlaysSynchronizationGranularity = "";
 
-    this.mediaOverlaysAutomaticPageTurn = false;
     this.mediaOverlaysAutomaticPlay = true;
+
+    /** 
+     *
+     * @property mediaOverlaysAutomaticPageTurn
+     * @type bool
+     */    
+
+    this.mediaOverlaysAutomaticPageTurn = false;
+
+    /** 
+     *
+     * @property enableGPUHardwareAccelerationCSS3D
+     * @type bool
+     */    
+
 
     this.enableGPUHardwareAccelerationCSS3D = false;
 
     // -1 ==> disable
     // [0...n] ==> index of transition in pre-defined array
-    this.pageTransition = -1;
     
+    /** 
+     *
+     * @property pageTransition
+     * @type number
+     */        
+
+    this.pageTransition = -1;
+ 
+    /** 
+     *
+     * @property scroll
+     * @type string
+     */        
+
     this.scroll = "auto";
+
+    /**
+     * Builds an array
+     *
+     * @method     buildArray
+     * @param      {string} str
+     * @return     {array} retArr
+     */
 
     function buildArray(str)
     {
@@ -25444,6 +26021,15 @@ var ViewerSettings = function(settingsData) {
         }
         return retArr;
     }
+
+    /**
+     * Maps the properties to the settings
+     *
+     * @method     mapProperty
+     * @param      {string} propName
+     * @param      settingsData
+     * @param      functionToApply
+     */
 
     function mapProperty(propName, settingsData, functionToApply) {
 
@@ -25468,12 +26054,20 @@ var ViewerSettings = function(settingsData) {
         return undefined;
     }
 
+    /**
+     * Updates the settings' new values
+     *
+     * @method     update
+     * @param      settingsData
+     */
+
     this.update = function(settingsData) {
 
         mapProperty("columnGap", settingsData);
         mapProperty("columnMaxWidth", settingsData);
         mapProperty("columnMinWidth", settingsData);
         mapProperty("fontSize", settingsData);
+        mapProperty("fontSelection", settingsData);
         mapProperty("mediaOverlaysPreservePlaybackWhenScroll", settingsData, booleanMapper);
         mapProperty("mediaOverlaysSkipSkippables", settingsData, booleanMapper);
         mapProperty("mediaOverlaysEscapeEscapables", settingsData, booleanMapper);
@@ -25495,6 +26089,221 @@ var ViewerSettings = function(settingsData) {
 };
     return ViewerSettings;
 });
+
+/**
+ * Copyright Marc J. Schmidt. See the LICENSE file at the top-level
+ * directory of this distribution and at
+ * https://github.com/marcj/css-element-queries/blob/master/LICENSE.
+ */
+;
+(function (root, factory) {
+    if (typeof define === "function" && define.amd) {
+        define('ResizeSensor',factory);
+    } else if (typeof exports === "object") {
+        module.exports = factory();
+    } else {
+        root.ResizeSensor = factory();
+    }
+}(this, function () {
+
+    // Make sure it does not throw in a SSR (Server Side Rendering) situation
+    if (typeof window === "undefined") {
+        return null;
+    }
+    // Only used for the dirty checking, so the event callback count is limited to max 1 call per fps per sensor.
+    // In combination with the event based resize sensor this saves cpu time, because the sensor is too fast and
+    // would generate too many unnecessary events.
+    var requestAnimationFrame = window.requestAnimationFrame ||
+        window.mozRequestAnimationFrame ||
+        window.webkitRequestAnimationFrame ||
+        function (fn) {
+            return window.setTimeout(fn, 20);
+        };
+
+    /**
+     * Iterate over each of the provided element(s).
+     *
+     * @param {HTMLElement|HTMLElement[]} elements
+     * @param {Function}                  callback
+     */
+    function forEachElement(elements, callback){
+        var elementsType = Object.prototype.toString.call(elements);
+        var isCollectionTyped = ('[object Array]' === elementsType
+            || ('[object NodeList]' === elementsType)
+            || ('[object HTMLCollection]' === elementsType)
+            || ('[object Object]' === elementsType)
+            || ('undefined' !== typeof jQuery && elements instanceof jQuery) //jquery
+            || ('undefined' !== typeof Elements && elements instanceof Elements) //mootools
+        );
+        var i = 0, j = elements.length;
+        if (isCollectionTyped) {
+            for (; i < j; i++) {
+                callback(elements[i]);
+            }
+        } else {
+            callback(elements);
+        }
+    }
+
+    /**
+     * Class for dimension change detection.
+     *
+     * @param {Element|Element[]|Elements|jQuery} element
+     * @param {Function} callback
+     *
+     * @constructor
+     */
+    var ResizeSensor = function(element, callback) {
+        /**
+         *
+         * @constructor
+         */
+        function EventQueue() {
+            var q = [];
+            this.add = function(ev) {
+                q.push(ev);
+            };
+
+            var i, j;
+            this.call = function() {
+                for (i = 0, j = q.length; i < j; i++) {
+                    q[i].call();
+                }
+            };
+
+            this.remove = function(ev) {
+                var newQueue = [];
+                for(i = 0, j = q.length; i < j; i++) {
+                    if(q[i] !== ev) newQueue.push(q[i]);
+                }
+                q = newQueue;
+            }
+
+            this.length = function() {
+                return q.length;
+            }
+        }
+
+        /**
+         *
+         * @param {HTMLElement} element
+         * @param {Function}    resized
+         */
+        function attachResizeEvent(element, resized) {
+            if (!element) return;
+            if (element.resizedAttached) {
+                element.resizedAttached.add(resized);
+                return;
+            }
+
+            element.resizedAttached = new EventQueue();
+            element.resizedAttached.add(resized);
+
+            element.resizeSensor = document.createElement('div');
+            element.resizeSensor.className = 'resize-sensor';
+            var style = 'position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: hidden; z-index: -1; visibility: hidden;';
+            var styleChild = 'position: absolute; left: 0; top: 0; transition: 0s;';
+
+            element.resizeSensor.style.cssText = style;
+            element.resizeSensor.innerHTML =
+                '<div class="resize-sensor-expand" style="' + style + '">' +
+                    '<div style="' + styleChild + '" class="resize-sensor-inner"></div>' +
+                '</div>' +
+                '<div class="resize-sensor-shrink" style="' + style + '">' +
+                    '<div style="' + styleChild + ' width: 200%; height: 200%" class="resize-sensor-inner"></div>' +
+                '</div>';
+            element.appendChild(element.resizeSensor);
+
+            if (element.resizeSensor.offsetParent !== element) {
+                element.style.position = 'relative';
+            }
+
+            var expand = element.resizeSensor.childNodes[0];
+            var expandChild = expand.childNodes[0];
+            var shrink = element.resizeSensor.childNodes[1];
+            var dirty, rafId, newWidth, newHeight;
+            var lastWidth = element.offsetWidth;
+            var lastHeight = element.offsetHeight;
+
+            var reset = function() {
+                expandChild.style.width = '100000px';
+                expandChild.style.height = '100000px';
+
+                expand.scrollLeft = 100000;
+                expand.scrollTop = 100000;
+
+                shrink.scrollLeft = 100000;
+                shrink.scrollTop = 100000;
+            };
+
+            reset();
+
+            var onResized = function() {
+                rafId = 0;
+
+                if (!dirty) return;
+
+                lastWidth = newWidth;
+                lastHeight = newHeight;
+
+                if (element.resizedAttached) {
+                    element.resizedAttached.call();
+                }
+            };
+
+            var onScroll = function() {
+                newWidth = element.offsetWidth;
+                newHeight = element.offsetHeight;
+                dirty = newWidth != lastWidth || newHeight != lastHeight;
+
+                if (dirty && !rafId) {
+                    rafId = requestAnimationFrame(onResized);
+                }
+
+                reset();
+            };
+
+            var addEvent = function(el, name, cb) {
+                if (el.attachEvent) {
+                    el.attachEvent('on' + name, cb);
+                } else {
+                    el.addEventListener(name, cb);
+                }
+            };
+
+            addEvent(expand, 'scroll', onScroll);
+            addEvent(shrink, 'scroll', onScroll);
+        }
+
+        forEachElement(element, function(elem){
+            attachResizeEvent(elem, callback);
+        });
+
+        this.detach = function(ev) {
+            ResizeSensor.detach(element, ev);
+        };
+    };
+
+    ResizeSensor.detach = function(element, ev) {
+        forEachElement(element, function(elem){
+            if (!elem) return
+            if(elem.resizedAttached && typeof ev == "function"){
+                elem.resizedAttached.remove(ev);
+                if(elem.resizedAttached.length()) return;
+            }
+            if (elem.resizeSensor) {
+                if (elem.contains(elem.resizeSensor)) {
+                    elem.removeChild(elem.resizeSensor);
+                }
+                delete elem.resizeSensor;
+                delete elem.resizedAttached;
+            }
+        });
+    };
+
+    return ResizeSensor;
+
+}));
 
 //  Created by Boris Schneiderman.
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
@@ -25522,8 +26331,8 @@ var ViewerSettings = function(settingsData) {
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-define('readium_shared_js/views/one_page_view',["../globals", "jquery", "underscore", "eventEmitter", "./cfi_navigation_logic", "../helpers", "../models/viewer_settings", "../models/bookmark_data"],
-    function (Globals, $, _, EventEmitter, CfiNavigationLogic, Helpers, ViewerSettings, BookmarkData) {
+define('readium_shared_js/views/one_page_view',["../globals", "jquery", "underscore", "eventEmitter", "./cfi_navigation_logic", "../helpers", "../models/viewer_settings", "../models/bookmark_data", "ResizeSensor"],
+    function (Globals, $, _, EventEmitter, CfiNavigationLogic, Helpers, ViewerSettings, BookmarkData, ResizeSensor) {
 
 /**
  * Renders one page of fixed layout spread
@@ -25554,6 +26363,11 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
     var _isIframeLoaded = false;
 
     var _$scaler;
+
+    var _lastBodySize = {
+        width: undefined,
+        height: undefined
+    };
 
     var PageTransitionHandler = function (opts) {
         var PageTransition = function (begin, end) {
@@ -25867,28 +26681,77 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             _$epubHtml = $("html", epubContentDocument);
             if (!_$epubHtml || _$epubHtml.length == 0) {
                 _$epubHtml = $("svg", epubContentDocument);
+                _$epubBody = undefined;
             } else {
                 _$epubBody = $("body", _$epubHtml);
             }
 
             //_$epubHtml.css("overflow", "hidden");
 
-            if (_enableBookStyleOverrides) {
+            if (_enableBookStyleOverrides) { // not fixed layout (reflowable in scroll view)
                 self.applyBookStyles();
             }
 
             updateMetaSize();
 
+            initResizeSensor();
+
             _pageTransitionHandler.onIFrameLoad();
         }
     }
 
+    function initResizeSensor() {
+
+        if (_$epubBody // undefined with SVG spine items
+            && _enableBookStyleOverrides // not fixed layout (reflowable in scroll view)
+            ) {
+
+            var bodyElement = _$epubBody[0];
+            if (bodyElement.resizeSensor) {
+                return;
+            }
+
+            // We need to make sure the content has indeed be resized, especially
+            // the first time it is triggered
+            _lastBodySize.width = $(bodyElement).width();
+            _lastBodySize.height = $(bodyElement).height();
+
+            bodyElement.resizeSensor = new ResizeSensor(bodyElement, function() {
+
+                var newBodySize = {
+                    width: $(bodyElement).width(),
+                    height: $(bodyElement).height()
+                };
+
+                console.debug("OnePageView content resized ...", newBodySize.width, newBodySize.height, _currentSpineItem.idref);
+                
+                if (newBodySize.width != _lastBodySize.width || newBodySize.height != _lastBodySize.height) {
+                    _lastBodySize.width = newBodySize.width;
+                    _lastBodySize.height = newBodySize.height;
+
+                    console.debug("... updating pagination.");
+
+                    var src = _spine.package.resolveRelativeUrl(_currentSpineItem.href);
+
+                    Globals.logEvent("OnePageView.Events.CONTENT_SIZE_CHANGED", "EMIT", "one_page_view.js [ " + _currentSpineItem.href + " -- " + src + " ]");
+                    
+                    self.emit(OnePageView.Events.CONTENT_SIZE_CHANGED, _$iframe, _currentSpineItem);
+                    
+                    //updatePagination();
+                } else {
+                    console.debug("... ignored (identical dimensions).");
+                }
+            });
+        }
+    }
+    
     var _viewSettings = undefined;
-    this.setViewSettings = function (settings) {
+    this.setViewSettings = function (settings, docWillChange) {
 
         _viewSettings = settings;
 
-        if (_enableBookStyleOverrides) {
+        if (_enableBookStyleOverrides  // not fixed layout (reflowable in scroll view)
+            && !docWillChange) {
             self.applyBookStyles();
         }
 
@@ -25897,27 +26760,34 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         _pageTransitionHandler.updateOptions(settings);
     };
 
-    function updateHtmlFontSize() {
+    function updateHtmlFontInfo() {
 
-        if (!_enableBookStyleOverrides) return;
+        if (!_enableBookStyleOverrides) return;  // fixed layout (not reflowable in scroll view)
 
         if (_$epubHtml && _viewSettings) {
-            Helpers.UpdateHtmlFontSize(_$epubHtml, _viewSettings.fontSize);
+            var i = _viewSettings.fontSelection;
+            var useDefault = !reader.fonts || !reader.fonts.length || i <= 0 || (i-1) >= reader.fonts.length;
+            var font = (useDefault ?
+                        {} :
+                        reader.fonts[i - 1]);
+            Helpers.UpdateHtmlFontAttributes(_$epubHtml, _viewSettings.fontSize, font, function() {});
         }
     }
 
     this.applyBookStyles = function () {
 
-        if (!_enableBookStyleOverrides) return;
+        if (!_enableBookStyleOverrides) return;  // fixed layout (not reflowable in scroll view)
 
         if (_$epubHtml) {
             Helpers.setStyles(_bookStyles.getStyles(), _$epubHtml);
-            updateHtmlFontSize();
+            updateHtmlFontInfo();
         }
     };
 
     //this is called by scroll_view for fixed spine item
     this.scaleToWidth = function (width) {
+
+        if (_enableBookStyleOverrides) return;  // not fixed layout (reflowable in scroll view)
 
         if (_meta_size.width <= 0) return; // resize event too early!
 
@@ -26026,6 +26896,8 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
     this.transformContentImmediate = function (scale, left, top) {
 
+        if (_enableBookStyleOverrides) return;  // not fixed layout (reflowable in scroll view)
+
         var elWidth = Math.ceil(_meta_size.width * scale);
         var elHeight = Math.floor(_meta_size.height * scale);
 
@@ -26051,7 +26923,9 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             enable3D = true;
         }
         
-        if (reader.needsFixedLayoutScalerWorkAround()) {
+        if (_$epubBody // not SVG spine item (otherwise fails in Safari OSX)
+            && reader.needsFixedLayoutScalerWorkAround()) {
+
             var css1 = Helpers.CSSTransformString({scale: scale, enable3D: enable3D});
             
             // See https://github.com/readium/readium-shared-js/issues/285 
@@ -26059,7 +26933,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             css1["min-height"] = _meta_size.height;
             
             _$epubHtml.css(css1);
-            
+
             // Ensures content dimensions matches viewport meta (authors / production tools should do this in their CSS...but unfortunately some don't).
             if (_$epubBody && _$epubBody.length) {
                 _$epubBody.css({width:_meta_size.width, height:_meta_size.height});
@@ -26077,7 +26951,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             css["height"] = _meta_size.height;
             _$scaler.css(css);
         }
-                
+
         // Chrome workaround: otherwise text is sometimes invisible (probably a rendering glitch due to the 3D transform graphics backend?)
         //_$epubHtml.css("visibility", "hidden"); // "flashing" in two-page spread mode is annoying :(
         _$epubHtml.css("opacity", "0.999");
@@ -26105,6 +26979,8 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 
         _meta_size.width = 0;
         _meta_size.height = 0;
+
+        if (_enableBookStyleOverrides) return; // not fixed layout (reflowable in scroll view)
 
         var size = undefined;
 
@@ -26415,7 +27291,10 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         return new CfiNavigationLogic({
             $iframe: _$iframe,
             frameDimensions: getFrameDimensions,
-            visibleContentOffsets: getVisibleContentOffsets
+            visibleContentOffsets: getVisibleContentOffsets,
+            classBlacklist: ["cfi-marker", "mo-cfi-highlight", "resize-sensor", "resize-sensor-expand", "resize-sensor-shrink", "resize-sensor-inner"],
+            elementBlacklist: [],
+            idBlacklist: ["MathJax_Message", "MathJax_SVG_Hidden"]
         });
     };
 
@@ -26548,7 +27427,8 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
 };
 
 OnePageView.Events = {
-    SPINE_ITEM_OPEN_START: "SpineItemOpenStart"
+    SPINE_ITEM_OPEN_START: "SpineItemOpenStart",
+    CONTENT_SIZE_CHANGED: "ContentSizeChanged"
 };
 return OnePageView;
 });
@@ -26588,10 +27468,12 @@ define('readium_shared_js/models/page_open_request',[],function() {
  *  firstPage {bool},
  *  lastPage {bool}
  *
+ * @class Models.PageOpenRequest
+ * @constructor
  * @param {Models.SpineItem} spineItem
  * @param {object} [initiator]
  *
- * @constructor
+
  */
 var PageOpenRequest = function(spineItem, initiator) {
 
@@ -26599,9 +27481,17 @@ var PageOpenRequest = function(spineItem, initiator) {
     this.spineItemPageIndex = undefined;
     this.elementId = undefined;
     this.elementCfi = undefined;
+    this.firstVisibleCfi = undefined;
+    this.lastVisibleCfi = undefined;
     this.firstPage = false;
     this.lastPage = false;
     this.initiator = initiator;
+
+    /**
+     * Resets the reading system
+     *
+     * @method     reset
+     */
 
     this.reset = function() {
         this.spineItemPageIndex = undefined;
@@ -26611,32 +27501,74 @@ var PageOpenRequest = function(spineItem, initiator) {
         this.lastPage = false;
     };
 
+    /**
+     * Sets the first page of the book
+     *
+     * @method     setFirstPage
+     */
+
     this.setFirstPage = function() {
         this.reset();
         this.firstPage = true;
     };
+
+    /**
+     * Sets the last page of the book
+     *
+     * @method     setLastPage
+     */
 
     this.setLastPage = function() {
         this.reset();
         this.lastPage = true;
     };
 
+    /**
+     * Sets the index of the book
+     *
+     * @method     setPageIndex
+     * @param      pageIndex
+     */
+
     this.setPageIndex = function(pageIndex) {
         this.reset();
         this.spineItemPageIndex = pageIndex;
     };
 
+    /**
+     * Sets the ID of the current element
+     *
+     * @method     setElementId
+     * @param      {number} elementId 
+     */
+
     this.setElementId = function(elementId) {
         this.reset();
         this.elementId = elementId;
     };
+    
+    /**
+     * Sets the CFI of the current element
+     *
+     * @method     setElementCfi
+     * @param      elementCfi
+     */
 
     this.setElementCfi = function(elementCfi) {
-
         this.reset();
         this.elementCfi = elementCfi;
     };
 
+    // Used by ReflowView to better keep track of the current page
+    // using just a bookmark to firstVisibleElement makes the current
+    // page gradually shift to the beginning of the chapter. By bookmarking
+    // both the first and last visible elements, we can keep track of the 
+    // "middle" of the visible area.
+    this.setFirstAndLastVisibleCfi = function(firstVisibleCfi, lastVisibleCfi) {
+        this.reset();
+        this.firstVisibleCfi = firstVisibleCfi;
+        this.lastVisibleCfi = lastVisibleCfi;
+    }
 
 };
 
@@ -26782,7 +27714,7 @@ var FixedView = function(options, reader){
     };
 
 
-    this.setViewSettings = function(settings) {
+    this.setViewSettings = function(settings, docWillChange) {
         
         _viewSettings = settings;
         
@@ -26790,7 +27722,7 @@ var FixedView = function(options, reader){
 
         var views = getDisplayingViews();
         for(var i = 0, count = views.length; i < count; i++) {
-            views[i].setViewSettings(settings);
+            views[i].setViewSettings(settings, docWillChange);
         }
     };
 
@@ -27884,8 +28816,8 @@ return InternalLinksSupport;
 //  LauncherOSX
 //
 //  Created by Boris Schneiderman.
-// Modified by Daniel Weck
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  Modified by Daniel Weck
+//  Copyright (c) 2016 Readium Foundation and/or its licensees. All rights reserved.
 //  
 //  Redistribution and use in source and binary forms, with or without modification, 
 //  are permitted provided that the following conditions are met:
@@ -27910,14 +28842,39 @@ return InternalLinksSupport;
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 define ('readium_shared_js/models/smil_iterator',["jquery", "../helpers"], function($, Helpers) {
 /**
+ * Wrapper of a smil iterator object. 
+ * A smil iterator is used by the media overlay player, to move along text areas which have an audio overlay. 
+ * Such areas are specified in the smil model via parallel smil nodes (text + audio).  
  *
- * @param smil
+ * @class  Models.SmilIterator
  * @constructor
+ * @param {Models.SmilModel} smil The current smil model
  */
 var SmilIterator = function(smil) {
 
+   /**
+     * The smil model
+     *
+     * @property smil
+     * @type Models.SmilModel
+     */
     this.smil = smil;
+
+    /**
+     * The current parallel smil node
+     *
+     * @property currentPar
+     * @type object
+     */
+     
     this.currentPar = undefined;
+
+    /**
+     * Resets the iterator. 
+     * In practice, looks for the first parallel smil node in the smil model
+     *
+     * @method     reset
+     */
 
     this.reset = function() {
         this.currentPar = findParNode(0, this.smil, false);
@@ -27944,7 +28901,15 @@ var SmilIterator = function(smil) {
 //            this.next();
 //        }
 //    };
-
+    
+    /**
+     * Looks for a text smil node identified by the id parameter 
+     * Returns true if the id param identifies a text smil node.
+     *
+     * @method     findTextId
+     * @param      {Number} id A smil node identifier
+     * @return     {Boolean} 
+     */
     this.findTextId = function(id)
     {
         if (!this.currentPar)
@@ -27978,6 +28943,7 @@ var SmilIterator = function(smil) {
 
                     parent = parent.parentNode;
                 }
+                //console.log(parent);
 
                 // INNER match
                 //var inside = this.currentPar.element.ownerDocument.getElementById(id);
@@ -27987,12 +28953,18 @@ var SmilIterator = function(smil) {
                     return true;
                 }
             }
-
+            // moves to the next parallel smil node
             this.next();
         }
 
         return false;
     }
+
+    /**
+     * Looks for the next parallel smil node
+     *
+     * @method     next 
+     */
 
     this.next = function() {
 
@@ -28004,6 +28976,12 @@ var SmilIterator = function(smil) {
         this.currentPar = findParNode(this.currentPar.index + 1, this.currentPar.parent, false);
     };
 
+    /**
+     * Looks for the previous parallel smil node
+     *
+     * @method     previous
+     */
+
     this.previous = function() {
 
         if(!this.currentPar) {
@@ -28013,6 +28991,13 @@ var SmilIterator = function(smil) {
 
         this.currentPar = findParNode(this.currentPar.index - 1, this.currentPar.parent, true);
     };
+
+    /**
+     * Checks if the current parallel smil node is the last one in the smil model
+     *
+     * @method     isLast
+     * @return     {Bool}
+     */
 
     this.isLast = function() {
         if (!this.currentPar) {
@@ -28038,6 +29023,14 @@ var SmilIterator = function(smil) {
         return true;
     }
 
+    /**
+     * Moves to the parallel smil node given as a parameter. 
+     *
+     * @method     goToPar
+     * @param      {Containter} par A parallel smil node
+     * @return     {Boolean} 
+     */
+
     this.goToPar =  function(par) {
 
         while(this.currentPar) {
@@ -28048,6 +29041,16 @@ var SmilIterator = function(smil) {
             this.next();
         }
     };
+
+    /**
+     * Looks for a parallel smil node in the smil model.
+     *
+     * @method     findParNode
+     * @param      {Number} startIndex Start index inside the container
+     * @param      {Models.SMilModel} container The smil model
+     * @param      {Boolean} previous True if  search among previous nodes
+     * @return     {Smil.ParNode} 
+     */
 
     function findParNode(startIndex, container, previous) {
 
@@ -36161,8 +37164,8 @@ var MediaOverlayDataInjector = function (mediaOverlay, mediaOverlayPlayer) {
 
                                     var range = rangy.createRange(elem.ownerDocument); //createNativeRange
                                     range.setStartAndEnd(
-                                        infoStart.textNode[0], infoStart.textOffset,
-                                        infoEnd.textNode[0], infoEnd.textOffset
+                                        infoStart.textNode, infoStart.textOffset,
+                                        infoEnd.textNode, infoEnd.textOffset
                                     );
         
                                     if (range.isPointInRange(pos.node, pos.offset))
@@ -36376,7 +37379,7 @@ var MediaOverlayDataInjector = function (mediaOverlay, mediaOverlayPlayer) {
                 ["MathJax_Message"]);
 //console.log(infoEnd);
 
-                                    var cfiTextParent = infoStart.textNode[0].parentNode;
+                                    var cfiTextParent = infoStart.textNode.parentNode;
 
                                     iter.currentPar.cfi = {
                                         smilTextSrcCfi: iter.currentPar.text.srcFragmentId,
@@ -37570,8 +38573,8 @@ var MediaOverlayElementHighlighter = function(reader) {
 //console.log(infoEnd);
             
             _rangyRange.setStartAndEnd(
-                infoStart.textNode[0], infoStart.textOffset,
-                infoEnd.textNode[0], infoEnd.textOffset
+                infoStart.textNode, infoStart.textOffset,
+                infoEnd.textNode, infoEnd.textOffset
             );
             
             if (false && // we use CssClassApplier instead, because surroundContents() has no trivial undoSurroundContents() function (inc. text nodes normalisation, etc.)
@@ -37895,6 +38898,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
     var _spine = options.spine;
     var _userStyles = options.userStyles;
     var _deferredPageRequest;
+    var _currentPageRequest;
     var _$contentFrame;
     var _$el;
 
@@ -38106,8 +39110,16 @@ var ScrollView = function (options, isContinuousScroll, reader) {
             && !_isSettingScrollPosition
             && !_isLoadingNewSpineItemOnPageRequest) {
 
+            self.resetCurrentPosition();
+
             updateTransientViews();
             onPaginationChanged(self);
+
+            _.defer(function() {
+                if (!_currentPageRequest) {
+                    self.saveCurrentPosition();
+                }
+            })
 
             var settings = reader.viewerSettings();
             if (!settings.mediaOverlaysPreservePlaybackWhenScroll)
@@ -38157,173 +39169,6 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         }
     }
 
-    function reachStableContentHeight(updateScroll, pageView, iframe, href, fixedLayout, metaWidth, msg, callback)
-    {
-        if (!Helpers.isIframeAlive(iframe))
-        {
-            if (_DEBUG)
-            {
-                console.log("reachStableContentHeight ! win && doc (iFrame disposed?)");
-            }
-
-            if (callback) callback(false);
-            return;
-        }
-
-        var MAX_ATTEMPTS = 10;
-        var TIME_MS = 300;
-
-        var w = iframe.contentWindow;
-        var d = iframe.contentDocument;
-
-        var previousPolledContentHeight = parseInt(Math.round(parseFloat(w.getComputedStyle(d.documentElement).height))); //body can be shorter!;
-
-        var initialContentHeight = previousPolledContentHeight;
-
-        if (updateScroll === 0)
-        {
-            updatePageViewSizeAndAdjustScroll(pageView);
-        }
-        else
-        {
-            updatePageViewSize(pageView);
-        }
-
-        var tryAgainFunc = function(tryAgain)
-        {
-            if (_DEBUG && tryAgain !== MAX_ATTEMPTS)
-            {
-                console.log("tryAgainFunc - " + tryAgain + ": " + href + "  <" + initialContentHeight +" -- "+ previousPolledContentHeight + ">");
-            }
-
-            tryAgain--;
-            if (tryAgain < 0)
-            {
-                if (_DEBUG)
-                {
-                    console.error("tryAgainFunc abort: " + href);
-                }
-
-                if (callback) callback(true);
-                return;
-            }
-
-            setTimeout(function()
-            {
-                try
-                {
-                    if (Helpers.isIframeAlive(iframe))
-                    {
-                        var win = iframe.contentWindow;
-                        var doc = iframe.contentDocument;
-
-                        var iframeHeight = parseInt(Math.round(parseFloat(window.getComputedStyle(iframe).height)));
-
-                        var docHeight = parseInt(Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height))); //body can be shorter!
-
-                        if (previousPolledContentHeight !== docHeight)
-                        {
-                            previousPolledContentHeight = docHeight;
-
-                            tryAgainFunc(tryAgain);
-                            return;
-                        }
-
-                        // CONTENT HEIGHT IS NOW STABILISED
-
-                        var diff = iframeHeight - docHeight;
-                        if (Math.abs(diff) > 4)
-                        {
-                            if (_DEBUG)
-                            {
-                                console.log("$$$ IFRAME HEIGHT ADJUST: " + href + "  [" + diff + "]<" + initialContentHeight + " -- " + previousPolledContentHeight + ">");
-                                console.log(msg);
-                            }
-
-                            if (updateScroll === 0)
-                            {
-                                updatePageViewSizeAndAdjustScroll(pageView);
-                            }
-                            else
-                            {
-                                updatePageViewSize(pageView);
-                            }
-
-                            if (Helpers.isIframeAlive(iframe))
-                            {
-                                var win = iframe.contentWindow;
-                                var doc = iframe.contentDocument;
-
-                                var docHeightAfter = parseInt(Math.round(parseFloat(win.getComputedStyle(doc.documentElement).height))); //body can be shorter!
-                                var iframeHeightAfter = parseInt(Math.round(parseFloat(window.getComputedStyle(iframe).height)));
-
-                                var newdiff = iframeHeightAfter - docHeightAfter;
-                                if (Math.abs(newdiff) > 4)
-                                {
-                                    if (_DEBUG)
-                                    {
-                                        console.error("## IFRAME HEIGHT ADJUST: " + href + "  [" + newdiff + "]<" + initialContentHeight + " -- "+ previousPolledContentHeight + ">");
-                                        console.log(msg);
-                                    }
-
-                                    tryAgainFunc(tryAgain);
-                                    return;
-                                }
-                                else
-                                {
-                                    if (_DEBUG)
-                                    {
-                                        console.log(">> IFRAME HEIGHT ADJUSTED OKAY: " + href + "  ["+diff+"]<" + initialContentHeight + " -- " + previousPolledContentHeight + ">");
-                                        // console.log(msg);
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                if (_DEBUG)
-                                {
-                                    console.log("tryAgainFunc ! win && doc (iFrame disposed?)");
-                                }
-
-                                if (callback) callback(false);
-                                return;
-                            }
-                        }
-                        else
-                        {
-                            //if (_DEBUG)
-                            // console.debug("IFRAME HEIGHT NO NEED ADJUST: " + href);
-                            // console.log(msg);
-                        }
-                    }
-                    else
-                    {
-                        if (_DEBUG)
-                        {
-                            console.log("tryAgainFunc ! win && doc (iFrame disposed?)");
-                        }
-
-                        if (callback) callback(false);
-                        return;
-                    }
-                }
-                catch(ex)
-                {
-                    console.error(ex);
-
-                    if (callback) callback(false);
-                    return;
-                }
-
-                if (callback) callback(true);
-
-            }, TIME_MS);
-        };
-
-        tryAgainFunc(MAX_ATTEMPTS);
-    }
-
-
     function addToTopOf(topView, callback) {
 
         var prevSpineItem = _spine.prevItem(topView.currentSpineItem(), true);
@@ -38332,7 +39177,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
             return;
         }
 
-        var tmpView = createPageViewForSpineItem(true);
+        var tmpView = createPageViewForSpineItem(prevSpineItem, true);
 
         // add to the end first to avoid scrolling during load
         var lastView = lastLoadedView();
@@ -38349,7 +39194,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
                 var scrollPos = scrollTop();
 
-                var newView = createPageViewForSpineItem();
+                var newView = createPageViewForSpineItem(prevSpineItem);
                 var originalHeight = range.bottom - range.top;
 
 
@@ -38367,14 +39212,12 @@ var ScrollView = function (options, isContinuousScroll, reader) {
                 newView.loadSpineItem(prevSpineItem, function (success, $iframe, spineItem, isNewlyLoaded, context) {
                     if (success) {
 
-                        var continueCallback = function (successFlag)
-                        {
-                            onPageViewLoaded(newView, success, $iframe, spineItem, isNewlyLoaded, context);
-
-                            callback(successFlag);
-                        };
-
-                        reachStableContentHeight(0, newView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToTopOf", continueCallback); // //onIFrameLoad called before this callback, so okay.
+                        updatePageViewSizeAndAdjustScroll(newView);
+                        onPageViewLoaded(newView, success, $iframe, spineItem, isNewlyLoaded, context);
+                        callback(success);
+                        // No need for complicated reachStableContentHeight any more
+                        // Remove this
+                        //reachStableContentHeight(0, newView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToTopOf", continueCallback); // //onIFrameLoad called before this callback, so okay.
                     }
                     else {
                         console.error("Unable to open 2 " + prevSpineItem.href);
@@ -38413,20 +39256,17 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
         var scrollPos = scrollTop();
 
-        var newView = createPageViewForSpineItem();
+        var newView = createPageViewForSpineItem(nexSpineItem);
         newView.element().insertAfter(bottomView.element());
 
         newView.loadSpineItem(nexSpineItem, function (success, $iframe, spineItem, isNewlyLoaded, context) {
             if (success) {
 
-                var continueCallback = function (successFlag)
-                {
-                    onPageViewLoaded(newView, success, $iframe, spineItem, isNewlyLoaded, context);
-
-                    callback(successFlag);
-                };
-
-                reachStableContentHeight(2, newView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToBottomOf", continueCallback); // //onIFrameLoad called before this callback, so okay.
+                updatePageViewSize(newView);
+                onPageViewLoaded(newView, success, $iframe, spineItem, isNewlyLoaded, context);
+                callback(success);
+                // No need for complicated reachStableContentHeight any more
+                //reachStableContentHeight(2, newView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? newView.meta_width() : 0, "addToBottomOf", continueCallback); // //onIFrameLoad called before this callback, so okay.
             }
             else {
                 console.error("Unable to load " + nexSpineItem.href);
@@ -38475,37 +39315,58 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         if (!_$contentFrame) {
             return;
         }
+    };
 
-        forEachItemView(function (pageView) {
+    this.resetCurrentPosition = function() {
+        _currentPageRequest = undefined;
+    };
 
-            updatePageViewSize(pageView);
-        }, false);
+    this.saveCurrentPosition = function() {
+        // If there's a deferred page request, there's no point in saving the current position
+        // as it's going to change soon
+        if (_deferredPageRequest) {
+            return;
+        }
 
-        onPaginationChanged(self);
+        var _firstVisibleCfi = self.getFirstVisibleCfi();
+        var spineItem = _spine.getItemById(_firstVisibleCfi.idref);
+        if (spineItem) {
+            _currentPageRequest = new PageOpenRequest(spineItem, self);
+            _currentPageRequest.setElementCfi(_firstVisibleCfi.contentCFI);
+        }
+    };
 
-        updateTransientViews();
+    this.restoreCurrentPosition = function() {
+        if (_currentPageRequest) {
+            this.openPageInternal(_currentPageRequest);            
+        }
     };
 
     var _viewSettings = undefined;
-    this.setViewSettings = function (settings) {
+    this.setViewSettings = function (settings, docWillChange) {
 
         _viewSettings = settings;
 
         forEachItemView(function (pageView) {
 
-            pageView.setViewSettings(settings);
+            pageView.setViewSettings(settings, docWillChange);
 
         }, false);
     };
 
-    function createPageViewForSpineItem(isTemporaryView) {
-
+    function createPageViewForSpineItem(aSpineItem, isTemporaryView) {
+        
         options.disablePageTransitions = true; // force
+
+        var enableBookStyleOverrides = true;
+        if (aSpineItem.isFixedLayout()) {
+            enableBookStyleOverrides = false;
+        }
 
         var pageView = new OnePageView(
             options,
             ["content-doc-frame"],
-            true, //enableBookStyleOverrides
+            enableBookStyleOverrides,
             reader);
 
         pageView.on(OnePageView.Events.SPINE_ITEM_OPEN_START, function($iframe, spineItem) {
@@ -38521,8 +39382,31 @@ var ScrollView = function (options, isContinuousScroll, reader) {
             self.emit(Globals.Events.CONTENT_DOCUMENT_UNLOADED, $iframe, spineItem);
         });
 
+        function updatePageViewSizeAndPagination_() {
+            // Resize the PageView to fit its content and update the pagination
+            // and the adjacent views
+            updatePageViewSize(pageView);
+            onPaginationChanged(self);
+            updateTransientViews();
+            if (_currentPageRequest && !_deferredPageRequest) {
+                self.restoreCurrentPosition();                
+            }
+        }
+        var updatePageViewSizeAndPagination = _.debounce(updatePageViewSizeAndPagination_, 100);
+
+        // Observe the CONTENT_SIZE_CHANGED from the page view so the ScrollView
+        // is notified when the size of the content of the view changes, because
+        // the font or the viewport size has changed
+        pageView.on(OnePageView.Events.CONTENT_SIZE_CHANGED, function($iframe, spineItem) {
+            
+            Globals.logEvent("OnePageView.Events.CONTENT_SIZE_CHANGED", "ON", "scroll_view.js [ " + spineItem.href + " ]");
+            updatePageViewSizeAndPagination();
+        });
+
         pageView.render();
-        if (_viewSettings) pageView.setViewSettings(_viewSettings);
+
+        var docWillChange = true;
+        if (_viewSettings) pageView.setViewSettings(_viewSettings, docWillChange);
 
         if (!isTemporaryView) {
             pageView.element().data("pageView", pageView);
@@ -38625,7 +39509,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
         var scrollPos = scrollTop();
 
-        var loadedView = createPageViewForSpineItem();
+        var loadedView = createPageViewForSpineItem(spineItem);
 
         _$contentFrame.append(loadedView.element());
 
@@ -38633,16 +39517,11 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
             if (success) {
 
-                var continueCallback = function(successFlag)
-                {
-                    onPageViewLoaded(loadedView, success, $iframe, spineItem, isNewlyLoaded, context);
-
-                    callback(loadedView);
-
-                    //successFlag should always be true as loadedView iFrame cannot be dead at this stage.
-                };
-
-                reachStableContentHeight(1, loadedView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? loadedView.meta_width() : 0, "openPage", continueCallback); // //onIFrameLoad called before this callback, so okay.
+                updatePageViewSize(loadedView);
+                onPageViewLoaded(loadedView, success, $iframe, spineItem, isNewlyLoaded, context);
+                //callback(loadedView);
+                // No need for complicated reachStableContentHeight any more
+                //reachStableContentHeight(1, loadedView, $iframe[0], spineItem.href, spineItem.isFixedLayout(), spineItem.isFixedLayout() ? loadedView.meta_width() : 0, "openPage", continueCallback); // //onIFrameLoad called before this callback, so okay.
             }
             else {
                 console.error("Unable to load " + spineItem.href);
@@ -38677,7 +39556,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
     };
 
 
-    this.openPage = function (pageRequest) {
+    this.openPageInternal = function (pageRequest) {
 
         _stopTransientViewUpdate = true;
 
@@ -38726,6 +39605,12 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         }
     };
 
+    this.openPage = function(pageRequest) {
+        this.resetCurrentPosition();
+        _currentPageRequest = pageRequest;
+        this.openPageInternal(pageRequest);
+    }
+
     function openPageViewElement(pageView, pageRequest) {
 
         var topOffset = 0;
@@ -38772,7 +39657,8 @@ var ScrollView = function (options, isContinuousScroll, reader) {
                 return;
             }
 
-            topOffset = sfiNav.getVerticalOffsetForElement($element) + pageRange.top;
+            var elementRange = getElementRange(pageView, $element);
+            topOffset = elementRange.top + pageRange.top;
 
         }
         else if (pageView && pageRequest.elementCfi) {
@@ -38787,7 +39673,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
             }
             
             var domRangeAsRange = getDomRangeAsRange(pageView, domRange);
-            if (isRangeIsVisibleOnScreen(pageView, domRangeAsRange, 60)) {
+            if (isRangeIsVisibleOnScreen(domRangeAsRange, 60)) {
                 //TODO refactoring required
                 // this is artificial call because MO player waits for this event to continue playing.
                 onPaginationChanged(pageRequest.initiator, pageRequest.spineItem, pageRequest.elementId);
@@ -39975,11 +40861,11 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
 
                 if (rangy)
                 {
-                    //infoStart.textNode[0].parentNode.ownerDocument
+                    //infoStart.textNode.parentNode.ownerDocument
                     var range = rangy.createRange(doc); //createNativeRange
                     range.setStartAndEnd(
-                        infoStart.textNode[0], infoStart.textOffset,
-                        infoEnd.textNode[0], infoEnd.textOffset
+                        infoStart.textNode, infoStart.textOffset,
+                        infoEnd.textNode, infoEnd.textOffset
                     );
                     _currentTTS = range.toString(); //.text()
                 }
@@ -41585,7 +42471,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 });
 
 //  Created by Boris Schneiderman.
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  Copyright (c) 2016 Readium Foundation and/or its licensees. All rights reserved.
 //  
 //  Redistribution and use in source and binary forms, with or without modification, 
 //  are permitted provided that the following conditions are met:
@@ -41611,38 +42497,51 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
 define('readium_shared_js/models/spine',["./spine_item", "../helpers", "URIjs"], function(SpineItem, Helpers, URI) {
 /**
- *  Wrapper of the spine object received from hosting application
+ *  Wrapper of the Spine object received from the host application
  *
- *  @class  Models.Spine
+ * @class  Models.Spine
+ * @constructor
+ * @param {Models.Package} epubPackage Parent package properties 
+ * @param {Object} spineDTO Spine data object, container for spine properties
  */
-
 var Spine = function(epubPackage, spineDTO) {
 
     var self = this;
 
-    /*
-     * Collection of spine items
+    /**
+     * The collection of spine items
+     *
      * @property items
-     * @type {Array}
+     * @type Array
      */
     this.items = [];
 
-    /*
-     * Page progression direction ltr|rtl|default
+    /**
+     * The page progression direction ltr|rtl|default
+     *
      * @property direction
-     * @type {string}
+     * @type String
+     * @default "ltr"
      */
     this.direction = "ltr";
 
-    /*
-     * @property package
-     * @type {Models.Package}
+    /**
+     * The container for parent package properties
+     *
+     * @property package  
+     * @type Models.Package
      *
      */
     this.package = epubPackage;
 
     var _handleLinear = false;
 
+    /**
+     * Sets a flag indicating that the app handles linear spine items
+     *
+     * @method     handleLinear
+     * @param      {Boolean} handleLinear  boolean flag
+     */
     this.handleLinear = function(handleLinear) {
         _handleLinear = handleLinear;
     };
@@ -41651,7 +42550,13 @@ var Spine = function(epubPackage, spineDTO) {
         return !_handleLinear || item.linear !== "no";
     }
 
-
+    /**
+     * Checks if a spine item is linear. 
+     *
+     * @method     isValidLinearItem
+     * @param      {Number} index  index of a spine item
+     * @return     {Boolean} TRUE if the app does not handle linear items or if the item is linear.
+    */
     this.isValidLinearItem = function(index) {
         
         if(!isValidIndex(index)) {
@@ -41661,6 +42566,62 @@ var Spine = function(epubPackage, spineDTO) {
         return isValidLinearItem(this.item(index));
     };
 
+    /**
+     * Checks if the page progression direction is right to left.
+     *
+     * @method     isRightToLeft
+     * @return     {Boolean} 
+     */
+    this.isRightToLeft = function() {
+
+        return self.direction == "rtl";
+    };
+
+    /**
+     * Checks if the page progression direction is left to right.
+     *
+     * @method     isLeftToRight
+     * @return     {Boolean} TRUE if the direction is not rtl.
+     */
+    this.isLeftToRight = function() {
+
+        return !self.isRightToLeft();
+    };
+
+    /**
+     * Checks if an spine item index is valid. 
+     *
+     * @method     isValidIndex
+     * @param      {Number} index  the index of the expected spine item
+     * @return     {Boolean} TRUE is the index is valid.
+    */
+    function isValidIndex(index) {
+
+        return index >= 0 && index < self.items.length;
+    }
+
+    function lookForPrevValidItem(ix) {
+
+        if(!isValidIndex(ix)) {
+            return undefined;
+        }
+
+        var item = self.items[ix];
+
+        if(isValidLinearItem(item)) {
+            return item;
+        }
+
+        return lookForPrevValidItem(item.index - 1);
+    }
+
+    /**
+     * Looks for the previous spine item. 
+     *
+     * @method     prevItem
+     * @param      {Models.SpineItem} item  a spine item
+     * @return     {Models.SpineItem} the previous spine item or undefined.
+    */
     this.prevItem = function(item) {
 
         return lookForPrevValidItem(item.index - 1);
@@ -41681,58 +42642,85 @@ var Spine = function(epubPackage, spineDTO) {
         return lookForNextValidItem(item.index + 1);
     }
 
-    function lookForPrevValidItem(ix) {
-
-        if(!isValidIndex(ix)) {
-            return undefined;
-        }
-
-        var item = self.items[ix];
-
-        if(isValidLinearItem(item)) {
-            return item;
-        }
-
-        return lookForPrevValidItem(item.index - 1);
-    }
-
-    this.nextItem = function(item){
+    /**
+     * Looks for the next spine item. 
+     *
+     * @method     nextItem
+     * @param      {Models.SpineItem} item  a spine item
+     * @return     {Models.SpineItem} the next spine item or undefined.
+    */
+    this.nextItem = function(item) {
 
         return lookForNextValidItem(item.index + 1);
     };
 
+    /**
+     * Gets the relative URL of a spine item. 
+     *
+     * @method     getItemUrl
+     * @param      {Models.SpineItem} item  the spine item
+     * @return     {String} the relative URL of the spine item.
+    */
     this.getItemUrl = function(item) {
 
         return self.package.resolveRelativeUrl(item.href);
 
     };
 
-    function isValidIndex(index) {
-
-        return index >= 0 && index < self.items.length;
-    }
-
+    /**
+     * Returns the first spine item. 
+     *
+     * @method     first
+     * @return     {Models.SpineItem} the first spine item.
+    */
     this.first = function() {
 
         return lookForNextValidItem(0);
     };
 
+    /**
+     * Returns the last spine item. 
+     *
+     * @method     last
+     * @return     {Models.SpineItem} the last spine item.
+    */
     this.last = function() {
 
         return lookForPrevValidItem(this.items.length - 1);
     };
 
+    /**
+     * Checks if a spine item is the first in the spine. 
+     *
+     * @method     isFirstItem
+     * @param      {Models.SpineItem} item  a spine item
+     * @return     {Boolean} TRUE if the spine item is the first in the list.
+    */
     this.isFirstItem = function(item) {
 
         return self.first() === item;
     };
 
+    /**
+     * Checks if a spine item is the last in the spine. 
+     *
+     * @method     isLastItem
+     * @param      {Models.SpineItem} item  a spine item
+     * @return     {Boolean} true if the spine item is the last in the list.
+    */
     this.isLastItem = function(item) {
 
         return self.last() === item;
     };
 
-    this.item = function(index) {
+    /**
+     * Returns a spine item by its index. 
+     *
+     * @method     item
+     * @param      {Number} index  the index of the expected spine item
+     * @return     {Models.SpineItem} the expected spine item or undefined.
+    */
+   this.item = function(index) {
         
         if (isValidIndex(index))
             return self.items[index];
@@ -41740,16 +42728,13 @@ var Spine = function(epubPackage, spineDTO) {
         return undefined;
     };
 
-    this.isRightToLeft = function() {
-
-        return self.direction == "rtl";
-    };
-
-    this.isLeftToRight = function() {
-
-        return !self.isRightToLeft();
-    };
-
+    /**
+     * Returns a spine item by its id.
+     *
+     * @method     getItemById
+     * @param      {Number} idref  the id of the expected spine item
+     * @return     {Models.SpineItem} the expected spine item or undefined.
+     */
     this.getItemById = function(idref) {
 
         var length = self.items.length;
@@ -41764,12 +42749,14 @@ var Spine = function(epubPackage, spineDTO) {
         return undefined;
     };
 
+    /**
+     * Returns a spine item by its href.
+     *
+     * @method     getItemByHref
+     * @param      {String} href  the URL of the expected spine item
+     * @return     {Models.SpineItem} the expected spine item or undefined.
+     */
     this.getItemByHref = function(href) {
-
-        // var href1 = Helpers.ResolveContentRef(self.items[i].href, self.package.rootUrl + "/pack.opf");
-        // var href1 = self.package.resolveRelativeUrl(href);
-        //var href1 = new URI(href).absoluteTo(self.package.rootUrl).pathname();
-        //var href1 = new URI(self.package.resolveRelativeUrl(href)).relativeTo(self.package.rootUrl).pathname();
         
         var href1 = new URI(self.package.resolveRelativeUrl(href)).normalizePathname().pathname();
         
@@ -41779,7 +42766,6 @@ var Spine = function(epubPackage, spineDTO) {
             
             var href2 = new URI(self.package.resolveRelativeUrl(self.items[i].href)).normalizePathname().pathname();
             
-            //if(self.items[i].href == href) {
             if(href1 == href2) {
                 return self.items[i];
             }
@@ -41788,6 +42774,11 @@ var Spine = function(epubPackage, spineDTO) {
         return undefined;
     };
 
+    /**
+     * Updates every spine item spread, if not already defined.
+     *
+     * @method     updateSpineItemsSpread
+     */
     function updateSpineItemsSpread() {
 
         var len = self.items.length;
@@ -41808,6 +42799,7 @@ var Spine = function(epubPackage, spineDTO) {
         }
     }
 
+    // initialization of the local 'direction' and 'items' array from the spineDTO structure
     if(spineDTO) {
 
         if(spineDTO.direction) {
@@ -41856,12 +42848,15 @@ var Spine = function(epubPackage, spineDTO) {
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 define ('readium_shared_js/models/smil_model',["../helpers"], function(Helpers) {
 
-/**
- *
- * @param parent
- * @constructor
- */
 var Smil = {};
+
+/**
+ * Wrapper of a SmilNode object
+ *
+ * @class      Smil.SmilNode
+ * @constructor
+ * @param      {Smil.SmilNode} parent Parent node of the new smil node
+ */
 
 Smil.SmilNode = function(parent) {
 
@@ -41869,7 +42864,12 @@ Smil.SmilNode = function(parent) {
     
     this.id = "";
     
-    //root node is a smil model
+    /**
+     * Finds the smil model object, i.e. the root node of the smil tree
+     *
+     * @method     getSmil
+     * @return     {Smil.SmilModel} node The smil model object
+     */    
     this.getSmil = function() {
 
         var node = this;
@@ -41879,7 +42879,13 @@ Smil.SmilNode = function(parent) {
 
         return node;
     };
-    
+    /**
+     * Checks if the node given as a parameter is an ancestor of the current node 
+     *
+     * @method     hasAncestor
+     * @param      {Smil.SmilNode} node The checked node
+     * @return     {Bool} true if the parameter node is an ancestor
+     */
     this.hasAncestor = function(node)
     {
         var parent = this.parent;
@@ -41897,14 +42903,63 @@ Smil.SmilNode = function(parent) {
     };
 };
 
+////////////////////////////
+//TimeContainerNode
+
+/**
+ * Wrapper of a time container (smil) node 
+ *
+ * @class      Smil.TimeContainerNode
+ * @constructor
+ * @param      {Smil.SmilNode} parent Parent smil node
+ */
+
 Smil.TimeContainerNode = function(parent) {
 
+    /**
+     * The parent node
+     *
+     * @property parent
+     * @type Smil.SmilNode
+     */
+    
     this.parent = parent;
     
+    /**
+     * The children nodes
+     *
+     * @property children
+     * @type undefined
+     */
+
     this.children = undefined;
+    
+    /**
+     * The index
+     *
+     * @property index
+     * @type undefined
+     */
+
     this.index = undefined;
     
+    /**
+     * The epub type
+     *
+     * @property epubtype
+     * @type String
+     */
+
     this.epubtype = "";
+
+
+    /**
+     * Checks if the smil node is escapable.
+     *
+     * @method     isEscapable
+     * @param      {Array} userEscapables
+     * @return     {Bool} true if the smil node is escapable 
+     */
 
     this.isEscapable = function(userEscapables)
     {
@@ -41935,6 +42990,14 @@ Smil.TimeContainerNode = function(parent) {
 
         return false;
     };
+
+    /**
+     * Checks is the smil node is skippable
+     *
+     * @method     isSkippables
+     * @param      {Array} userSkippables
+     * @return     {Bool} true s the smil node is skippable
+     */
 
     this.isSkippable = function(userSkippables)
     {
@@ -41969,13 +43032,36 @@ Smil.TimeContainerNode = function(parent) {
 
 Smil.TimeContainerNode.prototype = new Smil.SmilNode();
 
-//////////////////////////
+
+////////////////////////////
 //MediaNode
+
+/**
+ * Looks for the media parent folder
+ *
+ * @class      Smil.MediaNode
+ * @constructor
+ * @param      {Smil.SmilNode} parent Parent smil node
+ */
 
 Smil.MediaNode = function(parent) {
 
+    /**
+     * The parent node
+     *
+     * @property parent
+     * @type Smil.SmilNode
+     */
+
     this.parent = parent;
     
+    /**
+     * The source locator
+     *
+     * @property src
+     * @type String
+     */
+
     this.src = "";
 };
 
@@ -41984,18 +43070,64 @@ Smil.MediaNode.prototype = new Smil.SmilNode();
 ////////////////////////////
 //SeqNode
 
+/**
+ * Node Sequence
+ *
+ * @class      Smil.SeqNode
+ * @constructor
+ * @param      {Smil.SmilNode} parent Parent smil node
+ */
+
 Smil.SeqNode = function(parent) {
 
+    /**
+     * The parent node
+     *
+     * @property parent
+     * @type Smil.SmilNode
+     */
+
     this.parent = parent;
-    
+
+    /**
+     * The children nodes
+     *
+     * @property children
+     * @type Array
+     */
+
     this.children = [];
+
+    /**
+     * The node type (seq)
+     *
+     * @property nodeType
+     * @type String
+     */
+
     this.nodeType = "seq";
+
+    /**
+     * The text reference
+     *
+     * @property textref
+     * @type String
+     */
+
     this.textref = "";
     
+    /**
+     * Calculates the total duration of audio clips 
+     *
+     * @method     durationMilliseconds
+     * @return     {Number} 
+     */
+
     this.durationMilliseconds = function()
     {
+        // returns the smil object
         var smilData = this.getSmil();
-            
+
         var total = 0;
         
         for (var i = 0; i < this.children.length; i++)
@@ -42009,8 +43141,6 @@ Smil.SeqNode = function(parent) {
                 }
                 if (container.text && (!container.text.manifestItemId || container.text.manifestItemId != smilData.spineItemId))
                 {
-// console.log(container.text);
-// console.log(smilData.spineItemId);
                     continue;
                 }
                 
@@ -42026,6 +43156,16 @@ Smil.SeqNode = function(parent) {
         return total;
     };
     
+   /**
+     * Looks for a given parallel node in the current sequence node and its children.
+     *  Returns true if found. 
+     *
+     * @method     clipOffset
+     * @param      {Number} offset
+     * @param      {Smil.ParNode} par The reference parallel smil node
+     * @return     {Boolean} 
+     */ 
+
     this.clipOffset = function(offset, par)
     {
         var smilData = this.getSmil();
@@ -42066,6 +43206,16 @@ Smil.SeqNode = function(parent) {
         return false;
     };
 
+
+   /**
+     * Checks if a parallel smil node exists at a given timecode in the smil sequence node. 
+     * Returns the node or undefined.
+     *
+     * @method     parallelAt
+     * @param      {Number} timeMilliseconds
+     * @return     {Smil.ParNode}
+     */ 
+
     this.parallelAt = function(timeMilliseconds)
     {
         var smilData = this.getSmil();
@@ -42078,8 +43228,10 @@ Smil.SeqNode = function(parent) {
 
             var container = this.children[i];
             
+            // looks for a winning parallel smil node in a child parallel smil node
             if (container.nodeType === "par")
             {
+                // the parallel node must contain an audio clip and a text node with a proper id
                 if (!container.audio)
                 {
                     continue;
@@ -42089,7 +43241,7 @@ Smil.SeqNode = function(parent) {
                 {
                     continue;
                 }
-
+                // and the timecode given as a parameter must correspond to the audio clip time range  
                 var clipDur = container.audio.clipDurationMilliseconds();
 
                 if (clipDur > 0 && timeAdjusted <= clipDur)
@@ -42099,6 +43251,7 @@ Smil.SeqNode = function(parent) {
 
                 offset += clipDur;
             }
+            // looks for a winning parallel smil node in a child sequence smil node
             else if (container.nodeType === "seq")
             {
                 var para = container.parallelAt(timeAdjusted);
@@ -42113,6 +43266,15 @@ Smil.SeqNode = function(parent) {
 
         return undefined;
     };
+
+    /**
+     * Looks for the nth parallel smil node in the current sequence node
+     *
+     * @method     nthParallel
+     * @param      {Number} index
+     * @param      {Number} count
+     * @return     {Smil.ParNode} 
+     */    
 
     this.nthParallel = function(index, count)
     {
@@ -42149,16 +43311,78 @@ Smil.SeqNode.prototype = new Smil.TimeContainerNode();
 //////////////////////////
 //ParNode
 
+/**
+ * Returns the parent of the SMIL file by checking out the nodes
+ *
+ * @class      Smil.ParNode
+ * @constructor
+ * @param      {Smil.SmilNode} parent Parent smil node
+
+ */
+
 Smil.ParNode = function(parent) {
+
+    /**
+     * The parent node
+     *
+     * @property parent
+     * @type Smil.SmilNode
+     */
 
     this.parent = parent;
     
+    /**
+     * The children files
+     *
+     * @property children
+     * @type Array
+     */
+
     this.children = [];
-    this.nodeType = "par";
-    this.text = undefined;
-    this.audio = undefined;
-    this.element = undefined;
     
+    /**
+     * The Node Type
+     *
+     * @property nodeType which is equal to "par" here
+     * @type String
+     */
+
+    this.nodeType = "par";
+
+    /**
+     * Some text
+     *
+     * @property text 
+     * @type String
+     */
+    this.text = undefined;
+    
+    /**
+     * Some audio
+     *
+     * @property audio 
+     * @type unknown
+     */
+    
+    this.audio = undefined;
+
+    /**
+     * An element of the epub archive
+     *
+     * @property element 
+     * @type unknown
+     */
+    
+    this.element = undefined;    
+
+    /**
+     * Gets the first ancestor sequence with a given epub type, or undefined.
+     *
+     * @method     getFirstSeqAncestorWithEpubType
+     * @param      {String} epubtype
+     * @param      {Boolean} includeSelf
+     * @return     {Smil.SmilNode} 
+     */       
 
     this.getFirstSeqAncestorWithEpubType = function(epubtype, includeSelf) {
         if (!epubtype) return undefined;
@@ -42183,18 +43407,70 @@ Smil.ParNode.prototype = new Smil.TimeContainerNode();
 //////////////////////////
 //TextNode
 
+/**
+ * Node Sequence
+ *
+ * @class      Smil.TextNode
+ * @constructor
+ * @param      {Smil.SmilNode} parent Parent smil node
+
+ */
+
 Smil.TextNode = function(parent) {
+
+    /**
+     * The parent node
+     *
+     * @property parent
+     * @type Smil.SmilNode
+     */
 
     this.parent = parent;
 
+    /**
+     * The node type, set to "text"
+     *
+     * @property nodeType
+     * @type String 
+     */
+
     this.nodeType = "text";
+
+    /**
+     * The source file
+     *
+     * @property srcFile
+     * @type String
+     */
+    
     this.srcFile = "";
+    
+    /**
+     * A fragment of the source file ID
+     *
+     * @property srcFragmentId
+     * @type String
+     */
+
     this.srcFragmentId = "";
     
+    /**
+     * The ID of the manifest for the current item
+     *
+     * @property manifestItemId
+     * @type Number
+     */
     
     this.manifestItemId = undefined;
-    this.updateMediaManifestItemId = function()
-    {
+    
+    /**
+     * Updates the ID of the manifest for the current media
+     *
+     * @method     updateMediaManifestItemId 
+     */  
+
+    this.updateMediaManifestItemId = function() {
+
         var smilData = this.getSmil();
         
         if (!smilData.href || !smilData.href.length)
@@ -42240,17 +43516,67 @@ Smil.TextNode.prototype = new Smil.MediaNode();
 ///////////////////////////
 //AudioNode
 
+/**
+ * Looks for the media parent folder
+ *
+ * @class      Smil.AudioNode
+ * @constructor
+ * @param      {Smil.SmilNode} parent Parent smil node
+ */
+
 Smil.AudioNode = function(parent) {
+
+    /**
+     * The parent node
+     *
+     * @property parent
+     * @type Smil.SmilNode
+     */
 
     this.parent = parent;
 
+    /**
+     * The node type, set to "audio"
+     *
+     * @property nodeType 
+     * @type String
+     */
+
     this.nodeType = "audio";
+
+    /**
+     * The clip begin timecode
+     *
+     * @property clipBegin 
+     * @type Number
+     */
 
     this.clipBegin = 0;
 
+    /**
+     * The max duration of the audio clip which is almost infinite
+     *
+     * @property MAX 
+     * @type Number
+     */
+
     this.MAX = 1234567890.1; //Number.MAX_VALUE - 0.1; //Infinity;
+    
+    /**
+     * The clip end timecode
+     *
+     * @property clipEnd
+     * @type Number
+     */
+
     this.clipEnd = this.MAX;
     
+    /**
+     * Returns the duration of the audio clip
+     *
+     * @method     clipDurationMilliseconds
+     * @return     {Number} 
+     */  
 
     this.clipDurationMilliseconds = function()
     {
@@ -42271,28 +43597,105 @@ Smil.AudioNode.prototype = new Smil.MediaNode();
 //////////////////////////////
 //SmilModel
 
+/**
+ * Wrapper of the SmilModel object
+ *
+ * @class      Models.SmilModel
+ * @constructor
+ */
+
 var SmilModel = function() {
+
+    /**
+     * The parent object
+     *
+     * @property parent
+     * @type any
+     */
 
     this.parent = undefined;
     
+    /**
+     * The smil model children, i.e. a collection of seq or par smil nodes
+     *
+     * @property children
+     * @type Array
+     */
     
+    this.children = []; 
     
-    this.children = []; //collection of seq or par smil nodes
-    this.id = undefined; //manifest item id
-    this.href = undefined; //href of the .smil source file
+    /**
+     * The manifest item ID
+     *
+     * @property id
+     * @type Number
+     */
+
+    this.id = undefined; 
+
+    /**
+     * The href of the .smil source file
+     *
+     * @property href
+     * @type String
+     */
+
+    this.href = undefined; 
+    
+    /**
+     * The duration of the audio clips
+     *
+     * @property duration
+     * @type Number
+     */
+
     this.duration = undefined;
+
+    /**
+     * The media overlay object
+     *
+     * @property mo
+     * @type Models.MediaOverlay
+     */
+
     this.mo = undefined;
+
+    /**
+     * Checks if a parallel smil node exists at a given timecode in the smil model. 
+     * Returns the node or undefined.
+     *
+     * @method     parallelAt
+     * @param      {Number} timeMillisecond 
+     * @return     {Smil.ParNode}
+     */
     
     this.parallelAt = function(timeMilliseconds)
     {
         return this.children[0].parallelAt(timeMilliseconds);
     };
 
+    /**
+     * Looks for the nth parallel smil node in the current smil model
+     *
+     * @method     nthParallel
+     * @param      {Number} index
+     * @return     {Smil.ParNode} 
+     */
+
     this.nthParallel = function(index)
     {
         var count = {count: -1};
         return this.children[0].nthParallel(index, count);
     };
+
+    /**
+     * Looks for a given parallel node in the current smil model.
+     *  Returns its offset if found. 
+     *
+     * @method     clipOffset
+     * @param      {Smil.ParNode} par The reference parallel smil node
+     * @return     {Number} offset of the audio clip
+     */
 
     this.clipOffset = function(par)
     {
@@ -42304,7 +43707,14 @@ var SmilModel = function() {
 
         return 0;
     };
-    
+
+    /**
+     * Calculates the total audio duration of the smil model
+     *
+     * @method     durationMilliseconds_Calculated    
+     * @return     {Number}
+     */
+
     this.durationMilliseconds_Calculated = function()
     {
         return this.children[0].durationMilliseconds();
@@ -42318,26 +43728,31 @@ var SmilModel = function() {
     //     _epubtypeSyncs = [];
     // };
 
+    // local function, helper
     this.hasSync = function(epubtype)
     {
         for (var i = 0; i < _epubtypeSyncs.length; i++)
         {
             if (_epubtypeSyncs[i] === epubtype)
             {
-//console.debug("hasSync OK: ["+epubtype+"]");
                 return true;
             }
         }
         
-//console.debug("hasSync??: ["+epubtype+"] " + _epubtypeSyncs);
         return false;
     };
-    
+
+    /**
+     * Stores epub types given as parameters in the _epubtypeSyncs array
+     * Note: any use of the _epubtypeSyncs array?
+     *
+     * @method     addSync
+     * @param      {String} epubtypes    
+     */
+
     this.addSync = function(epubtypes)
     {
         if (!epubtypes) return;
-        
-//console.debug("addSyncs: "+epubtypes);
 
         var parts = epubtypes.split(' ');
         for (var i = 0; i < parts.length; i++)
@@ -42347,13 +43762,20 @@ var SmilModel = function() {
             if (epubtype.length > 0 && !this.hasSync(epubtype))
             {
                 _epubtypeSyncs.push(epubtype);
-
-//console.debug("addSync: "+epubtype);
             }
         }
     };
     
 };
+
+/**
+ * Static SmilModel.fromSmilDTO method, returns a clean SmilModel object
+ *
+ * @method      Model.fromSmilDTO
+ * @param      {string} smilDTO
+ * @param      {string} parent
+ * @return {Models.SmilModel}
+*/
 
 SmilModel.fromSmilDTO = function(smilDTO, mo) {
 
@@ -42362,6 +43784,7 @@ SmilModel.fromSmilDTO = function(smilDTO, mo) {
         console.debug("Media Overlay DTO import...");
     }
 
+    // Debug level indenting function
     var indent = 0;
     var getIndent = function()
     {
@@ -42398,6 +43821,7 @@ SmilModel.fromSmilDTO = function(smilDTO, mo) {
         console.log("JS MO duration=" + smilModel.duration);
     }
 
+    // Safe copy, helper function
     var safeCopyProperty = function(property, from, to, isRequired) {
 
         if((property in from))
@@ -42419,6 +43843,7 @@ SmilModel.fromSmilDTO = function(smilDTO, mo) {
         }
     };
 
+    // smil node creation, helper function
     var createNodeFromDTO = function(nodeDTO, parent) {
 
         var node;
@@ -42480,9 +43905,9 @@ SmilModel.fromSmilDTO = function(smilDTO, mo) {
                 }
             }
 
-////////////////
-var forceTTS = false; // for testing only!
-////////////////
+            ////////////////
+            var forceTTS = false; // for testing only!
+            ////////////////
 
             if (forceTTS || !node.audio)
             {
@@ -42565,6 +43990,7 @@ var forceTTS = false; // for testing only!
 
     };
 
+    // recursive copy of a tree, helper function
     var copyChildren = function(from, to) {
 
         var count = from.children.length;
@@ -42615,15 +44041,33 @@ return SmilModel;
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 define('readium_shared_js/models/media_overlay',["./smil_model"], function(SmilModel) {
+
 /**
+ * Wrapper of the MediaOverlay object
  *
- * @param package
+ * @class Models.MediaOverlay
  * @constructor
- */
+ * @param {Models.Package} package EPUB package
+*/
+
 var MediaOverlay = function(package) {
 
+    /**
+     * The parent package object
+     *
+     * @property package
+     * @type Models.Package
+     */    
     this.package = package;
-    
+
+    /**
+     * Checks if a parallel smil node exists at a given timecode. 
+     * Returns the first corresponding node found in a smil model found, or undefined.
+     *
+     * @method     parallelAt
+     * @param      {number} timeMilliseconds
+     * @return     {Smil.ParNode}  
+     */
 
     this.parallelAt = function(timeMilliseconds)
     {
@@ -42647,6 +44091,16 @@ var MediaOverlay = function(package) {
         return undefined;
     };
     
+    /**
+     * Calculates a timecode corresponding to a percent of the total audio duration (the function parameters smilData, par, and milliseconds are objects with a single field using the same name)
+     *
+     * @method     percentToPosition
+     * @param      {Number} percent
+     * @param      {Models.SmilModel} smilData (object with a single field using the same name, used as OUT param)
+     * @param      {Smil.ParNode} par (object with a single field using the same name, used as OUT param)
+     * @param      {Number} milliseconds (object with a single field using the same name, used as OUT param)
+     */
+
     this.percentToPosition = function(percent, smilData, par, milliseconds)
     {
         if (percent < 0.0 || percent > 100.0)
@@ -42685,6 +44139,13 @@ var MediaOverlay = function(package) {
         milliseconds.milliseconds = timeMs - (smilDataOffset + smilData.smilData.clipOffset(par.par));
     };
 
+    /**
+     * Calculates the accumulated audio duration of each smil overlay
+     *
+     * @method     durationMilliseconds_Calculated
+     * @return     {Number} total duration 
+     */
+
     this.durationMilliseconds_Calculated = function()
     {
         var total = 0;
@@ -42699,6 +44160,14 @@ var MediaOverlay = function(package) {
         return total;
     };
     
+    /**
+     * Returns the smil overlay at the given index
+     *
+     * @method     smilAt
+     * @param      {Number} smilIndex
+     * @return     {Models.SmilModel}
+     */
+
     this.smilAt = function(smilIndex)
     {
         if (smilIndex < 0 || smilIndex >= this.smil_models.length)
@@ -42709,14 +44178,19 @@ var MediaOverlay = function(package) {
         return this.smil_models[smilIndex];
     }
     
+    /**
+     * Calculates a percent of the total audio duration corresponding to a timecode
+     * 
+     * @method     positionToPercent
+     * @param      {Number} smilIndex Index of a smil model
+     * @param      {Number} parIndex
+     * @param      {Number} milliseconds
+     * @return     {Number} percent 
+     */
+
     this.positionToPercent = function(smilIndex, parIndex, milliseconds)
     {
-// console.log(">>>>>>>>>>");
-// console.log(milliseconds);
-// console.log(smilIndex);
-// console.log(parIndex);
-// console.log("-------");
-                
+           
         if (smilIndex >= this.smil_models.length)
         {
             return -1.0;
@@ -42728,8 +44202,6 @@ var MediaOverlay = function(package) {
             var sd = this.smil_models[i];
             smilDataOffset += sd.durationMilliseconds_Calculated();
         }
-
-//console.log(smilDataOffset);
         
         var smilData = this.smil_models[smilIndex];
 
@@ -42740,34 +44212,87 @@ var MediaOverlay = function(package) {
         }
 
         var offset = smilDataOffset + smilData.clipOffset(par) + milliseconds;
-
-//console.log(offset);
         
         var total = this.durationMilliseconds_Calculated();
 
-///console.log(total);
-
         var percent = (offset / total) * 100;
-
-//console.log("<<<<<<<<<<< " + percent);
         
         return percent;
       };
-      
+
+    /**
+     * Array of smil models {Models.SmilModel}
+     *
+     * @property smil_models
+     * @type Array
+     */
+
     this.smil_models = [];
 
+    /**
+     * List of the skippable smil items
+     *
+     * @property skippables
+     * @type Array
+     */
+
     this.skippables = [];
+    
+    /**
+     * List of the escapable smil items
+     *
+     * @property escapables
+     * @type Array
+     */
+
     this.escapables = [];
 
+    /**
+     * Duration of the smil audio
+     *
+     * @property duration
+     * @type Number
+     */
+
     this.duration = undefined;
+
+    /**
+     * Narrator
+     *
+     * @property narrator
+     * @type String
+     */
+
     this.narrator = undefined;
 
+    /**
+     * Author-defined name of the CSS "active class" (applied to the document as a whole)
+     *
+     * @property activeClass
+     * @type String
+     */
 
     this.activeClass = undefined;
+
+    /**
+     * Author-defined name of the CSS "playback active class" (applied to a single audio fragment)
+     *
+     * @property playbackActiveClass
+     * @type String
+     */
+
     this.playbackActiveClass = undefined;
 
+    // Debug messages, must be false in production!
     this.DEBUG = false;
 
+    /**
+     * Returns the smil model corresponding to a spine item, or undefined if not found.
+     *
+     * @method     getSmilBySpineItem
+     * @param      {Models.SpineItem} spineItem
+     * @return     {Models.SmilModel} 
+     */
 
     this.getSmilBySpineItem = function (spineItem) {
         if (!spineItem) return undefined;
@@ -42802,6 +44327,14 @@ var MediaOverlay = function(package) {
     };
     */
 
+    /**
+     * Returns the next smil model
+     *
+     * @method     getNextSmil
+     * @param      {Models.SmilModel} smil The current smil model
+     * @return     {Models.SmilModel} 
+     */
+
     this.getNextSmil = function(smil) {
 
         var index = this.smil_models.indexOf(smil);
@@ -42811,6 +44344,14 @@ var MediaOverlay = function(package) {
 
         return this.smil_models[index + 1];
     }
+
+    /**
+     * Returns the previous smil model
+     *
+     * @method     getPreviousSmil
+     * @param      {Models.SmilModel} smil The current smil model
+     * @return     {Models.SmilModel} 
+     */
 
     this.getPreviousSmil = function(smil) {
 
@@ -42823,18 +44364,23 @@ var MediaOverlay = function(package) {
     }
 };
 
+/**
+ * Static MediaOverlay.fromDTO method, returns a clean MediaOverlay object
+ *
+ * @method MediaOverlay.fromDTO
+ * @param {Object} moDTO Media overlay data object (raw JSON, as returned by a parser)
+ * @param {Models.Package} package EPUB package object
+ * @return {Models.MediaOverlay}
+*/
+
 MediaOverlay.fromDTO = function(moDTO, pack) {
 
     var mo = new MediaOverlay(pack);
 
     if(!moDTO) {
-        console.debug("No Media Overlay.");
         return mo;
     }
 
-    // if (mo.DEBUG)
-    //     console.debug(JSON.stringify(moDTO));
-        
     mo.duration = moDTO.duration;
     if (mo.duration && mo.duration.length && mo.duration.length > 0)
     {
@@ -42874,9 +44420,6 @@ MediaOverlay.fromDTO = function(moDTO, pack) {
 
     for(var i = 0; i < count; i++) {
         mo.skippables.push(moDTO.skippables[i]);
-
-        //if (mo.DEBUG)
-        //    console.debug("Media Overlay SKIPPABLE: " + mo.skippables[i]);
     }
 
     count = moDTO.escapables.length;
@@ -42886,8 +44429,6 @@ MediaOverlay.fromDTO = function(moDTO, pack) {
     for(var i = 0; i < count; i++) {
         mo.escapables.push(moDTO.escapables[i]);
 
-        //if (mo.DEBUG)
-        //    console.debug("Media Overlay ESCAPABLE: " + mo.escapables[i]);
     }
 
     return mo;
@@ -42899,7 +44440,7 @@ return MediaOverlay;
 
 
 //  Created by Boris Schneiderman.
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  Copyright (c) 2016 Readium Foundation and/or its licensees. All rights reserved.
 //  
 //  Redistribution and use in source and binary forms, with or without modification, 
 //  are permitted provided that the following conditions are met:
@@ -42927,7 +44468,7 @@ return MediaOverlay;
 define('readium_shared_js/models/package_data',[],function() {
 /**
  * This object is not instantiated directly but provided by the host application to the DOMAccess layer in the
- * Views.ReaderView.openBook function
+ * Views.ReaderView.OpenBookData function
  *
  * Provided for reference only
  *
@@ -42936,24 +44477,35 @@ define('readium_shared_js/models/package_data',[],function() {
 var PackageData = {
 
     /**
-     * @property rootUrl Url of the package file
-     * @type {string}
+     * The Url of the package file
+     *
+     * @property rootUrl 
+     * @type {String}
      *
      */
     rootUrl: "",
     /**
-     * @property rootUrl Url of the package file, to prefix Media Overlays SMIL audio references
-     * @type {string}
+     * The Url of the package file, to prefix Media Overlays SMIL audio references
+     *
+     * @property rootUrlMO 
+     * @type {String}
      *
      */
     rootUrlMO: "",
     /**
+     * The rendering layout; expected values are "reflowable"|"pre-paginated"
      *
-     * @property rendering_layout expected values "reflowable"|rendering_layout="pre-paginated"
-     * @type {string}
+     * @property rendering_layout 
+     * @type {String}
      */
     rendering_layout: "",
 
+    /**
+     * The spine properties
+     *
+     * @property spine 
+     * @type {Object}
+     */
     spine: {
 
         direction: "ltr",
@@ -42971,7 +44523,7 @@ var PackageData = {
 return PackageData;
 });
 //  Created by Boris Schneiderman.
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  Copyright (c) 2016 Readium Foundation and/or its licensees. All rights reserved.
 //  
 //  Redistribution and use in source and binary forms, with or without modification, 
 //  are permitted provided that the following conditions are met:
@@ -42995,34 +44547,104 @@ return PackageData;
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 define('readium_shared_js/models/package',['../helpers','./spine_item','./spine','./media_overlay', './package_data', 'URIjs'], function (Helpers, SpineItem, Spine, MediaOverlay, PackageData, URI) {
+
 /**
+ *  Wrapper of the Package object, created in openBook()
  *
- * @class Package
+ * @class  Models.Package
  * @constructor
+ * @param {Models.PackageData} packageData container for package properties 
  */
 var Package = function(packageData){
 
     var self = this;
-
+    
+    /**
+     * The associated spine object
+     *
+     * @property spine
+     * @type     Models.Spine
+     */
     this.spine = undefined;
-    
+
+    /**
+     * The root URL of the package file
+     *
+     * @property rootUrl
+     * @type     String
+     */
     this.rootUrl = undefined;
+
+    /**
+     * The root URL of the package file, to prefix Media Overlays SMIL audio references
+     *
+     * @property rootUrlMO 
+     * @type     String
+     *
+     */
     this.rootUrlMO = undefined;
-    
+ 
+    /**
+     * The Media Overlays object
+     *
+     * @property media_overlay 
+     * @type     Models.MediaOverlay
+     *
+     */   
     this.media_overlay = undefined;
     
+    /**
+     * The rendition viewport (as per the EPUB3 specification)
+     *
+     * @property rendition_viewport 
+     * @type     String
+     *
+     */   
     this.rendition_viewport = undefined;
     
+    /**
+     * The rendition flow (as per the EPUB3 specification)
+     *
+     * @property rendition_flow 
+     * @type     String
+     *
+     */   
     this.rendition_flow = undefined;
     
+    /**
+     * The rendition layout (as per the EPUB3 specification)
+     *
+     * @property rendition_layout 
+     * @type     String
+     *
+     */   
     this.rendition_layout = undefined;
 
-    //TODO: unused yet!
+    /**
+     * The rendition spread (as per the EPUB3 specification)
+     *
+     * @property rendition_spread 
+     * @type     String
+     *
+     */   
     this.rendition_spread = undefined;
 
-    //TODO: unused yet!
+    /**
+     * The rendition orientation (as per the EPUB3 specification)
+     *
+     * @property rendition_orientation 
+     * @type     String
+     *
+     */   
     this.rendition_orientation = undefined;
 
+    /**
+     * Returns a resolved relative Url, Media Overlay variant.
+     *
+     * @method     resolveRelativeUrlMO
+     * @param      {String} relativeUrl  the relative URL to resolve
+     * @return     {String} the resolved relative URL.
+     */
     this.resolveRelativeUrlMO = function(relativeUrl) {
         
         var relativeUrlUri = undefined;
@@ -43058,6 +44680,13 @@ var Package = function(packageData){
         return self.resolveRelativeUrl(relativeUrl);
     };
 
+    /**
+     * Returns a resolved relative Url.
+     *
+     * @method     resolveRelativeUrl
+     * @param      {String} relativeUrl  the relative URL to resolve
+     * @return     {String} the resolved relative URL.
+     */
     this.resolveRelativeUrl = function(relativeUrl) {
 
         var relativeUrlUri = undefined;
@@ -43093,15 +44722,26 @@ var Package = function(packageData){
         return relativeUrl;
     };
 
+    /**
+     * Checks if the package is Fixed Layout.
+     *
+     * @method     isFixedLayout
+     * @return     {Boolean} TRUE if the package is Fixed Layout.
+     */
     this.isFixedLayout = function() {
         return self.rendition_layout === SpineItem.RENDITION_LAYOUT_PREPAGINATED;
     };
 
+    /**
+     * Checks if the package is Reflowable.
+     *
+     * @method     isReflowable
+     * @return     {Boolean} TRUE if the package is Reflowable (i.e. not Fixed Layout).
+     */
     this.isReflowable = function() {
         return !self.isFixedLayout();
     };
     
-
     if(packageData) {
         
         this.rootUrl = packageData.rootUrl;
@@ -43124,2874 +44764,6 @@ var Package = function(packageData){
 return Package;
 });
 
-
-/* globals define, exports, module */
-
-(function(root, definition) {
-    if (typeof define === 'function' && define.amd) {
-        // AMD. Register as an anonymous module.
-        define('FontLoader',[], definition);
-    } else if (typeof exports === 'object') {
-        // Node. Does not work with strict CommonJS, but only CommonJS-like
-        // environments that support module.exports, like Node.
-        module.exports = definition();
-    } else {
-        // Browser globals (root is window)
-        root.FontLoader = definition();
-    }
-}(window, function() {
-
-    var isIE = /MSIE/i.test(navigator.userAgent),
-        ieVer = null;
-
-    // Get Internet Explorer version
-    if (isIE) {
-        var re, result;
-        re = new RegExp("MSIE ([0-9]{1,}[.0-9]{0,})");
-        result = re.exec(navigator.userAgent);
-        if (result !== null) {
-            ieVer = parseFloat(result[1]);
-        }
-    }
-
-    /**
-     * @typedef {Object} FontDescriptor
-     * @property {String} family
-     * @property {String} weight
-     * @property {String} style
-     * @property {String} stretch
-     */
-    function FontDescriptor(fontDescriptor) {
-        this._validateFontDescriptor(fontDescriptor);
-        this.family = fontDescriptor.family;
-        this.weight = fontDescriptor.weight;
-        this.style = fontDescriptor.style;
-        this.stretch = fontDescriptor.stretch;
-    }
-
-    FontDescriptor.prototype = {
-        constructor: FontDescriptor,
-        /**
-         * Returns font variation identifier of the FontDescriptor.
-         *
-         * FontDescriptors with different family-names may have same variation identifiers.
-         * This identifier is useful for mapping and storing font dimensions of fallback fonts with font variation
-         * properties similar to these of the loaded fonts.
-         *
-         * @returns {string}
-         */
-        variationKey: function() {
-            return this.weight + this.style + this.stretch;
-        },
-        /**
-         * Returns identifier of the FontDescriptor.
-         *
-         * @returns {string}
-         */
-        fontKey: function() {
-            return this.family + this.variationKey();
-        },
-        toJSON: function() {
-            return {
-                family: this.family,
-                weight: this.weight,
-                style: this.style,
-                stretch: this.stretch
-            };
-        },
-        _validateFontDescriptor: function(fontDescriptor) {
-            var style, stretch;
-
-            if (!fontDescriptor.family || !fontDescriptor.weight || !fontDescriptor.style) {
-                throw new Error("Illegal font descriptor, family, weight and style properties are required.")
-            }
-
-            if (!('possibleFontStyles' in FontLoader)) {
-                FontLoader.possibleFontStyles = [];
-                for (style in FontLoader.fontStyleAliasesMap) {
-                    if (FontLoader.fontStyleAliasesMap.hasOwnProperty(style)) {
-                        FontLoader.possibleFontStyles.push(FontLoader.fontStyleAliasesMap[style]);
-                    }
-                }
-            }
-            if (FontLoader.possibleFontStyles.indexOf(fontDescriptor.style) === -1) {
-                throw new Error("Illegal font descriptor, style property must be one of the following: " + FontLoader.possibleFontStyles.join(", "));
-            }
-
-            // For backward compatibility do not require "stretch" property
-            if ('stretch' in fontDescriptor) {
-                if (!('possibleFontStretches' in FontLoader)) {
-                    FontLoader.possibleFontStretches = [];
-                    for (stretch in FontLoader.fontStretchAliasesMap) {
-                        if (FontLoader.fontStretchAliasesMap.hasOwnProperty(stretch)) {
-                            FontLoader.possibleFontStretches.push(FontLoader.fontStretchAliasesMap[stretch]);
-                        }
-                    }
-                }
-                if (FontLoader.possibleFontStretches.indexOf(fontDescriptor.stretch) === -1) {
-                    throw new Error("Illegal font descriptor, stretch property must be one of the following: " + FontLoader.possibleFontStretches.join(", "));
-                }
-            } else {
-                fontDescriptor.stretch = 'normal';
-            }
-        }
-    };
-
-    /**
-     * FontLoader detects when web fonts specified in the "fontFamiliesArray" array were loaded and rendered. Then it
-     * notifies the specified delegate object via "fontLoaded" and "complete" methods when specific or all fonts were
-     * loaded respectively. The use of this functions implies that the insertion of specified web fonts into the
-     * document is done elsewhere.
-     *
-     * The fonts parameter may be an array of strings specifying the font-families with optionally specified font
-     * variations using FVD notation or font descriptor objects of the following type:
-     * {
-     *     family: "fontFamily",
-     *     weight: 400,
-     *     style: 'normal',
-     *     stretch: 'normal'
-     * }
-     * Where styles may ne one of the following: normal, bold, italic or oblique. If only string is specified, the
-     * default values used for weight, style and stretch are 400, 'normal' and 'normal' respectively.
-     *
-     * If all the specified fonts were loaded before the timeout was reached, the "complete" delegate method will be
-     * invoked with "null" error parameter. Otherwise, if timeout was reached before all specified fonts were loaded,
-     * the "complete" method will be invoked with an error object with two fields: the "message" string and the
-     * "notLoadedFonts" array of FontDescriptor objects of all the fonts that weren't loaded.
-     *
-     * @param {Array.<String|FontDescriptor>} fonts   Array of font-family strings or font descriptor objects.
-     * @param {Object}        delegate                Delegate object whose callback methods will be invoked in its own context.
-     * @param {Function}      [delegate.complete]     Called when all fonts were loaded or the timeout was reached.
-     * @param {Function}      [delegate.fontLoaded]   Called for each loaded font with its font-family string as its single parameter.
-     * @param {Number}        [timeout=3000]          Timeout in milliseconds. Pass "null" to disable timeout.
-     * @param {HTMLDocument}  [contextDocument]       The DOM tree context to use, if none provided then it will be the document.
-     * @constructor
-     */
-    function FontLoader(fonts, delegate, timeout, contextDocument) {
-        // Public
-        this.delegate = delegate;
-        this.timeout = (typeof timeout !== "undefined") ? timeout : 3000;
-
-        // Private
-        this._fontsArray = this._parseFonts(fonts);
-        this._started = false;
-        this._testDiv = null;
-        this._testContainer = null;
-        this._adobeBlankSizeWatcher = null;
-        this._sizeWatchers = [];
-        this._timeoutId = null;
-        this._intervalId = null;
-        this._intervalDelay = 50;
-        this._numberOfLoadedFonts = 0;
-        this._numberOfFonts = this._fontsArray.length;
-        this._fontsMap = {};
-        this._finished = false;
-        this._document = contextDocument || document;
-    }
-
-    FontLoader.useAdobeBlank = !isIE || ieVer >= 11.0;
-    FontLoader.useResizeEvent = isIE && ieVer < 11.0 && typeof document.attachEvent !== "undefined";
-    FontLoader.useIntervalChecking = window.opera || (isIE && ieVer < 11.0 && !FontLoader.useResizeEvent);
-    FontLoader.referenceText = " !\"\\#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~";
-    FontLoader.referenceFontFamilies = FontLoader.useAdobeBlank ? ["AdobeBlank"] : ["serif", "cursive"];
-    FontLoader.adobeBlankFontFaceStyleId = "fontLoaderAdobeBlankFontFace";
-    FontLoader.adobeBlankReferenceSize = null;
-    FontLoader.referenceFontFamilyVariationSizes = {};
-    FontLoader.adobeBlankFontFaceRule = "@font-face{ font-family:AdobeBlank; src:url('data:font/opentype;base64,T1RUTwAKAIAAAwAgQ0ZGIM6ZbkwAAEPEAAAZM0RTSUcAAAABAABtAAAAAAhPUy8yAR6vMwAAARAAAABgY21hcDqI98oAACjEAAAa4GhlYWT+BQILAAAArAAAADZoaGVhCCID7wAAAOQAAAAkaG10eAPoAHwAAFz4AAAQBm1heHAIAVAAAAABCAAAAAZuYW1lD/tWxwAAAXAAACdScG9zdP+4ADIAAEOkAAAAIAABAAAAAQj1Snw1O18PPPUAAwPoAAAAAM2C2p8AAAAAzYLanwB8/4gDbANwAAAAAwACAAAAAAAAAAEAAANw/4gAyAPoAHwAfANsAAEAAAAAAAAAAAAAAAAAAAACAABQAAgBAAAABAAAAZAABQAAAooCWAAAAEsCigJYAAABXgAyANwAAAAAAAAAAAAAAAD3/67/+9///w/gAD8AAAAAQURCRQHAAAD//wNw/4gAyANwAHhgLwH/AAAAAAAAAAAAAAAgAAAAAAARANIAAQAAAAAAAQALAAAAAQAAAAAAAgAHAAsAAQAAAAAAAwAbABIAAQAAAAAABAALAAAAAQAAAAAABQA5AC0AAQAAAAAABgAKAGYAAwABBAkAAABuAHAAAwABBAkAAQAWAN4AAwABBAkAAgAOAPQAAwABBAkAAwA2AQIAAwABBAkABAAWAN4AAwABBAkABQByATgAAwABBAkABgAUAaoAAwABBAkACAA0Ab4AAwABBAkACwA0AfIAAwABBAkADSQSAiYAAwABBAkADgBIJjhBZG9iZSBCbGFua1JlZ3VsYXIxLjAzNTtBREJFO0Fkb2JlQmxhbms7QURPQkVWZXJzaW9uIDEuMDM1O1BTIDEuMDAzO2hvdGNvbnYgMS4wLjcwO21ha2VvdGYubGliMi41LjU5MDBBZG9iZUJsYW5rAKkAIAAyADAAMQAzACAAQQBkAG8AYgBlACAAUwB5AHMAdABlAG0AcwAgAEkAbgBjAG8AcgBwAG8AcgBhAHQAZQBkAC4AIABBAGwAbAAgAFIAaQBnAGgAdABzACAAUgBlAHMAZQByAHYAZQBkAC4AQQBkAG8AYgBlACAAQgBsAGEAbgBrAFIAZQBnAHUAbABhAHIAMQAuADAAMwA1ADsAQQBEAEIARQA7AEEAZABvAGIAZQBCAGwAYQBuAGsAOwBBAEQATwBCAEUAVgBlAHIAcwBpAG8AbgAgADEALgAwADMANQA7AFAAUwAgADEALgAwADAAMwA7AGgAbwB0AGMAbwBuAHYAIAAxAC4AMAAuADcAMAA7AG0AYQBrAGUAbwB0AGYALgBsAGkAYgAyAC4ANQAuADUAOQAwADAAQQBkAG8AYgBlAEIAbABhAG4AawBBAGQAbwBiAGUAIABTAHkAcwB0AGUAbQBzACAASQBuAGMAbwByAHAAbwByAGEAdABlAGQAaAB0AHQAcAA6AC8ALwB3AHcAdwAuAGEAZABvAGIAZQAuAGMAbwBtAC8AdAB5AHAAZQAvAEEAZABvAGIAZQAgAEIAbABhAG4AawAgAGkAcwAgAHIAZQBsAGUAYQBzAGUAZAAgAHUAbgBkAGUAcgAgAHQAaABlACAAUwBJAEwAIABPAHAAZQBuACAARgBvAG4AdAAgAEwAaQBjAGUAbgBzAGUAIAAtACAAcABsAGUAYQBzAGUAIAByAGUAYQBkACAAaQB0ACAAYwBhAHIAZQBmAHUAbABsAHkAIABhAG4AZAAgAGQAbwAgAG4AbwB0ACAAZABvAHcAbgBsAG8AYQBkACAAdABoAGUAIABmAG8AbgB0AHMAIAB1AG4AbABlAHMAcwAgAHkAbwB1ACAAYQBnAHIAZQBlACAAdABvACAAdABoAGUAIAB0AGgAZQAgAHQAZQByAG0AcwAgAG8AZgAgAHQAaABlACAAbABpAGMAZQBuAHMAZQA6AA0ACgANAAoAQwBvAHAAeQByAGkAZwBoAHQAIACpACAAMgAwADEAMwAgAEEAZABvAGIAZQAgAFMAeQBzAHQAZQBtAHMAIABJAG4AYwBvAHIAcABvAHIAYQB0AGUAZAAgACgAaAB0AHQAcAA6AC8ALwB3AHcAdwAuAGEAZABvAGIAZQAuAGMAbwBtAC8AKQAsACAAdwBpAHQAaAAgAFIAZQBzAGUAcgB2AGUAZAAgAEYAbwBuAHQAIABOAGEAbQBlACAAQQBkAG8AYgBlACAAQgBsAGEAbgBrAA0ACgANAAoAVABoAGkAcwAgAEYAbwBuAHQAIABTAG8AZgB0AHcAYQByAGUAIABpAHMAIABsAGkAYwBlAG4AcwBlAGQAIAB1AG4AZABlAHIAIAB0AGgAZQAgAFMASQBMACAATwBwAGUAbgAgAEYAbwBuAHQAIABMAGkAYwBlAG4AcwBlACwAIABWAGUAcgBzAGkAbwBuACAAMQAuADEALgANAAoADQAKAFQAaABpAHMAIABsAGkAYwBlAG4AcwBlACAAaQBzACAAYwBvAHAAaQBlAGQAIABiAGUAbABvAHcALAAgAGEAbgBkACAAaQBzACAAYQBsAHMAbwAgAGEAdgBhAGkAbABhAGIAbABlACAAdwBpAHQAaAAgAGEAIABGAEEAUQAgAGEAdAA6ACAAaAB0AHQAcAA6AC8ALwBzAGMAcgBpAHAAdABzAC4AcwBpAGwALgBvAHIAZwAvAE8ARgBMAA0ACgANAAoALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAA0ACgBTAEkATAAgAE8AUABFAE4AIABGAE8ATgBUACAATABJAEMARQBOAFMARQAgAFYAZQByAHMAaQBvAG4AIAAxAC4AMQAgAC0AIAAyADYAIABGAGUAYgByAHUAYQByAHkAIAAyADAAMAA3AA0ACgAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ALQAtAC0ADQAKAA0ACgBQAFIARQBBAE0AQgBMAEUADQAKAFQAaABlACAAZwBvAGEAbABzACAAbwBmACAAdABoAGUAIABPAHAAZQBuACAARgBvAG4AdAAgAEwAaQBjAGUAbgBzAGUAIAAoAE8ARgBMACkAIABhAHIAZQAgAHQAbwAgAHMAdABpAG0AdQBsAGEAdABlACAAdwBvAHIAbABkAHcAaQBkAGUAIABkAGUAdgBlAGwAbwBwAG0AZQBuAHQAIABvAGYAIABjAG8AbABsAGEAYgBvAHIAYQB0AGkAdgBlACAAZgBvAG4AdAAgAHAAcgBvAGoAZQBjAHQAcwAsACAAdABvACAAcwB1AHAAcABvAHIAdAAgAHQAaABlACAAZgBvAG4AdAAgAGMAcgBlAGEAdABpAG8AbgAgAGUAZgBmAG8AcgB0AHMAIABvAGYAIABhAGMAYQBkAGUAbQBpAGMAIABhAG4AZAAgAGwAaQBuAGcAdQBpAHMAdABpAGMAIABjAG8AbQBtAHUAbgBpAHQAaQBlAHMALAAgAGEAbgBkACAAdABvACAAcAByAG8AdgBpAGQAZQAgAGEAIABmAHIAZQBlACAAYQBuAGQAIABvAHAAZQBuACAAZgByAGEAbQBlAHcAbwByAGsAIABpAG4AIAB3AGgAaQBjAGgAIABmAG8AbgB0AHMAIABtAGEAeQAgAGIAZQAgAHMAaABhAHIAZQBkACAAYQBuAGQAIABpAG0AcAByAG8AdgBlAGQAIABpAG4AIABwAGEAcgB0AG4AZQByAHMAaABpAHAAIAB3AGkAdABoACAAbwB0AGgAZQByAHMALgANAAoADQAKAFQAaABlACAATwBGAEwAIABhAGwAbABvAHcAcwAgAHQAaABlACAAbABpAGMAZQBuAHMAZQBkACAAZgBvAG4AdABzACAAdABvACAAYgBlACAAdQBzAGUAZAAsACAAcwB0AHUAZABpAGUAZAAsACAAbQBvAGQAaQBmAGkAZQBkACAAYQBuAGQAIAByAGUAZABpAHMAdAByAGkAYgB1AHQAZQBkACAAZgByAGUAZQBsAHkAIABhAHMAIABsAG8AbgBnACAAYQBzACAAdABoAGUAeQAgAGEAcgBlACAAbgBvAHQAIABzAG8AbABkACAAYgB5ACAAdABoAGUAbQBzAGUAbAB2AGUAcwAuACAAVABoAGUAIABmAG8AbgB0AHMALAAgAGkAbgBjAGwAdQBkAGkAbgBnACAAYQBuAHkAIABkAGUAcgBpAHYAYQB0AGkAdgBlACAAdwBvAHIAawBzACwAIABjAGEAbgAgAGIAZQAgAGIAdQBuAGQAbABlAGQALAAgAGUAbQBiAGUAZABkAGUAZAAsACAAcgBlAGQAaQBzAHQAcgBpAGIAdQB0AGUAZAAgAGEAbgBkAC8AbwByACAAcwBvAGwAZAAgAHcAaQB0AGgAIABhAG4AeQAgAHMAbwBmAHQAdwBhAHIAZQAgAHAAcgBvAHYAaQBkAGUAZAAgAHQAaABhAHQAIABhAG4AeQAgAHIAZQBzAGUAcgB2AGUAZAAgAG4AYQBtAGUAcwAgAGEAcgBlACAAbgBvAHQAIAB1AHMAZQBkACAAYgB5ACAAZABlAHIAaQB2AGEAdABpAHYAZQAgAHcAbwByAGsAcwAuACAAVABoAGUAIABmAG8AbgB0AHMAIABhAG4AZAAgAGQAZQByAGkAdgBhAHQAaQB2AGUAcwAsACAAaABvAHcAZQB2AGUAcgAsACAAYwBhAG4AbgBvAHQAIABiAGUAIAByAGUAbABlAGEAcwBlAGQAIAB1AG4AZABlAHIAIABhAG4AeQAgAG8AdABoAGUAcgAgAHQAeQBwAGUAIABvAGYAIABsAGkAYwBlAG4AcwBlAC4AIABUAGgAZQAgAHIAZQBxAHUAaQByAGUAbQBlAG4AdAAgAGYAbwByACAAZgBvAG4AdABzACAAdABvACAAcgBlAG0AYQBpAG4AIAB1AG4AZABlAHIAIAB0AGgAaQBzACAAbABpAGMAZQBuAHMAZQAgAGQAbwBlAHMAIABuAG8AdAAgAGEAcABwAGwAeQAgAHQAbwAgAGEAbgB5ACAAZABvAGMAdQBtAGUAbgB0ACAAYwByAGUAYQB0AGUAZAAgAHUAcwBpAG4AZwAgAHQAaABlACAAZgBvAG4AdABzACAAbwByACAAdABoAGUAaQByACAAZABlAHIAaQB2AGEAdABpAHYAZQBzAC4ADQAKAA0ACgBEAEUARgBJAE4ASQBUAEkATwBOAFMADQAKACIARgBvAG4AdAAgAFMAbwBmAHQAdwBhAHIAZQAiACAAcgBlAGYAZQByAHMAIAB0AG8AIAB0AGgAZQAgAHMAZQB0ACAAbwBmACAAZgBpAGwAZQBzACAAcgBlAGwAZQBhAHMAZQBkACAAYgB5ACAAdABoAGUAIABDAG8AcAB5AHIAaQBnAGgAdAAgAEgAbwBsAGQAZQByACgAcwApACAAdQBuAGQAZQByACAAdABoAGkAcwAgAGwAaQBjAGUAbgBzAGUAIABhAG4AZAAgAGMAbABlAGEAcgBsAHkAIABtAGEAcgBrAGUAZAAgAGEAcwAgAHMAdQBjAGgALgAgAFQAaABpAHMAIABtAGEAeQAgAGkAbgBjAGwAdQBkAGUAIABzAG8AdQByAGMAZQAgAGYAaQBsAGUAcwAsACAAYgB1AGkAbABkACAAcwBjAHIAaQBwAHQAcwAgAGEAbgBkACAAZABvAGMAdQBtAGUAbgB0AGEAdABpAG8AbgAuAA0ACgANAAoAIgBSAGUAcwBlAHIAdgBlAGQAIABGAG8AbgB0ACAATgBhAG0AZQAiACAAcgBlAGYAZQByAHMAIAB0AG8AIABhAG4AeQAgAG4AYQBtAGUAcwAgAHMAcABlAGMAaQBmAGkAZQBkACAAYQBzACAAcwB1AGMAaAAgAGEAZgB0AGUAcgAgAHQAaABlACAAYwBvAHAAeQByAGkAZwBoAHQAIABzAHQAYQB0AGUAbQBlAG4AdAAoAHMAKQAuAA0ACgANAAoAIgBPAHIAaQBnAGkAbgBhAGwAIABWAGUAcgBzAGkAbwBuACIAIAByAGUAZgBlAHIAcwAgAHQAbwAgAHQAaABlACAAYwBvAGwAbABlAGMAdABpAG8AbgAgAG8AZgAgAEYAbwBuAHQAIABTAG8AZgB0AHcAYQByAGUAIABjAG8AbQBwAG8AbgBlAG4AdABzACAAYQBzACAAZABpAHMAdAByAGkAYgB1AHQAZQBkACAAYgB5ACAAdABoAGUAIABDAG8AcAB5AHIAaQBnAGgAdAAgAEgAbwBsAGQAZQByACgAcwApAC4ADQAKAA0ACgAiAE0AbwBkAGkAZgBpAGUAZAAgAFYAZQByAHMAaQBvAG4AIgAgAHIAZQBmAGUAcgBzACAAdABvACAAYQBuAHkAIABkAGUAcgBpAHYAYQB0AGkAdgBlACAAbQBhAGQAZQAgAGIAeQAgAGEAZABkAGkAbgBnACAAdABvACwAIABkAGUAbABlAHQAaQBuAGcALAAgAG8AcgAgAHMAdQBiAHMAdABpAHQAdQB0AGkAbgBnACAALQAtACAAaQBuACAAcABhAHIAdAAgAG8AcgAgAGkAbgAgAHcAaABvAGwAZQAgAC0ALQAgAGEAbgB5ACAAbwBmACAAdABoAGUAIABjAG8AbQBwAG8AbgBlAG4AdABzACAAbwBmACAAdABoAGUAIABPAHIAaQBnAGkAbgBhAGwAIABWAGUAcgBzAGkAbwBuACwAIABiAHkAIABjAGgAYQBuAGcAaQBuAGcAIABmAG8AcgBtAGEAdABzACAAbwByACAAYgB5ACAAcABvAHIAdABpAG4AZwAgAHQAaABlACAARgBvAG4AdAAgAFMAbwBmAHQAdwBhAHIAZQAgAHQAbwAgAGEAIABuAGUAdwAgAGUAbgB2AGkAcgBvAG4AbQBlAG4AdAAuAA0ACgANAAoAIgBBAHUAdABoAG8AcgAiACAAcgBlAGYAZQByAHMAIAB0AG8AIABhAG4AeQAgAGQAZQBzAGkAZwBuAGUAcgAsACAAZQBuAGcAaQBuAGUAZQByACwAIABwAHIAbwBnAHIAYQBtAG0AZQByACwAIAB0AGUAYwBoAG4AaQBjAGEAbAAgAHcAcgBpAHQAZQByACAAbwByACAAbwB0AGgAZQByACAAcABlAHIAcwBvAG4AIAB3AGgAbwAgAGMAbwBuAHQAcgBpAGIAdQB0AGUAZAAgAHQAbwAgAHQAaABlACAARgBvAG4AdAAgAFMAbwBmAHQAdwBhAHIAZQAuAA0ACgANAAoAUABFAFIATQBJAFMAUwBJAE8ATgAgACYAIABDAE8ATgBEAEkAVABJAE8ATgBTAA0ACgBQAGUAcgBtAGkAcwBzAGkAbwBuACAAaQBzACAAaABlAHIAZQBiAHkAIABnAHIAYQBuAHQAZQBkACwAIABmAHIAZQBlACAAbwBmACAAYwBoAGEAcgBnAGUALAAgAHQAbwAgAGEAbgB5ACAAcABlAHIAcwBvAG4AIABvAGIAdABhAGkAbgBpAG4AZwAgAGEAIABjAG8AcAB5ACAAbwBmACAAdABoAGUAIABGAG8AbgB0ACAAUwBvAGYAdAB3AGEAcgBlACwAIAB0AG8AIAB1AHMAZQAsACAAcwB0AHUAZAB5ACwAIABjAG8AcAB5ACwAIABtAGUAcgBnAGUALAAgAGUAbQBiAGUAZAAsACAAbQBvAGQAaQBmAHkALAAgAHIAZQBkAGkAcwB0AHIAaQBiAHUAdABlACwAIABhAG4AZAAgAHMAZQBsAGwAIABtAG8AZABpAGYAaQBlAGQAIABhAG4AZAAgAHUAbgBtAG8AZABpAGYAaQBlAGQAIABjAG8AcABpAGUAcwAgAG8AZgAgAHQAaABlACAARgBvAG4AdAAgAFMAbwBmAHQAdwBhAHIAZQAsACAAcwB1AGIAagBlAGMAdAAgAHQAbwAgAHQAaABlACAAZgBvAGwAbABvAHcAaQBuAGcAIABjAG8AbgBkAGkAdABpAG8AbgBzADoADQAKAA0ACgAxACkAIABOAGUAaQB0AGgAZQByACAAdABoAGUAIABGAG8AbgB0ACAAUwBvAGYAdAB3AGEAcgBlACAAbgBvAHIAIABhAG4AeQAgAG8AZgAgAGkAdABzACAAaQBuAGQAaQB2AGkAZAB1AGEAbAAgAGMAbwBtAHAAbwBuAGUAbgB0AHMALAAgAGkAbgAgAE8AcgBpAGcAaQBuAGEAbAAgAG8AcgAgAE0AbwBkAGkAZgBpAGUAZAAgAFYAZQByAHMAaQBvAG4AcwAsACAAbQBhAHkAIABiAGUAIABzAG8AbABkACAAYgB5ACAAaQB0AHMAZQBsAGYALgANAAoADQAKADIAKQAgAE8AcgBpAGcAaQBuAGEAbAAgAG8AcgAgAE0AbwBkAGkAZgBpAGUAZAAgAFYAZQByAHMAaQBvAG4AcwAgAG8AZgAgAHQAaABlACAARgBvAG4AdAAgAFMAbwBmAHQAdwBhAHIAZQAgAG0AYQB5ACAAYgBlACAAYgB1AG4AZABsAGUAZAAsACAAcgBlAGQAaQBzAHQAcgBpAGIAdQB0AGUAZAAgAGEAbgBkAC8AbwByACAAcwBvAGwAZAAgAHcAaQB0AGgAIABhAG4AeQAgAHMAbwBmAHQAdwBhAHIAZQAsACAAcAByAG8AdgBpAGQAZQBkACAAdABoAGEAdAAgAGUAYQBjAGgAIABjAG8AcAB5ACAAYwBvAG4AdABhAGkAbgBzACAAdABoAGUAIABhAGIAbwB2AGUAIABjAG8AcAB5AHIAaQBnAGgAdAAgAG4AbwB0AGkAYwBlACAAYQBuAGQAIAB0AGgAaQBzACAAbABpAGMAZQBuAHMAZQAuACAAVABoAGUAcwBlACAAYwBhAG4AIABiAGUAIABpAG4AYwBsAHUAZABlAGQAIABlAGkAdABoAGUAcgAgAGEAcwAgAHMAdABhAG4AZAAtAGEAbABvAG4AZQAgAHQAZQB4AHQAIABmAGkAbABlAHMALAAgAGgAdQBtAGEAbgAtAHIAZQBhAGQAYQBiAGwAZQAgAGgAZQBhAGQAZQByAHMAIABvAHIAIABpAG4AIAB0AGgAZQAgAGEAcABwAHIAbwBwAHIAaQBhAHQAZQAgAG0AYQBjAGgAaQBuAGUALQByAGUAYQBkAGEAYgBsAGUAIABtAGUAdABhAGQAYQB0AGEAIABmAGkAZQBsAGQAcwAgAHcAaQB0AGgAaQBuACAAdABlAHgAdAAgAG8AcgAgAGIAaQBuAGEAcgB5ACAAZgBpAGwAZQBzACAAYQBzACAAbABvAG4AZwAgAGEAcwAgAHQAaABvAHMAZQAgAGYAaQBlAGwAZABzACAAYwBhAG4AIABiAGUAIABlAGEAcwBpAGwAeQAgAHYAaQBlAHcAZQBkACAAYgB5ACAAdABoAGUAIAB1AHMAZQByAC4ADQAKAA0ACgAzACkAIABOAG8AIABNAG8AZABpAGYAaQBlAGQAIABWAGUAcgBzAGkAbwBuACAAbwBmACAAdABoAGUAIABGAG8AbgB0ACAAUwBvAGYAdAB3AGEAcgBlACAAbQBhAHkAIAB1AHMAZQAgAHQAaABlACAAUgBlAHMAZQByAHYAZQBkACAARgBvAG4AdAAgAE4AYQBtAGUAKABzACkAIAB1AG4AbABlAHMAcwAgAGUAeABwAGwAaQBjAGkAdAAgAHcAcgBpAHQAdABlAG4AIABwAGUAcgBtAGkAcwBzAGkAbwBuACAAaQBzACAAZwByAGEAbgB0AGUAZAAgAGIAeQAgAHQAaABlACAAYwBvAHIAcgBlAHMAcABvAG4AZABpAG4AZwAgAEMAbwBwAHkAcgBpAGcAaAB0ACAASABvAGwAZABlAHIALgAgAFQAaABpAHMAIAByAGUAcwB0AHIAaQBjAHQAaQBvAG4AIABvAG4AbAB5ACAAYQBwAHAAbABpAGUAcwAgAHQAbwAgAHQAaABlACAAcAByAGkAbQBhAHIAeQAgAGYAbwBuAHQAIABuAGEAbQBlACAAYQBzACAAcAByAGUAcwBlAG4AdABlAGQAIAB0AG8AIAB0AGgAZQAgAHUAcwBlAHIAcwAuAA0ACgANAAoANAApACAAVABoAGUAIABuAGEAbQBlACgAcwApACAAbwBmACAAdABoAGUAIABDAG8AcAB5AHIAaQBnAGgAdAAgAEgAbwBsAGQAZQByACgAcwApACAAbwByACAAdABoAGUAIABBAHUAdABoAG8AcgAoAHMAKQAgAG8AZgAgAHQAaABlACAARgBvAG4AdAAgAFMAbwBmAHQAdwBhAHIAZQAgAHMAaABhAGwAbAAgAG4AbwB0ACAAYgBlACAAdQBzAGUAZAAgAHQAbwAgAHAAcgBvAG0AbwB0AGUALAAgAGUAbgBkAG8AcgBzAGUAIABvAHIAIABhAGQAdgBlAHIAdABpAHMAZQAgAGEAbgB5ACAATQBvAGQAaQBmAGkAZQBkACAAVgBlAHIAcwBpAG8AbgAsACAAZQB4AGMAZQBwAHQAIAB0AG8AIABhAGMAawBuAG8AdwBsAGUAZABnAGUAIAB0AGgAZQAgAGMAbwBuAHQAcgBpAGIAdQB0AGkAbwBuACgAcwApACAAbwBmACAAdABoAGUAIABDAG8AcAB5AHIAaQBnAGgAdAAgAEgAbwBsAGQAZQByACgAcwApACAAYQBuAGQAIAB0AGgAZQAgAEEAdQB0AGgAbwByACgAcwApACAAbwByACAAdwBpAHQAaAAgAHQAaABlAGkAcgAgAGUAeABwAGwAaQBjAGkAdAAgAHcAcgBpAHQAdABlAG4AIABwAGUAcgBtAGkAcwBzAGkAbwBuAC4ADQAKAA0ACgA1ACkAIABUAGgAZQAgAEYAbwBuAHQAIABTAG8AZgB0AHcAYQByAGUALAAgAG0AbwBkAGkAZgBpAGUAZAAgAG8AcgAgAHUAbgBtAG8AZABpAGYAaQBlAGQALAAgAGkAbgAgAHAAYQByAHQAIABvAHIAIABpAG4AIAB3AGgAbwBsAGUALAAgAG0AdQBzAHQAIABiAGUAIABkAGkAcwB0AHIAaQBiAHUAdABlAGQAIABlAG4AdABpAHIAZQBsAHkAIAB1AG4AZABlAHIAIAB0AGgAaQBzACAAbABpAGMAZQBuAHMAZQAsACAAYQBuAGQAIABtAHUAcwB0ACAAbgBvAHQAIABiAGUAIABkAGkAcwB0AHIAaQBiAHUAdABlAGQAIAB1AG4AZABlAHIAIABhAG4AeQAgAG8AdABoAGUAcgAgAGwAaQBjAGUAbgBzAGUALgAgAFQAaABlACAAcgBlAHEAdQBpAHIAZQBtAGUAbgB0ACAAZgBvAHIAIABmAG8AbgB0AHMAIAB0AG8AIAByAGUAbQBhAGkAbgAgAHUAbgBkAGUAcgAgAHQAaABpAHMAIABsAGkAYwBlAG4AcwBlACAAZABvAGUAcwAgAG4AbwB0ACAAYQBwAHAAbAB5ACAAdABvACAAYQBuAHkAIABkAG8AYwB1AG0AZQBuAHQAIABjAHIAZQBhAHQAZQBkACAAdQBzAGkAbgBnACAAdABoAGUAIABGAG8AbgB0ACAAUwBvAGYAdAB3AGEAcgBlAC4ADQAKAA0ACgBUAEUAUgBNAEkATgBBAFQASQBPAE4ADQAKAFQAaABpAHMAIABsAGkAYwBlAG4AcwBlACAAYgBlAGMAbwBtAGUAcwAgAG4AdQBsAGwAIABhAG4AZAAgAHYAbwBpAGQAIABpAGYAIABhAG4AeQAgAG8AZgAgAHQAaABlACAAYQBiAG8AdgBlACAAYwBvAG4AZABpAHQAaQBvAG4AcwAgAGEAcgBlACAAbgBvAHQAIABtAGUAdAAuAA0ACgANAAoARABJAFMAQwBMAEEASQBNAEUAUgANAAoAVABIAEUAIABGAE8ATgBUACAAUwBPAEYAVABXAEEAUgBFACAASQBTACAAUABSAE8AVgBJAEQARQBEACAAIgBBAFMAIABJAFMAIgAsACAAVwBJAFQASABPAFUAVAAgAFcAQQBSAFIAQQBOAFQAWQAgAE8ARgAgAEEATgBZACAASwBJAE4ARAAsACAARQBYAFAAUgBFAFMAUwAgAE8AUgAgAEkATQBQAEwASQBFAEQALAAgAEkATgBDAEwAVQBEAEkATgBHACAAQgBVAFQAIABOAE8AVAAgAEwASQBNAEkAVABFAEQAIABUAE8AIABBAE4AWQAgAFcAQQBSAFIAQQBOAFQASQBFAFMAIABPAEYAIABNAEUAUgBDAEgAQQBOAFQAQQBCAEkATABJAFQAWQAsACAARgBJAFQATgBFAFMAUwAgAEYATwBSACAAQQAgAFAAQQBSAFQASQBDAFUATABBAFIAIABQAFUAUgBQAE8AUwBFACAAQQBOAEQAIABOAE8ATgBJAE4ARgBSAEkATgBHAEUATQBFAE4AVAAgAE8ARgAgAEMATwBQAFkAUgBJAEcASABUACwAIABQAEEAVABFAE4AVAAsACAAVABSAEEARABFAE0AQQBSAEsALAAgAE8AUgAgAE8AVABIAEUAUgAgAFIASQBHAEgAVAAuACAASQBOACAATgBPACAARQBWAEUATgBUACAAUwBIAEEATABMACAAVABIAEUAIABDAE8AUABZAFIASQBHAEgAVAAgAEgATwBMAEQARQBSACAAQgBFACAATABJAEEAQgBMAEUAIABGAE8AUgAgAEEATgBZACAAQwBMAEEASQBNACwAIABEAEEATQBBAEcARQBTACAATwBSACAATwBUAEgARQBSACAATABJAEEAQgBJAEwASQBUAFkALAAgAEkATgBDAEwAVQBEAEkATgBHACAAQQBOAFkAIABHAEUATgBFAFIAQQBMACwAIABTAFAARQBDAEkAQQBMACwAIABJAE4ARABJAFIARQBDAFQALAAgAEkATgBDAEkARABFAE4AVABBAEwALAAgAE8AUgAgAEMATwBOAFMARQBRAFUARQBOAFQASQBBAEwAIABEAEEATQBBAEcARQBTACwAIABXAEgARQBUAEgARQBSACAASQBOACAAQQBOACAAQQBDAFQASQBPAE4AIABPAEYAIABDAE8ATgBUAFIAQQBDAFQALAAgAFQATwBSAFQAIABPAFIAIABPAFQASABFAFIAVwBJAFMARQAsACAAQQBSAEkAUwBJAE4ARwAgAEYAUgBPAE0ALAAgAE8AVQBUACAATwBGACAAVABIAEUAIABVAFMARQAgAE8AUgAgAEkATgBBAEIASQBMAEkAVABZACAAVABPACAAVQBTAEUAIABUAEgARQAgAEYATwBOAFQAIABTAE8ARgBUAFcAQQBSAEUAIABPAFIAIABGAFIATwBNACAATwBUAEgARQBSACAARABFAEEATABJAE4ARwBTACAASQBOACAAVABIAEUAIABGAE8ATgBUACAAUwBPAEYAVABXAEEAUgBFAC4ADQAKAGgAdAB0AHAAOgAvAC8AdwB3AHcALgBhAGQAbwBiAGUALgBjAG8AbQAvAHQAeQBwAGUALwBsAGUAZwBhAGwALgBoAHQAbQBsAAAAAAAFAAAAAwAAADgAAAAEAAABUAABAAAAAAAsAAMAAQAAADgAAwAKAAABUAAGAAwAAAAAAAEAAAAEARgAAABCAEAABQACB/8P/xf/H/8n/y//N/8//0f/T/9X/1//Z/9v/3f/f/+H/4//l/+f/6f/r/+3/7//x//P/9f/5//v//f//c///f//AAAAAAgAEAAYACAAKAAwADgAQABIAFAAWABgAGgAcAB4AIAAiACQAJgAoACoALAAuADAAMgA0ADgAOgA8AD4AP3w//8AAfgB8AHoAeAB2AHQAcgBwAG4AbABqAGgAZgBkAGIAYABeAFwAWgBYAFYAVABSAFAATgBMAEgARgBEAEIAQgBAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAAAAAAZkAAAAAAAAAIgAAAAAAAAB/8AAAABAAAIAAAAD/8AAAABAAAQAAAAF/8AAAABAAAYAAAAH/8AAAABAAAgAAAAJ/8AAAABAAAoAAAAL/8AAAABAAAwAAAAN/8AAAABAAA4AAAAP/8AAAABAABAAAAAR/8AAAABAABIAAAAT/8AAAABAABQAAAAV/8AAAABAABYAAAAX/8AAAABAABgAAAAZ/8AAAABAABoAAAAb/8AAAABAABwAAAAd/8AAAABAAB4AAAAf/8AAAABAACAAAAAh/8AAAABAACIAAAAj/8AAAABAACQAAAAl/8AAAABAACYAAAAn/8AAAABAACgAAAAp/8AAAABAACoAAAAr/8AAAABAACwAAAAt/8AAAABAAC4AAAAv/8AAAABAADAAAAAx/8AAAABAADIAAAAz/8AAAABAADQAAAA1/8AAAABAADgAAAA5/8AAAABAADoAAAA7/8AAAABAADwAAAA9/8AAAABAAD4AAAA/c8AAAABAAD98AAA//0AAAXxAAEAAAABB/8AAAABAAEIAAABD/8AAAABAAEQAAABF/8AAAABAAEYAAABH/8AAAABAAEgAAABJ/8AAAABAAEoAAABL/8AAAABAAEwAAABN/8AAAABAAE4AAABP/8AAAABAAFAAAABR/8AAAABAAFIAAABT/8AAAABAAFQAAABV/8AAAABAAFYAAABX/8AAAABAAFgAAABZ/8AAAABAAFoAAABb/8AAAABAAFwAAABd/8AAAABAAF4AAABf/8AAAABAAGAAAABh/8AAAABAAGIAAABj/8AAAABAAGQAAABl/8AAAABAAGYAAABn/8AAAABAAGgAAABp/8AAAABAAGoAAABr/8AAAABAAGwAAABt/8AAAABAAG4AAABv/8AAAABAAHAAAABx/8AAAABAAHIAAABz/8AAAABAAHQAAAB1/8AAAABAAHYAAAB3/8AAAABAAHgAAAB5/8AAAABAAHoAAAB7/8AAAABAAHwAAAB9/8AAAABAAH4AAAB//0AAAABAAIAAAACB/8AAAABAAIIAAACD/8AAAABAAIQAAACF/8AAAABAAIYAAACH/8AAAABAAIgAAACJ/8AAAABAAIoAAACL/8AAAABAAIwAAACN/8AAAABAAI4AAACP/8AAAABAAJAAAACR/8AAAABAAJIAAACT/8AAAABAAJQAAACV/8AAAABAAJYAAACX/8AAAABAAJgAAACZ/8AAAABAAJoAAACb/8AAAABAAJwAAACd/8AAAABAAJ4AAACf/8AAAABAAKAAAACh/8AAAABAAKIAAACj/8AAAABAAKQAAACl/8AAAABAAKYAAACn/8AAAABAAKgAAACp/8AAAABAAKoAAACr/8AAAABAAKwAAACt/8AAAABAAK4AAACv/8AAAABAALAAAACx/8AAAABAALIAAACz/8AAAABAALQAAAC1/8AAAABAALYAAAC3/8AAAABAALgAAAC5/8AAAABAALoAAAC7/8AAAABAALwAAAC9/8AAAABAAL4AAAC//0AAAABAAMAAAADB/8AAAABAAMIAAADD/8AAAABAAMQAAADF/8AAAABAAMYAAADH/8AAAABAAMgAAADJ/8AAAABAAMoAAADL/8AAAABAAMwAAADN/8AAAABAAM4AAADP/8AAAABAANAAAADR/8AAAABAANIAAADT/8AAAABAANQAAADV/8AAAABAANYAAADX/8AAAABAANgAAADZ/8AAAABAANoAAADb/8AAAABAANwAAADd/8AAAABAAN4AAADf/8AAAABAAOAAAADh/8AAAABAAOIAAADj/8AAAABAAOQAAADl/8AAAABAAOYAAADn/8AAAABAAOgAAADp/8AAAABAAOoAAADr/8AAAABAAOwAAADt/8AAAABAAO4AAADv/8AAAABAAPAAAADx/8AAAABAAPIAAADz/8AAAABAAPQAAAD1/8AAAABAAPYAAAD3/8AAAABAAPgAAAD5/8AAAABAAPoAAAD7/8AAAABAAPwAAAD9/8AAAABAAP4AAAD//0AAAABAAQAAAAEB/8AAAABAAQIAAAED/8AAAABAAQQAAAEF/8AAAABAAQYAAAEH/8AAAABAAQgAAAEJ/8AAAABAAQoAAAEL/8AAAABAAQwAAAEN/8AAAABAAQ4AAAEP/8AAAABAARAAAAER/8AAAABAARIAAAET/8AAAABAARQAAAEV/8AAAABAARYAAAEX/8AAAABAARgAAAEZ/8AAAABAARoAAAEb/8AAAABAARwAAAEd/8AAAABAAR4AAAEf/8AAAABAASAAAAEh/8AAAABAASIAAAEj/8AAAABAASQAAAEl/8AAAABAASYAAAEn/8AAAABAASgAAAEp/8AAAABAASoAAAEr/8AAAABAASwAAAEt/8AAAABAAS4AAAEv/8AAAABAATAAAAEx/8AAAABAATIAAAEz/8AAAABAATQAAAE1/8AAAABAATYAAAE3/8AAAABAATgAAAE5/8AAAABAAToAAAE7/8AAAABAATwAAAE9/8AAAABAAT4AAAE//0AAAABAAUAAAAFB/8AAAABAAUIAAAFD/8AAAABAAUQAAAFF/8AAAABAAUYAAAFH/8AAAABAAUgAAAFJ/8AAAABAAUoAAAFL/8AAAABAAUwAAAFN/8AAAABAAU4AAAFP/8AAAABAAVAAAAFR/8AAAABAAVIAAAFT/8AAAABAAVQAAAFV/8AAAABAAVYAAAFX/8AAAABAAVgAAAFZ/8AAAABAAVoAAAFb/8AAAABAAVwAAAFd/8AAAABAAV4AAAFf/8AAAABAAWAAAAFh/8AAAABAAWIAAAFj/8AAAABAAWQAAAFl/8AAAABAAWYAAAFn/8AAAABAAWgAAAFp/8AAAABAAWoAAAFr/8AAAABAAWwAAAFt/8AAAABAAW4AAAFv/8AAAABAAXAAAAFx/8AAAABAAXIAAAFz/8AAAABAAXQAAAF1/8AAAABAAXYAAAF3/8AAAABAAXgAAAF5/8AAAABAAXoAAAF7/8AAAABAAXwAAAF9/8AAAABAAX4AAAF//0AAAABAAYAAAAGB/8AAAABAAYIAAAGD/8AAAABAAYQAAAGF/8AAAABAAYYAAAGH/8AAAABAAYgAAAGJ/8AAAABAAYoAAAGL/8AAAABAAYwAAAGN/8AAAABAAY4AAAGP/8AAAABAAZAAAAGR/8AAAABAAZIAAAGT/8AAAABAAZQAAAGV/8AAAABAAZYAAAGX/8AAAABAAZgAAAGZ/8AAAABAAZoAAAGb/8AAAABAAZwAAAGd/8AAAABAAZ4AAAGf/8AAAABAAaAAAAGh/8AAAABAAaIAAAGj/8AAAABAAaQAAAGl/8AAAABAAaYAAAGn/8AAAABAAagAAAGp/8AAAABAAaoAAAGr/8AAAABAAawAAAGt/8AAAABAAa4AAAGv/8AAAABAAbAAAAGx/8AAAABAAbIAAAGz/8AAAABAAbQAAAG1/8AAAABAAbYAAAG3/8AAAABAAbgAAAG5/8AAAABAAboAAAG7/8AAAABAAbwAAAG9/8AAAABAAb4AAAG//0AAAABAAcAAAAHB/8AAAABAAcIAAAHD/8AAAABAAcQAAAHF/8AAAABAAcYAAAHH/8AAAABAAcgAAAHJ/8AAAABAAcoAAAHL/8AAAABAAcwAAAHN/8AAAABAAc4AAAHP/8AAAABAAdAAAAHR/8AAAABAAdIAAAHT/8AAAABAAdQAAAHV/8AAAABAAdYAAAHX/8AAAABAAdgAAAHZ/8AAAABAAdoAAAHb/8AAAABAAdwAAAHd/8AAAABAAd4AAAHf/8AAAABAAeAAAAHh/8AAAABAAeIAAAHj/8AAAABAAeQAAAHl/8AAAABAAeYAAAHn/8AAAABAAegAAAHp/8AAAABAAeoAAAHr/8AAAABAAewAAAHt/8AAAABAAe4AAAHv/8AAAABAAfAAAAHx/8AAAABAAfIAAAHz/8AAAABAAfQAAAH1/8AAAABAAfYAAAH3/8AAAABAAfgAAAH5/8AAAABAAfoAAAH7/8AAAABAAfwAAAH9/8AAAABAAf4AAAH//0AAAABAAgAAAAIB/8AAAABAAgIAAAID/8AAAABAAgQAAAIF/8AAAABAAgYAAAIH/8AAAABAAggAAAIJ/8AAAABAAgoAAAIL/8AAAABAAgwAAAIN/8AAAABAAg4AAAIP/8AAAABAAhAAAAIR/8AAAABAAhIAAAIT/8AAAABAAhQAAAIV/8AAAABAAhYAAAIX/8AAAABAAhgAAAIZ/8AAAABAAhoAAAIb/8AAAABAAhwAAAId/8AAAABAAh4AAAIf/8AAAABAAiAAAAIh/8AAAABAAiIAAAIj/8AAAABAAiQAAAIl/8AAAABAAiYAAAIn/8AAAABAAigAAAIp/8AAAABAAioAAAIr/8AAAABAAiwAAAIt/8AAAABAAi4AAAIv/8AAAABAAjAAAAIx/8AAAABAAjIAAAIz/8AAAABAAjQAAAI1/8AAAABAAjYAAAI3/8AAAABAAjgAAAI5/8AAAABAAjoAAAI7/8AAAABAAjwAAAI9/8AAAABAAj4AAAI//0AAAABAAkAAAAJB/8AAAABAAkIAAAJD/8AAAABAAkQAAAJF/8AAAABAAkYAAAJH/8AAAABAAkgAAAJJ/8AAAABAAkoAAAJL/8AAAABAAkwAAAJN/8AAAABAAk4AAAJP/8AAAABAAlAAAAJR/8AAAABAAlIAAAJT/8AAAABAAlQAAAJV/8AAAABAAlYAAAJX/8AAAABAAlgAAAJZ/8AAAABAAloAAAJb/8AAAABAAlwAAAJd/8AAAABAAl4AAAJf/8AAAABAAmAAAAJh/8AAAABAAmIAAAJj/8AAAABAAmQAAAJl/8AAAABAAmYAAAJn/8AAAABAAmgAAAJp/8AAAABAAmoAAAJr/8AAAABAAmwAAAJt/8AAAABAAm4AAAJv/8AAAABAAnAAAAJx/8AAAABAAnIAAAJz/8AAAABAAnQAAAJ1/8AAAABAAnYAAAJ3/8AAAABAAngAAAJ5/8AAAABAAnoAAAJ7/8AAAABAAnwAAAJ9/8AAAABAAn4AAAJ//0AAAABAAoAAAAKB/8AAAABAAoIAAAKD/8AAAABAAoQAAAKF/8AAAABAAoYAAAKH/8AAAABAAogAAAKJ/8AAAABAAooAAAKL/8AAAABAAowAAAKN/8AAAABAAo4AAAKP/8AAAABAApAAAAKR/8AAAABAApIAAAKT/8AAAABAApQAAAKV/8AAAABAApYAAAKX/8AAAABAApgAAAKZ/8AAAABAApoAAAKb/8AAAABAApwAAAKd/8AAAABAAp4AAAKf/8AAAABAAqAAAAKh/8AAAABAAqIAAAKj/8AAAABAAqQAAAKl/8AAAABAAqYAAAKn/8AAAABAAqgAAAKp/8AAAABAAqoAAAKr/8AAAABAAqwAAAKt/8AAAABAAq4AAAKv/8AAAABAArAAAAKx/8AAAABAArIAAAKz/8AAAABAArQAAAK1/8AAAABAArYAAAK3/8AAAABAArgAAAK5/8AAAABAAroAAAK7/8AAAABAArwAAAK9/8AAAABAAr4AAAK//0AAAABAAsAAAALB/8AAAABAAsIAAALD/8AAAABAAsQAAALF/8AAAABAAsYAAALH/8AAAABAAsgAAALJ/8AAAABAAsoAAALL/8AAAABAAswAAALN/8AAAABAAs4AAALP/8AAAABAAtAAAALR/8AAAABAAtIAAALT/8AAAABAAtQAAALV/8AAAABAAtYAAALX/8AAAABAAtgAAALZ/8AAAABAAtoAAALb/8AAAABAAtwAAALd/8AAAABAAt4AAALf/8AAAABAAuAAAALh/8AAAABAAuIAAALj/8AAAABAAuQAAALl/8AAAABAAuYAAALn/8AAAABAAugAAALp/8AAAABAAuoAAALr/8AAAABAAuwAAALt/8AAAABAAu4AAALv/8AAAABAAvAAAALx/8AAAABAAvIAAALz/8AAAABAAvQAAAL1/8AAAABAAvYAAAL3/8AAAABAAvgAAAL5/8AAAABAAvoAAAL7/8AAAABAAvwAAAL9/8AAAABAAv4AAAL//0AAAABAAwAAAAMB/8AAAABAAwIAAAMD/8AAAABAAwQAAAMF/8AAAABAAwYAAAMH/8AAAABAAwgAAAMJ/8AAAABAAwoAAAML/8AAAABAAwwAAAMN/8AAAABAAw4AAAMP/8AAAABAAxAAAAMR/8AAAABAAxIAAAMT/8AAAABAAxQAAAMV/8AAAABAAxYAAAMX/8AAAABAAxgAAAMZ/8AAAABAAxoAAAMb/8AAAABAAxwAAAMd/8AAAABAAx4AAAMf/8AAAABAAyAAAAMh/8AAAABAAyIAAAMj/8AAAABAAyQAAAMl/8AAAABAAyYAAAMn/8AAAABAAygAAAMp/8AAAABAAyoAAAMr/8AAAABAAywAAAMt/8AAAABAAy4AAAMv/8AAAABAAzAAAAMx/8AAAABAAzIAAAMz/8AAAABAAzQAAAM1/8AAAABAAzYAAAM3/8AAAABAAzgAAAM5/8AAAABAAzoAAAM7/8AAAABAAzwAAAM9/8AAAABAAz4AAAM//0AAAABAA0AAAANB/8AAAABAA0IAAAND/8AAAABAA0QAAANF/8AAAABAA0YAAANH/8AAAABAA0gAAANJ/8AAAABAA0oAAANL/8AAAABAA0wAAANN/8AAAABAA04AAANP/8AAAABAA1AAAANR/8AAAABAA1IAAANT/8AAAABAA1QAAANV/8AAAABAA1YAAANX/8AAAABAA1gAAANZ/8AAAABAA1oAAANb/8AAAABAA1wAAANd/8AAAABAA14AAANf/8AAAABAA2AAAANh/8AAAABAA2IAAANj/8AAAABAA2QAAANl/8AAAABAA2YAAANn/8AAAABAA2gAAANp/8AAAABAA2oAAANr/8AAAABAA2wAAANt/8AAAABAA24AAANv/8AAAABAA3AAAANx/8AAAABAA3IAAANz/8AAAABAA3QAAAN1/8AAAABAA3YAAAN3/8AAAABAA3gAAAN5/8AAAABAA3oAAAN7/8AAAABAA3wAAAN9/8AAAABAA34AAAN//0AAAABAA4AAAAOB/8AAAABAA4IAAAOD/8AAAABAA4QAAAOF/8AAAABAA4YAAAOH/8AAAABAA4gAAAOJ/8AAAABAA4oAAAOL/8AAAABAA4wAAAON/8AAAABAA44AAAOP/8AAAABAA5AAAAOR/8AAAABAA5IAAAOT/8AAAABAA5QAAAOV/8AAAABAA5YAAAOX/8AAAABAA5gAAAOZ/8AAAABAA5oAAAOb/8AAAABAA5wAAAOd/8AAAABAA54AAAOf/8AAAABAA6AAAAOh/8AAAABAA6IAAAOj/8AAAABAA6QAAAOl/8AAAABAA6YAAAOn/8AAAABAA6gAAAOp/8AAAABAA6oAAAOr/8AAAABAA6wAAAOt/8AAAABAA64AAAOv/8AAAABAA7AAAAOx/8AAAABAA7IAAAOz/8AAAABAA7QAAAO1/8AAAABAA7YAAAO3/8AAAABAA7gAAAO5/8AAAABAA7oAAAO7/8AAAABAA7wAAAO9/8AAAABAA74AAAO//0AAAABAA8AAAAPB/8AAAABAA8IAAAPD/8AAAABAA8QAAAPF/8AAAABAA8YAAAPH/8AAAABAA8gAAAPJ/8AAAABAA8oAAAPL/8AAAABAA8wAAAPN/8AAAABAA84AAAPP/8AAAABAA9AAAAPR/8AAAABAA9IAAAPT/8AAAABAA9QAAAPV/8AAAABAA9YAAAPX/8AAAABAA9gAAAPZ/8AAAABAA9oAAAPb/8AAAABAA9wAAAPd/8AAAABAA94AAAPf/8AAAABAA+AAAAPh/8AAAABAA+IAAAPj/8AAAABAA+QAAAPl/8AAAABAA+YAAAPn/8AAAABAA+gAAAPp/8AAAABAA+oAAAPr/8AAAABAA+wAAAPt/8AAAABAA+4AAAPv/8AAAABAA/AAAAPx/8AAAABAA/IAAAPz/8AAAABAA/QAAAP1/8AAAABAA/YAAAP3/8AAAABAA/gAAAP5/8AAAABAA/oAAAP7/8AAAABAA/wAAAP9/8AAAABAA/4AAAP//0AAAABABAAAAAQB/8AAAABABAIAAAQD/8AAAABABAQAAAQF/8AAAABABAYAAAQH/8AAAABABAgAAAQJ/8AAAABABAoAAAQL/8AAAABABAwAAAQN/8AAAABABA4AAAQP/8AAAABABBAAAAQR/8AAAABABBIAAAQT/8AAAABABBQAAAQV/8AAAABABBYAAAQX/8AAAABABBgAAAQZ/8AAAABABBoAAAQb/8AAAABABBwAAAQd/8AAAABABB4AAAQf/8AAAABABCAAAAQh/8AAAABABCIAAAQj/8AAAABABCQAAAQl/8AAAABABCYAAAQn/8AAAABABCgAAAQp/8AAAABABCoAAAQr/8AAAABABCwAAAQt/8AAAABABC4AAAQv/8AAAABABDAAAAQx/8AAAABABDIAAAQz/8AAAABABDQAAAQ1/8AAAABABDYAAAQ3/8AAAABABDgAAAQ5/8AAAABABDoAAAQ7/8AAAABABDwAAAQ9/8AAAABABD4AAAQ//0AAAABAAMAAAAAAAD/tQAyAAAAAAAAAAAAAAAAAAAAAAAAAAABAAQCAAEBAQtBZG9iZUJsYW5rAAEBATD4G/gciwwe+B0B+B4Ci/sM+gD6BAUeGgA/DB8cCAEMIvdMD/dZEfdRDCUcGRYMJAAFAQEGDk1YZ0Fkb2JlSWRlbnRpdHlDb3B5cmlnaHQgMjAxMyBBZG9iZSBTeXN0ZW1zIEluY29ycG9yYXRlZC4gQWxsIFJpZ2h0cyBSZXNlcnZlZC5BZG9iZSBCbGFua0Fkb2JlQmxhbmstMjA0OQAAAgABB/8DAAEAAAAIAQgBAgABAEsATABNAE4ATwBQAFEAUgBTAFQAVQBWAFcAWABZAFoAWwBcAF0AXgBfAGAAYQBiAGMAZABlAGYAZwBoAGkAagBrAGwAbQBuAG8AcABxAHIAcwB0AHUAdgB3AHgAeQB6AHsAfAB9AH4AfwCAAIEAggCDAIQAhQCGAIcAiACJAIoAiwCMAI0AjgCPAJAAkQCSAJMAlACVAJYAlwCYAJkAmgCbAJwAnQCeAJ8AoAChAKIAowCkAKUApgCnAKgAqQCqAKsArACtAK4ArwCwALEAsgCzALQAtQC2ALcAuAC5ALoAuwC8AL0AvgC/AMAAwQDCAMMAxADFAMYAxwDIAMkAygDLAMwAzQDOAM8A0ADRANIA0wDUANUA1gDXANgA2QDaANsA3ADdAN4A3wDgAOEA4gDjAOQA5QDmAOcA6ADpAOoA6wDsAO0A7gDvAPAA8QDyAPMA9AD1APYA9wD4APkA+gD7APwA/QD+AP8BAAEBAQIBAwEEAQUBBgEHAQgBCQEKAQsBDAENAQ4BDwEQAREBEgETARQBFQEWARcBGAEZARoBGwEcAR0BHgEfASABIQEiASMBJAElASYBJwEoASkBKgErASwBLQEuAS8BMAExATIBMwE0ATUBNgE3ATgBOQE6ATsBPAE9AT4BPwFAAUEBQgFDAUQBRQFGAUcBSAFJAUoBSwFMAU0BTgFPAVABUQFSAVMBVAFVAVYBVwFYAVkBWgFbAVwBXQFeAV8BYAFhAWIBYwFkAWUBZgFnAWgBaQFqAWsBbAFtAW4BbwFwAXEBcgFzAXQBdQF2AXcBeAF5AXoBewF8AX0BfgF/AYABgQGCAYMBhAGFAYYBhwGIAYkBigGLAYwBjQGOAY8BkAGRAZIBkwGUAZUBlgGXAZgBmQGaAZsBnAGdAZ4BnwGgAaEBogGjAaQBpQGmAacBqAGpAaoBqwGsAa0BrgGvAbABsQGyAbMBtAG1AbYBtwG4AbkBugG7AbwBvQG+Ab8BwAHBAcIBwwHEAcUBxgHHAcgByQHKAcsBzAHNAc4BzwHQAdEB0gHTAdQB1QHWAdcB2AHZAdoB2wHcAd0B3gHfAeAB4QHiAeMB5AHlAeYB5wHoAekB6gHrAewB7QHuAe8B8AHxAfIB8wH0AfUB9gH3AfgB+QH6AfsB/AH9Af4B/wIAAgECAgIDAgQCBQIGAgcCCAIJAgoCCwIMAg0CDgIPAhACEQISAhMCFAIVAhYCFwIYAhkCGgIbAhwCHQIeAh8CIAIhAiICIwIkAiUCJgInAigCKQIqAisCLAItAi4CLwIwAjECMgIzAjQCNQI2AjcCOAI5AjoCOwI8Aj0CPgI/AkACQQJCAkMCRAJFAkYCRwJIAkkCSgJLAkwCTQJOAk8CUAJRAlICUwJUAlUCVgJXAlgCWQJaAlsCXAJdAl4CXwJgAmECYgJjAmQCZQJmAmcCaAJpAmoCawJsAm0CbgJvAnACcQJyAnMCdAJ1AnYCdwJ4AnkCegJ7AnwCfQJ+An8CgAKBAoICgwKEAoUChgKHAogCiQKKAosCjAKNAo4CjwKQApECkgKTApQClQKWApcCmAKZApoCmwKcAp0CngKfAqACoQKiAqMCpAKlAqYCpwKoAqkCqgKrAqwCrQKuAq8CsAKxArICswK0ArUCtgK3ArgCuQK6ArsCvAK9Ar4CvwLAAsECwgLDAsQCxQLGAscCyALJAsoCywLMAs0CzgLPAtAC0QLSAtMC1ALVAtYC1wLYAtkC2gLbAtwC3QLeAt8C4ALhAuIC4wLkAuUC5gLnAugC6QLqAusC7ALtAu4C7wLwAvEC8gLzAvQC9QL2AvcC+AL5AvoC+wL8Av0C/gL/AwADAQMCAwMDBAMFAwYDBwMIAwkDCgMLAwwDDQMOAw8DEAMRAxIDEwMUAxUDFgMXAxgDGQMaAxsDHAMdAx4DHwMgAyEDIgMjAyQDJQMmAycDKAMpAyoDKwMsAy0DLgMvAzADMQMyAzMDNAM1AzYDNwM4AzkDOgM7AzwDPQM+Az8DQANBA0IDQwNEA0UDRgNHA0gDSQNKA0sDTANNA04DTwNQA1EDUgNTA1QDVQNWA1cDWANZA1oDWwNcA10DXgNfA2ADYQNiA2MDZANlA2YDZwNoA2kDagNrA2wDbQNuA28DcANxA3IDcwN0A3UDdgN3A3gDeQN6A3sDfAN9A34DfwOAA4EDggODA4QDhQOGA4cDiAOJA4oDiwOMA40DjgOPA5ADkQOSA5MDlAOVA5YDlwOYA5kDmgObA5wDnQOeA58DoAOhA6IDowOkA6UDpgOnA6gDqQOqA6sDrAOtA64DrwOwA7EDsgOzA7QDtQO2A7cDuAO5A7oDuwO8A70DvgO/A8ADwQPCA8MDxAPFA8YDxwPIA8kDygPLA8wDzQPOA88D0APRA9ID0wPUA9UD1gPXA9gD2QPaA9sD3APdA94D3wPgA+ED4gPjA+QD5QPmA+cD6APpA+oD6wPsA+0D7gPvA/AD8QPyA/MD9AP1A/YD9wP4A/kD+gP7A/wD/QP+A/8EAAQBBAIEAwQEBAUEBgQHBAgECQQKBAsEDAQNBA4EDwQQBBEEEgQTBBQEFQQWBBcEGAQZBBoEGwQcBB0EHgQfBCAEIQQiBCMEJAQlBCYEJwQoBCkEKgQrBCwELQQuBC8EMAQxBDIEMwQ0BDUENgQ3BDgEOQQ6BDsEPAQ9BD4EPwRABEEEQgRDBEQERQRGBEcESARJBEoESwRMBE0ETgRPBFAEUQRSBFMEVARVBFYEVwRYBFkEWgRbBFwEXQReBF8EYARhBGIEYwRkBGUEZgRnBGgEaQRqBGsEbARtBG4EbwRwBHEEcgRzBHQEdQR2BHcEeAR5BHoEewR8BH0EfgR/BIAEgQSCBIMEhASFBIYEhwSIBIkEigSLBIwEjQSOBI8EkASRBJIEkwSUBJUElgSXBJgEmQSaBJsEnASdBJ4EnwSgBKEEogSjBKQEpQSmBKcEqASpBKoEqwSsBK0ErgSvBLAEsQSyBLMEtAS1BLYEtwS4BLkEugS7BLwEvQS+BL8EwATBBMIEwwTEBMUExgTHBMgEyQTKBMsEzATNBM4EzwTQBNEE0gTTBNQE1QTWBNcE2ATZBNoE2wTcBN0E3gTfBOAE4QTiBOME5ATlBOYE5wToBOkE6gTrBOwE7QTuBO8E8ATxBPIE8wT0BPUE9gT3BPgE+QT6BPsE/AT9BP4E/wUABQEFAgUDBQQFBQUGBQcFCAUJBQoFCwUMBQ0FDgUPBRAFEQUSBRMFFAUVBRYFFwUYBRkFGgUbBRwFHQUeBR8FIAUhBSIFIwUkBSUFJgUnBSgFKQUqBSsFLAUtBS4FLwUwBTEFMgUzBTQFNQU2BTcFOAU5BToFOwU8BT0FPgU/BUAFQQVCBUMFRAVFBUYFRwVIBUkFSgVLBUwFTQVOBU8FUAVRBVIFUwVUBVUFVgVXBVgFWQVaBVsFXAVdBV4FXwVgBWEFYgVjBWQFZQVmBWcFaAVpBWoFawVsBW0FbgVvBXAFcQVyBXMFdAV1BXYFdwV4BXkFegV7BXwFfQV+BX8FgAWBBYIFgwWEBYUFhgWHBYgFiQWKBYsFjAWNBY4FjwWQBZEFkgWTBZQFlQWWBZcFmAWZBZoFmwWcBZ0FngWfBaAFoQWiBaMFpAWlBaYFpwWoBakFqgWrBawFrQWuBa8FsAWxBbIFswW0BbUFtgW3BbgFuQW6BbsFvAW9Bb4FvwXABcEFwgXDBcQFxQXGBccFyAXJBcoFywXMBc0FzgXPBdAF0QXSBdMF1AXVBdYF1wXYBdkF2gXbBdwF3QXeBd8F4AXhBeIF4wXkBeUF5gXnBegF6QXqBesF7AXtBe4F7wXwBfEF8gXzBfQF9QX2BfcF+AX5BfoF+wX8Bf0F/gX/BgAGAQYCBgMGBAYFBgYGBwYIBgkGCgYLBgwGDQYOBg8GEAYRBhIGEwYUBhUGFgYXBhgGGQYaBhsGHAYdBh4GHwYgBiEGIgYjBiQGJQYmBicGKAYpBioGKwYsBi0GLgYvBjAGMQYyBjMGNAY1BjYGNwY4BjkGOgY7BjwGPQY+Bj8GQAZBBkIGQwZEBkUGRgZHBkgGSQZKBksGTAZNBk4GTwZQBlEGUgZTBlQGVQZWBlcGWAZZBloGWwZcBl0GXgZfBmAGYQZiBmMGZAZlBmYGZwZoBmkGagZrBmwGbQZuBm8GcAZxBnIGcwZ0BnUGdgZ3BngGeQZ6BnsGfAZ9Bn4GfwaABoEGggaDBoQGhQaGBocGiAaJBooGiwaMBo0GjgaPBpAGkQaSBpMGlAaVBpYGlwaYBpkGmgabBpwGnQaeBp8GoAahBqIGowakBqUGpganBqgGqQaqBqsGrAatBq4GrwawBrEGsgazBrQGtQa2BrcGuAa5BroGuwa8Br0Gvga/BsAGwQbCBsMGxAbFBsYGxwbIBskGygbLBswGzQbOBs8G0AbRBtIG0wbUBtUG1gbXBtgG2QbaBtsG3AbdBt4G3wbgBuEG4gbjBuQG5QbmBucG6AbpBuoG6wbsBu0G7gbvBvAG8QbyBvMG9Ab1BvYG9wb4BvkG+gb7BvwG/Qb+Bv8HAAcBBwIHAwcEBwUHBgcHBwgHCQcKBwsHDAcNBw4HDwcQBxEHEgcTBxQHFQcWBxcHGAcZBxoHGwccBx0HHgcfByAHIQciByMHJAclByYHJwcoBykHKgcrBywHLQcuBy8HMAcxBzIHMwc0BzUHNgc3BzgHOQc6BzsHPAc9Bz4HPwdAB0EHQgdDB0QHRQdGB0cHSAdJB0oHSwdMB00HTgdPB1AHUQdSB1MHVAdVB1YHVwdYB1kHWgdbB1wHXQdeB18HYAdhB2IHYwdkB2UHZgdnB2gHaQdqB2sHbAdtB24HbwdwB3EHcgdzB3QHdQd2B3cHeAd5B3oHewd8B30Hfgd/B4AHgQeCB4MHhAeFB4YHhweIB4kHigeLB4wHjQeOB48HkAeRB5IHkweUB5UHlgeXB5gHmQeaB5sHnAedB54HnwegB6EHogejB6QHpQemB6cHqAepB6oHqwesB60HrgevB7AHsQeyB7MHtAe1B7YHtwe4B7kHuge7B7wHvQe+B78HwAfBB8IHwwfEB8UHxgfHB8gHyQfKB8sHzAfNB84HzwfQB9EH0gfTB9QH1QfWB9cH2AfZB9oH2wfcB90H3gffB+AH4QfiB+MH5AflB+YH5wfoB+kH6gfrB+wH7QfuB+8H8AfxB/IH8wf0B/UH9gf3B/gH+Qf6B/sH/Af9B/4H/wgACAEIAggDCAQIBQgGCAcICAgJCAoICwgMCA0IDggPCBAIEQgSCBMIFAgVCBYIFwgYCBkIGggbCBwIHQgeCB8IIAghCCIIIwgkCCUIJggnCCgIKQgqCCsILAgtCC4ILwgwCDEIMggzCDQINQg2CDcIOAg5CDoIOwg8CD0IPgg/CEAIQQhCCEMIRAhFCEYIRwhICEkISghLIPsMt/oktwH3ELf5LLcD9xD6BBX+fPmE+nwH/Vj+JxX50gf3xfwzBaawFfvF+DcF+PYGpmIV/dIH+8X4MwVwZhX3xfw3Bfz2Bg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODg4ODgABAQEK+B8MJpocGSQS+46LHAVGiwa9Cr0L+ucVAAPoAHwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAA') format('truetype'); }";
-    FontLoader.fontStyleAliasesMap = {"n": "normal", "b": "bold", "i": "italic", "o": "oblique"};
-    FontLoader.fontStretchAliasesMap = {"a": "ultra-condensed", "b": "extra-condensed", "c": "condensed", "d": "semi-condensed", "n": "normal", "e": "semi-expanded", "f": "expanded", "g": "extra-expanded", "h": "ultra-expanded"};
-
-    FontLoader.prototype = {
-        constructor: FontLoader,
-        loadFonts: function() {
-            var self = this,
-                newFontVariations;
-
-            if (this._started) {
-                throw new Error("FontLoader: loadFonts can not be called twice. Create new FontLoader to load different fonts.");
-            }
-            this._started = true;
-
-            if (this._numberOfFonts === 0) {
-                this._finish();
-                return;
-            }
-
-            if (this.timeout !== null) {
-                this._timeoutId = window.setTimeout(function timeoutFire() {
-                    self._finish();
-                }, this.timeout);
-            }
-
-            // Use constant line-height so there won't be changes in height because Adobe Blank uses zero width but not zero height.
-            this._testContainer = this._document.createElement("div");
-            this._testContainer.style.cssText = "position:absolute; left:-10000px; top:-10000px; white-space:nowrap; font-size:20px; line-height:20px; visibility:hidden;";
-
-            // Create testDiv template that will be cloned for each font
-            this._testDiv = this._document.createElement("div");
-            this._testDiv.style.position = "absolute";
-            this._testDiv.appendChild(this._document.createTextNode(FontLoader.referenceText));
-
-            if (!FontLoader.useAdobeBlank) {
-                // AdobeBlank is not used
-                // We need to extract dimensions of reference font-families for each requested font variation.
-                // The extracted dimensions are stored in a static property "referenceFontFamilyVariationSizes",
-                // so we might already have some or all of them all.
-                newFontVariations = this._getNewFontVariationsFromFonts(this._fontsArray);
-                if (newFontVariations.length) {
-                    this._extractReferenceFontSizes(newFontVariations);
-                }
-                this._loadFonts();
-            } else if (FontLoader.adobeBlankReferenceSize) {
-                // AdobeBlank is used, and was loaded
-                this._loadFonts();
-            } else {
-                // AdobeBlank is used but was not loaded
-                this._loadAdobeBlankFont();
-            }
-        },
-        _extractReferenceFontSizes: function(newFontVariations) {
-            var clonedDiv, j, i,
-                key, size, fontVariation;
-
-            clonedDiv = this._testDiv.cloneNode(true);
-            this._testContainer.appendChild(clonedDiv);
-            this._document.body.appendChild(this._testContainer);
-
-            for (i = 0; i < newFontVariations.length; i++) {
-                fontVariation = newFontVariations[i];
-                key = fontVariation.key;
-                FontLoader.referenceFontFamilyVariationSizes[key] = [];
-                for (j = 0; j < FontLoader.referenceFontFamilies.length; j++) {
-                    clonedDiv.style.fontFamily = FontLoader.referenceFontFamilies[j];
-                    clonedDiv.style.fontWeight = fontVariation.weight;
-                    clonedDiv.style.fontStyle = fontVariation.style;
-                    clonedDiv.style.fontStretch = fontVariation.stretch;
-                    size = new Size(clonedDiv.offsetWidth, clonedDiv.offsetHeight);
-                    FontLoader.referenceFontFamilyVariationSizes[key].push(size);
-                }
-            }
-
-            this._testContainer.parentNode.removeChild(this._testContainer);
-            clonedDiv.parentNode.removeChild(clonedDiv);
-        },
-        _loadAdobeBlankFont: function() {
-            var self = this,
-                adobeBlankDiv,
-                adobeBlankFallbackFont = "serif";
-
-            this._addAdobeBlankFontFaceIfNeeded();
-
-            adobeBlankDiv = this._testDiv.cloneNode(true);
-            this._testContainer.appendChild(adobeBlankDiv);
-            this._document.body.appendChild(this._testContainer);
-
-            // When using AdobeBlank (all browsers except IE < 11) only interval checking and size watcher methods
-            // are available for watching element size.
-            if (FontLoader.useIntervalChecking) {
-                adobeBlankDiv.style.fontFamily = FontLoader.referenceFontFamilies[0] + ", " + adobeBlankFallbackFont;
-                this._testContainer.appendChild(adobeBlankDiv);
-                // Start polling element sizes but also do first synchronous check in case all fonts where already loaded.
-                this._intervalId = window.setInterval(function intervalFire() {
-                    self._checkAdobeBlankSize();
-                }, this._intervalDelay);
-                this._checkAdobeBlankSize();
-            } else {
-                adobeBlankDiv.style.fontFamily = adobeBlankFallbackFont;
-                this._adobeBlankSizeWatcher = new SizeWatcher(/** @type HTMLElement */adobeBlankDiv, {
-                    container: this._testContainer,
-                    delegate: this,
-                    continuous: true,
-                    direction: SizeWatcher.directions.decrease,
-                    dimension: SizeWatcher.dimensions.horizontal,
-                    document: this._document
-                });
-                this._adobeBlankSizeWatcher.prepareForWatch();
-                this._adobeBlankSizeWatcher.beginWatching();
-                adobeBlankDiv.style.fontFamily = FontLoader.referenceFontFamilies[0] + ", " + adobeBlankFallbackFont;
-            }
-        },
-        _getNewFontVariationsFromFonts: function(fontDescriptors) {
-            var fontDescriptor, key, i,
-                variations = [],
-                variationsMap = {};
-
-            for (i = 0; i < fontDescriptors.length; i++) {
-                fontDescriptor = fontDescriptors[i];
-                key = fontDescriptor.variationKey();
-                if (!(key in variationsMap) && !(key in FontLoader.referenceFontFamilyVariationSizes)) {
-                    variationsMap[key] = true;
-                    variations.push({
-                        key: key,
-                        weight: fontDescriptor.weight,
-                        style: fontDescriptor.style,
-                        stretch: fontDescriptor.stretch
-                    });
-                }
-            }
-            return variations;
-        },
-        _parseFonts: function(fonts) {
-            var fontDescriptors = [], filteredFD,
-                i, font, fontKey, fontKeys = {};
-
-            for (i = 0; i < fonts.length; i++) {
-                font = fonts[i];
-                if (typeof font === "string") {
-                    if (font.indexOf(':') > -1) {
-                        fontDescriptors = fontDescriptors.concat(this._parseFVD(font));
-                    } else {
-                        fontDescriptors.push(new FontDescriptor({
-                            family: font,
-                            weight: 400,
-                            style: 'normal',
-                            stretch: 'normal'
-                        }));
-                    }
-                } else {
-                    fontDescriptors.push(new FontDescriptor(font));
-                }
-            }
-
-            // Filter duplicate fonts
-            filteredFD = [];
-            for (i = 0; i < fontDescriptors.length; i++) {
-                fontKey = fontDescriptors[i].fontKey();
-                if (!(fontKey in fontKeys)) {
-                    fontKeys[fontKey] = true;
-                    filteredFD.push(fontDescriptors[i]);
-                }
-            }
-
-            return filteredFD;
-        },
-        /**
-         * @param {string} fontString
-         * @returns {Array.<FontDescriptor>}
-         * @private
-         */
-        _parseFVD: function(fontString) {
-            var fontDescriptors = [],
-                parts = fontString.split(':'),
-                fontFamily, variants, i, variant,
-                styleAlias, weightAlias, stretchAlias,
-                weight, style, stretch;
-
-            fontFamily = parts[0];
-            variants = parts[1].split(',');
-
-            for (i = 0; i < variants.length; i++) {
-                variant = variants[i];
-
-                if (variant.length < 2 || variant.length > 3) {
-                    throw new Error("Invalid Font Variation Description: '" + fontString + "', number of variation characters must be 2 or 3");
-                }
-
-                styleAlias = variant[0];
-                weightAlias = variant[1];
-                stretchAlias = "n"; // stretch character is optional, default is 'n': 'normal'
-                if (variant.length === 3) {
-                    stretchAlias = variant[2]
-                }
-
-                if (styleAlias in FontLoader.fontStyleAliasesMap) {
-                    style = FontLoader.fontStyleAliasesMap[styleAlias];
-                } else {
-                    throw new Error("Invalid Font Variation Description: '" + fontString + "', the first variant character is not complying to FVD font-style specification");
-                }
-
-                weight = parseInt(weightAlias, 10);
-                if (isNaN(weight)) {
-                    throw new Error("Invalid Font Variation Description: '" + fontString + "', the second variant character is not complying to FVD font-weight specification");
-                } else {
-                    weight *= 100;
-                }
-
-                if (stretchAlias in FontLoader.fontStretchAliasesMap) {
-                    stretch = FontLoader.fontStretchAliasesMap[stretchAlias];
-                } else {
-                    throw new Error("Invalid Font Variation Description: '" + fontString + "', the third variant character is not complying to FVD font-stretch specification");
-                }
-
-                fontDescriptors.push(new FontDescriptor({
-                    family: fontFamily,
-                    weight: weight,
-                    style: style,
-                    stretch: stretch
-                }));
-            }
-
-            return fontDescriptors;
-        },
-        _addAdobeBlankFontFaceIfNeeded: function() {
-            var adobeBlankFontFaceStyle;
-            if (!this._document.getElementById(FontLoader.adobeBlankFontFaceStyleId)) {
-                adobeBlankFontFaceStyle = this._document.createElement("style");
-                adobeBlankFontFaceStyle.setAttribute("type", "text/css");
-                adobeBlankFontFaceStyle.setAttribute("id", FontLoader.adobeBlankFontFaceStyleId);
-                adobeBlankFontFaceStyle.appendChild(this._document.createTextNode(FontLoader.adobeBlankFontFaceRule));
-                this._document.getElementsByTagName("head")[0].appendChild(adobeBlankFontFaceStyle);
-            }
-        },
-        _checkAdobeBlankSize: function() {
-            var adobeBlankDiv = this._testContainer.firstChild;
-            this._adobeBlankLoaded(adobeBlankDiv);
-        },
-        _adobeBlankLoaded: function(adobeBlankDiv) {
-            // Prevent false size change, for example if AdobeBlank height is higher than fallback font.
-            if (adobeBlankDiv.offsetWidth !== 0) {
-                return;
-            }
-
-            FontLoader.adobeBlankReferenceSize = new Size(adobeBlankDiv.offsetWidth, adobeBlankDiv.offsetHeight);
-
-            if (this._adobeBlankSizeWatcher !== null) {
-                // SizeWatcher method
-                this._adobeBlankSizeWatcher.endWatching();
-                this._adobeBlankSizeWatcher.removeScrollWatchers();
-                this._adobeBlankSizeWatcher = null;
-            } else {
-                // Polling method (IE)
-                window.clearInterval(this._intervalId);
-                adobeBlankDiv.parentNode.removeChild(adobeBlankDiv);
-            }
-
-            this._testContainer.parentNode.removeChild(this._testContainer);
-
-            this._loadFonts();
-        },
-        _cloneNodeSetStyleAndAttributes: function(font, fontKey, referenceFontFamilyIndex) {
-            var clonedDiv = this._testDiv.cloneNode(true);
-            clonedDiv.style.fontWeight = font.weight;
-            clonedDiv.style.fontStyle = font.style;
-            clonedDiv.style.fontStretch = font.stretch;
-            clonedDiv.setAttribute("data-font-map-key", fontKey);
-            clonedDiv.setAttribute("data-ref-font-family-index", String(referenceFontFamilyIndex));
-            return clonedDiv;
-        },
-        _getFontMapKeyFromElement: function(element) {
-            return element.getAttribute("data-font-map-key");
-        },
-        _getFontFromElement: function(element) {
-            var fontKey = this._getFontMapKeyFromElement(element);
-            return this._fontsMap[fontKey];
-        },
-        _getFontFamilyFromElement: function(element) {
-            var font = this._getFontFromElement(element);
-            return font.family;
-        },
-        _getReferenceFontFamilyIndexFromElement: function(element) {
-            return element.getAttribute("data-ref-font-family-index");
-        },
-        _getReferenceFontFamilyFromElement: function(element) {
-            var referenceFontFamilyIndex = this._getReferenceFontFamilyIndexFromElement(element);
-            return FontLoader.referenceFontFamilies[referenceFontFamilyIndex];
-        },
-        _loadFonts: function() {
-            var i, j, clonedDiv, sizeWatcher,
-                font,
-                fontKey,
-                fontVariationKey,
-                referenceFontSize,
-                sizeWatcherDirection,
-                sizeWatcherDimension,
-                self = this;
-
-            // Add div for each font-family
-            for (i = 0; i < this._numberOfFonts; i++) {
-                font = this._fontsArray[i];
-                fontKey = font.fontKey();
-                this._fontsMap[fontKey] = font;
-
-                for (j = 0; j < FontLoader.referenceFontFamilies.length; j++) {
-                    clonedDiv = this._cloneNodeSetStyleAndAttributes(font, fontKey, j);
-                    if (FontLoader.useResizeEvent) {
-                        clonedDiv.style.fontFamily = FontLoader.referenceFontFamilies[j];
-                        this._testContainer.appendChild(clonedDiv);
-                    } else if (FontLoader.useIntervalChecking) {
-                        clonedDiv.style.fontFamily = "'" + font.family + "', " + FontLoader.referenceFontFamilies[j];
-                        this._testContainer.appendChild(clonedDiv);
-                    } else {
-                        clonedDiv.style.fontFamily = FontLoader.referenceFontFamilies[j];
-                        if (FontLoader.useAdobeBlank) {
-                            referenceFontSize = FontLoader.adobeBlankReferenceSize;
-                            sizeWatcherDirection = SizeWatcher.directions.increase;
-                            sizeWatcherDimension = SizeWatcher.dimensions.horizontal;
-                        } else {
-                            fontVariationKey = font.variationKey();
-                            referenceFontSize = FontLoader.referenceFontFamilyVariationSizes[fontVariationKey][j];
-                            sizeWatcherDirection = SizeWatcher.directions.both;
-                            sizeWatcherDimension = SizeWatcher.dimensions.both;
-                        }
-                        sizeWatcher = new SizeWatcher(/** @type HTMLElement */clonedDiv, {
-                            container: this._testContainer,
-                            delegate: this,
-                            size: referenceFontSize,
-                            direction: sizeWatcherDirection,
-                            dimension: sizeWatcherDimension,
-                            document: this._document
-                        });
-                        // The prepareForWatch() and beginWatching() methods will be invoked in separate iterations to
-                        // reduce number of browser's CSS recalculations.
-                        this._sizeWatchers.push(sizeWatcher);
-                    }
-                }
-            }
-
-            // Append the testContainer after all test elements to minimize DOM insertions
-            this._document.body.appendChild(this._testContainer);
-
-            if (FontLoader.useResizeEvent) {
-                for (j = 0; j < this._testContainer.childNodes.length; j++) {
-                    clonedDiv = this._testContainer.childNodes[j];
-                    // "resize" event works only with attachEvent
-                    clonedDiv.attachEvent("onresize", (function(self, clonedDiv) {
-                        return function() {
-                            self._elementSizeChanged(clonedDiv);
-                        }
-                    })(this, clonedDiv));
-                }
-                window.setTimeout(function() {
-                    for (j = 0; j < self._testContainer.childNodes.length; j++) {
-                        clonedDiv = self._testContainer.childNodes[j];
-                        clonedDiv.style.fontFamily = "'" + self._getFontFamilyFromElement(clonedDiv) + "', " + self._getReferenceFontFamilyFromElement(clonedDiv);
-                    }
-                }, 0);
-            } else if (FontLoader.useIntervalChecking) {
-                // Start polling element sizes but also do first synchronous check in case all fonts where already loaded.
-                this._intervalId = window.setInterval(function intervalFire() {
-                    self._checkSizes();
-                }, this._intervalDelay);
-                this._checkSizes();
-            } else {
-                // We are dividing the prepareForWatch() and beginWatching() methods to optimize browser performance by
-                // removing CSS recalculation from each iteration to the end of iterations.
-                for (i = 0; i < this._sizeWatchers.length; i++) {
-                    sizeWatcher = this._sizeWatchers[i];
-                    sizeWatcher.prepareForWatch();
-                }
-                for (i = 0; i < this._sizeWatchers.length; i++) {
-                    sizeWatcher = this._sizeWatchers[i];
-                    sizeWatcher.beginWatching();
-                    // Apply tested font-family
-                    clonedDiv = sizeWatcher.getWatchedElement();
-                    clonedDiv.style.fontFamily = "'" + this._getFontFamilyFromElement(clonedDiv) + "', " + self._getReferenceFontFamilyFromElement(clonedDiv);
-                }
-            }
-        },
-        _checkSizes: function() {
-            var i, testDiv, font, fontVariationKey, currSize, refSize, refFontFamilyIndex;
-
-            for (i = this._testContainer.childNodes.length - 1; i >= 0; i--) {
-                testDiv = this._testContainer.childNodes[i];
-                currSize = new Size(testDiv.offsetWidth, testDiv.offsetHeight);
-                if (FontLoader.useAdobeBlank) {
-                    refSize = FontLoader.adobeBlankReferenceSize;
-                } else {
-                    font = this._getFontFromElement(testDiv);
-                    fontVariationKey = font.variationKey();
-                    refFontFamilyIndex = this._getReferenceFontFamilyIndexFromElement(testDiv);
-                    refSize = FontLoader.referenceFontFamilyVariationSizes[fontVariationKey][refFontFamilyIndex];
-                }
-                if (!refSize.isEqual(currSize)) {
-                    // Element dimensions changed, this means its font loaded, remove it from testContainer div
-                    testDiv.parentNode.removeChild(testDiv);
-                    this._elementSizeChanged(testDiv);
-                }
-            }
-        },
-        _elementSizeChanged: function(element) {
-            var font, fontKey;
-
-            if (this._finished) {
-                return;
-            }
-
-            fontKey = this._getFontMapKeyFromElement(element);
-
-            // Check that the font of this element wasn't already marked as loaded by an element with different reference font family.
-            if (typeof this._fontsMap[fontKey] === "undefined") {
-                return;
-            }
-
-            font = this._fontsMap[fontKey];
-
-            this._numberOfLoadedFonts++;
-            delete this._fontsMap[fontKey];
-
-            if (this.delegate && typeof this.delegate.fontLoaded === "function") {
-                this.delegate.fontLoaded(font.toJSON());
-            }
-
-            if (this._numberOfLoadedFonts === this._numberOfFonts) {
-                this._finish();
-            }
-        },
-        _finish: function() {
-            var error, i, sizeWatcher,
-                fontKey,
-                notLoadedFonts = [];
-
-            if (this._finished) {
-                return;
-            }
-
-            this._finished = true;
-
-            if (this._adobeBlankSizeWatcher !== null) {
-                if (this._adobeBlankSizeWatcher.getState() === SizeWatcher.states.watchingForSizeChange) {
-                    this._adobeBlankSizeWatcher.endWatching();
-                }
-                this._adobeBlankSizeWatcher = null;
-            }
-
-            for (i = 0; i < this._sizeWatchers.length; i++) {
-                sizeWatcher = this._sizeWatchers[i];
-                if (sizeWatcher.getState() === SizeWatcher.states.watchingForSizeChange) {
-                    sizeWatcher.endWatching();
-                }
-            }
-            this._sizeWatchers = [];
-
-            if (this._testContainer !== null) {
-                this._testContainer.parentNode.removeChild(this._testContainer);
-            }
-
-            if (this._timeoutId !== null) {
-                window.clearTimeout(this._timeoutId);
-            }
-
-            if (this._intervalId !== null) {
-                window.clearInterval(this._intervalId);
-            }
-
-            if (this.delegate) {
-                if (this._numberOfLoadedFonts < this._numberOfFonts) {
-                    for (fontKey in this._fontsMap) {
-                        if (this._fontsMap.hasOwnProperty(fontKey)) {
-                            notLoadedFonts.push(this._fontsMap[fontKey].toJSON());
-                        }
-                    }
-                    error = {
-                        message: "Not all fonts were loaded (" + this._numberOfLoadedFonts + "/" + this._numberOfFonts + ")",
-                        notLoadedFonts: notLoadedFonts
-                    };
-                } else {
-                    error = null;
-                }
-                if (typeof this.delegate.complete === "function") {
-                    this.delegate.complete(error);
-                } else if (typeof this.delegate.fontsLoaded === "function") {
-                    this.delegate.fontsLoaded(error);
-                }
-            }
-        },
-        /**
-         * SizeWatcher delegate method
-         * @param {SizeWatcher} sizeWatcher
-         */
-        sizeWatcherChangedSize: function(sizeWatcher) {
-            var watchedElement = sizeWatcher.getWatchedElement();
-            if (sizeWatcher === this._adobeBlankSizeWatcher) {
-                this._adobeBlankLoaded(watchedElement);
-            } else {
-                this._elementSizeChanged(watchedElement);
-            }
-        }
-    };
-
-    /**
-     * Size object
-     *
-     * @param width
-     * @param height
-     * @constructor
-     */
-    function Size(width, height) {
-        this.width = width;
-        this.height = height;
-    }
-
-    Size.sizeFromString = function(sizeString) {
-        var arr = sizeString.split(",");
-        if (arr.length !== 2) {
-            return null;
-        }
-        return new Size(arr[0], arr[1]);
-    };
-
-    /**
-     * Compares receiver object to passed in size object.
-     *
-     * @param otherSize
-     * @returns {boolean}
-     */
-    Size.prototype.isEqual = function(otherSize) {
-        return (this.width === otherSize.width && this.height === otherSize.height);
-    };
-
-    Size.prototype.toString = function() {
-        return this.width + "," + this.height;
-    };
-
-    /**
-     * SizeWatcher observes size of an element and notifies when its size is changed. It doesn't use any timeouts
-     * to check the element size, when change in size occurs a callback method immediately invoked.
-     *
-     * To watch for element's size changes the element, and other required elements are appended to a container element
-     * you specify, and which must be added to the DOM tree before invoking prepareForWatch() method. Your container
-     * element should be positioned outside of client's visible area. Therefore you shouldn't use SizeWatcher to watch
-     * for size changes of elements used for UI.
-     * Such container element could be a simple <div> that is a child of the <body> element:
-     * <div style="position:absolute; left:-10000px; top:-10000px;"></div>
-     *
-     * You must invoke SizeWatcher's methods in a specific order to establish size change listeners:
-     *
-     * 1. Create SizeWatcher instance by invoke SizeWatcher constructor passing the element (size of which you want to
-     *    observe), the container element, the delegate object and optional size parameter of type Size which should be
-     *    the pre-calculated initial size of your element.
-     * 4. Invoke prepareForWatch() method. This method will calculate element size if you didn't passed it to the constructor.
-     * 5. Invoke beginWatching() method. This method will set event listeners and invoke your delegate's method once
-     *    element size changes.
-     *
-     * Failing to invoke above methods in their predefined order will throw an exception.
-     *
-     * @param {HTMLElement}   element An element, size of which will be observed for changes.
-     * @param {Object}        options
-     * @param {HTMLElement}   options.container An element to which special observing elements will be added. Must be in DOM tree
-     *                        when prepareForWatch() method is called.
-     * @param {Object}        options.delegate A delegate object with a sizeWatcherChangedSize method which will be invoked, in
-     *                        context of the delegate object, when change in size occurs. This method is invoked with single
-     *                        parameter which is the current SizeWatcher instance.
-     * @param {Size}          [options.size] The pre-calculated initial size of your element. When passed, the element is not
-     *                        asked for offsetWidth and offsetHeight, which may be useful to reduce browser's CSS
-     *                        recalculations. If you will not pass the size parameter then its size calculation will be
-     *                        deferred to prepareForWatch() method.
-     * @param {Boolean}       [options.continuous=false] A boolean flag indicating if the SizeWatcher will watch only for
-     *                        the first size change (default) or will continuously watch for size changes.
-     * @param {Number}        [options.direction=SizeWatcher.directions.both] The direction of size change that should be
-     *                        watched: SizeWatcher.directions.increase, SizeWatcher.directions.decrease or
-     *                        SizeWatcher.directions.both
-     * @param {Number}        [options.dimension=SizeWatcher.dimensions.both] The dimension of size change that should be
-     *                        watched: SizeWatcher.dimensions.horizontal, SizeWatcher.dimensions.vertical or
-     *                        SizeWatcher.dimensions.both
-     * @param {HTMLDocument}  [options.document] The DOM tree context to use, if none provided then it will be the document.
-     * @constructor
-     */
-    function SizeWatcher(element, options) {
-        this._element = element;
-        this._delegate = options.delegate;
-        this._size = null;
-        this._continuous = !!options.continuous;
-        this._direction = options.direction ? options.direction : SizeWatcher.directions.both;
-        this._dimension = options.dimension ? options.dimension : SizeWatcher.dimensions.both;
-        this._sizeIncreaseWatcherContentElm = null;
-        this._sizeDecreaseWatcherElm = null;
-        this._sizeIncreaseWatcherElm = null;
-        this._state = SizeWatcher.states.initialized;
-        this._scrollAmount = 2;
-        this._document = options.document || document;
-
-        this._generateScrollWatchers(options.size);
-        this._appendScrollWatchersToElement(options.container);
-    }
-
-    SizeWatcher.states = {
-        initialized: 0,
-        generatedScrollWatchers: 1,
-        appendedScrollWatchers: 2,
-        preparedScrollWatchers: 3,
-        watchingForSizeChange: 4
-    };
-
-    SizeWatcher.directions = {
-        decrease: 1,
-        increase: 2,
-        both: 3
-    };
-
-    SizeWatcher.dimensions = {
-        horizontal: 1,
-        vertical: 2,
-        both: 3
-    };
-
-    //noinspection JSUnusedLocalSymbols
-    SizeWatcher.prototype = {
-        constructor: SizeWatcher,
-        getWatchedElement: function() {
-            return this._element;
-        },
-        getState: function() {
-            return this._state;
-        },
-        setSize: function(size) {
-            this._size = size;
-            //noinspection JSBitwiseOperatorUsage
-            if (this._direction & SizeWatcher.directions.increase) {
-                this._sizeIncreaseWatcherContentElm.style.cssText = "width: " + (size.width + this._scrollAmount) + "px; height: " + (size.height + this._scrollAmount) + "px;";
-            }
-            //noinspection JSBitwiseOperatorUsage
-            if (this._direction & SizeWatcher.directions.decrease) {
-                this._sizeDecreaseWatcherElm.style.cssText = "position:absolute; left: 0px; top: 0px; overflow: hidden; width: " + (size.width - this._scrollAmount) + "px; height: " + (size.height - this._scrollAmount) + "px;";
-            }
-        },
-        _generateScrollWatchers: function(size) {
-
-            this._element.style.position = "absolute";
-
-            //noinspection JSBitwiseOperatorUsage
-            if (this._direction & SizeWatcher.directions.increase) {
-                this._sizeIncreaseWatcherContentElm = this._document.createElement("div");
-
-                this._sizeIncreaseWatcherElm = this._document.createElement("div");
-                this._sizeIncreaseWatcherElm.style.cssText = "position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden;";
-                this._sizeIncreaseWatcherElm.appendChild(this._sizeIncreaseWatcherContentElm);
-
-                this._element.appendChild(this._sizeIncreaseWatcherElm);
-            }
-
-            //noinspection JSBitwiseOperatorUsage
-            if (this._direction & SizeWatcher.directions.decrease) {
-                this._sizeDecreaseWatcherElm = this._document.createElement("div");
-                this._sizeDecreaseWatcherElm.appendChild(this._element);
-            }
-
-            if (size) {
-                this.setSize(size);
-            }
-
-            this._state = SizeWatcher.states.generatedScrollWatchers;
-        },
-        _appendScrollWatchersToElement: function(container) {
-            if (this._state !== SizeWatcher.states.generatedScrollWatchers) {
-                throw new Error("SizeWatcher._appendScrollWatchersToElement() was invoked before SizeWatcher._generateScrollWatchers()");
-            }
-
-            //noinspection JSBitwiseOperatorUsage
-            if (this._direction & SizeWatcher.directions.decrease) {
-                container.appendChild(this._sizeDecreaseWatcherElm);
-            } else {
-                container.appendChild(this._element);
-            }
-
-            this._state = SizeWatcher.states.appendedScrollWatchers;
-        },
-        removeScrollWatchers: function() {
-            //noinspection JSBitwiseOperatorUsage
-            if (this._direction & SizeWatcher.directions.decrease) {
-                if (this._sizeDecreaseWatcherElm.parentNode) {
-                    this._sizeDecreaseWatcherElm.parentNode.removeChild(this._sizeDecreaseWatcherElm);
-                }
-            } else if (this._element.parentNode) {
-                this._element.parentNode.removeChild(this._element);
-            }
-        },
-        prepareForWatch: function() {
-            var parentNode,
-                sizeDecreaseWatcherElmScrolled = true,
-                sizeIncreaseWatcherElmScrolled = true;
-
-            if (this._state !== SizeWatcher.states.appendedScrollWatchers) {
-                throw new Error("SizeWatcher.prepareForWatch() invoked before SizeWatcher._appendScrollWatchersToElement()");
-            }
-
-            if (this._size === null) {
-                this.setSize(new Size(this._element.offsetWidth, this._element.offsetHeight));
-            }
-
-            //noinspection JSBitwiseOperatorUsage
-            if (this._direction & SizeWatcher.directions.decrease) {
-                sizeDecreaseWatcherElmScrolled = this._scrollElementToBottomRight(this._sizeDecreaseWatcherElm);
-            }
-            //noinspection JSBitwiseOperatorUsage
-            if (this._direction & SizeWatcher.directions.increase) {
-                sizeIncreaseWatcherElmScrolled = this._scrollElementToBottomRight(this._sizeIncreaseWatcherElm);
-            }
-
-            // Check if scroll positions updated.
-            if (!sizeDecreaseWatcherElmScrolled || !sizeIncreaseWatcherElmScrolled) {
-
-                // Traverse tree to the top node to see if element is in the DOM tree.
-                parentNode = this._element.parentNode;
-                while (parentNode !== this._document && parentNode !== null) {
-                    parentNode = parentNode.parentNode;
-                }
-
-                if (parentNode === null) {
-                    throw new Error("Can't set scroll position of scroll watchers. SizeWatcher is not in the DOM tree.");
-                } else if (console && typeof console.warn === "function") {
-                    console.warn("SizeWatcher can't set scroll position of scroll watchers.");
-                }
-            }
-
-            this._state = SizeWatcher.states.preparedScrollWatchers;
-        },
-        _scrollElementToBottomRight: function(element) {
-            var elementScrolled = true;
-            //noinspection JSBitwiseOperatorUsage
-            if (this._dimension & SizeWatcher.dimensions.vertical) {
-                element.scrollTop = this._scrollAmount;
-                elementScrolled = elementScrolled && element.scrollTop > 0;
-            }
-            //noinspection JSBitwiseOperatorUsage
-            if (this._dimension & SizeWatcher.dimensions.horizontal) {
-                element.scrollLeft = this._scrollAmount;
-                elementScrolled = elementScrolled && element.scrollLeft > 0;
-            }
-            return elementScrolled;
-        },
-        beginWatching: function() {
-            if (this._state !== SizeWatcher.states.preparedScrollWatchers) {
-                throw new Error("SizeWatcher.beginWatching() invoked before SizeWatcher.prepareForWatch()");
-            }
-
-            //noinspection JSBitwiseOperatorUsage
-            if (this._direction & SizeWatcher.directions.decrease) {
-                //noinspection JSValidateTypes
-                this._sizeDecreaseWatcherElm.addEventListener("scroll", this, false);
-            }
-            //noinspection JSBitwiseOperatorUsage
-            if (this._direction & SizeWatcher.directions.increase) {
-                //noinspection JSValidateTypes
-                this._sizeIncreaseWatcherElm.addEventListener("scroll", this, false);
-            }
-
-            this._state = SizeWatcher.states.watchingForSizeChange;
-        },
-        endWatching: function() {
-            if (this._state !== SizeWatcher.states.watchingForSizeChange) {
-                throw new Error("SizeWatcher.endWatching() invoked before SizeWatcher.beginWatching()");
-            }
-
-            //noinspection JSBitwiseOperatorUsage
-            if (this._direction & SizeWatcher.directions.decrease) {
-                //noinspection JSValidateTypes
-                this._sizeDecreaseWatcherElm.removeEventListener("scroll", this, false);
-            }
-            //noinspection JSBitwiseOperatorUsage
-            if (this._direction & SizeWatcher.directions.increase) {
-                //noinspection JSValidateTypes
-                this._sizeIncreaseWatcherElm.removeEventListener("scroll", this, false);
-            }
-            this._state = SizeWatcher.states.appendedScrollWatchers;
-        },
-        /**
-         * @private
-         */
-        handleEvent: function(event) {
-            var newSize, oldSize;
-
-            // This is not suppose to happen because when we run endWatching() we remove scroll listeners.
-            // But some browsers will fire second scroll event which was pushed into event stack before listener was
-            // removed so do this check anyway.
-            if (this._state !== SizeWatcher.states.watchingForSizeChange) {
-                return;
-            }
-
-            newSize = new Size(this._element.offsetWidth, this._element.offsetHeight);
-            oldSize = this._size;
-
-            // Check if element size is changed. How come that element size isn't changed but scroll event fired?
-            // This can happen in two cases: when double scroll occurs or immediately after calling prepareForWatch()
-            // (event if scroll event listeners attached after it).
-            // The double scroll event happens when one size dimension (e.g.:width) is increased and another
-            // (e.g.:height) is decreased.
-            if (oldSize.isEqual(newSize)) {
-                return;
-            }
-
-            if (this._delegate && typeof this._delegate.sizeWatcherChangedSize === "function") {
-                this._delegate.sizeWatcherChangedSize(this);
-
-                // Check that endWatching() wasn't invoked from within the delegate.
-                if (this._state !== SizeWatcher.states.watchingForSizeChange) {
-                    return;
-                }
-            }
-
-            if (!this._continuous) {
-                this.endWatching();
-            } else {
-                // Set the new size so in case of double scroll event we won't cause the delegate method to be executed twice
-                // and also to update to the new watched size.
-                this.setSize(newSize);
-                // change state so prepareFowWatch() won't throw exception about wrong order invocation.
-                this._state = SizeWatcher.states.appendedScrollWatchers;
-                // Run prepareForWatch to reset the scroll watchers, we have already set the size
-                this.prepareForWatch();
-                // Set state to listeningForSizeChange, there is no need to invoke beginWatching() method as scroll event
-                // listeners and callback are already set.
-                this._state = SizeWatcher.states.watchingForSizeChange;
-
-            }
-        }
-    };
-
-    return FontLoader;
-
-}));
-
-(function(root) {
-	'use strict';
-
-	var CSSOM = root.CSSOM = {};
-/**
- * @constructor
- * @see http://www.w3.org/TR/DOM-Level-2-Style/css.html#CSS-CSSStyleDeclaration
- */
-CSSOM.CSSStyleDeclaration = function CSSStyleDeclaration(){
-	this.length = 0;
-	this.parentRule = null;
-
-	// NON-STANDARD
-	this._importants = {};
-};
-
-
-CSSOM.CSSStyleDeclaration.prototype = {
-
-	constructor: CSSOM.CSSStyleDeclaration,
-
-	/**
-	 *
-	 * @param {string} name
-	 * @see http://www.w3.org/TR/DOM-Level-2-Style/css.html#CSS-CSSStyleDeclaration-getPropertyValue
-	 * @return {string} the value of the property if it has been explicitly set for this declaration block.
-	 * Returns the empty string if the property has not been set.
-	 */
-	getPropertyValue: function(name) {
-		return this[name] || "";
-	},
-
-	/**
-	 *
-	 * @param {string} name
-	 * @param {string} value
-	 * @param {string} [priority=null] "important" or null
-	 * @see http://www.w3.org/TR/DOM-Level-2-Style/css.html#CSS-CSSStyleDeclaration-setProperty
-	 */
-	setProperty: function(name, value, priority) {
-		if (this[name]) {
-			// Property already exist. Overwrite it.
-			var index = Array.prototype.indexOf.call(this, name);
-			if (index < 0) {
-				this[this.length] = name;
-				this.length++;
-			}
-		} else {
-			// New property.
-			this[this.length] = name;
-			this.length++;
-		}
-		this[name] = value;
-		this._importants[name] = priority;
-	},
-
-	/**
-	 *
-	 * @param {string} name
-	 * @see http://www.w3.org/TR/DOM-Level-2-Style/css.html#CSS-CSSStyleDeclaration-removeProperty
-	 * @return {string} the value of the property if it has been explicitly set for this declaration block.
-	 * Returns the empty string if the property has not been set or the property name does not correspond to a known CSS property.
-	 */
-	removeProperty: function(name) {
-		if (!(name in this)) {
-			return "";
-		}
-		var index = Array.prototype.indexOf.call(this, name);
-		if (index < 0) {
-			return "";
-		}
-		var prevValue = this[name];
-		this[name] = "";
-
-		// That's what WebKit and Opera do
-		Array.prototype.splice.call(this, index, 1);
-
-		// That's what Firefox does
-		//this[index] = ""
-
-		return prevValue;
-	},
-
-	getPropertyCSSValue: function() {
-		//FIXME
-	},
-
-	/**
-	 *
-	 * @param {String} name
-	 */
-	getPropertyPriority: function(name) {
-		return this._importants[name] || "";
-	},
-
-
-	/**
-	 *   element.style.overflow = "auto"
-	 *   element.style.getPropertyShorthand("overflow-x")
-	 *   -> "overflow"
-	 */
-	getPropertyShorthand: function() {
-		//FIXME
-	},
-
-	isPropertyImplicit: function() {
-		//FIXME
-	},
-
-	// Doesn't work in IE < 9
-	get cssText(){
-		var properties = [];
-		for (var i=0, length=this.length; i < length; ++i) {
-			var name = this[i];
-			var value = this.getPropertyValue(name);
-			var priority = this.getPropertyPriority(name);
-			if (priority) {
-				priority = " !" + priority;
-			}
-			properties[i] = name + ": " + value + priority + ";";
-		}
-		return properties.join(" ");
-	},
-
-	set cssText(text){
-		var i, name;
-		for (i = this.length; i--;) {
-			name = this[i];
-			this[name] = "";
-		}
-		Array.prototype.splice.call(this, 0, this.length);
-		this._importants = {};
-
-		var dummyRule = CSSOM.parse('#bogus{' + text + '}').cssRules[0].style;
-		var length = dummyRule.length;
-		for (i = 0; i < length; ++i) {
-			name = dummyRule[i];
-			this.setProperty(dummyRule[i], dummyRule.getPropertyValue(name), dummyRule.getPropertyPriority(name));
-		}
-	}
-};
-
-
-
-/**
- * @constructor
- * @see http://dev.w3.org/csswg/cssom/#the-cssrule-interface
- * @see http://www.w3.org/TR/DOM-Level-2-Style/css.html#CSS-CSSRule
- */
-CSSOM.CSSRule = function CSSRule() {
-	this.parentRule = null;
-	this.parentStyleSheet = null;
-};
-
-CSSOM.CSSRule.UNKNOWN_RULE = 0;                 // obsolete
-CSSOM.CSSRule.STYLE_RULE = 1;
-CSSOM.CSSRule.CHARSET_RULE = 2;                 // obsolete
-CSSOM.CSSRule.IMPORT_RULE = 3;
-CSSOM.CSSRule.MEDIA_RULE = 4;
-CSSOM.CSSRule.FONT_FACE_RULE = 5;
-CSSOM.CSSRule.PAGE_RULE = 6;
-CSSOM.CSSRule.KEYFRAMES_RULE = 7;
-CSSOM.CSSRule.KEYFRAME_RULE = 8;
-CSSOM.CSSRule.MARGIN_RULE = 9;
-CSSOM.CSSRule.NAMESPACE_RULE = 10;
-CSSOM.CSSRule.COUNTER_STYLE_RULE = 11;
-CSSOM.CSSRule.SUPPORTS_RULE = 12;
-CSSOM.CSSRule.DOCUMENT_RULE = 13;
-CSSOM.CSSRule.FONT_FEATURE_VALUES_RULE = 14;
-CSSOM.CSSRule.VIEWPORT_RULE = 15;
-CSSOM.CSSRule.REGION_STYLE_RULE = 16;
-
-
-CSSOM.CSSRule.prototype = {
-	constructor: CSSOM.CSSRule
-	//FIXME
-};
-
-
-
-/**
- * @constructor
- * @see http://dev.w3.org/csswg/cssom/#cssstylerule
- * @see http://www.w3.org/TR/DOM-Level-2-Style/css.html#CSS-CSSStyleRule
- */
-CSSOM.CSSStyleRule = function CSSStyleRule() {
-	CSSOM.CSSRule.call(this);
-	this.selectorText = "";
-	this.style = new CSSOM.CSSStyleDeclaration();
-	this.style.parentRule = this;
-};
-
-CSSOM.CSSStyleRule.prototype = new CSSOM.CSSRule();
-CSSOM.CSSStyleRule.prototype.constructor = CSSOM.CSSStyleRule;
-CSSOM.CSSStyleRule.prototype.type = 1;
-
-Object.defineProperty(CSSOM.CSSStyleRule.prototype, "cssText", {
-	get: function() {
-		var text;
-		if (this.selectorText) {
-			text = this.selectorText + " {" + this.style.cssText + "}";
-		} else {
-			text = "";
-		}
-		return text;
-	},
-	set: function(cssText) {
-		var rule = CSSOM.CSSStyleRule.parse(cssText);
-		this.style = rule.style;
-		this.selectorText = rule.selectorText;
-	}
-});
-
-
-/**
- * NON-STANDARD
- * lightweight version of parse.js.
- * @param {string} ruleText
- * @return CSSStyleRule
- */
-CSSOM.CSSStyleRule.parse = function(ruleText) {
-	var i = 0;
-	var state = "selector";
-	var index;
-	var j = i;
-	var buffer = "";
-
-	var SIGNIFICANT_WHITESPACE = {
-		"selector": true,
-		"value": true
-	};
-
-	var styleRule = new CSSOM.CSSStyleRule();
-	var name, priority="";
-
-	for (var character; (character = ruleText.charAt(i)); i++) {
-
-		switch (character) {
-
-		case " ":
-		case "\t":
-		case "\r":
-		case "\n":
-		case "\f":
-			if (SIGNIFICANT_WHITESPACE[state]) {
-				// Squash 2 or more white-spaces in the row into 1
-				switch (ruleText.charAt(i - 1)) {
-					case " ":
-					case "\t":
-					case "\r":
-					case "\n":
-					case "\f":
-						break;
-					default:
-						buffer += " ";
-						break;
-				}
-			}
-			break;
-
-		// String
-		case '"':
-			j = i + 1;
-			index = ruleText.indexOf('"', j) + 1;
-			if (!index) {
-				throw '" is missing';
-			}
-			buffer += ruleText.slice(i, index);
-			i = index - 1;
-			break;
-
-		case "'":
-			j = i + 1;
-			index = ruleText.indexOf("'", j) + 1;
-			if (!index) {
-				throw "' is missing";
-			}
-			buffer += ruleText.slice(i, index);
-			i = index - 1;
-			break;
-
-		// Comment
-		case "/":
-			if (ruleText.charAt(i + 1) === "*") {
-				i += 2;
-				index = ruleText.indexOf("*/", i);
-				if (index === -1) {
-					throw new SyntaxError("Missing */");
-				} else {
-					i = index + 1;
-				}
-			} else {
-				buffer += character;
-			}
-			break;
-
-		case "{":
-			if (state === "selector") {
-				styleRule.selectorText = buffer.trim();
-				buffer = "";
-				state = "name";
-			}
-			break;
-
-		case ":":
-			if (state === "name") {
-				name = buffer.trim();
-				buffer = "";
-				state = "value";
-			} else {
-				buffer += character;
-			}
-			break;
-
-		case "!":
-			if (state === "value" && ruleText.indexOf("!important", i) === i) {
-				priority = "important";
-				i += "important".length;
-			} else {
-				buffer += character;
-			}
-			break;
-
-		case ";":
-			if (state === "value") {
-				styleRule.style.setProperty(name, buffer.trim(), priority);
-				priority = "";
-				buffer = "";
-				state = "name";
-			} else {
-				buffer += character;
-			}
-			break;
-
-		case "}":
-			if (state === "value") {
-				styleRule.style.setProperty(name, buffer.trim(), priority);
-				priority = "";
-				buffer = "";
-			} else if (state === "name") {
-				break;
-			} else {
-				buffer += character;
-			}
-			state = "selector";
-			break;
-
-		default:
-			buffer += character;
-			break;
-
-		}
-	}
-
-	return styleRule;
-
-};
-
-
-
-/**
- * @constructor
- * @see http://dev.w3.org/csswg/cssom/#the-medialist-interface
- */
-CSSOM.MediaList = function MediaList(){
-	this.length = 0;
-};
-
-CSSOM.MediaList.prototype = {
-
-	constructor: CSSOM.MediaList,
-
-	/**
-	 * @return {string}
-	 */
-	get mediaText() {
-		return Array.prototype.join.call(this, ", ");
-	},
-
-	/**
-	 * @param {string} value
-	 */
-	set mediaText(value) {
-		var values = value.split(",");
-		var length = this.length = values.length;
-		for (var i=0; i<length; i++) {
-			this[i] = values[i].trim();
-		}
-	},
-
-	/**
-	 * @param {string} medium
-	 */
-	appendMedium: function(medium) {
-		if (Array.prototype.indexOf.call(this, medium) === -1) {
-			this[this.length] = medium;
-			this.length++;
-		}
-	},
-
-	/**
-	 * @param {string} medium
-	 */
-	deleteMedium: function(medium) {
-		var index = Array.prototype.indexOf.call(this, medium);
-		if (index !== -1) {
-			Array.prototype.splice.call(this, index, 1);
-		}
-	}
-
-};
-
-
-
-/**
- * @constructor
- * @see http://dev.w3.org/csswg/cssom/#cssmediarule
- * @see http://www.w3.org/TR/DOM-Level-2-Style/css.html#CSS-CSSMediaRule
- */
-CSSOM.CSSMediaRule = function CSSMediaRule() {
-	CSSOM.CSSRule.call(this);
-	this.media = new CSSOM.MediaList();
-	this.cssRules = [];
-};
-
-CSSOM.CSSMediaRule.prototype = new CSSOM.CSSRule();
-CSSOM.CSSMediaRule.prototype.constructor = CSSOM.CSSMediaRule;
-CSSOM.CSSMediaRule.prototype.type = 4;
-//FIXME
-//CSSOM.CSSMediaRule.prototype.insertRule = CSSStyleSheet.prototype.insertRule;
-//CSSOM.CSSMediaRule.prototype.deleteRule = CSSStyleSheet.prototype.deleteRule;
-
-// http://opensource.apple.com/source/WebCore/WebCore-658.28/css/CSSMediaRule.cpp
-Object.defineProperty(CSSOM.CSSMediaRule.prototype, "cssText", {
-  get: function() {
-    var cssTexts = [];
-    for (var i=0, length=this.cssRules.length; i < length; i++) {
-      cssTexts.push(this.cssRules[i].cssText);
-    }
-    return "@media " + this.media.mediaText + " {" + cssTexts.join("") + "}";
-  }
-});
-
-
-
-/**
- * @constructor
- * @see http://dev.w3.org/csswg/cssom/#cssimportrule
- * @see http://www.w3.org/TR/DOM-Level-2-Style/css.html#CSS-CSSImportRule
- */
-CSSOM.CSSImportRule = function CSSImportRule() {
-	CSSOM.CSSRule.call(this);
-	this.href = "";
-	this.media = new CSSOM.MediaList();
-	this.styleSheet = new CSSOM.CSSStyleSheet();
-};
-
-CSSOM.CSSImportRule.prototype = new CSSOM.CSSRule();
-CSSOM.CSSImportRule.prototype.constructor = CSSOM.CSSImportRule;
-CSSOM.CSSImportRule.prototype.type = 3;
-
-Object.defineProperty(CSSOM.CSSImportRule.prototype, "cssText", {
-  get: function() {
-    var mediaText = this.media.mediaText;
-    return "@import url(" + this.href + ")" + (mediaText ? " " + mediaText : "") + ";";
-  },
-  set: function(cssText) {
-    var i = 0;
-
-    /**
-     * @import url(partial.css) screen, handheld;
-     *        ||               |
-     *        after-import     media
-     *         |
-     *         url
-     */
-    var state = '';
-
-    var buffer = '';
-    var index;
-    for (var character; (character = cssText.charAt(i)); i++) {
-
-      switch (character) {
-        case ' ':
-        case '\t':
-        case '\r':
-        case '\n':
-        case '\f':
-          if (state === 'after-import') {
-            state = 'url';
-          } else {
-            buffer += character;
-          }
-          break;
-
-        case '@':
-          if (!state && cssText.indexOf('@import', i) === i) {
-            state = 'after-import';
-            i += 'import'.length;
-            buffer = '';
-          }
-          break;
-
-        case 'u':
-          if (state === 'url' && cssText.indexOf('url(', i) === i) {
-            index = cssText.indexOf(')', i + 1);
-            if (index === -1) {
-              throw i + ': ")" not found';
-            }
-            i += 'url('.length;
-            var url = cssText.slice(i, index);
-            if (url[0] === url[url.length - 1]) {
-              if (url[0] === '"' || url[0] === "'") {
-                url = url.slice(1, -1);
-              }
-            }
-            this.href = url;
-            i = index;
-            state = 'media';
-          }
-          break;
-
-        case '"':
-          if (state === 'url') {
-            index = cssText.indexOf('"', i + 1);
-            if (!index) {
-              throw i + ": '\"' not found";
-            }
-            this.href = cssText.slice(i + 1, index);
-            i = index;
-            state = 'media';
-          }
-          break;
-
-        case "'":
-          if (state === 'url') {
-            index = cssText.indexOf("'", i + 1);
-            if (!index) {
-              throw i + ': "\'" not found';
-            }
-            this.href = cssText.slice(i + 1, index);
-            i = index;
-            state = 'media';
-          }
-          break;
-
-        case ';':
-          if (state === 'media') {
-            if (buffer) {
-              this.media.mediaText = buffer.trim();
-            }
-          }
-          break;
-
-        default:
-          if (state === 'media') {
-            buffer += character;
-          }
-          break;
-      }
-    }
-  }
-});
-
-
-
-/**
- * @constructor
- * @see http://dev.w3.org/csswg/cssom/#css-font-face-rule
- */
-CSSOM.CSSFontFaceRule = function CSSFontFaceRule() {
-	CSSOM.CSSRule.call(this);
-	this.style = new CSSOM.CSSStyleDeclaration();
-	this.style.parentRule = this;
-};
-
-CSSOM.CSSFontFaceRule.prototype = new CSSOM.CSSRule();
-CSSOM.CSSFontFaceRule.prototype.constructor = CSSOM.CSSFontFaceRule;
-CSSOM.CSSFontFaceRule.prototype.type = 5;
-//FIXME
-//CSSOM.CSSFontFaceRule.prototype.insertRule = CSSStyleSheet.prototype.insertRule;
-//CSSOM.CSSFontFaceRule.prototype.deleteRule = CSSStyleSheet.prototype.deleteRule;
-
-// http://www.opensource.apple.com/source/WebCore/WebCore-955.66.1/css/WebKitCSSFontFaceRule.cpp
-Object.defineProperty(CSSOM.CSSFontFaceRule.prototype, "cssText", {
-  get: function() {
-    return "@font-face {" + this.style.cssText + "}";
-  }
-});
-
-
-
-/**
- * @constructor
- * @see http://dev.w3.org/csswg/cssom/#the-stylesheet-interface
- */
-CSSOM.StyleSheet = function StyleSheet() {
-	this.parentStyleSheet = null;
-};
-
-
-
-/**
- * @constructor
- * @see http://www.w3.org/TR/DOM-Level-2-Style/css.html#CSS-CSSStyleSheet
- */
-CSSOM.CSSStyleSheet = function CSSStyleSheet() {
-	CSSOM.StyleSheet.call(this);
-	this.cssRules = [];
-};
-
-
-CSSOM.CSSStyleSheet.prototype = new CSSOM.StyleSheet();
-CSSOM.CSSStyleSheet.prototype.constructor = CSSOM.CSSStyleSheet;
-
-
-/**
- * Used to insert a new rule into the style sheet. The new rule now becomes part of the cascade.
- *
- *   sheet = new Sheet("body {margin: 0}")
- *   sheet.toString()
- *   -> "body{margin:0;}"
- *   sheet.insertRule("img {border: none}", 0)
- *   -> 0
- *   sheet.toString()
- *   -> "img{border:none;}body{margin:0;}"
- *
- * @param {string} rule
- * @param {number} index
- * @see http://www.w3.org/TR/DOM-Level-2-Style/css.html#CSS-CSSStyleSheet-insertRule
- * @return {number} The index within the style sheet's rule collection of the newly inserted rule.
- */
-CSSOM.CSSStyleSheet.prototype.insertRule = function(rule, index) {
-	if (index < 0 || index > this.cssRules.length) {
-		throw new RangeError("INDEX_SIZE_ERR");
-	}
-	var cssRule = CSSOM.parse(rule).cssRules[0];
-	cssRule.parentStyleSheet = this;
-	this.cssRules.splice(index, 0, cssRule);
-	return index;
-};
-
-
-/**
- * Used to delete a rule from the style sheet.
- *
- *   sheet = new Sheet("img{border:none} body{margin:0}")
- *   sheet.toString()
- *   -> "img{border:none;}body{margin:0;}"
- *   sheet.deleteRule(0)
- *   sheet.toString()
- *   -> "body{margin:0;}"
- *
- * @param {number} index within the style sheet's rule list of the rule to remove.
- * @see http://www.w3.org/TR/DOM-Level-2-Style/css.html#CSS-CSSStyleSheet-deleteRule
- */
-CSSOM.CSSStyleSheet.prototype.deleteRule = function(index) {
-	if (index < 0 || index >= this.cssRules.length) {
-		throw new RangeError("INDEX_SIZE_ERR");
-	}
-	this.cssRules.splice(index, 1);
-};
-
-
-/**
- * NON-STANDARD
- * @return {string} serialize stylesheet
- */
-CSSOM.CSSStyleSheet.prototype.toString = function() {
-	var result = "";
-	var rules = this.cssRules;
-	for (var i=0; i<rules.length; i++) {
-		result += rules[i].cssText + "\n";
-	}
-	return result;
-};
-
-
-
-/**
- * @constructor
- * @see http://www.w3.org/TR/css3-animations/#DOM-CSSKeyframesRule
- */
-CSSOM.CSSKeyframesRule = function CSSKeyframesRule() {
-	CSSOM.CSSRule.call(this);
-	this.name = '';
-	this.cssRules = [];
-};
-
-CSSOM.CSSKeyframesRule.prototype = new CSSOM.CSSRule();
-CSSOM.CSSKeyframesRule.prototype.constructor = CSSOM.CSSKeyframesRule;
-CSSOM.CSSKeyframesRule.prototype.type = 8;
-//FIXME
-//CSSOM.CSSKeyframesRule.prototype.insertRule = CSSStyleSheet.prototype.insertRule;
-//CSSOM.CSSKeyframesRule.prototype.deleteRule = CSSStyleSheet.prototype.deleteRule;
-
-// http://www.opensource.apple.com/source/WebCore/WebCore-955.66.1/css/WebKitCSSKeyframesRule.cpp
-Object.defineProperty(CSSOM.CSSKeyframesRule.prototype, "cssText", {
-  get: function() {
-    var cssTexts = [];
-    for (var i=0, length=this.cssRules.length; i < length; i++) {
-      cssTexts.push("  " + this.cssRules[i].cssText);
-    }
-    return "@" + (this._vendorPrefix || '') + "keyframes " + this.name + " { \n" + cssTexts.join("\n") + "\n}";
-  }
-});
-
-
-
-/**
- * @constructor
- * @see http://www.w3.org/TR/css3-animations/#DOM-CSSKeyframeRule
- */
-CSSOM.CSSKeyframeRule = function CSSKeyframeRule() {
-	CSSOM.CSSRule.call(this);
-	this.keyText = '';
-	this.style = new CSSOM.CSSStyleDeclaration();
-	this.style.parentRule = this;
-};
-
-CSSOM.CSSKeyframeRule.prototype = new CSSOM.CSSRule();
-CSSOM.CSSKeyframeRule.prototype.constructor = CSSOM.CSSKeyframeRule;
-CSSOM.CSSKeyframeRule.prototype.type = 9;
-//FIXME
-//CSSOM.CSSKeyframeRule.prototype.insertRule = CSSStyleSheet.prototype.insertRule;
-//CSSOM.CSSKeyframeRule.prototype.deleteRule = CSSStyleSheet.prototype.deleteRule;
-
-// http://www.opensource.apple.com/source/WebCore/WebCore-955.66.1/css/WebKitCSSKeyframeRule.cpp
-Object.defineProperty(CSSOM.CSSKeyframeRule.prototype, "cssText", {
-  get: function() {
-    return this.keyText + " {" + this.style.cssText + "} ";
-  }
-});
-
-
-
-/**
- * @constructor
- * @see https://developer.mozilla.org/en/CSS/@-moz-document
- */
-CSSOM.MatcherList = function MatcherList(){
-    this.length = 0;
-};
-
-CSSOM.MatcherList.prototype = {
-
-    constructor: CSSOM.MatcherList,
-
-    /**
-     * @return {string}
-     */
-    get matcherText() {
-        return Array.prototype.join.call(this, ", ");
-    },
-
-    /**
-     * @param {string} value
-     */
-    set matcherText(value) {
-        // just a temporary solution, actually it may be wrong by just split the value with ',', because a url can include ','.
-        var values = value.split(",");
-        var length = this.length = values.length;
-        for (var i=0; i<length; i++) {
-            this[i] = values[i].trim();
-        }
-    },
-
-    /**
-     * @param {string} matcher
-     */
-    appendMatcher: function(matcher) {
-        if (Array.prototype.indexOf.call(this, matcher) === -1) {
-            this[this.length] = matcher;
-            this.length++;
-        }
-    },
-
-    /**
-     * @param {string} matcher
-     */
-    deleteMatcher: function(matcher) {
-        var index = Array.prototype.indexOf.call(this, matcher);
-        if (index !== -1) {
-            Array.prototype.splice.call(this, index, 1);
-        }
-    }
-
-};
-
-
-
-/**
- * @constructor
- * @see https://developer.mozilla.org/en/CSS/@-moz-document
- */
-CSSOM.CSSDocumentRule = function CSSDocumentRule() {
-    CSSOM.CSSRule.call(this);
-    this.matcher = new CSSOM.MatcherList();
-    this.cssRules = [];
-};
-
-CSSOM.CSSDocumentRule.prototype = new CSSOM.CSSRule();
-CSSOM.CSSDocumentRule.prototype.constructor = CSSOM.CSSDocumentRule;
-CSSOM.CSSDocumentRule.prototype.type = 10;
-//FIXME
-//CSSOM.CSSDocumentRule.prototype.insertRule = CSSStyleSheet.prototype.insertRule;
-//CSSOM.CSSDocumentRule.prototype.deleteRule = CSSStyleSheet.prototype.deleteRule;
-
-Object.defineProperty(CSSOM.CSSDocumentRule.prototype, "cssText", {
-  get: function() {
-    var cssTexts = [];
-    for (var i=0, length=this.cssRules.length; i < length; i++) {
-        cssTexts.push(this.cssRules[i].cssText);
-    }
-    return "@-moz-document " + this.matcher.matcherText + " {" + cssTexts.join("") + "}";
-  }
-});
-
-
-
-/**
- * @constructor
- * @see http://www.w3.org/TR/DOM-Level-2-Style/css.html#CSS-CSSValue
- *
- * TODO: add if needed
- */
-CSSOM.CSSValue = function CSSValue() {
-};
-
-CSSOM.CSSValue.prototype = {
-	constructor: CSSOM.CSSValue,
-
-	// @see: http://www.w3.org/TR/DOM-Level-2-Style/css.html#CSS-CSSValue
-	set cssText(text) {
-		var name = this._getConstructorName();
-
-		throw new Error('DOMException: property "cssText" of "' + name + '" is readonly and can not be replaced with "' + text + '"!');
-	},
-
-	get cssText() {
-		var name = this._getConstructorName();
-
-		throw new Error('getter "cssText" of "' + name + '" is not implemented!');
-	},
-
-	_getConstructorName: function() {
-		var s = this.constructor.toString(),
-				c = s.match(/function\s([^\(]+)/),
-				name = c[1];
-
-		return name;
-	}
-};
-
-
-
-/**
- * @constructor
- * @see http://msdn.microsoft.com/en-us/library/ms537634(v=vs.85).aspx
- *
- */
-CSSOM.CSSValueExpression = function CSSValueExpression(token, idx) {
-	this._token = token;
-	this._idx = idx;
-};
-
-CSSOM.CSSValueExpression.prototype = new CSSOM.CSSValue();
-CSSOM.CSSValueExpression.prototype.constructor = CSSOM.CSSValueExpression;
-
-/**
- * parse css expression() value
- *
- * @return {Object}
- *         - error:
- *         or
- *         - idx:
- *         - expression:
- *
- * Example:
- *
- * .selector {
- *		zoom: expression(documentElement.clientWidth > 1000 ? '1000px' : 'auto');
- * }
- */
-CSSOM.CSSValueExpression.prototype.parse = function() {
-	var token = this._token,
-			idx = this._idx;
-
-	var character = '',
-			expression = '',
-			error = '',
-			info,
-			paren = [];
-
-
-	for (; ; ++idx) {
-		character = token.charAt(idx);
-
-		// end of token
-		if (character === '') {
-			error = 'css expression error: unfinished expression!';
-			break;
-		}
-
-		switch(character) {
-			case '(':
-				paren.push(character);
-				expression += character;
-				break;
-
-			case ')':
-				paren.pop(character);
-				expression += character;
-				break;
-
-			case '/':
-				if ((info = this._parseJSComment(token, idx))) { // comment?
-					if (info.error) {
-						error = 'css expression error: unfinished comment in expression!';
-					} else {
-						idx = info.idx;
-						// ignore the comment
-					}
-				} else if ((info = this._parseJSRexExp(token, idx))) { // regexp
-					idx = info.idx;
-					expression += info.text;
-				} else { // other
-					expression += character;
-				}
-				break;
-
-			case "'":
-			case '"':
-				info = this._parseJSString(token, idx, character);
-				if (info) { // string
-					idx = info.idx;
-					expression += info.text;
-				} else {
-					expression += character;
-				}
-				break;
-
-			default:
-				expression += character;
-				break;
-		}
-
-		if (error) {
-			break;
-		}
-
-		// end of expression
-		if (paren.length === 0) {
-			break;
-		}
-	}
-
-	var ret;
-	if (error) {
-		ret = {
-			error: error
-		};
-	} else {
-		ret = {
-			idx: idx,
-			expression: expression
-		};
-	}
-
-	return ret;
-};
-
-
-/**
- *
- * @return {Object|false}
- *          - idx:
- *          - text:
- *          or
- *          - error:
- *          or
- *          false
- *
- */
-CSSOM.CSSValueExpression.prototype._parseJSComment = function(token, idx) {
-	var nextChar = token.charAt(idx + 1),
-			text;
-
-	if (nextChar === '/' || nextChar === '*') {
-		var startIdx = idx,
-				endIdx,
-				commentEndChar;
-
-		if (nextChar === '/') { // line comment
-			commentEndChar = '\n';
-		} else if (nextChar === '*') { // block comment
-			commentEndChar = '*/';
-		}
-
-		endIdx = token.indexOf(commentEndChar, startIdx + 1 + 1);
-		if (endIdx !== -1) {
-			endIdx = endIdx + commentEndChar.length - 1;
-			text = token.substring(idx, endIdx + 1);
-			return {
-				idx: endIdx,
-				text: text
-			};
-		} else {
-			var error = 'css expression error: unfinished comment in expression!';
-			return {
-				error: error
-			};
-		}
-	} else {
-		return false;
-	}
-};
-
-
-/**
- *
- * @return {Object|false}
- *					- idx:
- *					- text:
- *					or 
- *					false
- *
- */
-CSSOM.CSSValueExpression.prototype._parseJSString = function(token, idx, sep) {
-	var endIdx = this._findMatchedIdx(token, idx, sep),
-			text;
-
-	if (endIdx === -1) {
-		return false;
-	} else {
-		text = token.substring(idx, endIdx + sep.length);
-
-		return {
-			idx: endIdx,
-			text: text
-		};
-	}
-};
-
-
-/**
- * parse regexp in css expression
- *
- * @return {Object|false}
- *				- idx:
- *				- regExp:
- *				or 
- *				false
- */
-
-/*
-
-all legal RegExp
- 
-/a/
-(/a/)
-[/a/]
-[12, /a/]
-
-!/a/
-
-+/a/
--/a/
-* /a/
-/ /a/
-%/a/
-
-===/a/
-!==/a/
-==/a/
-!=/a/
->/a/
->=/a/
-</a/
-<=/a/
-
-&/a/
-|/a/
-^/a/
-~/a/
-<</a/
->>/a/
->>>/a/
-
-&&/a/
-||/a/
-?/a/
-=/a/
-,/a/
-
-		delete /a/
-				in /a/
-instanceof /a/
-				new /a/
-		typeof /a/
-			void /a/
-
-*/
-CSSOM.CSSValueExpression.prototype._parseJSRexExp = function(token, idx) {
-	var before = token.substring(0, idx).replace(/\s+$/, ""),
-			legalRegx = [
-				/^$/,
-				/\($/,
-				/\[$/,
-				/\!$/,
-				/\+$/,
-				/\-$/,
-				/\*$/,
-				/\/\s+/,
-				/\%$/,
-				/\=$/,
-				/\>$/,
-				/<$/,
-				/\&$/,
-				/\|$/,
-				/\^$/,
-				/\~$/,
-				/\?$/,
-				/\,$/,
-				/delete$/,
-				/in$/,
-				/instanceof$/,
-				/new$/,
-				/typeof$/,
-				/void$/
-			];
-
-	var isLegal = legalRegx.some(function(reg) {
-		return reg.test(before);
-	});
-
-	if (!isLegal) {
-		return false;
-	} else {
-		var sep = '/';
-
-		// same logic as string
-		return this._parseJSString(token, idx, sep);
-	}
-};
-
-
-/**
- *
- * find next sep(same line) index in `token`
- *
- * @return {Number}
- *
- */
-CSSOM.CSSValueExpression.prototype._findMatchedIdx = function(token, idx, sep) {
-	var startIdx = idx,
-			endIdx;
-
-	var NOT_FOUND = -1;
-
-	while(true) {
-		endIdx = token.indexOf(sep, startIdx + 1);
-
-		if (endIdx === -1) { // not found
-			endIdx = NOT_FOUND;
-			break;
-		} else {
-			var text = token.substring(idx + 1, endIdx),
-					matched = text.match(/\\+$/);
-			if (!matched || matched[0] % 2 === 0) { // not escaped
-				break;
-			} else {
-				startIdx = endIdx;
-			}
-		}
-	}
-
-	// boundary must be in the same line(js sting or regexp)
-	var nextNewLineIdx = token.indexOf('\n', idx + 1);
-	if (nextNewLineIdx < endIdx) {
-		endIdx = NOT_FOUND;
-	}
-
-
-	return endIdx;
-};
-
-
-
-
-
-/**
- * @param {string} token
- */
-CSSOM.parse = function parse(token) {
-
-	var i = 0;
-
-	/**
-		"before-selector" or
-		"selector" or
-		"atRule" or
-		"atBlock" or
-		"before-name" or
-		"name" or
-		"before-value" or
-		"value"
-	*/
-	var state = "before-selector";
-
-	var index;
-	var buffer = "";
-
-	var SIGNIFICANT_WHITESPACE = {
-		"selector": true,
-		"value": true,
-		"atRule": true,
-		"importRule-begin": true,
-		"importRule": true,
-		"atBlock": true,
-		'documentRule-begin': true
-	};
-
-	var styleSheet = new CSSOM.CSSStyleSheet();
-
-	// @type CSSStyleSheet|CSSMediaRule|CSSFontFaceRule|CSSKeyframesRule|CSSDocumentRule
-	var currentScope = styleSheet;
-
-	// @type CSSMediaRule|CSSKeyframesRule|CSSDocumentRule
-	var parentRule;
-
-	var name, priority="", styleRule, mediaRule, importRule, fontFaceRule, keyframesRule, documentRule;
-
-	var atKeyframesRegExp = /@(-(?:\w+-)+)?keyframes/g;
-
-	var parseError = function(message) {
-		var lines = token.substring(0, i).split('\n');
-		var lineCount = lines.length;
-		var charCount = lines.pop().length + 1;
-		var error = new Error(message + ' (line ' + lineCount + ', char ' + charCount + ')');
-		error.line = lineCount;
-		/* jshint sub : true */
-		error['char'] = charCount;
-		error.styleSheet = styleSheet;
-		throw error;
-	};
-
-	for (var character; (character = token.charAt(i)); i++) {
-
-		switch (character) {
-
-		case " ":
-		case "\t":
-		case "\r":
-		case "\n":
-		case "\f":
-			if (SIGNIFICANT_WHITESPACE[state]) {
-				buffer += character;
-			}
-			break;
-
-		// String
-		case '"':
-			index = i + 1;
-			do {
-				index = token.indexOf('"', index) + 1;
-				if (!index) {
-					parseError('Unmatched "');
-				}
-			} while (token[index - 2] === '\\');
-			buffer += token.slice(i, index);
-			i = index - 1;
-			switch (state) {
-				case 'before-value':
-					state = 'value';
-					break;
-				case 'importRule-begin':
-					state = 'importRule';
-					break;
-			}
-			break;
-
-		case "'":
-			index = i + 1;
-			do {
-				index = token.indexOf("'", index) + 1;
-				if (!index) {
-					parseError("Unmatched '");
-				}
-			} while (token[index - 2] === '\\');
-			buffer += token.slice(i, index);
-			i = index - 1;
-			switch (state) {
-				case 'before-value':
-					state = 'value';
-					break;
-				case 'importRule-begin':
-					state = 'importRule';
-					break;
-			}
-			break;
-
-		// Comment
-		case "/":
-			if (token.charAt(i + 1) === "*") {
-				i += 2;
-				index = token.indexOf("*/", i);
-				if (index === -1) {
-					parseError("Missing */");
-				} else {
-					i = index + 1;
-				}
-			} else {
-				buffer += character;
-			}
-			if (state === "importRule-begin") {
-				buffer += " ";
-				state = "importRule";
-			}
-			break;
-
-		// At-rule
-		case "@":
-			if (token.indexOf("@-moz-document", i) === i) {
-				state = "documentRule-begin";
-				documentRule = new CSSOM.CSSDocumentRule();
-				documentRule.__starts = i;
-				i += "-moz-document".length;
-				buffer = "";
-				break;
-			} else if (token.indexOf("@media", i) === i) {
-				state = "atBlock";
-				mediaRule = new CSSOM.CSSMediaRule();
-				mediaRule.__starts = i;
-				i += "media".length;
-				buffer = "";
-				break;
-			} else if (token.indexOf("@import", i) === i) {
-				state = "importRule-begin";
-				i += "import".length;
-				buffer += "@import";
-				break;
-			} else if (token.indexOf("@font-face", i) === i) {
-				state = "fontFaceRule-begin";
-				i += "font-face".length;
-				fontFaceRule = new CSSOM.CSSFontFaceRule();
-				fontFaceRule.__starts = i;
-				buffer = "";
-				break;
-			} else {
-				atKeyframesRegExp.lastIndex = i;
-				var matchKeyframes = atKeyframesRegExp.exec(token);
-				if (matchKeyframes && matchKeyframes.index === i) {
-					state = "keyframesRule-begin";
-					keyframesRule = new CSSOM.CSSKeyframesRule();
-					keyframesRule.__starts = i;
-					keyframesRule._vendorPrefix = matchKeyframes[1]; // Will come out as undefined if no prefix was found
-					i += matchKeyframes[0].length - 1;
-					buffer = "";
-					break;
-				} else if (state === "selector") {
-					state = "atRule";
-				}
-			}
-			buffer += character;
-			break;
-
-		case "{":
-			if (state === "selector" || state === "atRule") {
-				styleRule.selectorText = buffer.trim();
-				styleRule.style.__starts = i;
-				buffer = "";
-				state = "before-name";
-			} else if (state === "atBlock") {
-				mediaRule.media.mediaText = buffer.trim();
-				currentScope = parentRule = mediaRule;
-				mediaRule.parentStyleSheet = styleSheet;
-				buffer = "";
-				state = "before-selector";
-			} else if (state === "fontFaceRule-begin") {
-				if (parentRule) {
-					fontFaceRule.parentRule = parentRule;
-				}
-				fontFaceRule.parentStyleSheet = styleSheet;
-				styleRule = fontFaceRule;
-				buffer = "";
-				state = "before-name";
-			} else if (state === "keyframesRule-begin") {
-				keyframesRule.name = buffer.trim();
-				if (parentRule) {
-					keyframesRule.parentRule = parentRule;
-				}
-				keyframesRule.parentStyleSheet = styleSheet;
-				currentScope = parentRule = keyframesRule;
-				buffer = "";
-				state = "keyframeRule-begin";
-			} else if (state === "keyframeRule-begin") {
-				styleRule = new CSSOM.CSSKeyframeRule();
-				styleRule.keyText = buffer.trim();
-				styleRule.__starts = i;
-				buffer = "";
-				state = "before-name";
-			} else if (state === "documentRule-begin") {
-				// FIXME: what if this '{' is in the url text of the match function?
-				documentRule.matcher.matcherText = buffer.trim();
-				if (parentRule) {
-					documentRule.parentRule = parentRule;
-				}
-				currentScope = parentRule = documentRule;
-				documentRule.parentStyleSheet = styleSheet;
-				buffer = "";
-				state = "before-selector";
-			}
-			break;
-
-		case ":":
-			if (state === "name") {
-				name = buffer.trim();
-				buffer = "";
-				state = "before-value";
-			} else {
-				buffer += character;
-			}
-			break;
-
-		case "(":
-			if (state === 'value') {
-				// ie css expression mode
-				if (buffer.trim() === 'expression') {
-					var info = (new CSSOM.CSSValueExpression(token, i)).parse();
-
-					if (info.error) {
-						parseError(info.error);
-					} else {
-						buffer += info.expression;
-						i = info.idx;
-					}
-				} else {
-					state = 'value-parenthesis';
-					buffer += character;
-				}
-			} else {
-				buffer += character;
-			}
-			break;
-
-		case ")":
-			if (state === 'value-parenthesis') {
-				state = 'value';
-			}
-			buffer += character;
-			break;
-
-		case "!":
-			if (state === "value" && token.indexOf("!important", i) === i) {
-				priority = "important";
-				i += "important".length;
-			} else {
-				buffer += character;
-			}
-			break;
-
-		case ";":
-			switch (state) {
-				case "value":
-					styleRule.style.setProperty(name, buffer.trim(), priority);
-					priority = "";
-					buffer = "";
-					state = "before-name";
-					break;
-				case "atRule":
-					buffer = "";
-					state = "before-selector";
-					break;
-				case "importRule":
-					importRule = new CSSOM.CSSImportRule();
-					importRule.parentStyleSheet = importRule.styleSheet.parentStyleSheet = styleSheet;
-					importRule.cssText = buffer + character;
-					styleSheet.cssRules.push(importRule);
-					buffer = "";
-					state = "before-selector";
-					break;
-				default:
-					buffer += character;
-					break;
-			}
-			break;
-
-		case "}":
-			switch (state) {
-				case "value":
-					styleRule.style.setProperty(name, buffer.trim(), priority);
-					priority = "";
-					/* falls through */
-				case "before-name":
-				case "name":
-					styleRule.__ends = i + 1;
-					if (parentRule) {
-						styleRule.parentRule = parentRule;
-					}
-					styleRule.parentStyleSheet = styleSheet;
-					currentScope.cssRules.push(styleRule);
-					buffer = "";
-					if (currentScope.constructor === CSSOM.CSSKeyframesRule) {
-						state = "keyframeRule-begin";
-					} else {
-						state = "before-selector";
-					}
-					break;
-				case "keyframeRule-begin":
-				case "before-selector":
-				case "selector":
-					// End of media/document rule.
-					if (!parentRule) {
-						parseError("Unexpected }");
-					}
-					currentScope.__ends = i + 1;
-					// Nesting rules aren't supported yet
-					styleSheet.cssRules.push(currentScope);
-					currentScope = styleSheet;
-					parentRule = null;
-					buffer = "";
-					state = "before-selector";
-					break;
-			}
-			break;
-
-		default:
-			switch (state) {
-				case "before-selector":
-					state = "selector";
-					styleRule = new CSSOM.CSSStyleRule();
-					styleRule.__starts = i;
-					break;
-				case "before-name":
-					state = "name";
-					break;
-				case "before-value":
-					state = "value";
-					break;
-				case "importRule-begin":
-					state = "importRule";
-					break;
-			}
-			buffer += character;
-			break;
-		}
-	}
-
-	return styleSheet;
-};
-
-
-
-/**
- * Produces a deep copy of stylesheet — the instance variables of stylesheet are copied recursively.
- * @param {CSSStyleSheet|CSSOM.CSSStyleSheet} stylesheet
- * @nosideeffects
- * @return {CSSOM.CSSStyleSheet}
- */
-CSSOM.clone = function clone(stylesheet) {
-
-	var cloned = new CSSOM.CSSStyleSheet();
-
-	var rules = stylesheet.cssRules;
-	if (!rules) {
-		return cloned;
-	}
-
-	var RULE_TYPES = {
-		1: CSSOM.CSSStyleRule,
-		4: CSSOM.CSSMediaRule,
-		//3: CSSOM.CSSImportRule,
-		//5: CSSOM.CSSFontFaceRule,
-		//6: CSSOM.CSSPageRule,
-		8: CSSOM.CSSKeyframesRule,
-		9: CSSOM.CSSKeyframeRule
-	};
-
-	for (var i=0, rulesLength=rules.length; i < rulesLength; i++) {
-		var rule = rules[i];
-		var ruleClone = cloned.cssRules[i] = new RULE_TYPES[rule.type]();
-
-		var style = rule.style;
-		if (style) {
-			var styleClone = ruleClone.style = new CSSOM.CSSStyleDeclaration();
-			for (var j=0, styleLength=style.length; j < styleLength; j++) {
-				var name = styleClone[j] = style[j];
-				styleClone[name] = style[name];
-				styleClone._importants[name] = style.getPropertyPriority(name);
-			}
-			styleClone.length = style.length;
-		}
-
-		if (rule.hasOwnProperty('keyText')) {
-			ruleClone.keyText = rule.keyText;
-		}
-
-		if (rule.hasOwnProperty('selectorText')) {
-			ruleClone.selectorText = rule.selectorText;
-		}
-
-		if (rule.hasOwnProperty('mediaText')) {
-			ruleClone.mediaText = rule.mediaText;
-		}
-
-		if (rule.hasOwnProperty('cssRules')) {
-			ruleClone.cssRules = clone(rule).cssRules;
-		}
-	}
-
-	return cloned;
-
-};
-
-
-})(this);
-define("cssom", (function (global) {
-    return function () {
-        var ret, fn;
-        return ret || global.CSSOM;
-    };
-}(this)));
-
-//  Created by Juan Corona <juanc@evidentpoint.com>
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
-//
-//  Redistribution and use in source and binary forms, with or without modification,
-//  are permitted provided that the following conditions are met:
-//  1. Redistributions of source code must retain the above copyright notice, this
-//  list of conditions and the following disclaimer.
-//  2. Redistributions in binary form must reproduce the above copyright notice,
-//  this list of conditions and the following disclaimer in the documentation and/or
-//  other materials provided with the distribution.
-//  3. Neither the name of the organization nor the names of its contributors may be
-//  used to endorse or promote products derived from this software without specific
-//  prior written permission.
-//
-//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
-//  OF THE POSSIBILITY OF SUCH DAMAGE.
-
-//TODO: This could be made into a plugin in the future.
-// A plugin would be ideal because we can make a light-weight alternative that doesn't need the FontLoader shim and the CSSOM parser.
-define('readium_shared_js/views/font_loader',["jquery", "underscore", "FontLoader", "cssom"], function($, _, FontLoader, CSSOM) {
-
-var FontLoaderFallback = function(document, options) {
-    var debug = options.debug;
-
-    var getRestrictedCssRules = function (styleSheet, callback) {
-        $.get(styleSheet.href).done(function(data) {
-            callback(CSSOM.parse(data).cssRules);
-        }).fail(function() {
-            callback(null);
-        });
-    };
-
-    var getUsedFonts = function(callback) {
-        var styleSheets = document.styleSheets;
-        var fontFamilies = [];
-        var fontFamilyRules = [];
-
-        // if no style sheets are found return immediately
-        if (!styleSheets || styleSheets.length <= 0) {
-            callback([]);
-            return;
-        }
-
-        var getFontFamilyFromRule = function(rule) {
-            if (rule.style && (rule.style.getPropertyValue || rule.style.fontFamily)) {
-                return rule.style.getPropertyValue("font-family") || rule.style.fontFamily;
-            }
-        }
-
-        var returnUsedFonts = function() {
-            if (debug) {
-                console.log(fontFamilies);
-            }
-            var usedFontFamilies = [];
-            _.each(fontFamilyRules, function(rule) {
-                var usedFontFamily = _.find(fontFamilies, function(family) {
-                    var fontFamily = getFontFamilyFromRule(rule);
-                    if (fontFamily && ~fontFamily.indexOf(family[1])) {
-                        return true;
-                    }
-                });
-
-                if (usedFontFamily && rule.selectorText && !_.contains(usedFontFamilies, usedFontFamily[0]) && document.querySelector(rule.selectorText)) {
-                    usedFontFamilies.push(usedFontFamily[0]);
-                }
-            });
-
-            if (debug) {
-                console.log(usedFontFamilies);
-            }
-
-            callback(usedFontFamilies);
-        };
-
-        var processedCount = 0;
-        var processCssRules = function(cssRules) {
-            _.each(cssRules, function(rule) {
-                var fontFamily = getFontFamilyFromRule(rule);
-                if (fontFamily) {
-                    if (rule.type === CSSRule.FONT_FACE_RULE) {
-                        fontFamilies.push([fontFamily.replace(/(^['"]|['"]$)/g, '').replace(/\\(['"])/g, '$1'), fontFamily]);
-                    } else {
-                        fontFamilyRules.push(rule);
-                    }
-                }
-            });
-
-            processedCount++;
-
-            if (processedCount >= styleSheets.length) {
-                returnUsedFonts();
-            }
-        };
-
-        _.each(styleSheets, function(styleSheet) {
-            var cssRules;
-            // Firefox (and possibly IE as well) throw a security exception if the CSS was loaded from a different domain.
-            // Other browsers just have null as the value of cssRules for that case.
-            try {
-                cssRules = styleSheet.cssRules || styleSheet.rules;
-            } catch (ignored) {}
-
-            if (!cssRules) {
-                getRestrictedCssRules(styleSheet, processCssRules);
-            } else {
-                processCssRules(cssRules);
-            }
-        });
-    };
-
-    return function(callback) {
-        callback = _.once(callback);
-        var loadCount = 0;
-
-        getUsedFonts(function(usedFontFamilies){
-            var fontLoader = new FontLoader(usedFontFamilies, {
-                "fontsLoaded": function(error) {
-                    if (debug) {
-                        if (error !== null) {
-                            // Reached the timeout but not all fonts were loaded
-                            console.log("font loader: " + error.message, error.notLoadedFonts);
-                        } else {
-                            // All fonts were loaded
-                            console.log("font loader: all fonts were loaded");
-                        }
-                    }
-                    callback();
-                },
-                "fontLoaded": function(font) {
-                    loadCount++;
-                    if (debug) {
-                        console.log("font loaded: " + font.family);
-                    }
-                    if (usedFontFamilies.length > options.minLoadCount && (loadCount / usedFontFamilies.length) >= options.minLoadRatio) {
-
-                        if (debug) {
-                            console.log('font loader: early callback');
-                        }
-                        callback();
-                    }
-                }
-            }, options.timeout, document);
-
-            fontLoader.loadFonts();
-        });
-    };
-};
-
-var FontLoaderNative = function(document, options) {
-    var debug = options.debug;
-
-    return function(callback) {
-        callback = _.once(callback);
-        var loadCount = 0;
-
-        var fontFaceCount = document.fonts.size;
-        var fontLoaded = function(font) {
-            loadCount++;
-            if (debug) {
-                console.log("(native) font loaded: " + font.family);
-            }
-            if (fontFaceCount > options.minLoadCount && (loadCount / fontFaceCount) >= options.minLoadRatio) {
-
-                if (debug) {
-                    console.log('(native) font loader: early callback');
-                }
-                callback();
-            }
-        }
-
-        var fontIterator = function(font) {
-            font.loaded.then(function() {
-                fontLoaded(font);
-            });
-        };
-
-        // For some reason (at this time) Chrome's implementation has a .forEach
-        // but it is not Array-like. This is opposite with Firefox's though.
-        if (document.fonts.forEach) {
-            document.fonts.forEach(fontIterator);
-        } else {
-            _.each(document.fonts, fontIterator);
-        }
-        var fontsReady = document.fonts.ready;
-        // In older implementations (chromium 35 for example) this is a method not a property
-        if (_.isFunction(fontsReady)) {
-            fontsReady = fontsReady.call(document.fonts);
-        }
-        fontsReady.then(function() {
-            if (debug) {
-                // All fonts were loaded
-                console.log("(native) font loader: all fonts were loaded");
-            }
-            callback();
-        });
-
-        window.setTimeout(function() {
-            if (debug && loadCount !== fontFaceCount) {
-                console.log('(native) font loader: timeout, not all fonts loaded/required');
-            } else if (debug) {
-                console.log('(native) font loader: timeout');
-            }
-            callback();
-        }, options.timeout);
-    }
-}
-
-var FontLoaderWrapper = function($iframe, options) {
-    options = options || {};
-
-    options.debug = options.debug || false;
-    options.timeout = options.timeout || 1500;
-    options.minLoadCount = options.minLoadCount || 3;
-    options.minLoadRatio = options.minLoadRatio || 0.75;
-
-    var document = $iframe[0].contentDocument;
-
-    // For browsers without CSS Font Loading Module
-    var fallbackNeeded = !document.fonts;
-
-    var fontLoader = fallbackNeeded ? FontLoaderFallback : FontLoaderNative;
-
-    this.waitForFonts = fontLoader(document, options);
-};
-
-return FontLoaderWrapper;
-
-});
 
 
 //  LauncherOSX
@@ -46023,17 +44795,16 @@ return FontLoaderWrapper;
 
 define('readium_shared_js/views/reflowable_view',["../globals", "jquery", "underscore", "eventEmitter", "../models/bookmark_data", "./cfi_navigation_logic",
     "../models/current_pages_info", "../helpers", "../models/page_open_request",
-    "../models/viewer_settings", "./font_loader"],
+    "../models/viewer_settings", "ResizeSensor"],
     function(Globals, $, _, EventEmitter, BookmarkData, CfiNavigationLogic,
              CurrentPagesInfo, Helpers, PageOpenRequest,
-             ViewerSettings, FontLoader) {
+             ViewerSettings, ResizeSensor) {
 /**
  * Renders reflowable content using CSS columns
  * @param options
  * @constructor
  */
 var ReflowableView = function(options, reader){
-
     $.extend(this, new EventEmitter());
 
     var self = this;
@@ -46048,11 +44819,17 @@ var ReflowableView = function(options, reader){
     var _isWaitingFrameRender = false;
     var _deferredPageRequest;
     var _fontSize = 100;
+    var _fontSelection = 0;
     var _$contentFrame;
     var _navigationLogic;
     var _$el;
     var _$iframe;
     var _$epubHtml;
+    var _lastPageRequest = undefined;
+
+    var _cfiClassBlacklist = ["cfi-marker", "mo-cfi-highlight", "resize-sensor", "resize-sensor-expand", "resize-sensor-shrink", "resize-sensor-inner"];
+    var _cfiElementBlacklist = [];
+    var _cfiIdBlacklist = ["MathJax_Message", "MathJax_SVG_Hidden"];
 
     var _$htmlBody;
 
@@ -46064,6 +44841,11 @@ var ReflowableView = function(options, reader){
     var _currentOpacity = -1;
 
     var _lastViewPortSize = {
+        width: undefined,
+        height: undefined
+    };
+
+    var _lastBodySize = {
         width: undefined,
         height: undefined
     };
@@ -46134,7 +44916,7 @@ var ReflowableView = function(options, reader){
     };
 
     var _viewSettings = undefined;
-    this.setViewSettings = function(settings) {
+    this.setViewSettings = function(settings, docWillChange) {
 
         _viewSettings = settings;
 
@@ -46143,12 +44925,15 @@ var ReflowableView = function(options, reader){
         _paginationInfo.columnMinWidth = settings.columnMinWidth;
         
         _fontSize = settings.fontSize;
-
-        updateHtmlFontSize();
-        updateColumnGap();
+        _fontSelection = settings.fontSelection;
 
         updateViewportSize();
-        updatePagination();
+
+        if (!docWillChange) {
+            updateColumnGap();
+
+            updateHtmlFontInfo();
+        }
     };
     
     function getFrameDimensions() {
@@ -46181,7 +44966,10 @@ var ReflowableView = function(options, reader){
         _navigationLogic = new CfiNavigationLogic({
             $iframe: _$iframe,
             frameDimensions: getFrameDimensions,
-            paginationInfo: _paginationInfo
+            paginationInfo: _paginationInfo,
+            classBlacklist: _cfiClassBlacklist,
+            elementBlacklist: _cfiElementBlacklist,
+            idBlacklist: _cfiIdBlacklist
         });
     }
 
@@ -46195,6 +44983,8 @@ var ReflowableView = function(options, reader){
                 Globals.logEvent("CONTENT_DOCUMENT_UNLOADED", "EMIT", "reflowable_view.js [ " + _currentSpineItem.href + " ]");
                 self.emit(Globals.Events.CONTENT_DOCUMENT_UNLOADED, _$iframe, _currentSpineItem);
             }
+
+            self.resetCurrentPosition();
 
             _paginationInfo.pageOffset = 0;
             _paginationInfo.currentSpreadIndex = 0;
@@ -46216,10 +45006,15 @@ var ReflowableView = function(options, reader){
         }
     }
 
-    function updateHtmlFontSize() {
-
+    function updateHtmlFontInfo() {
+    
         if(_$epubHtml) {
-            Helpers.UpdateHtmlFontSize(_$epubHtml, _fontSize);
+            var i = _fontSelection;
+            var useDefault = !reader.fonts || !reader.fonts.length || i <= 0 || (i-1) >= reader.fonts.length;
+            var font = (useDefault ?
+                        {} :
+                        reader.fonts[i - 1]);
+            Helpers.UpdateHtmlFontAttributes(_$epubHtml, _fontSize, font, function() {self.applyStyles();});
         }
     }
 
@@ -46232,17 +45027,6 @@ var ReflowableView = function(options, reader){
     }
 
     function onIFrameLoad(success) {
-        if (!success) {
-            applyIFrameLoad(success);
-            return;
-        }
-        var fontLoader = new FontLoader(_$iframe);
-        fontLoader.waitForFonts(function () {
-            applyIFrameLoad(success);
-        });
-    }
-
-    function applyIFrameLoad(success) {
 
         _isWaitingFrameRender = false;
 
@@ -46357,11 +45141,9 @@ var ReflowableView = function(options, reader){
         self.applyBookStyles();
         resizeImages();
 
-        updateHtmlFontSize();
         updateColumnGap();
 
-
-        self.applyStyles();
+        updateHtmlFontInfo();
     }
 
     this.applyStyles = function() {
@@ -46380,8 +45162,8 @@ var ReflowableView = function(options, reader){
 
     this.applyBookStyles = function() {
 
-        if(_$epubHtml) {
-            Helpers.setStyles(_bookStyles.getStyles(), _$epubHtml);
+        if(_$epubHtml) { // implies _$iframe
+            Helpers.setStyles(_bookStyles.getStyles(), _$iframe[0].contentDocument); //_$epubHtml
         }
     };
 
@@ -46397,7 +45179,7 @@ var ReflowableView = function(options, reader){
 
     }
 
-    this.openPage = function(pageRequest) {
+    this.openPageInternal = function(pageRequest) {
 
         if(_isWaitingFrameRender) {
             _deferredPageRequest = pageRequest;
@@ -46422,13 +45204,47 @@ var ReflowableView = function(options, reader){
             
             if (pageIndex < 0) pageIndex = 0;
         }
+        else if(pageRequest.firstVisibleCfi && pageRequest.lastVisibleCfi) {
+            var firstPageIndex;
+            var lastPageIndex;
+            try
+            {
+                firstPageIndex = _navigationLogic.getPageForElementCfi(pageRequest.firstVisibleCfi,
+                    _cfiClassBlacklist,
+                    _cfiElementBlacklist,
+                    _cfiIdBlacklist);
+                
+                if (firstPageIndex < 0) firstPageIndex = 0;
+            }
+            catch (e)
+            {
+                firstPageIndex = 0;
+                console.error(e);
+            }
+            try
+            {
+                lastPageIndex = _navigationLogic.getPageForElementCfi(pageRequest.lastVisibleCfi,
+                    _cfiClassBlacklist,
+                    _cfiElementBlacklist,
+                    _cfiIdBlacklist);
+                
+                if (lastPageIndex < 0) lastPageIndex = 0;
+            }
+            catch (e)
+            {
+                lastPageIndex = 0;
+                console.error(e);
+            }
+            // Go to the page in the middle of the two elements
+            pageIndex = Math.round((firstPageIndex + lastPageIndex) / 2);
+        }
         else if(pageRequest.elementCfi) {
             try
             {
                 pageIndex = _navigationLogic.getPageForElementCfi(pageRequest.elementCfi,
-                    ["cfi-marker", "mo-cfi-highlight"],
-                    [],
-                    ["MathJax_Message"]);
+                    _cfiClassBlacklist,
+                    _cfiElementBlacklist,
+                    _cfiIdBlacklist);
                 
                 if (pageIndex < 0) pageIndex = 0;
             }
@@ -46455,6 +45271,36 @@ var ReflowableView = function(options, reader){
         }
         else {
             console.log('Illegal pageIndex value: ', pageIndex, 'column count is ', _paginationInfo.columnCount);
+        }
+    };
+
+    this.openPage = function(pageRequest) {
+        // Go to request page, it will save the new position in onPaginationChanged
+        this.openPageInternal(pageRequest);
+        // Save it for when pagination is updated
+        _lastPageRequest = pageRequest;
+    };
+
+    this.resetCurrentPosition = function() {
+        _lastPageRequest = undefined;
+    };
+
+    this.saveCurrentPosition = function() {
+        // If there's a deferred page request, there's no point in saving the current position
+        // as it's going to change soon
+        if (_deferredPageRequest) {
+            return;
+        }
+
+        var _firstVisibleCfi = self.getFirstVisibleCfi();
+        var _lastVisibleCfi = self.getLastVisibleCfi();
+        _lastPageRequest = new PageOpenRequest(_currentSpineItem, self);
+        _lastPageRequest.setFirstAndLastVisibleCfi(_firstVisibleCfi.contentCFI, _lastVisibleCfi.contentCFI);
+    };
+
+    this.restoreCurrentPosition = function() {
+        if (_lastPageRequest) {
+            this.openPageInternal(_lastPageRequest);            
         }
     };
 
@@ -46505,6 +45351,10 @@ var ReflowableView = function(options, reader){
         redraw();
 
         _.defer(function () {
+
+            if (_lastPageRequest == undefined) {
+                self.saveCurrentPosition();
+            }
             
             Globals.logEvent("InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED", "EMIT", "reflowable_view.js");
             self.emit(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, {
@@ -46524,6 +45374,9 @@ var ReflowableView = function(options, reader){
         }
 
         if(_paginationInfo.currentSpreadIndex > 0) {
+            // Page will change, the current position is not valid any more
+            // Reset it so it's saved next time onPaginationChanged is called
+            this.resetCurrentPosition();
             _paginationInfo.currentSpreadIndex--;
             onPaginationChanged(initiator);
         }
@@ -46546,6 +45399,9 @@ var ReflowableView = function(options, reader){
         }
 
         if(_paginationInfo.currentSpreadIndex < _paginationInfo.spreadCount - 1) {
+            // Page will change, the current position is not valid any more
+            // Reset it so it's saved next time onPaginationChanged is called
+            this.resetCurrentPosition();
             _paginationInfo.currentSpreadIndex++;
             onPaginationChanged(initiator);
         }
@@ -46562,7 +45418,7 @@ var ReflowableView = function(options, reader){
     };
 
 
-    function updatePagination() {
+    function updatePagination_() {
 
         // At 100% font-size = 16px (on HTML, not body or descendant markup!)
         var MAXW = _paginationInfo.columnMaxWidth;
@@ -46709,11 +45565,19 @@ var ReflowableView = function(options, reader){
 
         Helpers.triggerLayout(_$iframe);
 
-        _paginationInfo.columnCount = ((_htmlBodyIsVerticalWritingMode ? _$epubHtml[0].scrollHeight : _$epubHtml[0].scrollWidth) + _paginationInfo.columnGap) / (_paginationInfo.columnWidth + _paginationInfo.columnGap);
+        var dim = (_htmlBodyIsVerticalWritingMode ? _$epubHtml[0].scrollHeight : _$epubHtml[0].scrollWidth);
+        if (dim == 0) {
+            console.error("Document dimensions zero?!");
+        }
+
+        _paginationInfo.columnCount = (dim + _paginationInfo.columnGap) / (_paginationInfo.columnWidth + _paginationInfo.columnGap);
         _paginationInfo.columnCount = Math.round(_paginationInfo.columnCount);
+        if (_paginationInfo.columnCount == 0) {
+            console.error("Column count zero?!");
+        }
 
         var totalGaps = (_paginationInfo.columnCount-1) * _paginationInfo.columnGap;
-        var colWidthCheck = ((_htmlBodyIsVerticalWritingMode ? _$epubHtml[0].scrollHeight : _$epubHtml[0].scrollWidth) - totalGaps) / _paginationInfo.columnCount;
+        var colWidthCheck = (dim - totalGaps) / _paginationInfo.columnCount;
         colWidthCheck = Math.round(colWidthCheck);
 
         if (colWidthCheck > _paginationInfo.columnWidth)
@@ -46738,9 +45602,16 @@ var ReflowableView = function(options, reader){
         }
         else {
 
-            //we get here on resizing the viewport
+            // we get here on resizing the viewport
+            if (_lastPageRequest) {
+                // Make sure we stay on the same page after the content or the viewport 
+                // has been resized
+                self.restoreCurrentPosition();
+            } else {
+                onPaginationChanged(self); // => redraw() => showBook(), so the trick below is not needed                
+            }
 
-            onPaginationChanged(self); // => redraw() => showBook(), so the trick below is not needed
+            //onPaginationChanged(self); // => redraw() => showBook(), so the trick below is not needed 
 
             // //We do this to force re-rendering of the document in the iframe.
             // //There is a bug in WebView control with right to left columns layout - after resizing the window html document
@@ -46752,8 +45623,47 @@ var ReflowableView = function(options, reader){
             // }, 50);
 
         }
-    }
 
+        // Only initializes the resize sensor once the content has been paginated once,
+        // to avoid the pagination process to trigger a resize event during its first
+        // execution, provoking a flicker
+        initResizeSensor();
+    }
+    var updatePagination = _.debounce(updatePagination_, 100);
+
+    function initResizeSensor() {
+        var bodyElement = _$htmlBody[0];
+        if (bodyElement.resizeSensor) {
+            return;
+        }
+
+        // We need to make sure the content has indeed be resized, especially
+        // the first time it is triggered
+        _lastBodySize.width = $(bodyElement).width();
+        _lastBodySize.height = $(bodyElement).height();
+
+        bodyElement.resizeSensor = new ResizeSensor(bodyElement, function() {
+            
+            var newBodySize = {
+                width: $(bodyElement).width(),
+                height: $(bodyElement).height()
+            };
+
+            console.debug("ReflowableView content resized ...", newBodySize.width, newBodySize.height, _currentSpineItem.idref);
+            
+            if (newBodySize.width != _lastBodySize.width || newBodySize.height != _lastBodySize.height) {
+                _lastBodySize.width = newBodySize.width;
+                _lastBodySize.height = newBodySize.height;
+                
+                console.debug("... updating pagination.");
+
+                updatePagination();
+            } else {
+                console.debug("... ignored (identical dimensions).");
+            }
+        });
+    }
+    
 //    function shiftBookOfScreen() {
 //
 //        if(_spine.isLeftToRight()) {
@@ -47065,15 +45975,37 @@ var ReflowableView = function(options, reader){
 
 define('readium_shared_js/models/style',[], function() {
 /**
- *
+ * @class Models.Style
+ * @constructor
  * @param selector
  * @param declarations
- * @constructor
  */
 var Style = function(selector, declarations) {
 
+    /**
+     * Initializing the selector
+     *
+     * @property selector
+     * @type 
+     */
+
     this.selector = selector;
+
+    /**
+     * Initializing the declarations
+     *
+     * @property selector
+     * @type 
+     */
+
     this.declarations = declarations;
+
+    /**
+     * Set the declarations array
+     *
+     * @method setDeclarations
+     * @param {Object} declarations
+     */
 
     this.setDeclarations = function(declarations) {
 
@@ -47088,7 +46020,7 @@ var Style = function(selector, declarations) {
     return Style;
 });
 
-//  Created by Boris Schneiderman.
+    //  Created by Boris Schneiderman.
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
 //  
 //  Redistribution and use in source and binary forms, with or without modification, 
@@ -47114,18 +46046,36 @@ var Style = function(selector, declarations) {
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 define('readium_shared_js/models/style_collection',["./style"], function(Style) {
+
 /**
  *
+ * @class Models.StyleCollection
+ * @return StyleCollection
  * @constructor
  */
+
 var StyleCollection = function() {
 
     var _styles = [];
+
+    /**
+     * Clears the collection.
+     *
+     * @method     clear
+     */
 
     this.clear = function() {
         _styles.length = 0;
 
     };
+
+    /**
+     * Finds the style of a selected item
+     *
+     * @method     findStyle
+     * @param      selector
+     * @return     {Models.Style}
+     */
 
     this.findStyle = function(selector) {
 
@@ -47138,6 +46088,15 @@ var StyleCollection = function() {
 
         return undefined;
     };
+
+    /**
+     * Adds a style to the collection
+     *
+     * @method     addStyle
+     * @param      selector
+     * @param      declarations
+     * @return     {Models.Style}
+     */
 
     this.addStyle = function(selector, declarations) {
 
@@ -47154,6 +46113,13 @@ var StyleCollection = function() {
         return style;
     };
 
+    /**
+     * Removes a style from the collection
+     *
+     * @method     addStyle
+     * @param      selector
+     */
+
     this.removeStyle = function(selector) {
         
         var count = _styles.length;
@@ -47167,9 +46133,22 @@ var StyleCollection = function() {
         }
     };
 
+    /**
+     * Gets all styles
+     *
+     * @method     getStyles
+     * @return     {Array}
+     */
+
     this.getStyles = function() {
         return _styles;
     };
+
+    /**
+     * Resets the styles
+     *
+     * @method     resetStyleValues
+     */
 
     this.resetStyleValues = function() {
 
@@ -47219,8 +46198,10 @@ var StyleCollection = function() {
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 define('readium_shared_js/models/switches',["jquery", "underscore"], function($, _) {
-/**
- *
+/** 
+ * Switches in the epub publication.
+ * 
+ * @class Models.Switches
  * @constructor
  */
 var Switches = function() {
@@ -47229,6 +46210,15 @@ var Switches = function() {
 
 // Description: Parse the epub "switch" tags and hide
 // cases that are not supported
+
+/**
+ *
+ * Static Switches.apply method.
+ * 
+ * @method Switches.apply
+ * @param dom
+ */
+
 Switches.apply = function(dom) {
 
     function isSupported(caseNode) {
@@ -47309,21 +46299,61 @@ Switches.apply = function(dom) {
 
 define('readium_shared_js/models/trigger',["jquery", "../helpers"], function($, Helpers) {
 /**
- * Setter fot epub Triggers
+ * Trigger in an epub publication.
  *
- *
+ * @class Models.Trigger
+ * @constructor
  * @param domNode
  */
 
 var Trigger = function(domNode) {
+
     var $el = $(domNode);
+    
+    /**
+     * epub trigger action
+     *
+     * @property action
+     * @type String
+     */
+
     this.action     = $el.attr("action");
+    
+    /**
+     * epub trigger ref
+     *
+     * @property ref
+     * @type String
+     */
+
     this.ref         = $el.attr("ref");
+    
+    /**
+     * epub trigger event
+     *
+     * @property event
+     * @type String
+     */
+
     this.event         = $el.attr("ev:event");
+    
+    /**
+     * epub trigger observer
+     *
+     * @property observer
+     * @type String
+     */
+
     this.observer     = $el.attr("ev:observer");
     this.ref         = $el.attr("ref");
 };
 
+/**
+ * Static register method
+ *
+ * @method register
+ * @param dom
+ */
 Trigger.register = function(dom) {
     $('trigger', dom).each(function() {
         var trigger = new Trigger(this);
@@ -47331,15 +46361,31 @@ Trigger.register = function(dom) {
     });
 };
 
+/**
+ * Prototype subscribe method
+ *
+ * @method subscribe
+ * @param dom
+ */
+
 Trigger.prototype.subscribe = function(dom) {
+    
     var selector = "#" + this.observer;
     var that = this;
     $(selector, dom).on(this.event, function() {
-        that.execute(dom);
+        return that.execute(dom);
     });
 };
 
+/**
+ * Prototype execute method
+ *
+ * @method execute
+ * @param dom
+ */
+
 Trigger.prototype.execute = function(dom) {
+
     var $target = $( "#" + Helpers.escapeJQuerySelector(this.ref), dom);
     switch(this.action)
     {
@@ -47367,13 +46413,17 @@ Trigger.prototype.execute = function(dom) {
             break;
         default:
             console.log("do not no how to handle trigger " + this.action);
+            return null;
     }
+    return false;   // do not propagate click event; it was already handled
+
 };
+
     return Trigger;
 });
 
 //  Created by Juan Corona
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  Copyright (c) 2016 Readium Foundation and/or its licensees. All rights reserved.
 //
 //  Redistribution and use in source and binary forms, with or without modification,
 //  are permitted provided that the following conditions are met:
@@ -47400,30 +46450,35 @@ Trigger.prototype.execute = function(dom) {
 define('readium_shared_js/models/node_range_info',[],function () {
 
     /**
-     * @class ReadiumSDK.Models.NodeRangePositionInfo
+     * @class Models.NodeRangePositionInfo
      * @constructor
+     * @param {Node} node The actual DOM node
+     * @param {Number} offest The position offsetf for the node
      */
     var NodeRangePositionInfo = function (node, offset) {
 
         /**
          * The actual DOM node
          * @property node
-         * @type {Node}
+         * @type Node
          */
         this.node = node;
 
         /**
          * The position offsetf for the node
          * @property offset
-         * @type {Number}
+         * @type Number
          */
         this.offset = offset;
 
     };
 
     /**
-     * @class ReadiumSDK.Models.NodeRangeInfo
+     * @class Models.NodeRangeInfo
      * @constructor
+     * @param {ClientRect} clientRect
+     * @param {Models.NodeRangePositionInfo} startInfo
+     * @param {Models.NodeRangePositionInfo} endInfo
      */
     var NodeRangeInfo = function (clientRect, startInfo, endInfo) {
 
@@ -47431,21 +46486,21 @@ define('readium_shared_js/models/node_range_info',[],function () {
         /**
          * Client rectangle information for the range content bounds
          * @property clientRect
-         * @type {ClientRect}
+         * @type ClientRect
          */
         this.clientRect = clientRect;
 
         /**
          * Node and position information providing where and which node the range starts with
          * @property startInfo
-         * @type {ReadiumSDK.Models.NodeRangePositionInfo}
+         * @type Models.NodeRangePositionInfo
          */
         this.startInfo = startInfo;
 
         /**
          * Node and position information providing where and which node the range ends with
          * @property endInfo
-         * @type {ReadiumSDK.Models.NodeRangePositionInfo}
+         * @type Models.NodeRangePositionInfo
          */
         this.endInfo = endInfo;
 
@@ -47512,7 +46567,6 @@ define('readium_shared_js/views/reader_view',["../globals", "jquery", "underscor
  * @constructor
  */
 var ReaderView = function (options) {
-
     $.extend(this, new EventEmitter());
 
     var self = this;
@@ -47537,6 +46591,9 @@ var ReaderView = function (options) {
         handleViewportResizeEnd, 250, 1000, self);
 
     $(window).on("resize.ReadiumSDK.readerView", lazyResize);
+
+    this.fonts = options.fonts;
+
 
     if (options.el instanceof $) {
         _$el = options.el;
@@ -47758,7 +46815,9 @@ var ReaderView = function (options) {
         })
 
         _currentView.render();
-        _currentView.setViewSettings(_viewerSettings);
+
+        var docWillChange = true;
+        _currentView.setViewSettings(_viewerSettings, docWillChange);
 
         // we do this to wait until elements are rendered otherwise book is not able to determine view size.
         setTimeout(function () {
@@ -47850,7 +46909,7 @@ var ReaderView = function (options) {
     /**
      * Triggers the process of opening the book and requesting resources specified in the packageData
      *
-     * @param {Views.ReaderView.OpenBookData} openBookData - object with open book data
+     * @param {Views.ReaderView.OpenBookData} openBookData Open book data object
      */
     this.openBook = function (openBookData) {
 
@@ -47882,6 +46941,10 @@ var ReaderView = function (options) {
         }
 
         var pageRequestData = undefined;
+
+        if (openBookData.openPageRequest && typeof(openBookData.openPageRequest) === 'function') {
+            openBookData.openPageRequest = openBookData.openPageRequest();
+        }
 
         if (openBookData.openPageRequest) {
 
@@ -48020,6 +47083,7 @@ var ReaderView = function (options) {
      *
      * @typedef {object} Globals.Views.ReaderView.SettingsData
      * @property {number} fontSize - Font size as percentage
+     * @property {number} fontSelection - Font selection as the number in the list of possible fonts, where 0 is special meaning default.
      * @property {(string|boolean)} syntheticSpread - "auto"|true|false
      * @property {(string|boolean)} scroll - "auto"|true|false
      * @property {boolean} doNotUpdateView - Indicates whether the view should be updated after the settings are applied
@@ -48061,8 +47125,15 @@ var ReaderView = function (options) {
                 initViewForItem(spineItem, function (isViewChanged) {
 
                     if (!isViewChanged) {
-                        _currentView.setViewSettings(_viewerSettings);
+                        var docWillChange = false;
+                        _currentView.setViewSettings(_viewerSettings, docWillChange);
                     }
+
+                    self.once(ReadiumSDK.Events.PAGINATION_CHANGED, function (pageChangeData)
+                    {
+                        var cfi = new BookmarkData(bookMark.idref, bookMark.contentCFI);
+                        self.debugBookmarkData(cfi);
+                    });
 
                     self.openSpineItemElementCfi(bookMark.idref, bookMark.contentCFI, self);
 
@@ -48245,7 +47316,8 @@ var ReaderView = function (options) {
         initViewForItem(pageRequest.spineItem, function (isViewChanged) {
 
             if (!isViewChanged) {
-                _currentView.setViewSettings(_viewerSettings);
+                var docWillChange = true;
+                _currentView.setViewSettings(_viewerSettings, docWillChange);
             }
 
             _currentView.openPage(pageRequest, dir);
@@ -48313,7 +47385,12 @@ var ReaderView = function (options) {
         var count = styles.length;
 
         for (var i = 0; i < count; i++) {
-            _bookStyles.addStyle(styles[i].selector, styles[i].declarations);
+            if (styles[i].declarations) {
+                _bookStyles.addStyle(styles[i].selector, styles[i].declarations);
+            }
+            else {
+                _bookStyles.removeStyle(styles[i].selector);
+            }
         }
 
         if (_currentView) {
@@ -48466,6 +47543,54 @@ var ReaderView = function (options) {
         openPage(pageData, 0);
 
         return true;
+    };
+
+    //var cfi = new BookmarkData(bookmark.idref, bookmark.contentCFI);
+    this.debugBookmarkData = function(cfi) {
+
+        if (!ReadiumSDK) return;
+
+        var DEBUG = true; // change this to visualize the CFI range
+        if (!DEBUG) return;
+            
+        var paginationInfo = this.getPaginationInfo();
+        console.log(JSON.stringify(paginationInfo));
+        
+        if (paginationInfo.isFixedLayout) return;
+    
+        try {
+            ReadiumSDK._DEBUG_CfiNavigationLogic.clearDebugOverlays();
+            
+        } catch (error) {
+            //ignore
+        }
+        
+        try {
+            console.log(cfi);
+            
+            var range = this.getDomRangeFromRangeCfi(cfi);
+            console.log(range);
+            
+            var res = ReadiumSDK._DEBUG_CfiNavigationLogic.drawDebugOverlayFromDomRange(range);
+            console.log(res);
+        
+            var cfiFirst = ReadiumSDK.reader.getFirstVisibleCfi();
+            console.log(cfiFirst);
+            
+            var cfiLast  = ReadiumSDK.reader.getLastVisibleCfi();
+            console.log(cfiLast);
+            
+        } catch (error) {
+            //ignore
+        }
+        
+        setTimeout(function() {
+            try {
+                ReadiumSDK._DEBUG_CfiNavigationLogic.clearDebugOverlays();
+            } catch (error) {
+                //ignore
+            }
+        }, 2000);
     };
 
     /**
@@ -48670,19 +47795,7 @@ var ReaderView = function (options) {
     this.handleViewportResize = function (bookmarkToRestore) {
         if (!_currentView) return;
 
-        var bookMark = bookmarkToRestore || _currentView.bookmarkCurrentPage(); // not self! (JSON string)
-
-        if (_currentView.isReflowable && _currentView.isReflowable() && bookMark && bookMark.idref) {
-            var spineItem = _spine.getItemById(bookMark.idref);
-
-            initViewForItem(spineItem, function (isViewChanged) {
-                self.openSpineItemElementCfi(bookMark.idref, bookMark.contentCFI, self);
-                return;
-            });
-        }
-        else {
-            _currentView.onViewportResize();
-        }
+        _currentView.onViewportResize();
     };
 
     /**
@@ -48695,13 +47808,6 @@ var ReaderView = function (options) {
      */
     this.addIFrameEventListener = function (eventName, callback, context) {
         _iframeLoader.addIFrameEventListener(eventName, callback, context);
-    };
-
-    this.isElementCfiVisible = function (spineIdRef, contentCfi) {
-        if (!_currentView) {
-            return false;
-        }
-        return _currentView.isElementCfiVisible(spineIdRef, contentCfi);
     };
 
     var BackgroundAudioTrackManager = function (readerView) {
@@ -49011,7 +48117,7 @@ var ReaderView = function (options) {
      * Resolve a range CFI into an object containing info about it.
      * @param {string} spineIdRef    The spine item idref associated with the content document
      * @param {string} partialCfi    The partial CFI that is the range CFI to resolve
-     * @returns {ReadiumSDK.Models.NodeRangeInfo}
+     * @returns {Models.NodeRangeInfo}
      */
     this.getNodeRangeInfoFromCfi = function (spineIdRef, partialCfi) {
         if (_currentView && spineIdRef && partialCfi) {

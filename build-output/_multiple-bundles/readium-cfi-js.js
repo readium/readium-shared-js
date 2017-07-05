@@ -153,7 +153,7 @@
         peg$c6 = peg$literalExpectation(",", false),
         peg$c7 = function(stepVal, localPathVal, rangeLocalPath1Val, rangeLocalPath2Val) {
 
-                return { type:"range", path:stepVal, localPath:localPathVal, range1:rangeLocalPath1Val, range2:rangeLocalPath2Val };
+                return { type:"range", path:stepVal, localPath:localPathVal?localPathVal:"", range1:rangeLocalPath1Val, range2:rangeLocalPath2Val };
           },
         peg$c8 = function(stepVal, localPathVal) { 
 
@@ -449,6 +449,9 @@
       s1 = peg$parseindexStep();
       if (s1 !== peg$FAILED) {
         s2 = peg$parselocal_path();
+        if (s2 === peg$FAILED) {
+          s2 = null;
+        }
         if (s2 !== peg$FAILED) {
           if (input.charCodeAt(peg$currPos) === 44) {
             s3 = peg$c5;
@@ -1672,7 +1675,7 @@ if (typeof define == 'function' && typeof define.amd == 'object') {
 
 (function(global) {
 
-var init = function($, cfiRuntimeErrors) {
+var init = function($, _, cfiRuntimeErrors) {
     
 var obj = {
 
@@ -1720,13 +1723,13 @@ var obj = {
 
         // TODO: This check must be expanded to all the different types of indirection step
         // Only expects iframes, at the moment
-        if ($currNode === undefined || !$currNode.is("iframe")) {
+        if ($currNode === undefined || !this._matchesLocalNameOrElement($currNode[0], 'iframe')) {
 
             throw cfiRuntimeErrors.NodeTypeError($currNode, "expected an iframe element");
         }
 
         // Check node type; only iframe indirection is handled, at the moment
-        if ($currNode.is("iframe")) {
+        if (this._matchesLocalNameOrElement($currNode[0], 'iframe')) {
 
             // Get content
             $contentDocument = $currNode.contents();
@@ -1951,62 +1954,66 @@ var obj = {
     },
 
     applyBlacklist : function ($elements, classBlacklist, elementBlacklist, idBlacklist) {
-
+        var self = this;
         var $filteredElements;
 
         $filteredElements = $elements.filter(
             function () {
 
-                var $currElement = $(this);
-                var includeInList = true;
+                var element = this;
 
-                if (classBlacklist) {
-
-                    // Filter each element with the class type
-                    $.each(classBlacklist, function (index, value) {
-
-                        if ($currElement.hasClass(value)) {
-                            includeInList = false;
-
-                            // Break this loop
-                            return false;
-                        }
-                    });
+                if (classBlacklist && classBlacklist.length) {
+                    var classList = self._getClassNameArray(element);
+                    if (classList.length === 1 && _.contains(classBlacklist, classList[0])) {
+                        return false;
+                    } else if (classList.length && _.intersection(classBlacklist, classList).length) {
+                        return false;
+                    }
                 }
 
-                if (elementBlacklist) {
-                    
-                    // For each type of element
-                    $.each(elementBlacklist, function (index, value) {
-
-                        if ($currElement.is(value)) {
-                            includeInList = false;
-
-                            // Break this loop
+                if (elementBlacklist && elementBlacklist.length) {
+                    if (element.tagName) {
+                        var isElementBlacklisted = _.find(elementBlacklist, function (blacklistedTag) {
+                            blacklistedTag = blacklistedTag.toLowerCase();
+                            return self._matchesLocalNameOrElement(element, blacklistedTag)
+                        });
+                        if (isElementBlacklisted) {
                             return false;
                         }
-                    });
+                    }
                 }
 
-                if (idBlacklist) {
-                    
-                    // For each type of element
-                    $.each(idBlacklist, function (index, value) {
-
-                        if ($currElement.attr("id") === value) {
-                            includeInList = false;
-
-                            // Break this loop
-                            return false;
-                        }
-                    });
+                if (idBlacklist && idBlacklist.length) {
+                    var id = element.id;
+                    if (id && id.length && _.contains(idBlacklist, id)) {
+                        return false;
+                    }
                 }
 
-                return includeInList;
+                return true;
             }
         );
 
         return $filteredElements;
+    },
+
+    _matchesLocalNameOrElement: function (element, otherNameOrElement) {
+        if (typeof otherNameOrElement === 'string') {
+            return (element.localName || element.nodeName) === otherNameOrElement;
+        } else {
+            return element === otherNameOrElement;
+        }
+    },
+
+    _getClassNameArray: function (element) {
+        var className = element.className;
+        if (typeof className === 'string') {
+            return className.split(/\s/);
+        } else if (typeof className === 'object' && 'baseVal' in className) {
+            return className.baseVal.split(/\s/);
+        } else {
+            return [];
+        }
     }
 };
 
@@ -2025,9 +2032,9 @@ return obj;
 if (typeof define == 'function' && typeof define.amd == 'object') {
     console.log("RequireJS ... cfi_instructions");
     
-    define('readium_cfi_js/cfi_instructions',['jquery', './cfi_runtime_errors'],
-    function ($, cfiRuntimeErrors) {
-        return init($, cfiRuntimeErrors);
+    define('readium_cfi_js/cfi_instructions',['jquery', 'underscore', './cfi_runtime_errors'],
+    function ($, _, cfiRuntimeErrors) {
+        return init($, _, cfiRuntimeErrors);
     });
 } else {
     console.log("!RequireJS ... cfi_instructions");
@@ -2036,7 +2043,7 @@ if (typeof define == 'function' && typeof define.amd == 'object') {
         throw new Error("EPUBcfi not initialised on global object?! (window or this context)");
     }
     global.EPUBcfi.CFIInstructions = 
-    init($,
+    init($, _,
         {
             NodeTypeError: global.EPUBcfi.NodeTypeError,
             OutOfRangeError: global.EPUBcfi.OutOfRangeError,
@@ -2284,7 +2291,6 @@ var obj = {
     //        that has no defined meaning in the spec.)
     //     contentDocument : A DOM representation of the content document to which the partial CFI refers.
     // }
-    // Rationale: This method exists to meet the requirements of the Readium-SDK and should be used with care
     getTextTerminusInfoWithPartialCFI : function (contentDocumentCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
 
         var decodedCFI = decodeURI(contentDocumentCFI);
@@ -2300,9 +2306,39 @@ var obj = {
 
         // Return the element at the end of the CFI
         textOffset = parseInt(CFIAST.cfiString.localPath.termStep.offsetValue);
-        return { textNode : $currElement[0],
-                 textOffset : textOffset
-            };
+        return {
+            textNode: $currElement[0],
+            textOffset: textOffset
+        };
+    },
+
+    // Description: This method will return the element or node (say, a text node) that is the final target of the
+    //   the CFI, along with the text terminus offset.
+    getTextTerminusInfo : function (CFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
+
+        var decodedCFI = decodeURI(CFI);
+        var CFIAST = cfiParser.parse(decodedCFI);
+        var indirectionNode;
+        var indirectionStepNum;
+        var $currElement;
+        var textOffset;
+
+        // Rationale: Since the correct content document for this CFI is already being passed, we can skip to the beginning
+        //   of the indirection step that referenced the content document.
+        // Note: This assumes that indirection steps and index steps conform to an interface: an object with stepLength, idAssertion
+        indirectionStepNum = this.getFirstIndirectionStepNum(CFIAST);
+        indirectionNode = CFIAST.cfiString.localPath.steps[indirectionStepNum];
+        indirectionNode.type = "indexStep";
+
+        // Interpret the rest of the steps
+        $currElement = this.interpretLocalPath(CFIAST.cfiString.localPath, indirectionStepNum, $(contentDocument.documentElement, contentDocument), classBlacklist, elementBlacklist, idBlacklist);
+
+        // Return the element at the end of the CFI
+        textOffset = parseInt(CFIAST.cfiString.localPath.termStep.offsetValue);
+        return {
+            textNode: $currElement[0],
+            textOffset: textOffset
+        };
     },
 
     // Description: This function will determine if the input "partial" CFI is expressed as a range
@@ -2444,8 +2480,7 @@ var obj = {
             }
 
             // Found the content document href referenced by the spine item
-            if ($currElement.is("itemref")) {
-
+            if (cfiInstructions._matchesLocalNameOrElement($currElement[0], "itemref")) {
                 return cfiInstructions.retrieveItemRefHref($currElement, $packageDocument);
             }
         }
@@ -2509,7 +2544,7 @@ if (typeof define == 'function' && typeof define.amd == 'object') {
 (function(global) {
 
 var init = function($, cfiInstructions, cfiRuntimeErrors) {
-    
+
     if (typeof cfiInstructions === "undefined") {
         throw new Error("UNDEFINED?! cfiInstructions");
     }
@@ -2544,8 +2579,8 @@ var obj = {
         if ($(rangeStartElement).parent()[0] === $(rangeEndElement).parent()[0]) {
             range1OffsetStep = this.createCFITextNodeStep($(rangeStartElement), startOffset, classBlacklist, elementBlacklist, idBlacklist);
             range2OffsetStep = this.createCFITextNodeStep($(rangeEndElement), endOffset, classBlacklist, elementBlacklist, idBlacklist);          
-            commonCFIComponent = this.createCFIElementSteps($(rangeStartElement).parent(), "html", classBlacklist, elementBlacklist, idBlacklist);
-            return commonCFIComponent.substring(1, commonCFIComponent.length) + "," + range1OffsetStep + "," + range2OffsetStep;
+            commonCFIComponent = this.createCFIElementSteps($(rangeStartElement).parent(), document.documentElement, classBlacklist, elementBlacklist, idBlacklist);
+            return commonCFIComponent + "," + range1OffsetStep + "," + range2OffsetStep;
         }
         else {
 
@@ -2576,16 +2611,14 @@ var obj = {
             }
 
             // Generate shared component
-            commonCFIComponent = this.createCFIElementSteps($(commonAncestor), "html", classBlacklist, elementBlacklist, idBlacklist);
+            commonCFIComponent = this.createCFIElementSteps($(commonAncestor), document.documentElement, classBlacklist, elementBlacklist, idBlacklist);
 
             // Return the result
-            return commonCFIComponent.substring(1, commonCFIComponent.length) + "," + range1CFI + "," + range2CFI;
+            return commonCFIComponent + "," + range1CFI + "," + range2CFI;
         }
     },
 
     generateElementRangeComponent : function (rangeStartElement, rangeEndElement, classBlacklist, elementBlacklist, idBlacklist) {
-        var document = rangeStartElement.ownerDocument;
-
         var docRange;
         var commonAncestor;
         var range1CFI;
@@ -2594,6 +2627,8 @@ var obj = {
 
         this.validateStartElement(rangeStartElement);
         this.validateStartElement(rangeEndElement);
+
+        var document = rangeStartElement.ownerDocument;
 
         if (rangeStartElement === rangeEndElement) {
             throw new Error("Start and end element cannot be the same for a CFI range");
@@ -2612,13 +2647,16 @@ var obj = {
         range2CFI = this.createCFIElementSteps($(rangeEndElement), commonAncestor, classBlacklist, elementBlacklist, idBlacklist);
 
         // Generate shared component
-        commonCFIComponent = this.createCFIElementSteps($(commonAncestor), "html", classBlacklist, elementBlacklist, idBlacklist);
+        commonCFIComponent = this.createCFIElementSteps($(commonAncestor), document.documentElement, classBlacklist, elementBlacklist, idBlacklist);
 
         // Return the result
-        return commonCFIComponent.substring(1, commonCFIComponent.length) + "," + range1CFI + "," + range2CFI;
+        return commonCFIComponent + "," + range1CFI + "," + range2CFI;
     },
 
     generateRangeComponent : function (rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist) {
+        this.validateTargetElement(rangeStartElement);
+        this.validateTargetElement(rangeEndElement);
+
         var document = rangeStartElement.ownerDocument;
 
         if(rangeStartElement.nodeType === Node.ELEMENT_NODE && rangeEndElement.nodeType === Node.ELEMENT_NODE){
@@ -2647,7 +2685,7 @@ var obj = {
                 this.validateStartTextNode(rangeStartElement);
                 // Generate terminating offset and range 1
                 range1OffsetStep = this.createCFITextNodeStep($(rangeStartElement), startOffset, classBlacklist, elementBlacklist, idBlacklist);
-                if($(rangeStartElement).parent().is(commonAncestor)){
+                if ($(rangeStartElement).parent()[0] === commonAncestor) {
                     range1CFI = range1OffsetStep;
                 } else {
                     range1CFI = this.createCFIElementSteps($(rangeStartElement).parent(), commonAncestor, classBlacklist, elementBlacklist, idBlacklist) + range1OffsetStep;    
@@ -2661,7 +2699,7 @@ var obj = {
                 this.validateStartTextNode(rangeEndElement);
                 // Generate terminating offset and range 2
                 range2OffsetStep = this.createCFITextNodeStep($(rangeEndElement), endOffset, classBlacklist, elementBlacklist, idBlacklist);
-                if($(rangeEndElement).parent().is(commonAncestor)){
+                if ($(rangeEndElement).parent()[0] === commonAncestor) {
                     range2CFI = range2OffsetStep;
                 } else {
                     range2CFI = this.createCFIElementSteps($(rangeEndElement).parent(), commonAncestor, classBlacklist, elementBlacklist, idBlacklist) + range2OffsetStep;    
@@ -2669,10 +2707,10 @@ var obj = {
             }
 
             // Generate shared component
-            commonCFIComponent = this.createCFIElementSteps($(commonAncestor), "html", classBlacklist, elementBlacklist, idBlacklist);
+            commonCFIComponent = this.createCFIElementSteps($(commonAncestor), document.documentElement, classBlacklist, elementBlacklist, idBlacklist);
 
             // Return the result
-            return commonCFIComponent.substring(1, commonCFIComponent.length) + "," + range1CFI + "," + range2CFI;
+            return commonCFIComponent + "," + range1CFI + "," + range2CFI;
         }
     },
 
@@ -2680,7 +2718,6 @@ var obj = {
     // Arguments: The text node that contains the offset referenced by the cfi, the offset value, the name of the 
     //   content document that contains the text node, the package document for this EPUB.
     generateCharacterOffsetCFIComponent : function (startTextNode, characterOffset, classBlacklist, elementBlacklist, idBlacklist) {
-
         var textNodeStep;
         var contentDocCFI;
         var $itemRefStartNode;
@@ -2691,24 +2728,22 @@ var obj = {
         // Create the text node step
         textNodeStep = this.createCFITextNodeStep($(startTextNode), characterOffset, classBlacklist, elementBlacklist, idBlacklist);
 
-        // Call the recursive method to create all the steps up to the head element of the content document (the "html" element)
-        contentDocCFI = this.createCFIElementSteps($(startTextNode).parent(), "html", classBlacklist, elementBlacklist, idBlacklist) + textNodeStep;
-        return contentDocCFI.substring(1, contentDocCFI.length);
+        // Call the recursive method to create all the steps up to the head element of the content document (typically the "html" element, or the "svg" element)
+        contentDocCFI = this.createCFIElementSteps($(startTextNode).parent(), startTextNode.ownerDocument.documentElement, classBlacklist, elementBlacklist, idBlacklist) + textNodeStep;
+        return contentDocCFI;
     },
 
     generateElementCFIComponent : function (startElement, classBlacklist, elementBlacklist, idBlacklist) {
-
         var contentDocCFI;
         var $itemRefStartNode;
         var packageDocCFI;
 
         this.validateStartElement(startElement);
 
-        // Call the recursive method to create all the steps up to the head element of the content document (the "html" element)
-        contentDocCFI = this.createCFIElementSteps($(startElement), "html", classBlacklist, elementBlacklist, idBlacklist);
+        // Call the recursive method to create all the steps up to the head element of the content document (typically the "html" element, or the "svg" element)
+        contentDocCFI = this.createCFIElementSteps($(startElement), startElement.ownerDocument.documentElement, classBlacklist, elementBlacklist, idBlacklist);
 
-        // Remove the ! 
-        return contentDocCFI.substring(1, contentDocCFI.length);
+        return contentDocCFI;
     },
 
     generatePackageDocumentCFIComponent : function (contentDocumentName, packageDocument, classBlacklist, elementBlacklist, idBlacklist) {
@@ -2767,12 +2802,17 @@ var obj = {
 
     validateStartElement : function (startElement) {
 
-        if (!startElement) {
-            throw new cfiRuntimeErrors.NodeTypeError(startElement, "CFI target element is undefined");
-        }
+        this.validateTargetElement(startElement);
 
         if (!(startElement.nodeType && startElement.nodeType === 1)) {
             throw new cfiRuntimeErrors.NodeTypeError(startElement, "CFI target element is not an HTML element");
+        }
+    },
+
+    validateTargetElement : function (startElement) {
+
+        if (!startElement) {
+            throw new cfiRuntimeErrors.NodeTypeError(startElement, "CFI target element is undefined");
         }
     },
 
@@ -2904,16 +2944,7 @@ var obj = {
         var currNodePosition;
         var CFIPosition;
         var idAssertion;
-        var elementStep; 
-
-
-
-        // per https://github.com/readium/readium-cfi-js/issues/28
-        // if the currentNode is the same as top level element, we're looking at a text node 
-        // that's a direct child of "topLevelElement" so we don't need to include it in the element step.
-        if ($currNode[0] === topLevelElement) {
-            return "";
-        }
+        var elementStep;
 
         // Find position of current node in parent list
         $blacklistExcluded = cfiInstructions.applyBlacklist($currNode.parent().children(), classBlacklist, elementBlacklist, idBlacklist);
@@ -2944,20 +2975,13 @@ var obj = {
         //   Also need to check if the current node is the top-level element. This can occur if the start node is also the
         //   top level element.
         $parentNode = $currNode.parent();
-        if ($parentNode.is(topLevelElement) || $currNode.is(topLevelElement)) {
-            
-            // If the top level node is a type from which an indirection step, add an indirection step character (!)
-            // REFACTORING CANDIDATE: It is possible that this should be changed to: if (topLevelElement = 'package') do
-            //   not return an indirection character. Every other type of top-level element may require an indirection
-            //   step to navigate to, thus requiring that ! is always prepended. 
-            if (topLevelElement === 'html') {
-                return "!" + elementStep;
-            }
-            else {
-                return elementStep;
-            }
-        }
-        else {
+        if (typeof topLevelElement === 'string' &&
+            cfiInstructions._matchesLocalNameOrElement($parentNode[0], topLevelElement) ||
+            cfiInstructions._matchesLocalNameOrElement($currNode[0], topLevelElement)) {
+            return elementStep;
+        } else if ($parentNode[0] === topLevelElement || $currNode[0] === topLevelElement) {
+            return elementStep;
+        } else {
             return this.createCFIElementSteps($parentNode, topLevelElement, classBlacklist, elementBlacklist, idBlacklist) + elementStep;
         }
     }
@@ -3060,6 +3084,9 @@ var init = function(cfiParser, cfiInterpreter, cfiInstructions, cfiRuntimeErrors
         },
         hasTextTerminus: function(cfi) {
             return cfiInterpreter.hasTextTerminus(cfi);
+        },
+        getTextTerminusInfo : function (CFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
+            return cfiInterpreter.getTextTerminusInfo(CFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist);
         },
         getTextTerminusInfoWithPartialCFI : function (contentDocumentCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
             return cfiInterpreter.getTextTerminusInfoWithPartialCFI(contentDocumentCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist);
