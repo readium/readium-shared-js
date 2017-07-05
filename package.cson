@@ -248,7 +248,7 @@ scripts:
 #=====================
     clean: '
 
-        yarn --version
+        yarn --version || echo noyarn
         &&
         node --version
         &&
