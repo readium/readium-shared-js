@@ -20,7 +20,8 @@ function(Globals, _, Helpers, PageOpenRequest, SpineItem, Vue, H2C) {
                 scrubber_left: 0,
                 seen: false,
                 needUpdate: true,
-                show_image_scrubber: true
+                show_image_scrubber: true,
+                needReload: false
             },
             computed: {
                 item_count: function() {
@@ -31,6 +32,10 @@ function(Globals, _, Helpers, PageOpenRequest, SpineItem, Vue, H2C) {
                 //console.debug("updated: scrubber_index = " + this.scrubber_index + ", needUpdate? " + this.needUpdate);
                 if (this.needUpdate) {
                     this.updateScrollView();
+                }
+
+                if (this.needReload) {
+                    this.reloadImage();
                 }
             },
             watch: {
@@ -104,6 +109,11 @@ function(Globals, _, Helpers, PageOpenRequest, SpineItem, Vue, H2C) {
                     }
                     //console.debug("onSelect: index = " + index + ", scrubber_index = " + this.scrubber_index);
                     this.needUpdate = true;
+                },
+                reloadImage: function() {
+                    _.each($(".scrubber_item>img"),function(el){
+                        el.src = el.src + "?" + new Date().getTime();
+                    });
                 },
                 updateScrollView: function() {
                     if (this.$refs.scrubber_scroller === undefined) {
