@@ -25,11 +25,11 @@
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 define(["../globals", "jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", "./iframe_loader", "./internal_links_support",
-        "./media_overlay_data_injector", "./media_overlay_player", "../models/package", "../models/page_open_request",
+        "./media_overlay_data_injector", "./media_overlay_player", "../models/package", "../models/metadata", "../models/page_open_request",
         "./reflowable_view", "./scroll_view", "../models/style_collection", "../models/switches", "../models/trigger",
         "../models/viewer_settings", "../models/bookmark_data", "../models/node_range_info"],
     function (Globals, $, _, EventEmitter, FixedView, Helpers, IFrameLoader, InternalLinksSupport,
-              MediaOverlayDataInjector, MediaOverlayPlayer, Package, PageOpenRequest,
+              MediaOverlayDataInjector, MediaOverlayPlayer, Package, Metadata, PageOpenRequest,
               ReflowableView, ScrollView, StyleCollection, Switches, Trigger,
               ViewerSettings, BookmarkData, NodeRangeInfo) {
 /**
@@ -52,6 +52,7 @@ var ReaderView = function (options) {
     var self = this;
     var _currentView = undefined;
     var _package = undefined;
+    var _metadata = undefined;
     var _spine = undefined;
     var _viewerSettings = new ViewerSettings({});
     //styles applied to the container divs
@@ -348,6 +349,15 @@ var ReaderView = function (options) {
     };
 
     /**
+     * Returns a data object based on the package document metadata
+     *
+     * @returns {Models.Metadata}
+     */
+    this.metadata = function () {
+        return _metadata;
+    };
+
+    /**
      * Returns a representation of the spine as a data object, also acts as list of spine items
      *
      * @returns {Models.Spine}
@@ -386,6 +396,7 @@ var ReaderView = function (options) {
         var packageData = openBookData.package ? openBookData.package : openBookData;
 
         _package = new Package(packageData);
+        _metadata = new Metadata(packageData.metadata);
 
         _spine = _package.spine;
         _spine.handleLinear(true);
