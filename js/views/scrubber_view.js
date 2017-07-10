@@ -28,9 +28,8 @@ function(Globals, _, Helpers, PageOpenRequest, SpineItem, Vue, H2C) {
         Landscape.prototype.updateScrollView = function(halfNumberOfItems, isViewportPortrait) {
             if (this.scrubber.scrubber_index > (halfNumberOfItems - 1)) {
                 this.scrubber.scrubber_left = this.scrubber.itemWidth() + (Math.round((this.scrubber.scrubber_index - (halfNumberOfItems - 1)) / 2) * this.scrubber.twoPagesItemWidth());
-                if (isViewportPortrait) {
-                    this.scrubber.scrubber_left -= (this.scrubber.twoPagesItemWidth() / 4);
-                } else {
+
+                if (!isViewportPortrait) {
                     this.scrubber.scrubber_left -= (this.scrubber.twoPagesItemWidth() / 2);
                 }
                 if (halfNumberOfItems == 1) {
