@@ -141,10 +141,7 @@ function(Globals, _, Helpers, PageOpenRequest, SpineItem, Vue, H2C) {
                     return 0;
                 },
                 isLandscape: function() {
-                    var rendition_spread = ReadiumSDK.reader.package().rendition_spread;
-                    var isLandscape = Helpers.getOrientation($('#viewport')) === Globals.Views.ORIENTATION_LANDSCAPE;
-
-                    return rendition_spread === SpineItem.RENDITION_SPREAD_BOTH || isLandscape;
+                    return ReadiumSDK.reader.getPaginationInfo().openPages.length > 1;
                 },
                 getOrientation: function() {
                     return this.isLandscape()? new Landscape(this) : new Portrait(this);
