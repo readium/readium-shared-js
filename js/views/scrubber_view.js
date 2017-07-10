@@ -191,7 +191,7 @@ function(Globals, _, Helpers, PageOpenRequest, SpineItem, Vue, H2C) {
                     var halfNumberOfItems = Math.round(Math.floor($viewport.outerWidth() / this.itemWidth()) / 2);
 
                     //console.debug("updateScrollView: halfNumberOfItems = " + halfNumberOfItems);
-                    $.each(this.$refs.scrubber_scroller.childNodes, function(index, node) {
+                    _.each(this.$refs.scrubber_scroller.childNodes, function(node, index) {
                         if (index > 0) {
                             if ((index - 1) % 2 == 0) {
                                 node.childNodes[0].style.paddingRight = isLandscape ? 0 : node.childNodes[0].style.paddingLeft;
