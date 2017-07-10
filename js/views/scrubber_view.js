@@ -2,6 +2,87 @@ define(["../globals", "underscore", "../helpers", "../models/page_open_request",
 function(Globals, _, Helpers, PageOpenRequest, SpineItem, Vue, H2C) {
     var ScrubberView = function() {
 
+        function Orientation(scrubber) {
+            this.scrubber = scrubber;
+        };
+
+        Orientation.prototype.onScrubberScroll = function() {
+
+        };
+
+        Orientation.prototype.onSelect = function() {
+
+        };
+
+        Orientation.prototype.updateScrollView = function() {
+
+        };
+
+        function Landscape(scrubber) {
+            Landscape.prototype.scrubber = scrubber;
+        }
+        Landscape.prototype = new Orientation();
+
+        Landscape.prototype.constructor = Landscape;
+
+        Landscape.prototype.updateScrollView = function(halfNumberOfItems, isViewportPortrait) {
+            if (this.scrubber.scrubber_index > (halfNumberOfItems - 1)) {
+                this.scrubber.scrubber_left = this.scrubber.itemWidth() + (Math.round((this.scrubber.scrubber_index - (halfNumberOfItems - 1)) / 2) * this.scrubber.twoPagesItemWidth());
+                if (isViewportPortrait) {
+                    this.scrubber.scrubber_left -= (this.scrubber.twoPagesItemWidth() / 4);
+                } else {
+                    this.scrubber.scrubber_left -= (this.scrubber.twoPagesItemWidth() / 2);
+                }
+                if (halfNumberOfItems == 1) {
+                    this.scrubber.scrubber_left -= this.scrubber.twoPagesItemWidth();
+                }
+            } else {
+                this.scrubber.scrubber_left = 0;
+            }
+        }
+
+        Landscape.prototype.onScrubberScroll = function(scrollerLeft) {
+            var halfNumberOfItems = Math.round(Math.floor($('#viewport').outerWidth() / this.scrubber.itemWidth()) / 2);
+
+            if (scrollerLeft > this.scrubber.itemWidth()) {
+                scrollerLeft -= this.scrubber.itemWidth();
+                this.scrubber.scrubber_index = Math.floor(scrollerLeft / this.scrubber.twoPagesItemWidth()) * 2 + (halfNumberOfItems - 1);
+            } else {
+                this.scrubber.scrubber_index = 0;
+            }
+        }
+
+        Landscape.prototype.onSelect = function(index) {
+            this.scrubber.scrubber_index = (index > 0) ? (index % 2 == 0 ? index - 1 : index) : index;
+        }
+
+        function Portrait (scrubber) {
+            Portrait.prototype.scrubber = scrubber;
+        }
+
+        Portrait.prototype = new Orientation();
+
+        Portrait.prototype.constructor = Portrait;
+
+        Portrait.prototype.updateScrollView = function(halfNumberOfItems, isViewportPortrait) {
+            if (this.scrubber.scrubber_index > (halfNumberOfItems - 1)) {
+                this.scrubber.scrubber_left = (this.scrubber.scrubber_index - (halfNumberOfItems - 1)) * this.scrubber.itemWidth();
+                if (halfNumberOfItems == 1) {
+                    this.scrubber.scrubber_left -= this.scrubber.itemWidth() / 2;
+                }
+            } else {
+                this.scrubber.scrubber_left = 0;
+            }
+        }
+
+        Portrait.prototype.onScrubberScroll = function(scrollerLeft) {
+            this.scrubber.scrubber_index = Math.floor(scrollerLeft / this.scrubber.itemWidth());
+        }
+
+        Portrait.prototype.onSelect = function(index) {
+            this.scrubber.scrubber_index = index;
+        }
+
         Vue.component('scrubber-item', {
             props: ['item'],
             template: '<div class="scrubber_item"><img class="scrubber_item_img" v-bind:src=item.src v-on:click="click" alt=""></div>',
@@ -66,6 +147,9 @@ function(Globals, _, Helpers, PageOpenRequest, SpineItem, Vue, H2C) {
 
                     return rendition_spread === SpineItem.RENDITION_SPREAD_BOTH || isLandscape;
                 },
+                getOrientation: function() {
+                    return this.isLandscape()? new Landscape(this) : new Portrait(this);
+                },
                 updateScrubber: function(event) {
                     //console.debug("updateScrubber");
                     if (this.show_image_scrubber) {
@@ -79,19 +163,7 @@ function(Globals, _, Helpers, PageOpenRequest, SpineItem, Vue, H2C) {
                         this.needUpdate = false;
                     } else if (this.$refs.scrubber_scroller !== undefined) {
                         var scrollerLeft = this.$refs.scrubber_scroller.scrollLeft;
-
-                        if (this.isLandscape()) {
-                            var halfNumberOfItems = Math.round(Math.floor($('#viewport').outerWidth() / this.itemWidth()) / 2);
-
-                            if (scrollerLeft > this.itemWidth()) {
-                                scrollerLeft -= this.itemWidth();
-                                this.scrubber_index = Math.floor(scrollerLeft / this.twoPagesItemWidth()) * 2 + (halfNumberOfItems - 1);
-                            } else {
-                                this.scrubber_index = 0;
-                            }
-                        } else {
-                            this.scrubber_index = Math.floor(scrollerLeft / this.itemWidth());
-                        }
+                        this.getOrientation().onScrubberScroll(scrollerLeft);
                         //console.debug("onScrubberScroll: scrubber_index = ? " + this.scrubber_index);
                     }
                 },
@@ -102,11 +174,7 @@ function(Globals, _, Helpers, PageOpenRequest, SpineItem, Vue, H2C) {
                     var index = _.indexOf(this.item_list.map(function(item) { return item.src }), src);
 
                     this.goToPage(index);
-                    if (!this.isLandscape()) {
-                        this.scrubber_index = index;
-                    } else {
-                        this.scrubber_index = (index > 0) ? (index % 2 == 0 ? index - 1 : index) : index;
-                    }
+                    this.getOrientation().onSelect(index);
                     //console.debug("onSelect: index = " + index + ", scrubber_index = " + this.scrubber_index);
                     this.needUpdate = true;
                 },
@@ -127,7 +195,7 @@ function(Globals, _, Helpers, PageOpenRequest, SpineItem, Vue, H2C) {
                     var halfNumberOfItems = Math.round(Math.floor($viewport.outerWidth() / this.itemWidth()) / 2);
 
                     //console.debug("updateScrollView: halfNumberOfItems = " + halfNumberOfItems);
-                    $.each(this.$refs.scrubber_scroller.childNodes, function(index, node) {
+                    _.each(this.$refs.scrubber_scroller.childNodes, function(index, node) {
                         if (index > 0) {
                             if ((index - 1) % 2 == 0) {
                                 node.childNodes[0].style.paddingRight = isLandscape ? 0 : node.childNodes[0].style.paddingLeft;
@@ -137,31 +205,7 @@ function(Globals, _, Helpers, PageOpenRequest, SpineItem, Vue, H2C) {
                         }
                     });
                     lastChild.style.marginRight = this.$refs.scrubber_scroller.clientWidth - this.itemWidth();
-                    if (this.isLandscape()) {
-                        if (this.scrubber_index > (halfNumberOfItems - 1)) {
-                            this.scrubber_left = this.itemWidth() + (Math.round((this.scrubber_index - (halfNumberOfItems - 1)) / 2) * this.twoPagesItemWidth());
-                            if (isViewportPortrait) {
-                                this.scrubber_left -= (this.twoPagesItemWidth() / 4);
-                            } else {
-                                this.scrubber_left -= (this.twoPagesItemWidth() / 2);
-                            }
-                            if (halfNumberOfItems == 1) {
-                                this.scrubber_left -= this.twoPagesItemWidth();
-                            }
-                        } else {
-                            this.scrubber_left = 0;
-                        }
-                    } else {
-                        if (this.scrubber_index > (halfNumberOfItems - 1)) {
-                            this.scrubber_left = (this.scrubber_index - (halfNumberOfItems - 1)) * this.itemWidth();
-                            if (halfNumberOfItems == 1) {
-                                this.scrubber_left -= this.itemWidth() / 2;
-                            }
-                        } else {
-                            this.scrubber_left = 0;
-                        }
-                        //this.scrubber_left = (this.scrubber_index == 0 ? this.scrubber_index : this.scrubber_index - 1) * this.itemWidth();
-                    }
+                    this.getOrientation().updateScrollView(halfNumberOfItems, isViewportPortrait);
                     this.$refs.scrubber_scroller.scrollLeft = this.scrubber_left;
                     //console.debug("updateScrollView: scrubber_left = " + this.scrubber_left);
                 },
