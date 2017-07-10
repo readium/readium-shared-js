@@ -1079,7 +1079,7 @@ var CfiNavigationLogic = function (options) {
             var chosenNode;
             var isTextNode;
 
-            var siblingTextNodesAndSelf = _.filter(element.parentElement.childNodes, function (n) {
+            var siblingTextNodesAndSelf = _.filter(element.parentNode.childNodes, function (n) {
                 return n === element || isValidTextNode(n);
             });
 
@@ -1108,7 +1108,7 @@ var CfiNavigationLogic = function (options) {
             } else if (isElementNode(element.nextElementSibling)) {
                 chosenNode = element.nextElementSibling;
             } else {
-                chosenNode = element.parentElement;
+                chosenNode = element.parentNode;
             }
 
             if (isTextNode) {
@@ -1374,7 +1374,7 @@ var CfiNavigationLogic = function (options) {
             while ((node = nodeIterator.nextNode())) {
                 var isLeafNode = node.nodeType === Node.ELEMENT_NODE && !node.childElementCount && !isValidTextNodeContent(node.textContent);
                 if (isLeafNode || isValidTextNode(node)){
-                    var element = (node.nodeType === Node.TEXT_NODE) ? node.parentElement : node;
+                    var element = (node.nodeType === Node.TEXT_NODE) ? node.parentNode : node;
                     if (!isElementBlacklisted(element)) {
                         $leafNodeElements.push($(node));
                     }
