@@ -205,8 +205,7 @@ var CfiNavigationLogic = function (options) {
          */
         function getColumnFullWidth() {
 
-        if (!options.paginationInfo || isVerticalWritingMode())
-        {
+            if (!options.paginationInfo || isVerticalWritingMode()) {
                 return options.$iframe.width();
             }
 
@@ -246,16 +245,6 @@ var CfiNavigationLogic = function (options) {
                 left: 0
             };
         }
-        
-        // CAUSES REGRESSION BUGS !! TODO FIXME
-        // https://github.com/readium/readium-shared-js/issues/384#issuecomment-305145129
-        // else {
-        //     return {
-        //         top: 0,
-        //         left: (options.paginationInfo ? options.paginationInfo.pageOffset : 0)
-        //         //* (isPageProgressionRightToLeft() ? -1 : 1)
-        //     };
-        // }
 
         /**
          * New (rectangle-based) algorithm, useful in multi-column layouts
@@ -825,25 +814,7 @@ var CfiNavigationLogic = function (options) {
             return !!visibleFragments.length;
         }
 
-        function findVisibleLeafNodeCfi(leafNodeList, pickerFunc, targetLeafNode, visibleContentOffsets, frameDimensions, startingParent) {
-            var index = 0;
-            if (!targetLeafNode) {
-                index = leafNodeList.indexOf(pickerFunc(leafNodeList));
-                var leafNode = leafNodeList[index];
-                if (leafNode) {
-                    startingParent = leafNode.element;
-                }
-            } else {
-                index = leafNodeList.indexOf(targetLeafNode);
-                if (index === -1) {
-                    //target leaf node not the right type? not in list?
-                    return null;
-                }
-                // use the next leaf node in the list
-                index += pickerFunc([1, -1]);
-            }
-            var visibleLeafNode = leafNodeList[index];
-
+        function findVisibleLeafNodeCfi(visibleLeafNode, pickerFunc, visibleContentOffsets, frameDimensions) {
             if (!visibleLeafNode) {
                 return null;
             }
@@ -851,17 +822,12 @@ var CfiNavigationLogic = function (options) {
             var element = visibleLeafNode.element;
             var textNode = visibleLeafNode.textNode;
 
-            if (targetLeafNode && element !== startingParent && !_.contains($(textNode || element).parents(), startingParent)) {
-                if (_DEBUG) console.warn("findVisibleLeafNodeCfi: stopped recursion early");
-                return null;
-            }
             //if a valid text node is found, try to generate a CFI with range offsets
             if (textNode && isValidTextNode(textNode)) {
                 var visibleRange = getVisibleTextRangeOffsets(textNode, pickerFunc, visibleContentOffsets, frameDimensions);
                 if (!visibleRange) {
-                    //the text node is valid, but not visible..
-                    //let's try again with the next node in the list
-                    return findVisibleLeafNodeCfi(leafNodeList, pickerFunc, visibleLeafNode, visibleContentOffsets, frameDimensions, startingParent);
+                    if (_DEBUG) console.warn("findVisibleLeafNodeCfi: failed to find text range offset");
+                    return null;
                 }
                 return generateCfiFromDomRange(visibleRange);
             } else {
@@ -870,23 +836,14 @@ var CfiNavigationLogic = function (options) {
             }
         }
 
-        // get an array of visible text elements and then select one based on the func supplied
-        // and generate a CFI for the first visible text subrange.
-        //function getVisibleTextRangeCfiForTextElementSelectedByFunc(pickerFunc, visibleContentOffsets, frameDimensions) {
-            //var visibleLeafNodeList = self.getVisibleLeafNodes(visibleContentOffsets, frameDimensions);
-            //var visibleLeafNodeList = [self.findFirstVisibleElement(visibleContentOffsets, frameDimensions)];
-            //var visibleLeafNodeList = [self.findFirstVisibleElementTx(visibleContentOffsets, frameDimensions)];
-            //return findVisibleLeafNodeCfi(visibleLeafNodeList, pickerFunc, null, visibleContentOffsets, frameDimensions);
-        //}
-
         function getLastVisibleTextRangeCfi(visibleContentOffsets, frameDimensions) {
-            var visibleLeafNodeList = [self.findLastVisibleElementTx(visibleContentOffsets, frameDimensions)];
-            return findVisibleLeafNodeCfi(visibleLeafNodeList, _.last, null, visibleContentOffsets, frameDimensions);
+            var visibleLeafNode = self.findLastVisibleElement(visibleContentOffsets, frameDimensions);
+            return findVisibleLeafNodeCfi(visibleLeafNode, _.last, visibleContentOffsets, frameDimensions);
         }
 
         function getFirstVisibleTextRangeCfi(visibleContentOffsets, frameDimensions) {
-            var visibleLeafNodeList = [self.findFirstVisibleElementTx(visibleContentOffsets, frameDimensions)];
-            return findVisibleLeafNodeCfi(visibleLeafNodeList, _.first, null, visibleContentOffsets, frameDimensions);
+            var visibleLeafNode = self.findFirstVisibleElement(visibleContentOffsets, frameDimensions);
+            return findVisibleLeafNodeCfi(visibleLeafNode, _.first, visibleContentOffsets, frameDimensions);
         }
 
         this.getFirstVisibleCfi = function (visibleContentOffsets, frameDimensions) {
@@ -1367,7 +1324,6 @@ var CfiNavigationLogic = function (options) {
         };
 
         function isElementBlacklisted(element) {
-            var isBlacklisted = false;
             var classAttribute = element.className;
             // check for SVGAnimatedString
             if (classAttribute && typeof classAttribute.animVal !== "undefined") {
@@ -1380,19 +1336,16 @@ var CfiNavigationLogic = function (options) {
 
             var classBlacklist = self.getClassBlacklist();
             if (classList.length === 1 && _.contains(classBlacklist, classList[0])) {
-                isBlacklisted = true;
-                return;
+                return true;
             } else if (classList.length && _.intersection(classBlacklist, classList).length) {
-                isBlacklisted = true;
-                return;
+                return true;
             }
 
             if (id && id.length && _.contains(self.getIdBlacklist(), id)) {
-                isBlacklisted = true;
-                return;
+                return true;
             }
 
-            return isBlacklisted;
+            return false;
         }
 
         this.getLeafNodeElements = function ($root) {
@@ -1622,8 +1575,8 @@ var CfiNavigationLogic = function (options) {
         //
         // }
 
-        this.findFirstVisibleElementTx = function (visibleContentOffsets, frameDimensions) {
-            
+        this.findFirstVisibleElement = function (visibleContentOffsets, frameDimensions) {
+
             var firstVisibleElement;
             var percentVisible = 0;
             var textNode;
@@ -1632,7 +1585,7 @@ var CfiNavigationLogic = function (options) {
                 this.getBodyElement(),
                 NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
                 function(node) {
-                    if (node.nodeType === Node.ELEMENT_NODE && isElementBlacklisted($(node)))
+                    if (node.nodeType === Node.ELEMENT_NODE && isElementBlacklisted(node))
                         return NodeFilter.FILTER_REJECT;
 
                     if (node.nodeType === Node.TEXT_NODE && !isValidTextNode(node))
@@ -1699,12 +1652,7 @@ var CfiNavigationLogic = function (options) {
             };
         };
 
-        this.findLastVisibleElementTx = function (visibleContentOffsets, frameDimensions) {
-
-            //if (!isPaginatedView()) {
-            //    visibleContentOffsets = getVisibleContentOffsets();
-            //    frameDimensions = {};
-            //}
+        this.findLastVisibleElement = function (visibleContentOffsets, frameDimensions) {
 
             var firstVisibleElement;
             var percentVisible = 0;
@@ -1714,7 +1662,7 @@ var CfiNavigationLogic = function (options) {
                 this.getBodyElement(),
                 NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
                 function(node) {
-                    if (node.nodeType === Node.ELEMENT_NODE && isElementBlacklisted($(node)))
+                    if (node.nodeType === Node.ELEMENT_NODE && isElementBlacklisted(node))
                         return NodeFilter.FILTER_REJECT;
 
                     if (node.nodeType === Node.TEXT_NODE && !isValidTextNode(node))
@@ -1783,100 +1731,6 @@ var CfiNavigationLogic = function (options) {
             };
         };
 
-
-        // BEGIN FRANKENSTEIN
-        //we look for text and images
-        this.findFirstVisibleElement = function (visibleContentOffsets, frameDimensions) {
-
-            // if (typeof props !== 'object') {
-            //     // compatibility with legacy code, `props` is `topOffset` actually
-            //     props = { top: props };
-            // }
-
-            var $elements;
-            var $firstVisibleTextNode = null;
-            var percentOfElementHeight = 0;
-            var textNode = null;
-
-            $elements = $("body", this.getRootElement()).find(":not(iframe)").contents().filter(function () {
-                return isValidTextNode(this) || this.nodeName.toLowerCase() === 'img';
-            });
-
-            // Find the first visible text node
-            $.each($elements, function() {
-
-                var $element;
-
-                if(this.nodeType === Node.TEXT_NODE)  { //text node
-                    $element = $(this).parent();
-                    textNode = $element[0];
-                }
-                else {
-                    $element = $(this); //image
-                    textNode = null;
-                }
-
-                var visibilityResult = false;
-                if (isPaginatedView()) {
-                    visibilityResult = checkVisibilityByRectangles($element, true, visibleContentOffsets, frameDimensions);
-                } else {
-                    visibilityResult = checkVisibilityByVerticalOffsets($element, visibleContentOffsets, true);
-                }
-                
-                if (visibilityResult) {
-                    $firstVisibleTextNode = $element;
-                    percentOfElementHeight = 100 - visibilityResult;
-                    return false;
-                }
-                return true;
-            });
-
-            return {
-                element: ($firstVisibleTextNode && $firstVisibleTextNode.length > 0) ? $firstVisibleTextNode[0] : null, 
-                textNode: textNode,
-                percentVisible: percentOfElementHeight
-            };
-        };
-
-        // Old (offsetTop-based) algorithm, useful in top-to-bottom layouts
-        function checkVisibilityByVerticalOffsets($element, visibleContentOffsets, shouldCalculateVisibilityOffset) {
-
-            var elementRect = Helpers.Rect.fromElement($element);
-            if (_.isNaN(elementRect.left)) {
-                // this is actually a point element, doesnt have a bounding rectangle
-                var position = $element.position();
-                elementRect = new Helpers.Rect(position.left, position.top, 0, 0);
-            }
-            var topOffset = (-1) * (visibleContentOffsets.top || 0);
-            var isBelowVisibleTop = elementRect.bottom() > topOffset;
-            var isAboveVisibleBottom = visibleContentOffsets.bottom !== undefined
-                ? elementRect.top < visibleContentOffsets.bottom
-                : true; //this check always passed, if corresponding offset isn't set
-
-            var percentOfElementHeight = 0;
-            if (isBelowVisibleTop && isAboveVisibleBottom) { // element is visible
-                if (!shouldCalculateVisibilityOffset) {
-                    return 100;
-                }
-                else if (elementRect.top <= topOffset) {
-                    percentOfElementHeight = Math.ceil(
-                        100 * (topOffset - elementRect.top) / elementRect.height
-                    );
-
-                    // below goes another algorithm, which has been used in getVisibleElements pattern,
-                    // but it seems to be a bit incorrect
-                    // (as spatial offset should be measured at the first visible point of the element):
-                    //
-                    // var visibleTop = Math.max(elementRect.top, visibleContentOffsets.top);
-                    // var visibleBottom = Math.min(elementRect.bottom(), visibleContentOffsets.bottom);
-                    // var visibleHeight = visibleBottom - visibleTop;
-                    // var percentVisible = Math.round((visibleHeight / elementRect.height) * 100);
-                }
-                return 100 - percentOfElementHeight;
-            }
-            return 0; // element isn't visible
-        }
-
-    }
+    };
 return CfiNavigationLogic;
 });
