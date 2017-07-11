@@ -806,7 +806,11 @@ var CfiNavigationLogic = function (options) {
                 console.debug('getVisibleTextRangeOffsets:getTextRangeOffset:runCount', runCount);
                 window.top._DEBUG_visibleTextRangeOffsetsRuns.push(runCount);
             }
-            return currRange[0];
+            var resultRange = currRange[0];
+            if (resultRange) {
+                resultRange.collapse(!directionBit);
+            }
+            return resultRange;
         }
 
         function hasVisibleFragments(fragments, filterFunc) {
