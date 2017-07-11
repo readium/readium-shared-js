@@ -935,9 +935,13 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
     // }
 
     function parseMetaSize(content) {
+        var pairs = [];
 
-        var pairs = content.replace(/\s/g, '').split(",");
-
+        if (pairs.includes(',')) {
+            pairs = content.replace(/\s/g, '').split(',');
+        } else {
+            pairs = content.trim().split(' ');
+        }
         var dict = {};
 
         for (var i = 0; i < pairs.length; i++) {
