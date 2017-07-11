@@ -54,6 +54,10 @@ input[type=range] {
     padding: 5px;
 }
 
+.right_to_left {
+    direction: rtl;
+}
+
 /* iPhone portrait */
 @media only screen
 and (min-device-width : 320px)

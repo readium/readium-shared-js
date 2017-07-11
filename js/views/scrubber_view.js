@@ -15,7 +15,7 @@ function(Globals, _, Helpers, PageOpenRequest, SpineItem, Vue, H2C) {
         };
 
         Orientation.prototype.updateScrollView = function() {
-
+            this.scrubber.getDirection().updateScrollView();
         };
 
         function Landscape(scrubber) {
@@ -38,6 +38,7 @@ function(Globals, _, Helpers, PageOpenRequest, SpineItem, Vue, H2C) {
             } else {
                 this.scrubber.scrubber_left = 0;
             }
+            Orientation.prototype.updateScrollView.call(this);
         }
 
         Landscape.prototype.onScrubberScroll = function(scrollerLeft) {
@@ -45,7 +46,8 @@ function(Globals, _, Helpers, PageOpenRequest, SpineItem, Vue, H2C) {
 
             if (scrollerLeft > this.scrubber.itemWidth()) {
                 scrollerLeft -= this.scrubber.itemWidth();
-                this.scrubber.scrubber_index = Math.floor(scrollerLeft / this.scrubber.twoPagesItemWidth()) * 2 + (halfNumberOfItems - 1);
+                this.scrubber.scrubber_index = Math.floor(scrollerLeft / this.scrubber.twoPagesItemWidth()) * 2 + (halfNumberOfItems - 1)
+                * this.scrubber.getDirection().getOffsetFactor();
             } else {
                 this.scrubber.scrubber_index = 0;
             }
@@ -72,15 +74,87 @@ function(Globals, _, Helpers, PageOpenRequest, SpineItem, Vue, H2C) {
             } else {
                 this.scrubber.scrubber_left = 0;
             }
+            Orientation.prototype.updateScrollView.call(this);
         }
 
         Portrait.prototype.onScrubberScroll = function(scrollerLeft) {
-            this.scrubber.scrubber_index = Math.floor(scrollerLeft / this.scrubber.itemWidth());
+            this.scrubber.scrubber_index = Math.floor(scrollerLeft / this.scrubber.itemWidth())
+             * this.scrubber.getDirection().getOffsetFactor();
         }
 
         Portrait.prototype.onSelect = function(index) {
             this.scrubber.scrubber_index = index;
         }
+
+        function Direction(scrubber) {
+            this.scrubber = scrubber;
+        }
+
+        Direction.prototype.updateScrollView = function() {
+
+        }
+
+        Direction.prototype.getOffsetFactor = function() {
+            return 1;
+        }
+
+        Direction.prototype.updateScrubberPadding = function() {
+
+        }
+
+        function LeftToRight(scrubber) {
+            LeftToRight.prototype.scrubber = scrubber;
+        }
+
+        LeftToRight.prototype = new Direction();
+
+        LeftToRight.prototype.constructor = LeftToRight;
+
+        LeftToRight.prototype.updateScrollView = function() {
+            this.scrubber.$refs.scrubber_scroller.scrollLeft = this.scrubber.scrubber_left;
+        }
+
+        LeftToRight.prototype.updateScrubberPadding = function(isLandscape) {
+            _.each(this.scrubber.$refs.scrubber_scroller.childNodes, function(node, index) {
+                if (index > 0) {
+                    if ((index - 1) % 2 == 0) {
+                        node.childNodes[0].style.paddingRight = isLandscape ? 0 : node.childNodes[0].style.paddingLeft;
+                    } else {
+                        node.childNodes[0].style.paddingLeft = isLandscape ? 0 : node.childNodes[0].style.paddingRight;
+                    }
+                }
+            });
+        }
+
+        function RightToLeft(scrubber) {
+            RightToLeft.prototype.scrubber = scrubber;
+        }
+
+        RightToLeft.prototype = new Direction();
+
+        RightToLeft.prototype.constructor = RightToLeft;
+
+        RightToLeft.prototype.updateScrollView = function() {
+            this.scrubber.$refs.scrubber_scroller.scrollLeft = this.scrubber.scrubber_left * -1;
+        }
+
+        RightToLeft.prototype.getOffsetFactor = function() {
+            return -1;
+        }
+
+        RightToLeft.prototype.updateScrubberPadding = function(isLandscape) {
+            _.each(this.scrubber.$refs.scrubber_scroller.childNodes, function(node, index) {
+                if (index > 0) {
+                    if ((index - 1) % 2 == 0) {
+                        node.childNodes[0].style.paddingLeft = isLandscape ? 0 : node.childNodes[0].style.paddingLeft;
+                    } else {
+                        node.childNodes[0].style.paddingRight = isLandscape ? 0 : node.childNodes[0].style.paddingRight;
+                    }
+                }
+            });
+        }
+
+
 
         Vue.component('scrubber-item', {
             props: ['item'],
@@ -144,7 +218,13 @@ function(Globals, _, Helpers, PageOpenRequest, SpineItem, Vue, H2C) {
                     return ReadiumSDK.reader.getPaginationInfo().openPages.length > 1;
                 },
                 getOrientation: function() {
-                    return this.isLandscape()? new Landscape(this) : new Portrait(this);
+                    return this.isLandscape() ? new Landscape(this) : new Portrait(this);
+                },
+                isLeftToRight: function() {
+                    return window.ReadiumSDK.reader.package().spine.isLeftToRight();
+                },
+                getDirection: function() {
+                    return this.isLeftToRight() ? new LeftToRight(this) : new RightToLeft(this);
                 },
                 updateScrubber: function(event) {
                     //console.debug("updateScrubber");
@@ -171,19 +251,20 @@ function(Globals, _, Helpers, PageOpenRequest, SpineItem, Vue, H2C) {
 
                     this.goToPage(index);
                     this.getOrientation().onSelect(index);
-                    //console.debug("onSelect: index = " + index + ", scrubber_index = " + this.scrubber_index);
+                    // console.debug("onSelect: index = " + index + ", scrubber_index = " + this.scrubber_index);
                     this.needUpdate = true;
                 },
                 reloadImage: function() {
                     _.each($(".scrubber_item>img"),function(el){
                         el.src = el.src + "?" + new Date().getTime();
                     });
+                    this.needReload = false;
                 },
                 updateScrollView: function() {
                     if (this.$refs.scrubber_scroller === undefined) {
                         return;
                     }
-                    //console.debug("updateScrollView: scrubber_index = " + this.scrubber_index);
+                    console.debug("updateScrollView: scrubber_index = " + this.scrubber_index);
                     var $viewport = $('#viewport');
                     var lastChild = this.$refs.scrubber_scroller.childNodes[this.$refs.scrubber_scroller.childNodes.length - 1];
                     var isLandscape = this.isLandscape();
@@ -191,19 +272,9 @@ function(Globals, _, Helpers, PageOpenRequest, SpineItem, Vue, H2C) {
                     var halfNumberOfItems = Math.round(Math.floor($viewport.outerWidth() / this.itemWidth()) / 2);
 
                     //console.debug("updateScrollView: halfNumberOfItems = " + halfNumberOfItems);
-                    _.each(this.$refs.scrubber_scroller.childNodes, function(node, index) {
-                        if (index > 0) {
-                            if ((index - 1) % 2 == 0) {
-                                node.childNodes[0].style.paddingRight = isLandscape ? 0 : node.childNodes[0].style.paddingLeft;
-                            } else {
-                                node.childNodes[0].style.paddingLeft = isLandscape ? 0 : node.childNodes[0].style.paddingRight;
-                            }
-                        }
-                    });
+                    this.getDirection().updateScrubberPadding(isLandscape);
                     lastChild.style.marginRight = this.$refs.scrubber_scroller.clientWidth - this.itemWidth();
                     this.getOrientation().updateScrollView(halfNumberOfItems, isViewportPortrait);
-                    this.$refs.scrubber_scroller.scrollLeft = this.scrubber_left;
-                    //console.debug("updateScrollView: scrubber_left = " + this.scrubber_left);
                 },
                 goToPage: function(index) {
                     var nextSpineItem = ReadiumSDK.reader.spine().items[index];
@@ -211,6 +282,14 @@ function(Globals, _, Helpers, PageOpenRequest, SpineItem, Vue, H2C) {
                     openPageRequest.setFirstPage();
                     ReadiumSDK.reader.goToPage(openPageRequest, 2);
                 },
+                directionClass: function() {
+                    var result = [];
+                    if (!this.isLeftToRight()) {
+                        result.push('right_to_left');
+                    }
+                    // console.log('directionClass result = '+result);
+                    return result;
+                }
             }
         });
 

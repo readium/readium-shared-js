@@ -490,7 +490,7 @@ var ReaderView = function (options) {
      * Flips the page from left to right.
      * Takes to account the page progression direction to decide to flip to prev or next page.
      */
-    this.openPageLeft = function () {
+    self.openPageLeft = function () {
 
         if (_package.spine.isLeftToRight()) {
             self.openPagePrev();
@@ -504,7 +504,7 @@ var ReaderView = function (options) {
      * Flips the page from right to left.
      * Takes to account the page progression direction to decide to flip to prev or next page.
      */
-    this.openPageRight = function () {
+    self.openPageRight = function () {
 
         if (_package.spine.isLeftToRight()) {
             self.openPageNext();
