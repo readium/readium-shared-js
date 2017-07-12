@@ -70,9 +70,6 @@ require.config({
         'vue':
             process._RJS_rootDir(1) + '/node_modules/vue/dist/vue',
 
-        'html2canvas':
-            process._RJS_rootDir(1) + '/node_modules/html2canvas/dist/html2canvas',
-
         // ------ LIBs
 
         'console_shim':
@@ -94,7 +91,11 @@ require.config({
             process._RJS_rootDir(1) + '/lib/rangy/rangy-cssclassapplier',
 
         "rangy-position":
-            process._RJS_rootDir(1) + '/lib/rangy/rangy-position'
+            process._RJS_rootDir(1) + '/lib/rangy/rangy-position',
+
+        // ------ EXTERNAL MODULES
+        'html2canvas':
+            process._RJS_rootDir(1) + '/external_modules/html2canvas/dist/html2canvas'
     },
 
     shim:

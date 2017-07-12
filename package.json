@@ -48,8 +48,7 @@
     "concurrently": "latest",
     "opener": "1.4.3",
     "http-server": "danielweck/http-server",
-    "vue": "2.2.1",
-    "html2canvas": "file:./external_modules/html2canvas/"
+    "vue": "2.2.1"
   },
   "devDependencies": {
     "jquery-sizes": "bramstein/jsizes",
