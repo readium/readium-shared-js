@@ -1,5 +1,5 @@
 /*
-  html2canvas 0.5.0-beta4 <http://html2canvas.hertzen.com>
+  html2canvas 0.5.1 <http://html2canvas.hertzen.com>
   Copyright (c) 2016 Niklas von Hertzen
 
   Released under  License
@@ -965,8 +965,12 @@ function html2canvas(nodeList, options) {
     }
 
     var node = ((nodeList === undefined) ? [document.documentElement] : ((nodeList.length) ? nodeList : [nodeList]))[0];
+    var width = options.width != null ? options.width : node.ownerDocument.defaultView.innerWidth;
+    var height = options.height != null ? options.height : node.ownerDocument.defaultView.innerHeight;
+
     node.setAttribute(html2canvasNodeAttribute + index, index);
-    return renderDocument(node.ownerDocument, options, node.ownerDocument.defaultView.innerWidth, node.ownerDocument.defaultView.innerHeight, index).then(function(canvas) {
+    //console.debug("BEFORE renderDocument: size: " + width + "x" + height);
+    return renderDocument(node.ownerDocument, options, width, height, index).then(function(canvas) {
         if (typeof(options.onrendered) === "function") {
             log("options.onrendered is deprecated, html2canvas returns a Promise containing the canvas");
             options.onrendered(canvas);
