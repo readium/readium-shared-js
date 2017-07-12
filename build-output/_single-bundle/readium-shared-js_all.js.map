@@ -71,7 +71,7 @@
     "js/models/node_range_info.js",
     "js/views/reader_view.js",
     "node_modules/vue/dist/vue.js",
-    "node_modules/html2canvas/dist/html2canvas.js",
+    "external_modules/html2canvas/dist/html2canvas.js",
     "js/views/scrubber_view.js",
     "../../../../../module-insertRequire.js"
   ],
