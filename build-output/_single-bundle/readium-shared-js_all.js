@@ -14360,125 +14360,96 @@ var obj = {
     //  "PUBLIC" METHODS (THE API)                                                          //
     // ------------------------------------------------------------------------------------ //
 
-    generateCharOffsetRangeComponent : function (rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist) {
-        var document = rangeStartElement.ownerDocument;
+    generateRangeComponent : function (rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist) {
+        var _document = rangeStartElement.ownerDocument;
 
-        var docRange;
-        var commonAncestor;
-        var $rangeStartParent;
-        var $rangeEndParent;
-        var range1OffsetStep;
-        var range1CFI;
-        var range2OffsetStep;
-        var range2CFI;
-        var commonCFIComponent;
+        // Create a document range from inputs
+        var docRange = _document.createRange();
+        docRange.setStart(rangeStartElement, startOffset);
+        docRange.setEnd(rangeEndElement, endOffset);
+
+        return this.generateDocumentRangeComponent(docRange, classBlacklist, elementBlacklist, idBlacklist);
+    },
+
+    generateCharOffsetRangeComponent : function (rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist) {
+        var _document = rangeStartElement.ownerDocument;
 
         this.validateStartTextNode(rangeStartElement);
         this.validateStartTextNode(rangeEndElement);
 
-        // Parent element is the same
-        if ($(rangeStartElement).parent()[0] === $(rangeEndElement).parent()[0]) {
-            range1OffsetStep = this.createCFITextNodeStep($(rangeStartElement), startOffset, classBlacklist, elementBlacklist, idBlacklist);
-            range2OffsetStep = this.createCFITextNodeStep($(rangeEndElement), endOffset, classBlacklist, elementBlacklist, idBlacklist);          
-            commonCFIComponent = this.createCFIElementSteps($(rangeStartElement).parent(), document.documentElement, classBlacklist, elementBlacklist, idBlacklist);
-            return commonCFIComponent + "," + range1OffsetStep + "," + range2OffsetStep;
-        }
-        else {
+        // Create a document range to find the common ancestor
+        var docRange = _document.createRange();
+        docRange.setStart(rangeStartElement, startOffset);
+        docRange.setEnd(rangeEndElement, endOffset);
 
-            // Create a document range to find the common ancestor
-            docRange = document.createRange();
-            docRange.setStart(rangeStartElement, startOffset);
-            docRange.setEnd(rangeEndElement, endOffset);
-            commonAncestor = docRange.commonAncestorContainer;
-
-            // Generate terminating offset and range 1
-            range1OffsetStep = this.createCFITextNodeStep($(rangeStartElement), startOffset, classBlacklist, elementBlacklist, idBlacklist);
-            $rangeStartParent = $(rangeStartElement).parent();
-            if ($rangeStartParent[0] === commonAncestor) {
-              // rangeStartElement is a text child node of the commonAncestor, so it's CFI sub-path is only the text node step:
-              range1CFI = range1OffsetStep;
-            } else {
-              range1CFI = this.createCFIElementSteps($rangeStartParent, commonAncestor, classBlacklist, elementBlacklist, idBlacklist) + range1OffsetStep;
-            }
-
-            // Generate terminating offset and range 2
-            range2OffsetStep = this.createCFITextNodeStep($(rangeEndElement), endOffset, classBlacklist, elementBlacklist, idBlacklist);
-            $rangeEndParent = $(rangeEndElement).parent();
-            if ($rangeEndParent[0] === commonAncestor) {
-              // rangeEndElement is a text child node of the commonAncestor, so it's CFI sub-path is only the text node step:
-              range2CFI = range2OffsetStep;
-            } else {
-              range2CFI = this.createCFIElementSteps($rangeEndParent, commonAncestor, classBlacklist, elementBlacklist, idBlacklist) + range2OffsetStep;
-            }
-
-            // Generate shared component
-            commonCFIComponent = this.createCFIElementSteps($(commonAncestor), document.documentElement, classBlacklist, elementBlacklist, idBlacklist);
-
-            // Return the result
-            return commonCFIComponent + "," + range1CFI + "," + range2CFI;
-        }
+        return this.generateDocumentRangeComponent(docRange, classBlacklist, elementBlacklist, idBlacklist);
     },
 
     generateElementRangeComponent : function (rangeStartElement, rangeEndElement, classBlacklist, elementBlacklist, idBlacklist) {
-        var docRange;
-        var commonAncestor;
-        var range1CFI;
-        var range2CFI;
-        var commonCFIComponent;
+        var _document = rangeStartElement.ownerDocument;
 
-        this.validateStartElement(rangeStartElement);
-        this.validateStartElement(rangeEndElement);
-
-        var document = rangeStartElement.ownerDocument;
-
-        if (rangeStartElement === rangeEndElement) {
-            throw new Error("Start and end element cannot be the same for a CFI range");
-        }
-
-        // Create a document range to find the common ancestor
-        docRange = document.createRange();
-        docRange.setStart(rangeStartElement, 0);
-        docRange.setEnd(rangeEndElement, rangeEndElement.childNodes.length);
-        commonAncestor = docRange.commonAncestorContainer;
-
-        // Generate range 1
-        range1CFI = this.createCFIElementSteps($(rangeStartElement), commonAncestor, classBlacklist, elementBlacklist, idBlacklist);
-
-        // Generate range 2
-        range2CFI = this.createCFIElementSteps($(rangeEndElement), commonAncestor, classBlacklist, elementBlacklist, idBlacklist);
-
-        // Generate shared component
-        commonCFIComponent = this.createCFIElementSteps($(commonAncestor), document.documentElement, classBlacklist, elementBlacklist, idBlacklist);
-
-        // Return the result
-        return commonCFIComponent + "," + range1CFI + "," + range2CFI;
+        // Create a document range from inputs
+        var docRange = _document.createRange();
+        docRange.setStartBefore(rangeStartElement);
+        docRange.setEndAfter(rangeEndElement);
+       
+        return this.generateDocumentRangeComponent(docRange, classBlacklist, elementBlacklist, idBlacklist);
     },
 
-    generateRangeComponent : function (rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist) {
-        this.validateTargetElement(rangeStartElement);
-        this.validateTargetElement(rangeEndElement);
+    generateDocumentRangeComponent : function (domRange, classBlacklist, elementBlacklist, idBlacklist) {
 
-        var document = rangeStartElement.ownerDocument;
+        var rangeStartElement = domRange.startContainer;
+        var startOffset = domRange.startOffset;
+        var rangeEndElement = domRange.endContainer;
+        var endOffset = domRange.endOffset;
+        var commonAncestor = domRange.commonAncestorContainer;
 
-        if(rangeStartElement.nodeType === Node.ELEMENT_NODE && rangeEndElement.nodeType === Node.ELEMENT_NODE){
-            return this.generateElementRangeComponent(rangeStartElement, rangeEndElement, classBlacklist, elementBlacklist, idBlacklist);
-        } else if(rangeStartElement.nodeType === Node.TEXT_NODE && rangeEndElement.nodeType === Node.TEXT_NODE){
-            return this.generateCharOffsetRangeComponent(rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist);
+        var _document = rangeStartElement.ownerDocument;
+
+        var range1CFI;
+        var range1OffsetStep;
+        var range2CFI;
+        var range2OffsetStep;
+        var commonCFIComponent;
+
+        if (rangeStartElement.nodeType === Node.TEXT_NODE && rangeEndElement.nodeType === Node.TEXT_NODE) {
+            // Parent element is the same
+            if ($(rangeStartElement).parent()[0] === $(rangeEndElement).parent()[0]) {
+                range1OffsetStep = this.createCFITextNodeStep($(rangeStartElement), startOffset, classBlacklist, elementBlacklist, idBlacklist);
+                range2OffsetStep = this.createCFITextNodeStep($(rangeEndElement), endOffset, classBlacklist, elementBlacklist, idBlacklist);
+                commonCFIComponent = this.createCFIElementSteps($(rangeStartElement).parent(), _document.documentElement, classBlacklist, elementBlacklist, idBlacklist);
+                return commonCFIComponent + "," + range1OffsetStep + "," + range2OffsetStep;
+            }
+        }
+
+        if (rangeStartElement.nodeType === Node.ELEMENT_NODE &&
+            rangeEndElement.nodeType === Node.ELEMENT_NODE &&
+            rangeStartElement === rangeEndElement &&
+            commonAncestor === rangeStartElement) {
+
+            var startElement = commonAncestor.childNodes[startOffset];
+            var endElement;
+            if (endOffset === commonAncestor.childNodes.length) {
+                endElement = commonAncestor.childNodes[endOffset - 1];
+            } else {
+                endElement = commonAncestor.childNodes[endOffset].previousSibling;
+            }
+
+            // Generate shared component
+            commonCFIComponent = this.createCFIElementSteps($(commonAncestor), _document.documentElement, classBlacklist, elementBlacklist, idBlacklist);
+
+            range1CFI = this.createCFIElementSteps($(startElement), commonAncestor, classBlacklist, elementBlacklist, idBlacklist);
+
+            if (startElement === endElement) {
+                return commonCFIComponent + range1CFI;
+            }
+
+            range2CFI = this.createCFIElementSteps($(endElement), commonAncestor, classBlacklist, elementBlacklist, idBlacklist);
+
+            // Return the result
+            return commonCFIComponent + "," + range1CFI + "," + range2CFI;
         } else {
-            var docRange;
-            var range1CFI;
-            var range1OffsetStep;
-            var range2CFI;
-            var range2OffsetStep;
-            var commonAncestor;
-            var commonCFIComponent;
-
-            // Create a document range to find the common ancestor
-            docRange = document.createRange();
-            docRange.setStart(rangeStartElement, startOffset);
-            docRange.setEnd(rangeEndElement, endOffset);
-            commonAncestor = docRange.commonAncestorContainer;
-
+            
             if(rangeStartElement.nodeType === Node.ELEMENT_NODE){
                 this.validateStartElement(rangeStartElement);
                 range1CFI = this.createCFIElementSteps($(rangeStartElement), commonAncestor, classBlacklist, elementBlacklist, idBlacklist);
@@ -14508,7 +14479,7 @@ var obj = {
             }
 
             // Generate shared component
-            commonCFIComponent = this.createCFIElementSteps($(commonAncestor), document.documentElement, classBlacklist, elementBlacklist, idBlacklist);
+            commonCFIComponent = this.createCFIElementSteps($(commonAncestor), _document.documentElement, classBlacklist, elementBlacklist, idBlacklist);
 
             // Return the result
             return commonCFIComponent + "," + range1CFI + "," + range2CFI;
@@ -14906,6 +14877,9 @@ var init = function(cfiParser, cfiInterpreter, cfiInstructions, cfiRuntimeErrors
         },
         generateCompleteCFI : function (packageDocumentCFIComponent, contentDocumentCFIComponent) {
             return cfiGenerator.generateCompleteCFI(packageDocumentCFIComponent, contentDocumentCFIComponent);
+        },
+        generateDocumentRangeComponent : function (domRange, classBlacklist, elementBlacklist, idBlacklist) {
+            return cfiGenerator.generateDocumentRangeComponent(domRange, classBlacklist, elementBlacklist, idBlacklist);
         },
         generateCharOffsetRangeComponent : function (rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist) {
             return cfiGenerator.generateCharOffsetRangeComponent(rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist);
