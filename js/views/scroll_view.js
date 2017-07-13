@@ -1354,37 +1354,24 @@ var ScrollView = function (options, isContinuousScroll, reader) {
     function getFirstOrLastVisibleCfi(pickerFunc) {
         var pageViews = getVisiblePageViews();
         var selectedPageView = pickerFunc(pageViews);
-        var pageViewTopOffset = selectedPageView.element().position().top;
+        var pageViewTopOffset =selectedPageView.element().position().top;
         var visibleContentOffsets, frameDimensions;
-        
-        var setupFunctions = [
-            function () {
-                visibleContentOffsets = {
-                    top: pageViewTopOffset,
-                    left: 0
-                };
-            },
-            function() {
-                var height = selectedPageView.element().height();
-                
-                if (pageViewTopOffset >= 0) {
-                    height = viewHeight() - pageViewTopOffset;
-                }
 
-                frameDimensions = {
-                    width: selectedPageView.element().width(),
-                    height: height
-                };
-                
-                visibleContentOffsets = {
-                    top: 0,
-                    left: 0
-                };
-            }
-        ];
+        visibleContentOffsets = {
+            top:  Math.min(0, pageViewTopOffset),
+            left: 0
+        };
+
+        var height = Math.min(selectedPageView.element().height(), viewHeight());
+
+        if (pageViewTopOffset >= 0) {
+            height = height - pageViewTopOffset;
+        }
         
-        //invoke setup function
-        pickerFunc(setupFunctions)();
+        frameDimensions = {
+            width: selectedPageView.element().width(),
+            height: height
+        };
         
         var cfiFunctions = [
             selectedPageView.getFirstVisibleCfi,
@@ -1420,6 +1407,10 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         });
     };
 
+    function createBookmarkFromCfi(currentSpineItem, cfi){
+        return new BookmarkData(currentSpineItem.idref, cfi);
+    }
+
     this.getRangeCfiFromDomRange = function (domRange) {
         return callOnVisiblePageView(function (pageView) {
             return pageView.getRangeCfiFromDomRange(domRange);
@@ -1428,25 +1419,43 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
     this.getVisibleCfiFromPoint = function (x, y, precisePoint) {
         return callOnVisiblePageView(function (pageView) {
-            return createBookmark(pageView.currentSpineItem(), pageView.getVisibleCfiFromPoint(x, y, precisePoint));
+            return createBookmarkFromCfi(pageView.currentSpineItem(), pageView.getVisibleCfiFromPoint(x, y, precisePoint));
         });
     };
 
     this.getRangeCfiFromPoints = function (startX, startY, endX, endY) {
         return callOnVisiblePageView(function (pageView) {
-            return createBookmark(pageView.currentSpineItem(), pageView.getRangeCfiFromPoints(startX, startY, endX, endY));
+            return createBookmarkFromCfi(pageView.currentSpineItem(), pageView.getRangeCfiFromPoints(startX, startY, endX, endY));
         });
     };
 
     this.getCfiForElement = function(element) {
         return callOnVisiblePageView(function (pageView) {
-            return createBookmark(pageView.currentSpineItem(), pageView.getCfiForElement(element));
-        });
+            return createBookmarkFromCfi(pageView.currentSpineItem(), pageView.getCfiForElement(element).contentCFI);
+        })
     };
 
     this.getElementFromPoint = function (x, y) {
         return callOnVisiblePageView(function (pageView) {
             return pageView.getElementFromPoint(x, y);
+        });
+    };
+
+    this.getStartCfi = function () {
+        return callOnVisiblePageView(function (pageView) {
+            return pageView.getStartCfi();
+        });
+    };
+
+    this.getEndCfi = function () {
+        return callOnVisiblePageView(function (pageView) {
+            return pageView.getEndCfi();
+        });
+    };
+
+    this.getNearestCfiFromElement = function (element) {
+        return callOnVisiblePageView(function (pageView) {
+            return pageView.getNearestCfiFromElement(element);
         });
     };
 };

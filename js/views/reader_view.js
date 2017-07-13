@@ -1628,6 +1628,29 @@ var ReaderView = function (options) {
         }
         return undefined;
     };
+
+    /**
+     * Get CFI of the first element from the base of the document
+     * @returns {ReadiumSDK.Models.BookmarkData}
+     */
+    this.getStartCfi = function() {
+        if (_currentView) {
+            return _currentView.getStartCfi();
+        }
+        return undefined;
+    };
+
+    /**
+     * Get CFI of the last element from the base of the document
+     * @returns {ReadiumSDK.Models.BookmarkData}
+     */
+    this.getEndCfi = function() {
+        if (_currentView) {
+            return _currentView.getEndCfi();
+        }
+        return undefined;
+    };
+
     /**
      *
      * @param {string} rangeCfi
@@ -1733,6 +1756,19 @@ var ReaderView = function (options) {
         }
         return undefined;
     };
+       
+    /**
+     * Useful for getting a CFI that's as close as possible to an invisible (not rendered, zero client rects) element
+     * @param {HTMLElement} element
+     * @returns {*}
+     */
+    this.getNearestCfiFromElement = function(element) {
+        if (_currentView) {
+            return _currentView.getNearestCfiFromElement(element);
+        }
+        return undefined;
+    };
+    
 };
 
 /**

@@ -862,6 +862,27 @@ var FixedView = function(options, reader){
         });
     };
 
+    this.getStartCfi = function () {
+        return getDisplayingViews()[0].getStartCfi();
+    };
+
+    this.getEndCfi = function () {
+        return getDisplayingViews()[0].getEndCfi();
+    };
+
+    this.getNearestCfiFromElement = function(element) {
+        var views = getDisplayingViews();
+
+        for (var i = 0, count = views.length; i < count; i++) {
+
+            var view = views[i];
+            if (view.getLoadedContentFrames()[0].$iframe[0].contentDocument === element.ownerDocument) {
+                return view.getNearestCfiFromElement(element);
+            }
+        }
+
+    };
+
 };
     return FixedView;
 });
