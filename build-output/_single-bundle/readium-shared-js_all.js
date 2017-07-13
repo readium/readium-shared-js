@@ -61160,9 +61160,9 @@ function(Globals, _, Helpers, PageOpenRequest, SpineItem, Vue, H2C) {
             _.each(this.scrubber.$refs.scrubber_scroller.childNodes, function(node, index) {
                 if (index > 0) {
                     if ((index - 1) % 2 == 0) {
-                        node.childNodes[0].style.paddingLeft = isLandscape ? 0 : node.childNodes[0].style.paddingLeft;
+                        node.childNodes[0].style.paddingLeft = isLandscape ? 0 : node.childNodes[0].style.paddingRight;
                     } else {
-                        node.childNodes[0].style.paddingRight = isLandscape ? 0 : node.childNodes[0].style.paddingRight;
+                        node.childNodes[0].style.paddingRight = isLandscape ? 0 : node.childNodes[0].style.paddingLeft;
                     }
                 }
             });
