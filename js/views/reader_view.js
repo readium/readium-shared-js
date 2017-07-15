@@ -27,11 +27,11 @@
 define(["../globals", "jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", "./iframe_loader", "./internal_links_support",
         "./media_overlay_data_injector", "./media_overlay_player", "../models/package", "../models/metadata", "../models/page_open_request",
         "./reflowable_view", "./scroll_view", "../models/style_collection", "../models/switches", "../models/trigger",
-        "../models/viewer_settings", "../models/bookmark_data", "../models/node_range_info"],
+        "../models/viewer_settings", "../models/bookmark_data", "../models/node_range_info", "./external_agent_support"],
     function (Globals, $, _, EventEmitter, FixedView, Helpers, IFrameLoader, InternalLinksSupport,
               MediaOverlayDataInjector, MediaOverlayPlayer, Package, Metadata, PageOpenRequest,
               ReflowableView, ScrollView, StyleCollection, Switches, Trigger,
-              ViewerSettings, BookmarkData, NodeRangeInfo) {
+              ViewerSettings, BookmarkData, NodeRangeInfo, ExternalAgentSupport) {
 /**
  * Options passed on the reader from the readium loader/initializer
  *
@@ -60,6 +60,7 @@ var ReaderView = function (options) {
     //styles applied to the content documents
     var _bookStyles = new StyleCollection();
     var _internalLinksSupport = new InternalLinksSupport(this);
+    var _externalAgentSupport = new ExternalAgentSupport(this);
     var _mediaOverlayPlayer;
     var _mediaOverlayDataInjector;
     var _iframeLoader;
@@ -245,6 +246,8 @@ var ReaderView = function (options) {
 
             _internalLinksSupport.processLinkElements($iframe, spineItem);
 
+            _externalAgentSupport.bindToContentDocument($iframe[0].contentDocument, spineItem);
+
             var contentDoc = $iframe[0].contentDocument;
             Trigger.register(contentDoc);
             Switches.apply(contentDoc);
@@ -277,6 +280,9 @@ var ReaderView = function (options) {
             _.defer(function () {
                 Globals.logEvent("PAGINATION_CHANGED", "EMIT", "reader_view.js");
                 self.emit(Globals.Events.PAGINATION_CHANGED, pageChangeData);
+                _.defer(function () {
+                    _externalAgentSupport.updateContentDocument(pageChangeData.spineItem);
+                });
             });
         });
 
