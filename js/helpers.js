@@ -240,11 +240,15 @@ Helpers.Rect.fromElement = function ($element) {
 };
 
 Helpers.UpdateHtmlLineHeight = function ($epubHtml, lineHeight) {
+    var perf = false;
+    if (perf) var time1 = window.performance.now();
     var factor = parseFloat(lineHeight / 100).toFixed(2);
     var win = $epubHtml[0].ownerDocument.defaultView;
-    var $textblocks = $('p, div, span, h1, h2, h3, h4, h5, h6, li, blockquote, td, pre', $epubHtml);
+    // var $textblocks = $('p, div, span, h1, h2, h3, h4, h5, h6, li, blockquote, td, pre', $epubHtml);
+    var $textblocks = $epubHtml[0].ownerDocument.querySelectorAll('p, div, span, h1, h2, h3, h4, h5, h6, li, blockquote, td, pre');
+    var ll = $textblocks.length;
     var originalLineHeight;
-    for (var i = 0; i < $textblocks.length; i++) {
+    for (var i = 0; i < ll; i++) {
         var ele = $textblocks[i],
             fontSizeAttr = ele.getAttribute('data-original-font-size');
 
@@ -262,7 +266,7 @@ Helpers.UpdateHtmlLineHeight = function ($epubHtml, lineHeight) {
         }
     }
     originalLineHeight = 0;
-    for (var i = 0; i < $textblocks.length; i++) {
+    for (var i = 0; i < ll; i++) {
         var ele = $textblocks[i],
             realOriginalLineHeight = ele.getAttribute('data-real-original-line-height'),
             lineHeightAttr = ele.getAttribute('data-original-line-height');
@@ -277,7 +281,25 @@ Helpers.UpdateHtmlLineHeight = function ($epubHtml, lineHeight) {
             ele.setAttribute("data-original-line-height", originalLineHeight * factor);
         }
     }
-    $epubHtml.css("line-height", factor + "em");
+    $epubHtml[0].style.lineHeight =  factor + "em";
+    // $epubHtml.css("line-height", factor + "em");
+
+    if (perf) {
+        var time2 = window.performance.now();
+
+        // Firefox: 80+
+        // Chrome: 4-10
+        // Edge: 15-34
+        // IE: 10-15
+        // https://readium.firebase.com/?epub=..%2Fepub_content%2Faccessible_epub_3&goto=%7B%22idref%22%3A%22id-id2635343%22%2C%22elementCfi%22%3A%22%2F4%2F2%5Bbuilding_a_better_epub%5D%2F10%2F44%2F6%2C%2F1%3A334%2C%2F1%3A335%22%7D
+
+        var diff = time2-time1;
+        console.log('diff-lineheight',diff);
+
+        // setTimeout(function(){
+        //     alert(diff);
+        // }, 2000);
+    }
 };
 
 Helpers.UpdateHtmlFontSize = function ($epubHtml, fontSize) {
@@ -290,16 +312,19 @@ Helpers.UpdateHtmlFontSize = function ($epubHtml, fontSize) {
 
     var factor = fontSize / 100;
     var win = $epubHtml[0].ownerDocument.defaultView;
-    var $textblocks = $('p, div, span, h1, h2, h3, h4, h5, h6, li, blockquote, td, pre', $epubHtml);
+    var $textblocks = $epubHtml[0].ownerDocument.querySelectorAll('p, div, span, h1, h2, h3, h4, h5, h6, li, blockquote, td, pre');
+    // var $textblocks = $('p, div, span, h1, h2, h3, h4, h5, h6, li, blockquote, td, pre', $epubHtml);
     var originalLineHeight;
-
+    var i;
+    var ll = $textblocks.length;
 
     // need to do two passes because it is possible to have nested text blocks.
     // If you change the font size of the parent this will then create an inaccurate
     // font size for any children.
-    for (var i = 0; i < $textblocks.length; i++) {
-        var ele = $textblocks[i],
-            fontSizeAttr = ele.getAttribute('data-original-font-size');
+    var ele, fontSizeAttr;
+    for (i = 0; i < ll; i++) {
+        ele = $textblocks[i];
+        fontSizeAttr = ele.getAttribute('data-original-font-size');
 
         if (!fontSizeAttr) {
             var style = win.getComputedStyle(ele);
@@ -316,7 +341,7 @@ Helpers.UpdateHtmlFontSize = function ($epubHtml, fontSize) {
 
     // reset variable so the below logic works. All variables in JS are function scoped.
     originalLineHeight = 0;
-    for (var i = 0; i < $textblocks.length; i++) {
+    for (var i = 0; i < ll; i++) {
         var ele = $textblocks[i],
             fontSizeAttr = ele.getAttribute('data-original-font-size'),
             lineHeightAttr = ele.getAttribute('data-original-line-height'),
@@ -328,14 +353,17 @@ Helpers.UpdateHtmlFontSize = function ($epubHtml, fontSize) {
         else {
             originalLineHeight = 0;
         }
+        ele.style.fontSize = (originalFontSize * factor) + 'px';
 
-        $(ele).css("font-size", (originalFontSize * factor) + 'px');
+        // $(ele).css("font-size", (originalFontSize * factor) + 'px');
         if (originalLineHeight) {
-            $(ele).css("line-height", (originalLineHeight * factor) + 'px');
+            ele.style.lineHeight = (originalLineHeight * factor) + 'px';
+            // $(ele).css("line-height", (originalLineHeight * factor) + 'px');
         }
 
     }
-    $epubHtml.css("font-size", fontSize + "%");
+    $epubHtml[0].style.fontSize = fontSize + '%';
+    // $epubHtml.css("font-size", fontSize + "%");
 
     if (perf) {
         var time2 = window.performance.now();
@@ -347,7 +375,7 @@ Helpers.UpdateHtmlFontSize = function ($epubHtml, fontSize) {
         // https://readium.firebase.com/?epub=..%2Fepub_content%2Faccessible_epub_3&goto=%7B%22idref%22%3A%22id-id2635343%22%2C%22elementCfi%22%3A%22%2F4%2F2%5Bbuilding_a_better_epub%5D%2F10%2F44%2F6%2C%2F1%3A334%2C%2F1%3A335%22%7D
 
         var diff = time2-time1;
-        console.log(diff);
+        console.log('diff-fontisze',diff);
 
         // setTimeout(function(){
         //     alert(diff);
@@ -459,6 +487,8 @@ Helpers.Margins = function (margin, border, padding) {
  * @param $iframe
  */
 Helpers.triggerLayout = function ($iframe) {
+    var perf = false;
+    if (perf) var time1 = window.performance.now();
 
     var doc = $iframe[0].contentDocument;
 
@@ -488,7 +518,7 @@ Helpers.triggerLayout = function ($iframe) {
     catch (ex) {
         console.error(ex);
     }
-
+    console.log('p1',window.performance.now() - time1);
     try {
         var el = doc.createElementNS("http://www.w3.org/1999/xhtml", "style");
         el.appendChild(doc.createTextNode("*{}"));
@@ -503,14 +533,31 @@ Helpers.triggerLayout = function ($iframe) {
             }
         }
     }
+
     catch (ex) {
         console.error(ex);
     }
-
+    console.log('p2',window.performance.now() - time1);
     if (doc.body) {
         var val = doc.body.offsetTop; // triggers layout
     }
+    console.log('p3',window.performance.now() - time1);
+    if (perf) {
+        var time2 = window.performance.now();
 
+        // Firefox: 80+
+        // Chrome: 4-10
+        // Edge: 15-34
+        // IE: 10-15
+        // https://readium.firebase.com/?epub=..%2Fepub_content%2Faccessible_epub_3&goto=%7B%22idref%22%3A%22id-id2635343%22%2C%22elementCfi%22%3A%22%2F4%2F2%5Bbuilding_a_better_epub%5D%2F10%2F44%2F6%2C%2F1%3A334%2C%2F1%3A335%22%7D
+
+        var diff = time2-time1;
+        console.log('diff-layout',diff);
+
+        // setTimeout(function(){
+        //     alert(diff);
+        // }, 2000);
+    }
 };
 
 /**
