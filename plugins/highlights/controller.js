@@ -55,7 +55,7 @@ function($, _, Class, HighlightHelpers, HighlightGroup) {
 
             var leftAddition = -this._getPaginationLeftOffset();
             
-            var isVerticalWritingMode = this.context.paginationInfo().isVerticalWritingMode;
+            var isVerticalWritingMode = this.context.paginationInfo.isVerticalWritingMode;
 
             var visibleCfiRange = this.getVisibleCfiRange();
 
@@ -210,7 +210,7 @@ function($, _, Class, HighlightHelpers, HighlightGroup) {
 
             leftAddition = -this._getPaginationLeftOffset();
 
-            var isVerticalWritingMode = this.context.paginationInfo().isVerticalWritingMode;
+            var isVerticalWritingMode = this.context.paginationInfo.isVerticalWritingMode;
 
             this._addHighlightHelper(
                 CFI, id, type, styles, selectedElements, range,
@@ -566,14 +566,14 @@ function($, _, Class, HighlightHelpers, HighlightGroup) {
                 return 0;
             }
 
-            var offsetLeftPixels = $htmlElement.css(this.context.paginationInfo().isVerticalWritingMode ? "top" : (this.context.isRTL ? "right" : "left"));
+            var offsetLeftPixels = $htmlElement.css(this.context.paginationInfo.isVerticalWritingMode ? "top" : (this.context.isRTL ? "right" : "left"));
             var offsetLeft = parseInt(offsetLeftPixels.replace("px", ""));
             if (isNaN(offsetLeft)) {
                 //for fixed layouts, $htmlElement.css("left") has no numerical value
                 offsetLeft = 0;
             }
             
-            if (this.context.isRTL && !this.context.paginationInfo().isVerticalWritingMode) return -offsetLeft;
+            if (this.context.isRTL && !this.context.paginationInfo.isVerticalWritingMode) return -offsetLeft;
              
             return offsetLeft;
         },

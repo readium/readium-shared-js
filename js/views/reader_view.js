@@ -1085,6 +1085,72 @@ var ReaderView = function (options) {
     };
 
     /**
+     * Returns current selection partial Cfi, useful for workflows that need to check whether the user has selected something.
+     *
+     * @returns {object | undefined} partial cfi object or undefined if nothing is selected
+     */
+    this.getCurrentSelectionCfi = function() {
+        if (self.plugins.highlights) {
+            return self.plugins.highlights.getCurrentSelectionCfi();
+        }
+        return null;
+    };
+
+    /**
+     * Creates a higlight based on given parameters
+     *
+     * @param {string} spineIdRef		Spine idref that defines the partial Cfi
+     * @param {string} cfi				Partial CFI (withouth the indirection step) relative to the spine index
+     * @param {string} id				Id of the highlight. must be unique
+     * @param {string} type 			Name of the class selector rule in annotations stylesheet.
+     * 									The style of the class will be applied to the created hightlight
+     * @param {object} styles			Object representing CSS properties to be applied to the highlight.
+     * 									e.g., to apply background color pass in: {'background-color': 'green'}
+     *
+     * @returns {object | undefined} partial cfi object of the created highlight
+     */
+    this.addHighlight = function(spineIdRef, cfi, id, type, styles) {
+        if (self.plugins.highlights) {
+            return self.plugins.highlights.addHighlight(spineIdRef, cfi, id, type, styles);
+        }
+        return null;
+    };
+
+    /**
+     * Creates a higlight based on the current selection
+     *
+     * @param {string} id id of the highlight. must be unique
+     * @param {string} type - name of the class selector rule in annotations.css file.
+     * @param {object} styles - object representing CSS properties to be applied to the highlight.
+     * e.g., to apply background color pass this {'background-color': 'green'}
+     * @param {boolean} clearSelection - set to true to clear the current selection
+     * after it is highlighted
+     *
+     * @returns {object | undefined} partial cfi object of the created highlight
+     */
+    this.addSelectionHighlight = function(id, type, styles, clearSelection) {
+        if (self.plugins.highlights) {
+            return self.plugins.highlights.addSelectionHighlight(id, type, styles, clearSelection);
+        }
+        return null;
+    };
+
+    /**
+     * Removes a given highlight
+     *
+     * @param {string} id  The id associated with the highlight.
+     *
+     * @returns {undefined}
+     *
+     */
+    this.removeHighlight = function(id) {
+        if (self.plugins.highlights) {
+            return self.plugins.highlights.removeHighlight(id);
+        }
+        return null;
+    };
+
+    /**
      * Resets all the custom styles set by setStyle callers at runtime
      */
     this.clearStyles = function () {
