@@ -61470,6 +61470,7 @@ function(Globals, _, Vue) {
                 },
                 onSave: function(event) {
                     //console.debug("onSave: avatar: " + this.item_list[this.selectedIndex].src + ", " + this.recording_name);
+                    this.recording_name = '';
                     this.seen = false;
                     ReadiumSDK.reader.emit(Globals.Events.COMPLETE_READ_AND_RECORD,
                             { avatar: this.item_list[this.selectedIndex].src,
@@ -61478,6 +61479,7 @@ function(Globals, _, Vue) {
                 },
                 onCancel: function(event) {
                     //console.debug("onCancel");
+                    this.recording_name = '';
                     this.seen = false;
                     ReadiumSDK.reader.emit(Globals.Events.COMPLETE_READ_AND_RECORD);
                 }
