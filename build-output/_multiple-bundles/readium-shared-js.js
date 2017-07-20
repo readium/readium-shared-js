@@ -120,7 +120,11 @@ var Globals = {
         /**
          * @event
          */
-        VIEWPORT_DID_RESIZE: "ViewportDidResize"
+        VIEWPORT_DID_RESIZE: "ViewportDidResize",
+        /**
+         * @event
+         */
+        COMPLETE_READ_AND_RECORD: "CompleteReadAndRecord"
     },
     /**
      * Internal Events
