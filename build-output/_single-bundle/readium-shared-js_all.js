@@ -24103,7 +24103,7 @@ Helpers.addTapEventHandler = function($body, reportClicked) {
         clearTimeout(tapTimer);
         //console.debug("TOUCH-END: # touches = " + event.changedTouches.length);
         //console.debug("TOUCH-END (" +  + touch.pageX + ", " + touch.pageY + "), tapped? " + tapped + ", longTapped? " + longTapped);
-        if (tapped && !longTapped) {
+        if (tapped && !longTapped && event.returnValue) {
             return reportClicked(event);
         }
         return true;
