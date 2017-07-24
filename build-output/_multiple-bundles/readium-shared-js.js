@@ -12876,8 +12876,9 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
         //self.pause();
         //self.reset();
-        _smilIterator = undefined;
-
+        if (_smilIterator.currentPar.element) {
+            _smilIterator = undefined;
+        }
         reader.openContentUrl(src, base, self);
     }
 
