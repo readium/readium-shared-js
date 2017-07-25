@@ -4899,7 +4899,7 @@ var ViewerSettings = function(settingsData) {
     } else {
         root.ResizeSensor = factory();
     }
-}(this, function () {
+}(typeof window !== 'undefined' ? window : this, function () {
 
     // Make sure it does not throw in a SSR (Server Side Rendering) situation
     if (typeof window === "undefined") {
