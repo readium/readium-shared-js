@@ -257,9 +257,6 @@ var ReaderView = function (options) {
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
             //console.log("initViewForItem: CONTENT_DOCUMENT_LOADED: isPlayingMediaOverlay() = " + self.isPlayingMediaOverlay() +
             //        ", _mediaOverlayPlayer.wasPausedBecauseNoAutoNextSmil() = " + _mediaOverlayPlayer.wasPausedBecauseNoAutoNextSmil());
-            if (_viewerSettings.mediaOverlaysAutomaticPlay && !self.isPlayingMediaOverlay() && !_mediaOverlayPlayer.wasPausedBecauseNoAutoNextSmil()) {
-                self.toggleMediaOverlay();
-            }
         });
 
         _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOAD_START, function ($iframe, spineItem) {
