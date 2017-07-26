@@ -4791,8 +4791,6 @@ var ViewerSettings = function(settingsData) {
     
     this.mediaOverlaysSynchronizationGranularity = "";
 
-    this.mediaOverlaysAutomaticPlay = true;
-
     /** 
      *
      * @property mediaOverlaysAutomaticPageTurn
@@ -4908,7 +4906,6 @@ var ViewerSettings = function(settingsData) {
         mapProperty("mediaOverlaysVolume", settingsData);
         mapProperty("mediaOverlaysSynchronizationGranularity", settingsData);
         mapProperty("mediaOverlaysAutomaticPageTurn", settingsData, booleanMapper);
-        mapProperty("mediaOverlaysAutomaticPlay", settingsData, booleanMapper);
         mapProperty("scroll", settingsData);
         mapProperty("syntheticSpread", settingsData);
         mapProperty("pageTransition", settingsData);
@@ -4934,7 +4931,7 @@ var ViewerSettings = function(settingsData) {
     } else {
         root.ResizeSensor = factory();
     }
-}(this, function () {
+}(typeof window !== 'undefined' ? window : this, function () {
 
     // Make sure it does not throw in a SSR (Server Side Rendering) situation
     if (typeof window === "undefined") {
@@ -17736,9 +17733,6 @@ var ReaderView = function (options) {
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
             //console.log("initViewForItem: CONTENT_DOCUMENT_LOADED: isPlayingMediaOverlay() = " + self.isPlayingMediaOverlay() +
             //        ", _mediaOverlayPlayer.wasPausedBecauseNoAutoNextSmil() = " + _mediaOverlayPlayer.wasPausedBecauseNoAutoNextSmil());
-            if (_viewerSettings.mediaOverlaysAutomaticPlay && !self.isPlayingMediaOverlay() && !_mediaOverlayPlayer.wasPausedBecauseNoAutoNextSmil()) {
-                self.toggleMediaOverlay();
-            }
         });
 
         _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOAD_START, function ($iframe, spineItem) {
