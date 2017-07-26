@@ -629,7 +629,7 @@ var ReflowableView = function(options, reader){
             // Reset it so it's saved next time onPaginationChanged is called
             this.resetCurrentPosition();
             _paginationInfo.currentSpreadIndex--;
-            onPaginationChanged(initiator);
+            onPaginationChanged(initiator, _currentSpineItem);
         }
         else {
 
@@ -654,7 +654,7 @@ var ReflowableView = function(options, reader){
             // Reset it so it's saved next time onPaginationChanged is called
             this.resetCurrentPosition();
             _paginationInfo.currentSpreadIndex++;
-            onPaginationChanged(initiator);
+            onPaginationChanged(initiator, _currentSpineItem);
         }
         else {
 
