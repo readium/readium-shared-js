@@ -41,25 +41,6 @@
     </head>
     <body>
         <div id="viewport"></div>
-        <div id='read_and_record_editing_container' v-if="seen">
-            <div class="read_and_record_text_field" style="font-family: sans-serif;">Choose a picture</div>
-            <div style="width: 100%; display: flex; align-items: center;">
-                <div class="avatar_arrow_container">
-                    <img class="avatar_arrow" src="bn_icn_arrow_left.png"/>
-                </div>
-                <div id="avatar_scroller" ref="avatar_scroller">
-                    <avatar-item v-for="item in item_list" v-bind:item="item" v-on:click="onSelect"/>
-                </div>
-                <div class="avatar_arrow_container">
-                    <img class="avatar_arrow" src="bn_icn_arrow_right.png"/>
-                </div>
-            </div>
-            <input class="read_and_record_text_field" type="text" placeholder="Name your recording" style="width: 100%;" v-model="recording_name">
-            <div style="width: 100%; text-align: center;">
-                <button class="read_and_record_text_field" type="button" v-on:click="onSave">Save</button>
-                <button class="read_and_record_text_field" type="button" v-on:click="onCancel">Cancel</button>
-            </div>
-        </div>
         <div id='scrubber' v-if="seen">
             <div id="scrubber_scroller" ref="scrubber_scroller" v-on:scroll="onScrubberScroll" v-bind:class="directionClass()">
                 <scrubber-item v-for="item in item_list" v-bind:item="item" v-on:click="onSelect" v-if="show_image_scrubber"/>

@@ -17,7 +17,7 @@ require.config({
 
     name: "readium-shared-js_all",
 
-    include: ['readium_shared_js/globalsSetup', 'readium_js_plugins', 'readium_shared_js/views/reader_view', 'readium_shared_js/views/scrubber_view', 'readium_shared_js/views/avatar_scroller'],
+    include: ['readium_shared_js/globalsSetup', 'readium_js_plugins', 'readium_shared_js/views/reader_view', 'readium_shared_js/views/scrubber_view'],
 
     // relative to this config file (not baseUrl)
     out: "../build-output/_single-bundle/readium-shared-js_all.js",
