@@ -734,9 +734,10 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
         var goNext = position > audio.clipEnd;
 
         var doNotNextSmil = !_autoNextSmil && from !== 6 && goNext;
+        var emitComplete = !doNotNextSmil;
 
         var spineItemIdRef = (_smilIterator && _smilIterator.smil && _smilIterator.smil.spineItemId) ? _smilIterator.smil.spineItemId : ((_lastPaginationData && _lastPaginationData.spineItem && _lastPaginationData.spineItem.idref) ? _lastPaginationData.spineItem.idref : undefined);
-        if (doNotNextSmil && spineItemIdRef && _lastPaginationData && _lastPaginationData.paginationInfo && _lastPaginationData.paginationInfo.openPages && _lastPaginationData.paginationInfo.openPages.length > 1)
+        if (spineItemIdRef && _lastPaginationData && _lastPaginationData.paginationInfo && _lastPaginationData.paginationInfo.openPages && _lastPaginationData.paginationInfo.openPages.length > 1)
         {
             //var iPage = _lastPaginationData.paginationInfo.isRightToLeft ? _lastPaginationData.paginationInfo.openPages.length - 1 : 0;
             var iPage = 0;
@@ -744,7 +745,12 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
             var openPage = _lastPaginationData.paginationInfo.openPages[iPage];
             if (spineItemIdRef === openPage.idref)
             {
-                doNotNextSmil = false;
+                if (doNotNextSmil) {
+                    doNotNextSmil = false;
+                }
+                if (_autoNextSmil) {
+                    emitComplete = false;
+                }
             }
         }
         
@@ -784,7 +790,11 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
             }
             else
             {
-                nextSmil(goNext);
+                if (!emitComplete) {
+                    nextSmil(goNext);
+                } else {
+                    reader.emit(Globals.Events.MEDIA_OVERLAY_COMPLETE_CURRENT_PAGE);
+                }
             }
             return;
         }
@@ -852,7 +862,11 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
                             }
                             else
                             {
-                                nextSmil(goNext);
+                                if (!emitComplete) {
+                                    nextSmil(goNext);
+                                } else {
+                                    reader.emit(Globals.Events.MEDIA_OVERLAY_COMPLETE_CURRENT_PAGE);
+                                }
                             }
                             
                             return;

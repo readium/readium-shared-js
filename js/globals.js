@@ -112,6 +112,10 @@ var Globals = {
         /**
          * @event
          */
+        MEDIA_OVERLAY_COMPLETE_CURRENT_PAGE: "MediaOverlayCompleteCurrentPage",
+        /**
+         * @event
+         */
         PLUGINS_LOADED: "PluginsLoaded",
         /**
          * @event
