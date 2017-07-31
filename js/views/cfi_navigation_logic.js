@@ -2,27 +2,27 @@
 //
 //  Created by Boris Schneiderman.
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
-//  
-//  Redistribution and use in source and binary forms, with or without modification, 
+//
+//  Redistribution and use in source and binary forms, with or without modification,
 //  are permitted provided that the following conditions are met:
-//  1. Redistributions of source code must retain the above copyright notice, this 
+//  1. Redistributions of source code must retain the above copyright notice, this
 //  list of conditions and the following disclaimer.
-//  2. Redistributions in binary form must reproduce the above copyright notice, 
-//  this list of conditions and the following disclaimer in the documentation and/or 
+//  2. Redistributions in binary form must reproduce the above copyright notice,
+//  this list of conditions and the following disclaimer in the documentation and/or
 //  other materials provided with the distribution.
-//  3. Neither the name of the organization nor the names of its contributors may be 
-//  used to endorse or promote products derived from this software without specific 
+//  3. Neither the name of the organization nor the names of its contributors may be
+//  used to endorse or promote products derived from this software without specific
 //  prior written permission.
-//  
-//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
-//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
-//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
-//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
-//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
-//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
-//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
+//
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /**
@@ -48,9 +48,9 @@ var CfiNavigationLogic = function(options) {
 
         return options.$iframe[0].contentDocument.documentElement;
     };
-    
+
     this.getBodyElement = function () {
-        
+
         // In SVG documents the root element can be considered the body.
         return this.getRootDocument().body || this.getRootElement();
     };
@@ -87,12 +87,14 @@ var CfiNavigationLogic = function(options) {
         } else if (endNode.nodeType === Node.TEXT_NODE) {
             range.setEnd(endNode, endOffset ? endOffset : 0);
         }
+        window.nodeRange = range;
+        window.ggRangeRect = range.getBoundingClientRect();
         return normalizeRectangle(range.getBoundingClientRect(),0,0);
     }
 
     function getNodeClientRectList(node, visibleContentOffsets) {
         visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
-        
+
         var range = createRange();
         range.selectNode(node);
         return _.map(range.getClientRects(), function (rect) {
@@ -104,7 +106,7 @@ var CfiNavigationLogic = function(options) {
         if (options.frameDimensions) {
             return options.frameDimensions();
         }
-        
+
         console.error('CfiNavigationLogic: No frame dimensions specified!');
         return null;
     }
@@ -164,10 +166,10 @@ var CfiNavigationLogic = function(options) {
         }
 
         if (isPaginatedView() && !isVwm) {
-            return (rect.left >= 0 && rect.left < frameDimensions.width) || 
+            return (rect.left >= 0 && rect.left < frameDimensions.width) ||
                 (!ignorePartiallyVisible && rect.left < 0 && rect.right >= 0);
         } else {
-            return (rect.top >= 0 && rect.top < frameDimensions.height) || 
+            return (rect.top >= 0 && rect.top < frameDimensions.height) ||
                 (!ignorePartiallyVisible && rect.top < 0 && rect.bottom >= 0);
         }
 
@@ -244,7 +246,7 @@ var CfiNavigationLogic = function(options) {
 
         if (clientRectangles.length === 1) {
             var adjustedRect = clientRectangles[0];
-            
+
             if (isPaginatedView()) {
                 if (adjustedRect.bottom > frameDimensions.height || adjustedRect.top < 0) {
                     // because of webkit inconsistency, that single rectangle should be adjusted
@@ -310,6 +312,7 @@ var CfiNavigationLogic = function(options) {
      * @returns {number|null}
      */
     function calculatePageIndexByRectangles(clientRectangles, spatialVerticalOffset, frameDimensions, columnFullWidth) {
+
         var isRtl = isPageProgressionRightToLeft();
         var isVwm = isVerticalWritingMode();
         columnFullWidth = columnFullWidth || getColumnFullWidth();
@@ -329,7 +332,11 @@ var CfiNavigationLogic = function(options) {
 
         if (isVwm) {
             var topOffset = firstRectangle.top;
-            pageIndex = Math.floor(topOffset / frameDimensions.height);
+            // console.log('calculatePageIndexByRectangles:topOffset', topOffset);
+            // console.log('calculatePageIndexByRectangles:frameDimensions.height', frameDimensions.height);
+            // console.log('options', options);
+            // 原本只除以iframe的高度，但columngap也要算在一頁的高度中，否則會出錯。
+            pageIndex = Math.floor(topOffset / (options.paginationInfo.columnWidth + options.paginationInfo.columnGap) );
         } else {
             var leftOffset = firstRectangle.left;
             if (isRtl) {
@@ -360,7 +367,8 @@ var CfiNavigationLogic = function(options) {
     function findPageBySingleRectangle(clientRectangle, visibleContentOffsets, frameDimensions) {
         visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
         frameDimensions = frameDimensions || getFrameDimensions();
-        
+        // console.log('visibleContentOffsets',visibleContentOffsets);
+        // console.log('frameDimensions',frameDimensions);
         var normalizedRectangle = normalizeRectangle(
             clientRectangle, visibleContentOffsets.left, visibleContentOffsets.top);
 
@@ -473,7 +481,8 @@ var CfiNavigationLogic = function(options) {
      * @returns {Object}
      */
     function normalizeRectangle(textRect, leftOffset, topOffset) {
-
+        // console.log('normalizeRectangle:textRect',textRect, leftOffset, topOffset);
+        // console.trace();
         var plainRectObject = {
             left: textRect.left,
             right: textRect.right,
@@ -482,7 +491,9 @@ var CfiNavigationLogic = function(options) {
             width: textRect.right - textRect.left,
             height: textRect.bottom - textRect.top
         };
+        // console.log('normalizeRectangle:before',plainRectObject);
         offsetRectangle(plainRectObject, leftOffset, topOffset);
+        // console.log('normalizeRectangle:after',plainRectObject);
         return plainRectObject;
     }
 
@@ -530,7 +541,7 @@ var CfiNavigationLogic = function(options) {
         columnFullWidth = columnFullWidth || getColumnFullWidth();
         isRtl = isRtl || isPageProgressionRightToLeft();
         isVwm = isVwm || isVerticalWritingMode();
-
+        // console.log('adjustRectangle:isVwm', isVwm);
         // Rectangle adjustment is not needed in VWM since it does not deal with columns
         if (isVwm) {
             return;
@@ -753,7 +764,7 @@ var CfiNavigationLogic = function(options) {
 
     function getVisibleTextRangeOffsetsSelectedByFunc(textNode, pickerFunc, visibleContentOffsets, frameDimensions) {
         visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
-        
+
         var textNodeFragments = getNodeClientRectList(textNode, visibleContentOffsets);
 
         var visibleFragments = _.filter(textNodeFragments, function (rect) {
@@ -771,7 +782,7 @@ var CfiNavigationLogic = function(options) {
             fragmentCorner.x -= visibleContentOffsets.left;
             fragmentCorner.y -= visibleContentOffsets.top;
         }
-        
+
         var caretRange = getCaretRangeFromPoint(fragmentCorner.x, fragmentCorner.y);
 
         // Workaround for inconsistencies with the caretRangeFromPoint IE TextRange based shim.
@@ -801,24 +812,24 @@ var CfiNavigationLogic = function(options) {
 
         if (DEBUG)
         console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'a0');
-        
+
         // Desperately try to find it from all angles! Darn sub pixeling..
         //TODO: remove the need for this brute-force method, since it's making the result non-deterministic
         if (!caretRange || caretRange.startContainer !== textNode) {
             caretRange = getCaretRangeFromPoint(fragmentCorner.x - 1, fragmentCorner.y);
-            
+
             if (DEBUG)
             console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'a1');
         }
         if (!caretRange || caretRange.startContainer !== textNode) {
             caretRange = getCaretRangeFromPoint(fragmentCorner.x, fragmentCorner.y - 1);
-            
+
             if (DEBUG)
             console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'a2');
         }
         if (!caretRange || caretRange.startContainer !== textNode) {
             caretRange = getCaretRangeFromPoint(fragmentCorner.x - 1, fragmentCorner.y - 1);
-            
+
             if (DEBUG)
             console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'a3');
         }
@@ -826,36 +837,36 @@ var CfiNavigationLogic = function(options) {
             fragmentCorner.x = Math.floor(fragmentCorner.x);
             fragmentCorner.y = Math.floor(fragmentCorner.y);
             caretRange = getCaretRangeFromPoint(fragmentCorner.x, fragmentCorner.y);
-            
+
             if (DEBUG)
             console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'b0');
         }
         // Desperately try to find it from all angles! Darn sub pixeling..
         if (!caretRange || caretRange.startContainer !== textNode) {
             caretRange = getCaretRangeFromPoint(fragmentCorner.x - 1, fragmentCorner.y);
-            
+
             if (DEBUG)
             console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'b1');
         }
         if (!caretRange || caretRange.startContainer !== textNode) {
             caretRange = getCaretRangeFromPoint(fragmentCorner.x, fragmentCorner.y - 1);
-            
+
             if (DEBUG)
             console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'b2');
         }
         if (!caretRange || caretRange.startContainer !== textNode) {
             caretRange = getCaretRangeFromPoint(fragmentCorner.x - 1, fragmentCorner.y - 1);
-            
+
             if (DEBUG)
             console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'b3');
         }
 
         // Still nothing? fall through..
         if (!caretRange) {
-            
+
             if (DEBUG)
             console.warn('getVisibleTextRangeOffsetsSelectedByFunc: no caret range result');
-            
+
             return null;
         }
 
@@ -865,10 +876,10 @@ var CfiNavigationLogic = function(options) {
                 {start: caretRange.startOffset - 1, end: caretRange.startOffset}]
             );
         } else {
-            
+
             if (DEBUG)
             console.warn('getVisibleTextRangeOffsetsSelectedByFunc: incorrect caret range result');
-            
+
             return null;
         }
     }
@@ -924,7 +935,7 @@ var CfiNavigationLogic = function(options) {
 
     // get an array of visible text elements and then select one based on the func supplied
     // and generate a CFI for the first visible text subrange.
-    function getVisibleTextRangeCfiForTextElementSelectedByFunc(pickerFunc, visibleContentOffsets, frameDimensions) {        
+    function getVisibleTextRangeCfiForTextElementSelectedByFunc(pickerFunc, visibleContentOffsets, frameDimensions) {
         var visibleLeafNodeList = self.getVisibleLeafNodes(visibleContentOffsets, frameDimensions);
         return findVisibleLeafNodeCfi(visibleLeafNodeList, pickerFunc, null, visibleContentOffsets, frameDimensions);
     }
@@ -1018,15 +1029,16 @@ var CfiNavigationLogic = function(options) {
 
         var cfiParts = splitCfi(cfi);
         var partialCfi = cfiParts.cfi;
-
         if (this.isRangeCfi(partialCfi)) {
             //if given a range cfi the exact page index needs to be calculated by getting node info from the range cfi
             var nodeRangeInfoFromCfi = this.getNodeRangeInfoFromCfi(partialCfi);
             //the page index is calculated from the node's client rectangle
+            // console.log('nodeRangeInfoFromCfi',nodeRangeInfoFromCfi);
             return findPageBySingleRectangle(nodeRangeInfoFromCfi.clientRect);
         }
 
         var $element = getElementByPartialCfi(cfiParts.cfi, classBlacklist, elementBlacklist, idBlacklist);
+        // console.log('getPageForElementCfi:targetElement', $element);
 
         if (!$element) {
             return -1;
@@ -1618,7 +1630,7 @@ var CfiNavigationLogic = function(options) {
                 //for fixed layouts, $htmlElement.css("left") has no numerical value
                 offsetLeft = 0;
             }
-            if (isPageProgressionRightToLeft() && !isVerticalWritingMode()) return -offsetLeft; 
+            if (isPageProgressionRightToLeft() && !isVerticalWritingMode()) return -offsetLeft;
             return offsetLeft;
         }
 

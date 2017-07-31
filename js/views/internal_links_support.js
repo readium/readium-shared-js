@@ -1,25 +1,25 @@
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
-// 
-//  Redistribution and use in source and binary forms, with or without modification, 
+//
+//  Redistribution and use in source and binary forms, with or without modification,
 //  are permitted provided that the following conditions are met:
-//  1. Redistributions of source code must retain the above copyright notice, this 
+//  1. Redistributions of source code must retain the above copyright notice, this
 //  list of conditions and the following disclaimer.
-//  2. Redistributions in binary form must reproduce the above copyright notice, 
-//  this list of conditions and the following disclaimer in the documentation and/or 
+//  2. Redistributions in binary form must reproduce the above copyright notice,
+//  this list of conditions and the following disclaimer in the documentation and/or
 //  other materials provided with the distribution.
-//  3. Neither the name of the organization nor the names of its contributors may be 
-//  used to endorse or promote products derived from this software without specific 
+//  3. Neither the name of the organization nor the names of its contributors may be
+//  used to endorse or promote products derived from this software without specific
 //  prior written permission.
-//  
-//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
-//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
-//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
-//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
-//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
-//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
-//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
+//
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 define(['jquery', '../helpers', 'readium_cfi_js'], function($, Helpers, epubCfi) {
@@ -116,7 +116,7 @@ var InternalLinksSupport = function(reader) {
 
     function readOpfFile(path, callback) {
 
-        //TODO: this should use readium-js resource fetcher (file / URI access abstraction layer), as right now this fails with packed EPUBs  
+        //TODO: this should use readium-js resource fetcher (file / URI access abstraction layer), as right now this fails with packed EPUBs
         $.ajax({
             // encoding: "UTF-8",
             // mimeType: "text/plain; charset=UTF-8",
@@ -146,18 +146,18 @@ var InternalLinksSupport = function(reader) {
         return fileName && Helpers.EndsWith(fileName, ".opf");
     }
 
-    function processLinkWithHash(hrefUri, spineItem) {
+    function processLinkWithHash(hrefUri, spineItem, isNoteRef) {
 
         var fileName = hrefUri.filename();
-
+        // console.log('processLinkWithHash:filename', fileName);
         var idref;
 
         //reference to another file
         if(fileName) {
             var normalizedUri = new URI(hrefUri, spineItem.href);
-            
+
             var pathname = decodeURIComponent(normalizedUri.pathname());
-            
+
             var newSpineItem = reader.spine().getItemByHref(pathname);
 
             if(!newSpineItem) {
@@ -172,7 +172,9 @@ var InternalLinksSupport = function(reader) {
         }
 
         var hashFrag = hrefUri.fragment();
-
+        // console.log('hashFrag', hashFrag);
+        // console.log('document',document);
+        //應該在這裡判斷是否為noteRef;
         reader.openSpineItemElementId(idref, hashFrag, self);
 
     }
@@ -185,7 +187,7 @@ var InternalLinksSupport = function(reader) {
             // Check for both href and xlink:href attribute and get value
             var href;
             if (clickEvent.currentTarget.attributes["xlink:href"]) {
-                
+
                 href = clickEvent.currentTarget.attributes["xlink:href"].value;
             }
             else {
@@ -195,15 +197,24 @@ var InternalLinksSupport = function(reader) {
             var overrideClickEvent = false;
             var hrefUri = new URI(href);
             var hrefIsRelative = hrefUri.is('relative');
-
+            var isNoteRef = clickEvent.currentTarget.attributes['epub:type'].value === 'noteref';
+            // console.log('internal_links_support_href',href);
             if (hrefIsRelative) {
 
                 if(isDeepLikHref(hrefUri)) {
                     processDeepLink(hrefUri, spineItem);
                     overrideClickEvent = true;
                 }
+                else if(isNoteRef){
+                    overrideClickEvent = true;
+                    var text = clickEvent.currentTarget.ownerDocument.querySelector(href).innerText;
+                    if (text){
+                        MooReaderApp.showNoteRef(text);
+                    }
+
+                }
                 else {
-                    processLinkWithHash(hrefUri, spineItem);
+                    processLinkWithHash(hrefUri, spineItem, isNoteRef);
                     overrideClickEvent = true;
                 }
 

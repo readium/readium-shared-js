@@ -786,9 +786,10 @@ var ReaderView = function (options) {
 
     // dir: 0 => new or same page, 1 => previous, 2 => next
     function openPage(pageRequest, dir) {
-
+        // console.log('openPage:dir',dir);
+        // console.log('pageRequest',pageRequest);
         initViewForItem(pageRequest.spineItem, function (isViewChanged) {
-            console.log('isViewChanged',isViewChanged);
+            // console.log('isViewChanged',isViewChanged);
             if (!isViewChanged) {
                 _currentView.setViewSettings(_viewerSettings);
             }

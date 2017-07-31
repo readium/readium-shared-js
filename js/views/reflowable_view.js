@@ -436,7 +436,7 @@ var ReflowableView = function(options, reader){
     }
 
     this.openPage = function(pageRequest) {
-
+        // console.log('pageRequest from reflowable_view', pageRequest);
         if(_isWaitingFrameRender) {
             _deferredPageRequest = pageRequest;
             return;
@@ -467,7 +467,7 @@ var ReflowableView = function(options, reader){
                     ["cfi-marker", "mo-cfi-highlight"],
                     [],
                     ["MathJax_Message"]);
-
+                // console.log('pageformelementcfi pageIndex from reflowable_view', pageIndex);
                 if (pageIndex < 0) pageIndex = 0;
             }
             catch (e)
