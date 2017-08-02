@@ -1974,6 +1974,21 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         this.toggleMediaOverlayRefresh(undefined);
     };
 
+    this.playMediaOverlay = function() {
+        if(self.isPlaying()) {
+            return;
+        }
+
+        //if we have position to continue from (reset wasn't called)
+        if(_smilIterator) {
+            self.play();
+            return;
+        }
+
+        this.toggleMediaOverlayRefresh(undefined);
+    };
+
+
     var _wasPlayingScrolling = false;
 
     this.toggleMediaOverlayRefresh = function(paginationData)

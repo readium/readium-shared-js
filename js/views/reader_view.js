@@ -1243,16 +1243,28 @@ var ReaderView = function (options) {
      * Pause currently playing media overlays.
      */
     this.pauseMediaOverlay = function () {
-
-        _mediaOverlayPlayer.pause();
+        if(_mediaOverlayPlayer && _mediaOverlayPlayer.isPlaying()) {
+            _mediaOverlayPlayer.pause();
+        }
     };
 
     /**
      * Start/Resume playback of media overlays.
      */
     this.playMediaOverlay = function () {
+        if(_mediaOverlayPlayer && !_mediaOverlayPlayer.isPlaying()) {
+            _mediaOverlayPlayer.playMediaOverlay();
+        }
+    };
 
-        _mediaOverlayPlayer.play();
+    /**
+     * Reset media overlay
+     */
+    this.resetMediaOverlay = function() {
+        if( _mediaOverlayPlayer) {
+            self.pauseMediaOverlay();
+            _mediaOverlayPlayer.reset();
+        }
     };
 
     /**
