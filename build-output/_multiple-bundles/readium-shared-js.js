@@ -13220,6 +13220,21 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         this.toggleMediaOverlayRefresh(undefined);
     };
 
+    this.playMediaOverlay = function() {
+        if(self.isPlaying()) {
+            return;
+        }
+
+        //if we have position to continue from (reset wasn't called)
+        if(_smilIterator) {
+            self.play();
+            return;
+        }
+
+        this.toggleMediaOverlayRefresh(undefined);
+    };
+
+
     var _wasPlayingScrolling = false;
 
     this.toggleMediaOverlayRefresh = function(paginationData)
@@ -18733,16 +18748,28 @@ var ReaderView = function (options) {
      * Pause currently playing media overlays.
      */
     this.pauseMediaOverlay = function () {
-
-        _mediaOverlayPlayer.pause();
+        if(_mediaOverlayPlayer && _mediaOverlayPlayer.isPlaying()) {
+            _mediaOverlayPlayer.pause();
+        }
     };
 
     /**
      * Start/Resume playback of media overlays.
      */
     this.playMediaOverlay = function () {
+        if(_mediaOverlayPlayer && !_mediaOverlayPlayer.isPlaying()) {
+            _mediaOverlayPlayer.playMediaOverlay();
+        }
+    };
 
-        _mediaOverlayPlayer.play();
+    /**
+     * Reset media overlay
+     */
+    this.resetMediaOverlay = function() {
+        if( _mediaOverlayPlayer) {
+            self.pauseMediaOverlay();
+            _mediaOverlayPlayer.reset();
+        }
     };
 
     /**
