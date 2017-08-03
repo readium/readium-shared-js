@@ -255,21 +255,22 @@ var MediaOverlayDataInjector = function (mediaOverlay, mediaOverlayPlayer) {
                     }
                     else
                     {
-                        var readaloud = $(elem).attr("ibooks:readaloud");
-                        if (!readaloud)
-                        {
-                            readaloud = $(elem).attr("epub:readaloud");
+                        var readaloud = Helpers.findReadAloud(elem, "ibooks:readaloud");
+                        var readaloudPause = Helpers.findReadAloud(elem, "data-ibooks-pause-readaloud");
+
+                        if (!readaloud) {
+                            readaloud = Helpers.findReadAloud(elem, "epub:readaloud");
                         }
-                        if (readaloud)
-                        {
+                        if (readaloud) {
                             //console.debug("MO readaloud attr: " + readaloud);
                             var isPlaying = mediaOverlayPlayer.isPlaying();
 
-                            if (readaloud === "start" && !isPlaying ||
-                                readaloud === "stop" && isPlaying ||
-                                readaloud === "startstop")
-                            {
+                            if ((readaloud === "start" && !isPlaying) ||
+                                (readaloud === "stop" && isPlaying) ||
+                                (readaloud === "startstop") ||
+                                (readaloudPause === "true" && !isPlaying)) {
                                 mediaOverlayPlayer.toggleMediaOverlay();
+
                                 return true;
                             }
                         }

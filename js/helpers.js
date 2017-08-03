@@ -1118,5 +1118,22 @@ Helpers.addTapEventHandler = function($body, reportClicked) {
     }
 };
 
+Helpers.findReadAloud = function(node, attributeName) {
+    if (node) {
+        var readaloud = $(node).attr(attributeName);
+
+        if (readaloud) {
+            return readaloud;
+        } else {
+            if (!node.parentElement || node.parentElement === document.body) {
+                return undefined;
+            }
+            if (node.parentElement) {
+                return Helpers.findReadAloud(node.parentElement, attributeName);
+            }
+        }
+    }
+};
+
 return Helpers;
 });
