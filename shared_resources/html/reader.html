@@ -36,16 +36,16 @@
         <script type="text/javascript" src="readium-shared-js_all.js"></script>
         <script type="text/javascript" src="host_app_feedback.js"></script>
         <link rel="stylesheet" type="text/css" href="sdk.css"/>
-        <link rel="stylesheet" type="text/css" href="scrubber.css"/>
+        <!--link rel="stylesheet" type="text/css" href="scrubber.css"/-->
     </head>
     <body>
         <div id="viewport"></div>
-        <div id='scrubber' v-if="seen">
+        <!--div id='scrubber' v-if="seen">
             <div id="scrubber_scroller" ref="scrubber_scroller" v-on:scroll="onScrubberScroll" v-bind:class="directionClass()">
                 <scrubber-item v-for="item in item_list" v-bind:item="item" v-on:click="onSelect" v-if="show_image_scrubber"/>
             </div>
             <input id='scrubber_range' type="range" v-on:change="updateScrubber" v-on:input="onScroll" v-model='scrubber_index' v-bind:max='item_count - 1'
              v-bind:class="directionClass()">
-        </div>
+        </div-->
     </body>
 </html>
