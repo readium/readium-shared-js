@@ -37638,7 +37638,7 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
 
             _audioElement.addEventListener("loadedmetadata", function()
                 {
-                    console.debug("3) loadedmetadata");
+                    console.debug("3) loadedmetadata: duration = " + _audioElement.duration);
                 }
             );
 
@@ -38171,7 +38171,7 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
         }
         
         var MAX_SEEK_RETRIES = 10;
-        var _seekedEvent1 = _iOS ? "canplaythrough" : "seeked"; //"progress"
+        var _seekedEvent1 = "seeked";
         var _seekedEvent2 = _iOS ? "timeupdate" : "seeked";
         function onSeeked(event)
         {
