@@ -1123,7 +1123,7 @@ Helpers.findReadAloud = function(node, attributeName) {
         var readaloud = $(node).attr(attributeName);
 
         if (readaloud) {
-            return readaloud;
+            return {node: node, attr: readaloud};
         } else {
             if (!node.parentElement || node.parentElement === document.body) {
                 return undefined;

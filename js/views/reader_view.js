@@ -1243,8 +1243,13 @@ var ReaderView = function (options) {
      * Pause currently playing media overlays.
      */
     this.pauseMediaOverlay = function () {
-        if(_mediaOverlayPlayer && _mediaOverlayPlayer.isPlaying()) {
-            _mediaOverlayPlayer.pause();
+        if (_mediaOverlayPlayer) {
+            if (_mediaOverlayPlayer.isPlaying()) {
+                _mediaOverlayPlayer.pause();
+            }
+            if (_mediaOverlayPlayer.iBooksAudioPlayerPlaying()) {
+                _mediaOverlayPlayer.pauseiBooksAudioPlayer();
+            }
         }
     };
 
@@ -1252,8 +1257,13 @@ var ReaderView = function (options) {
      * Start/Resume playback of media overlays.
      */
     this.playMediaOverlay = function () {
-        if(_mediaOverlayPlayer && !_mediaOverlayPlayer.isPlaying()) {
-            _mediaOverlayPlayer.playMediaOverlay();
+        if (_mediaOverlayPlayer) {
+            if (!_mediaOverlayPlayer.isPlaying()) {
+                _mediaOverlayPlayer.playMediaOverlay();
+            }
+            if (_mediaOverlayPlayer.iBooksAudioPlayerPlaying()) {
+                _mediaOverlayPlayer.pauseiBooksAudioPlayer();
+            }
         }
     };
 
