@@ -44119,7 +44119,7 @@ SmilModel.fromSmilDTO = function(smilDTO, mo) {
                 console.error("SMIL clipEnd is string, parsing float... (" + node.clipEnd + ")");
                 node.clipEnd = parseFloat(node.clipEnd);
             }
-            if (node.clipEnd <= node.clipBegin)
+            if (node.clipEnd < node.clipBegin)
             {
                 if (smilModel.mo.DEBUG)
                 {
