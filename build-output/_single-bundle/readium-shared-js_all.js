@@ -37620,6 +37620,7 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
         var _iOS = navigator.userAgent.match(/(iPad|iPhone|iPod)/g) ? true : false;
         var _Android = navigator.userAgent.toLowerCase().indexOf('android') > -1;
         var _isMobile = _iOS || _Android;
+        const kPauseDelayThreshold = 1.5;   // 1.5 second
 
         //var _isReadiumJS = typeof window.requirejs !== "undefined";
 
@@ -37998,7 +37999,7 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
                 {
                     console.debug("this.playFile() SAME SRC");
                 }
-                if (Math.abs(seekBegin - _audioElement.currentTime) >= 0.3)
+                if (Math.abs(seekBegin - _audioElement.currentTime) >= kPauseDelayThreshold)
                 {
                     this.pause();
                 }
@@ -38135,8 +38136,8 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
             {
                 newCurrentTime = 0.01;
             }
-    
-            if(Math.abs(newCurrentTime - _audioElement.currentTime) < 0.3)
+
+            if(Math.abs(newCurrentTime - _audioElement.currentTime) < kPauseDelayThreshold)
             {
                 if (DEBUG)
                 {
