@@ -12917,13 +12917,23 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
         var src = _smilIterator.currentPar.text.src;
         var base = _smilIterator.smil.href;
+        var openPages = reader.getPaginationInfo().openPages;
+        var needReload = true;
 
+        for (var i = 0; i < openPages.length; i++) {
+            if (openPages[i].idref === _smilIterator.currentPar.text.manifestItemId) {
+                needReload = false;
+                break;
+            }
+        }
         //self.pause();
         //self.reset();
         if (_smilIterator.currentPar.element) {
             _smilIterator = undefined;
         }
-        reader.openContentUrl(src, base, self);
+        if (needReload) {
+            reader.openContentUrl(src, base, self);
+        }
     }
 
     // iBooksAudioPlayer
