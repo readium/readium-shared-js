@@ -47,8 +47,7 @@
   "dependencies": {
     "concurrently": "latest",
     "opener": "1.4.3",
-    "http-server": "danielweck/http-server",
-    "vue": "2.2.1"
+    "http-server": "danielweck/http-server"
   },
   "devDependencies": {
     "jquery-sizes": "bramstein/jsizes",

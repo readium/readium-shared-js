@@ -67,9 +67,6 @@ require.config({
         'cssom':
             process._RJS_rootDir(1) + '/node_modules/cssom/build/CSSOM',
 
-        'vue':
-            process._RJS_rootDir(1) + '/node_modules/vue/dist/vue',
-
         // ------ LIBs
 
         'console_shim':
