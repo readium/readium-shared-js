@@ -654,7 +654,8 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
 
                 if (paginationInfo.openPages.length > 0) {
                     for (var i = 0; i < paginationInfo.openPages.length; i++) {
-                        if (_smilIterator.currentPar.text.manifestItemId === paginationInfo.openPages[i].idref) {
+                        if (!_smilIterator.currentPar.text.manifestItemId ||
+                            _smilIterator.currentPar.text.manifestItemId === paginationInfo.openPages[i].idref) {
                             needToOpenContentUrl = false;
                             break;
                         }
