@@ -564,13 +564,20 @@ var MediaOverlayDataInjector = function (mediaOverlay, mediaOverlayPlayer) {
                              });
                              */
                         }
+                    } else {
+                        var modata = $body.data("mediaOverlayData");
+
+                        console.warn("!! CANNOT FIND ELEMENT: " + iter.currentPar.text.srcFragmentId + " == " + iter.currentPar.text.srcFile + " /// " + spineItem.href);
+                        if (modata) {
+                            console.warn("[WARN] MO DATA already exists.");
+                            if (modata.par && modata.par !== iter.currentPar) {
+                                console.warn("DIFFERENT PARS??!");
+                            }
+                        }
+                        $body.data("mediaOverlayData", { par: iter.currentPar });
                     }
-                    else {
-                        console.error("!! CANNOT FIND ELEMENT: " + iter.currentPar.text.srcFragmentId + " == " + iter.currentPar.text.srcFile + " /// " + spineItem.href);
-                    }
-                }
-                else {
-//console.debug("[INFO] " + spineItem.href + " != " + textRelativeRef + " # " + iter.currentPar.text.srcFragmentId);
+                } else {
+                    //console.debug("[INFO] " + spineItem.href + " != " + textRelativeRef + " # " + iter.currentPar.text.srcFragmentId);
                 }
             }
 
