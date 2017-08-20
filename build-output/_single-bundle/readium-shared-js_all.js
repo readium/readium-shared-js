@@ -41178,6 +41178,7 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
                 _wasPausedBecauseNoAutoNextSmil = true;
                 self.reset();
                 //self.pause();
+                reader.emit(Globals.Events.MEDIA_OVERLAY_COMPLETE_CURRENT_PAGE);
             }
             else
             {
@@ -41250,6 +41251,7 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
                                 _wasPausedBecauseNoAutoNextSmil = true;
                                 self.reset();
                                 //self.pause();
+                                reader.emit(Globals.Events.MEDIA_OVERLAY_COMPLETE_CURRENT_PAGE);
                             }
                             else
                             {
