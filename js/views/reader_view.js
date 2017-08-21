@@ -236,7 +236,8 @@ var ReaderView = function (options) {
         self.emit(Globals.Events.READER_VIEW_CREATED, desiredViewType);
 
         _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOADED, function ($iframe, spineItem) {
-            
+            var contentDoc = $iframe[0].contentDocument;
+
             Globals.logEvent("CONTENT_DOCUMENT_LOADED", "ON", "reader_view.js (current view) [ " + spineItem.href + " ]");
 
             if (!Helpers.isIframeAlive($iframe[0])) return;
@@ -246,9 +247,8 @@ var ReaderView = function (options) {
 
             _internalLinksSupport.processLinkElements($iframe, spineItem);
 
-            _externalAgentSupport.bindToContentDocument($iframe[0].contentDocument, spineItem);
+            _externalAgentSupport.bindToContentDocument(contentDoc, spineItem);
 
-            var contentDoc = $iframe[0].contentDocument;
             Trigger.register(contentDoc);
             Switches.apply(contentDoc);
 
