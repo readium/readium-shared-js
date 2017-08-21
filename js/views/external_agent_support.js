@@ -22,7 +22,7 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define([], function() {
+define(["../globals"], function(Globals) {
     /**
      * This module helps external agents that interact with content documents from
      * the level of the iframe browsing context:
@@ -45,13 +45,23 @@ define([], function() {
         var contentDocumentStates = {};
         var contentDocuments = {};
 
+        Globals.on(Globals.Events.PLUGINS_LOADED, function() {
+            // Disable the AMD environment since it's not needed anymore at this point.
+            // This is done because external agents with their own module systems (Browserify)
+            // might load third-party scripts that are in the format of
+            // UMD (Universal Module Definition),
+            // and will mistakenly try to use Readium's AMD shim, almond.js, or require.js
+            if (window.define && window.define.amd) {
+                delete window.define.amd;
+            }
+        });
+
         function appendMetaTag(_document, property, content) {
             var tag = _document.createElement('meta');
             tag.setAttribute('name', property);
             tag.setAttribute('content', content);
             _document.head.appendChild(tag);
         }
-
 
         function injectDublinCoreResourceIdentifiers(contentDocument, spineItem) {
             var renditionIdentifier = reader.metadata().identifier; // the package unique identifier

@@ -14,17 +14,10 @@ define(['readium_js_plugins'], function (Plugins) {
         // Readium has been fully loaded by the RequireJS/AMD shim.
         // We can do this here in this callback when this plugin is invoked.
 
-        // Disable the AMD environment since it's not needed anymore at this point.
-        // This is done because some third-party modules in Hypothesis use UMD
-        // and will mistakenly try to use Readium's AMD shim, almond.js,
-        // instead of the loader for Hypothesis.
-        if (window.define && window.define.amd) {
-            delete window.define.amd;
-        }
-
         // Inject the script
         var script = document.createElement('script');
         script.setAttribute('src', H_EMBED_URL);
+        script.setAttribute('async', 'true');
         document.head.appendChild(script);
     });
 });
