@@ -10,6 +10,20 @@ define(['readium_js_plugins'], function (Plugins) {
     var H_EMBED_URL = 'https://hypothes.is/embed.js';
 
     Plugins.register("hypothesis", function () {
+        var self = this;
+
+        // Request that the UI controls make space for the Hypothesis sidebar
+        window.hypothesisConfig = function () {
+            return {
+                onLayoutChange: function(state) {
+                    self.emit('offsetPageButton', state.width);
+                    if (!state.expanded) {
+                        self.emit('offsetNavBar', state.width);
+                    }
+                }
+            };
+        };
+
         // The script for Hypothesis needs to be included once
         // Readium has been fully loaded by the RequireJS/AMD shim.
         // We can do this here in this callback when this plugin is invoked.
