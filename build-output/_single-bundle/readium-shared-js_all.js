@@ -16234,7 +16234,7 @@ define("es6-collections", function(){});
  * URI.js - Mutating URLs
  * IPv6 Support
  *
- * Version: 1.18.10
+ * Version: 1.18.12
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -16406,7 +16406,7 @@ define("es6-collections", function(){});
     if (root.IPv6 === this) {
       root.IPv6 = _IPv6;
     }
-  
+
     return this;
   }
 
@@ -16420,7 +16420,7 @@ define("es6-collections", function(){});
  * URI.js - Mutating URLs
  * Second Level Domain (SLD) Support
  *
- * Version: 1.18.10
+ * Version: 1.18.12
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -16665,7 +16665,7 @@ define("es6-collections", function(){});
 /*!
  * URI.js - Mutating URLs
  *
- * Version: 1.18.10
+ * Version: 1.18.12
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -16741,7 +16741,11 @@ define("es6-collections", function(){});
     return this;
   }
 
-  URI.version = '1.18.10';
+  function isInteger(value) {
+    return /^[0-9]+$/.test(value);
+  }
+
+  URI.version = '1.18.12';
 
   var p = URI.prototype;
   var hasOwn = Object.prototype.hasOwnProperty;
@@ -16871,7 +16875,7 @@ define("es6-collections", function(){});
   URI.escapeQuerySpace = true;
   // static properties
   URI.protocol_expression = /^[a-z][a-z0-9.+-]*$/i;
-  URI.idn_expression = /[^a-z0-9\.-]/i;
+  URI.idn_expression = /[^a-z0-9\._-]/i;
   URI.punycode_expression = /(xn--)/i;
   // well, 333.444.555.666 matches, but it sure ain't no IPv4 - do we care?
   URI.ip4_expression = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
@@ -16904,10 +16908,16 @@ define("es6-collections", function(){});
     ws: '80',
     wss: '443'
   };
+  // list of protocols which always require a hostname
+  URI.hostProtocols = [
+    'http',
+    'https'
+  ];
+
   // allowed hostname characters according to RFC 3986
   // ALPHA DIGIT "-" "." "_" "~" "!" "$" "&" "'" "(" ")" "*" "+" "," ";" "=" %encoded
-  // I've never seen a (non-IDN) hostname other than: ALPHA DIGIT . -
-  URI.invalid_hostname_characters = /[^a-zA-Z0-9\.-]/;
+  // I've never seen a (non-IDN) hostname other than: ALPHA DIGIT . - _
+  URI.invalid_hostname_characters = /[^a-zA-Z0-9\.\-:_]/;
   // map DOM Elements to their URI attribute
   URI.domAttributes = {
     'a': 'href',
@@ -17237,6 +17247,12 @@ define("es6-collections", function(){});
     if (parts.hostname && string.substring(pos).charAt(0) !== '/') {
       pos++;
       string = '/' + string;
+    }
+
+    URI.ensureValidHostname(parts.hostname, parts.protocol);
+
+    if (parts.port) {
+      URI.ensureValidPort(parts.port);
     }
 
     return string.substring(pos) || '/';
@@ -17679,20 +17695,42 @@ define("es6-collections", function(){});
     return string;
   };
 
-  URI.ensureValidHostname = function(v) {
+  URI.ensureValidHostname = function(v, protocol) {
     // Theoretically URIs allow percent-encoding in Hostnames (according to RFC 3986)
     // they are not part of DNS and therefore ignored by URI.js
 
-    if (v.match(URI.invalid_hostname_characters)) {
+    var hasHostname = !!v; // not null and not an empty string
+    var hasProtocol = !!protocol;
+    var rejectEmptyHostname = false;
+
+    if (hasProtocol) {
+      rejectEmptyHostname = arrayContains(URI.hostProtocols, protocol);
+    }
+
+    if (rejectEmptyHostname && !hasHostname) {
+      throw new TypeError('Hostname cannot be empty, if protocol is ' + protocol);
+    } else if (v && v.match(URI.invalid_hostname_characters)) {
       // test punycode
       if (!punycode) {
-        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-] and Punycode.js is not available');
+        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-:_] and Punycode.js is not available');
       }
-
       if (punycode.toASCII(v).match(URI.invalid_hostname_characters)) {
-        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-]');
+        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-:_]');
       }
     }
+  };
+
+  URI.ensureValidPort = function (v) {
+    if (!v) {
+      return;
+    }
+
+    var port = Number(v);
+    if (isInteger(port) && (port > 0) && (port < 65536)) {
+      return;
+    }
+
+    throw new TypeError('Port "' + v + '" is not a valid port');
   };
 
   // noConflict
@@ -17952,9 +17990,7 @@ define("es6-collections", function(){});
           v = v.substring(1);
         }
 
-        if (v.match(/[^0-9]/)) {
-          throw new TypeError('Port "' + v + '" contains characters other than [0-9]');
-        }
+        URI.ensureValidPort(v);
       }
     }
     return _port.call(this, v, build);
@@ -17972,6 +18008,7 @@ define("es6-collections", function(){});
       }
 
       v = x.hostname;
+      URI.ensureValidHostname(v, this._parts.protocol);
     }
     return _hostname.call(this, v, build);
   };
@@ -18090,8 +18127,12 @@ define("es6-collections", function(){});
         v += '.';
       }
 
+      if (v.indexOf(':') !== -1) {
+        throw new TypeError('Domains cannot contain colons');
+      }
+
       if (v) {
-        URI.ensureValidHostname(v);
+        URI.ensureValidHostname(v, this._parts.protocol);
       }
 
       this._parts.hostname = this._parts.hostname.replace(replace, v);
@@ -18130,7 +18171,11 @@ define("es6-collections", function(){});
         throw new TypeError('cannot set domain empty');
       }
 
-      URI.ensureValidHostname(v);
+      if (v.indexOf(':') !== -1) {
+        throw new TypeError('Domains cannot contain colons');
+      }
+
+      URI.ensureValidHostname(v, this._parts.protocol);
 
       if (!this._parts.hostname || this.is('IP')) {
         this._parts.hostname = v;
@@ -42176,6 +42221,67 @@ return Package;
 });
 
 
+//  Created by Juan Corona
+//  Copyright (c) 2016 Readium Foundation and/or its licensees. All rights reserved.
+//
+//  Redistribution and use in source and binary forms, with or without modification,
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice,
+//  this list of conditions and the following disclaimer in the documentation and/or
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be
+//  used to endorse or promote products derived from this software without specific
+//  prior written permission.
+//
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
+define('readium_shared_js/models/metadata',[], function () {
+
+    /**
+     *  Wrapper of the Metadata object, created in openBook()
+     *
+     * @class  Models.Metadata
+     */
+    var Metadata = function(packageMetadata) {
+        this.identifier = undefined;
+        this.title = undefined;
+        this.author = undefined;
+        this.description = undefined;
+        this.publisher = undefined;
+        this.language = undefined;
+        this.rights = undefined;
+        this.modifiedDate = undefined;
+        this.publishedDate = undefined;
+        this.epubVersion = undefined;
+
+        if (packageMetadata) {
+            this.identifier = packageMetadata.id;
+            this.title = packageMetadata.title;
+            this.author = packageMetadata.author;
+            this.description = packageMetadata.description;
+            this.language = packageMetadata.language;
+            this.publisher = packageMetadata.publisher;
+            this.rights = packageMetadata.rights;
+            this.modifiedDate = packageMetadata.modified_date;
+            this.publishedDate = packageMetadata.pubdate;
+            this.epubVersion = packageMetadata.epub_version;
+        }
+    };
+
+    return Metadata;
+});
+
+
 
 //  LauncherOSX
 //
@@ -42807,7 +42913,7 @@ var ReflowableView = function(options, reader){
             // Reset it so it's saved next time onPaginationChanged is called
             this.resetCurrentPosition();
             _paginationInfo.currentSpreadIndex--;
-            onPaginationChanged(initiator);
+            onPaginationChanged(initiator, _currentSpineItem);
         }
         else {
 
@@ -42832,7 +42938,7 @@ var ReflowableView = function(options, reader){
             // Reset it so it's saved next time onPaginationChanged is called
             this.resetCurrentPosition();
             _paginationInfo.currentSpreadIndex++;
-            onPaginationChanged(initiator);
+            onPaginationChanged(initiator, _currentSpineItem);
         }
         else {
 
@@ -43960,6 +44066,144 @@ define('readium_shared_js/models/node_range_info',[],function () {
 
     return NodeRangeInfo;
 });
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//
+//  Redistribution and use in source and binary forms, with or without modification,
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice,
+//  this list of conditions and the following disclaimer in the documentation and/or
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be
+//  used to endorse or promote products derived from this software without specific
+//  prior written permission.
+//
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
+
+define('readium_shared_js/views/external_agent_support',["../globals"], function(Globals) {
+    /**
+     * This module helps external agents that interact with content documents from
+     * the level of the iframe browsing context:
+     *
+     *   - By providing a means of identifying the content through metadata
+     *     that's brought down from the package document level.
+     *
+     *   - By providing a direct link (bringing down the shareable URL) that could be used
+     *     to load the content in the proper context with the reader app instead of the actual
+     *     content document asset path.
+     *
+     *   - By responding to an event when the external agent wants to bring a
+     *     specific range of content into view.
+     *
+     * @param {Views.ReaderView} reader     The Reader instance
+     * @constructor
+     */
+    var ExternalAgentSupport = function(reader) {
+
+        var contentDocumentStates = {};
+        var contentDocuments = {};
+
+        Globals.on(Globals.Events.PLUGINS_LOADED, function() {
+            // Disable the AMD environment since it's not needed anymore at this point.
+            // This is done because external agents with their own module systems (Browserify)
+            // might load third-party scripts that are in the format of
+            // UMD (Universal Module Definition),
+            // and will mistakenly try to use Readium's AMD shim, almond.js, or require.js
+            if (window.define && window.define.amd) {
+                delete window.define.amd;
+            }
+        });
+
+        function appendMetaTag(_document, property, content) {
+            var tag = _document.createElement('meta');
+            tag.setAttribute('name', property);
+            tag.setAttribute('content', content);
+            _document.head.appendChild(tag);
+        }
+
+        function injectDublinCoreResourceIdentifiers(contentDocument, spineItem) {
+            var renditionIdentifier = reader.metadata().identifier; // the package unique identifier
+            var spineItemIdentifier = spineItem.idref; // use the spine item id as an identifier too
+            if (renditionIdentifier && spineItemIdentifier) {
+                appendMetaTag(contentDocument, 'dc.relation.ispartof', renditionIdentifier);
+                appendMetaTag(contentDocument, 'dc.identifier', spineItemIdentifier);
+            }
+        }
+
+        function injectAppUrlAsCanonicalLink(contentDocument, spineItem) {
+            if (contentDocument.defaultView && contentDocument.defaultView.parent) {
+                var parentWindow = contentDocument.defaultView.parent;
+                var isParentInSameDomain = Object.keys(parentWindow).indexOf('document') !== -1;
+                // Only do this if there's no potential cross-domain violation
+                // and the reader application URL has a CFI value in a 'goto' query param.
+                if (isParentInSameDomain && parentWindow.location.search.match(/goto=.*cfi/i)) {
+                    var link = contentDocument.createElement('link');
+                    link.setAttribute('rel', 'canonical');
+                    link.setAttribute('href', parentWindow.location.href);
+                    contentDocument.head.appendChild(link);
+                    contentDocumentStates[spineItem.idref] = {
+                        canonicalLinkElement: link
+                    };
+                }
+            }
+        }
+
+        function bindBringIntoViewEvent(contentDocument) {
+            // 'scrolltorange' is a non-standard event that is emitted on the content frame
+            // by some external tools like Hypothes.is
+            contentDocument.addEventListener('scrolltorange', function (event) {
+                event.preventDefault();
+                var range = event.detail;
+                var target = reader.getRangeCfiFromDomRange(range);
+                reader.openSpineItemElementCfi(target.idref, target.contentCFI);
+            });
+        }
+
+        /***
+         *
+         * @param {Document} contentDocument    Document instance with DOM tree
+         * @param {Models.SpineItem} spineItem  The associated spine item object
+         */
+        this.bindToContentDocument = function(contentDocument, spineItem) {
+            injectDublinCoreResourceIdentifiers(contentDocument, spineItem);
+            injectAppUrlAsCanonicalLink(contentDocument, spineItem);
+            bindBringIntoViewEvent(contentDocument);
+            contentDocuments[spineItem.idref] = contentDocument;
+        };
+
+        /***
+         *
+         * @param {Models.SpineItem} spineItem  The associated spine item object
+         */
+        this.updateContentDocument = function (spineItem) {
+            var contentDocument = contentDocuments[spineItem.idref];
+            var state = contentDocumentStates[spineItem.idref];
+
+            if (contentDocument && state && state.canonicalLinkElement) {
+                if (contentDocument.defaultView && contentDocument.defaultView.parent) {
+                    var parentWindow = contentDocument.defaultView.parent;
+                    var isParentInDifferentDomain = 'document' in Object.keys(parentWindow);
+                    if (!isParentInDifferentDomain) {
+                        state.canonicalLinkElement.setAttribute('href', parentWindow.location.href);
+                    }
+                }
+            }
+        };
+    };
+
+    return ExternalAgentSupport;
+});
+
 //  Created by Boris Schneiderman.
 // Modified by Daniel Weck
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
@@ -43987,13 +44231,13 @@ define('readium_shared_js/models/node_range_info',[],function () {
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 define('readium_shared_js/views/reader_view',["../globals", "jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", "./iframe_loader", "./internal_links_support",
-        "./media_overlay_data_injector", "./media_overlay_player", "../models/package", "../models/page_open_request",
+        "./media_overlay_data_injector", "./media_overlay_player", "../models/package", "../models/metadata", "../models/page_open_request",
         "./reflowable_view", "./scroll_view", "../models/style_collection", "../models/switches", "../models/trigger",
-        "../models/viewer_settings", "../models/bookmark_data", "../models/node_range_info"],
+        "../models/viewer_settings", "../models/bookmark_data", "../models/node_range_info", "./external_agent_support"],
     function (Globals, $, _, EventEmitter, FixedView, Helpers, IFrameLoader, InternalLinksSupport,
-              MediaOverlayDataInjector, MediaOverlayPlayer, Package, PageOpenRequest,
+              MediaOverlayDataInjector, MediaOverlayPlayer, Package, Metadata, PageOpenRequest,
               ReflowableView, ScrollView, StyleCollection, Switches, Trigger,
-              ViewerSettings, BookmarkData, NodeRangeInfo) {
+              ViewerSettings, BookmarkData, NodeRangeInfo, ExternalAgentSupport) {
 /**
  * Options passed on the reader from the readium loader/initializer
  *
@@ -44014,6 +44258,7 @@ var ReaderView = function (options) {
     var self = this;
     var _currentView = undefined;
     var _package = undefined;
+    var _metadata = undefined;
     var _spine = undefined;
     var _viewerSettings = new ViewerSettings({});
     //styles applied to the container divs
@@ -44021,6 +44266,7 @@ var ReaderView = function (options) {
     //styles applied to the content documents
     var _bookStyles = new StyleCollection();
     var _internalLinksSupport = new InternalLinksSupport(this);
+    var _externalAgentSupport = new ExternalAgentSupport(this);
     var _mediaOverlayPlayer;
     var _mediaOverlayDataInjector;
     var _iframeLoader;
@@ -44196,7 +44442,8 @@ var ReaderView = function (options) {
         self.emit(Globals.Events.READER_VIEW_CREATED, desiredViewType);
 
         _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOADED, function ($iframe, spineItem) {
-            
+            var contentDoc = $iframe[0].contentDocument;
+
             Globals.logEvent("CONTENT_DOCUMENT_LOADED", "ON", "reader_view.js (current view) [ " + spineItem.href + " ]");
 
             if (!Helpers.isIframeAlive($iframe[0])) return;
@@ -44206,7 +44453,8 @@ var ReaderView = function (options) {
 
             _internalLinksSupport.processLinkElements($iframe, spineItem);
 
-            var contentDoc = $iframe[0].contentDocument;
+            _externalAgentSupport.bindToContentDocument(contentDoc, spineItem);
+
             Trigger.register(contentDoc);
             Switches.apply(contentDoc);
 
@@ -44238,6 +44486,9 @@ var ReaderView = function (options) {
             _.defer(function () {
                 Globals.logEvent("PAGINATION_CHANGED", "EMIT", "reader_view.js");
                 self.emit(Globals.Events.PAGINATION_CHANGED, pageChangeData);
+                _.defer(function () {
+                    _externalAgentSupport.updateContentDocument(pageChangeData.spineItem);
+                });
             });
         });
 
@@ -44310,6 +44561,15 @@ var ReaderView = function (options) {
     };
 
     /**
+     * Returns a data object based on the package document metadata
+     *
+     * @returns {Models.Metadata}
+     */
+    this.metadata = function () {
+        return _metadata;
+    };
+
+    /**
      * Returns a representation of the spine as a data object, also acts as list of spine items
      *
      * @returns {Models.Spine}
@@ -44348,6 +44608,7 @@ var ReaderView = function (options) {
         var packageData = openBookData.package ? openBookData.package : openBookData;
 
         _package = new Package(packageData);
+        _metadata = new Metadata(packageData.metadata);
 
         _spine = _package.spine;
         _spine.handleLinear(true);
