@@ -11917,7 +11917,7 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
         self.pause();
 
 //console.debug("current Smil: " + _smilIterator.smil.href + " /// " + _smilIterator.smil.id);
-
+        var lastSmil = _smilIterator.smil;
         var nextSmil = goNext ? _package.media_overlay.getNextSmil(_smilIterator.smil) : _package.media_overlay.getPreviousSmil(_smilIterator.smil);
         if(nextSmil) {
 
@@ -11943,11 +11943,22 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
                             break;
                         }
                     }
+                    if (paginationInfo.openPages.length > 1) {
+                        var completeRightPage = paginationInfo.openPages[1].idref === lastSmil.spineItemId;
+
+                        if (!completeRightPage && needToOpenContentUrl) {
+                            needToOpenContentUrl = false;
+                        }
+                    }
                 }
                 if (needToOpenContentUrl) {
                     //console.debug("nextSmil: openContentUrl: " + _smilIterator.currentPar.text.src + " -- " + _smilIterator.smil.href);
                     reader.openContentUrl(_smilIterator.currentPar.text.src, _smilIterator.smil.href, self);
                 } else {
+                    if (_smilIterator.currentPar.text.manifestItemId !== nextSmil.spineItemId) {
+                        console.warn("Current Par text.manifestItemId mismatched! Recover to " + nextSmil.spineItemId);
+                        _smilIterator.currentPar.text.manifestItemId = nextSmil.spineItemId;
+                    }
                     playCurrentPar();
                 }
             }
