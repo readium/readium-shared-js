@@ -15095,9 +15095,9 @@ SmilModel.fromSmilDTO = function(smilDTO, mo) {
             {
                 if (smilModel.mo.DEBUG)
                 {
-                    console.log(getIndent() + "JS MO clipEnd adjusted to MAX");
+                    console.log(getIndent() + "JS MO clipEnd adjusted to clipBegin");
                 }
-                node.clipEnd = node.MAX;
+                node.clipEnd = node.clipBegin;
             }
             
             //node.updateMediaManifestItemId(); ONLY XHTML SPINE ITEMS 
