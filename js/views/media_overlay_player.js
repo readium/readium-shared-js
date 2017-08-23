@@ -93,6 +93,9 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
 //console.debug(_settings);
         _audioPlayer.setRate(_settings.mediaOverlaysRate);
         _audioPlayer.setVolume(_settings.mediaOverlaysVolume / 100.0);
+        if (_settings.mediaOverlaysMuteAudio) {
+            self.reset();
+        }
     };
     self.onSettingsApplied();
     
@@ -620,8 +623,11 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
             var startTime = _smilIterator.currentPar.audio.clipBegin + clipBeginOffset;
 
 //console.debug("PLAY START TIME: " + startTime + "("+_smilIterator.currentPar.audio.clipBegin+" + "+clipBeginOffset+")");
-
-            _audioPlayer.playFile(_smilIterator.currentPar.audio.src, audioSource, startTime); //_smilIterator.currentPar.element ? _smilIterator.currentPar.element : _smilIterator.currentPar.cfi.cfiTextParent
+            if (_settings.mediaOverlaysMuteAudio) {
+                _audioPlayer.playFakeAudio(_smilIterator.currentPar.audio.src, audioSource, startTime)
+            } else {
+                _audioPlayer.playFile(_smilIterator.currentPar.audio.src, audioSource, startTime); //_smilIterator.currentPar.element ? _smilIterator.currentPar.element : _smilIterator.currentPar.cfi.cfiTextParent
+            }
         }
 
         clipBeginOffset = 0.0;

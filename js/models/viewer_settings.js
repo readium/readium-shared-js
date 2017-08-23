@@ -161,6 +161,14 @@ var ViewerSettings = function(settingsData) {
 
     this.mediaOverlaysAutomaticPageTurn = false;
 
+    /**
+     *
+     * @property mediaOverlaysMuteAudio
+     * @type bool
+     */
+
+    this.mediaOverlaysMuteAudio = false;
+
     /** 
      *
      * @property enableGPUHardwareAccelerationCSS3D
@@ -268,6 +276,7 @@ var ViewerSettings = function(settingsData) {
         mapProperty("mediaOverlaysVolume", settingsData);
         mapProperty("mediaOverlaysSynchronizationGranularity", settingsData);
         mapProperty("mediaOverlaysAutomaticPageTurn", settingsData, booleanMapper);
+        mapProperty("mediaOverlaysMuteAudio", settingsData, booleanMapper);
         mapProperty("scroll", settingsData);
         mapProperty("syntheticSpread", settingsData);
         mapProperty("pageTransition", settingsData);
