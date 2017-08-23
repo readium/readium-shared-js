@@ -40,16 +40,19 @@ define(['jquery'],function($) {
      */
     var AudioPlayer = function(onStatusChanged, onPositionChanged, onAudioEnded, onAudioPlay, onAudioPause)
     {
+        const kPauseDelayThreshold = 1.5;   // 1.5 second
+        const kAudioTimerInterval = 20;     // 20 milliseconds
         var _iOS = navigator.userAgent.match(/(iPad|iPhone|iPod)/g) ? true : false;
         var _Android = navigator.userAgent.toLowerCase().indexOf('android') > -1;
         var _isMobile = _iOS || _Android;
-        const kPauseDelayThreshold = 1.5;   // 1.5 second
 
         //var _isReadiumJS = typeof window.requirejs !== "undefined";
 
         var DEBUG = false;
 
         var _audioElement = new Audio();
+        var _fakeAudioTimer = undefined;
+        var _fakeAudioPosition = 0;
         
         if (DEBUG)
         {
@@ -198,6 +201,10 @@ define(['jquery'],function($) {
                 console.error("this.play()");
             }
     
+            if (_fakeAudioTimer) {
+                console.log("_fakeAudioTimer is running. DO NOTHING...");
+                return;
+            }
             if(!_currentEpubSrc)
             {
                 return false;
@@ -219,7 +226,7 @@ define(['jquery'],function($) {
             {
                 console.error("this.pause()");
             }
-    
+            stopFakeTimer();
             stopTimer();
     
             _audioElement.pause();
@@ -307,7 +314,7 @@ define(['jquery'],function($) {
                     {
                         onPositionChanged(currentTime, 1);
                     }
-                }, 20);
+                }, kAudioTimerInterval);
         }
     
         function stopTimer()
@@ -318,10 +325,18 @@ define(['jquery'],function($) {
             }
             _intervalTimer = undefined;
         }
+
+        function stopFakeTimer() {
+            if (_fakeAudioTimer) {
+                clearInterval(_fakeAudioTimer);
+            }
+            _fakeAudioTimer = undefined;
+            _fakeAudioPosition = 0;
+        }
     
         this.isPlaying = function()
         {
-            return _intervalTimer !== undefined;
+            return _intervalTimer !== undefined || _fakeAudioTimer !== undefined;
         };
     
         this.reset = function()
@@ -332,9 +347,9 @@ define(['jquery'],function($) {
             }
     
             this.pause();
-    
+
             _audioElement.moSeeking = undefined;
-    
+
             _currentSmilSrc = undefined;
             _currentEpubSrc = undefined;
     
@@ -344,7 +359,6 @@ define(['jquery'],function($) {
             }, 1);
         };
     
-
         _audioElement.addEventListener("loadstart", function()
             {
                 _touchInited = true;
@@ -374,9 +388,25 @@ define(['jquery'],function($) {
         var _playId = 0;
     
         var _seekQueuing = 0;
-        
+
+        this.playFakeAudio = function(smilSrc, epubSrc, clipBegin) {
+            _currentSmilSrc = smilSrc;
+            _currentEpubSrc = epubSrc;
+
+            stopFakeTimer();
+            _fakeAudioPosition = clipBegin;
+            _fakeAudioTimer = setInterval(function() {
+                _fakeAudioPosition += (kAudioTimerInterval / 1000);
+
+                onPositionChanged(_fakeAudioPosition, 1);
+            }, kAudioTimerInterval);
+            onStatusChanged({isPlaying: true});
+            onAudioPlay();
+        };
+
         this.playFile = function(smilSrc, epubSrc, seekBegin) //element
         {
+            stopFakeTimer();
             _playId++;
             if (_playId > 99999)
             {
@@ -402,7 +432,7 @@ define(['jquery'],function($) {
                 setTimeout(function()
                 {
                     self.playFile(smilSrc, epubSrc, seekBegin);
-                }, 20);
+                }, kAudioTimerInterval);
                 
                 return;
             }
