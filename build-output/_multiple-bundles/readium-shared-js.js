@@ -4816,6 +4816,14 @@ var ViewerSettings = function(settingsData) {
 
     this.mediaOverlaysAutomaticPageTurn = false;
 
+    /**
+     *
+     * @property mediaOverlaysMuteAudio
+     * @type bool
+     */
+
+    this.mediaOverlaysMuteAudio = false;
+
     /** 
      *
      * @property enableGPUHardwareAccelerationCSS3D
@@ -4923,6 +4931,7 @@ var ViewerSettings = function(settingsData) {
         mapProperty("mediaOverlaysVolume", settingsData);
         mapProperty("mediaOverlaysSynchronizationGranularity", settingsData);
         mapProperty("mediaOverlaysAutomaticPageTurn", settingsData, booleanMapper);
+        mapProperty("mediaOverlaysMuteAudio", settingsData, booleanMapper);
         mapProperty("scroll", settingsData);
         mapProperty("syntheticSpread", settingsData);
         mapProperty("pageTransition", settingsData);
@@ -8565,16 +8574,19 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
      */
     var AudioPlayer = function(onStatusChanged, onPositionChanged, onAudioEnded, onAudioPlay, onAudioPause)
     {
+        const kPauseDelayThreshold = 1.5;   // 1.5 second
+        const kAudioTimerInterval = 20;     // 20 milliseconds
         var _iOS = navigator.userAgent.match(/(iPad|iPhone|iPod)/g) ? true : false;
         var _Android = navigator.userAgent.toLowerCase().indexOf('android') > -1;
         var _isMobile = _iOS || _Android;
-        const kPauseDelayThreshold = 1.5;   // 1.5 second
 
         //var _isReadiumJS = typeof window.requirejs !== "undefined";
 
         var DEBUG = false;
 
         var _audioElement = new Audio();
+        var _fakeAudioTimer = undefined;
+        var _fakeAudioPosition = 0;
         
         if (DEBUG)
         {
@@ -8723,6 +8735,10 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
                 console.error("this.play()");
             }
     
+            if (_fakeAudioTimer) {
+                console.log("_fakeAudioTimer is running. DO NOTHING...");
+                return;
+            }
             if(!_currentEpubSrc)
             {
                 return false;
@@ -8744,7 +8760,7 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
             {
                 console.error("this.pause()");
             }
-    
+            stopFakeTimer();
             stopTimer();
     
             _audioElement.pause();
@@ -8832,7 +8848,7 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
                     {
                         onPositionChanged(currentTime, 1);
                     }
-                }, 20);
+                }, kAudioTimerInterval);
         }
     
         function stopTimer()
@@ -8843,10 +8859,18 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
             }
             _intervalTimer = undefined;
         }
+
+        function stopFakeTimer() {
+            if (_fakeAudioTimer) {
+                clearInterval(_fakeAudioTimer);
+            }
+            _fakeAudioTimer = undefined;
+            _fakeAudioPosition = 0;
+        }
     
         this.isPlaying = function()
         {
-            return _intervalTimer !== undefined;
+            return _intervalTimer !== undefined || _fakeAudioTimer !== undefined;
         };
     
         this.reset = function()
@@ -8857,9 +8881,9 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
             }
     
             this.pause();
-    
+
             _audioElement.moSeeking = undefined;
-    
+
             _currentSmilSrc = undefined;
             _currentEpubSrc = undefined;
     
@@ -8869,7 +8893,6 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
             }, 1);
         };
     
-
         _audioElement.addEventListener("loadstart", function()
             {
                 _touchInited = true;
@@ -8899,9 +8922,25 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
         var _playId = 0;
     
         var _seekQueuing = 0;
-        
+
+        this.playFakeAudio = function(smilSrc, epubSrc, clipBegin) {
+            _currentSmilSrc = smilSrc;
+            _currentEpubSrc = epubSrc;
+
+            stopFakeTimer();
+            _fakeAudioPosition = clipBegin;
+            _fakeAudioTimer = setInterval(function() {
+                _fakeAudioPosition += (kAudioTimerInterval / 1000);
+
+                onPositionChanged(_fakeAudioPosition, 1);
+            }, kAudioTimerInterval);
+            onStatusChanged({isPlaying: true});
+            onAudioPlay();
+        };
+
         this.playFile = function(smilSrc, epubSrc, seekBegin) //element
         {
+            stopFakeTimer();
             _playId++;
             if (_playId > 99999)
             {
@@ -8927,7 +8966,7 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
                 setTimeout(function()
                 {
                     self.playFile(smilSrc, epubSrc, seekBegin);
-                }, 20);
+                }, kAudioTimerInterval);
                 
                 return;
             }
@@ -11376,6 +11415,9 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
 //console.debug(_settings);
         _audioPlayer.setRate(_settings.mediaOverlaysRate);
         _audioPlayer.setVolume(_settings.mediaOverlaysVolume / 100.0);
+        if (_settings.mediaOverlaysMuteAudio) {
+            self.reset();
+        }
     };
     self.onSettingsApplied();
     
@@ -11903,8 +11945,11 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
             var startTime = _smilIterator.currentPar.audio.clipBegin + clipBeginOffset;
 
 //console.debug("PLAY START TIME: " + startTime + "("+_smilIterator.currentPar.audio.clipBegin+" + "+clipBeginOffset+")");
-
-            _audioPlayer.playFile(_smilIterator.currentPar.audio.src, audioSource, startTime); //_smilIterator.currentPar.element ? _smilIterator.currentPar.element : _smilIterator.currentPar.cfi.cfiTextParent
+            if (_settings.mediaOverlaysMuteAudio) {
+                _audioPlayer.playFakeAudio(_smilIterator.currentPar.audio.src, audioSource, startTime)
+            } else {
+                _audioPlayer.playFile(_smilIterator.currentPar.audio.src, audioSource, startTime); //_smilIterator.currentPar.element ? _smilIterator.currentPar.element : _smilIterator.currentPar.cfi.cfiTextParent
+            }
         }
 
         clipBeginOffset = 0.0;
