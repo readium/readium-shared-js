@@ -197,8 +197,8 @@ var InternalLinksSupport = function(reader) {
             var overrideClickEvent = false;
             var hrefUri = new URI(href);
             var hrefIsRelative = hrefUri.is('relative');
-            var isNoteRef = clickEvent.currentTarget.attributes['epub:type'].value === 'noteref';
-            // console.log('internal_links_support_href',href);
+            var epubType = clickEvent.currentTarget.attributes['epub:type'];
+            var isNoteRef = (epubType && epubType.value === 'noteref') ? true : false;
             if (hrefIsRelative) {
 
                 if(isDeepLikHref(hrefUri)) {
