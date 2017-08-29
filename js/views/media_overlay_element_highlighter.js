@@ -35,7 +35,7 @@ define(['jquery', 'rangy', 'readium_cfi_js'], function($, rangy, epubCfi) {
 var MediaOverlayElementHighlighter = function(reader) {
 
     this.includeParWhenAdjustingToSeqSyncGranularity = true;
-
+    const EPUB3_MO_ACTIVE_CLASS = "media-overlay-active";
     var DEFAULT_MO_ACTIVE_CLASS = "mo-active-default";
     var DEFAULT_MO_SUB_SYNC_CLASS = "mo-sub-sync";
     
@@ -97,6 +97,29 @@ var MediaOverlayElementHighlighter = function(reader) {
         }
     };
 
+    function getActiveClassFromHead($head, activeClassName) {
+        var styles = $head.find('style');
+
+        if (styles) {
+            for (var i = 0; i < styles.length; i++) {
+                var cssRules = styles[i].sheet.cssRules;
+
+                if (cssRules) {
+                    for (var j = 0; j < cssRules.length; j++) {
+                        var cssSelector = cssRules[j].selectorText;
+                        var cssStyle = cssRules[j].style;
+
+                        if (cssSelector && cssSelector.includes(activeClassName) &&
+                                cssStyle.cssText && cssStyle.cssText.length > 0) {
+                            return activeClassName;
+                        }
+                    }
+                }
+            }
+        }
+        return undefined;
+    };
+
     function ensureUserStyle($element, hasAuthorStyle, overrideWithUserStyle)
     {
         if ($userStyle)
@@ -113,16 +136,27 @@ var MediaOverlayElementHighlighter = function(reader) {
                 
             }
         }
-
+        var fallbackUserStyle = "background-color: yellow !important; color: black !important; border-radius: 0.4em;";
+        var appendUserStyle = true;
 
         $head = $("head", $element[0].ownerDocument.documentElement);
-
         $userStyle = $("<style type='text/css'> </style>");
 
-        $userStyle.append("." + DEFAULT_MO_ACTIVE_CLASS + " {");
-        
-        var fallbackUserStyle = "background-color: yellow !important; color: black !important; border-radius: 0.4em;";
-        
+        if (hasAuthorStyle) {
+            var activeClass = getActiveClassFromHead($head, _activeClass);
+
+            if (activeClass) {
+                appendUserStyle = false;
+            }
+            if (appendUserStyle) {
+                $userStyle.append("." + _activeClass + " {" + fallbackUserStyle);
+                appendUserStyle = false;
+            }
+        }
+        if (appendUserStyle) {
+            $userStyle.append("." + DEFAULT_MO_ACTIVE_CLASS + " {");
+        }
+
         var style = overrideWithUserStyle; //_reader.userStyles().findStyle("." + DEFAULT_MO_ACTIVE_CLASS);
         if (style)
         {
@@ -147,8 +181,9 @@ var MediaOverlayElementHighlighter = function(reader) {
         {
             $userStyle.append(fallbackUserStyle);
         }
-        
-        $userStyle.append("}");
+        if (appendUserStyle) {
+            $userStyle.append("}");
+        }
         
         
         // ---- CFI
@@ -189,6 +224,11 @@ var MediaOverlayElementHighlighter = function(reader) {
         var hasAuthorStyle = _activeClass && _activeClass !== "";
         var overrideWithUserStyle = _reader.userStyles().findStyle("." + DEFAULT_MO_ACTIVE_CLASS);
 
+        if (!hasAuthorStyle) {
+            $head = $("head", $hel[0].ownerDocument.documentElement);
+            _activeClass = getActiveClassFromHead($head, EPUB3_MO_ACTIVE_CLASS);
+            hasAuthorStyle = _activeClass && _activeClass !== "";
+        }
         ensureUserStyle($hel, hasAuthorStyle, overrideWithUserStyle);
                 
         if (overrideWithUserStyle || !hasAuthorStyle)
@@ -277,6 +317,11 @@ var MediaOverlayElementHighlighter = function(reader) {
         var hasAuthorStyle = _activeClass && _activeClass !== "";
         var overrideWithUserStyle = _reader.userStyles().findStyle("." + DEFAULT_MO_ACTIVE_CLASS); // TODO: performance issue?
 
+        if (!hasAuthorStyle) {
+            $head = $("head", $hel[0].ownerDocument.documentElement);
+            _activeClass = getActiveClassFromHead($head, EPUB3_MO_ACTIVE_CLASS);
+            hasAuthorStyle = _activeClass && _activeClass !== "";
+        }
         ensureUserStyle($hel, hasAuthorStyle, overrideWithUserStyle);
 
         var clazz = (overrideWithUserStyle || !hasAuthorStyle) ? ((hasAuthorStyle ? (_activeClass + " ") : "") + DEFAULT_MO_ACTIVE_CLASS) : _activeClass;
