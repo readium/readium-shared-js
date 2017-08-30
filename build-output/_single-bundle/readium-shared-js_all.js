@@ -24123,6 +24123,7 @@ Helpers.addTapEventHandler = function($body, reportClicked) {
     var startPageY = 0;
     var longTapped = false;
     var tapTimer = undefined;
+    var startReturnValue = true;
     var touchStartEventHandler = function(event) {
         var touch = event.touches[0];
 
@@ -24132,6 +24133,8 @@ Helpers.addTapEventHandler = function($body, reportClicked) {
         tapTimer = setTimeout(function() {
             longTapped = true;
         }, 1500);
+        startReturnValue = event.returnValue;
+        //console.debug("TOUCH-START: event.returnValue = " + event.returnValue);
         //console.debug("TOUCH-START: # touches = " + event.touches.length);
         //console.debug("TOUCH-START (" + startPageX + ", " + startPageY + ")");
     };
@@ -24148,7 +24151,7 @@ Helpers.addTapEventHandler = function($body, reportClicked) {
         clearTimeout(tapTimer);
         //console.debug("TOUCH-END: # touches = " + event.changedTouches.length);
         //console.debug("TOUCH-END (" +  + touch.pageX + ", " + touch.pageY + "), tapped? " + tapped + ", longTapped? " + longTapped);
-        if (tapped && !longTapped && event.returnValue) {
+        if (tapped && !longTapped && event.returnValue && startReturnValue) {
             return reportClicked(event);
         }
         return true;
