@@ -1,0 +1,1 @@
+require.config({bundles: {"readium-plugin-hypothesis":["readium_plugin_hypothesis","readium_plugin_hypothesis/main"]}});

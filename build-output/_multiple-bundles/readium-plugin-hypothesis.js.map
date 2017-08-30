@@ -1,0 +1,16 @@
+{
+  "version": 3,
+  "sources": [
+    "../../plugins/hypothesis/main.js",
+    "../../../../../../../../../module-create.js",
+    "../../../../../../../../../module-insertRequire.js"
+  ],
+  "names": [],
+  "mappings": "AAAA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA,ACxCA;AACA;AACA,ACFA;AACA;AACA",
+  "file": "readium-plugin-hypothesis.js",
+  "sourcesContent": [
+    "/**\n * This plugin helps to properly load the Hypothes.is client with Readium.\n * Enable this plugin if you want to add the Hypothesis client to your reader\n * so that visitors can annotate EPUBs without having to install\n * the Hypothesis browser extension.\n */\n\ndefine('readium_plugin_hypothesis/main',['readium_js_plugins'], function (Plugins) {\n\n    var H_EMBED_URL = 'https://hypothes.is/embed.js';\n\n    Plugins.register(\"hypothesis\", function () {\n        var self = this;\n\n        // Request that the UI controls make space for the Hypothesis sidebar\n        window.hypothesisConfig = function () {\n            return {\n                onLayoutChange: function(state) {\n                    self.emit('offsetPageButton', state.width);\n                    if (!state.expanded) {\n                        self.emit('offsetNavBar', state.width);\n                    }\n                }\n            };\n        };\n\n        // The script for Hypothesis needs to be included once\n        // Readium has been fully loaded by the RequireJS/AMD shim.\n        // We can do this here in this callback when this plugin is invoked.\n\n        // Inject the script\n        var script = document.createElement('script');\n        script.setAttribute('src', H_EMBED_URL);\n        script.setAttribute('async', 'true');\n        document.head.appendChild(script);\n    });\n});\n\ndefine('readium_plugin_hypothesis', ['readium_plugin_hypothesis/main'], function (main) { return main; });\n\n",
+    "\ndefine(\"readium-plugin-hypothesis\", function(){});\n",
+    "\nrequire([\"readium_plugin_hypothesis\"]);\n"
+  ]
+}
