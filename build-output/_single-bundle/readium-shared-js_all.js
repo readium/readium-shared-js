@@ -38557,7 +38557,7 @@ var MediaOverlayElementHighlighter = function(reader) {
                 
             }
         }
-        var fallbackUserStyle = "background-color: yellow !important; color: black !important; border-radius: 0.4em;";
+        var fallbackUserStyle = "color: #3366ff !important; fill: #3366ff !important; opacity: 1;";
         var appendUserStyle = true;
 
         $head = $("head", $element[0].ownerDocument.documentElement);
