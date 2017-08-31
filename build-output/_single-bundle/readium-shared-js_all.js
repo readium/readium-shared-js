@@ -37627,16 +37627,14 @@ var MediaOverlayDataInjector = function (mediaOverlay, mediaOverlayPlayer) {
                              */
                         }
                     } else {
-                        var modata = $body.data("mediaOverlayData");
+                        var dummyElement = document.createElement('div');
 
-                        console.warn("!! CANNOT FIND ELEMENT: " + iter.currentPar.text.srcFragmentId + " == " + iter.currentPar.text.srcFile + " /// " + spineItem.href);
-                        if (modata) {
-                            console.warn("[WARN] MO DATA already exists.");
-                            if (modata.par && modata.par !== iter.currentPar) {
-                                console.warn("DIFFERENT PARS??!");
-                            }
-                        }
-                        $body.data("mediaOverlayData", { par: iter.currentPar });
+                        console.warn("!! CANNOT FIND ELEMENT: " + iter.currentPar.text.srcFragmentId + " == " +
+                                iter.currentPar.text.srcFile + " /// " + spineItem.href);
+                        dummyElement.style.cssText = 'width: 0px; height: 0px;';
+                        dummyElement.className = "dummyMediaOverlayElement";
+                        $(dummyElement).data("mediaOverlayData", { par: iter.currentPar });
+                        $body.append(dummyElement);
                     }
                 } else {
                     //console.debug("[INFO] " + spineItem.href + " != " + textRelativeRef + " # " + iter.currentPar.text.srcFragmentId);
