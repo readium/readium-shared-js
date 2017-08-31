@@ -8477,7 +8477,13 @@ var MediaOverlayDataInjector = function (mediaOverlay, mediaOverlayPlayer) {
                     {
                         if (selectBody)
                         {
-                            $element = $body; //$("body", contentDocElement);
+                            var dummyElement = document.createElement('div');
+
+                            console.warn("Attach dummy media overlay to body...");
+                            dummyElement.style.cssText = 'width: 0px; height: 0px;';
+                            dummyElement.className = "dummyMediaOverlayElement";
+                            $body.append(dummyElement);
+                            $element = $(dummyElement);
                         }
                         else
                         {
