@@ -2920,6 +2920,18 @@ Helpers.addTapEventHandler = function($body, reportClicked) {
         var touch = event.changedTouches[0];
         var tapped = (Math.abs(touch.pageX - startPageX) <= 25) && (Math.abs(touch.pageY - startPageY) <= 25);
 
+        if (event.target && event.target !== document.body) {
+            var attributes = event.target.attributes;
+
+            if (attributes) {
+                for (var i = 0; i < attributes.length; i++) {
+                    if (attributes[i].name && attributes[i].name === "onclick") {
+                        tapped = false;
+                        break;
+                    }
+                }
+            }
+        }
         clearTimeout(tapTimer);
         //console.debug("TOUCH-END: # touches = " + event.changedTouches.length);
         //console.debug("TOUCH-END (" +  + touch.pageX + ", " + touch.pageY + "), tapped? " + tapped + ", longTapped? " + longTapped);
