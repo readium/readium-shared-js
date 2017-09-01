@@ -1153,9 +1153,9 @@ SmilModel.fromSmilDTO = function(smilDTO, mo) {
             {
                 if (smilModel.mo.DEBUG)
                 {
-                    console.log(getIndent() + "JS MO clipEnd adjusted to clipBegin");
+                    console.log(getIndent() + "JS MO clipEnd adjusted to clipBegin + 0.1");
                 }
-                node.clipEnd = node.clipBegin;
+                node.clipEnd = node.clipBegin + 0.1;
             }
             
             //node.updateMediaManifestItemId(); ONLY XHTML SPINE ITEMS 
