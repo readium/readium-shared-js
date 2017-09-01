@@ -11,6 +11,7 @@ body {
     position: absolute;
     overflow: hidden;
     box-sizing:border-box;
+    background-color: hsl(0, 0%, 67.7%);
     -moz-box-sizing:border-box; /* Firefox */
     -webkit-box-sizing:border-box; /* Safari */
 }
