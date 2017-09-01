@@ -37451,8 +37451,15 @@ var MediaOverlayDataInjector = function (mediaOverlay, mediaOverlayPlayer) {
             if (true) { //iter.currentPar.text.srcFragmentId (includes empty frag ID)
 
                 var textRelativeRef = Helpers.ResolveContentRef(iter.currentPar.text.srcFile, iter.smil.href);
-
                 var same = textRelativeRef === spineItem.href;
+
+                if (!same) {
+                    textRelativeRef = spineItem.href;
+                    iter.currentPar.text.srcFile = spineItem.href;
+                    iter.currentPar.text.src = spineItem.href;
+                    iter.currentPar.text.srcFragmentId = "";
+                    same = true;
+                }
                 if (same) {
                     var selectBody = !iter.currentPar.text.srcFragmentId || iter.currentPar.text.srcFragmentId.length == 0;
                     var selectId = iter.currentPar.text.srcFragmentId.indexOf(epubCfiPrefix) == 0 ? undefined : iter.currentPar.text.srcFragmentId;
@@ -37643,7 +37650,7 @@ var MediaOverlayDataInjector = function (mediaOverlay, mediaOverlayPlayer) {
                         $body.append(dummyElement);
                     }
                 } else {
-                    //console.debug("[INFO] " + spineItem.href + " != " + textRelativeRef + " # " + iter.currentPar.text.srcFragmentId);
+                    console.warn("[INFO] " + spineItem.href + " != " + textRelativeRef + " # " + iter.currentPar.text.srcFragmentId);
                 }
             }
 
@@ -38046,10 +38053,7 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
     
         var _seekQueuing = 0;
 
-        this.playFakeAudio = function(smilSrc, epubSrc, clipBegin) {
-            _currentSmilSrc = smilSrc;
-            _currentEpubSrc = epubSrc;
-
+        this.playFakeAudio = function(clipBegin) {
             stopFakeTimer();
             _fakeAudioPosition = clipBegin;
             _fakeAudioTimer = setInterval(function() {
@@ -41114,9 +41118,13 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
 
 //console.debug("PLAY START TIME: " + startTime + "("+_smilIterator.currentPar.audio.clipBegin+" + "+clipBeginOffset+")");
             if (_settings.mediaOverlaysMuteAudio) {
-                _audioPlayer.playFakeAudio(_smilIterator.currentPar.audio.src, audioSource, startTime)
+                _audioPlayer.playFakeAudio(startTime)
             } else {
-                _audioPlayer.playFile(_smilIterator.currentPar.audio.src, audioSource, startTime); //_smilIterator.currentPar.element ? _smilIterator.currentPar.element : _smilIterator.currentPar.cfi.cfiTextParent
+                if (dur <= 0) {
+                    _audioPlayer.playFakeAudio(startTime)
+                } else {
+                    _audioPlayer.playFile(_smilIterator.currentPar.audio.src, audioSource, startTime); //_smilIterator.currentPar.element ? _smilIterator.currentPar.element : _smilIterator.currentPar.cfi.cfiTextParent
+                }
             }
         }
 
@@ -41224,11 +41232,16 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
         //var TOLERANCE = 0.05;
         if(
             //position >= (audio.clipBegin - TOLERANCE) &&
-        position > DIRECTION_MARK &&
-            position <= audio.clipEnd) {
+        position > DIRECTION_MARK) {
+            const clipOffset = 3;
 
-//console.debug("onAudioPositionChanged: " + position);
-            return;
+            if (audio.clipBegin == audio.clipEnd && position <= audio.clipEnd + 3) {
+                console.warn("Invalid duration, Add " + clipOffset + " seconds to the clipEnd...");
+            }
+            if ((audio.clipBegin == audio.clipEnd && position <= audio.clipEnd + clipOffset) || position <= audio.clipEnd) {
+                //console.debug("onAudioPositionChanged: " + position);
+                return;
+            }
         }
 
         _skipAudioEnded = true;
@@ -44308,9 +44321,9 @@ SmilModel.fromSmilDTO = function(smilDTO, mo) {
             {
                 if (smilModel.mo.DEBUG)
                 {
-                    console.log(getIndent() + "JS MO clipEnd adjusted to clipBegin");
+                    console.log(getIndent() + "JS MO clipEnd adjusted to clipBegin + 0.1");
                 }
-                node.clipEnd = node.clipBegin;
+                node.clipEnd = node.clipBegin + 0.1;
             }
             
             //node.updateMediaManifestItemId(); ONLY XHTML SPINE ITEMS 
