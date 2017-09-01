@@ -389,8 +389,15 @@ var MediaOverlayDataInjector = function (mediaOverlay, mediaOverlayPlayer) {
             if (true) { //iter.currentPar.text.srcFragmentId (includes empty frag ID)
 
                 var textRelativeRef = Helpers.ResolveContentRef(iter.currentPar.text.srcFile, iter.smil.href);
-
                 var same = textRelativeRef === spineItem.href;
+
+                if (!same) {
+                    textRelativeRef = spineItem.href;
+                    iter.currentPar.text.srcFile = spineItem.href;
+                    iter.currentPar.text.src = spineItem.href;
+                    iter.currentPar.text.srcFragmentId = "";
+                    same = true;
+                }
                 if (same) {
                     var selectBody = !iter.currentPar.text.srcFragmentId || iter.currentPar.text.srcFragmentId.length == 0;
                     var selectId = iter.currentPar.text.srcFragmentId.indexOf(epubCfiPrefix) == 0 ? undefined : iter.currentPar.text.srcFragmentId;
@@ -581,7 +588,7 @@ var MediaOverlayDataInjector = function (mediaOverlay, mediaOverlayPlayer) {
                         $body.append(dummyElement);
                     }
                 } else {
-                    //console.debug("[INFO] " + spineItem.href + " != " + textRelativeRef + " # " + iter.currentPar.text.srcFragmentId);
+                    console.warn("[INFO] " + spineItem.href + " != " + textRelativeRef + " # " + iter.currentPar.text.srcFragmentId);
                 }
             }
 

@@ -624,9 +624,13 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
 
 //console.debug("PLAY START TIME: " + startTime + "("+_smilIterator.currentPar.audio.clipBegin+" + "+clipBeginOffset+")");
             if (_settings.mediaOverlaysMuteAudio) {
-                _audioPlayer.playFakeAudio(_smilIterator.currentPar.audio.src, audioSource, startTime)
+                _audioPlayer.playFakeAudio(startTime)
             } else {
-                _audioPlayer.playFile(_smilIterator.currentPar.audio.src, audioSource, startTime); //_smilIterator.currentPar.element ? _smilIterator.currentPar.element : _smilIterator.currentPar.cfi.cfiTextParent
+                if (dur <= 0) {
+                    _audioPlayer.playFakeAudio(startTime)
+                } else {
+                    _audioPlayer.playFile(_smilIterator.currentPar.audio.src, audioSource, startTime); //_smilIterator.currentPar.element ? _smilIterator.currentPar.element : _smilIterator.currentPar.cfi.cfiTextParent
+                }
             }
         }
 
@@ -734,11 +738,16 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
         //var TOLERANCE = 0.05;
         if(
             //position >= (audio.clipBegin - TOLERANCE) &&
-        position > DIRECTION_MARK &&
-            position <= audio.clipEnd) {
+        position > DIRECTION_MARK) {
+            const clipOffset = 3;
 
-//console.debug("onAudioPositionChanged: " + position);
-            return;
+            if (audio.clipBegin == audio.clipEnd && position <= audio.clipEnd + 3) {
+                console.warn("Invalid duration, Add " + clipOffset + " seconds to the clipEnd...");
+            }
+            if ((audio.clipBegin == audio.clipEnd && position <= audio.clipEnd + clipOffset) || position <= audio.clipEnd) {
+                //console.debug("onAudioPositionChanged: " + position);
+                return;
+            }
         }
 
         _skipAudioEnded = true;

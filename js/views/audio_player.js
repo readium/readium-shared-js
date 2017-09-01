@@ -389,10 +389,7 @@ define(['jquery'],function($) {
     
         var _seekQueuing = 0;
 
-        this.playFakeAudio = function(smilSrc, epubSrc, clipBegin) {
-            _currentSmilSrc = smilSrc;
-            _currentEpubSrc = epubSrc;
-
+        this.playFakeAudio = function(clipBegin) {
             stopFakeTimer();
             _fakeAudioPosition = clipBegin;
             _fakeAudioTimer = setInterval(function() {
