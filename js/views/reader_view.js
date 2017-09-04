@@ -253,6 +253,11 @@ var ReaderView = function (options) {
             Trigger.register(contentDoc);
             Switches.apply(contentDoc);
 
+            var $imgs = $iframe.contents().find("img");
+
+            if ($imgs[0]) {
+                $imgs.css({ "-webkit-user-select": "none", "-webkit-touch-callout": "none" });
+            }
             Globals.logEvent("CONTENT_DOCUMENT_LOADED", "EMIT", "reader_view.js [ " + spineItem.href + " ]");
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
             //console.log("initViewForItem: CONTENT_DOCUMENT_LOADED: isPlayingMediaOverlay() = " + self.isPlayingMediaOverlay() +
