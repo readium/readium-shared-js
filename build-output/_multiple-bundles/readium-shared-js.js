@@ -5765,6 +5765,11 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
     this.transformContentImmediate = function (scale, left, top) {
 
         if (_enableBookStyleOverrides) return;  // not fixed layout (reflowable in scroll view)
+        if (!_$el) {
+            console.warn("_$el is undefined!");
+
+            return;
+        }
 
         var elWidth = Math.ceil(_meta_size.width * scale);
         var elHeight = Math.floor(_meta_size.height * scale);
@@ -21566,6 +21571,11 @@ var ReaderView = function (options) {
             Trigger.register(contentDoc);
             Switches.apply(contentDoc);
 
+            var $imgs = $iframe.contents().find("img");
+
+            if ($imgs[0]) {
+                $imgs.css({ "-webkit-user-select": "none", "-webkit-touch-callout": "none" });
+            }
             Globals.logEvent("CONTENT_DOCUMENT_LOADED", "EMIT", "reader_view.js [ " + spineItem.href + " ]");
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
             //console.log("initViewForItem: CONTENT_DOCUMENT_LOADED: isPlayingMediaOverlay() = " + self.isPlayingMediaOverlay() +
