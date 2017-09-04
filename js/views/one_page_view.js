@@ -590,6 +590,11 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
     this.transformContentImmediate = function (scale, left, top) {
 
         if (_enableBookStyleOverrides) return;  // not fixed layout (reflowable in scroll view)
+        if (!_$el) {
+            console.warn("_$el is undefined!");
+
+            return;
+        }
 
         var elWidth = Math.ceil(_meta_size.width * scale);
         var elHeight = Math.floor(_meta_size.height * scale);
