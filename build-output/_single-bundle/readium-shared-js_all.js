@@ -50681,7 +50681,7 @@ var ReaderView = function (options) {
             var $imgs = $iframe.contents().find("img");
 
             if ($imgs[0]) {
-                $imgs.css({ "-webkit-user-select": "none", "-webkit-touch-callout": "none" });
+                $imgs.css({ "-webkit-user-select": "none", "-webkit-touch-callout": "none", "-webkit-user-drag": "none" });
             }
             Globals.logEvent("CONTENT_DOCUMENT_LOADED", "EMIT", "reader_view.js [ " + spineItem.href + " ]");
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
