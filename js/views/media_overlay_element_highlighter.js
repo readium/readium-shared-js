@@ -111,7 +111,10 @@ var MediaOverlayElementHighlighter = function(reader) {
 
                         if (cssSelector && cssSelector.includes(activeClassName) &&
                                 cssStyle.cssText && cssStyle.cssText.length > 0) {
-                            return activeClassName;
+                            if (cssSelector.charAt(0) === '.') {
+                                return cssSelector.slice(1);
+                            }
+                            return cssSelector;
                         }
                     }
                 }
