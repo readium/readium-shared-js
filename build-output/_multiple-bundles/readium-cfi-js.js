@@ -2569,7 +2569,7 @@ var obj = {
     },
     _concatStepsFromCFIAST: function(CFIAST) {
         return CFIAST.cfiString.localPath.steps.map(function (o) {
-            return o.stepLength;
+            return parseInt(o.stepLength);
         });
     },
     _compareCFIASTs: function (CFIAST1, CFIAST2) {
@@ -2586,8 +2586,8 @@ var obj = {
             var R = steps2[index];
             if (!L || !R) {
                 if (result === 0 && (term1.offsetValue || term2.offsetValue)) {
-                    var tL = term1.offsetValue || 0;
-                    var tR = term2.offsetValue || 0;
+                    var tL = parseInt(term1.offsetValue) || 0;
+                    var tR = parseInt(term2.offsetValue) || 0;
                     if (tL > tR) {
                         result = 1;
                     } else if (tL < tR) {
@@ -2600,8 +2600,10 @@ var obj = {
             }
             if (L > R) {
                 result = 1;
+                break;
             } else if (L < R) {
                 result = -1;
+                break;
             } else {
                 result = 0;
             }
