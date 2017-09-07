@@ -8896,7 +8896,6 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
                 clearInterval(_fakeAudioTimer);
             }
             _fakeAudioTimer = undefined;
-            _fakeAudioPosition = 0;
         }
     
         this.isPlaying = function()
@@ -8953,6 +8952,10 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
         var _playId = 0;
     
         var _seekQueuing = 0;
+
+        this.playFakeAudio = function() {
+            this.playFakeAudio(_fakeAudioPosition);
+        };
 
         this.playFakeAudio = function(clipBegin) {
             stopFakeTimer();
@@ -13477,7 +13480,11 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
         //if we have position to continue from (reset wasn't called)
         if(_smilIterator) {
-            self.play();
+            if (_settings.mediaOverlaysMuteAudio) {
+                _audioPlayer.playFakeAudio();
+            } else {
+                self.play();
+            }
             return;
         }
 
@@ -13485,16 +13492,18 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
     };
 
     this.playMediaOverlay = function() {
-        if(self.isPlaying()) {
+        if (self.isPlaying()) {
             return;
         }
-
-        //if we have position to continue from (reset wasn't called)
+        // if we have position to continue from (reset wasn't called)
         if(_smilIterator) {
-            self.play();
+            if (_settings.mediaOverlaysMuteAudio) {
+                _audioPlayer.playFakeAudio();
+            } else {
+                self.play();
+            }
             return;
         }
-
         this.toggleMediaOverlayRefresh(undefined);
     };
 
