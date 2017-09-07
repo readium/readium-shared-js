@@ -331,7 +331,6 @@ define(['jquery'],function($) {
                 clearInterval(_fakeAudioTimer);
             }
             _fakeAudioTimer = undefined;
-            _fakeAudioPosition = 0;
         }
     
         this.isPlaying = function()
@@ -388,6 +387,10 @@ define(['jquery'],function($) {
         var _playId = 0;
     
         var _seekQueuing = 0;
+
+        this.playFakeAudio = function() {
+            this.playFakeAudio(_fakeAudioPosition);
+        };
 
         this.playFakeAudio = function(clipBegin) {
             stopFakeTimer();
