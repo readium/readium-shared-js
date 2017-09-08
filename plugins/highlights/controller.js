@@ -555,9 +555,9 @@ function($, _, Class, HighlightHelpers, HighlightGroup) {
 
             var offset;
             if (this.context.isRTL && !this.context.isVerticalWritingMode) {
-                offset = -this.context.paginationInfo.pageOffset;
+                offset = -this.context.paginationInfo().pageOffset;
             } else {
-                offset = this.context.paginationInfo.pageOffset;
+                offset = this.context.paginationInfo().pageOffset;
             }
 
             if (this.context.isVerticalWritingMode) {
