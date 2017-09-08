@@ -716,13 +716,18 @@ Helpers.loadTemplate = function (name, params) {
  */
 Helpers.loadTemplate.cache = {
     "fixed_book_frame": '<div id="fixed-book-frame" class="clearfix book-frame fixed-book-frame"></div>',
-
-    "single_page_frame": '<div><div id="scaler"><iframe allowfullscreen="allowfullscreen" scrolling="no" class="iframe-fixed"></iframe></div></div>',
+    "single_page_frame": '<div><div id="scaler"><iframe enable-annotation="enable-annotation" allowfullscreen="allowfullscreen" scrolling="no" class="iframe-fixed"></iframe></div></div>',
     //"single_page_frame" : '<div><iframe scrolling="no" class="iframe-fixed" id="scaler"></iframe></div>',
 
     "scrolled_book_frame": '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"><div id="scrolled-content-frame"></div></div>',
     "reflowable_book_frame": '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"></div>',
-    "reflowable_book_page_frame": '<div id="reflowable-content-frame" class="reflowable-content-frame"><iframe allowfullscreen="allowfullscreen" scrolling="no" id="epubContentIframe"></iframe></div>'
+    "reflowable_book_page_frame": '<div id="reflowable-content-frame" class="reflowable-content-frame"><iframe enable-annotation="enable-annotation" allowfullscreen="allowfullscreen" scrolling="no" id="epubContentIframe"></iframe></div>'
+    /***
+     * The `enable-annotation` attribute on an iframe helps detect the content frames for annotating tools such as Hypothesis
+     * See here for more details:
+     * https://h.readthedocs.io/projects/client/en/latest/publishers/embedding/
+     * https://github.com/hypothesis/client/pull/533
+     ***/
 };
 
 /**
