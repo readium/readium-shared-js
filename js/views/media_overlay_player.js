@@ -1885,6 +1885,10 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         _smilIterator = undefined;
         _skipAudioEnded = false;
     };
+       
+   this.resetNoAutoNextSmil = function () {
+       _wasPausedBecauseNoAutoNextSmil = false;
+   }
 
     this.play = function ()
     {

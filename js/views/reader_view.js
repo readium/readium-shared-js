@@ -1279,6 +1279,7 @@ var ReaderView = function (options) {
         if( _mediaOverlayPlayer) {
             self.pauseMediaOverlay();
             _mediaOverlayPlayer.reset();
+            _mediaOverlayPlayer.resetNoAutoNextSmil();
         }
     };
 
