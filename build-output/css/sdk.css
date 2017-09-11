@@ -24,15 +24,14 @@ iframe {
     width: 100%;
     height: 100%;
     position: relative;
-    background-color: white;
     overflow: auto; /* pan-zoom feature, fixed layout pages */
 }
 
 
 /*Fixed layout */
-
 #fixed-book-frame {
     position: absolute !important;
+    background-color: white;
 }
 
 
