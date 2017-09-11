@@ -22,6 +22,6 @@ apply plugin: 'release'
 
 release {
     failOnUnversionedFiles = false
-    requireBranch = 'dev'
+    requireBranch = 'master'
     tagPrefix = "${artifactId}"
 }
