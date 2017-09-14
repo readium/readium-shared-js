@@ -509,9 +509,9 @@ var CfiNavigationLogic = function (options) {
                 width: textRect.right - textRect.left,
                 height: textRect.bottom - textRect.top
             };
-            if (leftOffset && topOffset) {
-                offsetRectangle(plainRectObject, leftOffset, topOffset);
-            }
+            leftOffset = leftOffset || 0;
+            topOffset = topOffset || 0;
+            offsetRectangle(plainRectObject, leftOffset, topOffset);
             return plainRectObject;
         }
 
