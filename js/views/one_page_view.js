@@ -1084,7 +1084,11 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         return navigation.getNodeRangeInfoFromCfi(partialCfi);
     };
 
-    function createBookmarkFromCfi(cfi){
+    function createBookmarkFromCfi(cfi) {
+        if (!_currentSpineItem) {
+            return null;
+        }
+
         return new BookmarkData(_currentSpineItem.idref, cfi);
     }
 
