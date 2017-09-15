@@ -83,9 +83,7 @@ define(["../globals"], function(Globals) {
                     link.setAttribute('rel', 'canonical');
                     link.setAttribute('href', parentWindow.location.href);
                     contentDocument.head.appendChild(link);
-                    contentDocumentStates[spineItem.idref] = {
-                        canonicalLinkElement: link
-                    };
+                    contentDocumentStates[spineItem.idref].canonicalLinkElement = link;
                 }
             }
         }
@@ -95,9 +93,19 @@ define(["../globals"], function(Globals) {
             // by some external tools like Hypothes.is
             contentDocument.addEventListener('scrolltorange', function (event) {
                 event.preventDefault();
+
                 var range = event.detail;
                 var target = reader.getRangeCfiFromDomRange(range);
-                reader.openSpineItemElementCfi(target.idref, target.contentCFI);
+                var contentDocumentState = contentDocumentStates[target.idref];
+
+                if (contentDocumentState && contentDocumentState.isUpdated) {
+                    reader.openSpineItemElementCfi(target.idref, target.contentCFI);
+                } else {
+                    contentDocumentState.pendingNavRequest = {
+                        idref: target.idref,
+                        contentCFI: target.contentCFI
+                    };
+                }
             });
         }
 
@@ -107,10 +115,11 @@ define(["../globals"], function(Globals) {
          * @param {Models.SpineItem} spineItem  The associated spine item object
          */
         this.bindToContentDocument = function(contentDocument, spineItem) {
+            contentDocuments[spineItem.idref] = contentDocument;
+            contentDocumentStates[spineItem.idref] = {};
             injectDublinCoreResourceIdentifiers(contentDocument, spineItem);
             injectAppUrlAsCanonicalLink(contentDocument, spineItem);
             bindBringIntoViewEvent(contentDocument);
-            contentDocuments[spineItem.idref] = contentDocument;
         };
 
         /***
@@ -121,13 +130,24 @@ define(["../globals"], function(Globals) {
             var contentDocument = contentDocuments[spineItem.idref];
             var state = contentDocumentStates[spineItem.idref];
 
-            if (contentDocument && state && state.canonicalLinkElement) {
-                if (contentDocument.defaultView && contentDocument.defaultView.parent) {
+            if (contentDocument && state) {
+
+                if (state.canonicalLinkElement &&
+                    contentDocument.defaultView &&
+                    contentDocument.defaultView.parent) {
                     var parentWindow = contentDocument.defaultView.parent;
                     var isParentInDifferentDomain = 'document' in Object.keys(parentWindow);
                     if (!isParentInDifferentDomain) {
                         state.canonicalLinkElement.setAttribute('href', parentWindow.location.href);
                     }
+                }
+
+                state.isUpdated = true;
+
+                var pendingNavRequest = state.pendingNavRequest;
+                if (pendingNavRequest) {
+                    reader.openSpineItemElementCfi(pendingNavRequest.idref, pendingNavRequest.contentCFI);
+                    state.pendingNavRequest = null;
                 }
             }
         };
