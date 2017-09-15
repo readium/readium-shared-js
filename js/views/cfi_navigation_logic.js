@@ -103,7 +103,16 @@ var CfiNavigationLogic = function (options) {
         } else if (endNode.nodeType === Node.TEXT_NODE) {
             range.setEnd(endNode, endOffset ? endOffset : 0);
         }
-        return normalizeRectangle(range.getBoundingClientRect(), 0, 0);
+
+        // Webkit has a bug where collapsed ranges provide an empty rect with getBoundingClientRect()
+        // https://bugs.webkit.org/show_bug.cgi?id=138949
+        // Thankfully it implements getClientRects() properly...
+        // A collapsed text range may still have geometry!
+        if (range.collapsed) {
+            return normalizeRectangle(range.getClientRects()[0], 0, 0);
+        } else {
+            return normalizeRectangle(range.getBoundingClientRect(), 0, 0);
+        }
     }
 
     function getNodeClientRectList(node, visibleContentOffsets) {
