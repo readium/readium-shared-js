@@ -22,7 +22,7 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define(["../globals"], function(Globals) {
+define(["../globals", "underscore"], function(Globals, _) {
     /**
      * This module helps external agents that interact with content documents from
      * the level of the iframe browsing context:
@@ -88,6 +88,20 @@ define(["../globals"], function(Globals) {
             }
         }
 
+        var bringIntoViewDebounced = _.debounce(function (range) {
+            var target = reader.getRangeCfiFromDomRange(range);
+            var contentDocumentState = contentDocumentStates[target.idref];
+
+            if (contentDocumentState && contentDocumentState.isUpdated) {
+                reader.openSpineItemElementCfi(target.idref, target.contentCFI);
+            } else {
+                contentDocumentState.pendingNavRequest = {
+                    idref: target.idref,
+                    contentCFI: target.contentCFI
+                };
+            }
+        }, 100);
+
         function bindBringIntoViewEvent(contentDocument) {
             // 'scrolltorange' is a non-standard event that is emitted on the content frame
             // by some external tools like Hypothes.is
@@ -95,17 +109,7 @@ define(["../globals"], function(Globals) {
                 event.preventDefault();
 
                 var range = event.detail;
-                var target = reader.getRangeCfiFromDomRange(range);
-                var contentDocumentState = contentDocumentStates[target.idref];
-
-                if (contentDocumentState && contentDocumentState.isUpdated) {
-                    reader.openSpineItemElementCfi(target.idref, target.contentCFI);
-                } else {
-                    contentDocumentState.pendingNavRequest = {
-                        idref: target.idref,
-                        contentCFI: target.contentCFI
-                    };
-                }
+                bringIntoViewDebounced(range);
             });
         }
 
