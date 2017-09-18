@@ -102,3 +102,42 @@ iframe {
 .mo-active-default {
 
 }
+
+
+/* For page turn indicator */
+@-webkit-keyframes left-arrow-anim {
+    0% { -webkit-transform: translateX(0); opacity: 0.4 }
+    100% { -webkit-transform: translateX(-0.4em); opacity: 0.9 }
+  }
+@-webkit-keyframes right-arrow-anim {
+    0% { -webkit-transform: translateX(0); opacity: 0.4 }
+    100% { -webkit-transform: translateX(0.4em); opacity: 0.9 }
+}
+
+.left-arrow {
+    -webkit-animation: left-arrow-anim 0.6s infinite alternate ease-in-out;
+    width: 0;
+    height: 0;
+    border-top: 15pt solid transparent;
+    border-bottom: 15pt solid transparent;
+    border-right:15pt solid #00b6f1;
+  }
+.right-arrow {
+    -webkit-animation: right-arrow-anim 0.6s infinite alternate ease-in-out;
+    width: 0;
+    height: 0;
+    border-top: 15pt solid transparent;
+    border-bottom: 15pt solid transparent;
+    border-left: 15pt solid #00b6f1;
+  }
+
+.left-indicator {
+    position: absolute;
+    top: 50%;
+    left: 5%;
+}
+.right-indicator {
+    position: absolute;
+    top: 50%;
+    right: 5%;
+}

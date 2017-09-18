@@ -47,5 +47,9 @@
             <input id='scrubber_range' type="range" v-on:change="updateScrubber" v-on:input="onScroll" v-model='scrubber_index' v-bind:max='item_count - 1'
              v-bind:class="directionClass()">
         </div-->
+        <div id='page-turn-indicator' style="display:none;" >
+            <div class="left-arrow left-indicator" onClick="window.ReadiumSDK.reader.emit(ReadiumSDK.Events.TURN_TO_LEFT_PAGE);"></div>
+            <div class="right-arrow right-indicator" onClick="window.ReadiumSDK.reader.emit(ReadiumSDK.Events.TURN_TO_RIGHT_PAGE);"></div>
+        </div>
     </body>
 </html>

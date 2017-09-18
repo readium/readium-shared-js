@@ -124,7 +124,15 @@ var Globals = {
         /**
          * @event
          */
-        VIEWPORT_DID_RESIZE: "ViewportDidResize"
+        VIEWPORT_DID_RESIZE: "ViewportDidResize",
+        /**
+         * @event
+         */
+        TURN_TO_LEFT_PAGE: "TurnToLeftPage",
+        /**
+         * @event
+         */
+        TURN_TO_RIGHT_PAGE: "TurnToRightPage"
     },
     /**
      * Internal Events
