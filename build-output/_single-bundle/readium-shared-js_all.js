@@ -41256,12 +41256,13 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
         if(
             //position >= (audio.clipBegin - TOLERANCE) &&
         position > DIRECTION_MARK) {
-            const clipOffset = 3;
+            const clipOffset = 5; // 5 seconds
+            const fallbackThreshold = audio.clipEnd + clipOffset;
 
-            if (audio.clipBegin == audio.clipEnd && position <= audio.clipEnd + 3) {
+            if (audio.clipBegin == audio.clipEnd && position <= fallbackThreshold) {
                 console.warn("Invalid duration, Add " + clipOffset + " seconds to the clipEnd...");
             }
-            if ((audio.clipBegin == audio.clipEnd && position <= audio.clipEnd + clipOffset) || position <= audio.clipEnd) {
+            if ((audio.clipBegin == audio.clipEnd && position <= fallbackThreshold) || position <= audio.clipEnd) {
                 //console.debug("onAudioPositionChanged: " + position);
                 return;
             }
