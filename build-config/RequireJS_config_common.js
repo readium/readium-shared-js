@@ -22,6 +22,10 @@ require.config({
                 process._RJS_rootDir(1) + '/js',
 
             main: "globalsSetup"
+        },
+        {
+            name: "readium_shared_css",
+            location: process._RJS_rootDir(1) + '/css'
         }
     ],
 

@@ -28,10 +28,11 @@
 
 define(["../globals", "jquery", "underscore", "eventEmitter", "../models/bookmark_data", "./cfi_navigation_logic",
     "../models/current_pages_info", "../helpers", "../models/page_open_request",
-    "../models/viewer_settings", "ResizeSensor"],
+    "../models/viewer_settings", "ResizeSensor", "../readiumCSS"],
     function(Globals, $, _, EventEmitter, BookmarkData, CfiNavigationLogic,
              CurrentPagesInfo, Helpers, PageOpenRequest,
-             ViewerSettings, ResizeSensor) {
+             ViewerSettings, ResizeSensor, ReadiumCSS) {
+
 /**
  * Renders reflowable content using CSS columns
  * @param options
@@ -96,6 +97,8 @@ var ReflowableView = function(options, reader){
         pageOffset : 0,
         columnCount: 0
     };
+
+    var _readiumCSS;
 
     this.render = function(){
 
@@ -229,6 +232,13 @@ var ReflowableView = function(options, reader){
         });
     }
 
+    function onIFrameUnload() {
+        Globals.logEvent("CONTENT_DOCUMENT_UNLOADED", "EMIT", "reflowable_view.js [ " + _currentSpineItem.href + " ]");
+        self.emit(Globals.Events.CONTENT_DOCUMENT_UNLOADED, _$iframe, _currentSpineItem);
+
+        _readiumCSS = null;
+    }
+
     function loadSpineItem(spineItem) {
 
         if(_currentSpineItem != spineItem) {
@@ -236,8 +246,7 @@ var ReflowableView = function(options, reader){
             //create & append iframe to container frame
             renderIframe();
             if (_currentSpineItem) {
-                Globals.logEvent("CONTENT_DOCUMENT_UNLOADED", "EMIT", "reflowable_view.js [ " + _currentSpineItem.href + " ]");
-                self.emit(Globals.Events.CONTENT_DOCUMENT_UNLOADED, _$iframe, _currentSpineItem);
+                onIFrameUnload();
             }
 
             self.resetCurrentPosition();
@@ -264,22 +273,25 @@ var ReflowableView = function(options, reader){
     }
 
     function updateHtmlFontInfo() {
-    
-        if(_$epubHtml) {
-            var i = _fontSelection;
-            var useDefault = !reader.fonts || !reader.fonts.length || i <= 0 || (i-1) >= reader.fonts.length;
-            var font = (useDefault ?
-                        {} :
-                        reader.fonts[i - 1]);
-            Helpers.UpdateHtmlFontAttributes(_$epubHtml, _fontSize, font, function() {self.applyStyles();});
-        }
+        //TODO Readium CSS
+        //
+        // if(_$epubHtml) {
+        //     var i = _fontSelection;
+        //     var useDefault = !reader.fonts || !reader.fonts.length || i <= 0 || (i-1) >= reader.fonts.length;
+        //     var font = (useDefault ?
+        //                 {} :
+        //                 reader.fonts[i - 1]);
+        //     Helpers.UpdateHtmlFontAttributes(_$epubHtml, _fontSize, font, function() {self.applyStyles();});
+        // }
+        self.applyStyles();
     }
 
     function updateColumnGap() {
 
         if(_$epubHtml) {
 
-            _$epubHtml.css("column-gap", _paginationInfo.columnGap + "px");
+            //TODO Readium CSS
+            //_$epubHtml.css("column-gap", _paginationInfo.columnGap + "px");
         }
     }
 
@@ -305,6 +317,12 @@ var ReflowableView = function(options, reader){
         var epubContentDocument = _$iframe[0].contentDocument;
         _$epubHtml = $("html", epubContentDocument);
         _$htmlBody = $("body", _$epubHtml);
+
+
+        _readiumCSS = new ReadiumCSS(epubContentDocument, {
+            pagination: true,
+            scroll: false
+        });
 
         // TODO: how to address this correctly across all the affected platforms?!
         // Video surface sometimes (depends on the video codec) disappears from CSS column (i.e. reflow page) during playback
@@ -376,11 +394,12 @@ var ReflowableView = function(options, reader){
         _$iframe.css("opacity", "1");
 
         updateViewportSize();
-        _$epubHtml.css("height", _lastViewPortSize.height + "px");
+        //TODO Readium CSS
+        // _$epubHtml.css("height", _lastViewPortSize.height + "px");
 
-        _$epubHtml.css("position", "relative");
-        _$epubHtml.css("margin", "0");
-        _$epubHtml.css("padding", "0");
+        // _$epubHtml.css("position", "relative");
+        // _$epubHtml.css("margin", "0");
+        // _$epubHtml.css("padding", "0");
 
         _$epubHtml.css("column-axis", (_htmlBodyIsVerticalWritingMode ? "vertical" : "horizontal"));
 
@@ -782,44 +801,48 @@ var ReflowableView = function(options, reader){
         _$iframe.css("width", _lastViewPortSize.width + "px");
         _$iframe.css("height", _lastViewPortSize.height + "px");
 
-        _$epubHtml.css("height", _lastViewPortSize.height + "px");
+        //TODO Readium CSS
+        // _$epubHtml.css("height", _lastViewPortSize.height + "px");
 
         // below min- max- are required in vertical writing mode (height is not enough, in some cases...weird!)
-        _$epubHtml.css("min-height", _lastViewPortSize.height + "px");
-        _$epubHtml.css("max-height", _lastViewPortSize.height + "px");
+        //TODO Readium CSS
+        // _$epubHtml.css("min-height", _lastViewPortSize.height + "px");
+        // _$epubHtml.css("max-height", _lastViewPortSize.height + "px");
 
         //normalise spacing to avoid interference with column-isation
-        _$epubHtml.css('margin', 0);
-        _$epubHtml.css('padding', 0);
-        _$epubHtml.css('border', 0);
-
+        //TODO Readium CSS
+        // _$epubHtml.css('margin', 0);
+        // _$epubHtml.css('padding', 0);
+        // _$epubHtml.css('border', 0);
+        // _$htmlBody.css('margin', 0);
+        // _$htmlBody.css('padding', 0);
+       
         // In order for the ResizeSensor to work, the content body needs to be "positioned".
         // This may be an issue since it changes the assumptions some content authors might make when positioning their content.
         _$htmlBody.css('position', 'relative');
-
-        _$htmlBody.css('margin', 0);
-        _$htmlBody.css('padding', 0);
 
         _paginationInfo.rightToLeft = _spine.isRightToLeft();
 
         _paginationInfo.columnWidth = Math.round(((_htmlBodyIsVerticalWritingMode ? _lastViewPortSize.height : _lastViewPortSize.width) - _paginationInfo.columnGap * (_paginationInfo.visibleColumnCount - 1)) / _paginationInfo.visibleColumnCount);
 
-        var useColumnCountNotWidth = _paginationInfo.visibleColumnCount > 1; // column-count == 1 does not work in Chrome, and is not needed anyway (HTML width is full viewport width, no Firefox video flickering)
-        if (useColumnCountNotWidth) {
-            _$epubHtml.css("width", _lastViewPortSize.width + "px");
-            _$epubHtml.css("column-width", "auto");
-            _$epubHtml.css("column-count", _paginationInfo.visibleColumnCount);
-        } else {
-            _$epubHtml.css("width", (_htmlBodyIsVerticalWritingMode ? _lastViewPortSize.width : _paginationInfo.columnWidth) + "px");
-            _$epubHtml.css("column-count", "auto");
-            _$epubHtml.css("column-width", _paginationInfo.columnWidth + "px");
-        }
-
-        _$epubHtml.css("column-fill", "auto");
+        //TODO Readium CSS
+        // var useColumnCountNotWidth = _paginationInfo.visibleColumnCount > 1; // column-count == 1 does not work in Chrome, and is not needed anyway (HTML width is full viewport width, no Firefox video flickering)
+        // if (useColumnCountNotWidth) {
+        //     _$epubHtml.css("width", _lastViewPortSize.width + "px");
+        //     _$epubHtml.css("column-width", "auto");
+        //     _$epubHtml.css("column-count", _paginationInfo.visibleColumnCount);
+        // } else {
+        //     _$epubHtml.css("width", (_htmlBodyIsVerticalWritingMode ? _lastViewPortSize.width : _paginationInfo.columnWidth) + "px");
+        //     _$epubHtml.css("column-count", "auto");
+        //     _$epubHtml.css("column-width", _paginationInfo.columnWidth + "px");
+        // }
+        //
+        // _$epubHtml.css("column-fill", "auto");
 
         _$epubHtml.css({left: "0", right: "0", top: "0"});
 
-        Helpers.triggerLayout(_$iframe);
+        //TODO Readium CSS
+        // Helpers.triggerLayout(_$iframe);
 
         var dim = (_htmlBodyIsVerticalWritingMode ? _$epubHtml[0].scrollHeight : _$epubHtml[0].scrollWidth);
         if (dim == 0) {
