@@ -14522,6 +14522,7 @@ var obj = {
     },
 
     generateDocumentRangeComponent : function (domRange, classBlacklist, elementBlacklist, idBlacklist) {
+        this._normalizeDomRange(domRange);
 
         var rangeStartElement = domRange.startContainer;
         var startOffset = domRange.startOffset;
@@ -14729,6 +14730,46 @@ var obj = {
         }
         else if ($($("itemref[idref='" + contentDocumentName + "']", packageDocument)[0]).length === 0) {
             throw new Error("The idref of the content document could not be found in the spine");
+        }
+    },
+
+    _validNodeTypesFilter: function (node) {
+        return node.nodeType === Node.TEXT_NODE || node.nodeType === Node.ELEMENT_NODE;
+    },
+
+    _normalizeDomRange: function (domRange) {
+        var rangeStartNode = domRange.startContainer;
+        var rangeEndNode = domRange.endContainer;
+        var commonAncestorNode = domRange.commonAncestorContainer;
+
+        if (commonAncestorNode.nodeType !== Node.ELEMENT_NODE) {
+            // No need for normalization on ranges where the ancestor is not an element
+            return;
+        }
+
+        if (rangeStartNode.nodeType !== Node.TEXT_NODE && rangeEndNode.nodeType !== Node.TEXT_NODE) {
+            // and one of the start/end nodes must be a text node
+            return;
+        }
+
+        if (rangeStartNode === commonAncestorNode) {
+            var firstChildNode = _.first(_.filter(rangeStartNode.childNodes, this._validNodeTypesFilter));
+            if (firstChildNode) {
+                domRange.setStart(firstChildNode, 0);
+            }
+        }
+
+        if (rangeEndNode === commonAncestorNode) {
+            var lastChildNode = _.last(_.filter(rangeEndNode.childNodes, this._validNodeTypesFilter));
+            if (lastChildNode) {
+                if (lastChildNode.length) {
+                    domRange.setEnd(lastChildNode, lastChildNode.length);
+                } else if (lastChildNode.hasChildNodes()) {
+                    domRange.setEnd(lastChildNode, lastChildNode.childNodes.length);
+                } else {
+                    domRange.setEnd(lastChildNode, 1);
+                }
+            }
         }
     },
 
@@ -16051,20 +16092,15 @@ define("console_shim", function(){});
 
 define("es6-collections", function(){});
 
-/*! https://mths.be/punycode v1.4.0 by @mathias */
+/*! http://mths.be/punycode v1.2.3 by @mathias */
 ;(function(root) {
 
 	/** Detect free variables */
-	var freeExports = typeof exports == 'object' && exports &&
-		!exports.nodeType && exports;
+	var freeExports = typeof exports == 'object' && exports;
 	var freeModule = typeof module == 'object' && module &&
-		!module.nodeType && module;
+		module.exports == freeExports && module;
 	var freeGlobal = typeof global == 'object' && global;
-	if (
-		freeGlobal.global === freeGlobal ||
-		freeGlobal.window === freeGlobal ||
-		freeGlobal.self === freeGlobal
-	) {
+	if (freeGlobal.global === freeGlobal || freeGlobal.window === freeGlobal) {
 		root = freeGlobal;
 	}
 
@@ -16090,8 +16126,8 @@ define("es6-collections", function(){});
 
 	/** Regular expressions */
 	regexPunycode = /^xn--/,
-	regexNonASCII = /[^\x20-\x7E]/, // unprintable ASCII chars + non-ASCII chars
-	regexSeparators = /[\x2E\u3002\uFF0E\uFF61]/g, // RFC 3490 separators
+	regexNonASCII = /[^ -~]/, // unprintable ASCII chars + non-ASCII chars
+	regexSeparators = /\x2E|\u3002|\uFF0E|\uFF61/g, // RFC 3490 separators
 
 	/** Error messages */
 	errors = {
@@ -16117,7 +16153,7 @@ define("es6-collections", function(){});
 	 * @returns {Error} Throws a `RangeError` with the applicable error message.
 	 */
 	function error(type) {
-		throw new RangeError(errors[type]);
+		throw RangeError(errors[type]);
 	}
 
 	/**
@@ -16130,37 +16166,23 @@ define("es6-collections", function(){});
 	 */
 	function map(array, fn) {
 		var length = array.length;
-		var result = [];
 		while (length--) {
-			result[length] = fn(array[length]);
+			array[length] = fn(array[length]);
 		}
-		return result;
+		return array;
 	}
 
 	/**
-	 * A simple `Array#map`-like wrapper to work with domain name strings or email
-	 * addresses.
+	 * A simple `Array#map`-like wrapper to work with domain name strings.
 	 * @private
-	 * @param {String} domain The domain name or email address.
+	 * @param {String} domain The domain name.
 	 * @param {Function} callback The function that gets called for every
 	 * character.
 	 * @returns {Array} A new string of characters returned by the callback
 	 * function.
 	 */
 	function mapDomain(string, fn) {
-		var parts = string.split('@');
-		var result = '';
-		if (parts.length > 1) {
-			// In email addresses, only the domain name should be punycoded. Leave
-			// the local part (i.e. everything up to `@`) intact.
-			result = parts[0] + '@';
-			string = parts[1];
-		}
-		// Avoid `split(regex)` for IE8 compatibility. See #17.
-		string = string.replace(regexSeparators, '\x2E');
-		var labels = string.split('.');
-		var encoded = map(labels, fn).join('.');
-		return result + encoded;
+		return map(string.split(regexSeparators), fn).join('.');
 	}
 
 	/**
@@ -16170,7 +16192,7 @@ define("es6-collections", function(){});
 	 * UCS-2 exposes as separate characters) into a single code point,
 	 * matching UTF-16.
 	 * @see `punycode.ucs2.encode`
-	 * @see <https://mathiasbynens.be/notes/javascript-encoding>
+	 * @see <http://mathiasbynens.be/notes/javascript-encoding>
 	 * @memberOf punycode.ucs2
 	 * @name decode
 	 * @param {String} string The Unicode input string (UCS-2).
@@ -16264,7 +16286,7 @@ define("es6-collections", function(){});
 
 	/**
 	 * Bias adaptation function as per section 3.4 of RFC 3492.
-	 * https://tools.ietf.org/html/rfc3492#section-3.4
+	 * http://tools.ietf.org/html/rfc3492#section-3.4
 	 * @private
 	 */
 	function adapt(delta, numPoints, firstTime) {
@@ -16300,6 +16322,7 @@ define("es6-collections", function(){});
 		    k,
 		    digit,
 		    t,
+		    length,
 		    /** Cached calculation results */
 		    baseMinusT;
 
@@ -16379,8 +16402,8 @@ define("es6-collections", function(){});
 	}
 
 	/**
-	 * Converts a string of Unicode symbols (e.g. a domain name label) to a
-	 * Punycode string of ASCII-only symbols.
+	 * Converts a string of Unicode symbols to a Punycode string of ASCII-only
+	 * symbols.
 	 * @memberOf punycode
 	 * @param {String} input The string of Unicode symbols.
 	 * @returns {String} The resulting Punycode string of ASCII-only symbols.
@@ -16493,18 +16516,17 @@ define("es6-collections", function(){});
 	}
 
 	/**
-	 * Converts a Punycode string representing a domain name or an email address
-	 * to Unicode. Only the Punycoded parts of the input will be converted, i.e.
-	 * it doesn't matter if you call it on a string that has already been
-	 * converted to Unicode.
+	 * Converts a Punycode string representing a domain name to Unicode. Only the
+	 * Punycoded parts of the domain name will be converted, i.e. it doesn't
+	 * matter if you call it on a string that has already been converted to
+	 * Unicode.
 	 * @memberOf punycode
-	 * @param {String} input The Punycoded domain name or email address to
-	 * convert to Unicode.
+	 * @param {String} domain The Punycode domain name to convert to Unicode.
 	 * @returns {String} The Unicode representation of the given Punycode
 	 * string.
 	 */
-	function toUnicode(input) {
-		return mapDomain(input, function(string) {
+	function toUnicode(domain) {
+		return mapDomain(domain, function(string) {
 			return regexPunycode.test(string)
 				? decode(string.slice(4).toLowerCase())
 				: string;
@@ -16512,18 +16534,15 @@ define("es6-collections", function(){});
 	}
 
 	/**
-	 * Converts a Unicode string representing a domain name or an email address to
-	 * Punycode. Only the non-ASCII parts of the domain name will be converted,
-	 * i.e. it doesn't matter if you call it with a domain that's already in
-	 * ASCII.
+	 * Converts a Unicode string representing a domain name to Punycode. Only the
+	 * non-ASCII parts of the domain name will be converted, i.e. it doesn't
+	 * matter if you call it with a domain that's already in ASCII.
 	 * @memberOf punycode
-	 * @param {String} input The domain name or email address to convert, as a
-	 * Unicode string.
-	 * @returns {String} The Punycode representation of the given domain name or
-	 * email address.
+	 * @param {String} domain The domain name to convert, as a Unicode string.
+	 * @returns {String} The Punycode representation of the given domain name.
 	 */
-	function toASCII(input) {
-		return mapDomain(input, function(string) {
+	function toASCII(domain) {
+		return mapDomain(domain, function(string) {
 			return regexNonASCII.test(string)
 				? 'xn--' + encode(string)
 				: string;
@@ -16539,11 +16558,11 @@ define("es6-collections", function(){});
 		 * @memberOf punycode
 		 * @type String
 		 */
-		'version': '1.3.2',
+		'version': '1.2.3',
 		/**
 		 * An object of methods to convert from JavaScript's internal character
 		 * representation (UCS-2) to Unicode code points, and back.
-		 * @see <https://mathiasbynens.be/notes/javascript-encoding>
+		 * @see <http://mathiasbynens.be/notes/javascript-encoding>
 		 * @memberOf punycode
 		 * @type Object
 		 */
@@ -16565,21 +16584,18 @@ define("es6-collections", function(){});
 		typeof define.amd == 'object' &&
 		define.amd
 	) {
-		define('punycode', [],function() {
+		define('punycode',[],function() {
 			return punycode;
 		});
-	} else if (freeExports && freeModule) {
-		if (module.exports == freeExports) {
-			// in Node.js, io.js, or RingoJS v0.8.0+
+	}	else if (freeExports && !freeExports.nodeType) {
+		if (freeModule) { // in Node.js or RingoJS v0.8.0+
 			freeModule.exports = punycode;
-		} else {
-			// in Narwhal or RingoJS v0.7.0-
+		} else { // in Narwhal or RingoJS v0.7.0-
 			for (key in punycode) {
 				punycode.hasOwnProperty(key) && (freeExports[key] = punycode[key]);
 			}
 		}
-	} else {
-		// in Rhino or a web browser
+	} else { // in Rhino or a web browser
 		root.punycode = punycode;
 	}
 
@@ -16589,20 +16605,21 @@ define("es6-collections", function(){});
  * URI.js - Mutating URLs
  * IPv6 Support
  *
- * Version: 1.18.12
+ * Version: 1.15.1
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
  *
  * Licensed under
  *   MIT License http://www.opensource.org/licenses/mit-license
+ *   GPL v3 http://opensource.org/licenses/GPL-3.0
  *
  */
 
 (function (root, factory) {
   'use strict';
   // https://github.com/umdjs/umd/blob/master/returnExports.js
-  if (typeof module === 'object' && module.exports) {
+  if (typeof exports === 'object') {
     // Node
     module.exports = factory();
   } else if (typeof define === 'function' && define.amd) {
@@ -16678,6 +16695,8 @@ define("es6-collections", function(){});
       while (segments.length < total) {
         segments.splice(pos, 0, '0000');
       }
+
+      length = segments.length;
     }
 
     // strip leading zeros
@@ -16761,7 +16780,7 @@ define("es6-collections", function(){});
     if (root.IPv6 === this) {
       root.IPv6 = _IPv6;
     }
-
+  
     return this;
   }
 
@@ -16775,20 +16794,21 @@ define("es6-collections", function(){});
  * URI.js - Mutating URLs
  * Second Level Domain (SLD) Support
  *
- * Version: 1.18.12
+ * Version: 1.15.1
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
  *
  * Licensed under
  *   MIT License http://www.opensource.org/licenses/mit-license
+ *   GPL v3 http://opensource.org/licenses/GPL-3.0
  *
  */
 
 (function (root, factory) {
   'use strict';
   // https://github.com/umdjs/umd/blob/master/returnExports.js
-  if (typeof module === 'object' && module.exports) {
+  if (typeof exports === 'object') {
     // Node
     module.exports = factory();
   } else if (typeof define === 'function' && define.amd) {
@@ -16946,12 +16966,7 @@ define("es6-collections", function(){});
       'ye':' co com gov ltd me net org plc ',
       'yu':' ac co edu gov org ',
       'za':' ac agric alt bourse city co cybernet db edu gov grondar iaccess imt inca landesign law mil net ngo nis nom olivetti org pix school tm web ',
-      'zm':' ac co com edu gov net org sch ',
-      // https://en.wikipedia.org/wiki/CentralNic#Second-level_domains
-      'com': 'ar br cn de eu gb gr hu jpn kr no qc ru sa se uk us uy za ',
-      'net': 'gb jp se uk ',
-      'org': 'ae',
-      'de': 'com '
+      'zm':' ac co com edu gov net org sch '
     },
     // gorhill 2013-10-25: Using indexOf() instead Regexp(). Significant boost
     // in both performance and memory footprint. No initialization required.
@@ -17020,19 +17035,20 @@ define("es6-collections", function(){});
 /*!
  * URI.js - Mutating URLs
  *
- * Version: 1.18.12
+ * Version: 1.15.1
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
  *
  * Licensed under
  *   MIT License http://www.opensource.org/licenses/mit-license
+ *   GPL v3 http://opensource.org/licenses/GPL-3.0
  *
  */
 (function (root, factory) {
   'use strict';
   // https://github.com/umdjs/umd/blob/master/returnExports.js
-  if (typeof module === 'object' && module.exports) {
+  if (typeof exports === 'object') {
     // Node
     module.exports = factory(require('./punycode'), require('./IPv6'), require('./SecondLevelDomains'));
   } else if (typeof define === 'function' && define.amd) {
@@ -17080,12 +17096,6 @@ define("es6-collections", function(){});
       }
     }
 
-    if (url === null) {
-      if (_urlSupplied) {
-        throw new TypeError('null is not a valid argument for URI');
-      }
-    }
-
     this.href(url);
 
     // resolve to base according to http://dvcs.w3.org/hg/url/raw-file/tip/Overview.html#constructor
@@ -17096,11 +17106,7 @@ define("es6-collections", function(){});
     return this;
   }
 
-  function isInteger(value) {
-    return /^[0-9]+$/.test(value);
-  }
-
-  URI.version = '1.18.12';
+  URI.version = '1.15.1';
 
   var p = URI.prototype;
   var hasOwn = Object.prototype.hasOwnProperty;
@@ -17203,11 +17209,6 @@ define("es6-collections", function(){});
     return true;
   }
 
-  function trimSlashes(text) {
-    var trim_expression = /^\/+|\/+$/g;
-    return text.replace(trim_expression, '');
-  }
-
   URI._parts = function() {
     return {
       protocol: null,
@@ -17230,7 +17231,7 @@ define("es6-collections", function(){});
   URI.escapeQuerySpace = true;
   // static properties
   URI.protocol_expression = /^[a-z][a-z0-9.+-]*$/i;
-  URI.idn_expression = /[^a-z0-9\._-]/i;
+  URI.idn_expression = /[^a-z0-9\.-]/i;
   URI.punycode_expression = /(xn--)/i;
   // well, 333.444.555.666 matches, but it sure ain't no IPv4 - do we care?
   URI.ip4_expression = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
@@ -17249,9 +17250,7 @@ define("es6-collections", function(){});
     // everything up to the next whitespace
     end: /[\s\r\n]|$/,
     // trim trailing punctuation captured by end RegExp
-    trim: /[`!()\[\]{};:'".,<>?«»“”„‘’]+$/,
-    // balanced parens inclusion (), [], {}, <>
-    parens: /(\([^\)]*\)|\[[^\]]*\]|\{[^}]*\}|<[^>]*>)/g,
+    trim: /[`!()\[\]{};:'".,<>?«»“”„‘’]+$/
   };
   // http://www.iana.org/assignments/uri-schemes.html
   // http://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers#Well-known_ports
@@ -17263,16 +17262,10 @@ define("es6-collections", function(){});
     ws: '80',
     wss: '443'
   };
-  // list of protocols which always require a hostname
-  URI.hostProtocols = [
-    'http',
-    'https'
-  ];
-
   // allowed hostname characters according to RFC 3986
   // ALPHA DIGIT "-" "." "_" "~" "!" "$" "&" "'" "(" ")" "*" "+" "," ";" "=" %encoded
-  // I've never seen a (non-IDN) hostname other than: ALPHA DIGIT . - _
-  URI.invalid_hostname_characters = /[^a-zA-Z0-9\.\-:_]/;
+  // I've never seen a (non-IDN) hostname other than: ALPHA DIGIT . -
+  URI.invalid_hostname_characters = /[^a-zA-Z0-9\.-]/;
   // map DOM Elements to their URI attribute
   URI.domAttributes = {
     'a': 'href',
@@ -17557,13 +17550,6 @@ define("es6-collections", function(){});
     return parts;
   };
   URI.parseHost = function(string, parts) {
-    // Copy chrome, IE, opera backslash-handling behavior.
-    // Back slashes before the query string get converted to forward slashes
-    // See: https://github.com/joyent/node/blob/386fd24f49b0e9d1a8a076592a404168faeecc34/lib/url.js#L115-L124
-    // See: https://code.google.com/p/chromium/issues/detail?id=25916
-    // https://github.com/medialize/URI.js/pull/233
-    string = string.replace(/\\/g, '/');
-
     // extract host:port
     var pos = string.indexOf('/');
     var bracketPos;
@@ -17602,12 +17588,6 @@ define("es6-collections", function(){});
     if (parts.hostname && string.substring(pos).charAt(0) !== '/') {
       pos++;
       string = '/' + string;
-    }
-
-    URI.ensureValidHostname(parts.hostname, parts.protocol);
-
-    if (parts.port) {
-      URI.ensureValidPort(parts.port);
     }
 
     return string.substring(pos) || '/';
@@ -17660,7 +17640,7 @@ define("es6-collections", function(){});
       value = v.length ? URI.decodeQuery(v.join('='), escapeQuerySpace) : null;
 
       if (hasOwn.call(items, name)) {
-        if (typeof items[name] === 'string' || items[name] === null) {
+        if (typeof items[name] === 'string') {
           items[name] = [items[name]];
         }
 
@@ -17728,13 +17708,11 @@ define("es6-collections", function(){});
 
     if (parts.username) {
       t += URI.encode(parts.username);
-    }
 
-    if (parts.password) {
-      t += ':' + URI.encode(parts.password);
-    }
+      if (parts.password) {
+        t += ':' + URI.encode(parts.password);
+      }
 
-    if (t) {
       t += '@';
     }
 
@@ -17826,7 +17804,7 @@ define("es6-collections", function(){});
           } else {
             data[name] = filterArrayValues(data[name], value);
           }
-        } else if (data[name] === String(value) && (!isArray(value) || value.length === 1)) {
+        } else if (data[name] === value) {
           data[name] = undefined;
         } else if (isArray(data[name])) {
           data[name] = filterArrayValues(data[name], value);
@@ -17839,35 +17817,18 @@ define("es6-collections", function(){});
     }
   };
   URI.hasQuery = function(data, name, value, withinArray) {
-    switch (getType(name)) {
-      case 'String':
-        // Nothing to do here
-        break;
-
-      case 'RegExp':
-        for (var key in data) {
-          if (hasOwn.call(data, key)) {
-            if (name.test(key) && (value === undefined || URI.hasQuery(data, key, value))) {
-              return true;
-            }
+    if (typeof name === 'object') {
+      for (var key in name) {
+        if (hasOwn.call(name, key)) {
+          if (!URI.hasQuery(data, key, name[key])) {
+            return false;
           }
         }
+      }
 
-        return false;
-
-      case 'Object':
-        for (var _key in name) {
-          if (hasOwn.call(name, _key)) {
-            if (!URI.hasQuery(data, _key, name[_key])) {
-              return false;
-            }
-          }
-        }
-
-        return true;
-
-      default:
-        throw new TypeError('URI.hasQuery() accepts a string, regular expression or object as the name parameter');
+      return true;
+    } else if (typeof name !== 'string') {
+      throw new TypeError('URI.hasQuery() accepts an object, string as the name parameter');
     }
 
     switch (getType(value)) {
@@ -17923,39 +17884,6 @@ define("es6-collections", function(){});
   };
 
 
-  URI.joinPaths = function() {
-    var input = [];
-    var segments = [];
-    var nonEmptySegments = 0;
-
-    for (var i = 0; i < arguments.length; i++) {
-      var url = new URI(arguments[i]);
-      input.push(url);
-      var _segments = url.segment();
-      for (var s = 0; s < _segments.length; s++) {
-        if (typeof _segments[s] === 'string') {
-          segments.push(_segments[s]);
-        }
-
-        if (_segments[s]) {
-          nonEmptySegments++;
-        }
-      }
-    }
-
-    if (!segments.length || !nonEmptySegments) {
-      return new URI('');
-    }
-
-    var uri = new URI('').segment(segments);
-
-    if (input[0].path() === '' || input[0].path().slice(0, 1) === '/') {
-      uri.path('/' + uri.path());
-    }
-
-    return uri.normalize();
-  };
-
   URI.commonPath = function(one, two) {
     var length = Math.min(one.length, two.length);
     var pos;
@@ -17985,7 +17913,6 @@ define("es6-collections", function(){});
     var _start = options.start || URI.findUri.start;
     var _end = options.end || URI.findUri.end;
     var _trim = options.trim || URI.findUri.trim;
-    var _parens = options.parens || URI.findUri.parens;
     var _attributeOpen = /[a-z0-9-]=["']?$/i;
 
     _start.lastIndex = 0;
@@ -18005,43 +17932,13 @@ define("es6-collections", function(){});
       }
 
       var end = start + string.slice(start).search(_end);
-      var slice = string.slice(start, end);
-      // make sure we include well balanced parens
-      var parensEnd = -1;
-      while (true) {
-        var parensMatch = _parens.exec(slice);
-        if (!parensMatch) {
-          break;
-        }
-
-        var parensMatchEnd = parensMatch.index + parensMatch[0].length;
-        parensEnd = Math.max(parensEnd, parensMatchEnd);
-      }
-
-      if (parensEnd > -1) {
-        slice = slice.slice(0, parensEnd) + slice.slice(parensEnd).replace(_trim, '');
-      } else {
-        slice = slice.replace(_trim, '');
-      }
-
-      if (slice.length <= match[0].length) {
-        // the extract only contains the starting marker of a URI,
-        // e.g. "www" or "http://"
-        continue;
-      }
-
+      var slice = string.slice(start, end).replace(_trim, '');
       if (options.ignore && options.ignore.test(slice)) {
         continue;
       }
 
       end = start + slice.length;
       var result = callback(slice, start, end, string);
-      if (result === undefined) {
-        _start.lastIndex = end;
-        continue;
-      }
-
-      result = String(result);
       string = string.slice(0, start) + result + string.slice(end);
       _start.lastIndex = start + result.length;
     }
@@ -18050,42 +17947,20 @@ define("es6-collections", function(){});
     return string;
   };
 
-  URI.ensureValidHostname = function(v, protocol) {
+  URI.ensureValidHostname = function(v) {
     // Theoretically URIs allow percent-encoding in Hostnames (according to RFC 3986)
     // they are not part of DNS and therefore ignored by URI.js
 
-    var hasHostname = !!v; // not null and not an empty string
-    var hasProtocol = !!protocol;
-    var rejectEmptyHostname = false;
-
-    if (hasProtocol) {
-      rejectEmptyHostname = arrayContains(URI.hostProtocols, protocol);
-    }
-
-    if (rejectEmptyHostname && !hasHostname) {
-      throw new TypeError('Hostname cannot be empty, if protocol is ' + protocol);
-    } else if (v && v.match(URI.invalid_hostname_characters)) {
+    if (v.match(URI.invalid_hostname_characters)) {
       // test punycode
       if (!punycode) {
-        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-:_] and Punycode.js is not available');
+        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-] and Punycode.js is not available');
       }
+
       if (punycode.toASCII(v).match(URI.invalid_hostname_characters)) {
-        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-:_]');
+        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-]');
       }
     }
-  };
-
-  URI.ensureValidPort = function (v) {
-    if (!v) {
-      return;
-    }
-
-    var port = Number(v);
-    if (isInteger(port) && (port > 0) && (port < 65536)) {
-      return;
-    }
-
-    throw new TypeError('Port "' + v + '" is not a valid port');
   };
 
   // noConflict
@@ -18345,7 +18220,9 @@ define("es6-collections", function(){});
           v = v.substring(1);
         }
 
-        URI.ensureValidPort(v);
+        if (v.match(/[^0-9]/)) {
+          throw new TypeError('Port "' + v + '" contains characters other than [0-9]');
+        }
       }
     }
     return _port.call(this, v, build);
@@ -18357,40 +18234,13 @@ define("es6-collections", function(){});
 
     if (v !== undefined) {
       var x = {};
-      var res = URI.parseHost(v, x);
-      if (res !== '/') {
-        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-]');
-      }
-
+      URI.parseHost(v, x);
       v = x.hostname;
-      URI.ensureValidHostname(v, this._parts.protocol);
     }
     return _hostname.call(this, v, build);
   };
 
   // compound accessors
-  p.origin = function(v, build) {
-    if (this._parts.urn) {
-      return v === undefined ? '' : this;
-    }
-
-    if (v === undefined) {
-      var protocol = this.protocol();
-      var authority = this.authority();
-      if (!authority) {
-        return '';
-      }
-
-      return (protocol ? protocol + '://' : '') + this.authority();
-    } else {
-      var origin = URI(v);
-      this
-        .protocol(origin.protocol())
-        .authority(origin.authority())
-        .build(!build);
-      return this;
-    }
-  };
   p.host = function(v, build) {
     if (this._parts.urn) {
       return v === undefined ? '' : this;
@@ -18399,11 +18249,7 @@ define("es6-collections", function(){});
     if (v === undefined) {
       return this._parts.hostname ? URI.buildHost(this._parts) : '';
     } else {
-      var res = URI.parseHost(v, this._parts);
-      if (res !== '/') {
-        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-]');
-      }
-
+      URI.parseHost(v, this._parts);
       this.build(!build);
       return this;
     }
@@ -18416,11 +18262,7 @@ define("es6-collections", function(){});
     if (v === undefined) {
       return this._parts.hostname ? URI.buildAuthority(this._parts) : '';
     } else {
-      var res = URI.parseAuthority(v, this._parts);
-      if (res !== '/') {
-        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-]');
-      }
-
+      URI.parseAuthority(v, this._parts);
       this.build(!build);
       return this;
     }
@@ -18431,8 +18273,12 @@ define("es6-collections", function(){});
     }
 
     if (v === undefined) {
+      if (!this._parts.username) {
+        return '';
+      }
+
       var t = URI.buildUserinfo(this._parts);
-      return t ? t.substring(0, t.length -1) : t;
+      return t.substring(0, t.length -1);
     } else {
       if (v[v.length-1] !== '@') {
         v += '@';
@@ -18482,12 +18328,8 @@ define("es6-collections", function(){});
         v += '.';
       }
 
-      if (v.indexOf(':') !== -1) {
-        throw new TypeError('Domains cannot contain colons');
-      }
-
       if (v) {
-        URI.ensureValidHostname(v, this._parts.protocol);
+        URI.ensureValidHostname(v);
       }
 
       this._parts.hostname = this._parts.hostname.replace(replace, v);
@@ -18526,11 +18368,7 @@ define("es6-collections", function(){});
         throw new TypeError('cannot set domain empty');
       }
 
-      if (v.indexOf(':') !== -1) {
-        throw new TypeError('Domains cannot contain colons');
-      }
-
-      URI.ensureValidHostname(v, this._parts.protocol);
+      URI.ensureValidHostname(v);
 
       if (!this._parts.hostname || this.is('IP')) {
         this._parts.hostname = v;
@@ -18641,7 +18479,7 @@ define("es6-collections", function(){});
       return v === undefined ? '' : this;
     }
 
-    if (typeof v !== 'string') {
+    if (v === undefined || v === true) {
       if (!this._parts.path || this._parts.path === '/') {
         return '';
       }
@@ -18769,10 +18607,9 @@ define("es6-collections", function(){});
             segments.pop();
           }
 
-          segments.push(trimSlashes(v[i]));
+          segments.push(v[i]);
         }
       } else if (v || typeof v === 'string') {
-        v = trimSlashes(v);
         if (segments[segments.length -1] === '') {
           // empty trailing elements have to be overwritten
           // to prevent results such as /foo//bar
@@ -18783,7 +18620,7 @@ define("es6-collections", function(){});
       }
     } else {
       if (v) {
-        segments[segment] = trimSlashes(v);
+        segments[segment] = v;
       } else {
         segments.splice(segment, 1);
       }
@@ -18821,7 +18658,7 @@ define("es6-collections", function(){});
       v = (typeof v === 'string' || v instanceof String) ? URI.encode(v) : v;
     } else {
       for (i = 0, l = v.length; i < l; i++) {
-        v[i] = URI.encode(v[i]);
+        v[i] = URI.decode(v[i]);
       }
     }
 
@@ -18968,8 +18805,6 @@ define("es6-collections", function(){});
       return this;
     }
 
-    _path = URI.recodePath(_path);
-
     var _was_relative;
     var _leadingParents = '';
     var _parent, _pos;
@@ -18978,11 +18813,6 @@ define("es6-collections", function(){});
     if (_path.charAt(0) !== '/') {
       _was_relative = true;
       _path = '/' + _path;
-    }
-
-    // handle relative files (as opposed to directories)
-    if (_path.slice(-3) === '/..' || _path.slice(-2) === '/.') {
-      _path += '/';
     }
 
     // resolve simples
@@ -19000,7 +18830,7 @@ define("es6-collections", function(){});
 
     // resolve parents
     while (true) {
-      _parent = _path.search(/\/\.\.(\/|$)/);
+      _parent = _path.indexOf('/..');
       if (_parent === -1) {
         // no more ../ to resolve
         break;
@@ -19022,6 +18852,7 @@ define("es6-collections", function(){});
       _path = _leadingParents + _path.substring(1);
     }
 
+    _path = URI.recodePath(_path);
     this._parts.path = _path;
     this.build(!build);
     return this;
@@ -19133,6 +18964,10 @@ define("es6-collections", function(){});
     var properties = ['protocol', 'username', 'password', 'hostname', 'port'];
     var basedir, i, p;
 
+    if (this._parts.urn) {
+      throw new Error('URNs do not have any generally defined hierarchical components');
+    }
+
     if (!(base instanceof URI)) {
       base = new URI(base);
     }
@@ -19140,7 +18975,6 @@ define("es6-collections", function(){});
     // << Readium patch
     // "filesystem:chrome-extension:"
     //
-    
     if (this._parts.protocol == 'filesystem') {
 
       return resolved;
@@ -19150,25 +18984,17 @@ define("es6-collections", function(){});
 
       var uri = this.absoluteTo(base._parts.path);
 
-      if (base._parts.path.indexOf("chrome-extension:") !== -1 || base._parts.path.indexOf("http:") !== -1 || base._parts.path.indexOf("https:") !== -1) {
+      if (base._parts.path.indexOf("chrome-extension:") !== -1) {
 
-        return new URI('filesystem:' + uri.toString());
+          return new URI('filesystem:' + uri.toString());
       }
 
       return uri;
     }
-
-    if (this._parts.urn) {
-      throw new Error('URNs do not have any generally defined hierarchical components');
-    }
-
     //
     // Readium patch >>
 
-    if (resolved._parts.protocol) {
-      // Directly returns even if this._parts.hostname is empty.
-      return resolved;
-    } else {
+    if (!resolved._parts.protocol) {
       resolved._parts.protocol = base._parts.protocol;
     }
 
@@ -19185,17 +19011,15 @@ define("es6-collections", function(){});
       if (!resolved._parts.query) {
         resolved._parts.query = base._parts.query;
       }
-    } else {
-      if (resolved._parts.path.substring(-2) === '..') {
-        resolved._parts.path += '/';
-      }
+    } else if (resolved._parts.path.substring(-2) === '..') {
+      resolved._parts.path += '/';
+    }
 
-      if (resolved.path().charAt(0) !== '/') {
-        basedir = base.directory();
-        basedir = basedir ? basedir : base.path().indexOf('/') === 0 ? '/' : '';
-        resolved._parts.path = (basedir ? (basedir + '/') : '') + resolved._parts.path;
-        resolved.normalizePath();
-      }
+    if (resolved.path().charAt(0) !== '/') {
+      basedir = base.directory();
+      basedir = basedir ? basedir : base.path().indexOf('/') === 0 ? '/' : '';
+      resolved._parts.path = (basedir ? (basedir + '/') : '') + resolved._parts.path;
+      resolved.normalizePath();
     }
 
     resolved.build();
@@ -19248,7 +19072,7 @@ define("es6-collections", function(){});
     }
 
     // determine common sub path
-    common = URI.commonPath(relativePath, basePath);
+    common = URI.commonPath(relative.path(), base.path());
 
     // If the paths have nothing in common, return a relative URL with the absolute path.
     if (!common) {
@@ -19260,7 +19084,7 @@ define("es6-collections", function(){});
       .replace(/[^\/]*$/, '')
       .replace(/.*?\//g, '../');
 
-    relativeParts.path = (parents + relativeParts.path.substring(common.length)) || './';
+    relativeParts.path = parents + relativeParts.path.substring(common.length);
 
     return relative.build();
   };
@@ -21339,13 +21163,18 @@ Helpers.loadTemplate = function (name, params) {
  */
 Helpers.loadTemplate.cache = {
     "fixed_book_frame": '<div id="fixed-book-frame" class="clearfix book-frame fixed-book-frame"></div>',
-
-    "single_page_frame": '<div><div id="scaler"><iframe allowfullscreen="allowfullscreen" scrolling="no" class="iframe-fixed"></iframe></div></div>',
+    "single_page_frame": '<div><div id="scaler"><iframe enable-annotation="enable-annotation" allowfullscreen="allowfullscreen" scrolling="no" class="iframe-fixed"></iframe></div></div>',
     //"single_page_frame" : '<div><iframe scrolling="no" class="iframe-fixed" id="scaler"></iframe></div>',
 
     "scrolled_book_frame": '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"><div id="scrolled-content-frame"></div></div>',
     "reflowable_book_frame": '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"></div>',
-    "reflowable_book_page_frame": '<div id="reflowable-content-frame" class="reflowable-content-frame"><iframe allowfullscreen="allowfullscreen" scrolling="no" id="epubContentIframe"></iframe></div>'
+    "reflowable_book_page_frame": '<div id="reflowable-content-frame" class="reflowable-content-frame"><iframe enable-annotation="enable-annotation" allowfullscreen="allowfullscreen" scrolling="no" id="epubContentIframe"></iframe></div>'
+    /***
+     * The `enable-annotation` attribute on an iframe helps detect the content frames for annotating tools such as Hypothesis
+     * See here for more details:
+     * https://h.readthedocs.io/projects/client/en/latest/publishers/embedding/
+     * https://github.com/hypothesis/client/pull/533
+     ***/
 };
 
 /**

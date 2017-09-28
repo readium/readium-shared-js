@@ -2721,6 +2721,7 @@ var obj = {
     },
 
     generateDocumentRangeComponent : function (domRange, classBlacklist, elementBlacklist, idBlacklist) {
+        this._normalizeDomRange(domRange);
 
         var rangeStartElement = domRange.startContainer;
         var startOffset = domRange.startOffset;
@@ -2928,6 +2929,46 @@ var obj = {
         }
         else if ($($("itemref[idref='" + contentDocumentName + "']", packageDocument)[0]).length === 0) {
             throw new Error("The idref of the content document could not be found in the spine");
+        }
+    },
+
+    _validNodeTypesFilter: function (node) {
+        return node.nodeType === Node.TEXT_NODE || node.nodeType === Node.ELEMENT_NODE;
+    },
+
+    _normalizeDomRange: function (domRange) {
+        var rangeStartNode = domRange.startContainer;
+        var rangeEndNode = domRange.endContainer;
+        var commonAncestorNode = domRange.commonAncestorContainer;
+
+        if (commonAncestorNode.nodeType !== Node.ELEMENT_NODE) {
+            // No need for normalization on ranges where the ancestor is not an element
+            return;
+        }
+
+        if (rangeStartNode.nodeType !== Node.TEXT_NODE && rangeEndNode.nodeType !== Node.TEXT_NODE) {
+            // and one of the start/end nodes must be a text node
+            return;
+        }
+
+        if (rangeStartNode === commonAncestorNode) {
+            var firstChildNode = _.first(_.filter(rangeStartNode.childNodes, this._validNodeTypesFilter));
+            if (firstChildNode) {
+                domRange.setStart(firstChildNode, 0);
+            }
+        }
+
+        if (rangeEndNode === commonAncestorNode) {
+            var lastChildNode = _.last(_.filter(rangeEndNode.childNodes, this._validNodeTypesFilter));
+            if (lastChildNode) {
+                if (lastChildNode.length) {
+                    domRange.setEnd(lastChildNode, lastChildNode.length);
+                } else if (lastChildNode.hasChildNodes()) {
+                    domRange.setEnd(lastChildNode, lastChildNode.childNodes.length);
+                } else {
+                    domRange.setEnd(lastChildNode, 1);
+                }
+            }
         }
     },
 

@@ -11362,20 +11362,15 @@ return jQuery;
   }
 }.call(this));
 
-/*! https://mths.be/punycode v1.4.0 by @mathias */
+/*! http://mths.be/punycode v1.2.3 by @mathias */
 ;(function(root) {
 
 	/** Detect free variables */
-	var freeExports = typeof exports == 'object' && exports &&
-		!exports.nodeType && exports;
+	var freeExports = typeof exports == 'object' && exports;
 	var freeModule = typeof module == 'object' && module &&
-		!module.nodeType && module;
+		module.exports == freeExports && module;
 	var freeGlobal = typeof global == 'object' && global;
-	if (
-		freeGlobal.global === freeGlobal ||
-		freeGlobal.window === freeGlobal ||
-		freeGlobal.self === freeGlobal
-	) {
+	if (freeGlobal.global === freeGlobal || freeGlobal.window === freeGlobal) {
 		root = freeGlobal;
 	}
 
@@ -11401,8 +11396,8 @@ return jQuery;
 
 	/** Regular expressions */
 	regexPunycode = /^xn--/,
-	regexNonASCII = /[^\x20-\x7E]/, // unprintable ASCII chars + non-ASCII chars
-	regexSeparators = /[\x2E\u3002\uFF0E\uFF61]/g, // RFC 3490 separators
+	regexNonASCII = /[^ -~]/, // unprintable ASCII chars + non-ASCII chars
+	regexSeparators = /\x2E|\u3002|\uFF0E|\uFF61/g, // RFC 3490 separators
 
 	/** Error messages */
 	errors = {
@@ -11428,7 +11423,7 @@ return jQuery;
 	 * @returns {Error} Throws a `RangeError` with the applicable error message.
 	 */
 	function error(type) {
-		throw new RangeError(errors[type]);
+		throw RangeError(errors[type]);
 	}
 
 	/**
@@ -11441,37 +11436,23 @@ return jQuery;
 	 */
 	function map(array, fn) {
 		var length = array.length;
-		var result = [];
 		while (length--) {
-			result[length] = fn(array[length]);
+			array[length] = fn(array[length]);
 		}
-		return result;
+		return array;
 	}
 
 	/**
-	 * A simple `Array#map`-like wrapper to work with domain name strings or email
-	 * addresses.
+	 * A simple `Array#map`-like wrapper to work with domain name strings.
 	 * @private
-	 * @param {String} domain The domain name or email address.
+	 * @param {String} domain The domain name.
 	 * @param {Function} callback The function that gets called for every
 	 * character.
 	 * @returns {Array} A new string of characters returned by the callback
 	 * function.
 	 */
 	function mapDomain(string, fn) {
-		var parts = string.split('@');
-		var result = '';
-		if (parts.length > 1) {
-			// In email addresses, only the domain name should be punycoded. Leave
-			// the local part (i.e. everything up to `@`) intact.
-			result = parts[0] + '@';
-			string = parts[1];
-		}
-		// Avoid `split(regex)` for IE8 compatibility. See #17.
-		string = string.replace(regexSeparators, '\x2E');
-		var labels = string.split('.');
-		var encoded = map(labels, fn).join('.');
-		return result + encoded;
+		return map(string.split(regexSeparators), fn).join('.');
 	}
 
 	/**
@@ -11481,7 +11462,7 @@ return jQuery;
 	 * UCS-2 exposes as separate characters) into a single code point,
 	 * matching UTF-16.
 	 * @see `punycode.ucs2.encode`
-	 * @see <https://mathiasbynens.be/notes/javascript-encoding>
+	 * @see <http://mathiasbynens.be/notes/javascript-encoding>
 	 * @memberOf punycode.ucs2
 	 * @name decode
 	 * @param {String} string The Unicode input string (UCS-2).
@@ -11575,7 +11556,7 @@ return jQuery;
 
 	/**
 	 * Bias adaptation function as per section 3.4 of RFC 3492.
-	 * https://tools.ietf.org/html/rfc3492#section-3.4
+	 * http://tools.ietf.org/html/rfc3492#section-3.4
 	 * @private
 	 */
 	function adapt(delta, numPoints, firstTime) {
@@ -11611,6 +11592,7 @@ return jQuery;
 		    k,
 		    digit,
 		    t,
+		    length,
 		    /** Cached calculation results */
 		    baseMinusT;
 
@@ -11690,8 +11672,8 @@ return jQuery;
 	}
 
 	/**
-	 * Converts a string of Unicode symbols (e.g. a domain name label) to a
-	 * Punycode string of ASCII-only symbols.
+	 * Converts a string of Unicode symbols to a Punycode string of ASCII-only
+	 * symbols.
 	 * @memberOf punycode
 	 * @param {String} input The string of Unicode symbols.
 	 * @returns {String} The resulting Punycode string of ASCII-only symbols.
@@ -11804,18 +11786,17 @@ return jQuery;
 	}
 
 	/**
-	 * Converts a Punycode string representing a domain name or an email address
-	 * to Unicode. Only the Punycoded parts of the input will be converted, i.e.
-	 * it doesn't matter if you call it on a string that has already been
-	 * converted to Unicode.
+	 * Converts a Punycode string representing a domain name to Unicode. Only the
+	 * Punycoded parts of the domain name will be converted, i.e. it doesn't
+	 * matter if you call it on a string that has already been converted to
+	 * Unicode.
 	 * @memberOf punycode
-	 * @param {String} input The Punycoded domain name or email address to
-	 * convert to Unicode.
+	 * @param {String} domain The Punycode domain name to convert to Unicode.
 	 * @returns {String} The Unicode representation of the given Punycode
 	 * string.
 	 */
-	function toUnicode(input) {
-		return mapDomain(input, function(string) {
+	function toUnicode(domain) {
+		return mapDomain(domain, function(string) {
 			return regexPunycode.test(string)
 				? decode(string.slice(4).toLowerCase())
 				: string;
@@ -11823,18 +11804,15 @@ return jQuery;
 	}
 
 	/**
-	 * Converts a Unicode string representing a domain name or an email address to
-	 * Punycode. Only the non-ASCII parts of the domain name will be converted,
-	 * i.e. it doesn't matter if you call it with a domain that's already in
-	 * ASCII.
+	 * Converts a Unicode string representing a domain name to Punycode. Only the
+	 * non-ASCII parts of the domain name will be converted, i.e. it doesn't
+	 * matter if you call it with a domain that's already in ASCII.
 	 * @memberOf punycode
-	 * @param {String} input The domain name or email address to convert, as a
-	 * Unicode string.
-	 * @returns {String} The Punycode representation of the given domain name or
-	 * email address.
+	 * @param {String} domain The domain name to convert, as a Unicode string.
+	 * @returns {String} The Punycode representation of the given domain name.
 	 */
-	function toASCII(input) {
-		return mapDomain(input, function(string) {
+	function toASCII(domain) {
+		return mapDomain(domain, function(string) {
 			return regexNonASCII.test(string)
 				? 'xn--' + encode(string)
 				: string;
@@ -11850,11 +11828,11 @@ return jQuery;
 		 * @memberOf punycode
 		 * @type String
 		 */
-		'version': '1.3.2',
+		'version': '1.2.3',
 		/**
 		 * An object of methods to convert from JavaScript's internal character
 		 * representation (UCS-2) to Unicode code points, and back.
-		 * @see <https://mathiasbynens.be/notes/javascript-encoding>
+		 * @see <http://mathiasbynens.be/notes/javascript-encoding>
 		 * @memberOf punycode
 		 * @type Object
 		 */
@@ -11876,21 +11854,18 @@ return jQuery;
 		typeof define.amd == 'object' &&
 		define.amd
 	) {
-		define('punycode', [],function() {
+		define('punycode',[],function() {
 			return punycode;
 		});
-	} else if (freeExports && freeModule) {
-		if (module.exports == freeExports) {
-			// in Node.js, io.js, or RingoJS v0.8.0+
+	}	else if (freeExports && !freeExports.nodeType) {
+		if (freeModule) { // in Node.js or RingoJS v0.8.0+
 			freeModule.exports = punycode;
-		} else {
-			// in Narwhal or RingoJS v0.7.0-
+		} else { // in Narwhal or RingoJS v0.7.0-
 			for (key in punycode) {
 				punycode.hasOwnProperty(key) && (freeExports[key] = punycode[key]);
 			}
 		}
-	} else {
-		// in Rhino or a web browser
+	} else { // in Rhino or a web browser
 		root.punycode = punycode;
 	}
 
@@ -11900,20 +11875,21 @@ return jQuery;
  * URI.js - Mutating URLs
  * IPv6 Support
  *
- * Version: 1.18.12
+ * Version: 1.15.1
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
  *
  * Licensed under
  *   MIT License http://www.opensource.org/licenses/mit-license
+ *   GPL v3 http://opensource.org/licenses/GPL-3.0
  *
  */
 
 (function (root, factory) {
   'use strict';
   // https://github.com/umdjs/umd/blob/master/returnExports.js
-  if (typeof module === 'object' && module.exports) {
+  if (typeof exports === 'object') {
     // Node
     module.exports = factory();
   } else if (typeof define === 'function' && define.amd) {
@@ -11989,6 +11965,8 @@ return jQuery;
       while (segments.length < total) {
         segments.splice(pos, 0, '0000');
       }
+
+      length = segments.length;
     }
 
     // strip leading zeros
@@ -12072,7 +12050,7 @@ return jQuery;
     if (root.IPv6 === this) {
       root.IPv6 = _IPv6;
     }
-
+  
     return this;
   }
 
@@ -12086,20 +12064,21 @@ return jQuery;
  * URI.js - Mutating URLs
  * Second Level Domain (SLD) Support
  *
- * Version: 1.18.12
+ * Version: 1.15.1
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
  *
  * Licensed under
  *   MIT License http://www.opensource.org/licenses/mit-license
+ *   GPL v3 http://opensource.org/licenses/GPL-3.0
  *
  */
 
 (function (root, factory) {
   'use strict';
   // https://github.com/umdjs/umd/blob/master/returnExports.js
-  if (typeof module === 'object' && module.exports) {
+  if (typeof exports === 'object') {
     // Node
     module.exports = factory();
   } else if (typeof define === 'function' && define.amd) {
@@ -12257,12 +12236,7 @@ return jQuery;
       'ye':' co com gov ltd me net org plc ',
       'yu':' ac co edu gov org ',
       'za':' ac agric alt bourse city co cybernet db edu gov grondar iaccess imt inca landesign law mil net ngo nis nom olivetti org pix school tm web ',
-      'zm':' ac co com edu gov net org sch ',
-      // https://en.wikipedia.org/wiki/CentralNic#Second-level_domains
-      'com': 'ar br cn de eu gb gr hu jpn kr no qc ru sa se uk us uy za ',
-      'net': 'gb jp se uk ',
-      'org': 'ae',
-      'de': 'com '
+      'zm':' ac co com edu gov net org sch '
     },
     // gorhill 2013-10-25: Using indexOf() instead Regexp(). Significant boost
     // in both performance and memory footprint. No initialization required.
@@ -12331,19 +12305,20 @@ return jQuery;
 /*!
  * URI.js - Mutating URLs
  *
- * Version: 1.18.12
+ * Version: 1.15.1
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
  *
  * Licensed under
  *   MIT License http://www.opensource.org/licenses/mit-license
+ *   GPL v3 http://opensource.org/licenses/GPL-3.0
  *
  */
 (function (root, factory) {
   'use strict';
   // https://github.com/umdjs/umd/blob/master/returnExports.js
-  if (typeof module === 'object' && module.exports) {
+  if (typeof exports === 'object') {
     // Node
     module.exports = factory(require('./punycode'), require('./IPv6'), require('./SecondLevelDomains'));
   } else if (typeof define === 'function' && define.amd) {
@@ -12391,12 +12366,6 @@ return jQuery;
       }
     }
 
-    if (url === null) {
-      if (_urlSupplied) {
-        throw new TypeError('null is not a valid argument for URI');
-      }
-    }
-
     this.href(url);
 
     // resolve to base according to http://dvcs.w3.org/hg/url/raw-file/tip/Overview.html#constructor
@@ -12407,11 +12376,7 @@ return jQuery;
     return this;
   }
 
-  function isInteger(value) {
-    return /^[0-9]+$/.test(value);
-  }
-
-  URI.version = '1.18.12';
+  URI.version = '1.15.1';
 
   var p = URI.prototype;
   var hasOwn = Object.prototype.hasOwnProperty;
@@ -12514,11 +12479,6 @@ return jQuery;
     return true;
   }
 
-  function trimSlashes(text) {
-    var trim_expression = /^\/+|\/+$/g;
-    return text.replace(trim_expression, '');
-  }
-
   URI._parts = function() {
     return {
       protocol: null,
@@ -12541,7 +12501,7 @@ return jQuery;
   URI.escapeQuerySpace = true;
   // static properties
   URI.protocol_expression = /^[a-z][a-z0-9.+-]*$/i;
-  URI.idn_expression = /[^a-z0-9\._-]/i;
+  URI.idn_expression = /[^a-z0-9\.-]/i;
   URI.punycode_expression = /(xn--)/i;
   // well, 333.444.555.666 matches, but it sure ain't no IPv4 - do we care?
   URI.ip4_expression = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
@@ -12560,9 +12520,7 @@ return jQuery;
     // everything up to the next whitespace
     end: /[\s\r\n]|$/,
     // trim trailing punctuation captured by end RegExp
-    trim: /[`!()\[\]{};:'".,<>?«»“”„‘’]+$/,
-    // balanced parens inclusion (), [], {}, <>
-    parens: /(\([^\)]*\)|\[[^\]]*\]|\{[^}]*\}|<[^>]*>)/g,
+    trim: /[`!()\[\]{};:'".,<>?«»“”„‘’]+$/
   };
   // http://www.iana.org/assignments/uri-schemes.html
   // http://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers#Well-known_ports
@@ -12574,16 +12532,10 @@ return jQuery;
     ws: '80',
     wss: '443'
   };
-  // list of protocols which always require a hostname
-  URI.hostProtocols = [
-    'http',
-    'https'
-  ];
-
   // allowed hostname characters according to RFC 3986
   // ALPHA DIGIT "-" "." "_" "~" "!" "$" "&" "'" "(" ")" "*" "+" "," ";" "=" %encoded
-  // I've never seen a (non-IDN) hostname other than: ALPHA DIGIT . - _
-  URI.invalid_hostname_characters = /[^a-zA-Z0-9\.\-:_]/;
+  // I've never seen a (non-IDN) hostname other than: ALPHA DIGIT . -
+  URI.invalid_hostname_characters = /[^a-zA-Z0-9\.-]/;
   // map DOM Elements to their URI attribute
   URI.domAttributes = {
     'a': 'href',
@@ -12868,13 +12820,6 @@ return jQuery;
     return parts;
   };
   URI.parseHost = function(string, parts) {
-    // Copy chrome, IE, opera backslash-handling behavior.
-    // Back slashes before the query string get converted to forward slashes
-    // See: https://github.com/joyent/node/blob/386fd24f49b0e9d1a8a076592a404168faeecc34/lib/url.js#L115-L124
-    // See: https://code.google.com/p/chromium/issues/detail?id=25916
-    // https://github.com/medialize/URI.js/pull/233
-    string = string.replace(/\\/g, '/');
-
     // extract host:port
     var pos = string.indexOf('/');
     var bracketPos;
@@ -12913,12 +12858,6 @@ return jQuery;
     if (parts.hostname && string.substring(pos).charAt(0) !== '/') {
       pos++;
       string = '/' + string;
-    }
-
-    URI.ensureValidHostname(parts.hostname, parts.protocol);
-
-    if (parts.port) {
-      URI.ensureValidPort(parts.port);
     }
 
     return string.substring(pos) || '/';
@@ -12971,7 +12910,7 @@ return jQuery;
       value = v.length ? URI.decodeQuery(v.join('='), escapeQuerySpace) : null;
 
       if (hasOwn.call(items, name)) {
-        if (typeof items[name] === 'string' || items[name] === null) {
+        if (typeof items[name] === 'string') {
           items[name] = [items[name]];
         }
 
@@ -13039,13 +12978,11 @@ return jQuery;
 
     if (parts.username) {
       t += URI.encode(parts.username);
-    }
 
-    if (parts.password) {
-      t += ':' + URI.encode(parts.password);
-    }
+      if (parts.password) {
+        t += ':' + URI.encode(parts.password);
+      }
 
-    if (t) {
       t += '@';
     }
 
@@ -13137,7 +13074,7 @@ return jQuery;
           } else {
             data[name] = filterArrayValues(data[name], value);
           }
-        } else if (data[name] === String(value) && (!isArray(value) || value.length === 1)) {
+        } else if (data[name] === value) {
           data[name] = undefined;
         } else if (isArray(data[name])) {
           data[name] = filterArrayValues(data[name], value);
@@ -13150,35 +13087,18 @@ return jQuery;
     }
   };
   URI.hasQuery = function(data, name, value, withinArray) {
-    switch (getType(name)) {
-      case 'String':
-        // Nothing to do here
-        break;
-
-      case 'RegExp':
-        for (var key in data) {
-          if (hasOwn.call(data, key)) {
-            if (name.test(key) && (value === undefined || URI.hasQuery(data, key, value))) {
-              return true;
-            }
+    if (typeof name === 'object') {
+      for (var key in name) {
+        if (hasOwn.call(name, key)) {
+          if (!URI.hasQuery(data, key, name[key])) {
+            return false;
           }
         }
+      }
 
-        return false;
-
-      case 'Object':
-        for (var _key in name) {
-          if (hasOwn.call(name, _key)) {
-            if (!URI.hasQuery(data, _key, name[_key])) {
-              return false;
-            }
-          }
-        }
-
-        return true;
-
-      default:
-        throw new TypeError('URI.hasQuery() accepts a string, regular expression or object as the name parameter');
+      return true;
+    } else if (typeof name !== 'string') {
+      throw new TypeError('URI.hasQuery() accepts an object, string as the name parameter');
     }
 
     switch (getType(value)) {
@@ -13234,39 +13154,6 @@ return jQuery;
   };
 
 
-  URI.joinPaths = function() {
-    var input = [];
-    var segments = [];
-    var nonEmptySegments = 0;
-
-    for (var i = 0; i < arguments.length; i++) {
-      var url = new URI(arguments[i]);
-      input.push(url);
-      var _segments = url.segment();
-      for (var s = 0; s < _segments.length; s++) {
-        if (typeof _segments[s] === 'string') {
-          segments.push(_segments[s]);
-        }
-
-        if (_segments[s]) {
-          nonEmptySegments++;
-        }
-      }
-    }
-
-    if (!segments.length || !nonEmptySegments) {
-      return new URI('');
-    }
-
-    var uri = new URI('').segment(segments);
-
-    if (input[0].path() === '' || input[0].path().slice(0, 1) === '/') {
-      uri.path('/' + uri.path());
-    }
-
-    return uri.normalize();
-  };
-
   URI.commonPath = function(one, two) {
     var length = Math.min(one.length, two.length);
     var pos;
@@ -13296,7 +13183,6 @@ return jQuery;
     var _start = options.start || URI.findUri.start;
     var _end = options.end || URI.findUri.end;
     var _trim = options.trim || URI.findUri.trim;
-    var _parens = options.parens || URI.findUri.parens;
     var _attributeOpen = /[a-z0-9-]=["']?$/i;
 
     _start.lastIndex = 0;
@@ -13316,43 +13202,13 @@ return jQuery;
       }
 
       var end = start + string.slice(start).search(_end);
-      var slice = string.slice(start, end);
-      // make sure we include well balanced parens
-      var parensEnd = -1;
-      while (true) {
-        var parensMatch = _parens.exec(slice);
-        if (!parensMatch) {
-          break;
-        }
-
-        var parensMatchEnd = parensMatch.index + parensMatch[0].length;
-        parensEnd = Math.max(parensEnd, parensMatchEnd);
-      }
-
-      if (parensEnd > -1) {
-        slice = slice.slice(0, parensEnd) + slice.slice(parensEnd).replace(_trim, '');
-      } else {
-        slice = slice.replace(_trim, '');
-      }
-
-      if (slice.length <= match[0].length) {
-        // the extract only contains the starting marker of a URI,
-        // e.g. "www" or "http://"
-        continue;
-      }
-
+      var slice = string.slice(start, end).replace(_trim, '');
       if (options.ignore && options.ignore.test(slice)) {
         continue;
       }
 
       end = start + slice.length;
       var result = callback(slice, start, end, string);
-      if (result === undefined) {
-        _start.lastIndex = end;
-        continue;
-      }
-
-      result = String(result);
       string = string.slice(0, start) + result + string.slice(end);
       _start.lastIndex = start + result.length;
     }
@@ -13361,42 +13217,20 @@ return jQuery;
     return string;
   };
 
-  URI.ensureValidHostname = function(v, protocol) {
+  URI.ensureValidHostname = function(v) {
     // Theoretically URIs allow percent-encoding in Hostnames (according to RFC 3986)
     // they are not part of DNS and therefore ignored by URI.js
 
-    var hasHostname = !!v; // not null and not an empty string
-    var hasProtocol = !!protocol;
-    var rejectEmptyHostname = false;
-
-    if (hasProtocol) {
-      rejectEmptyHostname = arrayContains(URI.hostProtocols, protocol);
-    }
-
-    if (rejectEmptyHostname && !hasHostname) {
-      throw new TypeError('Hostname cannot be empty, if protocol is ' + protocol);
-    } else if (v && v.match(URI.invalid_hostname_characters)) {
+    if (v.match(URI.invalid_hostname_characters)) {
       // test punycode
       if (!punycode) {
-        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-:_] and Punycode.js is not available');
+        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-] and Punycode.js is not available');
       }
+
       if (punycode.toASCII(v).match(URI.invalid_hostname_characters)) {
-        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-:_]');
+        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-]');
       }
     }
-  };
-
-  URI.ensureValidPort = function (v) {
-    if (!v) {
-      return;
-    }
-
-    var port = Number(v);
-    if (isInteger(port) && (port > 0) && (port < 65536)) {
-      return;
-    }
-
-    throw new TypeError('Port "' + v + '" is not a valid port');
   };
 
   // noConflict
@@ -13656,7 +13490,9 @@ return jQuery;
           v = v.substring(1);
         }
 
-        URI.ensureValidPort(v);
+        if (v.match(/[^0-9]/)) {
+          throw new TypeError('Port "' + v + '" contains characters other than [0-9]');
+        }
       }
     }
     return _port.call(this, v, build);
@@ -13668,40 +13504,13 @@ return jQuery;
 
     if (v !== undefined) {
       var x = {};
-      var res = URI.parseHost(v, x);
-      if (res !== '/') {
-        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-]');
-      }
-
+      URI.parseHost(v, x);
       v = x.hostname;
-      URI.ensureValidHostname(v, this._parts.protocol);
     }
     return _hostname.call(this, v, build);
   };
 
   // compound accessors
-  p.origin = function(v, build) {
-    if (this._parts.urn) {
-      return v === undefined ? '' : this;
-    }
-
-    if (v === undefined) {
-      var protocol = this.protocol();
-      var authority = this.authority();
-      if (!authority) {
-        return '';
-      }
-
-      return (protocol ? protocol + '://' : '') + this.authority();
-    } else {
-      var origin = URI(v);
-      this
-        .protocol(origin.protocol())
-        .authority(origin.authority())
-        .build(!build);
-      return this;
-    }
-  };
   p.host = function(v, build) {
     if (this._parts.urn) {
       return v === undefined ? '' : this;
@@ -13710,11 +13519,7 @@ return jQuery;
     if (v === undefined) {
       return this._parts.hostname ? URI.buildHost(this._parts) : '';
     } else {
-      var res = URI.parseHost(v, this._parts);
-      if (res !== '/') {
-        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-]');
-      }
-
+      URI.parseHost(v, this._parts);
       this.build(!build);
       return this;
     }
@@ -13727,11 +13532,7 @@ return jQuery;
     if (v === undefined) {
       return this._parts.hostname ? URI.buildAuthority(this._parts) : '';
     } else {
-      var res = URI.parseAuthority(v, this._parts);
-      if (res !== '/') {
-        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-]');
-      }
-
+      URI.parseAuthority(v, this._parts);
       this.build(!build);
       return this;
     }
@@ -13742,8 +13543,12 @@ return jQuery;
     }
 
     if (v === undefined) {
+      if (!this._parts.username) {
+        return '';
+      }
+
       var t = URI.buildUserinfo(this._parts);
-      return t ? t.substring(0, t.length -1) : t;
+      return t.substring(0, t.length -1);
     } else {
       if (v[v.length-1] !== '@') {
         v += '@';
@@ -13793,12 +13598,8 @@ return jQuery;
         v += '.';
       }
 
-      if (v.indexOf(':') !== -1) {
-        throw new TypeError('Domains cannot contain colons');
-      }
-
       if (v) {
-        URI.ensureValidHostname(v, this._parts.protocol);
+        URI.ensureValidHostname(v);
       }
 
       this._parts.hostname = this._parts.hostname.replace(replace, v);
@@ -13837,11 +13638,7 @@ return jQuery;
         throw new TypeError('cannot set domain empty');
       }
 
-      if (v.indexOf(':') !== -1) {
-        throw new TypeError('Domains cannot contain colons');
-      }
-
-      URI.ensureValidHostname(v, this._parts.protocol);
+      URI.ensureValidHostname(v);
 
       if (!this._parts.hostname || this.is('IP')) {
         this._parts.hostname = v;
@@ -13952,7 +13749,7 @@ return jQuery;
       return v === undefined ? '' : this;
     }
 
-    if (typeof v !== 'string') {
+    if (v === undefined || v === true) {
       if (!this._parts.path || this._parts.path === '/') {
         return '';
       }
@@ -14080,10 +13877,9 @@ return jQuery;
             segments.pop();
           }
 
-          segments.push(trimSlashes(v[i]));
+          segments.push(v[i]);
         }
       } else if (v || typeof v === 'string') {
-        v = trimSlashes(v);
         if (segments[segments.length -1] === '') {
           // empty trailing elements have to be overwritten
           // to prevent results such as /foo//bar
@@ -14094,7 +13890,7 @@ return jQuery;
       }
     } else {
       if (v) {
-        segments[segment] = trimSlashes(v);
+        segments[segment] = v;
       } else {
         segments.splice(segment, 1);
       }
@@ -14132,7 +13928,7 @@ return jQuery;
       v = (typeof v === 'string' || v instanceof String) ? URI.encode(v) : v;
     } else {
       for (i = 0, l = v.length; i < l; i++) {
-        v[i] = URI.encode(v[i]);
+        v[i] = URI.decode(v[i]);
       }
     }
 
@@ -14279,8 +14075,6 @@ return jQuery;
       return this;
     }
 
-    _path = URI.recodePath(_path);
-
     var _was_relative;
     var _leadingParents = '';
     var _parent, _pos;
@@ -14289,11 +14083,6 @@ return jQuery;
     if (_path.charAt(0) !== '/') {
       _was_relative = true;
       _path = '/' + _path;
-    }
-
-    // handle relative files (as opposed to directories)
-    if (_path.slice(-3) === '/..' || _path.slice(-2) === '/.') {
-      _path += '/';
     }
 
     // resolve simples
@@ -14311,7 +14100,7 @@ return jQuery;
 
     // resolve parents
     while (true) {
-      _parent = _path.search(/\/\.\.(\/|$)/);
+      _parent = _path.indexOf('/..');
       if (_parent === -1) {
         // no more ../ to resolve
         break;
@@ -14333,6 +14122,7 @@ return jQuery;
       _path = _leadingParents + _path.substring(1);
     }
 
+    _path = URI.recodePath(_path);
     this._parts.path = _path;
     this.build(!build);
     return this;
@@ -14444,6 +14234,10 @@ return jQuery;
     var properties = ['protocol', 'username', 'password', 'hostname', 'port'];
     var basedir, i, p;
 
+    if (this._parts.urn) {
+      throw new Error('URNs do not have any generally defined hierarchical components');
+    }
+
     if (!(base instanceof URI)) {
       base = new URI(base);
     }
@@ -14451,7 +14245,6 @@ return jQuery;
     // << Readium patch
     // "filesystem:chrome-extension:"
     //
-    
     if (this._parts.protocol == 'filesystem') {
 
       return resolved;
@@ -14461,25 +14254,17 @@ return jQuery;
 
       var uri = this.absoluteTo(base._parts.path);
 
-      if (base._parts.path.indexOf("chrome-extension:") !== -1 || base._parts.path.indexOf("http:") !== -1 || base._parts.path.indexOf("https:") !== -1) {
+      if (base._parts.path.indexOf("chrome-extension:") !== -1) {
 
-        return new URI('filesystem:' + uri.toString());
+          return new URI('filesystem:' + uri.toString());
       }
 
       return uri;
     }
-
-    if (this._parts.urn) {
-      throw new Error('URNs do not have any generally defined hierarchical components');
-    }
-
     //
     // Readium patch >>
 
-    if (resolved._parts.protocol) {
-      // Directly returns even if this._parts.hostname is empty.
-      return resolved;
-    } else {
+    if (!resolved._parts.protocol) {
       resolved._parts.protocol = base._parts.protocol;
     }
 
@@ -14496,17 +14281,15 @@ return jQuery;
       if (!resolved._parts.query) {
         resolved._parts.query = base._parts.query;
       }
-    } else {
-      if (resolved._parts.path.substring(-2) === '..') {
-        resolved._parts.path += '/';
-      }
+    } else if (resolved._parts.path.substring(-2) === '..') {
+      resolved._parts.path += '/';
+    }
 
-      if (resolved.path().charAt(0) !== '/') {
-        basedir = base.directory();
-        basedir = basedir ? basedir : base.path().indexOf('/') === 0 ? '/' : '';
-        resolved._parts.path = (basedir ? (basedir + '/') : '') + resolved._parts.path;
-        resolved.normalizePath();
-      }
+    if (resolved.path().charAt(0) !== '/') {
+      basedir = base.directory();
+      basedir = basedir ? basedir : base.path().indexOf('/') === 0 ? '/' : '';
+      resolved._parts.path = (basedir ? (basedir + '/') : '') + resolved._parts.path;
+      resolved.normalizePath();
     }
 
     resolved.build();
@@ -14559,7 +14342,7 @@ return jQuery;
     }
 
     // determine common sub path
-    common = URI.commonPath(relativePath, basePath);
+    common = URI.commonPath(relative.path(), base.path());
 
     // If the paths have nothing in common, return a relative URL with the absolute path.
     if (!common) {
@@ -14571,7 +14354,7 @@ return jQuery;
       .replace(/[^\/]*$/, '')
       .replace(/.*?\//g, '../');
 
-    relativeParts.path = (parents + relativeParts.path.substring(common.length)) || './';
+    relativeParts.path = parents + relativeParts.path.substring(common.length);
 
     return relative.build();
   };
@@ -22990,7 +22773,7 @@ CSSOM.CSSStyleDeclaration.prototype = {
 			this[this.length] = name;
 			this.length++;
 		}
-		this[name] = value + "";
+		this[name] = value;
 		this._importants[name] = priority;
 	},
 
@@ -23526,34 +23309,6 @@ Object.defineProperty(CSSOM.CSSFontFaceRule.prototype, "cssText", {
   get: function() {
     return "@font-face {" + this.style.cssText + "}";
   }
-});
-
-
-
-/**
- * @constructor
- * @see http://www.w3.org/TR/shadow-dom/#host-at-rule
- */
-CSSOM.CSSHostRule = function CSSHostRule() {
-	CSSOM.CSSRule.call(this);
-	this.cssRules = [];
-};
-
-CSSOM.CSSHostRule.prototype = new CSSOM.CSSRule();
-CSSOM.CSSHostRule.prototype.constructor = CSSOM.CSSHostRule;
-CSSOM.CSSHostRule.prototype.type = 1001;
-//FIXME
-//CSSOM.CSSHostRule.prototype.insertRule = CSSStyleSheet.prototype.insertRule;
-//CSSOM.CSSHostRule.prototype.deleteRule = CSSStyleSheet.prototype.deleteRule;
-
-Object.defineProperty(CSSOM.CSSHostRule.prototype, "cssText", {
-	get: function() {
-		var cssTexts = [];
-		for (var i=0, length=this.cssRules.length; i < length; i++) {
-			cssTexts.push(this.cssRules[i].cssText);
-		}
-		return "@host {" + cssTexts.join("") + "}";
-	}
 });
 
 
@@ -24178,12 +23933,10 @@ CSSOM.parse = function parse(token) {
 
 	var index;
 	var buffer = "";
-	var valueParenthesisDepth = 0;
 
 	var SIGNIFICANT_WHITESPACE = {
 		"selector": true,
 		"value": true,
-		"value-parenthesis": true,
 		"atRule": true,
 		"importRule-begin": true,
 		"importRule": true,
@@ -24199,7 +23952,7 @@ CSSOM.parse = function parse(token) {
 	// @type CSSMediaRule|CSSKeyframesRule|CSSDocumentRule
 	var parentRule;
 
-	var name, priority="", styleRule, mediaRule, importRule, fontFaceRule, keyframesRule, documentRule, hostRule;
+	var name, priority="", styleRule, mediaRule, importRule, fontFaceRule, keyframesRule, documentRule;
 
 	var atKeyframesRegExp = /@(-(?:\w+-)+)?keyframes/g;
 
@@ -24305,13 +24058,6 @@ CSSOM.parse = function parse(token) {
 				i += "media".length;
 				buffer = "";
 				break;
-			} else if (token.indexOf("@host", i) === i) {
-				state = "hostRule-begin";
-				i += "host".length;
-				hostRule = new CSSOM.CSSHostRule();
-				hostRule.__starts = i;
-				buffer = "";
-				break;
 			} else if (token.indexOf("@import", i) === i) {
 				state = "importRule-begin";
 				i += "import".length;
@@ -24352,11 +24098,6 @@ CSSOM.parse = function parse(token) {
 				mediaRule.media.mediaText = buffer.trim();
 				currentScope = parentRule = mediaRule;
 				mediaRule.parentStyleSheet = styleSheet;
-				buffer = "";
-				state = "before-selector";
-			} else if (state === "hostRule-begin") {
-				currentScope = parentRule = hostRule;
-				hostRule.parentStyleSheet = styleSheet;
 				buffer = "";
 				state = "before-selector";
 			} else if (state === "fontFaceRule-begin") {
@@ -24419,14 +24160,8 @@ CSSOM.parse = function parse(token) {
 					}
 				} else {
 					state = 'value-parenthesis';
-					//always ensure this is reset to 1 on transition
-					//from value to value-parenthesis
-					valueParenthesisDepth = 1;
 					buffer += character;
 				}
-			} else if (state === 'value-parenthesis') {
-				valueParenthesisDepth++;
-				buffer += character;
 			} else {
 				buffer += character;
 			}
@@ -24434,8 +24169,7 @@ CSSOM.parse = function parse(token) {
 
 		case ")":
 			if (state === 'value-parenthesis') {
-				valueParenthesisDepth--;
-				if (valueParenthesisDepth === 0) state = 'value';
+				state = 'value';
 			}
 			buffer += character;
 			break;
