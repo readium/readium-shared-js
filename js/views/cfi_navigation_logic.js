@@ -47,14 +47,21 @@ var CfiNavigationLogic = function (options) {
     }
 
     this.getRootElement = function () {
+        if (!options.$iframe) {
+            return null;
+        }
 
         return options.$iframe[0].contentDocument.documentElement;
     };
 
     this.getBodyElement = function () {
-
-        // In SVG documents the root element can be considered the body.
-        return this.getRootDocument().body || this.getRootElement();
+        var rootDocument = this.getRootDocument();
+        if (rootDocument && rootDocument.body) {
+            return rootDocument.body;
+        } else {
+            // In SVG documents the root element can be considered the body.
+            return this.getRootElement();
+        }
     };
 
     this.getClassBlacklist = function () {
@@ -70,6 +77,10 @@ var CfiNavigationLogic = function (options) {
     };
 
     this.getRootDocument = function () {
+        if (!options.$iframe) {
+            return null;
+        }
+
         return options.$iframe[0].contentDocument;
     };
 
@@ -1581,7 +1592,7 @@ var CfiNavigationLogic = function (options) {
                 var arr = window.top._DEBUG_visibleTextRangeOffsetsRuns;
                 return arr.reduce(function (a, b) {
                     return a + b;
-                }) / arr.length;             
+                }) / arr.length;
             }
         };
 
@@ -1590,12 +1601,18 @@ var CfiNavigationLogic = function (options) {
 
         this.findFirstVisibleElement = function (visibleContentOffsets, frameDimensions) {
 
+            var bodyElement = this.getBodyElement();
+
+            if (!bodyElement) {
+                return null;
+            }
+
             var firstVisibleElement;
             var percentVisible = 0;
             var textNode;
 
             var treeWalker = document.createTreeWalker(
-                this.getBodyElement(),
+                bodyElement,
                 NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
                 function(node) {
                     if (node.nodeType === Node.ELEMENT_NODE && isElementBlacklisted(node))
@@ -1667,12 +1684,18 @@ var CfiNavigationLogic = function (options) {
 
         this.findLastVisibleElement = function (visibleContentOffsets, frameDimensions) {
 
+            var bodyElement = this.getBodyElement();
+
+            if (!bodyElement) {
+                return null;
+            }
+
             var firstVisibleElement;
             var percentVisible = 0;
             var textNode;
 
             var treeWalker = document.createTreeWalker(
-                this.getBodyElement(),
+                bodyElement,
                 NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
                 function(node) {
                     if (node.nodeType === Node.ELEMENT_NODE && isElementBlacklisted(node))

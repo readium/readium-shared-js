@@ -594,10 +594,12 @@ var FixedView = function(options, reader){
     this.bookmarkCurrentPage = function() {
 
         var views = getDisplayingViews();
+        var loadedSpineItems = this.getLoadedSpineItems();
 
-        if(views.length > 0) {
-
+        if (views.length > 0) {
             return views[0].getFirstVisibleCfi();
+        } else if (loadedSpineItems.length > 0) {
+            return new BookmarkData(this.getLoadedSpineItems()[0].idref, null);
         }
 
         return undefined;
