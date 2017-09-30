@@ -2926,14 +2926,21 @@ var CfiNavigationLogic = function (options) {
     }
 
     this.getRootElement = function () {
+        if (!options.$iframe) {
+            return null;
+        }
 
         return options.$iframe[0].contentDocument.documentElement;
     };
 
     this.getBodyElement = function () {
-
-        // In SVG documents the root element can be considered the body.
-        return this.getRootDocument().body || this.getRootElement();
+        var rootDocument = this.getRootDocument();
+        if (rootDocument && rootDocument.body) {
+            return rootDocument.body;
+        } else {
+            // In SVG documents the root element can be considered the body.
+            return this.getRootElement();
+        }
     };
 
     this.getClassBlacklist = function () {
@@ -2949,6 +2956,10 @@ var CfiNavigationLogic = function (options) {
     };
 
     this.getRootDocument = function () {
+        if (!options.$iframe) {
+            return null;
+        }
+
         return options.$iframe[0].contentDocument;
     };
 
@@ -2982,7 +2993,16 @@ var CfiNavigationLogic = function (options) {
         } else if (endNode.nodeType === Node.TEXT_NODE) {
             range.setEnd(endNode, endOffset ? endOffset : 0);
         }
-        return normalizeRectangle(range.getBoundingClientRect(), 0, 0);
+
+        // Webkit has a bug where collapsed ranges provide an empty rect with getBoundingClientRect()
+        // https://bugs.webkit.org/show_bug.cgi?id=138949
+        // Thankfully it implements getClientRects() properly...
+        // A collapsed text range may still have geometry!
+        if (range.collapsed) {
+            return normalizeRectangle(range.getClientRects()[0], 0, 0);
+        } else {
+            return normalizeRectangle(range.getBoundingClientRect(), 0, 0);
+        }
     }
 
     function getNodeClientRectList(node, visibleContentOffsets) {
@@ -4451,7 +4471,7 @@ var CfiNavigationLogic = function (options) {
                 var arr = window.top._DEBUG_visibleTextRangeOffsetsRuns;
                 return arr.reduce(function (a, b) {
                     return a + b;
-                }) / arr.length;             
+                }) / arr.length;
             }
         };
 
@@ -4460,12 +4480,18 @@ var CfiNavigationLogic = function (options) {
 
         this.findFirstVisibleElement = function (visibleContentOffsets, frameDimensions) {
 
+            var bodyElement = this.getBodyElement();
+
+            if (!bodyElement) {
+                return null;
+            }
+
             var firstVisibleElement;
             var percentVisible = 0;
             var textNode;
 
             var treeWalker = document.createTreeWalker(
-                this.getBodyElement(),
+                bodyElement,
                 NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
                 function(node) {
                     if (node.nodeType === Node.ELEMENT_NODE && isElementBlacklisted(node))
@@ -4537,12 +4563,18 @@ var CfiNavigationLogic = function (options) {
 
         this.findLastVisibleElement = function (visibleContentOffsets, frameDimensions) {
 
+            var bodyElement = this.getBodyElement();
+
+            if (!bodyElement) {
+                return null;
+            }
+
             var firstVisibleElement;
             var percentVisible = 0;
             var textNode;
 
             var treeWalker = document.createTreeWalker(
-                this.getBodyElement(),
+                bodyElement,
                 NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
                 function(node) {
                     if (node.nodeType === Node.ELEMENT_NODE && isElementBlacklisted(node))
@@ -6191,7 +6223,11 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         return navigation.getNodeRangeInfoFromCfi(partialCfi);
     };
 
-    function createBookmarkFromCfi(cfi){
+    function createBookmarkFromCfi(cfi) {
+        if (!_currentSpineItem) {
+            return null;
+        }
+
         return new BookmarkData(_currentSpineItem.idref, cfi);
     }
 
@@ -6988,10 +7024,12 @@ var FixedView = function(options, reader){
     this.bookmarkCurrentPage = function() {
 
         var views = getDisplayingViews();
+        var loadedSpineItems = this.getLoadedSpineItems();
 
-        if(views.length > 0) {
-
+        if (views.length > 0) {
             return views[0].getFirstVisibleCfi();
+        } else if (loadedSpineItems.length > 0) {
+            return new BookmarkData(this.getLoadedSpineItems()[0].idref, null);
         }
 
         return undefined;
@@ -16541,6 +16579,11 @@ var ReflowableView = function(options, reader){
         _$epubHtml.css('margin', 0);
         _$epubHtml.css('padding', 0);
         _$epubHtml.css('border', 0);
+
+        // In order for the ResizeSensor to work, the content body needs to be "positioned".
+        // This may be an issue since it changes the assumptions some content authors might make when positioning their content.
+        _$htmlBody.css('position', 'relative');
+
         _$htmlBody.css('margin', 0);
         _$htmlBody.css('padding', 0);
 
@@ -17555,7 +17598,7 @@ define('readium_shared_js/models/node_range_info',[],function () {
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define('readium_shared_js/views/external_agent_support',["../globals"], function(Globals) {
+define('readium_shared_js/views/external_agent_support',["../globals", "underscore"], function(Globals, _) {
     /**
      * This module helps external agents that interact with content documents from
      * the level of the iframe browsing context:
@@ -17616,21 +17659,33 @@ define('readium_shared_js/views/external_agent_support',["../globals"], function
                     link.setAttribute('rel', 'canonical');
                     link.setAttribute('href', parentWindow.location.href);
                     contentDocument.head.appendChild(link);
-                    contentDocumentStates[spineItem.idref] = {
-                        canonicalLinkElement: link
-                    };
+                    contentDocumentStates[spineItem.idref].canonicalLinkElement = link;
                 }
             }
         }
+
+        var bringIntoViewDebounced = _.debounce(function (range) {
+            var target = reader.getRangeCfiFromDomRange(range);
+            var contentDocumentState = contentDocumentStates[target.idref];
+
+            if (contentDocumentState && contentDocumentState.isUpdated) {
+                reader.openSpineItemElementCfi(target.idref, target.contentCFI);
+            } else {
+                contentDocumentState.pendingNavRequest = {
+                    idref: target.idref,
+                    contentCFI: target.contentCFI
+                };
+            }
+        }, 100);
 
         function bindBringIntoViewEvent(contentDocument) {
             // 'scrolltorange' is a non-standard event that is emitted on the content frame
             // by some external tools like Hypothes.is
             contentDocument.addEventListener('scrolltorange', function (event) {
                 event.preventDefault();
+
                 var range = event.detail;
-                var target = reader.getRangeCfiFromDomRange(range);
-                reader.openSpineItemElementCfi(target.idref, target.contentCFI);
+                bringIntoViewDebounced(range);
             });
         }
 
@@ -17640,10 +17695,11 @@ define('readium_shared_js/views/external_agent_support',["../globals"], function
          * @param {Models.SpineItem} spineItem  The associated spine item object
          */
         this.bindToContentDocument = function(contentDocument, spineItem) {
+            contentDocuments[spineItem.idref] = contentDocument;
+            contentDocumentStates[spineItem.idref] = {};
             injectDublinCoreResourceIdentifiers(contentDocument, spineItem);
             injectAppUrlAsCanonicalLink(contentDocument, spineItem);
             bindBringIntoViewEvent(contentDocument);
-            contentDocuments[spineItem.idref] = contentDocument;
         };
 
         /***
@@ -17654,13 +17710,24 @@ define('readium_shared_js/views/external_agent_support',["../globals"], function
             var contentDocument = contentDocuments[spineItem.idref];
             var state = contentDocumentStates[spineItem.idref];
 
-            if (contentDocument && state && state.canonicalLinkElement) {
-                if (contentDocument.defaultView && contentDocument.defaultView.parent) {
+            if (contentDocument && state) {
+
+                if (state.canonicalLinkElement &&
+                    contentDocument.defaultView &&
+                    contentDocument.defaultView.parent) {
                     var parentWindow = contentDocument.defaultView.parent;
                     var isParentInDifferentDomain = 'document' in Object.keys(parentWindow);
                     if (!isParentInDifferentDomain) {
                         state.canonicalLinkElement.setAttribute('href', parentWindow.location.href);
                     }
+                }
+
+                state.isUpdated = true;
+
+                var pendingNavRequest = state.pendingNavRequest;
+                if (pendingNavRequest) {
+                    reader.openSpineItemElementCfi(pendingNavRequest.idref, pendingNavRequest.contentCFI);
+                    state.pendingNavRequest = null;
                 }
             }
         };
