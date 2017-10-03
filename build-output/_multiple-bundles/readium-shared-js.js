@@ -3408,9 +3408,9 @@ var CfiNavigationLogic = function (options) {
                 width: textRect.right - textRect.left,
                 height: textRect.bottom - textRect.top
             };
-            if (leftOffset && topOffset) {
-                offsetRectangle(plainRectObject, leftOffset, topOffset);
-            }
+            leftOffset = leftOffset || 0;
+            topOffset = topOffset || 0;
+            offsetRectangle(plainRectObject, leftOffset, topOffset);
             return plainRectObject;
         }
 
@@ -16652,10 +16652,10 @@ var ReflowableView = function(options, reader){
                 _paginationInfo.currentPageIndex = 0; // current page index is not stable, reset it
                 self.restoreCurrentPosition();
             } else {
-                onPaginationChanged(self); // => redraw() => showBook(), so the trick below is not needed                
+                onPaginationChanged(self, _currentSpineItem); // => redraw() => showBook(), so the trick below is not needed                
             }
 
-            //onPaginationChanged(self); // => redraw() => showBook(), so the trick below is not needed 
+            //onPaginationChanged(self, _currentSpineItem); // => redraw() => showBook(), so the trick below is not needed 
 
             // //We do this to force re-rendering of the document in the iframe.
             // //There is a bug in WebView control with right to left columns layout - after resizing the window html document
@@ -16663,7 +16663,7 @@ var ReflowableView = function(options, reader){
             // _$epubHtml.hide();
             // setTimeout(function() {
             //     _$epubHtml.show();
-            //     onPaginationChanged(self); // => redraw() => showBook()
+            //     onPaginationChanged(self, _currentSpineItem); // => redraw() => showBook()
             // }, 50);
 
         }
