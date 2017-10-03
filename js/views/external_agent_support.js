@@ -113,6 +113,23 @@ define(["../globals", "underscore"], function(Globals, _) {
             });
         }
 
+        function bindSelectionPopupWorkaround(contentDocument) {
+            // A hack to make the Hypothes.is 'adder' context menu popup work when the content doc body is positioned.
+            // When the content doc has columns and a body with position set to 'relative'
+            // the adder won't be positioned properly.
+            //
+            // The workaround is to clear the position property when a selection is active.
+            // Then restore the position property to 'relative' when the selection clears.
+            contentDocument.addEventListener('selectionchange', function () {
+                var selection = contentDocument.getSelection();
+                if (selection && selection.isCollapsed) {
+                    contentDocument.body.style.position = 'relative';
+                } else {
+                    contentDocument.body.style.position = '';
+                }
+            });
+        }
+
         /***
          *
          * @param {Document} contentDocument    Document instance with DOM tree
@@ -124,6 +141,10 @@ define(["../globals", "underscore"], function(Globals, _) {
             injectDublinCoreResourceIdentifiers(contentDocument, spineItem);
             injectAppUrlAsCanonicalLink(contentDocument, spineItem);
             bindBringIntoViewEvent(contentDocument);
+
+            if (spineItem.isReflowable()) {
+                bindSelectionPopupWorkaround(contentDocument);
+            }
         };
 
         /***
