@@ -16,7 +16,11 @@ define('readium_plugin_hypothesis/main',['readium_js_plugins'], function (Plugin
         window.hypothesisConfig = function () {
             return {
                 onLayoutChange: function(state) {
-                    self.emit('offsetPageButton', state.width);
+                    if (state.expanded) {
+                        self.emit('offsetPageButton', state.width);
+                    } else {
+                        self.emit('offsetPageButton', 0);
+                    }
                     if (!state.expanded) {
                         self.emit('offsetNavBar', state.width);
                     }
