@@ -11900,7 +11900,7 @@ return jQuery;
  * URI.js - Mutating URLs
  * IPv6 Support
  *
- * Version: 1.18.12
+ * Version: 1.19.0
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -12086,7 +12086,7 @@ return jQuery;
  * URI.js - Mutating URLs
  * Second Level Domain (SLD) Support
  *
- * Version: 1.18.12
+ * Version: 1.19.0
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -12331,7 +12331,7 @@ return jQuery;
 /*!
  * URI.js - Mutating URLs
  *
- * Version: 1.18.12
+ * Version: 1.19.0
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -12411,7 +12411,7 @@ return jQuery;
     return /^[0-9]+$/.test(value);
   }
 
-  URI.version = '1.18.12';
+  URI.version = '1.19.0';
 
   var p = URI.prototype;
   var hasOwn = Object.prototype.hasOwnProperty;
@@ -12531,10 +12531,15 @@ return jQuery;
       query: null,
       fragment: null,
       // state
+      preventInvalidHostname: URI.preventInvalidHostname,
       duplicateQueryParameters: URI.duplicateQueryParameters,
       escapeQuerySpace: URI.escapeQuerySpace
     };
   };
+  // state: throw on invalid hostname
+  // see https://github.com/medialize/URI.js/pull/345
+  // and https://github.com/medialize/URI.js/issues/354
+  URI.preventInvalidHostname = false;
   // state: allow duplicate query parameters (a=1&a=1)
   URI.duplicateQueryParameters = false;
   // state: replaces + with %20 (space in query strings)
@@ -12815,7 +12820,9 @@ return jQuery;
   URI.parse = function(string, parts) {
     var pos;
     if (!parts) {
-      parts = {};
+      parts = {
+        preventInvalidHostname: URI.preventInvalidHostname
+      };
     }
     // [protocol"://"[username[":"password]"@"]hostname[":"port]"/"?][path]["?"querystring]["#"fragment]
 
@@ -12868,6 +12875,10 @@ return jQuery;
     return parts;
   };
   URI.parseHost = function(string, parts) {
+    if (!string) {
+      string = '';
+    }
+
     // Copy chrome, IE, opera backslash-handling behavior.
     // Back slashes before the query string get converted to forward slashes
     // See: https://github.com/joyent/node/blob/386fd24f49b0e9d1a8a076592a404168faeecc34/lib/url.js#L115-L124
@@ -12915,7 +12926,9 @@ return jQuery;
       string = '/' + string;
     }
 
-    URI.ensureValidHostname(parts.hostname, parts.protocol);
+    if (parts.preventInvalidHostname) {
+      URI.ensureValidHostname(parts.hostname, parts.protocol);
+    }
 
     if (parts.port) {
       URI.ensureValidPort(parts.port);
@@ -13110,6 +13123,21 @@ return jQuery;
       throw new TypeError('URI.addQuery() accepts an object, string as the name parameter');
     }
   };
+
+  URI.setQuery = function(data, name, value) {
+    if (typeof name === 'object') {
+      for (var key in name) {
+        if (hasOwn.call(name, key)) {
+          URI.setQuery(data, key, name[key]);
+        }
+      }
+    } else if (typeof name === 'string') {
+      data[name] = value === undefined ? null : value;
+    } else {
+      throw new TypeError('URI.setQuery() accepts an object, string as the name parameter');
+    }
+  };
+
   URI.removeQuery = function(data, name, value) {
     var i, length, key;
 
@@ -13627,16 +13655,15 @@ return jQuery;
   var _hostname = p.hostname;
 
   p.protocol = function(v, build) {
-    if (v !== undefined) {
-      if (v) {
-        // accept trailing ://
-        v = v.replace(/:(\/\/)?$/, '');
+    if (v) {
+      // accept trailing ://
+      v = v.replace(/:(\/\/)?$/, '');
 
-        if (!v.match(URI.protocol_expression)) {
-          throw new TypeError('Protocol "' + v + '" contains characters other than [A-Z0-9.+-] or doesn\'t start with [A-Z]');
-        }
+      if (!v.match(URI.protocol_expression)) {
+        throw new TypeError('Protocol "' + v + '" contains characters other than [A-Z0-9.+-] or doesn\'t start with [A-Z]');
       }
     }
+
     return _protocol.call(this, v, build);
   };
   p.scheme = p.protocol;
@@ -13667,15 +13694,18 @@ return jQuery;
     }
 
     if (v !== undefined) {
-      var x = {};
+      var x = { preventInvalidHostname: this._parts.preventInvalidHostname };
       var res = URI.parseHost(v, x);
       if (res !== '/') {
         throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-]');
       }
 
       v = x.hostname;
-      URI.ensureValidHostname(v, this._parts.protocol);
+      if (this._parts.preventInvalidHostname) {
+        URI.ensureValidHostname(v, this._parts.protocol);
+      }
     }
+
     return _hostname.call(this, v, build);
   };
 
@@ -14639,6 +14669,11 @@ return jQuery;
   };
 
   // state
+  p.preventInvalidHostname = function(v) {
+    this._parts.preventInvalidHostname = !!v;
+    return this;
+  };
+
   p.duplicateQueryParameters = function(v) {
     this._parts.duplicateQueryParameters = !!v;
     return this;
@@ -22990,7 +23025,7 @@ CSSOM.CSSStyleDeclaration.prototype = {
 			this[this.length] = name;
 			this.length++;
 		}
-		this[name] = value + "";
+		this[name] = value;
 		this._importants[name] = priority;
 	},
 
@@ -23526,34 +23561,6 @@ Object.defineProperty(CSSOM.CSSFontFaceRule.prototype, "cssText", {
   get: function() {
     return "@font-face {" + this.style.cssText + "}";
   }
-});
-
-
-
-/**
- * @constructor
- * @see http://www.w3.org/TR/shadow-dom/#host-at-rule
- */
-CSSOM.CSSHostRule = function CSSHostRule() {
-	CSSOM.CSSRule.call(this);
-	this.cssRules = [];
-};
-
-CSSOM.CSSHostRule.prototype = new CSSOM.CSSRule();
-CSSOM.CSSHostRule.prototype.constructor = CSSOM.CSSHostRule;
-CSSOM.CSSHostRule.prototype.type = 1001;
-//FIXME
-//CSSOM.CSSHostRule.prototype.insertRule = CSSStyleSheet.prototype.insertRule;
-//CSSOM.CSSHostRule.prototype.deleteRule = CSSStyleSheet.prototype.deleteRule;
-
-Object.defineProperty(CSSOM.CSSHostRule.prototype, "cssText", {
-	get: function() {
-		var cssTexts = [];
-		for (var i=0, length=this.cssRules.length; i < length; i++) {
-			cssTexts.push(this.cssRules[i].cssText);
-		}
-		return "@host {" + cssTexts.join("") + "}";
-	}
 });
 
 
@@ -24178,12 +24185,10 @@ CSSOM.parse = function parse(token) {
 
 	var index;
 	var buffer = "";
-	var valueParenthesisDepth = 0;
 
 	var SIGNIFICANT_WHITESPACE = {
 		"selector": true,
 		"value": true,
-		"value-parenthesis": true,
 		"atRule": true,
 		"importRule-begin": true,
 		"importRule": true,
@@ -24199,7 +24204,7 @@ CSSOM.parse = function parse(token) {
 	// @type CSSMediaRule|CSSKeyframesRule|CSSDocumentRule
 	var parentRule;
 
-	var name, priority="", styleRule, mediaRule, importRule, fontFaceRule, keyframesRule, documentRule, hostRule;
+	var name, priority="", styleRule, mediaRule, importRule, fontFaceRule, keyframesRule, documentRule;
 
 	var atKeyframesRegExp = /@(-(?:\w+-)+)?keyframes/g;
 
@@ -24305,13 +24310,6 @@ CSSOM.parse = function parse(token) {
 				i += "media".length;
 				buffer = "";
 				break;
-			} else if (token.indexOf("@host", i) === i) {
-				state = "hostRule-begin";
-				i += "host".length;
-				hostRule = new CSSOM.CSSHostRule();
-				hostRule.__starts = i;
-				buffer = "";
-				break;
 			} else if (token.indexOf("@import", i) === i) {
 				state = "importRule-begin";
 				i += "import".length;
@@ -24352,11 +24350,6 @@ CSSOM.parse = function parse(token) {
 				mediaRule.media.mediaText = buffer.trim();
 				currentScope = parentRule = mediaRule;
 				mediaRule.parentStyleSheet = styleSheet;
-				buffer = "";
-				state = "before-selector";
-			} else if (state === "hostRule-begin") {
-				currentScope = parentRule = hostRule;
-				hostRule.parentStyleSheet = styleSheet;
 				buffer = "";
 				state = "before-selector";
 			} else if (state === "fontFaceRule-begin") {
@@ -24419,14 +24412,8 @@ CSSOM.parse = function parse(token) {
 					}
 				} else {
 					state = 'value-parenthesis';
-					//always ensure this is reset to 1 on transition
-					//from value to value-parenthesis
-					valueParenthesisDepth = 1;
 					buffer += character;
 				}
-			} else if (state === 'value-parenthesis') {
-				valueParenthesisDepth++;
-				buffer += character;
 			} else {
 				buffer += character;
 			}
@@ -24434,8 +24421,7 @@ CSSOM.parse = function parse(token) {
 
 		case ")":
 			if (state === 'value-parenthesis') {
-				valueParenthesisDepth--;
-				if (valueParenthesisDepth === 0) state = 'value';
+				state = 'value';
 			}
 			buffer += character;
 			break;

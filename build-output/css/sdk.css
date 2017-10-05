@@ -31,7 +31,6 @@ iframe {
 /*Fixed layout */
 #fixed-book-frame {
     position: absolute !important;
-    background-color: white;
 }
 
 
@@ -76,6 +75,7 @@ iframe {
 /*fixed layout frames only*/
 .fixed-page-frame, .fixed-page-frame-left, .fixed-page-frame-right, .fixed-page-frame-center {
     position: absolute !important;
+    background-color: white;
 }
 
 .fixed-page-frame-left {
