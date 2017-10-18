@@ -24167,6 +24167,7 @@ Helpers.addTapEventHandler = function($body, reportClicked) {
     var longTapped = false;
     var tapTimer = undefined;
     var startReturnValue = true;
+    var isMultitouch = false;
     var touchStartEventHandler = function(event) {
         var touch = event.touches[0];
 
@@ -24181,12 +24182,11 @@ Helpers.addTapEventHandler = function($body, reportClicked) {
         //console.debug("TOUCH-START: # touches = " + event.touches.length);
         //console.debug("TOUCH-START (" + startPageX + ", " + startPageY + ")");
     };
-    /*
     var touchMoveEventHandler = function(event) {
-        console.debug("TOUCH-MOVE: # touches = " + event.touches.length);
+        //console.debug("TOUCH-MOVE: # touches = " + event.touches.length);
         //console.debug("TOUCH-MOVE (" + event.touches[0].pageX + ", " + event.touches[0].pageY + ")");
+        isMultitouch = event.touches.length > 1;
     }
-    */
     var touchEndEventHandler = function(event) {
         var touch = event.changedTouches[0];
         var tapped = (Math.abs(touch.pageX - startPageX) <= 25) && (Math.abs(touch.pageY - startPageY) <= 25);
@@ -24206,7 +24206,7 @@ Helpers.addTapEventHandler = function($body, reportClicked) {
         clearTimeout(tapTimer);
         //console.debug("TOUCH-END: # touches = " + event.changedTouches.length);
         //console.debug("TOUCH-END (" +  + touch.pageX + ", " + touch.pageY + "), tapped? " + tapped + ", longTapped? " + longTapped);
-        if (tapped && !longTapped && event.returnValue && startReturnValue) {
+        if (tapped && !longTapped && !isMultitouch && event.returnValue && startReturnValue) {
             return reportClicked(event);
         }
         return true;
@@ -24214,11 +24214,11 @@ Helpers.addTapEventHandler = function($body, reportClicked) {
 
     if ('ontouchstart' in document.documentElement) {
         $body.addEventListener("touchstart", touchStartEventHandler, false);
-        //$body.addEventListener("touchmove", touchMoveEventHandler, false);
+        $body.addEventListener("touchmove", touchMoveEventHandler, false);
         $body.addEventListener("touchend", touchEndEventHandler, false);
     } else {
         $body.addEventListener("mousedown", touchStartEventHandler, false);
-        //$body.addEventListener("mousemove", touchMoveEventHandler, false);
+        $body.addEventListener("mousemove", touchMoveEventHandler, false);
         $body.addEventListener("mouseup", touchEndEventHandler, false);
     }
 };
