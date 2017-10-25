@@ -23025,7 +23025,7 @@ CSSOM.CSSStyleDeclaration.prototype = {
 			this[this.length] = name;
 			this.length++;
 		}
-		this[name] = value;
+		this[name] = value + "";
 		this._importants[name] = priority;
 	},
 
@@ -23561,6 +23561,34 @@ Object.defineProperty(CSSOM.CSSFontFaceRule.prototype, "cssText", {
   get: function() {
     return "@font-face {" + this.style.cssText + "}";
   }
+});
+
+
+
+/**
+ * @constructor
+ * @see http://www.w3.org/TR/shadow-dom/#host-at-rule
+ */
+CSSOM.CSSHostRule = function CSSHostRule() {
+	CSSOM.CSSRule.call(this);
+	this.cssRules = [];
+};
+
+CSSOM.CSSHostRule.prototype = new CSSOM.CSSRule();
+CSSOM.CSSHostRule.prototype.constructor = CSSOM.CSSHostRule;
+CSSOM.CSSHostRule.prototype.type = 1001;
+//FIXME
+//CSSOM.CSSHostRule.prototype.insertRule = CSSStyleSheet.prototype.insertRule;
+//CSSOM.CSSHostRule.prototype.deleteRule = CSSStyleSheet.prototype.deleteRule;
+
+Object.defineProperty(CSSOM.CSSHostRule.prototype, "cssText", {
+	get: function() {
+		var cssTexts = [];
+		for (var i=0, length=this.cssRules.length; i < length; i++) {
+			cssTexts.push(this.cssRules[i].cssText);
+		}
+		return "@host {" + cssTexts.join("") + "}";
+	}
 });
 
 
@@ -24185,10 +24213,12 @@ CSSOM.parse = function parse(token) {
 
 	var index;
 	var buffer = "";
+	var valueParenthesisDepth = 0;
 
 	var SIGNIFICANT_WHITESPACE = {
 		"selector": true,
 		"value": true,
+		"value-parenthesis": true,
 		"atRule": true,
 		"importRule-begin": true,
 		"importRule": true,
@@ -24204,7 +24234,7 @@ CSSOM.parse = function parse(token) {
 	// @type CSSMediaRule|CSSKeyframesRule|CSSDocumentRule
 	var parentRule;
 
-	var name, priority="", styleRule, mediaRule, importRule, fontFaceRule, keyframesRule, documentRule;
+	var name, priority="", styleRule, mediaRule, importRule, fontFaceRule, keyframesRule, documentRule, hostRule;
 
 	var atKeyframesRegExp = /@(-(?:\w+-)+)?keyframes/g;
 
@@ -24310,6 +24340,13 @@ CSSOM.parse = function parse(token) {
 				i += "media".length;
 				buffer = "";
 				break;
+			} else if (token.indexOf("@host", i) === i) {
+				state = "hostRule-begin";
+				i += "host".length;
+				hostRule = new CSSOM.CSSHostRule();
+				hostRule.__starts = i;
+				buffer = "";
+				break;
 			} else if (token.indexOf("@import", i) === i) {
 				state = "importRule-begin";
 				i += "import".length;
@@ -24350,6 +24387,11 @@ CSSOM.parse = function parse(token) {
 				mediaRule.media.mediaText = buffer.trim();
 				currentScope = parentRule = mediaRule;
 				mediaRule.parentStyleSheet = styleSheet;
+				buffer = "";
+				state = "before-selector";
+			} else if (state === "hostRule-begin") {
+				currentScope = parentRule = hostRule;
+				hostRule.parentStyleSheet = styleSheet;
 				buffer = "";
 				state = "before-selector";
 			} else if (state === "fontFaceRule-begin") {
@@ -24412,8 +24454,14 @@ CSSOM.parse = function parse(token) {
 					}
 				} else {
 					state = 'value-parenthesis';
+					//always ensure this is reset to 1 on transition
+					//from value to value-parenthesis
+					valueParenthesisDepth = 1;
 					buffer += character;
 				}
+			} else if (state === 'value-parenthesis') {
+				valueParenthesisDepth++;
+				buffer += character;
 			} else {
 				buffer += character;
 			}
@@ -24421,7 +24469,8 @@ CSSOM.parse = function parse(token) {
 
 		case ")":
 			if (state === 'value-parenthesis') {
-				state = 'value';
+				valueParenthesisDepth--;
+				if (valueParenthesisDepth === 0) state = 'value';
 			}
 			buffer += character;
 			break;
