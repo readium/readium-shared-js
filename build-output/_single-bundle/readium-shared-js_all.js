@@ -27392,7 +27392,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
     function parseMetaSize(content) {
         var pairs = [];
 
-        if (content.includes(',')) {
+        if (content.indexOf(',') !== -1) {
             pairs = content.replace(/\s/g, '').split(',');
         } else {
             pairs = content.trim().split(' ');
