@@ -100,7 +100,7 @@ dependencies:
     "opener": 'latest'
 
     #"http-server": 'latest'
-    "http-server": 'danielweck/http-server'
+    "http-server": 'github:danielweck/http-server'
     # SEE: https://github.com/indexzero/http-server/issues/154
 
 
@@ -113,26 +113,26 @@ devDependencies:
 # "requirejs", "almond", "jquery"
 
 
-    "jquery-sizes": 'bramstein/jsizes'
+    "jquery-sizes": 'github:bramstein/jsizes'
 
-    "domReady": 'requirejs/domReady'
+    "domReady": 'github:requirejs/domReady'
 
     "backbone": 'latest'
 
 # now included in readium-cfi-js
 #    "underscore": 'latest'
 
-    "urijs": 'danielweck/URI.js'
+    "urijs": 'github:danielweck/URI.js'
     #"urijs": 'latest'
 
     "eventemitter3": 'latest'
     
     "es6-collections": 'latest'
 
-    "cssom": 'danielweck/CSSOM'
-    #"CSSOM": 'NV/CSSOM'
+    "cssom": 'github:danielweck/CSSOM'
+    #"CSSOM": 'github:NV/CSSOM'
 
-    "css-element-queries": 'danielweck/css-element-queries'
+    "css-element-queries": 'github:danielweck/css-element-queries'
     
 
 # Below dependencies are only used for building tasks (above are runtime deps):
