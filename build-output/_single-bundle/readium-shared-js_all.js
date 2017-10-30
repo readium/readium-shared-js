@@ -43642,15 +43642,15 @@ var ReflowableView = function(options, reader){
             return;
         }
 
-        var page = _navigationLogic.getPageForElement($element);
+        var elementCfi = _navigationLogic.getCfiForElement(element);
 
-        if(page == -1)
+        if (!elementCfi)
         {
             return;
         }
 
         var openPageRequest = new PageOpenRequest(_currentSpineItem, initiator);
-        openPageRequest.setPageIndex(page);
+        openPageRequest.setElementCfi(elementCfi);
 
         var id = element.id;
         if (!id)
