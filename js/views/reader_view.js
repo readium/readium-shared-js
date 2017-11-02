@@ -280,6 +280,8 @@ var ReaderView = function (options) {
             _.defer(function () {
                 Globals.logEvent("PAGINATION_CHANGED", "EMIT", "reader_view.js");
                 self.emit(Globals.Events.PAGINATION_CHANGED, pageChangeData);
+                
+                if (!pageChangeData.spineItem) return;
                 _.defer(function () {
                     _externalAgentSupport.updateContentDocument(pageChangeData.spineItem);
                 });
