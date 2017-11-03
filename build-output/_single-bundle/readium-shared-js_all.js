@@ -13610,9 +13610,9 @@ var obj = {
         return $targetNode;
     },
 
-    retrieveItemRefHref : function ($itemRefElement, $packageDocument) {
+    retrieveItemRefHref : function ($itemRefElement, packageDocument) {
 
-        return $("#" + $itemRefElement.attr("idref"), $packageDocument).attr("href");
+        return $("#" + $itemRefElement.attr("idref"), packageDocument).attr("href");
     },
 
     indexOutOfRange : function (targetIndex, numChildElements) {
@@ -13912,7 +13912,6 @@ var obj = {
     //   the reading system, as it stands now.
     getContentDocHref : function (CFI, packageDocument, classBlacklist, elementBlacklist, idBlacklist) {
 
-        var $packageDocument = $(packageDocument);
         var decodedCFI = decodeURI(CFI);
         var CFIAST = cfiParser.parse(decodedCFI);
 
@@ -13921,9 +13920,9 @@ var obj = {
         }
 
         // Interpet the path node (the package document step)
-        var $packageElement = $($("package", $packageDocument)[0]);
+        var $packageElement = $(packageDocument.getElementsByTagNameNS('*', 'package'));
         var $currElement = this.interpretIndexStepNode(CFIAST.cfiString.path, $packageElement, classBlacklist, elementBlacklist, idBlacklist);
-        foundHref = this.searchLocalPathForHref($currElement, $packageDocument, CFIAST.cfiString.localPath, classBlacklist, elementBlacklist, idBlacklist);
+        foundHref = this.searchLocalPathForHref($currElement, packageDocument, CFIAST.cfiString.localPath, classBlacklist, elementBlacklist, idBlacklist);
 
         if (foundHref) {
             return foundHref;
@@ -13932,6 +13931,44 @@ var obj = {
             return undefined;
         }
     },
+
+    // Description: Compare two given CFIs. Either CFI can be expressed in range form. Assuming the CFIs reference the same content document (partial CFIs)
+    //  Because of this the output is an array with two integers.
+    //  If both integers are the same then you can simplify the results into a single integer.
+    //  The integer indicates that:
+    //      -1 | CFI location point A is located before CFI location point B
+    //       0 | CFI location point A is the same as CFI location point B
+    //       1 | CFI location point A is located after CFI location point B
+    //  If both integers are different then the first integer is,
+    //      a comparison between the start location of CFI range A and the start location of CFI range B,
+    //  and the second integer is,
+    //      a comparison between the end location of CFI range A and the end location of CFI range B.
+    compareCFIs: function (cfiA, cfiB) {
+
+        var decomposedCFI1 = this._decomposeCFI(cfiA);
+        var decomposedCFI2 = this._decomposeCFI(cfiB);
+
+        if (decomposedCFI1.length > 1 && decomposedCFI2.length > 1) {
+            return [
+                this._compareCFIASTs(decomposedCFI1[0], decomposedCFI2[0]),
+                this._compareCFIASTs(decomposedCFI1[1], decomposedCFI2[1])
+            ];
+        } else if (decomposedCFI1.length > 1 && decomposedCFI2.length === 1) {
+            return [
+                this._compareCFIASTs(decomposedCFI1[0], decomposedCFI2[0]),
+                this._compareCFIASTs(decomposedCFI1[1], decomposedCFI2[0])
+            ];
+        } else if (decomposedCFI1.length === 1 && decomposedCFI2.length > 1) {
+            return [
+                this._compareCFIASTs(decomposedCFI1[0], decomposedCFI2[0]),
+                this._compareCFIASTs(decomposedCFI1[0], decomposedCFI2[1])
+            ];
+        } else {
+            var result = this._compareCFIASTs(decomposedCFI1[0], decomposedCFI2[0]);
+            return [result, result];
+        }
+    },
+
 
     // Description: Inject an arbitrary html element into a position in a content document referenced by a CFI
     injectElement : function (CFI, contentDocument, elementToInject, classBlacklist, elementBlacklist, idBlacklist) {
@@ -14143,15 +14180,25 @@ var obj = {
     },
 
     // Description: This function will determine if the input "partial" CFI is expressed as a range
-    isRangeCfi: function (cfi) {
-        var CFIAST = cfiParser.parse(cfi);
-        return CFIAST.cfiString.range1 ? true : false;
+    isRangeCfi: function (CFI) {
+
+        var decodedCFI = CFI ? decodeURI(CFI) : undefined;
+        var CFIAST = cfiParser.parse(decodedCFI);
+        if (!CFIAST || CFIAST.type !== "CFIAST") {
+            throw cfiRuntimeErrors.NodeTypeError(CFIAST, "expected CFI AST root node");
+        }
+        return CFIAST.cfiString.type === "range";
     },
 
     // Description: This function will determine if the input "partial" CFI has a text terminus step
-    hasTextTerminus: function (cfi) {
-        var CFIAST = cfiParser.parse(cfi);
-        return CFIAST.cfiString.localPath.termStep ? true : false;
+    hasTextTerminus: function (CFI) {
+
+        var decodedCFI = CFI ? decodeURI(CFI) : undefined;
+        var CFIAST = cfiParser.parse(decodedCFI);
+        if (!CFIAST || CFIAST.type !== "CFIAST") {
+            throw cfiRuntimeErrors.NodeTypeError(CFIAST, "expected CFI AST root node");
+        }
+        return !!CFIAST.cfiString.localPath.termStep;
     },
 
     // ------------------------------------------------------------------------------------ //
@@ -14263,7 +14310,7 @@ var obj = {
         return $injectedElement;
     },
 
-    searchLocalPathForHref : function ($currElement, $packageDocument, localPathNode, classBlacklist, elementBlacklist, idBlacklist) {
+    searchLocalPathForHref : function ($currElement, packageDocument, localPathNode, classBlacklist, elementBlacklist, idBlacklist) {
 
         // Interpret the first local_path node, which is a set of steps and and a terminus condition
         var stepNum = 0;
@@ -14282,11 +14329,88 @@ var obj = {
 
             // Found the content document href referenced by the spine item
             if (cfiInstructions._matchesLocalNameOrElement($currElement[0], "itemref")) {
-                return cfiInstructions.retrieveItemRefHref($currElement, $packageDocument);
+                return cfiInstructions.retrieveItemRefHref($currElement, packageDocument);
             }
         }
 
         return undefined;
+    },
+
+    _splitRangeCFIAST: function(CFIAST, firstRange) {
+        var outCFIAST = $.extend(true, {}, CFIAST);
+        var targetRange = firstRange? CFIAST.cfiString.range1 : CFIAST.cfiString.range2;
+
+        delete outCFIAST.cfiString.range1;
+        delete outCFIAST.cfiString.range2;
+        outCFIAST.cfiString.type = "path";
+
+        outCFIAST.cfiString.localPath.steps = outCFIAST.cfiString.localPath.steps.concat(targetRange.steps);
+        outCFIAST.cfiString.localPath.termStep = targetRange.termStep;
+
+        return outCFIAST;
+    },
+    _decomposeCFI: function (CFI) {
+        var decodedCFI = decodeURI(CFI);
+        var CFIAST = cfiParser.parse(decodedCFI);
+
+        if (!CFIAST || CFIAST.type !== "CFIAST") {
+            throw cfiRuntimeErrors.NodeTypeError(CFIAST, "expected CFI AST root node");
+        }
+
+        var decomposedASTs = [];
+        if (CFIAST.cfiString.type === "range") {
+            decomposedASTs.push(this._splitRangeCFIAST(CFIAST, true));
+            decomposedASTs.push(this._splitRangeCFIAST(CFIAST, false));
+        } else {
+            decomposedASTs.push(CFIAST);
+        }
+
+        return decomposedASTs;
+    },
+    _concatStepsFromCFIAST: function(CFIAST) {
+        return CFIAST.cfiString.localPath.steps.map(function (o) {
+            return parseInt(o.stepLength);
+        });
+    },
+    _compareCFIASTs: function (CFIAST1, CFIAST2) {
+
+        var result = null;
+        var index = 0;
+        var steps1 = this._concatStepsFromCFIAST(CFIAST1);
+        var steps2 = this._concatStepsFromCFIAST(CFIAST2);
+        var term1 = CFIAST1.cfiString.localPath.termStep;
+        var term2 = CFIAST2.cfiString.localPath.termStep;
+
+        while (true) {
+            var L = steps1[index];
+            var R = steps2[index];
+            if (!L || !R) {
+                if (result === 0 && (term1.offsetValue || term2.offsetValue)) {
+                    var tL = parseInt(term1.offsetValue) || 0;
+                    var tR = parseInt(term2.offsetValue) || 0;
+                    if (tL > tR) {
+                        result = 1;
+                    } else if (tL < tR) {
+                        result = -1;
+                    } else {
+                        result = 0;
+                    }
+                }
+                break;
+            }
+            if (L > R) {
+                result = 1;
+                break;
+            } else if (L < R) {
+                result = -1;
+                break;
+            } else {
+                result = 0;
+            }
+            index = index + 1;
+        }
+
+        return result;
     }
 };
 
@@ -14360,125 +14484,97 @@ var obj = {
     //  "PUBLIC" METHODS (THE API)                                                          //
     // ------------------------------------------------------------------------------------ //
 
-    generateCharOffsetRangeComponent : function (rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist) {
-        var document = rangeStartElement.ownerDocument;
+    generateRangeComponent : function (rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist) {
+        var _document = rangeStartElement.ownerDocument;
 
-        var docRange;
-        var commonAncestor;
-        var $rangeStartParent;
-        var $rangeEndParent;
-        var range1OffsetStep;
-        var range1CFI;
-        var range2OffsetStep;
-        var range2CFI;
-        var commonCFIComponent;
+        // Create a document range from inputs
+        var docRange = _document.createRange();
+        docRange.setStart(rangeStartElement, startOffset);
+        docRange.setEnd(rangeEndElement, endOffset);
+
+        return this.generateDocumentRangeComponent(docRange, classBlacklist, elementBlacklist, idBlacklist);
+    },
+
+    generateCharOffsetRangeComponent : function (rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist) {
+        var _document = rangeStartElement.ownerDocument;
 
         this.validateStartTextNode(rangeStartElement);
         this.validateStartTextNode(rangeEndElement);
 
-        // Parent element is the same
-        if ($(rangeStartElement).parent()[0] === $(rangeEndElement).parent()[0]) {
-            range1OffsetStep = this.createCFITextNodeStep($(rangeStartElement), startOffset, classBlacklist, elementBlacklist, idBlacklist);
-            range2OffsetStep = this.createCFITextNodeStep($(rangeEndElement), endOffset, classBlacklist, elementBlacklist, idBlacklist);          
-            commonCFIComponent = this.createCFIElementSteps($(rangeStartElement).parent(), document.documentElement, classBlacklist, elementBlacklist, idBlacklist);
-            return commonCFIComponent + "," + range1OffsetStep + "," + range2OffsetStep;
-        }
-        else {
+        // Create a document range to find the common ancestor
+        var docRange = _document.createRange();
+        docRange.setStart(rangeStartElement, startOffset);
+        docRange.setEnd(rangeEndElement, endOffset);
 
-            // Create a document range to find the common ancestor
-            docRange = document.createRange();
-            docRange.setStart(rangeStartElement, startOffset);
-            docRange.setEnd(rangeEndElement, endOffset);
-            commonAncestor = docRange.commonAncestorContainer;
-
-            // Generate terminating offset and range 1
-            range1OffsetStep = this.createCFITextNodeStep($(rangeStartElement), startOffset, classBlacklist, elementBlacklist, idBlacklist);
-            $rangeStartParent = $(rangeStartElement).parent();
-            if ($rangeStartParent[0] === commonAncestor) {
-              // rangeStartElement is a text child node of the commonAncestor, so it's CFI sub-path is only the text node step:
-              range1CFI = range1OffsetStep;
-            } else {
-              range1CFI = this.createCFIElementSteps($rangeStartParent, commonAncestor, classBlacklist, elementBlacklist, idBlacklist) + range1OffsetStep;
-            }
-
-            // Generate terminating offset and range 2
-            range2OffsetStep = this.createCFITextNodeStep($(rangeEndElement), endOffset, classBlacklist, elementBlacklist, idBlacklist);
-            $rangeEndParent = $(rangeEndElement).parent();
-            if ($rangeEndParent[0] === commonAncestor) {
-              // rangeEndElement is a text child node of the commonAncestor, so it's CFI sub-path is only the text node step:
-              range2CFI = range2OffsetStep;
-            } else {
-              range2CFI = this.createCFIElementSteps($rangeEndParent, commonAncestor, classBlacklist, elementBlacklist, idBlacklist) + range2OffsetStep;
-            }
-
-            // Generate shared component
-            commonCFIComponent = this.createCFIElementSteps($(commonAncestor), document.documentElement, classBlacklist, elementBlacklist, idBlacklist);
-
-            // Return the result
-            return commonCFIComponent + "," + range1CFI + "," + range2CFI;
-        }
+        return this.generateDocumentRangeComponent(docRange, classBlacklist, elementBlacklist, idBlacklist);
     },
 
     generateElementRangeComponent : function (rangeStartElement, rangeEndElement, classBlacklist, elementBlacklist, idBlacklist) {
-        var docRange;
-        var commonAncestor;
-        var range1CFI;
-        var range2CFI;
-        var commonCFIComponent;
+        var _document = rangeStartElement.ownerDocument;
 
-        this.validateStartElement(rangeStartElement);
-        this.validateStartElement(rangeEndElement);
-
-        var document = rangeStartElement.ownerDocument;
-
-        if (rangeStartElement === rangeEndElement) {
-            throw new Error("Start and end element cannot be the same for a CFI range");
-        }
-
-        // Create a document range to find the common ancestor
-        docRange = document.createRange();
-        docRange.setStart(rangeStartElement, 0);
-        docRange.setEnd(rangeEndElement, rangeEndElement.childNodes.length);
-        commonAncestor = docRange.commonAncestorContainer;
-
-        // Generate range 1
-        range1CFI = this.createCFIElementSteps($(rangeStartElement), commonAncestor, classBlacklist, elementBlacklist, idBlacklist);
-
-        // Generate range 2
-        range2CFI = this.createCFIElementSteps($(rangeEndElement), commonAncestor, classBlacklist, elementBlacklist, idBlacklist);
-
-        // Generate shared component
-        commonCFIComponent = this.createCFIElementSteps($(commonAncestor), document.documentElement, classBlacklist, elementBlacklist, idBlacklist);
-
-        // Return the result
-        return commonCFIComponent + "," + range1CFI + "," + range2CFI;
+        // Create a document range from inputs
+        var docRange = _document.createRange();
+        docRange.setStartBefore(rangeStartElement);
+        docRange.setEndAfter(rangeEndElement);
+       
+        return this.generateDocumentRangeComponent(docRange, classBlacklist, elementBlacklist, idBlacklist);
     },
 
-    generateRangeComponent : function (rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist) {
-        this.validateTargetElement(rangeStartElement);
-        this.validateTargetElement(rangeEndElement);
+    generateDocumentRangeComponent : function (domRange, classBlacklist, elementBlacklist, idBlacklist) {
+        this._normalizeDomRange(domRange);
 
-        var document = rangeStartElement.ownerDocument;
+        var rangeStartElement = domRange.startContainer;
+        var startOffset = domRange.startOffset;
+        var rangeEndElement = domRange.endContainer;
+        var endOffset = domRange.endOffset;
+        var commonAncestor = domRange.commonAncestorContainer;
 
-        if(rangeStartElement.nodeType === Node.ELEMENT_NODE && rangeEndElement.nodeType === Node.ELEMENT_NODE){
-            return this.generateElementRangeComponent(rangeStartElement, rangeEndElement, classBlacklist, elementBlacklist, idBlacklist);
-        } else if(rangeStartElement.nodeType === Node.TEXT_NODE && rangeEndElement.nodeType === Node.TEXT_NODE){
-            return this.generateCharOffsetRangeComponent(rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist);
+        var _document = rangeStartElement.ownerDocument;
+
+        var range1CFI;
+        var range1OffsetStep;
+        var range2CFI;
+        var range2OffsetStep;
+        var commonCFIComponent;
+
+        if (rangeStartElement.nodeType === Node.TEXT_NODE && rangeEndElement.nodeType === Node.TEXT_NODE) {
+            // Parent element is the same
+            if ($(rangeStartElement).parent()[0] === $(rangeEndElement).parent()[0]) {
+                range1OffsetStep = this.createCFITextNodeStep($(rangeStartElement), startOffset, classBlacklist, elementBlacklist, idBlacklist);
+                range2OffsetStep = this.createCFITextNodeStep($(rangeEndElement), endOffset, classBlacklist, elementBlacklist, idBlacklist);
+                commonCFIComponent = this.createCFIElementSteps($(rangeStartElement).parent(), _document.documentElement, classBlacklist, elementBlacklist, idBlacklist);
+                return commonCFIComponent + "," + range1OffsetStep + "," + range2OffsetStep;
+            }
+        }
+
+        if (rangeStartElement.nodeType === Node.ELEMENT_NODE &&
+            rangeEndElement.nodeType === Node.ELEMENT_NODE &&
+            rangeStartElement === rangeEndElement &&
+            commonAncestor === rangeStartElement) {
+
+            var startElement = commonAncestor.childNodes[startOffset];
+            var endElement;
+            if (endOffset === commonAncestor.childNodes.length) {
+                endElement = commonAncestor.childNodes[endOffset - 1];
+            } else {
+                endElement = commonAncestor.childNodes[endOffset].previousSibling;
+            }
+
+            // Generate shared component
+            commonCFIComponent = this.createCFIElementSteps($(commonAncestor), _document.documentElement, classBlacklist, elementBlacklist, idBlacklist);
+
+            range1CFI = this.createCFIElementSteps($(startElement), commonAncestor, classBlacklist, elementBlacklist, idBlacklist);
+
+            if (startElement === endElement) {
+                return commonCFIComponent + range1CFI;
+            }
+
+            range2CFI = this.createCFIElementSteps($(endElement), commonAncestor, classBlacklist, elementBlacklist, idBlacklist);
+
+            // Return the result
+            return commonCFIComponent + "," + range1CFI + "," + range2CFI;
         } else {
-            var docRange;
-            var range1CFI;
-            var range1OffsetStep;
-            var range2CFI;
-            var range2OffsetStep;
-            var commonAncestor;
-            var commonCFIComponent;
-
-            // Create a document range to find the common ancestor
-            docRange = document.createRange();
-            docRange.setStart(rangeStartElement, startOffset);
-            docRange.setEnd(rangeEndElement, endOffset);
-            commonAncestor = docRange.commonAncestorContainer;
-
+            
             if(rangeStartElement.nodeType === Node.ELEMENT_NODE){
                 this.validateStartElement(rangeStartElement);
                 range1CFI = this.createCFIElementSteps($(rangeStartElement), commonAncestor, classBlacklist, elementBlacklist, idBlacklist);
@@ -14508,7 +14604,7 @@ var obj = {
             }
 
             // Generate shared component
-            commonCFIComponent = this.createCFIElementSteps($(commonAncestor), document.documentElement, classBlacklist, elementBlacklist, idBlacklist);
+            commonCFIComponent = this.createCFIElementSteps($(commonAncestor), _document.documentElement, classBlacklist, elementBlacklist, idBlacklist);
 
             // Return the result
             return commonCFIComponent + "," + range1CFI + "," + range2CFI;
@@ -14553,10 +14649,10 @@ var obj = {
         this.validatePackageDocument(packageDocument, contentDocumentName);
 
         // Get the start node (itemref element) that references the content document
-        $itemRefStartNode = $("itemref[idref='" + contentDocumentName + "']", $(packageDocument));
+        var $itemRefStartNode = $(this._findSpineItemNode(packageDocument, contentDocumentName));
 
         // Create the steps up to the top element of the package document (the "package" element)
-        packageDocCFIComponent = this.createCFIElementSteps($itemRefStartNode, "package", classBlacklist, elementBlacklist, idBlacklist);
+        var packageDocCFIComponent = this.createCFIElementSteps($itemRefStartNode, "package", classBlacklist, elementBlacklist, idBlacklist);
 
         // Append an !; this assumes that a CFI content document CFI component will be appended at some point
         return packageDocCFIComponent + "!";
@@ -14565,10 +14661,11 @@ var obj = {
     generatePackageDocumentCFIComponentWithSpineIndex : function (spineIndex, packageDocument, classBlacklist, elementBlacklist, idBlacklist) {
 
         // Get the start node (itemref element) that references the content document
-        $itemRefStartNode = $($("spine", packageDocument).children()[spineIndex]);
+        var spineItemNode = packageDocument.getElementsByTagNameNS('*', 'spine');
+        var $itemRefStartNode = $($(spineItemNode).children()[spineIndex]);
 
         // Create the steps up to the top element of the package document (the "package" element)
-        packageDocCFIComponent = this.createCFIElementSteps($itemRefStartNode, "package", classBlacklist, elementBlacklist, idBlacklist);
+        var packageDocCFIComponent = this.createCFIElementSteps($itemRefStartNode, "package", classBlacklist, elementBlacklist, idBlacklist);
 
         // Append an !; this assumes that a CFI content document CFI component will be appended at some point
         return packageDocCFIComponent + "!";
@@ -14631,8 +14728,62 @@ var obj = {
         if (!packageDocument) {
             throw new Error("A package document must be supplied to generate a CFI");
         }
-        else if ($($("itemref[idref='" + contentDocumentName + "']", packageDocument)[0]).length === 0) {
+
+        var spineItemNode = this._findSpineItemNode(packageDocument, contentDocumentName);
+
+        if (!spineItemNode) {
             throw new Error("The idref of the content document could not be found in the spine");
+        }
+    },
+
+    _validNodeTypesFilter: function (node) {
+        return node.nodeType === Node.TEXT_NODE || node.nodeType === Node.ELEMENT_NODE;
+    },
+
+    _findSpineItemNode: function (packageDocument, idref) {
+        var spineItemNode = null;
+        $(packageDocument.getElementsByTagNameNS('*', 'itemref')).each(function () {
+            if (this.getAttribute('idref') === idref) {
+                spineItemNode = this;
+                return false;
+            }
+        });
+        return spineItemNode;
+    },
+
+    _normalizeDomRange: function (domRange) {
+        var rangeStartNode = domRange.startContainer;
+        var rangeEndNode = domRange.endContainer;
+        var commonAncestorNode = domRange.commonAncestorContainer;
+
+        if (commonAncestorNode.nodeType !== Node.ELEMENT_NODE) {
+            // No need for normalization on ranges where the ancestor is not an element
+            return;
+        }
+
+        if (rangeStartNode.nodeType !== Node.TEXT_NODE && rangeEndNode.nodeType !== Node.TEXT_NODE) {
+            // and one of the start/end nodes must be a text node
+            return;
+        }
+
+        if (rangeStartNode === commonAncestorNode) {
+            var firstChildNode = _.first(_.filter(rangeStartNode.childNodes, this._validNodeTypesFilter));
+            if (firstChildNode) {
+                domRange.setStart(firstChildNode, 0);
+            }
+        }
+
+        if (rangeEndNode === commonAncestorNode) {
+            var lastChildNode = _.last(_.filter(rangeEndNode.childNodes, this._validNodeTypesFilter));
+            if (lastChildNode) {
+                if (lastChildNode.length) {
+                    domRange.setEnd(lastChildNode, lastChildNode.length);
+                } else if (lastChildNode.hasChildNodes()) {
+                    domRange.setEnd(lastChildNode, lastChildNode.childNodes.length);
+                } else {
+                    domRange.setEnd(lastChildNode, 1);
+                }
+            }
         }
     },
 
@@ -14892,6 +15043,9 @@ var init = function(cfiParser, cfiInterpreter, cfiInstructions, cfiRuntimeErrors
         getTextTerminusInfoWithPartialCFI : function (contentDocumentCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist) {
             return cfiInterpreter.getTextTerminusInfoWithPartialCFI(contentDocumentCFI, contentDocument, classBlacklist, elementBlacklist, idBlacklist);
         },
+        compareCFIs : function (cfiA, cfiB) {
+            return cfiInterpreter.compareCFIs(cfiA, cfiB);
+        },
         generateCharacterOffsetCFIComponent : function (startTextNode, characterOffset, classBlacklist, elementBlacklist, idBlacklist) {
             return cfiGenerator.generateCharacterOffsetCFIComponent(startTextNode, characterOffset, classBlacklist, elementBlacklist, idBlacklist);
         },
@@ -14906,6 +15060,9 @@ var init = function(cfiParser, cfiInterpreter, cfiInstructions, cfiRuntimeErrors
         },
         generateCompleteCFI : function (packageDocumentCFIComponent, contentDocumentCFIComponent) {
             return cfiGenerator.generateCompleteCFI(packageDocumentCFIComponent, contentDocumentCFIComponent);
+        },
+        generateDocumentRangeComponent : function (domRange, classBlacklist, elementBlacklist, idBlacklist) {
+            return cfiGenerator.generateDocumentRangeComponent(domRange, classBlacklist, elementBlacklist, idBlacklist);
         },
         generateCharOffsetRangeComponent : function (rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist) {
             return cfiGenerator.generateCharOffsetRangeComponent(rangeStartElement, startOffset, rangeEndElement, endOffset, classBlacklist, elementBlacklist, idBlacklist);
@@ -16260,7 +16417,7 @@ define("es6-collections", function(){});
  * URI.js - Mutating URLs
  * IPv6 Support
  *
- * Version: 1.18.10
+ * Version: 1.19.0
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -16432,7 +16589,7 @@ define("es6-collections", function(){});
     if (root.IPv6 === this) {
       root.IPv6 = _IPv6;
     }
-  
+
     return this;
   }
 
@@ -16446,7 +16603,7 @@ define("es6-collections", function(){});
  * URI.js - Mutating URLs
  * Second Level Domain (SLD) Support
  *
- * Version: 1.18.10
+ * Version: 1.19.0
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -16691,7 +16848,7 @@ define("es6-collections", function(){});
 /*!
  * URI.js - Mutating URLs
  *
- * Version: 1.18.10
+ * Version: 1.19.0
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -16767,7 +16924,11 @@ define("es6-collections", function(){});
     return this;
   }
 
-  URI.version = '1.18.10';
+  function isInteger(value) {
+    return /^[0-9]+$/.test(value);
+  }
+
+  URI.version = '1.19.0';
 
   var p = URI.prototype;
   var hasOwn = Object.prototype.hasOwnProperty;
@@ -16887,17 +17048,22 @@ define("es6-collections", function(){});
       query: null,
       fragment: null,
       // state
+      preventInvalidHostname: URI.preventInvalidHostname,
       duplicateQueryParameters: URI.duplicateQueryParameters,
       escapeQuerySpace: URI.escapeQuerySpace
     };
   };
+  // state: throw on invalid hostname
+  // see https://github.com/medialize/URI.js/pull/345
+  // and https://github.com/medialize/URI.js/issues/354
+  URI.preventInvalidHostname = false;
   // state: allow duplicate query parameters (a=1&a=1)
   URI.duplicateQueryParameters = false;
   // state: replaces + with %20 (space in query strings)
   URI.escapeQuerySpace = true;
   // static properties
   URI.protocol_expression = /^[a-z][a-z0-9.+-]*$/i;
-  URI.idn_expression = /[^a-z0-9\.-]/i;
+  URI.idn_expression = /[^a-z0-9\._-]/i;
   URI.punycode_expression = /(xn--)/i;
   // well, 333.444.555.666 matches, but it sure ain't no IPv4 - do we care?
   URI.ip4_expression = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
@@ -16930,10 +17096,16 @@ define("es6-collections", function(){});
     ws: '80',
     wss: '443'
   };
+  // list of protocols which always require a hostname
+  URI.hostProtocols = [
+    'http',
+    'https'
+  ];
+
   // allowed hostname characters according to RFC 3986
   // ALPHA DIGIT "-" "." "_" "~" "!" "$" "&" "'" "(" ")" "*" "+" "," ";" "=" %encoded
-  // I've never seen a (non-IDN) hostname other than: ALPHA DIGIT . -
-  URI.invalid_hostname_characters = /[^a-zA-Z0-9\.-]/;
+  // I've never seen a (non-IDN) hostname other than: ALPHA DIGIT . - _
+  URI.invalid_hostname_characters = /[^a-zA-Z0-9\.\-:_]/;
   // map DOM Elements to their URI attribute
   URI.domAttributes = {
     'a': 'href',
@@ -17165,7 +17337,9 @@ define("es6-collections", function(){});
   URI.parse = function(string, parts) {
     var pos;
     if (!parts) {
-      parts = {};
+      parts = {
+        preventInvalidHostname: URI.preventInvalidHostname
+      };
     }
     // [protocol"://"[username[":"password]"@"]hostname[":"port]"/"?][path]["?"querystring]["#"fragment]
 
@@ -17218,6 +17392,10 @@ define("es6-collections", function(){});
     return parts;
   };
   URI.parseHost = function(string, parts) {
+    if (!string) {
+      string = '';
+    }
+
     // Copy chrome, IE, opera backslash-handling behavior.
     // Back slashes before the query string get converted to forward slashes
     // See: https://github.com/joyent/node/blob/386fd24f49b0e9d1a8a076592a404168faeecc34/lib/url.js#L115-L124
@@ -17263,6 +17441,14 @@ define("es6-collections", function(){});
     if (parts.hostname && string.substring(pos).charAt(0) !== '/') {
       pos++;
       string = '/' + string;
+    }
+
+    if (parts.preventInvalidHostname) {
+      URI.ensureValidHostname(parts.hostname, parts.protocol);
+    }
+
+    if (parts.port) {
+      URI.ensureValidPort(parts.port);
     }
 
     return string.substring(pos) || '/';
@@ -17454,6 +17640,21 @@ define("es6-collections", function(){});
       throw new TypeError('URI.addQuery() accepts an object, string as the name parameter');
     }
   };
+
+  URI.setQuery = function(data, name, value) {
+    if (typeof name === 'object') {
+      for (var key in name) {
+        if (hasOwn.call(name, key)) {
+          URI.setQuery(data, key, name[key]);
+        }
+      }
+    } else if (typeof name === 'string') {
+      data[name] = value === undefined ? null : value;
+    } else {
+      throw new TypeError('URI.setQuery() accepts an object, string as the name parameter');
+    }
+  };
+
   URI.removeQuery = function(data, name, value) {
     var i, length, key;
 
@@ -17705,20 +17906,42 @@ define("es6-collections", function(){});
     return string;
   };
 
-  URI.ensureValidHostname = function(v) {
+  URI.ensureValidHostname = function(v, protocol) {
     // Theoretically URIs allow percent-encoding in Hostnames (according to RFC 3986)
     // they are not part of DNS and therefore ignored by URI.js
 
-    if (v.match(URI.invalid_hostname_characters)) {
+    var hasHostname = !!v; // not null and not an empty string
+    var hasProtocol = !!protocol;
+    var rejectEmptyHostname = false;
+
+    if (hasProtocol) {
+      rejectEmptyHostname = arrayContains(URI.hostProtocols, protocol);
+    }
+
+    if (rejectEmptyHostname && !hasHostname) {
+      throw new TypeError('Hostname cannot be empty, if protocol is ' + protocol);
+    } else if (v && v.match(URI.invalid_hostname_characters)) {
       // test punycode
       if (!punycode) {
-        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-] and Punycode.js is not available');
+        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-:_] and Punycode.js is not available');
       }
-
       if (punycode.toASCII(v).match(URI.invalid_hostname_characters)) {
-        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-]');
+        throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-:_]');
       }
     }
+  };
+
+  URI.ensureValidPort = function (v) {
+    if (!v) {
+      return;
+    }
+
+    var port = Number(v);
+    if (isInteger(port) && (port > 0) && (port < 65536)) {
+      return;
+    }
+
+    throw new TypeError('Port "' + v + '" is not a valid port');
   };
 
   // noConflict
@@ -17949,16 +18172,15 @@ define("es6-collections", function(){});
   var _hostname = p.hostname;
 
   p.protocol = function(v, build) {
-    if (v !== undefined) {
-      if (v) {
-        // accept trailing ://
-        v = v.replace(/:(\/\/)?$/, '');
+    if (v) {
+      // accept trailing ://
+      v = v.replace(/:(\/\/)?$/, '');
 
-        if (!v.match(URI.protocol_expression)) {
-          throw new TypeError('Protocol "' + v + '" contains characters other than [A-Z0-9.+-] or doesn\'t start with [A-Z]');
-        }
+      if (!v.match(URI.protocol_expression)) {
+        throw new TypeError('Protocol "' + v + '" contains characters other than [A-Z0-9.+-] or doesn\'t start with [A-Z]');
       }
     }
+
     return _protocol.call(this, v, build);
   };
   p.scheme = p.protocol;
@@ -17978,9 +18200,7 @@ define("es6-collections", function(){});
           v = v.substring(1);
         }
 
-        if (v.match(/[^0-9]/)) {
-          throw new TypeError('Port "' + v + '" contains characters other than [0-9]');
-        }
+        URI.ensureValidPort(v);
       }
     }
     return _port.call(this, v, build);
@@ -17991,14 +18211,18 @@ define("es6-collections", function(){});
     }
 
     if (v !== undefined) {
-      var x = {};
+      var x = { preventInvalidHostname: this._parts.preventInvalidHostname };
       var res = URI.parseHost(v, x);
       if (res !== '/') {
         throw new TypeError('Hostname "' + v + '" contains characters other than [A-Z0-9.-]');
       }
 
       v = x.hostname;
+      if (this._parts.preventInvalidHostname) {
+        URI.ensureValidHostname(v, this._parts.protocol);
+      }
     }
+
     return _hostname.call(this, v, build);
   };
 
@@ -18116,8 +18340,12 @@ define("es6-collections", function(){});
         v += '.';
       }
 
+      if (v.indexOf(':') !== -1) {
+        throw new TypeError('Domains cannot contain colons');
+      }
+
       if (v) {
-        URI.ensureValidHostname(v);
+        URI.ensureValidHostname(v, this._parts.protocol);
       }
 
       this._parts.hostname = this._parts.hostname.replace(replace, v);
@@ -18156,7 +18384,11 @@ define("es6-collections", function(){});
         throw new TypeError('cannot set domain empty');
       }
 
-      URI.ensureValidHostname(v);
+      if (v.indexOf(':') !== -1) {
+        throw new TypeError('Domains cannot contain colons');
+      }
+
+      URI.ensureValidHostname(v, this._parts.protocol);
 
       if (!this._parts.hostname || this.is('IP')) {
         this._parts.hostname = v;
@@ -18954,6 +19186,11 @@ define("es6-collections", function(){});
   };
 
   // state
+  p.preventInvalidHostname = function(v) {
+    this._parts.preventInvalidHostname = !!v;
+    return this;
+  };
+
   p.duplicateQueryParameters = function(v) {
     this._parts.duplicateQueryParameters = !!v;
     return this;
@@ -21152,13 +21389,18 @@ Helpers.loadTemplate = function (name, params) {
  */
 Helpers.loadTemplate.cache = {
     "fixed_book_frame": '<div id="fixed-book-frame" class="clearfix book-frame fixed-book-frame"></div>',
-
-    "single_page_frame": '<div><div id="scaler"><iframe allowfullscreen="allowfullscreen" scrolling="no" class="iframe-fixed"></iframe></div></div>',
+    "single_page_frame": '<div><div id="scaler"><iframe enable-annotation="enable-annotation" allowfullscreen="allowfullscreen" scrolling="no" class="iframe-fixed"></iframe></div></div>',
     //"single_page_frame" : '<div><iframe scrolling="no" class="iframe-fixed" id="scaler"></iframe></div>',
 
     "scrolled_book_frame": '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"><div id="scrolled-content-frame"></div></div>',
     "reflowable_book_frame": '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"></div>',
-    "reflowable_book_page_frame": '<div id="reflowable-content-frame" class="reflowable-content-frame"><iframe allowfullscreen="allowfullscreen" scrolling="no" id="epubContentIframe"></iframe></div>'
+    "reflowable_book_page_frame": '<div id="reflowable-content-frame" class="reflowable-content-frame"><iframe enable-annotation="enable-annotation" allowfullscreen="allowfullscreen" scrolling="no" id="epubContentIframe"></iframe></div>'
+    /***
+     * The `enable-annotation` attribute on an iframe helps detect the content frames for annotating tools such as Hypothesis
+     * See here for more details:
+     * https://h.readthedocs.io/projects/client/en/latest/publishers/embedding/
+     * https://github.com/hypothesis/client/pull/533
+     ***/
 };
 
 /**
@@ -21538,48 +21780,61 @@ return Helpers;
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /**
- * CFI navigation helper class
- *
- * @param options Additional settings for NavigationLogic object
- *      - paginationInfo            Layout details, used by clientRect-based geometry
- *      - visibleContentOffsets     Function that returns offsets. If supplied it is used instead of the inferred offsets
- *      - frameDimensions           Function that returns an object with width and height properties. Needs to be set.
- *      - $iframe                   Iframe reference, and needs to be set.
- * @constructor
- */
+* CFI navigation helper class
+*
+* @param options Additional settings for NavigationLogic object
+*      - paginationInfo            Layout details, used by clientRect-based geometry
+*      - visibleContentOffsets     Function that returns offsets. If supplied it is used instead of the inferred offsets
+*      - frameDimensions           Function that returns an object with width and height properties. Needs to be set.
+*      - $iframe                   Iframe reference, and needs to be set.
+* @constructor
+*/
 define('readium_shared_js/views/cfi_navigation_logic',["jquery", "underscore", "../helpers", 'readium_cfi_js'], function($, _, Helpers, epubCfi) {
 
-var CfiNavigationLogic = function(options) {
-
+var CfiNavigationLogic = function (options) {
     var self = this;
     options = options || {};
 
-    var debugMode = ReadiumSDK.DEBUG_MODE;
+    var _DEBUG = ReadiumSDK.DEBUG_MODE;
+    if (_DEBUG) {
+        window.top._DEBUG_visibleTextRangeOffsetsRuns = window.top._DEBUG_visibleTextRangeOffsetsRuns || [];
+    }
 
-    this.getRootElement = function() {
+    this.getRootElement = function () {
+        if (!options.$iframe) {
+            return null;
+        }
 
         return options.$iframe[0].contentDocument.documentElement;
     };
-    
+
     this.getBodyElement = function () {
-        
-        // In SVG documents the root element can be considered the body.
-        return this.getRootDocument().body || this.getRootElement();
+        var rootDocument = this.getRootDocument();
+        if (rootDocument && rootDocument.body) {
+            return rootDocument.body;
+        } else {
+            // In SVG documents the root element can be considered the body.
+            return this.getRootElement();
+        }
     };
 
     this.getClassBlacklist = function () {
         return options.classBlacklist || [];
-    }
+    };
 
     this.getIdBlacklist = function () {
         return options.idBlacklist || [];
-    }
+    };
 
     this.getElementBlacklist = function () {
         return options.elementBlacklist || [];
-    }
+    };
 
     this.getRootDocument = function () {
+        if (!options.$iframe) {
+            return null;
+        }
+
         return options.$iframe[0].contentDocument;
     };
 
@@ -21587,21 +21842,23 @@ var CfiNavigationLogic = function(options) {
         return self.getRootDocument().createRange();
     }
 
-    function getNodeClientRect(node) {
-        var range = createRange();
-        range.selectNode(node);
-        return normalizeRectangle(range.getBoundingClientRect(),0,0);
+    function createRangeFromNode(textnode) {
+        var documentRange = createRange();
+        documentRange.selectNodeContents(textnode);
+        return documentRange;
     }
+
+    function getNodeClientRect(node) {
+            var range = createRange();
+            range.selectNode(node);
+            return normalizeRectangle(range.getBoundingClientRect(), 0, 0);
+        }
 
     function getNodeContentsClientRect(node) {
-        var range = createRange();
-        range.selectNodeContents(node);
-        return normalizeRectangle(range.getBoundingClientRect(),0,0);
-    }
-
-    function getElementClientRect($element) {
-        return normalizeRectangle($element[0].getBoundingClientRect(),0,0);
-    }
+            var range = createRange();
+            range.selectNodeContents(node);
+            return normalizeRectangle(range.getBoundingClientRect(), 0, 0);
+        }
 
     function getNodeRangeClientRect(startNode, startOffset, endNode, endOffset) {
         var range = createRange();
@@ -21611,24 +21868,42 @@ var CfiNavigationLogic = function(options) {
         } else if (endNode.nodeType === Node.TEXT_NODE) {
             range.setEnd(endNode, endOffset ? endOffset : 0);
         }
-        return normalizeRectangle(range.getBoundingClientRect(),0,0);
+
+        // Webkit has a bug where collapsed ranges provide an empty rect with getBoundingClientRect()
+        // https://bugs.webkit.org/show_bug.cgi?id=138949
+        // Thankfully it implements getClientRects() properly...
+        // A collapsed text range may still have geometry!
+        if (range.collapsed) {
+            return normalizeRectangle(range.getClientRects()[0], 0, 0);
+        } else {
+            return normalizeRectangle(range.getBoundingClientRect(), 0, 0);
+        }
     }
 
     function getNodeClientRectList(node, visibleContentOffsets) {
         visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
-        
+
         var range = createRange();
         range.selectNode(node);
+        return getRangeClientRectList(range, visibleContentOffsets);
+    }
+
+    function getRangeClientRectList(range, visibleContentOffsets) {
+        visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
+
+        //noinspection JSUnresolvedFunction
+
         return _.map(range.getClientRects(), function (rect) {
+
             return normalizeRectangle(rect, visibleContentOffsets.left, visibleContentOffsets.top);
         });
     }
 
     function getFrameDimensions() {
-        if (options.frameDimensions) {
-            return options.frameDimensions();
+        if (options.frameDimensionsGetter) {
+            return options.frameDimensionsGetter();
         }
-        
+
         console.error('CfiNavigationLogic: No frame dimensions specified!');
         return null;
     }
@@ -21666,17 +21941,16 @@ var CfiNavigationLogic = function(options) {
 
     /**
      * @private
-     * Checks whether or not a (fully adjusted) rectangle is at least partly visible
+     * Checks whether or not a (fully adjusted) rectangle is visible
      *
      * @param {Object} rect
+     * @param {boolean} [ignorePartiallyVisible]
      * @param {Object} [frameDimensions]
-     * @param {boolean} [isVwm]           isVerticalWritingMode
      * @returns {boolean}
      */
-    function isRectVisible(rect, ignorePartiallyVisible, frameDimensions, isVwm) {
+    function isRectVisible(rect, ignorePartiallyVisible, frameDimensions) {
 
         frameDimensions = frameDimensions || getFrameDimensions();
-        isVwm = isVwm || isVerticalWritingMode();
 
         //Text nodes without printable text dont have client rectangles
         if (!rect) {
@@ -21687,1397 +21961,1289 @@ var CfiNavigationLogic = function(options) {
             return false;
         }
 
-        if (isPaginatedView()) {
-            return (rect.left >= 0 && rect.left < frameDimensions.width) || 
-                (!ignorePartiallyVisible && rect.left < 0 && rect.right >= 0);
+        if (isPaginatedView() && !isVerticalWritingMode()) {
+            return (rect.left >= 0 && rect.left < frameDimensions.width) ||
+                (!ignorePartiallyVisible && rect.left < 0 && rect.right > 0);
         } else {
-            return (rect.top >= 0 && rect.top < frameDimensions.height) || 
-                (!ignorePartiallyVisible && rect.top < 0 && rect.bottom >= 0);
+            return (rect.top >= 0 && rect.top < frameDimensions.height) ||
+                (!ignorePartiallyVisible && rect.top < 0 && rect.bottom > 0);
         }
 
     }
 
-    /**
-     * @private
-     * Retrieves _current_ full width of a column (including its gap)
-     *
-     * @returns {number} Full width of a column in pixels
-     */
-    function getColumnFullWidth() {
+        /**
+         * @private
+         * Retrieves _current_ full width of a column (including its gap)
+         *
+         * @returns {number} Full width of a column in pixels
+         */
+        function getColumnFullWidth() {
 
-        if (!options.paginationInfo || isVerticalWritingMode())
-        {
-            return options.$iframe.width();
+            if (!options.paginationInfo || isVerticalWritingMode()) {
+                return options.$iframe.width();
+            }
+
+            return options.paginationInfo.columnWidth + options.paginationInfo.columnGap;
         }
 
-        return options.paginationInfo.columnWidth + options.paginationInfo.columnGap;
-    }
+        /**
+         * @private
+         *
+         * Retrieves _current_ offset of a viewport
+         * (relational to the beginning of the chapter)
+         *
+         * @returns {Object}
+         */
+        function getVisibleContentOffsets() {
+            if (options.visibleContentOffsetsGetter) {
+                return options.visibleContentOffsetsGetter();
+            }
 
-    /**
-     * @private
-     *
-     * Retrieves _current_ offset of a viewport
-     * (related to the beginning of the chapter)
-     *
-     * @returns {Object}
-     */
-    function getVisibleContentOffsets() {
-        if (options.visibleContentOffsets) {
-            return options.visibleContentOffsets();
-        }
+            if (isVerticalWritingMode() && options.paginationOffsetsGetter) {
+                return options.paginationOffsetsGetter();
+            }
 
-        if (isVerticalWritingMode()) {
             return {
-                top: (options.paginationInfo ? options.paginationInfo.pageOffset : 0),
-                left: 0
-            };
-        }
-        
-        // CAUSES REGRESSION BUGS !! TODO FIXME
-        // https://github.com/readium/readium-shared-js/issues/384#issuecomment-305145129
-        // else {
-        //     return {
-        //         top: 0,
-        //         left: (options.paginationInfo ? options.paginationInfo.pageOffset : 0)
-        //         //* (isPageProgressionRightToLeft() ? -1 : 1)
-        //     };
-        // }
-
-        return {
-            top: 0,
-            left: 0
-        };
-    }
-
-    /**
-     * New (rectangle-based) algorithm, useful in multi-column layouts
-     *
-     * Note: the second param (props) is ignored intentionally
-     * (no need to use those in normalization)
-     *
-     * @param {jQuery} $element
-     * @param {Object} _props
-     * @param {boolean} shouldCalculateVisibilityPercentage
-     * @param {Object} [frameDimensions]
-     * @returns {number|null}
-     *      0 for non-visible elements,
-     *      0 < n <= 100 for visible elements
-     *      (will just give 100, if `shouldCalculateVisibilityPercentage` => false)
-     *      null for elements with display:none
-     */
-    function checkVisibilityByRectangles($element, shouldCalculateVisibilityPercentage, visibleContentOffsets, frameDimensions) {
-        visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
-        frameDimensions = frameDimensions || getFrameDimensions();
-
-        var clientRectangles = getNormalizedRectangles($element, visibleContentOffsets);
-        if (clientRectangles.length === 0) { // elements with display:none, etc.
-            return null;
-        }
-
-        var visibilityPercentage = 0;
-
-        if (clientRectangles.length === 1) {
-            var adjustedRect = clientRectangles[0];
-            
-            if (isPaginatedView()) {
-                if (adjustedRect.bottom > frameDimensions.height || adjustedRect.top < 0) {
-                    // because of webkit inconsistency, that single rectangle should be adjusted
-                    // until it hits the end OR will be based on the FIRST column that is visible
-                    adjustRectangle(adjustedRect, true, frameDimensions);
-                }
-            }
-
-            if (isRectVisible(adjustedRect, false, frameDimensions)) {
-                //it might still be partially visible in webkit
-                if (shouldCalculateVisibilityPercentage && adjustedRect.top < 0) {
-                    visibilityPercentage =
-                        Math.floor(100 * (adjustedRect.height + adjustedRect.top) / adjustedRect.height);
-                } else {
-                    visibilityPercentage = 100;
-                }
-            }
-        } else {
-            // for an element split between several CSS columns,z
-            // both Firefox and IE produce as many client rectangles;
-            // each of those should be checked
-            for (var i = 0, l = clientRectangles.length; i < l; ++i) {
-                if (isRectVisible(clientRectangles[i], false, frameDimensions)) {
-                    visibilityPercentage = shouldCalculateVisibilityPercentage
-                        ? measureVisibilityPercentageByRectangles(clientRectangles, i)
-                        : 100;
-                    break;
-                }
-            }
-        }
-
-        return visibilityPercentage;
-    }
-
-    /**
-     * Finds a page index (0-based) for a specific element.
-     * Calculations are based on rectangles retrieved with getClientRects() method.
-     *
-     * @param {jQuery} $element
-     * @param {number} spatialVerticalOffset
-     * @returns {number|null}
-     */
-    function findPageByRectangles($element, spatialVerticalOffset) {
-
-        var visibleContentOffsets = getVisibleContentOffsets();
-        //////////////////////
-        // ABOVE CAUSES REGRESSION BUGS !! TODO FIXME
-        // https://github.com/readium/readium-shared-js/issues/384#issuecomment-305145129
-        if (options.visibleContentOffsets) {
-            visibleContentOffsets = options.visibleContentOffsets();
-        }
-        if (isVerticalWritingMode()) {
-            visibleContentOffsets = {
-                top: (options.paginationInfo ? options.paginationInfo.pageOffset : 0),
-                left: 0
-            };
-        }
-        else { // THIS IS ENABLED ONLY FOR findPageByRectangles(), to fix the pageIndex computation. TODO FIXME!
-            visibleContentOffsets = {
                 top: 0,
-                left: (options.paginationInfo ? options.paginationInfo.pageOffset : 0)
-                //* (isPageProgressionRightToLeft() ? -1 : 1)
+                left: 0
             };
         }
-        //////////////////////
 
-        var clientRectangles = getNormalizedRectangles($element, visibleContentOffsets);
-        if (clientRectangles.length === 0) { // elements with display:none, etc.
-            return null;
-        }
-
-        return calculatePageIndexByRectangles(clientRectangles, spatialVerticalOffset);
-    }
-
-    /**
-     * @private
-     * Calculate a page index (0-based) for given client rectangles.
-     *
-     * @param {object} clientRectangles
-     * @param {number} [spatialVerticalOffset]
-     * @param {object} [frameDimensions]
-     * @param {object} [columnFullWidth]
-     * @returns {number|null}
-     */
-    function calculatePageIndexByRectangles(clientRectangles, spatialVerticalOffset, frameDimensions, columnFullWidth) {
-        var isRtl = isPageProgressionRightToLeft();
-        var isVwm = isVerticalWritingMode();
-        columnFullWidth = columnFullWidth || getColumnFullWidth();
-        frameDimensions = frameDimensions || getFrameDimensions();
-
-        if (spatialVerticalOffset) {
-            trimRectanglesByVertOffset(clientRectangles, spatialVerticalOffset,
-                frameDimensions, columnFullWidth, isRtl, isVwm);
-        }
-
-        var firstRectangle = _.first(clientRectangles);
-        if (clientRectangles.length === 1) {
-            adjustRectangle(firstRectangle, false, frameDimensions, columnFullWidth, isRtl, isVwm);
-        }
-
-        var pageIndex;
-
-        if (isVwm) {
-            var topOffset = firstRectangle.top;
-            pageIndex = Math.floor(topOffset / frameDimensions.height);
-        } else {
-            var leftOffset = firstRectangle.left;
-            if (isRtl) {
-                leftOffset = (columnFullWidth * (options.paginationInfo ? options.paginationInfo.visibleColumnCount : 1)) - leftOffset;
-            }
-            pageIndex = Math.floor(leftOffset / columnFullWidth);
-        }
-
-        if (pageIndex < 0) {
-            pageIndex = 0;
-        }
-        else if (pageIndex >= (options.paginationInfo ? options.paginationInfo.columnCount : 1)) {
-            pageIndex = (options.paginationInfo ? (options.paginationInfo.columnCount - 1) : 0);
-        }
-
-        return pageIndex;
-    }
-
-    /**
-     * Finds a page index (0-based) for a specific client rectangle.
-     * Calculations are based on viewport dimensions, offsets, and rectangle coordinates
-     *
-     * @param {ClientRect} clientRectangle
-     * @param {Object} [visibleContentOffsets]
-     * @param {Object} [frameDimensions]
-     * @returns {number|null}
-     */
-    function findPageBySingleRectangle(clientRectangle, visibleContentOffsets, frameDimensions) {
-        visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
-        frameDimensions = frameDimensions || getFrameDimensions();
-        
-        var normalizedRectangle = normalizeRectangle(
-            clientRectangle, visibleContentOffsets.left, visibleContentOffsets.top);
-
-        return calculatePageIndexByRectangles([normalizedRectangle], frameDimensions);
-    }
-
-    /**
-     * @private
-     * Calculates the visibility offset percentage based on ClientRect dimensions
-     *
-     * @param {Array} clientRectangles (should already be normalized)
-     * @param {number} firstVisibleRectIndex
-     * @returns {number} - visibility percentage (0 < n <= 100)
-     */
-    function measureVisibilityPercentageByRectangles(clientRectangles, firstVisibleRectIndex) {
-
-        var heightTotal = 0;
-        var heightVisible = 0;
-
-        if (clientRectangles.length > 1) {
-            _.each(clientRectangles, function (rect, index) {
-                heightTotal += rect.height;
-                if (index >= firstVisibleRectIndex) {
-                    // in this case, all the rectangles after the first visible
-                    // should be counted as visible
-                    heightVisible += rect.height;
-                }
-            });
-        }
-        else {
-            // should already be normalized and adjusted
-            heightTotal = clientRectangles[0].height;
-            heightVisible = clientRectangles[0].height - Math.max(
-                0, -clientRectangles[0].top);
-        }
-        return heightVisible === heightTotal
-            ? 100 // trivial case: element is 100% visible
-            : Math.floor(100 * heightVisible / heightTotal);
-    }
-
-    /**
-     * @private
-     * Retrieves the position of $element in multi-column layout
-     *
-     * @param {jQuery} $el
-     * @param {Object} [visibleContentOffsets]
-     * @returns {Object}
-     */
-    function getNormalizedRectangles($el, visibleContentOffsets) {
-
-        visibleContentOffsets = visibleContentOffsets || {};
-        var leftOffset = visibleContentOffsets.left || 0;
-        var topOffset = visibleContentOffsets.top || 0;
-
-        var isTextNode = ($el[0].nodeType === Node.TEXT_NODE);
-        var clientRectList;
-
-        if (isTextNode) {
-            var range = createRange();
-            range.selectNode($el[0]);
-            clientRectList = range.getClientRects();
-        } else {
-            clientRectList = $el[0].getClientRects();
-        }
-
-        // all the separate rectangles (for detecting position of the element
-        // split between several columns)
-        var clientRectangles = [];
-        for (var i = 0, l = clientRectList.length; i < l; ++i) {
-            if (clientRectList[i].height > 0) {
-                // Firefox sometimes gets it wrong,
-                // adding literally empty (height = 0) client rectangle preceding the real one,
-                // that empty client rectanle shouldn't be retrieved
-                clientRectangles.push(
-                    normalizeRectangle(clientRectList[i], leftOffset, topOffset));
-            }
-        }
-
-        return clientRectangles;
-    }
-
-    function getNormalizedBoundingRect($el, visibleContentOffsets) {
-        visibleContentOffsets = visibleContentOffsets || {};
-        var leftOffset = visibleContentOffsets.left || 0;
-        var topOffset = visibleContentOffsets.top || 0;
-
-        var isTextNode = ($el[0].nodeType === Node.TEXT_NODE);
-        var boundingClientRect;
-
-        if (isTextNode) {
-            var range = createRange();
-            range.selectNode($el[0]);
-            boundingClientRect = range.getBoundingClientRect();
-        } else {
-            boundingClientRect = $el[0].getBoundingClientRect();
-        }
-
-        // union of all rectangles wrapping the element
-        return normalizeRectangle(boundingClientRect, leftOffset, topOffset);
-    }
-
-    /**
-     * @private
-     * Converts TextRectangle object into a plain object,
-     * taking content offsets (=scrolls, position shifts etc.) into account
-     *
-     * @param {TextRectangle} textRect
-     * @param {number} leftOffset
-     * @param {number} topOffset
-     * @returns {Object}
-     */
-    function normalizeRectangle(textRect, leftOffset, topOffset) {
-
-        var plainRectObject = {
-            left: textRect.left,
-            right: textRect.right,
-            top: textRect.top,
-            bottom: textRect.bottom,
-            width: textRect.right - textRect.left,
-            height: textRect.bottom - textRect.top
-        };
-        offsetRectangle(plainRectObject, leftOffset, topOffset);
-        return plainRectObject;
-    }
-
-    /**
-     * @private
-     * Offsets plain object (which represents a TextRectangle).
-     *
-     * @param {Object} rect
-     * @param {number} leftOffset
-     * @param {number} topOffset
-     */
-    function offsetRectangle(rect, leftOffset, topOffset) {
-
-        rect.left += leftOffset;
-        rect.right += leftOffset;
-        rect.top += topOffset;
-        rect.bottom += topOffset;
-    }
-
-    /**
-     * @private
-     *
-     * When element is spilled over two or more columns,
-     * most of the time Webkit-based browsers
-     * still assign a single clientRectangle to it, setting its `top` property to negative value
-     * (so it looks like it's rendered based on the second column)
-     * Alas, sometimes they decide to continue the leftmost column - from _below_ its real height.
-     * In this case, `bottom` property is actually greater than element's height and had to be adjusted accordingly.
-     *
-     * Ugh.
-     *
-     * @param {Object} rect
-     * @param {boolean} [shouldLookForFirstVisibleColumn]
-     *      If set, there'll be two-phase adjustment
-     *      (to align a rectangle with a viewport)
-     * @param {Object} [frameDimensions]
-     * @param {number} [columnFullWidth]
-     * @param {boolean} [isRtl]
-     * @param {boolean} [isVwm]               isVerticalWritingMode
-     */
-    function adjustRectangle(rect, shouldLookForFirstVisibleColumn, frameDimensions, columnFullWidth, isRtl, isVwm) {
-
-        frameDimensions = frameDimensions || getFrameDimensions();
-        columnFullWidth = columnFullWidth || getColumnFullWidth();
-        isRtl = isRtl || isPageProgressionRightToLeft();
-        isVwm = isVwm || isVerticalWritingMode();
-
-        // Rectangle adjustment is not needed in VWM since it does not deal with columns
-        if (isVwm) {
-            return;
-        }
-
-        if (isRtl) {
-            columnFullWidth *= -1; // horizontal shifts are reverted in RTL mode
-        }
-
-        // first we go left/right (rebasing onto the very first column available)
-        while (rect.top < 0) {
-            offsetRectangle(rect, -columnFullWidth, frameDimensions.height);
-        }
-
-        // ... then, if necessary (for visibility offset checks),
-        // each column is tried again (now in reverse order)
-        // the loop will be stopped when the column is aligned with a viewport
-        // (i.e., is the first visible one).
-        if (shouldLookForFirstVisibleColumn) {
-            while (rect.bottom >= frameDimensions.height) {
-                if (isRectVisible(rect, false, frameDimensions, isVwm)) {
-                    break;
-                }
-                offsetRectangle(rect, columnFullWidth, -frameDimensions.height);
-            }
-        }
-    }
-
-    /**
-     * @private
-     * Trims the rectangle(s) representing the given element.
-     *
-     * @param {Array} rects
-     * @param {number} verticalOffset
-     * @param {number} frameDimensions
-     * @param {number} columnFullWidth
-     * @param {boolean} isRtl
-     * @param {boolean} isVwm               isVerticalWritingMode
-     */
-    function trimRectanglesByVertOffset(
-            rects, verticalOffset, frameDimensions, columnFullWidth, isRtl, isVwm) {
-
-        frameDimensions = frameDimensions || getFrameDimensions();
-        columnFullWidth = columnFullWidth || getColumnFullWidth();
-        isRtl = isRtl || isPageProgressionRightToLeft();
-        isVwm = isVwm || isVerticalWritingMode();
-
-        //TODO: Support vertical writing mode
-        if (isVwm) {
-            return;
-        }
-
-        var totalHeight = _.reduce(rects, function(prev, cur) {
-            return prev + cur.height;
-        }, 0);
-
-        var heightToHide = totalHeight * verticalOffset / 100;
-        if (rects.length > 1) {
-            var heightAccum = 0;
-            do {
-                heightAccum += rects[0].height;
-                if (heightAccum > heightToHide) {
-                    break;
-                }
-                rects.shift();
-            } while (rects.length > 1);
-        }
-        else {
-            // rebase to the last possible column
-            // (so that adding to top will be properly processed later)
-            if (isRtl) {
-                columnFullWidth *= -1;
-            }
-            while (rects[0].bottom >= frameDimensions.height) {
-                offsetRectangle(rects[0], columnFullWidth, -frameDimensions.height);
+        function getPaginationOffsets() {
+            if (options.paginationOffsetsGetter) {
+                return options.paginationOffsetsGetter();
             }
 
-            rects[0].top += heightToHide;
-            rects[0].height -= heightToHide;
-        }
-    }
-
-    this.getCfiForElement = function (element) {
-        var cfi = EPUBcfi.Generator.generateElementCFIComponent(element,
-            this.getClassBlacklist(),
-            this.getElementBlacklist(),
-            this.getIdBlacklist());
-
-        if (cfi[0] == "!") {
-            cfi = cfi.substring(1);
-        }
-        return cfi;
-    };
-
-    this.getVisibleCfiFromPoint = function (x, y, precisePoint) {
-        var document = self.getRootDocument();
-        var firstVisibleCaretRange = getCaretRangeFromPoint(x, y, document);
-        var elementFromPoint = document.elementFromPoint(x, y);
-        var invalidElementFromPoint = !elementFromPoint || elementFromPoint === document.documentElement;
-
-        if (precisePoint) {
-            if (!elementFromPoint || invalidElementFromPoint) {
-                return null;
-            }
-            var testRect = getNodeContentsClientRect(elementFromPoint);
-            if (!isRectVisible(testRect, false)) {
-                return null;
-            }
-            if ((x < testRect.left || x > testRect.right) || (y < testRect.top || y > testRect.bottom)) {
-                return null;
-            }
-        }
-
-        if (!firstVisibleCaretRange) {
-            if (invalidElementFromPoint) {
-                console.error("Could not generate CFI no visible element on page");
-                return null;
-            }
-            firstVisibleCaretRange = createRange();
-            firstVisibleCaretRange.selectNode(elementFromPoint);
-        }
-
-        var range = firstVisibleCaretRange;
-        var cfi;
-        //if we get a text node we need to get an approximate range for the first visible character offsets.
-        var node = range.startContainer;
-        var startOffset, endOffset;
-        if (node.nodeType === Node.TEXT_NODE) {
-            if (precisePoint && node.parentNode !== elementFromPoint) {
-                return null;
-            }
-            if (node.length === 1 && range.startOffset === 1) {
-                startOffset = 0;
-                endOffset = 1;
-            } else if (range.startOffset === node.length) {
-                startOffset = range.startOffset - 1;
-                endOffset = range.startOffset;
-            } else {
-                startOffset = range.startOffset;
-                endOffset = range.startOffset + 1;
-            }
-            var wrappedRange = {
-                startContainer: node,
-                endContainer: node,
-                startOffset: startOffset,
-                endOffset: endOffset,
-                commonAncestorContainer: range.commonAncestorContainer
+            return {
+                top: 0,
+                left: 0
             };
+        }
 
-            if (debugMode) {
-                drawDebugOverlayFromDomRange(wrappedRange);
-            }
+        /**
+         * New (rectangle-based) algorithm, useful in multi-column layouts
+         *
+         * Note: the second param (props) is ignored intentionally
+         * (no need to use those in normalization)
+         *
+         * @param {jQuery} $element
+         * @param {boolean} shouldCalculateVisibilityPercentage
+         * @param {Object} [visibleContentOffsets]
+         * @param {Object} [frameDimensions]
+         * @returns {number|null}
+         *      0 for non-visible elements,
+         *      0 < n <= 100 for visible elements
+         *      (will just give 100, if `shouldCalculateVisibilityPercentage` => false)
+         *      null for elements with display:none
+         */
+        function checkVisibilityByRectangles($element, shouldCalculateVisibilityPercentage, visibleContentOffsets, frameDimensions) {
+            visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
+            frameDimensions = frameDimensions || getFrameDimensions();
 
-            cfi = generateCfiFromDomRange(wrappedRange);
-        } else if (node.nodeType === Node.ELEMENT_NODE) {
-            node =
-                range.startContainer.childNodes[range.startOffset] ||
-                range.startContainer.childNodes[0] ||
-                range.startContainer;
-            if (precisePoint && node !== elementFromPoint) {
+            var clientRectangles = getNormalizedRectangles($element, visibleContentOffsets);
+            if (clientRectangles.length === 0) { // elements with display:none, etc.
                 return null;
             }
 
-            if (node.nodeType !== Node.ELEMENT_NODE) {
-                cfi = generateCfiFromDomRange(range);
+            var visibilityPercentage = 0;
+
+            if (clientRectangles.length === 1) {
+                var adjustedRect = clientRectangles[0];
+
+                if (isPaginatedView()) {
+                    if (adjustedRect.bottom > frameDimensions.height || adjustedRect.top < 0) {
+                        // because of webkit inconsistency, that single rectangle should be adjusted
+                        // until it hits the end OR will be based on the FIRST column that is visible
+                        adjustRectangle(adjustedRect, true, frameDimensions);
+                    }
+                }
+
+                if (isRectVisible(adjustedRect, false, frameDimensions)) {
+                    if (shouldCalculateVisibilityPercentage && adjustedRect.top < 0) {
+                        visibilityPercentage =
+                            Math.floor(100 * (adjustedRect.height + adjustedRect.top) / adjustedRect.height);
+                    } else if (shouldCalculateVisibilityPercentage && adjustedRect.bottom > frameDimensions.height) {
+                        visibilityPercentage =
+                            Math.floor(100 * (frameDimensions.height - adjustedRect.top) / adjustedRect.height);
+                    } else if (shouldCalculateVisibilityPercentage && adjustedRect.left < 0 && adjustedRect.right > 0) {
+                        visibilityPercentage =
+                            Math.floor(100 * adjustedRect.right / adjustedRect.width);
+                    } else if (shouldCalculateVisibilityPercentage && adjustedRect.left < 0 && adjustedRect.right > 0) {
+                        visibilityPercentage =
+                            Math.floor(100 * adjustedRect.right / adjustedRect.width);
+                    } else {
+                        visibilityPercentage = 100;
+                    }
+                }
             } else {
-                cfi = self.getCfiForElement(node);
+                // for an element split between several CSS columns,z
+                // both Firefox and IE produce as many client rectangles;
+                // each of those should be checked
+                for (var i = 0, l = clientRectangles.length; i < l; ++i) {
+                    if (isRectVisible(clientRectangles[i], false, frameDimensions)) {
+                        visibilityPercentage = shouldCalculateVisibilityPercentage
+                            ? measureVisibilityPercentageByRectangles(clientRectangles, i)
+                            : 100;
+                        break;
+                    }
+                }
             }
-        } else {
-            if (precisePoint && node !== elementFromPoint) {
+
+            return visibilityPercentage;
+        }
+
+        /**
+         * Finds a page index (0-based) delta for a specific element.
+         * Calculations are based on rectangles retrieved with getClientRects() method.
+         *
+         * @param {jQuery} $element
+         * @returns {number|null}
+         */
+        function findPageIndexDeltaByRectangles($element) {
+
+            var visibleContentOffsets = getVisibleContentOffsets();
+
+            var clientRectangles = getNormalizedRectangles($element, visibleContentOffsets);
+            if (clientRectangles.length === 0) { // elements with display:none, etc.
                 return null;
             }
 
-            cfi = self.getCfiForElement(elementFromPoint);
+            return calculatePageIndexDeltaByRectangles(clientRectangles);
         }
 
-        //This should not happen but if it does print some output, just in case
-        if (cfi && cfi.indexOf('NaN') !== -1) {
-            console.log('Did not generate a valid CFI:' + cfi);
-            return undefined;
+        /**
+         * @private
+         * Calculate a page index (0-based) delta for given client rectangles.
+         *
+         * @param {object[]} clientRectangles
+         * @param {object} [frameDimensions]
+         * @param {number} [columnFullWidth]
+         * @returns {number|null}
+         */
+        function calculatePageIndexDeltaByRectangles(clientRectangles, frameDimensions, columnFullWidth) {
+            var isRtl = isPageProgressionRightToLeft();
+            var isVwm = isVerticalWritingMode();
+            columnFullWidth = columnFullWidth || getColumnFullWidth();
+            frameDimensions = frameDimensions || getFrameDimensions();
+
+            var firstRectangle = _.first(clientRectangles);
+            if (clientRectangles.length === 1) {
+                adjustRectangle(firstRectangle, false, frameDimensions, columnFullWidth, isRtl, isVwm);
+            }
+
+            var pageIndex;
+
+            if (isVwm) {
+                var topOffset = firstRectangle.top;
+                pageIndex = Math.round(topOffset / frameDimensions.height);
+            } else {
+                var leftOffset = firstRectangle.left;
+                if (isRtl) {
+                    leftOffset = (columnFullWidth * (options.paginationInfo ? options.paginationInfo.visibleColumnCount : 1)) - leftOffset;
+                }
+                pageIndex = Math.round(leftOffset / columnFullWidth);
+            }
+
+            return pageIndex;
         }
 
-        return cfi;
-    };
+        /**
+         * Finds a page index (0-based) delta for a specific client rectangle.
+         * Calculations are based on viewport dimensions, offsets, and rectangle coordinates
+         *
+         * @param {ClientRect} clientRectangle
+         * @param {Object} [visibleContentOffsets]
+         * @param {Object} [frameDimensions]
+         * @returns {number|null}
+         */
+        function findPageIndexDeltaBySingleRectangle(clientRectangle, visibleContentOffsets, frameDimensions) {
+            visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
+            frameDimensions = frameDimensions || getFrameDimensions();
 
-    this.getRangeCfiFromPoints = function(startX, startY, endX, endY) {
-        var document = self.getRootDocument();
-        var start = getCaretRangeFromPoint(startX, startY, document),
-            end = getCaretRangeFromPoint(endX, endY, document),
-            range = createRange();
-        range.setStart(start.startContainer, start.startOffset);
-        range.setEnd(end.startContainer, end.startOffset);
-        // if we're looking at a text node create a nice range (n, n+1)
-        if (start.startContainer === start.endContainer && start.startContainer.nodeType === Node.TEXT_NODE && end.startContainer.length > end.startOffset+1) {
-            range.setEnd(end.startContainer, end.startOffset+1);
+            var normalizedRectangle = normalizeRectangle(
+                clientRectangle, visibleContentOffsets.left, visibleContentOffsets.top);
+
+            return calculatePageIndexDeltaByRectangles([normalizedRectangle], frameDimensions);
         }
-        return generateCfiFromDomRange(range);
-    };
 
-    function getTextNodeRectCornerPairs(rect) {
-        //
-        //    top left             top right
-        //    ╲                   ╱
-        //  ── ▒T▒E▒X▒T▒ ▒R▒E▒C▒T▒ ──
-        //
-        // top left corner & top right corner
-        // but for y coord use the mid point between top and bottom
+        /**
+         * @private
+         * Calculates the visibility offset percentage based on ClientRect dimensions
+         *
+         * @param {Array} clientRectangles (should already be normalized)
+         * @param {number} firstVisibleRectIndex
+         * @returns {number} - visibility percentage (0 < n <= 100)
+         */
+        function measureVisibilityPercentageByRectangles(clientRectangles, firstVisibleRectIndex) {
 
-        if (isVerticalWritingMode()) {
-            var x = rect.right - (rect.width / 2);
-            return [{x: x, y: rect.top}, {x: x, y: rect.bottom}];
-        } else {
-            var y = rect.top + (rect.height / 2);
-            var result = [{x: rect.left, y: y}, {x: rect.right, y: y}]
-            return isPageProgressionRightToLeft() ? result.reverse() : result;
+            var heightTotal = 0;
+            var heightVisible = 0;
+
+            if (clientRectangles.length > 1) {
+                _.each(clientRectangles, function (rect, index) {
+                    heightTotal += rect.height;
+                    if (index >= firstVisibleRectIndex) {
+                        // in this case, all the rectangles after the first visible
+                        // should be counted as visible
+                        heightVisible += rect.height;
+                    }
+                });
+            }
+            else {
+                // should already be normalized and adjusted
+                heightTotal = clientRectangles[0].height;
+                heightVisible = clientRectangles[0].height - Math.max(
+                    0, -clientRectangles[0].top);
+            }
+            return heightVisible === heightTotal
+                ? 100 // trivial case: element is 100% visible
+                : Math.floor(100 * heightVisible / heightTotal);
         }
-    }
 
-    var DEBUG = false;
+        /**
+         * @private
+         * Retrieves the position of $element in multi-column layout
+         *
+         * @param {jQuery} $el
+         * @param {Object} [visibleContentOffsets]
+         * @returns {Object[]}
+         */
+        function getNormalizedRectangles($el, visibleContentOffsets) {
 
-    function getVisibleTextRangeOffsetsSelectedByFunc(textNode, pickerFunc, visibleContentOffsets, frameDimensions) {
-        visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
-        
-        var textNodeFragments = getNodeClientRectList(textNode, visibleContentOffsets);
+            visibleContentOffsets = visibleContentOffsets || {};
+            var leftOffset = visibleContentOffsets.left || 0;
+            var topOffset = visibleContentOffsets.top || 0;
 
-        var visibleFragments = _.filter(textNodeFragments, function (rect) {
-            return isRectVisible(rect, false, frameDimensions);
-        });
+            var isTextNode = ($el[0].nodeType === Node.TEXT_NODE);
+            var clientRectList;
 
-        var fragment = pickerFunc(visibleFragments);
-        if (!fragment) {
-            //no visible fragment, empty text node?
-            return null;
-        }
-        var fragmentCorner = pickerFunc(getTextNodeRectCornerPairs(fragment));
-        // Reverse taking into account of visible content offsets
-        fragmentCorner.x -= visibleContentOffsets.left;
-        fragmentCorner.y -= visibleContentOffsets.top;
-        
-        var caretRange = getCaretRangeFromPoint(fragmentCorner.x, fragmentCorner.y);
+            if (isTextNode) {
+                var range = createRange();
+                range.selectNode($el[0]);
+                //noinspection JSUnresolvedFunction
+                clientRectList = range.getClientRects();
+            } else {
+                //noinspection JSUnresolvedFunction
+                clientRectList = $el[0].getClientRects();
+            }
 
-        // Workaround for inconsistencies with the caretRangeFromPoint IE TextRange based shim.
-        if (caretRange && caretRange.startContainer !== textNode && caretRange.startContainer === textNode.parentNode) {
-            if (DEBUG) console.log('ieTextRangeWorkaround needed');
-            var startOrEnd = pickerFunc([0, 1]);
-
-            // #1
-            if (caretRange.startOffset === caretRange.endOffset) {
-                var checkNode = caretRange.startContainer.childNodes[Math.max(caretRange.startOffset - 1, 0)];
-                if (checkNode === textNode) {
-                    caretRange = {
-                        startContainer: textNode,
-                        endContainer: textNode,
-                        startOffset: startOrEnd === 0 ? 0 : textNode.nodeValue.length,
-                        startOffset: startOrEnd === 0 ? 0 : textNode.nodeValue.length
-                    };
-                    if (DEBUG) console.log('ieTextRangeWorkaround #1:', caretRange);
+            // all the separate rectangles (for detecting position of the element
+            // split between several columns)
+            var clientRectangles = [];
+            for (var i = 0, l = clientRectList.length; i < l; ++i) {
+                if (clientRectList[i].height > 0 || clientRectList.length === 1) {
+                    // Firefox sometimes gets it wrong,
+                    // adding literally empty (height = 0) client rectangle preceding the real one,
+                    // that empty client rectanle shouldn't be retrieved
+                    clientRectangles.push(
+                        normalizeRectangle(clientRectList[i], leftOffset, topOffset));
                 }
             }
 
-            // Failed
-            else if (DEBUG) {
-                console.log('ieTextRangeWorkaround didn\'t work :(');
-            }
+            return clientRectangles;
         }
 
-        if (DEBUG)
-        console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'a0');
-        
-        // Desperately try to find it from all angles! Darn sub pixeling..
-        //TODO: remove the need for this brute-force method, since it's making the result non-deterministic
-        if (!caretRange || caretRange.startContainer !== textNode) {
-            caretRange = getCaretRangeFromPoint(fragmentCorner.x - 1, fragmentCorner.y);
-            
-            if (DEBUG)
-            console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'a1');
-        }
-        if (!caretRange || caretRange.startContainer !== textNode) {
-            caretRange = getCaretRangeFromPoint(fragmentCorner.x, fragmentCorner.y - 1);
-            
-            if (DEBUG)
-            console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'a2');
-        }
-        if (!caretRange || caretRange.startContainer !== textNode) {
-            caretRange = getCaretRangeFromPoint(fragmentCorner.x - 1, fragmentCorner.y - 1);
-            
-            if (DEBUG)
-            console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'a3');
-        }
-        if (!caretRange || caretRange.startContainer !== textNode) {
-            fragmentCorner.x = Math.floor(fragmentCorner.x);
-            fragmentCorner.y = Math.floor(fragmentCorner.y);
-            caretRange = getCaretRangeFromPoint(fragmentCorner.x, fragmentCorner.y);
-            
-            if (DEBUG)
-            console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'b0');
-        }
-        // Desperately try to find it from all angles! Darn sub pixeling..
-        if (!caretRange || caretRange.startContainer !== textNode) {
-            caretRange = getCaretRangeFromPoint(fragmentCorner.x - 1, fragmentCorner.y);
-            
-            if (DEBUG)
-            console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'b1');
-        }
-        if (!caretRange || caretRange.startContainer !== textNode) {
-            caretRange = getCaretRangeFromPoint(fragmentCorner.x, fragmentCorner.y - 1);
-            
-            if (DEBUG)
-            console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'b2');
-        }
-        if (!caretRange || caretRange.startContainer !== textNode) {
-            caretRange = getCaretRangeFromPoint(fragmentCorner.x - 1, fragmentCorner.y - 1);
-            
-            if (DEBUG)
-            console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'b3');
-        }
+        function getNormalizedBoundingRect($el, visibleContentOffsets) {
+            visibleContentOffsets = visibleContentOffsets || {};
+            var leftOffset = visibleContentOffsets.left || 0;
+            var topOffset = visibleContentOffsets.top || 0;
 
-        // Still nothing? fall through..
-        if (!caretRange) {
-            
-            if (DEBUG)
-            console.warn('getVisibleTextRangeOffsetsSelectedByFunc: no caret range result');
-            
-            return null;
-        }
+            var isTextNode = ($el[0].nodeType === Node.TEXT_NODE);
+            var boundingClientRect;
 
-        if (caretRange.startContainer === textNode) {
-            return pickerFunc(
-                [{start: caretRange.startOffset, end: caretRange.startOffset + 1},
-                {start: caretRange.startOffset - 1, end: caretRange.startOffset}]
-            );
-        } else {
-            
-            if (DEBUG)
-            console.warn('getVisibleTextRangeOffsetsSelectedByFunc: incorrect caret range result');
-            
-            return null;
-        }
-    }
-
-    function findVisibleLeafNodeCfi(leafNodeList, pickerFunc, targetLeafNode, visibleContentOffsets, frameDimensions, startingParent) {
-        var index = 0;
-        if (!targetLeafNode) {
-            index = leafNodeList.indexOf(pickerFunc(leafNodeList));
-            var leafNode = leafNodeList[index];
-            if (leafNode) {
-                startingParent = leafNode.element;
-            }
-        } else {
-            index = leafNodeList.indexOf(targetLeafNode);
-            if (index === -1) {
-                //target leaf node not the right type? not in list?
-                return null;
-            }
-            // use the next leaf node in the list
-            index += pickerFunc([1, -1]);
-        }
-        var visibleLeafNode = leafNodeList[index];
-
-        if (!visibleLeafNode) {
-            return null;
-        }
-
-        var element = visibleLeafNode.element;
-        var textNode = visibleLeafNode.textNode;
-
-        if (targetLeafNode && element !== startingParent && !_.contains($(textNode || element).parents(), startingParent)) {
-            if (DEBUG) console.warn("findVisibleLeafNodeCfi: stopped recursion early");
-            return null;
-        }
-
-        //if a valid text node is found, try to generate a CFI with range offsets
-        if (textNode && isValidTextNode(textNode)) {
-            var visibleRange = getVisibleTextRangeOffsetsSelectedByFunc(textNode, pickerFunc, visibleContentOffsets, frameDimensions);
-            if (!visibleRange) {
-                //the text node is valid, but not visible..
-                //let's try again with the next node in the list
-                return findVisibleLeafNodeCfi(leafNodeList, pickerFunc, visibleLeafNode, visibleContentOffsets, frameDimensions, startingParent);
-            }
-            var range = createRange();
-            range.setStart(textNode, visibleRange.start);
-            range.setEnd(textNode, visibleRange.end);
-            return generateCfiFromDomRange(range);
-        } else {
-            //if not then generate a CFI for the element
-            return self.getCfiForElement(element);
-        }
-    }
-
-    // get an array of visible text elements and then select one based on the func supplied
-    // and generate a CFI for the first visible text subrange.
-    function getVisibleTextRangeCfiForTextElementSelectedByFunc(pickerFunc, visibleContentOffsets, frameDimensions) {        
-        var visibleLeafNodeList = self.getVisibleLeafNodes(visibleContentOffsets, frameDimensions);
-        return findVisibleLeafNodeCfi(visibleLeafNodeList, pickerFunc, null, visibleContentOffsets, frameDimensions);
-    }
-
-    function getLastVisibleTextRangeCfi(visibleContentOffsets, frameDimensions) {
-        return getVisibleTextRangeCfiForTextElementSelectedByFunc(_.last, visibleContentOffsets, frameDimensions);
-    }
-
-    function getFirstVisibleTextRangeCfi(visibleContentOffsets, frameDimensions) {
-        return getVisibleTextRangeCfiForTextElementSelectedByFunc(_.first, visibleContentOffsets, frameDimensions);
-    }
-
-    this.getFirstVisibleCfi = function (visibleContentOffsets, frameDimensions) {
-        return getFirstVisibleTextRangeCfi(visibleContentOffsets, frameDimensions);
-    };
-
-    this.getLastVisibleCfi = function (visibleContentOffsets, frameDimensions) {
-        return getLastVisibleTextRangeCfi(visibleContentOffsets, frameDimensions);
-    };
-
-    function generateCfiFromDomRange(range) {
-        return EPUBcfi.generateRangeComponent(
-            range.startContainer, range.startOffset,
-            range.endContainer, range.endOffset,
-            self.getClassBlacklist(), self.getElementBlacklist(), self.getIdBlacklist());
-    }
-
-    function getRangeTargetNodes(rangeCfi) {
-        return EPUBcfi.getRangeTargetElements(
-            getWrappedCfiRelativeToContent(rangeCfi),
-            self.getRootDocument(),
-            self.getClassBlacklist(), self.getElementBlacklist(), self.getIdBlacklist());
-    }
-
-    this.getDomRangeFromRangeCfi = function(rangeCfi, rangeCfi2, inclusive) {
-        var range = createRange();
-
-        if (!rangeCfi2) {
-            if (self.isRangeCfi(rangeCfi)) {
-                var rangeInfo = getRangeTargetNodes(rangeCfi);
-                range.setStart(rangeInfo.startElement, rangeInfo.startOffset);
-                range.setEnd(rangeInfo.endElement, rangeInfo.endOffset);
+            if (isTextNode) {
+                var range = createRange();
+                range.selectNode($el[0]);
+                boundingClientRect = range.getBoundingClientRect();
             } else {
-                var element = self.getElementByCfi(rangeCfi,
-                    this.getClassBlacklist(), this.getElementBlacklist(), this.getIdBlacklist())[0];
-                range.selectNode(element);
-            }
-        } else {
-            if (self.isRangeCfi(rangeCfi)) {
-                var rangeInfo1 = getRangeTargetNodes(rangeCfi);
-                range.setStart(rangeInfo1.startElement, rangeInfo1.startOffset);
-            } else {
-                var startElement = self.getElementByCfi(rangeCfi,
-                    this.getClassBlacklist(), this.getElementBlacklist(), this.getIdBlacklist())[0];
-                range.setStart(startElement, 0);
+                boundingClientRect = $el[0].getBoundingClientRect();
             }
 
-            if (self.isRangeCfi(rangeCfi2)) {
-                var rangeInfo2 = getRangeTargetNodes(rangeCfi2);
-                if (inclusive) {
-                    range.setEnd(rangeInfo2.endElement, rangeInfo2.endOffset);
-                } else {
-                    range.setEnd(rangeInfo2.startElement, rangeInfo2.startOffset);
+            // union of all rectangles wrapping the element
+            return normalizeRectangle(boundingClientRect, leftOffset, topOffset);
+        }
+
+        /**
+         * @private
+         * Converts TextRectangle object into a plain object,
+         * taking content offsets (=scrolls, position shifts etc.) into account
+         *
+         * @param {Object} textRect
+         * @param {number} leftOffset
+         * @param {number} topOffset
+         * @returns {Object}
+         */
+        function normalizeRectangle(textRect, leftOffset, topOffset) {
+
+            var plainRectObject = {
+                left: textRect.left,
+                right: textRect.right,
+                top: textRect.top,
+                bottom: textRect.bottom,
+                width: textRect.right - textRect.left,
+                height: textRect.bottom - textRect.top
+            };
+            leftOffset = leftOffset || 0;
+            topOffset = topOffset || 0;
+            offsetRectangle(plainRectObject, leftOffset, topOffset);
+            return plainRectObject;
+        }
+
+        /**
+         * @private
+         * Offsets plain object (which represents a TextRectangle).
+         *
+         * @param {Object} rect
+         * @param {number} leftOffset
+         * @param {number} topOffset
+         */
+        function offsetRectangle(rect, leftOffset, topOffset) {
+
+            rect.left += leftOffset;
+            rect.right += leftOffset;
+            rect.top += topOffset;
+            rect.bottom += topOffset;
+        }
+
+        /**
+         * @private
+         *
+         * When element is spilled over two or more columns,
+         * most of the time Webkit-based browsers
+         * still assign a single clientRectangle to it, setting its `top` property to negative value
+         * (so it looks like it's rendered based on the second column)
+         * Alas, sometimes they decide to continue the leftmost column - from _below_ its real height.
+         * In this case, `bottom` property is actually greater than element's height and had to be adjusted accordingly.
+         *
+         * Ugh.
+         *
+         * @param {Object} rect
+         * @param {boolean} [shouldLookForFirstVisibleColumn]
+         *      If set, there'll be two-phase adjustment
+         *      (to align a rectangle with a viewport)
+         * @param {Object} [frameDimensions]
+         * @param {number} [columnFullWidth]
+         * @param {boolean} [isRtl]
+         * @param {boolean} [isVwm]               isVerticalWritingMode
+         */
+        function adjustRectangle(rect, shouldLookForFirstVisibleColumn, frameDimensions, columnFullWidth, isRtl, isVwm) {
+
+            frameDimensions = frameDimensions || getFrameDimensions();
+            columnFullWidth = columnFullWidth || getColumnFullWidth();
+            isRtl = isRtl || isPageProgressionRightToLeft();
+            isVwm = isVwm || isVerticalWritingMode();
+
+            // Rectangle adjustment is not needed in VWM since it does not deal with columns
+            if (isVwm) {
+                return;
+            }
+
+            if (isRtl) {
+                columnFullWidth *= -1; // horizontal shifts are reverted in RTL mode
+            }
+
+            // first we go left/right (rebasing onto the very first column available)
+            while (rect.top < 0) {
+                offsetRectangle(rect, -columnFullWidth, frameDimensions.height);
+            }
+
+            // ... then, if necessary (for visibility offset checks),
+            // each column is tried again (now in reverse order)
+            // the loop will be stopped when the column is aligned with a viewport
+            // (i.e., is the first visible one).
+            if (shouldLookForFirstVisibleColumn) {
+                while (rect.bottom >= frameDimensions.height) {
+                    if (isRectVisible(rect, false, frameDimensions)) {
+                        break;
+                    }
+                    offsetRectangle(rect, columnFullWidth, -frameDimensions.height);
                 }
-            } else {
-                var endElement = self.getElementByCfi(rangeCfi2,
-                    this.getClassBlacklist(), this.getElementBlacklist(), this.getIdBlacklist())[0];
-                range.setEnd(endElement, endElement.childNodes.length);
             }
         }
-        return range;
-    };
 
-    this.getRangeCfiFromDomRange = function(domRange) {
-        return generateCfiFromDomRange(domRange);
-    };
+        this.getCfiForElement = function (element) {
 
-    function getWrappedCfi(partialCfi) {
-        return "epubcfi(" + partialCfi + ")";
-    }
-
-    function getWrappedCfiRelativeToContent(partialCfi) {
-        return "epubcfi(/99!" + partialCfi + ")";
-    }
-
-    this.isRangeCfi = function (partialCfi) {
-        return EPUBcfi.Interpreter.isRangeCfi(getWrappedCfi(partialCfi)) || EPUBcfi.Interpreter.isRangeCfi(getWrappedCfiRelativeToContent(partialCfi));
-    };
-
-    this.getPageForElementCfi = function (cfi, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var cfiParts = splitCfi(cfi);
-        var partialCfi = cfiParts.cfi;
-
-        if (this.isRangeCfi(partialCfi)) {
-            //if given a range cfi the exact page index needs to be calculated by getting node info from the range cfi
-            var nodeRangeInfoFromCfi = this.getNodeRangeInfoFromCfi(partialCfi);
-            //the page index is calculated from the node's client rectangle
-            return findPageBySingleRectangle(nodeRangeInfoFromCfi.clientRect);
-        }
-
-        var $element = getElementByPartialCfi(cfiParts.cfi, classBlacklist, elementBlacklist, idBlacklist);
-
-        if (!$element) {
-            return -1;
-        }
-
-        var pageIndex = this.getPageForPointOnElement($element, cfiParts.x, cfiParts.y);
-
-        return pageIndex;
-
-    };
-
-    function getElementByPartialCfi(cfi, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var contentDoc = self.getRootDocument();
-
-        var wrappedCfi = getWrappedCfi(cfi);
-
-        try {
-            //noinspection JSUnresolvedVariable
-            var $element = EPUBcfi.getTargetElementWithPartialCFI(wrappedCfi, contentDoc, classBlacklist, elementBlacklist, idBlacklist);
-
-        } catch (ex) {
-            //EPUBcfi.Interpreter can throw a SyntaxError
-        }
-
-        if (!$element || $element.length == 0) {
-            console.log("Can't find element for CFI: " + cfi);
-            return undefined;
-        }
-
-        return $element;
-    }
-
-    this.getElementFromPoint = function (x, y) {
-
-        var document = self.getRootDocument();
-        return document.elementFromPoint(x, y);
-    };
-
-    this.getNodeRangeInfoFromCfi = function (cfi) {
-        var contentDoc = self.getRootDocument();
-        if (self.isRangeCfi(cfi)) {
-            var wrappedCfi = getWrappedCfiRelativeToContent(cfi);
-
-            try {
-                //noinspection JSUnresolvedVariable
-                var nodeResult = EPUBcfi.Interpreter.getRangeTargetElements(wrappedCfi, contentDoc,
-                    this.getClassBlacklist(),
-                    this.getElementBlacklist(),
-                    this.getIdBlacklist());
-
-                if (debugMode) {
-                    console.log(nodeResult);
-                }
-            } catch (ex) {
-                //EPUBcfi.Interpreter can throw a SyntaxError
-            }
-
-            if (!nodeResult) {
-                console.log("Can't find nodes for range CFI: " + cfi);
-                return undefined;
-            }
-
-            var startRangeInfo = {node: nodeResult.startElement, offset: nodeResult.startOffset};
-            var endRangeInfo = {node: nodeResult.endElement, offset: nodeResult.endOffset};
-            var nodeRangeClientRect =
-                startRangeInfo && endRangeInfo ?
-                    getNodeRangeClientRect(
-                        startRangeInfo.node,
-                        startRangeInfo.offset,
-                        endRangeInfo.node,
-                        endRangeInfo.offset)
-                    : null;
-
-            if (debugMode) {
-                console.log(nodeRangeClientRect);
-                addOverlayRect(nodeRangeClientRect, 'purple', contentDoc);
-            }
-
-            return {startInfo: startRangeInfo, endInfo: endRangeInfo, clientRect: nodeRangeClientRect}
-        } else {
-            var $element = self.getElementByCfi(cfi,
+            var cfi = EPUBcfi.Generator.generateElementCFIComponent(element,
                 this.getClassBlacklist(),
                 this.getElementBlacklist(),
                 this.getIdBlacklist());
 
-            var visibleContentOffsets = getVisibleContentOffsets();
-            return {startInfo: null, endInfo: null, clientRect: getNormalizedBoundingRect($element, visibleContentOffsets)};
-        }
-    };
-
-    this.isNodeFromRangeCfiVisible = function (cfi) {
-        var nodeRangeInfo = this.getNodeRangeInfoFromCfi(cfi);
-        if (nodeRangeInfo) {
-            return isRectVisible(nodeRangeInfo.clientRect, false);
-        } else {
-            return undefined;
-        }
-    };
-
-    this.getElementByCfi = function (cfi, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var cfiParts = splitCfi(cfi);
-        return getElementByPartialCfi(cfiParts.cfi, classBlacklist, elementBlacklist, idBlacklist);
-    };
-
-    this.getPageForElement = function ($element) {
-
-        return this.getPageForPointOnElement($element, 0, 0);
-    };
-
-    this.getPageForPointOnElement = function ($element, x, y) {
-
-        var pageIndex = findPageByRectangles($element, y);
-        if (pageIndex === null) {
-            console.warn('Impossible to locate a hidden element: ', $element);
-            return 0;
-        }
-        return pageIndex;
-    };
-
-    this.getVerticalOffsetForElement = function ($element) {
-      return this.getVerticalOffsetForPointOnElement($element, 0, 0);
-    };
-
-    this.getVerticalOffsetForPointOnElement = function ($element, x, y) {
-      var elementRect = Helpers.Rect.fromElement($element);
-      return Math.ceil(elementRect.top + y * elementRect.height / 100);
-    };
-
-    this.getElementById = function (id) {
-
-        var contentDoc = this.getRootDocument();
-
-        var $element = $(contentDoc.getElementById(id));
-        //$("#" + Helpers.escapeJQuerySelector(id), contentDoc);
-
-        if($element.length == 0) {
-            return undefined;
-        }
-
-        return $element;
-    };
-
-    this.getPageForElementId = function (id) {
-
-        var $element = this.getElementById(id);
-        if (!$element) {
-            return -1;
-        }
-
-        return this.getPageForElement($element);
-    };
-
-    function splitCfi(cfi) {
-
-        var ret = {
-            cfi: "",
-            x: 0,
-            y: 0
+            if (cfi[0] == "!") {
+                cfi = cfi.substring(1);
+            }
+            return cfi;
         };
 
-        var ix = cfi.indexOf("@");
+        this.getVisibleCfiFromPoint = function (x, y, precisePoint) {
+            var document = self.getRootDocument();
+            var firstVisibleCaretRange = getCaretRangeFromPoint(x, y, document);
+            var elementFromPoint = document.elementFromPoint(x, y);
+            var invalidElementFromPoint = !elementFromPoint || elementFromPoint === document.documentElement;
 
-        if (ix != -1) {
-            var terminus = cfi.substring(ix + 1);
-
-            var colIx = terminus.indexOf(":");
-            if (colIx != -1) {
-                ret.x = parseInt(terminus.substr(0, colIx));
-                ret.y = parseInt(terminus.substr(colIx + 1));
-            }
-            else {
-                console.log("Unexpected terminating step format");
-            }
-
-            ret.cfi = cfi.substring(0, ix);
-        }
-        else {
-
-            ret.cfi = cfi;
-        }
-
-        return ret;
-    }
-
-    // returns raw DOM element (not $ jQuery-wrapped)
-    this.getFirstVisibleMediaOverlayElement = function(visibleContentOffsets) {
-        var $root = $(this.getBodyElement());
-        if (!$root || !$root.length || !$root[0]) return undefined;
-
-        var that = this;
-
-        var firstPartial = undefined;
-
-        function traverseArray(arr) {
-            if (!arr || !arr.length) return undefined;
-
-            for (var i = 0, count = arr.length; i < count; i++) {
-                var item = arr[i];
-                if (!item) continue;
-
-                var $item = $(item);
-
-                if ($item.data("mediaOverlayData")) {
-                    var visible = that.getElementVisibility($item, visibleContentOffsets);
-                    if (visible) {
-                        if (!firstPartial) firstPartial = item;
-
-                        if (visible == 100) return item;
-                    }
+            if (precisePoint) {
+                if (!elementFromPoint || invalidElementFromPoint) {
+                    return null;
                 }
-                else {
-                    var elem = traverseArray(item.children);
-                    if (elem) return elem;
+                var testRect = getNodeContentsClientRect(elementFromPoint);
+                if (!isRectVisible(testRect, false)) {
+                    return null;
+                }
+                if ((x < testRect.left || x > testRect.right) || (y < testRect.top || y > testRect.bottom)) {
+                    return null;
                 }
             }
 
-            return undefined;
+            if (!firstVisibleCaretRange) {
+                if (invalidElementFromPoint) {
+                    console.error("Could not generate CFI no visible element on page");
+                    return null;
+                }
+                firstVisibleCaretRange = createRange();
+                firstVisibleCaretRange.selectNode(elementFromPoint);
+            }
+
+            var range = firstVisibleCaretRange;
+            var cfi;
+            //if we get a text node we need to get an approximate range for the first visible character offsets.
+            var node = range.startContainer;
+            var startOffset, endOffset;
+            if (node.nodeType === Node.TEXT_NODE) {
+                if (precisePoint && node.parentNode !== elementFromPoint) {
+                    return null;
+                }
+                if (node.length === 1 && range.startOffset === 1) {
+                    startOffset = 0;
+                    endOffset = 1;
+                } else if (range.startOffset === node.length) {
+                    startOffset = range.startOffset - 1;
+                    endOffset = range.startOffset;
+                } else {
+                    startOffset = range.startOffset;
+                    endOffset = range.startOffset + 1;
+                }
+                var wrappedRange = {
+                    startContainer: node,
+                    endContainer: node,
+                    startOffset: startOffset,
+                    endOffset: endOffset,
+                    commonAncestorContainer: range.commonAncestorContainer
+                };
+
+                if (_DEBUG) {
+                    drawDebugOverlayFromDomRange(wrappedRange);
+                }
+
+                cfi = generateCfiFromDomRange(wrappedRange);
+            } else if (node.nodeType === Node.ELEMENT_NODE) {
+                node =
+                    range.startContainer.childNodes[range.startOffset] ||
+                    range.startContainer.childNodes[0] ||
+                    range.startContainer;
+                if (precisePoint && node !== elementFromPoint) {
+                    return null;
+                }
+
+                if (node.nodeType !== Node.ELEMENT_NODE) {
+                    cfi = generateCfiFromDomRange(range);
+                } else {
+                    cfi = self.getCfiForElement(node);
+                }
+            } else {
+                if (precisePoint && node !== elementFromPoint) {
+                    return null;
+                }
+
+                cfi = self.getCfiForElement(elementFromPoint);
+            }
+
+            //This should not happen but if it does print some output, just in case
+            if (cfi && cfi.indexOf('NaN') !== -1) {
+                console.log('Did not generate a valid CFI:' + cfi);
+                return undefined;
+            }
+            return cfi;
+        };
+
+        this.getRangeCfiFromPoints = function (startX, startY, endX, endY) {
+            var document = self.getRootDocument();
+            var start = getCaretRangeFromPoint(startX, startY, document),
+                end = getCaretRangeFromPoint(endX, endY, document),
+                range = createRange();
+            range.setStart(start.startContainer, start.startOffset);
+            range.setEnd(end.startContainer, end.startOffset);
+            // if we're looking at a text node create a nice range (n, n+1)
+            if (start.startContainer === start.endContainer && start.startContainer.nodeType === Node.TEXT_NODE && end.startContainer.length > end.startOffset + 1) {
+                range.setEnd(end.startContainer, end.startOffset + 1);
+            }
+            return generateCfiFromDomRange(range);
+        };
+
+        function determineSplit(range, division) {
+            var percent = division / 100;
+            return Math.round((range.endOffset - range.startOffset ) * percent);
         }
 
-        var el = traverseArray([$root[0]]);
-        if (!el) el = firstPartial;
-        return el;
+        function splitRange(range, division) {
+            if (range.endOffset - range.startOffset === 1) {
+                return [range];
+            }
+            var length = determineSplit(range, division);
+            var textNode = range.startContainer;
+            var leftNodeRange = range.cloneRange();
+            leftNodeRange.setStart(textNode, range.startOffset);
+            leftNodeRange.setEnd(textNode, range.startOffset + length);
+            var rightNodeRange = range.cloneRange();
+            rightNodeRange.setStart(textNode, range.startOffset + length);
+            rightNodeRange.setEnd(textNode, range.endOffset);
 
-        // var $elements = this.getMediaOverlayElements($root);
-        // return this.getVisibleElements($elements, visibleContentOffsets);
-    };
+            return [leftNodeRange, rightNodeRange];
 
-    this.getElementVisibility = function ($element, visibleContentOffsets) {
-        return checkVisibilityByRectangles($element, true, visibleContentOffsets);
-    };
+        }
 
+        // create Range from target node and search for visibleOutput Range
+        function getVisibleTextRangeOffsets(textNode, pickerFunc, visibleContentOffsets, frameDimensions) {
+            visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
 
-    this.isElementVisible = checkVisibilityByRectangles;
-
-    this.getVisibleElementsWithFilter = function (visibleContentOffsets, filterFunction) {
-        var $elements = this.getElementsWithFilter($(this.getBodyElement()), filterFunction);
-        return this.getVisibleElements($elements, visibleContentOffsets);
-    };
-
-    this.getAllElementsWithFilter = function (filterFunction) {
-        var $elements = this.getElementsWithFilter($(this.getBodyElement()), filterFunction);
-        return $elements;
-    };
-
-    this.getAllVisibleElementsWithSelector = function (selector, visibleContentOffset) {
-        var elements = $(selector, this.getRootElement());
-        var $newElements = [];
-        $.each(elements, function () {
-            $newElements.push($(this));
-        });
-        var visibleElements = this.getVisibleElements($newElements, visibleContentOffset);
-        return visibleElements;
-    };
-
-    this.getVisibleElements = function ($elements, visibleContentOffsets, frameDimensions) {
-
-        var visibleElements = [];
-
-        _.each($elements, function ($node) {
-            var node = $node[0];
-            var isTextNode = (node.nodeType === Node.TEXT_NODE);
-            var element = isTextNode ? node.parentElement : node;
-            var visibilityPercentage = checkVisibilityByRectangles(
-                $node, true, visibleContentOffsets, frameDimensions);
-
-            if (visibilityPercentage) {
-                visibleElements.push({
-                    element: element, // DOM Element is pushed
-                    textNode: isTextNode ? node : null,
-                    percentVisible: visibilityPercentage
+            var nodeRange = createRangeFromNode(textNode);
+            var nodeClientRects = getRangeClientRectList(nodeRange, visibleContentOffsets);
+            var splitRatio = deterministicSplit(nodeClientRects, pickerFunc([0, 1]));
+            return getTextRangeOffset(splitRange(nodeRange, splitRatio), visibleContentOffsets,
+                pickerFunc([0, 1]), splitRatio,
+                function (rect) {
+                    return (isVerticalWritingMode() ? rect.height : rect.width) && isRectVisible(rect, false, frameDimensions);
                 });
-            }
-        });
-
-        return visibleElements;
-    };
-
-    this.getVisibleLeafNodes = function (visibleContentOffsets, frameDimensions) {
-
-        if (_cacheEnabled) {
-            var cacheKey = (options.paginationInfo || {}).currentSpreadIndex || 0;
-            var fromCache = _cache.visibleLeafNodes.get(cacheKey);
-            if (fromCache) {
-                return fromCache;
-            }
         }
 
-        var $elements = this.getLeafNodeElements($(this.getBodyElement()));
+        function deterministicSplit(rectList, directionBit) {
+            var split = 0;
+            // Calculate total cumulative Height for both visible portions and invisible portions and find the split
+            var visibleRects = _.filter(rectList, function (rect) {
+                return (isVerticalWritingMode() ? rect.height : rect.width) && isRectVisible(rect, false, getFrameDimensions());
+            });
+            var visibleRectHeight = calculateCumulativeHeight(visibleRects);
+            var invisibleRectHeight = totalHeight - visibleRectHeight;
+            var totalHeight = calculateCumulativeHeight(rectList);
 
-        var visibleElements = this.getVisibleElements($elements, visibleContentOffsets, frameDimensions);
-
-        if (_cacheEnabled) {
-            _cache.visibleLeafNodes.set(cacheKey, visibleElements);
-        }
-
-        return visibleElements;
-    };
-
-    this.getElementsWithFilter = function ($root, filterFunction) {
-
-        var $elements = [];
-
-        function traverseCollection(elements) {
-
-            if (elements == undefined) return;
-
-            for (var i = 0, count = elements.length; i < count; i++) {
-
-                var $element = $(elements[i]);
-
-                if (filterFunction($element)) {
-                    $elements.push($element);
-                }
-                else {
-                    traverseCollection($element[0].children);
-                }
-
+            if (visibleRectHeight === totalHeight) {
+                // either all visible or split
+                // heuristic: slight bias to increase likelihood of hits
+                return directionBit ? 55 : 45;
+            } else {
+                split = 100 * (visibleRectHeight / totalHeight);
+                return invisibleRectHeight > visibleRectHeight ? split + 5 : split - 5;
             }
         }
 
-        traverseCollection([$root[0]]);
-
-        return $elements;
-    };
-
-    function isElementBlacklisted(element) {
-        var isBlacklisted = false;
-        var classAttribute = element.className;
-        // check for SVGAnimatedString
-        if (classAttribute && typeof classAttribute.animVal !== "undefined") {
-            classAttribute = classAttribute.animVal;
-        } else if (classAttribute && typeof classAttribute.baseVal !== "undefined") {
-            classAttribute = classAttribute.baseVal;
-        }
-        var classList = classAttribute ? classAttribute.split(' ') : [];
-        var id = element.id;
-
-        var classBlacklist = self.getClassBlacklist();
-        if (classList.length === 1 && _.contains(classBlacklist, classList[0])) {
-            isBlacklisted = true;
-            return;
-        } else if (classList.length && _.intersection(classBlacklist, classList).length) {
-            isBlacklisted = true;
-            return;
-        }
-
-        if (id && id.length && _.contains(self.getIdBlacklist(), id)) {
-            isBlacklisted = true;
-            return;
-        }
-
-        return isBlacklisted;
-    }
-
-    this.getLeafNodeElements = function ($root) {
-
-        if (_cacheEnabled) {
-            var fromCache = _cache.leafNodeElements.get($root);
-            if (fromCache) {
-                return fromCache;
-            }
-        }
-
-        var nodeIterator = document.createNodeIterator(
-            $root[0],
-            NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
-            function() {
-                return NodeFilter.FILTER_ACCEPT;
-            },
-            false
-        );
-
-        var $leafNodeElements = [];
-
-        var node;
-        while ((node = nodeIterator.nextNode())) {
-            var isLeafNode = node.nodeType === Node.ELEMENT_NODE && !node.childElementCount && !isValidTextNodeContent(node.textContent);
-            if (isLeafNode || isValidTextNode(node)){
-                var element = (node.nodeType === Node.TEXT_NODE) ? node.parentElement : node;
-                if (!isElementBlacklisted(element)) {
-                    $leafNodeElements.push($(node));
-                }
-            }
-        }
-
-        if (_cacheEnabled) {
-            _cache.leafNodeElements.set($root, $leafNodeElements);
-        }
-
-        return $leafNodeElements;
-    };
-
-    function isValidTextNode(node) {
-
-        if (node.nodeType === Node.TEXT_NODE) {
-
-            return isValidTextNodeContent(node.nodeValue);
-        }
-
-        return false;
-
-    }
-
-    function isValidTextNodeContent(text) {
-        // Heuristic to find a text node with actual text
-        // If we don't do this, we may get a reference to a node that doesn't get rendered
-        // (such as for example a node that has tab character and a bunch of spaces)
-        // this is would be bad! ask me why.
-        return !!text.trim().length;
-    }
-
-    this.getElements = function (selector) {
-        if (!selector) {
-            return $(this.getRootElement()).children();
-        }
-        return $(selector, this.getRootElement());
-    };
-
-    this.getElement = function (selector) {
-
-        var $element = this.getElements(selector);
-
-        if($element.length > 0) {
-            return $element;
-        }
-
-        return undefined;
-    };
-
-    function Cache() {
-        var that = this;
-
-        //true = survives invalidation
-        var props = {
-            leafNodeElements: true,
-            visibleLeafNodes: false
-        };
-
-        _.each(props, function (val, key) {
-            that[key] = new Map();
-        });
-
-        this._invalidate = function () {
-            _.each(props, function (val, key) {
-                if (!val) {
-                    that[key] = new Map();
+        function rectTopHash (rectList) {
+            // sort the rectangles by top value
+            var sortedList = rectList.sort(function (a, b) {
+                return a.top < b.top;
+            });
+            var lineMap = [];
+            _.each(sortedList, function (rect) {
+                var key = rect.top;
+                if (!lineMap[key]) {
+                    lineMap[key] = [rect.height];
+                } else {
+                    var currentLine = lineMap[key];
+                    currentLine.push(rect.height);
+                    lineMap[key] = currentLine;
                 }
             });
         }
-    }
 
-    var _cache = new Cache();
+        function calculateCumulativeHeight (rectList) {
+            var lineMap = rectTopHash(rectList);
+            var height = 0;
+            _.each(lineMap, function (line) {
+                height = height + Math.max.apply(null, line);
+            });
+            return height;
+        }
 
-    var _cacheEnabled = false;
-
-    this.invalidateCache = function () {
-        _cache._invalidate();
-    };
-
-
-    // dmitry debug
-    // dmitry debug
-    // dmitry debug
-    // dmitry debug
-    // dmitry debug
-    // dmitry debug
-
-    var parseContentCfi = function(cont) {
-        return cont.replace(/\[(.*?)\]/, "").split(/[\/,:]/).map(function(n) { return parseInt(n); }).filter(Boolean);
-    };
-
-    var contentCfiComparator = function(cont1, cont2) {
-        cont1 = this.parseContentCfi(cont1);
-        cont2 = this.parseContentCfi(cont2);
-
-        //compare cont arrays looking for differences
-        for (var i=0; i<cont1.length; i++) {
-            if (cont1[i] > cont2[i]) {
-                return 1;
+        function getTextRangeOffset(startingSet, visibleContentOffsets, directionBit, splitRatio, filterFunc) {
+            var runCount = 0;
+            var currRange = startingSet;
+            //begin iterative binary search, each iteration will check Range length and visibility
+            while (currRange.length !== 1) {
+                runCount++;
+                var currTextNodeFragments = getRangeClientRectList(currRange[directionBit], visibleContentOffsets);
+                if (hasVisibleFragments(currTextNodeFragments, filterFunc)) {
+                    currRange = splitRange(currRange[directionBit], splitRatio);
+                }
+                // No visible fragment Look in other half
+                else {
+                    currRange = splitRange(currRange[directionBit ? 0 : 1], splitRatio);
+                }
             }
-            else if (cont1[i] < cont2[i]) {
+            if (_DEBUG) {
+                console.debug('getVisibleTextRangeOffsets:getTextRangeOffset:runCount', runCount);
+                window.top._DEBUG_visibleTextRangeOffsetsRuns.push(runCount);
+            }
+            var resultRange = currRange[0];
+            if (resultRange) {
+                resultRange.collapse(!directionBit);
+            }
+            return resultRange;
+        }
+
+        function hasVisibleFragments(fragments, filterFunc) {
+            var visibleFragments = _.filter(fragments, filterFunc);
+            return !!visibleFragments.length;
+        }
+
+        function findVisibleLeafNodeCfi(visibleLeafNode, pickerFunc, visibleContentOffsets, frameDimensions) {
+            if (!visibleLeafNode) {
+                return null;
+            }
+
+            var element = visibleLeafNode.element;
+            var textNode = visibleLeafNode.textNode;
+
+            //if a valid text node is found, try to generate a CFI with range offsets
+            if (textNode && isValidTextNode(textNode)) {
+                var visibleRange = getVisibleTextRangeOffsets(textNode, pickerFunc, visibleContentOffsets, frameDimensions);
+                if (!visibleRange) {
+                    if (_DEBUG) console.warn("findVisibleLeafNodeCfi: failed to find text range offset");
+                    return null;
+                }
+                return generateCfiFromDomRange(visibleRange);
+            } else {
+                //if not then generate a CFI for the element
+                return self.getCfiForElement(element);
+            }
+        }
+
+        function getLastVisibleTextRangeCfi(visibleContentOffsets, frameDimensions) {
+            var visibleLeafNode = self.findLastVisibleElement(visibleContentOffsets, frameDimensions);
+            return findVisibleLeafNodeCfi(visibleLeafNode, _.last, visibleContentOffsets, frameDimensions);
+        }
+
+        function getFirstVisibleTextRangeCfi(visibleContentOffsets, frameDimensions) {
+            var visibleLeafNode = self.findFirstVisibleElement(visibleContentOffsets, frameDimensions);
+            return findVisibleLeafNodeCfi(visibleLeafNode, _.first, visibleContentOffsets, frameDimensions);
+        }
+
+        this.getFirstVisibleCfi = function (visibleContentOffsets, frameDimensions) {
+            return getFirstVisibleTextRangeCfi(visibleContentOffsets, frameDimensions);
+        };
+
+        this.getLastVisibleCfi = function (visibleContentOffsets, frameDimensions) {
+            return getLastVisibleTextRangeCfi(visibleContentOffsets, frameDimensions);
+        };
+
+        function generateCfiFromDomRange(range) {
+            if (range.collapsed && range.startContainer.nodeType === Node.TEXT_NODE) {
+                return EPUBcfi.generateCharacterOffsetCFIComponent(
+                    range.startContainer, range.startOffset,
+                    ['cfi-marker'], [], ["MathJax_Message", "MathJax_SVG_Hidden"]);
+            } else if (range.collapsed) {
+                return self.getCfiForElement(range.startContainer);
+            } else {
+                return EPUBcfi.generateRangeComponent(
+                    range.startContainer, range.startOffset,
+                    range.endContainer, range.endOffset,
+                    self.getClassBlacklist(), self.getElementBlacklist(), self.getIdBlacklist());
+            }
+        }
+
+        this.getDomRangeFromRangeCfi = function (rangeCfi, rangeCfi2, inclusive) {
+            var range = createRange();
+
+            if (!rangeCfi2) {
+                if (self.isRangeCfi(rangeCfi)) {
+                    var rangeInfo = self.getNodeRangeInfoFromCfi(rangeCfi);
+                    range.setStart(rangeInfo.startInfo.node, rangeInfo.startInfo.offset);
+                    range.setEnd(rangeInfo.endInfo.node, rangeInfo.endInfo.offset);
+                } else {
+                    var element = self.getElementByCfi(rangeCfi,
+                        this.getClassBlacklist(), this.getElementBlacklist(), this.getIdBlacklist())[0];
+                    range.selectNode(element);
+                }
+            } else {
+                if (self.isRangeCfi(rangeCfi)) {
+                    var rangeInfo1 = self.getNodeRangeInfoFromCfi(rangeCfi);
+                    range.setStart(rangeInfo1.startInfo.node, rangeInfo1.startInfo.offset);
+                } else {
+                    var startElement = self.getElementByCfi(rangeCfi,
+                        this.getClassBlacklist(), this.getElementBlacklist(), this.getIdBlacklist())[0];
+                    range.setStart(startElement, 0);
+                }
+
+                if (self.isRangeCfi(rangeCfi2)) {
+                    var rangeInfo2 = self.getNodeRangeInfoFromCfi(rangeCfi2);
+                    if (inclusive) {
+                        range.setEnd(rangeInfo2.endInfo.node, rangeInfo2.endInfo.offset);
+                    } else {
+                        range.setEnd(rangeInfo2.startInfo.node, rangeInfo2.startInfo.offset);
+                    }
+                } else {
+                    var endElement = self.getElementByCfi(rangeCfi2,
+                        this.getClassBlacklist(), this.getElementBlacklist(), this.getIdBlacklist())[0];
+                    range.setEnd(endElement, endElement.childNodes.length);
+                }
+            }
+            return range;
+        };
+
+        this.getRangeCfiFromDomRange = function (domRange) {
+            return generateCfiFromDomRange(domRange);
+        };
+
+        function getWrappedCfi(partialCfi) {
+            return "epubcfi(/99!" + partialCfi + ")";
+        }
+
+        this.isRangeCfi = function (partialCfi) {
+            return _isRangeCfi(partialCfi) || _hasTextTerminus(partialCfi);
+        };
+
+        function _isRangeCfi(partialCfi) {
+            return EPUBcfi.Interpreter.isRangeCfi(getWrappedCfi(partialCfi));
+        }
+
+        function _hasTextTerminus(partialCfi) {
+            return EPUBcfi.Interpreter.hasTextTerminus(getWrappedCfi(partialCfi));
+        }
+
+        this.getPageIndexDeltaForCfi = function (partialCfi, classBlacklist, elementBlacklist, idBlacklist) {
+
+            if (this.isRangeCfi(partialCfi)) {
+                //if given a range cfi the exact page index needs to be calculated by getting node info from the range cfi
+                var nodeRangeInfoFromCfi = this.getNodeRangeInfoFromCfi(partialCfi);
+                //the page index is calculated from the node's client rectangle
+                return findPageIndexDeltaBySingleRectangle(nodeRangeInfoFromCfi.clientRect);
+            }
+
+            var $element = getElementByPartialCfi(partialCfi, classBlacklist, elementBlacklist, idBlacklist);
+
+            if (!$element) {
                 return -1;
             }
+
+            return this.getPageIndexDeltaForElement($element);
+        };
+
+        function getElementByPartialCfi(cfi, classBlacklist, elementBlacklist, idBlacklist) {
+
+            var contentDoc = self.getRootDocument();
+
+            var wrappedCfi = getWrappedCfi(cfi);
+
+            try {
+                //noinspection JSUnresolvedVariable
+                var $element = EPUBcfi.getTargetElement(wrappedCfi, contentDoc, classBlacklist, elementBlacklist, idBlacklist);
+
+            } catch (ex) {
+                //EPUBcfi.Interpreter can throw a SyntaxError
+            }
+
+            if (!$element || $element.length == 0) {
+                console.log("Can't find element for CFI: " + cfi);
+                return undefined;
+            }
+
+            return $element;
         }
 
-        //no differences found, so confirm that cont2 did not have values we didn't check
-        if (cont1.length < cont2.length) {
-            return -1;
+        this.getElementFromPoint = function (x, y) {
+
+            var document = self.getRootDocument();
+            return document.elementFromPoint(x, y);
+        };
+
+        this.getNodeRangeInfoFromCfi = function (cfi) {
+            var contentDoc = self.getRootDocument();
+
+            var wrappedCfi = getWrappedCfi(cfi);
+            if (_isRangeCfi(cfi)) {
+
+                try {
+                    //noinspection JSUnresolvedVariable
+                    var nodeResult = EPUBcfi.Interpreter.getRangeTargetElements(wrappedCfi, contentDoc,
+                        this.getClassBlacklist(),
+                        this.getElementBlacklist(),
+                        this.getIdBlacklist());
+
+                    if (_DEBUG) {
+                        console.log(nodeResult);
+                    }
+                } catch (ex) {
+                    //EPUBcfi.Interpreter can throw a SyntaxError
+                }
+
+                if (!nodeResult) {
+                    console.log("Can't find nodes for range CFI: " + cfi);
+                    return undefined;
+                }
+
+                var startRangeInfo = {node: nodeResult.startElement, offset: nodeResult.startOffset};
+                var endRangeInfo = {node: nodeResult.endElement, offset: nodeResult.endOffset};
+                var nodeRangeClientRect =
+                    startRangeInfo && endRangeInfo ?
+                        getNodeRangeClientRect(
+                            startRangeInfo.node,
+                            startRangeInfo.offset,
+                            endRangeInfo.node,
+                            endRangeInfo.offset)
+                        : null;
+
+                if (_DEBUG) {
+                    console.log(nodeRangeClientRect);
+                    addOverlayRect(nodeRangeClientRect, 'purple', contentDoc);
+                }
+
+                return {startInfo: startRangeInfo, endInfo: endRangeInfo, clientRect: nodeRangeClientRect};
+            } else if (_hasTextTerminus(cfi)) {
+
+                try {
+                    //noinspection JSUnresolvedVariable
+                    var textTerminusResult = EPUBcfi.Interpreter.getTextTerminusInfo(wrappedCfi, contentDoc,
+                        this.getClassBlacklist(),
+                        this.getElementBlacklist(),
+                        this.getIdBlacklist());
+
+                    if (_DEBUG) {
+                        console.log(textTerminusResult);
+                    }
+                } catch (ex) {
+                    //EPUBcfi.Interpreter can throw a SyntaxError
+                }
+
+                if (!textTerminusResult) {
+                    console.log("Can't find node for text term CFI: " + cfi);
+                    return undefined;
+                }
+
+                var textTermRangeInfo = {node: textTerminusResult.textNode, offset: textTerminusResult.textOffset};
+                var textTermClientRect =
+                    getNodeRangeClientRect(
+                        textTermRangeInfo.node,
+                        textTermRangeInfo.offset,
+                        textTermRangeInfo.node,
+                        textTermRangeInfo.offset);
+                if (_DEBUG) {
+                    console.log(textTermClientRect);
+                    addOverlayRect(textTermClientRect, 'purple', contentDoc);
+                }
+
+                return {startInfo: textTermRangeInfo, endInfo: textTermRangeInfo, clientRect: textTermClientRect};
+            } else {
+                var $element = self.getElementByCfi(cfi,
+                    this.getClassBlacklist(),
+                    this.getElementBlacklist(),
+                    this.getIdBlacklist());
+
+                var visibleContentOffsets = getVisibleContentOffsets();
+                return {
+                    startInfo: null,
+                    endInfo: null,
+                    clientRect: getNormalizedBoundingRect($element, visibleContentOffsets)
+                };
+            }
+        };
+
+        this.isNodeFromRangeCfiVisible = function (cfi) {
+            var nodeRangeInfo = this.getNodeRangeInfoFromCfi(cfi);
+            if (nodeRangeInfo) {
+                return isRectVisible(nodeRangeInfo.clientRect, false);
+            } else {
+                return undefined;
+            }
+        };
+
+        this.getNearestCfiFromElement = function (element) {
+            var collapseToStart;
+            var chosenNode;
+            var isTextNode;
+
+            var siblingTextNodesAndSelf = _.filter(element.parentNode.childNodes, function (n) {
+                return n === element || isValidTextNode(n);
+            });
+
+            var indexOfSelf = siblingTextNodesAndSelf.indexOf(element);
+            var nearestNode = siblingTextNodesAndSelf[indexOfSelf - 1];
+            if (!nearestNode) {
+                nearestNode = siblingTextNodesAndSelf[indexOfSelf + 1];
+                collapseToStart = true;
+            }
+            if (!nearestNode) {
+                nearestNode = _.last(this.getLeafNodeElements($(element.previousElementSibling)));
+                if (!nearestNode) {
+                    collapseToStart = true;
+                    nearestNode = _.first(this.getLeafNodeElements($(element.nextElementSibling)));
+                }
+            }
+
+            // Prioritize text node use
+            if (isValidTextNode(nearestNode)) {
+                chosenNode = nearestNode;
+                isTextNode = true;
+            } else if (isElementNode(nearestNode)) {
+                chosenNode = nearestNode;
+            } else if (isElementNode(element.previousElementSibling)) {
+                chosenNode = element.previousElementSibling;
+            } else if (isElementNode(element.nextElementSibling)) {
+                chosenNode = element.nextElementSibling;
+            } else {
+                chosenNode = element.parentNode;
+            }
+
+            if (isTextNode) {
+                var range = chosenNode.ownerDocument.createRange();
+                range.selectNodeContents(chosenNode);
+                range.collapse(collapseToStart);
+                return this.getRangeCfiFromDomRange(range);
+            } else {
+                return this.getCfiForElement(chosenNode);
+            }
+        };
+
+        this.getElementByCfi = function (partialCfi, classBlacklist, elementBlacklist, idBlacklist) {
+            return getElementByPartialCfi(partialCfi, classBlacklist, elementBlacklist, idBlacklist);
+        };
+
+        this.getPageIndexDeltaForElement = function ($element) {
+
+            // first try to get delta by rectangles
+            var pageIndex = findPageIndexDeltaByRectangles($element);
+
+            // for hidden elements (e.g., page breaks) there are no rectangles
+            if (pageIndex === null) {
+
+                // get CFI of the nearest (to hidden) element, and then get CFI's element
+                var nearestVisibleElement = this.getElementByCfi(this.getNearestCfiFromElement($element[0]));
+
+                // find page index by rectangles again, for the nearest element
+                return findPageIndexDeltaByRectangles(nearestVisibleElement);
+            }
+            return pageIndex;
+        };
+
+        this.getElementById = function (id) {
+
+            var contentDoc = this.getRootDocument();
+
+            var $element = $(contentDoc.getElementById(id));
+            //$("#" + Helpers.escapeJQuerySelector(id), contentDoc);
+
+            if ($element.length == 0) {
+                return undefined;
+            }
+
+            return $element;
+        };
+
+        this.getPageIndexDeltaForElementId = function (id) {
+
+            var $element = this.getElementById(id);
+            if (!$element) {
+                return -1;
+            }
+
+            return this.getPageIndexDeltaForElement($element);
+        };
+
+        // returns raw DOM element (not $ jQuery-wrapped)
+        this.getFirstVisibleMediaOverlayElement = function (visibleContentOffsets) {
+            var $root = $(this.getBodyElement());
+            if (!$root || !$root.length || !$root[0]) return undefined;
+
+            var that = this;
+
+            var firstPartial = undefined;
+
+            function traverseArray(arr) {
+                if (!arr || !arr.length) return undefined;
+
+                for (var i = 0, count = arr.length; i < count; i++) {
+                    var item = arr[i];
+                    if (!item) continue;
+
+                    var $item = $(item);
+
+                    if ($item.data("mediaOverlayData")) {
+                        var visible = that.getElementVisibility($item, visibleContentOffsets);
+                        if (visible) {
+                            if (!firstPartial) firstPartial = item;
+
+                            if (visible == 100) return item;
+                        }
+                    }
+                    else {
+                        var elem = traverseArray(item.children);
+                        if (elem) return elem;
+                    }
+                }
+
+                return undefined;
+            }
+
+            var el = traverseArray([$root[0]]);
+            if (!el) el = firstPartial;
+            return el;
+
+            // var $elements = this.getMediaOverlayElements($root);
+            // return this.getVisibleElements($elements, visibleContentOffsets);
+        };
+
+        this.getElementVisibility = function ($element, visibleContentOffsets) {
+            return checkVisibilityByRectangles($element, true, visibleContentOffsets);
+        };
+
+
+        this.isElementVisible = this.getElementVisibility;
+
+        this.getVisibleElementsWithFilter = function (visibleContentOffsets, filterFunction) {
+            var $elements = this.getElementsWithFilter($(this.getBodyElement()), filterFunction);
+            return this.getVisibleElements($elements, visibleContentOffsets);
+        };
+
+        this.getAllElementsWithFilter = function (filterFunction) {
+            return this.getElementsWithFilter($(this.getBodyElement()), filterFunction);
+        };
+
+        this.getAllVisibleElementsWithSelector = function (selector, visibleContentOffset) {
+            var elements = $(selector, this.getRootElement());
+            var $newElements = [];
+            $.each(elements, function () {
+                $newElements.push($(this));
+            });
+            return this.getVisibleElements($newElements, visibleContentOffset);
+        };
+
+        this.getVisibleElements = function ($elements, visibleContentOffsets, frameDimensions) {
+
+            var visibleElements = [];
+
+            _.each($elements, function ($node) {
+                var isTextNode = ($node[0].nodeType === Node.TEXT_NODE);
+                var $element = isTextNode ? $node.parent() : $node;
+                var visibilityPercentage = checkVisibilityByRectangles(
+                    $node, true, visibleContentOffsets, frameDimensions);
+
+                if (visibilityPercentage) {
+                    visibleElements.push({
+                        element: $element[0], // DOM Element is pushed
+                        textNode: isTextNode ? $node[0] : null,
+                        percentVisible: visibilityPercentage
+
+                    });
+                }
+            });
+
+            return visibleElements;
+        };
+
+        this.getVisibleLeafNodes = function (visibleContentOffsets, frameDimensions) {
+
+            if (_cacheEnabled) {
+                var cacheKey = (options.paginationInfo || {}).currentSpreadIndex || 0;
+                var fromCache = _cache.visibleLeafNodes.get(cacheKey);
+                if (fromCache) {
+                    return fromCache;
+                }
+            }
+
+            var $elements = this.getLeafNodeElements($(this.getBodyElement()));
+
+            var visibleElements = this.getVisibleElements($elements, visibleContentOffsets, frameDimensions);
+            if (_cacheEnabled) {
+                _cache.visibleLeafNodes.set(cacheKey, visibleElements);
+            }
+
+            return visibleElements;
+        };
+
+        function getBaseCfiSelectedByFunc(pickerFunc) {
+            var $elements = self.getLeafNodeElements($(self.getBodyElement()));
+            var $selectedNode = pickerFunc($elements);
+            var collapseToStart = pickerFunc([true, false]);
+            var range = createRange();
+            range.selectNodeContents($selectedNode[0]);
+            range.collapse(collapseToStart);
+            return generateCfiFromDomRange(range);
         }
 
-        //cont arrays are identical
-        return 0;
-    };
+        this.getStartCfi = function () {
+            return getBaseCfiSelectedByFunc(_.first);
+        };
 
 
-    // end dmitry debug
+        this.getEndCfi = function () {
+            return getBaseCfiSelectedByFunc(_.last);
+        };
 
-    //if (debugMode) {
+        this.getElementsWithFilter = function ($root, filterFunction) {
+
+            var $elements = [];
+
+            function traverseCollection(elements) {
+
+                if (elements == undefined) return;
+
+                for (var i = 0, count = elements.length; i < count; i++) {
+
+                    var $element = $(elements[i]);
+
+                    if (filterFunction($element)) {
+                        $elements.push($element);
+                    }
+                    else {
+                        traverseCollection($element[0].children);
+                    }
+
+                }
+            }
+
+            traverseCollection([$root[0]]);
+
+            return $elements;
+        };
+
+        function isElementBlacklisted(element) {
+            var classAttribute = element.className;
+            // check for SVGAnimatedString
+            if (classAttribute && typeof classAttribute.animVal !== "undefined") {
+                classAttribute = classAttribute.animVal;
+            } else if (classAttribute && typeof classAttribute.baseVal !== "undefined") {
+                classAttribute = classAttribute.baseVal;
+            }
+            var classList = classAttribute ? classAttribute.split(' ') : [];
+            var id = element.id;
+
+            var classBlacklist = self.getClassBlacklist();
+            if (classList.length === 1 && _.contains(classBlacklist, classList[0])) {
+                return true;
+            } else if (classList.length && _.intersection(classBlacklist, classList).length) {
+                return true;
+            }
+
+            if (id && id.length && _.contains(self.getIdBlacklist(), id)) {
+                return true;
+            }
+
+            return false;
+        }
+
+        this.getLeafNodeElements = function ($root) {
+
+            if (_cacheEnabled) {
+                var fromCache = _cache.leafNodeElements.get($root);
+                if (fromCache) {
+                    return fromCache;
+                }
+            }
+
+            //noinspection JSUnresolvedVariable,JSCheckFunctionSignatures
+            var nodeIterator = document.createNodeIterator(
+                $root[0],
+                NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
+                function () {
+                    //noinspection JSUnresolvedVariable
+                    return NodeFilter.FILTER_ACCEPT;
+                },
+                false
+            );
+
+            var $leafNodeElements = [];
+
+            var node;
+            while ((node = nodeIterator.nextNode())) {
+                var isLeafNode = node.nodeType === Node.ELEMENT_NODE && !node.childElementCount && !isValidTextNodeContent(node.textContent);
+                if (isLeafNode || isValidTextNode(node)){
+                    var element = (node.nodeType === Node.TEXT_NODE) ? node.parentNode : node;
+                    if (!isElementBlacklisted(element)) {
+                        $leafNodeElements.push($(node));
+                    }
+                }
+            }
+
+            if (_cacheEnabled) {
+                _cache.leafNodeElements.set($root, $leafNodeElements);
+            }
+            return $leafNodeElements;
+        };
+
+        function isElementNode(node) {
+            if (!node) {
+                return false;
+            }
+            else {
+                return node.nodeType === Node.ELEMENT_NODE;
+            }
+        }
+
+        function isValidTextNode(node) {
+            if (!node) {
+                return false;
+            }
+            if (node.nodeType === Node.TEXT_NODE) {
+
+                return isValidTextNodeContent(node.nodeValue);
+            }
+
+            return false;
+
+        }
+
+        function isValidTextNodeContent(text) {
+            // Heuristic to find a text node with actual text
+            // If we don't do this, we may get a reference to a node that doesn't get rendered
+            // (such as for example a node that has tab character and a bunch of spaces)
+            // this is would be bad! ask me why.
+            return !!text.trim().length;
+        }
+
+        this.getElements = function (selector) {
+            if (!selector) {
+                return $(this.getRootElement()).children();
+            }
+            return $(selector, this.getRootElement());
+        };
+
+        this.getElement = function (selector) {
+
+            var $element = this.getElements(selector);
+
+            if ($element.length > 0) {
+                return $element;
+            }
+
+            return undefined;
+        };
+
+        function Cache() {
+            var that = this;
+
+            //true = survives invalidation
+            var props = {
+                leafNodeElements: true,
+                visibleLeafNodes: false
+            };
+
+            _.each(props, function (val, key) {
+                that[key] = new Map();
+            });
+
+            this._invalidate = function () {
+                _.each(props, function (val, key) {
+                    if (!val) {
+                        that[key] = new Map();
+                    }
+                });
+            }
+        }
+
+        var _cache = new Cache();
+
+        var _cacheEnabled = false;
+
+        this.invalidateCache = function () {
+            _cache._invalidate();
+        };
+
+        //if (_DEBUG) {
 
         var $debugOverlays = [];
 
@@ -23129,19 +23295,11 @@ var CfiNavigationLogic = function(options) {
         }
 
         function drawDebugOverlayFromRect(rect) {
-            var leftOffset, topOffset;
-
-            if (isVerticalWritingMode()) {
-                leftOffset = 0;
-                topOffset = -getPaginationLeftOffset();
-            } else {
-                leftOffset = -getPaginationLeftOffset();
-                topOffset = 0;
-            }
+            var offsets = getPaginationOffsets();
 
             addOverlayRect({
-                left: rect.left + leftOffset,
-                top: rect.top + topOffset,
+                left: rect.left + offsets.left,
+                top: rect.top + offsets.top,
                 width: rect.width,
                 height: rect.height
             }, true, self.getRootDocument());
@@ -23161,24 +23319,11 @@ var CfiNavigationLogic = function(options) {
             drawDebugOverlayFromRect(getNodeClientRect(node));
         }
 
-        function getPaginationLeftOffset() {
-
-            var $htmlElement = $("html", self.getRootDocument());
-            var offsetLeftPixels = $htmlElement.css(isVerticalWritingMode() ? "top" : (isPageProgressionRightToLeft() ? "right" : "left"));
-            var offsetLeft = parseInt(offsetLeftPixels.replace("px", ""));
-            if (isNaN(offsetLeft)) {
-                //for fixed layouts, $htmlElement.css("left") has no numerical value
-                offsetLeft = 0;
-            }
-            if (isPageProgressionRightToLeft() && !isVerticalWritingMode()) return -offsetLeft; 
-            return offsetLeft;
-        }
-
         function clearDebugOverlays() {
-            _.each($debugOverlays, function($el){
+            _.each($debugOverlays, function ($el) {
                 $el.remove();
             });
-            $debugOverlays.clear();
+            $debugOverlays = [];
         }
 
         ReadiumSDK._DEBUG_CfiNavigationLogic = {
@@ -23196,13 +23341,187 @@ var CfiNavigationLogic = function(options) {
                 var cfi2 = ReadiumSDK.reader.getLastVisibleCfi();
                 var range2 = ReadiumSDK.reader.getDomRangeFromRangeCfi(cfi2);
                 console.log(cfi2, range2, drawDebugOverlayFromDomRange(range2));
+            },
+            visibleTextRangeOffsetsRunsAvg: function () {
+                var arr = window.top._DEBUG_visibleTextRangeOffsetsRuns;
+                return arr.reduce(function (a, b) {
+                    return a + b;
+                }) / arr.length;
             }
         };
 
         //
-   // }
+        // }
 
-};
+        this.findFirstVisibleElement = function (visibleContentOffsets, frameDimensions) {
+
+            var bodyElement = this.getBodyElement();
+
+            if (!bodyElement) {
+                return null;
+            }
+
+            var firstVisibleElement;
+            var percentVisible = 0;
+            var textNode;
+
+            var treeWalker = document.createTreeWalker(
+                bodyElement,
+                NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
+                function(node) {
+                    if (node.nodeType === Node.ELEMENT_NODE && isElementBlacklisted(node))
+                        return NodeFilter.FILTER_REJECT;
+
+                    if (node.nodeType === Node.TEXT_NODE && !isValidTextNode(node))
+                        return NodeFilter.FILTER_REJECT;
+
+                    var visibilityResult = checkVisibilityByRectangles($(node), true, visibleContentOffsets, frameDimensions);
+                    return visibilityResult ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+                },
+                false
+                );
+
+            while (treeWalker.nextNode()) {
+                var node = treeWalker.currentNode;
+
+                if (node.nodeType === Node.TEXT_NODE) {
+                    firstVisibleElement = node.parentNode;
+                    textNode = node;
+                    percentVisible = 100; // not really used, assume this value unless otherwise
+                    break;
+                }
+
+                var hasChildElements = false;
+                var hasChildTextNodes = false;
+
+                for (var i = node.childNodes.length - 1; i >= 0; i--) {
+                    var childNode = node.childNodes[i];
+                    if (childNode.nodeType === Node.ELEMENT_NODE) {
+                        hasChildElements = true;
+                        break;
+                    }
+                    if (childNode.nodeType === Node.TEXT_NODE)
+                        hasChildTextNodes = true;
+                }
+
+                // potentially stop tree traversal when first element hit with no child element nodes
+                if (!hasChildElements && hasChildTextNodes) {
+                    for (var i=node.childNodes.length-1; i>=0; i--) {
+                        var childNode = node.childNodes[i];
+                        if (childNode.nodeType === Node.TEXT_NODE && isValidTextNode(childNode)) {
+                            var visibilityResult = checkVisibilityByRectangles($(childNode), true, visibleContentOffsets, frameDimensions);
+                            if (visibilityResult) {
+                                firstVisibleElement = node;
+                                textNode = childNode;
+                                percentVisible = visibilityResult;
+                                break;
+                            }
+                        }
+                    }
+                } else if (!hasChildElements) {
+                    firstVisibleElement = node;
+                    percentVisible = 100;
+                    textNode = null;
+                    break;
+                }
+            }
+
+            if (!firstVisibleElement) {
+                return null;
+            }
+            return {
+                element: firstVisibleElement,
+                textNode: textNode,
+                percentVisible: percentVisible
+            };
+        };
+
+        this.findLastVisibleElement = function (visibleContentOffsets, frameDimensions) {
+
+            var bodyElement = this.getBodyElement();
+
+            if (!bodyElement) {
+                return null;
+            }
+
+            var firstVisibleElement;
+            var percentVisible = 0;
+            var textNode;
+
+            var treeWalker = document.createTreeWalker(
+                bodyElement,
+                NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
+                function(node) {
+                    if (node.nodeType === Node.ELEMENT_NODE && isElementBlacklisted(node))
+                        return NodeFilter.FILTER_REJECT;
+
+                    if (node.nodeType === Node.TEXT_NODE && !isValidTextNode(node))
+                        return NodeFilter.FILTER_REJECT;
+
+                    var visibilityResult = checkVisibilityByRectangles($(node), true, visibleContentOffsets, frameDimensions);
+                    return visibilityResult ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+                },
+                false
+                );
+
+            while (treeWalker.lastChild()) { }
+
+            do {
+                var node = treeWalker.currentNode;
+
+                if (node.nodeType === Node.TEXT_NODE) {
+                    firstVisibleElement = node.parentNode;
+                    textNode = node;
+                    percentVisible = 100; // not really used, assume this value unless otherwise
+                    break;
+                }
+
+                var hasChildElements = false;
+                var hasChildTextNodes = false;
+
+                for (var i = node.childNodes.length - 1; i >= 0; i--) {
+                    var childNode = node.childNodes[i];
+                    if (childNode.nodeType === Node.ELEMENT_NODE) {
+                        hasChildElements = true;
+                        break;
+                    }
+                    if (childNode.nodeType === Node.TEXT_NODE)
+                        hasChildTextNodes = true;
+                }
+
+                // potentially stop tree traversal when first element hit with no child element nodes
+                if (!hasChildElements && hasChildTextNodes) {
+                    for (var i=node.childNodes.length-1; i>=0; i--) {
+                        var childNode = node.childNodes[i];
+                        if (childNode.nodeType === Node.TEXT_NODE && isValidTextNode(childNode)) {
+                            var visibilityResult = checkVisibilityByRectangles($(childNode), true, visibleContentOffsets, frameDimensions);
+                            if (visibilityResult) {
+                                firstVisibleElement = node;
+                                textNode = childNode;
+                                percentVisible = visibilityResult;
+                                break;
+                            }
+                        }
+                    }
+                } else if (!hasChildElements) {
+                    firstVisibleElement = node;
+                    percentVisible = 100;
+                    textNode = null;
+                    break;
+                }
+            } while (treeWalker.previousNode());
+
+            if (!firstVisibleElement) {
+                return null;
+            }
+            return {
+                element: firstVisibleElement,
+                textNode: textNode,
+                percentVisible: percentVisible
+            };
+        };
+
+    };
 return CfiNavigationLogic;
 });
 
@@ -23492,7 +23811,7 @@ var ViewerSettings = function(settingsData) {
     } else {
         root.ResizeSensor = factory();
     }
-}(this, function () {
+}(typeof window !== 'undefined' ? window : this, function () {
 
     // Make sure it does not throw in a SSR (Server Side Rendering) situation
     if (typeof window === "undefined") {
@@ -24669,17 +24988,24 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
     }
     
     function getFrameDimensions() {
+        if (reader.needsFixedLayoutScalerWorkAround()) {
+            var parentEl = _$el.parent()[0];
+            return {
+                width: parentEl.clientWidth,
+                height: parentEl.clientHeight
+            };
+        }
         return {
-            width: _$el.parent()[0].clientWidth,
-            height: _$el.parent()[0].clientHeight
+            width: _meta_size.width,
+            height: _meta_size.height
         };
     }
     
     this.getNavigator = function () {
         return new CfiNavigationLogic({
             $iframe: _$iframe,
-            frameDimensions: getFrameDimensions,
-            visibleContentOffsets: getVisibleContentOffsets,
+            frameDimensionsGetter: getFrameDimensions,
+            visibleContentOffsetsGetter: getVisibleContentOffsets,
             classBlacklist: ["cfi-marker", "mo-cfi-highlight", "resize-sensor", "resize-sensor-expand", "resize-sensor-shrink", "resize-sensor-inner"],
             elementBlacklist: [],
             idBlacklist: ["MathJax_Message", "MathJax_SVG_Hidden"]
@@ -24772,7 +25098,11 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         return navigation.getNodeRangeInfoFromCfi(partialCfi);
     };
 
-    function createBookmarkFromCfi(cfi){
+    function createBookmarkFromCfi(cfi) {
+        if (!_currentSpineItem) {
+            return null;
+        }
+
         return new BookmarkData(_currentSpineItem.idref, cfi);
     }
 
@@ -24812,6 +25142,17 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         return self.getNavigator().getElementFromPoint(x, y);
     };
 
+    this.getStartCfi = function () {
+        return createBookmarkFromCfi(self.getNavigator().getStartCfi());
+    };
+
+    this.getEndCfi = function () {
+        return createBookmarkFromCfi(self.getNavigator().getEndCfi());
+    };
+
+    this.getNearestCfiFromElement = function(element) {
+        return createBookmarkFromCfi(self.getNavigator().getNearestCfiFromElement(element));
+    };
 };
 
 OnePageView.Events = {
@@ -25558,10 +25899,12 @@ var FixedView = function(options, reader){
     this.bookmarkCurrentPage = function() {
 
         var views = getDisplayingViews();
+        var loadedSpineItems = this.getLoadedSpineItems();
 
-        if(views.length > 0) {
-
+        if (views.length > 0) {
             return views[0].getFirstVisibleCfi();
+        } else if (loadedSpineItems.length > 0) {
+            return new BookmarkData(this.getLoadedSpineItems()[0].idref, null);
         }
 
         return undefined;
@@ -25824,6 +26167,27 @@ var FixedView = function(options, reader){
         return callOnPageView(spineItemIdref, function (view) {
             return view.getElementFromPoint(x,y);
         });
+    };
+
+    this.getStartCfi = function () {
+        return getDisplayingViews()[0].getStartCfi();
+    };
+
+    this.getEndCfi = function () {
+        return getDisplayingViews()[0].getEndCfi();
+    };
+
+    this.getNearestCfiFromElement = function(element) {
+        var views = getDisplayingViews();
+
+        for (var i = 0, count = views.length; i < count; i++) {
+
+            var view = views[i];
+            if (view.getLoadedContentFrames()[0].$iframe[0].contentDocument === element.ownerDocument) {
+                return view.getNearestCfiFromElement(element);
+            }
+        }
+
     };
 
 };
@@ -37558,37 +37922,24 @@ var ScrollView = function (options, isContinuousScroll, reader) {
     function getFirstOrLastVisibleCfi(pickerFunc) {
         var pageViews = getVisiblePageViews();
         var selectedPageView = pickerFunc(pageViews);
-        var pageViewTopOffset = selectedPageView.element().position().top;
+        var pageViewTopOffset =selectedPageView.element().position().top;
         var visibleContentOffsets, frameDimensions;
-        
-        var setupFunctions = [
-            function () {
-                visibleContentOffsets = {
-                    top: pageViewTopOffset,
-                    left: 0
-                };
-            },
-            function() {
-                var height = selectedPageView.element().height();
-                
-                if (pageViewTopOffset >= 0) {
-                    height = viewHeight() - pageViewTopOffset;
-                }
 
-                frameDimensions = {
-                    width: selectedPageView.element().width(),
-                    height: height
-                };
-                
-                visibleContentOffsets = {
-                    top: 0,
-                    left: 0
-                };
-            }
-        ];
+        visibleContentOffsets = {
+            top:  Math.min(0, pageViewTopOffset),
+            left: 0
+        };
+
+        var height = Math.min(selectedPageView.element().height(), viewHeight());
+
+        if (pageViewTopOffset >= 0) {
+            height = height - pageViewTopOffset;
+        }
         
-        //invoke setup function
-        pickerFunc(setupFunctions)();
+        frameDimensions = {
+            width: selectedPageView.element().width(),
+            height: height
+        };
         
         var cfiFunctions = [
             selectedPageView.getFirstVisibleCfi,
@@ -37624,6 +37975,10 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         });
     };
 
+    function createBookmarkFromCfi(currentSpineItem, cfi){
+        return new BookmarkData(currentSpineItem.idref, cfi);
+    }
+
     this.getRangeCfiFromDomRange = function (domRange) {
         return callOnVisiblePageView(function (pageView) {
             return pageView.getRangeCfiFromDomRange(domRange);
@@ -37632,25 +37987,43 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
     this.getVisibleCfiFromPoint = function (x, y, precisePoint) {
         return callOnVisiblePageView(function (pageView) {
-            return createBookmark(pageView.currentSpineItem(), pageView.getVisibleCfiFromPoint(x, y, precisePoint));
+            return createBookmarkFromCfi(pageView.currentSpineItem(), pageView.getVisibleCfiFromPoint(x, y, precisePoint));
         });
     };
 
     this.getRangeCfiFromPoints = function (startX, startY, endX, endY) {
         return callOnVisiblePageView(function (pageView) {
-            return createBookmark(pageView.currentSpineItem(), pageView.getRangeCfiFromPoints(startX, startY, endX, endY));
+            return createBookmarkFromCfi(pageView.currentSpineItem(), pageView.getRangeCfiFromPoints(startX, startY, endX, endY));
         });
     };
 
     this.getCfiForElement = function(element) {
         return callOnVisiblePageView(function (pageView) {
-            return createBookmark(pageView.currentSpineItem(), pageView.getCfiForElement(element));
-        });
+            return createBookmarkFromCfi(pageView.currentSpineItem(), pageView.getCfiForElement(element).contentCFI);
+        })
     };
 
     this.getElementFromPoint = function (x, y) {
         return callOnVisiblePageView(function (pageView) {
             return pageView.getElementFromPoint(x, y);
+        });
+    };
+
+    this.getStartCfi = function () {
+        return callOnVisiblePageView(function (pageView) {
+            return pageView.getStartCfi();
+        });
+    };
+
+    this.getEndCfi = function () {
+        return callOnVisiblePageView(function (pageView) {
+            return pageView.getEndCfi();
+        });
+    };
+
+    this.getNearestCfiFromElement = function (element) {
+        return callOnVisiblePageView(function (pageView) {
+            return pageView.getNearestCfiFromElement(element);
         });
     };
 };
@@ -38590,14 +38963,7 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
 
     this.touchInit = function()
     {
-        var todo = _audioPlayer.touchInit();
-        if (todo)
-        {
-            if (_enableHTMLSpeech)
-            {
-                speakStart("o", 0);
-            }
-        }
+        return _audioPlayer.touchInit();
     };
 
     var tokeniseTTS = function(element)
@@ -42109,6 +42475,67 @@ return Package;
 });
 
 
+//  Created by Juan Corona
+//  Copyright (c) 2016 Readium Foundation and/or its licensees. All rights reserved.
+//
+//  Redistribution and use in source and binary forms, with or without modification,
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice,
+//  this list of conditions and the following disclaimer in the documentation and/or
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be
+//  used to endorse or promote products derived from this software without specific
+//  prior written permission.
+//
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
+define('readium_shared_js/models/metadata',[], function () {
+
+    /**
+     *  Wrapper of the Metadata object, created in openBook()
+     *
+     * @class  Models.Metadata
+     */
+    var Metadata = function(packageMetadata) {
+        this.identifier = undefined;
+        this.title = undefined;
+        this.author = undefined;
+        this.description = undefined;
+        this.publisher = undefined;
+        this.language = undefined;
+        this.rights = undefined;
+        this.modifiedDate = undefined;
+        this.publishedDate = undefined;
+        this.epubVersion = undefined;
+
+        if (packageMetadata) {
+            this.identifier = packageMetadata.id;
+            this.title = packageMetadata.title;
+            this.author = packageMetadata.author;
+            this.description = packageMetadata.description;
+            this.language = packageMetadata.language;
+            this.publisher = packageMetadata.publisher;
+            this.rights = packageMetadata.rights;
+            this.modifiedDate = packageMetadata.modified_date;
+            this.publishedDate = packageMetadata.pubdate;
+            this.epubVersion = packageMetadata.epub_version;
+        }
+    };
+
+    return Metadata;
+});
+
+
 
 //  LauncherOSX
 //
@@ -42202,6 +42629,7 @@ var ReflowableView = function(options, reader){
         columnMinWidth: 400,
         spreadCount : 0,
         currentSpreadIndex : 0,
+        currentPageIndex: 0,
         columnWidth : undefined,
         pageOffset : 0,
         columnCount: 0
@@ -42287,6 +42715,27 @@ var ReflowableView = function(options, reader){
         };
     }
 
+    function getPageOffset() {
+        if (_paginationInfo.rightToLeft && !_paginationInfo.isVerticalWritingMode) {
+            return -_paginationInfo.pageOffset;
+        }
+        return _paginationInfo.pageOffset;
+    }
+
+    function getPaginationOffsets() {
+        var offset = getPageOffset();
+        if (_paginationInfo.isVerticalWritingMode) {
+            return {
+                top: offset,
+                left: 0
+            };
+        }
+        return {
+            top: 0,
+            left: offset
+        };
+    }
+
     function renderIframe() {
         if (_$contentFrame) {
             //destroy old contentFrame
@@ -42309,8 +42758,9 @@ var ReflowableView = function(options, reader){
 
         _navigationLogic = new CfiNavigationLogic({
             $iframe: _$iframe,
-            frameDimensions: getFrameDimensions,
+            frameDimensionsGetter: getFrameDimensions,
             paginationInfo: _paginationInfo,
+            paginationOffsetsGetter: getPaginationOffsets,
             classBlacklist: _cfiClassBlacklist,
             elementBlacklist: _cfiElementBlacklist,
             idBlacklist: _cfiIdBlacklist
@@ -42332,6 +42782,7 @@ var ReflowableView = function(options, reader){
 
             _paginationInfo.pageOffset = 0;
             _paginationInfo.currentSpreadIndex = 0;
+            _paginationInfo.currentPageIndex = 0;
             _currentSpineItem = spineItem;
             
             // TODO: this is a dirty hack!!
@@ -42523,18 +42974,18 @@ var ReflowableView = function(options, reader){
 
     }
 
-    this.openPageInternal = function(pageRequest) {
+    function _openPageInternal(pageRequest) {
 
         if(_isWaitingFrameRender) {
             _deferredPageRequest = pageRequest;
-            return;
+            return false;
         }
 
         // if no spine item specified we are talking about current spine item
         if(pageRequest.spineItem && pageRequest.spineItem != _currentSpineItem) {
             _deferredPageRequest = pageRequest;
             loadSpineItem(pageRequest.spineItem);
-            return;
+            return true;
         }
 
         var pageIndex = undefined;
@@ -42544,21 +42995,17 @@ var ReflowableView = function(options, reader){
             pageIndex = pageRequest.spineItemPageIndex;
         }
         else if(pageRequest.elementId) {
-            pageIndex = _navigationLogic.getPageForElementId(pageRequest.elementId);
-            
-            if (pageIndex < 0) pageIndex = 0;
+            pageIndex = _paginationInfo.currentPageIndex + _navigationLogic.getPageIndexDeltaForElementId(pageRequest.elementId);
         }
         else if(pageRequest.firstVisibleCfi && pageRequest.lastVisibleCfi) {
             var firstPageIndex;
             var lastPageIndex;
             try
             {
-                firstPageIndex = _navigationLogic.getPageForElementCfi(pageRequest.firstVisibleCfi,
+                firstPageIndex = _navigationLogic.getPageIndexDeltaForCfi(pageRequest.firstVisibleCfi,
                     _cfiClassBlacklist,
                     _cfiElementBlacklist,
                     _cfiIdBlacklist);
-                
-                if (firstPageIndex < 0) firstPageIndex = 0;
             }
             catch (e)
             {
@@ -42567,12 +43014,10 @@ var ReflowableView = function(options, reader){
             }
             try
             {
-                lastPageIndex = _navigationLogic.getPageForElementCfi(pageRequest.lastVisibleCfi,
+                lastPageIndex = _navigationLogic.getPageIndexDeltaForCfi(pageRequest.lastVisibleCfi,
                     _cfiClassBlacklist,
                     _cfiElementBlacklist,
                     _cfiIdBlacklist);
-                
-                if (lastPageIndex < 0) lastPageIndex = 0;
             }
             catch (e)
             {
@@ -42580,17 +43025,15 @@ var ReflowableView = function(options, reader){
                 console.error(e);
             }
             // Go to the page in the middle of the two elements
-            pageIndex = Math.round((firstPageIndex + lastPageIndex) / 2);
+            pageIndex = _paginationInfo.currentPageIndex + Math.round((firstPageIndex + lastPageIndex) / 2);
         }
         else if(pageRequest.elementCfi) {
             try
             {
-                pageIndex = _navigationLogic.getPageForElementCfi(pageRequest.elementCfi,
+                pageIndex = _paginationInfo.currentPageIndex + _navigationLogic.getPageIndexDeltaForCfi(pageRequest.elementCfi,
                     _cfiClassBlacklist,
                     _cfiElementBlacklist,
                     _cfiIdBlacklist);
-                
-                if (pageIndex < 0) pageIndex = 0;
             }
             catch (e)
             {
@@ -42609,18 +43052,20 @@ var ReflowableView = function(options, reader){
             pageIndex = 0;
         }
 
-        if(pageIndex >= 0 && pageIndex < _paginationInfo.columnCount) {
-            _paginationInfo.currentSpreadIndex = Math.floor(pageIndex / _paginationInfo.visibleColumnCount) ;
-            onPaginationChanged(pageRequest.initiator, pageRequest.spineItem, pageRequest.elementId);
-        }
-        else {
+        if (pageIndex < 0 || pageIndex > _paginationInfo.columnCount) {
             console.log('Illegal pageIndex value: ', pageIndex, 'column count is ', _paginationInfo.columnCount);
+            pageIndex = pageIndex < 0 ? 0 : _paginationInfo.columnCount;
         }
-    };
+
+        _paginationInfo.currentPageIndex = pageIndex;
+        _paginationInfo.currentSpreadIndex = Math.floor(pageIndex / _paginationInfo.visibleColumnCount) ;
+        onPaginationChanged(pageRequest.initiator, pageRequest.spineItem, pageRequest.elementId);
+        return true;
+    }
 
     this.openPage = function(pageRequest) {
         // Go to request page, it will save the new position in onPaginationChanged
-        this.openPageInternal(pageRequest);
+        _openPageInternal(pageRequest);
         // Save it for when pagination is updated
         _lastPageRequest = pageRequest;
     };
@@ -42644,7 +43089,7 @@ var ReflowableView = function(options, reader){
 
     this.restoreCurrentPosition = function() {
         if (_lastPageRequest) {
-            this.openPageInternal(_lastPageRequest);            
+            _openPageInternal(_lastPageRequest);
         }
     };
 
@@ -42689,7 +43134,7 @@ var ReflowableView = function(options, reader){
     }
 
     function onPaginationChanged_(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
-
+        _paginationInfo.currentPageIndex = _paginationInfo.currentSpreadIndex * _paginationInfo.visibleColumnCount;
         _paginationInfo.pageOffset = (_paginationInfo.columnWidth + _paginationInfo.columnGap) * _paginationInfo.visibleColumnCount * _paginationInfo.currentSpreadIndex;
         
         redraw();
@@ -42722,7 +43167,7 @@ var ReflowableView = function(options, reader){
             // Reset it so it's saved next time onPaginationChanged is called
             this.resetCurrentPosition();
             _paginationInfo.currentSpreadIndex--;
-            onPaginationChanged(initiator);
+            onPaginationChanged(initiator, _currentSpineItem);
         }
         else {
 
@@ -42747,7 +43192,7 @@ var ReflowableView = function(options, reader){
             // Reset it so it's saved next time onPaginationChanged is called
             this.resetCurrentPosition();
             _paginationInfo.currentSpreadIndex++;
-            onPaginationChanged(initiator);
+            onPaginationChanged(initiator, _currentSpineItem);
         }
         else {
 
@@ -42885,6 +43330,11 @@ var ReflowableView = function(options, reader){
         _$epubHtml.css('margin', 0);
         _$epubHtml.css('padding', 0);
         _$epubHtml.css('border', 0);
+
+        // In order for the ResizeSensor to work, the content body needs to be "positioned".
+        // This may be an issue since it changes the assumptions some content authors might make when positioning their content.
+        _$htmlBody.css('position', 'relative');
+
         _$htmlBody.css('margin', 0);
         _$htmlBody.css('padding', 0);
 
@@ -42950,12 +43400,13 @@ var ReflowableView = function(options, reader){
             if (_lastPageRequest) {
                 // Make sure we stay on the same page after the content or the viewport 
                 // has been resized
+                _paginationInfo.currentPageIndex = 0; // current page index is not stable, reset it
                 self.restoreCurrentPosition();
             } else {
-                onPaginationChanged(self); // => redraw() => showBook(), so the trick below is not needed                
+                onPaginationChanged(self, _currentSpineItem); // => redraw() => showBook(), so the trick below is not needed                
             }
 
-            //onPaginationChanged(self); // => redraw() => showBook(), so the trick below is not needed 
+            //onPaginationChanged(self, _currentSpineItem); // => redraw() => showBook(), so the trick below is not needed 
 
             // //We do this to force re-rendering of the document in the iframe.
             // //There is a bug in WebView control with right to left columns layout - after resizing the window html document
@@ -42963,7 +43414,7 @@ var ReflowableView = function(options, reader){
             // _$epubHtml.hide();
             // setTimeout(function() {
             //     _$epubHtml.show();
-            //     onPaginationChanged(self); // => redraw() => showBook()
+            //     onPaginationChanged(self, _currentSpineItem); // => redraw() => showBook()
             // }, 50);
 
         }
@@ -43161,15 +43612,15 @@ var ReflowableView = function(options, reader){
             return;
         }
 
-        var page = _navigationLogic.getPageForElement($element);
+        var elementCfi = _navigationLogic.getCfiForElement(element);
 
-        if(page == -1)
+        if (!elementCfi)
         {
             return;
         }
 
         var openPageRequest = new PageOpenRequest(_currentSpineItem, initiator);
-        openPageRequest.setPageIndex(page);
+        openPageRequest.setElementCfi(elementCfi);
 
         var id = element.id;
         if (!id)
@@ -43261,6 +43712,14 @@ var ReflowableView = function(options, reader){
         return createBookmarkFromCfi(_navigationLogic.getLastVisibleCfi());
     };
 
+    this.getStartCfi = function () {
+        return createBookmarkFromCfi(_navigationLogic.getStartCfi());
+    };
+
+    this.getEndCfi = function () {
+        return createBookmarkFromCfi(_navigationLogic.getEndCfi());
+    };
+
     this.getDomRangeFromRangeCfi = function (rangeCfi, rangeCfi2, inclusive) {
         if (rangeCfi2 && rangeCfi.idref !== rangeCfi2.idref) {
             console.error("getDomRangeFromRangeCfi: both CFIs must be scoped under the same spineitem idref");
@@ -43287,6 +43746,10 @@ var ReflowableView = function(options, reader){
 
     this.getElementFromPoint = function(x, y) {
         return _navigationLogic.getElementFromPoint(x,y);
+    };
+
+    this.getNearestCfiFromElement = function(element) {
+        return createBookmarkFromCfi(_navigationLogic.getNearestCfiFromElement(element));
     };
 };
     return ReflowableView;
@@ -43862,6 +44325,189 @@ define('readium_shared_js/models/node_range_info',[],function () {
 
     return NodeRangeInfo;
 });
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//
+//  Redistribution and use in source and binary forms, with or without modification,
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice,
+//  this list of conditions and the following disclaimer in the documentation and/or
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be
+//  used to endorse or promote products derived from this software without specific
+//  prior written permission.
+//
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
+
+define('readium_shared_js/views/external_agent_support',["../globals", "underscore"], function(Globals, _) {
+    /**
+     * This module helps external agents that interact with content documents from
+     * the level of the iframe browsing context:
+     *
+     *   - By providing a means of identifying the content through metadata
+     *     that's brought down from the package document level.
+     *
+     *   - By providing a direct link (bringing down the shareable URL) that could be used
+     *     to load the content in the proper context with the reader app instead of the actual
+     *     content document asset path.
+     *
+     *   - By responding to an event when the external agent wants to bring a
+     *     specific range of content into view.
+     *
+     * @param {Views.ReaderView} reader     The Reader instance
+     * @constructor
+     */
+    var ExternalAgentSupport = function(reader) {
+
+        var contentDocumentStates = {};
+        var contentDocuments = {};
+
+        Globals.on(Globals.Events.PLUGINS_LOADED, function() {
+            // Disable the AMD environment since it's not needed anymore at this point.
+            // This is done because external agents with their own module systems (Browserify)
+            // might load third-party scripts that are in the format of
+            // UMD (Universal Module Definition),
+            // and will mistakenly try to use Readium's AMD shim, almond.js, or require.js
+            if (window.define && window.define.amd) {
+                delete window.define.amd;
+            }
+        });
+
+        function appendMetaTag(_document, property, content) {
+            var tag = _document.createElement('meta');
+            tag.setAttribute('name', property);
+            tag.setAttribute('content', content);
+            _document.head.appendChild(tag);
+        }
+
+        function injectDublinCoreResourceIdentifiers(contentDocument, spineItem) {
+            var renditionIdentifier = reader.metadata().identifier; // the package unique identifier
+            var spineItemIdentifier = spineItem.idref; // use the spine item id as an identifier too
+            if (renditionIdentifier && spineItemIdentifier) {
+                appendMetaTag(contentDocument, 'dc.relation.ispartof', renditionIdentifier);
+                appendMetaTag(contentDocument, 'dc.identifier', spineItemIdentifier);
+            }
+        }
+
+        function injectAppUrlAsCanonicalLink(contentDocument, spineItem) {
+            if (contentDocument.defaultView && contentDocument.defaultView.parent) {
+                var parentWindow = contentDocument.defaultView.parent;
+                var isParentInSameDomain = Object.keys(parentWindow).indexOf('document') !== -1;
+                // Only do this if there's no potential cross-domain violation
+                // and the reader application URL has a CFI value in a 'goto' query param.
+                if (isParentInSameDomain && parentWindow.location.search.match(/goto=.*cfi/i)) {
+                    var link = contentDocument.createElement('link');
+                    link.setAttribute('rel', 'canonical');
+                    link.setAttribute('href', parentWindow.location.href);
+                    contentDocument.head.appendChild(link);
+                    contentDocumentStates[spineItem.idref].canonicalLinkElement = link;
+                }
+            }
+        }
+
+        var bringIntoViewDebounced = _.debounce(function (range) {
+            var target = reader.getRangeCfiFromDomRange(range);
+            var contentDocumentState = contentDocumentStates[target.idref];
+
+            if (contentDocumentState && contentDocumentState.isUpdated) {
+                reader.openSpineItemElementCfi(target.idref, target.contentCFI);
+            } else {
+                contentDocumentState.pendingNavRequest = {
+                    idref: target.idref,
+                    contentCFI: target.contentCFI
+                };
+            }
+        }, 100);
+
+        function bindBringIntoViewEvent(contentDocument) {
+            // 'scrolltorange' is a non-standard event that is emitted on the content frame
+            // by some external tools like Hypothes.is
+            contentDocument.addEventListener('scrolltorange', function (event) {
+                event.preventDefault();
+
+                var range = event.detail;
+                bringIntoViewDebounced(range);
+            });
+        }
+
+        function bindSelectionPopupWorkaround(contentDocument) {
+            // A hack to make the Hypothes.is 'adder' context menu popup work when the content doc body is positioned.
+            // When the content doc has columns and a body with position set to 'relative'
+            // the adder won't be positioned properly.
+            //
+            // The workaround is to clear the position property when a selection is active.
+            // Then restore the position property to 'relative' when the selection clears.
+            contentDocument.addEventListener('selectionchange', function () {
+                var selection = contentDocument.getSelection();
+                if (selection && selection.isCollapsed) {
+                    contentDocument.body.style.position = 'relative';
+                } else {
+                    contentDocument.body.style.position = '';
+                }
+            });
+        }
+
+        /***
+         *
+         * @param {Document} contentDocument    Document instance with DOM tree
+         * @param {Models.SpineItem} spineItem  The associated spine item object
+         */
+        this.bindToContentDocument = function(contentDocument, spineItem) {
+            contentDocuments[spineItem.idref] = contentDocument;
+            contentDocumentStates[spineItem.idref] = {};
+            injectDublinCoreResourceIdentifiers(contentDocument, spineItem);
+            injectAppUrlAsCanonicalLink(contentDocument, spineItem);
+            bindBringIntoViewEvent(contentDocument);
+
+            if (spineItem.isReflowable()) {
+                bindSelectionPopupWorkaround(contentDocument);
+            }
+        };
+
+        /***
+         *
+         * @param {Models.SpineItem} spineItem  The associated spine item object
+         */
+        this.updateContentDocument = function (spineItem) {
+            var contentDocument = contentDocuments[spineItem.idref];
+            var state = contentDocumentStates[spineItem.idref];
+
+            if (contentDocument && state) {
+
+                if (state.canonicalLinkElement &&
+                    contentDocument.defaultView &&
+                    contentDocument.defaultView.parent) {
+                    var parentWindow = contentDocument.defaultView.parent;
+                    var isParentInDifferentDomain = 'document' in Object.keys(parentWindow);
+                    if (!isParentInDifferentDomain) {
+                        state.canonicalLinkElement.setAttribute('href', parentWindow.location.href);
+                    }
+                }
+
+                state.isUpdated = true;
+
+                var pendingNavRequest = state.pendingNavRequest;
+                if (pendingNavRequest) {
+                    reader.openSpineItemElementCfi(pendingNavRequest.idref, pendingNavRequest.contentCFI);
+                    state.pendingNavRequest = null;
+                }
+            }
+        };
+    };
+
+    return ExternalAgentSupport;
+});
+
 //  Created by Boris Schneiderman.
 // Modified by Daniel Weck
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
@@ -43889,13 +44535,13 @@ define('readium_shared_js/models/node_range_info',[],function () {
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 define('readium_shared_js/views/reader_view',["../globals", "jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", "./iframe_loader", "./internal_links_support",
-        "./media_overlay_data_injector", "./media_overlay_player", "../models/package", "../models/page_open_request",
+        "./media_overlay_data_injector", "./media_overlay_player", "../models/package", "../models/metadata", "../models/page_open_request",
         "./reflowable_view", "./scroll_view", "../models/style_collection", "../models/switches", "../models/trigger",
-        "../models/viewer_settings", "../models/bookmark_data", "../models/node_range_info"],
+        "../models/viewer_settings", "../models/bookmark_data", "../models/node_range_info", "./external_agent_support"],
     function (Globals, $, _, EventEmitter, FixedView, Helpers, IFrameLoader, InternalLinksSupport,
-              MediaOverlayDataInjector, MediaOverlayPlayer, Package, PageOpenRequest,
+              MediaOverlayDataInjector, MediaOverlayPlayer, Package, Metadata, PageOpenRequest,
               ReflowableView, ScrollView, StyleCollection, Switches, Trigger,
-              ViewerSettings, BookmarkData, NodeRangeInfo) {
+              ViewerSettings, BookmarkData, NodeRangeInfo, ExternalAgentSupport) {
 /**
  * Options passed on the reader from the readium loader/initializer
  *
@@ -43916,6 +44562,7 @@ var ReaderView = function (options) {
     var self = this;
     var _currentView = undefined;
     var _package = undefined;
+    var _metadata = undefined;
     var _spine = undefined;
     var _viewerSettings = new ViewerSettings({});
     //styles applied to the container divs
@@ -43923,6 +44570,7 @@ var ReaderView = function (options) {
     //styles applied to the content documents
     var _bookStyles = new StyleCollection();
     var _internalLinksSupport = new InternalLinksSupport(this);
+    var _externalAgentSupport = new ExternalAgentSupport(this);
     var _mediaOverlayPlayer;
     var _mediaOverlayDataInjector;
     var _iframeLoader;
@@ -44098,7 +44746,8 @@ var ReaderView = function (options) {
         self.emit(Globals.Events.READER_VIEW_CREATED, desiredViewType);
 
         _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOADED, function ($iframe, spineItem) {
-            
+            var contentDoc = $iframe[0].contentDocument;
+
             Globals.logEvent("CONTENT_DOCUMENT_LOADED", "ON", "reader_view.js (current view) [ " + spineItem.href + " ]");
 
             if (!Helpers.isIframeAlive($iframe[0])) return;
@@ -44108,7 +44757,8 @@ var ReaderView = function (options) {
 
             _internalLinksSupport.processLinkElements($iframe, spineItem);
 
-            var contentDoc = $iframe[0].contentDocument;
+            _externalAgentSupport.bindToContentDocument(contentDoc, spineItem);
+
             Trigger.register(contentDoc);
             Switches.apply(contentDoc);
 
@@ -44140,6 +44790,11 @@ var ReaderView = function (options) {
             _.defer(function () {
                 Globals.logEvent("PAGINATION_CHANGED", "EMIT", "reader_view.js");
                 self.emit(Globals.Events.PAGINATION_CHANGED, pageChangeData);
+                
+                if (!pageChangeData.spineItem) return;
+                _.defer(function () {
+                    _externalAgentSupport.updateContentDocument(pageChangeData.spineItem);
+                });
             });
         });
 
@@ -44212,6 +44867,15 @@ var ReaderView = function (options) {
     };
 
     /**
+     * Returns a data object based on the package document metadata
+     *
+     * @returns {Models.Metadata}
+     */
+    this.metadata = function () {
+        return _metadata;
+    };
+
+    /**
      * Returns a representation of the spine as a data object, also acts as list of spine items
      *
      * @returns {Models.Spine}
@@ -44250,6 +44914,7 @@ var ReaderView = function (options) {
         var packageData = openBookData.package ? openBookData.package : openBookData;
 
         _package = new Package(packageData);
+        _metadata = new Metadata(packageData.metadata);
 
         _spine = _package.spine;
         _spine.handleLinear(true);
@@ -44418,7 +45083,7 @@ var ReaderView = function (options) {
      * @typedef {object} Globals.Views.ReaderView.SettingsData
      * @property {number} fontSize - Font size as percentage
      * @property {number} fontSelection - Font selection as the number in the list of possible fonts, where 0 is special meaning default.
-     * @property {(string|boolean)} syntheticSpread - "auto"|true|false
+     * @property {(string|boolean)} syntheticSpread - "auto"|"single"|"double"
      * @property {(string|boolean)} scroll - "auto"|true|false
      * @property {boolean} doNotUpdateView - Indicates whether the view should be updated after the settings are applied
      * @property {boolean} mediaOverlaysEnableClick - Indicates whether media overlays are interactive on mouse clicks
@@ -45492,6 +46157,29 @@ var ReaderView = function (options) {
         }
         return undefined;
     };
+
+    /**
+     * Get CFI of the first element from the base of the document
+     * @returns {ReadiumSDK.Models.BookmarkData}
+     */
+    this.getStartCfi = function() {
+        if (_currentView) {
+            return _currentView.getStartCfi();
+        }
+        return undefined;
+    };
+
+    /**
+     * Get CFI of the last element from the base of the document
+     * @returns {ReadiumSDK.Models.BookmarkData}
+     */
+    this.getEndCfi = function() {
+        if (_currentView) {
+            return _currentView.getEndCfi();
+        }
+        return undefined;
+    };
+
     /**
      *
      * @param {string} rangeCfi
@@ -45597,6 +46285,19 @@ var ReaderView = function (options) {
         }
         return undefined;
     };
+       
+    /**
+     * Useful for getting a CFI that's as close as possible to an invisible (not rendered, zero client rects) element
+     * @param {HTMLElement} element
+     * @returns {*}
+     */
+    this.getNearestCfiFromElement = function(element) {
+        if (_currentView) {
+            return _currentView.getNearestCfiFromElement(element);
+        }
+        return undefined;
+    };
+    
 };
 
 /**

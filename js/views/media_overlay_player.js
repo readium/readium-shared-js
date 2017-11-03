@@ -930,14 +930,7 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
 
     this.touchInit = function()
     {
-        var todo = _audioPlayer.touchInit();
-        if (todo)
-        {
-            if (_enableHTMLSpeech)
-            {
-                speakStart("o", 0);
-            }
-        }
+        return _audioPlayer.touchInit();
     };
 
     var tokeniseTTS = function(element)
