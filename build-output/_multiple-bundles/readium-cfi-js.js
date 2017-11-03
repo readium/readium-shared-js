@@ -1809,9 +1809,9 @@ var obj = {
         return $targetNode;
     },
 
-    retrieveItemRefHref : function ($itemRefElement, $packageDocument) {
+    retrieveItemRefHref : function ($itemRefElement, packageDocument) {
 
-        return $("#" + $itemRefElement.attr("idref"), $packageDocument).attr("href");
+        return $("#" + $itemRefElement.attr("idref"), packageDocument).attr("href");
     },
 
     indexOutOfRange : function (targetIndex, numChildElements) {
@@ -2111,7 +2111,6 @@ var obj = {
     //   the reading system, as it stands now.
     getContentDocHref : function (CFI, packageDocument, classBlacklist, elementBlacklist, idBlacklist) {
 
-        var $packageDocument = $(packageDocument);
         var decodedCFI = decodeURI(CFI);
         var CFIAST = cfiParser.parse(decodedCFI);
 
@@ -2120,9 +2119,9 @@ var obj = {
         }
 
         // Interpet the path node (the package document step)
-        var $packageElement = $($("package", $packageDocument)[0]);
+        var $packageElement = $(packageDocument.getElementsByTagNameNS('*', 'package'));
         var $currElement = this.interpretIndexStepNode(CFIAST.cfiString.path, $packageElement, classBlacklist, elementBlacklist, idBlacklist);
-        foundHref = this.searchLocalPathForHref($currElement, $packageDocument, CFIAST.cfiString.localPath, classBlacklist, elementBlacklist, idBlacklist);
+        foundHref = this.searchLocalPathForHref($currElement, packageDocument, CFIAST.cfiString.localPath, classBlacklist, elementBlacklist, idBlacklist);
 
         if (foundHref) {
             return foundHref;
@@ -2510,7 +2509,7 @@ var obj = {
         return $injectedElement;
     },
 
-    searchLocalPathForHref : function ($currElement, $packageDocument, localPathNode, classBlacklist, elementBlacklist, idBlacklist) {
+    searchLocalPathForHref : function ($currElement, packageDocument, localPathNode, classBlacklist, elementBlacklist, idBlacklist) {
 
         // Interpret the first local_path node, which is a set of steps and and a terminus condition
         var stepNum = 0;
@@ -2529,7 +2528,7 @@ var obj = {
 
             // Found the content document href referenced by the spine item
             if (cfiInstructions._matchesLocalNameOrElement($currElement[0], "itemref")) {
-                return cfiInstructions.retrieveItemRefHref($currElement, $packageDocument);
+                return cfiInstructions.retrieveItemRefHref($currElement, packageDocument);
             }
         }
 
@@ -2849,10 +2848,10 @@ var obj = {
         this.validatePackageDocument(packageDocument, contentDocumentName);
 
         // Get the start node (itemref element) that references the content document
-        $itemRefStartNode = $("itemref[idref='" + contentDocumentName + "']", $(packageDocument));
+        var $itemRefStartNode = $(this._findSpineItemNode(packageDocument, contentDocumentName));
 
         // Create the steps up to the top element of the package document (the "package" element)
-        packageDocCFIComponent = this.createCFIElementSteps($itemRefStartNode, "package", classBlacklist, elementBlacklist, idBlacklist);
+        var packageDocCFIComponent = this.createCFIElementSteps($itemRefStartNode, "package", classBlacklist, elementBlacklist, idBlacklist);
 
         // Append an !; this assumes that a CFI content document CFI component will be appended at some point
         return packageDocCFIComponent + "!";
@@ -2861,10 +2860,11 @@ var obj = {
     generatePackageDocumentCFIComponentWithSpineIndex : function (spineIndex, packageDocument, classBlacklist, elementBlacklist, idBlacklist) {
 
         // Get the start node (itemref element) that references the content document
-        $itemRefStartNode = $($("spine", packageDocument).children()[spineIndex]);
+        var spineItemNode = packageDocument.getElementsByTagNameNS('*', 'spine');
+        var $itemRefStartNode = $($(spineItemNode).children()[spineIndex]);
 
         // Create the steps up to the top element of the package document (the "package" element)
-        packageDocCFIComponent = this.createCFIElementSteps($itemRefStartNode, "package", classBlacklist, elementBlacklist, idBlacklist);
+        var packageDocCFIComponent = this.createCFIElementSteps($itemRefStartNode, "package", classBlacklist, elementBlacklist, idBlacklist);
 
         // Append an !; this assumes that a CFI content document CFI component will be appended at some point
         return packageDocCFIComponent + "!";
@@ -2927,13 +2927,27 @@ var obj = {
         if (!packageDocument) {
             throw new Error("A package document must be supplied to generate a CFI");
         }
-        else if ($($("itemref[idref='" + contentDocumentName + "']", packageDocument)[0]).length === 0) {
+
+        var spineItemNode = this._findSpineItemNode(packageDocument, contentDocumentName);
+
+        if (!spineItemNode) {
             throw new Error("The idref of the content document could not be found in the spine");
         }
     },
 
     _validNodeTypesFilter: function (node) {
         return node.nodeType === Node.TEXT_NODE || node.nodeType === Node.ELEMENT_NODE;
+    },
+
+    _findSpineItemNode: function (packageDocument, idref) {
+        var spineItemNode = null;
+        $(packageDocument.getElementsByTagNameNS('*', 'itemref')).each(function () {
+            if (this.getAttribute('idref') === idref) {
+                spineItemNode = this;
+                return false;
+            }
+        });
+        return spineItemNode;
     },
 
     _normalizeDomRange: function (domRange) {
