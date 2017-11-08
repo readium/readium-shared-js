@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project
+  xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.nypl.readium</groupId>
+  <artifactId>readium-shared-js</artifactId>
+  <version>0.27.0</version>
+
+  <packaging>jar</packaging>
+  <description>Readium SDK (Shared JavaScript components)</description>
+  <url>https://github.com/NYPL-Simplified/readium-shared-js</url>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+  </properties>
+
+  <prerequisites>
+    <maven>3.2.1</maven>
+  </prerequisites>
+
+  <scm>
+    <url>https://github.com/NYPL-Simplified/readium-shared-js</url>
+    <connection>scm:https://github.com/NYPL-Simplified/readium-shared-js</connection>
+    <developerConnection>scm:https://github.com/NYPL-Simplified/readium-shared-js</developerConnection>
+  </scm>
+
+  <distributionManagement>
+    <site>
+      <id>GitHub</id>
+      <name>GitHub</name>
+      <url>${project.url}</url>
+    </site>
+    <repository>
+      <id>nypl-nexus-group</id>
+      <name>NYPL Nexus</name>
+      <url>https://nexus.librarysimplified.org:8443/nexus/content/repositories/releases-no-drm</url>
+    </repository>
+  </distributionManagement>
+
+  <licenses>
+    <license>
+      <name>3-Clause BSD License</name>
+      <url>http://opensource.org/licenses/BSD-3-Clause</url>
+    </license>
+  </licenses>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-clean-plugin</artifactId>
+          <version>2.6.1</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-deploy-plugin</artifactId>
+          <version>2.8.2</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-install-plugin</artifactId>
+          <version>2.5.2</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-resources-plugin</artifactId>
+          <version>2.7</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-source-plugin</artifactId>
+          <version>2.4</version>
+        </plugin>
+
+        <!-- Produce custom manifest in jar files -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>2.6</version>
+          <configuration>
+            <archive>
+              <manifestEntries>
+                <Specification-Title>${project.name}</Specification-Title>
+                <Specification-Version>${project.version}</Specification-Version>
+                <Specification-Vendor>Readium Foundation</Specification-Vendor>
+                <Implementation-Title>${project.name}</Implementation-Title>
+                <Implementation-Version>${project.version}</Implementation-Version>
+                <Implementation-Vendor>Readium Foundation</Implementation-Vendor>
+                <Implementation-Vendor-Id>${project.groupId}</Implementation-Vendor-Id>
+                <Sealed>true</Sealed>
+              </manifestEntries>
+            </archive>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
+    <!-- Pack all resources into the package -->
+    <resources>
+      <resource>
+        <directory>build-output/_single-bundle</directory>
+        <includes>
+          <include>readium-shared-js_all.js</include>
+          <include>readium-shared-js_all.js.bundles.js</include>
+          <include>readium-shared-js_all.js.map</include>
+        </includes>
+      </resource>
+      <resource>
+        <directory>build-output/css</directory>
+        <includes>
+          <include>sdk.css</include>
+        </includes>
+      </resource>
+    </resources>
+  </build>
+
+</project>
