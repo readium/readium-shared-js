@@ -46,24 +46,24 @@
   ],
   "dependencies": {
     "concurrently": "latest",
+    "http-server": "github:danielweck/http-server",
     "npm-run-all": "latest",
-    "opener": "latest",
-    "http-server": "github:danielweck/http-server"
+    "opener": "latest"
   },
   "devDependencies": {
-    "jquery-sizes": "github:bramstein/jsizes",
-    "domReady": "github:requirejs/domReady",
     "backbone": "latest",
-    "urijs": "github:danielweck/URI.js",
-    "eventemitter3": "latest",
-    "es6-collections": "latest",
+    "css-element-queries": "github:danielweck/css-element-queries",
     "cssom": "github:danielweck/CSSOM",
-    "css-element-queries": "github:danielweck/css-element-queries"
+    "domReady": "github:requirejs/domReady",
+    "es6-collections": "latest",
+    "eventemitter3": "latest",
+    "jquery-sizes": "github:bramstein/jsizes",
+    "urijs": "github:danielweck/URI.js"
   },
   "scripts": {
     "cson2json": "node ./readium-cfi-js/node_modules/cson/bin/cson2json package.cson > package.json && node readium-cfi-js/readium-build-tools/optimizePackageJsonScripts.js",
     "prepare:all": "npm run prepare:submodule && npm run prepare:local",
-    "prepare:local": "(npm outdated || echo outdated) && npm install --no-save --only=prod && npm install --no-save --only=dev && npm update --no-save && npm run prepare:local:common",
+    "prepare:local": "(npm outdated || echo outdated) && npm install --only=prod && npm install --only=dev && npm update && npm run prepare:local:common",
     "prepare:yarn:all": "yarn run prepare:yarn:submodule && yarn run prepare:yarn:local",
     "prepare:yarn:local": "(yarn outdated || echo outdated) && yarn install && yarn upgrade && yarn run prepare:local:common",
     "prepare:local:common": "npm run prepare:patch && node readium-cfi-js/readium-build-tools/gitHubForksUpdater.js",
