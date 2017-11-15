@@ -2904,11 +2904,12 @@ Helpers.addTapEventHandler = function($body, reportClicked) {
     var longTapped = false;
     var tapTimer = undefined;
     var startReturnValue = true;
-    var isMultitouch = false;
+    var isMultTtouch = false;
     var touchStartEventHandler = function(event) {
         var touch = event.touches[0];
 
         longTapped = false;
+        isMultiTouch = false;
         startPageX = touch.pageX;
         startPageY = touch.pageY;
         tapTimer = setTimeout(function() {
@@ -2922,7 +2923,7 @@ Helpers.addTapEventHandler = function($body, reportClicked) {
     var touchMoveEventHandler = function(event) {
         //console.debug("TOUCH-MOVE: # touches = " + event.touches.length);
         //console.debug("TOUCH-MOVE (" + event.touches[0].pageX + ", " + event.touches[0].pageY + ")");
-        isMultitouch = event.touches.length > 1;
+        isMultiTouch = event.touches.length > 1;
     }
     var touchEndEventHandler = function(event) {
         var touch = event.changedTouches[0];
@@ -2943,7 +2944,7 @@ Helpers.addTapEventHandler = function($body, reportClicked) {
         clearTimeout(tapTimer);
         //console.debug("TOUCH-END: # touches = " + event.changedTouches.length);
         //console.debug("TOUCH-END (" +  + touch.pageX + ", " + touch.pageY + "), tapped? " + tapped + ", longTapped? " + longTapped);
-        if (tapped && !longTapped && !isMultitouch && event.returnValue && startReturnValue) {
+        if (tapped && !longTapped && !isMultiTouch && event.returnValue && startReturnValue) {
             return reportClicked(event);
         }
         return true;
