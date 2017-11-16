@@ -60,6 +60,16 @@ var SpineItem = function(itemData, index, spine){
     this.href = itemData.href;
 
     /**
+     * The package level CFI of the spine item, i.e. the CFI path to the spine item
+     * element in the package document.
+     *
+     * @property cfi
+     * @type String
+     * @default  None
+     */
+    this.cfi = itemData.cfi;
+
+    /**
      * A flag indicating whether the spineItem has the attribute linear, which 
      * is either yes or no.  Default is yes.
      *
