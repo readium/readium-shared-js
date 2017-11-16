@@ -377,6 +377,10 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
                 _$epubBody = undefined;
             } else {
                 _$epubBody = $("body", _$epubHtml);
+
+                if (!_enableBookStyleOverrides) { // fixed layout
+                    _$epubBody.css("margin", "0"); // ensures 8px margin default user agent stylesheet is reset to zero
+                }
             }
 
             //_$epubHtml.css("overflow", "hidden");
