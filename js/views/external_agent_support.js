@@ -72,16 +72,31 @@ define(["../globals", "underscore"], function(Globals, _) {
             }
         }
 
+        function determineCanonicalLinkHref(contentWindow) {
+            // Only grab the href if there's no potential cross-domain violation
+            // and the reader application URL has a CFI value in a 'goto' query param.
+            var isSameDomain = Object.keys(contentWindow).indexOf('document') !== -1;
+            if (isSameDomain && contentWindow.location.search.match(/goto=.*cfi/i)) {
+                return contentWindow.location.href.split("#")[0];
+            }
+        }
+
+        function getContentDocumentCanonicalLink(contentDocument) {
+            var contentDocWindow = contentDocument.defaultView;
+            if (contentDocWindow && (contentDocWindow.parent|| contentDocWindow.top)) {
+                var parentWindowCanonicalHref = determineCanonicalLinkHref(contentDocWindow.parent);
+                var topWindowCanonicalHref = determineCanonicalLinkHref(contentDocWindow.top);
+                return topWindowCanonicalHref || parentWindowCanonicalHref;
+            }
+        }
+
         function injectAppUrlAsCanonicalLink(contentDocument, spineItem) {
             if (contentDocument.defaultView && contentDocument.defaultView.parent) {
-                var parentWindow = contentDocument.defaultView.parent;
-                var isParentInSameDomain = Object.keys(parentWindow).indexOf('document') !== -1;
-                // Only do this if there's no potential cross-domain violation
-                // and the reader application URL has a CFI value in a 'goto' query param.
-                if (isParentInSameDomain && parentWindow.location.search.match(/goto=.*cfi/i)) {
+                var canonicalLinkHref = getContentDocumentCanonicalLink(contentDocument);
+                if (canonicalLinkHref) {
                     var link = contentDocument.createElement('link');
                     link.setAttribute('rel', 'canonical');
-                    link.setAttribute('href', parentWindow.location.href);
+                    link.setAttribute('href', canonicalLinkHref);
                     contentDocument.head.appendChild(link);
                     contentDocumentStates[spineItem.idref].canonicalLinkElement = link;
                 }
@@ -157,13 +172,10 @@ define(["../globals", "underscore"], function(Globals, _) {
 
             if (contentDocument && state) {
 
-                if (state.canonicalLinkElement &&
-                    contentDocument.defaultView &&
-                    contentDocument.defaultView.parent) {
-                    var parentWindow = contentDocument.defaultView.parent;
-                    var isParentInDifferentDomain = 'document' in Object.keys(parentWindow);
-                    if (!isParentInDifferentDomain) {
-                        state.canonicalLinkElement.setAttribute('href', parentWindow.location.href);
+                if (state.canonicalLinkElement) {
+                    var canonicalLinkHref = getContentDocumentCanonicalLink(contentDocument);
+                    if (canonicalLinkHref) {
+                        state.canonicalLinkElement.setAttribute('href', canonicalLinkHref);
                     }
                 }
 
