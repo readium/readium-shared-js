@@ -37382,20 +37382,20 @@ var MediaOverlayDataInjector = function (mediaOverlay, mediaOverlayPlayer) {
                             var audioSrc = $(readaloud.node).attr("data-ibooks-audio-src");
                             var needToReset = $(readaloud.node).attr("data-ibooks-audio-reset-on-play");
 
-                            if (!audioSrc) {
+                            if (!audioSrc && readaloudPause) {
                                 audioSrc = $(readaloudPause.node).attr("data-ibooks-audio-src");
                             }
-                            if (!needToReset) {
+                            if (!needToReset && readaloudPause) {
                                 needToReset = $(readaloudPause.node).attr("data-ibooks-audio-reset-on-play");
                             }
-                            if ((readaloud.attr === "start" && !isPlaying) ||
+                            if ((readaloud && (readaloud.attr === "start" && !isPlaying) ||
                                     (readaloud.attr === "stop" && isPlaying) ||
-                                    (readaloud.attr === "startstop") ||
-                                    (readaloudPause.attr === "true")) {
+                                    (readaloud.attr === "startstop")) ||
+                                    (readaloudPause && readaloudPause.attr === "true")) {
                                 if (audioSrc) {
                                     mediaOverlayPlayer.toggleiBooksAudioPlayer(audioSrc, 0, (needToReset && needToReset === "true"));
-                                } else {
-                                    mediaOverlayPlayer.toggleMediaOverlay();
+                                } else if (tapEmitter) {
+                                    tapEmitter();
                                 }
                                 return true;
                             }
