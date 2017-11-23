@@ -43,7 +43,6 @@ var ReflowableView = function(options, reader){
 
     var self = this;
 
-    var _$viewport = options.$viewport;
     var _spine = options.spine;
     var _userStyles = options.userStyles;
     var _bookStyles = options.bookStyles;
@@ -54,25 +53,30 @@ var ReflowableView = function(options, reader){
     var _deferredPageRequest;
     var _fontSize = 100;
     var _fontSelection = 0;
-    var _$contentFrame;
+    
     var _navigationLogic;
-    var _$el;
-    var _$iframe;
-    var _$epubHtml;
+
+    // Container elements
+    var viewportElement = options.$viewport[0];
+    var containerElement;
+    var contentFrameElement;
+
+    // Handles to EPUB content iframe references
+    var contentFrame;
+    var contentWindow;
+    var contentDocument;
+    var contentDocumentRoot;
+    var contentDocumentBody;
+
     var _lastPageRequest = undefined;
 
     var _cfiClassBlacklist = ["cfi-marker", "mo-cfi-highlight", "resize-sensor", "resize-sensor-expand", "resize-sensor-shrink", "resize-sensor-inner", "js-hypothesis-config", "js-hypothesis-embed"];
     var _cfiElementBlacklist = ["hypothesis-adder"];
     var _cfiIdBlacklist = ["MathJax_Message", "MathJax_SVG_Hidden"];
 
-    var _$htmlBody;
-
     var _htmlBodyIsVerticalWritingMode;
     var _htmlBodyIsLTRDirection;
     var _htmlBodyIsLTRWritingMode;
-
-
-    var _currentOpacity = -1;
 
     var _lastViewPortSize = {
         width: undefined,
@@ -102,10 +106,8 @@ var ReflowableView = function(options, reader){
 
     this.render = function(){
 
-        var template = Helpers.loadTemplate("reflowable_book_frame", {});
-
-        _$el = $(template);
-        _$viewport.append(_$el);
+        containerElement = $(Helpers.loadTemplate("reflowable_book_frame", {}))[0];
+        viewportElement.appendChild(containerElement);
 
         var settings = reader.viewerSettings();
         if (!settings || typeof settings.enableGPUHardwareAccelerationCSS3D === "undefined")
@@ -115,7 +117,7 @@ var ReflowableView = function(options, reader){
         }
         if (settings.enableGPUHardwareAccelerationCSS3D) {
             // This fixes rendering issues with WebView (native apps), which clips content embedded in iframes unless GPU hardware acceleration is enabled for CSS rendering.
-            _$el.css("transform", "translateZ(0)");
+            $(containerElement).css("transform", "translateZ(0)");
         }
 
         // See ReaderView.handleViewportResize
@@ -127,17 +129,17 @@ var ReflowableView = function(options, reader){
     };
 
     function setFrameSizesToRectangle(rectangle) {
-        _$contentFrame.css("left", rectangle.left + "px");
-        _$contentFrame.css("top", rectangle.top + "px");
-        _$contentFrame.css("right", rectangle.right + "px");
-        _$contentFrame.css("bottom", rectangle.bottom + "px");
-
+        $(contentFrameElement)
+            .css("left", rectangle.left + "px")
+            .css("top", rectangle.top + "px")
+            .css("right", rectangle.right + "px")
+            .css("bottom", rectangle.bottom + "px");
     }
 
     this.remove = function() {
 
         //$(window).off("resize.ReadiumSDK.reflowableView");
-        _$el.remove();
+        $(containerElement).remove();
 
     };
 
@@ -175,8 +177,8 @@ var ReflowableView = function(options, reader){
     
     function getFrameDimensions() {
         return {
-            width: _$iframe[0].clientWidth,
-            height: _$iframe[0].clientHeight
+            width: contentFrame.clientWidth,
+            height: contentFrame.clientHeight
         };
     }
 
@@ -201,28 +203,31 @@ var ReflowableView = function(options, reader){
         };
     }
 
+    function getScrollRoot() {
+        return contentFrame.contentDocument.scrollingElement || contentDocumentRoot;
+    }
+
     function renderIframe() {
-        if (_$contentFrame) {
+        if (contentFrameElement) {
             //destroy old contentFrame
-            _$contentFrame.remove();
+            contentFrameElement.remove();
         }
 
-        var template = Helpers.loadTemplate("reflowable_book_page_frame", {});
-        var $bookFrame = $(template);
-        $bookFrame = _$el.append($bookFrame);
+        var bookFrame = $(Helpers.loadTemplate("reflowable_book_page_frame", {}))[0];
+        containerElement.appendChild(bookFrame);
 
-        _$contentFrame = $("#reflowable-content-frame", $bookFrame);
+        contentFrameElement = $("#reflowable-content-frame", containerElement)[0];
 
-        _$iframe = $("#epubContentIframe", $bookFrame);
-
-        _$iframe.css("left", "");
-        _$iframe.css("right", "");
-        _$iframe.css("position", "relative");
+        var $iframe = $("#epubContentIframe", containerElement);
+        contentFrame = $iframe[0];
+        $iframe.css("left", "");
+        $iframe.css("right", "");
+        $iframe.css("position", "relative");
         //_$iframe.css(_spine.isLeftToRight() ? "left" : "right", "0px");
-        _$iframe.css("overflow", "hidden");
+        $iframe.css("overflow", "hidden");
 
         _navigationLogic = new CfiNavigationLogic({
-            $iframe: _$iframe,
+            $iframe: $iframe,
             frameDimensionsGetter: getFrameDimensions,
             paginationInfo: _paginationInfo,
             paginationOffsetsGetter: getPaginationOffsets,
@@ -234,14 +239,14 @@ var ReflowableView = function(options, reader){
 
     function onIFrameUnload() {
         Globals.logEvent("CONTENT_DOCUMENT_UNLOADED", "EMIT", "reflowable_view.js [ " + _currentSpineItem.href + " ]");
-        self.emit(Globals.Events.CONTENT_DOCUMENT_UNLOADED, _$iframe, _currentSpineItem);
+        self.emit(Globals.Events.CONTENT_DOCUMENT_UNLOADED, $(contentFrame), _currentSpineItem);
 
         _readiumCSS = null;
     }
 
     function loadSpineItem(spineItem) {
 
-        if(_currentSpineItem != spineItem) {
+        if (_currentSpineItem !== spineItem) {
 
             //create & append iframe to container frame
             renderIframe();
@@ -264,11 +269,11 @@ var ReflowableView = function(options, reader){
             var src = _spine.package.resolveRelativeUrl(spineItem.href);
             
             Globals.logEvent("CONTENT_DOCUMENT_LOAD_START", "EMIT", "reflowable_view.js [ " + spineItem.href + " -- " + src + " ]");
-            self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, _$iframe, spineItem);
+            self.emit(Globals.Events.CONTENT_DOCUMENT_LOAD_START, $(contentFrame), spineItem);
 
-            _$iframe.css("opacity", "0.01");
+            contentFrame.style.opacity = '0.01';
 
-            _iframeLoader.loadIframe(_$iframe[0], src, onIFrameLoad, self, {spineItem : spineItem});
+            _iframeLoader.loadIframe(contentFrame, src, onIFrameLoad, self, {spineItem : spineItem});
         }
     }
 
@@ -288,10 +293,8 @@ var ReflowableView = function(options, reader){
 
     function updateColumnGap() {
 
-        if(_$epubHtml) {
-
-            //TODO Readium CSS
-            //_$epubHtml.css("column-gap", _paginationInfo.columnGap + "px");
+        if (contentDocumentRoot && contentDocumentRoot.style) {
+            contentDocumentRoot.style.setProperty("--RS__colGap", _paginationInfo.columnGap + "px");
         }
     }
 
@@ -306,23 +309,24 @@ var ReflowableView = function(options, reader){
         }
 
         if(!success) {
-            _$iframe.css("opacity", "1");
+            contentFrame.style.opacity = '1';
             _deferredPageRequest = undefined;
             return;
         }
 
         Globals.logEvent("CONTENT_DOCUMENT_LOADED", "EMIT", "reflowable_view.js [ " + _currentSpineItem.href + " ]");
-        self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, _$iframe, _currentSpineItem);
+        self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, $(contentFrame), _currentSpineItem);
 
-        var epubContentDocument = _$iframe[0].contentDocument;
-        _$epubHtml = $("html", epubContentDocument);
-        _$htmlBody = $("body", _$epubHtml);
+        contentWindow = contentFrame.contentWindow;
+        contentDocument = contentFrame.contentDocument;
+        contentDocumentRoot = contentDocument.documentElement;
+        contentDocumentBody = contentDocument.body;
 
-
-        _readiumCSS = new ReadiumCSS(epubContentDocument, {
+        _readiumCSS = new ReadiumCSS(contentDocument, {
             pagination: true,
             scroll: false
         });
+        _readiumCSS.inject();
 
         // TODO: how to address this correctly across all the affected platforms?!
         // Video surface sometimes (depends on the video codec) disappears from CSS column (i.e. reflow page) during playback
@@ -343,10 +347,10 @@ var ReflowableView = function(options, reader){
         _htmlBodyIsLTRDirection = true;
         _htmlBodyIsLTRWritingMode = undefined;
 
-        var win = _$iframe[0].contentDocument.defaultView || _$iframe[0].contentWindow;
+        var win = contentFrame.contentDocument.defaultView || contentFrame.contentWindow;
 
         //Helpers.isIframeAlive
-        var htmlBodyComputedStyle = win.getComputedStyle(_$htmlBody[0], null);
+        var htmlBodyComputedStyle = win.getComputedStyle(contentDocumentBody, null);
         if (htmlBodyComputedStyle)
         {
             _htmlBodyIsLTRDirection = htmlBodyComputedStyle.direction === "ltr";
@@ -374,7 +378,7 @@ var ReflowableView = function(options, reader){
 
         if (_htmlBodyIsLTRDirection)
         {
-            if (_$htmlBody[0].getAttribute("dir") === "rtl" || _$epubHtml[0].getAttribute("dir") === "rtl")
+            if (contentDocumentBody.getAttribute("dir") === "rtl" || contentDocumentRoot.getAttribute("dir") === "rtl")
             {
                 _htmlBodyIsLTRDirection = false;
             }
@@ -383,37 +387,26 @@ var ReflowableView = function(options, reader){
         // Some EPUBs may not have explicit RTL content direction (via CSS "direction" property or @dir attribute) despite having a RTL page progression direction. Readium consequently tweaks the HTML in order to restore the correct block flow in the browser renderer, resulting in the appropriate CSS columnisation (which is used to emulate pagination).
         if (!_spine.isLeftToRight() && _htmlBodyIsLTRDirection && !_htmlBodyIsVerticalWritingMode)
         {
-            _$htmlBody[0].setAttribute("dir", "rtl");
+            contentDocumentBody.setAttribute("dir", "rtl");
             _htmlBodyIsLTRDirection = false;
             _htmlBodyIsLTRWritingMode = false;
         }
 
         _paginationInfo.isVerticalWritingMode = _htmlBodyIsVerticalWritingMode; 
 
-        hideBook();
-        _$iframe.css("opacity", "1");
+        contentFrame.style.opacity = '';
+
+        // Hide the content until first pagination.
+        // For example to hide the shifting of pagination to the last page when navigating backwards.
+        contentDocumentRoot.style.opacity = '0';
+        self.once(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, function () {
+            contentDocumentRoot.style.opacity = '';
+        });
 
         updateViewportSize();
-        //TODO Readium CSS
-        // _$epubHtml.css("height", _lastViewPortSize.height + "px");
-
-        // _$epubHtml.css("position", "relative");
-        // _$epubHtml.css("margin", "0");
-        // _$epubHtml.css("padding", "0");
-
-        _$epubHtml.css("column-axis", (_htmlBodyIsVerticalWritingMode ? "vertical" : "horizontal"));
-
-        //
-        // /////////
-        // //Columns Debugging
-        //
-        //     _$epubHtml.css("column-rule-color", "red");
-        //     _$epubHtml.css("column-rule-style", "dashed");
-        //     _$epubHtml.css("column-rule-width", "1px");
-        // _$epubHtml.css("background-color", '#b0c4de');
-        //
-        // ////
-
+        
+        $(contentDocumentRoot).css("column-axis", (_htmlBodyIsVerticalWritingMode ? "vertical" : "horizontal"));
+        
         self.applyBookStyles();
         resizeImages();
 
@@ -424,11 +417,11 @@ var ReflowableView = function(options, reader){
 
     this.applyStyles = function() {
 
-        Helpers.setStyles(_userStyles.getStyles(), _$el.parent());
+        Helpers.setStyles(_userStyles.getStyles(), $(containerElement).parent());
 
         //because left, top, bottom, right setting ignores padding of parent container
         //we have to take it to account manually
-        var elementMargins = Helpers.Margins.fromElement(_$el);
+        var elementMargins = Helpers.Margins.fromElement($(containerElement));
         setFrameSizesToRectangle(elementMargins.padding);
 
 
@@ -438,8 +431,8 @@ var ReflowableView = function(options, reader){
 
     this.applyBookStyles = function() {
 
-        if(_$epubHtml) { // implies _$iframe
-            Helpers.setStyles(_bookStyles.getStyles(), _$iframe[0].contentDocument); //_$epubHtml
+        if(contentDocumentRoot) { // implies _$iframe
+            Helpers.setStyles(_bookStyles.getStyles(), contentFrame.contentDocument); //_$epubHtml
         }
     };
 
@@ -463,7 +456,7 @@ var ReflowableView = function(options, reader){
         }
 
         // if no spine item specified we are talking about current spine item
-        if(pageRequest.spineItem && pageRequest.spineItem != _currentSpineItem) {
+        if (pageRequest.spineItem && pageRequest.spineItem !== _currentSpineItem) {
             _deferredPageRequest = pageRequest;
             loadSpineItem(pageRequest.spineItem);
             return true;
@@ -580,31 +573,28 @@ var ReflowableView = function(options, reader){
 
         if (_htmlBodyIsVerticalWritingMode)
         {
-            _$epubHtml.css("top", offsetVal);
+            $(contentDocumentRoot).css("top", offsetVal);
         }
         else
         {
             var ltr = _htmlBodyIsLTRDirection || _htmlBodyIsLTRWritingMode;
 
-            _$epubHtml.css("left", ltr ? offsetVal : "");
-            _$epubHtml.css("right", !ltr ? offsetVal : "");
+            $(contentDocumentRoot)
+                .css("left", ltr ? offsetVal : "")
+                .css("right", !ltr ? offsetVal : "");
         }
-
-        showBook(); // as it's no longer hidden by shifting the position
     }
 
     function updateViewportSize() {
 
-        var newWidth = _$contentFrame.width();
-        
-        // Ensure that the new viewport width is always even numbered
-        // this is to prevent a rendering inconsistency between browsers when odd-numbered bounds are used for CSS columns
-        // See https://github.com/readium/readium-shared-js/issues/37
-        newWidth -= newWidth % 2;
+        if (!contentFrameElement) {
+            return;
+        }
 
-        var newHeight = _$contentFrame.height();
+        var newWidth = contentFrameElement.clientWidth;
+        var newHeight = contentFrameElement.clientHeight;
 
-        if(_lastViewPortSize.width !== newWidth || _lastViewPortSize.height !== newHeight){
+        if (_lastViewPortSize.width !== newWidth || _lastViewPortSize.height !== newHeight) {
 
             _lastViewPortSize.width = newWidth;
             _lastViewPortSize.height = newHeight;
@@ -689,198 +679,67 @@ var ReflowableView = function(options, reader){
 
 
     function updatePagination_() {
+        var isDoublePageSyntheticSpread = Helpers.deduceSyntheticSpread($(viewportElement), _currentSpineItem, _viewSettings);
 
-        // At 100% font-size = 16px (on HTML, not body or descendant markup!)
-        var MAXW = _paginationInfo.columnMaxWidth;
-        var MINW = _paginationInfo.columnMinWidth;
-
-        var isDoublePageSyntheticSpread = Helpers.deduceSyntheticSpread(_$viewport, _currentSpineItem, _viewSettings);
-
-        var forced = (isDoublePageSyntheticSpread === false) || (isDoublePageSyntheticSpread === true);
+        var isDoublePageForced = (isDoublePageSyntheticSpread === false) || (isDoublePageSyntheticSpread === true);
         // excludes 0 and 1 falsy/truthy values which denote non-forced result
-
-// console.debug("isDoublePageSyntheticSpread: " + isDoublePageSyntheticSpread);
-// console.debug("forced: " + forced);
-//
+        console.log('isDoublePageSyntheticSpread 1', isDoublePageSyntheticSpread);
         if (isDoublePageSyntheticSpread === 0)
         {
-            isDoublePageSyntheticSpread = 1; // try double page, will shrink if doesn't fit
-// console.debug("TRYING SPREAD INSTEAD OF SINGLE...");
+            var readiumCssPreference = contentWindow.getComputedStyle(contentDocumentRoot).getPropertyValue("--RS__colCount");
+            isDoublePageSyntheticSpread = parseInt(readiumCssPreference) === 2;
         }
+
+        console.log('isDoublePageSyntheticSpread 2', isDoublePageSyntheticSpread);
 
         _paginationInfo.visibleColumnCount = isDoublePageSyntheticSpread ? 2 : 1;
 
         if (_htmlBodyIsVerticalWritingMode)
         {
-            MAXW *= 2;
             isDoublePageSyntheticSpread = false;
-            forced = true;
+            isDoublePageForced = true;
             _paginationInfo.visibleColumnCount = 1;
 // console.debug("Vertical Writing Mode => single CSS column, but behaves as if two-page spread");
         }
 
-        if(!_$epubHtml) {
+        if (!contentDocumentRoot) {
             return;
         }
 
-        hideBook(); // shiftBookOfScreen();
-
-        // "borderLeft" is the blank vertical strip (e.g. 40px wide) where the left-arrow button resides, i.e. previous page command
-        var borderLeft = parseInt(_$viewport.css("border-left-width"));
-        
-        // The "columnGap" separates two consecutive columns in a 2-page synthetic spread (e.g. 60px wide).
-        // This middle gap (blank vertical strip) actually corresponds to the left page's right-most margin, combined with the right page's left-most margin.
-        // So, "adjustedGapLeft" is half of the center strip... 
-        var adjustedGapLeft = _paginationInfo.columnGap/2;
-        // ...but we include the "borderLeft" strip to avoid wasting valuable rendering real-estate:  
-        adjustedGapLeft = Math.max(0, adjustedGapLeft-borderLeft);
-        // Typically, "adjustedGapLeft" is zero because the space available for the 'previous page' button is wider than half of the column gap!
-
-        // "borderRight" is the blank vertical strip (e.g. 40px wide) where the right-arrow button resides, i.e. next page command
-        var borderRight = parseInt(_$viewport.css("border-right-width"));
-        
-        // The "columnGap" separates two consecutive columns in a 2-page synthetic spread (e.g. 60px wide).
-        // This middle gap (blank vertical strip) actually corresponds to the left page's right-most margin, combined with the right page's left-most margin.
-        // So, "adjustedGapRight" is half of the center strip... 
-        var adjustedGapRight = _paginationInfo.columnGap/2;
-        // ...but we include the "borderRight" strip to avoid wasting valuable rendering real-estate:
-        adjustedGapRight = Math.max(0, adjustedGapRight-borderRight);
-        // Typically, "adjustedGapRight" is zero because the space available for the 'next page' button is wider than half of the column gap! (in other words, the right-most and left-most page margins are fully included in the strips reserved for the arrow buttons)
-
-        // Note that "availableWidth" does not contain "borderLeft" and "borderRight" (.width() excludes the padding and border and margin in the CSS box model of div#epub-reader-frame)  
-        var availableWidth = _$viewport.width();
-        
-        // ...So, we substract the page margins and button spacing to obtain the width available for actual text:
-        var textWidth = availableWidth - adjustedGapLeft - adjustedGapRight;
-        
-        // ...and if we have 2 pages / columns, then we split the text width in half: 
-        if (isDoublePageSyntheticSpread)
-        {
-            textWidth = (textWidth - _paginationInfo.columnGap) * 0.5;
-        }
-
-        var filler = 0;
-
-        // Now, if the resulting width actually available for document content is greater than the maximum allowed value, we create even more left+right blank space to "compress" the horizontal run of text.  
-        if (textWidth > MAXW)
-        {
-            var eachPageColumnReduction = textWidth - MAXW;
-            
-            // if we have a 2-page synthetic spread, then we "trim" left and right sides by adding "eachPageColumnReduction" blank space.
-            // if we have a single page / column, then this loss of text real estate is shared between right and left sides  
-            filler = Math.floor(eachPageColumnReduction * (isDoublePageSyntheticSpread ? 1 : 0.5));
-        }
-
-        // Let's check whether a narrow two-page synthetic spread (impeded reabability) can be reduced down to a single page / column:
-        else if (!forced && textWidth < MINW && isDoublePageSyntheticSpread)
-        {
-            isDoublePageSyntheticSpread = false;
-            _paginationInfo.visibleColumnCount = 1;
-
-            textWidth = availableWidth - adjustedGapLeft - adjustedGapRight;
-            if (textWidth > MAXW)
-            {
-                filler = Math.floor((textWidth - MAXW) * 0.5);
-            }
-        }
-        
-        _$el.css({"left": (filler+adjustedGapLeft + "px"), "right": (filler+adjustedGapRight + "px")});
-        
-        updateViewportSize(); //_$contentFrame ==> _lastViewPortSize
-
-        var resultingColumnWidth = _$el.width();
-        if (isDoublePageSyntheticSpread) {
-            resultingColumnWidth = (resultingColumnWidth - _paginationInfo.columnGap) / 2;
-        }
-        resultingColumnWidth = Math.floor(resultingColumnWidth);
-        if ((resultingColumnWidth-1) > MAXW) {
-            console.debug("resultingColumnWidth > MAXW ! " + resultingColumnWidth + " > " + MAXW);
-        }
-        
-
-        _$iframe.css("width", _lastViewPortSize.width + "px");
-        _$iframe.css("height", _lastViewPortSize.height + "px");
-
-        //TODO Readium CSS
-        // _$epubHtml.css("height", _lastViewPortSize.height + "px");
-
-        // below min- max- are required in vertical writing mode (height is not enough, in some cases...weird!)
-        //TODO Readium CSS
-        // _$epubHtml.css("min-height", _lastViewPortSize.height + "px");
-        // _$epubHtml.css("max-height", _lastViewPortSize.height + "px");
-
-        //normalise spacing to avoid interference with column-isation
-        //TODO Readium CSS
-        // _$epubHtml.css('margin', 0);
-        // _$epubHtml.css('padding', 0);
-        // _$epubHtml.css('border', 0);
-        // _$htmlBody.css('margin', 0);
-        // _$htmlBody.css('padding', 0);
+        updateViewportSize();
        
         // In order for the ResizeSensor to work, the content body needs to be "positioned".
         // This may be an issue since it changes the assumptions some content authors might make when positioning their content.
-        _$htmlBody.css('position', 'relative');
+        contentDocumentBody.style.position = 'relative';
 
         _paginationInfo.rightToLeft = _spine.isRightToLeft();
 
         _paginationInfo.columnWidth = Math.round(((_htmlBodyIsVerticalWritingMode ? _lastViewPortSize.height : _lastViewPortSize.width) - _paginationInfo.columnGap * (_paginationInfo.visibleColumnCount - 1)) / _paginationInfo.visibleColumnCount);
 
-        //TODO Readium CSS
-        // var useColumnCountNotWidth = _paginationInfo.visibleColumnCount > 1; // column-count == 1 does not work in Chrome, and is not needed anyway (HTML width is full viewport width, no Firefox video flickering)
-        // if (useColumnCountNotWidth) {
-        //     _$epubHtml.css("width", _lastViewPortSize.width + "px");
-        //     _$epubHtml.css("column-width", "auto");
-        //     _$epubHtml.css("column-count", _paginationInfo.visibleColumnCount);
-        // } else {
-        //     _$epubHtml.css("width", (_htmlBodyIsVerticalWritingMode ? _lastViewPortSize.width : _paginationInfo.columnWidth) + "px");
-        //     _$epubHtml.css("column-count", "auto");
-        //     _$epubHtml.css("column-width", _paginationInfo.columnWidth + "px");
-        // }
-        //
-        // _$epubHtml.css("column-fill", "auto");
+        $(contentDocumentRoot).css({left: "0", right: "0", top: "0"});
 
-        _$epubHtml.css({left: "0", right: "0", top: "0"});
-
-        //TODO Readium CSS
-        // Helpers.triggerLayout(_$iframe);
-
-        var dim = (_htmlBodyIsVerticalWritingMode ? _$epubHtml[0].scrollHeight : _$epubHtml[0].scrollWidth);
-        if (dim == 0) {
+        var totalDimension = (_htmlBodyIsVerticalWritingMode ? getScrollRoot().scrollHeight : getScrollRoot().scrollWidth);
+        if (totalDimension === 0) {
             console.error("Document dimensions zero?!");
         }
 
-        _paginationInfo.columnCount = (dim + _paginationInfo.columnGap) / (_paginationInfo.columnWidth + _paginationInfo.columnGap);
+        _paginationInfo.columnGap = parseInt(contentWindow.getComputedStyle(contentDocumentRoot).getPropertyValue("column-gap"));
+        _paginationInfo.columnCount = (totalDimension + _paginationInfo.columnGap) / (_paginationInfo.columnWidth + _paginationInfo.columnGap);
         _paginationInfo.columnCount = Math.round(_paginationInfo.columnCount);
-        if (_paginationInfo.columnCount == 0) {
+        if (!_paginationInfo.columnCount) {
             console.error("Column count zero?!");
-        }
-
-        var totalGaps = (_paginationInfo.columnCount-1) * _paginationInfo.columnGap;
-        var colWidthCheck = (dim - totalGaps) / _paginationInfo.columnCount;
-        colWidthCheck = Math.round(colWidthCheck);
-
-        if (colWidthCheck > _paginationInfo.columnWidth)
-        {
-            console.debug("ADJUST COLUMN");
-            console.log(_paginationInfo.columnWidth);
-            console.log(colWidthCheck);
-
-            _paginationInfo.columnWidth = colWidthCheck;
         }
 
         _paginationInfo.spreadCount =  Math.ceil(_paginationInfo.columnCount / _paginationInfo.visibleColumnCount);
 
-        if(_paginationInfo.currentSpreadIndex >= _paginationInfo.spreadCount) {
+        if (_paginationInfo.currentSpreadIndex >= _paginationInfo.spreadCount) {
             _paginationInfo.currentSpreadIndex = _paginationInfo.spreadCount - 1;
         }
 
-        if(_deferredPageRequest) {
-
+        if (_deferredPageRequest) {
             //if there is a request for specific page we get here
             openDeferredElement();
-        }
-        else {
-
+        } else {
             // we get here on resizing the viewport
             if (_lastPageRequest) {
                 // Make sure we stay on the same page after the content or the viewport 
@@ -888,20 +747,8 @@ var ReflowableView = function(options, reader){
                 _paginationInfo.currentPageIndex = 0; // current page index is not stable, reset it
                 self.restoreCurrentPosition();
             } else {
-                onPaginationChanged(self, _currentSpineItem); // => redraw() => showBook(), so the trick below is not needed                
+                onPaginationChanged(self, _currentSpineItem); // => redraw()
             }
-
-            //onPaginationChanged(self, _currentSpineItem); // => redraw() => showBook(), so the trick below is not needed 
-
-            // //We do this to force re-rendering of the document in the iframe.
-            // //There is a bug in WebView control with right to left columns layout - after resizing the window html document
-            // //is shifted in side the containing div. Hiding and showing the html element puts document in place.
-            // _$epubHtml.hide();
-            // setTimeout(function() {
-            //     _$epubHtml.show();
-            //     onPaginationChanged(self, _currentSpineItem); // => redraw() => showBook()
-            // }, 50);
-
         }
 
         // Only initializes the resize sensor once the content has been paginated once,
@@ -912,7 +759,7 @@ var ReflowableView = function(options, reader){
     var updatePagination = _.debounce(updatePagination_, 100);
 
     function initResizeSensor() {
-        var bodyElement = _$htmlBody[0];
+        var bodyElement = contentDocumentBody;
         if (bodyElement.resizeSensor) {
             return;
         }
@@ -943,35 +790,15 @@ var ReflowableView = function(options, reader){
             }
         });
     }
-    
-//    function shiftBookOfScreen() {
-//
-//        if(_spine.isLeftToRight()) {
-//            _$epubHtml.css("left", (_lastViewPortSize.width + 1000) + "px");
-//        }
-//        else {
-//            _$epubHtml.css("right", (_lastViewPortSize.width + 1000) + "px");
-//        }
-//    }
 
     function hideBook()
     {
-        if (_currentOpacity != -1) return; // already hidden
-
-        // css('opacity') produces invalid result in Firefox, when iframes are involved and when is called
-        // directly after set, i.e. after showBook(), see: https://github.com/jquery/jquery/issues/2622
-        //_currentOpacity = $epubHtml.css('opacity');
-        _currentOpacity = _$epubHtml[0].style.opacity;
-        _$epubHtml.css('opacity', "0");
+        contentDocumentRoot.style.opacity = '0';
     }
 
     function showBook()
     {
-        if (_currentOpacity != -1)
-        {
-            _$epubHtml.css('opacity', _currentOpacity);
-        }
-        _currentOpacity = -1;
+        contentDocumentRoot.style.opacity = '';
     }
 
     this.getPaginationInfo = function() {
@@ -1011,7 +838,7 @@ var ReflowableView = function(options, reader){
     //we need this styles for css columnizer not to chop big images
     function resizeImages() {
 
-        if(!_$epubHtml) {
+        if(!contentDocumentRoot) {
             return;
         }
 
@@ -1019,7 +846,7 @@ var ReflowableView = function(options, reader){
         var height;
         var width;
 
-        $('img, svg', _$epubHtml).each(function(){
+        $('img, svg', contentDocumentRoot).each(function(){
 
             $elem = $(this);
 

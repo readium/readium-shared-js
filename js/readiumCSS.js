@@ -27,8 +27,6 @@ define([
     function ReadiumCSS(contentDocument, options) {
         this._contentDocument = contentDocument;
         this._options = options;
-
-        debugger;
     }
 
     function hasAuthorStyles(contentDocument) {
@@ -37,7 +35,53 @@ define([
         return includesInlineStyles || includesExternalOrInternalStylesheets;
     }
 
-    ReadiumCSS.prototype.inject = function() {
+
+    function injectStylesheet(contentDocument, cssText, prepend) {
+        var headElement = contentDocument.head;
+
+        var styleElement = contentDocument.createElement("style");
+        styleElement.textContent = cssText;
+        if (prepend) {
+            headElement.insertBefore(styleElement, headElement.firstChild);
+        } else {
+            headElement.appendChild(styleElement);
+        }
+    }
+
+    ReadiumCSS.prototype.inject = function () {
+        var contentDocument = this._contentDocument;
+        var hasNoAuthorStyles = !hasAuthorStyles(contentDocument);
+
+        injectStylesheet(contentDocument, safeguards_css, true);
+        injectStylesheet(contentDocument, html5patch_css, true);
+        injectStylesheet(contentDocument, base_css, true);
+
+        if (hasNoAuthorStyles) {
+            injectStylesheet(contentDocument, default_css);
+        }
+
+        injectStylesheet(contentDocument, highlights_css);
+
+        if (this._options.pagination) {
+            injectStylesheet(contentDocument, pagination_css);
+        }
+
+        if (this._options.scroll) {
+            injectStylesheet(contentDocument, scroll_css);
+        }
+
+        if (this._options.displayMode === 'night') {
+            injectStylesheet(contentDocument, night_mode_css);
+        } else if (this._options.displayMode === 'sepia') {
+            injectStylesheet(contentDocument, sepia_mode_css);
+        }
+
+        injectStylesheet(contentDocument, os_a11y_css);
+        injectStylesheet(contentDocument, user_settings_css);
+
+        if (this._options.fontSizeNormalize) {
+            injectStylesheet(contentDocument, fs_normalize_css);
+        }
 
     };
 
