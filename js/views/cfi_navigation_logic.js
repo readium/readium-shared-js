@@ -1233,7 +1233,8 @@ var CfiNavigationLogic = function (options) {
             // return this.getVisibleElements($elements, visibleContentOffsets);
         };
 
-        this.getElementVisibility = function ($element, visibleContentOffsets) {
+        this.getElementVisibility = function (element, visibleContentOffsets) {
+            var $element = $(element);
             return checkVisibilityByRectangles($element, true, visibleContentOffsets);
         };
 

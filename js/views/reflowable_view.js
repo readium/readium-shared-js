@@ -117,7 +117,7 @@ var ReflowableView = function(options, reader){
         }
         if (settings.enableGPUHardwareAccelerationCSS3D) {
             // This fixes rendering issues with WebView (native apps), which clips content embedded in iframes unless GPU hardware acceleration is enabled for CSS rendering.
-            $(containerElement).css("transform", "translateZ(0)");
+            containerElement.style.transform = "translateZ(0)";
         }
 
         // See ReaderView.handleViewportResize
@@ -128,19 +128,8 @@ var ReflowableView = function(options, reader){
         return self;
     };
 
-    function setFrameSizesToRectangle(rectangle) {
-        $(contentFrameElement)
-            .css("left", rectangle.left + "px")
-            .css("top", rectangle.top + "px")
-            .css("right", rectangle.right + "px")
-            .css("bottom", rectangle.bottom + "px");
-    }
-
     this.remove = function() {
-
-        //$(window).off("resize.ReadiumSDK.reflowableView");
-        $(containerElement).remove();
-
+        containerElement.remove();
     };
 
     this.isReflowable = function() {
@@ -404,11 +393,10 @@ var ReflowableView = function(options, reader){
         });
 
         updateViewportSize();
-        
-        $(contentDocumentRoot).css("column-axis", (_htmlBodyIsVerticalWritingMode ? "vertical" : "horizontal"));
-        
+
+        contentDocumentRoot.style.columnAxis = _htmlBodyIsVerticalWritingMode ? "vertical" : "horizontal";
+
         self.applyBookStyles();
-        resizeImages();
 
         updateColumnGap();
 
@@ -417,13 +405,7 @@ var ReflowableView = function(options, reader){
 
     this.applyStyles = function() {
 
-        Helpers.setStyles(_userStyles.getStyles(), $(containerElement).parent());
-
-        //because left, top, bottom, right setting ignores padding of parent container
-        //we have to take it to account manually
-        var elementMargins = Helpers.Margins.fromElement($(containerElement));
-        setFrameSizesToRectangle(elementMargins.padding);
-
+        Helpers.setStyles(_userStyles.getStyles(), containerElement.parentNode);
 
         updateViewportSize();
         updatePagination();
@@ -573,15 +555,14 @@ var ReflowableView = function(options, reader){
 
         if (_htmlBodyIsVerticalWritingMode)
         {
-            $(contentDocumentRoot).css("top", offsetVal);
+            contentDocumentRoot.style.top = offsetVal;
         }
         else
         {
             var ltr = _htmlBodyIsLTRDirection || _htmlBodyIsLTRWritingMode;
 
-            $(contentDocumentRoot)
-                .css("left", ltr ? offsetVal : "")
-                .css("right", !ltr ? offsetVal : "");
+            contentDocumentRoot.style.left = ltr ? offsetVal : "";
+            contentDocumentRoot.style.right = !ltr ? offsetVal : "";
         }
     }
 
@@ -683,7 +664,7 @@ var ReflowableView = function(options, reader){
             return;
         }
 
-        var isDoublePageSyntheticSpread = Helpers.deduceSyntheticSpread($(viewportElement), _currentSpineItem, _viewSettings);
+        var isDoublePageSyntheticSpread = Helpers.deduceSyntheticSpread(viewportElement, _currentSpineItem, _viewSettings);
 
         // excludes 0 and 1 falsy/truthy values which denote non-forced result
         if (isDoublePageSyntheticSpread === 0)
@@ -714,8 +695,6 @@ var ReflowableView = function(options, reader){
         _paginationInfo.columnGap = parseInt(contentWindow.getComputedStyle(contentDocumentRoot).getPropertyValue("column-gap"));
 
         _paginationInfo.columnWidth = ((_htmlBodyIsVerticalWritingMode ? _lastViewPortSize.height : _lastViewPortSize.width) - _paginationInfo.columnGap * (_paginationInfo.visibleColumnCount - 1)) / _paginationInfo.visibleColumnCount;
-
-        $(contentDocumentRoot).css({left: "0", right: "0", top: "0"});
 
         var totalDimension = (_htmlBodyIsVerticalWritingMode ? getScrollRoot().scrollHeight : getScrollRoot().scrollWidth);
         if (totalDimension === 0) {
@@ -764,14 +743,14 @@ var ReflowableView = function(options, reader){
 
         // We need to make sure the content has indeed be resized, especially
         // the first time it is triggered
-        _lastBodySize.width = $(bodyElement).width();
-        _lastBodySize.height = $(bodyElement).height();
+        _lastBodySize.width = bodyElement.scrollWidth;
+        _lastBodySize.height = bodyElement.scrollHeight;
 
         bodyElement.resizeSensor = new ResizeSensor(bodyElement, function() {
             
             var newBodySize = {
-                width: $(bodyElement).width(),
-                height: $(bodyElement).height()
+                width: bodyElement.scrollWidth,
+                height: bodyElement.scrollHeight
             };
 
             console.debug("ReflowableView content resized ...", newBodySize.width, newBodySize.height, _currentSpineItem.idref);
@@ -833,38 +812,6 @@ var ReflowableView = function(options, reader){
 
     }
 
-    //we need this styles for css columnizer not to chop big images
-    function resizeImages() {
-
-        if(!contentDocumentRoot) {
-            return;
-        }
-
-        var $elem;
-        var height;
-        var width;
-
-        $('img, svg', contentDocumentRoot).each(function(){
-
-            $elem = $(this);
-
-            // if we set max-width/max-height to 100% columnizing engine chops images embedded in the text
-            // (but not if we set it to 99-98%) go figure.
-            // TODO: CSS min-w/h is content-box, not border-box (does not take into account padding + border)? => images may still overrun?
-            $elem.css('max-width', '98%');
-            $elem.css('max-height', '98%');
-
-            if(!$elem.css('height')) {
-                $elem.css('height', 'auto');
-            }
-
-            if(!$elem.css('width')) {
-                $elem.css('width', 'auto');
-            }
-
-        });
-    }
-
     this.bookmarkCurrentPage = function() {
 
         if(!_currentSpineItem) {
@@ -916,8 +863,7 @@ var ReflowableView = function(options, reader){
 
     this.insureElementVisibility = function(spineItemId, element, initiator) {
 
-        var $element = $(element);
-        if(_navigationLogic.isElementVisible($element))
+        if(_navigationLogic.isElementVisible(element))
         {
             return;
         }
