@@ -91,7 +91,7 @@ var ReflowableView = function(options, reader){
     var _paginationInfo = {
 
         visibleColumnCount : 2,
-        columnGap : 20,
+        columnGap : 0,
         columnMaxWidth: 550,
         columnMinWidth: 400,
         spreadCount : 0,
@@ -679,32 +679,29 @@ var ReflowableView = function(options, reader){
 
 
     function updatePagination_() {
-        var isDoublePageSyntheticSpread = Helpers.deduceSyntheticSpread($(viewportElement), _currentSpineItem, _viewSettings);
-
-        var isDoublePageForced = (isDoublePageSyntheticSpread === false) || (isDoublePageSyntheticSpread === true);
-        // excludes 0 and 1 falsy/truthy values which denote non-forced result
-        console.log('isDoublePageSyntheticSpread 1', isDoublePageSyntheticSpread);
-        if (isDoublePageSyntheticSpread === 0)
-        {
-            var readiumCssPreference = contentWindow.getComputedStyle(contentDocumentRoot).getPropertyValue("--RS__colCount");
-            isDoublePageSyntheticSpread = parseInt(readiumCssPreference) === 2;
+        if (!contentDocumentRoot) {
+            return;
         }
 
-        console.log('isDoublePageSyntheticSpread 2', isDoublePageSyntheticSpread);
+        var isDoublePageSyntheticSpread = Helpers.deduceSyntheticSpread($(viewportElement), _currentSpineItem, _viewSettings);
 
-        _paginationInfo.visibleColumnCount = isDoublePageSyntheticSpread ? 2 : 1;
+        // excludes 0 and 1 falsy/truthy values which denote non-forced result
+        if (isDoublePageSyntheticSpread === 0)
+        {
+            var readiumCssPreference = contentWindow.getComputedStyle(contentDocumentRoot).getPropertyValue('--RS__colCount');
+            isDoublePageSyntheticSpread = parseInt(readiumCssPreference) === 2;
+        }
 
         if (_htmlBodyIsVerticalWritingMode)
         {
             isDoublePageSyntheticSpread = false;
-            isDoublePageForced = true;
             _paginationInfo.visibleColumnCount = 1;
 // console.debug("Vertical Writing Mode => single CSS column, but behaves as if two-page spread");
         }
 
-        if (!contentDocumentRoot) {
-            return;
-        }
+        _paginationInfo.visibleColumnCount = isDoublePageSyntheticSpread ? 2 : 1;
+
+        contentDocumentRoot.style.setProperty('--RS__colCount', _paginationInfo.visibleColumnCount);
 
         updateViewportSize();
        
@@ -714,7 +711,9 @@ var ReflowableView = function(options, reader){
 
         _paginationInfo.rightToLeft = _spine.isRightToLeft();
 
-        _paginationInfo.columnWidth = Math.round(((_htmlBodyIsVerticalWritingMode ? _lastViewPortSize.height : _lastViewPortSize.width) - _paginationInfo.columnGap * (_paginationInfo.visibleColumnCount - 1)) / _paginationInfo.visibleColumnCount);
+        _paginationInfo.columnGap = parseInt(contentWindow.getComputedStyle(contentDocumentRoot).getPropertyValue("column-gap"));
+
+        _paginationInfo.columnWidth = ((_htmlBodyIsVerticalWritingMode ? _lastViewPortSize.height : _lastViewPortSize.width) - _paginationInfo.columnGap * (_paginationInfo.visibleColumnCount - 1)) / _paginationInfo.visibleColumnCount;
 
         $(contentDocumentRoot).css({left: "0", right: "0", top: "0"});
 
@@ -723,7 +722,6 @@ var ReflowableView = function(options, reader){
             console.error("Document dimensions zero?!");
         }
 
-        _paginationInfo.columnGap = parseInt(contentWindow.getComputedStyle(contentDocumentRoot).getPropertyValue("column-gap"));
         _paginationInfo.columnCount = (totalDimension + _paginationInfo.columnGap) / (_paginationInfo.columnWidth + _paginationInfo.columnGap);
         _paginationInfo.columnCount = Math.round(_paginationInfo.columnCount);
         if (!_paginationInfo.columnCount) {
