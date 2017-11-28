@@ -53,9 +53,7 @@ function($, _, Class, HighlightHelpers, HighlightGroup) {
         redraw: function() {
             var that = this;
 
-            var leftAddition = -this._getPaginationLeftOffset();
-            
-            var isVerticalWritingMode = this.context.paginationInfo.isVerticalWritingMode;
+            var paginationOffsets = this._getPaginationOffsets();
 
             var visibleCfiRange = this.getVisibleCfiRange();
 
@@ -75,11 +73,7 @@ function($, _, Class, HighlightHelpers, HighlightGroup) {
                         visibleCfiRange.lastVisibleCfi.contentCFI);
                 }
                 highlightGroup.visible = visible;
-                highlightGroup.resetHighlights(that.readerBoundElement,
-                    isVerticalWritingMode ? leftAddition : 0,
-                    isVerticalWritingMode ? 0 : leftAddition
-                    );
-
+                highlightGroup.resetHighlights(that.readerBoundElement, paginationOffsets.top, paginationOffsets.left);
             });
         },
 
@@ -151,10 +145,7 @@ function($, _, Class, HighlightHelpers, HighlightGroup) {
         addHighlight: function(CFI, id, type, styles) {
             var CFIRangeInfo;
             var range;
-            var rangeStartNode;
-            var rangeEndNode;
             var selectedElements;
-            var leftAddition;
 
             var contentDoc = this.context.document;
             //get transform scale of content document
@@ -208,16 +199,12 @@ function($, _, Class, HighlightHelpers, HighlightGroup) {
                 range = null;
             }
 
-            leftAddition = -this._getPaginationLeftOffset();
-
-            var isVerticalWritingMode = this.context.paginationInfo.isVerticalWritingMode;
+            var paginationOffsets = this._getPaginationOffsets();
 
             this._addHighlightHelper(
                 CFI, id, type, styles, selectedElements, range,
-                startNode, endNode,
-                isVerticalWritingMode ? leftAddition : 0,
-                isVerticalWritingMode ? 0 : leftAddition
-                );
+                startNode, endNode, paginationOffsets.top, paginationOffsets.left
+            );
 
             return {
                 selectedElements: selectedElements,
@@ -429,7 +416,7 @@ function($, _, Class, HighlightHelpers, HighlightGroup) {
             var selectedElements = [];
 
             if (!elementType) {
-                var elementType = ["text"];
+                elementType = ["text"];
             }
 
             this._findSelectedElements(
@@ -558,24 +545,31 @@ function($, _, Class, HighlightHelpers, HighlightGroup) {
             }
         },
 
-        _getPaginationLeftOffset: function() {
-        
-            var $htmlElement = $(this.context.document.documentElement);
-            if (!$htmlElement || !$htmlElement.length) {
-                // if there is no html element, we might be dealing with a fxl with a svg spine item
-                return 0;
+        _getPaginationOffsets: function() {
+            if (!this.context.paginationInfo) {
+                return {
+                    top: 0,
+                    left: 0
+                }
             }
 
-            var offsetLeftPixels = $htmlElement.css(this.context.paginationInfo.isVerticalWritingMode ? "top" : (this.context.isRTL ? "right" : "left"));
-            var offsetLeft = parseInt(offsetLeftPixels.replace("px", ""));
-            if (isNaN(offsetLeft)) {
-                //for fixed layouts, $htmlElement.css("left") has no numerical value
-                offsetLeft = 0;
+            var offset;
+            if (this.context.isRTL && !this.context.isVerticalWritingMode) {
+                offset = -this.context.paginationInfo().pageOffset;
+            } else {
+                offset = this.context.paginationInfo().pageOffset;
             }
-            
-            if (this.context.isRTL && !this.context.paginationInfo.isVerticalWritingMode) return -offsetLeft;
-             
-            return offsetLeft;
+
+            if (this.context.isVerticalWritingMode) {
+                return {
+                    top: offset,
+                    left: 0
+                };
+            }
+            return {
+                top: 0,
+                left: offset
+            };
         },
 
         _injectAnnotationCSS: function(annotationCSSUrl) {

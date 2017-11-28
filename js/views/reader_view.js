@@ -25,13 +25,13 @@
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 define(["../globals", "jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", "./iframe_loader", "./internal_links_support",
-        "./media_overlay_data_injector", "./media_overlay_player", "../models/package", "../models/page_open_request",
+        "./media_overlay_data_injector", "./media_overlay_player", "../models/package", "../models/metadata", "../models/page_open_request",
         "./reflowable_view", "./scroll_view", "../models/style_collection", "../models/switches", "../models/trigger",
-        "../models/viewer_settings", "../models/bookmark_data", "../models/node_range_info", "html2canvas"],
+        "../models/viewer_settings", "../models/bookmark_data", "../models/node_range_info", "./external_agent_support", "html2canvas"],
     function (Globals, $, _, EventEmitter, FixedView, Helpers, IFrameLoader, InternalLinksSupport,
-              MediaOverlayDataInjector, MediaOverlayPlayer, Package, PageOpenRequest,
+              MediaOverlayDataInjector, MediaOverlayPlayer, Package, Metadata, PageOpenRequest,
               ReflowableView, ScrollView, StyleCollection, Switches, Trigger,
-              ViewerSettings, BookmarkData, NodeRangeInfo, Html2Canvas) {
+              ViewerSettings, BookmarkData, NodeRangeInfo, ExternalAgentSupport, Html2Canvas) {
 /**
  * Options passed on the reader from the readium loader/initializer
  *
@@ -52,6 +52,7 @@ var ReaderView = function (options) {
     var self = this;
     var _currentView = undefined;
     var _package = undefined;
+    var _metadata = undefined;
     var _spine = undefined;
     var _viewerSettings = new ViewerSettings({});
     //styles applied to the container divs
@@ -59,6 +60,7 @@ var ReaderView = function (options) {
     //styles applied to the content documents
     var _bookStyles = new StyleCollection();
     var _internalLinksSupport = new InternalLinksSupport(this);
+    var _externalAgentSupport = new ExternalAgentSupport(this);
     var _mediaOverlayPlayer;
     var _mediaOverlayDataInjector;
     var _iframeLoader;
@@ -237,7 +239,8 @@ var ReaderView = function (options) {
         self.emit(Globals.Events.READER_VIEW_CREATED, desiredViewType);
 
         _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOADED, function ($iframe, spineItem) {
-            
+            var contentDoc = $iframe[0].contentDocument;
+
             Globals.logEvent("CONTENT_DOCUMENT_LOADED", "ON", "reader_view.js (current view) [ " + spineItem.href + " ]");
 
             if (!Helpers.isIframeAlive($iframe[0])) return;
@@ -249,7 +252,8 @@ var ReaderView = function (options) {
 
             _internalLinksSupport.processLinkElements($iframe, spineItem);
 
-            var contentDoc = $iframe[0].contentDocument;
+            _externalAgentSupport.bindToContentDocument(contentDoc, spineItem);
+
             Trigger.register(contentDoc);
             Switches.apply(contentDoc);
 
@@ -288,6 +292,11 @@ var ReaderView = function (options) {
             _.defer(function () {
                 Globals.logEvent("PAGINATION_CHANGED", "EMIT", "reader_view.js");
                 self.emit(Globals.Events.PAGINATION_CHANGED, pageChangeData);
+                
+                if (!pageChangeData.spineItem) return;
+                _.defer(function () {
+                    _externalAgentSupport.updateContentDocument(pageChangeData.spineItem);
+                });
             });
         });
 
@@ -360,6 +369,15 @@ var ReaderView = function (options) {
     };
 
     /**
+     * Returns a data object based on the package document metadata
+     *
+     * @returns {Models.Metadata}
+     */
+    this.metadata = function () {
+        return _metadata;
+    };
+
+    /**
      * Returns a representation of the spine as a data object, also acts as list of spine items
      *
      * @returns {Models.Spine}
@@ -398,6 +416,7 @@ var ReaderView = function (options) {
         var packageData = openBookData.package ? openBookData.package : openBookData;
 
         _package = new Package(packageData);
+        _metadata = new Metadata(packageData.metadata);
 
         _spine = _package.spine;
         _spine.handleLinear(true);
@@ -566,7 +585,7 @@ var ReaderView = function (options) {
      * @typedef {object} Globals.Views.ReaderView.SettingsData
      * @property {number} fontSize - Font size as percentage
      * @property {number} fontSelection - Font selection as the number in the list of possible fonts, where 0 is special meaning default.
-     * @property {(string|boolean)} syntheticSpread - "auto"|true|false
+     * @property {(string|boolean)} syntheticSpread - "auto"|"single"|"double"
      * @property {(string|boolean)} scroll - "auto"|true|false
      * @property {boolean} doNotUpdateView - Indicates whether the view should be updated after the settings are applied
      * @property {boolean} mediaOverlaysEnableClick - Indicates whether media overlays are interactive on mouse clicks
@@ -1731,6 +1750,29 @@ var ReaderView = function (options) {
         }
         return undefined;
     };
+
+    /**
+     * Get CFI of the first element from the base of the document
+     * @returns {ReadiumSDK.Models.BookmarkData}
+     */
+    this.getStartCfi = function() {
+        if (_currentView) {
+            return _currentView.getStartCfi();
+        }
+        return undefined;
+    };
+
+    /**
+     * Get CFI of the last element from the base of the document
+     * @returns {ReadiumSDK.Models.BookmarkData}
+     */
+    this.getEndCfi = function() {
+        if (_currentView) {
+            return _currentView.getEndCfi();
+        }
+        return undefined;
+    };
+
     /**
      *
      * @param {string} rangeCfi
@@ -1836,6 +1878,19 @@ var ReaderView = function (options) {
         }
         return undefined;
     };
+       
+    /**
+     * Useful for getting a CFI that's as close as possible to an invisible (not rendered, zero client rects) element
+     * @param {HTMLElement} element
+     * @returns {*}
+     */
+    this.getNearestCfiFromElement = function(element) {
+        if (_currentView) {
+            return _currentView.getNearestCfiFromElement(element);
+        }
+        return undefined;
+    };
+    
 };
 
 /**
