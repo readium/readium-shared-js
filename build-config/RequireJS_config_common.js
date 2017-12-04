@@ -64,6 +64,9 @@ require.config({
         "es6-collections":
             process._RJS_rootDir(1) + '/node_modules/es6-collections/index',
 
+        "es6-promise":
+            process._RJS_rootDir(1) + '/node_modules/es6-promise/dist/es6-promise',
+
         'cssom':
             process._RJS_rootDir(1) + '/node_modules/cssom/build/CSSOM',
 
