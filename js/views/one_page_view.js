@@ -996,8 +996,8 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             $iframe: _$iframe,
             frameDimensionsGetter: getFrameDimensions,
             visibleContentOffsetsGetter: getVisibleContentOffsets,
-            classBlacklist: ["cfi-marker", "mo-cfi-highlight", "resize-sensor", "resize-sensor-expand", "resize-sensor-shrink", "resize-sensor-inner"],
-            elementBlacklist: [],
+            classBlacklist: ["cfi-marker", "mo-cfi-highlight", "resize-sensor", "resize-sensor-expand", "resize-sensor-shrink", "resize-sensor-inner", "js-hypothesis-config", "js-hypothesis-embed"],
+            elementBlacklist: ["hypothesis-adder"],
             idBlacklist: ["MathJax_Message", "MathJax_SVG_Hidden"]
         });
     };
