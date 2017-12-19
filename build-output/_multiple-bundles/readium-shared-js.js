@@ -4202,7 +4202,7 @@ var CfiNavigationLogic = function (options) {
                             if (!firstPartial) firstPartial = item;
 
                             if (visible == 100) return item;
-                        }
+                        } else return item;
                     }
                     else {
                         var elem = traverseArray(item.children);
