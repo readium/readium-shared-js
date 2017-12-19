@@ -278,7 +278,7 @@ var MediaOverlayDataInjector = function (mediaOverlay, mediaOverlayPlayer) {
                                     (readaloud.attr === "startstop")) ||
                                     (readaloudPause && readaloudPause.attr === "true")) {
                                 if (audioSrc) {
-                                    mediaOverlayPlayer.toggleiBooksAudioPlayer(audioSrc, 0, (needToReset && needToReset === "true"));
+                                    mediaOverlayPlayer.toggleIBooksAudioPlayer(audioSrc, 0, (needToReset && needToReset === "true"));
                                 } else if (tapEmitter) {
                                     tapEmitter();
                                 }

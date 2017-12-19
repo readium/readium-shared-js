@@ -128,6 +128,14 @@ var Globals = {
         /**
          * @event
          */
+        PLAY_IBOOKS_AUDIO: "PlayIBooksAudio",
+        /**
+         * @event
+         */
+        PAUSE_IBOOKS_AUDIO: "PauseIBooksAudio",
+        /**
+         * @event
+         */
         TURN_TO_LEFT_PAGE: "TurnToLeftPage",
         /**
          * @event

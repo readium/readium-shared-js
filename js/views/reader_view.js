@@ -1272,7 +1272,7 @@ var ReaderView = function (options) {
                 _mediaOverlayPlayer.pause();
             }
             if (_mediaOverlayPlayer.iBooksAudioPlayerPlaying()) {
-                _mediaOverlayPlayer.pauseiBooksAudioPlayer();
+                _mediaOverlayPlayer.pauseIBooksAudioPlayer();
             }
         }
     };
@@ -1286,10 +1286,28 @@ var ReaderView = function (options) {
                 _mediaOverlayPlayer.playMediaOverlay();
             }
             if (_mediaOverlayPlayer.iBooksAudioPlayerPlaying()) {
-                _mediaOverlayPlayer.pauseiBooksAudioPlayer();
+                _mediaOverlayPlayer.pauseIBooksAudioPlayer();
             }
         }
     };
+
+    /**
+     * Play selected iBooks audio
+     */
+    this.playIBooksAudio = function() {
+        if (_mediaOverlayPlayer) {
+            _mediaOverlayPlayer.playIBooksAudioPlayer();
+        }
+    }
+
+    /**
+     * Pause current playing iBooks audio
+     */
+    this.pauseIBooksAudio = function() {
+        if (_mediaOverlayPlayer) {
+            _mediaOverlayPlayer.pauseIBooksAudioPlayer();
+        }
+    }
 
     /**
      * Reset media overlay
