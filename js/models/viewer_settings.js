@@ -127,7 +127,7 @@ var ViewerSettings = function(settingsData) {
      * @type bool
      */
     
-    this.mediaOverlaysEnableClick = true;
+    this.mediaOverlaysEnableClick = false;
 
     /** 
      *
