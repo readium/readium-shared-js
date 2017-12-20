@@ -15769,6 +15769,14 @@ var Globals = {
         /**
          * @event
          */
+        PLAY_IBOOKS_AUDIO: "PlayIBooksAudio",
+        /**
+         * @event
+         */
+        PAUSE_IBOOKS_AUDIO: "PauseIBooksAudio",
+        /**
+         * @event
+         */
         TURN_TO_LEFT_PAGE: "TurnToLeftPage",
         /**
          * @event
@@ -37671,7 +37679,7 @@ var MediaOverlayDataInjector = function (mediaOverlay, mediaOverlayPlayer) {
                                     (readaloud.attr === "startstop")) ||
                                     (readaloudPause && readaloudPause.attr === "true")) {
                                 if (audioSrc) {
-                                    mediaOverlayPlayer.toggleiBooksAudioPlayer(audioSrc, 0, (needToReset && needToReset === "true"));
+                                    mediaOverlayPlayer.toggleIBooksAudioPlayer(audioSrc, 0, (needToReset && needToReset === "true"));
                                 } else if (tapEmitter) {
                                     tapEmitter();
                                 }
@@ -40881,8 +40889,10 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
 
     var _audioPlayer = new AudioPlayer(onStatusChanged, onAudioPositionChanged, onAudioEnded, onPlay, onPause);
 
-    var _iBooksAudioPlayer = new AudioPlayer(oniBooksAudioStatusChanged, oniBooksAudioPostionChanged, oniBooksAudioEnded, oniBoosAudioPlay, oniBoosAudioPause);
-    var _currentiBooksAudioSource = undefined;
+    var _iBooksAudioPlayer = new AudioPlayer(onIBooksAudioStatusChanged, onIBooksAudioPostionChanged, onIBooksAudioEnded, onIBooksAudioPlay, onIBooksAudioPause);
+    var _currentIBooksAudioSource = undefined;
+    var _prepareIBooksAudioSource = undefined;
+    var _iBooksAudioStartTime = undefined;
 
     var _ttsIsPlaying = false;
     var _currentTTS = undefined;
@@ -40906,6 +40916,7 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
     var _settings = reader.viewerSettings();
     var self = this;
     var _elementHighlighter = new MediaOverlayElementHighlighter(reader);
+    var _Android = navigator.userAgent.toLowerCase().indexOf('android') > -1;
 
     reader.on(Globals.Events.READER_VIEW_DESTROYED, function(){
         Globals.logEvent("READER_VIEW_DESTROYED", "ON", "media_overlay_player.js");
@@ -42523,67 +42534,93 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         }
     }
 
-    // iBooksAudioPlayer
-    function oniBooksAudioStatusChanged(status) {
-        //console.debug("oniBooksAudioStatusChanged: " + status);
+    // IBooksAudioPlayer
+    function onIBooksAudioStatusChanged(status) {
+        //console.debug("onIBooksAudioStatusChanged: " + status);
     }
 
-    function oniBooksAudioPostionChanged(position, from, skipping) {
-        //console.debug("oniBooksAudioPositionChanged position: " + position + ", from: " + from + ", skipping = " + skipping);
+    function onIBooksAudioPostionChanged(position, from, skipping) {
+        //console.debug("onIBooksAudioPositionChanged position: " + position + ", from: " + from + ", skipping = " + skipping);
     }
 
-    function oniBooksAudioEnded() {
-        //console.debug("oniBooksAudioEnded");
-        _currentiBooksAudioSource = undefined;
+    function onIBooksAudioEnded() {
+        //console.debug("onIBooksAudioEnded");
+        _currentIBooksAudioSource = undefined;
+        _prepareIBooksAudioSource = undefined;
+        _iBooksAudioStartTime = undefined;
     }
 
-    function oniBoosAudioPlay() {
-        //console.debug("oniBooksAudioPlay");
+    function onIBooksAudioPlay() {
+        //console.debug("onIBooksAudioPlay");
     }
 
-    function oniBoosAudioPause() {
-        //console.debug("oniBooksAudioPause");
+    function onIBooksAudioPause() {
+        //console.debug("onIBooksAudioPause");
     }
 
     this.iBooksAudioPlayerPlaying = function() {
         return _iBooksAudioPlayer.isPlaying();
     };
 
-    this.pauseiBooksAudioPlayer = function() {
+    this.pauseIBooksAudioPlayer = function() {
         _iBooksAudioPlayer.pause();
     };
 
-    this.playiBooksAudioPlayer = function(src, startTime) {
+    this.playIBooksAudioPlayer = function(src, startTime) {
         if (self.isPlaying()) {
             self.pause();
         }
-        if (src !== _currentiBooksAudioSource) {
-            _currentiBooksAudioSource = src;
-            _iBooksAudioPlayer.playFile(undefined, src, startTime)
+        if (_Android && src === undefined && startTime === undefined) {
+            src = _prepareIBooksAudioSource;
+            startTime = _iBooksAudioStartTime;
+        }
+        if (src !== _currentIBooksAudioSource) {
+            var audioSource = _package.resolveRelativeUrlMO(src);
+
+            _currentIBooksAudioSource = src;
+            _iBooksAudioPlayer.playFile(undefined, audioSource, startTime)
         } else {
             _iBooksAudioPlayer.play();
         }
     };
 
-    this.toggleiBooksAudioPlayer = function(src, startTime, needReset) {
+    this.toggleIBooksAudioPlayer = function(src, startTime, needReset) {
         if (self.isPlaying()) {
             self.pause();
         }
         if (needReset) {
-            _currentiBooksAudioSource = undefined;
+            _currentIBooksAudioSource = undefined;
+            _prepareIBooksAudioSource = undefined;
+            _iBooksAudioStartTime = undefined;
         }
-        if (src && src !== _currentiBooksAudioSource) {
-            self.playiBooksAudioPlayer(src, startTime);
+        if (src && src !== _currentIBooksAudioSource) {
+            if (_Android) {
+                _prepareIBooksAudioSource = src;
+                _iBooksAudioStartTime = startTime;
+                reader.emit(Globals.Events.PLAY_IBOOKS_AUDIO);
+            } else {
+                self.playIBooksAudioPlayer(src, startTime);
+            }
             return;
         }
         if (self.iBooksAudioPlayerPlaying()) {
-            self.pauseiBooksAudioPlayer();
+            if (_Android) {
+                reader.emit(Globals.Events.PAUSE_IBOOKS_AUDIO);
+            } else {
+                self.pauseIBooksAudioPlayer();
+            }
         } else {
             if (!src || startTime < 0) {
-                console.error("toggleiBooksAudioPlayer: Invalid argument! src: " + src + ", startTime = " + startTime);
+                console.error("toggleIBooksAudioPlayer: Invalid argument! src: " + src + ", startTime = " + startTime);
                 return;
             }
-            self.playiBooksAudioPlayer(src, startTime);
+            if (_Android) {
+                _prepareIBooksAudioSource = src;
+                _iBooksAudioStartTime = startTime;
+                reader.emit(Globals.Events.PLAY_IBOOKS_AUDIO);
+            } else {
+                self.playIBooksAudioPlayer(src, startTime);
+            }
         }
     };
 
@@ -42639,7 +42676,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
             self.pause();
         }
         if (self.iBooksAudioPlayerPlaying()) {
-            self.pauseiBooksAudioPlayer();
+            self.pauseIBooksAudioPlayer();
         }
         if (par.element || par.cfi && par.cfi.cfiTextParent)
         {
@@ -42711,7 +42748,9 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         clipBeginOffset = 0.0;
         _audioPlayer.reset();
         _iBooksAudioPlayer.reset();
-        _currentiBooksAudioSource = undefined;
+        _currentIBooksAudioSource = undefined;
+        _prepareIBooksAudioSource = undefined;
+        _iBooksAudioStartTime = undefined;
         self.resetTTS();
         self.resetEmbedded();
         self.resetBlankPage();
@@ -42761,7 +42800,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
     {
         _wasPlayingScrolling = false;
         if (self.iBooksAudioPlayerPlaying()) {
-            self.pauseiBooksAudioPlayer();
+            self.pauseIBooksAudioPlayer();
         }
         if (_blankPagePlayer)
         {
@@ -42951,7 +42990,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
     {
 //console.debug("moData SMIL: " + moData.par.getSmil().href + " // " + + moData.par.getSmil().id);
         if (self.iBooksAudioPlayerPlaying()) {
-            self.pauseiBooksAudioPlayer();
+            self.pauseIBooksAudioPlayer();
         }
         var spineItems = reader.getLoadedSpineItems();
 
@@ -53477,7 +53516,7 @@ var ReaderView = function (options) {
                 _mediaOverlayPlayer.pause();
             }
             if (_mediaOverlayPlayer.iBooksAudioPlayerPlaying()) {
-                _mediaOverlayPlayer.pauseiBooksAudioPlayer();
+                _mediaOverlayPlayer.pauseIBooksAudioPlayer();
             }
         }
     };
@@ -53491,10 +53530,28 @@ var ReaderView = function (options) {
                 _mediaOverlayPlayer.playMediaOverlay();
             }
             if (_mediaOverlayPlayer.iBooksAudioPlayerPlaying()) {
-                _mediaOverlayPlayer.pauseiBooksAudioPlayer();
+                _mediaOverlayPlayer.pauseIBooksAudioPlayer();
             }
         }
     };
+
+    /**
+     * Play selected iBooks audio
+     */
+    this.playIBooksAudio = function() {
+        if (_mediaOverlayPlayer) {
+            _mediaOverlayPlayer.playIBooksAudioPlayer();
+        }
+    }
+
+    /**
+     * Pause current playing iBooks audio
+     */
+    this.pauseIBooksAudio = function() {
+        if (_mediaOverlayPlayer) {
+            _mediaOverlayPlayer.pauseIBooksAudioPlayer();
+        }
+    }
 
     /**
      * Reset media overlay
