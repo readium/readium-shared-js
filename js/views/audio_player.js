@@ -568,13 +568,10 @@ define(['jquery'],function($) {
                 {
                     console.debug("onReadyToSeek ANDROID ... waiting a bit ... #" + event.data.playId);
                 }
-                
+
                 //self.play();
                 playToForcePreload();
-                
-                setTimeout(function() {
-                    onReadyToSeek_(event);
-                }, 1000);
+                onReadyToSeek_(event);
             }
         }
     
@@ -690,7 +687,7 @@ define(['jquery'],function($) {
                     setTimeout(function()
                     {
                         onSeeked(event);
-                    }, _Android ? 1000 : 200);
+                    }, 200);
                 }
     
                 setTimeout(function()
