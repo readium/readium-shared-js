@@ -48,17 +48,17 @@
     "concurrently": "^3.5.0",
     "npm-run-all": "^4.1.2",
     "opener": "^1.4.3",
-    "http-server": "github:danielweck/http-server"
+    "http-server": "github:danielweck/http-server#master"
   },
   "devDependencies": {
-    "jquery-sizes": "github:bramstein/jsizes",
-    "domReady": "github:requirejs/domReady",
+    "jquery-sizes": "github:bramstein/jsizes#master",
+    "domReady": "github:requirejs/domReady#master",
     "backbone": "^1.3.3",
-    "urijs": "github:danielweck/URI.js",
+    "urijs": "github:danielweck/URI.js#master",
     "eventemitter3": "^2.0.3",
     "es6-collections": "^0.5.6",
-    "cssom": "github:danielweck/CSSOM",
-    "css-element-queries": "github:danielweck/css-element-queries"
+    "cssom": "github:danielweck/CSSOM#master",
+    "css-element-queries": "github:danielweck/css-element-queries#master"
   },
   "scripts": {
     "cson2json": "node ./readium-cfi-js/node_modules/cson/bin/cson2json package.cson > package.json && node readium-cfi-js/readium-build-tools/optimizePackageJsonScripts.js",
