@@ -586,12 +586,13 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         return pageView;
     }
 
-    function findPageViewForSpineItem(spineItem, reverse) {
+    function findPageViewForSpineItemIdref(spineItemIdref, reverse) {
 
         var retView = undefined;
 
         forEachItemView(function (pageView) {
-            if (pageView.currentSpineItem() == spineItem) {
+            var currentSpineItem = pageView.currentSpineItem();
+            if (currentSpineItem && currentSpineItem.idref === spineItemIdref) {
                 retView = pageView;
                 //brake the iteration
                 return false;
@@ -736,7 +737,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
         if (pageRequest.spineItem) {
 
-            var pageView = findPageViewForSpineItem(pageRequest.spineItem);
+            var pageView = findPageViewForSpineItemIdref(pageRequest.spineItem.idref);
             if (pageView) {
                 doneLoadingSpineItem(pageView, pageRequest);
             }
@@ -1324,37 +1325,35 @@ var ScrollView = function (options, isContinuousScroll, reader) {
     };
 
     this.getElements = function(spineItemIdref, selector) {
-        var pageView = findPageViewForSpineItem(spineItemIdref);
+        var pageView = findPageViewForSpineItemIdref(spineItemIdref);
         if (pageView) {
             return pageView.getElements(spineItemIdref, selector);
         }
     };
 
-    this.isNodeFromRangeCfiVisible = function (spineIdref, partialCfi) {
-        var pageView = findPageViewForSpineItem(spineIdRef);
+    this.isNodeFromRangeCfiVisible = function (spineItemIdref, partialCfi) {
+        var pageView = findPageViewForSpineItemIdref(spineIdRef);
         if (pageView) {
             return pageView.isNodeFromRangeCfiVisible(spineIdRef, partialCfi);
         }
     };
 
-    this.isVisibleSpineItemElementCfi = function (spineIdRef, partialCfi) {
-        var pageView = findPageViewForSpineItem(spineIdRef);
+    this.isVisibleSpineItemElementCfi = function (spineItemIdref, partialCfi) {
+        var pageView = findPageViewForSpineItemIdref(spineIdRef);
         if (pageView) {
             return pageView.isVisibleSpineItemElementCfi(spineIdRef, partialCfi);
         }
     };
 
-    this.getNodeRangeInfoFromCfi = function(spineIdRef, partialCfi){
-        var pageView = findPageViewForSpineItem(spineIdRef);
+    this.getNodeRangeInfoFromCfi = function(spineItemIdref, partialCfi){
+        var pageView = findPageViewForSpineItemIdref(spineIdRef);
         if (pageView) {
             return pageView.isVisibleSpineItemElementCfi(spineIdRef, partialCfi);
         }
     };
     
-    function getFirstOrLastVisibleCfi(pickerFunc) {
-        var pageViews = getVisiblePageViews();
-        var selectedPageView = pickerFunc(pageViews);
-        var pageViewTopOffset =selectedPageView.element().position().top;
+    function getViewDisplayParams(view) {
+        var pageViewTopOffset = view.element().position().top;
         var visibleContentOffsets, frameDimensions;
 
         visibleContentOffsets = {
@@ -1362,33 +1361,86 @@ var ScrollView = function (options, isContinuousScroll, reader) {
             left: 0
         };
 
-        var height = Math.min(selectedPageView.element().height(), viewHeight());
+        var height = Math.min(view.element().height(), viewHeight());
 
         if (pageViewTopOffset >= 0) {
             height = height - pageViewTopOffset;
         }
         
         frameDimensions = {
-            width: selectedPageView.element().width(),
+            width: view.element().width(),
             height: height
         };
         
-        var cfiFunctions = [
-            selectedPageView.getFirstVisibleCfi,
-            selectedPageView.getLastVisibleCfi
-        ];
-        
-        return pickerFunc(cfiFunctions)(visibleContentOffsets, frameDimensions);
+        return {
+            visibleContentOffsets: visibleContentOffsets,
+            frameDimensions: frameDimensions
+        }
     }
-    
-    this.getFirstVisibleCfi = function () {
-        
-        return getFirstOrLastVisibleCfi(_.first);
+
+
+    this.getFirstVisibleCfi = function(spineItemIdref) {
+        var pageView;
+        if (spineItemIdref) {
+            pageView = findPageViewForSpineItemIdref(spineItemIdref);
+        } else {
+            pageView = _.first(getVisiblePageViews());
+        }
+
+        if (pageView) {
+            var displayParams = getViewDisplayParams(pageView);
+            return pageView.getFirstVisibleCfi(
+                displayParams.visibleContentOffsets, displayParams.frameDimensions);
+        } else {
+            return null;
+        }
     };
 
-    this.getLastVisibleCfi = function () {
-        
-        return getFirstOrLastVisibleCfi(_.last);
+    this.getLastVisibleCfi = function(spineItemIdref) {
+        var pageView;
+        if (spineItemIdref) {
+            pageView = findPageViewForSpineItemIdref(spineItemIdref);
+        } else {
+            pageView = _.last(getVisiblePageViews());
+        }
+
+        if (pageView) {
+            var displayParams = getViewDisplayParams(pageView);
+            return pageView.getLastVisibleCfi(
+                displayParams.visibleContentOffsets, displayParams.frameDimensions);
+        } else {
+            return null;
+        }
+    };
+
+    this.getStartCfi = function (spineItemIdref) {
+        var pageView;
+        if (spineItemIdref) {
+            pageView = findPageViewForSpineItemIdref(spineItemIdref);
+        } else {
+            pageView = _.first(getVisiblePageViews());
+        }
+
+        if (pageView) {
+            return pageView.getStartCfi();
+        } else {
+            return null;
+        }
+    };
+
+    this.getEndCfi = function (spineItemIdref) {
+        var pageView;
+        if (spineItemIdref) {
+            pageView = findPageViewForSpineItemIdref(spineItemIdref);
+        } else {
+            pageView = _.last(getVisiblePageViews());
+        }
+
+        if (pageView) {
+            return pageView.getEndCfi();
+        } else {
+            return null;
+        }
     };
 
     this.getDomRangeFromRangeCfi = function (rangeCfi, rangeCfi2, inclusive) {
@@ -1438,18 +1490,6 @@ var ScrollView = function (options, isContinuousScroll, reader) {
     this.getElementFromPoint = function (x, y) {
         return callOnVisiblePageView(function (pageView) {
             return pageView.getElementFromPoint(x, y);
-        });
-    };
-
-    this.getStartCfi = function () {
-        return callOnVisiblePageView(function (pageView) {
-            return pageView.getStartCfi();
-        });
-    };
-
-    this.getEndCfi = function () {
-        return callOnVisiblePageView(function (pageView) {
-            return pageView.getEndCfi();
         });
     };
 

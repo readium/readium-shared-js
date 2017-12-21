@@ -1166,19 +1166,31 @@ var ReflowableView = function(options, reader){
         return new BookmarkData(_currentSpineItem.idref, cfi);
     }
 
-    this.getFirstVisibleCfi = function () {
+    this.getFirstVisibleCfi = function (spineItemIdref) {
+        if (spineItemIdref && spineItemIdref !== _currentSpineItem.idref) {
+            return null;
+        }
         return createBookmarkFromCfi(_navigationLogic.getFirstVisibleCfi());
     };
 
-    this.getLastVisibleCfi = function () {
+    this.getLastVisibleCfi = function (spineItemIdref) {
+        if (spineItemIdref && spineItemIdref !== _currentSpineItem.idref) {
+            return null;
+        }
         return createBookmarkFromCfi(_navigationLogic.getLastVisibleCfi());
     };
 
-    this.getStartCfi = function () {
+    this.getStartCfi = function (spineItemIdref) {
+        if (spineItemIdref && spineItemIdref !== _currentSpineItem.idref) {
+            return null;
+        }
         return createBookmarkFromCfi(_navigationLogic.getStartCfi());
     };
 
-    this.getEndCfi = function () {
+    this.getEndCfi = function (spineItemIdref) {
+        if (spineItemIdref && spineItemIdref !== _currentSpineItem.idref) {
+            return null;
+        }
         return createBookmarkFromCfi(_navigationLogic.getEndCfi());
     };
 
