@@ -168,9 +168,7 @@ scripts:
 
         (npm outdated || echo outdated)
         &&
-        npm install --only=prod
-        &&
-        npm install --only=dev
+        npm install
         &&
         npm run prepare:local:common
     '
