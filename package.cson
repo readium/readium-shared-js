@@ -196,9 +196,6 @@ scripts:
 #=====================
     'prepare:local:common': '
 
-        npm run
-            prepare:patch
-        &&
         node
             readium-cfi-js/readium-build-tools/gitHubForksUpdater.js
     '
@@ -225,17 +222,6 @@ scripts:
         cd ..
         &&
         ls
-    '
-
-#=====================
-    'prepare:patch': '
-
-        npm run rimraf
-            node_modules/eventemitter3/_rjs/**
-        &&
-        node readium-cfi-js/node_modules/requirejs/bin/r.js -convert
-            node_modules/eventemitter3/
-            node_modules/eventemitter3/_rjs/
     '
 
 #=====================
