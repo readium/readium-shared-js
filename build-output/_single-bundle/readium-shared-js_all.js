@@ -15138,320 +15138,7 @@ if (typeof define == 'function' && typeof define.amd == 'object') {
 
 define('readium_cfi_js', ['readium_cfi_js/cfi_API'], function (main) { return main; });
 
-define('eventEmitter',['require','exports','module'],function (require, exports, module) {'use strict';
-
-var has = Object.prototype.hasOwnProperty
-  , prefix = '~';
-
-/**
- * Constructor to create a storage for our `EE` objects.
- * An `Events` instance is a plain object whose properties are event names.
- *
- * @constructor
- * @api private
- */
-function Events() {}
-
-//
-// We try to not inherit from `Object.prototype`. In some engines creating an
-// instance in this way is faster than calling `Object.create(null)` directly.
-// If `Object.create(null)` is not supported we prefix the event names with a
-// character to make sure that the built-in object properties are not
-// overridden or used as an attack vector.
-//
-if (Object.create) {
-  Events.prototype = Object.create(null);
-
-  //
-  // This hack is needed because the `__proto__` property is still inherited in
-  // some old browsers like Android 4, iPhone 5.1, Opera 11 and Safari 5.
-  //
-  if (!new Events().__proto__) prefix = false;
-}
-
-/**
- * Representation of a single event listener.
- *
- * @param {Function} fn The listener function.
- * @param {Mixed} context The context to invoke the listener with.
- * @param {Boolean} [once=false] Specify if the listener is a one-time listener.
- * @constructor
- * @api private
- */
-function EE(fn, context, once) {
-  this.fn = fn;
-  this.context = context;
-  this.once = once || false;
-}
-
-/**
- * Minimal `EventEmitter` interface that is molded against the Node.js
- * `EventEmitter` interface.
- *
- * @constructor
- * @api public
- */
-function EventEmitter() {
-  this._events = new Events();
-  this._eventsCount = 0;
-}
-
-/**
- * Return an array listing the events for which the emitter has registered
- * listeners.
- *
- * @returns {Array}
- * @api public
- */
-EventEmitter.prototype.eventNames = function eventNames() {
-  var names = []
-    , events
-    , name;
-
-  if (this._eventsCount === 0) return names;
-
-  for (name in (events = this._events)) {
-    if (has.call(events, name)) names.push(prefix ? name.slice(1) : name);
-  }
-
-  if (Object.getOwnPropertySymbols) {
-    return names.concat(Object.getOwnPropertySymbols(events));
-  }
-
-  return names;
-};
-
-/**
- * Return the listeners registered for a given event.
- *
- * @param {String|Symbol} event The event name.
- * @param {Boolean} exists Only check if there are listeners.
- * @returns {Array|Boolean}
- * @api public
- */
-EventEmitter.prototype.listeners = function listeners(event, exists) {
-  var evt = prefix ? prefix + event : event
-    , available = this._events[evt];
-
-  if (exists) return !!available;
-  if (!available) return [];
-  if (available.fn) return [available.fn];
-
-  for (var i = 0, l = available.length, ee = new Array(l); i < l; i++) {
-    ee[i] = available[i].fn;
-  }
-
-  return ee;
-};
-
-/**
- * Calls each of the listeners registered for a given event.
- *
- * @param {String|Symbol} event The event name.
- * @returns {Boolean} `true` if the event had listeners, else `false`.
- * @api public
- */
-EventEmitter.prototype.emit = function emit(event, a1, a2, a3, a4, a5) {
-  var evt = prefix ? prefix + event : event;
-
-  if (!this._events[evt]) return false;
-
-  var listeners = this._events[evt]
-    , len = arguments.length
-    , args
-    , i;
-
-  if (listeners.fn) {
-    if (listeners.once) this.removeListener(event, listeners.fn, undefined, true);
-
-    switch (len) {
-      case 1: return listeners.fn.call(listeners.context), true;
-      case 2: return listeners.fn.call(listeners.context, a1), true;
-      case 3: return listeners.fn.call(listeners.context, a1, a2), true;
-      case 4: return listeners.fn.call(listeners.context, a1, a2, a3), true;
-      case 5: return listeners.fn.call(listeners.context, a1, a2, a3, a4), true;
-      case 6: return listeners.fn.call(listeners.context, a1, a2, a3, a4, a5), true;
-    }
-
-    for (i = 1, args = new Array(len -1); i < len; i++) {
-      args[i - 1] = arguments[i];
-    }
-
-    listeners.fn.apply(listeners.context, args);
-  } else {
-    var length = listeners.length
-      , j;
-
-    for (i = 0; i < length; i++) {
-      if (listeners[i].once) this.removeListener(event, listeners[i].fn, undefined, true);
-
-      switch (len) {
-        case 1: listeners[i].fn.call(listeners[i].context); break;
-        case 2: listeners[i].fn.call(listeners[i].context, a1); break;
-        case 3: listeners[i].fn.call(listeners[i].context, a1, a2); break;
-        case 4: listeners[i].fn.call(listeners[i].context, a1, a2, a3); break;
-        default:
-          if (!args) for (j = 1, args = new Array(len -1); j < len; j++) {
-            args[j - 1] = arguments[j];
-          }
-
-          listeners[i].fn.apply(listeners[i].context, args);
-      }
-    }
-  }
-
-  return true;
-};
-
-/**
- * Add a listener for a given event.
- *
- * @param {String|Symbol} event The event name.
- * @param {Function} fn The listener function.
- * @param {Mixed} [context=this] The context to invoke the listener with.
- * @returns {EventEmitter} `this`.
- * @api public
- */
-EventEmitter.prototype.on = function on(event, fn, context) {
-  var listener = new EE(fn, context || this)
-    , evt = prefix ? prefix + event : event;
-
-  if (!this._events[evt]) this._events[evt] = listener, this._eventsCount++;
-  else if (!this._events[evt].fn) this._events[evt].push(listener);
-  else this._events[evt] = [this._events[evt], listener];
-
-  return this;
-};
-
-/**
- * Add a one-time listener for a given event.
- *
- * @param {String|Symbol} event The event name.
- * @param {Function} fn The listener function.
- * @param {Mixed} [context=this] The context to invoke the listener with.
- * @returns {EventEmitter} `this`.
- * @api public
- */
-EventEmitter.prototype.once = function once(event, fn, context) {
-  var listener = new EE(fn, context || this, true)
-    , evt = prefix ? prefix + event : event;
-
-  if (!this._events[evt]) this._events[evt] = listener, this._eventsCount++;
-  else if (!this._events[evt].fn) this._events[evt].push(listener);
-  else this._events[evt] = [this._events[evt], listener];
-
-  return this;
-};
-
-/**
- * Remove the listeners of a given event.
- *
- * @param {String|Symbol} event The event name.
- * @param {Function} fn Only remove the listeners that match this function.
- * @param {Mixed} context Only remove the listeners that have this context.
- * @param {Boolean} once Only remove one-time listeners.
- * @returns {EventEmitter} `this`.
- * @api public
- */
-EventEmitter.prototype.removeListener = function removeListener(event, fn, context, once) {
-  var evt = prefix ? prefix + event : event;
-
-  if (!this._events[evt]) return this;
-  if (!fn) {
-    if (--this._eventsCount === 0) this._events = new Events();
-    else delete this._events[evt];
-    return this;
-  }
-
-  var listeners = this._events[evt];
-
-  if (listeners.fn) {
-    if (
-         listeners.fn === fn
-      && (!once || listeners.once)
-      && (!context || listeners.context === context)
-    ) {
-      if (--this._eventsCount === 0) this._events = new Events();
-      else delete this._events[evt];
-    }
-  } else {
-    for (var i = 0, events = [], length = listeners.length; i < length; i++) {
-      if (
-           listeners[i].fn !== fn
-        || (once && !listeners[i].once)
-        || (context && listeners[i].context !== context)
-      ) {
-        events.push(listeners[i]);
-      }
-    }
-
-    //
-    // Reset the array, or remove it completely if we have no more listeners.
-    //
-    if (events.length) this._events[evt] = events.length === 1 ? events[0] : events;
-    else if (--this._eventsCount === 0) this._events = new Events();
-    else delete this._events[evt];
-  }
-
-  return this;
-};
-
-/**
- * Remove all listeners, or those of the specified event.
- *
- * @param {String|Symbol} [event] The event name.
- * @returns {EventEmitter} `this`.
- * @api public
- */
-EventEmitter.prototype.removeAllListeners = function removeAllListeners(event) {
-  var evt;
-
-  if (event) {
-    evt = prefix ? prefix + event : event;
-    if (this._events[evt]) {
-      if (--this._eventsCount === 0) this._events = new Events();
-      else delete this._events[evt];
-    }
-  } else {
-    this._events = new Events();
-    this._eventsCount = 0;
-  }
-
-  return this;
-};
-
-//
-// Alias methods names because people roll like that.
-//
-EventEmitter.prototype.off = EventEmitter.prototype.removeListener;
-EventEmitter.prototype.addListener = EventEmitter.prototype.on;
-
-//
-// This function doesn't apply anymore.
-//
-EventEmitter.prototype.setMaxListeners = function setMaxListeners() {
-  return this;
-};
-
-//
-// Expose the prefix.
-//
-EventEmitter.prefixed = prefix;
-
-//
-// Allow `EventEmitter` to be imported as module namespace.
-//
-EventEmitter.EventEmitter = EventEmitter;
-
-//
-// Expose the module.
-//
-if ('undefined' !== typeof module) {
-  module.exports = EventEmitter;
-}
-
-});
-
+(function(e){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=e()}else if(typeof define==="function"&&define.amd){define('eventEmitter',[],e)}else{var t;if(typeof window!=="undefined"){t=window}else if(typeof global!=="undefined"){t=global}else if(typeof self!=="undefined"){t=self}else{t=this}t.EventEmitter3=e()}})(function(){var e,t,n;return function e(t,n,r){function s(o,f){if(!n[o]){if(!t[o]){var u=typeof require=="function"&&require;if(!f&&u)return u(o,!0);if(i)return i(o,!0);var c=new Error("Cannot find module '"+o+"'");throw c.code="MODULE_NOT_FOUND",c}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s}({1:[function(e,t,n){"use strict";var r=Object.prototype.hasOwnProperty,s="~";function i(){}if(Object.create){i.prototype=Object.create(null);if(!(new i).__proto__)s=false}function o(e,t,n){this.fn=e;this.context=t;this.once=n||false}function f(){this._events=new i;this._eventsCount=0}f.prototype.eventNames=function e(){var t=[],n,i;if(this._eventsCount===0)return t;for(i in n=this._events){if(r.call(n,i))t.push(s?i.slice(1):i)}if(Object.getOwnPropertySymbols){return t.concat(Object.getOwnPropertySymbols(n))}return t};f.prototype.listeners=function e(t,n){var r=s?s+t:t,i=this._events[r];if(n)return!!i;if(!i)return[];if(i.fn)return[i.fn];for(var o=0,f=i.length,u=new Array(f);o<f;o++){u[o]=i[o].fn}return u};f.prototype.emit=function e(t,n,r,i,o,f){var u=s?s+t:t;if(!this._events[u])return false;var c=this._events[u],l=arguments.length,h,v;if(c.fn){if(c.once)this.removeListener(t,c.fn,undefined,true);switch(l){case 1:return c.fn.call(c.context),true;case 2:return c.fn.call(c.context,n),true;case 3:return c.fn.call(c.context,n,r),true;case 4:return c.fn.call(c.context,n,r,i),true;case 5:return c.fn.call(c.context,n,r,i,o),true;case 6:return c.fn.call(c.context,n,r,i,o,f),true}for(v=1,h=new Array(l-1);v<l;v++){h[v-1]=arguments[v]}c.fn.apply(c.context,h)}else{var a=c.length,p;for(v=0;v<a;v++){if(c[v].once)this.removeListener(t,c[v].fn,undefined,true);switch(l){case 1:c[v].fn.call(c[v].context);break;case 2:c[v].fn.call(c[v].context,n);break;case 3:c[v].fn.call(c[v].context,n,r);break;case 4:c[v].fn.call(c[v].context,n,r,i);break;default:if(!h)for(p=1,h=new Array(l-1);p<l;p++){h[p-1]=arguments[p]}c[v].fn.apply(c[v].context,h)}}}return true};f.prototype.on=function e(t,n,r){var i=new o(n,r||this),f=s?s+t:t;if(!this._events[f])this._events[f]=i,this._eventsCount++;else if(!this._events[f].fn)this._events[f].push(i);else this._events[f]=[this._events[f],i];return this};f.prototype.once=function e(t,n,r){var i=new o(n,r||this,true),f=s?s+t:t;if(!this._events[f])this._events[f]=i,this._eventsCount++;else if(!this._events[f].fn)this._events[f].push(i);else this._events[f]=[this._events[f],i];return this};f.prototype.removeListener=function e(t,n,r,o){var f=s?s+t:t;if(!this._events[f])return this;if(!n){if(--this._eventsCount===0)this._events=new i;else delete this._events[f];return this}var u=this._events[f];if(u.fn){if(u.fn===n&&(!o||u.once)&&(!r||u.context===r)){if(--this._eventsCount===0)this._events=new i;else delete this._events[f]}}else{for(var c=0,l=[],h=u.length;c<h;c++){if(u[c].fn!==n||o&&!u[c].once||r&&u[c].context!==r){l.push(u[c])}}if(l.length)this._events[f]=l.length===1?l[0]:l;else if(--this._eventsCount===0)this._events=new i;else delete this._events[f]}return this};f.prototype.removeAllListeners=function e(t){var n;if(t){n=s?s+t:t;if(this._events[n]){if(--this._eventsCount===0)this._events=new i;else delete this._events[n]}}else{this._events=new i;this._eventsCount=0}return this};f.prototype.off=f.prototype.removeListener;f.prototype.addListener=f.prototype.on;f.prototype.setMaxListeners=function e(){return this};f.prefixed=s;f.EventEmitter=f;if("undefined"!==typeof t){t.exports=f}},{}]},{},[1])(1)});
 //  LauncherOSX
 //
 //  Created by Boris Schneiderman.
@@ -20175,6 +19862,16 @@ var SpineItem = function(itemData, index, spine){
     this.href = itemData.href;
 
     /**
+     * The package level CFI of the spine item, i.e. the CFI path to the spine item
+     * element in the package document.
+     *
+     * @property cfi
+     * @type String
+     * @default  None
+     */
+    this.cfi = itemData.cfi;
+
+    /**
      * A flag indicating whether the spineItem has the attribute linear, which 
      * is either yes or no.  Default is yes.
      *
@@ -20697,7 +20394,7 @@ SpineItem.alternateSpread = function(spread) {
 //  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
-define('readium_shared_js/helpers',["./globals", 'underscore', "jquery", "jquerySizes", "./models/spine_item"], function(Globals, _, $, JQuerySizes, SpineItem) {
+define('readium_shared_js/helpers',["./globals", 'underscore', "jquery", "jquerySizes", "./models/spine_item", 'URIjs'], function(Globals, _, $, JQuerySizes, SpineItem, URI) {
     
 (function()
 {
@@ -20764,13 +20461,13 @@ Helpers.getEbookUrlFilePath = function(ebookURL) {
 };
 
 /**
- *
+ * @param initialQuery: (optional) initial query string
  * @returns object (map between URL query parameter names and corresponding decoded / unescaped values)
  */
-Helpers.getURLQueryParams = function() {
+Helpers.getURLQueryParams = function(initialQuery) {
     var params = {};
 
-    var query = window.location.search;
+    var query = initialQuery || window.location.search;
     if (query && query.length) {
         query = query.substring(1);
         var keyParams = query.split('&');
@@ -20788,57 +20485,64 @@ Helpers.getURLQueryParams = function() {
 
 
 /**
- * @param urlpath: string corresponding a URL without query parameters (i.e. the part before the '?' question mark in index.html?param=value). If undefined/null, the default window.location is used.
- * @param overrides: object that maps query parameter names with values (to be included in the resulting URL, while any other query params in the current window.location are preserved as-is) 
- * @returns a string corresponding to a URL obtained by concatenating the given URL with the given query parameters (and those already in window.location)
+ * @param initialUrl: string corresponding a URL. If undefined/null, the default window.location is used.
+ * @param queryStringOverrides: object that maps query parameter names with values (to be included in the resulting URL, while any other query params in the current window.location are preserved as-is)
+ * @returns string corresponding to a URL obtained by concatenating the given URL with the given query parameters
  */
-Helpers.buildUrlQueryParameters = function(urlpath, overrides) {
-    
-    if (!urlpath) {
-        urlpath =
-        window.location ? (
-            window.location.protocol
-            + "//"
-            + window.location.hostname
-            + (window.location.port ? (':' + window.location.port) : '')
-            + window.location.pathname
-        ) : 'index.html';
+Helpers.buildUrlQueryParameters = function(initialUrl, queryStringOverrides) {
+    var uriInstance = new URI(initialUrl || window.location);
+    var startingQueryString = uriInstance.search();
+    var urlFragment = uriInstance.hash();
+    var urlPath = uriInstance.search('').hash('').toString();
+
+    var newQueryString = "";
+
+    for (var overrideKey in queryStringOverrides) {
+        if (!queryStringOverrides.hasOwnProperty(overrideKey)) continue;
+
+        if (!queryStringOverrides[overrideKey]) continue;
+
+        var overrideEntry = queryStringOverrides[overrideKey];
+        if (_.isString(overrideEntry)) {
+            overrideEntry = overrideEntry.trim();
+        }
+
+        if (!overrideEntry) continue;
+
+        if (overrideEntry.verbatim) {
+            overrideEntry = overrideEntry.value; // grab value from entry as object
+        } else {
+            overrideEntry = encodeURIComponent(overrideEntry);
+        }
+
+        console.debug("URL QUERY PARAM OVERRIDE: " + overrideKey + " = " + overrideEntry);
+
+        newQueryString += (overrideKey + "=" + overrideEntry);
+        newQueryString += "&";
     }
 
-    var paramsString = "";
-    
-    for (var key in overrides) {
-        if (!overrides.hasOwnProperty(key)) continue;
-        
-        if (!overrides[key]) continue;
-        
-        var val = overrides[key].trim();
-        if (!val) continue;
-        
-        console.debug("URL QUERY PARAM OVERRIDE: " + key + " = " + val);
 
-        paramsString += (key + "=" + encodeURIComponent(val));
-        paramsString += "&";
+    var parsedQueryString = Helpers.getURLQueryParams(startingQueryString);
+    for (var parsedKey in parsedQueryString) {
+        if (!parsedQueryString.hasOwnProperty(parsedKey)) continue;
+
+        if (!parsedQueryString[parsedKey]) continue;
+
+        if (queryStringOverrides[parsedKey]) continue;
+
+        var parsedValue = parsedQueryString[parsedKey].trim();
+        if (!parsedValue) continue;
+
+        console.debug("URL QUERY PARAM PRESERVED: " + parsedKey + " = " + parsedValue);
+
+        newQueryString += (parsedKey + "=" + encodeURIComponent(parsedValue));
+        newQueryString += "&";
     }
-    
-    var urlParams = Helpers.getURLQueryParams();
-    for (var key in urlParams) {
-        if (!urlParams.hasOwnProperty(key)) continue;
-        
-        if (!urlParams[key]) continue;
-        
-        if (overrides[key]) continue;
 
-        var val = urlParams[key].trim();
-        if (!val) continue;
-        
-        console.debug("URL QUERY PARAM PRESERVED: " + key + " = " + val);
+    // remove trailing "&"
+    newQueryString = newQueryString.slice(0, -1);
 
-        paramsString += (key + "=" + encodeURIComponent(val));
-        paramsString += "&";
-    }
-    
-    return urlpath + "?" + paramsString;
+    return urlPath + "?" + newQueryString + urlFragment;
 };
 
 
@@ -24391,6 +24095,10 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
                 _$epubBody = undefined;
             } else {
                 _$epubBody = $("body", _$epubHtml);
+
+                if (!_enableBookStyleOverrides) { // fixed layout
+                    _$epubBody.css("margin", "0"); // ensures 8px margin default user agent stylesheet is reset to zero
+                }
             }
 
             //_$epubHtml.css("overflow", "hidden");
@@ -26222,7 +25930,7 @@ var FixedView = function(options, reader){
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define('readium_shared_js/views/iframe_loader',["jquery", "underscore"], function($, _) {
+define('readium_shared_js/views/iframe_loader',["jquery", "underscore", 'URIjs'], function($, _, URI) {
 /**
  *
  * @constructor
@@ -26361,7 +26069,7 @@ return IFrameLoader;
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define('readium_shared_js/views/internal_links_support',['jquery', '../helpers', 'readium_cfi_js'], function($, Helpers, epubCfi) {
+define('readium_shared_js/views/internal_links_support',['jquery', '../helpers', 'readium_cfi_js', 'URIjs'], function($, Helpers, epubCfi, URI) {
 /**
  *
  * @param reader
@@ -40468,13 +40176,17 @@ var Spine = function(epubPackage, spineDTO) {
      */
     this.getItemByHref = function(href) {
         
-        var href1 = new URI(self.package.resolveRelativeUrl(href)).normalizePathname().pathname();
+        var href1_ = self.package.resolveRelativeUrl(href);
+        href1_ = href1_.replace("filesystem:chrome-extension://", "filesystem-chrome-extension://");
+        var href1 = new URI(href1_).normalizePathname().pathname();
         
         var length = self.items.length;
 
         for(var i = 0; i < length; i++) {
             
-            var href2 = new URI(self.package.resolveRelativeUrl(self.items[i].href)).normalizePathname().pathname();
+            var href2_ = self.package.resolveRelativeUrl(self.items[i].href);
+            href2_ = href2_.replace("filesystem:chrome-extension://", "filesystem-chrome-extension://");
+            var href2 = new URI(href2_).normalizePathname().pathname();
             
             if(href1 == href2) {
                 return self.items[i];
@@ -41757,10 +41469,10 @@ define('readium_shared_js/models/media_overlay',["./smil_model"], function(SmilM
  *
  * @class Models.MediaOverlay
  * @constructor
- * @param {Models.Package} package EPUB package
+ * @param {Models.Package} packageModel  EPUB package
 */
 
-var MediaOverlay = function(package) {
+var MediaOverlay = function(packageModel) {
 
     /**
      * The parent package object
@@ -41768,7 +41480,7 @@ var MediaOverlay = function(package) {
      * @property package
      * @type Models.Package
      */    
-    this.package = package;
+    this.package = packageModel;
 
     /**
      * Checks if a parallel smil node exists at a given timecode. 
@@ -42079,13 +41791,13 @@ var MediaOverlay = function(package) {
  *
  * @method MediaOverlay.fromDTO
  * @param {Object} moDTO Media overlay data object (raw JSON, as returned by a parser)
- * @param {Models.Package} package EPUB package object
+ * @param {Models.Package} packageModel EPUB package object
  * @return {Models.MediaOverlay}
 */
 
-MediaOverlay.fromDTO = function(moDTO, pack) {
+MediaOverlay.fromDTO = function(moDTO, packageModel) {
 
-    var mo = new MediaOverlay(pack);
+    var mo = new MediaOverlay(packageModel);
 
     if(!moDTO) {
         return mo;
@@ -44399,16 +44111,31 @@ define('readium_shared_js/views/external_agent_support',["../globals", "undersco
             }
         }
 
+        function determineCanonicalLinkHref(contentWindow) {
+            // Only grab the href if there's no potential cross-domain violation
+            // and the reader application URL has a CFI value in a 'goto' query param.
+            var isSameDomain = Object.keys(contentWindow).indexOf('document') !== -1;
+            if (isSameDomain && contentWindow.location.search.match(/goto=.*cfi/i)) {
+                return contentWindow.location.href.split("#")[0];
+            }
+        }
+
+        function getContentDocumentCanonicalLink(contentDocument) {
+            var contentDocWindow = contentDocument.defaultView;
+            if (contentDocWindow && (contentDocWindow.parent|| contentDocWindow.top)) {
+                var parentWindowCanonicalHref = determineCanonicalLinkHref(contentDocWindow.parent);
+                var topWindowCanonicalHref = determineCanonicalLinkHref(contentDocWindow.top);
+                return topWindowCanonicalHref || parentWindowCanonicalHref;
+            }
+        }
+
         function injectAppUrlAsCanonicalLink(contentDocument, spineItem) {
             if (contentDocument.defaultView && contentDocument.defaultView.parent) {
-                var parentWindow = contentDocument.defaultView.parent;
-                var isParentInSameDomain = Object.keys(parentWindow).indexOf('document') !== -1;
-                // Only do this if there's no potential cross-domain violation
-                // and the reader application URL has a CFI value in a 'goto' query param.
-                if (isParentInSameDomain && parentWindow.location.search.match(/goto=.*cfi/i)) {
+                var canonicalLinkHref = getContentDocumentCanonicalLink(contentDocument);
+                if (canonicalLinkHref) {
                     var link = contentDocument.createElement('link');
                     link.setAttribute('rel', 'canonical');
-                    link.setAttribute('href', parentWindow.location.href);
+                    link.setAttribute('href', canonicalLinkHref);
                     contentDocument.head.appendChild(link);
                     contentDocumentStates[spineItem.idref].canonicalLinkElement = link;
                 }
@@ -44484,13 +44211,10 @@ define('readium_shared_js/views/external_agent_support',["../globals", "undersco
 
             if (contentDocument && state) {
 
-                if (state.canonicalLinkElement &&
-                    contentDocument.defaultView &&
-                    contentDocument.defaultView.parent) {
-                    var parentWindow = contentDocument.defaultView.parent;
-                    var isParentInDifferentDomain = 'document' in Object.keys(parentWindow);
-                    if (!isParentInDifferentDomain) {
-                        state.canonicalLinkElement.setAttribute('href', parentWindow.location.href);
+                if (state.canonicalLinkElement) {
+                    var canonicalLinkHref = getContentDocumentCanonicalLink(contentDocument);
+                    if (canonicalLinkHref) {
+                        state.canonicalLinkElement.setAttribute('href', canonicalLinkHref);
                     }
                 }
 
@@ -46013,8 +45737,8 @@ var ReaderView = function (options) {
             Globals.logEvent("MEDIA_OVERLAY_STATUS_CHANGED", "ON", "reader_view.js (via BackgroundAudioTrackManager)");
             
             if (!value.smilIndex) return;
-            var package = readerView.package();
-            var smil = package.media_overlay.smilAt(value.smilIndex);
+            var packageModel = readerView.package();
+            var smil = packageModel.media_overlay.smilAt(value.smilIndex);
             if (!smil || !smil.spineItemId) return;
 
             var needUpdate = false;

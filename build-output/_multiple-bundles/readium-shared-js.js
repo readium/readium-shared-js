@@ -1300,6 +1300,16 @@ var SpineItem = function(itemData, index, spine){
     this.href = itemData.href;
 
     /**
+     * The package level CFI of the spine item, i.e. the CFI path to the spine item
+     * element in the package document.
+     *
+     * @property cfi
+     * @type String
+     * @default  None
+     */
+    this.cfi = itemData.cfi;
+
+    /**
      * A flag indicating whether the spineItem has the attribute linear, which 
      * is either yes or no.  Default is yes.
      *
@@ -1822,7 +1832,7 @@ SpineItem.alternateSpread = function(spread) {
 //  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
-define('readium_shared_js/helpers',["./globals", 'underscore', "jquery", "jquerySizes", "./models/spine_item"], function(Globals, _, $, JQuerySizes, SpineItem) {
+define('readium_shared_js/helpers',["./globals", 'underscore', "jquery", "jquerySizes", "./models/spine_item", 'URIjs'], function(Globals, _, $, JQuerySizes, SpineItem, URI) {
     
 (function()
 {
@@ -1889,13 +1899,13 @@ Helpers.getEbookUrlFilePath = function(ebookURL) {
 };
 
 /**
- *
+ * @param initialQuery: (optional) initial query string
  * @returns object (map between URL query parameter names and corresponding decoded / unescaped values)
  */
-Helpers.getURLQueryParams = function() {
+Helpers.getURLQueryParams = function(initialQuery) {
     var params = {};
 
-    var query = window.location.search;
+    var query = initialQuery || window.location.search;
     if (query && query.length) {
         query = query.substring(1);
         var keyParams = query.split('&');
@@ -1913,57 +1923,64 @@ Helpers.getURLQueryParams = function() {
 
 
 /**
- * @param urlpath: string corresponding a URL without query parameters (i.e. the part before the '?' question mark in index.html?param=value). If undefined/null, the default window.location is used.
- * @param overrides: object that maps query parameter names with values (to be included in the resulting URL, while any other query params in the current window.location are preserved as-is) 
- * @returns a string corresponding to a URL obtained by concatenating the given URL with the given query parameters (and those already in window.location)
+ * @param initialUrl: string corresponding a URL. If undefined/null, the default window.location is used.
+ * @param queryStringOverrides: object that maps query parameter names with values (to be included in the resulting URL, while any other query params in the current window.location are preserved as-is)
+ * @returns string corresponding to a URL obtained by concatenating the given URL with the given query parameters
  */
-Helpers.buildUrlQueryParameters = function(urlpath, overrides) {
-    
-    if (!urlpath) {
-        urlpath =
-        window.location ? (
-            window.location.protocol
-            + "//"
-            + window.location.hostname
-            + (window.location.port ? (':' + window.location.port) : '')
-            + window.location.pathname
-        ) : 'index.html';
+Helpers.buildUrlQueryParameters = function(initialUrl, queryStringOverrides) {
+    var uriInstance = new URI(initialUrl || window.location);
+    var startingQueryString = uriInstance.search();
+    var urlFragment = uriInstance.hash();
+    var urlPath = uriInstance.search('').hash('').toString();
+
+    var newQueryString = "";
+
+    for (var overrideKey in queryStringOverrides) {
+        if (!queryStringOverrides.hasOwnProperty(overrideKey)) continue;
+
+        if (!queryStringOverrides[overrideKey]) continue;
+
+        var overrideEntry = queryStringOverrides[overrideKey];
+        if (_.isString(overrideEntry)) {
+            overrideEntry = overrideEntry.trim();
+        }
+
+        if (!overrideEntry) continue;
+
+        if (overrideEntry.verbatim) {
+            overrideEntry = overrideEntry.value; // grab value from entry as object
+        } else {
+            overrideEntry = encodeURIComponent(overrideEntry);
+        }
+
+        console.debug("URL QUERY PARAM OVERRIDE: " + overrideKey + " = " + overrideEntry);
+
+        newQueryString += (overrideKey + "=" + overrideEntry);
+        newQueryString += "&";
     }
 
-    var paramsString = "";
-    
-    for (var key in overrides) {
-        if (!overrides.hasOwnProperty(key)) continue;
-        
-        if (!overrides[key]) continue;
-        
-        var val = overrides[key].trim();
-        if (!val) continue;
-        
-        console.debug("URL QUERY PARAM OVERRIDE: " + key + " = " + val);
 
-        paramsString += (key + "=" + encodeURIComponent(val));
-        paramsString += "&";
+    var parsedQueryString = Helpers.getURLQueryParams(startingQueryString);
+    for (var parsedKey in parsedQueryString) {
+        if (!parsedQueryString.hasOwnProperty(parsedKey)) continue;
+
+        if (!parsedQueryString[parsedKey]) continue;
+
+        if (queryStringOverrides[parsedKey]) continue;
+
+        var parsedValue = parsedQueryString[parsedKey].trim();
+        if (!parsedValue) continue;
+
+        console.debug("URL QUERY PARAM PRESERVED: " + parsedKey + " = " + parsedValue);
+
+        newQueryString += (parsedKey + "=" + encodeURIComponent(parsedValue));
+        newQueryString += "&";
     }
-    
-    var urlParams = Helpers.getURLQueryParams();
-    for (var key in urlParams) {
-        if (!urlParams.hasOwnProperty(key)) continue;
-        
-        if (!urlParams[key]) continue;
-        
-        if (overrides[key]) continue;
 
-        var val = urlParams[key].trim();
-        if (!val) continue;
-        
-        console.debug("URL QUERY PARAM PRESERVED: " + key + " = " + val);
+    // remove trailing "&"
+    newQueryString = newQueryString.slice(0, -1);
 
-        paramsString += (key + "=" + encodeURIComponent(val));
-        paramsString += "&";
-    }
-    
-    return urlpath + "?" + paramsString;
+    return urlPath + "?" + newQueryString + urlFragment;
 };
 
 
@@ -5516,6 +5533,10 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
                 _$epubBody = undefined;
             } else {
                 _$epubBody = $("body", _$epubHtml);
+
+                if (!_enableBookStyleOverrides) { // fixed layout
+                    _$epubBody.css("margin", "0"); // ensures 8px margin default user agent stylesheet is reset to zero
+                }
             }
 
             //_$epubHtml.css("overflow", "hidden");
@@ -7347,7 +7368,7 @@ var FixedView = function(options, reader){
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define('readium_shared_js/views/iframe_loader',["jquery", "underscore"], function($, _) {
+define('readium_shared_js/views/iframe_loader',["jquery", "underscore", 'URIjs'], function($, _, URI) {
 /**
  *
  * @constructor
@@ -7486,7 +7507,7 @@ return IFrameLoader;
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define('readium_shared_js/views/internal_links_support',['jquery', '../helpers', 'readium_cfi_js'], function($, Helpers, epubCfi) {
+define('readium_shared_js/views/internal_links_support',['jquery', '../helpers', 'readium_cfi_js', 'URIjs'], function($, Helpers, epubCfi, URI) {
 /**
  *
  * @param reader
@@ -13717,13 +13738,17 @@ var Spine = function(epubPackage, spineDTO) {
      */
     this.getItemByHref = function(href) {
         
-        var href1 = new URI(self.package.resolveRelativeUrl(href)).normalizePathname().pathname();
+        var href1_ = self.package.resolveRelativeUrl(href);
+        href1_ = href1_.replace("filesystem:chrome-extension://", "filesystem-chrome-extension://");
+        var href1 = new URI(href1_).normalizePathname().pathname();
         
         var length = self.items.length;
 
         for(var i = 0; i < length; i++) {
             
-            var href2 = new URI(self.package.resolveRelativeUrl(self.items[i].href)).normalizePathname().pathname();
+            var href2_ = self.package.resolveRelativeUrl(self.items[i].href);
+            href2_ = href2_.replace("filesystem:chrome-extension://", "filesystem-chrome-extension://");
+            var href2 = new URI(href2_).normalizePathname().pathname();
             
             if(href1 == href2) {
                 return self.items[i];
@@ -15006,10 +15031,10 @@ define('readium_shared_js/models/media_overlay',["./smil_model"], function(SmilM
  *
  * @class Models.MediaOverlay
  * @constructor
- * @param {Models.Package} package EPUB package
+ * @param {Models.Package} packageModel  EPUB package
 */
 
-var MediaOverlay = function(package) {
+var MediaOverlay = function(packageModel) {
 
     /**
      * The parent package object
@@ -15017,7 +15042,7 @@ var MediaOverlay = function(package) {
      * @property package
      * @type Models.Package
      */    
-    this.package = package;
+    this.package = packageModel;
 
     /**
      * Checks if a parallel smil node exists at a given timecode. 
@@ -15328,13 +15353,13 @@ var MediaOverlay = function(package) {
  *
  * @method MediaOverlay.fromDTO
  * @param {Object} moDTO Media overlay data object (raw JSON, as returned by a parser)
- * @param {Models.Package} package EPUB package object
+ * @param {Models.Package} packageModel EPUB package object
  * @return {Models.MediaOverlay}
 */
 
-MediaOverlay.fromDTO = function(moDTO, pack) {
+MediaOverlay.fromDTO = function(moDTO, packageModel) {
 
-    var mo = new MediaOverlay(pack);
+    var mo = new MediaOverlay(packageModel);
 
     if(!moDTO) {
         return mo;
@@ -17648,16 +17673,31 @@ define('readium_shared_js/views/external_agent_support',["../globals", "undersco
             }
         }
 
+        function determineCanonicalLinkHref(contentWindow) {
+            // Only grab the href if there's no potential cross-domain violation
+            // and the reader application URL has a CFI value in a 'goto' query param.
+            var isSameDomain = Object.keys(contentWindow).indexOf('document') !== -1;
+            if (isSameDomain && contentWindow.location.search.match(/goto=.*cfi/i)) {
+                return contentWindow.location.href.split("#")[0];
+            }
+        }
+
+        function getContentDocumentCanonicalLink(contentDocument) {
+            var contentDocWindow = contentDocument.defaultView;
+            if (contentDocWindow && (contentDocWindow.parent|| contentDocWindow.top)) {
+                var parentWindowCanonicalHref = determineCanonicalLinkHref(contentDocWindow.parent);
+                var topWindowCanonicalHref = determineCanonicalLinkHref(contentDocWindow.top);
+                return topWindowCanonicalHref || parentWindowCanonicalHref;
+            }
+        }
+
         function injectAppUrlAsCanonicalLink(contentDocument, spineItem) {
             if (contentDocument.defaultView && contentDocument.defaultView.parent) {
-                var parentWindow = contentDocument.defaultView.parent;
-                var isParentInSameDomain = Object.keys(parentWindow).indexOf('document') !== -1;
-                // Only do this if there's no potential cross-domain violation
-                // and the reader application URL has a CFI value in a 'goto' query param.
-                if (isParentInSameDomain && parentWindow.location.search.match(/goto=.*cfi/i)) {
+                var canonicalLinkHref = getContentDocumentCanonicalLink(contentDocument);
+                if (canonicalLinkHref) {
                     var link = contentDocument.createElement('link');
                     link.setAttribute('rel', 'canonical');
-                    link.setAttribute('href', parentWindow.location.href);
+                    link.setAttribute('href', canonicalLinkHref);
                     contentDocument.head.appendChild(link);
                     contentDocumentStates[spineItem.idref].canonicalLinkElement = link;
                 }
@@ -17733,13 +17773,10 @@ define('readium_shared_js/views/external_agent_support',["../globals", "undersco
 
             if (contentDocument && state) {
 
-                if (state.canonicalLinkElement &&
-                    contentDocument.defaultView &&
-                    contentDocument.defaultView.parent) {
-                    var parentWindow = contentDocument.defaultView.parent;
-                    var isParentInDifferentDomain = 'document' in Object.keys(parentWindow);
-                    if (!isParentInDifferentDomain) {
-                        state.canonicalLinkElement.setAttribute('href', parentWindow.location.href);
+                if (state.canonicalLinkElement) {
+                    var canonicalLinkHref = getContentDocumentCanonicalLink(contentDocument);
+                    if (canonicalLinkHref) {
+                        state.canonicalLinkElement.setAttribute('href', canonicalLinkHref);
                     }
                 }
 
@@ -19262,8 +19299,8 @@ var ReaderView = function (options) {
             Globals.logEvent("MEDIA_OVERLAY_STATUS_CHANGED", "ON", "reader_view.js (via BackgroundAudioTrackManager)");
             
             if (!value.smilIndex) return;
-            var package = readerView.package();
-            var smil = package.media_overlay.smilAt(value.smilIndex);
+            var packageModel = readerView.package();
+            var smil = packageModel.media_overlay.smilAt(value.smilIndex);
             if (!smil || !smil.spineItemId) return;
 
             var needUpdate = false;
