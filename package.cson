@@ -33,7 +33,7 @@
 
 name: "readium-shared-js"
 
-version: "0.28.0"
+version: "0.29.0"
 
 engines:
     node: ">=4"
@@ -92,15 +92,14 @@ files: [
 dependencies:
 
     #"parallelshell": 'latest'
-    "concurrently": 'latest'
+    "concurrently": '^3.5.0'
 
-    "npm-run-all": 'latest'
+    "npm-run-all": '^4.1.2'
 
-
-    "opener": 'latest'
+    "opener": '^1.4.3'
 
     #"http-server": 'latest'
-    "http-server": 'github:danielweck/http-server'
+    "http-server": 'github:danielweck/http-server#master'
     # SEE: https://github.com/indexzero/http-server/issues/154
 
 
@@ -113,26 +112,26 @@ devDependencies:
 # "requirejs", "almond", "jquery"
 
 
-    "jquery-sizes": 'github:bramstein/jsizes'
+    "jquery-sizes": 'github:bramstein/jsizes#master'
 
-    "domReady": 'github:requirejs/domReady'
+    "domReady": 'github:requirejs/domReady#master'
 
-    "backbone": 'latest'
+    "backbone": '^1.3.3'
 
 # now included in readium-cfi-js
 #    "underscore": 'latest'
 
-    "urijs": 'github:danielweck/URI.js'
+    "urijs": 'github:danielweck/URI.js#master'
     #"urijs": 'latest'
 
-    "eventemitter3": 'latest'
+    "eventemitter3": '^2.0.3'
     
-    "es6-collections": 'latest'
+    "es6-collections": '^0.5.6'
 
-    "cssom": 'github:danielweck/CSSOM'
+    "cssom": 'github:danielweck/CSSOM#master'
     #"CSSOM": 'github:NV/CSSOM'
 
-    "css-element-queries": 'github:danielweck/css-element-queries'
+    "css-element-queries": 'github:danielweck/css-element-queries#master'
     
 
 # Below dependencies are only used for building tasks (above are runtime deps):
@@ -169,11 +168,7 @@ scripts:
 
         (npm outdated || echo outdated)
         &&
-        npm install --no-save --only=prod
-        &&
-        npm install --no-save --only=dev
-        &&
-        npm update --no-save
+        npm install
         &&
         npm run prepare:local:common
     '
@@ -195,17 +190,12 @@ scripts:
         &&
         yarn install
         &&
-        yarn upgrade
-        &&
         yarn run prepare:local:common
     '
 
 #=====================
     'prepare:local:common': '
 
-        npm run
-            prepare:patch
-        &&
         node
             readium-cfi-js/readium-build-tools/gitHubForksUpdater.js
     '
@@ -232,17 +222,6 @@ scripts:
         cd ..
         &&
         ls
-    '
-
-#=====================
-    'prepare:patch': '
-
-        npm run rimraf
-            node_modules/eventemitter3/_rjs/**
-        &&
-        node readium-cfi-js/node_modules/requirejs/bin/r.js -convert
-            node_modules/eventemitter3/
-            node_modules/eventemitter3/_rjs/
     '
 
 #=====================

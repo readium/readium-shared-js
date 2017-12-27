@@ -58,9 +58,8 @@ require.config({
             process._RJS_rootDir(1) + '/node_modules/domReady/domReady',
 
         eventEmitter:
-            process._RJS_rootDir(1) + '/node_modules/eventemitter3/_rjs/index',
-        //see prepare:patch npm build task (converts CommonJS to AMD => define(function(require, exports, module) { .... });)
-
+            process._RJS_rootDir(1) + '/node_modules/eventemitter3/umd/eventemitter3.min',
+        
         "es6-collections":
             process._RJS_rootDir(1) + '/node_modules/es6-collections/index',
 

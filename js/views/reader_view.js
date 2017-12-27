@@ -1624,8 +1624,8 @@ var ReaderView = function (options) {
             Globals.logEvent("MEDIA_OVERLAY_STATUS_CHANGED", "ON", "reader_view.js (via BackgroundAudioTrackManager)");
             
             if (!value.smilIndex) return;
-            var package = readerView.package();
-            var smil = package.media_overlay.smilAt(value.smilIndex);
+            var packageModel = readerView.package();
+            var smil = packageModel.media_overlay.smilAt(value.smilIndex);
             if (!smil || !smil.spineItemId) return;
 
             var needUpdate = false;
