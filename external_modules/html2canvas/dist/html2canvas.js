@@ -1565,7 +1565,6 @@ NodeContainer.prototype.cloneTo = function(stack) {
     stack.computedStyles = this.computedStyles;
     stack.styles = this.styles;
     stack.backgroundImages = this.backgroundImages;
-    stack.opacity = this.opacity;
 };
 
 NodeContainer.prototype.getOpacity = function() {
@@ -3126,7 +3125,6 @@ CanvasRenderer.prototype.backgroundRepeatShape = function(imageContainer, backgr
 
 CanvasRenderer.prototype.renderBackgroundRepeat = function(imageContainer, backgroundPosition, size, bounds, borderLeft, borderTop) {
     var offsetX = Math.round(bounds.left + backgroundPosition.left + borderLeft), offsetY = Math.round(bounds.top + backgroundPosition.top + borderTop);
-
 
     this.setFillStyle(this.ctx.createPattern(this.resizeImage(imageContainer, size), "repeat"));
     this.ctx.translate(offsetX, offsetY);
