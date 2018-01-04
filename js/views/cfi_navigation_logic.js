@@ -1369,6 +1369,10 @@ var CfiNavigationLogic = function (options) {
                 return true;
             }
 
+            if (_.contains(self.getElementBlacklist(), element.tagName.toLowerCase())) {
+                return true;
+            }
+
             return false;
         }
 
