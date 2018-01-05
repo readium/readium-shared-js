@@ -20710,6 +20710,7 @@ function ImageContainer(src, cors) {
     this.image = new Image();
     var self = this;
     this.tainted = null;
+    this.transformMatrix = null;
     this.promise = new Promise(function(resolve, reject) {
         self.image.onload = resolve;
         self.image.onerror = reject;
@@ -21021,6 +21022,7 @@ function NodeContainer(node, parent) {
     this.backgroundImages = null;
     this.transformData = null;
     this.transformMatrix = null;
+    this.inheritTransformMatrix = false;
     this.isPseudoElement = false;
     this.opacity = null;
 }
@@ -21034,7 +21036,6 @@ NodeContainer.prototype.cloneTo = function(stack) {
     stack.computedStyles = this.computedStyles;
     stack.styles = this.styles;
     stack.backgroundImages = this.backgroundImages;
-    stack.opacity = this.opacity;
 };
 
 NodeContainer.prototype.getOpacity = function() {
@@ -21246,7 +21247,16 @@ NodeContainer.prototype.parseBounds = function() {
 };
 
 NodeContainer.prototype.hasTransform = function() {
-    return this.parseTransformMatrix().join(",") !== "1,0,0,1,0,0" || (this.parent && this.parent.hasTransform());
+    var parentTransformMatrix = (this.parent && this.parent.hasTransform()) ? this.parent.transformMatrix : null;
+
+    this.parseTransformMatrix();
+    if (parentTransformMatrix && !this.inheritTransformMatrix) {
+        if (this.transformMatrix.join(",") === "1,0,0,1,0,0") {
+            this.inheritTransformMatrix = true;
+            this.transformMatrix = parentTransformMatrix;
+        }
+    }
+    return this.transformMatrix.join(",") !== "1,0,0,1,0,0";
 };
 
 NodeContainer.prototype.getValue = function() {
@@ -21609,7 +21619,7 @@ NodeParser.prototype.paintNode = function(container) {
     if (isStackingContext(container)) {
         this.renderer.setOpacity(container.opacity);
         this.renderer.ctx.save();
-        if (container.hasTransform()) {
+        if (container.hasTransform() && !container.inheritTransformMatrix) {
             this.renderer.setTransform(container.parseTransform());
         }
     }
@@ -22417,6 +22427,10 @@ Renderer.prototype.renderBackgroundRepeating = function(container, bounds, image
     var size = container.parseBackgroundSize(bounds, imageContainer.image, index);
     var position = container.parseBackgroundPosition(bounds, imageContainer.image, index, size);
     var repeat = container.parseBackgroundRepeat(index);
+
+    if (container.transformMatrix.join(",") !== "1,0,0,1,0,0") {
+        imageContainer.transformMatrix = container.transformMatrix;
+    }
     switch (repeat) {
     case "repeat-x":
     case "repeat no-repeat":
@@ -22507,11 +22521,13 @@ CanvasRenderer.prototype.drawImage = function(imageContainer, sx, sy, sw, sh, dx
     }
 };
 
-CanvasRenderer.prototype.clip = function(shapes, callback, context) {
+CanvasRenderer.prototype.clip = function(shapes, callback, context, matrix) {
     this.ctx.save();
-    shapes.filter(hasEntries).forEach(function(shape) {
-        this.shape(shape).clip();
-    }, this);
+    if (matrix !== undefined) {
+        shapes.filter(hasEntries).forEach(function(shape) {
+            this.shape(shape).clip();
+        }, this);
+    }
     callback.call(context);
     this.ctx.restore();
 };
@@ -22575,11 +22591,12 @@ CanvasRenderer.prototype.backgroundRepeatShape = function(imageContainer, backgr
     ];
     this.clip([shape], function() {
         this.renderBackgroundRepeat(imageContainer, backgroundPosition, size, bounds, borderData[3], borderData[0]);
-    }, this);
+    }, this, imageContainer.transformMatrix);
 };
 
 CanvasRenderer.prototype.renderBackgroundRepeat = function(imageContainer, backgroundPosition, size, bounds, borderLeft, borderTop) {
     var offsetX = Math.round(bounds.left + backgroundPosition.left + borderLeft), offsetY = Math.round(bounds.top + backgroundPosition.top + borderTop);
+
     this.setFillStyle(this.ctx.createPattern(this.resizeImage(imageContainer, size), "repeat"));
     this.ctx.translate(offsetX, offsetY);
     this.ctx.fill();
