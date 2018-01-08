@@ -1,0 +1,54 @@
+:root {
+    writing-mode: vertical-rl;
+
+    height: 100vh;
+    max-height: 100vh;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    /* calc and auto are not ways to go for horizontal centering, unfortunately */
+    /*
+      position: relative;
+      right: 50%;
+      transform: translateX(50%);
+      This solution screws selection big time */
+
+    columns: 100vh auto;
+    column-fill: auto;
+    column-gap: 0;
+
+    box-sizing: border-box;
+    -webkit-padding-before: 10px;
+    padding-block-start: 10px;
+    -webkit-padding-after: 10px;
+    padding-block-end: 10px;
+
+    /*
+     -webkit-padding-start: 10px;
+     padding-inline-start: 10px;
+     -webkit-padding-end: 10px;
+     padding-inline-end: 10px;
+    */
+
+    background-color: #faf4e8;
+
+    /* If you want columns laid out on the inline a.k.a. x-axis, Safari has some non-standard prop for this
+
+      -webkit-column-axis: horizontal;
+      column-rule: 1px solid;
+      */
+}
+
+body {
+    box-sizing: border-box;
+
+    /*max-width: 40rem;*/
+    /*!* Surprisingly, max-width doesn’t work *!*/
+    /*max-height: 35em;*/
+
+    margin: auto 0;
+    -webkit-padding-start: 20px;
+    padding-inline-start: 20px;
+    -webkit-padding-end: 20px;
+    padding-inline-end: 20px;
+}

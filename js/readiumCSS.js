@@ -5,6 +5,7 @@ define([
     "text!readium_shared_css/ReadiumCSS-default.css",
     "text!readium_shared_css/ReadiumCSS-highlights.css",
     "text!readium_shared_css/ReadiumCSS-pagination.css",
+    "text!readium_shared_css/ReadiumCSS-vertical_writing.css",
     "text!readium_shared_css/ReadiumCSS-scroll.css",
     "text!readium_shared_css/ReadiumCSS-night_mode.css",
     "text!readium_shared_css/ReadiumCSS-sepia_mode.css",
@@ -17,6 +18,7 @@ define([
              default_css,
              highlights_css,
              pagination_css,
+             vertical_writing_css,
              scroll_css,
              night_mode_css,
              sepia_mode_css,
@@ -64,6 +66,10 @@ define([
 
         if (this._options.pagination) {
             injectStylesheet(contentDocument, pagination_css);
+        }
+
+        if (this._options.verticalWriting) {
+            injectStylesheet(contentDocument, vertical_writing_css);
         }
 
         if (this._options.scroll) {

@@ -311,12 +311,6 @@ var ReflowableView = function(options, reader){
         contentDocumentRoot = contentDocument.documentElement;
         contentDocumentBody = contentDocument.body;
 
-        _readiumCSS = new ReadiumCSS(contentDocument, {
-            pagination: true,
-            scroll: false
-        });
-        _readiumCSS.inject();
-
         // TODO: how to address this correctly across all the affected platforms?!
         // Video surface sometimes (depends on the video codec) disappears from CSS column (i.e. reflow page) during playback
         // (audio continues to play normally, but video canvas is invisible).
@@ -381,7 +375,14 @@ var ReflowableView = function(options, reader){
             _htmlBodyIsLTRWritingMode = false;
         }
 
-        _paginationInfo.isVerticalWritingMode = _htmlBodyIsVerticalWritingMode; 
+        _paginationInfo.isVerticalWritingMode = _htmlBodyIsVerticalWritingMode;
+
+        _readiumCSS = new ReadiumCSS(contentDocument, {
+            pagination: true,
+            verticalWriting: _htmlBodyIsVerticalWritingMode,
+            scroll: false
+        });
+        _readiumCSS.inject();
 
         contentFrame.style.opacity = '';
 
@@ -659,7 +660,7 @@ var ReflowableView = function(options, reader){
     };
 
 
-    function updatePagination_() {
+    function updatePagination() {
         if (!contentDocumentRoot) {
             return;
         }
@@ -733,7 +734,6 @@ var ReflowableView = function(options, reader){
         // execution, provoking a flicker
         initResizeSensor();
     }
-    var updatePagination = _.debounce(updatePagination_, 100);
 
     function initResizeSensor() {
         var bodyElement = contentDocumentBody;
