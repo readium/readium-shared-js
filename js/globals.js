@@ -112,7 +112,35 @@ var Globals = {
         /**
          * @event
          */
-        PLUGINS_LOADED: "PluginsLoaded"
+        MEDIA_OVERLAY_COMPLETE_CURRENT_PAGE: "MediaOverlayCompleteCurrentPage",
+        /**
+         * @event
+         */
+        PLUGINS_LOADED: "PluginsLoaded",
+        /**
+         * @event
+         */
+        USER_DID_TAP: "UserDidTap",
+        /**
+         * @event
+         */
+        VIEWPORT_DID_RESIZE: "ViewportDidResize",
+        /**
+         * @event
+         */
+        PLAY_IBOOKS_AUDIO: "PlayIBooksAudio",
+        /**
+         * @event
+         */
+        PAUSE_IBOOKS_AUDIO: "PauseIBooksAudio",
+        /**
+         * @event
+         */
+        TURN_TO_LEFT_PAGE: "TurnToLeftPage",
+        /**
+         * @event
+         */
+        TURN_TO_RIGHT_PAGE: "TurnToRightPage"
     },
     /**
      * Internal Events

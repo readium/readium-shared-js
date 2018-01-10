@@ -1,0 +1,108 @@
+{
+  "_args": [
+    [
+      {
+        "raw": "html2canvas@latest",
+        "scope": null,
+        "escapedName": "html2canvas",
+        "name": "html2canvas",
+        "rawSpec": "latest",
+        "spec": "latest",
+        "type": "tag"
+      },
+      "/Users/zhsieh/workspace/readium-shared-js"
+    ]
+  ],
+  "_from": "html2canvas@latest",
+  "_id": "html2canvas@0.5.1",
+  "_inCache": true,
+  "_location": "/html2canvas",
+  "_nodeVersion": "4.0.0",
+  "_npmUser": {
+    "name": "niklasvh",
+    "email": "niklasvh@gmail.com"
+  },
+  "_npmVersion": "2.14.2",
+  "_phantomChildren": {},
+  "_requested": {
+    "raw": "html2canvas@latest",
+    "scope": null,
+    "escapedName": "html2canvas",
+    "name": "html2canvas",
+    "rawSpec": "latest",
+    "spec": "latest",
+    "type": "tag"
+  },
+  "_requiredBy": [
+    "/"
+  ],
+  "_resolved": "https://registry.npmjs.org/html2canvas/-/html2canvas-0.5.1.tgz",
+  "_shasum": "8282c62ac5fd78168f5702b5e4877157ca93f39e",
+  "_shrinkwrap": null,
+  "_spec": "html2canvas@latest",
+  "_where": "/Users/zhsieh/workspace/readium-shared-js",
+  "author": {
+    "name": "Niklas von Hertzen",
+    "email": "niklasvh@gmail.com",
+    "url": "http://hertzen.com"
+  },
+  "bugs": {
+    "url": "https://github.com/niklasvh/html2canvas/issues"
+  },
+  "dependencies": {},
+  "description": "Screenshots with JavaScript",
+  "devDependencies": {
+    "base64-arraybuffer": "^0.1.5",
+    "bluebird": "^3.0.6",
+    "browserify-derequire": "^0.9.4",
+    "grunt": "^0.4.5",
+    "grunt-browserify": "^4.0.1",
+    "grunt-cli": "^0.1.13",
+    "grunt-contrib-connect": "^0.11.2",
+    "grunt-contrib-jshint": "^0.11.3",
+    "grunt-contrib-uglify": "^0.11.0",
+    "grunt-contrib-watch": "^0.6.1",
+    "grunt-execute": "^0.2.2",
+    "grunt-mocha-cli": "^1.12.0",
+    "grunt-mocha-phantomjs": "^2.0.0",
+    "html2canvas-proxy": "0.0.5",
+    "humanize-duration": "^2.0.1",
+    "lodash": "^3.10.1",
+    "pngjs": "^2.2.0",
+    "requirejs": "^2.1.20",
+    "sauce-connect-launcher": "^0.13.0",
+    "wd": "^0.4.0"
+  },
+  "directories": {},
+  "dist": {
+    "shasum": "8282c62ac5fd78168f5702b5e4877157ca93f39e",
+    "tarball": "https://registry.npmjs.org/html2canvas/-/html2canvas-0.5.1.tgz"
+  },
+  "engines": {
+    "node": ">=4.0.0"
+  },
+  "gitHead": "83e9b85e1eb27993d48132af0fbfb4ee2f13c887",
+  "homepage": "http://html2canvas.hertzen.com",
+  "license": "MIT",
+  "main": "dist/html2canvas.js",
+  "maintainers": [
+    {
+      "name": "niklasvh",
+      "email": "niklasvh@gmail.com"
+    }
+  ],
+  "name": "html2canvas",
+  "optionalDependencies": {},
+  "readme": "ERROR: No README data found!",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/niklasvh/html2canvas.git"
+  },
+  "scripts": {
+    "sauceconnect": "tests/sauceconnect.js",
+    "start": "grunt server",
+    "test": "grunt travis --verbose"
+  },
+  "title": "html2canvas",
+  "version": "0.5.1"
+}

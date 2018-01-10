@@ -594,6 +594,11 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
     this.transformContentImmediate = function (scale, left, top) {
 
         if (_enableBookStyleOverrides) return;  // not fixed layout (reflowable in scroll view)
+        if (!_$el) {
+            console.warn("_$el is undefined!");
+
+            return;
+        }
 
         var elWidth = Math.ceil(_meta_size.width * scale);
         var elHeight = Math.floor(_meta_size.height * scale);
@@ -623,7 +628,11 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         if (_$epubBody // not SVG spine item (otherwise fails in Safari OSX)
             && reader.needsFixedLayoutScalerWorkAround()) {
 
-            var css1 = Helpers.CSSTransformString({scale: scale, enable3D: enable3D});
+            //IOS-13384: Don't change iframe content HTML scale,
+            //Otherwise the touch event location will be scaled too.
+            //This should be WKWebView bug
+            //Set the scale in outer "scaler" div
+            var css1 = Helpers.CSSTransformString({scale: 1, enable3D: enable3D});
             
             // See https://github.com/readium/readium-shared-js/issues/285 
             css1["min-width"] = _meta_size.width;
@@ -636,9 +645,9 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
                 _$epubBody.css({width:_meta_size.width, height:_meta_size.height});
             }
 
-            var css2 = Helpers.CSSTransformString({scale : 1, enable3D: enable3D});
-            css2["width"] = _meta_size.width * scale;
-            css2["height"] = _meta_size.height * scale;
+            var css2 = Helpers.CSSTransformString({scale : scale, enable3D: enable3D});
+            css2["width"] = _meta_size.width;
+            css2["height"] = _meta_size.height;
 
             _$scaler.css(css2);
         }
@@ -939,9 +948,13 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
     // }
 
     function parseMetaSize(content) {
+        var pairs = [];
 
-        var pairs = content.replace(/\s/g, '').split(",");
-
+        if (content.indexOf(',') !== -1) {
+            pairs = content.replace(/\s/g, '').split(',');
+        } else {
+            pairs = content.trim().split(' ');
+        }
         var dict = {};
 
         for (var i = 0; i < pairs.length; i++) {

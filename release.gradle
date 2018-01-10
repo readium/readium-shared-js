@@ -1,0 +1,27 @@
+/*
+ * NOTE:
+ * Define the following constants in ~/.gradle/gradle.properties
+ *
+ * NOOKREPO_DEPLOYMENT_USERNAME=username
+ * NOOKREPO_DEPLOYMENT_PASSWORD=password
+ * NOOKREPO_DEPLOYMENT_URL=http://dnjnookrepo.barnesandnoble.com:8081/nexus/content/repositories
+ *
+ */
+
+buildscript {
+    repositories {
+        mavenCentral()
+        maven { url "https://oss.sonatype.org/content/groups/public"}
+    }
+    dependencies {
+        classpath 'com.github.townsfolk:gradle-release:1.2'
+    }
+}
+
+apply plugin: 'release'
+
+release {
+    failOnUnversionedFiles = false
+    requireBranch = 'master'
+    tagPrefix = "${artifactId}"
+}

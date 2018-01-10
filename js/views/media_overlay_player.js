@@ -41,6 +41,11 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
 
     var _audioPlayer = new AudioPlayer(onStatusChanged, onAudioPositionChanged, onAudioEnded, onPlay, onPause);
 
+    var _iBooksAudioPlayer = new AudioPlayer(onIBooksAudioStatusChanged, onIBooksAudioPostionChanged, onIBooksAudioEnded, onIBooksAudioPlay, onIBooksAudioPause);
+    var _currentIBooksAudioSource = undefined;
+    var _prepareIBooksAudioSource = undefined;
+    var _iBooksAudioStartTime = undefined;
+
     var _ttsIsPlaying = false;
     var _currentTTS = undefined;
     var _enableHTMLSpeech = true && typeof window.speechSynthesis !== "undefined" && speechSynthesis != null; // set to false to force "native" platform TTS engine, rather than HTML Speech API
@@ -63,6 +68,7 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
     var _settings = reader.viewerSettings();
     var self = this;
     var _elementHighlighter = new MediaOverlayElementHighlighter(reader);
+    var _Android = navigator.userAgent.toLowerCase().indexOf('android') > -1;
 
     reader.on(Globals.Events.READER_VIEW_DESTROYED, function(){
         Globals.logEvent("READER_VIEW_DESTROYED", "ON", "media_overlay_player.js");
@@ -90,6 +96,9 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
 //console.debug(_settings);
         _audioPlayer.setRate(_settings.mediaOverlaysRate);
         _audioPlayer.setVolume(_settings.mediaOverlaysVolume / 100.0);
+        if (_settings.mediaOverlaysMuteAudio) {
+            self.reset();
+        }
     };
     self.onSettingsApplied();
     
@@ -617,8 +626,15 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
             var startTime = _smilIterator.currentPar.audio.clipBegin + clipBeginOffset;
 
 //console.debug("PLAY START TIME: " + startTime + "("+_smilIterator.currentPar.audio.clipBegin+" + "+clipBeginOffset+")");
-
-            _audioPlayer.playFile(_smilIterator.currentPar.audio.src, audioSource, startTime); //_smilIterator.currentPar.element ? _smilIterator.currentPar.element : _smilIterator.currentPar.cfi.cfiTextParent
+            if (_settings.mediaOverlaysMuteAudio) {
+                _audioPlayer.playFakeAudio(startTime)
+            } else {
+                if (dur <= 0) {
+                    _audioPlayer.playFakeAudio(startTime)
+                } else {
+                    _audioPlayer.playFile(_smilIterator.currentPar.audio.src, audioSource, startTime); //_smilIterator.currentPar.element ? _smilIterator.currentPar.element : _smilIterator.currentPar.cfi.cfiTextParent
+                }
+            }
         }
 
         clipBeginOffset = 0.0;
@@ -631,7 +647,7 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
         self.pause();
 
 //console.debug("current Smil: " + _smilIterator.smil.href + " /// " + _smilIterator.smil.id);
-
+        var lastSmil = _smilIterator.smil;
         var nextSmil = goNext ? _package.media_overlay.getNextSmil(_smilIterator.smil) : _package.media_overlay.getPreviousSmil(_smilIterator.smil);
         if(nextSmil) {
 
@@ -646,10 +662,35 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
                         _smilIterator.next();
                     }
                 }
+                var needToOpenContentUrl = true;
+                var paginationInfo = reader.getPaginationInfo();
 
-//console.debug("openContentUrl (nextSmil): " + _smilIterator.currentPar.text.src + " -- " + _smilIterator.smil.href);
+                if (paginationInfo.openPages.length > 0) {
+                    for (var i = 0; i < paginationInfo.openPages.length; i++) {
+                        if (!_smilIterator.currentPar.text.manifestItemId ||
+                            _smilIterator.currentPar.text.manifestItemId === paginationInfo.openPages[i].idref) {
+                            needToOpenContentUrl = false;
+                            break;
+                        }
+                    }
+                    if (paginationInfo.openPages.length > 1) {
+                        var completeRightPage = paginationInfo.openPages[1].idref === lastSmil.spineItemId;
 
-                reader.openContentUrl(_smilIterator.currentPar.text.src, _smilIterator.smil.href, self);
+                        if (!completeRightPage && needToOpenContentUrl) {
+                            needToOpenContentUrl = false;
+                        }
+                    }
+                }
+                if (needToOpenContentUrl) {
+                    //console.debug("nextSmil: openContentUrl: " + _smilIterator.currentPar.text.src + " -- " + _smilIterator.smil.href);
+                    reader.openContentUrl(_smilIterator.currentPar.text.src, _smilIterator.smil.href, self);
+                } else {
+                    if (_smilIterator.currentPar.text.manifestItemId !== nextSmil.spineItemId) {
+                        console.warn("Current Par text.manifestItemId mismatched! Recover to " + nextSmil.spineItemId);
+                        _smilIterator.currentPar.text.manifestItemId = nextSmil.spineItemId;
+                    }
+                    playCurrentPar();
+                }
             }
         }
         else
@@ -700,11 +741,17 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
         //var TOLERANCE = 0.05;
         if(
             //position >= (audio.clipBegin - TOLERANCE) &&
-        position > DIRECTION_MARK &&
-            position <= audio.clipEnd) {
+        position > DIRECTION_MARK) {
+            const clipOffset = 5; // 5 seconds
+            const fallbackThreshold = audio.clipEnd + clipOffset;
 
-//console.debug("onAudioPositionChanged: " + position);
-            return;
+            if (audio.clipBegin == audio.clipEnd && position <= fallbackThreshold) {
+                console.warn("Invalid duration, Add " + clipOffset + " seconds to the clipEnd...");
+            }
+            if ((audio.clipBegin == audio.clipEnd && position <= fallbackThreshold) || position <= audio.clipEnd) {
+                //console.debug("onAudioPositionChanged: " + position);
+                return;
+            }
         }
 
         _skipAudioEnded = true;
@@ -721,9 +768,10 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
         var goNext = position > audio.clipEnd;
 
         var doNotNextSmil = !_autoNextSmil && from !== 6 && goNext;
+        var emitComplete = !doNotNextSmil;
 
         var spineItemIdRef = (_smilIterator && _smilIterator.smil && _smilIterator.smil.spineItemId) ? _smilIterator.smil.spineItemId : ((_lastPaginationData && _lastPaginationData.spineItem && _lastPaginationData.spineItem.idref) ? _lastPaginationData.spineItem.idref : undefined);
-        if (doNotNextSmil && spineItemIdRef && _lastPaginationData && _lastPaginationData.paginationInfo && _lastPaginationData.paginationInfo.openPages && _lastPaginationData.paginationInfo.openPages.length > 1)
+        if (spineItemIdRef && _lastPaginationData && _lastPaginationData.paginationInfo && _lastPaginationData.paginationInfo.openPages && _lastPaginationData.paginationInfo.openPages.length > 1)
         {
             //var iPage = _lastPaginationData.paginationInfo.isRightToLeft ? _lastPaginationData.paginationInfo.openPages.length - 1 : 0;
             var iPage = 0;
@@ -731,7 +779,12 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
             var openPage = _lastPaginationData.paginationInfo.openPages[iPage];
             if (spineItemIdRef === openPage.idref)
             {
-                doNotNextSmil = false;
+                if (doNotNextSmil) {
+                    doNotNextSmil = false;
+                }
+                if (_autoNextSmil) {
+                    emitComplete = false;
+                }
             }
         }
         
@@ -768,10 +821,15 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
                 _wasPausedBecauseNoAutoNextSmil = true;
                 self.reset();
                 //self.pause();
+                reader.emit(Globals.Events.MEDIA_OVERLAY_COMPLETE_CURRENT_PAGE);
             }
             else
             {
-                nextSmil(goNext);
+                if (!emitComplete) {
+                    nextSmil(goNext);
+                } else {
+                    reader.emit(Globals.Events.MEDIA_OVERLAY_COMPLETE_CURRENT_PAGE);
+                }
             }
             return;
         }
@@ -836,10 +894,15 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
                                 _wasPausedBecauseNoAutoNextSmil = true;
                                 self.reset();
                                 //self.pause();
+                                reader.emit(Globals.Events.MEDIA_OVERLAY_COMPLETE_CURRENT_PAGE);
                             }
                             else
                             {
-                                nextSmil(goNext);
+                                if (!emitComplete) {
+                                    nextSmil(goNext);
+                                } else {
+                                    reader.emit(Globals.Events.MEDIA_OVERLAY_COMPLETE_CURRENT_PAGE);
+                                }
                             }
                             
                             return;
@@ -1604,13 +1667,114 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
         var src = _smilIterator.currentPar.text.src;
         var base = _smilIterator.smil.href;
+        var openPages = reader.getPaginationInfo().openPages;
+        var needReload = true;
 
+        for (var i = 0; i < openPages.length; i++) {
+            if (openPages[i].idref === _smilIterator.currentPar.text.manifestItemId) {
+                needReload = false;
+                break;
+            }
+        }
         //self.pause();
         //self.reset();
-        _smilIterator = undefined;
-
-        reader.openContentUrl(src, base, self);
+        if (_smilIterator.currentPar.element) {
+            _smilIterator = undefined;
+        }
+        if (needReload) {
+            reader.openContentUrl(src, base, self);
+        }
     }
+
+    // IBooksAudioPlayer
+    function onIBooksAudioStatusChanged(status) {
+        //console.debug("onIBooksAudioStatusChanged: " + status);
+    }
+
+    function onIBooksAudioPostionChanged(position, from, skipping) {
+        //console.debug("onIBooksAudioPositionChanged position: " + position + ", from: " + from + ", skipping = " + skipping);
+    }
+
+    function onIBooksAudioEnded() {
+        //console.debug("onIBooksAudioEnded");
+        _currentIBooksAudioSource = undefined;
+        _prepareIBooksAudioSource = undefined;
+        _iBooksAudioStartTime = undefined;
+    }
+
+    function onIBooksAudioPlay() {
+        //console.debug("onIBooksAudioPlay");
+    }
+
+    function onIBooksAudioPause() {
+        //console.debug("onIBooksAudioPause");
+    }
+
+    this.iBooksAudioPlayerPlaying = function() {
+        return _iBooksAudioPlayer.isPlaying();
+    };
+
+    this.pauseIBooksAudioPlayer = function() {
+        _iBooksAudioPlayer.pause();
+    };
+
+    this.playIBooksAudioPlayer = function(src, startTime) {
+        if (self.isPlaying()) {
+            self.pause();
+        }
+        if (_Android && src === undefined && startTime === undefined) {
+            src = _prepareIBooksAudioSource;
+            startTime = _iBooksAudioStartTime;
+        }
+        if (src !== _currentIBooksAudioSource) {
+            var audioSource = _package.resolveRelativeUrlMO(src);
+
+            _currentIBooksAudioSource = src;
+            _iBooksAudioPlayer.playFile(undefined, audioSource, startTime)
+        } else {
+            _iBooksAudioPlayer.play();
+        }
+    };
+
+    this.toggleIBooksAudioPlayer = function(src, startTime, needReset) {
+        if (self.isPlaying()) {
+            self.pause();
+        }
+        if (needReset) {
+            _currentIBooksAudioSource = undefined;
+            _prepareIBooksAudioSource = undefined;
+            _iBooksAudioStartTime = undefined;
+        }
+        if (src && src !== _currentIBooksAudioSource) {
+            if (_Android) {
+                _prepareIBooksAudioSource = src;
+                _iBooksAudioStartTime = startTime;
+                reader.emit(Globals.Events.PLAY_IBOOKS_AUDIO);
+            } else {
+                self.playIBooksAudioPlayer(src, startTime);
+            }
+            return;
+        }
+        if (self.iBooksAudioPlayerPlaying()) {
+            if (_Android) {
+                reader.emit(Globals.Events.PAUSE_IBOOKS_AUDIO);
+            } else {
+                self.pauseIBooksAudioPlayer();
+            }
+        } else {
+            if (!src || startTime < 0) {
+                console.error("toggleIBooksAudioPlayer: Invalid argument! src: " + src + ", startTime = " + startTime);
+                return;
+            }
+            if (_Android) {
+                _prepareIBooksAudioSource = src;
+                _iBooksAudioStartTime = startTime;
+                reader.emit(Globals.Events.PLAY_IBOOKS_AUDIO);
+            } else {
+                self.playIBooksAudioPlayer(src, startTime);
+            }
+        }
+    };
 
     this.escape = function() {
         
@@ -1663,7 +1827,9 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         {
             self.pause();
         }
-
+        if (self.iBooksAudioPlayerPlaying()) {
+            self.pauseIBooksAudioPlayer();
+        }
         if (par.element || par.cfi && par.cfi.cfiTextParent)
         {
             var seq = _elementHighlighter.adjustParToSeqSyncGranularity(par);
@@ -1733,6 +1899,10 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
     this.reset = function() {
         clipBeginOffset = 0.0;
         _audioPlayer.reset();
+        _iBooksAudioPlayer.reset();
+        _currentIBooksAudioSource = undefined;
+        _prepareIBooksAudioSource = undefined;
+        _iBooksAudioStartTime = undefined;
         self.resetTTS();
         self.resetEmbedded();
         self.resetBlankPage();
@@ -1740,6 +1910,10 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         _smilIterator = undefined;
         _skipAudioEnded = false;
     };
+       
+   this.resetNoAutoNextSmil = function () {
+       _wasPausedBecauseNoAutoNextSmil = false;
+   }
 
     this.play = function ()
     {
@@ -1762,10 +1936,11 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         {
             if (!_audioPlayer.play())
             {
-                console.log("Audio player was dead, reactivating...");
-
+                console.log("Audio player was dead...");
+                /*
                 this.reset();
                 this.toggleMediaOverlay();
+                */
                 return;
             }
         }
@@ -1776,7 +1951,9 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
     this.pause = function()
     {
         _wasPlayingScrolling = false;
-        
+        if (self.iBooksAudioPlayerPlaying()) {
+            self.pauseIBooksAudioPlayer();
+        }
         if (_blankPagePlayer)
         {
             this.resetBlankPage();
@@ -1931,19 +2108,42 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
         //if we have position to continue from (reset wasn't called)
         if(_smilIterator) {
-            self.play();
+            if (_settings.mediaOverlaysMuteAudio) {
+                _audioPlayer.playFakeAudio();
+            } else {
+                self.play();
+            }
             return;
         }
 
         this.toggleMediaOverlayRefresh(undefined);
     };
 
+    this.playMediaOverlay = function() {
+        if (self.isPlaying()) {
+            return;
+        }
+        // if we have position to continue from (reset wasn't called)
+        if(_smilIterator) {
+            if (_settings.mediaOverlaysMuteAudio) {
+                _audioPlayer.playFakeAudio();
+            } else {
+                self.play();
+            }
+            return;
+        }
+        this.toggleMediaOverlayRefresh(undefined);
+    };
+
+
     var _wasPlayingScrolling = false;
 
     this.toggleMediaOverlayRefresh = function(paginationData)
     {
 //console.debug("moData SMIL: " + moData.par.getSmil().href + " // " + + moData.par.getSmil().id);
-
+        if (self.iBooksAudioPlayerPlaying()) {
+            self.pauseIBooksAudioPlayer();
+        }
         var spineItems = reader.getLoadedSpineItems();
 
         //paginationData.isRightToLeft
@@ -2095,18 +2295,24 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
             self.reset();
             return;
         }
-
         var zPar = moData.par ? moData.par : moData.pars[0];
         var parSmil = zPar.getSmil();
-        if(!_smilIterator || _smilIterator.smil != parSmil)
-        {
+        var doNotResetSmli = false;
+
+        if (!_smilIterator || _smilIterator.smil != parSmil) {
             _smilIterator = new SmilIterator(parSmil);
+        } else {
+            if (playingPar.text.manifestItemId === _smilIterator.currentPar.text.manifestItemId) {
+                doNotResetSmli = true;
+            } else {
+                _smilIterator.reset();
+            }
         }
-        else
-        {
-            _smilIterator.reset();
+        if (doNotResetSmli) {
+            self.play();
+
+            return;
         }
-        
         _smilIterator.goToPar(zPar);
         
         if (!_smilIterator.currentPar && id)
@@ -2114,13 +2320,14 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
             _smilIterator.reset();
             _smilIterator.findTextId(id);
         }
-        
         if (!_smilIterator.currentPar)
         {
             self.reset();
             return;
         }
-
+        while (!_smilIterator.isFirst()) {
+            _smilIterator.previous();
+        }
         if (wasPlaying && playingPar && playingPar === _smilIterator.currentPar)
         {
             self.play();
@@ -2143,6 +2350,10 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
     {
         _autoNextSmil = autoNext;
     };
+
+    this.wasPausedBecauseNoAutoNextSmil = function() {
+        return _wasPausedBecauseNoAutoNextSmil;
+    }
 };
     return MediaOverlayPlayer;
 });

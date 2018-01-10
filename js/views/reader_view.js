@@ -27,11 +27,11 @@
 define(["../globals", "jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", "./iframe_loader", "./internal_links_support",
         "./media_overlay_data_injector", "./media_overlay_player", "../models/package", "../models/metadata", "../models/page_open_request",
         "./reflowable_view", "./scroll_view", "../models/style_collection", "../models/switches", "../models/trigger",
-        "../models/viewer_settings", "../models/bookmark_data", "../models/node_range_info", "./external_agent_support"],
+        "../models/viewer_settings", "../models/bookmark_data", "../models/node_range_info", "./external_agent_support", "es6-promise", "html2canvas"],
     function (Globals, $, _, EventEmitter, FixedView, Helpers, IFrameLoader, InternalLinksSupport,
               MediaOverlayDataInjector, MediaOverlayPlayer, Package, Metadata, PageOpenRequest,
               ReflowableView, ScrollView, StyleCollection, Switches, Trigger,
-              ViewerSettings, BookmarkData, NodeRangeInfo, ExternalAgentSupport) {
+              ViewerSettings, BookmarkData, NodeRangeInfo, ExternalAgentSupport, Promise, Html2Canvas) {
 /**
  * Options passed on the reader from the readium loader/initializer
  *
@@ -229,7 +229,10 @@ var ReaderView = function (options) {
             iframeLoader: _iframeLoader
         };
 
-
+        Helpers.addTapEventHandler(_$el[0], function(e) {
+            self.emit(Globals.Events.USER_DID_TAP);
+            return true;
+        });
         _currentView = self.createViewForType(desiredViewType, viewCreationParams);
         
         Globals.logEvent("READER_VIEW_CREATED", "EMIT", "reader_view.js");
@@ -243,7 +246,9 @@ var ReaderView = function (options) {
             if (!Helpers.isIframeAlive($iframe[0])) return;
 
             // performance degrades with large DOM (e.g. word-level text-audio sync)
-            _mediaOverlayDataInjector.attachMediaOverlayData($iframe, spineItem, _viewerSettings);
+            _mediaOverlayDataInjector.attachMediaOverlayData($iframe, spineItem, _viewerSettings, function() {
+                self.emit(Globals.Events.USER_DID_TAP);
+            });
 
             _internalLinksSupport.processLinkElements($iframe, spineItem);
 
@@ -252,8 +257,15 @@ var ReaderView = function (options) {
             Trigger.register(contentDoc);
             Switches.apply(contentDoc);
 
+            var $imgs = $iframe.contents().find("img");
+
+            if ($imgs[0]) {
+                $imgs.css({ "-webkit-user-select": "none", "-webkit-touch-callout": "none", "-webkit-user-drag": "none" });
+            }
             Globals.logEvent("CONTENT_DOCUMENT_LOADED", "EMIT", "reader_view.js [ " + spineItem.href + " ]");
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
+            //console.log("initViewForItem: CONTENT_DOCUMENT_LOADED: isPlayingMediaOverlay() = " + self.isPlayingMediaOverlay() +
+            //        ", _mediaOverlayPlayer.wasPausedBecauseNoAutoNextSmil() = " + _mediaOverlayPlayer.wasPausedBecauseNoAutoNextSmil());
         });
 
         _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOAD_START, function ($iframe, spineItem) {
@@ -499,7 +511,7 @@ var ReaderView = function (options) {
      * Flips the page from left to right.
      * Takes to account the page progression direction to decide to flip to prev or next page.
      */
-    this.openPageLeft = function () {
+    self.openPageLeft = function () {
 
         if (_package.spine.isLeftToRight()) {
             self.openPagePrev();
@@ -513,7 +525,7 @@ var ReaderView = function (options) {
      * Flips the page from right to left.
      * Takes to account the page progression direction to decide to flip to prev or next page.
      */
-    this.openPageRight = function () {
+    self.openPageRight = function () {
 
         if (_package.spine.isLeftToRight()) {
             self.openPageNext();
@@ -813,6 +825,8 @@ var ReaderView = function (options) {
         });
     }
 
+    this.goToPage = openPage;
+
 
     /**
      * Opens page index of the spine item with idref provided
@@ -1092,6 +1106,72 @@ var ReaderView = function (options) {
     };
 
     /**
+     * Returns current selection partial Cfi, useful for workflows that need to check whether the user has selected something.
+     *
+     * @returns {object | undefined} partial cfi object or undefined if nothing is selected
+     */
+    this.getCurrentSelectionCfi = function() {
+        if (self.plugins.highlights) {
+            return self.plugins.highlights.getCurrentSelectionCfi();
+        }
+        return null;
+    };
+
+    /**
+     * Creates a higlight based on given parameters
+     *
+     * @param {string} spineIdRef		Spine idref that defines the partial Cfi
+     * @param {string} cfi				Partial CFI (withouth the indirection step) relative to the spine index
+     * @param {string} id				Id of the highlight. must be unique
+     * @param {string} type 			Name of the class selector rule in annotations stylesheet.
+     * 									The style of the class will be applied to the created hightlight
+     * @param {object} styles			Object representing CSS properties to be applied to the highlight.
+     * 									e.g., to apply background color pass in: {'background-color': 'green'}
+     *
+     * @returns {object | undefined} partial cfi object of the created highlight
+     */
+    this.addHighlight = function(spineIdRef, cfi, id, type, styles) {
+        if (self.plugins.highlights) {
+            return self.plugins.highlights.addHighlight(spineIdRef, cfi, id, type, styles);
+        }
+        return null;
+    };
+
+    /**
+     * Creates a higlight based on the current selection
+     *
+     * @param {string} id id of the highlight. must be unique
+     * @param {string} type - name of the class selector rule in annotations.css file.
+     * @param {object} styles - object representing CSS properties to be applied to the highlight.
+     * e.g., to apply background color pass this {'background-color': 'green'}
+     * @param {boolean} clearSelection - set to true to clear the current selection
+     * after it is highlighted
+     *
+     * @returns {object | undefined} partial cfi object of the created highlight
+     */
+    this.addSelectionHighlight = function(id, type, styles, clearSelection) {
+        if (self.plugins.highlights) {
+            return self.plugins.highlights.addSelectionHighlight(id, type, styles, clearSelection);
+        }
+        return null;
+    };
+
+    /**
+     * Removes a given highlight
+     *
+     * @param {string} id  The id associated with the highlight.
+     *
+     * @returns {undefined}
+     *
+     */
+    this.removeHighlight = function(id) {
+        if (self.plugins.highlights) {
+            return self.plugins.highlights.removeHighlight(id);
+        }
+        return null;
+    };
+
+    /**
      * Resets all the custom styles set by setStyle callers at runtime
      */
     this.clearStyles = function () {
@@ -1187,16 +1267,57 @@ var ReaderView = function (options) {
      * Pause currently playing media overlays.
      */
     this.pauseMediaOverlay = function () {
-
-        _mediaOverlayPlayer.pause();
+        if (_mediaOverlayPlayer) {
+            if (_mediaOverlayPlayer.isPlaying()) {
+                _mediaOverlayPlayer.pause();
+            }
+            if (_mediaOverlayPlayer.iBooksAudioPlayerPlaying()) {
+                _mediaOverlayPlayer.pauseIBooksAudioPlayer();
+            }
+        }
     };
 
     /**
      * Start/Resume playback of media overlays.
      */
     this.playMediaOverlay = function () {
+        if (_mediaOverlayPlayer) {
+            if (!_mediaOverlayPlayer.isPlaying()) {
+                _mediaOverlayPlayer.playMediaOverlay();
+            }
+            if (_mediaOverlayPlayer.iBooksAudioPlayerPlaying()) {
+                _mediaOverlayPlayer.pauseIBooksAudioPlayer();
+            }
+        }
+    };
 
-        _mediaOverlayPlayer.play();
+    /**
+     * Play selected iBooks audio
+     */
+    this.playIBooksAudio = function() {
+        if (_mediaOverlayPlayer) {
+            _mediaOverlayPlayer.playIBooksAudioPlayer();
+        }
+    }
+
+    /**
+     * Pause current playing iBooks audio
+     */
+    this.pauseIBooksAudio = function() {
+        if (_mediaOverlayPlayer) {
+            _mediaOverlayPlayer.pauseIBooksAudioPlayer();
+        }
+    }
+
+    /**
+     * Reset media overlay
+     */
+    this.resetMediaOverlay = function() {
+        if( _mediaOverlayPlayer) {
+            self.pauseMediaOverlay();
+            _mediaOverlayPlayer.reset();
+            _mediaOverlayPlayer.resetNoAutoNextSmil();
+        }
     };
 
     /**
@@ -1275,7 +1396,7 @@ var ReaderView = function (options) {
     function handleViewportResizeEnd() {
         //same as doing one final tick for now
         handleViewportResizeTick();
-
+        self.emit(Globals.Events.VIEWPORT_DID_RESIZE);
         if (_resizeMOWasPlaying) self.playMediaOverlay();
     }
 

@@ -127,7 +127,7 @@ var ViewerSettings = function(settingsData) {
      * @type bool
      */
     
-    this.mediaOverlaysEnableClick = true;
+    this.mediaOverlaysEnableClick = false;
 
     /** 
      *
@@ -159,7 +159,15 @@ var ViewerSettings = function(settingsData) {
      * @type bool
      */    
 
-    this.mediaOverlaysAutomaticPageTurn = true;
+    this.mediaOverlaysAutomaticPageTurn = false;
+
+    /**
+     *
+     * @property mediaOverlaysMuteAudio
+     * @type bool
+     */
+
+    this.mediaOverlaysMuteAudio = false;
 
     /** 
      *
@@ -235,6 +243,15 @@ var ViewerSettings = function(settingsData) {
 
     }
 
+    function booleanMapper(value) {
+        if (value === "0" || value.toLowerCase() === "false" || value.toLowerCase() === "no") {
+            return false;
+        } else if (value === "1" || value.toLowerCase() == "true" || value.toLowerCase === "yes") {
+            return true;
+        }
+        return undefined;
+    }
+
     /**
      * Updates the settings' new values
      *
@@ -249,20 +266,21 @@ var ViewerSettings = function(settingsData) {
         mapProperty("columnMinWidth", settingsData);
         mapProperty("fontSize", settingsData);
         mapProperty("fontSelection", settingsData);
-        mapProperty("mediaOverlaysPreservePlaybackWhenScroll", settingsData);
-        mapProperty("mediaOverlaysSkipSkippables", settingsData);
-        mapProperty("mediaOverlaysEscapeEscapables", settingsData);
+        mapProperty("mediaOverlaysPreservePlaybackWhenScroll", settingsData, booleanMapper);
+        mapProperty("mediaOverlaysSkipSkippables", settingsData, booleanMapper);
+        mapProperty("mediaOverlaysEscapeEscapables", settingsData, booleanMapper);
         mapProperty("mediaOverlaysSkippables", settingsData, buildArray);
         mapProperty("mediaOverlaysEscapables", settingsData, buildArray);
-        mapProperty("mediaOverlaysEnableClick", settingsData);
+        mapProperty("mediaOverlaysEnableClick", settingsData, booleanMapper);
         mapProperty("mediaOverlaysRate", settingsData);
         mapProperty("mediaOverlaysVolume", settingsData);
         mapProperty("mediaOverlaysSynchronizationGranularity", settingsData);
-        mapProperty("mediaOverlaysAutomaticPageTurn", settingsData);
+        mapProperty("mediaOverlaysAutomaticPageTurn", settingsData, booleanMapper);
+        mapProperty("mediaOverlaysMuteAudio", settingsData, booleanMapper);
         mapProperty("scroll", settingsData);
         mapProperty("syntheticSpread", settingsData);
         mapProperty("pageTransition", settingsData);
-        mapProperty("enableGPUHardwareAccelerationCSS3D", settingsData);
+        mapProperty("enableGPUHardwareAccelerationCSS3D", settingsData, booleanMapper);
     };
 
     this.update(settingsData);

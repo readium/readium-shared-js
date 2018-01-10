@@ -59,6 +59,15 @@ var CurrentPagesInfo = function(spine, isFixedLayout) {
     this.isFixedLayout = isFixedLayout;
     
     /**
+     * Is the ebook is vertical writing mode?
+     *
+     * @property isVerticalWritingMode
+     * @type bool
+     */
+    // TODO: Parsing attributes from HTML
+    this.isVerticalWritingMode = false;
+
+    /**
      * Counts the number of spine items
      *
      * @property spineItemCount

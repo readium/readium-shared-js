@@ -48,6 +48,7 @@
     "concurrently": "^3.5.0",
     "npm-run-all": "^4.1.2",
     "opener": "^1.4.3",
+    "es6-promise": "4.2.2",
     "http-server": "github:danielweck/http-server#master"
   },
   "devDependencies": {

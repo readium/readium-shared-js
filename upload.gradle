@@ -1,0 +1,56 @@
+/*
+ * NOTE:
+ * Define the following constants in ~/.gradle/gradle.properties
+ *
+ * NOOKREPO_DEPLOYMENT_USERNAME=username
+ * NOOKREPO_DEPLOYMENT_PASSWORD=password
+ * NOOKREPO_DEPLOYMENT_URL=http://dnjnookrepo.barnesandnoble.com:8081/nexus/content/repositories
+ *
+ */
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:2.3.0'
+        classpath 'org.ajoberstar:gradle-git:1.6.0'
+    }
+}
+
+apply plugin: 'maven'
+
+task distRelease(type: Zip) {
+    baseName=artifactId
+
+    from ('build-output') {
+        include '*/**'
+        into "${baseName}/build-output"
+    }
+    from ('shared_resources') {
+        include '*/**'
+        into "${baseName}/shared_resources"
+    }
+}
+
+task dist(dependsOn: [distRelease])
+
+artifacts {
+    archives distRelease
+}
+
+uploadArchives {
+    repositories.mavenDeployer {
+        repository(url: NOOKREPO_DEPLOYMENT_URL + "/releases") {
+            authentication(userName: NOOKREPO_DEPLOYMENT_USERNAME, password: NOOKREPO_DEPLOYMENT_PASSWORD)
+        }
+        snapshotRepository(url: NOOKREPO_DEPLOYMENT_URL + "/snapshots") {
+            authentication(userName: NOOKREPO_DEPLOYMENT_USERNAME, password: NOOKREPO_DEPLOYMENT_PASSWORD)
+        }
+        pom.artifactId = artifactId
+        pom.groupId = groupId
+        pom.version = version
+    }
+}
+
+uploadArchives.dependsOn dist

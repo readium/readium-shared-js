@@ -7,10 +7,11 @@ body {
     height: 100%;
     width: 100%;
     margin: 0;
-    padding: 10px;
+    padding: 0;
     position: absolute;
     overflow: hidden;
     box-sizing:border-box;
+    background-color: hsl(0, 0%, 67.7%);
     -moz-box-sizing:border-box; /* Firefox */
     -webkit-box-sizing:border-box; /* Safari */
 }
@@ -23,13 +24,11 @@ iframe {
     width: 100%;
     height: 100%;
     position: relative;
-    
     overflow: auto; /* pan-zoom feature, fixed layout pages */
 }
 
 
 /*Fixed layout */
-
 #fixed-book-frame {
     position: absolute !important;
 }
@@ -76,6 +75,7 @@ iframe {
 /*fixed layout frames only*/
 .fixed-page-frame, .fixed-page-frame-left, .fixed-page-frame-right, .fixed-page-frame-center {
     position: absolute !important;
+    background-color: white;
 }
 
 .fixed-page-frame-left {
@@ -101,4 +101,43 @@ iframe {
 
 .mo-active-default {
 
+}
+
+
+/* For page turn indicator */
+@-webkit-keyframes left-arrow-anim {
+    0% { -webkit-transform: translateX(0); opacity: 0.4 }
+    100% { -webkit-transform: translateX(-0.4em); opacity: 0.9 }
+  }
+@-webkit-keyframes right-arrow-anim {
+    0% { -webkit-transform: translateX(0); opacity: 0.4 }
+    100% { -webkit-transform: translateX(0.4em); opacity: 0.9 }
+}
+
+.left-arrow {
+    -webkit-animation: left-arrow-anim 0.6s infinite alternate ease-in-out;
+    width: 0;
+    height: 0;
+    border-top: 15pt solid transparent;
+    border-bottom: 15pt solid transparent;
+    border-right:15pt solid #00b6f1;
+  }
+.right-arrow {
+    -webkit-animation: right-arrow-anim 0.6s infinite alternate ease-in-out;
+    width: 0;
+    height: 0;
+    border-top: 15pt solid transparent;
+    border-bottom: 15pt solid transparent;
+    border-left: 15pt solid #00b6f1;
+  }
+
+.left-indicator {
+    position: absolute;
+    top: 50%;
+    left: 5%;
+}
+.right-indicator {
+    position: absolute;
+    top: 50%;
+    right: 5%;
 }

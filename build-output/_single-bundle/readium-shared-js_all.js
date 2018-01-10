@@ -15139,6 +15139,193 @@ if (typeof define == 'function' && typeof define.amd == 'object') {
 define('readium_cfi_js', ['readium_cfi_js/cfi_API'], function (main) { return main; });
 
 (function(e){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=e()}else if(typeof define==="function"&&define.amd){define('eventEmitter',[],e)}else{var t;if(typeof window!=="undefined"){t=window}else if(typeof global!=="undefined"){t=global}else if(typeof self!=="undefined"){t=self}else{t=this}t.EventEmitter3=e()}})(function(){var e,t,n;return function e(t,n,r){function s(o,f){if(!n[o]){if(!t[o]){var u=typeof require=="function"&&require;if(!f&&u)return u(o,!0);if(i)return i(o,!0);var c=new Error("Cannot find module '"+o+"'");throw c.code="MODULE_NOT_FOUND",c}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s}({1:[function(e,t,n){"use strict";var r=Object.prototype.hasOwnProperty,s="~";function i(){}if(Object.create){i.prototype=Object.create(null);if(!(new i).__proto__)s=false}function o(e,t,n){this.fn=e;this.context=t;this.once=n||false}function f(){this._events=new i;this._eventsCount=0}f.prototype.eventNames=function e(){var t=[],n,i;if(this._eventsCount===0)return t;for(i in n=this._events){if(r.call(n,i))t.push(s?i.slice(1):i)}if(Object.getOwnPropertySymbols){return t.concat(Object.getOwnPropertySymbols(n))}return t};f.prototype.listeners=function e(t,n){var r=s?s+t:t,i=this._events[r];if(n)return!!i;if(!i)return[];if(i.fn)return[i.fn];for(var o=0,f=i.length,u=new Array(f);o<f;o++){u[o]=i[o].fn}return u};f.prototype.emit=function e(t,n,r,i,o,f){var u=s?s+t:t;if(!this._events[u])return false;var c=this._events[u],l=arguments.length,h,v;if(c.fn){if(c.once)this.removeListener(t,c.fn,undefined,true);switch(l){case 1:return c.fn.call(c.context),true;case 2:return c.fn.call(c.context,n),true;case 3:return c.fn.call(c.context,n,r),true;case 4:return c.fn.call(c.context,n,r,i),true;case 5:return c.fn.call(c.context,n,r,i,o),true;case 6:return c.fn.call(c.context,n,r,i,o,f),true}for(v=1,h=new Array(l-1);v<l;v++){h[v-1]=arguments[v]}c.fn.apply(c.context,h)}else{var a=c.length,p;for(v=0;v<a;v++){if(c[v].once)this.removeListener(t,c[v].fn,undefined,true);switch(l){case 1:c[v].fn.call(c[v].context);break;case 2:c[v].fn.call(c[v].context,n);break;case 3:c[v].fn.call(c[v].context,n,r);break;case 4:c[v].fn.call(c[v].context,n,r,i);break;default:if(!h)for(p=1,h=new Array(l-1);p<l;p++){h[p-1]=arguments[p]}c[v].fn.apply(c[v].context,h)}}}return true};f.prototype.on=function e(t,n,r){var i=new o(n,r||this),f=s?s+t:t;if(!this._events[f])this._events[f]=i,this._eventsCount++;else if(!this._events[f].fn)this._events[f].push(i);else this._events[f]=[this._events[f],i];return this};f.prototype.once=function e(t,n,r){var i=new o(n,r||this,true),f=s?s+t:t;if(!this._events[f])this._events[f]=i,this._eventsCount++;else if(!this._events[f].fn)this._events[f].push(i);else this._events[f]=[this._events[f],i];return this};f.prototype.removeListener=function e(t,n,r,o){var f=s?s+t:t;if(!this._events[f])return this;if(!n){if(--this._eventsCount===0)this._events=new i;else delete this._events[f];return this}var u=this._events[f];if(u.fn){if(u.fn===n&&(!o||u.once)&&(!r||u.context===r)){if(--this._eventsCount===0)this._events=new i;else delete this._events[f]}}else{for(var c=0,l=[],h=u.length;c<h;c++){if(u[c].fn!==n||o&&!u[c].once||r&&u[c].context!==r){l.push(u[c])}}if(l.length)this._events[f]=l.length===1?l[0]:l;else if(--this._eventsCount===0)this._events=new i;else delete this._events[f]}return this};f.prototype.removeAllListeners=function e(t){var n;if(t){n=s?s+t:t;if(this._events[n]){if(--this._eventsCount===0)this._events=new i;else delete this._events[n]}}else{this._events=new i;this._eventsCount=0}return this};f.prototype.off=f.prototype.removeListener;f.prototype.addListener=f.prototype.on;f.prototype.setMaxListeners=function e(){return this};f.prefixed=s;f.EventEmitter=f;if("undefined"!==typeof t){t.exports=f}},{}]},{},[1])(1)});
+//
+//  Created by Juan Corona
+//  Based on original proposal by Mickaël Menu
+//  Portions adapted from Rangy's Module system: Copyright (c) 2014 Tim Down
+//
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//
+//  Redistribution and use in source and binary forms, with or without modification,
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice,
+//  this list of conditions and the following disclaimer in the documentation and/or
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be
+//  used to endorse or promote products derived from this software without specific
+//  prior written permission.
+//
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
+
+define('readium_js_plugins',["jquery", "underscore", "eventEmitter"], function ($, _, EventEmitter) {
+
+    var _registeredPlugins = {};
+
+    /**
+     * A  plugins controller used to easily add plugins from the host app, eg.
+     * ReadiumSDK.Plugins.register("footnotes", function(api){ ... });
+     *
+     * @constructor
+     */
+    var PluginsController = function () {
+        var self = this;
+
+
+        this.initialize = function (reader) {
+            var apiFactory = new PluginApiFactory(reader);
+
+            if (!reader.plugins) {
+                //attach an object to the reader that will be
+                // used for plugin namespaces and their extensions
+                reader.plugins = {};
+            } else {
+                throw new Error("Already initialized on reader!");
+            }
+            _.each(_registeredPlugins, function (plugin) {
+                plugin.init(apiFactory);
+            });
+        };
+
+        this.getLoadedPlugins = function() {
+            return _registeredPlugins;
+        };
+
+        // Creates a new instance of the given plugin constructor.
+        this.register = function (name, optDependencies, initFunc) {
+
+            if (_registeredPlugins[name]) {
+                throw new Error("Duplicate registration for plugin with name: " + name);
+            }
+
+            var dependencies;
+            if (typeof optDependencies === 'function') {
+                initFunc = optDependencies;
+            } else {
+                dependencies = optDependencies;
+            }
+
+            _registeredPlugins[name] = new Plugin(name, dependencies, function(plugin, api) {
+                if (!plugin.initialized || !api.host.plugins[plugin.name]) {
+                    plugin.initialized = true;
+                    try {
+                        var pluginContext = {};
+                        $.extend(pluginContext, new EventEmitter());
+
+                        initFunc.call(pluginContext, api.instance);
+                        plugin.supported = true;
+
+                        api.host.plugins[plugin.name] = pluginContext;
+                    } catch (ex) {
+                        plugin.fail(ex);
+                    }
+                }
+            });
+        };
+    };
+
+    function PluginApi(reader, plugin) {
+        this.reader = reader;
+        this.plugin = plugin;
+    }
+
+    function PluginApiFactory(reader) {
+        this.create = function (plugin) {
+            return {
+                host: reader,
+                instance: new PluginApi(reader, plugin)
+            };
+        };
+    }
+
+//
+//  The following is adapted from Rangy's Module class:
+//
+//  Copyright (c) 2014 Tim Down
+//
+//  The MIT License (MIT)
+//  Permission is hereby granted, free of charge, to any person obtaining a copy
+//  of this software and associated documentation files (the "Software"), to deal
+//  in the Software without restriction, including without limitation the rights
+//  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+//  copies of the Software, and to permit persons to whom the Software is
+//  furnished to do so, subject to the following conditions:
+//
+//  The above copyright notice and this permission notice shall be included in all
+//  copies or substantial portions of the Software.
+//
+//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+//  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+//  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+//  SOFTWARE.
+
+    function Plugin(name, dependencies, initializer) {
+        this.name = name;
+        this.dependencies = dependencies;
+        this.initialized = false;
+        this.supported = false;
+        this.initializer = initializer;
+    }
+
+    Plugin.prototype = {
+        init: function (apiFactory) {
+            var requiredPluginNames = this.dependencies || [];
+            for (var i = 0, len = requiredPluginNames.length, requiredPlugin, PluginName; i < len; ++i) {
+                PluginName = requiredPluginNames[i];
+
+                requiredPlugin = _registeredPlugins[PluginName];
+                if (!requiredPlugin || !(requiredPlugin instanceof Plugin)) {
+                    throw new Error("required Plugin '" + PluginName + "' not found");
+                }
+
+                requiredPlugin.init(apiFactory);
+
+                if (!requiredPlugin.supported) {
+                    throw new Error("required Plugin '" + PluginName + "' not supported");
+                }
+            }
+
+            // Now run initializer
+            this.initializer(this, apiFactory.create(this));
+        },
+
+        fail: function (reason) {
+            this.initialized = true;
+            this.supported = false;
+            throw new Error("Plugin '" + this.name + "' failed to load: " + reason);
+        },
+
+        warn: function (msg) {
+            console.warn("Plugin " + this.name + ": " + msg);
+        },
+
+        deprecationNotice: function (deprecated, replacement) {
+            console.warn("DEPRECATED: " + deprecated + " in Plugin " + this.name + "is deprecated. Please use "
+            + replacement + " instead");
+        },
+
+        createError: function (msg) {
+            return new Error("Error in " + this.name + " Plugin: " + msg);
+        }
+    };
+
+    var instance = new PluginsController();
+    return instance;
+});
+
 //  LauncherOSX
 //
 //  Created by Boris Schneiderman.
@@ -15253,7 +15440,35 @@ var Globals = {
         /**
          * @event
          */
-        PLUGINS_LOADED: "PluginsLoaded"
+        MEDIA_OVERLAY_COMPLETE_CURRENT_PAGE: "MediaOverlayCompleteCurrentPage",
+        /**
+         * @event
+         */
+        PLUGINS_LOADED: "PluginsLoaded",
+        /**
+         * @event
+         */
+        USER_DID_TAP: "UserDidTap",
+        /**
+         * @event
+         */
+        VIEWPORT_DID_RESIZE: "ViewportDidResize",
+        /**
+         * @event
+         */
+        PLAY_IBOOKS_AUDIO: "PlayIBooksAudio",
+        /**
+         * @event
+         */
+        PAUSE_IBOOKS_AUDIO: "PauseIBooksAudio",
+        /**
+         * @event
+         */
+        TURN_TO_LEFT_PAGE: "TurnToLeftPage",
+        /**
+         * @event
+         */
+        TURN_TO_RIGHT_PAGE: "TurnToRightPage"
     },
     /**
      * Internal Events
@@ -15323,6 +15538,2616 @@ navigator.epubReadingSystem = {
         return false;
     }
 };
+/* Simple JavaScript Inheritance
+ * By John Resig http://ejohn.org/
+ * MIT Licensed.
+ */
+// Inspired by base2 and Prototype
+define('readium_plugin_highlights/lib/class',[],function() {
+
+    var initializing = false,
+        fnTest = /xyz/.test(function() {
+            xyz;
+        }) ? /\b_super\b/ : /.*/;
+
+    // The base Class implementation (does nothing)
+    var Class = function() {};
+
+    // Create a new Class that inherits from this class
+    Class.extend = function(prop) {
+        var _super = this.prototype;
+
+        // Instantiate a base class (but only create the instance,
+        // don't run the init constructor)
+        initializing = true;
+        var prototype = new this();
+        initializing = false;
+
+        // Copy the properties over onto the new prototype
+        for (var name in prop) {
+            // Check if we're overwriting an existing function
+            prototype[name] = typeof prop[name] == "function" &&
+                typeof _super[name] == "function" && fnTest.test(prop[name]) ?
+                (function(name, fn) {
+                    return function() {
+                        var tmp = this._super;
+
+                        // Add a new ._super() method that is the same method
+                        // but on the super-class
+                        this._super = _super[name];
+
+                        // The method only need to be bound temporarily, so we
+                        // remove it when we're done executing
+                        var ret = fn.apply(this, arguments);
+                        this._super = tmp;
+
+                        return ret;
+                    };
+                })(name, prop[name]) :
+                prop[name];
+        }
+
+        // The dummy class constructor
+        function Class() {
+            // All construction is actually done in the init method
+            if (!initializing && this.init)
+                this.init.apply(this, arguments);
+        }
+
+        // Populate our constructed prototype object
+        Class.prototype = prototype;
+
+        // Enforce the constructor to be what we expect
+        Class.prototype.constructor = Class;
+
+        // And make this class extendable
+        Class.extend = arguments.callee;
+
+        return Class;
+    };
+
+    return Class;
+});
+
+define('readium_plugin_highlights/helpers',[],function() {
+    var HighlightHelpers = {
+        getMatrix: function($obj) {
+            var matrix = $obj.css("-webkit-transform") ||
+                $obj.css("-moz-transform") ||
+                $obj.css("-ms-transform") ||
+                $obj.css("-o-transform") ||
+                $obj.css("transform");
+            return matrix === "none" ? undefined : matrix;
+        },
+        getScaleFromMatrix: function(matrix) {
+            var matrixRegex = /matrix\((-?\d*\.?\d+),\s*0,\s*0,\s*(-?\d*\.?\d+),\s*0,\s*0\)/,
+                matches = matrix.match(matrixRegex);
+            return matches[1];
+        }
+    };
+
+    return HighlightHelpers;
+});
+
+define('readium_plugin_highlights/models/text_line_inferrer',["../lib/class"], function(Class) {
+    var TextLineInferrer = Class.extend({
+
+        init: function(options) {
+            this.lineHorizontalThreshold = options.lineHorizontalThreshold || 0;
+            this.lineHorizontalLimit = options.lineHorizontalLimit || 0;
+        },
+
+        // ----------------- PUBLIC INTERFACE --------------------------------------------------------------
+
+        inferLines: function(rectTextList) {
+            var inferredLines = [];
+            var numRects = rectTextList.length;
+            var numLines = 0;
+            var currLine;
+            var currRect;
+            var currRectTextObj;
+            var rectAppended;
+
+            // Iterate through each rect
+            for (var currRectNum = 0; currRectNum <= numRects - 1; currRectNum++) {
+                currRectTextObj = rectTextList[currRectNum];
+                currRect = currRectTextObj.rect;
+                // Check if the rect can be added to any of the current lines
+                rectAppended = false;
+
+                if (inferredLines.length > 0) {
+                    currLine = inferredLines[inferredLines.length - 1];
+
+                    if (this.includeRectInLine(currLine.line, currRect.top, currRect.left,
+                            currRect.width, currRect.height)) {
+                        rectAppended = this.expandLine(currLine.line, currRect.left, currRect.top,
+                            currRect.width, currRect.height);
+
+                        currLine.data.push(currRectTextObj);
+                    }
+                }
+
+                if (!rectAppended) {
+                    inferredLines.push({
+                        data: [currRectTextObj],
+                        line: this.createNewLine(currRect.left, currRect.top,
+                            currRect.width, currRect.height)
+                    });
+                    // Update the number of lines, so we're not using .length on every iteration
+                    numLines = numLines + 1;
+                }
+            }
+            return inferredLines;
+        },
+
+
+        // ----------------- PRIVATE HELPERS ---------------------------------------------------------------
+
+        includeRectInLine: function(currLine, rectTop, rectLeft, rectWidth, rectHeight) {
+            // is on an existing line : based on vertical position
+            if (this.rectIsWithinLineVertically(rectTop, rectHeight, currLine.maxTop, currLine.maxBottom)) {
+                if (this.rectIsWithinLineHorizontally(rectLeft, rectWidth, currLine.left,
+                        currLine.width, currLine.avgHeight)) {
+                    return true;
+                }
+            }
+            return false;
+        },
+
+        rectIsWithinLineVertically: function(rectTop, rectHeight, currLineMaxTop, currLineMaxBottom) {
+            var rectBottom = rectTop + rectHeight;
+            var lineHeight = currLineMaxBottom - currLineMaxTop;
+            var lineHeightAdjustment = (lineHeight * 0.75) / 2;
+            var rectHeightAdjustment = (rectHeight * 0.75) / 2;
+
+            rectTop = rectTop + rectHeightAdjustment;
+            rectBottom = rectBottom - rectHeightAdjustment;
+            currLineMaxTop = currLineMaxTop + lineHeightAdjustment;
+            currLineMaxBottom = currLineMaxBottom - lineHeightAdjustment;
+
+            if (rectTop === currLineMaxTop && rectBottom === currLineMaxBottom) {
+                return true;
+            } else if (rectTop < currLineMaxTop && rectBottom < currLineMaxBottom &&
+                rectBottom > currLineMaxTop) {
+                return true;
+            } else if (rectTop > currLineMaxTop && rectBottom > currLineMaxBottom &&
+                rectTop < currLineMaxBottom) {
+                return true;
+            } else if (rectTop > currLineMaxTop && rectBottom < currLineMaxBottom) {
+                return true;
+            } else if (rectTop < currLineMaxTop && rectBottom > currLineMaxBottom) {
+                return true;
+            } else {
+                return false;
+            }
+        },
+
+        rectIsWithinLineHorizontally: function(rectLeft, rectWidth, currLineLeft, currLineWidth,
+            currLineAvgHeight) {
+            var lineGapHeuristic = 2 * currLineAvgHeight;
+            var rectRight = rectLeft + rectWidth;
+            var currLineRight = rectLeft + currLineWidth;
+
+            if ((currLineLeft - rectRight) > lineGapHeuristic) {
+                return false;
+            } else if ((rectLeft - currLineRight) > lineGapHeuristic) {
+                return false;
+            } else {
+                return true;
+            }
+        },
+
+        createNewLine: function(rectLeft, rectTop, rectWidth, rectHeight) {
+            var maxBottom = rectTop + rectHeight;
+
+            return {
+                left: rectLeft,
+                startTop: rectTop,
+                width: rectWidth,
+                avgHeight: rectHeight,
+                maxTop: rectTop,
+                maxBottom: maxBottom,
+                numRects: 1
+            };
+        },
+
+        expandLine: function(currLine, rectLeft, rectTop, rectWidth, rectHeight) {
+            var lineOldRight = currLine.left + currLine.width;
+
+            // Update all the properties of the current line with rect dimensions
+            var rectRight = rectLeft + rectWidth;
+            var rectBottom = rectTop + rectHeight;
+            var numRectsPlusOne = currLine.numRects + 1;
+
+            // Average height calculation
+            var currSumHeights = currLine.avgHeight * currLine.numRects;
+            var avgHeight = Math.ceil((currSumHeights + rectHeight) / numRectsPlusOne);
+            currLine.avgHeight = avgHeight;
+            currLine.numRects = numRectsPlusOne;
+
+            // Expand the line vertically
+            currLine = this.expandLineVertically(currLine, rectTop, rectBottom);
+            currLine = this.expandLineHorizontally(currLine, rectLeft, rectRight);
+
+            return currLine;
+        },
+
+        expandLineVertically: function(currLine, rectTop, rectBottom) {
+            if (rectTop < currLine.maxTop) {
+                currLine.maxTop = rectTop;
+            }
+            if (rectBottom > currLine.maxBottom) {
+                currLine.maxBottom = rectBottom;
+            }
+
+            return currLine;
+        },
+
+        expandLineHorizontally: function(currLine, rectLeft, rectRight) {
+            var newLineLeft = currLine.left <= rectLeft ? currLine.left : rectLeft;
+            var lineRight = currLine.left + currLine.width;
+            var newLineRight = lineRight >= rectRight ? lineRight : rectRight;
+            var newLineWidth = newLineRight - newLineLeft;
+
+            //cancel the expansion if the line is going to expand outside a horizontal limit
+            //this is used to prevent lines from spanning multiple columns in a two column epub view
+            var horizontalThreshold = this.lineHorizontalThreshold;
+            var horizontalLimit = this.lineHorizontalLimit;
+
+            var leftBoundary = Math.floor(newLineLeft / horizontalLimit) * horizontalLimit;
+            var centerBoundary = leftBoundary + horizontalThreshold;
+            var rightBoundary = leftBoundary + horizontalLimit;
+            if ((newLineLeft > leftBoundary && newLineRight > centerBoundary && newLineLeft < centerBoundary) || (newLineLeft > centerBoundary && newLineRight > rightBoundary)) {
+                return undefined;
+            }
+
+            currLine.left = newLineLeft;
+            currLine.width = newLineWidth;
+
+            return currLine;
+        }
+    });
+
+    return TextLineInferrer;
+});
+
+// https://github.com/heygrady/Units
+//
+// Copyright (c) 2013 Grady Kuhnline
+//
+// MIT License
+//
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
+// the following conditions:
+//
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+define('readium_plugin_highlights/lib/length',[],function() {
+    return function(document) {
+        "use strict";
+
+        // create a test element
+        var testElem = document.createElement('test'),
+            docElement = document.documentElement,
+            defaultView = document.defaultView,
+            getComputedStyle = defaultView && defaultView.getComputedStyle,
+            computedValueBug,
+            runit = /^(-?[\d+\.\-]+)([a-z]+|%)$/i,
+            convert = {},
+            conversions = [1 / 25.4, 1 / 2.54, 1 / 72, 1 / 6],
+            units = ['mm', 'cm', 'pt', 'pc', 'in', 'mozmm'],
+            i = 6; // units.length
+
+        // add the test element to the dom
+        docElement.appendChild(testElem);
+
+        // test for the WebKit getComputedStyle bug
+        // @see http://bugs.jquery.com/ticket/10639
+        if (getComputedStyle) {
+            // add a percentage margin and measure it
+            testElem.style.marginTop = '1%';
+            computedValueBug = getComputedStyle(testElem).marginTop === '1%';
+        }
+
+        // pre-calculate absolute unit conversions
+        while (i--) {
+            convert[units[i] + "toPx"] = conversions[i] ? conversions[i] * convert.inToPx : toPx(testElem, '1' + units[i]);
+        }
+
+        // remove the test element from the DOM and delete it
+        docElement.removeChild(testElem);
+        testElem = undefined;
+
+        // convert a value to pixels
+        function toPx(elem, value, prop, force) {
+            // use width as the default property, or specify your own
+            prop = prop || 'width';
+
+            var style,
+                inlineValue,
+                ret,
+                unit = (value.match(runit) || [])[2],
+                conversion = unit === 'px' ? 1 : convert[unit + 'toPx'],
+                rem = /r?em/i;
+
+            if (conversion || rem.test(unit) && !force) {
+                // calculate known conversions immediately
+                // find the correct element for absolute units or rem or fontSize + em or em
+                elem = conversion ? elem : unit === 'rem' ? docElement : prop === 'fontSize' ? elem.parentNode || elem : elem;
+
+                // use the pre-calculated conversion or fontSize of the element for rem and em
+                conversion = conversion || parseFloat(curCSS(elem, 'fontSize'));
+
+                // multiply the value by the conversion
+                ret = parseFloat(value) // conversion;
+            } else {
+                // begin "the awesome hack by Dean Edwards"
+                // @see http://erik.eae.net/archives/2007/07/27/18.54.15/#comment-102291
+
+                // remember the current style
+                style = elem.style;
+                inlineValue = style[prop];
+
+                // set the style on the target element
+                try {
+                    style[prop] = value;
+                } catch (e) {
+                    // IE 8 and below throw an exception when setting unsupported units
+                    return 0;
+                }
+
+                // read the computed value
+                // if style is nothing we probably set an unsupported unit
+                ret = !style[prop] ? 0 : parseFloat(curCSS(elem, prop));
+
+                // reset the style back to what it was or blank it out
+                style[prop] = inlineValue !== undefined ? inlineValue : null;
+            }
+
+            // return a number
+            return ret;
+        }
+
+        // return the computed value of a CSS property
+        function curCSS(elem, prop) {
+            var value,
+                pixel,
+                unit,
+                rvpos = /^top|bottom/,
+                outerProp = ["paddingTop", "paddingBottom", "borderTop", "borderBottom"],
+                innerHeight,
+                parent,
+                i = 4; // outerProp.length
+
+            if (getComputedStyle) {
+                // FireFox, Chrome/Safari, Opera and IE9+
+                value = getComputedStyle(elem)[prop];
+            } else if (pixel = elem.style['pixel' + prop.charAt(0).toUpperCase() + prop.slice(1)]) {
+                // IE and Opera support pixel shortcuts for top, bottom, left, right, height, width
+                // WebKit supports pixel shortcuts only when an absolute unit is used
+                value = pixel + 'px';
+            } else if (prop === 'fontSize') {
+                // correct IE issues with font-size
+                // @see http://bugs.jquery.com/ticket/760
+                value = toPx(elem, '1em', 'left', 1) + 'px';
+            } else {
+                // IE 8 and below return the specified style
+                value = elem.currentStyle[prop];
+            }
+
+            // check the unit
+            unit = (value.match(runit) || [])[2];
+            if (unit === '%' && computedValueBug) {
+                // WebKit won't convert percentages for top, bottom, left, right, margin and text-indent
+                if (rvpos.test(prop)) {
+                    // Top and bottom require measuring the innerHeight of the parent.
+                    innerHeight = (parent = elem.parentNode || elem).offsetHeight;
+                    while (i--) {
+                        innerHeight -= parseFloat(curCSS(parent, outerProp[i]));
+                    }
+                    value = parseFloat(value) / 100 // innerHeight + 'px';
+                } else {
+                    // This fixes margin, left, right and text-indent
+                    // @see https://bugs.webkit.org/show_bug.cgi?id=29084
+                    // @see http://bugs.jquery.com/ticket/10639
+                    value = toPx(elem, value);
+                }
+            } else if ((value === 'auto' || (unit && unit !== 'px')) && getComputedStyle) {
+                // WebKit and Opera will return auto in some cases
+                // Firefox will pass back an unaltered value when it can't be set, like top on a static element
+                value = 0;
+            } else if (unit && unit !== 'px' && !getComputedStyle) {
+                // IE 8 and below won't convert units for us
+                // try to convert using a prop that will return pixels
+                // this will be accurate for everything (except font-size and some percentages)
+                value = toPx(elem, value) + 'px';
+            }
+            return value;
+        }
+
+        // export the conversion function
+        return {
+            toPx: toPx
+        };
+    };
+});
+
+define('readium_plugin_highlights/models/copied_text_styles',[],function() {
+    return [
+        "color",
+        "font-family",
+        "font-size",
+        "font-weight",
+        "font-style",
+        //"line-height",
+        "text-decoration",
+        "text-transform",
+        "text-shadow",
+        "letter-spacing",
+
+        "text-rendering",
+        "font-kerning",
+        "font-language-override",
+        "font-size-adjust",
+        "font-stretch",
+        "font-synthesis",
+        "font-variant",
+        "font-variant-alternates",
+        "font-variant-caps",
+        "font-variant-east-asian",
+        "font-variant-ligatures",
+        "font-variant-numeric",
+        "font-variant-position",
+        "-webkit-font-smoothing ",
+
+        "-ms-writing-mode",
+        "-webkit-writing-mode",
+        "-moz-writing-mode",
+        "-ms-writing-mode",
+        "writing-mode",
+
+        "-webkit-text-orientation",
+        "-moz-text-orientation",
+        "-ms-text-orientation",
+        "text-orientation: mixed"
+    ];
+});
+
+define('readium_plugin_highlights/views/view',["jquery", "underscore", "../lib/class", "../lib/length", "../models/text_line_inferrer", "../models/copied_text_styles"],
+function($, _, Class, Length, TextLineInferrer, CopiedTextStyles) {
+    // This is not a backbone view.
+
+    var HighlightView = Class.extend({
+        // this is an element that highlight will be associated with, it is not styled at this point
+        template: "<div class=\"rd-highlight\"></div>",
+
+        init: function(context, options) {
+            this.context = context;
+
+            this.lengthLib = new Length(this.context.document);
+
+            this.highlight = {
+                id: options.id,
+                CFI: options.CFI,
+                type: options.type,
+                top: options.top,
+                left: options.left,
+                height: options.height,
+                width: options.width,
+                styles: options.styles,
+                contentRenderData: options.contentRenderData
+            };
+
+            this.swipeThreshold = 10;
+            this.swipeVelocity = 0.65; // in px/ms
+        },
+
+        render: function() {
+            this.$el = $(this.template, this.context.document);
+            this.$el.attr('data-id', this.highlight.id);
+            this.updateStyles();
+            this.renderContent();
+            return this.$el;
+        },
+
+        remove: function() {
+            this.highlight = null;
+            this.context = null;
+            this.$el.remove();
+        },
+
+
+
+        resetPosition: function(top, left, height, width) {
+            _.assign(this.highlight, {
+                top: top,
+                left: left,
+                height: height,
+                width: width
+            });
+            this.setCSS();
+        },
+
+        setStyles: function(styles) {
+            this.highlight.styles = styles;
+            this.updateStyles();
+        },
+
+        update: function(type, styles) {
+            // save old type
+            var oldType = this.highlight.type;
+
+            _.assign(this.highlight, {
+                type: type,
+                styles: styles
+            });
+
+            // we need to fully restyle view elements
+            // remove all the "inline" styles
+            this.$el.removeAttr("style");
+
+            // remove class applied by "type"
+            this.$el.removeClass(oldType);
+
+            this.updateStyles();
+        },
+
+        updateStyles: function() {
+            this.setBaseHighlight();
+            this.setCSS();
+        },
+
+        // Will return null or false if :first-line/letter would not apply to the first text node child
+        getFirstTextNodeChild: function(elem) {
+            for (var i = 0; i < elem.childNodes.length; i++) {
+                var child = elem.childNodes[i];
+                if (child.nodeType === Node.TEXT_NODE) {
+                    return child;
+                }
+
+                if (child.nodeType === Node.ELEMENT_NODE) {
+                    var doc = child.ownerDocument;
+                    var style = doc.defaultView.getComputedStyle(child);
+                    // If it's not an element we can definitely ignore
+                    if ((style['position'] !== 'absolute' && style['position'] !== 'fixed') &&
+                        style['float'] === 'none' && style['display'] !== 'none') {
+                        if (style['display'] === 'inline') {
+                            var result = this.getFirstTextNodeChild(child);
+                            if (result) {
+                                return result;
+                            } else if (result === false) {
+                                return false;
+                            }
+                        } else {
+                            return false;
+                        }
+                    }
+                }
+            }
+            return null;
+        },
+
+        // Returns the styles which apply to the first line of the specified element, or null if there aren't any
+        // Assumes that the specified argument is a block element
+        getFirstLineStyles: function(elem) {
+            var win = elem.ownerDocument.defaultView;
+            if (!win.getMatchedCSSRules) {
+                // Without getMatchingCSSRules, we can't get first-line styles
+                return null;
+            }
+            while (elem) {
+                var styles = win.getMatchedCSSRules(elem, 'first-line');
+                if (styles) {
+                    return styles[0].style;
+                }
+
+                // Go through previous siblings, return null if there's a non-empty text node, or an element that's
+                // not display: none; - both of these prevent :first-line styles from the parents from applying
+                var sibling = elem;
+                while (sibling = sibling.previousSibling) {
+                    if (sibling.nodeType === Node.ELEMENT_NODE) {
+                        var siblingStyles = win.getComputedStyle(sibling);
+                        if (siblingStyles['display'] !== 'none') {
+                            return null;
+                        }
+                    } else if (sibling.nodeType === Node.TEXT_NODE && sibling.textContent.match(/\S/)) {
+                        return null;
+                    }
+                };
+                elem = elem.parentNode;
+            }
+        },
+
+        renderContent: function() {
+            var that = this;
+            var renderData = this.highlight.contentRenderData;
+            if (renderData) {
+                _.each(renderData.data, function(data) {
+                    var $ancestor = $(data.ancestorEl);
+                    var $blockAncestor = $(data.blockAncestorEl);
+                    var document = data.ancestorEl.ownerDocument;
+
+                    var el = document.createElement("div");
+                    el.style.position = 'absolute';
+                    el.style.top = (data.rect.top - renderData.top) + "px";
+                    el.style.left = (data.rect.left - renderData.left) + "px";
+                    el.style.width = (data.rect.width + 1) + "px";
+                    el.style.height = data.rect.height + "px";
+
+                    var copyStyles = function(copyFrom, copyTo) {
+                        _.each(CopiedTextStyles, function(styleName) {
+                            var style = copyFrom[styleName];
+                            if (style) {
+                                copyTo[styleName] = style;
+                            }
+                        });
+                    };
+
+                    var copiedStyles = $ancestor.data("rd-copied-text-styles");
+                    if (!copiedStyles) {
+                        copiedStyles = {};
+                        var computedStyle = document.defaultView.getComputedStyle(data.ancestorEl);
+                        copyStyles(computedStyle, copiedStyles);
+                        $ancestor.data("rd-copied-text-styles", copiedStyles);
+                    }
+
+                    var copiedFirstLineStyles = $blockAncestor.data("rd-copied-first-line-styles");
+                    if (copiedFirstLineStyles === undefined) {
+                        copiedFirstLineStyles = null;
+                        var firstLineStyles = that.getFirstLineStyles(data.blockAncestorEl);
+                        if (firstLineStyles) {
+                            copiedFirstLineStyles = {};
+                            copyStyles(firstLineStyles, copiedFirstLineStyles);
+                            // Delete text-transform because it doesn't apply in Chrome on :first-line
+                            delete copiedFirstLineStyles['text-transform'];
+                            _.each(["font-size", "letter-spacing"], function(styleName) {
+                                if (copiedFirstLineStyles[styleName]) {
+                                    copiedFirstLineStyles[styleName] = that.lengthLib.toPx(data.ancestorEl, copiedFirstLineStyles[styleName]) + "px";
+                                }
+                            });
+                        }
+                        $blockAncestor.data("rd-copied-first-line-styles", copiedFirstLineStyles);
+                    }
+
+                    if (copiedFirstLineStyles) {
+                        var textNode = that.getFirstTextNodeChild(data.blockAncestorEl);
+                        var range = document.createRange();
+                        range.setStart(textNode, 0);
+                        range.setEnd(data.node, data.startOffset + 1);
+                        var rects = range.getClientRects();
+                        var inferrer = new TextLineInferrer({
+                            lineHorizontalThreshold: $("body", document).clientWidth,
+                            lineHorizontalLimit: document.defaultView.innerWidth
+                        });
+                        if (inferrer.inferLines(_.map(rects, function(rect) {
+                                return {
+                                    rect: rect
+                                }
+                            })).length > 1) {
+                            copiedFirstLineStyles = null;
+                        }
+                    }
+
+                    _.each(copiedStyles, function(style, styleName) {
+                        style = copiedFirstLineStyles ? copiedFirstLineStyles[styleName] || style : style;
+                        el.style[styleName] = style;
+                    });
+                    el.style["line-height"] = data.rect.height + "px";
+
+                    el.appendChild(document.createTextNode(data.text));
+                    that.$el[0].appendChild(el);
+                });
+                processedElements = null;
+                computedStyles = null;
+            }
+        },
+
+        setCSS: function() {
+            // set highlight's absolute position
+            this.$el.css({
+                "position": "absolute",
+                "top": this.highlight.top + "px",
+                "left": this.highlight.left + "px",
+                "height": this.highlight.height + "px",
+                "width": this.highlight.width + "px"
+            });
+
+            // apply styles, if any
+            var styles = this.highlight.styles || {};
+            try {
+                this.$el.css(styles);
+            } catch (ex) {
+                console.log('EpubAnnotations: invalid css styles');
+            }
+        },
+
+        setBaseHighlight: function(removeFocus) {
+            var type = this.highlight.type;
+            this.$el.addClass(type);
+            this.$el.removeClass("hover-" + type);
+            if (removeFocus) {
+                this.$el.removeClass("focused-" + type);
+            }
+        },
+
+        setHoverHighlight: function() {
+            var type = this.highlight.type;
+            this.$el.addClass("hover-" + type);
+            this.$el.removeClass(type);
+        },
+
+        setFocusedHighlight: function() {
+            var type = this.highlight.type;
+            this.$el.addClass("focused-" + type);
+            this.$el.removeClass(type).removeClass("hover-" + type);
+        },
+
+        setVisibility: function(value) {
+            if (value) {
+                this.$el.css('display', '');
+            } else {
+                this.$el.css('display', 'none');
+            }
+        },
+
+    });
+
+    return HighlightView;
+});
+
+define('readium_plugin_highlights/views/border_view',["./view"], function(HighlightView) {
+
+    // This is not a backbone view.
+
+    var HighlightBorderView = HighlightView.extend({
+
+        template: "<div class=\"rd-highlight-border\"></div>",
+
+        setCSS: function() {
+
+            this.$el.css({
+                backgroundClip: 'padding-box',
+                borderStyle: 'solid',
+                borderWidth: '5px',
+                boxSizing: "border-box"
+            });
+            this._super();
+        },
+
+        setBaseHighlight: function() {
+
+            this.$el.addClass("highlight-border");
+            this.$el.removeClass("hover-highlight-border").removeClass("focused-highlight-border");
+        },
+
+        setHoverHighlight: function() {
+
+            this.$el.addClass("hover-highlight-border");
+            this.$el.removeClass("highlight-border");
+        },
+
+        setFocusedHighlight: function() {
+            this.$el.addClass('focused-highlight-border');
+            this.$el.removeClass('highlight-border').removeClass('hover-highlight-border');
+        }
+    });
+
+    return HighlightBorderView;
+});
+
+define('readium_plugin_highlights/models/group',["jquery", "underscore", "../lib/class", "./text_line_inferrer", "../views/view", "../views/border_view", "../helpers"],
+function($, _, Class, TextLineInferrer, HighlightView, HighlightBorderView, HighlightHelpers) {
+
+    var debouncedTrigger = _.debounce(
+        function(fn, eventName) {
+            fn(eventName);
+        }, 10);
+
+    var HighlightGroup = Class.extend({
+
+        init: function(context, options) {
+            this.context = context;
+
+            this.highlightViews = [];
+
+            this.CFI = options.CFI;
+            this.selectedNodes = options.selectedNodes;
+            this.offsetTopAddition = options.offsetTopAddition;
+            this.offsetLeftAddition = options.offsetLeftAddition;
+            this.styles = options.styles;
+            this.id = options.id;
+            this.type = options.type;
+            this.scale = options.scale;
+            this.selectionText = options.selectionText;
+            this.visible = options.visible;
+            this.rangeInfo = options.rangeInfo;
+
+            this.constructHighlightViews();
+        },
+
+        onHighlightEvent: function(event, type) {
+            var that = this;
+            var documentFrame = this.context.iframe;
+            var topView = this.context.manager;
+            var triggerEvent = _.partial(topView.trigger, _, that.type,
+                that.CFI, that.id, event, documentFrame);
+
+            if (type === "click" || type === "touchend") {
+                debouncedTrigger(triggerEvent, "annotationClicked");
+
+            } else if (type === "contextmenu") {
+                triggerEvent("annotationRightClicked");
+
+            } else if (type === "mousemove") {
+                triggerEvent("annotationMouseMove");
+
+            } else if (type === "mouseenter") {
+                triggerEvent("annotationHoverIn");
+
+            } else if (type === "mouseleave") {
+                triggerEvent("annotationHoverOut");
+
+            } else if (type === "mousedown") {
+                // prevent selection when right clicking
+                var preventEvent = function(event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    documentFrame.contentDocument.removeEventListener(event.type, preventEvent);
+                };
+                if (event.button === 2) {
+                    event.preventDefault();
+                    documentFrame.contentDocument.addEventListener("selectstart", preventEvent);
+                    documentFrame.contentDocument.addEventListener("mouseup", preventEvent);
+                    documentFrame.contentDocument.addEventListener("click", preventEvent);
+                    documentFrame.contentDocument.addEventListener("contextmenu", preventEvent);
+                }
+            }
+
+            // "mouseenter" and "mouseleave" events not only trigger corresponding named event, but also
+            // affect the appearance
+            if (type === "mouseenter" || type === "mouseleave") {
+                // Change appearance of highlightViews constituting this highlight group
+                // do not iterate over secondary highlight views (hightlightViewsSecondary)
+                _.each(this.highlightViews, function(highlightView) {
+
+                    if (type === "mouseenter") {
+                        highlightView.setHoverHighlight();
+                    } else if (type === "mouseleave") {
+                        highlightView.setBaseHighlight(false);
+                    }
+                });
+            }
+
+        },
+
+        normalizeRectangle: function(rect) {
+            return {
+                left: rect.left,
+                right: rect.right,
+                top: rect.top,
+                bottom: rect.bottom,
+                width: rect.right - rect.left,
+                height: rect.bottom - rect.top
+            };
+        },
+
+        // produces an event string corresponding to "pointer events" that we want to monitor on the
+        // bound HL container. We are adding namespace to the event names in order to be able to
+        // remove them by specifying <eventname>.<namespace> only, rather than classic callback function
+        getBoundHighlightContainerEvents: function() {
+            // these are the event names that we handle in "onHighlightEvent"
+            var boundHighlightContainerEvents = ["click", "touchstart", "touchend", "touchmove", "contextmenu",
+                "mouseenter", "mouseleave", "mousemove", "mousedown"
+            ];
+            var namespace = ".rdjsam-" + this.id;
+            return boundHighlightContainerEvents.map(function(e) {
+                return e + namespace;
+            }).join(" ");
+        },
+
+        getFirstBlockParent: function(elem) {
+            var win = elem.ownerDocument.defaultView;
+            do {
+                var style = win.getComputedStyle(elem);
+                if (style['display'] !== 'inline') {
+                    return elem;
+                }
+            } while (elem = elem.parentNode);
+        },
+
+        // construct view for each rectangle constituting HL group
+        constructHighlightViews: function() {
+            var that = this;
+            if (!this.visible)
+                return;
+
+            var rectTextList = [];
+
+            // this is an array of elements (not Node.TEXT_NODE) that are part of HL group
+            // they will presented as HighlightBorderView
+            var rectElementList = [];
+            var inferrer;
+            var inferredLines;
+            var allContainerRects = [];
+            var hoverThreshold = 2; // Pixels to expand each rect on each side, for hovering/clicking purposes
+            var rangeInfo = this.rangeInfo;
+            var selectedNodes = this.selectedNodes;
+            var includeMedia = this.includeMedia;
+            var contentDocumentFrame = this.context.iframe;
+            var highlightStyles = this.styles;
+            var cloneTextMode = highlightStyles ? highlightStyles['-rd-highlight-mode'] === 'clone-text' : false;
+
+            function pushToRectTextList(range) {
+                var match,
+                    rangeText = range.toString(),
+                    rects = [],
+                    node = range.startContainer,
+                    ancestor = range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE ? range.commonAncestorContainer : range.commonAncestorContainer.parentNode,
+                    blockAncestor = that.getFirstBlockParent(ancestor),
+                    baseOffset = range.startOffset,
+                    rgx = /\S+/g;
+
+                if (cloneTextMode) {
+                    while (match = rgx.exec(rangeText)) {
+                        var startOffset = baseOffset + rgx.lastIndex - match[0].length,
+                            endOffset = baseOffset + rgx.lastIndex;
+                        range.setStart(node, startOffset);
+                        range.setEnd(node, endOffset);
+                        var clientRects = range.getClientRects();
+                        var curRect = 0;
+                        var curStart = startOffset;
+                        var curEnd = curStart;
+                        while (curRect < clientRects.length) {
+                            var saveRect = false;
+                            if (clientRects[curRect].width === 0 || clientRects[curRect].height === 0) {
+                                curRect++;
+                                continue;
+                            }
+                            if (curRect === clientRects.length - 1) {
+                                curEnd = endOffset;
+                                saveRect = true;
+                            } else {
+                                curEnd++;
+                                range.setStart(node, curStart);
+                                range.setEnd(node, curEnd);
+                                var tempRects = range.getClientRects();
+                                var tempRect = tempRects[0];
+                                // Skip over empty first rect if there is one
+                                if (tempRects.length > 1 && (tempRect.width === 0 || tempRect.height === 0)) {
+                                    tempRect = tempRects[1];
+                                }
+                                var differences = 0;
+                                _.each(["top", "left", "bottom", "right"], function(prop) {
+                                    differences += (tempRects[0][prop] !== clientRects[curRect][prop] ? 1 : 0);
+                                });
+                                if (differences === 0) {
+                                    saveRect = true;
+                                }
+                            }
+                            if (saveRect) {
+                                rects.push({
+                                    rect: clientRects[curRect],
+                                    text: node.textContent.substring(curStart, curEnd),
+                                    node: node,
+                                    startOffset: curStart
+                                });
+                                curRect++;
+                                curStart = curEnd;
+                            }
+                        }
+                    }
+                } else {
+                    _.each(range.getClientRects(), function(rect) {
+                        rects.push({
+                            rect: rect,
+                            text: rangeText
+                        });
+                    });
+                }
+                _.each(rects, function(rect) {
+                    var normalizedRect = that.normalizeRectangle(rect.rect);
+
+                    //filter out empty rectangles
+                    if (normalizedRect.width === 0 || normalizedRect.height === 0) {
+                        return;
+                    }
+
+                    // push both rect and ancestor in the list
+                    rectTextList.push({
+                        rect: normalizedRect,
+                        text: rect.text,
+                        ancestorEl: ancestor,
+                        blockAncestorEl: blockAncestor,
+                        node: rect.node,
+                        startOffset: rect.startOffset
+                    });
+                });
+            }
+
+            // if range is within one node
+            if (rangeInfo && rangeInfo.startNode === rangeInfo.endNode) {
+                var node = rangeInfo.startNode;
+                var range = that.context.document.createRange();
+                range.setStart(node, rangeInfo.startOffset);
+                range.setEnd(node, rangeInfo.endOffset);
+
+                // we are only interested in TEXT_NODE
+                if (node.nodeType === Node.TEXT_NODE) {
+                    // get client rectangles for the range and push them into rectTextList
+                    pushToRectTextList(range);
+                    selectedNodes = [];
+                }
+            }
+
+            // multi-node range, for each selected node
+            _.each(selectedNodes, function(node) {
+                // create new Range
+                var range = that.context.document.createRange();
+                if (node.nodeType === Node.TEXT_NODE) {
+                    if (rangeInfo && node === rangeInfo.startNode && rangeInfo.startOffset !== 0) {
+                        range.setStart(node, rangeInfo.startOffset);
+                        range.setEnd(node, node.length);
+                    } else if (rangeInfo && node === rangeInfo.endNode && rangeInfo.endOffset !== 0) {
+                        range.setStart(node, 0);
+                        range.setEnd(node, rangeInfo.endOffset);
+                    } else {
+                        range.selectNodeContents(node);
+                    }
+
+                    // for each client rectangle
+                    pushToRectTextList(range);
+                } else if (node.nodeType === Node.ELEMENT_NODE && includeMedia) {
+                    // non-text node element
+                    // if we support this elements in the HL group
+                    if (_.contains(["img", "video", "audio"], node.tagName.toLowerCase())) {
+                        // set the Range to contain the node and its contents and push rectangle to the list
+                        range.selectNode(node);
+                        rectElementList.push(range.getBoundingClientRect());
+                    }
+                }
+            });
+
+            var $html = $(that.context.document.documentElement);
+
+            function calculateScale() {
+                var scale = that.scale;
+                //is there a transform scale for the content document?
+                var matrix = HighlightHelpers.getMatrix($html);
+                if (!matrix && (that.context.isIe9 || that.context.isIe10)) {
+                    //if there's no transform scale then set the scale as the IE zoom factor
+                    scale = (window.screen.deviceXDPI / 96); //96dpi == 100% scale
+                } else if (matrix) {
+                    scale = HighlightHelpers.getScaleFromMatrix(matrix);
+                }
+                return scale;
+            }
+
+            var scale = calculateScale();
+
+            inferrer = new TextLineInferrer({
+                lineHorizontalThreshold: $("body", $html).clientWidth,
+                lineHorizontalLimit: contentDocumentFrame.contentWindow.innerWidth
+            });
+
+            // only take "rect" property when inferring lines
+            inferredLines = inferrer.inferLines(rectTextList);
+            _.each(inferredLines, function(line, index) {
+                var renderData = line.data;
+                //console.log(line.data);
+                line = line.line;
+                var highlightTop = (line.startTop + that.offsetTopAddition) / scale;
+                var highlightLeft = (line.left + that.offsetLeftAddition) / scale;
+                var highlightHeight = line.avgHeight / scale;
+                var highlightWidth = line.width / scale;
+                allContainerRects.push({
+                    top: highlightTop - hoverThreshold,
+                    left: highlightLeft - hoverThreshold,
+                    bottom: highlightTop + highlightHeight + hoverThreshold * 2,
+                    right: highlightLeft + highlightWidth + hoverThreshold * 2,
+                });
+
+                var highlightView = new HighlightView(that.context, {
+                    id: that.id,
+                    CFI: that.CFI,
+                    type: that.type,
+                    top: highlightTop,
+                    left: highlightLeft,
+                    height: highlightHeight,
+                    width: highlightWidth,
+                    styles: _.extend({
+                        "z-index": "1000",
+                        "pointer-events": "none"
+                    }, highlightStyles),
+                    contentRenderData: cloneTextMode ? {
+                        data: renderData,
+                        top: line.startTop,
+                        left: line.left
+                    } : null
+                });
+
+                that.highlightViews.push(highlightView);
+            });
+
+            // deal with non TEXT_NODE elements
+            _.each(rectElementList, function(rect) {
+                var highlightTop = (rect.top + that.offsetTopAddition) / scale;
+                var highlightLeft = (rect.left + that.offsetLeftAddition) / scale;
+                var highlightHeight = rect.height / scale;
+                var highlightWidth = rect.width / scale;
+                allContainerRects.push({
+                    top: highlightTop - hoverThreshold,
+                    left: highlightLeft - hoverThreshold,
+                    bottom: highlightTop + highlightHeight + hoverThreshold * 2,
+                    right: highlightLeft + highlightWidth + hoverThreshold * 2,
+                });
+
+                var highlightView = new HighlightBorderView(this.context, {
+                    highlightId: that.id,
+                    CFI: that.CFI,
+                    top: highlightTop,
+                    left: highlightLeft,
+                    height: highlightHeight,
+                    width: highlightWidth,
+                    styles: highlightStyles
+                });
+
+                that.highlightViews.push(highlightView);
+            });
+
+            // this is a flag indicating if mouse is currently within the boundary of HL group
+            var mouseEntered = false;
+
+            // helper function to test if a point is within a rectangle
+            function pointRectangleIntersection(point, rect) {
+                return point.x > rect.left && point.x < rect.right &&
+                    point.y > rect.top && point.y < rect.bottom;
+            };
+
+            // e is a jQuery event wrapper (use e.originalEvent to access the raw object)
+            that.boundHighlightCallback = function(e) {
+                var scale = calculateScale();
+                var mouseIsInside = false;
+
+                var x = e.pageX;
+                var y = e.pageY;
+
+                if (e.type === 'touchend') {
+                    var lastTouch = _.last(e.originalEvent.changedTouches);
+                    x = lastTouch.pageX;
+                    y = lastTouch.pageY;
+                }
+
+                var point = {
+                    x: (x + that.offsetLeftAddition) / scale,
+                    y: (y + that.offsetTopAddition) / scale
+                };
+
+                _.each(allContainerRects, function(rect) {
+
+                    if (pointRectangleIntersection(point, rect)) {
+                        mouseIsInside = true;
+                        // if event is "click" and there is an active selection
+                        if (e.type === "click") {
+                            var sel = e.target.ownerDocument.getSelection();
+                            // had to add this check to make sure that rangeCount is not 0
+                            if (sel && sel.rangeCount && !sel.getRangeAt(0).collapsed) {
+                                //do not trigger a click when there is an active selection
+                                return;
+                            }
+                        }
+
+                        var isTouchEvent = e.type.indexOf('touch') !== -1;
+
+                        if (isTouchEvent) {
+                            // call "normal" event handler for HL group to touch capable devices
+                            that.onHighlightEvent(e, e.type);
+                        }
+
+                        // if this is the first time we are mouse entering in the area
+                        if (!mouseEntered) {
+                            // regardless of the actual event type we want highlightGroupCallback process "mouseenter"
+                            that.onHighlightEvent(e, "mouseenter");
+
+                            // set flag indicating that we are in HL group confines
+                            mouseEntered = true;
+                            return;
+                        } else if (!isTouchEvent) {
+                            // call "normal" event handler for HL group to desktop devices
+                            that.onHighlightEvent(e, e.type);
+                        }
+                    }
+                });
+
+                if (!mouseIsInside && mouseEntered) {
+                    // set flag indicating that we left HL group confines
+                    mouseEntered = false;
+                    that.onHighlightEvent(e, "mouseleave");
+                }
+            };
+            that.boundHighlightElement = $html;
+            $html.on(this.getBoundHighlightContainerEvents(), that.boundHighlightCallback);
+        },
+
+        resetHighlights: function(viewportElement, offsetTop, offsetLeft) {
+            this.offsetTopAddition = offsetTop;
+            this.offsetLeftAddition = offsetLeft;
+            this.destroyCurrentHighlights();
+            this.constructHighlightViews();
+            this.renderHighlights(viewportElement);
+        },
+
+        destroyCurrentHighlights: function() {
+            var that = this;
+            _.each(this.highlightViews, function(highlightView) {
+                highlightView.remove();
+            });
+
+            var events = that.getBoundHighlightContainerEvents();
+            var $el = this.boundHighlightElement;
+            if ($el) {
+                $el.off(events, this.boundHighlightCallback);
+            }
+
+            this.boundHighlightCallback = null;
+            this.boundHighlightElement = null;
+
+            this.highlightViews.length = 0;
+        },
+
+        renderHighlights: function(viewportElement) {
+            // higlight group is live, it just doesn't need to be visible, yet.
+            if (!this.visible) {
+                return;
+            }
+
+            _.each(this.highlightViews, function(view, index) {
+                $(viewportElement).append(view.render());
+            });
+        },
+
+        toInfo: function() {
+            // get array of rectangles for all the HightligtViews
+            var rectangleArray = [];
+            var offsetTopAddition = this.offsetTopAddition;
+            var offsetLeftAddition = this.offsetLeftAddition;
+            var scale = this.scale;
+            _.each(this.highlightViews, function(view, index) {
+                var hl = view.highlight;
+                rectangleArray.push({
+                    top: (hl.top - offsetTopAddition) * scale,
+                    left: (hl.left - offsetLeftAddition) * scale,
+                    height: hl.height * scale,
+                    width: hl.width * scale
+                });
+            });
+
+            return {
+                id: this.id,
+                type: this.type,
+                CFI: this.CFI,
+                rectangleArray: rectangleArray,
+                selectedText: this.selectionText
+            };
+        },
+
+        setStyles: function(styles) {
+            this.styles = styles;
+            _.each(this.highlightViews, function(view, index) {
+                view.setStyles(styles);
+            });
+        },
+
+        update: function(type, styles) {
+            this.type = type;
+            this.styles = styles;
+
+            // for each View of the HightlightGroup
+            _.each(this.highlightViews, function(view, index) {
+                view.update(type, styles);
+            });
+        },
+
+        setState: function(state, value) {
+            _.each(this.highlightViews, function(view, index) {
+                if (state === "hover") {
+                    if (value) {
+                        view.setHoverHighlight();
+                    } else {
+                        view.setBaseHighlight(false);
+                    }
+                } else if (state === "visible") {
+                    view.setVisibility(value);
+                } else if (state === "focused") {
+                    if (value) {
+                        view.setFocusedHighlight();
+                    } else {
+                        view.setBaseHighlight(true);
+                    }
+
+                }
+            });
+        }
+    });
+
+    return HighlightGroup;
+});
+
+define('readium_plugin_highlights/controller',["jquery", "underscore", "./lib/class", "./helpers", "./models/group"],
+function($, _, Class, HighlightHelpers, HighlightGroup) {
+    var HighlightsController = Class.extend({
+
+        highlights: [],
+        annotationHash: {},
+        offsetTopAddition: 0,
+        offsetLeftAddition: 0,
+        readerBoundElement: undefined,
+        scale: 0,
+
+        init: function(context, options) {
+            this.context = context;
+
+            this.epubCFI = EPUBcfi;
+            this.readerBoundElement = this.context.document.documentElement;
+
+            if (options.getVisibleCfiRangeFn) {
+                this.getVisibleCfiRange = options.getVisibleCfiRangeFn;
+            }
+
+            // inject annotation CSS into iframe
+            if (this.context.cssUrl) {
+                this._injectAnnotationCSS(this.context.cssUrl);
+            }
+
+            // emit an event when user selects some text.
+            var that = this;
+            this.context.document.addEventListener("mouseup", function(event) {
+                var range = that._getCurrentSelectionRange();
+                if (range === undefined) {
+                    return;
+                }
+                if (range.startOffset - range.endOffset) {
+                    that.context.manager.trigger("textSelectionEvent", event, range, that.context.iframe);
+                }
+            });
+
+            if (!rangy.initialized) {
+                rangy.init();
+            }
+        },
+
+        getVisibleCfiRange: function() {
+            // returns {firstVisibleCfi: <>, lastVisibleCfi: <>}
+            // implemented in Readium.ReaderView, passed in via options
+        },
+
+        // ------------------------------------------------------------------------------------ //
+        //  "PUBLIC" METHODS (THE API)                                                          //
+        // ------------------------------------------------------------------------------------ //
+
+        redraw: function() {
+            var that = this;
+
+            var paginationOffsets = this._getPaginationOffsets();
+
+            var visibleCfiRange = this.getVisibleCfiRange();
+
+            // Highlights
+            _.each(this.highlights, function(highlightGroup) {
+                var visible = true;
+
+                if (visibleCfiRange &&
+                    visibleCfiRange.firstVisibleCfi &&
+                    visibleCfiRange.firstVisibleCfi.contentCFI &&
+                    visibleCfiRange.lastVisibleCfi &&
+                    visibleCfiRange.lastVisibleCfi.contentCFI) {
+
+                    visible = that._cfiIsBetweenTwoCfis(
+                        highlightGroup.CFI,
+                        visibleCfiRange.firstVisibleCfi.contentCFI,
+                        visibleCfiRange.lastVisibleCfi.contentCFI);
+                }
+                highlightGroup.visible = visible;
+                highlightGroup.resetHighlights(that.readerBoundElement, paginationOffsets.top, paginationOffsets.left);
+            });
+        },
+
+        getHighlight: function(id) {
+            var highlight = this.annotationHash[id];
+            if (highlight) {
+                return highlight.toInfo();
+            } else {
+                return undefined;
+            }
+        },
+
+        getHighlights: function() {
+            var highlights = [];
+            _.each(this.highlights, function(highlight) {
+                highlights.push(highlight.toInfo());
+            });
+            return highlights;
+        },
+
+        removeHighlight: function(annotationId) {
+            var annotationHash = this.annotationHash;
+            var highlights = this.highlights;
+
+            delete annotationHash[annotationId];
+
+            highlights = _.reject(highlights, function(highlightGroup) {
+                if (highlightGroup.id == annotationId) {
+                    highlightGroup.destroyCurrentHighlights();
+                    return true;
+                } else {
+                    return false;
+                }
+            });
+
+            this.highlights = highlights;
+        },
+
+        removeHighlightsByType: function(type) {
+            var annotationHash = this.annotationHash;
+            var highlights = this.highlights;
+
+            // the returned list only contains HLs for which the function returns false
+            highlights = _.reject(highlights, function(highlightGroup) {
+                if (highlightGroup.type === type) {
+                    delete annotationHash[highlightGroup.id];
+                    highlightGroup.destroyCurrentHighlights();
+                    return true;
+                } else {
+                    return false;
+                }
+            });
+
+            this.highlights = highlights;
+        },
+
+        // generate unique prefix for HL ids
+        generateIdPrefix: function() {
+            var idPrefix = 'xxxxxxxx'.replace(/[x]/g, function(c) {
+                var r = Math.random() * 16 | 0;
+                return r.toString(16);
+            });
+            idPrefix += "_";
+            return idPrefix;
+        },
+
+
+        // takes partial CFI as parameter
+        addHighlight: function(CFI, id, type, styles) {
+            var CFIRangeInfo;
+            var range;
+            var selectedElements;
+
+            var contentDoc = this.context.document;
+            //get transform scale of content document
+            var scale = 1.0;
+            var matrix = HighlightHelpers.getMatrix($('html', contentDoc));
+            if (matrix) {
+                scale = HighlightHelpers.getScaleFromMatrix(matrix);
+            }
+
+            //create a dummy test div to determine if the browser provides
+            // client rectangles that take transform scaling into consideration
+            var $div = $('<div style="font-size: 50px; position: absolute; background: red; top:-9001px;">##</div>');
+            $(contentDoc.documentElement).append($div);
+            range = contentDoc.createRange();
+            range.selectNode($div[0]);
+            var renderedWidth = this._normalizeRectangle(range.getBoundingClientRect()).width;
+            var clientWidth = $div[0].clientWidth;
+            $div.remove();
+            var renderedVsClientWidthFactor = renderedWidth / clientWidth;
+            if (renderedVsClientWidthFactor === 1) {
+                //browser doesn't provide scaled client rectangles (firefox)
+                scale = 1;
+            } else if (this.context.isIe9 || this.context.isIe10) {
+                //use the test scale factor as our scale value for IE 9/10
+                scale = renderedVsClientWidthFactor;
+            }
+            this.scale = scale;
+
+            // form fake full CFI to satisfy getRangeTargetNodes
+            var arbitraryPackageDocCFI = "/99!"
+            var fullFakeCFI = "epubcfi(" + arbitraryPackageDocCFI + CFI + ")";
+            if (this.epubCFI.Interpreter.isRangeCfi(fullFakeCFI)) {
+                CFIRangeInfo = this.epubCFI.getRangeTargetElements(fullFakeCFI, contentDoc, ["cfi-marker", "cfi-blacklist", "mo-cfi-highlight"], [], ["MathJax_Message", "MathJax_SVG_Hidden"]);
+
+                var startNode = CFIRangeInfo.startElement,
+                    endNode = CFIRangeInfo.endElement;
+                range = rangy.createRange(contentDoc);
+                if (startNode.length < CFIRangeInfo.startOffset) {
+                    //this is a workaround
+                    // "Uncaught IndexSizeError: Index or size was negative, or greater than the allowed value." errors
+                    // the range cfi generator outputs a cfi like /4/2,/1:125,/16
+                    // can't explain, investigating..
+                    CFIRangeInfo.startOffset = startNode.length;
+                }
+                range.setStart(startNode, CFIRangeInfo.startOffset);
+                range.setEnd(endNode, CFIRangeInfo.endOffset);
+                selectedElements = range.getNodes();
+            } else {
+                var element = this.epubCFI.getTargetElement(fullFakeCFI, contentDoc, ["cfi-marker", "cfi-blacklist", "mo-cfi-highlight"], [], ["MathJax_Message", "MathJax_SVG_Hidden"]);
+                selectedElements = [element ? element[0] : null];
+                range = null;
+            }
+
+            var paginationOffsets = this._getPaginationOffsets();
+
+            this._addHighlightHelper(
+                CFI, id, type, styles, selectedElements, range,
+                startNode, endNode, paginationOffsets.top, paginationOffsets.left
+            );
+
+            return {
+                selectedElements: selectedElements,
+                CFI: CFI
+            };
+        },
+
+
+        // this returns a partial CFI only!!
+        getCurrentSelectionCFI: function() {
+            var currentSelection = this._getCurrentSelectionRange();
+            var CFI;
+            if (currentSelection) {
+                selectionInfo = this._getSelectionInfo(currentSelection);
+                CFI = selectionInfo.CFI;
+            }
+
+            return CFI;
+        },
+
+        // this returns a partial CFI only!!
+        getCurrentSelectionOffsetCFI: function() {
+            var currentSelection = this._getCurrentSelectionRange();
+
+            var CFI;
+            if (currentSelection) {
+                CFI = this._generateCharOffsetCFI(currentSelection);
+            }
+            return CFI;
+        },
+
+        addSelectionHighlight: function(id, type, styles, clearSelection) {
+            var CFI = this.getCurrentSelectionCFI();
+            if (CFI) {
+
+                // if clearSelection is true
+                if (clearSelection) {
+                    var iframeDocument = this.context.document;
+                    if (iframeDocument.getSelection) {
+                        var currentSelection = iframeDocument.getSelection();
+                        currentSelection.collapseToStart();
+                    }
+                }
+                return this.addHighlight(CFI, id, type, styles);
+            } else {
+                throw new Error("Nothing selected");
+            }
+        },
+
+        updateAnnotation: function(id, type, styles) {
+            var annotationViews = this.annotationHash[id];
+            if (annotationViews) {
+                annotationViews.update(type, styles);
+            }
+            return annotationViews;
+        },
+
+        replaceAnnotation: function(id, cfi, type, styles) {
+            var annotationViews = this.annotationHash[id];
+            if (annotationViews) {
+                // remove an existing annotatio
+                this.removeHighlight(id);
+
+                // create a new HL
+                this.addHighlight(cfi, id, type, styles);
+            }
+            return annotationViews;
+        },
+
+        updateAnnotationView: function(id, styles) {
+            var annotationViews = this.annotationHash[id];
+            if (annotationViews) {
+                annotationViews.setStyles(styles);
+            }
+            return annotationViews;
+        },
+
+        setAnnotationViewState: function(id, state, value) {
+            var annotationViews = this.annotationHash[id];
+            if (annotationViews) {
+                annotationViews.setState(state, value);
+            }
+            return annotationViews;
+        },
+
+        setAnnotationViewStateForAll: function(state, value) {
+            var annotationViews = this.annotationHash;
+            _.each(annotationViews, function(annotationView) {
+                annotationView.setState(state, value);
+            });
+        },
+
+        // ------------------------------------------------------------------------------------ //
+        //  "PRIVATE" HELPERS                                                                   //
+        // ------------------------------------------------------------------------------------ //
+
+
+
+        //return an array of all numbers in the content cfi
+        _parseContentCfi: function(cont) {
+            return cont.replace(/\[(.*?)\]/, "").split(/[\/,:]/).map(function(n) {
+                return parseInt(n);
+            }).filter(Boolean);
+        },
+
+        _contentCfiComparator: function(cont1, cont2) {
+            cont1 = this._parseContentCfi(cont1);
+            cont2 = this._parseContentCfi(cont2);
+
+            //compare cont arrays looking for differences
+            for (var i = 0; i < cont1.length; i++) {
+                if (cont1[i] > cont2[i]) {
+                    return 1;
+                } else if (cont1[i] < cont2[i]) {
+                    return -1;
+                }
+            }
+
+            //no differences found, so confirm that cont2 did not have values we didn't check
+            if (cont1.length < cont2.length) {
+                return -1;
+            }
+
+            //cont arrays are identical
+            return 0;
+        },
+
+        // determine if a given Cfi falls between two other cfis.2
+        _cfiIsBetweenTwoCfis: function(cfi, firstVisibleCfi, lastVisibleCfi) {
+            if (!firstVisibleCfi || !lastVisibleCfi) {
+                return null;
+            }
+            var first = this._contentCfiComparator(cfi, firstVisibleCfi);
+            var second = this._contentCfiComparator(cfi, lastVisibleCfi);
+            return first >= 0 && second <= 0;
+        },
+
+        _addHighlightHelper: function(CFI, annotationId, type, styles, highlightedNodes,
+            range, startNode, endNode, offsetTop, offsetLeft) {
+            if (!offsetTop) {
+                offsetTop = this.offsetTopAddition;
+            }
+            if (!offsetLeft) {
+                offsetLeft = this.offsetLeftAddition;
+            }
+
+            var visible;
+            // check if the options specify lastVisibleCfi/firstVisibleCfi. If they don't fall back to displaying the highlights anyway.
+            var visibleCfiRange = this.getVisibleCfiRange();
+            if (visibleCfiRange &&
+                visibleCfiRange.firstVisibleCfi &&
+                visibleCfiRange.firstVisibleCfi.contentCFI &&
+                visibleCfiRange.lastVisibleCfi &&
+                visibleCfiRange.lastVisibleCfi.contentCFI) {
+                visible = this._cfiIsBetweenTwoCfis(CFI, visibleCfiRange.firstVisibleCfi.contentCFI, visibleCfiRange.lastVisibleCfi.contentCFI);
+            } else {
+                visible = true;
+            }
+
+            annotationId = annotationId.toString();
+            if (this.annotationHash[annotationId]) {
+                throw new Error("That annotation id already exists; annotation not added");
+            }
+
+            var highlightGroup = new HighlightGroup(this.context, {
+                CFI: CFI,
+                selectedNodes: highlightedNodes,
+                offsetTopAddition: offsetTop,
+                offsetLeftAddition: offsetLeft,
+                styles: styles,
+                id: annotationId,
+                type: type,
+                scale: this.scale,
+                selectionText: range ? range.toString() : "",
+                visible: visible,
+                rangeInfo: range ? {
+                    startNode: startNode,
+                    startOffset: range.startOffset,
+                    endNode: endNode,
+                    endOffset: range.endOffset
+                } : null
+            });
+
+            this.annotationHash[annotationId] = highlightGroup;
+            this.highlights.push(highlightGroup);
+
+
+            highlightGroup.renderHighlights(this.readerBoundElement);
+        },
+
+        _normalizeRectangle: function(rect) {
+            return {
+                left: rect.left,
+                right: rect.right,
+                top: rect.top,
+                bottom: rect.bottom,
+                width: rect.right - rect.left,
+                height: rect.bottom - rect.top
+            };
+        },
+
+        _getSelectionInfo: function(selectedRange, elementType) {
+            // Generate CFI for selected text
+            var CFI = this._generateRangeCFI(selectedRange);
+            var intervalState = {
+                startElementFound: false,
+                endElementFound: false
+            };
+            var selectedElements = [];
+
+            if (!elementType) {
+                elementType = ["text"];
+            }
+
+            this._findSelectedElements(
+                selectedRange.commonAncestorContainer,
+                selectedRange.startContainer,
+                selectedRange.endContainer,
+                intervalState,
+                selectedElements,
+                elementType
+            );
+
+            // Return a list of selected text nodes and the CFI
+            return {
+                CFI: CFI,
+                selectedElements: selectedElements
+            };
+        },
+
+        _generateRangeCFI: function(selectedRange) {
+            var startNode = selectedRange.startContainer;
+            var endNode = selectedRange.endContainer;
+            var commonAncestor = selectedRange.commonAncestorContainer;
+            var startOffset;
+            var endOffset;
+            var rangeCFIComponent;
+
+            startOffset = selectedRange.startOffset;
+            endOffset = selectedRange.endOffset;
+
+            rangeCFIComponent = this.epubCFI.generateRangeComponent(
+                startNode,
+                startOffset,
+                endNode,
+                endOffset, ["cfi-marker", "cfi-blacklist", "mo-cfi-highlight"], [], ["MathJax_Message", "MathJax_SVG_Hidden"]
+            );
+            return rangeCFIComponent;
+        },
+
+        _generateCharOffsetCFI: function(selectedRange) {
+            // Character offset
+            var startNode = selectedRange.startContainer;
+            var startOffset = selectedRange.startOffset;
+            var charOffsetCFI;
+
+            if (startNode.nodeType === Node.TEXT_NODE) {
+                charOffsetCFI = this.epubCFI.generateCharacterOffsetCFIComponent(
+                    startNode,
+                    startOffset, ["cfi-marker", "cfi-blacklist", "mo-cfi-highlight"], [], ["MathJax_Message", "MathJax_SVG_Hidden"]
+                );
+            }
+            return charOffsetCFI;
+        },
+
+        // REFACTORING CANDIDATE: Convert this to jquery
+        _findSelectedElements: function(
+            currElement, startElement, endElement, intervalState, selectedElements, elementTypes) {
+
+            if (currElement === startElement) {
+                intervalState.startElementFound = true;
+            }
+
+            if (intervalState.startElementFound === true) {
+                this._addElement(currElement, selectedElements, elementTypes);
+            }
+
+            if (currElement === endElement) {
+                intervalState.endElementFound = true;
+                return;
+            }
+
+            if (currElement.firstChild) {
+                this._findSelectedElements(currElement.firstChild, startElement, endElement,
+                    intervalState, selectedElements, elementTypes);
+                if (intervalState.endElementFound) {
+                    return;
+                }
+            }
+
+            if (currElement.nextSibling) {
+                this._findSelectedElements(currElement.nextSibling, startElement, endElement,
+                    intervalState, selectedElements, elementTypes);
+                if (intervalState.endElementFound) {
+                    return;
+                }
+            }
+        },
+
+        _addElement: function(currElement, selectedElements, elementTypes) {
+            // Check if the node is one of the types
+            _.each(elementTypes, function(elementType) {
+
+                if (elementType === "text") {
+                    if (currElement.nodeType === Node.TEXT_NODE) {
+                        selectedElements.push(currElement);
+                    }
+                } else {
+                    if ($(currElement).is(elementType)) {
+                        selectedElements.push(currElement);
+                    }
+                }
+            });
+        },
+
+        // Rationale: This is a cross-browser method to get the currently selected text
+        _getCurrentSelectionRange: function() {
+            var currentSelection;
+            var iframeDocument = this.context.document;
+            if (iframeDocument.getSelection) {
+
+                currentSelection = iframeDocument.getSelection();
+                if (!currentSelection || currentSelection.rangeCount === 0) {
+                    return undefined;
+                }
+
+                var range = currentSelection.getRangeAt(0);
+
+                if (range.toString() !== '') {
+                    return range;
+                } else {
+                    return undefined;
+                }
+            } else if (iframeDocument.selection) {
+                return iframeDocument.selection.createRange();
+            } else {
+                return undefined;
+            }
+        },
+
+        _getPaginationOffsets: function() {
+            if (!this.context.paginationInfo) {
+                return {
+                    top: 0,
+                    left: 0
+                }
+            }
+
+            var offset;
+            if (this.context.isRTL && !this.context.isVerticalWritingMode) {
+                offset = -this.context.paginationInfo().pageOffset;
+            } else {
+                offset = this.context.paginationInfo().pageOffset;
+            }
+
+            if (this.context.isVerticalWritingMode) {
+                return {
+                    top: offset,
+                    left: 0
+                };
+            }
+            return {
+                top: 0,
+                left: offset
+            };
+        },
+
+        _injectAnnotationCSS: function(annotationCSSUrl) {
+            var doc = this.context.document;
+            setTimeout(function(){
+                var $contentDocHead = $("head", doc);
+                $contentDocHead.append(
+                    $("<link/>", {
+                        rel: "stylesheet",
+                        href: annotationCSSUrl,
+                        type: "text/css"
+                    })
+                );
+            }, 0);
+        }
+    });
+
+    return HighlightsController;
+});
+
+//  Created by Boris Schneiderman.
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//  
+//  Redistribution and use in source and binary forms, with or without modification, 
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this 
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice, 
+//  this list of conditions and the following disclaimer in the documentation and/or 
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be 
+//  used to endorse or promote products derived from this software without specific 
+//  prior written permission.
+//  
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
+
+define('readium_shared_js/models/bookmark_data',[],function() {
+/**
+ * @class Models.BookmarkData
+ */
+var BookmarkData = function(idref, contentCFI) {
+
+    var self = this;
+
+    /**
+     * spine item idref
+     * @property idref
+     * @type {string}
+     */
+
+    this.idref = idref;
+
+    /**
+     * cfi of the first visible element
+     * @property contentCFI
+     * @type {string}
+     */
+    
+    this.contentCFI = contentCFI;
+
+    /**
+     * serialize to string
+     * @return JSON string representation
+     */
+    
+    this.toString = function(){
+        return JSON.stringify(self);
+    }
+
+};
+
+/**
+ * Deserialize from string
+ * @param str
+ * @returns {ReadiumSDK.Models.BookmarkData}
+ */
+BookmarkData.fromString = function(str) {
+    var obj = JSON.parse(str);
+    return new BookmarkData(obj.idref,obj.contentCFI);
+};
+return BookmarkData;
+});
+//  Created by Dmitry Markushevich (dmitrym@evidentpoint.com)
+//
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//
+//  Redistribution and use in source and binary forms, with or without modification,
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice,
+//  this list of conditions and the following disclaimer in the documentation and/or
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be
+//  used to endorse or promote products derived from this software without specific
+//  prior written permission.
+//
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
+
+define('readium_plugin_highlights/manager',['jquery', 'underscore', 'eventEmitter', './controller', './helpers', 'readium_shared_js/models/bookmark_data'], function($, _, EventEmitter, HighlightsController, HighlightHelpers, BookmarkData) {
+
+var defaultContext = {};
+
+//determine if browser is IE9 or IE10
+var div = document.createElement("div");
+div.innerHTML = "<!--[if IE 9]><i></i><![endif]-->";
+defaultContext.isIe9 = (div.getElementsByTagName("i").length == 1);
+// IE10 introduced a prefixed version of PointerEvent, but not unprefixed.
+defaultContext.isIe10 = window.MSPointerEvent && !window.PointerEvent;
+
+/**
+ *
+ * @param proxyObj
+ * @param options
+ * @constructor
+ */
+var HighlightsManager = function (proxyObj, options) {
+
+    var self = this;
+
+    // live annotations contains references to the annotation _module_ for visible spines
+    var liveAnnotations = {};
+    var spines = {};
+    var proxy = proxyObj;
+    var annotationCSSUrl = options.annotationCSSUrl;
+
+    if (!annotationCSSUrl) {
+        console.warn("WARNING! Annotations CSS not supplied. Highlighting might not work.");
+    }
+
+    _.extend(this, new EventEmitter());
+
+    // this.on("all", function() {
+    // });
+    //TODO: EventEmitter3 does not support "all" or "*" (catch-all event sink)
+    //https://github.com/primus/eventemitter3/blob/master/index.js#L61
+    //...so instead we patch trigger() and emit() (which are synonymous, see Bootstrapper.js EventEmitter.prototype.trigger = EventEmitter.prototype.emit;)
+
+    var originalEmit = self['emit'];
+
+    var triggerEmitPatch = function() {
+        var args = Array.prototype.slice.call(arguments);
+        // mangle annotationClicked event. What really needs to happen is, the annotation_module needs to return a
+        // bare Cfi, and this class should append the idref.
+        var mangleEvent = function(annotationEvent){
+            if (args.length && args[0] === annotationEvent) {
+                for (var spineIndex in liveAnnotations)
+                {
+                    var contentDocumentFrame = args[5];
+                    var jQueryEvent = args[4];
+                    if (typeof jQueryEvent.clientX === 'undefined') {
+                        jQueryEvent.clientX = jQueryEvent.pageX;
+                        jQueryEvent.clientY = jQueryEvent.pageY;
+                    }
+
+                    var annotationId = args[3];
+                    var partialCfi = args[2];
+                    var type = args[1];
+                    if (liveAnnotations[spineIndex].getHighlight(annotationId)) {
+                        var idref = spines[spineIndex].idref;
+                        args = [annotationEvent, type, idref, partialCfi, annotationId, jQueryEvent, contentDocumentFrame];
+                    }
+                }
+            }
+        }
+        mangleEvent('annotationClicked');
+        mangleEvent('annotationTouched');
+        mangleEvent('annotationRightClicked');
+        mangleEvent('annotationHoverIn');
+        mangleEvent('annotationHoverOut');
+
+        originalEmit.apply(self, args);
+        originalEmit.apply(proxy, args);
+    };
+
+    this.trigger = triggerEmitPatch;
+    this.emit = triggerEmitPatch;
+
+    this.attachAnnotations = function($iframe, spineItem, loadedSpineItems) {
+        var iframe = $iframe[0];
+
+        var context = _.extend({
+            document: iframe.contentDocument,
+            window: iframe.contentWindow,
+            iframe: iframe,
+            manager: self,
+            cssUrl: annotationCSSUrl,
+            isFixedLayout: spineItem.isFixedLayout(),
+            isRTL: spineItem.spine.isRightToLeft(),
+            paginationInfo: function() { return spineItem.paginationInfo; }
+            
+        }, defaultContext);
+
+        liveAnnotations[spineItem.index] = new HighlightsController(context, {getVisibleCfiRangeFn: options.getVisibleCfiRangeFn});
+        spines[spineItem.index] = spineItem;
+
+        // check to see which spine indicies can be culled depending on the currently loaded spine items
+        for(var spineIndex in liveAnnotations) {
+            if (liveAnnotations.hasOwnProperty(spineIndex) && !_.contains(loadedSpineItems, spines[spineIndex])) {
+                delete liveAnnotations[spineIndex];
+            }
+        }
+    };
+
+    this.getCurrentSelectionCfi = function() {
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            var partialCfi = annotationsForView.getCurrentSelectionCFI();
+            if (partialCfi) {
+                return {"idref":spines[spine].idref, "cfi":partialCfi};
+            }
+        }
+        return undefined;
+    };
+
+    this.addSelectionHighlight = function(id, type, styles, clearSelection) {
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            if (annotationsForView.getCurrentSelectionCFI()) {
+                var annotation = annotationsForView.addSelectionHighlight(
+                    id, type, styles, clearSelection);
+                return new BookmarkData(spines[spine].idref, annotation.CFI);
+            }
+        }
+        return undefined;
+    };
+
+    this.addHighlight = function(spineIdRef, partialCfi, id, type, styles) {
+        for(var spine in liveAnnotations) {
+            if (spines[spine].idref === spineIdRef) {
+                var annotationsForView = liveAnnotations[spine];
+                var annotation = annotationsForView.addHighlight(partialCfi, id, type, styles);
+                if (annotation) {
+                    return new BookmarkData(spineIdRef, annotation.CFI);
+                }
+            }
+        }
+        return undefined;
+    };
+
+    this.removeHighlight = function(id) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result  = annotationsForView.removeHighlight(id);
+        }
+        return result;
+    };
+
+    this.removeHighlightsByType = function(type) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result  = annotationsForView.removeHighlightsByType(type);
+        }
+        return result;
+    };
+
+    this.getHighlight = function(id) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result  = annotationsForView.getHighlight(id);
+            if (result !== undefined)
+				return result;
+        }
+        return result;
+    };
+
+    this.updateAnnotation = function(id, type, styles) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result = annotationsForView.updateAnnotation(id, type, styles);
+            if(result) {
+                break;
+            }
+        }
+        return result;
+    };
+
+    this.replaceAnnotation = function(id, cfi, type, styles) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result = annotationsForView.replaceAnnotation(id, cfi, type, styles);
+            if(result) {
+                break;
+            }
+        }
+        return result;
+    };
+
+    // redraw gets called on pagination change, so for progressive rendering we may have to add annotations that were previously not visible.
+    this.redrawAnnotations = function(){
+        for(var spine in liveAnnotations) {
+            liveAnnotations[spine].redraw();
+        }
+    };
+
+    this.updateAnnotationView = function(id, styles) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result = annotationsForView.updateAnnotationView(id,styles);
+            if(result){
+                break;
+            }
+        }
+        return result;
+    };
+
+    this.setAnnotationViewState = function(id, state, value) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result = annotationsForView.setAnnotationViewState(id, state, value);
+            if(result){
+                break;
+            }
+        }
+        return result;
+    };
+
+    this.setAnnotationViewStateForAll = function(state, value) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result = annotationsForView.setAnnotationViewStateForAll(state, value);
+            if(result){
+                break;
+            }
+        }
+        return result;
+    };
+
+    this.cfiIsBetweenTwoCfis = function (cfi, lowBoundaryCfi, highBoundaryCfi) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result = annotationsForView.cfiIsBetweenTwoCfis(cfi, lowBoundaryCfi, highBoundaryCfi);
+            if(result){
+                break;
+            }
+        }
+        return result;
+    };
+
+    this.contentCfiComparator = function(contCfi1, contCfi2) {
+        var result = undefined;
+        for(var spine in liveAnnotations) {
+            var annotationsForView = liveAnnotations[spine];
+            result = annotationsForView.contentCfiComparator(contCfi1, contCfi2);
+            if(result){
+                break;
+            }
+        }
+        return result;
+    };
+
+    function getElementFromViewElement(element) {
+        //TODO JC: yuck, we get two different collection structures from non fixed and fixed views.. must refactor..
+        return element.element ? element.element : element;
+    }
+
+    this.getAnnotationMidpoints = function($elementSpineItemCollection){
+        var output = [];
+
+        _.each($elementSpineItemCollection, function (item){
+            var annotations = [];
+
+            var lastId = null;
+
+            var baseOffset = {top: 0, left: 0};
+            if (item.elements && item.elements.length > 0) {
+                var firstElement = getElementFromViewElement(item.elements[0]);
+                var offsetElement = firstElement.ownerDocument.defaultView.frameElement.parentElement;
+                baseOffset = {top: offsetElement.offsetTop, left: offsetElement.offsetLeft};
+            }
+
+            _.each(item.elements, function(element){
+
+                var $element = $(getElementFromViewElement(element));
+                var elementId = $element.attr('data-id');
+
+                if(!elementId){
+                    console.warn('AnnotationsManager:getAnnotationMidpoints: Got an annotation element with no ID??')
+                    return;
+                }
+                if (elementId === lastId) return;
+                lastId = elementId;
+
+                //calculate position offsets with scaling
+                var scale = 1;
+                //figure out a better way to get the html parent from an element..
+                var $html = $element.parent();
+                //get transformation scale from content document
+                var matrix = HighlightHelpers.getMatrix($html);
+                if (matrix) {
+                    scale = HighlightHelpers.getScaleFromMatrix(matrix);
+                }
+                var offset = $element.offset();
+                offset.top += baseOffset.top + ($element.height() / 2);
+                offset.left += baseOffset.left;
+                if(scale !== 1){
+                    offset = {top: (offset.top * scale)*(1/scale), left: offset.left };
+                }
+                var $highlighted = {id: elementId, position: offset, lineHeight: parseInt($element.css('line-height'),10)};
+                annotations.push($highlighted)
+            });
+
+            output.push({annotations:annotations, spineItem: item.spineItem});
+        });
+
+        return output;
+    };
+
+    this.getAnnotationsElementSelector = function () {
+        return 'div.rd-highlight, div.rd-highlight-border';
+    };
+
+};
+
+return HighlightsManager;
+});
+
+define('readium_plugin_highlights/main',['readium_js_plugins', 'readium_shared_js/globals', './manager'], function (Plugins, Globals, HighlightsManager) {
+    var config = {};
+
+    Plugins.register("highlights", function (api) {
+        var reader = api.reader, _highlightsManager, _initialized = false, _initializedLate = false;
+
+        var self = this;
+
+        function isInitialized() {
+            if (!_initialized) {
+                api.plugin.warn('Not initialized!')
+            }
+            return _initialized;
+        }
+
+        this.initialize = function (options) {
+            options = options || {};
+
+            setTimeout(isInitialized, 1000);
+
+            if (_initialized) {
+                api.plugin.warn('Already initialized!');
+                return;
+            }
+
+            if (reader.getFirstVisibleCfi && reader.getLastVisibleCfi && !options.getVisibleCfiRangeFn) {
+                options.getVisibleCfiRangeFn = function () {
+                    return {firstVisibleCfi: reader.getFirstVisibleCfi(), lastVisibleCfi: reader.getLastVisibleCfi()};
+                };
+            }
+
+            _highlightsManager = new HighlightsManager(self, options);
+
+            if (_initializedLate) {
+                api.plugin.warn('Unable to attach to currently loaded content document.\n' +
+                'Initialize the plugin before loading a content document.');
+            }
+
+            _initialized = true;
+        };
+
+        this.getHighlightsManager = function() {
+            return _highlightsManager;
+        };
+
+        /**
+         * Returns current selection partial Cfi, useful for workflows that need to check whether the user has selected something.
+         *
+         * @returns {object | undefined} partial cfi object or undefined if nothing is selected
+         */
+        this.getCurrentSelectionCfi = function() {
+            return _highlightsManager.getCurrentSelectionCfi();
+        };
+
+        /**
+         * Creates a higlight based on given parameters
+         *
+         * @param {string} spineIdRef		Spine idref that defines the partial Cfi
+         * @param {string} cfi				Partial CFI (withouth the indirection step) relative to the spine index
+         * @param {string} id				Id of the highlight. must be unique
+         * @param {string} type 			Name of the class selector rule in annotations stylesheet.
+         * 									The style of the class will be applied to the created hightlight
+         * @param {object} styles			Object representing CSS properties to be applied to the highlight.
+         * 									e.g., to apply background color pass in: {'background-color': 'green'}
+         *
+         * @returns {object | undefined} partial cfi object of the created highlight
+         */
+        this.addHighlight = function(spineIdRef, cfi, id, type, styles) {
+            return _highlightsManager.addHighlight(spineIdRef, cfi, id, type, styles);
+        };
+
+        /**
+         * Creates a higlight based on the current selection
+         *
+         * @param {string} id id of the highlight. must be unique
+         * @param {string} type - name of the class selector rule in annotations.css file.
+         * @param {object} styles - object representing CSS properties to be applied to the highlight.
+         * e.g., to apply background color pass this {'background-color': 'green'}
+         * @param {boolean} clearSelection - set to true to clear the current selection
+         * after it is highlighted
+         *
+         * @returns {object | undefined} partial cfi object of the created highlight
+         */
+        this.addSelectionHighlight =  function(id, type, styles, clearSelection) {
+            return _highlightsManager.addSelectionHighlight(id, type, styles, clearSelection);
+        };
+
+        /**
+         * Removes a given highlight
+         *
+         * @param {string} id  The id associated with the highlight.
+         *
+         * @returns {undefined}
+         *
+         */
+        this.removeHighlight = function(id) {
+            return _highlightsManager.removeHighlight(id);
+        };
+
+        /**
+         * Removes highlights of a given type
+         *
+         * @param {string} type type of the highlight.
+         *
+         * @returns {undefined}
+         *
+         */
+        this.removeHighlightsByType = function(type) {
+            return _highlightsManager.removeHighlightsByType(type);
+        };
+
+        /**
+         * Client Rectangle
+         * @typedef {object} ReadiumSDK.Views.ReaderView.ClientRect
+         * @property {number} top
+         * @property {number} left
+         * @property {number} height
+         * @property {number} width
+         */
+
+        /**
+         * Highlight Info
+         *
+         * @typedef {object} ReadiumSDK.Views.ReaderView.HighlightInfo
+         * @property {string} id - unique id of the highlight
+         * @property {string} type - highlight type (css class)
+         * @property {string} CFI - partial CFI range of the highlight
+         * @property {ReadiumSDK.Views.ReaderView.ClientRect[]} rectangleArray - array of rectangles consituting the highlight
+         * @property {string} selectedText - concatenation of highlight nodes' text
+         */
+
+        /**
+         * Gets given highlight
+         *
+         * @param {string} id id of the highlight.
+         *
+         * @returns {ReadiumSDK.Views.ReaderView.HighlightInfo} Object describing the highlight
+         */
+        this.getHighlight = function(id) {
+            return _highlightsManager.getHighlight(id);
+        };
+
+        /**
+         * Update annotation by the id, reapplies CSS styles to the existing annotaion
+         *
+         * @param {string} id id of the annotation.
+         * @property {string} type - annotation type (name of css class)
+         * @param {object} styles - object representing CSS properties to be applied to the annotation.
+         * e.g., to apply background color pass this {'background-color': 'green'}.
+         */
+        this.updateAnnotation = function(id, type, styles) {
+            _highlightsManager.updateAnnotation(id, type, styles);
+        };
+
+        /**
+         * Replace annotation with this id. Current annotation is removed and a new one is created.
+         *
+         * @param {string} id id of the annotation.
+         * @property {string} cfi - partial CFI range of the annotation
+         * @property {string} type - annotation type (name of css class)
+         * @param {object} styles - object representing CSS properties to be applied to the annotation.
+         * e.g., to apply background color pass this {'background-color': 'green'}.
+         */
+        this.replaceAnnotation = function(id, cfi, type, styles) {
+            _highlightsManager.replaceAnnotation(id, cfi, type, styles);
+        };
+
+
+        /**
+         * Redraws all annotations
+         */
+        this.redrawAnnotations = function() {
+            _highlightsManager.redrawAnnotations();
+        };
+
+        /**
+         * Updates an annotation to use the supplied styles
+         *
+         * @param {string} id
+         * @param {string} styles
+         */
+        this.updateAnnotationView = function(id, styles) {
+            _highlightsManager.updateAnnotationView(id, styles);
+        };
+
+        /**
+         * Updates an annotation view state, such as whether its hovered in or not.
+         * @param {string} id       The id associated with the highlight.
+         * @param {string} state    The state type to be updated
+         * @param {string} value    The state value to apply to the highlight
+         * @returns {undefined}
+         */
+        this.setAnnotationViewState = function(id, state, value) {
+            return _highlightsManager.setAnnotationViewState(id, state, value);
+        };
+
+        /**
+         * Updates an annotation view state for all views.
+         * @param {string} state    The state type to be updated
+         * @param {string} value    The state value to apply to the highlights
+         * @returns {undefined}
+         */
+        this.setAnnotationViewStateForAll = function (state, value) {
+            return _highlightsManager.setAnnotationViewStateForAll(state, value);
+        };
+
+        /**
+         * Gets a list of the visible midpoint positions of all annotations
+         *
+         * @returns {HTMLElement[]}
+         */
+        this.getVisibleAnnotationMidpoints = function () {
+            if (reader.getVisibleElements) {
+                var $visibleElements = reader.getVisibleElements(_highlightsManager.getAnnotationsElementSelector(), true);
+
+                var elementMidpoints = _highlightsManager.getAnnotationMidpoints($visibleElements);
+                return elementMidpoints || [];
+            } else {
+                // FIXME: Expose the getVisibleElements call from the reader's internal views.
+                console.warn('getAnnotationMidpoints won\'t work with this version of Readium');
+            }
+        };
+
+        reader.on(Globals.Events.CONTENT_DOCUMENT_LOADED, function ($iframe, spineItem) {
+            if (_initialized) {
+                _highlightsManager.attachAnnotations($iframe, spineItem, reader.getLoadedSpineItems());
+            } else {
+                _initializedLate = true;
+            }
+        });
+
+        ////FIXME: JCCR mj8: this is sometimes faulty, consider removal
+        //// automatically redraw annotations.
+        //reader.on(ReadiumSDK.Events.PAGINATION_CHANGED, _.debounce(function () {
+        //    self.redrawAnnotations();
+        //}, 10, true));
+
+
+
+    });
+
+    return config;
+});
+
+define('readium_plugin_highlights', ['readium_plugin_highlights/main'], function (main) { return main; });
+
 /*
 This code is required to IE for console shim
 */
@@ -18891,193 +21716,6 @@ define("es6-collections", function(){});
   return URI;
 }));
 
-//
-//  Created by Juan Corona
-//  Based on original proposal by Mickaël Menu
-//  Portions adapted from Rangy's Module system: Copyright (c) 2014 Tim Down
-//
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
-//
-//  Redistribution and use in source and binary forms, with or without modification,
-//  are permitted provided that the following conditions are met:
-//  1. Redistributions of source code must retain the above copyright notice, this
-//  list of conditions and the following disclaimer.
-//  2. Redistributions in binary form must reproduce the above copyright notice,
-//  this list of conditions and the following disclaimer in the documentation and/or
-//  other materials provided with the distribution.
-//  3. Neither the name of the organization nor the names of its contributors may be
-//  used to endorse or promote products derived from this software without specific
-//  prior written permission.
-//
-//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
-//  OF THE POSSIBILITY OF SUCH DAMAGE.
-
-define('readium_js_plugins',["jquery", "underscore", "eventEmitter"], function ($, _, EventEmitter) {
-
-    var _registeredPlugins = {};
-
-    /**
-     * A  plugins controller used to easily add plugins from the host app, eg.
-     * ReadiumSDK.Plugins.register("footnotes", function(api){ ... });
-     *
-     * @constructor
-     */
-    var PluginsController = function () {
-        var self = this;
-
-
-        this.initialize = function (reader) {
-            var apiFactory = new PluginApiFactory(reader);
-
-            if (!reader.plugins) {
-                //attach an object to the reader that will be
-                // used for plugin namespaces and their extensions
-                reader.plugins = {};
-            } else {
-                throw new Error("Already initialized on reader!");
-            }
-            _.each(_registeredPlugins, function (plugin) {
-                plugin.init(apiFactory);
-            });
-        };
-
-        this.getLoadedPlugins = function() {
-            return _registeredPlugins;
-        };
-
-        // Creates a new instance of the given plugin constructor.
-        this.register = function (name, optDependencies, initFunc) {
-
-            if (_registeredPlugins[name]) {
-                throw new Error("Duplicate registration for plugin with name: " + name);
-            }
-
-            var dependencies;
-            if (typeof optDependencies === 'function') {
-                initFunc = optDependencies;
-            } else {
-                dependencies = optDependencies;
-            }
-
-            _registeredPlugins[name] = new Plugin(name, dependencies, function(plugin, api) {
-                if (!plugin.initialized || !api.host.plugins[plugin.name]) {
-                    plugin.initialized = true;
-                    try {
-                        var pluginContext = {};
-                        $.extend(pluginContext, new EventEmitter());
-
-                        initFunc.call(pluginContext, api.instance);
-                        plugin.supported = true;
-
-                        api.host.plugins[plugin.name] = pluginContext;
-                    } catch (ex) {
-                        plugin.fail(ex);
-                    }
-                }
-            });
-        };
-    };
-
-    function PluginApi(reader, plugin) {
-        this.reader = reader;
-        this.plugin = plugin;
-    }
-
-    function PluginApiFactory(reader) {
-        this.create = function (plugin) {
-            return {
-                host: reader,
-                instance: new PluginApi(reader, plugin)
-            };
-        };
-    }
-
-//
-//  The following is adapted from Rangy's Module class:
-//
-//  Copyright (c) 2014 Tim Down
-//
-//  The MIT License (MIT)
-//  Permission is hereby granted, free of charge, to any person obtaining a copy
-//  of this software and associated documentation files (the "Software"), to deal
-//  in the Software without restriction, including without limitation the rights
-//  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-//  copies of the Software, and to permit persons to whom the Software is
-//  furnished to do so, subject to the following conditions:
-//
-//  The above copyright notice and this permission notice shall be included in all
-//  copies or substantial portions of the Software.
-//
-//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-//  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-//  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-//  SOFTWARE.
-
-    function Plugin(name, dependencies, initializer) {
-        this.name = name;
-        this.dependencies = dependencies;
-        this.initialized = false;
-        this.supported = false;
-        this.initializer = initializer;
-    }
-
-    Plugin.prototype = {
-        init: function (apiFactory) {
-            var requiredPluginNames = this.dependencies || [];
-            for (var i = 0, len = requiredPluginNames.length, requiredPlugin, PluginName; i < len; ++i) {
-                PluginName = requiredPluginNames[i];
-
-                requiredPlugin = _registeredPlugins[PluginName];
-                if (!requiredPlugin || !(requiredPlugin instanceof Plugin)) {
-                    throw new Error("required Plugin '" + PluginName + "' not found");
-                }
-
-                requiredPlugin.init(apiFactory);
-
-                if (!requiredPlugin.supported) {
-                    throw new Error("required Plugin '" + PluginName + "' not supported");
-                }
-            }
-
-            // Now run initializer
-            this.initializer(this, apiFactory.create(this));
-        },
-
-        fail: function (reason) {
-            this.initialized = true;
-            this.supported = false;
-            throw new Error("Plugin '" + this.name + "' failed to load: " + reason);
-        },
-
-        warn: function (msg) {
-            console.warn("Plugin " + this.name + ": " + msg);
-        },
-
-        deprecationNotice: function (deprecated, replacement) {
-            console.warn("DEPRECATED: " + deprecated + " in Plugin " + this.name + "is deprecated. Please use "
-            + replacement + " instead");
-        },
-
-        createError: function (msg) {
-            return new Error("Error in " + this.name + " Plugin: " + msg);
-        }
-    };
-
-    var instance = new PluginsController();
-    return instance;
-});
-
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
 //
 //  Redistribution and use in source and binary forms, with or without modification,
@@ -19187,77 +21825,6 @@ define('readium_shared_js', ['readium_shared_js/globalsSetup'], function (main) 
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define('readium_shared_js/models/bookmark_data',[],function() {
-/**
- * @class Models.BookmarkData
- */
-var BookmarkData = function(idref, contentCFI) {
-
-    var self = this;
-
-    /**
-     * spine item idref
-     * @property idref
-     * @type {string}
-     */
-
-    this.idref = idref;
-
-    /**
-     * cfi of the first visible element
-     * @property contentCFI
-     * @type {string}
-     */
-    
-    this.contentCFI = contentCFI;
-
-    /**
-     * serialize to string
-     * @return JSON string representation
-     */
-    
-    this.toString = function(){
-        return JSON.stringify(self);
-    }
-
-};
-
-/**
- * Deserialize from string
- * @param str
- * @returns {ReadiumSDK.Models.BookmarkData}
- */
-BookmarkData.fromString = function(str) {
-    var obj = JSON.parse(str);
-    return new BookmarkData(obj.idref,obj.contentCFI);
-};
-return BookmarkData;
-});
-//  Created by Boris Schneiderman.
-//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
-//  
-//  Redistribution and use in source and binary forms, with or without modification, 
-//  are permitted provided that the following conditions are met:
-//  1. Redistributions of source code must retain the above copyright notice, this 
-//  list of conditions and the following disclaimer.
-//  2. Redistributions in binary form must reproduce the above copyright notice, 
-//  this list of conditions and the following disclaimer in the documentation and/or 
-//  other materials provided with the distribution.
-//  3. Neither the name of the organization nor the names of its contributors may be 
-//  used to endorse or promote products derived from this software without specific 
-//  prior written permission.
-//  
-//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
-//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
-//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
-//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
-//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
-//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
-//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
-//  OF THE POSSIBILITY OF SUCH DAMAGE.
-
 define('readium_shared_js/models/current_pages_info',[],function() {
 
 /**
@@ -19293,6 +21860,15 @@ var CurrentPagesInfo = function(spine, isFixedLayout) {
 
     this.isFixedLayout = isFixedLayout;
     
+    /**
+     * Is the ebook is vertical writing mode?
+     *
+     * @property isVerticalWritingMode
+     * @type bool
+     */
+    // TODO: Parsing attributes from HTML
+    this.isVerticalWritingMode = false;
+
     /**
      * Counts the number of spine items
      *
@@ -21453,6 +24029,86 @@ Helpers.polyfillCaretRangeFromPoint = function(document) {
     }
 };
 
+Helpers.addTapEventHandler = function($body, reportClicked) {
+    var startPageX = 0;
+    var startPageY = 0;
+    var longTapped = false;
+    var tapTimer = undefined;
+    var startReturnValue = true;
+    var isMultTtouch = false;
+    var touchStartEventHandler = function(event) {
+        var touch = event.touches[0];
+
+        longTapped = false;
+        isMultiTouch = false;
+        startPageX = touch.pageX;
+        startPageY = touch.pageY;
+        tapTimer = setTimeout(function() {
+            longTapped = true;
+        }, 1500);
+        startReturnValue = event.returnValue;
+        //console.debug("TOUCH-START: event.returnValue = " + event.returnValue);
+        //console.debug("TOUCH-START: # touches = " + event.touches.length);
+        //console.debug("TOUCH-START (" + startPageX + ", " + startPageY + ")");
+    };
+    var touchMoveEventHandler = function(event) {
+        //console.debug("TOUCH-MOVE: # touches = " + event.touches.length);
+        //console.debug("TOUCH-MOVE (" + event.touches[0].pageX + ", " + event.touches[0].pageY + ")");
+        isMultiTouch = event.touches.length > 1;
+    }
+    var touchEndEventHandler = function(event) {
+        var touch = event.changedTouches[0];
+        var tapped = (Math.abs(touch.pageX - startPageX) <= 25) && (Math.abs(touch.pageY - startPageY) <= 25);
+
+        if (event.target && event.target !== document.body) {
+            var attributes = event.target.attributes;
+
+            if (attributes) {
+                for (var i = 0; i < attributes.length; i++) {
+                    if (attributes[i].name && attributes[i].name === "onclick") {
+                        tapped = false;
+                        break;
+                    }
+                }
+            }
+        }
+        clearTimeout(tapTimer);
+        //console.debug("TOUCH-END: # touches = " + event.changedTouches.length);
+        //console.debug("TOUCH-END (" +  + touch.pageX + ", " + touch.pageY + "), tapped? " + tapped + ", longTapped? " + longTapped);
+        if (tapped && !longTapped && !isMultiTouch && event.returnValue && startReturnValue) {
+            return reportClicked(event);
+        }
+        return true;
+    };
+
+    if ('ontouchstart' in document.documentElement) {
+        $body.addEventListener("touchstart", touchStartEventHandler, false);
+        $body.addEventListener("touchmove", touchMoveEventHandler, false);
+        $body.addEventListener("touchend", touchEndEventHandler, false);
+    } else {
+        $body.addEventListener("mousedown", touchStartEventHandler, false);
+        $body.addEventListener("mousemove", touchMoveEventHandler, false);
+        $body.addEventListener("mouseup", touchEndEventHandler, false);
+    }
+};
+
+Helpers.findReadAloud = function(node, attributeName) {
+    if (node) {
+        var readaloud = $(node).attr(attributeName);
+
+        if (readaloud) {
+            return {node: node, attr: readaloud};
+        } else {
+            if (!node.parentElement || node.parentElement === document.body) {
+                return undefined;
+            }
+            if (node.parentElement) {
+                return Helpers.findReadAloud(node.parentElement, attributeName);
+            }
+        }
+    }
+};
+
 return Helpers;
 });
 
@@ -22672,7 +25328,7 @@ var CfiNavigationLogic = function (options) {
                             if (!firstPartial) firstPartial = item;
 
                             if (visible == 100) return item;
-                        }
+                        } else return item;
                     }
                     else {
                         var elem = traverseArray(item.children);
@@ -23358,7 +26014,7 @@ var ViewerSettings = function(settingsData) {
      * @type bool
      */
     
-    this.mediaOverlaysEnableClick = true;
+    this.mediaOverlaysEnableClick = false;
 
     /** 
      *
@@ -23390,7 +26046,15 @@ var ViewerSettings = function(settingsData) {
      * @type bool
      */    
 
-    this.mediaOverlaysAutomaticPageTurn = true;
+    this.mediaOverlaysAutomaticPageTurn = false;
+
+    /**
+     *
+     * @property mediaOverlaysMuteAudio
+     * @type bool
+     */
+
+    this.mediaOverlaysMuteAudio = false;
 
     /** 
      *
@@ -23466,6 +26130,15 @@ var ViewerSettings = function(settingsData) {
 
     }
 
+    function booleanMapper(value) {
+        if (value === "0" || value.toLowerCase() === "false" || value.toLowerCase() === "no") {
+            return false;
+        } else if (value === "1" || value.toLowerCase() == "true" || value.toLowerCase === "yes") {
+            return true;
+        }
+        return undefined;
+    }
+
     /**
      * Updates the settings' new values
      *
@@ -23480,20 +26153,21 @@ var ViewerSettings = function(settingsData) {
         mapProperty("columnMinWidth", settingsData);
         mapProperty("fontSize", settingsData);
         mapProperty("fontSelection", settingsData);
-        mapProperty("mediaOverlaysPreservePlaybackWhenScroll", settingsData);
-        mapProperty("mediaOverlaysSkipSkippables", settingsData);
-        mapProperty("mediaOverlaysEscapeEscapables", settingsData);
+        mapProperty("mediaOverlaysPreservePlaybackWhenScroll", settingsData, booleanMapper);
+        mapProperty("mediaOverlaysSkipSkippables", settingsData, booleanMapper);
+        mapProperty("mediaOverlaysEscapeEscapables", settingsData, booleanMapper);
         mapProperty("mediaOverlaysSkippables", settingsData, buildArray);
         mapProperty("mediaOverlaysEscapables", settingsData, buildArray);
-        mapProperty("mediaOverlaysEnableClick", settingsData);
+        mapProperty("mediaOverlaysEnableClick", settingsData, booleanMapper);
         mapProperty("mediaOverlaysRate", settingsData);
         mapProperty("mediaOverlaysVolume", settingsData);
         mapProperty("mediaOverlaysSynchronizationGranularity", settingsData);
-        mapProperty("mediaOverlaysAutomaticPageTurn", settingsData);
+        mapProperty("mediaOverlaysAutomaticPageTurn", settingsData, booleanMapper);
+        mapProperty("mediaOverlaysMuteAudio", settingsData, booleanMapper);
         mapProperty("scroll", settingsData);
         mapProperty("syntheticSpread", settingsData);
         mapProperty("pageTransition", settingsData);
-        mapProperty("enableGPUHardwareAccelerationCSS3D", settingsData);
+        mapProperty("enableGPUHardwareAccelerationCSS3D", settingsData, booleanMapper);
     };
 
     this.update(settingsData);
@@ -24312,6 +26986,11 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
     this.transformContentImmediate = function (scale, left, top) {
 
         if (_enableBookStyleOverrides) return;  // not fixed layout (reflowable in scroll view)
+        if (!_$el) {
+            console.warn("_$el is undefined!");
+
+            return;
+        }
 
         var elWidth = Math.ceil(_meta_size.width * scale);
         var elHeight = Math.floor(_meta_size.height * scale);
@@ -24341,7 +27020,11 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         if (_$epubBody // not SVG spine item (otherwise fails in Safari OSX)
             && reader.needsFixedLayoutScalerWorkAround()) {
 
-            var css1 = Helpers.CSSTransformString({scale: scale, enable3D: enable3D});
+            //IOS-13384: Don't change iframe content HTML scale,
+            //Otherwise the touch event location will be scaled too.
+            //This should be WKWebView bug
+            //Set the scale in outer "scaler" div
+            var css1 = Helpers.CSSTransformString({scale: 1, enable3D: enable3D});
             
             // See https://github.com/readium/readium-shared-js/issues/285 
             css1["min-width"] = _meta_size.width;
@@ -24354,9 +27037,9 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
                 _$epubBody.css({width:_meta_size.width, height:_meta_size.height});
             }
 
-            var css2 = Helpers.CSSTransformString({scale : 1, enable3D: enable3D});
-            css2["width"] = _meta_size.width * scale;
-            css2["height"] = _meta_size.height * scale;
+            var css2 = Helpers.CSSTransformString({scale : scale, enable3D: enable3D});
+            css2["width"] = _meta_size.width;
+            css2["height"] = _meta_size.height;
 
             _$scaler.css(css2);
         }
@@ -24657,9 +27340,13 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
     // }
 
     function parseMetaSize(content) {
+        var pairs = [];
 
-        var pairs = content.replace(/\s/g, '').split(",");
-
+        if (content.indexOf(',') !== -1) {
+            pairs = content.replace(/\s/g, '').split(',');
+        } else {
+            pairs = content.trim().split(' ');
+        }
         var dict = {};
 
         for (var i = 0; i < pairs.length; i++) {
@@ -25113,7 +27800,7 @@ var FixedView = function(options, reader){
         _zoom = zoom;
 
         resizeBook(false); 
-    }
+    };
 
     this.render = function(){
 
@@ -26460,17 +29147,26 @@ var SmilIterator = function(smil) {
      */
 
     this.isLast = function() {
-
-        if(!this.currentPar) {
+        if (!this.currentPar) {
             console.debug("Par iterator is out of range");
+
             return;
         }
-
-        if (findParNode(this.currentPar.index + 1, this.currentPar.parent, false))
-        {
+        if (findParNode(this.currentPar.index + 1, this.currentPar.parent, false)) {
             return false;
         }
+        return true;
+    }
 
+    this.isFirst = function() {
+        if (!this.currentPar) {
+            console.debug("Par iterator is out of range");
+
+            return;
+        }
+        if (findParNode(this.currentPar.index - 1, this.currentPar.parent, true)) {
+            return false;
+        }
         return true;
     }
 
@@ -34444,15 +37140,16 @@ define ('readium_shared_js/views/media_overlay_data_injector',["jquery", "unders
  */
 var MediaOverlayDataInjector = function (mediaOverlay, mediaOverlayPlayer) {
 
-    this.attachMediaOverlayData = function ($iframe, spineItem, mediaOverlaySettings) {
-
+    this.attachMediaOverlayData = function ($iframe, spineItem, mediaOverlaySettings, tapEmitter) {
         var contentDocElement = $iframe[0].contentDocument.documentElement;
+        var $body = $("body", contentDocElement);
 
         if (!spineItem.media_overlay_id && mediaOverlay.smil_models.length === 0) {
+            if ($body.length > 0) {
+                Helpers.addTapEventHandler($body[0], tapEmitter);
+            }
             return;
         }
-
-        var $body = $("body", contentDocElement);
         if ($body.length == 0) {
             console.error("! BODY ???");
         }
@@ -34464,25 +37161,25 @@ var MediaOverlayDataInjector = function (mediaOverlay, mediaOverlayPlayer) {
             else {
                 $body.data("mediaOverlayClick", {ping: "pong"});
 
-                var touchClickMOEventHandler = function (event)
-                {
-                    //console.debug("MO TOUCH-DOWN: "+event.type);
-                    
-                    var elem = $(this)[0]; // body
-                    elem = event.target; // body descendant
+                var tapMOEventHandler = function(event) {
+                    //console.debug("MO TOUCH-END");
 
+                    var elem = $(this)[0]; // body
+
+                    elem = event.target; // body descendant
                     if (!elem)
                     {
                         mediaOverlayPlayer.touchInit();
+                        if (tapEmitter) {
+                            tapEmitter();
+                        }
                         return true;
                     }
-
-//console.debug("MO CLICK: " + elem.id);
-
+                    //console.debug("MO CLICK: " + elem.id);
                     var data = undefined;
                     var el = elem;
-
                     var inLink = false;
+
                     if (el.nodeName.toLowerCase() === "a")
                     {
                         inLink = true;
@@ -34510,14 +37207,17 @@ var MediaOverlayDataInjector = function (mediaOverlay, mediaOverlayPlayer) {
 
                         if (!mediaOverlaySettings.mediaOverlaysEnableClick)
                         {
-console.log("MO CLICK DISABLED");
+                            console.log("MO CLICK DISABLED");
                             mediaOverlayPlayer.touchInit();
+                            if (tapEmitter) {
+                                tapEmitter();
+                            }
                             return true;
                         }
 
                         if (inLink)
                         {
-console.log("MO CLICKED LINK");
+                            console.log("MO CLICKED LINK");
                             mediaOverlayPlayer.touchInit();
                             return true;
                         }
@@ -34644,48 +37344,64 @@ console.log("MO CLICKED LINK");
 
                         if (el && el != elem && el.nodeName.toLowerCase() === "body" && par && !par.getSmil().id)
                         {
-//console.debug("MO CLICKED BLANK BODY");
+                            //console.debug("MO CLICKED BLANK BODY");
                             mediaOverlayPlayer.touchInit();
+                            if (tapEmitter) {
+                                tapEmitter();
+                            }
                             return true;
                         }
-
-                        mediaOverlayPlayer.playUserPar(par);
+                        //console.debug("MO CLICKED: isPlaying()" + mediaOverlayPlayer.isPlaying());
+                        if (mediaOverlayPlayer.isPlaying())
+                        {
+                            mediaOverlayPlayer.pause();
+                        }
+                        else
+                        {
+                            mediaOverlayPlayer.playUserPar(par);
+                        }
                         return true;
                     }
                     else
                     {
-                        var readaloud = $(elem).attr("ibooks:readaloud");
-                        if (!readaloud)
-                        {
-                            readaloud = $(elem).attr("epub:readaloud");
-                        }
-                        if (readaloud)
-                        {
-console.debug("MO readaloud attr: " + readaloud);
+                        var readaloud = Helpers.findReadAloud(elem, "ibooks:readaloud");
+                        var readaloudPause = Helpers.findReadAloud(elem, "data-ibooks-pause-readaloud");
 
+                        if (!readaloud) {
+                            readaloud = Helpers.findReadAloud(elem, "epub:readaloud");
+                        }
+                        if (readaloud) {
+                            //console.debug("MO readaloud attr: " + readaloud);
                             var isPlaying = mediaOverlayPlayer.isPlaying();
-                            if (readaloud === "start" && !isPlaying ||
-                                readaloud === "stop" && isPlaying ||
-                                readaloud === "startstop")
-                            {
-                                mediaOverlayPlayer.toggleMediaOverlay();
+                            var audioSrc = $(readaloud.node).attr("data-ibooks-audio-src");
+                            var needToReset = $(readaloud.node).attr("data-ibooks-audio-reset-on-play");
+
+                            if (!audioSrc && readaloudPause) {
+                                audioSrc = $(readaloudPause.node).attr("data-ibooks-audio-src");
+                            }
+                            if (!needToReset && readaloudPause) {
+                                needToReset = $(readaloudPause.node).attr("data-ibooks-audio-reset-on-play");
+                            }
+                            if ((readaloud && (readaloud.attr === "start" && !isPlaying) ||
+                                    (readaloud.attr === "stop" && isPlaying) ||
+                                    (readaloud.attr === "startstop")) ||
+                                    (readaloudPause && readaloudPause.attr === "true")) {
+                                if (audioSrc) {
+                                    mediaOverlayPlayer.toggleIBooksAudioPlayer(audioSrc, 0, (needToReset && needToReset === "true"));
+                                } else if (tapEmitter) {
+                                    tapEmitter();
+                                }
                                 return true;
                             }
                         }
                     }
-
                     mediaOverlayPlayer.touchInit();
+                    if (tapEmitter) {
+                        tapEmitter();
+                    }
                     return true;
                 };
-
-                var touchClickMOEventHandler_ = _.debounce(touchClickMOEventHandler, 200);
-                
-                if ('ontouchstart' in document.documentElement)
-                {
-                  $body[0].addEventListener("touchstart", touchClickMOEventHandler_, false);
-                }
-                $body[0].addEventListener("mousedown", touchClickMOEventHandler_, false);
-
+                Helpers.addTapEventHandler($body[0], tapMOEventHandler);
                 //var clickEvent = 'ontouchstart' in document.documentElement ? 'touchstart' : 'click';
                 //$body.bind(clickEvent, touchClickMOEventHandler);
             }
@@ -34782,8 +37498,15 @@ console.debug("MO readaloud attr: " + readaloud);
             if (true) { //iter.currentPar.text.srcFragmentId (includes empty frag ID)
 
                 var textRelativeRef = Helpers.ResolveContentRef(iter.currentPar.text.srcFile, iter.smil.href);
-
                 var same = textRelativeRef === spineItem.href;
+
+                if (!same) {
+                    textRelativeRef = spineItem.href;
+                    iter.currentPar.text.srcFile = spineItem.href;
+                    iter.currentPar.text.src = spineItem.href;
+                    iter.currentPar.text.srcFragmentId = "";
+                    same = true;
+                }
                 if (same) {
                     var selectBody = !iter.currentPar.text.srcFragmentId || iter.currentPar.text.srcFragmentId.length == 0;
                     var selectId = iter.currentPar.text.srcFragmentId.indexOf(epubCfiPrefix) == 0 ? undefined : iter.currentPar.text.srcFragmentId;
@@ -34912,7 +37635,13 @@ console.debug("MO readaloud attr: " + readaloud);
                     {
                         if (selectBody)
                         {
-                            $element = $body; //$("body", contentDocElement);
+                            var dummyElement = document.createElement('div');
+
+                            console.warn("Attach dummy media overlay to body...");
+                            dummyElement.style.cssText = 'width: 0px; height: 0px;';
+                            dummyElement.className = "dummyMediaOverlayElement";
+                            $body.append(dummyElement);
+                            $element = $(dummyElement);
                         }
                         else
                         {
@@ -34957,13 +37686,18 @@ console.debug("MO readaloud attr: " + readaloud);
                              });
                              */
                         }
+                    } else {
+                        var dummyElement = document.createElement('div');
+
+                        console.warn("!! CANNOT FIND ELEMENT: " + iter.currentPar.text.srcFragmentId + " == " +
+                                iter.currentPar.text.srcFile + " /// " + spineItem.href);
+                        dummyElement.style.cssText = 'width: 0px; height: 0px;';
+                        dummyElement.className = "dummyMediaOverlayElement";
+                        $(dummyElement).data("mediaOverlayData", { par: iter.currentPar });
+                        $body.append(dummyElement);
                     }
-                    else {
-                        console.error("!! CANNOT FIND ELEMENT: " + iter.currentPar.text.srcFragmentId + " == " + iter.currentPar.text.srcFile + " /// " + spineItem.href);
-                    }
-                }
-                else {
-//console.debug("[INFO] " + spineItem.href + " != " + textRelativeRef + " # " + iter.currentPar.text.srcFragmentId);
+                } else {
+                    console.warn("[INFO] " + spineItem.href + " != " + textRelativeRef + " # " + iter.currentPar.text.srcFragmentId);
                 }
             }
 
@@ -35017,6 +37751,8 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
      */
     var AudioPlayer = function(onStatusChanged, onPositionChanged, onAudioEnded, onAudioPlay, onAudioPause)
     {
+        const kPauseDelayThreshold = 1.5;   // 1.5 second
+        const kAudioTimerInterval = 20;     // 20 milliseconds
         var _iOS = navigator.userAgent.match(/(iPad|iPhone|iPod)/g) ? true : false;
         var _Android = navigator.userAgent.toLowerCase().indexOf('android') > -1;
         var _isMobile = _iOS || _Android;
@@ -35026,6 +37762,8 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
         var DEBUG = false;
 
         var _audioElement = new Audio();
+        var _fakeAudioTimer = undefined;
+        var _fakeAudioPosition = 0;
         
         if (DEBUG)
         {
@@ -35049,7 +37787,7 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
 
             _audioElement.addEventListener("loadedmetadata", function()
                 {
-                    console.debug("3) loadedmetadata");
+                    console.debug("3) loadedmetadata: duration = " + _audioElement.duration);
                 }
             );
 
@@ -35174,6 +37912,10 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
                 console.error("this.play()");
             }
     
+            if (_fakeAudioTimer) {
+                console.log("_fakeAudioTimer is running. DO NOTHING...");
+                return;
+            }
             if(!_currentEpubSrc)
             {
                 return false;
@@ -35195,7 +37937,7 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
             {
                 console.error("this.pause()");
             }
-    
+            stopFakeTimer();
             stopTimer();
     
             _audioElement.pause();
@@ -35283,7 +38025,7 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
                     {
                         onPositionChanged(currentTime, 1);
                     }
-                }, 20);
+                }, kAudioTimerInterval);
         }
     
         function stopTimer()
@@ -35294,10 +38036,17 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
             }
             _intervalTimer = undefined;
         }
+
+        function stopFakeTimer() {
+            if (_fakeAudioTimer) {
+                clearInterval(_fakeAudioTimer);
+            }
+            _fakeAudioTimer = undefined;
+        }
     
         this.isPlaying = function()
         {
-            return _intervalTimer !== undefined;
+            return _intervalTimer !== undefined || _fakeAudioTimer !== undefined;
         };
     
         this.reset = function()
@@ -35308,9 +38057,9 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
             }
     
             this.pause();
-    
+
             _audioElement.moSeeking = undefined;
-    
+
             _currentSmilSrc = undefined;
             _currentEpubSrc = undefined;
     
@@ -35320,7 +38069,6 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
             }, 1);
         };
     
-
         _audioElement.addEventListener("loadstart", function()
             {
                 _touchInited = true;
@@ -35350,9 +38098,26 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
         var _playId = 0;
     
         var _seekQueuing = 0;
-        
+
+        this.playFakeAudio = function() {
+            this.playFakeAudio(_fakeAudioPosition);
+        };
+
+        this.playFakeAudio = function(clipBegin) {
+            stopFakeTimer();
+            _fakeAudioPosition = clipBegin;
+            _fakeAudioTimer = setInterval(function() {
+                _fakeAudioPosition += (kAudioTimerInterval / 1000);
+
+                onPositionChanged(_fakeAudioPosition, 1);
+            }, kAudioTimerInterval);
+            onStatusChanged({isPlaying: true});
+            onAudioPlay();
+        };
+
         this.playFile = function(smilSrc, epubSrc, seekBegin) //element
         {
+            stopFakeTimer();
             _playId++;
             if (_playId > 99999)
             {
@@ -35378,7 +38143,7 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
                 setTimeout(function()
                 {
                     self.playFile(smilSrc, epubSrc, seekBegin);
-                }, 20);
+                }, kAudioTimerInterval);
                 
                 return;
             }
@@ -35398,8 +38163,10 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
                 {
                     console.debug("this.playFile() SAME SRC");
                 }
-    
-                this.pause();
+                if (Math.abs(seekBegin - _audioElement.currentTime) >= kPauseDelayThreshold)
+                {
+                    this.pause();
+                }
     
                 _currentSmilSrc = smilSrc;
                 _currentEpubSrc = epubSrc;
@@ -35512,13 +38279,10 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
                 {
                     console.debug("onReadyToSeek ANDROID ... waiting a bit ... #" + event.data.playId);
                 }
-                
+
                 //self.play();
                 playToForcePreload();
-                
-                setTimeout(function() {
-                    onReadyToSeek_(event);
-                }, 1000);
+                onReadyToSeek_(event);
             }
         }
     
@@ -35533,8 +38297,8 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
             {
                 newCurrentTime = 0.01;
             }
-    
-            if(Math.abs(newCurrentTime - _audioElement.currentTime) < 0.3)
+
+            if(Math.abs(newCurrentTime - _audioElement.currentTime) < kPauseDelayThreshold)
             {
                 if (DEBUG)
                 {
@@ -35580,7 +38344,7 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
         }
         
         var MAX_SEEK_RETRIES = 10;
-        var _seekedEvent1 = _iOS ? "canplaythrough" : "seeked"; //"progress"
+        var _seekedEvent1 = "seeked";
         var _seekedEvent2 = _iOS ? "timeupdate" : "seeked";
         function onSeeked(event)
         {
@@ -35634,7 +38398,7 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
                     setTimeout(function()
                     {
                         onSeeked(event);
-                    }, _Android ? 1000 : 200);
+                    }, 200);
                 }
     
                 setTimeout(function()
@@ -35747,7 +38511,7 @@ define('readium_shared_js/views/media_overlay_element_highlighter',['jquery', 'r
 var MediaOverlayElementHighlighter = function(reader) {
 
     this.includeParWhenAdjustingToSeqSyncGranularity = true;
-
+    const EPUB3_MO_ACTIVE_CLASS = "media-overlay-active";
     var DEFAULT_MO_ACTIVE_CLASS = "mo-active-default";
     var DEFAULT_MO_SUB_SYNC_CLASS = "mo-sub-sync";
     
@@ -35809,6 +38573,32 @@ var MediaOverlayElementHighlighter = function(reader) {
         }
     };
 
+    function getActiveClassFromHead($head, activeClassName) {
+        var styles = $head.find('style');
+
+        if (styles) {
+            for (var i = 0; i < styles.length; i++) {
+                var cssRules = styles[i].sheet.cssRules;
+
+                if (cssRules) {
+                    for (var j = 0; j < cssRules.length; j++) {
+                        var cssSelector = cssRules[j].selectorText;
+                        var cssStyle = cssRules[j].style;
+
+                        if (cssSelector && cssSelector.includes(activeClassName) &&
+                                cssStyle.cssText && cssStyle.cssText.length > 0) {
+                            if (cssSelector.charAt(0) === '.') {
+                                return cssSelector.slice(1);
+                            }
+                            return cssSelector;
+                        }
+                    }
+                }
+            }
+        }
+        return undefined;
+    };
+
     function ensureUserStyle($element, hasAuthorStyle, overrideWithUserStyle)
     {
         if ($userStyle)
@@ -35825,16 +38615,27 @@ var MediaOverlayElementHighlighter = function(reader) {
                 
             }
         }
-
+        var fallbackUserStyle = "color: #3366ff !important; fill: #3366ff !important; opacity: 1;";
+        var appendUserStyle = true;
 
         $head = $("head", $element[0].ownerDocument.documentElement);
-
         $userStyle = $("<style type='text/css'> </style>");
 
-        $userStyle.append("." + DEFAULT_MO_ACTIVE_CLASS + " {");
-        
-        var fallbackUserStyle = "background-color: yellow !important; color: black !important; border-radius: 0.4em;";
-        
+        if (hasAuthorStyle) {
+            var activeClass = getActiveClassFromHead($head, _activeClass);
+
+            if (activeClass) {
+                appendUserStyle = false;
+            }
+            if (appendUserStyle) {
+                $userStyle.append("." + _activeClass + " {" + fallbackUserStyle);
+                appendUserStyle = false;
+            }
+        }
+        if (appendUserStyle) {
+            $userStyle.append("." + DEFAULT_MO_ACTIVE_CLASS + " {");
+        }
+
         var style = overrideWithUserStyle; //_reader.userStyles().findStyle("." + DEFAULT_MO_ACTIVE_CLASS);
         if (style)
         {
@@ -35859,8 +38660,9 @@ var MediaOverlayElementHighlighter = function(reader) {
         {
             $userStyle.append(fallbackUserStyle);
         }
-        
-        $userStyle.append("}");
+        if (appendUserStyle) {
+            $userStyle.append("}");
+        }
         
         
         // ---- CFI
@@ -35901,6 +38703,11 @@ var MediaOverlayElementHighlighter = function(reader) {
         var hasAuthorStyle = _activeClass && _activeClass !== "";
         var overrideWithUserStyle = _reader.userStyles().findStyle("." + DEFAULT_MO_ACTIVE_CLASS);
 
+        if (!hasAuthorStyle) {
+            $head = $("head", $hel[0].ownerDocument.documentElement);
+            _activeClass = getActiveClassFromHead($head, EPUB3_MO_ACTIVE_CLASS);
+            hasAuthorStyle = _activeClass && _activeClass !== "";
+        }
         ensureUserStyle($hel, hasAuthorStyle, overrideWithUserStyle);
                 
         if (overrideWithUserStyle || !hasAuthorStyle)
@@ -35989,6 +38796,11 @@ var MediaOverlayElementHighlighter = function(reader) {
         var hasAuthorStyle = _activeClass && _activeClass !== "";
         var overrideWithUserStyle = _reader.userStyles().findStyle("." + DEFAULT_MO_ACTIVE_CLASS); // TODO: performance issue?
 
+        if (!hasAuthorStyle) {
+            $head = $("head", $hel[0].ownerDocument.documentElement);
+            _activeClass = getActiveClassFromHead($head, EPUB3_MO_ACTIVE_CLASS);
+            hasAuthorStyle = _activeClass && _activeClass !== "";
+        }
         ensureUserStyle($hel, hasAuthorStyle, overrideWithUserStyle);
 
         var clazz = (overrideWithUserStyle || !hasAuthorStyle) ? ((hasAuthorStyle ? (_activeClass + " ") : "") + DEFAULT_MO_ACTIVE_CLASS) : _activeClass;
@@ -37782,6 +40594,11 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
 
     var _audioPlayer = new AudioPlayer(onStatusChanged, onAudioPositionChanged, onAudioEnded, onPlay, onPause);
 
+    var _iBooksAudioPlayer = new AudioPlayer(onIBooksAudioStatusChanged, onIBooksAudioPostionChanged, onIBooksAudioEnded, onIBooksAudioPlay, onIBooksAudioPause);
+    var _currentIBooksAudioSource = undefined;
+    var _prepareIBooksAudioSource = undefined;
+    var _iBooksAudioStartTime = undefined;
+
     var _ttsIsPlaying = false;
     var _currentTTS = undefined;
     var _enableHTMLSpeech = true && typeof window.speechSynthesis !== "undefined" && speechSynthesis != null; // set to false to force "native" platform TTS engine, rather than HTML Speech API
@@ -37804,6 +40621,7 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
     var _settings = reader.viewerSettings();
     var self = this;
     var _elementHighlighter = new MediaOverlayElementHighlighter(reader);
+    var _Android = navigator.userAgent.toLowerCase().indexOf('android') > -1;
 
     reader.on(Globals.Events.READER_VIEW_DESTROYED, function(){
         Globals.logEvent("READER_VIEW_DESTROYED", "ON", "media_overlay_player.js");
@@ -37831,6 +40649,9 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
 //console.debug(_settings);
         _audioPlayer.setRate(_settings.mediaOverlaysRate);
         _audioPlayer.setVolume(_settings.mediaOverlaysVolume / 100.0);
+        if (_settings.mediaOverlaysMuteAudio) {
+            self.reset();
+        }
     };
     self.onSettingsApplied();
     
@@ -38358,8 +41179,15 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
             var startTime = _smilIterator.currentPar.audio.clipBegin + clipBeginOffset;
 
 //console.debug("PLAY START TIME: " + startTime + "("+_smilIterator.currentPar.audio.clipBegin+" + "+clipBeginOffset+")");
-
-            _audioPlayer.playFile(_smilIterator.currentPar.audio.src, audioSource, startTime); //_smilIterator.currentPar.element ? _smilIterator.currentPar.element : _smilIterator.currentPar.cfi.cfiTextParent
+            if (_settings.mediaOverlaysMuteAudio) {
+                _audioPlayer.playFakeAudio(startTime)
+            } else {
+                if (dur <= 0) {
+                    _audioPlayer.playFakeAudio(startTime)
+                } else {
+                    _audioPlayer.playFile(_smilIterator.currentPar.audio.src, audioSource, startTime); //_smilIterator.currentPar.element ? _smilIterator.currentPar.element : _smilIterator.currentPar.cfi.cfiTextParent
+                }
+            }
         }
 
         clipBeginOffset = 0.0;
@@ -38372,7 +41200,7 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
         self.pause();
 
 //console.debug("current Smil: " + _smilIterator.smil.href + " /// " + _smilIterator.smil.id);
-
+        var lastSmil = _smilIterator.smil;
         var nextSmil = goNext ? _package.media_overlay.getNextSmil(_smilIterator.smil) : _package.media_overlay.getPreviousSmil(_smilIterator.smil);
         if(nextSmil) {
 
@@ -38387,10 +41215,35 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
                         _smilIterator.next();
                     }
                 }
+                var needToOpenContentUrl = true;
+                var paginationInfo = reader.getPaginationInfo();
 
-//console.debug("openContentUrl (nextSmil): " + _smilIterator.currentPar.text.src + " -- " + _smilIterator.smil.href);
+                if (paginationInfo.openPages.length > 0) {
+                    for (var i = 0; i < paginationInfo.openPages.length; i++) {
+                        if (!_smilIterator.currentPar.text.manifestItemId ||
+                            _smilIterator.currentPar.text.manifestItemId === paginationInfo.openPages[i].idref) {
+                            needToOpenContentUrl = false;
+                            break;
+                        }
+                    }
+                    if (paginationInfo.openPages.length > 1) {
+                        var completeRightPage = paginationInfo.openPages[1].idref === lastSmil.spineItemId;
 
-                reader.openContentUrl(_smilIterator.currentPar.text.src, _smilIterator.smil.href, self);
+                        if (!completeRightPage && needToOpenContentUrl) {
+                            needToOpenContentUrl = false;
+                        }
+                    }
+                }
+                if (needToOpenContentUrl) {
+                    //console.debug("nextSmil: openContentUrl: " + _smilIterator.currentPar.text.src + " -- " + _smilIterator.smil.href);
+                    reader.openContentUrl(_smilIterator.currentPar.text.src, _smilIterator.smil.href, self);
+                } else {
+                    if (_smilIterator.currentPar.text.manifestItemId !== nextSmil.spineItemId) {
+                        console.warn("Current Par text.manifestItemId mismatched! Recover to " + nextSmil.spineItemId);
+                        _smilIterator.currentPar.text.manifestItemId = nextSmil.spineItemId;
+                    }
+                    playCurrentPar();
+                }
             }
         }
         else
@@ -38441,11 +41294,17 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
         //var TOLERANCE = 0.05;
         if(
             //position >= (audio.clipBegin - TOLERANCE) &&
-        position > DIRECTION_MARK &&
-            position <= audio.clipEnd) {
+        position > DIRECTION_MARK) {
+            const clipOffset = 5; // 5 seconds
+            const fallbackThreshold = audio.clipEnd + clipOffset;
 
-//console.debug("onAudioPositionChanged: " + position);
-            return;
+            if (audio.clipBegin == audio.clipEnd && position <= fallbackThreshold) {
+                console.warn("Invalid duration, Add " + clipOffset + " seconds to the clipEnd...");
+            }
+            if ((audio.clipBegin == audio.clipEnd && position <= fallbackThreshold) || position <= audio.clipEnd) {
+                //console.debug("onAudioPositionChanged: " + position);
+                return;
+            }
         }
 
         _skipAudioEnded = true;
@@ -38462,9 +41321,10 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
         var goNext = position > audio.clipEnd;
 
         var doNotNextSmil = !_autoNextSmil && from !== 6 && goNext;
+        var emitComplete = !doNotNextSmil;
 
         var spineItemIdRef = (_smilIterator && _smilIterator.smil && _smilIterator.smil.spineItemId) ? _smilIterator.smil.spineItemId : ((_lastPaginationData && _lastPaginationData.spineItem && _lastPaginationData.spineItem.idref) ? _lastPaginationData.spineItem.idref : undefined);
-        if (doNotNextSmil && spineItemIdRef && _lastPaginationData && _lastPaginationData.paginationInfo && _lastPaginationData.paginationInfo.openPages && _lastPaginationData.paginationInfo.openPages.length > 1)
+        if (spineItemIdRef && _lastPaginationData && _lastPaginationData.paginationInfo && _lastPaginationData.paginationInfo.openPages && _lastPaginationData.paginationInfo.openPages.length > 1)
         {
             //var iPage = _lastPaginationData.paginationInfo.isRightToLeft ? _lastPaginationData.paginationInfo.openPages.length - 1 : 0;
             var iPage = 0;
@@ -38472,7 +41332,12 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
             var openPage = _lastPaginationData.paginationInfo.openPages[iPage];
             if (spineItemIdRef === openPage.idref)
             {
-                doNotNextSmil = false;
+                if (doNotNextSmil) {
+                    doNotNextSmil = false;
+                }
+                if (_autoNextSmil) {
+                    emitComplete = false;
+                }
             }
         }
         
@@ -38509,10 +41374,15 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
                 _wasPausedBecauseNoAutoNextSmil = true;
                 self.reset();
                 //self.pause();
+                reader.emit(Globals.Events.MEDIA_OVERLAY_COMPLETE_CURRENT_PAGE);
             }
             else
             {
-                nextSmil(goNext);
+                if (!emitComplete) {
+                    nextSmil(goNext);
+                } else {
+                    reader.emit(Globals.Events.MEDIA_OVERLAY_COMPLETE_CURRENT_PAGE);
+                }
             }
             return;
         }
@@ -38577,10 +41447,15 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
                                 _wasPausedBecauseNoAutoNextSmil = true;
                                 self.reset();
                                 //self.pause();
+                                reader.emit(Globals.Events.MEDIA_OVERLAY_COMPLETE_CURRENT_PAGE);
                             }
                             else
                             {
-                                nextSmil(goNext);
+                                if (!emitComplete) {
+                                    nextSmil(goNext);
+                                } else {
+                                    reader.emit(Globals.Events.MEDIA_OVERLAY_COMPLETE_CURRENT_PAGE);
+                                }
                             }
                             
                             return;
@@ -39345,13 +42220,114 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
         var src = _smilIterator.currentPar.text.src;
         var base = _smilIterator.smil.href;
+        var openPages = reader.getPaginationInfo().openPages;
+        var needReload = true;
 
+        for (var i = 0; i < openPages.length; i++) {
+            if (openPages[i].idref === _smilIterator.currentPar.text.manifestItemId) {
+                needReload = false;
+                break;
+            }
+        }
         //self.pause();
         //self.reset();
-        _smilIterator = undefined;
-
-        reader.openContentUrl(src, base, self);
+        if (_smilIterator.currentPar.element) {
+            _smilIterator = undefined;
+        }
+        if (needReload) {
+            reader.openContentUrl(src, base, self);
+        }
     }
+
+    // IBooksAudioPlayer
+    function onIBooksAudioStatusChanged(status) {
+        //console.debug("onIBooksAudioStatusChanged: " + status);
+    }
+
+    function onIBooksAudioPostionChanged(position, from, skipping) {
+        //console.debug("onIBooksAudioPositionChanged position: " + position + ", from: " + from + ", skipping = " + skipping);
+    }
+
+    function onIBooksAudioEnded() {
+        //console.debug("onIBooksAudioEnded");
+        _currentIBooksAudioSource = undefined;
+        _prepareIBooksAudioSource = undefined;
+        _iBooksAudioStartTime = undefined;
+    }
+
+    function onIBooksAudioPlay() {
+        //console.debug("onIBooksAudioPlay");
+    }
+
+    function onIBooksAudioPause() {
+        //console.debug("onIBooksAudioPause");
+    }
+
+    this.iBooksAudioPlayerPlaying = function() {
+        return _iBooksAudioPlayer.isPlaying();
+    };
+
+    this.pauseIBooksAudioPlayer = function() {
+        _iBooksAudioPlayer.pause();
+    };
+
+    this.playIBooksAudioPlayer = function(src, startTime) {
+        if (self.isPlaying()) {
+            self.pause();
+        }
+        if (_Android && src === undefined && startTime === undefined) {
+            src = _prepareIBooksAudioSource;
+            startTime = _iBooksAudioStartTime;
+        }
+        if (src !== _currentIBooksAudioSource) {
+            var audioSource = _package.resolveRelativeUrlMO(src);
+
+            _currentIBooksAudioSource = src;
+            _iBooksAudioPlayer.playFile(undefined, audioSource, startTime)
+        } else {
+            _iBooksAudioPlayer.play();
+        }
+    };
+
+    this.toggleIBooksAudioPlayer = function(src, startTime, needReset) {
+        if (self.isPlaying()) {
+            self.pause();
+        }
+        if (needReset) {
+            _currentIBooksAudioSource = undefined;
+            _prepareIBooksAudioSource = undefined;
+            _iBooksAudioStartTime = undefined;
+        }
+        if (src && src !== _currentIBooksAudioSource) {
+            if (_Android) {
+                _prepareIBooksAudioSource = src;
+                _iBooksAudioStartTime = startTime;
+                reader.emit(Globals.Events.PLAY_IBOOKS_AUDIO);
+            } else {
+                self.playIBooksAudioPlayer(src, startTime);
+            }
+            return;
+        }
+        if (self.iBooksAudioPlayerPlaying()) {
+            if (_Android) {
+                reader.emit(Globals.Events.PAUSE_IBOOKS_AUDIO);
+            } else {
+                self.pauseIBooksAudioPlayer();
+            }
+        } else {
+            if (!src || startTime < 0) {
+                console.error("toggleIBooksAudioPlayer: Invalid argument! src: " + src + ", startTime = " + startTime);
+                return;
+            }
+            if (_Android) {
+                _prepareIBooksAudioSource = src;
+                _iBooksAudioStartTime = startTime;
+                reader.emit(Globals.Events.PLAY_IBOOKS_AUDIO);
+            } else {
+                self.playIBooksAudioPlayer(src, startTime);
+            }
+        }
+    };
 
     this.escape = function() {
         
@@ -39404,7 +42380,9 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         {
             self.pause();
         }
-
+        if (self.iBooksAudioPlayerPlaying()) {
+            self.pauseIBooksAudioPlayer();
+        }
         if (par.element || par.cfi && par.cfi.cfiTextParent)
         {
             var seq = _elementHighlighter.adjustParToSeqSyncGranularity(par);
@@ -39474,6 +42452,10 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
     this.reset = function() {
         clipBeginOffset = 0.0;
         _audioPlayer.reset();
+        _iBooksAudioPlayer.reset();
+        _currentIBooksAudioSource = undefined;
+        _prepareIBooksAudioSource = undefined;
+        _iBooksAudioStartTime = undefined;
         self.resetTTS();
         self.resetEmbedded();
         self.resetBlankPage();
@@ -39481,6 +42463,10 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         _smilIterator = undefined;
         _skipAudioEnded = false;
     };
+       
+   this.resetNoAutoNextSmil = function () {
+       _wasPausedBecauseNoAutoNextSmil = false;
+   }
 
     this.play = function ()
     {
@@ -39503,10 +42489,11 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         {
             if (!_audioPlayer.play())
             {
-                console.log("Audio player was dead, reactivating...");
-
+                console.log("Audio player was dead...");
+                /*
                 this.reset();
                 this.toggleMediaOverlay();
+                */
                 return;
             }
         }
@@ -39517,7 +42504,9 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
     this.pause = function()
     {
         _wasPlayingScrolling = false;
-        
+        if (self.iBooksAudioPlayerPlaying()) {
+            self.pauseIBooksAudioPlayer();
+        }
         if (_blankPagePlayer)
         {
             this.resetBlankPage();
@@ -39672,19 +42661,42 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
         //if we have position to continue from (reset wasn't called)
         if(_smilIterator) {
-            self.play();
+            if (_settings.mediaOverlaysMuteAudio) {
+                _audioPlayer.playFakeAudio();
+            } else {
+                self.play();
+            }
             return;
         }
 
         this.toggleMediaOverlayRefresh(undefined);
     };
 
+    this.playMediaOverlay = function() {
+        if (self.isPlaying()) {
+            return;
+        }
+        // if we have position to continue from (reset wasn't called)
+        if(_smilIterator) {
+            if (_settings.mediaOverlaysMuteAudio) {
+                _audioPlayer.playFakeAudio();
+            } else {
+                self.play();
+            }
+            return;
+        }
+        this.toggleMediaOverlayRefresh(undefined);
+    };
+
+
     var _wasPlayingScrolling = false;
 
     this.toggleMediaOverlayRefresh = function(paginationData)
     {
 //console.debug("moData SMIL: " + moData.par.getSmil().href + " // " + + moData.par.getSmil().id);
-
+        if (self.iBooksAudioPlayerPlaying()) {
+            self.pauseIBooksAudioPlayer();
+        }
         var spineItems = reader.getLoadedSpineItems();
 
         //paginationData.isRightToLeft
@@ -39836,18 +42848,24 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
             self.reset();
             return;
         }
-
         var zPar = moData.par ? moData.par : moData.pars[0];
         var parSmil = zPar.getSmil();
-        if(!_smilIterator || _smilIterator.smil != parSmil)
-        {
+        var doNotResetSmli = false;
+
+        if (!_smilIterator || _smilIterator.smil != parSmil) {
             _smilIterator = new SmilIterator(parSmil);
+        } else {
+            if (playingPar.text.manifestItemId === _smilIterator.currentPar.text.manifestItemId) {
+                doNotResetSmli = true;
+            } else {
+                _smilIterator.reset();
+            }
         }
-        else
-        {
-            _smilIterator.reset();
+        if (doNotResetSmli) {
+            self.play();
+
+            return;
         }
-        
         _smilIterator.goToPar(zPar);
         
         if (!_smilIterator.currentPar && id)
@@ -39855,13 +42873,14 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
             _smilIterator.reset();
             _smilIterator.findTextId(id);
         }
-        
         if (!_smilIterator.currentPar)
         {
             self.reset();
             return;
         }
-
+        while (!_smilIterator.isFirst()) {
+            _smilIterator.previous();
+        }
         if (wasPlaying && playingPar && playingPar === _smilIterator.currentPar)
         {
             self.play();
@@ -39884,6 +42903,10 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
     {
         _autoNextSmil = autoNext;
     };
+
+    this.wasPausedBecauseNoAutoNextSmil = function() {
+        return _wasPausedBecauseNoAutoNextSmil;
+    }
 };
     return MediaOverlayPlayer;
 });
@@ -41392,13 +44415,13 @@ SmilModel.fromSmilDTO = function(smilDTO, mo) {
                 console.error("SMIL clipEnd is string, parsing float... (" + node.clipEnd + ")");
                 node.clipEnd = parseFloat(node.clipEnd);
             }
-            if (node.clipEnd <= node.clipBegin)
+            if (node.clipEnd < node.clipBegin)
             {
                 if (smilModel.mo.DEBUG)
                 {
-                    console.log(getIndent() + "JS MO clipEnd adjusted to MAX");
+                    console.log(getIndent() + "JS MO clipEnd adjusted to clipBegin + 0.1");
                 }
-                node.clipEnd = node.MAX;
+                node.clipEnd = node.clipBegin + 0.1;
             }
             
             //node.updateMediaManifestItemId(); ONLY XHTML SPINE ITEMS 
@@ -44232,6 +47255,4764 @@ define('readium_shared_js/views/external_agent_support',["../globals", "undersco
     return ExternalAgentSupport;
 });
 
+/*!
+ * @overview es6-promise - a tiny implementation of Promises/A+.
+ * @copyright Copyright (c) 2014 Yehuda Katz, Tom Dale, Stefan Penner and contributors (Conversion to ES6 API by Jake Archibald)
+ * @license   Licensed under MIT license
+ *            See https://raw.githubusercontent.com/stefanpenner/es6-promise/master/LICENSE
+ * @version   v4.2.2+97478eb6
+ */
+
+(function (global, factory) {
+	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
+	typeof define === 'function' && define.amd ? define('es6-promise',factory) :
+	(global.ES6Promise = factory());
+}(this, (function () { 'use strict';
+
+function objectOrFunction(x) {
+  var type = typeof x;
+  return x !== null && (type === 'object' || type === 'function');
+}
+
+function isFunction(x) {
+  return typeof x === 'function';
+}
+
+
+
+var _isArray = void 0;
+if (Array.isArray) {
+  _isArray = Array.isArray;
+} else {
+  _isArray = function (x) {
+    return Object.prototype.toString.call(x) === '[object Array]';
+  };
+}
+
+var isArray = _isArray;
+
+var len = 0;
+var vertxNext = void 0;
+var customSchedulerFn = void 0;
+
+var asap = function asap(callback, arg) {
+  queue[len] = callback;
+  queue[len + 1] = arg;
+  len += 2;
+  if (len === 2) {
+    // If len is 2, that means that we need to schedule an async flush.
+    // If additional callbacks are queued before the queue is flushed, they
+    // will be processed by this flush that we are scheduling.
+    if (customSchedulerFn) {
+      customSchedulerFn(flush);
+    } else {
+      scheduleFlush();
+    }
+  }
+};
+
+function setScheduler(scheduleFn) {
+  customSchedulerFn = scheduleFn;
+}
+
+function setAsap(asapFn) {
+  asap = asapFn;
+}
+
+var browserWindow = typeof window !== 'undefined' ? window : undefined;
+var browserGlobal = browserWindow || {};
+var BrowserMutationObserver = browserGlobal.MutationObserver || browserGlobal.WebKitMutationObserver;
+var isNode = typeof self === 'undefined' && typeof process !== 'undefined' && {}.toString.call(process) === '[object process]';
+
+// test for web worker but not in IE10
+var isWorker = typeof Uint8ClampedArray !== 'undefined' && typeof importScripts !== 'undefined' && typeof MessageChannel !== 'undefined';
+
+// node
+function useNextTick() {
+  // node version 0.10.x displays a deprecation warning when nextTick is used recursively
+  // see https://github.com/cujojs/when/issues/410 for details
+  return function () {
+    return process.nextTick(flush);
+  };
+}
+
+// vertx
+function useVertxTimer() {
+  if (typeof vertxNext !== 'undefined') {
+    return function () {
+      vertxNext(flush);
+    };
+  }
+
+  return useSetTimeout();
+}
+
+function useMutationObserver() {
+  var iterations = 0;
+  var observer = new BrowserMutationObserver(flush);
+  var node = document.createTextNode('');
+  observer.observe(node, { characterData: true });
+
+  return function () {
+    node.data = iterations = ++iterations % 2;
+  };
+}
+
+// web worker
+function useMessageChannel() {
+  var channel = new MessageChannel();
+  channel.port1.onmessage = flush;
+  return function () {
+    return channel.port2.postMessage(0);
+  };
+}
+
+function useSetTimeout() {
+  // Store setTimeout reference so es6-promise will be unaffected by
+  // other code modifying setTimeout (like sinon.useFakeTimers())
+  var globalSetTimeout = setTimeout;
+  return function () {
+    return globalSetTimeout(flush, 1);
+  };
+}
+
+var queue = new Array(1000);
+function flush() {
+  for (var i = 0; i < len; i += 2) {
+    var callback = queue[i];
+    var arg = queue[i + 1];
+
+    callback(arg);
+
+    queue[i] = undefined;
+    queue[i + 1] = undefined;
+  }
+
+  len = 0;
+}
+
+function attemptVertx() {
+  try {
+    var r = require;
+    var vertx = r('vertx');
+    vertxNext = vertx.runOnLoop || vertx.runOnContext;
+    return useVertxTimer();
+  } catch (e) {
+    return useSetTimeout();
+  }
+}
+
+var scheduleFlush = void 0;
+// Decide what async method to use to triggering processing of queued callbacks:
+if (isNode) {
+  scheduleFlush = useNextTick();
+} else if (BrowserMutationObserver) {
+  scheduleFlush = useMutationObserver();
+} else if (isWorker) {
+  scheduleFlush = useMessageChannel();
+} else if (browserWindow === undefined && typeof require === 'function') {
+  scheduleFlush = attemptVertx();
+} else {
+  scheduleFlush = useSetTimeout();
+}
+
+function then(onFulfillment, onRejection) {
+  var parent = this;
+
+  var child = new this.constructor(noop);
+
+  if (child[PROMISE_ID] === undefined) {
+    makePromise(child);
+  }
+
+  var _state = parent._state;
+
+
+  if (_state) {
+    var callback = arguments[_state - 1];
+    asap(function () {
+      return invokeCallback(_state, child, callback, parent._result);
+    });
+  } else {
+    subscribe(parent, child, onFulfillment, onRejection);
+  }
+
+  return child;
+}
+
+/**
+  `Promise.resolve` returns a promise that will become resolved with the
+  passed `value`. It is shorthand for the following:
+
+  ```javascript
+  let promise = new Promise(function(resolve, reject){
+    resolve(1);
+  });
+
+  promise.then(function(value){
+    // value === 1
+  });
+  ```
+
+  Instead of writing the above, your code now simply becomes the following:
+
+  ```javascript
+  let promise = Promise.resolve(1);
+
+  promise.then(function(value){
+    // value === 1
+  });
+  ```
+
+  @method resolve
+  @static
+  @param {Any} value value that the returned promise will be resolved with
+  Useful for tooling.
+  @return {Promise} a promise that will become fulfilled with the given
+  `value`
+*/
+function resolve$1(object) {
+  /*jshint validthis:true */
+  var Constructor = this;
+
+  if (object && typeof object === 'object' && object.constructor === Constructor) {
+    return object;
+  }
+
+  var promise = new Constructor(noop);
+  resolve(promise, object);
+  return promise;
+}
+
+var PROMISE_ID = Math.random().toString(36).substring(16);
+
+function noop() {}
+
+var PENDING = void 0;
+var FULFILLED = 1;
+var REJECTED = 2;
+
+var GET_THEN_ERROR = new ErrorObject();
+
+function selfFulfillment() {
+  return new TypeError("You cannot resolve a promise with itself");
+}
+
+function cannotReturnOwn() {
+  return new TypeError('A promises callback cannot return that same promise.');
+}
+
+function getThen(promise) {
+  try {
+    return promise.then;
+  } catch (error) {
+    GET_THEN_ERROR.error = error;
+    return GET_THEN_ERROR;
+  }
+}
+
+function tryThen(then$$1, value, fulfillmentHandler, rejectionHandler) {
+  try {
+    then$$1.call(value, fulfillmentHandler, rejectionHandler);
+  } catch (e) {
+    return e;
+  }
+}
+
+function handleForeignThenable(promise, thenable, then$$1) {
+  asap(function (promise) {
+    var sealed = false;
+    var error = tryThen(then$$1, thenable, function (value) {
+      if (sealed) {
+        return;
+      }
+      sealed = true;
+      if (thenable !== value) {
+        resolve(promise, value);
+      } else {
+        fulfill(promise, value);
+      }
+    }, function (reason) {
+      if (sealed) {
+        return;
+      }
+      sealed = true;
+
+      reject(promise, reason);
+    }, 'Settle: ' + (promise._label || ' unknown promise'));
+
+    if (!sealed && error) {
+      sealed = true;
+      reject(promise, error);
+    }
+  }, promise);
+}
+
+function handleOwnThenable(promise, thenable) {
+  if (thenable._state === FULFILLED) {
+    fulfill(promise, thenable._result);
+  } else if (thenable._state === REJECTED) {
+    reject(promise, thenable._result);
+  } else {
+    subscribe(thenable, undefined, function (value) {
+      return resolve(promise, value);
+    }, function (reason) {
+      return reject(promise, reason);
+    });
+  }
+}
+
+function handleMaybeThenable(promise, maybeThenable, then$$1) {
+  if (maybeThenable.constructor === promise.constructor && then$$1 === then && maybeThenable.constructor.resolve === resolve$1) {
+    handleOwnThenable(promise, maybeThenable);
+  } else {
+    if (then$$1 === GET_THEN_ERROR) {
+      reject(promise, GET_THEN_ERROR.error);
+      GET_THEN_ERROR.error = null;
+    } else if (then$$1 === undefined) {
+      fulfill(promise, maybeThenable);
+    } else if (isFunction(then$$1)) {
+      handleForeignThenable(promise, maybeThenable, then$$1);
+    } else {
+      fulfill(promise, maybeThenable);
+    }
+  }
+}
+
+function resolve(promise, value) {
+  if (promise === value) {
+    reject(promise, selfFulfillment());
+  } else if (objectOrFunction(value)) {
+    handleMaybeThenable(promise, value, getThen(value));
+  } else {
+    fulfill(promise, value);
+  }
+}
+
+function publishRejection(promise) {
+  if (promise._onerror) {
+    promise._onerror(promise._result);
+  }
+
+  publish(promise);
+}
+
+function fulfill(promise, value) {
+  if (promise._state !== PENDING) {
+    return;
+  }
+
+  promise._result = value;
+  promise._state = FULFILLED;
+
+  if (promise._subscribers.length !== 0) {
+    asap(publish, promise);
+  }
+}
+
+function reject(promise, reason) {
+  if (promise._state !== PENDING) {
+    return;
+  }
+  promise._state = REJECTED;
+  promise._result = reason;
+
+  asap(publishRejection, promise);
+}
+
+function subscribe(parent, child, onFulfillment, onRejection) {
+  var _subscribers = parent._subscribers;
+  var length = _subscribers.length;
+
+
+  parent._onerror = null;
+
+  _subscribers[length] = child;
+  _subscribers[length + FULFILLED] = onFulfillment;
+  _subscribers[length + REJECTED] = onRejection;
+
+  if (length === 0 && parent._state) {
+    asap(publish, parent);
+  }
+}
+
+function publish(promise) {
+  var subscribers = promise._subscribers;
+  var settled = promise._state;
+
+  if (subscribers.length === 0) {
+    return;
+  }
+
+  var child = void 0,
+      callback = void 0,
+      detail = promise._result;
+
+  for (var i = 0; i < subscribers.length; i += 3) {
+    child = subscribers[i];
+    callback = subscribers[i + settled];
+
+    if (child) {
+      invokeCallback(settled, child, callback, detail);
+    } else {
+      callback(detail);
+    }
+  }
+
+  promise._subscribers.length = 0;
+}
+
+function ErrorObject() {
+  this.error = null;
+}
+
+var TRY_CATCH_ERROR = new ErrorObject();
+
+function tryCatch(callback, detail) {
+  try {
+    return callback(detail);
+  } catch (e) {
+    TRY_CATCH_ERROR.error = e;
+    return TRY_CATCH_ERROR;
+  }
+}
+
+function invokeCallback(settled, promise, callback, detail) {
+  var hasCallback = isFunction(callback),
+      value = void 0,
+      error = void 0,
+      succeeded = void 0,
+      failed = void 0;
+
+  if (hasCallback) {
+    value = tryCatch(callback, detail);
+
+    if (value === TRY_CATCH_ERROR) {
+      failed = true;
+      error = value.error;
+      value.error = null;
+    } else {
+      succeeded = true;
+    }
+
+    if (promise === value) {
+      reject(promise, cannotReturnOwn());
+      return;
+    }
+  } else {
+    value = detail;
+    succeeded = true;
+  }
+
+  if (promise._state !== PENDING) {
+    // noop
+  } else if (hasCallback && succeeded) {
+    resolve(promise, value);
+  } else if (failed) {
+    reject(promise, error);
+  } else if (settled === FULFILLED) {
+    fulfill(promise, value);
+  } else if (settled === REJECTED) {
+    reject(promise, value);
+  }
+}
+
+function initializePromise(promise, resolver) {
+  try {
+    resolver(function resolvePromise(value) {
+      resolve(promise, value);
+    }, function rejectPromise(reason) {
+      reject(promise, reason);
+    });
+  } catch (e) {
+    reject(promise, e);
+  }
+}
+
+var id = 0;
+function nextId() {
+  return id++;
+}
+
+function makePromise(promise) {
+  promise[PROMISE_ID] = id++;
+  promise._state = undefined;
+  promise._result = undefined;
+  promise._subscribers = [];
+}
+
+function validationError() {
+  return new Error('Array Methods must be provided an Array');
+}
+
+function validationError() {
+  return new Error('Array Methods must be provided an Array');
+}
+
+var Enumerator = function () {
+  function Enumerator(Constructor, input) {
+    this._instanceConstructor = Constructor;
+    this.promise = new Constructor(noop);
+
+    if (!this.promise[PROMISE_ID]) {
+      makePromise(this.promise);
+    }
+
+    if (isArray(input)) {
+      this.length = input.length;
+      this._remaining = input.length;
+
+      this._result = new Array(this.length);
+
+      if (this.length === 0) {
+        fulfill(this.promise, this._result);
+      } else {
+        this.length = this.length || 0;
+        this._enumerate(input);
+        if (this._remaining === 0) {
+          fulfill(this.promise, this._result);
+        }
+      }
+    } else {
+      reject(this.promise, validationError());
+    }
+  }
+
+  Enumerator.prototype._enumerate = function _enumerate(input) {
+    for (var i = 0; this._state === PENDING && i < input.length; i++) {
+      this._eachEntry(input[i], i);
+    }
+  };
+
+  Enumerator.prototype._eachEntry = function _eachEntry(entry, i) {
+    var c = this._instanceConstructor;
+    var resolve$$1 = c.resolve;
+
+
+    if (resolve$$1 === resolve$1) {
+      var _then = getThen(entry);
+
+      if (_then === then && entry._state !== PENDING) {
+        this._settledAt(entry._state, i, entry._result);
+      } else if (typeof _then !== 'function') {
+        this._remaining--;
+        this._result[i] = entry;
+      } else if (c === Promise$1) {
+        var promise = new c(noop);
+        handleMaybeThenable(promise, entry, _then);
+        this._willSettleAt(promise, i);
+      } else {
+        this._willSettleAt(new c(function (resolve$$1) {
+          return resolve$$1(entry);
+        }), i);
+      }
+    } else {
+      this._willSettleAt(resolve$$1(entry), i);
+    }
+  };
+
+  Enumerator.prototype._settledAt = function _settledAt(state, i, value) {
+    var promise = this.promise;
+
+
+    if (promise._state === PENDING) {
+      this._remaining--;
+
+      if (state === REJECTED) {
+        reject(promise, value);
+      } else {
+        this._result[i] = value;
+      }
+    }
+
+    if (this._remaining === 0) {
+      fulfill(promise, this._result);
+    }
+  };
+
+  Enumerator.prototype._willSettleAt = function _willSettleAt(promise, i) {
+    var enumerator = this;
+
+    subscribe(promise, undefined, function (value) {
+      return enumerator._settledAt(FULFILLED, i, value);
+    }, function (reason) {
+      return enumerator._settledAt(REJECTED, i, reason);
+    });
+  };
+
+  return Enumerator;
+}();
+
+/**
+  `Promise.all` accepts an array of promises, and returns a new promise which
+  is fulfilled with an array of fulfillment values for the passed promises, or
+  rejected with the reason of the first passed promise to be rejected. It casts all
+  elements of the passed iterable to promises as it runs this algorithm.
+
+  Example:
+
+  ```javascript
+  let promise1 = resolve(1);
+  let promise2 = resolve(2);
+  let promise3 = resolve(3);
+  let promises = [ promise1, promise2, promise3 ];
+
+  Promise.all(promises).then(function(array){
+    // The array here would be [ 1, 2, 3 ];
+  });
+  ```
+
+  If any of the `promises` given to `all` are rejected, the first promise
+  that is rejected will be given as an argument to the returned promises's
+  rejection handler. For example:
+
+  Example:
+
+  ```javascript
+  let promise1 = resolve(1);
+  let promise2 = reject(new Error("2"));
+  let promise3 = reject(new Error("3"));
+  let promises = [ promise1, promise2, promise3 ];
+
+  Promise.all(promises).then(function(array){
+    // Code here never runs because there are rejected promises!
+  }, function(error) {
+    // error.message === "2"
+  });
+  ```
+
+  @method all
+  @static
+  @param {Array} entries array of promises
+  @param {String} label optional string for labeling the promise.
+  Useful for tooling.
+  @return {Promise} promise that is fulfilled when all `promises` have been
+  fulfilled, or rejected if any of them become rejected.
+  @static
+*/
+function all(entries) {
+  return new Enumerator(this, entries).promise;
+}
+
+/**
+  `Promise.race` returns a new promise which is settled in the same way as the
+  first passed promise to settle.
+
+  Example:
+
+  ```javascript
+  let promise1 = new Promise(function(resolve, reject){
+    setTimeout(function(){
+      resolve('promise 1');
+    }, 200);
+  });
+
+  let promise2 = new Promise(function(resolve, reject){
+    setTimeout(function(){
+      resolve('promise 2');
+    }, 100);
+  });
+
+  Promise.race([promise1, promise2]).then(function(result){
+    // result === 'promise 2' because it was resolved before promise1
+    // was resolved.
+  });
+  ```
+
+  `Promise.race` is deterministic in that only the state of the first
+  settled promise matters. For example, even if other promises given to the
+  `promises` array argument are resolved, but the first settled promise has
+  become rejected before the other promises became fulfilled, the returned
+  promise will become rejected:
+
+  ```javascript
+  let promise1 = new Promise(function(resolve, reject){
+    setTimeout(function(){
+      resolve('promise 1');
+    }, 200);
+  });
+
+  let promise2 = new Promise(function(resolve, reject){
+    setTimeout(function(){
+      reject(new Error('promise 2'));
+    }, 100);
+  });
+
+  Promise.race([promise1, promise2]).then(function(result){
+    // Code here never runs
+  }, function(reason){
+    // reason.message === 'promise 2' because promise 2 became rejected before
+    // promise 1 became fulfilled
+  });
+  ```
+
+  An example real-world use case is implementing timeouts:
+
+  ```javascript
+  Promise.race([ajax('foo.json'), timeout(5000)])
+  ```
+
+  @method race
+  @static
+  @param {Array} promises array of promises to observe
+  Useful for tooling.
+  @return {Promise} a promise which settles in the same way as the first passed
+  promise to settle.
+*/
+function race(entries) {
+  /*jshint validthis:true */
+  var Constructor = this;
+
+  if (!isArray(entries)) {
+    return new Constructor(function (_, reject) {
+      return reject(new TypeError('You must pass an array to race.'));
+    });
+  } else {
+    return new Constructor(function (resolve, reject) {
+      var length = entries.length;
+      for (var i = 0; i < length; i++) {
+        Constructor.resolve(entries[i]).then(resolve, reject);
+      }
+    });
+  }
+}
+
+/**
+  `Promise.reject` returns a promise rejected with the passed `reason`.
+  It is shorthand for the following:
+
+  ```javascript
+  let promise = new Promise(function(resolve, reject){
+    reject(new Error('WHOOPS'));
+  });
+
+  promise.then(function(value){
+    // Code here doesn't run because the promise is rejected!
+  }, function(reason){
+    // reason.message === 'WHOOPS'
+  });
+  ```
+
+  Instead of writing the above, your code now simply becomes the following:
+
+  ```javascript
+  let promise = Promise.reject(new Error('WHOOPS'));
+
+  promise.then(function(value){
+    // Code here doesn't run because the promise is rejected!
+  }, function(reason){
+    // reason.message === 'WHOOPS'
+  });
+  ```
+
+  @method reject
+  @static
+  @param {Any} reason value that the returned promise will be rejected with.
+  Useful for tooling.
+  @return {Promise} a promise rejected with the given `reason`.
+*/
+function reject$1(reason) {
+  /*jshint validthis:true */
+  var Constructor = this;
+  var promise = new Constructor(noop);
+  reject(promise, reason);
+  return promise;
+}
+
+function needsResolver() {
+  throw new TypeError('You must pass a resolver function as the first argument to the promise constructor');
+}
+
+function needsNew() {
+  throw new TypeError("Failed to construct 'Promise': Please use the 'new' operator, this object constructor cannot be called as a function.");
+}
+
+/**
+  Promise objects represent the eventual result of an asynchronous operation. The
+  primary way of interacting with a promise is through its `then` method, which
+  registers callbacks to receive either a promise's eventual value or the reason
+  why the promise cannot be fulfilled.
+
+  Terminology
+  -----------
+
+  - `promise` is an object or function with a `then` method whose behavior conforms to this specification.
+  - `thenable` is an object or function that defines a `then` method.
+  - `value` is any legal JavaScript value (including undefined, a thenable, or a promise).
+  - `exception` is a value that is thrown using the throw statement.
+  - `reason` is a value that indicates why a promise was rejected.
+  - `settled` the final resting state of a promise, fulfilled or rejected.
+
+  A promise can be in one of three states: pending, fulfilled, or rejected.
+
+  Promises that are fulfilled have a fulfillment value and are in the fulfilled
+  state.  Promises that are rejected have a rejection reason and are in the
+  rejected state.  A fulfillment value is never a thenable.
+
+  Promises can also be said to *resolve* a value.  If this value is also a
+  promise, then the original promise's settled state will match the value's
+  settled state.  So a promise that *resolves* a promise that rejects will
+  itself reject, and a promise that *resolves* a promise that fulfills will
+  itself fulfill.
+
+
+  Basic Usage:
+  ------------
+
+  ```js
+  let promise = new Promise(function(resolve, reject) {
+    // on success
+    resolve(value);
+
+    // on failure
+    reject(reason);
+  });
+
+  promise.then(function(value) {
+    // on fulfillment
+  }, function(reason) {
+    // on rejection
+  });
+  ```
+
+  Advanced Usage:
+  ---------------
+
+  Promises shine when abstracting away asynchronous interactions such as
+  `XMLHttpRequest`s.
+
+  ```js
+  function getJSON(url) {
+    return new Promise(function(resolve, reject){
+      let xhr = new XMLHttpRequest();
+
+      xhr.open('GET', url);
+      xhr.onreadystatechange = handler;
+      xhr.responseType = 'json';
+      xhr.setRequestHeader('Accept', 'application/json');
+      xhr.send();
+
+      function handler() {
+        if (this.readyState === this.DONE) {
+          if (this.status === 200) {
+            resolve(this.response);
+          } else {
+            reject(new Error('getJSON: `' + url + '` failed with status: [' + this.status + ']'));
+          }
+        }
+      };
+    });
+  }
+
+  getJSON('/posts.json').then(function(json) {
+    // on fulfillment
+  }, function(reason) {
+    // on rejection
+  });
+  ```
+
+  Unlike callbacks, promises are great composable primitives.
+
+  ```js
+  Promise.all([
+    getJSON('/posts'),
+    getJSON('/comments')
+  ]).then(function(values){
+    values[0] // => postsJSON
+    values[1] // => commentsJSON
+
+    return values;
+  });
+  ```
+
+  @class Promise
+  @param {Function} resolver
+  Useful for tooling.
+  @constructor
+*/
+
+var Promise$1 = function () {
+  function Promise(resolver) {
+    this[PROMISE_ID] = nextId();
+    this._result = this._state = undefined;
+    this._subscribers = [];
+
+    if (noop !== resolver) {
+      typeof resolver !== 'function' && needsResolver();
+      this instanceof Promise ? initializePromise(this, resolver) : needsNew();
+    }
+  }
+
+  /**
+  The primary way of interacting with a promise is through its `then` method,
+  which registers callbacks to receive either a promise's eventual value or the
+  reason why the promise cannot be fulfilled.
+   ```js
+  findUser().then(function(user){
+    // user is available
+  }, function(reason){
+    // user is unavailable, and you are given the reason why
+  });
+  ```
+   Chaining
+  --------
+   The return value of `then` is itself a promise.  This second, 'downstream'
+  promise is resolved with the return value of the first promise's fulfillment
+  or rejection handler, or rejected if the handler throws an exception.
+   ```js
+  findUser().then(function (user) {
+    return user.name;
+  }, function (reason) {
+    return 'default name';
+  }).then(function (userName) {
+    // If `findUser` fulfilled, `userName` will be the user's name, otherwise it
+    // will be `'default name'`
+  });
+   findUser().then(function (user) {
+    throw new Error('Found user, but still unhappy');
+  }, function (reason) {
+    throw new Error('`findUser` rejected and we're unhappy');
+  }).then(function (value) {
+    // never reached
+  }, function (reason) {
+    // if `findUser` fulfilled, `reason` will be 'Found user, but still unhappy'.
+    // If `findUser` rejected, `reason` will be '`findUser` rejected and we're unhappy'.
+  });
+  ```
+  If the downstream promise does not specify a rejection handler, rejection reasons will be propagated further downstream.
+   ```js
+  findUser().then(function (user) {
+    throw new PedagogicalException('Upstream error');
+  }).then(function (value) {
+    // never reached
+  }).then(function (value) {
+    // never reached
+  }, function (reason) {
+    // The `PedgagocialException` is propagated all the way down to here
+  });
+  ```
+   Assimilation
+  ------------
+   Sometimes the value you want to propagate to a downstream promise can only be
+  retrieved asynchronously. This can be achieved by returning a promise in the
+  fulfillment or rejection handler. The downstream promise will then be pending
+  until the returned promise is settled. This is called *assimilation*.
+   ```js
+  findUser().then(function (user) {
+    return findCommentsByAuthor(user);
+  }).then(function (comments) {
+    // The user's comments are now available
+  });
+  ```
+   If the assimliated promise rejects, then the downstream promise will also reject.
+   ```js
+  findUser().then(function (user) {
+    return findCommentsByAuthor(user);
+  }).then(function (comments) {
+    // If `findCommentsByAuthor` fulfills, we'll have the value here
+  }, function (reason) {
+    // If `findCommentsByAuthor` rejects, we'll have the reason here
+  });
+  ```
+   Simple Example
+  --------------
+   Synchronous Example
+   ```javascript
+  let result;
+   try {
+    result = findResult();
+    // success
+  } catch(reason) {
+    // failure
+  }
+  ```
+   Errback Example
+   ```js
+  findResult(function(result, err){
+    if (err) {
+      // failure
+    } else {
+      // success
+    }
+  });
+  ```
+   Promise Example;
+   ```javascript
+  findResult().then(function(result){
+    // success
+  }, function(reason){
+    // failure
+  });
+  ```
+   Advanced Example
+  --------------
+   Synchronous Example
+   ```javascript
+  let author, books;
+   try {
+    author = findAuthor();
+    books  = findBooksByAuthor(author);
+    // success
+  } catch(reason) {
+    // failure
+  }
+  ```
+   Errback Example
+   ```js
+   function foundBooks(books) {
+   }
+   function failure(reason) {
+   }
+   findAuthor(function(author, err){
+    if (err) {
+      failure(err);
+      // failure
+    } else {
+      try {
+        findBoooksByAuthor(author, function(books, err) {
+          if (err) {
+            failure(err);
+          } else {
+            try {
+              foundBooks(books);
+            } catch(reason) {
+              failure(reason);
+            }
+          }
+        });
+      } catch(error) {
+        failure(err);
+      }
+      // success
+    }
+  });
+  ```
+   Promise Example;
+   ```javascript
+  findAuthor().
+    then(findBooksByAuthor).
+    then(function(books){
+      // found books
+  }).catch(function(reason){
+    // something went wrong
+  });
+  ```
+   @method then
+  @param {Function} onFulfilled
+  @param {Function} onRejected
+  Useful for tooling.
+  @return {Promise}
+  */
+
+  /**
+  `catch` is simply sugar for `then(undefined, onRejection)` which makes it the same
+  as the catch block of a try/catch statement.
+  ```js
+  function findAuthor(){
+  throw new Error('couldn't find that author');
+  }
+  // synchronous
+  try {
+  findAuthor();
+  } catch(reason) {
+  // something went wrong
+  }
+  // async with promises
+  findAuthor().catch(function(reason){
+  // something went wrong
+  });
+  ```
+  @method catch
+  @param {Function} onRejection
+  Useful for tooling.
+  @return {Promise}
+  */
+
+
+  Promise.prototype.catch = function _catch(onRejection) {
+    return this.then(null, onRejection);
+  };
+
+  /**
+    `finally` will be invoked regardless of the promise's fate just as native
+    try/catch/finally behaves
+  
+    Synchronous example:
+  
+    ```js
+    findAuthor() {
+      if (Math.random() > 0.5) {
+        throw new Error();
+      }
+      return new Author();
+    }
+  
+    try {
+      return findAuthor(); // succeed or fail
+    } catch(error) {
+      return findOtherAuther();
+    } finally {
+      // always runs
+      // doesn't affect the return value
+    }
+    ```
+  
+    Asynchronous example:
+  
+    ```js
+    findAuthor().catch(function(reason){
+      return findOtherAuther();
+    }).finally(function(){
+      // author was either found, or not
+    });
+    ```
+  
+    @method finally
+    @param {Function} callback
+    @return {Promise}
+  */
+
+
+  Promise.prototype.finally = function _finally(callback) {
+    var promise = this;
+    var constructor = promise.constructor;
+
+    return promise.then(function (value) {
+      return constructor.resolve(callback()).then(function () {
+        return value;
+      });
+    }, function (reason) {
+      return constructor.resolve(callback()).then(function () {
+        throw reason;
+      });
+    });
+  };
+
+  return Promise;
+}();
+
+Promise$1.prototype.then = then;
+Promise$1.all = all;
+Promise$1.race = race;
+Promise$1.resolve = resolve$1;
+Promise$1.reject = reject$1;
+Promise$1._setScheduler = setScheduler;
+Promise$1._setAsap = setAsap;
+Promise$1._asap = asap;
+
+/*global self*/
+function polyfill() {
+    var local = void 0;
+
+    if (typeof global !== 'undefined') {
+        local = global;
+    } else if (typeof self !== 'undefined') {
+        local = self;
+    } else {
+        try {
+            local = Function('return this')();
+        } catch (e) {
+            throw new Error('polyfill failed because global object is unavailable in this environment');
+        }
+    }
+
+    var P = local.Promise;
+
+    if (P) {
+        var promiseToString = null;
+        try {
+            promiseToString = Object.prototype.toString.call(P.resolve());
+        } catch (e) {
+            // silently ignored
+        }
+
+        if (promiseToString === '[object Promise]' && !P.cast) {
+            return;
+        }
+    }
+
+    local.Promise = Promise$1;
+}
+
+// Strange compat..
+Promise$1.polyfill = polyfill;
+Promise$1.Promise = Promise$1;
+
+return Promise$1;
+
+})));
+
+
+
+//# sourceMappingURL=es6-promise.map
+;
+/*
+  html2canvas 0.5.1 <http://html2canvas.hertzen.com>
+  Copyright (c) 2016 Niklas von Hertzen
+
+  Released under  License
+*/
+
+(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define('html2canvas',[],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.html2canvas = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
+(function (global){
+/*! https://mths.be/punycode v1.4.0 by @mathias */
+;(function(root) {
+
+	/** Detect free variables */
+	var freeExports = typeof exports == 'object' && exports &&
+		!exports.nodeType && exports;
+	var freeModule = typeof module == 'object' && module &&
+		!module.nodeType && module;
+	var freeGlobal = typeof global == 'object' && global;
+	if (
+		freeGlobal.global === freeGlobal ||
+		freeGlobal.window === freeGlobal ||
+		freeGlobal.self === freeGlobal
+	) {
+		root = freeGlobal;
+	}
+
+	/**
+	 * The `punycode` object.
+	 * @name punycode
+	 * @type Object
+	 */
+	var punycode,
+
+	/** Highest positive signed 32-bit float value */
+	maxInt = 2147483647, // aka. 0x7FFFFFFF or 2^31-1
+
+	/** Bootstring parameters */
+	base = 36,
+	tMin = 1,
+	tMax = 26,
+	skew = 38,
+	damp = 700,
+	initialBias = 72,
+	initialN = 128, // 0x80
+	delimiter = '-', // '\x2D'
+
+	/** Regular expressions */
+	regexPunycode = /^xn--/,
+	regexNonASCII = /[^\x20-\x7E]/, // unprintable ASCII chars + non-ASCII chars
+	regexSeparators = /[\x2E\u3002\uFF0E\uFF61]/g, // RFC 3490 separators
+
+	/** Error messages */
+	errors = {
+		'overflow': 'Overflow: input needs wider integers to process',
+		'not-basic': 'Illegal input >= 0x80 (not a basic code point)',
+		'invalid-input': 'Invalid input'
+	},
+
+	/** Convenience shortcuts */
+	baseMinusTMin = base - tMin,
+	floor = Math.floor,
+	stringFromCharCode = String.fromCharCode,
+
+	/** Temporary variable */
+	key;
+
+	/*--------------------------------------------------------------------------*/
+
+	/**
+	 * A generic error utility function.
+	 * @private
+	 * @param {String} type The error type.
+	 * @returns {Error} Throws a `RangeError` with the applicable error message.
+	 */
+	function error(type) {
+		throw new RangeError(errors[type]);
+	}
+
+	/**
+	 * A generic `Array#map` utility function.
+	 * @private
+	 * @param {Array} array The array to iterate over.
+	 * @param {Function} callback The function that gets called for every array
+	 * item.
+	 * @returns {Array} A new array of values returned by the callback function.
+	 */
+	function map(array, fn) {
+		var length = array.length;
+		var result = [];
+		while (length--) {
+			result[length] = fn(array[length]);
+		}
+		return result;
+	}
+
+	/**
+	 * A simple `Array#map`-like wrapper to work with domain name strings or email
+	 * addresses.
+	 * @private
+	 * @param {String} domain The domain name or email address.
+	 * @param {Function} callback The function that gets called for every
+	 * character.
+	 * @returns {Array} A new string of characters returned by the callback
+	 * function.
+	 */
+	function mapDomain(string, fn) {
+		var parts = string.split('@');
+		var result = '';
+		if (parts.length > 1) {
+			// In email addresses, only the domain name should be punycoded. Leave
+			// the local part (i.e. everything up to `@`) intact.
+			result = parts[0] + '@';
+			string = parts[1];
+		}
+		// Avoid `split(regex)` for IE8 compatibility. See #17.
+		string = string.replace(regexSeparators, '\x2E');
+		var labels = string.split('.');
+		var encoded = map(labels, fn).join('.');
+		return result + encoded;
+	}
+
+	/**
+	 * Creates an array containing the numeric code points of each Unicode
+	 * character in the string. While JavaScript uses UCS-2 internally,
+	 * this function will convert a pair of surrogate halves (each of which
+	 * UCS-2 exposes as separate characters) into a single code point,
+	 * matching UTF-16.
+	 * @see `punycode.ucs2.encode`
+	 * @see <https://mathiasbynens.be/notes/javascript-encoding>
+	 * @memberOf punycode.ucs2
+	 * @name decode
+	 * @param {String} string The Unicode input string (UCS-2).
+	 * @returns {Array} The new array of code points.
+	 */
+	function ucs2decode(string) {
+		var output = [],
+		    counter = 0,
+		    length = string.length,
+		    value,
+		    extra;
+		while (counter < length) {
+			value = string.charCodeAt(counter++);
+			if (value >= 0xD800 && value <= 0xDBFF && counter < length) {
+				// high surrogate, and there is a next character
+				extra = string.charCodeAt(counter++);
+				if ((extra & 0xFC00) == 0xDC00) { // low surrogate
+					output.push(((value & 0x3FF) << 10) + (extra & 0x3FF) + 0x10000);
+				} else {
+					// unmatched surrogate; only append this code unit, in case the next
+					// code unit is the high surrogate of a surrogate pair
+					output.push(value);
+					counter--;
+				}
+			} else {
+				output.push(value);
+			}
+		}
+		return output;
+	}
+
+	/**
+	 * Creates a string based on an array of numeric code points.
+	 * @see `punycode.ucs2.decode`
+	 * @memberOf punycode.ucs2
+	 * @name encode
+	 * @param {Array} codePoints The array of numeric code points.
+	 * @returns {String} The new Unicode string (UCS-2).
+	 */
+	function ucs2encode(array) {
+		return map(array, function(value) {
+			var output = '';
+			if (value > 0xFFFF) {
+				value -= 0x10000;
+				output += stringFromCharCode(value >>> 10 & 0x3FF | 0xD800);
+				value = 0xDC00 | value & 0x3FF;
+			}
+			output += stringFromCharCode(value);
+			return output;
+		}).join('');
+	}
+
+	/**
+	 * Converts a basic code point into a digit/integer.
+	 * @see `digitToBasic()`
+	 * @private
+	 * @param {Number} codePoint The basic numeric code point value.
+	 * @returns {Number} The numeric value of a basic code point (for use in
+	 * representing integers) in the range `0` to `base - 1`, or `base` if
+	 * the code point does not represent a value.
+	 */
+	function basicToDigit(codePoint) {
+		if (codePoint - 48 < 10) {
+			return codePoint - 22;
+		}
+		if (codePoint - 65 < 26) {
+			return codePoint - 65;
+		}
+		if (codePoint - 97 < 26) {
+			return codePoint - 97;
+		}
+		return base;
+	}
+
+	/**
+	 * Converts a digit/integer into a basic code point.
+	 * @see `basicToDigit()`
+	 * @private
+	 * @param {Number} digit The numeric value of a basic code point.
+	 * @returns {Number} The basic code point whose value (when used for
+	 * representing integers) is `digit`, which needs to be in the range
+	 * `0` to `base - 1`. If `flag` is non-zero, the uppercase form is
+	 * used; else, the lowercase form is used. The behavior is undefined
+	 * if `flag` is non-zero and `digit` has no uppercase form.
+	 */
+	function digitToBasic(digit, flag) {
+		//  0..25 map to ASCII a..z or A..Z
+		// 26..35 map to ASCII 0..9
+		return digit + 22 + 75 * (digit < 26) - ((flag != 0) << 5);
+	}
+
+	/**
+	 * Bias adaptation function as per section 3.4 of RFC 3492.
+	 * https://tools.ietf.org/html/rfc3492#section-3.4
+	 * @private
+	 */
+	function adapt(delta, numPoints, firstTime) {
+		var k = 0;
+		delta = firstTime ? floor(delta / damp) : delta >> 1;
+		delta += floor(delta / numPoints);
+		for (/* no initialization */; delta > baseMinusTMin * tMax >> 1; k += base) {
+			delta = floor(delta / baseMinusTMin);
+		}
+		return floor(k + (baseMinusTMin + 1) * delta / (delta + skew));
+	}
+
+	/**
+	 * Converts a Punycode string of ASCII-only symbols to a string of Unicode
+	 * symbols.
+	 * @memberOf punycode
+	 * @param {String} input The Punycode string of ASCII-only symbols.
+	 * @returns {String} The resulting string of Unicode symbols.
+	 */
+	function decode(input) {
+		// Don't use UCS-2
+		var output = [],
+		    inputLength = input.length,
+		    out,
+		    i = 0,
+		    n = initialN,
+		    bias = initialBias,
+		    basic,
+		    j,
+		    index,
+		    oldi,
+		    w,
+		    k,
+		    digit,
+		    t,
+		    /** Cached calculation results */
+		    baseMinusT;
+
+		// Handle the basic code points: let `basic` be the number of input code
+		// points before the last delimiter, or `0` if there is none, then copy
+		// the first basic code points to the output.
+
+		basic = input.lastIndexOf(delimiter);
+		if (basic < 0) {
+			basic = 0;
+		}
+
+		for (j = 0; j < basic; ++j) {
+			// if it's not a basic code point
+			if (input.charCodeAt(j) >= 0x80) {
+				error('not-basic');
+			}
+			output.push(input.charCodeAt(j));
+		}
+
+		// Main decoding loop: start just after the last delimiter if any basic code
+		// points were copied; start at the beginning otherwise.
+
+		for (index = basic > 0 ? basic + 1 : 0; index < inputLength; /* no final expression */) {
+
+			// `index` is the index of the next character to be consumed.
+			// Decode a generalized variable-length integer into `delta`,
+			// which gets added to `i`. The overflow checking is easier
+			// if we increase `i` as we go, then subtract off its starting
+			// value at the end to obtain `delta`.
+			for (oldi = i, w = 1, k = base; /* no condition */; k += base) {
+
+				if (index >= inputLength) {
+					error('invalid-input');
+				}
+
+				digit = basicToDigit(input.charCodeAt(index++));
+
+				if (digit >= base || digit > floor((maxInt - i) / w)) {
+					error('overflow');
+				}
+
+				i += digit * w;
+				t = k <= bias ? tMin : (k >= bias + tMax ? tMax : k - bias);
+
+				if (digit < t) {
+					break;
+				}
+
+				baseMinusT = base - t;
+				if (w > floor(maxInt / baseMinusT)) {
+					error('overflow');
+				}
+
+				w *= baseMinusT;
+
+			}
+
+			out = output.length + 1;
+			bias = adapt(i - oldi, out, oldi == 0);
+
+			// `i` was supposed to wrap around from `out` to `0`,
+			// incrementing `n` each time, so we'll fix that now:
+			if (floor(i / out) > maxInt - n) {
+				error('overflow');
+			}
+
+			n += floor(i / out);
+			i %= out;
+
+			// Insert `n` at position `i` of the output
+			output.splice(i++, 0, n);
+
+		}
+
+		return ucs2encode(output);
+	}
+
+	/**
+	 * Converts a string of Unicode symbols (e.g. a domain name label) to a
+	 * Punycode string of ASCII-only symbols.
+	 * @memberOf punycode
+	 * @param {String} input The string of Unicode symbols.
+	 * @returns {String} The resulting Punycode string of ASCII-only symbols.
+	 */
+	function encode(input) {
+		var n,
+		    delta,
+		    handledCPCount,
+		    basicLength,
+		    bias,
+		    j,
+		    m,
+		    q,
+		    k,
+		    t,
+		    currentValue,
+		    output = [],
+		    /** `inputLength` will hold the number of code points in `input`. */
+		    inputLength,
+		    /** Cached calculation results */
+		    handledCPCountPlusOne,
+		    baseMinusT,
+		    qMinusT;
+
+		// Convert the input in UCS-2 to Unicode
+		input = ucs2decode(input);
+
+		// Cache the length
+		inputLength = input.length;
+
+		// Initialize the state
+		n = initialN;
+		delta = 0;
+		bias = initialBias;
+
+		// Handle the basic code points
+		for (j = 0; j < inputLength; ++j) {
+			currentValue = input[j];
+			if (currentValue < 0x80) {
+				output.push(stringFromCharCode(currentValue));
+			}
+		}
+
+		handledCPCount = basicLength = output.length;
+
+		// `handledCPCount` is the number of code points that have been handled;
+		// `basicLength` is the number of basic code points.
+
+		// Finish the basic string - if it is not empty - with a delimiter
+		if (basicLength) {
+			output.push(delimiter);
+		}
+
+		// Main encoding loop:
+		while (handledCPCount < inputLength) {
+
+			// All non-basic code points < n have been handled already. Find the next
+			// larger one:
+			for (m = maxInt, j = 0; j < inputLength; ++j) {
+				currentValue = input[j];
+				if (currentValue >= n && currentValue < m) {
+					m = currentValue;
+				}
+			}
+
+			// Increase `delta` enough to advance the decoder's <n,i> state to <m,0>,
+			// but guard against overflow
+			handledCPCountPlusOne = handledCPCount + 1;
+			if (m - n > floor((maxInt - delta) / handledCPCountPlusOne)) {
+				error('overflow');
+			}
+
+			delta += (m - n) * handledCPCountPlusOne;
+			n = m;
+
+			for (j = 0; j < inputLength; ++j) {
+				currentValue = input[j];
+
+				if (currentValue < n && ++delta > maxInt) {
+					error('overflow');
+				}
+
+				if (currentValue == n) {
+					// Represent delta as a generalized variable-length integer
+					for (q = delta, k = base; /* no condition */; k += base) {
+						t = k <= bias ? tMin : (k >= bias + tMax ? tMax : k - bias);
+						if (q < t) {
+							break;
+						}
+						qMinusT = q - t;
+						baseMinusT = base - t;
+						output.push(
+							stringFromCharCode(digitToBasic(t + qMinusT % baseMinusT, 0))
+						);
+						q = floor(qMinusT / baseMinusT);
+					}
+
+					output.push(stringFromCharCode(digitToBasic(q, 0)));
+					bias = adapt(delta, handledCPCountPlusOne, handledCPCount == basicLength);
+					delta = 0;
+					++handledCPCount;
+				}
+			}
+
+			++delta;
+			++n;
+
+		}
+		return output.join('');
+	}
+
+	/**
+	 * Converts a Punycode string representing a domain name or an email address
+	 * to Unicode. Only the Punycoded parts of the input will be converted, i.e.
+	 * it doesn't matter if you call it on a string that has already been
+	 * converted to Unicode.
+	 * @memberOf punycode
+	 * @param {String} input The Punycoded domain name or email address to
+	 * convert to Unicode.
+	 * @returns {String} The Unicode representation of the given Punycode
+	 * string.
+	 */
+	function toUnicode(input) {
+		return mapDomain(input, function(string) {
+			return regexPunycode.test(string)
+				? decode(string.slice(4).toLowerCase())
+				: string;
+		});
+	}
+
+	/**
+	 * Converts a Unicode string representing a domain name or an email address to
+	 * Punycode. Only the non-ASCII parts of the domain name will be converted,
+	 * i.e. it doesn't matter if you call it with a domain that's already in
+	 * ASCII.
+	 * @memberOf punycode
+	 * @param {String} input The domain name or email address to convert, as a
+	 * Unicode string.
+	 * @returns {String} The Punycode representation of the given domain name or
+	 * email address.
+	 */
+	function toASCII(input) {
+		return mapDomain(input, function(string) {
+			return regexNonASCII.test(string)
+				? 'xn--' + encode(string)
+				: string;
+		});
+	}
+
+	/*--------------------------------------------------------------------------*/
+
+	/** Define the public API */
+	punycode = {
+		/**
+		 * A string representing the current Punycode.js version number.
+		 * @memberOf punycode
+		 * @type String
+		 */
+		'version': '1.3.2',
+		/**
+		 * An object of methods to convert from JavaScript's internal character
+		 * representation (UCS-2) to Unicode code points, and back.
+		 * @see <https://mathiasbynens.be/notes/javascript-encoding>
+		 * @memberOf punycode
+		 * @type Object
+		 */
+		'ucs2': {
+			'decode': ucs2decode,
+			'encode': ucs2encode
+		},
+		'decode': decode,
+		'encode': encode,
+		'toASCII': toASCII,
+		'toUnicode': toUnicode
+	};
+
+	/** Expose `punycode` */
+	// Some AMD build optimizers, like r.js, check for specific condition patterns
+	// like the following:
+	if (
+		typeof define == 'function' &&
+		typeof define.amd == 'object' &&
+		define.amd
+	) {
+		define('punycode', function() {
+			return punycode;
+		});
+	} else if (freeExports && freeModule) {
+		if (module.exports == freeExports) {
+			// in Node.js, io.js, or RingoJS v0.8.0+
+			freeModule.exports = punycode;
+		} else {
+			// in Narwhal or RingoJS v0.7.0-
+			for (key in punycode) {
+				punycode.hasOwnProperty(key) && (freeExports[key] = punycode[key]);
+			}
+		}
+	} else {
+		// in Rhino or a web browser
+		root.punycode = punycode;
+	}
+
+}(this));
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],2:[function(_dereq_,module,exports){
+var log = _dereq_('./log');
+
+function restoreOwnerScroll(ownerDocument, x, y) {
+    if (ownerDocument.defaultView && (x !== ownerDocument.defaultView.pageXOffset || y !== ownerDocument.defaultView.pageYOffset)) {
+        ownerDocument.defaultView.scrollTo(x, y);
+    }
+}
+
+function cloneCanvasContents(canvas, clonedCanvas) {
+    try {
+        if (clonedCanvas) {
+            clonedCanvas.width = canvas.width;
+            clonedCanvas.height = canvas.height;
+            clonedCanvas.getContext("2d").putImageData(canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height), 0, 0);
+        }
+    } catch(e) {
+        log("Unable to copy canvas content from", canvas, e);
+    }
+}
+
+function cloneNode(node, javascriptEnabled) {
+    var clone = node.nodeType === 3 ? document.createTextNode(node.nodeValue) : node.cloneNode(false);
+
+    var child = node.firstChild;
+    while(child) {
+        if (javascriptEnabled === true || child.nodeType !== 1 || child.nodeName !== 'SCRIPT') {
+            clone.appendChild(cloneNode(child, javascriptEnabled));
+        }
+        child = child.nextSibling;
+    }
+
+    if (node.nodeType === 1) {
+        clone._scrollTop = node.scrollTop;
+        clone._scrollLeft = node.scrollLeft;
+        if (node.nodeName === "CANVAS") {
+            cloneCanvasContents(node, clone);
+        } else if (node.nodeName === "TEXTAREA" || node.nodeName === "SELECT") {
+            clone.value = node.value;
+        }
+    }
+
+    return clone;
+}
+
+function initNode(node) {
+    if (node.nodeType === 1) {
+        node.scrollTop = node._scrollTop;
+        node.scrollLeft = node._scrollLeft;
+
+        var child = node.firstChild;
+        while(child) {
+            initNode(child);
+            child = child.nextSibling;
+        }
+    }
+}
+
+module.exports = function(ownerDocument, containerDocument, width, height, options, x ,y) {
+    var documentElement = cloneNode(ownerDocument.documentElement, options.javascriptEnabled);
+    var container = containerDocument.createElement("iframe");
+
+    container.className = "html2canvas-container";
+    container.style.visibility = "hidden";
+    container.style.position = "fixed";
+    container.style.left = "-10000px";
+    container.style.top = "0px";
+    container.style.border = "0";
+    container.width = width;
+    container.height = height;
+    container.scrolling = "no"; // ios won't scroll without it
+    containerDocument.body.appendChild(container);
+
+    return new Promise(function(resolve) {
+        var documentClone = container.contentWindow.document;
+
+        /* Chrome doesn't detect relative background-images assigned in inline <style> sheets when fetched through getComputedStyle
+         if window url is about:blank, we can assign the url to current by writing onto the document
+         */
+        container.contentWindow.onload = container.onload = function() {
+            var interval = setInterval(function() {
+                if (documentClone.body.childNodes.length > 0) {
+                    initNode(documentClone.documentElement);
+                    clearInterval(interval);
+                    if (options.type === "view") {
+                        container.contentWindow.scrollTo(x, y);
+                        if ((/(iPad|iPhone|iPod)/g).test(navigator.userAgent) && (container.contentWindow.scrollY !== y || container.contentWindow.scrollX !== x)) {
+                            documentClone.documentElement.style.top = (-y) + "px";
+                            documentClone.documentElement.style.left = (-x) + "px";
+                            documentClone.documentElement.style.position = 'absolute';
+                        }
+                    }
+                    resolve(container);
+                }
+            }, 50);
+        };
+
+        documentClone.open();
+        documentClone.write("<!DOCTYPE html><html></html>");
+        // Chrome scrolls the parent document for some reason after the write to the cloned window???
+        restoreOwnerScroll(ownerDocument, x, y);
+        documentClone.replaceChild(documentClone.adoptNode(documentElement), documentClone.documentElement);
+        documentClone.close();
+    });
+};
+
+},{"./log":13}],3:[function(_dereq_,module,exports){
+// http://dev.w3.org/csswg/css-color/
+
+function Color(value) {
+    this.r = 0;
+    this.g = 0;
+    this.b = 0;
+    this.a = null;
+    var result = this.fromArray(value) ||
+        this.namedColor(value) ||
+        this.rgb(value) ||
+        this.rgba(value) ||
+        this.hex6(value) ||
+        this.hex3(value);
+}
+
+Color.prototype.darken = function(amount) {
+    var a = 1 - amount;
+    return  new Color([
+        Math.round(this.r * a),
+        Math.round(this.g * a),
+        Math.round(this.b * a),
+        this.a
+    ]);
+};
+
+Color.prototype.isTransparent = function() {
+    return this.a === 0;
+};
+
+Color.prototype.isBlack = function() {
+    return this.r === 0 && this.g === 0 && this.b === 0;
+};
+
+Color.prototype.fromArray = function(array) {
+    if (Array.isArray(array)) {
+        this.r = Math.min(array[0], 255);
+        this.g = Math.min(array[1], 255);
+        this.b = Math.min(array[2], 255);
+        if (array.length > 3) {
+            this.a = array[3];
+        }
+    }
+
+    return (Array.isArray(array));
+};
+
+var _hex3 = /^#([a-f0-9]{3})$/i;
+
+Color.prototype.hex3 = function(value) {
+    var match = null;
+    if ((match = value.match(_hex3)) !== null) {
+        this.r = parseInt(match[1][0] + match[1][0], 16);
+        this.g = parseInt(match[1][1] + match[1][1], 16);
+        this.b = parseInt(match[1][2] + match[1][2], 16);
+    }
+    return match !== null;
+};
+
+var _hex6 = /^#([a-f0-9]{6})$/i;
+
+Color.prototype.hex6 = function(value) {
+    var match = null;
+    if ((match = value.match(_hex6)) !== null) {
+        this.r = parseInt(match[1].substring(0, 2), 16);
+        this.g = parseInt(match[1].substring(2, 4), 16);
+        this.b = parseInt(match[1].substring(4, 6), 16);
+    }
+    return match !== null;
+};
+
+
+var _rgb = /^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/;
+
+Color.prototype.rgb = function(value) {
+    var match = null;
+    if ((match = value.match(_rgb)) !== null) {
+        this.r = Number(match[1]);
+        this.g = Number(match[2]);
+        this.b = Number(match[3]);
+    }
+    return match !== null;
+};
+
+var _rgba = /^rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d?\.?\d+)\s*\)$/;
+
+Color.prototype.rgba = function(value) {
+    var match = null;
+    if ((match = value.match(_rgba)) !== null) {
+        this.r = Number(match[1]);
+        this.g = Number(match[2]);
+        this.b = Number(match[3]);
+        this.a = Number(match[4]);
+    }
+    return match !== null;
+};
+
+Color.prototype.toString = function() {
+    return this.a !== null && this.a !== 1 ?
+    "rgba(" + [this.r, this.g, this.b, this.a].join(",") + ")" :
+    "rgb(" + [this.r, this.g, this.b].join(",") + ")";
+};
+
+Color.prototype.namedColor = function(value) {
+    value = value.toLowerCase();
+    var color = colors[value];
+    if (color) {
+        this.r = color[0];
+        this.g = color[1];
+        this.b = color[2];
+    } else if (value === "transparent") {
+        this.r = this.g = this.b = this.a = 0;
+        return true;
+    }
+
+    return !!color;
+};
+
+Color.prototype.isColor = true;
+
+// JSON.stringify([].slice.call($$('.named-color-table tr'), 1).map(function(row) { return [row.childNodes[3].textContent, row.childNodes[5].textContent.trim().split(",").map(Number)] }).reduce(function(data, row) {data[row[0]] = row[1]; return data}, {}))
+var colors = {
+    "aliceblue": [240, 248, 255],
+    "antiquewhite": [250, 235, 215],
+    "aqua": [0, 255, 255],
+    "aquamarine": [127, 255, 212],
+    "azure": [240, 255, 255],
+    "beige": [245, 245, 220],
+    "bisque": [255, 228, 196],
+    "black": [0, 0, 0],
+    "blanchedalmond": [255, 235, 205],
+    "blue": [0, 0, 255],
+    "blueviolet": [138, 43, 226],
+    "brown": [165, 42, 42],
+    "burlywood": [222, 184, 135],
+    "cadetblue": [95, 158, 160],
+    "chartreuse": [127, 255, 0],
+    "chocolate": [210, 105, 30],
+    "coral": [255, 127, 80],
+    "cornflowerblue": [100, 149, 237],
+    "cornsilk": [255, 248, 220],
+    "crimson": [220, 20, 60],
+    "cyan": [0, 255, 255],
+    "darkblue": [0, 0, 139],
+    "darkcyan": [0, 139, 139],
+    "darkgoldenrod": [184, 134, 11],
+    "darkgray": [169, 169, 169],
+    "darkgreen": [0, 100, 0],
+    "darkgrey": [169, 169, 169],
+    "darkkhaki": [189, 183, 107],
+    "darkmagenta": [139, 0, 139],
+    "darkolivegreen": [85, 107, 47],
+    "darkorange": [255, 140, 0],
+    "darkorchid": [153, 50, 204],
+    "darkred": [139, 0, 0],
+    "darksalmon": [233, 150, 122],
+    "darkseagreen": [143, 188, 143],
+    "darkslateblue": [72, 61, 139],
+    "darkslategray": [47, 79, 79],
+    "darkslategrey": [47, 79, 79],
+    "darkturquoise": [0, 206, 209],
+    "darkviolet": [148, 0, 211],
+    "deeppink": [255, 20, 147],
+    "deepskyblue": [0, 191, 255],
+    "dimgray": [105, 105, 105],
+    "dimgrey": [105, 105, 105],
+    "dodgerblue": [30, 144, 255],
+    "firebrick": [178, 34, 34],
+    "floralwhite": [255, 250, 240],
+    "forestgreen": [34, 139, 34],
+    "fuchsia": [255, 0, 255],
+    "gainsboro": [220, 220, 220],
+    "ghostwhite": [248, 248, 255],
+    "gold": [255, 215, 0],
+    "goldenrod": [218, 165, 32],
+    "gray": [128, 128, 128],
+    "green": [0, 128, 0],
+    "greenyellow": [173, 255, 47],
+    "grey": [128, 128, 128],
+    "honeydew": [240, 255, 240],
+    "hotpink": [255, 105, 180],
+    "indianred": [205, 92, 92],
+    "indigo": [75, 0, 130],
+    "ivory": [255, 255, 240],
+    "khaki": [240, 230, 140],
+    "lavender": [230, 230, 250],
+    "lavenderblush": [255, 240, 245],
+    "lawngreen": [124, 252, 0],
+    "lemonchiffon": [255, 250, 205],
+    "lightblue": [173, 216, 230],
+    "lightcoral": [240, 128, 128],
+    "lightcyan": [224, 255, 255],
+    "lightgoldenrodyellow": [250, 250, 210],
+    "lightgray": [211, 211, 211],
+    "lightgreen": [144, 238, 144],
+    "lightgrey": [211, 211, 211],
+    "lightpink": [255, 182, 193],
+    "lightsalmon": [255, 160, 122],
+    "lightseagreen": [32, 178, 170],
+    "lightskyblue": [135, 206, 250],
+    "lightslategray": [119, 136, 153],
+    "lightslategrey": [119, 136, 153],
+    "lightsteelblue": [176, 196, 222],
+    "lightyellow": [255, 255, 224],
+    "lime": [0, 255, 0],
+    "limegreen": [50, 205, 50],
+    "linen": [250, 240, 230],
+    "magenta": [255, 0, 255],
+    "maroon": [128, 0, 0],
+    "mediumaquamarine": [102, 205, 170],
+    "mediumblue": [0, 0, 205],
+    "mediumorchid": [186, 85, 211],
+    "mediumpurple": [147, 112, 219],
+    "mediumseagreen": [60, 179, 113],
+    "mediumslateblue": [123, 104, 238],
+    "mediumspringgreen": [0, 250, 154],
+    "mediumturquoise": [72, 209, 204],
+    "mediumvioletred": [199, 21, 133],
+    "midnightblue": [25, 25, 112],
+    "mintcream": [245, 255, 250],
+    "mistyrose": [255, 228, 225],
+    "moccasin": [255, 228, 181],
+    "navajowhite": [255, 222, 173],
+    "navy": [0, 0, 128],
+    "oldlace": [253, 245, 230],
+    "olive": [128, 128, 0],
+    "olivedrab": [107, 142, 35],
+    "orange": [255, 165, 0],
+    "orangered": [255, 69, 0],
+    "orchid": [218, 112, 214],
+    "palegoldenrod": [238, 232, 170],
+    "palegreen": [152, 251, 152],
+    "paleturquoise": [175, 238, 238],
+    "palevioletred": [219, 112, 147],
+    "papayawhip": [255, 239, 213],
+    "peachpuff": [255, 218, 185],
+    "peru": [205, 133, 63],
+    "pink": [255, 192, 203],
+    "plum": [221, 160, 221],
+    "powderblue": [176, 224, 230],
+    "purple": [128, 0, 128],
+    "rebeccapurple": [102, 51, 153],
+    "red": [255, 0, 0],
+    "rosybrown": [188, 143, 143],
+    "royalblue": [65, 105, 225],
+    "saddlebrown": [139, 69, 19],
+    "salmon": [250, 128, 114],
+    "sandybrown": [244, 164, 96],
+    "seagreen": [46, 139, 87],
+    "seashell": [255, 245, 238],
+    "sienna": [160, 82, 45],
+    "silver": [192, 192, 192],
+    "skyblue": [135, 206, 235],
+    "slateblue": [106, 90, 205],
+    "slategray": [112, 128, 144],
+    "slategrey": [112, 128, 144],
+    "snow": [255, 250, 250],
+    "springgreen": [0, 255, 127],
+    "steelblue": [70, 130, 180],
+    "tan": [210, 180, 140],
+    "teal": [0, 128, 128],
+    "thistle": [216, 191, 216],
+    "tomato": [255, 99, 71],
+    "turquoise": [64, 224, 208],
+    "violet": [238, 130, 238],
+    "wheat": [245, 222, 179],
+    "white": [255, 255, 255],
+    "whitesmoke": [245, 245, 245],
+    "yellow": [255, 255, 0],
+    "yellowgreen": [154, 205, 50]
+};
+
+module.exports = Color;
+
+},{}],4:[function(_dereq_,module,exports){
+var Support = _dereq_('./support');
+var CanvasRenderer = _dereq_('./renderers/canvas');
+var ImageLoader = _dereq_('./imageloader');
+var NodeParser = _dereq_('./nodeparser');
+var NodeContainer = _dereq_('./nodecontainer');
+var log = _dereq_('./log');
+var utils = _dereq_('./utils');
+var createWindowClone = _dereq_('./clone');
+var loadUrlDocument = _dereq_('./proxy').loadUrlDocument;
+var getBounds = utils.getBounds;
+
+var html2canvasNodeAttribute = "data-html2canvas-node";
+var html2canvasCloneIndex = 0;
+
+function html2canvas(nodeList, options) {
+    var index = html2canvasCloneIndex++;
+    options = options || {};
+    if (options.logging) {
+        log.options.logging = true;
+        log.options.start = Date.now();
+    }
+
+    options.async = typeof(options.async) === "undefined" ? true : options.async;
+    options.allowTaint = typeof(options.allowTaint) === "undefined" ? false : options.allowTaint;
+    options.removeContainer = typeof(options.removeContainer) === "undefined" ? true : options.removeContainer;
+    options.javascriptEnabled = typeof(options.javascriptEnabled) === "undefined" ? false : options.javascriptEnabled;
+    options.imageTimeout = typeof(options.imageTimeout) === "undefined" ? 10000 : options.imageTimeout;
+    options.renderer = typeof(options.renderer) === "function" ? options.renderer : CanvasRenderer;
+    options.strict = !!options.strict;
+
+    if (typeof(nodeList) === "string") {
+        if (typeof(options.proxy) !== "string") {
+            return Promise.reject("Proxy must be used when rendering url");
+        }
+        var width = options.width != null ? options.width : window.innerWidth;
+        var height = options.height != null ? options.height : window.innerHeight;
+        return loadUrlDocument(absoluteUrl(nodeList), options.proxy, document, width, height, options).then(function(container) {
+            return renderWindow(container.contentWindow.document.documentElement, container, options, width, height);
+        });
+    }
+
+    var node = ((nodeList === undefined) ? [document.documentElement] : ((nodeList.length) ? nodeList : [nodeList]))[0];
+    var width = options.width != null ? options.width : node.ownerDocument.defaultView.innerWidth;
+    var height = options.height != null ? options.height : node.ownerDocument.defaultView.innerHeight;
+
+    node.setAttribute(html2canvasNodeAttribute + index, index);
+    //console.debug("BEFORE renderDocument: size: " + width + "x" + height);
+    return renderDocument(node.ownerDocument, options, width, height, index).then(function(canvas) {
+        if (typeof(options.onrendered) === "function") {
+            log("options.onrendered is deprecated, html2canvas returns a Promise containing the canvas");
+            options.onrendered(canvas);
+        }
+        return canvas;
+    });
+}
+
+html2canvas.CanvasRenderer = CanvasRenderer;
+html2canvas.NodeContainer = NodeContainer;
+html2canvas.log = log;
+html2canvas.utils = utils;
+
+var html2canvasExport = (typeof(document) === "undefined" || typeof(Object.create) !== "function" || typeof(document.createElement("canvas").getContext) !== "function") ? function() {
+    return Promise.reject("No canvas support");
+} : html2canvas;
+
+module.exports = html2canvasExport;
+
+if (typeof(define) === 'function' && define.amd) {
+    define('html2canvas', [], function() {
+        return html2canvasExport;
+    });
+}
+
+function renderDocument(document, options, windowWidth, windowHeight, html2canvasIndex) {
+    return createWindowClone(document, document, windowWidth, windowHeight, options, document.defaultView.pageXOffset, document.defaultView.pageYOffset).then(function(container) {
+        log("Document cloned");
+        var attributeName = html2canvasNodeAttribute + html2canvasIndex;
+        var selector = "[" + attributeName + "='" + html2canvasIndex + "']";
+        document.querySelector(selector).removeAttribute(attributeName);
+        var clonedWindow = container.contentWindow;
+        var node = clonedWindow.document.querySelector(selector);
+        var oncloneHandler = (typeof(options.onclone) === "function") ? Promise.resolve(options.onclone(clonedWindow.document)) : Promise.resolve(true);
+        return oncloneHandler.then(function() {
+            return renderWindow(node, container, options, windowWidth, windowHeight);
+        });
+    });
+}
+
+function renderWindow(node, container, options, windowWidth, windowHeight) {
+    var clonedWindow = container.contentWindow;
+    var support = new Support(clonedWindow.document);
+    var imageLoader = new ImageLoader(options, support);
+    var bounds = getBounds(node);
+    var width = options.type === "view" ? windowWidth : documentWidth(clonedWindow.document);
+    var height = options.type === "view" ? windowHeight : documentHeight(clonedWindow.document);
+    var renderer = new options.renderer(width, height, imageLoader, options, document);
+    var parser = new NodeParser(node, renderer, support, imageLoader, options);
+    return parser.ready.then(function() {
+        log("Finished rendering");
+        var canvas;
+
+        if (options.type === "view") {
+            canvas = crop(renderer.canvas, {width: renderer.canvas.width, height: renderer.canvas.height, top: 0, left: 0, x: 0, y: 0});
+        } else if (node === clonedWindow.document.body || node === clonedWindow.document.documentElement || options.canvas != null) {
+            canvas = renderer.canvas;
+        } else {
+            canvas = crop(renderer.canvas, {width:  options.width != null ? options.width : bounds.width, height: options.height != null ? options.height : bounds.height, top: bounds.top, left: bounds.left, x: 0, y: 0});
+        }
+
+        cleanupContainer(container, options);
+        return canvas;
+    });
+}
+
+function cleanupContainer(container, options) {
+    if (options.removeContainer) {
+        container.parentNode.removeChild(container);
+        log("Cleaned up container");
+    }
+}
+
+function crop(canvas, bounds) {
+    var croppedCanvas = document.createElement("canvas");
+    var x1 = Math.min(canvas.width - 1, Math.max(0, bounds.left));
+    var x2 = Math.min(canvas.width, Math.max(1, bounds.left + bounds.width));
+    var y1 = Math.min(canvas.height - 1, Math.max(0, bounds.top));
+    var y2 = Math.min(canvas.height, Math.max(1, bounds.top + bounds.height));
+    croppedCanvas.width = bounds.width;
+    croppedCanvas.height =  bounds.height;
+    var width = x2-x1;
+    var height = y2-y1;
+    log("Cropping canvas at:", "left:", bounds.left, "top:", bounds.top, "width:", width, "height:", height);
+    log("Resulting crop with width", bounds.width, "and height", bounds.height, "with x", x1, "and y", y1);
+    croppedCanvas.getContext("2d").drawImage(canvas, x1, y1, width, height, bounds.x, bounds.y, width, height);
+    return croppedCanvas;
+}
+
+function documentWidth (doc) {
+    return Math.max(
+        Math.max(doc.body.scrollWidth, doc.documentElement.scrollWidth),
+        Math.max(doc.body.offsetWidth, doc.documentElement.offsetWidth),
+        Math.max(doc.body.clientWidth, doc.documentElement.clientWidth)
+    );
+}
+
+function documentHeight (doc) {
+    return Math.max(
+        Math.max(doc.body.scrollHeight, doc.documentElement.scrollHeight),
+        Math.max(doc.body.offsetHeight, doc.documentElement.offsetHeight),
+        Math.max(doc.body.clientHeight, doc.documentElement.clientHeight)
+    );
+}
+
+function absoluteUrl(url) {
+    var link = document.createElement("a");
+    link.href = url;
+    link.href = link.href;
+    return link;
+}
+
+},{"./clone":2,"./imageloader":11,"./log":13,"./nodecontainer":14,"./nodeparser":15,"./proxy":16,"./renderers/canvas":20,"./support":22,"./utils":26}],5:[function(_dereq_,module,exports){
+var log = _dereq_('./log');
+var smallImage = _dereq_('./utils').smallImage;
+
+function DummyImageContainer(src) {
+    this.src = src;
+    log("DummyImageContainer for", src);
+    if (!this.promise || !this.image) {
+        log("Initiating DummyImageContainer");
+        DummyImageContainer.prototype.image = new Image();
+        var image = this.image;
+        DummyImageContainer.prototype.promise = new Promise(function(resolve, reject) {
+            image.onload = resolve;
+            image.onerror = reject;
+            image.src = smallImage();
+            if (image.complete === true) {
+                resolve(image);
+            }
+        });
+    }
+}
+
+module.exports = DummyImageContainer;
+
+},{"./log":13,"./utils":26}],6:[function(_dereq_,module,exports){
+var smallImage = _dereq_('./utils').smallImage;
+
+function Font(family, size) {
+    var container = document.createElement('div'),
+        img = document.createElement('img'),
+        span = document.createElement('span'),
+        sampleText = 'Hidden Text',
+        baseline,
+        middle;
+
+    container.style.visibility = "hidden";
+    container.style.fontFamily = family;
+    container.style.fontSize = size;
+    container.style.margin = 0;
+    container.style.padding = 0;
+
+    document.body.appendChild(container);
+
+    img.src = smallImage();
+    img.width = 1;
+    img.height = 1;
+
+    img.style.margin = 0;
+    img.style.padding = 0;
+    img.style.verticalAlign = "baseline";
+
+    span.style.fontFamily = family;
+    span.style.fontSize = size;
+    span.style.margin = 0;
+    span.style.padding = 0;
+
+    span.appendChild(document.createTextNode(sampleText));
+    container.appendChild(span);
+    container.appendChild(img);
+    baseline = (img.offsetTop - span.offsetTop) + 1;
+
+    container.removeChild(span);
+    container.appendChild(document.createTextNode(sampleText));
+
+    container.style.lineHeight = "normal";
+    img.style.verticalAlign = "super";
+
+    middle = (img.offsetTop-container.offsetTop) + 1;
+
+    document.body.removeChild(container);
+
+    this.baseline = baseline;
+    this.lineWidth = 1;
+    this.middle = middle;
+}
+
+module.exports = Font;
+
+},{"./utils":26}],7:[function(_dereq_,module,exports){
+var Font = _dereq_('./font');
+
+function FontMetrics() {
+    this.data = {};
+}
+
+FontMetrics.prototype.getMetrics = function(family, size) {
+    if (this.data[family + "-" + size] === undefined) {
+        this.data[family + "-" + size] = new Font(family, size);
+    }
+    return this.data[family + "-" + size];
+};
+
+module.exports = FontMetrics;
+
+},{"./font":6}],8:[function(_dereq_,module,exports){
+var utils = _dereq_('./utils');
+var getBounds = utils.getBounds;
+var loadUrlDocument = _dereq_('./proxy').loadUrlDocument;
+
+function FrameContainer(container, sameOrigin, options) {
+    this.image = null;
+    this.src = container;
+    var self = this;
+    var bounds = getBounds(container);
+    this.promise = (!sameOrigin ? this.proxyLoad(options.proxy, bounds, options) : new Promise(function(resolve) {
+        if (container.contentWindow.document.URL === "about:blank" || container.contentWindow.document.documentElement == null) {
+            container.contentWindow.onload = container.onload = function() {
+                resolve(container);
+            };
+        } else {
+            resolve(container);
+        }
+    })).then(function(container) {
+        var html2canvas = _dereq_('./core');
+        return html2canvas(container.contentWindow.document.documentElement, {type: 'view', width: container.width, height: container.height, proxy: options.proxy, javascriptEnabled: options.javascriptEnabled, removeContainer: options.removeContainer, allowTaint: options.allowTaint, imageTimeout: options.imageTimeout / 2});
+    }).then(function(canvas) {
+        return self.image = canvas;
+    });
+}
+
+FrameContainer.prototype.proxyLoad = function(proxy, bounds, options) {
+    var container = this.src;
+    return loadUrlDocument(container.src, proxy, container.ownerDocument, bounds.width, bounds.height, options);
+};
+
+module.exports = FrameContainer;
+
+},{"./core":4,"./proxy":16,"./utils":26}],9:[function(_dereq_,module,exports){
+function GradientContainer(imageData) {
+    this.src = imageData.value;
+    this.colorStops = [];
+    this.type = null;
+    this.x0 = 0.5;
+    this.y0 = 0.5;
+    this.x1 = 0.5;
+    this.y1 = 0.5;
+    this.promise = Promise.resolve(true);
+}
+
+GradientContainer.TYPES = {
+    LINEAR: 1,
+    RADIAL: 2
+};
+
+// TODO: support hsl[a], negative %/length values
+// TODO: support <angle> (e.g. -?\d{1,3}(?:\.\d+)deg, etc. : https://developer.mozilla.org/docs/Web/CSS/angle )
+GradientContainer.REGEXP_COLORSTOP = /^\s*(rgba?\(\s*\d{1,3},\s*\d{1,3},\s*\d{1,3}(?:,\s*[0-9\.]+)?\s*\)|[a-z]{3,20}|#[a-f0-9]{3,6})(?:\s+(\d{1,3}(?:\.\d+)?)(%|px)?)?(?:\s|$)/i;
+
+module.exports = GradientContainer;
+
+},{}],10:[function(_dereq_,module,exports){
+function ImageContainer(src, cors) {
+    this.src = src;
+    this.image = new Image();
+    var self = this;
+    this.tainted = null;
+    this.transformMatrix = null;
+    this.promise = new Promise(function(resolve, reject) {
+        self.image.onload = resolve;
+        self.image.onerror = reject;
+        if (cors) {
+            self.image.crossOrigin = "anonymous";
+        }
+        self.image.src = src;
+        if (self.image.complete === true) {
+            resolve(self.image);
+        }
+    });
+}
+
+module.exports = ImageContainer;
+
+},{}],11:[function(_dereq_,module,exports){
+var log = _dereq_('./log');
+var ImageContainer = _dereq_('./imagecontainer');
+var DummyImageContainer = _dereq_('./dummyimagecontainer');
+var ProxyImageContainer = _dereq_('./proxyimagecontainer');
+var FrameContainer = _dereq_('./framecontainer');
+var SVGContainer = _dereq_('./svgcontainer');
+var SVGNodeContainer = _dereq_('./svgnodecontainer');
+var LinearGradientContainer = _dereq_('./lineargradientcontainer');
+var WebkitGradientContainer = _dereq_('./webkitgradientcontainer');
+var bind = _dereq_('./utils').bind;
+
+function ImageLoader(options, support) {
+    this.link = null;
+    this.options = options;
+    this.support = support;
+    this.origin = this.getOrigin(window.location.href);
+}
+
+ImageLoader.prototype.findImages = function(nodes) {
+    var images = [];
+    nodes.reduce(function(imageNodes, container) {
+        switch(container.node.nodeName) {
+        case "IMG":
+            return imageNodes.concat([{
+                args: [container.node.src],
+                method: "url"
+            }]);
+        case "svg":
+        case "IFRAME":
+            return imageNodes.concat([{
+                args: [container.node],
+                method: container.node.nodeName
+            }]);
+        }
+        return imageNodes;
+    }, []).forEach(this.addImage(images, this.loadImage), this);
+    return images;
+};
+
+ImageLoader.prototype.findBackgroundImage = function(images, container) {
+    container.parseBackgroundImages().filter(this.hasImageBackground).forEach(this.addImage(images, this.loadImage), this);
+    return images;
+};
+
+ImageLoader.prototype.addImage = function(images, callback) {
+    return function(newImage) {
+        newImage.args.forEach(function(image) {
+            if (!this.imageExists(images, image)) {
+                images.splice(0, 0, callback.call(this, newImage));
+                log('Added image #' + (images.length), typeof(image) === "string" ? image.substring(0, 100) : image);
+            }
+        }, this);
+    };
+};
+
+ImageLoader.prototype.hasImageBackground = function(imageData) {
+    return imageData.method !== "none";
+};
+
+ImageLoader.prototype.loadImage = function(imageData) {
+    if (imageData.method === "url") {
+        var src = imageData.args[0];
+        if (this.isSVG(src) && !this.support.svg && !this.options.allowTaint) {
+            return new SVGContainer(src);
+        } else if (src.match(/data:image\/.*;base64,/i)) {
+            return new ImageContainer(src.replace(/url\(['"]{0,}|['"]{0,}\)$/ig, ''), false);
+        } else if (this.isSameOrigin(src) || this.options.allowTaint === true || this.isSVG(src)) {
+            return new ImageContainer(src, false);
+        } else if (this.support.cors && !this.options.allowTaint && this.options.useCORS) {
+            return new ImageContainer(src, true);
+        } else if (this.options.proxy) {
+            return new ProxyImageContainer(src, this.options.proxy);
+        } else {
+            return new DummyImageContainer(src);
+        }
+    } else if (imageData.method === "linear-gradient") {
+        return new LinearGradientContainer(imageData);
+    } else if (imageData.method === "gradient") {
+        return new WebkitGradientContainer(imageData);
+    } else if (imageData.method === "svg") {
+        return new SVGNodeContainer(imageData.args[0], this.support.svg);
+    } else if (imageData.method === "IFRAME") {
+        return new FrameContainer(imageData.args[0], this.isSameOrigin(imageData.args[0].src), this.options);
+    } else {
+        return new DummyImageContainer(imageData);
+    }
+};
+
+ImageLoader.prototype.isSVG = function(src) {
+    return src.substring(src.length - 3).toLowerCase() === "svg" || SVGContainer.prototype.isInline(src);
+};
+
+ImageLoader.prototype.imageExists = function(images, src) {
+    return images.some(function(image) {
+        return image.src === src;
+    });
+};
+
+ImageLoader.prototype.isSameOrigin = function(url) {
+    return (this.getOrigin(url) === this.origin);
+};
+
+ImageLoader.prototype.getOrigin = function(url) {
+    var link = this.link || (this.link = document.createElement("a"));
+    link.href = url;
+    link.href = link.href; // IE9, LOL! - http://jsfiddle.net/niklasvh/2e48b/
+    return link.protocol + link.hostname + link.port;
+};
+
+ImageLoader.prototype.getPromise = function(container) {
+    return this.timeout(container, this.options.imageTimeout)['catch'](function() {
+        var dummy = new DummyImageContainer(container.src);
+        return dummy.promise.then(function(image) {
+            container.image = image;
+        });
+    });
+};
+
+ImageLoader.prototype.get = function(src) {
+    var found = null;
+    return this.images.some(function(img) {
+        return (found = img).src === src;
+    }) ? found : null;
+};
+
+ImageLoader.prototype.fetch = function(nodes) {
+    this.images = nodes.reduce(bind(this.findBackgroundImage, this), this.findImages(nodes));
+    this.images.forEach(function(image, index) {
+        image.promise.then(function() {
+            log("Succesfully loaded image #"+ (index+1), image);
+        }, function(e) {
+            log("Failed loading image #"+ (index+1), image, e);
+        });
+    });
+    this.ready = Promise.all(this.images.map(this.getPromise, this));
+    log("Finished searching images");
+    return this;
+};
+
+ImageLoader.prototype.timeout = function(container, timeout) {
+    var timer;
+    var promise = Promise.race([container.promise, new Promise(function(res, reject) {
+        timer = setTimeout(function() {
+            log("Timed out loading image", container);
+            reject(container);
+        }, timeout);
+    })]).then(function(container) {
+        clearTimeout(timer);
+        return container;
+    });
+    promise['catch'](function() {
+        clearTimeout(timer);
+    });
+    return promise;
+};
+
+module.exports = ImageLoader;
+
+},{"./dummyimagecontainer":5,"./framecontainer":8,"./imagecontainer":10,"./lineargradientcontainer":12,"./log":13,"./proxyimagecontainer":17,"./svgcontainer":23,"./svgnodecontainer":24,"./utils":26,"./webkitgradientcontainer":27}],12:[function(_dereq_,module,exports){
+var GradientContainer = _dereq_('./gradientcontainer');
+var Color = _dereq_('./color');
+
+function LinearGradientContainer(imageData) {
+    GradientContainer.apply(this, arguments);
+    this.type = GradientContainer.TYPES.LINEAR;
+
+    var hasDirection = LinearGradientContainer.REGEXP_DIRECTION.test( imageData.args[0] ) ||
+        !GradientContainer.REGEXP_COLORSTOP.test( imageData.args[0] );
+
+    if (hasDirection) {
+        imageData.args[0].split(/\s+/).reverse().forEach(function(position, index) {
+            switch(position) {
+            case "left":
+                this.x0 = 0;
+                this.x1 = 1;
+                break;
+            case "top":
+                this.y0 = 0;
+                this.y1 = 1;
+                break;
+            case "right":
+                this.x0 = 1;
+                this.x1 = 0;
+                break;
+            case "bottom":
+                this.y0 = 1;
+                this.y1 = 0;
+                break;
+            case "to":
+                var y0 = this.y0;
+                var x0 = this.x0;
+                this.y0 = this.y1;
+                this.x0 = this.x1;
+                this.x1 = x0;
+                this.y1 = y0;
+                break;
+            case "center":
+                break; // centered by default
+            // Firefox internally converts position keywords to percentages:
+            // http://www.w3.org/TR/2010/WD-CSS2-20101207/colors.html#propdef-background-position
+            default: // percentage or absolute length
+                // TODO: support absolute start point positions (e.g., use bounds to convert px to a ratio)
+                var ratio = parseFloat(position, 10) * 1e-2;
+                if (isNaN(ratio)) { // invalid or unhandled value
+                    break;
+                }
+                if (index === 0) {
+                    this.y0 = ratio;
+                    this.y1 = 1 - this.y0;
+                } else {
+                    this.x0 = ratio;
+                    this.x1 = 1 - this.x0;
+                }
+                break;
+            }
+        }, this);
+    } else {
+        this.y0 = 0;
+        this.y1 = 1;
+    }
+
+    this.colorStops = imageData.args.slice(hasDirection ? 1 : 0).map(function(colorStop) {
+        var colorStopMatch = colorStop.match(GradientContainer.REGEXP_COLORSTOP);
+        var value = +colorStopMatch[2];
+        var unit = value === 0 ? "%" : colorStopMatch[3]; // treat "0" as "0%"
+        return {
+            color: new Color(colorStopMatch[1]),
+            // TODO: support absolute stop positions (e.g., compute gradient line length & convert px to ratio)
+            stop: unit === "%" ? value / 100 : null
+        };
+    });
+
+    if (this.colorStops[0].stop === null) {
+        this.colorStops[0].stop = 0;
+    }
+
+    if (this.colorStops[this.colorStops.length - 1].stop === null) {
+        this.colorStops[this.colorStops.length - 1].stop = 1;
+    }
+
+    // calculates and fills-in explicit stop positions when omitted from rule
+    this.colorStops.forEach(function(colorStop, index) {
+        if (colorStop.stop === null) {
+            this.colorStops.slice(index).some(function(find, count) {
+                if (find.stop !== null) {
+                    colorStop.stop = ((find.stop - this.colorStops[index - 1].stop) / (count + 1)) + this.colorStops[index - 1].stop;
+                    return true;
+                } else {
+                    return false;
+                }
+            }, this);
+        }
+    }, this);
+}
+
+LinearGradientContainer.prototype = Object.create(GradientContainer.prototype);
+
+// TODO: support <angle> (e.g. -?\d{1,3}(?:\.\d+)deg, etc. : https://developer.mozilla.org/docs/Web/CSS/angle )
+LinearGradientContainer.REGEXP_DIRECTION = /^\s*(?:to|left|right|top|bottom|center|\d{1,3}(?:\.\d+)?%?)(?:\s|$)/i;
+
+module.exports = LinearGradientContainer;
+
+},{"./color":3,"./gradientcontainer":9}],13:[function(_dereq_,module,exports){
+var logger = function() {
+    if (logger.options.logging && window.console && window.console.log) {
+        Function.prototype.bind.call(window.console.log, (window.console)).apply(window.console, [(Date.now() - logger.options.start) + "ms", "html2canvas:"].concat([].slice.call(arguments, 0)));
+    }
+};
+
+logger.options = {logging: false};
+module.exports = logger;
+
+},{}],14:[function(_dereq_,module,exports){
+var Color = _dereq_('./color');
+var utils = _dereq_('./utils');
+var getBounds = utils.getBounds;
+var parseBackgrounds = utils.parseBackgrounds;
+var offsetBounds = utils.offsetBounds;
+
+function NodeContainer(node, parent) {
+    this.node = node;
+    this.parent = parent;
+    this.stack = null;
+    this.bounds = null;
+    this.borders = null;
+    this.clip = [];
+    this.backgroundClip = [];
+    this.offsetBounds = null;
+    this.visible = null;
+    this.computedStyles = null;
+    this.colors = {};
+    this.styles = {};
+    this.backgroundImages = null;
+    this.transformData = null;
+    this.transformMatrix = null;
+    this.inheritTransformMatrix = false;
+    this.isPseudoElement = false;
+    this.opacity = null;
+}
+
+NodeContainer.prototype.cloneTo = function(stack) {
+    stack.visible = this.visible;
+    stack.borders = this.borders;
+    stack.bounds = this.bounds;
+    stack.clip = this.clip;
+    stack.backgroundClip = this.backgroundClip;
+    stack.computedStyles = this.computedStyles;
+    stack.styles = this.styles;
+    stack.backgroundImages = this.backgroundImages;
+};
+
+NodeContainer.prototype.getOpacity = function() {
+    return this.opacity === null ? (this.opacity = this.cssFloat('opacity')) : this.opacity;
+};
+
+NodeContainer.prototype.assignStack = function(stack) {
+    this.stack = stack;
+    stack.children.push(this);
+};
+
+NodeContainer.prototype.isElementVisible = function() {
+    return this.node.nodeType === Node.TEXT_NODE ? this.parent.visible : (
+        this.css('display') !== "none" &&
+        this.css('visibility') !== "hidden" &&
+        !this.node.hasAttribute("data-html2canvas-ignore") &&
+        (this.node.nodeName !== "INPUT" || this.node.getAttribute("type") !== "hidden")
+    );
+};
+
+NodeContainer.prototype.css = function(attribute) {
+    if (!this.computedStyles) {
+        this.computedStyles = this.isPseudoElement ? this.parent.computedStyle(this.before ? ":before" : ":after") : this.computedStyle(null);
+    }
+
+    return this.styles[attribute] || (this.styles[attribute] = this.computedStyles[attribute]);
+};
+
+NodeContainer.prototype.prefixedCss = function(attribute) {
+    var prefixes = ["webkit", "moz", "ms", "o"];
+    var value = this.css(attribute);
+    if (value === undefined) {
+        prefixes.some(function(prefix) {
+            value = this.css(prefix + attribute.substr(0, 1).toUpperCase() + attribute.substr(1));
+            return value !== undefined;
+        }, this);
+    }
+    return value === undefined ? null : value;
+};
+
+NodeContainer.prototype.computedStyle = function(type) {
+    return this.node.ownerDocument.defaultView.getComputedStyle(this.node, type);
+};
+
+NodeContainer.prototype.cssInt = function(attribute) {
+    var value = parseInt(this.css(attribute), 10);
+    return (isNaN(value)) ? 0 : value; // borders in old IE are throwing 'medium' for demo.html
+};
+
+NodeContainer.prototype.color = function(attribute) {
+    return this.colors[attribute] || (this.colors[attribute] = new Color(this.css(attribute)));
+};
+
+NodeContainer.prototype.cssFloat = function(attribute) {
+    var value = parseFloat(this.css(attribute));
+    return (isNaN(value)) ? 0 : value;
+};
+
+NodeContainer.prototype.fontWeight = function() {
+    var weight = this.css("fontWeight");
+    switch(parseInt(weight, 10)){
+    case 401:
+        weight = "bold";
+        break;
+    case 400:
+        weight = "normal";
+        break;
+    }
+    return weight;
+};
+
+NodeContainer.prototype.parseClip = function() {
+    var matches = this.css('clip').match(this.CLIP);
+    if (matches) {
+        return {
+            top: parseInt(matches[1], 10),
+            right: parseInt(matches[2], 10),
+            bottom: parseInt(matches[3], 10),
+            left: parseInt(matches[4], 10)
+        };
+    }
+    return null;
+};
+
+NodeContainer.prototype.parseBackgroundImages = function() {
+    return this.backgroundImages || (this.backgroundImages = parseBackgrounds(this.css("backgroundImage")));
+};
+
+NodeContainer.prototype.cssList = function(property, index) {
+    var value = (this.css(property) || '').split(',');
+    value = value[index || 0] || value[0] || 'auto';
+    value = value.trim().split(' ');
+    if (value.length === 1) {
+        value = [value[0], isPercentage(value[0]) ? 'auto' : value[0]];
+    }
+    return value;
+};
+
+NodeContainer.prototype.parseBackgroundSize = function(bounds, image, index) {
+    var size = this.cssList("backgroundSize", index);
+    var width, height;
+
+    if (isPercentage(size[0])) {
+        width = bounds.width * parseFloat(size[0]) / 100;
+    } else if (/contain|cover/.test(size[0])) {
+        var targetRatio = bounds.width / bounds.height, currentRatio = image.width / image.height;
+        return (targetRatio < currentRatio ^ size[0] === 'contain') ?  {width: bounds.height * currentRatio, height: bounds.height} : {width: bounds.width, height: bounds.width / currentRatio};
+    } else {
+        width = parseInt(size[0], 10);
+    }
+
+    if (size[0] === 'auto' && size[1] === 'auto') {
+        height = image.height;
+    } else if (size[1] === 'auto') {
+        height = width / image.width * image.height;
+    } else if (isPercentage(size[1])) {
+        height =  bounds.height * parseFloat(size[1]) / 100;
+    } else {
+        height = parseInt(size[1], 10);
+    }
+
+    if (size[0] === 'auto') {
+        width = height / image.height * image.width;
+    }
+
+    return {width: width, height: height};
+};
+
+NodeContainer.prototype.parseBackgroundPosition = function(bounds, image, index, backgroundSize) {
+    var position = this.cssList('backgroundPosition', index);
+    var left, top;
+
+    if (isPercentage(position[0])){
+        left = (bounds.width - (backgroundSize || image).width) * (parseFloat(position[0]) / 100);
+    } else {
+        left = parseInt(position[0], 10);
+    }
+
+    if (position[1] === 'auto') {
+        top = left / image.width * image.height;
+    } else if (isPercentage(position[1])){
+        top =  (bounds.height - (backgroundSize || image).height) * parseFloat(position[1]) / 100;
+    } else {
+        top = parseInt(position[1], 10);
+    }
+
+    if (position[0] === 'auto') {
+        left = top / image.height * image.width;
+    }
+
+    return {left: left, top: top};
+};
+
+NodeContainer.prototype.parseBackgroundRepeat = function(index) {
+    return this.cssList("backgroundRepeat", index)[0];
+};
+
+NodeContainer.prototype.parseTextShadows = function() {
+    var textShadow = this.css("textShadow");
+    var results = [];
+
+    if (textShadow && textShadow !== 'none') {
+        var shadows = textShadow.match(this.TEXT_SHADOW_PROPERTY);
+        for (var i = 0; shadows && (i < shadows.length); i++) {
+            var s = shadows[i].match(this.TEXT_SHADOW_VALUES);
+            results.push({
+                color: new Color(s[0]),
+                offsetX: s[1] ? parseFloat(s[1].replace('px', '')) : 0,
+                offsetY: s[2] ? parseFloat(s[2].replace('px', '')) : 0,
+                blur: s[3] ? s[3].replace('px', '') : 0
+            });
+        }
+    }
+    return results;
+};
+
+NodeContainer.prototype.parseTransform = function() {
+    if (!this.transformData) {
+        if (this.hasTransform()) {
+            var offset = this.parseBounds();
+            var origin = this.prefixedCss("transformOrigin").split(" ").map(removePx).map(asFloat);
+            origin[0] += offset.left;
+            origin[1] += offset.top;
+            this.transformData = {
+                origin: origin,
+                matrix: this.parseTransformMatrix()
+            };
+        } else {
+            this.transformData = {
+                origin: [0, 0],
+                matrix: [1, 0, 0, 1, 0, 0]
+            };
+        }
+    }
+    return this.transformData;
+};
+
+NodeContainer.prototype.parseTransformMatrix = function() {
+    if (!this.transformMatrix) {
+        var transform = this.prefixedCss("transform");
+        var matrix = transform ? parseMatrix(transform.match(this.MATRIX_PROPERTY)) : null;
+        this.transformMatrix = matrix ? matrix : [1, 0, 0, 1, 0, 0];
+    }
+    return this.transformMatrix;
+};
+
+NodeContainer.prototype.parseBounds = function() {
+    return this.bounds || (this.bounds = this.hasTransform() ? offsetBounds(this.node) : getBounds(this.node));
+};
+
+NodeContainer.prototype.hasTransform = function() {
+    var parentTransformMatrix = (this.parent && this.parent.hasTransform()) ? this.parent.transformMatrix : null;
+
+    this.parseTransformMatrix();
+    if (parentTransformMatrix && !this.inheritTransformMatrix) {
+        if (this.transformMatrix.join(",") === "1,0,0,1,0,0") {
+            this.inheritTransformMatrix = true;
+            this.transformMatrix = parentTransformMatrix;
+        }
+    }
+    return this.transformMatrix.join(",") !== "1,0,0,1,0,0";
+};
+
+NodeContainer.prototype.getValue = function() {
+    var value = this.node.value || "";
+    if (this.node.tagName === "SELECT") {
+        value = selectionValue(this.node);
+    } else if (this.node.type === "password") {
+        value = Array(value.length + 1).join('\u2022'); // jshint ignore:line
+    }
+    return value.length === 0 ? (this.node.placeholder || "") : value;
+};
+
+NodeContainer.prototype.MATRIX_PROPERTY = /(matrix|matrix3d)\((.+)\)/;
+NodeContainer.prototype.TEXT_SHADOW_PROPERTY = /((rgba|rgb)\([^\)]+\)(\s-?\d+px){0,})/g;
+NodeContainer.prototype.TEXT_SHADOW_VALUES = /(-?\d+px)|(#.+)|(rgb\(.+\))|(rgba\(.+\))/g;
+NodeContainer.prototype.CLIP = /^rect\((\d+)px,? (\d+)px,? (\d+)px,? (\d+)px\)$/;
+
+function selectionValue(node) {
+    var option = node.options[node.selectedIndex || 0];
+    return option ? (option.text || "") : "";
+}
+
+function parseMatrix(match) {
+    if (match && match[1] === "matrix") {
+        return match[2].split(",").map(function(s) {
+            return parseFloat(s.trim());
+        });
+    } else if (match && match[1] === "matrix3d") {
+        var matrix3d = match[2].split(",").map(function(s) {
+          return parseFloat(s.trim());
+        });
+        return [matrix3d[0], matrix3d[1], matrix3d[4], matrix3d[5], matrix3d[12], matrix3d[13]];
+    }
+}
+
+function isPercentage(value) {
+    return value.toString().indexOf("%") !== -1;
+}
+
+function removePx(str) {
+    return str.replace("px", "");
+}
+
+function asFloat(str) {
+    return parseFloat(str);
+}
+
+module.exports = NodeContainer;
+
+},{"./color":3,"./utils":26}],15:[function(_dereq_,module,exports){
+var log = _dereq_('./log');
+var punycode = _dereq_('punycode');
+var NodeContainer = _dereq_('./nodecontainer');
+var TextContainer = _dereq_('./textcontainer');
+var PseudoElementContainer = _dereq_('./pseudoelementcontainer');
+var FontMetrics = _dereq_('./fontmetrics');
+var Color = _dereq_('./color');
+var StackingContext = _dereq_('./stackingcontext');
+var utils = _dereq_('./utils');
+var bind = utils.bind;
+var getBounds = utils.getBounds;
+var parseBackgrounds = utils.parseBackgrounds;
+var offsetBounds = utils.offsetBounds;
+
+function NodeParser(element, renderer, support, imageLoader, options) {
+    log("Starting NodeParser");
+    this.renderer = renderer;
+    this.options = options;
+    this.range = null;
+    this.support = support;
+    this.renderQueue = [];
+    this.stack = new StackingContext(true, 1, element.ownerDocument, null);
+    var parent = new NodeContainer(element, null);
+    if (options.background) {
+        renderer.rectangle(0, 0, renderer.width, renderer.height, new Color(options.background));
+    }
+    if (element === element.ownerDocument.documentElement) {
+        // http://www.w3.org/TR/css3-background/#special-backgrounds
+        var canvasBackground = new NodeContainer(parent.color('backgroundColor').isTransparent() ? element.ownerDocument.body : element.ownerDocument.documentElement, null);
+        renderer.rectangle(0, 0, renderer.width, renderer.height, canvasBackground.color('backgroundColor'));
+    }
+    parent.visibile = parent.isElementVisible();
+    this.createPseudoHideStyles(element.ownerDocument);
+    this.disableAnimations(element.ownerDocument);
+    this.nodes = flatten([parent].concat(this.getChildren(parent)).filter(function(container) {
+        return container.visible = container.isElementVisible();
+    }).map(this.getPseudoElements, this));
+    this.fontMetrics = new FontMetrics();
+    log("Fetched nodes, total:", this.nodes.length);
+    log("Calculate overflow clips");
+    this.calculateOverflowClips();
+    log("Start fetching images");
+    this.images = imageLoader.fetch(this.nodes.filter(isElement));
+    this.ready = this.images.ready.then(bind(function() {
+        log("Images loaded, starting parsing");
+        log("Creating stacking contexts");
+        this.createStackingContexts();
+        log("Sorting stacking contexts");
+        this.sortStackingContexts(this.stack);
+        this.parse(this.stack);
+        log("Render queue created with " + this.renderQueue.length + " items");
+        return new Promise(bind(function(resolve) {
+            if (!options.async) {
+                this.renderQueue.forEach(this.paint, this);
+                resolve();
+            } else if (typeof(options.async) === "function") {
+                options.async.call(this, this.renderQueue, resolve);
+            } else if (this.renderQueue.length > 0){
+                this.renderIndex = 0;
+                this.asyncRenderer(this.renderQueue, resolve);
+            } else {
+                resolve();
+            }
+        }, this));
+    }, this));
+}
+
+NodeParser.prototype.calculateOverflowClips = function() {
+    this.nodes.forEach(function(container) {
+        if (isElement(container)) {
+            if (isPseudoElement(container)) {
+                container.appendToDOM();
+            }
+            container.borders = this.parseBorders(container);
+            var clip = (container.css('overflow') === "hidden") ? [container.borders.clip] : [];
+            var cssClip = container.parseClip();
+            if (cssClip && ["absolute", "fixed"].indexOf(container.css('position')) !== -1) {
+                clip.push([["rect",
+                        container.bounds.left + cssClip.left,
+                        container.bounds.top + cssClip.top,
+                        cssClip.right - cssClip.left,
+                        cssClip.bottom - cssClip.top
+                ]]);
+            }
+            container.clip = hasParentClip(container) ? container.parent.clip.concat(clip) : clip;
+            container.backgroundClip = (container.css('overflow') !== "hidden") ? container.clip.concat([container.borders.clip]) : container.clip;
+            if (isPseudoElement(container)) {
+                container.cleanDOM();
+            }
+        } else if (isTextNode(container)) {
+            container.clip = hasParentClip(container) ? container.parent.clip : [];
+        }
+        if (!isPseudoElement(container)) {
+            container.bounds = null;
+        }
+    }, this);
+};
+
+function hasParentClip(container) {
+    return container.parent && container.parent.clip.length;
+}
+
+NodeParser.prototype.asyncRenderer = function(queue, resolve, asyncTimer) {
+    asyncTimer = asyncTimer || Date.now();
+    this.paint(queue[this.renderIndex++]);
+    if (queue.length === this.renderIndex) {
+        resolve();
+    } else if (asyncTimer + 20 > Date.now()) {
+        this.asyncRenderer(queue, resolve, asyncTimer);
+    } else {
+        setTimeout(bind(function() {
+            this.asyncRenderer(queue, resolve);
+        }, this), 0);
+    }
+};
+
+NodeParser.prototype.createPseudoHideStyles = function(document) {
+    this.createStyles(document, '.' + PseudoElementContainer.prototype.PSEUDO_HIDE_ELEMENT_CLASS_BEFORE + ':before { content: "" !important; display: none !important; }' +
+        '.' + PseudoElementContainer.prototype.PSEUDO_HIDE_ELEMENT_CLASS_AFTER + ':after { content: "" !important; display: none !important; }');
+};
+
+NodeParser.prototype.disableAnimations = function(document) {
+    this.createStyles(document, '* { -webkit-animation: none !important; -moz-animation: none !important; -o-animation: none !important; animation: none !important; ' +
+        '-webkit-transition: none !important; -moz-transition: none !important; -o-transition: none !important; transition: none !important;}');
+};
+
+NodeParser.prototype.createStyles = function(document, styles) {
+    var hidePseudoElements = document.createElement('style');
+    hidePseudoElements.innerHTML = styles;
+    document.body.appendChild(hidePseudoElements);
+};
+
+NodeParser.prototype.getPseudoElements = function(container) {
+    var nodes = [[container]];
+    if (container.node.nodeType === Node.ELEMENT_NODE) {
+        var before = this.getPseudoElement(container, ":before");
+        var after = this.getPseudoElement(container, ":after");
+
+        if (before) {
+            nodes.push(before);
+        }
+
+        if (after) {
+            nodes.push(after);
+        }
+    }
+    return flatten(nodes);
+};
+
+function toCamelCase(str) {
+    return str.replace(/(\-[a-z])/g, function(match){
+        return match.toUpperCase().replace('-','');
+    });
+}
+
+NodeParser.prototype.getPseudoElement = function(container, type) {
+    var style = container.computedStyle(type);
+    if(!style || !style.content || style.content === "none" || style.content === "-moz-alt-content" || style.display === "none") {
+        return null;
+    }
+
+    var content = stripQuotes(style.content);
+    var isImage = content.substr(0, 3) === 'url';
+    var pseudoNode = document.createElement(isImage ? 'img' : 'html2canvaspseudoelement');
+    var pseudoContainer = new PseudoElementContainer(pseudoNode, container, type);
+
+    for (var i = style.length-1; i >= 0; i--) {
+        var property = toCamelCase(style.item(i));
+        pseudoNode.style[property] = style[property];
+    }
+
+    pseudoNode.className = PseudoElementContainer.prototype.PSEUDO_HIDE_ELEMENT_CLASS_BEFORE + " " + PseudoElementContainer.prototype.PSEUDO_HIDE_ELEMENT_CLASS_AFTER;
+
+    if (isImage) {
+        pseudoNode.src = parseBackgrounds(content)[0].args[0];
+        return [pseudoContainer];
+    } else {
+        var text = document.createTextNode(content);
+        pseudoNode.appendChild(text);
+        return [pseudoContainer, new TextContainer(text, pseudoContainer)];
+    }
+};
+
+
+NodeParser.prototype.getChildren = function(parentContainer) {
+    return flatten([].filter.call(parentContainer.node.childNodes, renderableNode).map(function(node) {
+        var container = [node.nodeType === Node.TEXT_NODE ? new TextContainer(node, parentContainer) : new NodeContainer(node, parentContainer)].filter(nonIgnoredElement);
+        return node.nodeType === Node.ELEMENT_NODE && container.length && node.tagName !== "TEXTAREA" ? (container[0].isElementVisible() ? container.concat(this.getChildren(container[0])) : []) : container;
+    }, this));
+};
+
+NodeParser.prototype.newStackingContext = function(container, hasOwnStacking) {
+    var stack = new StackingContext(hasOwnStacking, container.getOpacity(), container.node, container.parent);
+    container.cloneTo(stack);
+    var parentStack = hasOwnStacking ? stack.getParentStack(this) : stack.parent.stack;
+    parentStack.contexts.push(stack);
+    container.stack = stack;
+};
+
+NodeParser.prototype.createStackingContexts = function() {
+    this.nodes.forEach(function(container) {
+        if (isElement(container) && (this.isRootElement(container) || hasOpacity(container) || isPositionedForStacking(container) || this.isBodyWithTransparentRoot(container) || container.hasTransform())) {
+            this.newStackingContext(container, true);
+        } else if (isElement(container) && ((isPositioned(container) && zIndex0(container)) || isInlineBlock(container) || isFloating(container))) {
+            this.newStackingContext(container, false);
+        } else {
+            container.assignStack(container.parent.stack);
+        }
+    }, this);
+};
+
+NodeParser.prototype.isBodyWithTransparentRoot = function(container) {
+    return container.node.nodeName === "BODY" && container.parent.color('backgroundColor').isTransparent();
+};
+
+NodeParser.prototype.isRootElement = function(container) {
+    return container.parent === null;
+};
+
+NodeParser.prototype.sortStackingContexts = function(stack) {
+    stack.contexts.sort(zIndexSort(stack.contexts.slice(0)));
+    stack.contexts.forEach(this.sortStackingContexts, this);
+};
+
+NodeParser.prototype.parseTextBounds = function(container) {
+    return function(text, index, textList) {
+        if (container.parent.css("textDecoration").substr(0, 4) !== "none" || text.trim().length !== 0) {
+            if (this.support.rangeBounds && !container.parent.hasTransform()) {
+                var offset = textList.slice(0, index).join("").length;
+                return this.getRangeBounds(container.node, offset, text.length);
+            } else if (container.node && typeof(container.node.data) === "string") {
+                var replacementNode = container.node.splitText(text.length);
+                var bounds = this.getWrapperBounds(container.node, container.parent.hasTransform());
+                container.node = replacementNode;
+                return bounds;
+            }
+        } else if(!this.support.rangeBounds || container.parent.hasTransform()){
+            container.node = container.node.splitText(text.length);
+        }
+        return {};
+    };
+};
+
+NodeParser.prototype.getWrapperBounds = function(node, transform) {
+    var wrapper = node.ownerDocument.createElement('html2canvaswrapper');
+    var parent = node.parentNode,
+        backupText = node.cloneNode(true);
+
+    wrapper.appendChild(node.cloneNode(true));
+    parent.replaceChild(wrapper, node);
+    var bounds = transform ? offsetBounds(wrapper) : getBounds(wrapper);
+    parent.replaceChild(backupText, wrapper);
+    return bounds;
+};
+
+NodeParser.prototype.getRangeBounds = function(node, offset, length) {
+    var range = this.range || (this.range = node.ownerDocument.createRange());
+    range.setStart(node, offset);
+    range.setEnd(node, offset + length);
+    return range.getBoundingClientRect();
+};
+
+function ClearTransform() {}
+
+NodeParser.prototype.parse = function(stack) {
+    // http://www.w3.org/TR/CSS21/visuren.html#z-index
+    var negativeZindex = stack.contexts.filter(negativeZIndex); // 2. the child stacking contexts with negative stack levels (most negative first).
+    var descendantElements = stack.children.filter(isElement);
+    var descendantNonFloats = descendantElements.filter(not(isFloating));
+    var nonInlineNonPositionedDescendants = descendantNonFloats.filter(not(isPositioned)).filter(not(inlineLevel)); // 3 the in-flow, non-inline-level, non-positioned descendants.
+    var nonPositionedFloats = descendantElements.filter(not(isPositioned)).filter(isFloating); // 4. the non-positioned floats.
+    var inFlow = descendantNonFloats.filter(not(isPositioned)).filter(inlineLevel); // 5. the in-flow, inline-level, non-positioned descendants, including inline tables and inline blocks.
+    var stackLevel0 = stack.contexts.concat(descendantNonFloats.filter(isPositioned)).filter(zIndex0); // 6. the child stacking contexts with stack level 0 and the positioned descendants with stack level 0.
+    var text = stack.children.filter(isTextNode).filter(hasText);
+    var positiveZindex = stack.contexts.filter(positiveZIndex); // 7. the child stacking contexts with positive stack levels (least positive first).
+    negativeZindex.concat(nonInlineNonPositionedDescendants).concat(nonPositionedFloats)
+        .concat(inFlow).concat(stackLevel0).concat(text).concat(positiveZindex).forEach(function(container) {
+            this.renderQueue.push(container);
+            if (isStackingContext(container)) {
+                this.parse(container);
+                this.renderQueue.push(new ClearTransform());
+            }
+        }, this);
+};
+
+NodeParser.prototype.paint = function(container) {
+    try {
+        if (container instanceof ClearTransform) {
+            this.renderer.ctx.restore();
+        } else if (isTextNode(container)) {
+            if (isPseudoElement(container.parent)) {
+                container.parent.appendToDOM();
+            }
+            this.paintText(container);
+            if (isPseudoElement(container.parent)) {
+                container.parent.cleanDOM();
+            }
+        } else {
+            this.paintNode(container);
+        }
+    } catch(e) {
+        log(e);
+        if (this.options.strict) {
+            throw e;
+        }
+    }
+};
+
+NodeParser.prototype.paintNode = function(container) {
+    if (isStackingContext(container)) {
+        this.renderer.setOpacity(container.opacity);
+        this.renderer.ctx.save();
+        if (container.hasTransform() && !container.inheritTransformMatrix) {
+            this.renderer.setTransform(container.parseTransform());
+        }
+    }
+
+    if (container.node.nodeName === "INPUT" && container.node.type === "checkbox") {
+        this.paintCheckbox(container);
+    } else if (container.node.nodeName === "INPUT" && container.node.type === "radio") {
+        this.paintRadio(container);
+    } else {
+        this.paintElement(container);
+    }
+};
+
+NodeParser.prototype.paintElement = function(container) {
+    var bounds = container.parseBounds();
+    this.renderer.clip(container.backgroundClip, function() {
+        this.renderer.renderBackground(container, bounds, container.borders.borders.map(getWidth));
+    }, this);
+
+    this.renderer.clip(container.clip, function() {
+        this.renderer.renderBorders(container.borders.borders);
+    }, this);
+
+    this.renderer.clip(container.backgroundClip, function() {
+        switch (container.node.nodeName) {
+        case "svg":
+        case "IFRAME":
+            var imgContainer = this.images.get(container.node);
+            if (imgContainer) {
+                this.renderer.renderImage(container, bounds, container.borders, imgContainer);
+            } else {
+                log("Error loading <" + container.node.nodeName + ">", container.node);
+            }
+            break;
+        case "IMG":
+            var imageContainer = this.images.get(container.node.src);
+            if (imageContainer) {
+                this.renderer.renderImage(container, bounds, container.borders, imageContainer);
+            } else {
+                log("Error loading <img>", container.node.src);
+            }
+            break;
+        case "CANVAS":
+            this.renderer.renderImage(container, bounds, container.borders, {image: container.node});
+            break;
+        case "SELECT":
+        case "INPUT":
+        case "TEXTAREA":
+            this.paintFormValue(container);
+            break;
+        }
+    }, this);
+};
+
+NodeParser.prototype.paintCheckbox = function(container) {
+    var b = container.parseBounds();
+
+    var size = Math.min(b.width, b.height);
+    var bounds = {width: size - 1, height: size - 1, top: b.top, left: b.left};
+    var r = [3, 3];
+    var radius = [r, r, r, r];
+    var borders = [1,1,1,1].map(function(w) {
+        return {color: new Color('#A5A5A5'), width: w};
+    });
+
+    var borderPoints = calculateCurvePoints(bounds, radius, borders);
+
+    this.renderer.clip(container.backgroundClip, function() {
+        this.renderer.rectangle(bounds.left + 1, bounds.top + 1, bounds.width - 2, bounds.height - 2, new Color("#DEDEDE"));
+        this.renderer.renderBorders(calculateBorders(borders, bounds, borderPoints, radius));
+        if (container.node.checked) {
+            this.renderer.font(new Color('#424242'), 'normal', 'normal', 'bold', (size - 3) + "px", 'arial');
+            this.renderer.text("\u2714", bounds.left + size / 6, bounds.top + size - 1);
+        }
+    }, this);
+};
+
+NodeParser.prototype.paintRadio = function(container) {
+    var bounds = container.parseBounds();
+
+    var size = Math.min(bounds.width, bounds.height) - 2;
+
+    this.renderer.clip(container.backgroundClip, function() {
+        this.renderer.circleStroke(bounds.left + 1, bounds.top + 1, size, new Color('#DEDEDE'), 1, new Color('#A5A5A5'));
+        if (container.node.checked) {
+            this.renderer.circle(Math.ceil(bounds.left + size / 4) + 1, Math.ceil(bounds.top + size / 4) + 1, Math.floor(size / 2), new Color('#424242'));
+        }
+    }, this);
+};
+
+NodeParser.prototype.paintFormValue = function(container) {
+    var value = container.getValue();
+    if (value.length > 0) {
+        var document = container.node.ownerDocument;
+        var wrapper = document.createElement('html2canvaswrapper');
+        var properties = ['lineHeight', 'textAlign', 'fontFamily', 'fontWeight', 'fontSize', 'color',
+            'paddingLeft', 'paddingTop', 'paddingRight', 'paddingBottom',
+            'width', 'height', 'borderLeftStyle', 'borderTopStyle', 'borderLeftWidth', 'borderTopWidth',
+            'boxSizing', 'whiteSpace', 'wordWrap'];
+
+        properties.forEach(function(property) {
+            try {
+                wrapper.style[property] = container.css(property);
+            } catch(e) {
+                // Older IE has issues with "border"
+                log("html2canvas: Parse: Exception caught in renderFormValue: " + e.message);
+            }
+        });
+        var bounds = container.parseBounds();
+        wrapper.style.position = "fixed";
+        wrapper.style.left = bounds.left + "px";
+        wrapper.style.top = bounds.top + "px";
+        wrapper.textContent = value;
+        document.body.appendChild(wrapper);
+        this.paintText(new TextContainer(wrapper.firstChild, container));
+        document.body.removeChild(wrapper);
+    }
+};
+
+NodeParser.prototype.paintText = function(container) {
+    container.applyTextTransform();
+    var characters = punycode.ucs2.decode(container.node.data);
+    var textList = (!this.options.letterRendering || noLetterSpacing(container)) && !hasUnicode(container.node.data) ? getWords(characters) : characters.map(function(character) {
+        return punycode.ucs2.encode([character]);
+    });
+
+    var weight = container.parent.fontWeight();
+    var size = container.parent.css('fontSize');
+    var family = container.parent.css('fontFamily');
+    var shadows = container.parent.parseTextShadows();
+
+    this.renderer.font(container.parent.color('color'), container.parent.css('fontStyle'), container.parent.css('fontVariant'), weight, size, family);
+    if (shadows.length) {
+        // TODO: support multiple text shadows
+        this.renderer.fontShadow(shadows[0].color, shadows[0].offsetX, shadows[0].offsetY, shadows[0].blur);
+    } else {
+        this.renderer.clearShadow();
+    }
+
+    this.renderer.clip(container.parent.clip, function() {
+        textList.map(this.parseTextBounds(container), this).forEach(function(bounds, index) {
+            if (bounds) {
+                this.renderer.text(textList[index], bounds.left, bounds.bottom);
+                this.renderTextDecoration(container.parent, bounds, this.fontMetrics.getMetrics(family, size));
+            }
+        }, this);
+    }, this);
+};
+
+NodeParser.prototype.renderTextDecoration = function(container, bounds, metrics) {
+    switch(container.css("textDecoration").split(" ")[0]) {
+    case "underline":
+        // Draws a line at the baseline of the font
+        // TODO As some browsers display the line as more than 1px if the font-size is big, need to take that into account both in position and size
+        this.renderer.rectangle(bounds.left, Math.round(bounds.top + metrics.baseline + metrics.lineWidth), bounds.width, 1, container.color("color"));
+        break;
+    case "overline":
+        this.renderer.rectangle(bounds.left, Math.round(bounds.top), bounds.width, 1, container.color("color"));
+        break;
+    case "line-through":
+        // TODO try and find exact position for line-through
+        this.renderer.rectangle(bounds.left, Math.ceil(bounds.top + metrics.middle + metrics.lineWidth), bounds.width, 1, container.color("color"));
+        break;
+    }
+};
+
+var borderColorTransforms = {
+    inset: [
+        ["darken", 0.60],
+        ["darken", 0.10],
+        ["darken", 0.10],
+        ["darken", 0.60]
+    ]
+};
+
+NodeParser.prototype.parseBorders = function(container) {
+    var nodeBounds = container.parseBounds();
+    var radius = getBorderRadiusData(container);
+    var borders = ["Top", "Right", "Bottom", "Left"].map(function(side, index) {
+        var style = container.css('border' + side + 'Style');
+        var color = container.color('border' + side + 'Color');
+        if (style === "inset" && color.isBlack()) {
+            color = new Color([255, 255, 255, color.a]); // this is wrong, but
+        }
+        var colorTransform = borderColorTransforms[style] ? borderColorTransforms[style][index] : null;
+        return {
+            width: container.cssInt('border' + side + 'Width'),
+            color: colorTransform ? color[colorTransform[0]](colorTransform[1]) : color,
+            args: null
+        };
+    });
+    var borderPoints = calculateCurvePoints(nodeBounds, radius, borders);
+
+    return {
+        clip: this.parseBackgroundClip(container, borderPoints, borders, radius, nodeBounds),
+        borders: calculateBorders(borders, nodeBounds, borderPoints, radius)
+    };
+};
+
+function calculateBorders(borders, nodeBounds, borderPoints, radius) {
+    return borders.map(function(border, borderSide) {
+        if (border.width > 0) {
+            var bx = nodeBounds.left;
+            var by = nodeBounds.top;
+            var bw = nodeBounds.width;
+            var bh = nodeBounds.height - (borders[2].width);
+
+            switch(borderSide) {
+            case 0:
+                // top border
+                bh = borders[0].width;
+                border.args = drawSide({
+                        c1: [bx, by],
+                        c2: [bx + bw, by],
+                        c3: [bx + bw - borders[1].width, by + bh],
+                        c4: [bx + borders[3].width, by + bh]
+                    }, radius[0], radius[1],
+                    borderPoints.topLeftOuter, borderPoints.topLeftInner, borderPoints.topRightOuter, borderPoints.topRightInner);
+                break;
+            case 1:
+                // right border
+                bx = nodeBounds.left + nodeBounds.width - (borders[1].width);
+                bw = borders[1].width;
+
+                border.args = drawSide({
+                        c1: [bx + bw, by],
+                        c2: [bx + bw, by + bh + borders[2].width],
+                        c3: [bx, by + bh],
+                        c4: [bx, by + borders[0].width]
+                    }, radius[1], radius[2],
+                    borderPoints.topRightOuter, borderPoints.topRightInner, borderPoints.bottomRightOuter, borderPoints.bottomRightInner);
+                break;
+            case 2:
+                // bottom border
+                by = (by + nodeBounds.height) - (borders[2].width);
+                bh = borders[2].width;
+                border.args = drawSide({
+                        c1: [bx + bw, by + bh],
+                        c2: [bx, by + bh],
+                        c3: [bx + borders[3].width, by],
+                        c4: [bx + bw - borders[3].width, by]
+                    }, radius[2], radius[3],
+                    borderPoints.bottomRightOuter, borderPoints.bottomRightInner, borderPoints.bottomLeftOuter, borderPoints.bottomLeftInner);
+                break;
+            case 3:
+                // left border
+                bw = borders[3].width;
+                border.args = drawSide({
+                        c1: [bx, by + bh + borders[2].width],
+                        c2: [bx, by],
+                        c3: [bx + bw, by + borders[0].width],
+                        c4: [bx + bw, by + bh]
+                    }, radius[3], radius[0],
+                    borderPoints.bottomLeftOuter, borderPoints.bottomLeftInner, borderPoints.topLeftOuter, borderPoints.topLeftInner);
+                break;
+            }
+        }
+        return border;
+    });
+}
+
+NodeParser.prototype.parseBackgroundClip = function(container, borderPoints, borders, radius, bounds) {
+    var backgroundClip = container.css('backgroundClip'),
+        borderArgs = [];
+
+    switch(backgroundClip) {
+    case "content-box":
+    case "padding-box":
+        parseCorner(borderArgs, radius[0], radius[1], borderPoints.topLeftInner, borderPoints.topRightInner, bounds.left + borders[3].width, bounds.top + borders[0].width);
+        parseCorner(borderArgs, radius[1], radius[2], borderPoints.topRightInner, borderPoints.bottomRightInner, bounds.left + bounds.width - borders[1].width, bounds.top + borders[0].width);
+        parseCorner(borderArgs, radius[2], radius[3], borderPoints.bottomRightInner, borderPoints.bottomLeftInner, bounds.left + bounds.width - borders[1].width, bounds.top + bounds.height - borders[2].width);
+        parseCorner(borderArgs, radius[3], radius[0], borderPoints.bottomLeftInner, borderPoints.topLeftInner, bounds.left + borders[3].width, bounds.top + bounds.height - borders[2].width);
+        break;
+
+    default:
+        parseCorner(borderArgs, radius[0], radius[1], borderPoints.topLeftOuter, borderPoints.topRightOuter, bounds.left, bounds.top);
+        parseCorner(borderArgs, radius[1], radius[2], borderPoints.topRightOuter, borderPoints.bottomRightOuter, bounds.left + bounds.width, bounds.top);
+        parseCorner(borderArgs, radius[2], radius[3], borderPoints.bottomRightOuter, borderPoints.bottomLeftOuter, bounds.left + bounds.width, bounds.top + bounds.height);
+        parseCorner(borderArgs, radius[3], radius[0], borderPoints.bottomLeftOuter, borderPoints.topLeftOuter, bounds.left, bounds.top + bounds.height);
+        break;
+    }
+
+    return borderArgs;
+};
+
+function getCurvePoints(x, y, r1, r2) {
+    var kappa = 4 * ((Math.sqrt(2) - 1) / 3);
+    var ox = (r1) * kappa, // control point offset horizontal
+        oy = (r2) * kappa, // control point offset vertical
+        xm = x + r1, // x-middle
+        ym = y + r2; // y-middle
+    return {
+        topLeft: bezierCurve({x: x, y: ym}, {x: x, y: ym - oy}, {x: xm - ox, y: y}, {x: xm, y: y}),
+        topRight: bezierCurve({x: x, y: y}, {x: x + ox,y: y}, {x: xm, y: ym - oy}, {x: xm, y: ym}),
+        bottomRight: bezierCurve({x: xm, y: y}, {x: xm, y: y + oy}, {x: x + ox, y: ym}, {x: x, y: ym}),
+        bottomLeft: bezierCurve({x: xm, y: ym}, {x: xm - ox, y: ym}, {x: x, y: y + oy}, {x: x, y:y})
+    };
+}
+
+function calculateCurvePoints(bounds, borderRadius, borders) {
+    var x = bounds.left,
+        y = bounds.top,
+        width = bounds.width,
+        height = bounds.height,
+
+        tlh = borderRadius[0][0] < width / 2 ? borderRadius[0][0] : width / 2,
+        tlv = borderRadius[0][1] < height / 2 ? borderRadius[0][1] : height / 2,
+        trh = borderRadius[1][0] < width / 2 ? borderRadius[1][0] : width / 2,
+        trv = borderRadius[1][1] < height / 2 ? borderRadius[1][1] : height / 2,
+        brh = borderRadius[2][0] < width / 2 ? borderRadius[2][0] : width / 2,
+        brv = borderRadius[2][1] < height / 2 ? borderRadius[2][1] : height / 2,
+        blh = borderRadius[3][0] < width / 2 ? borderRadius[3][0] : width / 2,
+        blv = borderRadius[3][1] < height / 2 ? borderRadius[3][1] : height / 2;
+
+    var topWidth = width - trh,
+        rightHeight = height - brv,
+        bottomWidth = width - brh,
+        leftHeight = height - blv;
+
+    return {
+        topLeftOuter: getCurvePoints(x, y, tlh, tlv).topLeft.subdivide(0.5),
+        topLeftInner: getCurvePoints(x + borders[3].width, y + borders[0].width, Math.max(0, tlh - borders[3].width), Math.max(0, tlv - borders[0].width)).topLeft.subdivide(0.5),
+        topRightOuter: getCurvePoints(x + topWidth, y, trh, trv).topRight.subdivide(0.5),
+        topRightInner: getCurvePoints(x + Math.min(topWidth, width + borders[3].width), y + borders[0].width, (topWidth > width + borders[3].width) ? 0 :trh - borders[3].width, trv - borders[0].width).topRight.subdivide(0.5),
+        bottomRightOuter: getCurvePoints(x + bottomWidth, y + rightHeight, brh, brv).bottomRight.subdivide(0.5),
+        bottomRightInner: getCurvePoints(x + Math.min(bottomWidth, width - borders[3].width), y + Math.min(rightHeight, height + borders[0].width), Math.max(0, brh - borders[1].width),  brv - borders[2].width).bottomRight.subdivide(0.5),
+        bottomLeftOuter: getCurvePoints(x, y + leftHeight, blh, blv).bottomLeft.subdivide(0.5),
+        bottomLeftInner: getCurvePoints(x + borders[3].width, y + leftHeight, Math.max(0, blh - borders[3].width), blv - borders[2].width).bottomLeft.subdivide(0.5)
+    };
+}
+
+function bezierCurve(start, startControl, endControl, end) {
+    var lerp = function (a, b, t) {
+        return {
+            x: a.x + (b.x - a.x) * t,
+            y: a.y + (b.y - a.y) * t
+        };
+    };
+
+    return {
+        start: start,
+        startControl: startControl,
+        endControl: endControl,
+        end: end,
+        subdivide: function(t) {
+            var ab = lerp(start, startControl, t),
+                bc = lerp(startControl, endControl, t),
+                cd = lerp(endControl, end, t),
+                abbc = lerp(ab, bc, t),
+                bccd = lerp(bc, cd, t),
+                dest = lerp(abbc, bccd, t);
+            return [bezierCurve(start, ab, abbc, dest), bezierCurve(dest, bccd, cd, end)];
+        },
+        curveTo: function(borderArgs) {
+            borderArgs.push(["bezierCurve", startControl.x, startControl.y, endControl.x, endControl.y, end.x, end.y]);
+        },
+        curveToReversed: function(borderArgs) {
+            borderArgs.push(["bezierCurve", endControl.x, endControl.y, startControl.x, startControl.y, start.x, start.y]);
+        }
+    };
+}
+
+function drawSide(borderData, radius1, radius2, outer1, inner1, outer2, inner2) {
+    var borderArgs = [];
+
+    if (radius1[0] > 0 || radius1[1] > 0) {
+        borderArgs.push(["line", outer1[1].start.x, outer1[1].start.y]);
+        outer1[1].curveTo(borderArgs);
+    } else {
+        borderArgs.push([ "line", borderData.c1[0], borderData.c1[1]]);
+    }
+
+    if (radius2[0] > 0 || radius2[1] > 0) {
+        borderArgs.push(["line", outer2[0].start.x, outer2[0].start.y]);
+        outer2[0].curveTo(borderArgs);
+        borderArgs.push(["line", inner2[0].end.x, inner2[0].end.y]);
+        inner2[0].curveToReversed(borderArgs);
+    } else {
+        borderArgs.push(["line", borderData.c2[0], borderData.c2[1]]);
+        borderArgs.push(["line", borderData.c3[0], borderData.c3[1]]);
+    }
+
+    if (radius1[0] > 0 || radius1[1] > 0) {
+        borderArgs.push(["line", inner1[1].end.x, inner1[1].end.y]);
+        inner1[1].curveToReversed(borderArgs);
+    } else {
+        borderArgs.push(["line", borderData.c4[0], borderData.c4[1]]);
+    }
+
+    return borderArgs;
+}
+
+function parseCorner(borderArgs, radius1, radius2, corner1, corner2, x, y) {
+    if (radius1[0] > 0 || radius1[1] > 0) {
+        borderArgs.push(["line", corner1[0].start.x, corner1[0].start.y]);
+        corner1[0].curveTo(borderArgs);
+        corner1[1].curveTo(borderArgs);
+    } else {
+        borderArgs.push(["line", x, y]);
+    }
+
+    if (radius2[0] > 0 || radius2[1] > 0) {
+        borderArgs.push(["line", corner2[0].start.x, corner2[0].start.y]);
+    }
+}
+
+function negativeZIndex(container) {
+    return container.cssInt("zIndex") < 0;
+}
+
+function positiveZIndex(container) {
+    return container.cssInt("zIndex") > 0;
+}
+
+function zIndex0(container) {
+    return container.cssInt("zIndex") === 0;
+}
+
+function inlineLevel(container) {
+    return ["inline", "inline-block", "inline-table"].indexOf(container.css("display")) !== -1;
+}
+
+function isStackingContext(container) {
+    return (container instanceof StackingContext);
+}
+
+function hasText(container) {
+    return container.node.data.trim().length > 0;
+}
+
+function noLetterSpacing(container) {
+    return (/^(normal|none|0px)$/.test(container.parent.css("letterSpacing")));
+}
+
+function getBorderRadiusData(container) {
+    return ["TopLeft", "TopRight", "BottomRight", "BottomLeft"].map(function(side) {
+        var value = container.css('border' + side + 'Radius');
+        var arr = value.split(" ");
+        if (arr.length <= 1) {
+            arr[1] = arr[0];
+        }
+        return arr.map(asInt);
+    });
+}
+
+function renderableNode(node) {
+    return (node.nodeType === Node.TEXT_NODE || node.nodeType === Node.ELEMENT_NODE);
+}
+
+function isPositionedForStacking(container) {
+    var position = container.css("position");
+    var zIndex = (["absolute", "relative", "fixed"].indexOf(position) !== -1) ? container.css("zIndex") : "auto";
+    return zIndex !== "auto";
+}
+
+function isPositioned(container) {
+    return container.css("position") !== "static";
+}
+
+function isFloating(container) {
+    return container.css("float") !== "none";
+}
+
+function isInlineBlock(container) {
+    return ["inline-block", "inline-table"].indexOf(container.css("display")) !== -1;
+}
+
+function not(callback) {
+    var context = this;
+    return function() {
+        return !callback.apply(context, arguments);
+    };
+}
+
+function isElement(container) {
+    return container.node.nodeType === Node.ELEMENT_NODE;
+}
+
+function isPseudoElement(container) {
+    return container.isPseudoElement === true;
+}
+
+function isTextNode(container) {
+    return container.node.nodeType === Node.TEXT_NODE;
+}
+
+function zIndexSort(contexts) {
+    return function(a, b) {
+        return (a.cssInt("zIndex") + (contexts.indexOf(a) / contexts.length)) - (b.cssInt("zIndex") + (contexts.indexOf(b) / contexts.length));
+    };
+}
+
+function hasOpacity(container) {
+    return container.getOpacity() < 1;
+}
+
+function asInt(value) {
+    return parseInt(value, 10);
+}
+
+function getWidth(border) {
+    return border.width;
+}
+
+function nonIgnoredElement(nodeContainer) {
+    return (nodeContainer.node.nodeType !== Node.ELEMENT_NODE || ["SCRIPT", "HEAD", "TITLE", "OBJECT", "BR", "OPTION"].indexOf(nodeContainer.node.nodeName) === -1);
+}
+
+function flatten(arrays) {
+    return [].concat.apply([], arrays);
+}
+
+function stripQuotes(content) {
+    var first = content.substr(0, 1);
+    return (first === content.substr(content.length - 1) && first.match(/'|"/)) ? content.substr(1, content.length - 2) : content;
+}
+
+function getWords(characters) {
+    var words = [], i = 0, onWordBoundary = false, word;
+    while(characters.length) {
+        if (isWordBoundary(characters[i]) === onWordBoundary) {
+            word = characters.splice(0, i);
+            if (word.length) {
+                words.push(punycode.ucs2.encode(word));
+            }
+            onWordBoundary =! onWordBoundary;
+            i = 0;
+        } else {
+            i++;
+        }
+
+        if (i >= characters.length) {
+            word = characters.splice(0, i);
+            if (word.length) {
+                words.push(punycode.ucs2.encode(word));
+            }
+        }
+    }
+    return words;
+}
+
+function isWordBoundary(characterCode) {
+    return [
+        32, // <space>
+        13, // \r
+        10, // \n
+        9, // \t
+        45 // -
+    ].indexOf(characterCode) !== -1;
+}
+
+function hasUnicode(string) {
+    return (/[^\u0000-\u00ff]/).test(string);
+}
+
+module.exports = NodeParser;
+
+},{"./color":3,"./fontmetrics":7,"./log":13,"./nodecontainer":14,"./pseudoelementcontainer":18,"./stackingcontext":21,"./textcontainer":25,"./utils":26,"punycode":1}],16:[function(_dereq_,module,exports){
+var XHR = _dereq_('./xhr');
+var utils = _dereq_('./utils');
+var log = _dereq_('./log');
+var createWindowClone = _dereq_('./clone');
+var decode64 = utils.decode64;
+
+function Proxy(src, proxyUrl, document) {
+    var supportsCORS = ('withCredentials' in new XMLHttpRequest());
+    if (!proxyUrl) {
+        return Promise.reject("No proxy configured");
+    }
+    var callback = createCallback(supportsCORS);
+    var url = createProxyUrl(proxyUrl, src, callback);
+
+    return supportsCORS ? XHR(url) : (jsonp(document, url, callback).then(function(response) {
+        return decode64(response.content);
+    }));
+}
+var proxyCount = 0;
+
+function ProxyURL(src, proxyUrl, document) {
+    var supportsCORSImage = ('crossOrigin' in new Image());
+    var callback = createCallback(supportsCORSImage);
+    var url = createProxyUrl(proxyUrl, src, callback);
+    return (supportsCORSImage ? Promise.resolve(url) : jsonp(document, url, callback).then(function(response) {
+        return "data:" + response.type + ";base64," + response.content;
+    }));
+}
+
+function jsonp(document, url, callback) {
+    return new Promise(function(resolve, reject) {
+        var s = document.createElement("script");
+        var cleanup = function() {
+            delete window.html2canvas.proxy[callback];
+            document.body.removeChild(s);
+        };
+        window.html2canvas.proxy[callback] = function(response) {
+            cleanup();
+            resolve(response);
+        };
+        s.src = url;
+        s.onerror = function(e) {
+            cleanup();
+            reject(e);
+        };
+        document.body.appendChild(s);
+    });
+}
+
+function createCallback(useCORS) {
+    return !useCORS ? "html2canvas_" + Date.now() + "_" + (++proxyCount) + "_" + Math.round(Math.random() * 100000) : "";
+}
+
+function createProxyUrl(proxyUrl, src, callback) {
+    return proxyUrl + "?url=" + encodeURIComponent(src) + (callback.length ? "&callback=html2canvas.proxy." + callback : "");
+}
+
+function documentFromHTML(src) {
+    return function(html) {
+        var parser = new DOMParser(), doc;
+        try {
+            doc = parser.parseFromString(html, "text/html");
+        } catch(e) {
+            log("DOMParser not supported, falling back to createHTMLDocument");
+            doc = document.implementation.createHTMLDocument("");
+            try {
+                doc.open();
+                doc.write(html);
+                doc.close();
+            } catch(ee) {
+                log("createHTMLDocument write not supported, falling back to document.body.innerHTML");
+                doc.body.innerHTML = html; // ie9 doesnt support writing to documentElement
+            }
+        }
+
+        var b = doc.querySelector("base");
+        if (!b || !b.href.host) {
+            var base = doc.createElement("base");
+            base.href = src;
+            doc.head.insertBefore(base, doc.head.firstChild);
+        }
+
+        return doc;
+    };
+}
+
+function loadUrlDocument(src, proxy, document, width, height, options) {
+    return new Proxy(src, proxy, window.document).then(documentFromHTML(src)).then(function(doc) {
+        return createWindowClone(doc, document, width, height, options, 0, 0);
+    });
+}
+
+exports.Proxy = Proxy;
+exports.ProxyURL = ProxyURL;
+exports.loadUrlDocument = loadUrlDocument;
+
+},{"./clone":2,"./log":13,"./utils":26,"./xhr":28}],17:[function(_dereq_,module,exports){
+var ProxyURL = _dereq_('./proxy').ProxyURL;
+
+function ProxyImageContainer(src, proxy) {
+    var link = document.createElement("a");
+    link.href = src;
+    src = link.href;
+    this.src = src;
+    this.image = new Image();
+    var self = this;
+    this.promise = new Promise(function(resolve, reject) {
+        self.image.crossOrigin = "Anonymous";
+        self.image.onload = resolve;
+        self.image.onerror = reject;
+
+        new ProxyURL(src, proxy, document).then(function(url) {
+            self.image.src = url;
+        })['catch'](reject);
+    });
+}
+
+module.exports = ProxyImageContainer;
+
+},{"./proxy":16}],18:[function(_dereq_,module,exports){
+var NodeContainer = _dereq_('./nodecontainer');
+
+function PseudoElementContainer(node, parent, type) {
+    NodeContainer.call(this, node, parent);
+    this.isPseudoElement = true;
+    this.before = type === ":before";
+}
+
+PseudoElementContainer.prototype.cloneTo = function(stack) {
+    PseudoElementContainer.prototype.cloneTo.call(this, stack);
+    stack.isPseudoElement = true;
+    stack.before = this.before;
+};
+
+PseudoElementContainer.prototype = Object.create(NodeContainer.prototype);
+
+PseudoElementContainer.prototype.appendToDOM = function() {
+    if (this.before) {
+        this.parent.node.insertBefore(this.node, this.parent.node.firstChild);
+    } else {
+        this.parent.node.appendChild(this.node);
+    }
+    this.parent.node.className += " " + this.getHideClass();
+};
+
+PseudoElementContainer.prototype.cleanDOM = function() {
+    this.node.parentNode.removeChild(this.node);
+    this.parent.node.className = this.parent.node.className.replace(this.getHideClass(), "");
+};
+
+PseudoElementContainer.prototype.getHideClass = function() {
+    return this["PSEUDO_HIDE_ELEMENT_CLASS_" + (this.before ? "BEFORE" : "AFTER")];
+};
+
+PseudoElementContainer.prototype.PSEUDO_HIDE_ELEMENT_CLASS_BEFORE = "___html2canvas___pseudoelement_before";
+PseudoElementContainer.prototype.PSEUDO_HIDE_ELEMENT_CLASS_AFTER = "___html2canvas___pseudoelement_after";
+
+module.exports = PseudoElementContainer;
+
+},{"./nodecontainer":14}],19:[function(_dereq_,module,exports){
+var log = _dereq_('./log');
+
+function Renderer(width, height, images, options, document) {
+    this.width = width;
+    this.height = height;
+    this.images = images;
+    this.options = options;
+    this.document = document;
+}
+
+Renderer.prototype.renderImage = function(container, bounds, borderData, imageContainer) {
+    var paddingLeft = container.cssInt('paddingLeft'),
+        paddingTop = container.cssInt('paddingTop'),
+        paddingRight = container.cssInt('paddingRight'),
+        paddingBottom = container.cssInt('paddingBottom'),
+        borders = borderData.borders;
+
+    var width = bounds.width - (borders[1].width + borders[3].width + paddingLeft + paddingRight);
+    var height = bounds.height - (borders[0].width + borders[2].width + paddingTop + paddingBottom);
+    this.drawImage(
+        imageContainer,
+        0,
+        0,
+        imageContainer.image.width || width,
+        imageContainer.image.height || height,
+        bounds.left + paddingLeft + borders[3].width,
+        bounds.top + paddingTop + borders[0].width,
+        width,
+        height
+    );
+};
+
+Renderer.prototype.renderBackground = function(container, bounds, borderData) {
+    if (bounds.height > 0 && bounds.width > 0) {
+        this.renderBackgroundColor(container, bounds);
+        this.renderBackgroundImage(container, bounds, borderData);
+    }
+};
+
+Renderer.prototype.renderBackgroundColor = function(container, bounds) {
+    var color = container.color("backgroundColor");
+    if (!color.isTransparent()) {
+        this.rectangle(bounds.left, bounds.top, bounds.width, bounds.height, color);
+    }
+};
+
+Renderer.prototype.renderBorders = function(borders) {
+    borders.forEach(this.renderBorder, this);
+};
+
+Renderer.prototype.renderBorder = function(data) {
+    if (!data.color.isTransparent() && data.args !== null) {
+        this.drawShape(data.args, data.color);
+    }
+};
+
+Renderer.prototype.renderBackgroundImage = function(container, bounds, borderData) {
+    var backgroundImages = container.parseBackgroundImages();
+    backgroundImages.reverse().forEach(function(backgroundImage, index, arr) {
+        switch(backgroundImage.method) {
+        case "url":
+            var image = this.images.get(backgroundImage.args[0]);
+            if (image) {
+                this.renderBackgroundRepeating(container, bounds, image, arr.length - (index+1), borderData);
+            } else {
+                log("Error loading background-image", backgroundImage.args[0]);
+            }
+            break;
+        case "linear-gradient":
+        case "gradient":
+            var gradientImage = this.images.get(backgroundImage.value);
+            if (gradientImage) {
+                this.renderBackgroundGradient(gradientImage, bounds, borderData);
+            } else {
+                log("Error loading background-image", backgroundImage.args[0]);
+            }
+            break;
+        case "none":
+            break;
+        default:
+            log("Unknown background-image type", backgroundImage.args[0]);
+        }
+    }, this);
+};
+
+Renderer.prototype.renderBackgroundRepeating = function(container, bounds, imageContainer, index, borderData) {
+    var size = container.parseBackgroundSize(bounds, imageContainer.image, index);
+    var position = container.parseBackgroundPosition(bounds, imageContainer.image, index, size);
+    var repeat = container.parseBackgroundRepeat(index);
+
+    if (container.transformMatrix.join(",") !== "1,0,0,1,0,0") {
+        imageContainer.transformMatrix = container.transformMatrix;
+    }
+    switch (repeat) {
+    case "repeat-x":
+    case "repeat no-repeat":
+        this.backgroundRepeatShape(imageContainer, position, size, bounds, bounds.left + borderData[3], bounds.top + position.top + borderData[0], 99999, size.height, borderData);
+        break;
+    case "repeat-y":
+    case "no-repeat repeat":
+        this.backgroundRepeatShape(imageContainer, position, size, bounds, bounds.left + position.left + borderData[3], bounds.top + borderData[0], size.width, 99999, borderData);
+        break;
+    case "no-repeat":
+        this.backgroundRepeatShape(imageContainer, position, size, bounds, bounds.left + position.left + borderData[3], bounds.top + position.top + borderData[0], size.width, size.height, borderData);
+        break;
+    default:
+        this.renderBackgroundRepeat(imageContainer, position, size, {top: bounds.top, left: bounds.left}, borderData[3], borderData[0]);
+        break;
+    }
+};
+
+module.exports = Renderer;
+
+},{"./log":13}],20:[function(_dereq_,module,exports){
+var Renderer = _dereq_('../renderer');
+var LinearGradientContainer = _dereq_('../lineargradientcontainer');
+var log = _dereq_('../log');
+
+function CanvasRenderer(width, height) {
+    Renderer.apply(this, arguments);
+    this.canvas = this.options.canvas || this.document.createElement("canvas");
+    if (!this.options.canvas) {
+        this.canvas.width = width;
+        this.canvas.height = height;
+    }
+    this.ctx = this.canvas.getContext("2d");
+    this.taintCtx = this.document.createElement("canvas").getContext("2d");
+    this.ctx.textBaseline = "bottom";
+    this.variables = {};
+    log("Initialized CanvasRenderer with size", width, "x", height);
+}
+
+CanvasRenderer.prototype = Object.create(Renderer.prototype);
+
+CanvasRenderer.prototype.setFillStyle = function(fillStyle) {
+    this.ctx.fillStyle = typeof(fillStyle) === "object" && !!fillStyle.isColor ? fillStyle.toString() : fillStyle;
+    return this.ctx;
+};
+
+CanvasRenderer.prototype.rectangle = function(left, top, width, height, color) {
+    this.setFillStyle(color).fillRect(left, top, width, height);
+};
+
+CanvasRenderer.prototype.circle = function(left, top, size, color) {
+    this.setFillStyle(color);
+    this.ctx.beginPath();
+    this.ctx.arc(left + size / 2, top + size / 2, size / 2, 0, Math.PI*2, true);
+    this.ctx.closePath();
+    this.ctx.fill();
+};
+
+CanvasRenderer.prototype.circleStroke = function(left, top, size, color, stroke, strokeColor) {
+    this.circle(left, top, size, color);
+    this.ctx.strokeStyle = strokeColor.toString();
+    this.ctx.stroke();
+};
+
+CanvasRenderer.prototype.drawShape = function(shape, color) {
+    this.shape(shape);
+    this.setFillStyle(color).fill();
+};
+
+CanvasRenderer.prototype.taints = function(imageContainer) {
+    if (imageContainer.tainted === null) {
+        this.taintCtx.drawImage(imageContainer.image, 0, 0);
+        try {
+            this.taintCtx.getImageData(0, 0, 1, 1);
+            imageContainer.tainted = false;
+        } catch(e) {
+            this.taintCtx = document.createElement("canvas").getContext("2d");
+            imageContainer.tainted = true;
+        }
+    }
+
+    return imageContainer.tainted;
+};
+
+CanvasRenderer.prototype.drawImage = function(imageContainer, sx, sy, sw, sh, dx, dy, dw, dh) {
+    if (!this.taints(imageContainer) || this.options.allowTaint) {
+        this.ctx.drawImage(imageContainer.image, sx, sy, sw, sh, dx, dy, dw, dh);
+    }
+};
+
+CanvasRenderer.prototype.clip = function(shapes, callback, context, matrix) {
+    this.ctx.save();
+    if (matrix !== undefined) {
+        shapes.filter(hasEntries).forEach(function(shape) {
+            this.shape(shape).clip();
+        }, this);
+    }
+    callback.call(context);
+    this.ctx.restore();
+};
+
+CanvasRenderer.prototype.shape = function(shape) {
+    this.ctx.beginPath();
+    shape.forEach(function(point, index) {
+        if (point[0] === "rect") {
+            this.ctx.rect.apply(this.ctx, point.slice(1));
+        } else {
+            this.ctx[(index === 0) ? "moveTo" : point[0] + "To" ].apply(this.ctx, point.slice(1));
+        }
+    }, this);
+    this.ctx.closePath();
+    return this.ctx;
+};
+
+CanvasRenderer.prototype.font = function(color, style, variant, weight, size, family) {
+    this.setFillStyle(color).font = [style, variant, weight, size, family].join(" ").split(",")[0];
+};
+
+CanvasRenderer.prototype.fontShadow = function(color, offsetX, offsetY, blur) {
+    this.setVariable("shadowColor", color.toString())
+        .setVariable("shadowOffsetY", offsetX)
+        .setVariable("shadowOffsetX", offsetY)
+        .setVariable("shadowBlur", blur);
+};
+
+CanvasRenderer.prototype.clearShadow = function() {
+    this.setVariable("shadowColor", "rgba(0,0,0,0)");
+};
+
+CanvasRenderer.prototype.setOpacity = function(opacity) {
+    this.ctx.globalAlpha = opacity;
+};
+
+CanvasRenderer.prototype.setTransform = function(transform) {
+    this.ctx.translate(transform.origin[0], transform.origin[1]);
+    this.ctx.transform.apply(this.ctx, transform.matrix);
+    this.ctx.translate(-transform.origin[0], -transform.origin[1]);
+};
+
+CanvasRenderer.prototype.setVariable = function(property, value) {
+    if (this.variables[property] !== value) {
+        this.variables[property] = this.ctx[property] = value;
+    }
+
+    return this;
+};
+
+CanvasRenderer.prototype.text = function(text, left, bottom) {
+    this.ctx.fillText(text, left, bottom);
+};
+
+CanvasRenderer.prototype.backgroundRepeatShape = function(imageContainer, backgroundPosition, size, bounds, left, top, width, height, borderData) {
+    var shape = [
+        ["line", Math.round(left), Math.round(top)],
+        ["line", Math.round(left + width), Math.round(top)],
+        ["line", Math.round(left + width), Math.round(height + top)],
+        ["line", Math.round(left), Math.round(height + top)]
+    ];
+    this.clip([shape], function() {
+        this.renderBackgroundRepeat(imageContainer, backgroundPosition, size, bounds, borderData[3], borderData[0]);
+    }, this, imageContainer.transformMatrix);
+};
+
+CanvasRenderer.prototype.renderBackgroundRepeat = function(imageContainer, backgroundPosition, size, bounds, borderLeft, borderTop) {
+    var offsetX = Math.round(bounds.left + backgroundPosition.left + borderLeft), offsetY = Math.round(bounds.top + backgroundPosition.top + borderTop);
+
+    this.setFillStyle(this.ctx.createPattern(this.resizeImage(imageContainer, size), "repeat"));
+    this.ctx.translate(offsetX, offsetY);
+    this.ctx.fill();
+    this.ctx.translate(-offsetX, -offsetY);
+};
+
+CanvasRenderer.prototype.renderBackgroundGradient = function(gradientImage, bounds) {
+    if (gradientImage instanceof LinearGradientContainer) {
+        var gradient = this.ctx.createLinearGradient(
+            bounds.left + bounds.width * gradientImage.x0,
+            bounds.top + bounds.height * gradientImage.y0,
+            bounds.left +  bounds.width * gradientImage.x1,
+            bounds.top +  bounds.height * gradientImage.y1);
+        gradientImage.colorStops.forEach(function(colorStop) {
+            gradient.addColorStop(colorStop.stop, colorStop.color.toString());
+        });
+        this.rectangle(bounds.left, bounds.top, bounds.width, bounds.height, gradient);
+    }
+};
+
+CanvasRenderer.prototype.resizeImage = function(imageContainer, size) {
+    var image = imageContainer.image;
+    if(image.width === size.width && image.height === size.height) {
+        return image;
+    }
+
+    var ctx, canvas = document.createElement('canvas');
+    canvas.width = size.width;
+    canvas.height = size.height;
+    ctx = canvas.getContext("2d");
+    ctx.drawImage(image, 0, 0, image.width, image.height, 0, 0, size.width, size.height );
+    return canvas;
+};
+
+function hasEntries(array) {
+    return array.length > 0;
+}
+
+module.exports = CanvasRenderer;
+
+},{"../lineargradientcontainer":12,"../log":13,"../renderer":19}],21:[function(_dereq_,module,exports){
+var NodeContainer = _dereq_('./nodecontainer');
+
+function StackingContext(hasOwnStacking, opacity, element, parent) {
+    NodeContainer.call(this, element, parent);
+    this.ownStacking = hasOwnStacking;
+    this.contexts = [];
+    this.children = [];
+    this.opacity = (this.parent ? this.parent.stack.opacity : 1) * opacity;
+}
+
+StackingContext.prototype = Object.create(NodeContainer.prototype);
+
+StackingContext.prototype.getParentStack = function(context) {
+    var parentStack = (this.parent) ? this.parent.stack : null;
+    return parentStack ? (parentStack.ownStacking ? parentStack : parentStack.getParentStack(context)) : context.stack;
+};
+
+module.exports = StackingContext;
+
+},{"./nodecontainer":14}],22:[function(_dereq_,module,exports){
+function Support(document) {
+    this.rangeBounds = this.testRangeBounds(document);
+    this.cors = this.testCORS();
+    this.svg = this.testSVG();
+}
+
+Support.prototype.testRangeBounds = function(document) {
+    var range, testElement, rangeBounds, rangeHeight, support = false;
+
+    if (document.createRange) {
+        range = document.createRange();
+        if (range.getBoundingClientRect) {
+            testElement = document.createElement('boundtest');
+            testElement.style.height = "123px";
+            testElement.style.display = "block";
+            document.body.appendChild(testElement);
+
+            range.selectNode(testElement);
+            rangeBounds = range.getBoundingClientRect();
+            rangeHeight = rangeBounds.height;
+
+            if (rangeHeight === 123) {
+                support = true;
+            }
+            document.body.removeChild(testElement);
+        }
+    }
+
+    return support;
+};
+
+Support.prototype.testCORS = function() {
+    return typeof((new Image()).crossOrigin) !== "undefined";
+};
+
+Support.prototype.testSVG = function() {
+    var img = new Image();
+    var canvas = document.createElement("canvas");
+    var ctx =  canvas.getContext("2d");
+    img.src = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'></svg>";
+
+    try {
+        ctx.drawImage(img, 0, 0);
+        canvas.toDataURL();
+    } catch(e) {
+        return false;
+    }
+    return true;
+};
+
+module.exports = Support;
+
+},{}],23:[function(_dereq_,module,exports){
+var XHR = _dereq_('./xhr');
+var decode64 = _dereq_('./utils').decode64;
+
+function SVGContainer(src) {
+    this.src = src;
+    this.image = null;
+    var self = this;
+
+    this.promise = this.hasFabric().then(function() {
+        return (self.isInline(src) ? Promise.resolve(self.inlineFormatting(src)) : XHR(src));
+    }).then(function(svg) {
+        return new Promise(function(resolve) {
+            window.html2canvas.svg.fabric.loadSVGFromString(svg, self.createCanvas.call(self, resolve));
+        });
+    });
+}
+
+SVGContainer.prototype.hasFabric = function() {
+    return !window.html2canvas.svg || !window.html2canvas.svg.fabric ? Promise.reject(new Error("html2canvas.svg.js is not loaded, cannot render svg")) : Promise.resolve();
+};
+
+SVGContainer.prototype.inlineFormatting = function(src) {
+    return (/^data:image\/svg\+xml;base64,/.test(src)) ? this.decode64(this.removeContentType(src)) : this.removeContentType(src);
+};
+
+SVGContainer.prototype.removeContentType = function(src) {
+    return src.replace(/^data:image\/svg\+xml(;base64)?,/,'');
+};
+
+SVGContainer.prototype.isInline = function(src) {
+    return (/^data:image\/svg\+xml/i.test(src));
+};
+
+SVGContainer.prototype.createCanvas = function(resolve) {
+    var self = this;
+    return function (objects, options) {
+        var canvas = new window.html2canvas.svg.fabric.StaticCanvas('c');
+        self.image = canvas.lowerCanvasEl;
+        canvas
+            .setWidth(options.width)
+            .setHeight(options.height)
+            .add(window.html2canvas.svg.fabric.util.groupSVGElements(objects, options))
+            .renderAll();
+        resolve(canvas.lowerCanvasEl);
+    };
+};
+
+SVGContainer.prototype.decode64 = function(str) {
+    return (typeof(window.atob) === "function") ? window.atob(str) : decode64(str);
+};
+
+module.exports = SVGContainer;
+
+},{"./utils":26,"./xhr":28}],24:[function(_dereq_,module,exports){
+var SVGContainer = _dereq_('./svgcontainer');
+
+function SVGNodeContainer(node, _native) {
+    this.src = node;
+    this.image = null;
+    var self = this;
+
+    this.promise = _native ? new Promise(function(resolve, reject) {
+        self.image = new Image();
+        self.image.onload = resolve;
+        self.image.onerror = reject;
+        self.image.src = "data:image/svg+xml," + (new XMLSerializer()).serializeToString(node);
+        if (self.image.complete === true) {
+            resolve(self.image);
+        }
+    }) : this.hasFabric().then(function() {
+        return new Promise(function(resolve) {
+            window.html2canvas.svg.fabric.parseSVGDocument(node, self.createCanvas.call(self, resolve));
+        });
+    });
+}
+
+SVGNodeContainer.prototype = Object.create(SVGContainer.prototype);
+
+module.exports = SVGNodeContainer;
+
+},{"./svgcontainer":23}],25:[function(_dereq_,module,exports){
+var NodeContainer = _dereq_('./nodecontainer');
+
+function TextContainer(node, parent) {
+    NodeContainer.call(this, node, parent);
+}
+
+TextContainer.prototype = Object.create(NodeContainer.prototype);
+
+TextContainer.prototype.applyTextTransform = function() {
+    this.node.data = this.transform(this.parent.css("textTransform"));
+};
+
+TextContainer.prototype.transform = function(transform) {
+    var text = this.node.data;
+    switch(transform){
+        case "lowercase":
+            return text.toLowerCase();
+        case "capitalize":
+            return text.replace(/(^|\s|:|-|\(|\))([a-z])/g, capitalize);
+        case "uppercase":
+            return text.toUpperCase();
+        default:
+            return text;
+    }
+};
+
+function capitalize(m, p1, p2) {
+    if (m.length > 0) {
+        return p1 + p2.toUpperCase();
+    }
+}
+
+module.exports = TextContainer;
+
+},{"./nodecontainer":14}],26:[function(_dereq_,module,exports){
+exports.smallImage = function smallImage() {
+    return "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+};
+
+exports.bind = function(callback, context) {
+    return function() {
+        return callback.apply(context, arguments);
+    };
+};
+
+/*
+ * base64-arraybuffer
+ * https://github.com/niklasvh/base64-arraybuffer
+ *
+ * Copyright (c) 2012 Niklas von Hertzen
+ * Licensed under the MIT license.
+ */
+
+exports.decode64 = function(base64) {
+    var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    var len = base64.length, i, encoded1, encoded2, encoded3, encoded4, byte1, byte2, byte3;
+
+    var output = "";
+
+    for (i = 0; i < len; i+=4) {
+        encoded1 = chars.indexOf(base64[i]);
+        encoded2 = chars.indexOf(base64[i+1]);
+        encoded3 = chars.indexOf(base64[i+2]);
+        encoded4 = chars.indexOf(base64[i+3]);
+
+        byte1 = (encoded1 << 2) | (encoded2 >> 4);
+        byte2 = ((encoded2 & 15) << 4) | (encoded3 >> 2);
+        byte3 = ((encoded3 & 3) << 6) | encoded4;
+        if (encoded3 === 64) {
+            output += String.fromCharCode(byte1);
+        } else if (encoded4 === 64 || encoded4 === -1) {
+            output += String.fromCharCode(byte1, byte2);
+        } else{
+            output += String.fromCharCode(byte1, byte2, byte3);
+        }
+    }
+
+    return output;
+};
+
+exports.getBounds = function(node) {
+    if (node.getBoundingClientRect) {
+        var clientRect = node.getBoundingClientRect();
+        var width = node.offsetWidth == null ? clientRect.width : node.offsetWidth;
+        return {
+            top: clientRect.top,
+            bottom: clientRect.bottom || (clientRect.top + clientRect.height),
+            right: clientRect.left + width,
+            left: clientRect.left,
+            width:  width,
+            height: node.offsetHeight == null ? clientRect.height : node.offsetHeight
+        };
+    }
+    return {};
+};
+
+exports.offsetBounds = function(node) {
+    var parent = node.offsetParent ? exports.offsetBounds(node.offsetParent) : {top: 0, left: 0};
+
+    return {
+        top: node.offsetTop + parent.top,
+        bottom: node.offsetTop + node.offsetHeight + parent.top,
+        right: node.offsetLeft + parent.left + node.offsetWidth,
+        left: node.offsetLeft + parent.left,
+        width: node.offsetWidth,
+        height: node.offsetHeight
+    };
+};
+
+exports.parseBackgrounds = function(backgroundImage) {
+    var whitespace = ' \r\n\t',
+        method, definition, prefix, prefix_i, block, results = [],
+        mode = 0, numParen = 0, quote, args;
+    var appendResult = function() {
+        if(method) {
+            if (definition.substr(0, 1) === '"') {
+                definition = definition.substr(1, definition.length - 2);
+            }
+            if (definition) {
+                args.push(definition);
+            }
+            if (method.substr(0, 1) === '-' && (prefix_i = method.indexOf('-', 1 ) + 1) > 0) {
+                prefix = method.substr(0, prefix_i);
+                method = method.substr(prefix_i);
+            }
+            results.push({
+                prefix: prefix,
+                method: method.toLowerCase(),
+                value: block,
+                args: args,
+                image: null
+            });
+        }
+        args = [];
+        method = prefix = definition = block = '';
+    };
+    args = [];
+    method = prefix = definition = block = '';
+    backgroundImage.split("").forEach(function(c) {
+        if (mode === 0 && whitespace.indexOf(c) > -1) {
+            return;
+        }
+        switch(c) {
+        case '"':
+            if(!quote) {
+                quote = c;
+            } else if(quote === c) {
+                quote = null;
+            }
+            break;
+        case '(':
+            if(quote) {
+                break;
+            } else if(mode === 0) {
+                mode = 1;
+                block += c;
+                return;
+            } else {
+                numParen++;
+            }
+            break;
+        case ')':
+            if (quote) {
+                break;
+            } else if(mode === 1) {
+                if(numParen === 0) {
+                    mode = 0;
+                    block += c;
+                    appendResult();
+                    return;
+                } else {
+                    numParen--;
+                }
+            }
+            break;
+
+        case ',':
+            if (quote) {
+                break;
+            } else if(mode === 0) {
+                appendResult();
+                return;
+            } else if (mode === 1) {
+                if (numParen === 0 && !method.match(/^url$/i)) {
+                    args.push(definition);
+                    definition = '';
+                    block += c;
+                    return;
+                }
+            }
+            break;
+        }
+
+        block += c;
+        if (mode === 0) {
+            method += c;
+        } else {
+            definition += c;
+        }
+    });
+
+    appendResult();
+    return results;
+};
+
+},{}],27:[function(_dereq_,module,exports){
+var GradientContainer = _dereq_('./gradientcontainer');
+
+function WebkitGradientContainer(imageData) {
+    GradientContainer.apply(this, arguments);
+    this.type = imageData.args[0] === "linear" ? GradientContainer.TYPES.LINEAR : GradientContainer.TYPES.RADIAL;
+}
+
+WebkitGradientContainer.prototype = Object.create(GradientContainer.prototype);
+
+module.exports = WebkitGradientContainer;
+
+},{"./gradientcontainer":9}],28:[function(_dereq_,module,exports){
+function XHR(url) {
+    return new Promise(function(resolve, reject) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url);
+
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                resolve(xhr.responseText);
+            } else {
+                reject(new Error(xhr.statusText));
+            }
+        };
+
+        xhr.onerror = function() {
+            reject(new Error("Network Error"));
+        };
+
+        xhr.send();
+    });
+}
+
+module.exports = XHR;
+
+},{}]},{},[4])(4)
+});
+
 //  Created by Boris Schneiderman.
 // Modified by Daniel Weck
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
@@ -44261,11 +52042,11 @@ define('readium_shared_js/views/external_agent_support',["../globals", "undersco
 define('readium_shared_js/views/reader_view',["../globals", "jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", "./iframe_loader", "./internal_links_support",
         "./media_overlay_data_injector", "./media_overlay_player", "../models/package", "../models/metadata", "../models/page_open_request",
         "./reflowable_view", "./scroll_view", "../models/style_collection", "../models/switches", "../models/trigger",
-        "../models/viewer_settings", "../models/bookmark_data", "../models/node_range_info", "./external_agent_support"],
+        "../models/viewer_settings", "../models/bookmark_data", "../models/node_range_info", "./external_agent_support", "es6-promise", "html2canvas"],
     function (Globals, $, _, EventEmitter, FixedView, Helpers, IFrameLoader, InternalLinksSupport,
               MediaOverlayDataInjector, MediaOverlayPlayer, Package, Metadata, PageOpenRequest,
               ReflowableView, ScrollView, StyleCollection, Switches, Trigger,
-              ViewerSettings, BookmarkData, NodeRangeInfo, ExternalAgentSupport) {
+              ViewerSettings, BookmarkData, NodeRangeInfo, ExternalAgentSupport, Promise, Html2Canvas) {
 /**
  * Options passed on the reader from the readium loader/initializer
  *
@@ -44463,7 +52244,10 @@ var ReaderView = function (options) {
             iframeLoader: _iframeLoader
         };
 
-
+        Helpers.addTapEventHandler(_$el[0], function(e) {
+            self.emit(Globals.Events.USER_DID_TAP);
+            return true;
+        });
         _currentView = self.createViewForType(desiredViewType, viewCreationParams);
         
         Globals.logEvent("READER_VIEW_CREATED", "EMIT", "reader_view.js");
@@ -44477,7 +52261,9 @@ var ReaderView = function (options) {
             if (!Helpers.isIframeAlive($iframe[0])) return;
 
             // performance degrades with large DOM (e.g. word-level text-audio sync)
-            _mediaOverlayDataInjector.attachMediaOverlayData($iframe, spineItem, _viewerSettings);
+            _mediaOverlayDataInjector.attachMediaOverlayData($iframe, spineItem, _viewerSettings, function() {
+                self.emit(Globals.Events.USER_DID_TAP);
+            });
 
             _internalLinksSupport.processLinkElements($iframe, spineItem);
 
@@ -44486,8 +52272,15 @@ var ReaderView = function (options) {
             Trigger.register(contentDoc);
             Switches.apply(contentDoc);
 
+            var $imgs = $iframe.contents().find("img");
+
+            if ($imgs[0]) {
+                $imgs.css({ "-webkit-user-select": "none", "-webkit-touch-callout": "none", "-webkit-user-drag": "none" });
+            }
             Globals.logEvent("CONTENT_DOCUMENT_LOADED", "EMIT", "reader_view.js [ " + spineItem.href + " ]");
             self.emit(Globals.Events.CONTENT_DOCUMENT_LOADED, $iframe, spineItem);
+            //console.log("initViewForItem: CONTENT_DOCUMENT_LOADED: isPlayingMediaOverlay() = " + self.isPlayingMediaOverlay() +
+            //        ", _mediaOverlayPlayer.wasPausedBecauseNoAutoNextSmil() = " + _mediaOverlayPlayer.wasPausedBecauseNoAutoNextSmil());
         });
 
         _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOAD_START, function ($iframe, spineItem) {
@@ -44733,7 +52526,7 @@ var ReaderView = function (options) {
      * Flips the page from left to right.
      * Takes to account the page progression direction to decide to flip to prev or next page.
      */
-    this.openPageLeft = function () {
+    self.openPageLeft = function () {
 
         if (_package.spine.isLeftToRight()) {
             self.openPagePrev();
@@ -44747,7 +52540,7 @@ var ReaderView = function (options) {
      * Flips the page from right to left.
      * Takes to account the page progression direction to decide to flip to prev or next page.
      */
-    this.openPageRight = function () {
+    self.openPageRight = function () {
 
         if (_package.spine.isLeftToRight()) {
             self.openPageNext();
@@ -45047,6 +52840,8 @@ var ReaderView = function (options) {
         });
     }
 
+    this.goToPage = openPage;
+
 
     /**
      * Opens page index of the spine item with idref provided
@@ -45326,6 +53121,72 @@ var ReaderView = function (options) {
     };
 
     /**
+     * Returns current selection partial Cfi, useful for workflows that need to check whether the user has selected something.
+     *
+     * @returns {object | undefined} partial cfi object or undefined if nothing is selected
+     */
+    this.getCurrentSelectionCfi = function() {
+        if (self.plugins.highlights) {
+            return self.plugins.highlights.getCurrentSelectionCfi();
+        }
+        return null;
+    };
+
+    /**
+     * Creates a higlight based on given parameters
+     *
+     * @param {string} spineIdRef		Spine idref that defines the partial Cfi
+     * @param {string} cfi				Partial CFI (withouth the indirection step) relative to the spine index
+     * @param {string} id				Id of the highlight. must be unique
+     * @param {string} type 			Name of the class selector rule in annotations stylesheet.
+     * 									The style of the class will be applied to the created hightlight
+     * @param {object} styles			Object representing CSS properties to be applied to the highlight.
+     * 									e.g., to apply background color pass in: {'background-color': 'green'}
+     *
+     * @returns {object | undefined} partial cfi object of the created highlight
+     */
+    this.addHighlight = function(spineIdRef, cfi, id, type, styles) {
+        if (self.plugins.highlights) {
+            return self.plugins.highlights.addHighlight(spineIdRef, cfi, id, type, styles);
+        }
+        return null;
+    };
+
+    /**
+     * Creates a higlight based on the current selection
+     *
+     * @param {string} id id of the highlight. must be unique
+     * @param {string} type - name of the class selector rule in annotations.css file.
+     * @param {object} styles - object representing CSS properties to be applied to the highlight.
+     * e.g., to apply background color pass this {'background-color': 'green'}
+     * @param {boolean} clearSelection - set to true to clear the current selection
+     * after it is highlighted
+     *
+     * @returns {object | undefined} partial cfi object of the created highlight
+     */
+    this.addSelectionHighlight = function(id, type, styles, clearSelection) {
+        if (self.plugins.highlights) {
+            return self.plugins.highlights.addSelectionHighlight(id, type, styles, clearSelection);
+        }
+        return null;
+    };
+
+    /**
+     * Removes a given highlight
+     *
+     * @param {string} id  The id associated with the highlight.
+     *
+     * @returns {undefined}
+     *
+     */
+    this.removeHighlight = function(id) {
+        if (self.plugins.highlights) {
+            return self.plugins.highlights.removeHighlight(id);
+        }
+        return null;
+    };
+
+    /**
      * Resets all the custom styles set by setStyle callers at runtime
      */
     this.clearStyles = function () {
@@ -45421,16 +53282,57 @@ var ReaderView = function (options) {
      * Pause currently playing media overlays.
      */
     this.pauseMediaOverlay = function () {
-
-        _mediaOverlayPlayer.pause();
+        if (_mediaOverlayPlayer) {
+            if (_mediaOverlayPlayer.isPlaying()) {
+                _mediaOverlayPlayer.pause();
+            }
+            if (_mediaOverlayPlayer.iBooksAudioPlayerPlaying()) {
+                _mediaOverlayPlayer.pauseIBooksAudioPlayer();
+            }
+        }
     };
 
     /**
      * Start/Resume playback of media overlays.
      */
     this.playMediaOverlay = function () {
+        if (_mediaOverlayPlayer) {
+            if (!_mediaOverlayPlayer.isPlaying()) {
+                _mediaOverlayPlayer.playMediaOverlay();
+            }
+            if (_mediaOverlayPlayer.iBooksAudioPlayerPlaying()) {
+                _mediaOverlayPlayer.pauseIBooksAudioPlayer();
+            }
+        }
+    };
 
-        _mediaOverlayPlayer.play();
+    /**
+     * Play selected iBooks audio
+     */
+    this.playIBooksAudio = function() {
+        if (_mediaOverlayPlayer) {
+            _mediaOverlayPlayer.playIBooksAudioPlayer();
+        }
+    }
+
+    /**
+     * Pause current playing iBooks audio
+     */
+    this.pauseIBooksAudio = function() {
+        if (_mediaOverlayPlayer) {
+            _mediaOverlayPlayer.pauseIBooksAudioPlayer();
+        }
+    }
+
+    /**
+     * Reset media overlay
+     */
+    this.resetMediaOverlay = function() {
+        if( _mediaOverlayPlayer) {
+            self.pauseMediaOverlay();
+            _mediaOverlayPlayer.reset();
+            _mediaOverlayPlayer.resetNoAutoNextSmil();
+        }
     };
 
     /**
@@ -45509,7 +53411,7 @@ var ReaderView = function (options) {
     function handleViewportResizeEnd() {
         //same as doing one final tick for now
         handleViewportResizeTick();
-
+        self.emit(Globals.Events.VIEWPORT_DID_RESIZE);
         if (_resizeMOWasPlaying) self.playMediaOverlay();
     }
 
@@ -46040,6 +53942,6 @@ return ReaderView;
 });
 
 
-require(["readium_cfi_js/cfi_API", "readium_shared_js/globalsSetup"]);
+require(["readium_cfi_js/cfi_API", "readium_plugin_highlights", "readium_shared_js/globalsSetup"]);
 
 //# sourceMappingURL=readium-shared-js_all.js.map

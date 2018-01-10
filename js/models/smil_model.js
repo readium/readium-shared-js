@@ -1149,13 +1149,13 @@ SmilModel.fromSmilDTO = function(smilDTO, mo) {
                 console.error("SMIL clipEnd is string, parsing float... (" + node.clipEnd + ")");
                 node.clipEnd = parseFloat(node.clipEnd);
             }
-            if (node.clipEnd <= node.clipBegin)
+            if (node.clipEnd < node.clipBegin)
             {
                 if (smilModel.mo.DEBUG)
                 {
-                    console.log(getIndent() + "JS MO clipEnd adjusted to MAX");
+                    console.log(getIndent() + "JS MO clipEnd adjusted to clipBegin + 0.1");
                 }
-                node.clipEnd = node.MAX;
+                node.clipEnd = node.clipBegin + 0.1;
             }
             
             //node.updateMediaManifestItemId(); ONLY XHTML SPINE ITEMS 

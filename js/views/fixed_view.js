@@ -100,7 +100,7 @@ var FixedView = function(options, reader){
         _zoom = zoom;
 
         resizeBook(false); 
-    }
+    };
 
     this.render = function(){
 

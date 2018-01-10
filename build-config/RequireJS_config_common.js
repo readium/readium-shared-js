@@ -63,6 +63,9 @@ require.config({
         "es6-collections":
             process._RJS_rootDir(1) + '/node_modules/es6-collections/index',
 
+        "es6-promise":
+            process._RJS_rootDir(1) + '/node_modules/es6-promise/dist/es6-promise',
+
         'cssom':
             process._RJS_rootDir(1) + '/node_modules/cssom/build/CSSOM',
 
@@ -87,7 +90,11 @@ require.config({
             process._RJS_rootDir(1) + '/lib/rangy/rangy-cssclassapplier',
 
         "rangy-position":
-            process._RJS_rootDir(1) + '/lib/rangy/rangy-position'
+            process._RJS_rootDir(1) + '/lib/rangy/rangy-position',
+
+        // ------ EXTERNAL MODULES
+        'html2canvas':
+            process._RJS_rootDir(1) + '/external_modules/html2canvas/dist/html2canvas'
     },
 
     shim:

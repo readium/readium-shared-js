@@ -1083,5 +1083,85 @@ Helpers.polyfillCaretRangeFromPoint = function(document) {
     }
 };
 
+Helpers.addTapEventHandler = function($body, reportClicked) {
+    var startPageX = 0;
+    var startPageY = 0;
+    var longTapped = false;
+    var tapTimer = undefined;
+    var startReturnValue = true;
+    var isMultTtouch = false;
+    var touchStartEventHandler = function(event) {
+        var touch = event.touches[0];
+
+        longTapped = false;
+        isMultiTouch = false;
+        startPageX = touch.pageX;
+        startPageY = touch.pageY;
+        tapTimer = setTimeout(function() {
+            longTapped = true;
+        }, 1500);
+        startReturnValue = event.returnValue;
+        //console.debug("TOUCH-START: event.returnValue = " + event.returnValue);
+        //console.debug("TOUCH-START: # touches = " + event.touches.length);
+        //console.debug("TOUCH-START (" + startPageX + ", " + startPageY + ")");
+    };
+    var touchMoveEventHandler = function(event) {
+        //console.debug("TOUCH-MOVE: # touches = " + event.touches.length);
+        //console.debug("TOUCH-MOVE (" + event.touches[0].pageX + ", " + event.touches[0].pageY + ")");
+        isMultiTouch = event.touches.length > 1;
+    }
+    var touchEndEventHandler = function(event) {
+        var touch = event.changedTouches[0];
+        var tapped = (Math.abs(touch.pageX - startPageX) <= 25) && (Math.abs(touch.pageY - startPageY) <= 25);
+
+        if (event.target && event.target !== document.body) {
+            var attributes = event.target.attributes;
+
+            if (attributes) {
+                for (var i = 0; i < attributes.length; i++) {
+                    if (attributes[i].name && attributes[i].name === "onclick") {
+                        tapped = false;
+                        break;
+                    }
+                }
+            }
+        }
+        clearTimeout(tapTimer);
+        //console.debug("TOUCH-END: # touches = " + event.changedTouches.length);
+        //console.debug("TOUCH-END (" +  + touch.pageX + ", " + touch.pageY + "), tapped? " + tapped + ", longTapped? " + longTapped);
+        if (tapped && !longTapped && !isMultiTouch && event.returnValue && startReturnValue) {
+            return reportClicked(event);
+        }
+        return true;
+    };
+
+    if ('ontouchstart' in document.documentElement) {
+        $body.addEventListener("touchstart", touchStartEventHandler, false);
+        $body.addEventListener("touchmove", touchMoveEventHandler, false);
+        $body.addEventListener("touchend", touchEndEventHandler, false);
+    } else {
+        $body.addEventListener("mousedown", touchStartEventHandler, false);
+        $body.addEventListener("mousemove", touchMoveEventHandler, false);
+        $body.addEventListener("mouseup", touchEndEventHandler, false);
+    }
+};
+
+Helpers.findReadAloud = function(node, attributeName) {
+    if (node) {
+        var readaloud = $(node).attr(attributeName);
+
+        if (readaloud) {
+            return {node: node, attr: readaloud};
+        } else {
+            if (!node.parentElement || node.parentElement === document.body) {
+                return undefined;
+            }
+            if (node.parentElement) {
+                return Helpers.findReadAloud(node.parentElement, attributeName);
+            }
+        }
+    }
+};
+
 return Helpers;
 });

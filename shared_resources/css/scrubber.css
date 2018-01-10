@@ -1,0 +1,234 @@
+body {
+    padding: 0px;
+    margin: 0px;
+}
+
+input[type=range] {
+    -webkit-appearance: none;
+    margin: 0px;
+}
+
+#overlay {
+    width: 30%;
+    height: 100%;
+    position: absolute;
+    z-index: 9;
+}
+
+#scrubber {
+    width: 100%;
+    height: 30%;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    z-index: 10;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    background-color: rgba(200, 200, 200, 0.95);
+    padding-bottom: 15px;
+}
+
+#scrubber_range {
+    width: 100%;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+#scrubber_scroller {
+    width: 100%;
+    overflow-x: scroll;
+    overflow-y: hidden;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+}
+
+.scrubber_item {
+    position:relative;
+    display:inline-block;
+    overflow:hidden;
+}
+
+.scrubber_item_img {
+    height: 90%;
+    width: auto;
+    display: block;
+    padding: 5px;
+}
+
+.right_to_left {
+    direction: rtl;
+}
+
+/* iPhone portrait */
+@media only screen
+and (min-device-width : 320px)
+and (max-device-width : 568px)
+and (orientation : portrait) {
+    input[type=range]::-webkit-slider-runnable-track {
+        width: 300px;
+        height: 15px;
+        background: #ddd;
+        border: none;
+        border-radius: 3px;
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        border: none;
+        height: 70px;
+        width: 70px;
+        border-radius: 50%;
+        background: white;
+        margin-top: -28px;
+    }
+
+    input[type=range]:focus {
+        outline: none;
+    }
+
+    input[type=range]:focus::-webkit-slider-runnable-track {
+        background: #ccc;
+    }
+
+    .scrubber_item_img {
+        height: calc(100% - 98px);
+        padding: 20px;
+    }
+}
+
+/* iPhone landscape */
+@media only screen
+and (min-device-width : 320px)
+and (max-device-width : 568px)
+and (orientation : landscape) {
+    input[type=range]::-webkit-slider-runnable-track {
+        width: 300px;
+        height: 6px;
+        background: #ddd;
+        border: none;
+        border-radius: 3px;
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        border: none;
+        height: 30px;
+        width: 30px;
+        border-radius: 50%;
+        background: white;
+        margin-top: -12px;
+    }
+
+    input[type=range]:focus {
+        outline: none;
+    }
+
+    input[type=range]:focus::-webkit-slider-runnable-track {
+        background: #ccc;
+    }
+
+    #scrubber {
+        padding-bottom: 0px;
+    }
+
+    #scrubber_range {
+        margin-top: 12px;
+        margin-bottom: 12px;
+    }
+
+    .scrubber_item_img {
+        height: calc(100% - 42px);
+        padding: 5px;
+    }
+}
+
+/* iPad portrait */
+@media only screen
+and (min-device-width : 768px)
+and (max-device-width : 1024px)
+and (orientation : portrait) {
+    input[type=range]::-webkit-slider-runnable-track {
+        width: 300px;
+        height: 10px;
+        background: #ddd;
+        border: none;
+        border-radius: 4px;
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        border: none;
+        height: 50px;
+        width: 50px;
+        border-radius: 50%;
+        background: white;
+        margin-top: -20px;
+    }
+
+    input[type=range]:focus {
+        outline: none;
+    }
+
+    input[type=range]:focus::-webkit-slider-runnable-track {
+        background: #ccc;
+    }
+
+    #scrubber {
+        padding-bottom: 0px;
+    }
+
+    #scrubber_range {
+        margin-top: 12px;
+        margin-bottom: 12px;
+    }
+
+    .scrubber_item_img {
+        height: calc(100% - 82px);
+        padding: 15px;
+    }
+}
+
+/* iPad landscape */
+@media only screen
+and (min-device-width : 768px)
+and (max-device-width : 1024px)
+and (orientation : landscape) {
+    input[type=range]::-webkit-slider-runnable-track {
+        width: 300px;
+        height: 8px;
+        background: #ddd;
+        border: none;
+        border-radius: 4px;
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        border: none;
+        height: 35px;
+        width: 35px;
+        border-radius: 50%;
+        background: white;
+        margin-top: -14px;
+    }
+
+    input[type=range]:focus {
+        outline: none;
+    }
+
+    input[type=range]:focus::-webkit-slider-runnable-track {
+        background: #ccc;
+    }
+
+    #scrubber {
+        padding-bottom: 0px;
+    }
+
+    #scrubber_range {
+        margin-top: 10px;
+        margin-bottom: 10px;
+    }
+
+    .scrubber_item_img {
+        height: calc(100% - 59px);
+        padding: 10px;
+    }
+}
