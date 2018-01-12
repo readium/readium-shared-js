@@ -13,7 +13,7 @@
 
 require.config({
 
-    baseUrl: process._RJS_baseUrl(1),
+    baseUrl: process._RJS_baseUrl(0),
 
     name: "readium-shared-js_all",
 
@@ -23,6 +23,6 @@ require.config({
     out: "../build-output/_npm-bundle/readium-shared-js.js",
 
     paths: {
-        "readium-shared-js_all": process._RJS_rootDir(1) + '/build-config/npm_main_module'
+        "readium-shared-js_all": process._RJS_rootDir(0) + '/build-config/npm_main_module'
     }
 });
