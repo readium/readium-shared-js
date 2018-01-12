@@ -311,6 +311,9 @@ scripts:
         &&
         npm run
             build:scripts:single --readium-shared-js:RJS_UGLY=no
+        &&
+        npm run
+            build:scripts:npm --readium-shared-js:RJS_UGLY=no
     '
 
 #=====================
@@ -332,6 +335,13 @@ scripts:
 
         npm run rjs
              --rjs_bundle=single
+    '
+
+#=====================
+    'build:scripts:npm': '
+
+        npm run rjs
+             --rjs_bundle=npm
     '
 
 #=====================
