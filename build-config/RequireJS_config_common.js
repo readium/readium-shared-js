@@ -29,12 +29,17 @@ require.config({
     {
         // ------ NPM MODULEs
 
+        'readium_cfi_js':
+            process._RJS_rootDir(0) + '/node_modules/readium-cfi-js/dist/readium-cfi.umd',
+
         "readium_js_plugins":
             process._RJS_rootDir(0) + '/js/plugins_controller',
 
-// now included in readium-cfi-js
-//        underscore:
-//            process._RJS_rootDir(0) + '/node_modules/underscore/underscore',
+        jquery:
+            process._RJS_rootDir(0) + '/node_modules/jquery/dist/jquery',
+
+        underscore:
+            process._RJS_rootDir(0) + '/node_modules/underscore/underscore',
 
         URIjs:
             process._RJS_rootDir(0) + '/node_modules/urijs/src/URI',

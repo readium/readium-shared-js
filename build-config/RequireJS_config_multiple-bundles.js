@@ -24,7 +24,7 @@ require.config({
             name: "readium-shared-js",
             create: true,
             include: ['readium_shared_js/globalsSetup', 'readium_shared_js/views/reader_view'],
-            exclude: ["readium-external-libs", "readium-cfi-js"],
+            exclude: ["readium-external-libs"],
             insertRequire: ["readium_shared_js/globalsSetup"]
         }
     ]

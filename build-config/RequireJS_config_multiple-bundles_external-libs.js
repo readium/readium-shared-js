@@ -23,7 +23,7 @@ require.config({
         {
             name: "readium-external-libs",
             create: true,
-            include: ['jquery', 'underscore',
+            include: ['jquery', 'underscore', 'readium_cfi_js',
             'URIjs', 'punycode', 'SecondLevelDomains', 'IPv6',
             'jquerySizes', 'domReady', 'eventEmitter', 'console_shim',
             'rangy', 'rangy-core', 'rangy-textrange', 'rangy-highlighter', 'rangy-cssclassapplier', 'rangy-position', 'cssom'],

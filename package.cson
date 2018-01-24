@@ -159,6 +159,8 @@ devDependencies:
 
     "yuidocjs": '^0.10.2'
 
+    "amdclean": '^2.7.0'
+
 
 #####################################################################
 scripts:
@@ -177,9 +179,6 @@ scripts:
     'prepare:all': '
 
         npm run
-            prepare:submodule
-        &&
-        npm run
             prepare:local
     '
 
@@ -196,9 +195,6 @@ scripts:
 #=====================
     'prepare:yarn:all': '
 
-        yarn run
-            prepare:yarn:submodule
-        &&
         yarn run
             prepare:yarn:local
     '
@@ -218,30 +214,6 @@ scripts:
 
         node
             readium-build-tools/gitHubForksUpdater.js
-    '
-
-#=====================
-    'prepare:submodule': '
-
-        cd readium-cfi-js
-        &&
-        npm run prepare:all
-        &&
-        cd ..
-        &&
-        ls
-    '
-
-#=====================
-    'prepare:yarn:submodule': '
-
-        cd readium-cfi-js
-        &&
-        yarn run prepare:yarn:all
-        &&
-        cd ..
-        &&
-        ls
     '
 
 #=====================
