@@ -73,7 +73,7 @@
     "jshint": "^2.9.5",
     "glob": "^7.1.2",
     "yuidocjs": "^0.10.2",
-    "amdclean": "^2.7.0"
+    "amdclean": "github:JCCR/amdclean#master"
   },
   "scripts": {
     "cson2json": "node ./node_modules/cson/bin/cson2json package.cson > package.json && node readium-build-tools/optimizePackageJsonScripts.js",

@@ -160,8 +160,7 @@ devDependencies:
 
     "yuidocjs": '^0.10.2'
 
-    "amdclean": '^2.7.0'
-
+    "amdclean": 'github:JCCR/amdclean#master'
 
 #####################################################################
 scripts:
