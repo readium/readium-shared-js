@@ -102,6 +102,8 @@ dependencies:
     "http-server": 'github:danielweck/http-server#master'
     # SEE: https://github.com/indexzero/http-server/issues/154
 
+    "readium-cfi-js": 'latest'
+
 
 #####################################################################
 # These dependencies can be fetched by using the "--dev" option
