@@ -80,16 +80,16 @@ require.config({
             process._RJS_rootDir(0) + '/lib/rangy/rangy',
 
         "rangy-core":
-            process._RJS_rootDir(0) + '/lib/rangy/rangy-core',
+            process._RJS_rootDir(0) + '/node_modules/rangy/lib/rangy-core',
 
         "rangy-textrange":
-            process._RJS_rootDir(0) + '/lib/rangy/rangy-textrange',
+            process._RJS_rootDir(0) + '/node_modules/rangy/lib/rangy-textrange',
 
         "rangy-highlighter":
-            process._RJS_rootDir(0) + '/lib/rangy/rangy-highlighter',
+            process._RJS_rootDir(0) + '/node_modules/rangy/lib/rangy-highlighter',
 
-        "rangy-cssclassapplier":
-            process._RJS_rootDir(0) + '/lib/rangy/rangy-cssclassapplier',
+        "rangy-classapplier":
+            process._RJS_rootDir(0) + '/node_modules/rangy/lib/rangy-classapplier',
 
         "rangy-position":
             process._RJS_rootDir(0) + '/lib/rangy/rangy-position'
@@ -106,54 +106,6 @@ require.config({
             deps: ['jquery'],
             exports: 'jQuery'
         },
-
-        'rangy-core':
-        {
-            deps: ["domReady"],
-
-            init:
-            function(domReady)
-            {
-                var rangi = this.rangy;
-                domReady(
-                function()
-                {
-                    rangi.init();
-                });
-                return this.rangy;
-            },
-
-            exports: "rangy" // global.rangy
-        },
-        'rangy-textrange':
-        {
-            deps: ["rangy-core"],
-            exports: "rangy.modules.TextRange"
-        },
-        'rangy-highlighter':
-        {
-            deps: ["rangy-core"],
-            exports: "rangy.modules.Highlighter"
-        },
-        'rangy-cssclassapplier':
-        {
-            deps: ["rangy-core"],
-            exports: "rangy.modules.ClassApplier"
-        },
-        'rangy-position':
-        {
-            deps: ["rangy-core"],
-            exports: "rangy.modules.Position"
         }
-       /*
-       'rangy/rangy-serializer': {
-         deps: ["rangy/rangy-core"],
-         exports: "rangy.modules.Serializer"
-       },
-       'rangy/rangy-selectionsaverestore': {
-         deps: ["rangy/rangy-core"],
-         exports: "rangy.modules.SaveRestore"
-       },
-       */
     }
 });

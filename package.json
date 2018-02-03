@@ -56,6 +56,7 @@
     "jquery": "2.x.x",
     "underscore": "^1.8.3",
     "jquery-sizes": "github:bramstein/jsizes#master",
+    "rangy": "^1.3.0",
     "domReady": "github:requirejs/domReady#master",
     "backbone": "^1.3.3",
     "urijs": "github:danielweck/URI.js#master",
