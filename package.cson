@@ -118,7 +118,7 @@ devDependencies:
 
     "rangy": '^1.3.0'
 
-    "jquery-sizes": 'github:bramstein/jsizes#master'
+    "jquery-sizes": 'github:JCCR/jsizes#master'
 
     "domReady": 'github:requirejs/domReady#master'
 

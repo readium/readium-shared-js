@@ -99,13 +99,6 @@ require.config({
     {
         cssom: {
             exports: 'CSSOM'
-        },
-
-        jquerySizes:
-        {
-            deps: ['jquery'],
-            exports: 'jQuery'
-        },
         }
     }
 });
