@@ -306,7 +306,7 @@ scripts:
             build:scripts:single --readium-shared-js:RJS_UGLY=no
         &&
         npm run
-            build:scripts:npm --readium-shared-js:RJS_UGLY=no
+            build:scripts:umd --readium-shared-js:RJS_UGLY=no
     '
 
 #=====================
@@ -331,10 +331,10 @@ scripts:
     '
 
 #=====================
-    'build:scripts:npm': '
+    'build:scripts:umd': '
 
         npm run rjs
-             --rjs_bundle=npm
+             --rjs_bundle=umd
     '
 
 #=====================

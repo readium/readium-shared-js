@@ -20,9 +20,9 @@ require.config({
     include: ['readium_shared_js/globalsSetup', 'readium_js_plugins', 'readium_shared_js/views/reader_view'],
 
     // relative to this config file (not baseUrl)
-    out: "../build-output/_npm-bundle/readium-shared-js.js",
+    out: "../build-output/_umd-bundle/readium-shared-js.js",
 
     paths: {
-        "readium-shared-js_all": process._RJS_rootDir(0) + '/build-config/npm_main_module'
+        "readium-shared-js_all": process._RJS_rootDir(0) + '/build-config/module_exports'
     }
 });

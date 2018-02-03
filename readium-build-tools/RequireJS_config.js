@@ -43,7 +43,7 @@ function(thiz){
     var configCustomTarget = undefined;
     var configOverrideTarget = undefined;
     process._RJS_isSingleBundle = false;
-    process._RJS_isNpmBundle = false;
+    process._RJS_isUmdBundle = false;
 
     process._RJS_isUgly = true;
 
@@ -93,10 +93,10 @@ function(thiz){
             var configBundleType = parameter;
             configBundleType = configBundleType.substr(token.length);
             console.log(configBundleType);
-            process._RJS_isSingleBundle = (configBundleType === "single" || configBundleType === "npm" ? true : false);
-            process._RJS_isNpmBundle = (configBundleType === "npm" ? true : false);
+            process._RJS_isSingleBundle = (configBundleType === "single" || configBundleType === "umd" ? true : false);
+            process._RJS_isUmdBundle = (configBundleType === "umd" ? true : false);
 
-            process._RJS__configTarget = (process._RJS_isNpmBundle ? "npm-bundle" : (process._RJS_isSingleBundle ? "single-bundle" : "multiple-bundles"));
+            process._RJS__configTarget = (process._RJS_isUmdBundle ? "umd-bundle" : (process._RJS_isSingleBundle ? "single-bundle" : "multiple-bundles"));
         }
 
         token = "--rjs_configCustomTarget=";
