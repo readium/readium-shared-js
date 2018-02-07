@@ -19,14 +19,6 @@ function (data) {
     var outputFileName = path.basename(data.path);
     var rootPath = path.resolve(outputPath, '../../');
 
-    var packageJson = module.require(path.join(rootPath, 'package.json'));
-    delete packageJson.files;
-    delete packageJson.dependencies;
-    delete packageJson.devDependencies;
-    delete packageJson.scripts;
-
-    packageJson.main = outputFileName;
-
     var configDir = process.cwd()
         + "/"
         + process._RJS_Path_RelCwd__ConfigDir;
@@ -46,5 +38,5 @@ function (data) {
     fs.writeFileSync(outputFile, cleanedCode);
     fs.unlinkSync(outputFile + '.map'); // Delete the source map, as it is incompatible :(
 
-    fs.writeFileSync(path.join(outputPath, 'package.json'), JSON.stringify(packageJson, null, ' '));
+    console.log("done");
 }
