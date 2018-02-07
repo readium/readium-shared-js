@@ -31283,7 +31283,7 @@ _readium_shared_js_views_fixed_view = function (Globals, $, _, EventEmitter, Boo
     $.extend(this, new EventEmitter());
     var self = this;
     var _$el;
-    var _$viewport = options.$viewport;
+    var _$viewport = $(options.$viewport);
     var _spine = options.spine;
     var _userStyles = options.userStyles;
     var _bookStyles = options.bookStyles;
@@ -39833,7 +39833,7 @@ _readium_shared_js_views_scroll_view = function (Globals, $, _, EventEmitter, Bo
     var ITEM_LOAD_SCROLL_BUFFER = 2000;
     var ON_SCROLL_TIME_DALAY = 300;
     var self = this;
-    var _$viewport = options.$viewport;
+    var _$viewport = $(options.$viewport);
     var _spine = options.spine;
     var _userStyles = options.userStyles;
     var _deferredPageRequest;
@@ -42347,7 +42347,7 @@ _readium_shared_js_views_reflowable_view = function (Globals, $, _, EventEmitter
   var ReflowableView = function (options, reader) {
     $.extend(this, new EventEmitter());
     var self = this;
-    var _$viewport = options.$viewport;
+    var _$viewport = $(options.$viewport);
     var _spine = options.spine;
     var _userStyles = options.userStyles;
     var _bookStyles = options.bookStyles;

@@ -6590,7 +6590,7 @@ var FixedView = function(options, reader){
     var self = this;
 
     var _$el;
-    var _$viewport = options.$viewport;
+    var _$viewport = $(options.$viewport);
     var _spine = options.spine;
     var _userStyles = options.userStyles;
     var _bookStyles = options.bookStyles;
@@ -9996,7 +9996,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
     var self = this;
 
-    var _$viewport = options.$viewport;
+    var _$viewport = $(options.$viewport);
     var _spine = options.spine;
     var _userStyles = options.userStyles;
     var _deferredPageRequest;
@@ -15953,7 +15953,7 @@ var ReflowableView = function(options, reader){
 
     var self = this;
 
-    var _$viewport = options.$viewport;
+    var _$viewport = $(options.$viewport);
     var _spine = options.spine;
     var _userStyles = options.userStyles;
     var _bookStyles = options.bookStyles;
