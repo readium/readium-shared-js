@@ -91,17 +91,6 @@ files: [
 #####################################################################
 dependencies:
 
-    #"parallelshell": 'latest'
-    "concurrently": '^3.5.0'
-
-    "npm-run-all": '^4.1.2'
-
-    "opener": '^1.4.3'
-
-    #"http-server": 'latest'
-    "http-server": 'github:danielweck/http-server#master'
-    # SEE: https://github.com/indexzero/http-server/issues/154
-
     "readium-cfi-js": 'latest'
 
 
@@ -140,6 +129,17 @@ devDependencies:
 
 
 # Below dependencies are only used for building tasks (above are runtime deps):
+
+    #"parallelshell": 'latest'
+    "concurrently": '^3.5.0'
+
+    "npm-run-all": '^4.1.2'
+
+    "opener": '^1.4.3'
+
+    #"http-server": 'latest'
+    "http-server": 'github:danielweck/http-server#master'
+    # SEE: https://github.com/indexzero/http-server/issues/154
 
     "cson": '^4.1.0'
 
