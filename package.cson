@@ -86,7 +86,8 @@ files: [
 # See http://requirejs.org/docs/commonjs.html
 # See http://requirejs.org/docs/node.html
 #
-#main: "build-output/_multiple-bundles/readium-shared-js.js"
+main: "build-output/_umd-bundle/readium-shared-js.js"
+types: "dev/readium-shared-js.d.ts"
 
 #####################################################################
 dependencies:
