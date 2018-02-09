@@ -15,6 +15,7 @@ function (data) {
     console.log("========> onModuleBundleComplete [amdclean]");
     var fs = module.require('fs');
     var path = module.require('path');
+    var rimraf = module.require('rimraf');
     var outputPath = path.dirname(data.path);
     var outputFileName = path.basename(data.path);
     var rootPath = path.resolve(outputPath, '../../');
@@ -32,11 +33,14 @@ function (data) {
             return '_' + postNormalizedModuleName;
         }
     });
-    cleanedCode = fs.readFileSync(configDir + '/npm_wrapper_start.template')
-        + '\n' + cleanedCode + '\nreturn _' + data.name.replace(/-/g, '_') + ';\n'
-        + fs.readFileSync(configDir + '/npm_wrapper_end.template');
-    fs.writeFileSync(outputFile, cleanedCode);
-    fs.unlinkSync(outputFile + '.map'); // Delete the source map, as it is incompatible :(
+    cleanedCode = fs.readFileSync(configDir + '/umd_wrapper_start.template') +
+        '\n' + cleanedCode + '\nreturn _' + data.name.replace(/-/g, '_') + ';\n' +
+        fs.readFileSync(configDir + '/umd_wrapper_end.template');
+    var cleanedOutputPath = path.resolve(outputPath, '../_umd-bundle');
+    fs.mkdirSync(cleanedOutputPath);
+    fs.writeFileSync(path.join(cleanedOutputPath, outputFileName), cleanedCode);
+    //fs.unlinkSync(outputFile + '.map'); // Delete the source map, as it is incompatible :(
+    rimraf.sync(outputPath); // Delete the original path as it was temporary
 
-    console.log("done");
+    console.log("UMD bundle created.");
 }
