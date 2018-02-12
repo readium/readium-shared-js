@@ -163,7 +163,12 @@ devDependencies:
 
     "yuidocjs": '^0.10.2'
 
+    # UMD bundle generation
     "amdclean": 'github:JCCR/amdclean#master'
+
+    "concat-with-sourcemaps": '^1.0.5'
+
+    "sorcery": '^0.10.0'
 
 #####################################################################
 scripts:

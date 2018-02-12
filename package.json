@@ -76,7 +76,9 @@
     "jshint": "^2.9.5",
     "glob": "^7.1.2",
     "yuidocjs": "^0.10.2",
-    "amdclean": "github:JCCR/amdclean#master"
+    "amdclean": "github:JCCR/amdclean#master",
+    "concat-with-sourcemaps": "^1.0.5",
+    "sorcery": "^0.10.0"
   },
   "scripts": {
     "cson2json": "node ./node_modules/cson/bin/cson2json package.cson > package.json && node readium-build-tools/optimizePackageJsonScripts.js",
@@ -102,6 +104,7 @@
     "http:watch": "echo > open_webbrowser.js && run-p \"dowatch\" \"httpServe\"",
     "http": "npm run genPluginsConfig && npm run httpServe",
     "dowatch": "node ./node_modules/watch/cli.js \"npm run build && node readium-build-tools/webbrowser.js && node ./node_modules/rimraf/bin.js open_webbrowser.js\" dev/ js/ plugins/",
-    "httpServe": "node readium-build-tools/http-server.js -LOGFILE http.log -OPEN /dev/ -a 127.0.0.1 -p 9090 --cors ."
+    "watch": "watch \"npm run build\" dev/ js/ plugins/",
+    "httpServe": "node readium-build-tools/http-server.js -LOGFILE http.log -OPEN /dev/ -c-1 -a 127.0.0.1 -p 9090 --cors ."
   }
 }
