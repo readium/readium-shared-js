@@ -101,7 +101,6 @@
     "build:styles": "node ./node_modules/cpy-cli/cli.js static/sdk.css build-output/css/",
     "http:watch": "echo > open_webbrowser.js && run-p \"dowatch\" \"httpServe\"",
     "http": "npm run genPluginsConfig && npm run httpServe",
-    "watch": "watch \"npm run build\" dev/ js/ plugins/",
     "dowatch": "node ./node_modules/watch/cli.js \"npm run build && node readium-build-tools/webbrowser.js && node ./node_modules/rimraf/bin.js open_webbrowser.js\" dev/ js/ plugins/",
     "httpServe": "node readium-build-tools/http-server.js -LOGFILE http.log -OPEN /dev/ -a 127.0.0.1 -p 9090 --cors ."
   }

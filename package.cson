@@ -392,6 +392,14 @@ scripts:
     #    --exec \" ... \"
 
 #=====================
+#### BLOCKING! (CTRL-C) [watch]
+    'watch': '
+
+        watch 
+            \"npm run build\"
+            dev/ js/ plugins/
+    '
+#=====================
     'httpServe': '
 
         node
