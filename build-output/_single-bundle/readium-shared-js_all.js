@@ -16104,7 +16104,7 @@ define("es6-collections", function(){});
  * URI.js - Mutating URLs
  * IPv6 Support
  *
- * Version: 1.19.0
+ * Version: 1.19.1
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -16290,7 +16290,7 @@ define("es6-collections", function(){});
  * URI.js - Mutating URLs
  * Second Level Domain (SLD) Support
  *
- * Version: 1.19.0
+ * Version: 1.19.1
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -16535,7 +16535,7 @@ define("es6-collections", function(){});
 /*!
  * URI.js - Mutating URLs
  *
- * Version: 1.19.0
+ * Version: 1.19.1
  *
  * Author: Rodney Rehm
  * Web: http://medialize.github.io/URI.js/
@@ -16615,7 +16615,7 @@ define("es6-collections", function(){});
     return /^[0-9]+$/.test(value);
   }
 
-  URI.version = '1.19.0';
+  URI.version = '1.19.1';
 
   var p = URI.prototype;
   var hasOwn = Object.prototype.hasOwnProperty;
@@ -17775,9 +17775,13 @@ define("es6-collections", function(){});
     } else if (_URI || _object) {
       var src = _URI ? href._parts : href;
       for (key in src) {
+        if (key === 'query') { continue; }
         if (hasOwn.call(this._parts, key)) {
           this._parts[key] = src[key];
         }
+      }
+      if (src.query) {
+        this.query(src.query, false);
       }
     } else {
       throw new TypeError('invalid input');
@@ -20731,8 +20735,10 @@ Helpers.UpdateHtmlFontAttributes = function ($epubHtml, fontSize, fontObj, callb
             // TODO: group the 3x potential $(ele).css() calls below to avoid multiple jQuery style mutations 
 
             var fontSizeAttr = ele.getAttribute('data-original-font-size');
-            var originalFontSize = Number(fontSizeAttr);
-            $(ele).css("font-size", (originalFontSize * factor) + 'px');
+            var originalFontSize = fontSizeAttr ? Number(fontSizeAttr) : 0;
+            if (originalFontSize) {
+                $(ele).css("font-size", (originalFontSize * factor) + 'px');
+            }
 
             var lineHeightAttr = ele.getAttribute('data-original-line-height');
             var originalLineHeight = lineHeightAttr ? Number(lineHeightAttr) : 0;
@@ -22827,6 +22833,10 @@ var CfiNavigationLogic = function (options) {
                 return true;
             }
 
+            if (_.contains(self.getElementBlacklist(), element.tagName.toLowerCase())) {
+                return true;
+            }
+
             return false;
         }
 
@@ -23501,12 +23511,13 @@ var ViewerSettings = function(settingsData) {
     return ViewerSettings;
 });
 
+
+
 /**
  * Copyright Marc J. Schmidt. See the LICENSE file at the top-level
  * directory of this distribution and at
  * https://github.com/marcj/css-element-queries/blob/master/LICENSE.
  */
-;
 (function (root, factory) {
     if (typeof define === "function" && define.amd) {
         define('ResizeSensor',factory);
@@ -23557,6 +23568,26 @@ var ViewerSettings = function(settingsData) {
     }
 
     /**
+    * Get element size
+    * @param {HTMLElement} element
+    * @returns {Object} {width, height}
+    */
+    function getElementSize(element) {
+        if (!element.getBoundingClientRect) {
+            return {
+                width: element.offsetWidth,
+                height: element.offsetHeight
+            }
+        }
+
+        var rect = element.getBoundingClientRect();
+        return {
+            width: Math.round(rect.width),
+            height: Math.round(rect.height)
+        }
+    }
+
+    /**
      * Class for dimension change detection.
      *
      * @param {Element|Element[]|Elements|jQuery} element
@@ -23588,7 +23619,7 @@ var ViewerSettings = function(settingsData) {
                     if(q[i] !== ev) newQueue.push(q[i]);
                 }
                 q = newQueue;
-            }
+            };
 
             this.length = function() {
                 return q.length;
@@ -23611,8 +23642,9 @@ var ViewerSettings = function(settingsData) {
             element.resizedAttached.add(resized);
 
             element.resizeSensor = document.createElement('div');
+            element.resizeSensor.dir = 'ltr';
             element.resizeSensor.className = 'resize-sensor';
-            var style = 'position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: hidden; z-index: -1; visibility: hidden;';
+            var style = 'position: absolute; left: -10px; top: -10px; right: 0; bottom: 0; overflow: hidden; z-index: -1; visibility: hidden;';
             var styleChild = 'position: absolute; left: 0; top: 0; transition: 0s;';
 
             element.resizeSensor.style.cssText = style;
@@ -23625,7 +23657,8 @@ var ViewerSettings = function(settingsData) {
                 '</div>';
             element.appendChild(element.resizeSensor);
 
-            if (element.resizeSensor.offsetParent !== element) {
+            var position = window.getComputedStyle(element).getPropertyValue('position');
+            if ('absolute' !== position && 'relative' !== position && 'fixed' !== position) {
                 element.style.position = 'relative';
             }
 
@@ -23633,10 +23666,19 @@ var ViewerSettings = function(settingsData) {
             var expandChild = expand.childNodes[0];
             var shrink = element.resizeSensor.childNodes[1];
             var dirty, rafId, newWidth, newHeight;
-            var lastWidth = element.offsetWidth;
-            var lastHeight = element.offsetHeight;
+            var size = getElementSize(element);
+            var lastWidth = size.width;
+            var lastHeight = size.height;
 
             var reset = function() {
+                //set display to block, necessary otherwise hidden elements won't ever work
+                var invisible = element.offsetWidth === 0 && element.offsetHeight === 0;
+
+                if (invisible) {
+                    var saveDisplay = element.style.display;
+                    element.style.display = 'block';
+                }
+
                 expandChild.style.width = '100000px';
                 expandChild.style.height = '100000px';
 
@@ -23645,9 +23687,12 @@ var ViewerSettings = function(settingsData) {
 
                 shrink.scrollLeft = 100000;
                 shrink.scrollTop = 100000;
-            };
 
-            reset();
+                if (invisible) {
+                    element.style.display = saveDisplay;
+                }
+            };
+            element.resizeSensor.resetSensor = reset;
 
             var onResized = function() {
                 rafId = 0;
@@ -23663,8 +23708,9 @@ var ViewerSettings = function(settingsData) {
             };
 
             var onScroll = function() {
-                newWidth = element.offsetWidth;
-                newHeight = element.offsetHeight;
+                var size = getElementSize(element);
+                var newWidth = size.width;
+                var newHeight = size.height;
                 dirty = newWidth != lastWidth || newHeight != lastHeight;
 
                 if (dirty && !rafId) {
@@ -23684,6 +23730,9 @@ var ViewerSettings = function(settingsData) {
 
             addEvent(expand, 'scroll', onScroll);
             addEvent(shrink, 'scroll', onScroll);
+            
+			// Fix for custom Elements
+			requestAnimationFrame(reset);
         }
 
         forEachElement(element, function(elem){
@@ -23693,12 +23742,22 @@ var ViewerSettings = function(settingsData) {
         this.detach = function(ev) {
             ResizeSensor.detach(element, ev);
         };
+
+        this.reset = function() {
+            element.resizeSensor.resetSensor();
+        };
+    };
+
+    ResizeSensor.reset = function(element, ev) {
+        forEachElement(element, function(elem){
+            elem.resizeSensor.resetSensor();
+        });
     };
 
     ResizeSensor.detach = function(element, ev) {
         forEachElement(element, function(elem){
-            if (!elem) return
-            if(elem.resizedAttached && typeof ev == "function"){
+            if (!elem) return;
+            if(elem.resizedAttached && typeof ev === "function"){
                 elem.resizedAttached.remove(ev);
                 if(elem.resizedAttached.length()) return;
             }
@@ -24714,8 +24773,8 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
             $iframe: _$iframe,
             frameDimensionsGetter: getFrameDimensions,
             visibleContentOffsetsGetter: getVisibleContentOffsets,
-            classBlacklist: ["cfi-marker", "mo-cfi-highlight", "resize-sensor", "resize-sensor-expand", "resize-sensor-shrink", "resize-sensor-inner"],
-            elementBlacklist: [],
+            classBlacklist: ["cfi-marker", "mo-cfi-highlight", "resize-sensor", "resize-sensor-expand", "resize-sensor-shrink", "resize-sensor-inner", "js-hypothesis-config", "js-hypothesis-embed"],
+            elementBlacklist: ["hypothesis-adder"],
             idBlacklist: ["MathJax_Message", "MathJax_SVG_Hidden"]
         });
     };
@@ -42310,8 +42369,8 @@ var ReflowableView = function(options, reader){
     var _$epubHtml;
     var _lastPageRequest = undefined;
 
-    var _cfiClassBlacklist = ["cfi-marker", "mo-cfi-highlight", "resize-sensor", "resize-sensor-expand", "resize-sensor-shrink", "resize-sensor-inner"];
-    var _cfiElementBlacklist = [];
+    var _cfiClassBlacklist = ["cfi-marker", "mo-cfi-highlight", "resize-sensor", "resize-sensor-expand", "resize-sensor-shrink", "resize-sensor-inner", "js-hypothesis-config", "js-hypothesis-embed"];
+    var _cfiElementBlacklist = ["hypothesis-adder"];
     var _cfiIdBlacklist = ["MathJax_Message", "MathJax_SVG_Hidden"];
 
     var _$htmlBody;
