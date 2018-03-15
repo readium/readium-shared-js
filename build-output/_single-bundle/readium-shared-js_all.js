@@ -26022,7 +26022,7 @@ var util = Object.freeze({
 //   executable instructions in the AST.
 
 // ------------------------------------------------------------------------------------ //
-//  "PRIVATE" HELPERS                                                                   //
+//  "PUBLIC" METHODS (THE API) are exported using the `export` keyword                  //
 // ------------------------------------------------------------------------------------ //
 
 function indexOutOfRange(targetIndex, numChildElements) {
@@ -26156,10 +26156,6 @@ function inferTargetTextNode(CFIStepValue, $currNode, classBlacklist, elementBla
   // return the text node list
   return $targetTextNodeList;
 }
-
-// ------------------------------------------------------------------------------------ //
-//  "PUBLIC" METHODS (THE API)                                                          //
-// ------------------------------------------------------------------------------------ //
 
 // Description: Follows a step
 // Rationale: The use of children() is important here
@@ -27725,7 +27721,7 @@ var parser$1 = Object.freeze({
 //   Whoops. There shouldn't be any interference, however, I think this should be changed.
 
 // ------------------------------------------------------------------------------------ //
-//  "PRIVATE" HELPERS                                                                   //
+//  "PUBLIC" METHODS (THE API) are exported using the `export` keyword                  //
 // ------------------------------------------------------------------------------------ //
 
 function getFirstIndirectionStepNum(CFIAST) {
@@ -27736,32 +27732,6 @@ function getFirstIndirectionStepNum(CFIAST) {
     var nextStepNode = CFIAST.cfiString.localPath.steps[stepNum];
     if (nextStepNode.type === 'indirectionStep') {
       return stepNum;
-    }
-  }
-
-  return undefined;
-}
-
-function searchLocalPathForHref($currElement, packageDocument, localPathNode, classBlacklist, elementBlacklist, idBlacklist) {
-  // Interpret the first local_path node, which is a set of steps and and a terminus condition
-  var nextStepNode = void 0;
-  var $foundElement = void 0;
-  for (var stepNum = 0; stepNum <= localPathNode.steps.length - 1; stepNum += 1) {
-    nextStepNode = localPathNode.steps[stepNum];
-    if (nextStepNode.type === 'indexStep') {
-      $foundElement = interpretIndexStepNode(nextStepNode, $currElement, classBlacklist, elementBlacklist, idBlacklist);
-    } else if (nextStepNode.type === 'indirectionStep') {
-      $foundElement = interpretIndirectionStepNode(nextStepNode, $currElement, classBlacklist, elementBlacklist, idBlacklist);
-    }
-
-    var _$foundElement = $foundElement,
-        _$foundElement2 = slicedToArray(_$foundElement, 1),
-        foundElement = _$foundElement2[0];
-    // Found the content document href referenced by the spine item
-
-
-    if (matchesLocalNameOrElement(foundElement, 'itemref')) {
-      return retrieveItemRefHref(foundElement, packageDocument);
     }
   }
 
@@ -27848,10 +27818,6 @@ function compareCFIASTs(CFIAST1, CFIAST2) {
   return result;
 }
 
-// ------------------------------------------------------------------------------------ //
-//  "PUBLIC" METHODS (THE API)                                                          //
-// ------------------------------------------------------------------------------------ //
-
 function interpretIndexStepNode(indexStepNode, $currElement, classBlacklist, elementBlacklist, idBlacklist) {
   // Check node type; throw error if wrong type
   if (indexStepNode === undefined || indexStepNode.type !== 'indexStep') {
@@ -27888,6 +27854,32 @@ function interpretIndirectionStepNode(indirectionStepNode, $currElement, classBl
   }
 
   return $stepTarget;
+}
+
+function searchLocalPathForHref($currElement, packageDocument, localPathNode, classBlacklist, elementBlacklist, idBlacklist) {
+  // Interpret the first local_path node, which is a set of steps and and a terminus condition
+  var nextStepNode = void 0;
+  var $foundElement = void 0;
+  for (var stepNum = 0; stepNum <= localPathNode.steps.length - 1; stepNum += 1) {
+    nextStepNode = localPathNode.steps[stepNum];
+    if (nextStepNode.type === 'indexStep') {
+      $foundElement = interpretIndexStepNode(nextStepNode, $currElement, classBlacklist, elementBlacklist, idBlacklist);
+    } else if (nextStepNode.type === 'indirectionStep') {
+      $foundElement = interpretIndirectionStepNode(nextStepNode, $currElement, classBlacklist, elementBlacklist, idBlacklist);
+    }
+
+    var _$foundElement = $foundElement,
+        _$foundElement2 = slicedToArray(_$foundElement, 1),
+        foundElement = _$foundElement2[0];
+    // Found the content document href referenced by the spine item
+
+
+    if (matchesLocalNameOrElement(foundElement, 'itemref')) {
+      return retrieveItemRefHref(foundElement, packageDocument);
+    }
+  }
+
+  return undefined;
 }
 
 // REFACTORING CANDIDATE: cfiString node and start step num could be merged into one argument,
@@ -28222,7 +28214,7 @@ var interpreter = Object.freeze({
 //  prior written permission.
 
 // ------------------------------------------------------------------------------------ //
-//  "PRIVATE" HELPERS                                                                   //
+//  "PUBLIC" METHODS (THE API) are exported using the `export` keyword                  //
 // ------------------------------------------------------------------------------------ //
 
 function validateStartTextNode(startTextNode, characterOffset) {
@@ -28328,10 +28320,6 @@ function normalizeDomRange(domRange) {
     }
   }
 }
-
-// ------------------------------------------------------------------------------------ //
-//  "PUBLIC" METHODS (THE API)                                                          //
-// ------------------------------------------------------------------------------------ //
 
 // Description: Creates a CFI terminating step to a text node, with a character offset
 // REFACTORING CANDIDATE: Some of the parts of this method
@@ -35007,6 +34995,9 @@ var ViewerSettings = function(settingsData) {
      * @constructor
      */
     var ResizeSensor = function(element, callback) {
+       
+        var observer;
+       
         /**
          *
          * @constructor
@@ -35018,9 +35009,9 @@ var ViewerSettings = function(settingsData) {
             };
 
             var i, j;
-            this.call = function() {
+            this.call = function(sizeInfo) {
                 for (i = 0, j = q.length; i < j; i++) {
-                    q[i].call();
+                    q[i].call(this, sizeInfo);
                 }
             };
 
@@ -35076,32 +35067,50 @@ var ViewerSettings = function(settingsData) {
             var expand = element.resizeSensor.childNodes[0];
             var expandChild = expand.childNodes[0];
             var shrink = element.resizeSensor.childNodes[1];
-            var dirty, rafId, newWidth, newHeight;
+
+            var dirty, rafId;
             var size = getElementSize(element);
             var lastWidth = size.width;
             var lastHeight = size.height;
-
-            var reset = function() {
-                //set display to block, necessary otherwise hidden elements won't ever work
-                var invisible = element.offsetWidth === 0 && element.offsetHeight === 0;
-
-                if (invisible) {
-                    var saveDisplay = element.style.display;
-                    element.style.display = 'block';
-                }
-
+            var initialHiddenCheck = true, resetRAF_id;
+            
+            
+            var resetExpandShrink = function () {
                 expandChild.style.width = '100000px';
                 expandChild.style.height = '100000px';
-
+        
                 expand.scrollLeft = 100000;
                 expand.scrollTop = 100000;
-
+        
                 shrink.scrollLeft = 100000;
                 shrink.scrollTop = 100000;
+            };
 
-                if (invisible) {
-                    element.style.display = saveDisplay;
+            var reset = function() {
+                // Check if element is hidden
+                if (initialHiddenCheck) {
+                    if (!expand.scrollTop && !expand.scrollLeft) {
+
+                        // reset
+                        resetExpandShrink();
+
+                        // Check in next frame
+                        if (!resetRAF_id){
+                            resetRAF_id = requestAnimationFrame(function(){
+                                resetRAF_id = 0;
+                                
+                                reset();
+                            });
+                        }
+                        
+                        return;
+                    } else {
+                        // Stop checking
+                        initialHiddenCheck = false;
+                    }
                 }
+
+                resetExpandShrink();
             };
             element.resizeSensor.resetSensor = reset;
 
@@ -35110,19 +35119,17 @@ var ViewerSettings = function(settingsData) {
 
                 if (!dirty) return;
 
-                lastWidth = newWidth;
-                lastHeight = newHeight;
+                lastWidth = size.width;
+                lastHeight = size.height;
 
                 if (element.resizedAttached) {
-                    element.resizedAttached.call();
+                    element.resizedAttached.call(size);
                 }
             };
 
             var onScroll = function() {
-                var size = getElementSize(element);
-                var newWidth = size.width;
-                var newHeight = size.height;
-                dirty = newWidth != lastWidth || newHeight != lastHeight;
+                size = getElementSize(element);
+                dirty = size.width !== lastWidth || size.height !== lastHeight;
 
                 if (dirty && !rafId) {
                     rafId = requestAnimationFrame(onResized);
@@ -35142,16 +35149,41 @@ var ViewerSettings = function(settingsData) {
             addEvent(expand, 'scroll', onScroll);
             addEvent(shrink, 'scroll', onScroll);
             
-			// Fix for custom Elements
-			requestAnimationFrame(reset);
+            // Fix for custom Elements
+            requestAnimationFrame(reset);
+        }
+         
+        if (typeof ResizeObserver !== "undefined") {
+            observer = new ResizeObserver(function(element){
+                forEachElement(element, function (elem) {
+                    callback.call(
+                        this,
+                        {
+                            width: elem.contentRect.width,
+                            height: elem.contentRect.height
+                        }
+                   );
+                });
+            });
+            if (element !== undefined) {
+                forEachElement(element, function(elem){
+                   observer.observe(elem);
+                });
+            }
+        }
+        else {
+            forEachElement(element, function(elem){
+                attachResizeEvent(elem, callback);
+            });
         }
 
-        forEachElement(element, function(elem){
-            attachResizeEvent(elem, callback);
-        });
-
         this.detach = function(ev) {
-            ResizeSensor.detach(element, ev);
+            if (typeof ResizeObserver != "undefined") {
+               observer.unobserve(element);
+            }
+            else {
+                ResizeSensor.detach(element, ev);
+            }
         };
 
         this.reset = function() {
