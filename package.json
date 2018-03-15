@@ -42,7 +42,7 @@
   "main": "build-output/_umd-bundle/readium-shared-js.js",
   "types": "dev/readium-shared-js.d.ts",
   "dependencies": {
-    "readium-cfi-js": "latest"
+    "readium-cfi-js": "github:readium/readium-cfi-js#v0.31.0-alpha"
   },
   "devDependencies": {
     "almond": "^0.3.3",
