@@ -13,13 +13,13 @@
 
 require.config({
 
-    baseUrl: process._RJS_baseUrl(1),
+    baseUrl: process._RJS_baseUrl(0),
 
     packages: [
         {
             name: "readium_shared_js",
             location:
-                process._RJS_rootDir(1) + '/js',
+                process._RJS_rootDir(0) + '/js',
 
             main: "globalsSetup"
         }
@@ -29,126 +29,76 @@ require.config({
     {
         // ------ NPM MODULEs
 
-        "readium_js_plugins":
-            process._RJS_rootDir(1) + '/js/plugins_controller',
+        'readium_cfi_js':
+            process._RJS_rootDir(0) + '/node_modules/readium-cfi-js/dist/readium-cfi.umd',
 
-// now included in readium-cfi-js
-//        underscore:
-//            process._RJS_rootDir(1) + '/node_modules/underscore/underscore',
+        "readium_js_plugins":
+            process._RJS_rootDir(0) + '/js/plugins_controller',
+
+        jquery:
+            process._RJS_rootDir(0) + '/node_modules/jquery/dist/jquery',
+
+        underscore:
+            process._RJS_rootDir(0) + '/node_modules/underscore/underscore',
 
         URIjs:
-            process._RJS_rootDir(1) + '/node_modules/urijs/src/URI',
+            process._RJS_rootDir(0) + '/node_modules/urijs/src/URI',
 
         punycode:
-            process._RJS_rootDir(1) + '/node_modules/urijs/src/punycode',
+            process._RJS_rootDir(0) + '/node_modules/urijs/src/punycode',
 
         SecondLevelDomains:
-            process._RJS_rootDir(1) + '/node_modules/urijs/src/SecondLevelDomains',
+            process._RJS_rootDir(0) + '/node_modules/urijs/src/SecondLevelDomains',
 
         IPv6:
-            process._RJS_rootDir(1) + '/node_modules/urijs/src/IPv6',
+            process._RJS_rootDir(0) + '/node_modules/urijs/src/IPv6',
 
         jquerySizes:
-            process._RJS_rootDir(1) + '/node_modules/jquery-sizes/lib/jquery.sizes',
+            process._RJS_rootDir(0) + '/node_modules/jquery-sizes/lib/jquery.sizes',
 
         ResizeSensor:
-            process._RJS_rootDir(1) + '/node_modules/css-element-queries/src/ResizeSensor',
+            process._RJS_rootDir(0) + '/node_modules/css-element-queries/src/ResizeSensor',
 
         domReady:
-            process._RJS_rootDir(1) + '/node_modules/domReady/domReady',
+            process._RJS_rootDir(0) + '/node_modules/domReady/domReady',
 
         eventEmitter:
-            process._RJS_rootDir(1) + '/node_modules/eventemitter3/umd/eventemitter3.min',
+            process._RJS_rootDir(0) + '/node_modules/eventemitter3/umd/eventemitter3.min',
         
         "es6-collections":
-            process._RJS_rootDir(1) + '/node_modules/es6-collections/index',
+            process._RJS_rootDir(0) + '/node_modules/es6-collections/index',
 
         'cssom':
-            process._RJS_rootDir(1) + '/node_modules/cssom/build/CSSOM',
+            process._RJS_rootDir(0) + '/node_modules/cssom/build/CSSOM',
 
         // ------ LIBs
 
         'console_shim':
-            process._RJS_rootDir(1) + '/lib/console_shim',
+            process._RJS_rootDir(0) + '/lib/console_shim',
 
         rangy:
-            process._RJS_rootDir(1) + '/lib/rangy/rangy',
+            process._RJS_rootDir(0) + '/lib/rangy/rangy',
 
         "rangy-core":
-            process._RJS_rootDir(1) + '/lib/rangy/rangy-core',
+            process._RJS_rootDir(0) + '/node_modules/rangy/lib/rangy-core',
 
         "rangy-textrange":
-            process._RJS_rootDir(1) + '/lib/rangy/rangy-textrange',
+            process._RJS_rootDir(0) + '/node_modules/rangy/lib/rangy-textrange',
 
         "rangy-highlighter":
-            process._RJS_rootDir(1) + '/lib/rangy/rangy-highlighter',
+            process._RJS_rootDir(0) + '/node_modules/rangy/lib/rangy-highlighter',
 
-        "rangy-cssclassapplier":
-            process._RJS_rootDir(1) + '/lib/rangy/rangy-cssclassapplier',
+        "rangy-classapplier":
+            process._RJS_rootDir(0) + '/node_modules/rangy/lib/rangy-classapplier',
 
         "rangy-position":
-            process._RJS_rootDir(1) + '/lib/rangy/rangy-position'
+            process._RJS_rootDir(0) + '/lib/rangy/rangy-position'
     },
 
     shim:
     {
         cssom: {
             exports: 'CSSOM'
-        },
-
-        jquerySizes:
-        {
-            deps: ['jquery'],
-            exports: 'jQuery'
-        },
-
-        'rangy-core':
-        {
-            deps: ["domReady"],
-
-            init:
-            function(domReady)
-            {
-                var rangi = this.rangy;
-                domReady(
-                function()
-                {
-                    rangi.init();
-                });
-                return this.rangy;
-            },
-
-            exports: "rangy" // global.rangy
-        },
-        'rangy-textrange':
-        {
-            deps: ["rangy-core"],
-            exports: "rangy.modules.TextRange"
-        },
-        'rangy-highlighter':
-        {
-            deps: ["rangy-core"],
-            exports: "rangy.modules.Highlighter"
-        },
-        'rangy-cssclassapplier':
-        {
-            deps: ["rangy-core"],
-            exports: "rangy.modules.ClassApplier"
-        },
-        'rangy-position':
-        {
-            deps: ["rangy-core"],
-            exports: "rangy.modules.Position"
         }
-       /*
-       'rangy/rangy-serializer': {
-         deps: ["rangy/rangy-core"],
-         exports: "rangy.modules.Serializer"
-       },
-       'rangy/rangy-selectionsaverestore': {
-         deps: ["rangy/rangy-core"],
-         exports: "rangy.modules.SaveRestore"
-       },
-       */
     }
 });

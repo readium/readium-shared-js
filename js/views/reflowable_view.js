@@ -42,7 +42,7 @@ var ReflowableView = function(options, reader){
 
     var self = this;
 
-    var _$viewport = options.$viewport;
+    var _$viewport = $(options.$viewport);
     var _spine = options.spine;
     var _userStyles = options.userStyles;
     var _bookStyles = options.bookStyles;

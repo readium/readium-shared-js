@@ -614,7 +614,7 @@ define('readium_js_plugins',["jquery", "underscore", "eventEmitter"], function (
 //  prior written permission.
 
 //'text!empty:'
-define('readium_shared_js/globalsSetup',['./globals', 'jquery', 'console_shim', 'es6-collections', 'eventEmitter', 'URIjs', 'readium_cfi_js', 'readium_js_plugins'], function (Globals, $, console_shim, es6collections, EventEmitter, URI, epubCfi, PluginsController) {
+define('readium_shared_js/globalsSetup',['./globals', 'jquery', 'console_shim', 'es6-collections', 'eventEmitter', 'URIjs', 'readium_cfi_js', 'readium_js_plugins'], function (Globals, $, console_shim, es6collections, EventEmitter, URI, EPUBcfi, PluginsController) {
 
     console.log("Globals...");
 
@@ -2933,7 +2933,7 @@ return Helpers;
 *      - $iframe                   Iframe reference, and needs to be set.
 * @constructor
 */
-define('readium_shared_js/views/cfi_navigation_logic',["jquery", "underscore", "../helpers", 'readium_cfi_js'], function($, _, Helpers, epubCfi) {
+define('readium_shared_js/views/cfi_navigation_logic',["jquery", "underscore", "../helpers", 'readium_cfi_js'], function($, _, Helpers, EPUBcfi) {
 
 var CfiNavigationLogic = function (options) {
     var self = this;
@@ -6590,7 +6590,7 @@ var FixedView = function(options, reader){
     var self = this;
 
     var _$el;
-    var _$viewport = options.$viewport;
+    var _$viewport = $(options.$viewport);
     var _spine = options.spine;
     var _userStyles = options.userStyles;
     var _bookStyles = options.bookStyles;
@@ -7606,7 +7606,7 @@ return IFrameLoader;
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define('readium_shared_js/views/internal_links_support',['jquery', '../helpers', 'readium_cfi_js', 'URIjs'], function($, Helpers, epubCfi, URI) {
+define('readium_shared_js/views/internal_links_support',['jquery', '../helpers', 'readium_cfi_js', 'URIjs'], function($, Helpers, EPUBcfi, URI) {
 /**
  *
  * @param reader
@@ -8096,7 +8096,7 @@ return SmilIterator;
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define ('readium_shared_js/views/media_overlay_data_injector',["jquery", "underscore", "../helpers", "../models/smil_iterator", "rangy", 'readium_cfi_js'], function($, _, Helpers, SmilIterator, rangy, epubCfi) {
+define ('readium_shared_js/views/media_overlay_data_injector',["jquery", "underscore", "../helpers", "../models/smil_iterator", "rangy", 'readium_cfi_js'], function($, _, Helpers, SmilIterator, rangy, EPUBcfi) {
 /**
  *
  * @param mediaOverlay
@@ -9399,7 +9399,7 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define('readium_shared_js/views/media_overlay_element_highlighter',['jquery', 'rangy', 'readium_cfi_js'], function($, rangy, epubCfi) {
+define('readium_shared_js/views/media_overlay_element_highlighter',['jquery', 'rangy', 'readium_cfi_js'], function($, rangy, EPUBcfi) {
 /**
  *
  * @param reader
@@ -9996,7 +9996,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
     var self = this;
 
-    var _$viewport = options.$viewport;
+    var _$viewport = $(options.$viewport);
     var _spine = options.spine;
     var _userStyles = options.userStyles;
     var _deferredPageRequest;
@@ -11429,7 +11429,7 @@ return ScrollView;
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 define('readium_shared_js/views/media_overlay_player',["../globals", "jquery", "../helpers", "./audio_player", "./media_overlay_element_highlighter", "../models/smil_iterator", "rangy", 'readium_cfi_js', './scroll_view'],
-    function(Globals, $, Helpers, AudioPlayer, MediaOverlayElementHighlighter, SmilIterator, rangy, epubCfi, ScrollView) {
+    function(Globals, $, Helpers, AudioPlayer, MediaOverlayElementHighlighter, SmilIterator, rangy, EPUBcfi, ScrollView) {
 /**
  *
  * @param reader
@@ -15953,7 +15953,7 @@ var ReflowableView = function(options, reader){
 
     var self = this;
 
-    var _$viewport = options.$viewport;
+    var _$viewport = $(options.$viewport);
     var _spine = options.spine;
     var _userStyles = options.userStyles;
     var _bookStyles = options.bookStyles;
