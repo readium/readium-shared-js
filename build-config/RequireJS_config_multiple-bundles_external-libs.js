@@ -26,7 +26,7 @@ require.config({
             include: ['jquery', 'underscore', 'readium_cfi_js',
             'URIjs', 'punycode', 'SecondLevelDomains', 'IPv6',
             'jquerySizes', 'domReady', 'eventEmitter', 'console_shim',
-            'rangy', 'rangy-core', 'rangy-textrange', 'rangy-highlighter', 'rangy-classapplier', 'rangy-position', 'cssom'],
+            'rangy', 'rangy-core', 'rangy-textrange', 'rangy-classapplier', 'rangy-highlighter', 'rangy-position', 'cssom'],
         }
     ]
 });
