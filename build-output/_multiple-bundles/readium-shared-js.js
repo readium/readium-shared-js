@@ -5214,7 +5214,9 @@ var ViewerSettings = function(settingsData) {
 
         this.detach = function(ev) {
             if (typeof ResizeObserver != "undefined") {
-               observer.unobserve(element);
+                forEachElement(element, function(elem){
+                    observer.unobserve(elem);
+                });
             }
             else {
                 ResizeSensor.detach(element, ev);
