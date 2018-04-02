@@ -1089,7 +1089,7 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
     };
 
     function createBookmarkFromCfi(cfi) {
-        if (!_currentSpineItem) {
+        if (!_currentSpineItem || !cfi) {
             return null;
         }
 

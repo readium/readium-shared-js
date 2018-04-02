@@ -754,20 +754,60 @@ var FixedView = function(options, reader){
     };
 
 
-    this.getFirstVisibleCfi = function () {
-        var views = getDisplayingViews();
-        if (views.length > 0) {
-            return views[0].getFirstVisibleCfi();
+    this.getFirstVisibleCfi = function (spineItemIdref) {
+
+        if (spineItemIdref) {
+            return callOnPageView(spineItemIdref, function (view) {
+                return view.getFirstVisibleCfi();
+            });
+        } else {
+            var view = _.first(getDisplayingViews())
+            if (view) {
+                return view.getFirstVisibleCfi();
+            }
         }
-        return undefined;
     };
 
-    this.getLastVisibleCfi = function () {
-        var views = getDisplayingViews();
-        if (views.length > 0) {
-            return views[views.length - 1].getLastVisibleCfi();
+    this.getLastVisibleCfi = function (spineItemIdref) {
+
+        if (spineItemIdref) {
+            return callOnPageView(spineItemIdref, function (view) {
+                return view.getLastVisibleCfi();
+            });
+        } else {
+            var view = _.last(getDisplayingViews())
+            if (view) {
+                return view.getLastVisibleCfi();
+            }
         }
-        return undefined;
+    };
+
+    this.getStartCfi = function (spineItemIdref) {
+
+        if (spineItemIdref) {
+            return callOnPageView(spineItemIdref, function (view) {
+                return view.getStartCfi();
+            });
+        } else {
+            var view = _.first(getDisplayingViews())
+            if (view) {
+                return view.getStartCfi();
+            }
+        }
+    };
+
+    this.getEndCfi = function (spineItemIdref) {
+
+        if (spineItemIdref) {
+            return callOnPageView(spineItemIdref, function (view) {
+                return view.getEndCfi();
+            });
+        } else {
+            var view = _.last(getDisplayingViews())
+            if (view) {
+                return view.getEndCfi();
+            }
+        }
     };
 
     this.getDomRangesFromRangeCfi = function (rangeCfi, rangeCfi2, inclusive) {
@@ -862,14 +902,6 @@ var FixedView = function(options, reader){
         return callOnPageView(spineItemIdref, function (view) {
             return view.getElementFromPoint(x,y);
         });
-    };
-
-    this.getStartCfi = function () {
-        return getDisplayingViews()[0].getStartCfi();
-    };
-
-    this.getEndCfi = function () {
-        return getDisplayingViews()[0].getEndCfi();
     };
 
     this.getNearestCfiFromElement = function(element) {

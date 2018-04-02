@@ -1626,46 +1626,55 @@ var ReaderView = function (options) {
     this.getPaginationInfo = function(){
         return _currentView.getPaginationInfo();
     };
+
     /**
-     * Get CFI of the first element visible in the viewport
+     * Returns the top left (for LTR docs) or top right location (for RTL docs) of the first visible content document in view.
+     * 
+     * @param {string} [spineItemIdref]    Optional. The spine item idref of the content document to explicitly target in the current view.
      * @returns {ReadiumSDK.Models.BookmarkData}
      */
-    this.getFirstVisibleCfi = function() {
+    this.getFirstVisibleCfi = function(spineItemIdref) {
         if (_currentView) {
-            return _currentView.getFirstVisibleCfi();
+            return _currentView.getFirstVisibleCfi(spineItemIdref);
         }
         return undefined;
     };
 
     /**
-     * Get CFI of the last element visible in the viewport
+     * Returns the lower right (for LTR docs) or lower left location (for RTL docs) of the last visible content document in view.
+     * 
+     * @param {string} [spineItemIdref]    Optional. The spine item idref of the content document to explicitly target in the current view.
      * @returns {ReadiumSDK.Models.BookmarkData}
      */
-    this.getLastVisibleCfi = function() {
+    this.getLastVisibleCfi = function(spineItemIdref) {
         if (_currentView) {
-            return _currentView.getLastVisibleCfi();
+            return _currentView.getLastVisibleCfi(spineItemIdref);
         }
         return undefined;
     };
 
     /**
-     * Get CFI of the first element from the base of the document
+     * Returns the top left (for LTR docs) or top right location (for RTL docs) of the first content document loaded in the current view.
+     * 
+     * @param {string} [spineItemIdref]    Optional. The spine item idref of the content document to explicitly target in the current view.
      * @returns {ReadiumSDK.Models.BookmarkData}
      */
-    this.getStartCfi = function() {
+    this.getStartCfi = function(spineItemIdref) {
         if (_currentView) {
-            return _currentView.getStartCfi();
+            return _currentView.getStartCfi(spineItemIdref);
         }
         return undefined;
     };
 
     /**
-     * Get CFI of the last element from the base of the document
+     * Returns the lower right (for LTR docs) or lower left location (for RTL docs) of the last content document loaded in the current view.
+     * 
+     * @param {string} [spineItemIdref]    Optional. The spine item idref of the content document to explicitly target in the current view.
      * @returns {ReadiumSDK.Models.BookmarkData}
      */
-    this.getEndCfi = function() {
+    this.getEndCfi = function(spineItemIdref) {
         if (_currentView) {
-            return _currentView.getEndCfi();
+            return _currentView.getEndCfi(spineItemIdref);
         }
         return undefined;
     };
