@@ -24,7 +24,7 @@
 //  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
-define(["./globals", 'underscore', "jquery", "jquerySizes", "./models/spine_item"], function(Globals, _, $, JQuerySizes, SpineItem) {
+define(["./globals", 'underscore', "jquery", "jquerySizes", "./models/spine_item", 'URIjs'], function(Globals, _, $, JQuerySizes, SpineItem, URI) {
     
 (function()
 {
@@ -91,13 +91,13 @@ Helpers.getEbookUrlFilePath = function(ebookURL) {
 };
 
 /**
- *
+ * @param initialQuery: (optional) initial query string
  * @returns object (map between URL query parameter names and corresponding decoded / unescaped values)
  */
-Helpers.getURLQueryParams = function() {
+Helpers.getURLQueryParams = function(initialQuery) {
     var params = {};
 
-    var query = window.location.search;
+    var query = initialQuery || window.location.search;
     if (query && query.length) {
         query = query.substring(1);
         var keyParams = query.split('&');
@@ -115,57 +115,64 @@ Helpers.getURLQueryParams = function() {
 
 
 /**
- * @param urlpath: string corresponding a URL without query parameters (i.e. the part before the '?' question mark in index.html?param=value). If undefined/null, the default window.location is used.
- * @param overrides: object that maps query parameter names with values (to be included in the resulting URL, while any other query params in the current window.location are preserved as-is) 
- * @returns a string corresponding to a URL obtained by concatenating the given URL with the given query parameters (and those already in window.location)
+ * @param initialUrl: string corresponding a URL. If undefined/null, the default window.location is used.
+ * @param queryStringOverrides: object that maps query parameter names with values (to be included in the resulting URL, while any other query params in the current window.location are preserved as-is)
+ * @returns string corresponding to a URL obtained by concatenating the given URL with the given query parameters
  */
-Helpers.buildUrlQueryParameters = function(urlpath, overrides) {
-    
-    if (!urlpath) {
-        urlpath =
-        window.location ? (
-            window.location.protocol
-            + "//"
-            + window.location.hostname
-            + (window.location.port ? (':' + window.location.port) : '')
-            + window.location.pathname
-        ) : 'index.html';
+Helpers.buildUrlQueryParameters = function(initialUrl, queryStringOverrides) {
+    var uriInstance = new URI(initialUrl || window.location);
+    var startingQueryString = uriInstance.search();
+    var urlFragment = uriInstance.hash();
+    var urlPath = uriInstance.search('').hash('').toString();
+
+    var newQueryString = "";
+
+    for (var overrideKey in queryStringOverrides) {
+        if (!queryStringOverrides.hasOwnProperty(overrideKey)) continue;
+
+        if (!queryStringOverrides[overrideKey]) continue;
+
+        var overrideEntry = queryStringOverrides[overrideKey];
+        if (_.isString(overrideEntry)) {
+            overrideEntry = overrideEntry.trim();
+        }
+
+        if (!overrideEntry) continue;
+
+        if (overrideEntry.verbatim) {
+            overrideEntry = overrideEntry.value; // grab value from entry as object
+        } else {
+            overrideEntry = encodeURIComponent(overrideEntry);
+        }
+
+        console.debug("URL QUERY PARAM OVERRIDE: " + overrideKey + " = " + overrideEntry);
+
+        newQueryString += (overrideKey + "=" + overrideEntry);
+        newQueryString += "&";
     }
 
-    var paramsString = "";
-    
-    for (var key in overrides) {
-        if (!overrides.hasOwnProperty(key)) continue;
-        
-        if (!overrides[key]) continue;
-        
-        var val = overrides[key].trim();
-        if (!val) continue;
-        
-        console.debug("URL QUERY PARAM OVERRIDE: " + key + " = " + val);
 
-        paramsString += (key + "=" + encodeURIComponent(val));
-        paramsString += "&";
+    var parsedQueryString = Helpers.getURLQueryParams(startingQueryString);
+    for (var parsedKey in parsedQueryString) {
+        if (!parsedQueryString.hasOwnProperty(parsedKey)) continue;
+
+        if (!parsedQueryString[parsedKey]) continue;
+
+        if (queryStringOverrides[parsedKey]) continue;
+
+        var parsedValue = parsedQueryString[parsedKey].trim();
+        if (!parsedValue) continue;
+
+        console.debug("URL QUERY PARAM PRESERVED: " + parsedKey + " = " + parsedValue);
+
+        newQueryString += (parsedKey + "=" + encodeURIComponent(parsedValue));
+        newQueryString += "&";
     }
-    
-    var urlParams = Helpers.getURLQueryParams();
-    for (var key in urlParams) {
-        if (!urlParams.hasOwnProperty(key)) continue;
-        
-        if (!urlParams[key]) continue;
-        
-        if (overrides[key]) continue;
 
-        var val = urlParams[key].trim();
-        if (!val) continue;
-        
-        console.debug("URL QUERY PARAM PRESERVED: " + key + " = " + val);
+    // remove trailing "&"
+    newQueryString = newQueryString.slice(0, -1);
 
-        paramsString += (key + "=" + encodeURIComponent(val));
-        paramsString += "&";
-    }
-    
-    return urlpath + "?" + paramsString;
+    return urlPath + "?" + newQueryString + urlFragment;
 };
 
 
@@ -354,8 +361,10 @@ Helpers.UpdateHtmlFontAttributes = function ($epubHtml, fontSize, fontObj, callb
             // TODO: group the 3x potential $(ele).css() calls below to avoid multiple jQuery style mutations 
 
             var fontSizeAttr = ele.getAttribute('data-original-font-size');
-            var originalFontSize = Number(fontSizeAttr);
-            $(ele).css("font-size", (originalFontSize * factor) + 'px');
+            var originalFontSize = fontSizeAttr ? Number(fontSizeAttr) : 0;
+            if (originalFontSize) {
+                $(ele).css("font-size", (originalFontSize * factor) + 'px');
+            }
 
             var lineHeightAttr = ele.getAttribute('data-original-line-height');
             var originalLineHeight = lineHeightAttr ? Number(lineHeightAttr) : 0;
@@ -716,13 +725,18 @@ Helpers.loadTemplate = function (name, params) {
  */
 Helpers.loadTemplate.cache = {
     "fixed_book_frame": '<div id="fixed-book-frame" class="clearfix book-frame fixed-book-frame"></div>',
-
-    "single_page_frame": '<div><div id="scaler"><iframe allowfullscreen="allowfullscreen" scrolling="no" class="iframe-fixed"></iframe></div></div>',
+    "single_page_frame": '<div><div id="scaler"><iframe enable-annotation="enable-annotation" allowfullscreen="allowfullscreen" scrolling="no" class="iframe-fixed"></iframe></div></div>',
     //"single_page_frame" : '<div><iframe scrolling="no" class="iframe-fixed" id="scaler"></iframe></div>',
 
     "scrolled_book_frame": '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"><div id="scrolled-content-frame"></div></div>',
     "reflowable_book_frame": '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"></div>',
-    "reflowable_book_page_frame": '<div id="reflowable-content-frame" class="reflowable-content-frame"><iframe allowfullscreen="allowfullscreen" scrolling="no" id="epubContentIframe"></iframe></div>'
+    "reflowable_book_page_frame": '<div id="reflowable-content-frame" class="reflowable-content-frame"><iframe enable-annotation="enable-annotation" allowfullscreen="allowfullscreen" scrolling="no" id="epubContentIframe"></iframe></div>'
+    /***
+     * The `enable-annotation` attribute on an iframe helps detect the content frames for annotating tools such as Hypothesis
+     * See here for more details:
+     * https://h.readthedocs.io/projects/client/en/latest/publishers/embedding/
+     * https://github.com/hypothesis/client/pull/533
+     ***/
 };
 
 /**

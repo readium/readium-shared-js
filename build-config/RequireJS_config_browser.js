@@ -20,8 +20,7 @@ window.process._RJS_baseUrl = function(n)
 
 window.process._RJS_rootDir = function(n)
 {
-    if (n == 1) return ".";
-    if (n == 0) return "readium-cfi-js";
+    if (n == 0) return ".";
 };
 
 // Used in readium-build-tools/pluginsConfigMaker

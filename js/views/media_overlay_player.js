@@ -27,7 +27,7 @@
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 define(["../globals", "jquery", "../helpers", "./audio_player", "./media_overlay_element_highlighter", "../models/smil_iterator", "rangy", 'readium_cfi_js', './scroll_view'],
-    function(Globals, $, Helpers, AudioPlayer, MediaOverlayElementHighlighter, SmilIterator, rangy, epubCfi, ScrollView) {
+    function(Globals, $, Helpers, AudioPlayer, MediaOverlayElementHighlighter, SmilIterator, rangy, EPUBcfi, ScrollView) {
 /**
  *
  * @param reader
@@ -930,14 +930,7 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
 
     this.touchInit = function()
     {
-        var todo = _audioPlayer.touchInit();
-        if (todo)
-        {
-            if (_enableHTMLSpeech)
-            {
-                speakStart("o", 0);
-            }
-        }
+        return _audioPlayer.touchInit();
     };
 
     var tokeniseTTS = function(element)
