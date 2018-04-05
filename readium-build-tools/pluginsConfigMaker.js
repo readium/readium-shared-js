@@ -137,7 +137,7 @@ var templates = {
         'name: "readium-plugin-<%this.plugins[i]%>",\n' +
         'create: true,\n' +
         'include: ["readium_plugin_<%this.plugins[i]%>"],\n' +
-        'exclude: ["readium-external-libs", "readium-cfi-js", "readium-shared-js"],\n' +
+        'exclude: ["readium-external-libs", "readium-shared-js"],\n' +
         'insertRequire: ["readium_plugin_<%this.plugins[i]%>"]\n' +
         '},\n' +
         '<%}%>' +
@@ -173,8 +173,6 @@ pluginsCsonDefault = cson.parse(pluginsCsonDefault);
     //--readium-js-viewer:RJS_PLUGINS_OVERRIDE=no
     // or:
     //--readium-shared-js:RJS_PLUGINS_OVERRIDE=false
-    // or:
-    //--readium-cfi-js:RJS_PLUGINS_OVERRIDE=FALSE
     //
     // ... or ENV shell variable, e.g. PowerShell:
     //Set-Item Env:RJS_PLUGINS_OVERRIDE no
