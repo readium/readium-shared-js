@@ -8098,7 +8098,7 @@ return SmilIterator;
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define ('readium_shared_js/views/media_overlay_data_injector',["jquery", "underscore", "../helpers", "../models/smil_iterator", "rangy", 'readium_cfi_js'], function($, _, Helpers, SmilIterator, rangy, EPUBcfi) {
+define ('readium_shared_js/views/media_overlay_data_injector',["jquery", "underscore", "../helpers", "../models/smil_iterator", 'readium_cfi_js'], function($, _, Helpers, SmilIterator, EPUBcfi) {
 /**
  *
  * @param mediaOverlay
@@ -8187,122 +8187,123 @@ console.log("MO CLICKED LINK");
 
                         var par = data.par ? data.par : data.pars[0];
 
-                        if (data.pars && (typeof rangy !== "undefined"))
-                        {
-                            var wasPaused = false;
+// RANGY dependency removed, see https://github.com/readium/readium-shared-js/issues/445
+//                         if (data.pars && (typeof rangy !== "undefined"))
+//                         {
+//                             var wasPaused = false;
                             
-                            // To remove highlight which may have altered DOM (and break CFI expressions)
-                            if (mediaOverlayPlayer.isPlayingCfi())
-                            {
-                                wasPaused = true;
-                                mediaOverlayPlayer.pause();
-                            }
+//                             // To remove highlight which may have altered DOM (and break CFI expressions)
+//                             if (mediaOverlayPlayer.isPlayingCfi())
+//                             {
+//                                 wasPaused = true;
+//                                 mediaOverlayPlayer.pause();
+//                             }
                          
-                            // /////////////////////
-                            // 
-                            // var p = {x: event.pageX, y: event.pageY};
-                            // if (webkitConvertPointFromPageToNode)
-                            // {
-                            //     p = webkitConvertPointFromPageToNode(elem.ownerDocument.body, new WebKitPoint(event.pageX, event.pageY));
-                            // }
-                            // 
-                            // var div = elem.ownerDocument.getElementById("CLICKED");
-                            // if (div)
-                            // {
-                            //     div.parentNode.removeChild(div);
-                            // }
-                            // 
-                            // div = elem.ownerDocument.createElementNS("http://www.w3.org/1999/xhtml", 'div');
-                            // div.setAttribute("style", "background-color: red; position: absolute; z-index: 999; width: 50px; height: 50px; left: " + p.x + "px; top: " + p.y + "px;");
-                            // div.id = "CLICKED";
-                            // div.setAttribute("id", div.id);
-                            // var divTxt = elem.ownerDocument.createTextNode(" ");
-                            // div.appendChild(divTxt);
-                            // elem.ownerDocument.body.appendChild(div);
-                            //                          
-                            // /////////////////////
+//                             // /////////////////////
+//                             // 
+//                             // var p = {x: event.pageX, y: event.pageY};
+//                             // if (webkitConvertPointFromPageToNode)
+//                             // {
+//                             //     p = webkitConvertPointFromPageToNode(elem.ownerDocument.body, new WebKitPoint(event.pageX, event.pageY));
+//                             // }
+//                             // 
+//                             // var div = elem.ownerDocument.getElementById("CLICKED");
+//                             // if (div)
+//                             // {
+//                             //     div.parentNode.removeChild(div);
+//                             // }
+//                             // 
+//                             // div = elem.ownerDocument.createElementNS("http://www.w3.org/1999/xhtml", 'div');
+//                             // div.setAttribute("style", "background-color: red; position: absolute; z-index: 999; width: 50px; height: 50px; left: " + p.x + "px; top: " + p.y + "px;");
+//                             // div.id = "CLICKED";
+//                             // div.setAttribute("id", div.id);
+//                             // var divTxt = elem.ownerDocument.createTextNode(" ");
+//                             // div.appendChild(divTxt);
+//                             // elem.ownerDocument.body.appendChild(div);
+//                             //                          
+//                             // /////////////////////
 
 
-                            //rangy.init();
-                            try
-                            {
-// THIS WORKS (same as Rangy's method below)
-//                                 var r;
-//                                 if (elem.ownerDocument.caretRangeFromPoint)
-//                                 {
-//                                     r = elem.ownerDocument.caretRangeFromPoint(event.pageX, event.pageY);
-//                                 }
-//                                 else if (event.rangeParent)
-//                                 {
-//                                     r = elem.ownerDocument.createRange();
-//                                     range.setStart(event.rangeParent, event.rangeOffset);
-//                                 }
-//                                 
-// console.log("------ 1");
-// console.log(elem.ownerDocument);
-// console.log(event.pageX);
-// console.log(event.pageY);
-// console.log(r.startContainer);
-// console.log(r.startOffset);
-// console.log("------");
+//                             //rangy.init();
+//                             try
+//                             {
+// // THIS WORKS (same as Rangy's method below)
+// //                                 var r;
+// //                                 if (elem.ownerDocument.caretRangeFromPoint)
+// //                                 {
+// //                                     r = elem.ownerDocument.caretRangeFromPoint(event.pageX, event.pageY);
+// //                                 }
+// //                                 else if (event.rangeParent)
+// //                                 {
+// //                                     r = elem.ownerDocument.createRange();
+// //                                     range.setStart(event.rangeParent, event.rangeOffset);
+// //                                 }
+// //                                 
+// // console.log("------ 1");
+// // console.log(elem.ownerDocument);
+// // console.log(event.pageX);
+// // console.log(event.pageY);
+// // console.log(r.startContainer);
+// // console.log(r.startOffset);
+// // console.log("------");
 
-                                var pos = rangy.positionFromPoint(event.pageX, event.pageY, elem.ownerDocument);
-// console.log("------ 2");
-// console.log(pos.node.textContent);
-// console.log(pos.offset);
-// console.log("------");
+//                                 var pos = rangy.positionFromPoint(event.pageX, event.pageY, elem.ownerDocument);
+// // console.log("------ 2");
+// // console.log(pos.node.textContent);
+// // console.log(pos.offset);
+// // console.log("------");
 
-                                par = undefined;
+//                                 par = undefined;
                                 
-                                for (var iPar = 0; iPar < data.pars.length; iPar++)
-                                {
-                                    var p = data.pars[iPar];
+//                                 for (var iPar = 0; iPar < data.pars.length; iPar++)
+//                                 {
+//                                     var p = data.pars[iPar];
 
-                                    var startCFI = "epubcfi(" + p.cfi.partialStartCfi + ")";
-                                    var infoStart = EPUBcfi.getTextTerminusInfoWithPartialCFI(startCFI, elem.ownerDocument,
-                ["cfi-marker", "mo-cfi-highlight"],
-                [],
-                ["MathJax_Message"]);
-//console.log(infoStart);
+//                                     var startCFI = "epubcfi(" + p.cfi.partialStartCfi + ")";
+//                                     var infoStart = EPUBcfi.getTextTerminusInfoWithPartialCFI(startCFI, elem.ownerDocument,
+//                 ["cfi-marker", "mo-cfi-highlight"],
+//                 [],
+//                 ["MathJax_Message"]);
+// //console.log(infoStart);
 
-                                    var endCFI = "epubcfi(" + p.cfi.partialEndCfi + ")";
-                                    var infoEnd = EPUBcfi.getTextTerminusInfoWithPartialCFI(endCFI, elem.ownerDocument,
-                ["cfi-marker", "mo-cfi-highlight"],
-                [],
-                ["MathJax_Message"]);
-//console.log(infoEnd);
+//                                     var endCFI = "epubcfi(" + p.cfi.partialEndCfi + ")";
+//                                     var infoEnd = EPUBcfi.getTextTerminusInfoWithPartialCFI(endCFI, elem.ownerDocument,
+//                 ["cfi-marker", "mo-cfi-highlight"],
+//                 [],
+//                 ["MathJax_Message"]);
+// //console.log(infoEnd);
 
-                                    var range = rangy.createRange(elem.ownerDocument); //createNativeRange
-                                    range.setStartAndEnd(
-                                        infoStart.textNode, infoStart.textOffset,
-                                        infoEnd.textNode, infoEnd.textOffset
-                                    );
+//                                     var range = rangy.createRange(elem.ownerDocument); //createNativeRange
+//                                     range.setStartAndEnd(
+//                                         infoStart.textNode, infoStart.textOffset,
+//                                         infoEnd.textNode, infoEnd.textOffset
+//                                     );
         
-                                    if (range.isPointInRange(pos.node, pos.offset))
-                                    {
-// console.log(p.cfi.partialStartCfi);
-// console.log(p.cfi.partialEndCfi);
-                                        // DOUBLE CHECK WITH getClientRects ??
+//                                     if (range.isPointInRange(pos.node, pos.offset))
+//                                     {
+// // console.log(p.cfi.partialStartCfi);
+// // console.log(p.cfi.partialEndCfi);
+//                                         // DOUBLE CHECK WITH getClientRects ??
                                         
-                                        par = p;
-                                        break;
-                                    }
-                                }
-                            }
-                            catch (e)
-                            {
-                                console.error(e);
-                            }
+//                                         par = p;
+//                                         break;
+//                                     }
+//                                 }
+//                             }
+//                             catch (e)
+//                             {
+//                                 console.error(e);
+//                             }
                             
-                            if (!par)
-                            {
-                                if (wasPaused)
-                                {
-                                    mediaOverlayPlayer.toggleMediaOverlay();
-                                }
-                                return true;
-                            }
-                        }
+//                             if (!par)
+//                             {
+//                                 if (wasPaused)
+//                                 {
+//                                     mediaOverlayPlayer.toggleMediaOverlay();
+//                                 }
+//                                 return true;
+//                             }
+//                         }
 
 
                         if (el && el != elem && el.nodeName.toLowerCase() === "body" && par && !par.getSmil().id)
@@ -9401,7 +9402,7 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define('readium_shared_js/views/media_overlay_element_highlighter',['jquery', 'rangy', 'readium_cfi_js'], function($, rangy, EPUBcfi) {
+define('readium_shared_js/views/media_overlay_element_highlighter',['jquery', 'readium_cfi_js'], function($, EPUBcfi) {
 /**
  *
  * @param reader
@@ -9433,9 +9434,10 @@ var MediaOverlayElementHighlighter = function(reader) {
 
     var _reader = reader;
     
-    var USE_RANGY = true && (typeof rangy !== "undefined");
-    var _rangyCSS = undefined;
-    var _rangyRange = undefined;
+// RANGY dependency removed, see https://github.com/readium/readium-shared-js/issues/445
+// var USE_RANGY = true && (typeof rangy !== "undefined");
+// var _rangyCSS = undefined;
+// var _rangyRange = undefined;
     
     var HIGHLIGHT_ID = "MO_SPEAK";
     
@@ -9656,64 +9658,66 @@ var MediaOverlayElementHighlighter = function(reader) {
 
         var clazz = (overrideWithUserStyle || !hasAuthorStyle) ? ((hasAuthorStyle ? (_activeClass + " ") : "") + DEFAULT_MO_ACTIVE_CLASS) : _activeClass;
 
-        if (USE_RANGY)
-        {
-            var doc = _highlightedCfiPar.cfi.cfiTextParent.ownerDocument;
+// RANGY dependency removed, see https://github.com/readium/readium-shared-js/issues/445
+//         if (USE_RANGY)
+//         {
+//             var doc = _highlightedCfiPar.cfi.cfiTextParent.ownerDocument;
 
-            _rangyRange = rangy.createRange(doc); //createNativeRange
+//             _rangyRange = rangy.createRange(doc); //createNativeRange
 
-            var startCFI = "epubcfi(" + _highlightedCfiPar.cfi.partialStartCfi + ")";
-            var infoStart = EPUBcfi.getTextTerminusInfoWithPartialCFI(startCFI, doc,
-                ["cfi-marker", "mo-cfi-highlight"],
-                [],
-                ["MathJax_Message"]);
-//console.log(infoStart);
+//             var startCFI = "epubcfi(" + _highlightedCfiPar.cfi.partialStartCfi + ")";
+//             var infoStart = EPUBcfi.getTextTerminusInfoWithPartialCFI(startCFI, doc,
+//                 ["cfi-marker", "mo-cfi-highlight"],
+//                 [],
+//                 ["MathJax_Message"]);
+// //console.log(infoStart);
 
-            var endCFI = "epubcfi(" + _highlightedCfiPar.cfi.partialEndCfi + ")";
-            var infoEnd = EPUBcfi.getTextTerminusInfoWithPartialCFI(endCFI, doc,
-                ["cfi-marker", "mo-cfi-highlight"],
-                [],
-                ["MathJax_Message"]);
-//console.log(infoEnd);
+//             var endCFI = "epubcfi(" + _highlightedCfiPar.cfi.partialEndCfi + ")";
+//             var infoEnd = EPUBcfi.getTextTerminusInfoWithPartialCFI(endCFI, doc,
+//                 ["cfi-marker", "mo-cfi-highlight"],
+//                 [],
+//                 ["MathJax_Message"]);
+// //console.log(infoEnd);
             
-            _rangyRange.setStartAndEnd(
-                infoStart.textNode, infoStart.textOffset,
-                infoEnd.textNode, infoEnd.textOffset
-            );
+//             _rangyRange.setStartAndEnd(
+//                 infoStart.textNode, infoStart.textOffset,
+//                 infoEnd.textNode, infoEnd.textOffset
+//             );
             
-            if (false && // we use CssClassApplier instead, because surroundContents() has no trivial undoSurroundContents() function (inc. text nodes normalisation, etc.)
-                _rangyRange.canSurroundContents())
-            {
-                _rangyRange.MO_createCssClassApplier = false;
+//             if (false && // we use CssClassApplier instead, because surroundContents() has no trivial undoSurroundContents() function (inc. text nodes normalisation, etc.)
+//                 _rangyRange.canSurroundContents())
+//             {
+//                 _rangyRange.MO_createCssClassApplier = false;
                 
-                var span = doc.createElementNS("http://www.w3.org/1999/xhtml", 'span');
-                span.id = HIGHLIGHT_ID;
-                span.setAttribute("id", span.id);
-                span.setAttribute("class", clazz + " mo-cfi-highlight");
+//                 var span = doc.createElementNS("http://www.w3.org/1999/xhtml", 'span');
+//                 span.id = HIGHLIGHT_ID;
+//                 span.setAttribute("id", span.id);
+//                 span.setAttribute("class", clazz + " mo-cfi-highlight");
             
-                _rangyRange.surroundContents(span);
-            }
-            else
-            {
-                _rangyRange.MO_createCssClassApplier = true;
+//                 _rangyRange.surroundContents(span);
+//             }
+//             else
+//             {
+//                 _rangyRange.MO_createCssClassApplier = true;
                 
-                if (!_rangyCSS || _rangyCSS.cssClass !== clazz)
-                {
-                    _rangyCSS = rangy.createCssClassApplier(clazz,
-                    {
-                        elementTagName: "span",
-                        elementProperties: {className: "mo-cfi-highlight"},
-                        ignoreWhiteSpace: true,
-                        applyToEditableOnly: false,
-                        normalize: true
-                    },
-                    ["span"]);
-                }
+//                 if (!_rangyCSS || _rangyCSS.cssClass !== clazz)
+//                 {
+//                     _rangyCSS = rangy.createCssClassApplier(clazz,
+//                     {
+//                         elementTagName: "span",
+//                         elementProperties: {className: "mo-cfi-highlight"},
+//                         ignoreWhiteSpace: true,
+//                         applyToEditableOnly: false,
+//                         normalize: true
+//                     },
+//                     ["span"]);
+//                 }
 
-                _rangyCSS.applyToRange(_rangyRange);
-            }
-        }
-        else if (_reader.plugins.highlights) // same API, newer implementation
+//                 _rangyCSS.applyToRange(_rangyRange);
+//             }
+//         }
+//         else
+        if (_reader.plugins.highlights) // same API, newer implementation
         {
             try
             {
@@ -9797,29 +9801,31 @@ var MediaOverlayElementHighlighter = function(reader) {
         if (_highlightedCfiPar)
         {
             var doc = _highlightedCfiPar.cfi.cfiTextParent.ownerDocument;
-            if (USE_RANGY)
-            {
-                if (_rangyCSS && _rangyRange.MO_createCssClassApplier)
-                {
-                    _rangyCSS.undoToRange(_rangyRange);
-                }
-                else
-                {
-                    var toRemove = undefined;
-                    while ((toRemove = doc.getElementById(HIGHLIGHT_ID)) !== null)
-                    {
-                        var txt = toRemove.textContent; // TODO: innerHTML? or better: hasChildNodes loop + detach and re-attach
-                        var txtNode = doc.createTextNode(txt);
-                        
-                        toRemove.parentNode.replaceChild(txtNode, toRemove);
-                        txtNode.parentNode.normalize();
-                    }
-                }
-        
-                //_rangyCSS = undefined;
-                _rangyRange = undefined;
-            }
-            else if (_reader.plugins.highlights) // same API, new implementation
+// RANGY dependency removed, see https://github.com/readium/readium-shared-js/issues/445
+// if (USE_RANGY)
+// {
+//     if (_rangyCSS && _rangyRange.MO_createCssClassApplier)
+//     {
+//         _rangyCSS.undoToRange(_rangyRange);
+//     }
+//     else
+//     {
+//         var toRemove = undefined;
+//         while ((toRemove = doc.getElementById(HIGHLIGHT_ID)) !== null)
+//         {
+//             var txt = toRemove.textContent; // TODO: innerHTML? or better: hasChildNodes loop + detach and re-attach
+//             var txtNode = doc.createTextNode(txt);
+            
+//             toRemove.parentNode.replaceChild(txtNode, toRemove);
+//             txtNode.parentNode.normalize();
+//         }
+//     }
+
+//     //_rangyCSS = undefined;
+//     _rangyRange = undefined;
+// }
+// else
+            if (_reader.plugins.highlights) // same API, new implementation
             {
                 try
                 {
@@ -11430,8 +11436,8 @@ return ScrollView;
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define('readium_shared_js/views/media_overlay_player',["../globals", "jquery", "../helpers", "./audio_player", "./media_overlay_element_highlighter", "../models/smil_iterator", "rangy", 'readium_cfi_js', './scroll_view'],
-    function(Globals, $, Helpers, AudioPlayer, MediaOverlayElementHighlighter, SmilIterator, rangy, EPUBcfi, ScrollView) {
+define('readium_shared_js/views/media_overlay_player',["../globals", "jquery", "../helpers", "./audio_player", "./media_overlay_element_highlighter", "../models/smil_iterator", 'readium_cfi_js', './scroll_view'],
+    function(Globals, $, Helpers, AudioPlayer, MediaOverlayElementHighlighter, SmilIterator, EPUBcfi, ScrollView) {
 /**
  *
  * @param reader
@@ -11972,20 +11978,21 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
                 ["MathJax_Message"]);
 //console.log(infoEnd);
 
-                if (rangy)
-                {
-                    //infoStart.textNode.parentNode.ownerDocument
-                    var range = rangy.createRange(doc); //createNativeRange
-                    range.setStartAndEnd(
-                        infoStart.textNode, infoStart.textOffset,
-                        infoEnd.textNode, infoEnd.textOffset
-                    );
-                    _currentTTS = range.toString(); //.text()
-                }
-                else
-                {
+// RANGY dependency removed, see https://github.com/readium/readium-shared-js/issues/445
+// if (rangy)
+// {
+//     //infoStart.textNode.parentNode.ownerDocument
+//     var range = rangy.createRange(doc); //createNativeRange
+//     range.setStartAndEnd(
+//         infoStart.textNode, infoStart.textOffset,
+//         infoEnd.textNode, infoEnd.textOffset
+//     );
+//     _currentTTS = range.toString(); //.text()
+// }
+// else
+// {
                     _currentTTS = undefined;
-                }
+// }
 
                 if (!_currentTTS || _currentTTS == "")
                 {

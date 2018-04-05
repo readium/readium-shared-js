@@ -74,25 +74,7 @@ require.config({
         // ------ LIBs
 
         'console_shim':
-            process._RJS_rootDir(0) + '/lib/console_shim',
-
-        rangy:
-            process._RJS_rootDir(0) + '/lib/rangy/rangy',
-
-        "rangy-core":
-            process._RJS_rootDir(0) + '/node_modules/rangy/lib/rangy-core',
-
-        "rangy-textrange":
-            process._RJS_rootDir(0) + '/node_modules/rangy/lib/rangy-textrange',
-
-        "rangy-highlighter":
-            process._RJS_rootDir(0) + '/node_modules/rangy/lib/rangy-highlighter',
-
-        "rangy-classapplier":
-            process._RJS_rootDir(0) + '/node_modules/rangy/lib/rangy-classapplier',
-
-        "rangy-position":
-            process._RJS_rootDir(0) + '/lib/rangy/rangy-position'
+            process._RJS_rootDir(0) + '/lib/console_shim'
     },
 
     shim:
