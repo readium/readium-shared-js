@@ -13,7 +13,7 @@
 
 require.config({
 
-    baseUrl: process._RJS_baseUrl(1),
+    baseUrl: process._RJS_baseUrl(0),
 
     // relative to this config file (not baseUrl)
     dir: "../build-output/_multiple-bundles",
@@ -24,7 +24,7 @@ require.config({
             name: "readium-shared-js",
             create: true,
             include: ['readium_shared_js/globalsSetup', 'readium_shared_js/views/reader_view'],
-            exclude: ["readium-external-libs", "readium-cfi-js"],
+            exclude: ["readium-external-libs"],
             insertRequire: ["readium_shared_js/globalsSetup"]
         }
     ]

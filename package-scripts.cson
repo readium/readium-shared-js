@@ -1,0 +1,223 @@
+'cson2json': '
+
+    json -I -f package.json -e "this.scripts=$(cat package-scripts.cson | cson2json)"
+    &&
+    node readium-build-tools/optimizePackageJsonScripts.js
+'
+
+'prepare:all': '
+
+    npm run
+        prepare:local
+'
+
+'prepare:local': '
+
+    (npm outdated || echo outdated)
+    &&
+    (npm ci || npm install)
+    &&
+    npm run prepare:local:common
+'
+
+'prepare:yarn:all': '
+
+    yarn run
+        prepare:yarn:local
+'
+
+'prepare:yarn:local': '
+
+    (yarn outdated || echo outdated)
+    &&
+    yarn install
+    &&
+    yarn run prepare:local:common
+'
+
+'prepare:local:common': '
+
+    node readium-build-tools/gitHubForksUpdater.js
+'
+
+'clean': '
+
+    (yarn --version || echo noyarn)
+    &&
+    node --version
+    &&
+    npm --version
+    &&
+    rimraf
+        build-output/*
+    &&
+    rimraf
+        api-docs/*
+'
+
+'apidocs': '
+
+    npm run yuidocjs
+'
+
+'prebuild': '
+
+    npm run clean
+'
+
+'build': '
+
+    npm run
+        build:styles
+    &&
+    npm run
+        build:scripts
+'
+
+'lint': '
+
+    npm run jshint
+        "js/**.js"
+'
+
+'genPluginsConfig': '
+
+    node readium-build-tools/pluginsConfigMaker.js
+'
+
+'prebuild:scripts': '
+
+    npm run genPluginsConfig --readium-shared-js:RJS_PLUGINS_OVERRIDE=no
+'
+# RJS_PLUGINS_OVERRIDE can be overridden, via an ENV shell variable:
+# e.g. PowerShell:
+# Set-Item Env:RJS_PLUGINS_OVERRIDE no
+# e.g. OSX terminal:
+# RJS_PLUGINS_OVERRIDE=no npm run build
+# (temporary, process-specific ENV variable)
+
+#    'prebuild:scripts': '
+#
+#        npm run
+#            lint
+#    '
+
+#    'postbuild:scripts': '
+#
+#        npm run rimraf
+#                build-output/_SOURCES
+#    '
+
+'build:scripts': '
+
+    npm run
+        build:scripts:multiple --readium-shared-js:RJS_UGLY=no
+    &&
+    npm run
+        build:scripts:single --readium-shared-js:RJS_UGLY=no
+    &&
+    npm run
+        build:scripts:umd --readium-shared-js:RJS_UGLY=no
+'
+
+'build:scripts:multiple': '
+
+    npm run rjs
+            --rjs_bundle=multiple
+'
+
+'postbuild:scripts:multiple': '
+
+    npm run rimraf
+        build-output/_multiple-bundles/RequireJS.js.src.js
+'
+
+'build:scripts:single': '
+
+    npm run rjs
+            --rjs_bundle=single
+'
+
+'build:scripts:umd': '
+
+    npm run rjs
+            --rjs_bundle=umd
+'
+
+'prebuild:styles': '
+
+    mkdirp
+        build-output/css/
+'
+
+# TODO use cssminify
+'build:styles': '
+
+    cpy
+        static/sdk.css
+        build-output/css/
+'
+
+#### BLOCKING! (CTRL-C) [watch][live-reload][http]
+'http:watch': '
+
+    echo > open_webbrowser.js
+    &&
+    run-p
+        \"dowatch\"
+        \"httpServe\"
+'
+# \"live-reload\"
+
+#### BLOCKING! (CTRL-C) [http]
+'http': '
+    npm run genPluginsConfig
+    &&
+    npm run httpServe
+'
+
+#### BLOCKING! (CTRL-C) [watch or nodemon]
+'dowatch': '
+
+    watch
+        \"npm run build
+            && node readium-build-tools/webbrowser.js
+            && rimraf
+                    open_webbrowser.js\"
+        dev/ js/ plugins/
+'
+#    nodemon -q
+#    -w dev/
+#    --ext \".\"
+#    --exec \" ... \"
+
+#### BLOCKING! (CTRL-C) [watch]
+'watch': '
+
+    watch 
+        \"npm run build\"
+        dev/ js/ plugins/
+'
+
+'httpServe': '
+
+    node
+        readium-build-tools/http-server.js
+        
+        -LOGFILE
+        http.log
+        
+        -OPEN
+        /dev/
+        
+        -c-1
+        -a 127.0.0.1
+        -p 9090
+        --cors
+        .
+'
+
+#    'live-reload': '
+#
+#        live-reload --port 9091 --delay 1000 build-output/
+#    '

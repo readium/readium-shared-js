@@ -22,7 +22,7 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define(['jquery', '../helpers', 'readium_cfi_js', '../globals', '../models/viewer_settings'], function($, Helpers, epubCfi, Globals, ViewerSettings) {
+define(['jquery', '../helpers', 'readium_cfi_js', 'URIjs', '../globals', '../models/viewer_settings'], function($, Helpers, EPUBcfi, URI, Globals, ViewerSettings) {
 /**
  *
  * @param reader
