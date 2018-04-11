@@ -10365,7 +10365,11 @@ var Globals = {
         /**
          * @event
          */
-        PLUGINS_LOADED: "PluginsLoaded"
+        PLUGINS_LOADED: "PluginsLoaded",
+        /**
+         * @event
+         */
+        EPUB_POPUP_FOOTNOTE: "EpubPopupFootnote"
     },
     /**
      * Internal Events
@@ -25207,115 +25211,6 @@ var Map = getNative(root, 'Map');
  * @name clear
  * @memberOf MapCache
  */
-<<<<<<< HEAD
-var Globals = {
-
-    /**
-     * Current version of the JS SDK
-     * @static
-     * @return {string} version
-     */
-    version: function () {
-        return "0.8.0";
-    },
-    /**
-     * @namespace
-     */
-    Views: {
-        /**
-         * Landscape Orientation
-         */
-        ORIENTATION_LANDSCAPE: "orientation_landscape",
-        /**
-         * Portrait Orientation
-         */
-        ORIENTATION_PORTRAIT: "orientation_portrait"
-    },
-    /**
-     * @namespace
-     */
-    Events: {
-        /**
-         * @event
-         */
-        READER_INITIALIZED: "ReaderInitialized",
-        /**
-         * This gets triggered on every page turnover. It includes spine information and such.
-         * @event
-         */
-        PAGINATION_CHANGED: "PaginationChanged",
-        /**
-         * @event
-         */
-        SETTINGS_APPLIED: "SettingsApplied",
-        /**
-         * @event
-         */
-        FXL_VIEW_RESIZED: "FXLViewResized",
-        /**
-         * @event
-         */
-        READER_VIEW_CREATED: "ReaderViewCreated",
-        /**
-         * @event
-         */
-        READER_VIEW_DESTROYED: "ReaderViewDestroyed",
-        /**
-         * @event
-         */
-        CONTENT_DOCUMENT_LOAD_START: "ContentDocumentLoadStart",
-        /**
-         * @event
-         */
-        CONTENT_DOCUMENT_LOADED: "ContentDocumentLoaded",
-        /**
-         * @event
-         */
-        CONTENT_DOCUMENT_UNLOADED: "ContentDocumentUnloaded",
-        /**
-         * @event
-         */
-        MEDIA_OVERLAY_STATUS_CHANGED: "MediaOverlayStatusChanged",
-        /**
-         * @event
-         */
-        MEDIA_OVERLAY_TTS_SPEAK: "MediaOverlayTTSSpeak",
-        /**
-         * @event
-         */
-        MEDIA_OVERLAY_TTS_STOP: "MediaOverlayTTSStop",
-        /**
-         * @event
-         */
-        PLUGINS_LOADED: "PluginsLoaded",
-        /**
-         * @event
-         */
-        EPUB_POPUP_FOOTNOTE: "EpubPopupFootnote"
-    },
-    /**
-     * Internal Events
-     *
-     * @desc Should not be triggered outside of {@link Views.ReaderView}.
-     * @namespace
-     */
-    InternalEvents: {
-        /**
-         * @event
-         */
-        CURRENT_VIEW_PAGINATION_CHANGED: "CurrentViewPaginationChanged",
-    },
-    
-    logEvent: function(eventName, eventType, eventSource) {
-        if (DEBUG) {
-            console.debug("#### ReadiumSDK.Events." + eventName + " - "+eventType+" - " + eventSource);
-        }
-    }
-};
-$.extend(Globals, new EventEmitter());
-
-return Globals;
-=======
 function mapCacheClear() {
   this.size = 0;
   this.__data__ = {
@@ -25324,7 +25219,6 @@ function mapCacheClear() {
     'string': new Hash
   };
 }
->>>>>>> develop
 
 /**
  * Checks if `value` is suitable for use as unique object key.
@@ -33358,13 +33252,13 @@ var CfiNavigationLogic = function (options) {
 
             if (isVwm) {
                 var topOffset = firstRectangle.top;
-                pageIndex = Math.round(topOffset / frameDimensions.height);
+                pageIndex = Math.floor(topOffset / frameDimensions.height);
             } else {
                 var leftOffset = firstRectangle.left;
                 if (isRtl) {
                     leftOffset = (columnFullWidth * (options.paginationInfo ? options.paginationInfo.visibleColumnCount : 1)) - leftOffset;
                 }
-                pageIndex = Math.round(leftOffset / columnFullWidth);
+                pageIndex = Math.floor(leftOffset / columnFullWidth);
             }
 
             return pageIndex;
@@ -37690,11 +37584,7 @@ return IFrameLoader;
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-<<<<<<< HEAD
-define('readium_shared_js/views/internal_links_support',['jquery', '../helpers', 'readium_cfi_js', '../globals', '../models/viewer_settings'], function($, Helpers, epubCfi, Globals, ViewerSettings) {
-=======
-define('readium_shared_js/views/internal_links_support',['jquery', '../helpers', 'readium_cfi_js', 'URIjs'], function($, Helpers, EPUBcfi, URI) {
->>>>>>> develop
+define('readium_shared_js/views/internal_links_support',['jquery', '../helpers', 'readium_cfi_js', 'URIjs', '../globals', '../models/viewer_settings'], function($, Helpers, EPUBcfi, URI, Globals, ViewerSettings) {
 /**
  *
  * @param reader

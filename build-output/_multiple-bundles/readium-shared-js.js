@@ -3283,13 +3283,13 @@ var CfiNavigationLogic = function (options) {
 
             if (isVwm) {
                 var topOffset = firstRectangle.top;
-                pageIndex = Math.round(topOffset / frameDimensions.height);
+                pageIndex = Math.floor(topOffset / frameDimensions.height);
             } else {
                 var leftOffset = firstRectangle.left;
                 if (isRtl) {
                     leftOffset = (columnFullWidth * (options.paginationInfo ? options.paginationInfo.visibleColumnCount : 1)) - leftOffset;
                 }
-                pageIndex = Math.round(leftOffset / columnFullWidth);
+                pageIndex = Math.floor(leftOffset / columnFullWidth);
             }
 
             return pageIndex;
@@ -7615,11 +7615,7 @@ return IFrameLoader;
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-<<<<<<< HEAD
-define('readium_shared_js/views/internal_links_support',['jquery', '../helpers', 'readium_cfi_js', '../globals', '../models/viewer_settings'], function($, Helpers, epubCfi, Globals, ViewerSettings) {
-=======
-define('readium_shared_js/views/internal_links_support',['jquery', '../helpers', 'readium_cfi_js', 'URIjs'], function($, Helpers, EPUBcfi, URI) {
->>>>>>> develop
+define('readium_shared_js/views/internal_links_support',['jquery', '../helpers', 'readium_cfi_js', 'URIjs', '../globals', '../models/viewer_settings'], function($, Helpers, EPUBcfi, URI, Globals, ViewerSettings) {
 /**
  *
  * @param reader
