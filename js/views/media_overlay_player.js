@@ -568,21 +568,8 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
                 ["MathJax_Message"]);
 //console.log(infoEnd);
 
-// RANGY dependency removed, see https://github.com/readium/readium-shared-js/issues/445
-// if (rangy)
-// {
-//     //infoStart.textNode.parentNode.ownerDocument
-//     var range = rangy.createRange(doc); //createNativeRange
-//     range.setStartAndEnd(
-//         infoStart.textNode, infoStart.textOffset,
-//         infoEnd.textNode, infoEnd.textOffset
-//     );
-//     _currentTTS = range.toString(); //.text()
-// }
-// else
-// {
-                    _currentTTS = undefined;
-// }
+                // TODO: get string range to speak
+                _currentTTS = undefined;
 
                 if (!_currentTTS || _currentTTS == "")
                 {
