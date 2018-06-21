@@ -60,7 +60,7 @@
     "glob": "^7.1.2",
     "http-server": "github:danielweck/http-server#master",
     "jquery": "2.x.x",
-    "jquery-sizes": "github:JCCR/jquery-sizes#master",
+    "jquery-sizes": "github:JCCR/jquery-sizes#1cd6df779a9dd5fbef4fa4c2254a0ee299ee9d3c",
     "jshint": "^2.9.5",
     "json": "^9.0.6",
     "mkdirp": "^0.5.1",
