@@ -55,7 +55,7 @@
     "css-element-queries": "github:danielweck/css-element-queries#master",
     "cssom": "github:danielweck/CSSOM#master",
     "domReady": "github:requirejs/domReady#master",
-    "es6-collections": "^0.5.6",
+    "es6-shim": "^0.35.3",
     "eventemitter3": "^3.1.0",
     "glob": "^7.1.2",
     "http-server": "github:danielweck/http-server#master",
