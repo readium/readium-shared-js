@@ -1232,6 +1232,15 @@ var ReaderView = function (options) {
         return undefined;
     };
 
+
+    this.holdNextMediaOverlay = function() {
+        _mediaOverlayPlayer.holdNextMediaOverlay();
+    };
+
+    this.resumeNextMediaOverlay = function() {
+        _mediaOverlayPlayer.resumeNextMediaOverlay();
+    };
+
     /**
      * Used to jump to an element to make sure it is visible when a content document is paginated
      * @param {string}      spineItemId   The spine item idref associated with an active content document

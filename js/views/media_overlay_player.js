@@ -664,6 +664,17 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
 //4 = TTS
 //5 = audio end
 //6 = user previous/next/escape
+    var holdNext = false;
+
+    this.holdNextMediaOverlay = function() {
+        holdNext = true;
+    };
+
+    this.resumeNextMediaOverlay = function() {
+        holdNext = false;
+        self.play();
+    };
+
     function onAudioPositionChanged(position, from, skipping) { //noLetPlay
 
         audioCurrentTime = position;
@@ -726,6 +737,10 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
         if (goNext)
         {
             _smilIterator.next();
+            if (holdNext) {
+                self.pause(true);
+                return;
+            }
         }
         else //position <= DIRECTION_MARK
         {
@@ -760,6 +775,10 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
             else
             {
                 nextSmil(goNext);
+                if (holdNext) {
+                   self.pause(true);
+                   return;
+                }
             }
             return;
         }
@@ -1761,7 +1780,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         highlightCurrentElement();
     }
 
-    this.pause = function()
+    this.pause = function(keepHighlighter)
     {
         _wasPlayingScrolling = false;
         
@@ -1787,7 +1806,10 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
             _audioPlayer.pause();
         }
 
-        _elementHighlighter.reset();
+        if (!keepHighlighter) 
+        {
+            _elementHighlighter.reset();
+        }
     }
 
     this.isMediaOverlayAvailable = function() {
