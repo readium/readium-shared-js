@@ -36,10 +36,9 @@ define(["../globals", "jquery", "../helpers", "./audio_player", "./media_overlay
  */
 var MediaOverlayPlayer = function(reader, onStatusChanged) {
 
-
     var _smilIterator = undefined;
 
-    var _audioPlayer = new AudioPlayer(onStatusChanged, onAudioPositionChanged, onAudioEnded, onPlay, onPause);
+    var _audioPlayer = new AudioPlayer(onAudioStatusChanged, onAudioPositionChanged, onAudioEnded, onPlay, onPause);
 
     var _ttsIsPlaying = false;
     var _currentTTS = undefined;
@@ -447,7 +446,7 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
 
         }, 2000);
 
-        onStatusChanged({isPlaying: true});
+        onAudioStatusChanged({isPlaying: true});
     }
 
     function playCurrentPar() {
@@ -518,7 +517,7 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
                     
                     // gives the audio player some dispatcher time to raise the onPause event
                     setTimeout(function(){
-                        onStatusChanged({isPlaying: true});
+                        onAudioStatusChanged({isPlaying: true});
                     }, 80);
 
 //                    $(element).on("seeked", function()
@@ -664,16 +663,20 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
 //4 = TTS
 //5 = audio end
 //6 = user previous/next/escape
-    var holdNext = false;
+    var _holdNext = false;
 
     this.holdNextMediaOverlay = function() {
-        holdNext = true;
+        _holdNext = true;
     };
 
     this.resumeNextMediaOverlay = function() {
-        holdNext = false;
+        _holdNext = false;
         self.play();
     };
+
+    function onAudioStatusChanged(status) {
+        onStatusChanged($.extend({}, getStatusInfo(), status));
+    }
 
     function onAudioPositionChanged(position, from, skipping) { //noLetPlay
 
@@ -737,7 +740,7 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
         if (goNext)
         {
             _smilIterator.next();
-            if (holdNext) {
+            if (_holdNext) {
                 self.pause(true);
                 return;
             }
@@ -775,7 +778,7 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
             else
             {
                 nextSmil(goNext);
-                if (holdNext) {
+                if (_holdNext) {
                    self.pause(true);
                    return;
                 }
@@ -1089,7 +1092,7 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
         {
             // gives the audio player some dispatcher time to raise the onPause event
             setTimeout(function(){
-                onStatusChanged({isPlaying: true});
+                onAudioStatusChanged({isPlaying: true});
             }, 80);
             
             _ttsIsPlaying = true;
@@ -1407,7 +1410,7 @@ console.debug("TTS resume");
         var wasPlaying = _ttsIsPlaying;
 
         if (wasPlaying) {
-            onStatusChanged({isPlaying: false});
+            onAudioStatusChanged({isPlaying: false});
         }
         
         _ttsIsPlaying = false;
@@ -1427,11 +1430,7 @@ console.debug("TTS resume");
 
     var _timerTick = undefined;
 
-    function onPlay() {
-        onPause();
-
-        var func = function() {
-
+    function getStatusInfo () {
             if (!_smilIterator || !_smilIterator.currentPar)
             {
                 return;
@@ -1449,9 +1448,9 @@ console.debug("TTS resume");
 //            }
 
             var playPosition = audioCurrentTime - _smilIterator.currentPar.audio.clipBegin;
-            if (playPosition <= 0)
+        if (playPosition < 0)
             {
-                return;
+            playPosition = 0;
             }
 
             var smilIndex = smil.mo.smil_models.indexOf(smil);
@@ -1468,7 +1467,23 @@ console.debug("TTS resume");
                 smilIterator.next();
             }
 
-            onStatusChanged({playPosition: playPosition, smilIndex: smilIndex, parIndex: parIndex});
+        return {
+            playPosition: playPosition,
+            smilIndex: smilIndex,
+            parIndex: parIndex,
+            smilId: smil.id,
+            parId: smilIterator.currentPar.id
+        };
+    }
+
+    function onPlay() {
+        onPause();
+
+        var func = function() {
+            var status = getStatusInfo();
+            if (status && status.playPosition > 0) {
+               onStatusChanged(status);
+            }
         };
 
         setTimeout(func, 500);
@@ -1717,7 +1732,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         _blankPagePlayer = undefined;
 
         if (wasPlaying) {
-            onStatusChanged({isPlaying: false});
+            onAudioStatusChanged({isPlaying: false});
         }
     };
 
@@ -1732,7 +1747,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         _currentEmbedded = undefined;
         
         if (wasPlaying) {
-            onStatusChanged({isPlaying: false});
+            onAudioStatusChanged({isPlaying: false});
         }
         _embeddedIsPlaying = false;
     };
@@ -1746,6 +1761,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         _elementHighlighter.reset();
         _smilIterator = undefined;
         _skipAudioEnded = false;
+        _holdNext = false;
     };
 
     this.play = function ()
@@ -1759,7 +1775,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         {
             _embeddedIsPlaying = true;
             _currentEmbedded.play();
-            onStatusChanged({isPlaying: true});
+            onAudioStatusChanged({isPlaying: true});
         }
         else if (_currentTTS)
         {
@@ -1795,7 +1811,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
             {
                 _currentEmbedded.pause();
             }
-            onStatusChanged({isPlaying: false});
+            onAudioStatusChanged({isPlaying: false});
         }
         else if (_ttsIsPlaying)
         {
