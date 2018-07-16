@@ -739,11 +739,11 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
         
         if (goNext)
         {
-            _smilIterator.next();
             if (_holdNext) {
                 self.pause(true);
                 return;
             }
+            _smilIterator.next();
         }
         else //position <= DIRECTION_MARK
         {
@@ -777,11 +777,11 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
             }
             else
             {
-                nextSmil(goNext);
                 if (_holdNext) {
-                   self.pause(true);
-                   return;
+                    self.pause(true);
+                    return;
                 }
+                nextSmil(goNext);
             }
             return;
         }
