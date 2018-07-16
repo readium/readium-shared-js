@@ -230,14 +230,18 @@ define(['jquery'],function($) {
     
         function onPlay()
         {
-            onStatusChanged({isPlaying: true});
+            if (!_isForcingPreload) {
+                onStatusChanged({isPlaying: true});
+            }
             onAudioPlay();
         }
     
         function onPause()
         {
             onAudioPause();
-            onStatusChanged({isPlaying: false});
+            if (!_isForcingPreload) {
+                onStatusChanged({isPlaying: false});
+            }
         }
     
         function onEnded()
@@ -255,7 +259,9 @@ define(['jquery'],function($) {
             stopTimer();
     
             onAudioEnded();
-            onStatusChanged({isPlaying: false});
+            if (!_isForcingPreload) {
+                onStatusChanged({isPlaying: false});
+            }
         }
         
         var _intervalTimerSkips = 0;
@@ -486,13 +492,15 @@ define(['jquery'],function($) {
         //     playToForcePreload();
         // };
         
+        var _isForcingPreload = false;
+
         var playToForcePreload = function()
         {
             if (DEBUG)
             {
                 console.debug("playToForcePreload");
             }
-            
+            _isForcingPreload = true;
             //_audioElement.volume = 0;
             //_audioElement.play();
             var vol = _volume;
@@ -510,6 +518,9 @@ define(['jquery'],function($) {
                 console.debug("onPlayToForcePreload");
             }
             _audioElement.pause(); // note: interval timer continues (immediately follows self.play())
+            setTimeout(function() {
+                _isForcingPreload = false;
+            }, 0);
         };
     
         var _readyEvent = _Android ? "canplaythrough" : "canplay";
