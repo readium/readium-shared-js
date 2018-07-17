@@ -675,7 +675,7 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
     };
 
     function onAudioStatusChanged(status) {
-        onStatusChanged($.extend({}, getStatusInfo(), status));
+        onStatusChanged($.extend({}, status, getStatusInfo()));
     }
 
     function onAudioPositionChanged(position, from, skipping) { //noLetPlay
@@ -743,6 +743,7 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
                 self.pause(true);
                 return;
             }
+            onAudioStatusChanged({isPlaying: false});
             _smilIterator.next();
         }
         else //position <= DIRECTION_MARK
@@ -915,6 +916,7 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
         {
 //console.debug("ONLY highlightCurrentElement");
             highlightCurrentElement();
+            onAudioStatusChanged({isPlaying: true});
             return;
         }
 
