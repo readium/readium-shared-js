@@ -117,9 +117,10 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
         // MOPLayer.onPageChanged()
 
         var wasPlaying = self.isPlaying();
-        if (wasPlaying)
+        if (wasPlaying || _holdNext)
         {
             _wasPlayingAtDocLoadStart = true;
+            self.resumeNextMediaOverlay();
             self.pause();
         }
     };
@@ -451,6 +452,8 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
 
     function playCurrentPar() {
         _wasPlayingScrolling = false;
+        _holdNext = false;
+        _resumeExecutor = null;
         
         if (!_smilIterator || !_smilIterator.currentPar)
         {
@@ -609,7 +612,7 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
         }
 
         clipBeginOffset = 0.0;
-
+        onAudioStatusChanged({isPlaying: true});
         highlightCurrentElement();
     }
 
@@ -664,14 +667,16 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
 //5 = audio end
 //6 = user previous/next/escape
     var _holdNext = false;
+    var _resumeExecutor;
 
     this.holdNextMediaOverlay = function() {
         _holdNext = true;
     };
 
     this.resumeNextMediaOverlay = function() {
-        _holdNext = false;
-        self.play();
+        if (_resumeExecutor) {
+            _resumeExecutor();
+        }
     };
 
     function onAudioStatusChanged(status) {
@@ -741,6 +746,12 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
         {
             if (_holdNext) {
                 self.pause(true);
+                _resumeExecutor = function() {
+                    _holdNext = false;
+                    _resumeExecutor = null;
+                    self.play(true);
+                    onAudioPositionChanged(position, from, skipping);
+                };
                 return;
             }
             onAudioStatusChanged({isPlaying: false});
@@ -780,8 +791,14 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
             {
                 if (_holdNext) {
                     self.pause(true);
+                    _resumeExecutor = function() {
+                        _holdNext = false;
+                        self.play(true);
+                        onAudioPositionChanged(position, from, skipping);
+                    };
                     return;
                 }
+                onAudioStatusChanged({isPlaying: false});
                 nextSmil(goNext);
             }
             return;
@@ -1766,7 +1783,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         _holdNext = false;
     };
 
-    this.play = function ()
+    this.play = function (doNotReactivate)
     {
         if (_smilIterator && _smilIterator.smil && !_smilIterator.smil.id)
         {
@@ -1785,7 +1802,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         }
         else
         {
-            if (!_audioPlayer.play())
+            if (!_audioPlayer.play() && !doNotReactivate)
             {
                 console.log("Audio player was dead, reactivating...");
 
