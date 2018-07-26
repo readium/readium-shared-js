@@ -3735,17 +3735,11 @@ isstream@~0.1.2:
   version "0.1.2"
   resolved "https://registry.yarnpkg.com/isstream/-/isstream-0.1.2.tgz#47e63f7af55afa6f92e1500e690eb8b8529c099a"
 
-"jquery-sizes@github:JCCR/jquery-sizes#master":
-  version "0.33.0"
-  resolved "https://codeload.github.com/JCCR/jquery-sizes/tar.gz/d26d2510d069f84a64052c443a06b8534c5e9d0e"
-  dependencies:
-    jquery latest
-
 jquery@2.x.x:
   version "2.2.4"
   resolved "https://registry.yarnpkg.com/jquery/-/jquery-2.2.4.tgz#2c89d6889b5eac522a7eea32c14521559c6cbf02"
 
-jquery@^3.3.1, jquery@latest:
+jquery@^3.3.1:
   version "3.3.1"
   resolved "https://registry.yarnpkg.com/jquery/-/jquery-3.3.1.tgz#958ce29e81c9790f31be7792df5d4d95fc57fbca"
 

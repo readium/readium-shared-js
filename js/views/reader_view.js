@@ -93,7 +93,7 @@ var ReaderView = function (options) {
     }
 
 
-    _needsFixedLayoutScalerWorkAround = options.needsFixedLayoutScalerWorkAround;
+    var _needsFixedLayoutScalerWorkAround = options.needsFixedLayoutScalerWorkAround;
     /**
      * @returns {boolean}
      */
