@@ -4,18 +4,15 @@ const root = p => path.resolve(__dirname, p);
 const webpack = require("webpack");
 const {
   createConfig,
-  babel,
   entryPoint,
   setOutput,
   resolve,
-  customConfig,
   addPlugins,
-  match
+  babel,
 } = require("webpack-blocks");
 
 module.exports = createConfig([
-  /*   babel(),
- */
+  babel(),
   resolve({
     alias: {
       console_shim: root("./lib/console_shim"),
@@ -32,6 +29,7 @@ module.exports = createConfig([
     path: root("./build"),
     filename: "index.js",
     libraryTarget: "umd"
+
   }),
   addPlugins([
     new webpack.ProvidePlugin({
