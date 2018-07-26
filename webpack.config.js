@@ -28,8 +28,7 @@ module.exports = createConfig([
   setOutput({
     path: root("./build"),
     filename: "index.js",
-    libraryTarget: "umd"
-
+    libraryTarget: "commonjs"
   }),
   addPlugins([
     new webpack.ProvidePlugin({
