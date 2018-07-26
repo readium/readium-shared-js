@@ -34058,12 +34058,13 @@ _readium_shared_js_views_external_agent_support = function (Globals, _) {
       element.resizeSensor = document.createElement('div');
       element.resizeSensor.dir = 'ltr';
       element.resizeSensor.className = 'resize-sensor';
-      var style = 'position: absolute; left: -10px; top: -10px; right: 0; bottom: 0; overflow: hidden; z-index: -1; visibility: hidden;';
+      var style = 'position: absolute; left: -10px; top: -10px; right: 0; bottom: 0; overflow: hidden; z-index: -1; visibility: hidden; max-width: 100%';
       var styleChild = 'position: absolute; left: 0; top: 0; transition: 0s;';
       element.resizeSensor.style.cssText = style;
       element.resizeSensor.innerHTML = '<div class="resize-sensor-expand" style="' + style + '">' + '<div style="' + styleChild + '" class="resize-sensor-inner"></div>' + '</div>' + '<div class="resize-sensor-shrink" style="' + style + '">' + '<div style="' + styleChild + ' width: 200%; height: 200%" class="resize-sensor-inner"></div>' + '</div>';
       element.appendChild(element.resizeSensor);
-      var position = window.getComputedStyle(element).getPropertyValue('position');
+      var computedStyle = window.getComputedStyle(element);
+      var position = computedStyle ? computedStyle.getPropertyValue('position') : null;
       if ('absolute' !== position && 'relative' !== position && 'fixed' !== position) {
         element.style.position = 'relative';
       }

@@ -30250,6 +30250,33 @@ Object.defineProperty(CSSOM.CSSMediaRule.prototype, "cssText", {
 
 /**
  * @constructor
+ * @see https://drafts.csswg.org/css-conditional-3/#the-csssupportsrule-interface
+ */
+CSSOM.CSSSupportsRule = function CSSSupportsRule() {
+  CSSOM.CSSRule.call(this);
+  this.conditionText = '';
+  this.cssRules = [];
+};
+
+CSSOM.CSSSupportsRule.prototype = new CSSOM.CSSRule();
+CSSOM.CSSSupportsRule.prototype.constructor = CSSOM.CSSSupportsRule;
+CSSOM.CSSSupportsRule.prototype.type = 12;
+
+Object.defineProperty(CSSOM.CSSSupportsRule.prototype, "cssText", {
+  get: function() {
+    var cssTexts = [];
+
+    for (var i = 0, length = this.cssRules.length; i < length; i++) {
+      cssTexts.push(this.cssRules[i].cssText);
+    }
+
+    return "@supports " + this.conditionText + " {" + cssTexts.join("") + "}";
+  }
+});
+
+
+/**
+ * @constructor
  * @see http://dev.w3.org/csswg/cssom/#cssimportrule
  * @see http://www.w3.org/TR/DOM-Level-2-Style/css.html#CSS-CSSImportRule
  */
@@ -31034,6 +31061,7 @@ CSSOM.parse = function parse(token) {
 		"selector" or
 		"atRule" or
 		"atBlock" or
+		"conditionBlock" or
 		"before-name" or
 		"name" or
 		"before-value" or
@@ -31053,18 +31081,23 @@ CSSOM.parse = function parse(token) {
 		"importRule-begin": true,
 		"importRule": true,
 		"atBlock": true,
+		"conditionBlock": true,
 		'documentRule-begin': true
 	};
 
 	var styleSheet = new CSSOM.CSSStyleSheet();
 
-	// @type CSSStyleSheet|CSSMediaRule|CSSFontFaceRule|CSSKeyframesRule|CSSDocumentRule
+	// @type CSSStyleSheet|CSSMediaRule|CSSSupportsRule|CSSFontFaceRule|CSSKeyframesRule|CSSDocumentRule
 	var currentScope = styleSheet;
 
-	// @type CSSMediaRule|CSSKeyframesRule|CSSDocumentRule
+	// @type CSSMediaRule|CSSSupportsRule|CSSKeyframesRule|CSSDocumentRule
 	var parentRule;
 
-	var name, priority="", styleRule, mediaRule, importRule, fontFaceRule, keyframesRule, documentRule, hostRule;
+	var ancestorRules = [];
+	var hasAncestors = false;
+	var prevScope;
+
+	var name, priority="", styleRule, mediaRule, supportsRule, importRule, fontFaceRule, keyframesRule, documentRule, hostRule;
 
 	var atKeyframesRegExp = /@(-(?:\w+-)+)?keyframes/g;
 
@@ -31170,6 +31203,13 @@ CSSOM.parse = function parse(token) {
 				i += "media".length;
 				buffer = "";
 				break;
+			} else if (token.indexOf("@supports", i) === i) {
+				state = "conditionBlock";
+				supportsRule = new CSSOM.CSSSupportsRule();
+				supportsRule.__starts = i;
+				i += "supports".length;
+				buffer = "";
+				break;
 			} else if (token.indexOf("@host", i) === i) {
 				state = "hostRule-begin";
 				i += "host".length;
@@ -31215,17 +31255,38 @@ CSSOM.parse = function parse(token) {
 				state = "before-name";
 			} else if (state === "atBlock") {
 				mediaRule.media.mediaText = buffer.trim();
+
+				if (parentRule) {
+					ancestorRules.push(parentRule);
+				}
+
 				currentScope = parentRule = mediaRule;
 				mediaRule.parentStyleSheet = styleSheet;
 				buffer = "";
 				state = "before-selector";
+			} else if (state === "conditionBlock") {
+				supportsRule.conditionText = buffer.trim();
+
+				if (parentRule) {
+					ancestorRules.push(parentRule);
+				}
+
+				currentScope = parentRule = supportsRule;
+				supportsRule.parentStyleSheet = styleSheet;
+				buffer = "";
+				state = "before-selector";
 			} else if (state === "hostRule-begin") {
+				if (parentRule) {
+					ancestorRules.push(parentRule);
+				}
+
 				currentScope = parentRule = hostRule;
 				hostRule.parentStyleSheet = styleSheet;
 				buffer = "";
 				state = "before-selector";
 			} else if (state === "fontFaceRule-begin") {
 				if (parentRule) {
+					ancestorRules.push(parentRule);
 					fontFaceRule.parentRule = parentRule;
 				}
 				fontFaceRule.parentStyleSheet = styleSheet;
@@ -31235,6 +31296,7 @@ CSSOM.parse = function parse(token) {
 			} else if (state === "keyframesRule-begin") {
 				keyframesRule.name = buffer.trim();
 				if (parentRule) {
+					ancestorRules.push(parentRule);
 					keyframesRule.parentRule = parentRule;
 				}
 				keyframesRule.parentStyleSheet = styleSheet;
@@ -31251,6 +31313,7 @@ CSSOM.parse = function parse(token) {
 				// FIXME: what if this '{' is in the url text of the match function?
 				documentRule.matcher.matcherText = buffer.trim();
 				if (parentRule) {
+					ancestorRules.push(parentRule);
 					documentRule.parentRule = parentRule;
 				}
 				currentScope = parentRule = documentRule;
@@ -31364,15 +31427,39 @@ CSSOM.parse = function parse(token) {
 				case "keyframeRule-begin":
 				case "before-selector":
 				case "selector":
-					// End of media/document rule.
+					// End of media/supports/document rule.
 					if (!parentRule) {
 						parseError("Unexpected }");
 					}
-					currentScope.__ends = i + 1;
-					// Nesting rules aren't supported yet
-					styleSheet.cssRules.push(currentScope);
-					currentScope = styleSheet;
-					parentRule = null;
+
+					// Handle rules nested in @media or @supports
+					hasAncestors = ancestorRules.length > 0;
+
+					while (ancestorRules.length > 0) {
+						parentRule = ancestorRules.pop();
+
+						if (
+							parentRule.constructor.name === "CSSMediaRule"
+							|| parentRule.constructor.name === "CSSSupportsRule"
+						) {
+							prevScope = currentScope;
+							currentScope = parentRule;
+							currentScope.cssRules.push(prevScope);
+							break;
+						}
+
+						if (ancestorRules.length === 0) {
+							hasAncestors = false;
+						}
+					}
+					
+					if (!hasAncestors) {
+						currentScope.__ends = i + 1;
+						styleSheet.cssRules.push(currentScope);
+						currentScope = styleSheet;
+						parentRule = null;
+					}
+
 					buffer = "";
 					state = "before-selector";
 					break;
@@ -31428,7 +31515,8 @@ CSSOM.clone = function clone(stylesheet) {
 		//5: CSSOM.CSSFontFaceRule,
 		//6: CSSOM.CSSPageRule,
 		8: CSSOM.CSSKeyframesRule,
-		9: CSSOM.CSSKeyframeRule
+		9: CSSOM.CSSKeyframeRule,
+		12: CSSOM.CSSSupportsRule
 	};
 
 	for (var i=0, rulesLength=rules.length; i < rulesLength; i++) {
@@ -31456,6 +31544,10 @@ CSSOM.clone = function clone(stylesheet) {
 
 		if (rule.hasOwnProperty('mediaText')) {
 			ruleClone.mediaText = rule.mediaText;
+		}
+
+		if (rule.hasOwnProperty('conditionText')) {
+			ruleClone.conditionText = rule.conditionText;
 		}
 
 		if (rule.hasOwnProperty('cssRules')) {
