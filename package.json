@@ -95,6 +95,7 @@
     "apidocs": "node ./node_modules/yuidocjs/lib/cli.js -N -C -c yuidocs.json",
     "prebuild": "npm run clean",
     "build": "npm run build:styles && npm run build:scripts",
+    "build-webpack": "webpack",
     "lint": "node ./readium-build-tools/jshint_glob.js \"js/**.js\"",
     "genPluginsConfig": "node readium-build-tools/pluginsConfigMaker.js",
     "prebuild:scripts": "npm run genPluginsConfig --readium-shared-js:RJS_PLUGINS_OVERRIDE=no",
