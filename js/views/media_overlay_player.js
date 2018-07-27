@@ -1857,8 +1857,11 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
 
     /*
     this.setMediaOverlaySkippables = function(items) {
+
     };
+
     this.setMediaOverlayEscapables = function(items) {
+
     };
     */
 
@@ -1876,6 +1879,7 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         if (_currentPagination && _currentPagination.isFixedLayout && _currentPagination.openPages && _currentPagination.openPages.length > 0)
         {
             var combinedPath = Globals.Helpers.ResolveContentRef(contentRefUrl, sourceFileHref);
+
             var hashIndex = combinedPath.indexOf("#");
             var hrefPart;
             var elementId;
@@ -1887,8 +1891,10 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
                 hrefPart = combinedPath;
                 elementId = undefined;
             }
+
             var spineItem = reader.spine.getItemByHref(hrefPart);
             var spineItemIndex = _currentPagination.openPages[0].spineItemIndex;
+
             //var idref = _currentPagination.openPages[0].idref;
             //spineItem.idref === idref
             //var currentSpineItem = reader.spine.getItemById(idref);
