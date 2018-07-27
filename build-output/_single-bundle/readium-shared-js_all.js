@@ -34353,7 +34353,6 @@ function (Globals, $, console_shim, es6Shim, EventEmitter, URI, EPUBcfi, Plugins
     }
     // Plugins bootstrapping ends
 });
-
 define('readium_shared_js', ['readium_shared_js/globalsSetup'], function (main) { return main; });
 
 //  Created by Boris Schneiderman.
@@ -35610,448 +35609,452 @@ SpineItem.alternateSpread = function(spread) {
 //  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
-define('readium_shared_js/helpers',[
-  "./globals",
-  "underscore",
-  "jquery",
-  "jquerySizes",
-  "./models/spine_item",
-  "URIjs"
-], function(Globals, _, $, JQuerySizes, SpineItem, URI) {
-  (function() {
-    /* jshint strict: true */
-    /* jshint -W034 */
+define('readium_shared_js/helpers',["./globals", 'underscore', "jquery", "jquerySizes", "./models/spine_item", 'URIjs'], function(Globals, _, $, JQuerySizes, SpineItem, URI) {
+    
+(function()
+{
+/* jshint strict: true */
+/* jshint -W034 */
     "use strict";
-
-    if (window.performance) {
-      if (window.performance.now) {
-        return;
-      }
-
-      var vendors = ["webkitNow", "mozNow", "msNow", "oNow"];
-
-      for (var i = 0; i < vendors.length; i++) {
-        if (vendors[i] in window.performance) {
-          window.performance.now = window.performance[vendors[i]];
-          return;
+    
+    if(window.performance)
+    {
+        if (window.performance.now)
+        {
+            return;
         }
-      }
-    } else {
-      window.performance = {};
+        
+        var vendors = ['webkitNow', 'mozNow', 'msNow', 'oNow'];
+        
+        for (var i = 0; i < vendors.length; i++)
+        {
+            if (vendors[i] in window.performance)
+            {
+                window.performance.now = window.performance[vendors[i]];
+                return;
+            }
+        }
     }
-
-    if (Date.now) {
-      window.performance.now = function() {
-        return Date.now();
-      };
-      return;
+    else
+    {
+        window.performance = {};
+        
     }
-
-    window.performance.now = function() {
-      return +new Date();
+    
+    if(Date.now)
+    {
+        window.performance.now = function()
+        {
+            return Date.now();
+        };
+        return;
+    }
+    
+    window.performance.now = function()
+    {
+        return +(new Date());
     };
-  })();
+})();
 
-  var Helpers = {};
+var Helpers = {};
 
-  /**
-   *
-   * @param ebookURL URL string, or Blob (possibly File)
-   * @returns string representing the file path / name from which the asset referenced by this URL originates
-   */
-  Helpers.getEbookUrlFilePath = function(ebookURL) {
+/**
+ *
+ * @param ebookURL URL string, or Blob (possibly File)
+ * @returns string representing the file path / name from which the asset referenced by this URL originates
+ */
+Helpers.getEbookUrlFilePath = function(ebookURL) {
     if (!window.Blob || !window.File) return ebookURL;
 
     if (ebookURL instanceof File) {
-      return ebookURL.name;
+        return ebookURL.name;
     } else if (ebookURL instanceof Blob) {
-      return "readium-ebook.epub";
+        return "readium-ebook.epub";
     } else {
-      return ebookURL;
+        return ebookURL;
     }
-  };
+};
 
-  /**
-   * @param initialQuery: (optional) initial query string
-   * @returns object (map between URL query parameter names and corresponding decoded / unescaped values)
-   */
-  Helpers.getURLQueryParams = function(initialQuery) {
+/**
+ * @param initialQuery: (optional) initial query string
+ * @returns object (map between URL query parameter names and corresponding decoded / unescaped values)
+ */
+Helpers.getURLQueryParams = function(initialQuery) {
     var params = {};
 
     var query = initialQuery || window.location.search;
     if (query && query.length) {
-      query = query.substring(1);
-      var keyParams = query.split("&");
-      for (var x = 0; x < keyParams.length; x++) {
-        var keyVal = keyParams[x].split("=");
-        if (keyVal.length > 1) {
-          params[keyVal[0]] = decodeURIComponent(keyVal[1]);
+        query = query.substring(1);
+        var keyParams = query.split('&');
+        for (var x = 0; x < keyParams.length; x++)
+        {
+            var keyVal = keyParams[x].split('=');
+            if (keyVal.length > 1) {
+                params[keyVal[0]] = decodeURIComponent(keyVal[1]);
+            }
         }
-      }
     }
 
     return params;
-  };
+};
 
-  /**
-   * @param initialUrl: string corresponding a URL. If undefined/null, the default window.location is used.
-   * @param queryStringOverrides: object that maps query parameter names with values (to be included in the resulting URL, while any other query params in the current window.location are preserved as-is)
-   * @returns string corresponding to a URL obtained by concatenating the given URL with the given query parameters
-   */
-  Helpers.buildUrlQueryParameters = function(initialUrl, queryStringOverrides) {
+
+/**
+ * @param initialUrl: string corresponding a URL. If undefined/null, the default window.location is used.
+ * @param queryStringOverrides: object that maps query parameter names with values (to be included in the resulting URL, while any other query params in the current window.location are preserved as-is)
+ * @returns string corresponding to a URL obtained by concatenating the given URL with the given query parameters
+ */
+Helpers.buildUrlQueryParameters = function(initialUrl, queryStringOverrides) {
     var uriInstance = new URI(initialUrl || window.location);
     var startingQueryString = uriInstance.search();
     var urlFragment = uriInstance.hash();
-    var urlPath = uriInstance
-      .search("")
-      .hash("")
-      .toString();
+    var urlPath = uriInstance.search('').hash('').toString();
 
     var newQueryString = "";
 
     for (var overrideKey in queryStringOverrides) {
-      if (!queryStringOverrides.hasOwnProperty(overrideKey)) continue;
+        if (!queryStringOverrides.hasOwnProperty(overrideKey)) continue;
 
-      if (!queryStringOverrides[overrideKey]) continue;
+        if (!queryStringOverrides[overrideKey]) continue;
 
-      var overrideEntry = queryStringOverrides[overrideKey];
-      if (_.isString(overrideEntry)) {
-        overrideEntry = overrideEntry.trim();
-      }
+        var overrideEntry = queryStringOverrides[overrideKey];
+        if (_.isString(overrideEntry)) {
+            overrideEntry = overrideEntry.trim();
+        }
 
-      if (!overrideEntry) continue;
+        if (!overrideEntry) continue;
 
-      if (overrideEntry.verbatim) {
-        overrideEntry = overrideEntry.value; // grab value from entry as object
-      } else {
-        overrideEntry = encodeURIComponent(overrideEntry);
-      }
+        if (overrideEntry.verbatim) {
+            overrideEntry = overrideEntry.value; // grab value from entry as object
+        } else {
+            overrideEntry = encodeURIComponent(overrideEntry);
+        }
 
-      console.debug(
-        "URL QUERY PARAM OVERRIDE: " + overrideKey + " = " + overrideEntry
-      );
+        console.debug("URL QUERY PARAM OVERRIDE: " + overrideKey + " = " + overrideEntry);
 
-      newQueryString += overrideKey + "=" + overrideEntry;
-      newQueryString += "&";
+        newQueryString += (overrideKey + "=" + overrideEntry);
+        newQueryString += "&";
     }
+
 
     var parsedQueryString = Helpers.getURLQueryParams(startingQueryString);
     for (var parsedKey in parsedQueryString) {
-      if (!parsedQueryString.hasOwnProperty(parsedKey)) continue;
+        if (!parsedQueryString.hasOwnProperty(parsedKey)) continue;
 
-      if (!parsedQueryString[parsedKey]) continue;
+        if (!parsedQueryString[parsedKey]) continue;
 
-      if (queryStringOverrides[parsedKey]) continue;
+        if (queryStringOverrides[parsedKey]) continue;
 
-      var parsedValue = parsedQueryString[parsedKey].trim();
-      if (!parsedValue) continue;
+        var parsedValue = parsedQueryString[parsedKey].trim();
+        if (!parsedValue) continue;
 
-      console.debug(
-        "URL QUERY PARAM PRESERVED: " + parsedKey + " = " + parsedValue
-      );
+        console.debug("URL QUERY PARAM PRESERVED: " + parsedKey + " = " + parsedValue);
 
-      newQueryString += parsedKey + "=" + encodeURIComponent(parsedValue);
-      newQueryString += "&";
+        newQueryString += (parsedKey + "=" + encodeURIComponent(parsedValue));
+        newQueryString += "&";
     }
 
     // remove trailing "&"
     newQueryString = newQueryString.slice(0, -1);
 
     return urlPath + "?" + newQueryString + urlFragment;
-  };
+};
 
-  /**
-   *
-   * @param left
-   * @param top
-   * @param width
-   * @param height
-   * @constructor
-   */
-  Helpers.Rect = function(left, top, width, height) {
+
+/**
+ *
+ * @param left
+ * @param top
+ * @param width
+ * @param height
+ * @constructor
+ */
+Helpers.Rect = function (left, top, width, height) {
+
     this.left = left;
     this.top = top;
     this.width = width;
     this.height = height;
 
-    this.right = function() {
-      return this.left + this.width;
+    this.right = function () {
+        return this.left + this.width;
     };
 
-    this.bottom = function() {
-      return this.top + this.height;
+    this.bottom = function () {
+        return this.top + this.height;
     };
 
-    this.isOverlap = function(rect, tolerance) {
-      if (tolerance == undefined) {
-        tolerance = 0;
-      }
+    this.isOverlap = function (rect, tolerance) {
 
-      return !(
-        rect.right() < this.left + tolerance ||
+        if (tolerance == undefined) {
+            tolerance = 0;
+        }
+
+        return !(rect.right() < this.left + tolerance ||
         rect.left > this.right() - tolerance ||
         rect.bottom() < this.top + tolerance ||
-        rect.top > this.bottom() - tolerance
-      );
-    };
-  };
+        rect.top > this.bottom() - tolerance);
+    }
+};
 
-  /**
-   *
-   * @param $element
-   * @returns {Helpers.Rect}
-   */
-  //This method treats multicolumn view as one long column and finds the rectangle of the element in this "long" column
-  //we are not using jQuery Offset() and width()/height() function because for multicolumn rendition_layout it produces rectangle as a bounding box of element that
-  // reflows between columns this is inconstant and difficult to analyze .
-  Helpers.Rect.fromElement = function($element) {
+/**
+ *
+ * @param $element
+ * @returns {Helpers.Rect}
+ */
+//This method treats multicolumn view as one long column and finds the rectangle of the element in this "long" column
+//we are not using jQuery Offset() and width()/height() function because for multicolumn rendition_layout it produces rectangle as a bounding box of element that
+// reflows between columns this is inconstant and difficult to analyze .
+Helpers.Rect.fromElement = function ($element) {
+
     var e;
-    if (_.isArray($element) || $element instanceof jQuery) e = $element[0];
-    else e = $element;
+    if (_.isArray($element) || $element instanceof jQuery)
+        e = $element[0];
+    else
+        e = $element;
     // TODODM this is somewhat hacky. Text (range?) elements don't have a position so we have to ask the parent.
     if (e.nodeType === 3) {
-      e = $element.parent()[0];
+        e = $element.parent()[0];
     }
+
 
     var offsetLeft = e.offsetLeft;
     var offsetTop = e.offsetTop;
     var offsetWidth = e.offsetWidth;
     var offsetHeight = e.offsetHeight;
 
-    while ((e = e.offsetParent)) {
-      offsetLeft += e.offsetLeft;
-      offsetTop += e.offsetTop;
+    while (e = e.offsetParent) {
+        offsetLeft += e.offsetLeft;
+        offsetTop += e.offsetTop;
     }
 
     return new Helpers.Rect(offsetLeft, offsetTop, offsetWidth, offsetHeight);
-  };
-  /**
-   *
-   * @param $epubHtml: The html that is to have font attributes added.
-   * @param fontSize: The font size that is to be added to the element at all locations.
-   * @param fontObj: The font Object containing at minimum the URL, and fontFamilyName (In fields url and fontFamily) respectively. Pass in null's on the object's fields to signal no font.
-   * @param callback: function invoked when "done", which means that if there are asynchronous operations such as font-face loading via injected stylesheets, then the UpdateHtmlFontAttributes() function returns immediately but the caller should wait for the callback function call if fully-loaded font-face *stylesheets* are required on the caller's side (note that the caller's side may still need to detect *actual font loading*, via the FontLoader API or some sort of ResizeSensor to indicate that the updated font-family has been used to render the document).
-   */
+};
+/**
+ *
+ * @param $epubHtml: The html that is to have font attributes added.
+ * @param fontSize: The font size that is to be added to the element at all locations.
+ * @param fontObj: The font Object containing at minimum the URL, and fontFamilyName (In fields url and fontFamily) respectively. Pass in null's on the object's fields to signal no font.
+ * @param callback: function invoked when "done", which means that if there are asynchronous operations such as font-face loading via injected stylesheets, then the UpdateHtmlFontAttributes() function returns immediately but the caller should wait for the callback function call if fully-loaded font-face *stylesheets* are required on the caller's side (note that the caller's side may still need to detect *actual font loading*, via the FontLoader API or some sort of ResizeSensor to indicate that the updated font-family has been used to render the document). 
+ */
 
-  Helpers.UpdateHtmlFontAttributes = function(
-    $epubHtml,
-    fontSize,
-    fontObj,
-    callback
-  ) {
+Helpers.UpdateHtmlFontAttributes = function ($epubHtml, fontSize, fontObj, callback) {
+
+
     var FONT_FAMILY_ID = "readium_font_family_link";
 
     var docHead = $("head", $epubHtml);
     var link = $("#" + FONT_FAMILY_ID, docHead);
 
-    const NOTHING = 0,
-      ADD = 1,
-      REMOVE = 2; //Types for css font family.
+    const NOTHING = 0, ADD = 1, REMOVE = 2; //Types for css font family.
     var changeFontFamily = NOTHING;
 
     var fontLoadCallback = function() {
-      var perf = false;
+            
+        var perf = false;
 
-      // TODO: very slow on Firefox!
-      // See https://github.com/readium/readium-shared-js/issues/274
-      if (perf) var time1 = window.performance.now();
+        // TODO: very slow on Firefox!
+        // See https://github.com/readium/readium-shared-js/issues/274
+        if (perf) var time1 = window.performance.now();
 
-      if (changeFontFamily != NOTHING) {
-        var fontFamilyStyle = $("style#readium-fontFamily", docHead);
 
-        if (fontFamilyStyle && fontFamilyStyle[0]) {
-          // REMOVE, or ADD (because we remove before re-adding from scratch)
-          docHead[0].removeChild(fontFamilyStyle[0]);
+
+        if (changeFontFamily != NOTHING) {
+            var fontFamilyStyle = $("style#readium-fontFamily", docHead);
+
+            if (fontFamilyStyle && fontFamilyStyle[0]) {
+                // REMOVE, or ADD (because we remove before re-adding from scratch)
+                docHead[0].removeChild(fontFamilyStyle[0]);
+            }
+            if (changeFontFamily == ADD) {
+                var style = $epubHtml[0].ownerDocument.createElement('style');
+                style.setAttribute("id", "readium-fontFamily");
+                style.appendChild($epubHtml[0].ownerDocument.createTextNode('html * { font-family: "'+fontObj.fontFamily+'" !important; }')); // this technique works for text-align too (e.g. text-align: justify !important;)
+
+                docHead[0].appendChild(style);
+
+                //fontFamilyStyle = $(style);
+            }
         }
-        if (changeFontFamily == ADD) {
-          var style = $epubHtml[0].ownerDocument.createElement("style");
-          style.setAttribute("id", "readium-fontFamily");
-          style.appendChild(
-            $epubHtml[0].ownerDocument.createTextNode(
-              'html * { font-family: "' + fontObj.fontFamily + '" !important; }'
-            )
-          ); // this technique works for text-align too (e.g. text-align: justify !important;)
-
-          docHead[0].appendChild(style);
-
-          //fontFamilyStyle = $(style);
-        }
-      }
-
-      // The code below does not work because jQuery $element.css() on html.body somehow "resets" the font: CSS directive by removing it entirely (font-family: works with !important, but unfortunately further deep inside the DOM there may be CSS applied with the font: directive, which somehow seems to take precedence! ... as shown in Chrome's developer tools)
-      // ...thus why we use the above routine instead, to insert a new head>style element
-      // // var doc = $epubHtml[0].ownerDocument;
-      // // var body = doc.body;
-      // var $body = $("body", $epubHtml);
-      // // $body.css({
-      // //     "font-size" : fontSize + "%",
-      // //     "font-family" : ""
-      // // });
-      // $body.css("font-family", "");
-      // if (changeFontFamily == ADD) {
-
-      //     var existing = $body.attr("style");
-      //     $body[0].setAttribute("style",
-      //         existing + " ; font-family: '" + fontObj.fontFamily + "' !important ;" + " ; font: regular 100% '" + fontObj.fontFamily + "' !important ;");
-      // }
-
-      var factor = fontSize / 100;
-      var win = $epubHtml[0].ownerDocument.defaultView;
-      if (!win) {
-        console.log("NIL $epubHtml[0].ownerDocument.defaultView");
-        return;
-      }
-
-      // TODO: is this a complete list? Is there a better way to do this?
-      //https://github.com/readium/readium-shared-js/issues/336
-      // Note that font-family is handled differently, using an injected stylesheet with a catch-all selector that pushes an "!important" CSS value in the document's cascade.
-      var $textblocks = $(
-        "p, div, span, h1, h2, h3, h4, h5, h6, li, blockquote, td, pre, dt, dd, code, a",
-        $epubHtml
-      ); // excludes section, body etc.
-
-      // need to do two passes because it is possible to have nested text blocks.
-      // If you change the font size of the parent this will then create an inaccurate
-      // font size for any children.
-      for (var i = 0; i < $textblocks.length; i++) {
-        var ele = $textblocks[i];
-
-        var fontSizeAttr = ele.getAttribute("data-original-font-size");
-        if (fontSizeAttr) {
-          // early exit, original values already set.
-          break;
-        }
-
-        var style = win.getComputedStyle(ele);
-
-        var originalFontSize = parseInt(style.fontSize);
-        ele.setAttribute("data-original-font-size", originalFontSize);
-
-        var originalLineHeight = parseInt(style.lineHeight);
-        // getComputedStyle will not calculate the line-height if the value is 'normal'. In this case parseInt will return NaN
-        if (originalLineHeight) {
-          ele.setAttribute("data-original-line-height", originalLineHeight);
-        }
-
-        // var fontFamilyAttr = ele.getAttribute('data-original-font-family');
-        // if (!fontFamilyAttr) {
-        //     var originalFontFamily = style.fontFamily;
-        //     if (originalFontFamily) {
-        //         ele.setAttribute('data-original-font-family', originalFontFamily);
-        //     }
+        
+        // The code below does not work because jQuery $element.css() on html.body somehow "resets" the font: CSS directive by removing it entirely (font-family: works with !important, but unfortunately further deep inside the DOM there may be CSS applied with the font: directive, which somehow seems to take precedence! ... as shown in Chrome's developer tools)
+        // ...thus why we use the above routine instead, to insert a new head>style element
+        // // var doc = $epubHtml[0].ownerDocument;
+        // // var body = doc.body;
+        // var $body = $("body", $epubHtml);
+        // // $body.css({
+        // //     "font-size" : fontSize + "%",
+        // //     "font-family" : ""
+        // // });
+        // $body.css("font-family", "");
+        // if (changeFontFamily == ADD) {
+            
+        //     var existing = $body.attr("style");
+        //     $body[0].setAttribute("style",
+        //         existing + " ; font-family: '" + fontObj.fontFamily + "' !important ;" + " ; font: regular 100% '" + fontObj.fontFamily + "' !important ;");
         // }
-      }
 
-      for (var i = 0; i < $textblocks.length; i++) {
-        var ele = $textblocks[i];
 
-        // TODO: group the 3x potential $(ele).css() calls below to avoid multiple jQuery style mutations
-
-        var fontSizeAttr = ele.getAttribute("data-original-font-size");
-        var originalFontSize = fontSizeAttr ? Number(fontSizeAttr) : 0;
-        if (originalFontSize) {
-          $(ele).css("font-size", originalFontSize * factor + "px");
+        var factor = fontSize / 100;
+        var win = $epubHtml[0].ownerDocument.defaultView;
+        if (!win) {
+            console.log("NIL $epubHtml[0].ownerDocument.defaultView");
+            return;
         }
 
-        var lineHeightAttr = ele.getAttribute("data-original-line-height");
-        var originalLineHeight = lineHeightAttr ? Number(lineHeightAttr) : 0;
-        if (originalLineHeight) {
-          $(ele).css("line-height", originalLineHeight * factor + "px");
+        // TODO: is this a complete list? Is there a better way to do this?
+        //https://github.com/readium/readium-shared-js/issues/336
+        // Note that font-family is handled differently, using an injected stylesheet with a catch-all selector that pushes an "!important" CSS value in the document's cascade.
+        var $textblocks = $('p, div, span, h1, h2, h3, h4, h5, h6, li, blockquote, td, pre, dt, dd, code, a', $epubHtml); // excludes section, body etc.
+
+        // need to do two passes because it is possible to have nested text blocks.
+        // If you change the font size of the parent this will then create an inaccurate
+        // font size for any children.
+        for (var i = 0; i < $textblocks.length; i++) {
+
+            var ele = $textblocks[i];
+            
+            var fontSizeAttr = ele.getAttribute('data-original-font-size');
+            if (fontSizeAttr) {
+                // early exit, original values already set.
+                break;
+            }
+
+            var style = win.getComputedStyle(ele);
+            
+            var originalFontSize = parseInt(style.fontSize);
+            ele.setAttribute('data-original-font-size', originalFontSize);
+
+            var originalLineHeight = parseInt(style.lineHeight);
+            // getComputedStyle will not calculate the line-height if the value is 'normal'. In this case parseInt will return NaN
+            if (originalLineHeight) {
+                ele.setAttribute('data-original-line-height', originalLineHeight);
+            }
+            
+            // var fontFamilyAttr = ele.getAttribute('data-original-font-family');
+            // if (!fontFamilyAttr) {
+            //     var originalFontFamily = style.fontFamily;
+            //     if (originalFontFamily) {
+            //         ele.setAttribute('data-original-font-family', originalFontFamily);
+            //     }
+            // }
         }
 
-        // var fontFamilyAttr = ele.getAttribute('data-original-font-family');
-        // switch(changeFontFamily){
-        //     case NOTHING:
-        //         break;
-        //     case ADD:
-        //         $(ele).css("font-family", fontObj.fontFamily);
-        //         break;
-        //     case REMOVE:
-        //         $(ele).css("font-family", fontFamilyAttr);
-        //         break;
-        // }
-      }
+        for (var i = 0; i < $textblocks.length; i++) {
+            var ele = $textblocks[i];
 
-      $epubHtml.css("font-size", fontSize + "%");
+            // TODO: group the 3x potential $(ele).css() calls below to avoid multiple jQuery style mutations 
 
-      if (perf) {
-        var time2 = window.performance.now();
+            var fontSizeAttr = ele.getAttribute('data-original-font-size');
+            var originalFontSize = fontSizeAttr ? Number(fontSizeAttr) : 0;
+            if (originalFontSize) {
+                $(ele).css("font-size", (originalFontSize * factor) + 'px');
+            }
 
-        // Firefox: 80+
-        // Chrome: 4-10
-        // Edge: 15-34
-        // IE: 10-15
-        // https://readium.firebase.com/?epub=..%2Fepub_content%2Faccessible_epub_3&goto=%7B%22idref%22%3A%22id-id2635343%22%2C%22elementCfi%22%3A%22%2F4%2F2%5Bbuilding_a_better_epub%5D%2F10%2F44%2F6%2C%2F1%3A334%2C%2F1%3A335%22%7D
+            var lineHeightAttr = ele.getAttribute('data-original-line-height');
+            var originalLineHeight = lineHeightAttr ? Number(lineHeightAttr) : 0;
+            if (originalLineHeight) {
+                $(ele).css("line-height", (originalLineHeight * factor) + 'px');
+            }
+            
+            // var fontFamilyAttr = ele.getAttribute('data-original-font-family');
+            // switch(changeFontFamily){
+            //     case NOTHING:
+            //         break;
+            //     case ADD:
+            //         $(ele).css("font-family", fontObj.fontFamily);
+            //         break;
+            //     case REMOVE:
+            //         $(ele).css("font-family", fontFamilyAttr);
+            //         break;
+            // }
+        }
 
-        var diff = time2 - time1;
-        console.log(diff);
+        $epubHtml.css("font-size", fontSize + "%");
 
-        // setTimeout(function(){
-        //     alert(diff);
-        // }, 2000);
-      }
+        
+        
+        if (perf) {
+            var time2 = window.performance.now();
+        
+            // Firefox: 80+
+            // Chrome: 4-10
+            // Edge: 15-34
+            // IE: 10-15
+            // https://readium.firebase.com/?epub=..%2Fepub_content%2Faccessible_epub_3&goto=%7B%22idref%22%3A%22id-id2635343%22%2C%22elementCfi%22%3A%22%2F4%2F2%5Bbuilding_a_better_epub%5D%2F10%2F44%2F6%2C%2F1%3A334%2C%2F1%3A335%22%7D
+            
+            var diff = time2-time1;
+            console.log(diff);
+            
+            // setTimeout(function(){
+            //     alert(diff);
+            // }, 2000);
+        }
 
-      callback();
+        callback();
     };
     var fontLoadCallback_ = _.once(fontLoadCallback);
 
-    if (fontObj.fontFamily && fontObj.url) {
-      var dataFontFamily = link.length
-        ? link.attr("data-fontfamily")
-        : undefined;
+    if(fontObj.fontFamily && fontObj.url){
+        var dataFontFamily = link.length ? link.attr("data-fontfamily") : undefined;
 
-      if (!link.length) {
-        changeFontFamily = ADD;
+        if(!link.length){
+            changeFontFamily = ADD;
 
-        setTimeout(function() {
-          link = $("<link/>", {
-            id: FONT_FAMILY_ID,
-            "data-fontfamily": fontObj.fontFamily,
-            rel: "stylesheet",
-            type: "text/css"
-          });
-          docHead.append(link);
-
-          link.attr({
-            href: fontObj.url
-          });
-        }, 0);
-      } else if (dataFontFamily != fontObj.fontFamily) {
-        changeFontFamily = ADD;
-
-        link.attr({
-          "data-fontfamily": fontObj.fontFamily,
-          href: fontObj.url
-        });
-      } else {
-        changeFontFamily = NOTHING;
-      }
-    } else {
-      changeFontFamily = REMOVE;
-      if (link.length) link.remove();
+            setTimeout(function(){
+                
+                link = $("<link/>", {
+                    "id" : FONT_FAMILY_ID,
+                    "data-fontfamily" : fontObj.fontFamily,
+                    "rel" : "stylesheet",
+                    "type" : "text/css"
+                });
+                docHead.append(link);
+                    
+                link.attr({
+                    "href" : fontObj.url
+                });
+            }, 0);
+        }
+        else if(dataFontFamily != fontObj.fontFamily){
+            changeFontFamily = ADD;
+        
+            link.attr({
+                "data-fontfamily" : fontObj.fontFamily,
+                "href" : fontObj.url
+            });
+        } else {
+            changeFontFamily = NOTHING;
+        }
+    }
+    else{
+        changeFontFamily = REMOVE;
+        if(link.length) link.remove();
     }
 
     if (changeFontFamily == ADD) {
-      // just in case the link@onload does not trigger, we set a timeout
-      setTimeout(function() {
-        fontLoadCallback_();
-      }, 100);
-    } else {
-      // REMOVE, NOTHING
-      fontLoadCallback_();
+        // just in case the link@onload does not trigger, we set a timeout
+        setTimeout(function(){
+            fontLoadCallback_();
+        }, 100);
     }
-  };
+    else { // REMOVE, NOTHING
+        fontLoadCallback_();
+    }
+};
 
-  /**
-   *
-   * @param contentRef
-   * @param sourceFileHref
-   * @returns {string}
-   * @constructor
-   */
-  Helpers.ResolveContentRef = function(contentRef, sourceFileHref) {
+
+/**
+ *
+ * @param contentRef
+ * @param sourceFileHref
+ * @returns {string}
+ * @constructor
+ */
+Helpers.ResolveContentRef = function (contentRef, sourceFileHref) {
+
     if (!sourceFileHref) {
-      return contentRef;
+        return contentRef;
     }
 
     var sourceParts = sourceFileHref.split("/");
@@ -36060,62 +36063,67 @@ define('readium_shared_js/helpers',[
     var pathComponents = contentRef.split("/");
 
     while (sourceParts.length > 0 && pathComponents[0] === "..") {
-      sourceParts.pop();
-      pathComponents.splice(0, 1);
+
+        sourceParts.pop();
+        pathComponents.splice(0, 1);
     }
 
     var combined = sourceParts.concat(pathComponents);
 
     return combined.join("/");
-  };
 
-  /**
-   *
-   * @param str
-   * @param suffix
-   * @returns {boolean}
-   * @static
-   */
-  Helpers.EndsWith = function(str, suffix) {
+};
+
+/**
+ *
+ * @param str
+ * @param suffix
+ * @returns {boolean}
+ * @static
+ */
+Helpers.EndsWith = function (str, suffix) {
     return str.indexOf(suffix, str.length - suffix.length) !== -1;
-  };
+};
 
-  /**
-   *
-   * @param str
-   * @param suffix
-   * @returns {boolean}
-   * @static
-   */
-  Helpers.BeginsWith = function(str, suffix) {
+/**
+ *
+ * @param str
+ * @param suffix
+ * @returns {boolean}
+ * @static
+ */
+Helpers.BeginsWith = function (str, suffix) {
+
     return str.indexOf(suffix) === 0;
-  };
+};
 
-  /**
-   *
-   * @param str
-   * @param toRemove
-   * @returns {string}
-   * @static
-   */
-  Helpers.RemoveFromString = function(str, toRemove) {
+/**
+ *
+ * @param str
+ * @param toRemove
+ * @returns {string}
+ * @static
+ */
+Helpers.RemoveFromString = function (str, toRemove) {
+
     var startIx = str.indexOf(toRemove);
 
     if (startIx == -1) {
-      return str;
+        return str;
     }
 
     return str.substring(0, startIx) + str.substring(startIx + toRemove.length);
-  };
+};
 
-  /**
-   *
-   * @param margin
-   * @param border
-   * @param padding
-   * @constructor
-   */
-  Helpers.Margins = function(margin, border, padding) {
+/**
+ *
+ * @param margin
+ * @param border
+ * @param padding
+ * @constructor
+ */
+Helpers.Margins = function (margin, border, padding) {
+
     this.margin = margin;
     this.border = border;
     this.padding = padding;
@@ -36125,491 +36133,445 @@ define('readium_shared_js/helpers',[
     this.top = this.margin.top + this.border.top + this.padding.top;
     this.bottom = this.margin.bottom + this.border.bottom + this.padding.bottom;
 
-    this.width = function() {
-      return this.left + this.right;
+    this.width = function () {
+        return this.left + this.right;
     };
 
-    this.height = function() {
-      return this.top + this.bottom;
-    };
-  };
+    this.height = function () {
+        return this.top + this.bottom;
+    }
+};
 
-  /**
-   *
-   * @param $iframe
-   */
-  Helpers.triggerLayout = function($iframe) {
+/**
+ *
+ * @param $iframe
+ */
+Helpers.triggerLayout = function ($iframe) {
+
     var doc = $iframe[0].contentDocument;
 
     if (!doc) {
-      return;
+        return;
     }
 
     var ss = undefined;
     try {
-      ss =
-        doc.styleSheets && doc.styleSheets.length
-          ? doc.styleSheets[0]
-          : undefined;
-      if (!ss) {
-        var style = doc.createElement("style");
-        doc.head.appendChild(style);
-        style.appendChild(doc.createTextNode(""));
-        ss = style.sheet;
-      }
-
-      if (ss) {
-        var cssRule =
-          "body:first-child::before {content:'READIUM';color: red;font-weight: bold;}";
-        if (ss.cssRules) {
-          ss.insertRule(cssRule, ss.cssRules.length);
-        } else {
-          ss.insertRule(cssRule, 0);
+        ss = doc.styleSheets && doc.styleSheets.length ? doc.styleSheets[0] : undefined;
+        if (!ss) {
+            var style = doc.createElement('style');
+            doc.head.appendChild(style);
+            style.appendChild(doc.createTextNode(''));
+            ss = style.sheet;
         }
-      }
-    } catch (ex) {
-      console.error(ex);
+
+        if (ss) {
+            var cssRule = 'body:first-child::before {content:\'READIUM\';color: red;font-weight: bold;}';
+            if (ss.cssRules) {
+                ss.insertRule(cssRule, ss.cssRules.length);
+            } else {
+                ss.insertRule(cssRule, 0);
+            }
+        }
+    }
+    catch (ex) {
+        console.error(ex);
     }
 
     try {
-      var el = doc.createElementNS("http://www.w3.org/1999/xhtml", "style");
-      el.appendChild(doc.createTextNode("*{}"));
-      doc.body.appendChild(el);
-      doc.body.removeChild(el);
+        var el = doc.createElementNS("http://www.w3.org/1999/xhtml", "style");
+        el.appendChild(doc.createTextNode("*{}"));
+        doc.body.appendChild(el);
+        doc.body.removeChild(el);
 
-      if (ss) {
-        if (ss.cssRules) {
-          ss.deleteRule(ss.cssRules.length - 1);
-        } else {
-          ss.deleteRule(0);
+        if (ss) {
+            if (ss.cssRules) {
+                ss.deleteRule(ss.cssRules.length - 1);
+            } else {
+                ss.deleteRule(0);
+            }
         }
-      }
-    } catch (ex) {
-      console.error(ex);
+    }
+    catch (ex) {
+        console.error(ex);
     }
 
     if (doc.body) {
-      var val = doc.body.offsetTop; // triggers layout
+        var val = doc.body.offsetTop; // triggers layout
     }
-  };
 
-  /**
-   *
-   * @param $viewport
-   * @param spineItem
-   * @param settings
-   * @returns {boolean}
-   */
-  //Based on https://docs.google.com/spreadsheet/ccc?key=0AoPMUkQhc4wcdDI0anFvWm96N0xRT184ZE96MXFRdFE&usp=drive_web#gid=0 doc
-  // Returns falsy and truthy
-  // true and false mean that the synthetic-spread or single-page is "forced" (to be respected whatever the external conditions)
-  // 1 and 0 mean that the synthetic-spread or single-page is "not forced" (is allowed to be overriden by external conditions, such as optimum column width / text line number of characters, etc.)
-  Helpers.deduceSyntheticSpread = function($viewport, spineItem, settings) {
+};
+
+/**
+ *
+ * @param $viewport
+ * @param spineItem
+ * @param settings
+ * @returns {boolean}
+ */
+//Based on https://docs.google.com/spreadsheet/ccc?key=0AoPMUkQhc4wcdDI0anFvWm96N0xRT184ZE96MXFRdFE&usp=drive_web#gid=0 doc
+// Returns falsy and truthy
+// true and false mean that the synthetic-spread or single-page is "forced" (to be respected whatever the external conditions)
+// 1 and 0 mean that the synthetic-spread or single-page is "not forced" (is allowed to be overriden by external conditions, such as optimum column width / text line number of characters, etc.)
+Helpers.deduceSyntheticSpread = function ($viewport, spineItem, settings) {
+
     if (!$viewport || $viewport.length == 0) {
-      return 0; // non-forced
+        return 0; // non-forced
     }
 
     //http://www.idpf.org/epub/fxl/#property-spread-values
 
-    var rendition_spread = spineItem
-      ? spineItem.getRenditionSpread()
-      : undefined;
+    var rendition_spread = spineItem ? spineItem.getRenditionSpread() : undefined;
 
     if (rendition_spread === SpineItem.RENDITION_SPREAD_NONE) {
-      return false; // forced
+        return false; // forced
 
-      //"Reading Systems must not incorporate this spine item in a synthetic spread."
+        //"Reading Systems must not incorporate this spine item in a synthetic spread."
     }
 
     if (settings.syntheticSpread == "double") {
-      return true; // forced
-    } else if (settings.syntheticSpread == "single") {
-      return false; // forced
+        return true; // forced
+    }
+    else if (settings.syntheticSpread == "single") {
+        return false; // forced
     }
 
     if (!spineItem) {
-      return 0; // non-forced
+        return 0; // non-forced
     }
 
     if (rendition_spread === SpineItem.RENDITION_SPREAD_BOTH) {
-      return true; // forced
+        return true; // forced
 
-      //"Reading Systems should incorporate this spine item in a synthetic spread regardless of device orientation."
+        //"Reading Systems should incorporate this spine item in a synthetic spread regardless of device orientation."
     }
 
     var orientation = Helpers.getOrientation($viewport);
 
     if (rendition_spread === SpineItem.RENDITION_SPREAD_LANDSCAPE) {
-      return orientation === Globals.Views.ORIENTATION_LANDSCAPE; // forced
+        return orientation === Globals.Views.ORIENTATION_LANDSCAPE; // forced
 
-      //"Reading Systems should incorporate this spine item in a synthetic spread only when the device is in landscape orientation."
+        //"Reading Systems should incorporate this spine item in a synthetic spread only when the device is in landscape orientation."
     }
 
     if (rendition_spread === SpineItem.RENDITION_SPREAD_PORTRAIT) {
-      return orientation === Globals.Views.ORIENTATION_PORTRAIT; // forced
+        return orientation === Globals.Views.ORIENTATION_PORTRAIT; // forced
 
-      //"Reading Systems should incorporate this spine item in a synthetic spread only when the device is in portrait orientation."
+        //"Reading Systems should incorporate this spine item in a synthetic spread only when the device is in portrait orientation."
     }
 
-    if (
-      !rendition_spread ||
-      rendition_spread === SpineItem.RENDITION_SPREAD_AUTO
-    ) {
-      // if no spread set in document and user didn't set in in setting we will do double for landscape
-      var landscape = orientation === Globals.Views.ORIENTATION_LANDSCAPE;
-      return landscape ? 1 : 0; // non-forced
+    if (!rendition_spread || rendition_spread === SpineItem.RENDITION_SPREAD_AUTO) {
+        // if no spread set in document and user didn't set in in setting we will do double for landscape
+        var landscape = orientation === Globals.Views.ORIENTATION_LANDSCAPE;
+        return landscape ? 1 : 0; // non-forced
 
-      //"Reading Systems may use synthetic spreads in specific or all device orientations as part of a display area utilization optimization process."
+        //"Reading Systems may use synthetic spreads in specific or all device orientations as part of a display area utilization optimization process."
     }
 
     console.warn("Helpers.deduceSyntheticSpread: spread properties?!");
     return 0; // non-forced
-  };
+};
 
-  /**
-   *
-   * @param $element
-   * @returns {Helpers.Rect}
-   */
-  Helpers.Margins.fromElement = function($element) {
+/**
+ *
+ * @param $element
+ * @returns {Helpers.Rect}
+ */
+Helpers.Margins.fromElement = function ($element) {
     return new this($element.margin(), $element.border(), $element.padding());
-  };
+};
 
-  /**
-   * @returns {Helpers.Rect}
-   */
-  Helpers.Margins.empty = function() {
-    return new this(
-      { left: 0, right: 0, top: 0, bottom: 0 },
-      { left: 0, right: 0, top: 0, bottom: 0 },
-      {
+/**
+ * @returns {Helpers.Rect}
+ */
+Helpers.Margins.empty = function () {
+
+    return new this({left: 0, right: 0, top: 0, bottom: 0}, {left: 0, right: 0, top: 0, bottom: 0}, {
         left: 0,
         right: 0,
         top: 0,
         bottom: 0
-      }
-    );
-  };
+    });
 
-  /**
-   *
-   * @param name
-   * @param params
-   * @returns {Helpers.loadTemplate.cache}
-   */
-  Helpers.loadTemplate = function(name, params) {
+};
+
+/**
+ *
+ * @param name
+ * @param params
+ * @returns {Helpers.loadTemplate.cache}
+ */
+Helpers.loadTemplate = function (name, params) {
     return Helpers.loadTemplate.cache[name];
-  };
+};
 
-  /**
-   *
-   * @type {{fixed_book_frame: string, single_page_frame: string, scrolled_book_frame: string, reflowable_book_frame: string, reflowable_book_page_frame: string}}
-   */
-  Helpers.loadTemplate.cache = {
-    fixed_book_frame:
-      '<div id="fixed-book-frame" class="clearfix book-frame fixed-book-frame"></div>',
-    single_page_frame:
-      '<div><div id="scaler"><iframe enable-annotation="enable-annotation" allowfullscreen="allowfullscreen" scrolling="no" class="iframe-fixed"></iframe></div></div>',
+/**
+ *
+ * @type {{fixed_book_frame: string, single_page_frame: string, scrolled_book_frame: string, reflowable_book_frame: string, reflowable_book_page_frame: string}}
+ */
+Helpers.loadTemplate.cache = {
+    "fixed_book_frame": '<div id="fixed-book-frame" class="clearfix book-frame fixed-book-frame"></div>',
+    "single_page_frame": '<div><div id="scaler"><iframe enable-annotation="enable-annotation" allowfullscreen="allowfullscreen" scrolling="no" class="iframe-fixed"></iframe></div></div>',
     //"single_page_frame" : '<div><iframe scrolling="no" class="iframe-fixed" id="scaler"></iframe></div>',
 
-    scrolled_book_frame:
-      '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"><div id="scrolled-content-frame"></div></div>',
-    reflowable_book_frame:
-      '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"></div>',
-    reflowable_book_page_frame:
-      '<div id="reflowable-content-frame" class="reflowable-content-frame"><iframe enable-annotation="enable-annotation" allowfullscreen="allowfullscreen" scrolling="no" id="epubContentIframe"></iframe></div>'
+    "scrolled_book_frame": '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"><div id="scrolled-content-frame"></div></div>',
+    "reflowable_book_frame": '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"></div>',
+    "reflowable_book_page_frame": '<div id="reflowable-content-frame" class="reflowable-content-frame"><iframe enable-annotation="enable-annotation" allowfullscreen="allowfullscreen" scrolling="no" id="epubContentIframe"></iframe></div>'
     /***
      * The `enable-annotation` attribute on an iframe helps detect the content frames for annotating tools such as Hypothesis
      * See here for more details:
      * https://h.readthedocs.io/projects/client/en/latest/publishers/embedding/
      * https://github.com/hypothesis/client/pull/533
      ***/
-  };
+};
 
-  /**
-   *
-   * @param styles
-   * @param $element
-   */
-  Helpers.setStyles = function(styles, $element) {
+/**
+ *
+ * @param styles
+ * @param $element
+ */
+Helpers.setStyles = function (styles, $element) {
+
     var count = styles.length;
 
     if (!count) {
-      return;
+        return;
     }
 
     var stylingGlobal = "";
     var stylings = [];
-    var elementIsDocument = $element && $element.createTextNode ? true : false;
+    var elementIsDocument = ($element && $element.createTextNode) ? true : false;
 
     for (var i = 0; i < count; i++) {
-      var style = styles[i];
+        var style = styles[i];
 
-      if (elementIsDocument) {
-        if (
-          !style.selector ||
-          style.selector == "" ||
-          style.selector == "html" ||
-          style.selector == "body" ||
-          style.selector == "*"
-        ) {
-          for (var prop in style.declarations) {
-            if (style.declarations.hasOwnProperty(prop)) {
-              // backgroundColor => background-color
-              var prop_ = prop.replace(/[A-Z]/g, function(a) {
-                return "-" + a.toLowerCase();
-              });
+        if (elementIsDocument) {
+            if (!style.selector || style.selector == "" || style.selector == "html" || style.selector == "body" || style.selector == "*") {
+                for (var prop in style.declarations) {
+                    if (style.declarations.hasOwnProperty(prop)) {
+                        // backgroundColor => background-color
+                        var prop_ = prop.replace(/[A-Z]/g, function(a) {return '-' + a.toLowerCase()});
 
-              stylingGlobal +=
-                prop_ + ": " + style.declarations[prop] + " !important; ";
+                        stylingGlobal += prop_ + ": " + style.declarations[prop] + " !important; ";
+                    }
+                }
+            } else {
+                //$(style.selector, $($element.doumentElement)).css(style.declarations);
+
+                var cssProperties = "";
+
+                for (var prop in style.declarations) {
+                    if (style.declarations.hasOwnProperty(prop)) {
+                        // backgroundColor => background-color
+                        var prop_ = prop.replace(/[A-Z]/g, function(a) {return '-' + a.toLowerCase()});
+                        cssProperties += prop_ + ": " + style.declarations[prop] + " !important; ";
+                    }
+                }
+
+                stylings.push({selector: style.selector, cssProps: cssProperties});
             }
-          }
-        } else {
-          //$(style.selector, $($element.doumentElement)).css(style.declarations);
-
-          var cssProperties = "";
-
-          for (var prop in style.declarations) {
-            if (style.declarations.hasOwnProperty(prop)) {
-              // backgroundColor => background-color
-              var prop_ = prop.replace(/[A-Z]/g, function(a) {
-                return "-" + a.toLowerCase();
-              });
-              cssProperties +=
-                prop_ + ": " + style.declarations[prop] + " !important; ";
+            
+        } else { // HTML element
+            if (style.selector) {
+                $(style.selector, $element).css(style.declarations);
             }
-          }
-
-          stylings.push({ selector: style.selector, cssProps: cssProperties });
+            else {
+                $element.css(style.declarations);
+            }
         }
-      } else {
-        // HTML element
-        if (style.selector) {
-          $(style.selector, $element).css(style.declarations);
-        } else {
-          $element.css(style.declarations);
-        }
-      }
     }
 
-    if (elementIsDocument) {
-      // HTML document
+    if (elementIsDocument) { // HTML document
 
-      var doc = $element;
+        var doc = $element;
 
-      var bookStyleElement = $("style#readium-bookStyles", doc.head);
+        var bookStyleElement = $("style#readium-bookStyles", doc.head);
 
-      if (bookStyleElement && bookStyleElement[0]) {
-        // we remove before re-adding from scratch
-        doc.head.removeChild(bookStyleElement[0]);
-      }
-
-      var cssStylesheet = "";
-
-      if (stylingGlobal.length > 0) {
-        cssStylesheet +=
-          " body, body::after, body::before, body *, body *::after, body *::before { " +
-          stylingGlobal +
-          " } ";
-      }
-
-      if (stylings.length > 0) {
-        for (var i = 0; i < stylings.length; i++) {
-          var styling = stylings[i];
-
-          cssStylesheet +=
-            " " + styling.selector + " { " + styling.cssProps + " } ";
+        if (bookStyleElement && bookStyleElement[0]) {
+            // we remove before re-adding from scratch
+            doc.head.removeChild(bookStyleElement[0]);
         }
-      }
+        
+        var cssStylesheet = "";
 
-      if (cssStylesheet.length > 0) {
-        var styleElement = doc.createElement("style");
-        styleElement.setAttribute("id", "readium-bookStyles");
-        styleElement.appendChild(doc.createTextNode(cssStylesheet));
+        if (stylingGlobal.length > 0) {
+            cssStylesheet += ' body, body::after, body::before, body *, body *::after, body *::before { ' + stylingGlobal + ' } ';
+        }
 
-        doc.head.appendChild(styleElement);
+        if (stylings.length > 0) {
+            for (var i = 0; i < stylings.length; i++) {
+                var styling = stylings[i];
 
-        //bookStyleElement = $(styleElement);
-      }
+                cssStylesheet += ' ' + styling.selector + ' { ' + styling.cssProps + ' } ';
+            }
+        }
+
+        if (cssStylesheet.length > 0) {
+
+            var styleElement = doc.createElement('style');
+            styleElement.setAttribute("id", "readium-bookStyles");
+            styleElement.appendChild(doc.createTextNode(cssStylesheet));
+
+            doc.head.appendChild(styleElement);
+
+            //bookStyleElement = $(styleElement);
+        }
     }
-  };
+};
 
-  /**
-   *
-   * @param iframe
-   * @returns {boolean}
-   */
-  Helpers.isIframeAlive = function(iframe) {
+/**
+ *
+ * @param iframe
+ * @returns {boolean}
+ */
+Helpers.isIframeAlive = function (iframe) {
     var w = undefined;
     var d = undefined;
     try {
-      w = iframe.contentWindow;
-      d = iframe.contentDocument;
-    } catch (ex) {
-      console.error(ex);
-      return false;
+        w = iframe.contentWindow;
+        d = iframe.contentDocument;
+    }
+    catch (ex) {
+        console.error(ex);
+        return false;
     }
 
     return w && d;
-  };
+};
 
-  /**
-   *
-   * @param $viewport
-   * @returns {Globals.Views.ORIENTATION_LANDSCAPE|Globals.Views.ORIENTATION_PORTRAIT}
-   */
-  Helpers.getOrientation = function($viewport) {
+/**
+ *
+ * @param $viewport
+ * @returns {Globals.Views.ORIENTATION_LANDSCAPE|Globals.Views.ORIENTATION_PORTRAIT}
+ */
+Helpers.getOrientation = function ($viewport) {
+
     var viewportWidth = $viewport.width();
     var viewportHeight = $viewport.height();
 
     if (!viewportWidth || !viewportHeight) {
-      return undefined;
+        return undefined;
     }
 
-    return viewportWidth >= viewportHeight
-      ? Globals.Views.ORIENTATION_LANDSCAPE
-      : Globals.Views.ORIENTATION_PORTRAIT;
-  };
+    return viewportWidth >= viewportHeight ? Globals.Views.ORIENTATION_LANDSCAPE : Globals.Views.ORIENTATION_PORTRAIT;
+};
 
-  /**
-   *
-   * @param item
-   * @param orientation
-   * @returns {boolean}
-   */
-  Helpers.isRenditionSpreadPermittedForItem = function(item, orientation) {
+/**
+ *
+ * @param item
+ * @param orientation
+ * @returns {boolean}
+ */
+Helpers.isRenditionSpreadPermittedForItem = function (item, orientation) {
+
     var rendition_spread = item.getRenditionSpread();
 
-    return (
-      !rendition_spread ||
-      rendition_spread == SpineItem.RENDITION_SPREAD_BOTH ||
-      rendition_spread == SpineItem.RENDITION_SPREAD_AUTO ||
-      (rendition_spread == SpineItem.RENDITION_SPREAD_LANDSCAPE &&
-        orientation == Globals.Views.ORIENTATION_LANDSCAPE) ||
-      (rendition_spread == SpineItem.RENDITION_SPREAD_PORTRAIT &&
-        orientation == Globals.Views.ORIENTATION_PORTRAIT)
-    );
-  };
+    return !rendition_spread
+        || rendition_spread == SpineItem.RENDITION_SPREAD_BOTH
+        || rendition_spread == SpineItem.RENDITION_SPREAD_AUTO
+        || (rendition_spread == SpineItem.RENDITION_SPREAD_LANDSCAPE
+        && orientation == Globals.Views.ORIENTATION_LANDSCAPE)
+        || (rendition_spread == SpineItem.RENDITION_SPREAD_PORTRAIT
+        && orientation == Globals.Views.ORIENTATION_PORTRAIT );
+};
 
-  Helpers.CSSTransition = function($el, trans) {
+Helpers.CSSTransition = function ($el, trans) {
+
     // does not work!
     //$el.css('transition', trans);
 
     var css = {};
     // empty '' prefix FIRST!
-    _.each(["", "-webkit-", "-moz-", "-ms-"], function(prefix) {
-      css[prefix + "transition"] = prefix + trans;
+    _.each(['', '-webkit-', '-moz-', '-ms-'], function (prefix) {
+        css[prefix + 'transition'] = prefix + trans;
     });
     $el.css(css);
-  };
+}
 
-  //scale, left, top, angle, origin
-  Helpers.CSSTransformString = function(options) {
+//scale, left, top, angle, origin
+Helpers.CSSTransformString = function (options) {
     var enable3D = options.enable3D ? true : false;
 
-    var translate,
-      scale,
-      rotation,
-      origin = options.origin;
+    var translate, scale, rotation,
+        origin = options.origin;
 
     if (options.left || options.top) {
-      var left = options.left || 0,
-        top = options.top || 0;
+        var left = options.left || 0,
+            top = options.top || 0;
 
-      translate = enable3D
-        ? "translate3D(" + left + "px, " + top + "px, 0)"
-        : "translate(" + left + "px, " + top + "px)";
+        translate = enable3D ? ("translate3D(" + left + "px, " + top + "px, 0)") : ("translate(" + left + "px, " + top + "px)");
     }
     if (options.scale) {
-      scale = enable3D
-        ? "scale3D(" + options.scale + ", " + options.scale + ", 0)"
-        : "scale(" + options.scale + ")";
+        scale = enable3D ? ("scale3D(" + options.scale + ", " + options.scale + ", 0)") : ("scale(" + options.scale + ")");
     }
     if (options.angle) {
-      rotation = enable3D
-        ? "rotate3D(0,0," + options.angle + "deg)"
-        : "rotate(" + options.angle + "deg)";
+        rotation = enable3D ? ("rotate3D(0,0," + options.angle + "deg)") : ("rotate(" + options.angle + "deg)");
     }
 
     if (!(translate || scale || rotation)) {
-      return {};
+        return {};
     }
 
-    var transformString =
-      translate && scale
-        ? translate + " " + scale
-        : translate
-          ? translate
-          : scale; // the order is important!
+    var transformString = (translate && scale) ? (translate + " " + scale) : (translate ? translate : scale); // the order is important!
     if (rotation) {
-      transformString = transformString + " " + rotation;
-      //transformString = rotation + " " + transformString;
+        transformString = transformString + " " + rotation;
+        //transformString = rotation + " " + transformString;
     }
 
     var css = {};
-    css["transform"] = transformString;
-    css["transform-origin"] = origin ? origin : enable3D ? "0 0 0" : "0 0";
+    css['transform'] = transformString;
+    css['transform-origin'] = origin ? origin : (enable3D ? '0 0 0' : '0 0');
     return css;
-  };
+};
 
-  Helpers.extendedThrottle = function(
-    startCb,
-    tickCb,
-    endCb,
-    tickRate,
-    waitThreshold,
-    context
-  ) {
+Helpers.extendedThrottle = function (startCb, tickCb, endCb, tickRate, waitThreshold, context) {
     if (!tickRate) tickRate = 250;
     if (!waitThreshold) waitThreshold = tickRate;
 
     var first = true,
-      last,
-      deferTimer;
+        last,
+        deferTimer;
 
-    return function() {
-      var ctx = context || this,
-        now = (Date.now && Date.now()) || new Date().getTime(),
-        args = arguments;
+    return function () {
+        var ctx = context || this,
+            now = (Date.now && Date.now()) || new Date().getTime(),
+            args = arguments;
 
-      if (!(last && now < last + tickRate)) {
-        last = now;
-        if (first) {
-          startCb.apply(ctx, args);
-          first = false;
-        } else {
-          tickCb.apply(ctx, args);
+        if (!(last && now < last + tickRate)) {
+            last = now;
+            if (first) {
+                startCb.apply(ctx, args);
+                first = false;
+            } else {
+                tickCb.apply(ctx, args);
+            }
         }
-      }
 
-      clearTimeout(deferTimer);
-      deferTimer = setTimeout(function() {
-        last = now;
-        first = true;
-        endCb.apply(ctx, args);
-      }, waitThreshold);
+        clearTimeout(deferTimer);
+        deferTimer = setTimeout(function () {
+            last = now;
+            first = true;
+            endCb.apply(ctx, args);
+        }, waitThreshold);
     };
-  };
+};
 
-  //TODO: consider using CSSOM escape() or polyfill
-  //https://github.com/mathiasbynens/CSS.escape/blob/master/css.escape.js
-  //http://mathiasbynens.be/notes/css-escapes
-  /**
-   *
-   * @param sel
-   * @returns {string}
-   */
-  Helpers.escapeJQuerySelector = function(sel) {
+
+//TODO: consider using CSSOM escape() or polyfill
+//https://github.com/mathiasbynens/CSS.escape/blob/master/css.escape.js
+//http://mathiasbynens.be/notes/css-escapes
+/**
+ *
+ * @param sel
+ * @returns {string}
+ */
+Helpers.escapeJQuerySelector = function (sel) {
     //http://api.jquery.com/category/selectors/
     //!"#$%&'()*+,./:;<=>?@[\]^`{|}~
     // double backslash escape
 
     if (!sel) return undefined;
 
-    var selector = sel.replace(
-      /([;&,\.\+\*\~\?':"\!\^#$%@\[\]\(\)<=>\|\/\\{}`])/g,
-      "\\$1"
-    );
+    var selector = sel.replace(/([;&,\.\+\*\~\?':"\!\^#$%@\[\]\(\)<=>\|\/\\{}`])/g, '\\$1');
 
     // if (selector !== sel)
     // {
@@ -36623,297 +36585,258 @@ define('readium_shared_js/helpers',[
     // }
 
     return selector;
-  };
+};
 
-  Helpers.polyfillCaretRangeFromPoint = function(document) {
+Helpers.polyfillCaretRangeFromPoint = function(document) {
     //Derived from css-regions-polyfill:
     // https://github.com/FremyCompany/css-regions-polyfill/blob/bfbb6445ec2a2a883005ab8801d8463fa54b5701/src/range-extensions.js
     //Copyright (c) 2013 François REMY
     //Copyright (c) 2013 Adobe Systems Inc.
     //Licensed under the Apache License, Version 2.0
     if (!document.caretRangeFromPoint) {
-      if (document.caretPositionFromPoint) {
-        document.caretRangeFromPoint = function caretRangeFromPoint(x, y) {
-          var r = document.createRange();
-          var p = document.caretPositionFromPoint(x, y);
-          if (!p) return null;
-          if (p.offsetNode) {
-            r.setStart(p.offsetNode, p.offset);
-            r.setEnd(p.offsetNode, p.offset);
-          }
-          return r;
-        };
-      } else if (
-        (document.body || document.createElement("body")).createTextRange
-      ) {
-        //
-        // we may want to convert TextRange to Range
-        //
+        if (document.caretPositionFromPoint) {
+            document.caretRangeFromPoint = function caretRangeFromPoint(x, y) {
+                var r = document.createRange();
+                var p = document.caretPositionFromPoint(x, y);
+                if (!p) return null;
+                if (p.offsetNode) {
+                    r.setStart(p.offsetNode, p.offset);
+                    r.setEnd(p.offsetNode, p.offset);
+                }
+                return r;
+            }
+        } else if ((document.body || document.createElement('body')).createTextRange) {
+            //
+            // we may want to convert TextRange to Range
+            //
 
-        //TextRangeUtils, taken from: https://code.google.com/p/ierange/
-        //Copyright (c) 2009 Tim Cameron Ryan
-        //Released under the MIT/X License
-        var TextRangeUtils = {
-          convertToDOMRange: function(textRange, document) {
-            var adoptBoundary = function(domRange, textRangeInner, bStart) {
-              // iterate backwards through parent element to find anchor location
-              var cursorNode = document.createElement("a"),
-                cursor = textRangeInner.duplicate();
-              cursor.collapse(bStart);
-              var parent = cursor.parentElement();
-              do {
-                parent.insertBefore(cursorNode, cursorNode.previousSibling);
-                cursor.moveToElementText(cursorNode);
-              } while (
-                cursor.compareEndPoints(
-                  bStart ? "StartToStart" : "StartToEnd",
-                  textRangeInner
-                ) > 0 &&
-                cursorNode.previousSibling
-              );
-              // when we exceed or meet the cursor, we've found the node
-              if (
-                cursor.compareEndPoints(
-                  bStart ? "StartToStart" : "StartToEnd",
-                  textRangeInner
-                ) == -1 &&
-                cursorNode.nextSibling
-              ) {
-                // data node
-                cursor.setEndPoint(
-                  bStart ? "EndToStart" : "EndToEnd",
-                  textRangeInner
-                );
-                domRange[bStart ? "setStart" : "setEnd"](
-                  cursorNode.nextSibling,
-                  cursor.text.length
-                );
-              } else {
-                // element
-                domRange[bStart ? "setStartBefore" : "setEndBefore"](
-                  cursorNode
-                );
-              }
-              cursorNode.parentNode.removeChild(cursorNode);
+            //TextRangeUtils, taken from: https://code.google.com/p/ierange/
+            //Copyright (c) 2009 Tim Cameron Ryan
+            //Released under the MIT/X License
+            var TextRangeUtils = {
+                convertToDOMRange: function(textRange, document) {
+                    var adoptBoundary = function(domRange, textRangeInner, bStart) {
+                        // iterate backwards through parent element to find anchor location
+                        var cursorNode = document.createElement('a'),
+                            cursor = textRangeInner.duplicate();
+                        cursor.collapse(bStart);
+                        var parent = cursor.parentElement();
+                        do {
+                            parent.insertBefore(cursorNode, cursorNode.previousSibling);
+                            cursor.moveToElementText(cursorNode);
+                        } while (cursor.compareEndPoints(bStart ? 'StartToStart' : 'StartToEnd', textRangeInner) > 0 && cursorNode.previousSibling);
+                        // when we exceed or meet the cursor, we've found the node
+                        if (cursor.compareEndPoints(bStart ? 'StartToStart' : 'StartToEnd', textRangeInner) == -1 && cursorNode.nextSibling) {
+                            // data node
+                            cursor.setEndPoint(bStart ? 'EndToStart' : 'EndToEnd', textRangeInner);
+                            domRange[bStart ? 'setStart' : 'setEnd'](cursorNode.nextSibling, cursor.text.length);
+                        } else {
+                            // element
+                            domRange[bStart ? 'setStartBefore' : 'setEndBefore'](cursorNode);
+                        }
+                        cursorNode.parentNode.removeChild(cursorNode);
+                    };
+                    // return a DOM range
+                    var domRange = document.createRange();
+                    adoptBoundary(domRange, textRange, true);
+                    adoptBoundary(domRange, textRange, false);
+                    return domRange;
+                }
             };
-            // return a DOM range
-            var domRange = document.createRange();
-            adoptBoundary(domRange, textRange, true);
-            adoptBoundary(domRange, textRange, false);
-            return domRange;
-          }
-        };
 
-        document.caretRangeFromPoint = function caretRangeFromPoint(x, y) {
-          // the accepted number of vertical backtracking, in CSS pixels
-          var IYDepth = 40;
-          // try to create a text range at the specified location
-          var tr = document.body.createTextRange();
-          for (var iy = IYDepth; iy; iy = iy - 4) {
-            try {
-              tr.moveToPoint(x, iy + y - IYDepth);
-              return TextRangeUtils.convertToDOMRange(tr, document);
-            } catch (ex) {}
-          }
-          // if that fails, return the location just after the element located there
-          try {
-            var elem = document.elementFromPoint(x - 1, y - 1);
-            var r = document.createRange();
-            r.setStartAfter(elem);
-            return r;
-          } catch (ex) {
-            return null;
-          }
-        };
-      }
+            document.caretRangeFromPoint = function caretRangeFromPoint(x, y) {
+                // the accepted number of vertical backtracking, in CSS pixels
+                var IYDepth = 40;
+                // try to create a text range at the specified location
+                var tr = document.body.createTextRange();
+                for (var iy = IYDepth; iy; iy = iy - 4) {
+                    try {
+                        tr.moveToPoint(x, iy + y - IYDepth);
+                        return TextRangeUtils.convertToDOMRange(tr, document);
+                    } catch (ex) {
+                    }
+                }
+                // if that fails, return the location just after the element located there
+                try {
+                    var elem = document.elementFromPoint(x - 1, y - 1);
+                    var r = document.createRange();
+                    r.setStartAfter(elem);
+                    return r;
+                } catch (ex) {
+                    return null;
+                }
+            }
+        }
     }
-  };
+};
 
-  return Helpers;
+return Helpers;
 });
 
 //  LauncherOSX
 //
 //  Created by Boris Schneiderman.
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
-//
-//  Redistribution and use in source and binary forms, with or without modification,
+//  
+//  Redistribution and use in source and binary forms, with or without modification, 
 //  are permitted provided that the following conditions are met:
-//  1. Redistributions of source code must retain the above copyright notice, this
+//  1. Redistributions of source code must retain the above copyright notice, this 
 //  list of conditions and the following disclaimer.
-//  2. Redistributions in binary form must reproduce the above copyright notice,
-//  this list of conditions and the following disclaimer in the documentation and/or
+//  2. Redistributions in binary form must reproduce the above copyright notice, 
+//  this list of conditions and the following disclaimer in the documentation and/or 
 //  other materials provided with the distribution.
-//  3. Neither the name of the organization nor the names of its contributors may be
-//  used to endorse or promote products derived from this software without specific
+//  3. Neither the name of the organization nor the names of its contributors may be 
+//  used to endorse or promote products derived from this software without specific 
 //  prior written permission.
-//
-//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+//  
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /**
- * CFI navigation helper class
- *
- * @param options Additional settings for NavigationLogic object
- *      - paginationInfo            Layout details, used by clientRect-based geometry
- *      - visibleContentOffsets     Function that returns offsets. If supplied it is used instead of the inferred offsets
- *      - frameDimensions           Function that returns an object with width and height properties. Needs to be set.
- *      - $iframe                   Iframe reference, and needs to be set.
- * @constructor
- */
-define('readium_shared_js/views/cfi_navigation_logic',["jquery", "underscore", "../helpers", "readium_cfi_js"], function(
-  $,
-  _,
-  Helpers,
-  EPUBcfi
-) {
-  var CfiNavigationLogic = function(options) {
+* CFI navigation helper class
+*
+* @param options Additional settings for NavigationLogic object
+*      - paginationInfo            Layout details, used by clientRect-based geometry
+*      - visibleContentOffsets     Function that returns offsets. If supplied it is used instead of the inferred offsets
+*      - frameDimensions           Function that returns an object with width and height properties. Needs to be set.
+*      - $iframe                   Iframe reference, and needs to be set.
+* @constructor
+*/
+define('readium_shared_js/views/cfi_navigation_logic',["jquery", "underscore", "../helpers", 'readium_cfi_js'], function($, _, Helpers, EPUBcfi) {
+
+var CfiNavigationLogic = function (options) {
     var self = this;
     options = options || {};
 
     var _DEBUG = ReadiumSDK.DEBUG_MODE;
     if (_DEBUG) {
-      window.top._DEBUG_visibleTextRangeOffsetsRuns =
-        window.top._DEBUG_visibleTextRangeOffsetsRuns || [];
+        window.top._DEBUG_visibleTextRangeOffsetsRuns = window.top._DEBUG_visibleTextRangeOffsetsRuns || [];
     }
 
-    this.getRootElement = function() {
-      if (!options.$iframe) {
-        return null;
-      }
+    this.getRootElement = function () {
+        if (!options.$iframe) {
+            return null;
+        }
 
-      return options.$iframe[0].contentDocument.documentElement;
+        return options.$iframe[0].contentDocument.documentElement;
     };
 
-    this.getBodyElement = function() {
-      var rootDocument = this.getRootDocument();
-      if (rootDocument && rootDocument.body) {
-        return rootDocument.body;
-      } else {
-        // In SVG documents the root element can be considered the body.
-        return this.getRootElement();
-      }
+    this.getBodyElement = function () {
+        var rootDocument = this.getRootDocument();
+        if (rootDocument && rootDocument.body) {
+            return rootDocument.body;
+        } else {
+            // In SVG documents the root element can be considered the body.
+            return this.getRootElement();
+        }
     };
 
-    this.getClassBlacklist = function() {
-      return options.classBlacklist || [];
+    this.getClassBlacklist = function () {
+        return options.classBlacklist || [];
     };
 
-    this.getIdBlacklist = function() {
-      return options.idBlacklist || [];
+    this.getIdBlacklist = function () {
+        return options.idBlacklist || [];
     };
 
-    this.getElementBlacklist = function() {
-      return options.elementBlacklist || [];
+    this.getElementBlacklist = function () {
+        return options.elementBlacklist || [];
     };
 
-    this.getRootDocument = function() {
-      if (!options.$iframe) {
-        return null;
-      }
+    this.getRootDocument = function () {
+        if (!options.$iframe) {
+            return null;
+        }
 
-      return options.$iframe[0].contentDocument;
+        return options.$iframe[0].contentDocument;
     };
 
     function createRange() {
-      return self.getRootDocument().createRange();
+        return self.getRootDocument().createRange();
     }
 
     function createRangeFromNode(textnode) {
-      var documentRange = createRange();
-      documentRange.selectNodeContents(textnode);
-      return documentRange;
+        var documentRange = createRange();
+        documentRange.selectNodeContents(textnode);
+        return documentRange;
     }
 
     function getNodeClientRect(node) {
-      var range = createRange();
-      range.selectNode(node);
-      return normalizeRectangle(range.getBoundingClientRect(), 0, 0);
-    }
+            var range = createRange();
+            range.selectNode(node);
+            return normalizeRectangle(range.getBoundingClientRect(), 0, 0);
+        }
 
     function getNodeContentsClientRect(node) {
-      var range = createRange();
-      range.selectNodeContents(node);
-      return normalizeRectangle(range.getBoundingClientRect(), 0, 0);
-    }
+            var range = createRange();
+            range.selectNodeContents(node);
+            return normalizeRectangle(range.getBoundingClientRect(), 0, 0);
+        }
 
-    function getNodeRangeClientRect(
-      startNode,
-      startOffset,
-      endNode,
-      endOffset
-    ) {
-      var range = createRange();
-      range.setStart(startNode, startOffset ? startOffset : 0);
-      if (endNode.nodeType === Node.ELEMENT_NODE) {
-        range.setEnd(
-          endNode,
-          endOffset ? endOffset : endNode.childNodes.length
-        );
-      } else if (endNode.nodeType === Node.TEXT_NODE) {
-        range.setEnd(endNode, endOffset ? endOffset : 0);
-      }
+    function getNodeRangeClientRect(startNode, startOffset, endNode, endOffset) {
+        var range = createRange();
+        range.setStart(startNode, startOffset ? startOffset : 0);
+        if (endNode.nodeType === Node.ELEMENT_NODE) {
+            range.setEnd(endNode, endOffset ? endOffset : endNode.childNodes.length);
+        } else if (endNode.nodeType === Node.TEXT_NODE) {
+            range.setEnd(endNode, endOffset ? endOffset : 0);
+        }
 
-      // Webkit has a bug where collapsed ranges provide an empty rect with getBoundingClientRect()
-      // https://bugs.webkit.org/show_bug.cgi?id=138949
-      // Thankfully it implements getClientRects() properly...
-      // A collapsed text range may still have geometry!
-      if (range.collapsed) {
-        return normalizeRectangle(range.getClientRects()[0], 0, 0);
-      } else {
-        return normalizeRectangle(range.getBoundingClientRect(), 0, 0);
-      }
+        // Webkit has a bug where collapsed ranges provide an empty rect with getBoundingClientRect()
+        // https://bugs.webkit.org/show_bug.cgi?id=138949
+        // Thankfully it implements getClientRects() properly...
+        // A collapsed text range may still have geometry!
+        if (range.collapsed) {
+            return normalizeRectangle(range.getClientRects()[0], 0, 0);
+        } else {
+            return normalizeRectangle(range.getBoundingClientRect(), 0, 0);
+        }
     }
 
     function getNodeClientRectList(node, visibleContentOffsets) {
-      visibleContentOffsets =
-        visibleContentOffsets || getVisibleContentOffsets();
+        visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
 
-      var range = createRange();
-      range.selectNode(node);
-      return getRangeClientRectList(range, visibleContentOffsets);
+        var range = createRange();
+        range.selectNode(node);
+        return getRangeClientRectList(range, visibleContentOffsets);
     }
 
     function getRangeClientRectList(range, visibleContentOffsets) {
-      visibleContentOffsets =
-        visibleContentOffsets || getVisibleContentOffsets();
+        visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
 
-      //noinspection JSUnresolvedFunction
+        //noinspection JSUnresolvedFunction
 
-      return _.map(range.getClientRects(), function(rect) {
-        return normalizeRectangle(
-          rect,
-          visibleContentOffsets.left,
-          visibleContentOffsets.top
-        );
-      });
+        return _.map(range.getClientRects(), function (rect) {
+
+            return normalizeRectangle(rect, visibleContentOffsets.left, visibleContentOffsets.top);
+        });
     }
 
     function getFrameDimensions() {
-      if (options.frameDimensionsGetter) {
-        return options.frameDimensionsGetter();
-      }
+        if (options.frameDimensionsGetter) {
+            return options.frameDimensionsGetter();
+        }
 
-      console.error("CfiNavigationLogic: No frame dimensions specified!");
-      return null;
+        console.error('CfiNavigationLogic: No frame dimensions specified!');
+        return null;
     }
 
     function getCaretRangeFromPoint(x, y, document) {
-      document = document || self.getRootDocument();
-      Helpers.polyfillCaretRangeFromPoint(document); //only polyfills once, no-op afterwards
-      return document.caretRangeFromPoint(x, y);
+        document = document || self.getRootDocument();
+        Helpers.polyfillCaretRangeFromPoint(document); //only polyfills once, no-op afterwards
+        return document.caretRangeFromPoint(x, y);
     }
 
     function isPaginatedView() {
-      return !!options.paginationInfo;
+        return !!options.paginationInfo;
     }
 
     /**
@@ -36923,7 +36846,7 @@ define('readium_shared_js/views/cfi_navigation_logic',["jquery", "underscore", "
      * @returns {boolean}
      */
     function isPageProgressionRightToLeft() {
-      return options.paginationInfo && !!options.paginationInfo.rightToLeft;
+        return options.paginationInfo && !!options.paginationInfo.rightToLeft;
     }
 
     /**
@@ -36933,10 +36856,9 @@ define('readium_shared_js/views/cfi_navigation_logic',["jquery", "underscore", "
      * @returns {boolean}
      */
     function isVerticalWritingMode() {
-      return (
-        options.paginationInfo && !!options.paginationInfo.isVerticalWritingMode
-      );
+        return options.paginationInfo && !!options.paginationInfo.isVerticalWritingMode;
     }
+
 
     /**
      * @private
@@ -36948,1886 +36870,1584 @@ define('readium_shared_js/views/cfi_navigation_logic',["jquery", "underscore", "
      * @returns {boolean}
      */
     function isRectVisible(rect, ignorePartiallyVisible, frameDimensions) {
-      frameDimensions = frameDimensions || getFrameDimensions();
 
-      //Text nodes without printable text dont have client rectangles
-      if (!rect) {
-        return false;
-      }
-      //Sometimes we get client rects that are "empty" and aren't supposed to be visible
-      if (
-        rect.left == 0 &&
-        rect.right == 0 &&
-        rect.top == 0 &&
-        rect.bottom == 0
-      ) {
-        return false;
-      }
+        frameDimensions = frameDimensions || getFrameDimensions();
 
-      if (isPaginatedView() && !isVerticalWritingMode()) {
-        return (
-          (rect.left >= 0 && rect.left < frameDimensions.width) ||
-          (!ignorePartiallyVisible && rect.left < 0 && rect.right > 0)
-        );
-      } else {
-        return (
-          (rect.top >= 0 && rect.top < frameDimensions.height) ||
-          (!ignorePartiallyVisible && rect.top < 0 && rect.bottom > 0)
-        );
-      }
-    }
-
-    /**
-     * @private
-     * Retrieves _current_ full width of a column (including its gap)
-     *
-     * @returns {number} Full width of a column in pixels
-     */
-    function getColumnFullWidth() {
-      if (!options.paginationInfo || isVerticalWritingMode()) {
-        return options.$iframe.width();
-      }
-
-      return (
-        options.paginationInfo.columnWidth + options.paginationInfo.columnGap
-      );
-    }
-
-    /**
-     * @private
-     *
-     * Retrieves _current_ offset of a viewport
-     * (relational to the beginning of the chapter)
-     *
-     * @returns {Object}
-     */
-    function getVisibleContentOffsets() {
-      if (options.visibleContentOffsetsGetter) {
-        return options.visibleContentOffsetsGetter();
-      }
-
-      if (isVerticalWritingMode() && options.paginationOffsetsGetter) {
-        return options.paginationOffsetsGetter();
-      }
-
-      return {
-        top: 0,
-        left: 0
-      };
-    }
-
-    function getPaginationOffsets() {
-      if (options.paginationOffsetsGetter) {
-        return options.paginationOffsetsGetter();
-      }
-
-      return {
-        top: 0,
-        left: 0
-      };
-    }
-
-    /**
-     * New (rectangle-based) algorithm, useful in multi-column layouts
-     *
-     * Note: the second param (props) is ignored intentionally
-     * (no need to use those in normalization)
-     *
-     * @param {jQuery} $element
-     * @param {boolean} shouldCalculateVisibilityPercentage
-     * @param {Object} [visibleContentOffsets]
-     * @param {Object} [frameDimensions]
-     * @returns {number|null}
-     *      0 for non-visible elements,
-     *      0 < n <= 100 for visible elements
-     *      (will just give 100, if `shouldCalculateVisibilityPercentage` => false)
-     *      null for elements with display:none
-     */
-    function checkVisibilityByRectangles(
-      $element,
-      shouldCalculateVisibilityPercentage,
-      visibleContentOffsets,
-      frameDimensions
-    ) {
-      visibleContentOffsets =
-        visibleContentOffsets || getVisibleContentOffsets();
-      frameDimensions = frameDimensions || getFrameDimensions();
-
-      var clientRectangles = getNormalizedRectangles(
-        $element,
-        visibleContentOffsets
-      );
-      if (clientRectangles.length === 0) {
-        // elements with display:none, etc.
-        return null;
-      }
-
-      var visibilityPercentage = 0;
-
-      if (clientRectangles.length === 1) {
-        var adjustedRect = clientRectangles[0];
-
-        if (isPaginatedView()) {
-          if (
-            adjustedRect.bottom > frameDimensions.height ||
-            adjustedRect.top < 0
-          ) {
-            // because of webkit inconsistency, that single rectangle should be adjusted
-            // until it hits the end OR will be based on the FIRST column that is visible
-            adjustRectangle(adjustedRect, true, frameDimensions);
-          }
+        //Text nodes without printable text dont have client rectangles
+        if (!rect) {
+            return false;
+        }
+        //Sometimes we get client rects that are "empty" and aren't supposed to be visible
+        if (rect.left == 0 && rect.right == 0 && rect.top == 0 && rect.bottom == 0) {
+            return false;
         }
 
-        if (isRectVisible(adjustedRect, false, frameDimensions)) {
-          if (shouldCalculateVisibilityPercentage && adjustedRect.top < 0) {
-            visibilityPercentage = Math.floor(
-              (100 * (adjustedRect.height + adjustedRect.top)) /
-                adjustedRect.height
-            );
-          } else if (
-            shouldCalculateVisibilityPercentage &&
-            adjustedRect.bottom > frameDimensions.height
-          ) {
-            visibilityPercentage = Math.floor(
-              (100 * (frameDimensions.height - adjustedRect.top)) /
-                adjustedRect.height
-            );
-          } else if (
-            shouldCalculateVisibilityPercentage &&
-            adjustedRect.left < 0 &&
-            adjustedRect.right > 0
-          ) {
-            visibilityPercentage = Math.floor(
-              (100 * adjustedRect.right) / adjustedRect.width
-            );
-          } else if (
-            shouldCalculateVisibilityPercentage &&
-            adjustedRect.left < 0 &&
-            adjustedRect.right > 0
-          ) {
-            visibilityPercentage = Math.floor(
-              (100 * adjustedRect.right) / adjustedRect.width
-            );
-          } else {
-            visibilityPercentage = 100;
-          }
-        }
-      } else {
-        // for an element split between several CSS columns,z
-        // both Firefox and IE produce as many client rectangles;
-        // each of those should be checked
-        for (var i = 0, l = clientRectangles.length; i < l; ++i) {
-          if (isRectVisible(clientRectangles[i], false, frameDimensions)) {
-            visibilityPercentage = shouldCalculateVisibilityPercentage
-              ? measureVisibilityPercentageByRectangles(clientRectangles, i)
-              : 100;
-            break;
-          }
-        }
-      }
-
-      return visibilityPercentage;
-    }
-
-    /**
-     * Finds a page index (0-based) delta for a specific element.
-     * Calculations are based on rectangles retrieved with getClientRects() method.
-     *
-     * @param {jQuery} $element
-     * @returns {number|null}
-     */
-    function findPageIndexDeltaByRectangles($element) {
-      var visibleContentOffsets = getVisibleContentOffsets();
-
-      var clientRectangles = getNormalizedRectangles(
-        $element,
-        visibleContentOffsets
-      );
-      if (clientRectangles.length === 0) {
-        // elements with display:none, etc.
-        return null;
-      }
-
-      return calculatePageIndexDeltaByRectangles(clientRectangles);
-    }
-
-    /**
-     * @private
-     * Calculate a page index (0-based) delta for given client rectangles.
-     *
-     * @param {object[]} clientRectangles
-     * @param {object} [frameDimensions]
-     * @param {number} [columnFullWidth]
-     * @returns {number|null}
-     */
-    function calculatePageIndexDeltaByRectangles(
-      clientRectangles,
-      frameDimensions,
-      columnFullWidth
-    ) {
-      var isRtl = isPageProgressionRightToLeft();
-      var isVwm = isVerticalWritingMode();
-      columnFullWidth = columnFullWidth || getColumnFullWidth();
-      frameDimensions = frameDimensions || getFrameDimensions();
-
-      var firstRectangle = _.first(clientRectangles);
-      if (clientRectangles.length === 1) {
-        adjustRectangle(
-          firstRectangle,
-          false,
-          frameDimensions,
-          columnFullWidth,
-          isRtl,
-          isVwm
-        );
-      }
-
-      var pageIndex;
-
-      if (isVwm) {
-        var topOffset = firstRectangle.top;
-        pageIndex = Math.floor(topOffset / frameDimensions.height);
-      } else {
-        var leftOffset = firstRectangle.left;
-        if (isRtl) {
-          leftOffset =
-            columnFullWidth *
-              (options.paginationInfo
-                ? options.paginationInfo.visibleColumnCount
-                : 1) -
-            leftOffset;
-        }
-        pageIndex = Math.floor(leftOffset / columnFullWidth);
-      }
-
-      return pageIndex;
-    }
-
-    /**
-     * Finds a page index (0-based) delta for a specific client rectangle.
-     * Calculations are based on viewport dimensions, offsets, and rectangle coordinates
-     *
-     * @param {ClientRect} clientRectangle
-     * @param {Object} [visibleContentOffsets]
-     * @param {Object} [frameDimensions]
-     * @returns {number|null}
-     */
-    function findPageIndexDeltaBySingleRectangle(
-      clientRectangle,
-      visibleContentOffsets,
-      frameDimensions
-    ) {
-      visibleContentOffsets =
-        visibleContentOffsets || getVisibleContentOffsets();
-      frameDimensions = frameDimensions || getFrameDimensions();
-
-      var normalizedRectangle = normalizeRectangle(
-        clientRectangle,
-        visibleContentOffsets.left,
-        visibleContentOffsets.top
-      );
-
-      return calculatePageIndexDeltaByRectangles(
-        [normalizedRectangle],
-        frameDimensions
-      );
-    }
-
-    /**
-     * @private
-     * Calculates the visibility offset percentage based on ClientRect dimensions
-     *
-     * @param {Array} clientRectangles (should already be normalized)
-     * @param {number} firstVisibleRectIndex
-     * @returns {number} - visibility percentage (0 < n <= 100)
-     */
-    function measureVisibilityPercentageByRectangles(
-      clientRectangles,
-      firstVisibleRectIndex
-    ) {
-      var heightTotal = 0;
-      var heightVisible = 0;
-
-      if (clientRectangles.length > 1) {
-        _.each(clientRectangles, function(rect, index) {
-          heightTotal += rect.height;
-          if (index >= firstVisibleRectIndex) {
-            // in this case, all the rectangles after the first visible
-            // should be counted as visible
-            heightVisible += rect.height;
-          }
-        });
-      } else {
-        // should already be normalized and adjusted
-        heightTotal = clientRectangles[0].height;
-        heightVisible =
-          clientRectangles[0].height - Math.max(0, -clientRectangles[0].top);
-      }
-      return heightVisible === heightTotal
-        ? 100 // trivial case: element is 100% visible
-        : Math.floor((100 * heightVisible) / heightTotal);
-    }
-
-    /**
-     * @private
-     * Retrieves the position of $element in multi-column layout
-     *
-     * @param {jQuery} $el
-     * @param {Object} [visibleContentOffsets]
-     * @returns {Object[]}
-     */
-    function getNormalizedRectangles($el, visibleContentOffsets) {
-      visibleContentOffsets = visibleContentOffsets || {};
-      var leftOffset = visibleContentOffsets.left || 0;
-      var topOffset = visibleContentOffsets.top || 0;
-
-      var isTextNode = $el[0].nodeType === Node.TEXT_NODE;
-      var clientRectList;
-
-      if (isTextNode) {
-        var range = createRange();
-        range.selectNode($el[0]);
-        //noinspection JSUnresolvedFunction
-        clientRectList = range.getClientRects();
-      } else {
-        //noinspection JSUnresolvedFunction
-        clientRectList = $el[0].getClientRects();
-      }
-
-      // all the separate rectangles (for detecting position of the element
-      // split between several columns)
-      var clientRectangles = [];
-      for (var i = 0, l = clientRectList.length; i < l; ++i) {
-        if (clientRectList[i].height > 0 || clientRectList.length === 1) {
-          // Firefox sometimes gets it wrong,
-          // adding literally empty (height = 0) client rectangle preceding the real one,
-          // that empty client rectanle shouldn't be retrieved
-          clientRectangles.push(
-            normalizeRectangle(clientRectList[i], leftOffset, topOffset)
-          );
-        }
-      }
-
-      return clientRectangles;
-    }
-
-    function getNormalizedBoundingRect($el, visibleContentOffsets) {
-      visibleContentOffsets = visibleContentOffsets || {};
-      var leftOffset = visibleContentOffsets.left || 0;
-      var topOffset = visibleContentOffsets.top || 0;
-
-      var isTextNode = $el[0].nodeType === Node.TEXT_NODE;
-      var boundingClientRect;
-
-      if (isTextNode) {
-        var range = createRange();
-        range.selectNode($el[0]);
-        boundingClientRect = range.getBoundingClientRect();
-      } else {
-        boundingClientRect = $el[0].getBoundingClientRect();
-      }
-
-      // union of all rectangles wrapping the element
-      return normalizeRectangle(boundingClientRect, leftOffset, topOffset);
-    }
-
-    /**
-     * @private
-     * Converts TextRectangle object into a plain object,
-     * taking content offsets (=scrolls, position shifts etc.) into account
-     *
-     * @param {Object} textRect
-     * @param {number} leftOffset
-     * @param {number} topOffset
-     * @returns {Object}
-     */
-    function normalizeRectangle(textRect, leftOffset, topOffset) {
-      var plainRectObject = {
-        left: textRect.left,
-        right: textRect.right,
-        top: textRect.top,
-        bottom: textRect.bottom,
-        width: textRect.right - textRect.left,
-        height: textRect.bottom - textRect.top
-      };
-      leftOffset = leftOffset || 0;
-      topOffset = topOffset || 0;
-      offsetRectangle(plainRectObject, leftOffset, topOffset);
-      return plainRectObject;
-    }
-
-    /**
-     * @private
-     * Offsets plain object (which represents a TextRectangle).
-     *
-     * @param {Object} rect
-     * @param {number} leftOffset
-     * @param {number} topOffset
-     */
-    function offsetRectangle(rect, leftOffset, topOffset) {
-      rect.left += leftOffset;
-      rect.right += leftOffset;
-      rect.top += topOffset;
-      rect.bottom += topOffset;
-    }
-
-    /**
-     * @private
-     *
-     * When element is spilled over two or more columns,
-     * most of the time Webkit-based browsers
-     * still assign a single clientRectangle to it, setting its `top` property to negative value
-     * (so it looks like it's rendered based on the second column)
-     * Alas, sometimes they decide to continue the leftmost column - from _below_ its real height.
-     * In this case, `bottom` property is actually greater than element's height and had to be adjusted accordingly.
-     *
-     * Ugh.
-     *
-     * @param {Object} rect
-     * @param {boolean} [shouldLookForFirstVisibleColumn]
-     *      If set, there'll be two-phase adjustment
-     *      (to align a rectangle with a viewport)
-     * @param {Object} [frameDimensions]
-     * @param {number} [columnFullWidth]
-     * @param {boolean} [isRtl]
-     * @param {boolean} [isVwm]               isVerticalWritingMode
-     */
-    function adjustRectangle(
-      rect,
-      shouldLookForFirstVisibleColumn,
-      frameDimensions,
-      columnFullWidth,
-      isRtl,
-      isVwm
-    ) {
-      frameDimensions = frameDimensions || getFrameDimensions();
-      columnFullWidth = columnFullWidth || getColumnFullWidth();
-      isRtl = isRtl || isPageProgressionRightToLeft();
-      isVwm = isVwm || isVerticalWritingMode();
-
-      // Rectangle adjustment is not needed in VWM since it does not deal with columns
-      if (isVwm) {
-        return;
-      }
-
-      if (isRtl) {
-        columnFullWidth *= -1; // horizontal shifts are reverted in RTL mode
-      }
-
-      // first we go left/right (rebasing onto the very first column available)
-      while (rect.top < 0) {
-        offsetRectangle(rect, -columnFullWidth, frameDimensions.height);
-      }
-
-      // ... then, if necessary (for visibility offset checks),
-      // each column is tried again (now in reverse order)
-      // the loop will be stopped when the column is aligned with a viewport
-      // (i.e., is the first visible one).
-      if (shouldLookForFirstVisibleColumn) {
-        while (rect.bottom >= frameDimensions.height) {
-          if (isRectVisible(rect, false, frameDimensions)) {
-            break;
-          }
-          offsetRectangle(rect, columnFullWidth, -frameDimensions.height);
-        }
-      }
-    }
-
-    this.getCfiForElement = function(element) {
-      var cfi = EPUBcfi.Generator.generateElementCFIComponent(
-        element,
-        this.getClassBlacklist(),
-        this.getElementBlacklist(),
-        this.getIdBlacklist()
-      );
-
-      if (cfi[0] == "!") {
-        cfi = cfi.substring(1);
-      }
-      return cfi;
-    };
-
-    this.getVisibleCfiFromPoint = function(x, y, precisePoint) {
-      var document = self.getRootDocument();
-      var firstVisibleCaretRange = getCaretRangeFromPoint(x, y, document);
-      var elementFromPoint = document.elementFromPoint(x, y);
-      var invalidElementFromPoint =
-        !elementFromPoint || elementFromPoint === document.documentElement;
-
-      if (precisePoint) {
-        if (!elementFromPoint || invalidElementFromPoint) {
-          return null;
-        }
-        var testRect = getNodeContentsClientRect(elementFromPoint);
-        if (!isRectVisible(testRect, false)) {
-          return null;
-        }
-        if (
-          x < testRect.left ||
-          x > testRect.right ||
-          (y < testRect.top || y > testRect.bottom)
-        ) {
-          return null;
-        }
-      }
-
-      if (!firstVisibleCaretRange) {
-        if (invalidElementFromPoint) {
-          console.error("Could not generate CFI no visible element on page");
-          return null;
-        }
-        firstVisibleCaretRange = createRange();
-        firstVisibleCaretRange.selectNode(elementFromPoint);
-      }
-
-      var range = firstVisibleCaretRange;
-      var cfi;
-      //if we get a text node we need to get an approximate range for the first visible character offsets.
-      var node = range.startContainer;
-      var startOffset, endOffset;
-      if (node.nodeType === Node.TEXT_NODE) {
-        if (precisePoint && node.parentNode !== elementFromPoint) {
-          return null;
-        }
-        if (node.length === 1 && range.startOffset === 1) {
-          startOffset = 0;
-          endOffset = 1;
-        } else if (range.startOffset === node.length) {
-          startOffset = range.startOffset - 1;
-          endOffset = range.startOffset;
+        if (isPaginatedView() && !isVerticalWritingMode()) {
+            return (rect.left >= 0 && rect.left < frameDimensions.width) ||
+                (!ignorePartiallyVisible && rect.left < 0 && rect.right > 0);
         } else {
-          startOffset = range.startOffset;
-          endOffset = range.startOffset + 1;
-        }
-        var wrappedRange = {
-          startContainer: node,
-          endContainer: node,
-          startOffset: startOffset,
-          endOffset: endOffset,
-          commonAncestorContainer: range.commonAncestorContainer
-        };
-
-        if (_DEBUG) {
-          drawDebugOverlayFromDomRange(wrappedRange);
+            return (rect.top >= 0 && rect.top < frameDimensions.height) ||
+                (!ignorePartiallyVisible && rect.top < 0 && rect.bottom > 0);
         }
 
-        cfi = generateCfiFromDomRange(wrappedRange);
-      } else if (node.nodeType === Node.ELEMENT_NODE) {
-        node =
-          range.startContainer.childNodes[range.startOffset] ||
-          range.startContainer.childNodes[0] ||
-          range.startContainer;
-        if (precisePoint && node !== elementFromPoint) {
-          return null;
-        }
-
-        if (node.nodeType !== Node.ELEMENT_NODE) {
-          cfi = generateCfiFromDomRange(range);
-        } else {
-          cfi = self.getCfiForElement(node);
-        }
-      } else {
-        if (precisePoint && node !== elementFromPoint) {
-          return null;
-        }
-
-        cfi = self.getCfiForElement(elementFromPoint);
-      }
-
-      //This should not happen but if it does print some output, just in case
-      if (cfi && cfi.indexOf("NaN") !== -1) {
-        console.log("Did not generate a valid CFI:" + cfi);
-        return undefined;
-      }
-      return cfi;
-    };
-
-    this.getRangeCfiFromPoints = function(startX, startY, endX, endY) {
-      var document = self.getRootDocument();
-      var start = getCaretRangeFromPoint(startX, startY, document),
-        end = getCaretRangeFromPoint(endX, endY, document),
-        range = createRange();
-      range.setStart(start.startContainer, start.startOffset);
-      range.setEnd(end.startContainer, end.startOffset);
-      // if we're looking at a text node create a nice range (n, n+1)
-      if (
-        start.startContainer === start.endContainer &&
-        start.startContainer.nodeType === Node.TEXT_NODE &&
-        end.startContainer.length > end.startOffset + 1
-      ) {
-        range.setEnd(end.startContainer, end.startOffset + 1);
-      }
-      return generateCfiFromDomRange(range);
-    };
-
-    function determineSplit(range, division) {
-      var percent = division / 100;
-      return Math.round((range.endOffset - range.startOffset) * percent);
     }
 
-    function splitRange(range, division) {
-      if (range.endOffset - range.startOffset === 1) {
-        return [range];
-      }
-      var length = determineSplit(range, division);
-      var textNode = range.startContainer;
-      var leftNodeRange = range.cloneRange();
-      leftNodeRange.setStart(textNode, range.startOffset);
-      leftNodeRange.setEnd(textNode, range.startOffset + length);
-      var rightNodeRange = range.cloneRange();
-      rightNodeRange.setStart(textNode, range.startOffset + length);
-      rightNodeRange.setEnd(textNode, range.endOffset);
-
-      return [leftNodeRange, rightNodeRange];
-    }
-
-    // create Range from target node and search for visibleOutput Range
-    function getVisibleTextRangeOffsets(
-      textNode,
-      pickerFunc,
-      visibleContentOffsets,
-      frameDimensions
-    ) {
-      visibleContentOffsets =
-        visibleContentOffsets || getVisibleContentOffsets();
-
-      var nodeRange = createRangeFromNode(textNode);
-      var nodeClientRects = getRangeClientRectList(
-        nodeRange,
-        visibleContentOffsets
-      );
-      var splitRatio = deterministicSplit(nodeClientRects, pickerFunc([0, 1]));
-      return getTextRangeOffset(
-        splitRange(nodeRange, splitRatio),
-        visibleContentOffsets,
-        pickerFunc([0, 1]),
-        splitRatio,
-        function(rect) {
-          return (
-            (isVerticalWritingMode() ? rect.height : rect.width) &&
-            isRectVisible(rect, false, frameDimensions)
-          );
-        }
-      );
-    }
-
-    function deterministicSplit(rectList, directionBit) {
-      var split = 0;
-      // Calculate total cumulative Height for both visible portions and invisible portions and find the split
-      var visibleRects = _.filter(rectList, function(rect) {
-        return (
-          (isVerticalWritingMode() ? rect.height : rect.width) &&
-          isRectVisible(rect, false, getFrameDimensions())
-        );
-      });
-      var visibleRectHeight = calculateCumulativeHeight(visibleRects);
-      var invisibleRectHeight = totalHeight - visibleRectHeight;
-      var totalHeight = calculateCumulativeHeight(rectList);
-
-      if (visibleRectHeight === totalHeight) {
-        // either all visible or split
-        // heuristic: slight bias to increase likelihood of hits
-        return directionBit ? 55 : 45;
-      } else {
-        split = 100 * (visibleRectHeight / totalHeight);
-        return invisibleRectHeight > visibleRectHeight ? split + 5 : split - 5;
-      }
-    }
-
-    function rectTopHash(rectList) {
-      // sort the rectangles by top value
-      var sortedList = rectList.sort(function(a, b) {
-        return a.top < b.top;
-      });
-      var lineMap = [];
-      _.each(sortedList, function(rect) {
-        var key = rect.top;
-        if (!lineMap[key]) {
-          lineMap[key] = [rect.height];
-        } else {
-          var currentLine = lineMap[key];
-          currentLine.push(rect.height);
-          lineMap[key] = currentLine;
-        }
-      });
-    }
-
-    function calculateCumulativeHeight(rectList) {
-      var lineMap = rectTopHash(rectList);
-      var height = 0;
-      _.each(lineMap, function(line) {
-        height = height + Math.max.apply(null, line);
-      });
-      return height;
-    }
-
-    function getTextRangeOffset(
-      startingSet,
-      visibleContentOffsets,
-      directionBit,
-      splitRatio,
-      filterFunc
-    ) {
-      var runCount = 0;
-      var currRange = startingSet;
-      //begin iterative binary search, each iteration will check Range length and visibility
-      while (currRange.length !== 1) {
-        runCount++;
-        var currTextNodeFragments = getRangeClientRectList(
-          currRange[directionBit],
-          visibleContentOffsets
-        );
-        if (hasVisibleFragments(currTextNodeFragments, filterFunc)) {
-          currRange = splitRange(currRange[directionBit], splitRatio);
-        }
-        // No visible fragment Look in other half
-        else {
-          currRange = splitRange(currRange[directionBit ? 0 : 1], splitRatio);
-        }
-      }
-      if (_DEBUG) {
-        console.debug(
-          "getVisibleTextRangeOffsets:getTextRangeOffset:runCount",
-          runCount
-        );
-        window.top._DEBUG_visibleTextRangeOffsetsRuns.push(runCount);
-      }
-      var resultRange = currRange[0];
-      if (resultRange) {
-        resultRange.collapse(!directionBit);
-      }
-      return resultRange;
-    }
-
-    function hasVisibleFragments(fragments, filterFunc) {
-      var visibleFragments = _.filter(fragments, filterFunc);
-      return !!visibleFragments.length;
-    }
-
-    function findVisibleLeafNodeCfi(
-      visibleLeafNode,
-      pickerFunc,
-      visibleContentOffsets,
-      frameDimensions
-    ) {
-      if (!visibleLeafNode) {
-        return null;
-      }
-
-      var element = visibleLeafNode.element;
-      var textNode = visibleLeafNode.textNode;
-
-      //if a valid text node is found, try to generate a CFI with range offsets
-      if (textNode && isValidTextNode(textNode)) {
-        var visibleRange = getVisibleTextRangeOffsets(
-          textNode,
-          pickerFunc,
-          visibleContentOffsets,
-          frameDimensions
-        );
-        if (!visibleRange) {
-          if (_DEBUG)
-            console.warn(
-              "findVisibleLeafNodeCfi: failed to find text range offset"
-            );
-          return null;
-        }
-        return generateCfiFromDomRange(visibleRange);
-      } else {
-        //if not then generate a CFI for the element
-        return self.getCfiForElement(element);
-      }
-    }
-
-    function getLastVisibleTextRangeCfi(
-      visibleContentOffsets,
-      frameDimensions
-    ) {
-      var visibleLeafNode = self.findLastVisibleElement(
-        visibleContentOffsets,
-        frameDimensions
-      );
-      return findVisibleLeafNodeCfi(
-        visibleLeafNode,
-        _.last,
-        visibleContentOffsets,
-        frameDimensions
-      );
-    }
-
-    function getFirstVisibleTextRangeCfi(
-      visibleContentOffsets,
-      frameDimensions
-    ) {
-      var visibleLeafNode = self.findFirstVisibleElement(
-        visibleContentOffsets,
-        frameDimensions
-      );
-      return findVisibleLeafNodeCfi(
-        visibleLeafNode,
-        _.first,
-        visibleContentOffsets,
-        frameDimensions
-      );
-    }
-
-    this.getFirstVisibleCfi = function(visibleContentOffsets, frameDimensions) {
-      return getFirstVisibleTextRangeCfi(
-        visibleContentOffsets,
-        frameDimensions
-      );
-    };
-
-    this.getLastVisibleCfi = function(visibleContentOffsets, frameDimensions) {
-      return getLastVisibleTextRangeCfi(visibleContentOffsets, frameDimensions);
-    };
-
-    function generateCfiFromDomRange(range) {
-      if (range.collapsed && range.startContainer.nodeType === Node.TEXT_NODE) {
-        return EPUBcfi.Generator.generateCharacterOffsetCFIComponent(
-          range.startContainer,
-          range.startOffset,
-          ["cfi-marker"],
-          [],
-          ["MathJax_Message", "MathJax_SVG_Hidden"]
-        );
-      } else if (range.collapsed) {
-        return self.getCfiForElement(range.startContainer);
-      } else {
-        return EPUBcfi.Generator.generateRangeComponent(
-          range.startContainer,
-          range.startOffset,
-          range.endContainer,
-          range.endOffset,
-          self.getClassBlacklist(),
-          self.getElementBlacklist(),
-          self.getIdBlacklist()
-        );
-      }
-    }
-
-    this.getDomRangeFromRangeCfi = function(rangeCfi, rangeCfi2, inclusive) {
-      var range = createRange();
-
-      if (!rangeCfi2) {
-        if (self.isRangeCfi(rangeCfi)) {
-          var rangeInfo = self.getNodeRangeInfoFromCfi(rangeCfi);
-          range.setStart(rangeInfo.startInfo.node, rangeInfo.startInfo.offset);
-          range.setEnd(rangeInfo.endInfo.node, rangeInfo.endInfo.offset);
-        } else {
-          var element = self.getElementByCfi(
-            rangeCfi,
-            this.getClassBlacklist(),
-            this.getElementBlacklist(),
-            this.getIdBlacklist()
-          )[0];
-          range.selectNode(element);
-        }
-      } else {
-        if (self.isRangeCfi(rangeCfi)) {
-          var rangeInfo1 = self.getNodeRangeInfoFromCfi(rangeCfi);
-          range.setStart(
-            rangeInfo1.startInfo.node,
-            rangeInfo1.startInfo.offset
-          );
-        } else {
-          var startElement = self.getElementByCfi(
-            rangeCfi,
-            this.getClassBlacklist(),
-            this.getElementBlacklist(),
-            this.getIdBlacklist()
-          )[0];
-          range.setStart(startElement, 0);
-        }
-
-        if (self.isRangeCfi(rangeCfi2)) {
-          var rangeInfo2 = self.getNodeRangeInfoFromCfi(rangeCfi2);
-          if (inclusive) {
-            range.setEnd(rangeInfo2.endInfo.node, rangeInfo2.endInfo.offset);
-          } else {
-            range.setEnd(
-              rangeInfo2.startInfo.node,
-              rangeInfo2.startInfo.offset
-            );
-          }
-        } else {
-          var endElement = self.getElementByCfi(
-            rangeCfi2,
-            this.getClassBlacklist(),
-            this.getElementBlacklist(),
-            this.getIdBlacklist()
-          )[0];
-          range.setEnd(endElement, endElement.childNodes.length);
-        }
-      }
-      return range;
-    };
-
-    this.getRangeCfiFromDomRange = function(domRange) {
-      return generateCfiFromDomRange(domRange);
-    };
-
-    function getWrappedCfi(partialCfi) {
-      return "epubcfi(/99!" + partialCfi + ")";
-    }
-
-    this.isRangeCfi = function(partialCfi) {
-      return _isRangeCfi(partialCfi) || _hasTextTerminus(partialCfi);
-    };
-
-    function _isRangeCfi(partialCfi) {
-      return EPUBcfi.Interpreter.isRangeCfi(getWrappedCfi(partialCfi));
-    }
-
-    function _hasTextTerminus(partialCfi) {
-      return EPUBcfi.Interpreter.hasTextTerminus(getWrappedCfi(partialCfi));
-    }
-
-    this.getPageIndexDeltaForCfi = function(
-      partialCfi,
-      classBlacklist,
-      elementBlacklist,
-      idBlacklist
-    ) {
-      if (this.isRangeCfi(partialCfi)) {
-        //if given a range cfi the exact page index needs to be calculated by getting node info from the range cfi
-        var nodeRangeInfoFromCfi = this.getNodeRangeInfoFromCfi(partialCfi);
-        //the page index is calculated from the node's client rectangle
-        return findPageIndexDeltaBySingleRectangle(
-          nodeRangeInfoFromCfi.clientRect
-        );
-      }
-
-      var $element = getElementByPartialCfi(
-        partialCfi,
-        classBlacklist,
-        elementBlacklist,
-        idBlacklist
-      );
-
-      if (!$element) {
-        return -1;
-      }
-
-      return this.getPageIndexDeltaForElement($element);
-    };
-
-    function getElementByPartialCfi(
-      cfi,
-      classBlacklist,
-      elementBlacklist,
-      idBlacklist
-    ) {
-      var contentDoc = self.getRootDocument();
-
-      var wrappedCfi = getWrappedCfi(cfi);
-
-      try {
-        //noinspection JSUnresolvedVariable
-        var $element = EPUBcfi.Interpreter.getTargetElement(
-          wrappedCfi,
-          contentDoc,
-          classBlacklist,
-          elementBlacklist,
-          idBlacklist
-        );
-      } catch (ex) {
-        //EPUBcfi.Interpreter can throw a SyntaxError
-      }
-
-      if (!$element || $element.length == 0) {
-        console.log("Can't find element for CFI: " + cfi);
-        return undefined;
-      }
-
-      return $element;
-    }
-
-    this.getElementFromPoint = function(x, y) {
-      var document = self.getRootDocument();
-      return document.elementFromPoint(x, y);
-    };
-
-    this.getNodeRangeInfoFromCfi = function(cfi) {
-      var contentDoc = self.getRootDocument();
-
-      var wrappedCfi = getWrappedCfi(cfi);
-      if (_isRangeCfi(cfi)) {
-        try {
-          //noinspection JSUnresolvedVariable
-          var nodeResult = EPUBcfi.Interpreter.getRangeTargetElements(
-            wrappedCfi,
-            contentDoc,
-            this.getClassBlacklist(),
-            this.getElementBlacklist(),
-            this.getIdBlacklist()
-          );
-
-          if (_DEBUG) {
-            console.log(nodeResult);
-          }
-        } catch (ex) {
-          //EPUBcfi.Interpreter can throw a SyntaxError
-        }
-
-        if (!nodeResult) {
-          console.log("Can't find nodes for range CFI: " + cfi);
-          return undefined;
-        }
-
-        var startRangeInfo = {
-          node: nodeResult.startElement,
-          offset: nodeResult.startOffset
-        };
-        var endRangeInfo = {
-          node: nodeResult.endElement,
-          offset: nodeResult.endOffset
-        };
-        var nodeRangeClientRect =
-          startRangeInfo && endRangeInfo
-            ? getNodeRangeClientRect(
-                startRangeInfo.node,
-                startRangeInfo.offset,
-                endRangeInfo.node,
-                endRangeInfo.offset
-              )
-            : null;
-
-        if (_DEBUG) {
-          console.log(nodeRangeClientRect);
-          addOverlayRect(nodeRangeClientRect, "purple", contentDoc);
-        }
-
-        return {
-          startInfo: startRangeInfo,
-          endInfo: endRangeInfo,
-          clientRect: nodeRangeClientRect
-        };
-      } else if (_hasTextTerminus(cfi)) {
-        try {
-          //noinspection JSUnresolvedVariable
-          var textTerminusResult = EPUBcfi.Interpreter.getTextTerminusInfo(
-            wrappedCfi,
-            contentDoc,
-            this.getClassBlacklist(),
-            this.getElementBlacklist(),
-            this.getIdBlacklist()
-          );
-
-          if (_DEBUG) {
-            console.log(textTerminusResult);
-          }
-        } catch (ex) {
-          //EPUBcfi.Interpreter can throw a SyntaxError
-        }
-
-        if (!textTerminusResult) {
-          console.log("Can't find node for text term CFI: " + cfi);
-          return undefined;
-        }
-
-        var textTermRangeInfo = {
-          node: textTerminusResult.textNode,
-          offset: textTerminusResult.textOffset
-        };
-        var textTermClientRect = getNodeRangeClientRect(
-          textTermRangeInfo.node,
-          textTermRangeInfo.offset,
-          textTermRangeInfo.node,
-          textTermRangeInfo.offset
-        );
-        if (_DEBUG) {
-          console.log(textTermClientRect);
-          addOverlayRect(textTermClientRect, "purple", contentDoc);
-        }
-
-        return {
-          startInfo: textTermRangeInfo,
-          endInfo: textTermRangeInfo,
-          clientRect: textTermClientRect
-        };
-      } else {
-        var $element = self.getElementByCfi(
-          cfi,
-          this.getClassBlacklist(),
-          this.getElementBlacklist(),
-          this.getIdBlacklist()
-        );
-
-        var visibleContentOffsets = getVisibleContentOffsets();
-        return {
-          startInfo: null,
-          endInfo: null,
-          clientRect: getNormalizedBoundingRect($element, visibleContentOffsets)
-        };
-      }
-    };
-
-    this.isNodeFromRangeCfiVisible = function(cfi) {
-      var nodeRangeInfo = this.getNodeRangeInfoFromCfi(cfi);
-      if (nodeRangeInfo) {
-        return isRectVisible(nodeRangeInfo.clientRect, false);
-      } else {
-        return undefined;
-      }
-    };
-
-    this.getNearestCfiFromElement = function(element) {
-      var collapseToStart;
-      var chosenNode;
-      var isTextNode;
-
-      var siblingTextNodesAndSelf = _.filter(
-        element.parentNode.childNodes,
-        function(n) {
-          return n === element || isValidTextNode(n);
-        }
-      );
-
-      var indexOfSelf = siblingTextNodesAndSelf.indexOf(element);
-      var nearestNode = siblingTextNodesAndSelf[indexOfSelf - 1];
-      if (!nearestNode) {
-        nearestNode = siblingTextNodesAndSelf[indexOfSelf + 1];
-        collapseToStart = true;
-      }
-      if (!nearestNode) {
-        nearestNode = _.last(
-          this.getLeafNodeElements($(element.previousElementSibling))
-        );
-        if (!nearestNode) {
-          collapseToStart = true;
-          nearestNode = _.first(
-            this.getLeafNodeElements($(element.nextElementSibling))
-          );
-        }
-      }
-
-      // Prioritize text node use
-      if (isValidTextNode(nearestNode)) {
-        chosenNode = nearestNode;
-        isTextNode = true;
-      } else if (isElementNode(nearestNode)) {
-        chosenNode = nearestNode;
-      } else if (isElementNode(element.previousElementSibling)) {
-        chosenNode = element.previousElementSibling;
-      } else if (isElementNode(element.nextElementSibling)) {
-        chosenNode = element.nextElementSibling;
-      } else {
-        chosenNode = element.parentNode;
-      }
-
-      if (isTextNode) {
-        var range = chosenNode.ownerDocument.createRange();
-        range.selectNodeContents(chosenNode);
-        range.collapse(collapseToStart);
-        return this.getRangeCfiFromDomRange(range);
-      } else {
-        return this.getCfiForElement(chosenNode);
-      }
-    };
-
-    this.getElementByCfi = function(
-      partialCfi,
-      classBlacklist,
-      elementBlacklist,
-      idBlacklist
-    ) {
-      return getElementByPartialCfi(
-        partialCfi,
-        classBlacklist,
-        elementBlacklist,
-        idBlacklist
-      );
-    };
-
-    this.getPageIndexDeltaForElement = function($element) {
-      // first try to get delta by rectangles
-      var pageIndex = findPageIndexDeltaByRectangles($element);
-
-      // for hidden elements (e.g., page breaks) there are no rectangles
-      if (pageIndex === null) {
-        // get CFI of the nearest (to hidden) element, and then get CFI's element
-        var nearestVisibleElement = this.getElementByCfi(
-          this.getNearestCfiFromElement($element[0])
-        );
-
-        // find page index by rectangles again, for the nearest element
-        return findPageIndexDeltaByRectangles(nearestVisibleElement);
-      }
-      return pageIndex;
-    };
-
-    this.getElementById = function(id) {
-      var contentDoc = this.getRootDocument();
-
-      var $element = $(contentDoc.getElementById(id));
-      //$("#" + Helpers.escapeJQuerySelector(id), contentDoc);
-
-      if ($element.length == 0) {
-        return undefined;
-      }
-
-      return $element;
-    };
-
-    this.getPageIndexDeltaForElementId = function(id) {
-      var $element = this.getElementById(id);
-      if (!$element) {
-        return -1;
-      }
-
-      return this.getPageIndexDeltaForElement($element);
-    };
-
-    // returns raw DOM element (not $ jQuery-wrapped)
-    this.getFirstVisibleMediaOverlayElement = function(visibleContentOffsets) {
-      var $root = $(this.getBodyElement());
-      if (!$root || !$root.length || !$root[0]) return undefined;
-
-      var that = this;
-
-      var firstPartial = undefined;
-
-      function traverseArray(arr) {
-        if (!arr || !arr.length) return undefined;
-
-        for (var i = 0, count = arr.length; i < count; i++) {
-          var item = arr[i];
-          if (!item) continue;
-
-          var $item = $(item);
-
-          if ($item.data("mediaOverlayData")) {
-            var visible = that.getElementVisibility(
-              $item,
-              visibleContentOffsets
-            );
-            if (visible) {
-              if (!firstPartial) firstPartial = item;
-
-              if (visible == 100) return item;
+        /**
+         * @private
+         * Retrieves _current_ full width of a column (including its gap)
+         *
+         * @returns {number} Full width of a column in pixels
+         */
+        function getColumnFullWidth() {
+
+            if (!options.paginationInfo || isVerticalWritingMode()) {
+                return options.$iframe.width();
             }
-          } else {
-            var elem = traverseArray(item.children);
-            if (elem) return elem;
-          }
+
+            return options.paginationInfo.columnWidth + options.paginationInfo.columnGap;
         }
 
-        return undefined;
-      }
-
-      var el = traverseArray([$root[0]]);
-      if (!el) el = firstPartial;
-      return el;
-
-      // var $elements = this.getMediaOverlayElements($root);
-      // return this.getVisibleElements($elements, visibleContentOffsets);
-    };
-
-    this.getElementVisibility = function($element, visibleContentOffsets) {
-      return checkVisibilityByRectangles($element, true, visibleContentOffsets);
-    };
-
-    this.isElementVisible = this.getElementVisibility;
-
-    this.getVisibleElementsWithFilter = function(
-      visibleContentOffsets,
-      filterFunction
-    ) {
-      var $elements = this.getElementsWithFilter(
-        $(this.getBodyElement()),
-        filterFunction
-      );
-      return this.getVisibleElements($elements, visibleContentOffsets);
-    };
-
-    this.getAllElementsWithFilter = function(filterFunction) {
-      return this.getElementsWithFilter(
-        $(this.getBodyElement()),
-        filterFunction
-      );
-    };
-
-    this.getAllVisibleElementsWithSelector = function(
-      selector,
-      visibleContentOffset
-    ) {
-      var elements = $(selector, this.getRootElement());
-      var $newElements = [];
-      $.each(elements, function() {
-        $newElements.push($(this));
-      });
-      return this.getVisibleElements($newElements, visibleContentOffset);
-    };
-
-    this.getVisibleElements = function(
-      $elements,
-      visibleContentOffsets,
-      frameDimensions
-    ) {
-      var visibleElements = [];
-
-      _.each($elements, function($node) {
-        var isTextNode = $node[0].nodeType === Node.TEXT_NODE;
-        var $element = isTextNode ? $node.parent() : $node;
-        var visibilityPercentage = checkVisibilityByRectangles(
-          $node,
-          true,
-          visibleContentOffsets,
-          frameDimensions
-        );
-
-        if (visibilityPercentage) {
-          visibleElements.push({
-            element: $element[0], // DOM Element is pushed
-            textNode: isTextNode ? $node[0] : null,
-            percentVisible: visibilityPercentage
-          });
-        }
-      });
-
-      return visibleElements;
-    };
-
-    this.getVisibleLeafNodes = function(
-      visibleContentOffsets,
-      frameDimensions
-    ) {
-      if (_cacheEnabled) {
-        var cacheKey = (options.paginationInfo || {}).currentSpreadIndex || 0;
-        var fromCache = _cache.visibleLeafNodes.get(cacheKey);
-        if (fromCache) {
-          return fromCache;
-        }
-      }
-
-      var $elements = this.getLeafNodeElements($(this.getBodyElement()));
-
-      var visibleElements = this.getVisibleElements(
-        $elements,
-        visibleContentOffsets,
-        frameDimensions
-      );
-      if (_cacheEnabled) {
-        _cache.visibleLeafNodes.set(cacheKey, visibleElements);
-      }
-
-      return visibleElements;
-    };
-
-    function getBaseCfiSelectedByFunc(pickerFunc) {
-      var $elements = self.getLeafNodeElements($(self.getBodyElement()));
-      var $selectedNode = pickerFunc($elements);
-      var collapseToStart = pickerFunc([true, false]);
-      var range = createRange();
-      range.selectNodeContents($selectedNode[0]);
-      range.collapse(collapseToStart);
-      return generateCfiFromDomRange(range);
-    }
-
-    this.getStartCfi = function() {
-      return getBaseCfiSelectedByFunc(_.first);
-    };
-
-    this.getEndCfi = function() {
-      return getBaseCfiSelectedByFunc(_.last);
-    };
-
-    this.getElementsWithFilter = function($root, filterFunction) {
-      var $elements = [];
-
-      function traverseCollection(elements) {
-        if (elements == undefined) return;
-
-        for (var i = 0, count = elements.length; i < count; i++) {
-          var $element = $(elements[i]);
-
-          if (filterFunction($element)) {
-            $elements.push($element);
-          } else {
-            traverseCollection($element[0].children);
-          }
-        }
-      }
-
-      traverseCollection([$root[0]]);
-
-      return $elements;
-    };
-
-    function isElementBlacklisted(element) {
-      var classAttribute = element.className;
-      // check for SVGAnimatedString
-      if (classAttribute && typeof classAttribute.animVal !== "undefined") {
-        classAttribute = classAttribute.animVal;
-      } else if (
-        classAttribute &&
-        typeof classAttribute.baseVal !== "undefined"
-      ) {
-        classAttribute = classAttribute.baseVal;
-      }
-      var classList = classAttribute ? classAttribute.split(" ") : [];
-      var id = element.id;
-
-      var classBlacklist = self.getClassBlacklist();
-      if (classList.length === 1 && _.contains(classBlacklist, classList[0])) {
-        return true;
-      } else if (
-        classList.length &&
-        _.intersection(classBlacklist, classList).length
-      ) {
-        return true;
-      }
-
-      if (id && id.length && _.contains(self.getIdBlacklist(), id)) {
-        return true;
-      }
-
-      if (
-        _.contains(self.getElementBlacklist(), element.tagName.toLowerCase())
-      ) {
-        return true;
-      }
-
-      return false;
-    }
-
-    this.getLeafNodeElements = function($root) {
-      if (_cacheEnabled) {
-        var fromCache = _cache.leafNodeElements.get($root);
-        if (fromCache) {
-          return fromCache;
-        }
-      }
-
-      //noinspection JSUnresolvedVariable,JSCheckFunctionSignatures
-      var nodeIterator = document.createNodeIterator(
-        $root[0],
-        NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
-        function() {
-          //noinspection JSUnresolvedVariable
-          return NodeFilter.FILTER_ACCEPT;
-        },
-        false
-      );
-
-      var $leafNodeElements = [];
-
-      var node;
-      while ((node = nodeIterator.nextNode())) {
-        var isLeafNode =
-          node.nodeType === Node.ELEMENT_NODE &&
-          !node.childElementCount &&
-          !isValidTextNodeContent(node.textContent);
-        if (isLeafNode || isValidTextNode(node)) {
-          var element =
-            node.nodeType === Node.TEXT_NODE ? node.parentNode : node;
-          if (!isElementBlacklisted(element)) {
-            $leafNodeElements.push($(node));
-          }
-        }
-      }
-
-      if (_cacheEnabled) {
-        _cache.leafNodeElements.set($root, $leafNodeElements);
-      }
-      return $leafNodeElements;
-    };
-
-    function isElementNode(node) {
-      if (!node) {
-        return false;
-      } else {
-        return node.nodeType === Node.ELEMENT_NODE;
-      }
-    }
-
-    function isValidTextNode(node) {
-      if (!node) {
-        return false;
-      }
-      if (node.nodeType === Node.TEXT_NODE) {
-        return isValidTextNodeContent(node.nodeValue);
-      }
-
-      return false;
-    }
-
-    function isValidTextNodeContent(text) {
-      // Heuristic to find a text node with actual text
-      // If we don't do this, we may get a reference to a node that doesn't get rendered
-      // (such as for example a node that has tab character and a bunch of spaces)
-      // this is would be bad! ask me why.
-      return !!text.trim().length;
-    }
-
-    this.getElements = function(selector) {
-      if (!selector) {
-        return $(this.getRootElement()).children();
-      }
-      return $(selector, this.getRootElement());
-    };
-
-    this.getElement = function(selector) {
-      var $element = this.getElements(selector);
-
-      if ($element.length > 0) {
-        return $element;
-      }
-
-      return undefined;
-    };
-
-    function Cache() {
-      var that = this;
-
-      //true = survives invalidation
-      var props = {
-        leafNodeElements: true,
-        visibleLeafNodes: false
-      };
-
-      _.each(props, function(val, key) {
-        that[key] = new Map();
-      });
-
-      this._invalidate = function() {
-        _.each(props, function(val, key) {
-          if (!val) {
-            that[key] = new Map();
-          }
-        });
-      };
-    }
-
-    var _cache = new Cache();
-
-    var _cacheEnabled = false;
-
-    this.invalidateCache = function() {
-      _cache._invalidate();
-    };
-
-    //if (_DEBUG) {
-
-    var $debugOverlays = [];
-
-    //used for visual debug atm
-    function getRandomColor() {
-      var letters = "0123456789ABCDEF".split("");
-      var color = "#";
-      for (var i = 0; i < 6; i++) {
-        color += letters[Math.round(Math.random() * 15)];
-      }
-      return color;
-    }
-
-    //used for visual debug atm
-    function addOverlayRect(rects, color, doc) {
-      var random = getRandomColor();
-      if (!(rects instanceof Array)) {
-        rects = [rects];
-      }
-      for (var i = 0; i != rects.length; i++) {
-        var rect = rects[i];
-        var overlayDiv = doc.createElement("div");
-        overlayDiv.style.position = "absolute";
-        $(overlayDiv).css("z-index", "1000");
-        $(overlayDiv).css("pointer-events", "none");
-        $(overlayDiv).css("opacity", "0.4");
-        overlayDiv.style.border = "1px solid white";
-        if (!color && !random) {
-          overlayDiv.style.background = "purple";
-        } else if (random && !color) {
-          overlayDiv.style.background = random;
-        } else {
-          if (color === true) {
-            color = "red";
-          }
-          overlayDiv.style.border = "1px dashed " + color;
-          overlayDiv.style.background = "yellow";
-        }
-
-        overlayDiv.style.margin = overlayDiv.style.padding = "0";
-        overlayDiv.style.top = rect.top + "px";
-        overlayDiv.style.left = rect.left + "px";
-        // we want rect.width to be the border width, so content width is 2px less.
-        overlayDiv.style.width = rect.width - 2 + "px";
-        overlayDiv.style.height = rect.height - 2 + "px";
-        doc.documentElement.appendChild(overlayDiv);
-        $debugOverlays.push($(overlayDiv));
-      }
-    }
-
-    function drawDebugOverlayFromRect(rect) {
-      var offsets = getPaginationOffsets();
-
-      addOverlayRect(
-        {
-          left: rect.left + offsets.left,
-          top: rect.top + offsets.top,
-          width: rect.width,
-          height: rect.height
-        },
-        true,
-        self.getRootDocument()
-      );
-    }
-
-    function drawDebugOverlayFromDomRange(range) {
-      var rect = getNodeRangeClientRect(
-        range.startContainer,
-        range.startOffset,
-        range.endContainer,
-        range.endOffset
-      );
-      drawDebugOverlayFromRect(rect);
-      return rect;
-    }
-
-    function drawDebugOverlayFromNode(node) {
-      drawDebugOverlayFromRect(getNodeClientRect(node));
-    }
-
-    function clearDebugOverlays() {
-      _.each($debugOverlays, function($el) {
-        $el.remove();
-      });
-      $debugOverlays = [];
-    }
-
-    ReadiumSDK._DEBUG_CfiNavigationLogic = {
-      clearDebugOverlays: clearDebugOverlays,
-      drawDebugOverlayFromRect: drawDebugOverlayFromRect,
-      drawDebugOverlayFromDomRange: drawDebugOverlayFromDomRange,
-      drawDebugOverlayFromNode: drawDebugOverlayFromNode,
-      debugVisibleCfis: function() {
-        console.log(
-          JSON.stringify(ReadiumSDK.reader.getPaginationInfo().openPages)
-        );
-
-        var cfi1 = ReadiumSDK.reader.getFirstVisibleCfi();
-        var range1 = ReadiumSDK.reader.getDomRangeFromRangeCfi(cfi1);
-        console.log(cfi1, range1, drawDebugOverlayFromDomRange(range1));
-
-        var cfi2 = ReadiumSDK.reader.getLastVisibleCfi();
-        var range2 = ReadiumSDK.reader.getDomRangeFromRangeCfi(cfi2);
-        console.log(cfi2, range2, drawDebugOverlayFromDomRange(range2));
-      },
-      visibleTextRangeOffsetsRunsAvg: function() {
-        var arr = window.top._DEBUG_visibleTextRangeOffsetsRuns;
-        return (
-          arr.reduce(function(a, b) {
-            return a + b;
-          }) / arr.length
-        );
-      }
-    };
-
-    //
-    // }
-
-    this.findFirstVisibleElement = function(
-      visibleContentOffsets,
-      frameDimensions
-    ) {
-      var bodyElement = this.getBodyElement();
-
-      if (!bodyElement) {
-        return null;
-      }
-
-      var firstVisibleElement;
-      var percentVisible = 0;
-      var textNode;
-
-      var treeWalker = document.createTreeWalker(
-        bodyElement,
-        NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
-        function(node) {
-          if (node.nodeType === Node.ELEMENT_NODE && isElementBlacklisted(node))
-            return NodeFilter.FILTER_REJECT;
-
-          if (node.nodeType === Node.TEXT_NODE && !isValidTextNode(node))
-            return NodeFilter.FILTER_REJECT;
-
-          var visibilityResult = checkVisibilityByRectangles(
-            $(node),
-            true,
-            visibleContentOffsets,
-            frameDimensions
-          );
-          return visibilityResult
-            ? NodeFilter.FILTER_ACCEPT
-            : NodeFilter.FILTER_REJECT;
-        },
-        false
-      );
-
-      while (treeWalker.nextNode()) {
-        var node = treeWalker.currentNode;
-
-        if (node.nodeType === Node.TEXT_NODE) {
-          firstVisibleElement = node.parentNode;
-          textNode = node;
-          percentVisible = 100; // not really used, assume this value unless otherwise
-          break;
-        }
-
-        var hasChildElements = false;
-        var hasChildTextNodes = false;
-
-        for (var i = node.childNodes.length - 1; i >= 0; i--) {
-          var childNode = node.childNodes[i];
-          if (childNode.nodeType === Node.ELEMENT_NODE) {
-            hasChildElements = true;
-            break;
-          }
-          if (childNode.nodeType === Node.TEXT_NODE) hasChildTextNodes = true;
-        }
-
-        // potentially stop tree traversal when first element hit with no child element nodes
-        if (!hasChildElements && hasChildTextNodes) {
-          for (var i = node.childNodes.length - 1; i >= 0; i--) {
-            var childNode = node.childNodes[i];
-            if (
-              childNode.nodeType === Node.TEXT_NODE &&
-              isValidTextNode(childNode)
-            ) {
-              var visibilityResult = checkVisibilityByRectangles(
-                $(childNode),
-                true,
-                visibleContentOffsets,
-                frameDimensions
-              );
-              if (visibilityResult) {
-                firstVisibleElement = node;
-                textNode = childNode;
-                percentVisible = visibilityResult;
-                break;
-              }
+        /**
+         * @private
+         *
+         * Retrieves _current_ offset of a viewport
+         * (relational to the beginning of the chapter)
+         *
+         * @returns {Object}
+         */
+        function getVisibleContentOffsets() {
+            if (options.visibleContentOffsetsGetter) {
+                return options.visibleContentOffsetsGetter();
             }
-          }
-        } else if (!hasChildElements) {
-          firstVisibleElement = node;
-          percentVisible = 100;
-          textNode = null;
-          break;
-        }
-      }
 
-      if (!firstVisibleElement) {
-        return null;
-      }
-      return {
-        element: firstVisibleElement,
-        textNode: textNode,
-        percentVisible: percentVisible
-      };
-    };
-
-    this.findLastVisibleElement = function(
-      visibleContentOffsets,
-      frameDimensions
-    ) {
-      var bodyElement = this.getBodyElement();
-
-      if (!bodyElement) {
-        return null;
-      }
-
-      var firstVisibleElement;
-      var percentVisible = 0;
-      var textNode;
-
-      var treeWalker = document.createTreeWalker(
-        bodyElement,
-        NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
-        function(node) {
-          if (node.nodeType === Node.ELEMENT_NODE && isElementBlacklisted(node))
-            return NodeFilter.FILTER_REJECT;
-
-          if (node.nodeType === Node.TEXT_NODE && !isValidTextNode(node))
-            return NodeFilter.FILTER_REJECT;
-
-          var visibilityResult = checkVisibilityByRectangles(
-            $(node),
-            true,
-            visibleContentOffsets,
-            frameDimensions
-          );
-          return visibilityResult
-            ? NodeFilter.FILTER_ACCEPT
-            : NodeFilter.FILTER_REJECT;
-        },
-        false
-      );
-
-      while (treeWalker.lastChild()) {}
-
-      do {
-        var node = treeWalker.currentNode;
-
-        if (node.nodeType === Node.TEXT_NODE) {
-          firstVisibleElement = node.parentNode;
-          textNode = node;
-          percentVisible = 100; // not really used, assume this value unless otherwise
-          break;
-        }
-
-        var hasChildElements = false;
-        var hasChildTextNodes = false;
-
-        for (var i = node.childNodes.length - 1; i >= 0; i--) {
-          var childNode = node.childNodes[i];
-          if (childNode.nodeType === Node.ELEMENT_NODE) {
-            hasChildElements = true;
-            break;
-          }
-          if (childNode.nodeType === Node.TEXT_NODE) hasChildTextNodes = true;
-        }
-
-        // potentially stop tree traversal when first element hit with no child element nodes
-        if (!hasChildElements && hasChildTextNodes) {
-          for (var i = node.childNodes.length - 1; i >= 0; i--) {
-            var childNode = node.childNodes[i];
-            if (
-              childNode.nodeType === Node.TEXT_NODE &&
-              isValidTextNode(childNode)
-            ) {
-              var visibilityResult = checkVisibilityByRectangles(
-                $(childNode),
-                true,
-                visibleContentOffsets,
-                frameDimensions
-              );
-              if (visibilityResult) {
-                firstVisibleElement = node;
-                textNode = childNode;
-                percentVisible = visibilityResult;
-                break;
-              }
+            if (isVerticalWritingMode() && options.paginationOffsetsGetter) {
+                return options.paginationOffsetsGetter();
             }
-          }
-        } else if (!hasChildElements) {
-          firstVisibleElement = node;
-          percentVisible = 100;
-          textNode = null;
-          break;
-        }
-      } while (treeWalker.previousNode());
 
-      if (!firstVisibleElement) {
-        return null;
-      }
-      return {
-        element: firstVisibleElement,
-        textNode: textNode,
-        percentVisible: percentVisible
-      };
+            return {
+                top: 0,
+                left: 0
+            };
+        }
+
+        function getPaginationOffsets() {
+            if (options.paginationOffsetsGetter) {
+                return options.paginationOffsetsGetter();
+            }
+
+            return {
+                top: 0,
+                left: 0
+            };
+        }
+
+        /**
+         * New (rectangle-based) algorithm, useful in multi-column layouts
+         *
+         * Note: the second param (props) is ignored intentionally
+         * (no need to use those in normalization)
+         *
+         * @param {jQuery} $element
+         * @param {boolean} shouldCalculateVisibilityPercentage
+         * @param {Object} [visibleContentOffsets]
+         * @param {Object} [frameDimensions]
+         * @returns {number|null}
+         *      0 for non-visible elements,
+         *      0 < n <= 100 for visible elements
+         *      (will just give 100, if `shouldCalculateVisibilityPercentage` => false)
+         *      null for elements with display:none
+         */
+        function checkVisibilityByRectangles($element, shouldCalculateVisibilityPercentage, visibleContentOffsets, frameDimensions) {
+            visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
+            frameDimensions = frameDimensions || getFrameDimensions();
+
+            var clientRectangles = getNormalizedRectangles($element, visibleContentOffsets);
+            if (clientRectangles.length === 0) { // elements with display:none, etc.
+                return null;
+            }
+
+            var visibilityPercentage = 0;
+
+            if (clientRectangles.length === 1) {
+                var adjustedRect = clientRectangles[0];
+
+                if (isPaginatedView()) {
+                    if (adjustedRect.bottom > frameDimensions.height || adjustedRect.top < 0) {
+                        // because of webkit inconsistency, that single rectangle should be adjusted
+                        // until it hits the end OR will be based on the FIRST column that is visible
+                        adjustRectangle(adjustedRect, true, frameDimensions);
+                    }
+                }
+
+                if (isRectVisible(adjustedRect, false, frameDimensions)) {
+                    if (shouldCalculateVisibilityPercentage && adjustedRect.top < 0) {
+                        visibilityPercentage =
+                            Math.floor(100 * (adjustedRect.height + adjustedRect.top) / adjustedRect.height);
+                    } else if (shouldCalculateVisibilityPercentage && adjustedRect.bottom > frameDimensions.height) {
+                        visibilityPercentage =
+                            Math.floor(100 * (frameDimensions.height - adjustedRect.top) / adjustedRect.height);
+                    } else if (shouldCalculateVisibilityPercentage && adjustedRect.left < 0 && adjustedRect.right > 0) {
+                        visibilityPercentage =
+                            Math.floor(100 * adjustedRect.right / adjustedRect.width);
+                    } else if (shouldCalculateVisibilityPercentage && adjustedRect.left < 0 && adjustedRect.right > 0) {
+                        visibilityPercentage =
+                            Math.floor(100 * adjustedRect.right / adjustedRect.width);
+                    } else {
+                        visibilityPercentage = 100;
+                    }
+                }
+            } else {
+                // for an element split between several CSS columns,z
+                // both Firefox and IE produce as many client rectangles;
+                // each of those should be checked
+                for (var i = 0, l = clientRectangles.length; i < l; ++i) {
+                    if (isRectVisible(clientRectangles[i], false, frameDimensions)) {
+                        visibilityPercentage = shouldCalculateVisibilityPercentage
+                            ? measureVisibilityPercentageByRectangles(clientRectangles, i)
+                            : 100;
+                        break;
+                    }
+                }
+            }
+
+            return visibilityPercentage;
+        }
+
+        /**
+         * Finds a page index (0-based) delta for a specific element.
+         * Calculations are based on rectangles retrieved with getClientRects() method.
+         *
+         * @param {jQuery} $element
+         * @returns {number|null}
+         */
+        function findPageIndexDeltaByRectangles($element) {
+
+            var visibleContentOffsets = getVisibleContentOffsets();
+
+            var clientRectangles = getNormalizedRectangles($element, visibleContentOffsets);
+            if (clientRectangles.length === 0) { // elements with display:none, etc.
+                return null;
+            }
+
+            return calculatePageIndexDeltaByRectangles(clientRectangles);
+        }
+
+        /**
+         * @private
+         * Calculate a page index (0-based) delta for given client rectangles.
+         *
+         * @param {object[]} clientRectangles
+         * @param {object} [frameDimensions]
+         * @param {number} [columnFullWidth]
+         * @returns {number|null}
+         */
+        function calculatePageIndexDeltaByRectangles(clientRectangles, frameDimensions, columnFullWidth) {
+            var isRtl = isPageProgressionRightToLeft();
+            var isVwm = isVerticalWritingMode();
+            columnFullWidth = columnFullWidth || getColumnFullWidth();
+            frameDimensions = frameDimensions || getFrameDimensions();
+
+            var firstRectangle = _.first(clientRectangles);
+            if (clientRectangles.length === 1) {
+                adjustRectangle(firstRectangle, false, frameDimensions, columnFullWidth, isRtl, isVwm);
+            }
+
+            var pageIndex;
+
+            if (isVwm) {
+                var topOffset = firstRectangle.top;
+                pageIndex = Math.floor(topOffset / frameDimensions.height);
+            } else {
+                var leftOffset = firstRectangle.left;
+                if (isRtl) {
+                    leftOffset = (columnFullWidth * (options.paginationInfo ? options.paginationInfo.visibleColumnCount : 1)) - leftOffset;
+                }
+                pageIndex = Math.floor(leftOffset / columnFullWidth);
+            }
+
+            return pageIndex;
+        }
+
+        /**
+         * Finds a page index (0-based) delta for a specific client rectangle.
+         * Calculations are based on viewport dimensions, offsets, and rectangle coordinates
+         *
+         * @param {ClientRect} clientRectangle
+         * @param {Object} [visibleContentOffsets]
+         * @param {Object} [frameDimensions]
+         * @returns {number|null}
+         */
+        function findPageIndexDeltaBySingleRectangle(clientRectangle, visibleContentOffsets, frameDimensions) {
+            visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
+            frameDimensions = frameDimensions || getFrameDimensions();
+
+            var normalizedRectangle = normalizeRectangle(
+                clientRectangle, visibleContentOffsets.left, visibleContentOffsets.top);
+
+            return calculatePageIndexDeltaByRectangles([normalizedRectangle], frameDimensions);
+        }
+
+        /**
+         * @private
+         * Calculates the visibility offset percentage based on ClientRect dimensions
+         *
+         * @param {Array} clientRectangles (should already be normalized)
+         * @param {number} firstVisibleRectIndex
+         * @returns {number} - visibility percentage (0 < n <= 100)
+         */
+        function measureVisibilityPercentageByRectangles(clientRectangles, firstVisibleRectIndex) {
+
+            var heightTotal = 0;
+            var heightVisible = 0;
+
+            if (clientRectangles.length > 1) {
+                _.each(clientRectangles, function (rect, index) {
+                    heightTotal += rect.height;
+                    if (index >= firstVisibleRectIndex) {
+                        // in this case, all the rectangles after the first visible
+                        // should be counted as visible
+                        heightVisible += rect.height;
+                    }
+                });
+            }
+            else {
+                // should already be normalized and adjusted
+                heightTotal = clientRectangles[0].height;
+                heightVisible = clientRectangles[0].height - Math.max(
+                    0, -clientRectangles[0].top);
+            }
+            return heightVisible === heightTotal
+                ? 100 // trivial case: element is 100% visible
+                : Math.floor(100 * heightVisible / heightTotal);
+        }
+
+        /**
+         * @private
+         * Retrieves the position of $element in multi-column layout
+         *
+         * @param {jQuery} $el
+         * @param {Object} [visibleContentOffsets]
+         * @returns {Object[]}
+         */
+        function getNormalizedRectangles($el, visibleContentOffsets) {
+
+            visibleContentOffsets = visibleContentOffsets || {};
+            var leftOffset = visibleContentOffsets.left || 0;
+            var topOffset = visibleContentOffsets.top || 0;
+
+            var isTextNode = ($el[0].nodeType === Node.TEXT_NODE);
+            var clientRectList;
+
+            if (isTextNode) {
+                var range = createRange();
+                range.selectNode($el[0]);
+                //noinspection JSUnresolvedFunction
+                clientRectList = range.getClientRects();
+            } else {
+                //noinspection JSUnresolvedFunction
+                clientRectList = $el[0].getClientRects();
+            }
+
+            // all the separate rectangles (for detecting position of the element
+            // split between several columns)
+            var clientRectangles = [];
+            for (var i = 0, l = clientRectList.length; i < l; ++i) {
+                if (clientRectList[i].height > 0 || clientRectList.length === 1) {
+                    // Firefox sometimes gets it wrong,
+                    // adding literally empty (height = 0) client rectangle preceding the real one,
+                    // that empty client rectanle shouldn't be retrieved
+                    clientRectangles.push(
+                        normalizeRectangle(clientRectList[i], leftOffset, topOffset));
+                }
+            }
+
+            return clientRectangles;
+        }
+
+        function getNormalizedBoundingRect($el, visibleContentOffsets) {
+            visibleContentOffsets = visibleContentOffsets || {};
+            var leftOffset = visibleContentOffsets.left || 0;
+            var topOffset = visibleContentOffsets.top || 0;
+
+            var isTextNode = ($el[0].nodeType === Node.TEXT_NODE);
+            var boundingClientRect;
+
+            if (isTextNode) {
+                var range = createRange();
+                range.selectNode($el[0]);
+                boundingClientRect = range.getBoundingClientRect();
+            } else {
+                boundingClientRect = $el[0].getBoundingClientRect();
+            }
+
+            // union of all rectangles wrapping the element
+            return normalizeRectangle(boundingClientRect, leftOffset, topOffset);
+        }
+
+        /**
+         * @private
+         * Converts TextRectangle object into a plain object,
+         * taking content offsets (=scrolls, position shifts etc.) into account
+         *
+         * @param {Object} textRect
+         * @param {number} leftOffset
+         * @param {number} topOffset
+         * @returns {Object}
+         */
+        function normalizeRectangle(textRect, leftOffset, topOffset) {
+
+            var plainRectObject = {
+                left: textRect.left,
+                right: textRect.right,
+                top: textRect.top,
+                bottom: textRect.bottom,
+                width: textRect.right - textRect.left,
+                height: textRect.bottom - textRect.top
+            };
+            leftOffset = leftOffset || 0;
+            topOffset = topOffset || 0;
+            offsetRectangle(plainRectObject, leftOffset, topOffset);
+            return plainRectObject;
+        }
+
+        /**
+         * @private
+         * Offsets plain object (which represents a TextRectangle).
+         *
+         * @param {Object} rect
+         * @param {number} leftOffset
+         * @param {number} topOffset
+         */
+        function offsetRectangle(rect, leftOffset, topOffset) {
+
+            rect.left += leftOffset;
+            rect.right += leftOffset;
+            rect.top += topOffset;
+            rect.bottom += topOffset;
+        }
+
+        /**
+         * @private
+         *
+         * When element is spilled over two or more columns,
+         * most of the time Webkit-based browsers
+         * still assign a single clientRectangle to it, setting its `top` property to negative value
+         * (so it looks like it's rendered based on the second column)
+         * Alas, sometimes they decide to continue the leftmost column - from _below_ its real height.
+         * In this case, `bottom` property is actually greater than element's height and had to be adjusted accordingly.
+         *
+         * Ugh.
+         *
+         * @param {Object} rect
+         * @param {boolean} [shouldLookForFirstVisibleColumn]
+         *      If set, there'll be two-phase adjustment
+         *      (to align a rectangle with a viewport)
+         * @param {Object} [frameDimensions]
+         * @param {number} [columnFullWidth]
+         * @param {boolean} [isRtl]
+         * @param {boolean} [isVwm]               isVerticalWritingMode
+         */
+        function adjustRectangle(rect, shouldLookForFirstVisibleColumn, frameDimensions, columnFullWidth, isRtl, isVwm) {
+
+            frameDimensions = frameDimensions || getFrameDimensions();
+            columnFullWidth = columnFullWidth || getColumnFullWidth();
+            isRtl = isRtl || isPageProgressionRightToLeft();
+            isVwm = isVwm || isVerticalWritingMode();
+
+            // Rectangle adjustment is not needed in VWM since it does not deal with columns
+            if (isVwm) {
+                return;
+            }
+
+            if (isRtl) {
+                columnFullWidth *= -1; // horizontal shifts are reverted in RTL mode
+            }
+
+            // first we go left/right (rebasing onto the very first column available)
+            while (rect.top < 0) {
+                offsetRectangle(rect, -columnFullWidth, frameDimensions.height);
+            }
+
+            // ... then, if necessary (for visibility offset checks),
+            // each column is tried again (now in reverse order)
+            // the loop will be stopped when the column is aligned with a viewport
+            // (i.e., is the first visible one).
+            if (shouldLookForFirstVisibleColumn) {
+                while (rect.bottom >= frameDimensions.height) {
+                    if (isRectVisible(rect, false, frameDimensions)) {
+                        break;
+                    }
+                    offsetRectangle(rect, columnFullWidth, -frameDimensions.height);
+                }
+            }
+        }
+
+        this.getCfiForElement = function (element) {
+
+            var cfi = EPUBcfi.Generator.generateElementCFIComponent(element,
+                this.getClassBlacklist(),
+                this.getElementBlacklist(),
+                this.getIdBlacklist());
+
+            if (cfi[0] == "!") {
+                cfi = cfi.substring(1);
+            }
+            return cfi;
+        };
+
+        this.getVisibleCfiFromPoint = function (x, y, precisePoint) {
+            var document = self.getRootDocument();
+            var firstVisibleCaretRange = getCaretRangeFromPoint(x, y, document);
+            var elementFromPoint = document.elementFromPoint(x, y);
+            var invalidElementFromPoint = !elementFromPoint || elementFromPoint === document.documentElement;
+
+            if (precisePoint) {
+                if (!elementFromPoint || invalidElementFromPoint) {
+                    return null;
+                }
+                var testRect = getNodeContentsClientRect(elementFromPoint);
+                if (!isRectVisible(testRect, false)) {
+                    return null;
+                }
+                if ((x < testRect.left || x > testRect.right) || (y < testRect.top || y > testRect.bottom)) {
+                    return null;
+                }
+            }
+
+            if (!firstVisibleCaretRange) {
+                if (invalidElementFromPoint) {
+                    console.error("Could not generate CFI no visible element on page");
+                    return null;
+                }
+                firstVisibleCaretRange = createRange();
+                firstVisibleCaretRange.selectNode(elementFromPoint);
+            }
+
+            var range = firstVisibleCaretRange;
+            var cfi;
+            //if we get a text node we need to get an approximate range for the first visible character offsets.
+            var node = range.startContainer;
+            var startOffset, endOffset;
+            if (node.nodeType === Node.TEXT_NODE) {
+                if (precisePoint && node.parentNode !== elementFromPoint) {
+                    return null;
+                }
+                if (node.length === 1 && range.startOffset === 1) {
+                    startOffset = 0;
+                    endOffset = 1;
+                } else if (range.startOffset === node.length) {
+                    startOffset = range.startOffset - 1;
+                    endOffset = range.startOffset;
+                } else {
+                    startOffset = range.startOffset;
+                    endOffset = range.startOffset + 1;
+                }
+                var wrappedRange = {
+                    startContainer: node,
+                    endContainer: node,
+                    startOffset: startOffset,
+                    endOffset: endOffset,
+                    commonAncestorContainer: range.commonAncestorContainer
+                };
+
+                if (_DEBUG) {
+                    drawDebugOverlayFromDomRange(wrappedRange);
+                }
+
+                cfi = generateCfiFromDomRange(wrappedRange);
+            } else if (node.nodeType === Node.ELEMENT_NODE) {
+                node =
+                    range.startContainer.childNodes[range.startOffset] ||
+                    range.startContainer.childNodes[0] ||
+                    range.startContainer;
+                if (precisePoint && node !== elementFromPoint) {
+                    return null;
+                }
+
+                if (node.nodeType !== Node.ELEMENT_NODE) {
+                    cfi = generateCfiFromDomRange(range);
+                } else {
+                    cfi = self.getCfiForElement(node);
+                }
+            } else {
+                if (precisePoint && node !== elementFromPoint) {
+                    return null;
+                }
+
+                cfi = self.getCfiForElement(elementFromPoint);
+            }
+
+            //This should not happen but if it does print some output, just in case
+            if (cfi && cfi.indexOf('NaN') !== -1) {
+                console.log('Did not generate a valid CFI:' + cfi);
+                return undefined;
+            }
+            return cfi;
+        };
+
+        this.getRangeCfiFromPoints = function (startX, startY, endX, endY) {
+            var document = self.getRootDocument();
+            var start = getCaretRangeFromPoint(startX, startY, document),
+                end = getCaretRangeFromPoint(endX, endY, document),
+                range = createRange();
+            range.setStart(start.startContainer, start.startOffset);
+            range.setEnd(end.startContainer, end.startOffset);
+            // if we're looking at a text node create a nice range (n, n+1)
+            if (start.startContainer === start.endContainer && start.startContainer.nodeType === Node.TEXT_NODE && end.startContainer.length > end.startOffset + 1) {
+                range.setEnd(end.startContainer, end.startOffset + 1);
+            }
+            return generateCfiFromDomRange(range);
+        };
+
+        function determineSplit(range, division) {
+            var percent = division / 100;
+            return Math.round((range.endOffset - range.startOffset ) * percent);
+        }
+
+        function splitRange(range, division) {
+            if (range.endOffset - range.startOffset === 1) {
+                return [range];
+            }
+            var length = determineSplit(range, division);
+            var textNode = range.startContainer;
+            var leftNodeRange = range.cloneRange();
+            leftNodeRange.setStart(textNode, range.startOffset);
+            leftNodeRange.setEnd(textNode, range.startOffset + length);
+            var rightNodeRange = range.cloneRange();
+            rightNodeRange.setStart(textNode, range.startOffset + length);
+            rightNodeRange.setEnd(textNode, range.endOffset);
+
+            return [leftNodeRange, rightNodeRange];
+
+        }
+
+        // create Range from target node and search for visibleOutput Range
+        function getVisibleTextRangeOffsets(textNode, pickerFunc, visibleContentOffsets, frameDimensions) {
+            visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
+
+            var nodeRange = createRangeFromNode(textNode);
+            var nodeClientRects = getRangeClientRectList(nodeRange, visibleContentOffsets);
+            var splitRatio = deterministicSplit(nodeClientRects, pickerFunc([0, 1]));
+            return getTextRangeOffset(splitRange(nodeRange, splitRatio), visibleContentOffsets,
+                pickerFunc([0, 1]), splitRatio,
+                function (rect) {
+                    return (isVerticalWritingMode() ? rect.height : rect.width) && isRectVisible(rect, false, frameDimensions);
+                });
+        }
+
+        function deterministicSplit(rectList, directionBit) {
+            var split = 0;
+            // Calculate total cumulative Height for both visible portions and invisible portions and find the split
+            var visibleRects = _.filter(rectList, function (rect) {
+                return (isVerticalWritingMode() ? rect.height : rect.width) && isRectVisible(rect, false, getFrameDimensions());
+            });
+            var visibleRectHeight = calculateCumulativeHeight(visibleRects);
+            var invisibleRectHeight = totalHeight - visibleRectHeight;
+            var totalHeight = calculateCumulativeHeight(rectList);
+
+            if (visibleRectHeight === totalHeight) {
+                // either all visible or split
+                // heuristic: slight bias to increase likelihood of hits
+                return directionBit ? 55 : 45;
+            } else {
+                split = 100 * (visibleRectHeight / totalHeight);
+                return invisibleRectHeight > visibleRectHeight ? split + 5 : split - 5;
+            }
+        }
+
+        function rectTopHash (rectList) {
+            // sort the rectangles by top value
+            var sortedList = rectList.sort(function (a, b) {
+                return a.top < b.top;
+            });
+            var lineMap = [];
+            _.each(sortedList, function (rect) {
+                var key = rect.top;
+                if (!lineMap[key]) {
+                    lineMap[key] = [rect.height];
+                } else {
+                    var currentLine = lineMap[key];
+                    currentLine.push(rect.height);
+                    lineMap[key] = currentLine;
+                }
+            });
+        }
+
+        function calculateCumulativeHeight (rectList) {
+            var lineMap = rectTopHash(rectList);
+            var height = 0;
+            _.each(lineMap, function (line) {
+                height = height + Math.max.apply(null, line);
+            });
+            return height;
+        }
+
+        function getTextRangeOffset(startingSet, visibleContentOffsets, directionBit, splitRatio, filterFunc) {
+            var runCount = 0;
+            var currRange = startingSet;
+            //begin iterative binary search, each iteration will check Range length and visibility
+            while (currRange.length !== 1) {
+                runCount++;
+                var currTextNodeFragments = getRangeClientRectList(currRange[directionBit], visibleContentOffsets);
+                if (hasVisibleFragments(currTextNodeFragments, filterFunc)) {
+                    currRange = splitRange(currRange[directionBit], splitRatio);
+                }
+                // No visible fragment Look in other half
+                else {
+                    currRange = splitRange(currRange[directionBit ? 0 : 1], splitRatio);
+                }
+            }
+            if (_DEBUG) {
+                console.debug('getVisibleTextRangeOffsets:getTextRangeOffset:runCount', runCount);
+                window.top._DEBUG_visibleTextRangeOffsetsRuns.push(runCount);
+            }
+            var resultRange = currRange[0];
+            if (resultRange) {
+                resultRange.collapse(!directionBit);
+            }
+            return resultRange;
+        }
+
+        function hasVisibleFragments(fragments, filterFunc) {
+            var visibleFragments = _.filter(fragments, filterFunc);
+            return !!visibleFragments.length;
+        }
+
+        function findVisibleLeafNodeCfi(visibleLeafNode, pickerFunc, visibleContentOffsets, frameDimensions) {
+            if (!visibleLeafNode) {
+                return null;
+            }
+
+            var element = visibleLeafNode.element;
+            var textNode = visibleLeafNode.textNode;
+
+            //if a valid text node is found, try to generate a CFI with range offsets
+            if (textNode && isValidTextNode(textNode)) {
+                var visibleRange = getVisibleTextRangeOffsets(textNode, pickerFunc, visibleContentOffsets, frameDimensions);
+                if (!visibleRange) {
+                    if (_DEBUG) console.warn("findVisibleLeafNodeCfi: failed to find text range offset");
+                    return null;
+                }
+                return generateCfiFromDomRange(visibleRange);
+            } else {
+                //if not then generate a CFI for the element
+                return self.getCfiForElement(element);
+            }
+        }
+
+        function getLastVisibleTextRangeCfi(visibleContentOffsets, frameDimensions) {
+            var visibleLeafNode = self.findLastVisibleElement(visibleContentOffsets, frameDimensions);
+            return findVisibleLeafNodeCfi(visibleLeafNode, _.last, visibleContentOffsets, frameDimensions);
+        }
+
+        function getFirstVisibleTextRangeCfi(visibleContentOffsets, frameDimensions) {
+            var visibleLeafNode = self.findFirstVisibleElement(visibleContentOffsets, frameDimensions);
+            return findVisibleLeafNodeCfi(visibleLeafNode, _.first, visibleContentOffsets, frameDimensions);
+        }
+
+        this.getFirstVisibleCfi = function (visibleContentOffsets, frameDimensions) {
+            return getFirstVisibleTextRangeCfi(visibleContentOffsets, frameDimensions);
+        };
+
+        this.getLastVisibleCfi = function (visibleContentOffsets, frameDimensions) {
+            return getLastVisibleTextRangeCfi(visibleContentOffsets, frameDimensions);
+        };
+
+        function generateCfiFromDomRange(range) {
+            if (range.collapsed && range.startContainer.nodeType === Node.TEXT_NODE) {
+                return EPUBcfi.generateCharacterOffsetCFIComponent(
+                    range.startContainer, range.startOffset,
+                    ['cfi-marker'], [], ["MathJax_Message", "MathJax_SVG_Hidden"]);
+            } else if (range.collapsed) {
+                return self.getCfiForElement(range.startContainer);
+            } else {
+                return EPUBcfi.generateRangeComponent(
+                    range.startContainer, range.startOffset,
+                    range.endContainer, range.endOffset,
+                    self.getClassBlacklist(), self.getElementBlacklist(), self.getIdBlacklist());
+            }
+        }
+
+        this.getDomRangeFromRangeCfi = function (rangeCfi, rangeCfi2, inclusive) {
+            var range = createRange();
+
+            if (!rangeCfi2) {
+                if (self.isRangeCfi(rangeCfi)) {
+                    var rangeInfo = self.getNodeRangeInfoFromCfi(rangeCfi);
+                    range.setStart(rangeInfo.startInfo.node, rangeInfo.startInfo.offset);
+                    range.setEnd(rangeInfo.endInfo.node, rangeInfo.endInfo.offset);
+                } else {
+                    var element = self.getElementByCfi(rangeCfi,
+                        this.getClassBlacklist(), this.getElementBlacklist(), this.getIdBlacklist())[0];
+                    range.selectNode(element);
+                }
+            } else {
+                if (self.isRangeCfi(rangeCfi)) {
+                    var rangeInfo1 = self.getNodeRangeInfoFromCfi(rangeCfi);
+                    range.setStart(rangeInfo1.startInfo.node, rangeInfo1.startInfo.offset);
+                } else {
+                    var startElement = self.getElementByCfi(rangeCfi,
+                        this.getClassBlacklist(), this.getElementBlacklist(), this.getIdBlacklist())[0];
+                    range.setStart(startElement, 0);
+                }
+
+                if (self.isRangeCfi(rangeCfi2)) {
+                    var rangeInfo2 = self.getNodeRangeInfoFromCfi(rangeCfi2);
+                    if (inclusive) {
+                        range.setEnd(rangeInfo2.endInfo.node, rangeInfo2.endInfo.offset);
+                    } else {
+                        range.setEnd(rangeInfo2.startInfo.node, rangeInfo2.startInfo.offset);
+                    }
+                } else {
+                    var endElement = self.getElementByCfi(rangeCfi2,
+                        this.getClassBlacklist(), this.getElementBlacklist(), this.getIdBlacklist())[0];
+                    range.setEnd(endElement, endElement.childNodes.length);
+                }
+            }
+            return range;
+        };
+
+        this.getRangeCfiFromDomRange = function (domRange) {
+            return generateCfiFromDomRange(domRange);
+        };
+
+        function getWrappedCfi(partialCfi) {
+            return "epubcfi(/99!" + partialCfi + ")";
+        }
+
+        this.isRangeCfi = function (partialCfi) {
+            return _isRangeCfi(partialCfi) || _hasTextTerminus(partialCfi);
+        };
+
+        function _isRangeCfi(partialCfi) {
+            return EPUBcfi.Interpreter.isRangeCfi(getWrappedCfi(partialCfi));
+        }
+
+        function _hasTextTerminus(partialCfi) {
+            return EPUBcfi.Interpreter.hasTextTerminus(getWrappedCfi(partialCfi));
+        }
+
+        this.getPageIndexDeltaForCfi = function (partialCfi, classBlacklist, elementBlacklist, idBlacklist) {
+
+            if (this.isRangeCfi(partialCfi)) {
+                //if given a range cfi the exact page index needs to be calculated by getting node info from the range cfi
+                var nodeRangeInfoFromCfi = this.getNodeRangeInfoFromCfi(partialCfi);
+                //the page index is calculated from the node's client rectangle
+                return findPageIndexDeltaBySingleRectangle(nodeRangeInfoFromCfi.clientRect);
+            }
+
+            var $element = getElementByPartialCfi(partialCfi, classBlacklist, elementBlacklist, idBlacklist);
+
+            if (!$element) {
+                return -1;
+            }
+
+            return this.getPageIndexDeltaForElement($element);
+        };
+
+        function getElementByPartialCfi(cfi, classBlacklist, elementBlacklist, idBlacklist) {
+
+            var contentDoc = self.getRootDocument();
+
+            var wrappedCfi = getWrappedCfi(cfi);
+
+            try {
+                //noinspection JSUnresolvedVariable
+                var $element = EPUBcfi.getTargetElement(wrappedCfi, contentDoc, classBlacklist, elementBlacklist, idBlacklist);
+
+            } catch (ex) {
+                //EPUBcfi.Interpreter can throw a SyntaxError
+            }
+
+            if (!$element || $element.length == 0) {
+                console.log("Can't find element for CFI: " + cfi);
+                return undefined;
+            }
+
+            return $element;
+        }
+
+        this.getElementFromPoint = function (x, y) {
+
+            var document = self.getRootDocument();
+            return document.elementFromPoint(x, y);
+        };
+
+        this.getNodeRangeInfoFromCfi = function (cfi) {
+            var contentDoc = self.getRootDocument();
+
+            var wrappedCfi = getWrappedCfi(cfi);
+            if (_isRangeCfi(cfi)) {
+
+                try {
+                    //noinspection JSUnresolvedVariable
+                    var nodeResult = EPUBcfi.Interpreter.getRangeTargetElements(wrappedCfi, contentDoc,
+                        this.getClassBlacklist(),
+                        this.getElementBlacklist(),
+                        this.getIdBlacklist());
+
+                    if (_DEBUG) {
+                        console.log(nodeResult);
+                    }
+                } catch (ex) {
+                    //EPUBcfi.Interpreter can throw a SyntaxError
+                }
+
+                if (!nodeResult) {
+                    console.log("Can't find nodes for range CFI: " + cfi);
+                    return undefined;
+                }
+
+                var startRangeInfo = {node: nodeResult.startElement, offset: nodeResult.startOffset};
+                var endRangeInfo = {node: nodeResult.endElement, offset: nodeResult.endOffset};
+                var nodeRangeClientRect =
+                    startRangeInfo && endRangeInfo ?
+                        getNodeRangeClientRect(
+                            startRangeInfo.node,
+                            startRangeInfo.offset,
+                            endRangeInfo.node,
+                            endRangeInfo.offset)
+                        : null;
+
+                if (_DEBUG) {
+                    console.log(nodeRangeClientRect);
+                    addOverlayRect(nodeRangeClientRect, 'purple', contentDoc);
+                }
+
+                return {startInfo: startRangeInfo, endInfo: endRangeInfo, clientRect: nodeRangeClientRect};
+            } else if (_hasTextTerminus(cfi)) {
+
+                try {
+                    //noinspection JSUnresolvedVariable
+                    var textTerminusResult = EPUBcfi.Interpreter.getTextTerminusInfo(wrappedCfi, contentDoc,
+                        this.getClassBlacklist(),
+                        this.getElementBlacklist(),
+                        this.getIdBlacklist());
+
+                    if (_DEBUG) {
+                        console.log(textTerminusResult);
+                    }
+                } catch (ex) {
+                    //EPUBcfi.Interpreter can throw a SyntaxError
+                }
+
+                if (!textTerminusResult) {
+                    console.log("Can't find node for text term CFI: " + cfi);
+                    return undefined;
+                }
+
+                var textTermRangeInfo = {node: textTerminusResult.textNode, offset: textTerminusResult.textOffset};
+                var textTermClientRect =
+                    getNodeRangeClientRect(
+                        textTermRangeInfo.node,
+                        textTermRangeInfo.offset,
+                        textTermRangeInfo.node,
+                        textTermRangeInfo.offset);
+                if (_DEBUG) {
+                    console.log(textTermClientRect);
+                    addOverlayRect(textTermClientRect, 'purple', contentDoc);
+                }
+
+                return {startInfo: textTermRangeInfo, endInfo: textTermRangeInfo, clientRect: textTermClientRect};
+            } else {
+                var $element = self.getElementByCfi(cfi,
+                    this.getClassBlacklist(),
+                    this.getElementBlacklist(),
+                    this.getIdBlacklist());
+
+                var visibleContentOffsets = getVisibleContentOffsets();
+                return {
+                    startInfo: null,
+                    endInfo: null,
+                    clientRect: getNormalizedBoundingRect($element, visibleContentOffsets)
+                };
+            }
+        };
+
+        this.isNodeFromRangeCfiVisible = function (cfi) {
+            var nodeRangeInfo = this.getNodeRangeInfoFromCfi(cfi);
+            if (nodeRangeInfo) {
+                return isRectVisible(nodeRangeInfo.clientRect, false);
+            } else {
+                return undefined;
+            }
+        };
+
+        this.getNearestCfiFromElement = function (element) {
+            var collapseToStart;
+            var chosenNode;
+            var isTextNode;
+
+            var siblingTextNodesAndSelf = _.filter(element.parentNode.childNodes, function (n) {
+                return n === element || isValidTextNode(n);
+            });
+
+            var indexOfSelf = siblingTextNodesAndSelf.indexOf(element);
+            var nearestNode = siblingTextNodesAndSelf[indexOfSelf - 1];
+            if (!nearestNode) {
+                nearestNode = siblingTextNodesAndSelf[indexOfSelf + 1];
+                collapseToStart = true;
+            }
+            if (!nearestNode) {
+                nearestNode = _.last(this.getLeafNodeElements($(element.previousElementSibling)));
+                if (!nearestNode) {
+                    collapseToStart = true;
+                    nearestNode = _.first(this.getLeafNodeElements($(element.nextElementSibling)));
+                }
+            }
+
+            // Prioritize text node use
+            if (isValidTextNode(nearestNode)) {
+                chosenNode = nearestNode;
+                isTextNode = true;
+            } else if (isElementNode(nearestNode)) {
+                chosenNode = nearestNode;
+            } else if (isElementNode(element.previousElementSibling)) {
+                chosenNode = element.previousElementSibling;
+            } else if (isElementNode(element.nextElementSibling)) {
+                chosenNode = element.nextElementSibling;
+            } else {
+                chosenNode = element.parentNode;
+            }
+
+            if (isTextNode) {
+                var range = chosenNode.ownerDocument.createRange();
+                range.selectNodeContents(chosenNode);
+                range.collapse(collapseToStart);
+                return this.getRangeCfiFromDomRange(range);
+            } else {
+                return this.getCfiForElement(chosenNode);
+            }
+        };
+
+        this.getElementByCfi = function (partialCfi, classBlacklist, elementBlacklist, idBlacklist) {
+            return getElementByPartialCfi(partialCfi, classBlacklist, elementBlacklist, idBlacklist);
+        };
+
+        this.getPageIndexDeltaForElement = function ($element) {
+
+            // first try to get delta by rectangles
+            var pageIndex = findPageIndexDeltaByRectangles($element);
+
+            // for hidden elements (e.g., page breaks) there are no rectangles
+            if (pageIndex === null) {
+
+                // get CFI of the nearest (to hidden) element, and then get CFI's element
+                var nearestVisibleElement = this.getElementByCfi(this.getNearestCfiFromElement($element[0]));
+
+                // find page index by rectangles again, for the nearest element
+                return findPageIndexDeltaByRectangles(nearestVisibleElement);
+            }
+            return pageIndex;
+        };
+
+        this.getElementById = function (id) {
+
+            var contentDoc = this.getRootDocument();
+
+            var $element = $(contentDoc.getElementById(id));
+            //$("#" + Helpers.escapeJQuerySelector(id), contentDoc);
+
+            if ($element.length == 0) {
+                return undefined;
+            }
+
+            return $element;
+        };
+
+        this.getPageIndexDeltaForElementId = function (id) {
+
+            var $element = this.getElementById(id);
+            if (!$element) {
+                return -1;
+            }
+
+            return this.getPageIndexDeltaForElement($element);
+        };
+
+        // returns raw DOM element (not $ jQuery-wrapped)
+        this.getFirstVisibleMediaOverlayElement = function (visibleContentOffsets) {
+            var $root = $(this.getBodyElement());
+            if (!$root || !$root.length || !$root[0]) return undefined;
+
+            var that = this;
+
+            var firstPartial = undefined;
+
+            function traverseArray(arr) {
+                if (!arr || !arr.length) return undefined;
+
+                for (var i = 0, count = arr.length; i < count; i++) {
+                    var item = arr[i];
+                    if (!item) continue;
+
+                    var $item = $(item);
+
+                    if ($item.data("mediaOverlayData")) {
+                        var visible = that.getElementVisibility($item, visibleContentOffsets);
+                        if (visible) {
+                            if (!firstPartial) firstPartial = item;
+
+                            if (visible == 100) return item;
+                        }
+                    }
+                    else {
+                        var elem = traverseArray(item.children);
+                        if (elem) return elem;
+                    }
+                }
+
+                return undefined;
+            }
+
+            var el = traverseArray([$root[0]]);
+            if (!el) el = firstPartial;
+            return el;
+
+            // var $elements = this.getMediaOverlayElements($root);
+            // return this.getVisibleElements($elements, visibleContentOffsets);
+        };
+
+        this.getElementVisibility = function ($element, visibleContentOffsets) {
+            return checkVisibilityByRectangles($element, true, visibleContentOffsets);
+        };
+
+
+        this.isElementVisible = this.getElementVisibility;
+
+        this.getVisibleElementsWithFilter = function (visibleContentOffsets, filterFunction) {
+            var $elements = this.getElementsWithFilter($(this.getBodyElement()), filterFunction);
+            return this.getVisibleElements($elements, visibleContentOffsets);
+        };
+
+        this.getAllElementsWithFilter = function (filterFunction) {
+            return this.getElementsWithFilter($(this.getBodyElement()), filterFunction);
+        };
+
+        this.getAllVisibleElementsWithSelector = function (selector, visibleContentOffset) {
+            var elements = $(selector, this.getRootElement());
+            var $newElements = [];
+            $.each(elements, function () {
+                $newElements.push($(this));
+            });
+            return this.getVisibleElements($newElements, visibleContentOffset);
+        };
+
+        this.getVisibleElements = function ($elements, visibleContentOffsets, frameDimensions) {
+
+            var visibleElements = [];
+
+            _.each($elements, function ($node) {
+                var isTextNode = ($node[0].nodeType === Node.TEXT_NODE);
+                var $element = isTextNode ? $node.parent() : $node;
+                var visibilityPercentage = checkVisibilityByRectangles(
+                    $node, true, visibleContentOffsets, frameDimensions);
+
+                if (visibilityPercentage) {
+                    visibleElements.push({
+                        element: $element[0], // DOM Element is pushed
+                        textNode: isTextNode ? $node[0] : null,
+                        percentVisible: visibilityPercentage
+
+                    });
+                }
+            });
+
+            return visibleElements;
+        };
+
+        this.getVisibleLeafNodes = function (visibleContentOffsets, frameDimensions) {
+
+            if (_cacheEnabled) {
+                var cacheKey = (options.paginationInfo || {}).currentSpreadIndex || 0;
+                var fromCache = _cache.visibleLeafNodes.get(cacheKey);
+                if (fromCache) {
+                    return fromCache;
+                }
+            }
+
+            var $elements = this.getLeafNodeElements($(this.getBodyElement()));
+
+            var visibleElements = this.getVisibleElements($elements, visibleContentOffsets, frameDimensions);
+            if (_cacheEnabled) {
+                _cache.visibleLeafNodes.set(cacheKey, visibleElements);
+            }
+
+            return visibleElements;
+        };
+
+        function getBaseCfiSelectedByFunc(pickerFunc) {
+            var $elements = self.getLeafNodeElements($(self.getBodyElement()));
+            var $selectedNode = pickerFunc($elements);
+            var collapseToStart = pickerFunc([true, false]);
+            var range = createRange();
+            range.selectNodeContents($selectedNode[0]);
+            range.collapse(collapseToStart);
+            return generateCfiFromDomRange(range);
+        }
+
+        this.getStartCfi = function () {
+            return getBaseCfiSelectedByFunc(_.first);
+        };
+
+
+        this.getEndCfi = function () {
+            return getBaseCfiSelectedByFunc(_.last);
+        };
+
+        this.getElementsWithFilter = function ($root, filterFunction) {
+
+            var $elements = [];
+
+            function traverseCollection(elements) {
+
+                if (elements == undefined) return;
+
+                for (var i = 0, count = elements.length; i < count; i++) {
+
+                    var $element = $(elements[i]);
+
+                    if (filterFunction($element)) {
+                        $elements.push($element);
+                    }
+                    else {
+                        traverseCollection($element[0].children);
+                    }
+
+                }
+            }
+
+            traverseCollection([$root[0]]);
+
+            return $elements;
+        };
+
+        function isElementBlacklisted(element) {
+            var classAttribute = element.className;
+            // check for SVGAnimatedString
+            if (classAttribute && typeof classAttribute.animVal !== "undefined") {
+                classAttribute = classAttribute.animVal;
+            } else if (classAttribute && typeof classAttribute.baseVal !== "undefined") {
+                classAttribute = classAttribute.baseVal;
+            }
+            var classList = classAttribute ? classAttribute.split(' ') : [];
+            var id = element.id;
+
+            var classBlacklist = self.getClassBlacklist();
+            if (classList.length === 1 && _.contains(classBlacklist, classList[0])) {
+                return true;
+            } else if (classList.length && _.intersection(classBlacklist, classList).length) {
+                return true;
+            }
+
+            if (id && id.length && _.contains(self.getIdBlacklist(), id)) {
+                return true;
+            }
+
+            if (_.contains(self.getElementBlacklist(), element.tagName.toLowerCase())) {
+                return true;
+            }
+
+            return false;
+        }
+
+        this.getLeafNodeElements = function ($root) {
+
+            if (_cacheEnabled) {
+                var fromCache = _cache.leafNodeElements.get($root);
+                if (fromCache) {
+                    return fromCache;
+                }
+            }
+
+            //noinspection JSUnresolvedVariable,JSCheckFunctionSignatures
+            var nodeIterator = document.createNodeIterator(
+                $root[0],
+                NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
+                function () {
+                    //noinspection JSUnresolvedVariable
+                    return NodeFilter.FILTER_ACCEPT;
+                },
+                false
+            );
+
+            var $leafNodeElements = [];
+
+            var node;
+            while ((node = nodeIterator.nextNode())) {
+                var isLeafNode = node.nodeType === Node.ELEMENT_NODE && !node.childElementCount && !isValidTextNodeContent(node.textContent);
+                if (isLeafNode || isValidTextNode(node)){
+                    var element = (node.nodeType === Node.TEXT_NODE) ? node.parentNode : node;
+                    if (!isElementBlacklisted(element)) {
+                        $leafNodeElements.push($(node));
+                    }
+                }
+            }
+
+            if (_cacheEnabled) {
+                _cache.leafNodeElements.set($root, $leafNodeElements);
+            }
+            return $leafNodeElements;
+        };
+
+        function isElementNode(node) {
+            if (!node) {
+                return false;
+            }
+            else {
+                return node.nodeType === Node.ELEMENT_NODE;
+            }
+        }
+
+        function isValidTextNode(node) {
+            if (!node) {
+                return false;
+            }
+            if (node.nodeType === Node.TEXT_NODE) {
+
+                return isValidTextNodeContent(node.nodeValue);
+            }
+
+            return false;
+
+        }
+
+        function isValidTextNodeContent(text) {
+            // Heuristic to find a text node with actual text
+            // If we don't do this, we may get a reference to a node that doesn't get rendered
+            // (such as for example a node that has tab character and a bunch of spaces)
+            // this is would be bad! ask me why.
+            return !!text.trim().length;
+        }
+
+        this.getElements = function (selector) {
+            if (!selector) {
+                return $(this.getRootElement()).children();
+            }
+            return $(selector, this.getRootElement());
+        };
+
+        this.getElement = function (selector) {
+
+            var $element = this.getElements(selector);
+
+            if ($element.length > 0) {
+                return $element;
+            }
+
+            return undefined;
+        };
+
+        function Cache() {
+            var that = this;
+
+            //true = survives invalidation
+            var props = {
+                leafNodeElements: true,
+                visibleLeafNodes: false
+            };
+
+            _.each(props, function (val, key) {
+                that[key] = new Map();
+            });
+
+            this._invalidate = function () {
+                _.each(props, function (val, key) {
+                    if (!val) {
+                        that[key] = new Map();
+                    }
+                });
+            }
+        }
+
+        var _cache = new Cache();
+
+        var _cacheEnabled = false;
+
+        this.invalidateCache = function () {
+            _cache._invalidate();
+        };
+
+        //if (_DEBUG) {
+
+        var $debugOverlays = [];
+
+        //used for visual debug atm
+        function getRandomColor() {
+            var letters = '0123456789ABCDEF'.split('');
+            var color = '#';
+            for (var i = 0; i < 6; i++) {
+                color += letters[Math.round(Math.random() * 15)];
+            }
+            return color;
+        }
+
+        //used for visual debug atm
+        function addOverlayRect(rects, color, doc) {
+            var random = getRandomColor();
+            if (!(rects instanceof Array)) {
+                rects = [rects];
+            }
+            for (var i = 0; i != rects.length; i++) {
+                var rect = rects[i];
+                var overlayDiv = doc.createElement('div');
+                overlayDiv.style.position = 'absolute';
+                $(overlayDiv).css('z-index', '1000');
+                $(overlayDiv).css('pointer-events', 'none');
+                $(overlayDiv).css('opacity', '0.4');
+                overlayDiv.style.border = '1px solid white';
+                if (!color && !random) {
+                    overlayDiv.style.background = 'purple';
+                } else if (random && !color) {
+                    overlayDiv.style.background = random;
+                } else {
+                    if (color === true) {
+                        color = 'red';
+                    }
+                    overlayDiv.style.border = '1px dashed ' + color;
+                    overlayDiv.style.background = 'yellow';
+                }
+
+                overlayDiv.style.margin = overlayDiv.style.padding = '0';
+                overlayDiv.style.top = (rect.top ) + 'px';
+                overlayDiv.style.left = (rect.left ) + 'px';
+                // we want rect.width to be the border width, so content width is 2px less.
+                overlayDiv.style.width = (rect.width - 2) + 'px';
+                overlayDiv.style.height = (rect.height - 2) + 'px';
+                doc.documentElement.appendChild(overlayDiv);
+                $debugOverlays.push($(overlayDiv));
+            }
+        }
+
+        function drawDebugOverlayFromRect(rect) {
+            var offsets = getPaginationOffsets();
+
+            addOverlayRect({
+                left: rect.left + offsets.left,
+                top: rect.top + offsets.top,
+                width: rect.width,
+                height: rect.height
+            }, true, self.getRootDocument());
+        }
+
+        function drawDebugOverlayFromDomRange(range) {
+            var rect = getNodeRangeClientRect(
+                range.startContainer,
+                range.startOffset,
+                range.endContainer,
+                range.endOffset);
+            drawDebugOverlayFromRect(rect);
+            return rect;
+        }
+
+        function drawDebugOverlayFromNode(node) {
+            drawDebugOverlayFromRect(getNodeClientRect(node));
+        }
+
+        function clearDebugOverlays() {
+            _.each($debugOverlays, function ($el) {
+                $el.remove();
+            });
+            $debugOverlays = [];
+        }
+
+        ReadiumSDK._DEBUG_CfiNavigationLogic = {
+            clearDebugOverlays: clearDebugOverlays,
+            drawDebugOverlayFromRect: drawDebugOverlayFromRect,
+            drawDebugOverlayFromDomRange: drawDebugOverlayFromDomRange,
+            drawDebugOverlayFromNode: drawDebugOverlayFromNode,
+            debugVisibleCfis: function () {
+                console.log(JSON.stringify(ReadiumSDK.reader.getPaginationInfo().openPages));
+
+                var cfi1 = ReadiumSDK.reader.getFirstVisibleCfi();
+                var range1 = ReadiumSDK.reader.getDomRangeFromRangeCfi(cfi1);
+                console.log(cfi1, range1, drawDebugOverlayFromDomRange(range1));
+
+                var cfi2 = ReadiumSDK.reader.getLastVisibleCfi();
+                var range2 = ReadiumSDK.reader.getDomRangeFromRangeCfi(cfi2);
+                console.log(cfi2, range2, drawDebugOverlayFromDomRange(range2));
+            },
+            visibleTextRangeOffsetsRunsAvg: function () {
+                var arr = window.top._DEBUG_visibleTextRangeOffsetsRuns;
+                return arr.reduce(function (a, b) {
+                    return a + b;
+                }) / arr.length;
+            }
+        };
+
+        //
+        // }
+
+        this.findFirstVisibleElement = function (visibleContentOffsets, frameDimensions) {
+
+            var bodyElement = this.getBodyElement();
+
+            if (!bodyElement) {
+                return null;
+            }
+
+            var firstVisibleElement;
+            var percentVisible = 0;
+            var textNode;
+
+            var treeWalker = document.createTreeWalker(
+                bodyElement,
+                NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
+                function(node) {
+                    if (node.nodeType === Node.ELEMENT_NODE && isElementBlacklisted(node))
+                        return NodeFilter.FILTER_REJECT;
+
+                    if (node.nodeType === Node.TEXT_NODE && !isValidTextNode(node))
+                        return NodeFilter.FILTER_REJECT;
+
+                    var visibilityResult = checkVisibilityByRectangles($(node), true, visibleContentOffsets, frameDimensions);
+                    return visibilityResult ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+                },
+                false
+                );
+
+            while (treeWalker.nextNode()) {
+                var node = treeWalker.currentNode;
+
+                if (node.nodeType === Node.TEXT_NODE) {
+                    firstVisibleElement = node.parentNode;
+                    textNode = node;
+                    percentVisible = 100; // not really used, assume this value unless otherwise
+                    break;
+                }
+
+                var hasChildElements = false;
+                var hasChildTextNodes = false;
+
+                for (var i = node.childNodes.length - 1; i >= 0; i--) {
+                    var childNode = node.childNodes[i];
+                    if (childNode.nodeType === Node.ELEMENT_NODE) {
+                        hasChildElements = true;
+                        break;
+                    }
+                    if (childNode.nodeType === Node.TEXT_NODE)
+                        hasChildTextNodes = true;
+                }
+
+                // potentially stop tree traversal when first element hit with no child element nodes
+                if (!hasChildElements && hasChildTextNodes) {
+                    for (var i=node.childNodes.length-1; i>=0; i--) {
+                        var childNode = node.childNodes[i];
+                        if (childNode.nodeType === Node.TEXT_NODE && isValidTextNode(childNode)) {
+                            var visibilityResult = checkVisibilityByRectangles($(childNode), true, visibleContentOffsets, frameDimensions);
+                            if (visibilityResult) {
+                                firstVisibleElement = node;
+                                textNode = childNode;
+                                percentVisible = visibilityResult;
+                                break;
+                            }
+                        }
+                    }
+                } else if (!hasChildElements) {
+                    firstVisibleElement = node;
+                    percentVisible = 100;
+                    textNode = null;
+                    break;
+                }
+            }
+
+            if (!firstVisibleElement) {
+                return null;
+            }
+            return {
+                element: firstVisibleElement,
+                textNode: textNode,
+                percentVisible: percentVisible
+            };
+        };
+
+        this.findLastVisibleElement = function (visibleContentOffsets, frameDimensions) {
+
+            var bodyElement = this.getBodyElement();
+
+            if (!bodyElement) {
+                return null;
+            }
+
+            var firstVisibleElement;
+            var percentVisible = 0;
+            var textNode;
+
+            var treeWalker = document.createTreeWalker(
+                bodyElement,
+                NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
+                function(node) {
+                    if (node.nodeType === Node.ELEMENT_NODE && isElementBlacklisted(node))
+                        return NodeFilter.FILTER_REJECT;
+
+                    if (node.nodeType === Node.TEXT_NODE && !isValidTextNode(node))
+                        return NodeFilter.FILTER_REJECT;
+
+                    var visibilityResult = checkVisibilityByRectangles($(node), true, visibleContentOffsets, frameDimensions);
+                    return visibilityResult ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+                },
+                false
+                );
+
+            while (treeWalker.lastChild()) { }
+
+            do {
+                var node = treeWalker.currentNode;
+
+                if (node.nodeType === Node.TEXT_NODE) {
+                    firstVisibleElement = node.parentNode;
+                    textNode = node;
+                    percentVisible = 100; // not really used, assume this value unless otherwise
+                    break;
+                }
+
+                var hasChildElements = false;
+                var hasChildTextNodes = false;
+
+                for (var i = node.childNodes.length - 1; i >= 0; i--) {
+                    var childNode = node.childNodes[i];
+                    if (childNode.nodeType === Node.ELEMENT_NODE) {
+                        hasChildElements = true;
+                        break;
+                    }
+                    if (childNode.nodeType === Node.TEXT_NODE)
+                        hasChildTextNodes = true;
+                }
+
+                // potentially stop tree traversal when first element hit with no child element nodes
+                if (!hasChildElements && hasChildTextNodes) {
+                    for (var i=node.childNodes.length-1; i>=0; i--) {
+                        var childNode = node.childNodes[i];
+                        if (childNode.nodeType === Node.TEXT_NODE && isValidTextNode(childNode)) {
+                            var visibilityResult = checkVisibilityByRectangles($(childNode), true, visibleContentOffsets, frameDimensions);
+                            if (visibilityResult) {
+                                firstVisibleElement = node;
+                                textNode = childNode;
+                                percentVisible = visibilityResult;
+                                break;
+                            }
+                        }
+                    }
+                } else if (!hasChildElements) {
+                    firstVisibleElement = node;
+                    percentVisible = 100;
+                    textNode = null;
+                    break;
+                }
+            } while (treeWalker.previousNode());
+
+            if (!firstVisibleElement) {
+                return null;
+            }
+            return {
+                element: firstVisibleElement,
+                textNode: textNode,
+                percentVisible: percentVisible
+            };
+        };
+
     };
-  };
-  return CfiNavigationLogic;
+return CfiNavigationLogic;
 });
 
 //  Created by Boris Schneiderman.
@@ -42233,447 +41853,424 @@ return SmilIterator;
 });
 
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
-//
-//  Redistribution and use in source and binary forms, with or without modification,
+//  
+//  Redistribution and use in source and binary forms, with or without modification, 
 //  are permitted provided that the following conditions are met:
-//  1. Redistributions of source code must retain the above copyright notice, this
+//  1. Redistributions of source code must retain the above copyright notice, this 
 //  list of conditions and the following disclaimer.
-//  2. Redistributions in binary form must reproduce the above copyright notice,
-//  this list of conditions and the following disclaimer in the documentation and/or
+//  2. Redistributions in binary form must reproduce the above copyright notice, 
+//  this list of conditions and the following disclaimer in the documentation and/or 
 //  other materials provided with the distribution.
-//  3. Neither the name of the organization nor the names of its contributors may be
-//  used to endorse or promote products derived from this software without specific
+//  3. Neither the name of the organization nor the names of its contributors may be 
+//  used to endorse or promote products derived from this software without specific 
 //  prior written permission.
-//
-//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+//  
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define('readium_shared_js/views/media_overlay_data_injector',[
-  "jquery",
-  "underscore",
-  "../helpers",
-  "../models/smil_iterator",
-  "readium_cfi_js"
-], function($, _, Helpers, SmilIterator, EPUBcfi) {
-  /**
-   *
-   * @param mediaOverlay
-   * @param mediaOverlayPlayer
-   * @constructor
-   */
-  var MediaOverlayDataInjector = function(mediaOverlay, mediaOverlayPlayer) {
-    this.attachMediaOverlayData = function(
-      $iframe,
-      spineItem,
-      mediaOverlaySettings
-    ) {
-      var contentDocElement = $iframe[0].contentDocument.documentElement;
+define ('readium_shared_js/views/media_overlay_data_injector',["jquery", "underscore", "../helpers", "../models/smil_iterator", 'readium_cfi_js'], function($, _, Helpers, SmilIterator, EPUBcfi) {
+/**
+ *
+ * @param mediaOverlay
+ * @param mediaOverlayPlayer
+ * @constructor
+ */
+var MediaOverlayDataInjector = function (mediaOverlay, mediaOverlayPlayer) {
 
-      if (
-        !spineItem.media_overlay_id &&
-        mediaOverlay.smil_models.length === 0
-      ) {
-        return;
-      }
+    this.attachMediaOverlayData = function ($iframe, spineItem, mediaOverlaySettings) {
 
-      var $body = $("body", contentDocElement);
-      if ($body.length == 0) {
-        console.error("! BODY ???");
-      } else {
-        var click = $body.data("mediaOverlayClick");
-        if (click) {
-          console.error("[WARN] already mediaOverlayClick");
-        } else {
-          $body.data("mediaOverlayClick", { ping: "pong" });
+        var contentDocElement = $iframe[0].contentDocument.documentElement;
 
-          var touchClickMOEventHandler = function(event) {
-            //console.debug("MO TOUCH-DOWN: "+event.type);
-
-            var elem = $(this)[0]; // body
-            elem = event.target; // body descendant
-
-            if (!elem) {
-              mediaOverlayPlayer.touchInit();
-              return true;
-            }
-
-            //console.debug("MO CLICK: " + elem.id);
-
-            var data = undefined;
-            var el = elem;
-
-            var inLink = false;
-            if (el.nodeName.toLowerCase() === "a") {
-              inLink = true;
-            }
-
-            while (!(data = $(el).data("mediaOverlayData"))) {
-              if (el.nodeName.toLowerCase() === "a") {
-                inLink = true;
-              }
-              el = el.parentNode;
-              if (!el) {
-                break;
-              }
-            }
-
-            if (data && (data.par || data.pars)) {
-              if (el !== elem) {
-                //console.log("MO CLICK REDIRECT: " + el.id);
-              }
-
-              if (!mediaOverlaySettings.mediaOverlaysEnableClick) {
-                console.log("MO CLICK DISABLED");
-                mediaOverlayPlayer.touchInit();
-                return true;
-              }
-
-              if (inLink) {
-                console.log("MO CLICKED LINK");
-                mediaOverlayPlayer.touchInit();
-                return true;
-              }
-
-              var par = data.par ? data.par : data.pars[0];
-
-              if (
-                el &&
-                el != elem &&
-                el.nodeName.toLowerCase() === "body" &&
-                par &&
-                !par.getSmil().id
-              ) {
-                //console.debug("MO CLICKED BLANK BODY");
-                mediaOverlayPlayer.touchInit();
-                return true;
-              }
-
-              mediaOverlayPlayer.playUserPar(par);
-              return true;
-            } else {
-              var readaloud = $(elem).attr("ibooks:readaloud");
-              if (!readaloud) {
-                readaloud = $(elem).attr("epub:readaloud");
-              }
-              if (readaloud) {
-                console.debug("MO readaloud attr: " + readaloud);
-
-                var isPlaying = mediaOverlayPlayer.isPlaying();
-                if (
-                  (readaloud === "start" && !isPlaying) ||
-                  (readaloud === "stop" && isPlaying) ||
-                  readaloud === "startstop"
-                ) {
-                  mediaOverlayPlayer.toggleMediaOverlay();
-                  return true;
-                }
-              }
-            }
-
-            mediaOverlayPlayer.touchInit();
-            return true;
-          };
-
-          var touchClickMOEventHandler_ = _.debounce(
-            touchClickMOEventHandler,
-            200
-          );
-
-          if ("ontouchstart" in document.documentElement) {
-            $body[0].addEventListener(
-              "touchstart",
-              touchClickMOEventHandler_,
-              false
-            );
-          }
-          $body[0].addEventListener(
-            "mousedown",
-            touchClickMOEventHandler_,
-            false
-          );
-
-          //var clickEvent = 'ontouchstart' in document.documentElement ? 'touchstart' : 'click';
-          //$body.bind(clickEvent, touchClickMOEventHandler);
-        }
-      }
-
-      var smil = mediaOverlay.getSmilBySpineItem(spineItem);
-      if (!smil) {
-        console.error(
-          "NO SMIL?? " + spineItem.idref + " /// " + spineItem.media_overlay_id
-        );
-        return;
-      }
-
-      var traverseSmilSeqs = function(root) {
-        if (!root) return;
-
-        if (root.nodeType && root.nodeType === "seq") {
-          // if (root.element)
-          // {
-          //     console.error("WARN: seq.element already set: " + root.textref);
-          // }
-
-          if (root.textref) {
-            var parts = root.textref.split("#");
-            var file = parts[0];
-            var fragmentId = parts.length === 2 ? parts[1] : "";
-            //
-            // console.debug(root.textref);
-            // console.debug(fragmentId);
-            // console.log("---- SHOULD BE EQUAL:");
-            // console.debug(file);
-            // console.debug(par.text.srcFile);
-            //
-            // if (file !== par.text.srcFile)
-            // {
-            //     console.error("adjustParToSeqSyncGranularity textref.file !== par.text.srcFile ???");
-            //     return par;
-            // }
-            //
-            // if (!fragmentId)
-            // {
-            //     console.error("adjustParToSeqSyncGranularity !fragmentId ???");
-            //     return par;
-            // }
-
-            if (file && fragmentId) {
-              var textRelativeRef = Helpers.ResolveContentRef(file, smil.href);
-              var same = textRelativeRef === spineItem.href;
-              if (same) {
-                root.element = $iframe[0].contentDocument.getElementById(
-                  fragmentId
-                );
-
-                if (!root.element) {
-                  console.error("seq.textref !element? " + root.textref);
-                }
-
-                // var selector = "#" + Helpers.escapeJQuerySelector(fragmentId);
-                // var $element = $(selector, element.ownerDocument.documentElement);
-                // if ($element)
-                // {
-                //     seq.element = $element[0];
-                // }
-              }
-            }
-          }
+        if (!spineItem.media_overlay_id && mediaOverlay.smil_models.length === 0) {
+            return;
         }
 
-        if (root.children && root.children.length) {
-          for (var i = 0; i < root.children.length; i++) {
-            var child = root.children[i];
-            traverseSmilSeqs(child);
-          }
+        var $body = $("body", contentDocElement);
+        if ($body.length == 0) {
+            console.error("! BODY ???");
         }
-      };
-      traverseSmilSeqs(smil);
+        else {
+            var click = $body.data("mediaOverlayClick");
+            if (click) {
+                console.error("[WARN] already mediaOverlayClick");
+            }
+            else {
+                $body.data("mediaOverlayClick", {ping: "pong"});
 
-      //console.debug("[[MO ATTACH]] " + spineItem.idref + " /// " + spineItem.media_overlay_id + " === " + smil.id);
+                var touchClickMOEventHandler = function (event)
+                {
+                    //console.debug("MO TOUCH-DOWN: "+event.type);
+                    
+                    var elem = $(this)[0]; // body
+                    elem = event.target; // body descendant
 
-      var iter = new SmilIterator(smil);
-
-      var fakeOpfRoot = "/99!";
-      var epubCfiPrefix = "epubcfi";
-
-      while (iter.currentPar) {
-        iter.currentPar.element = undefined;
-        iter.currentPar.cfi = undefined;
-
-        if (true) {
-          //iter.currentPar.text.srcFragmentId (includes empty frag ID)
-
-          var textRelativeRef = Helpers.ResolveContentRef(
-            iter.currentPar.text.srcFile,
-            iter.smil.href
-          );
-
-          var same = textRelativeRef === spineItem.href;
-          if (same) {
-            var selectBody =
-              !iter.currentPar.text.srcFragmentId ||
-              iter.currentPar.text.srcFragmentId.length == 0;
-            var selectId =
-              iter.currentPar.text.srcFragmentId.indexOf(epubCfiPrefix) == 0
-                ? undefined
-                : iter.currentPar.text.srcFragmentId;
-
-            var $element = undefined;
-            var isCfiTextRange = false;
-            if (!selectBody && !selectId) {
-              if (
-                iter.currentPar.text.srcFragmentId.indexOf(epubCfiPrefix) === 0
-              ) {
-                var partial = iter.currentPar.text.srcFragmentId.substr(
-                  epubCfiPrefix.length + 1,
-                  iter.currentPar.text.srcFragmentId.length -
-                    epubCfiPrefix.length -
-                    2
-                );
-
-                if (partial.indexOf(fakeOpfRoot) === 0) {
-                  partial = partial.substr(
-                    fakeOpfRoot.length,
-                    partial.length - fakeOpfRoot.length
-                  );
-                }
-                //console.log(partial);
-                var parts = partial.split(",");
-                if (parts && parts.length === 3) {
-                  try {
-                    var partialStartCfi = parts[0] + parts[1];
-                    var startCFI = "epubcfi(" + partialStartCfi + ")";
-                    var infoStart = EPUBcfi.Interpreter.getTextTerminusInfoWithPartialCFI(
-                      startCFI,
-                      $iframe[0].contentDocument,
-                      ["cfi-marker", "mo-cfi-highlight"],
-                      [],
-                      ["MathJax_Message"]
-                    );
-                    //console.log(infoStart);
-
-                    var partialEndCfi = parts[0] + parts[2];
-                    var endCFI = "epubcfi(" + partialEndCfi + ")";
-                    var infoEnd = EPUBcfi.Interpreter.getTextTerminusInfoWithPartialCFI(
-                      endCFI,
-                      $iframe[0].contentDocument,
-                      ["cfi-marker", "mo-cfi-highlight"],
-                      [],
-                      ["MathJax_Message"]
-                    );
-                    //console.log(infoEnd);
-
-                    var cfiTextParent = infoStart.textNode.parentNode;
-
-                    iter.currentPar.cfi = {
-                      smilTextSrcCfi: iter.currentPar.text.srcFragmentId,
-                      partialRangeCfi: partial,
-                      partialStartCfi: partialStartCfi,
-                      partialEndCfi: partialEndCfi,
-
-                      cfiTextParent: cfiTextParent
-
-                      // textNode becomes invalid after highlighting! (dynamic span insertion/removal changes DOM)
-                      // cfiRangeStart: infoStart,
-                      // cfiRangeEnd: infoEnd
-                    };
-
-                    // TODO: not just start textNode, but all of them between start and end...
-                    // ...that being said, CFI text ranges likely to be used only within a single common parent,
-                    // so this is an acceptable implementation shortcut for this CFI experimentation (word-level text/audio synchronisation).
-                    isCfiTextRange = true;
-                    $element = $(cfiTextParent);
-                    var modata = $element.data("mediaOverlayData");
-                    if (!modata) {
-                      modata = { pars: [iter.currentPar] };
-                      $element.data("mediaOverlayData", modata);
-                    } else {
-                      if (modata.par) {
-                        console.error("[WARN] non-CFI MO DATA already exists!");
-                        modata.par = undefined;
-                      }
-
-                      var found = false;
-                      if (modata.pars) {
-                        for (
-                          var iPars = 0;
-                          iPars < modata.pars.length;
-                          iPars++
-                        ) {
-                          var par = modata.pars[iPars];
-
-                          if (par === iter.currentPar) {
-                            found = true;
-                            console.error(
-                              "[WARN] mediaOverlayData CFI PAR already registered!"
-                            );
-                          }
-                        }
-                      } else {
-                        modata.pars = [];
-                      }
-
-                      if (!found) {
-                        modata.pars.push(iter.currentPar);
-                      }
+                    if (!elem)
+                    {
+                        mediaOverlayPlayer.touchInit();
+                        return true;
                     }
-                  } catch (error) {
-                    console.error(error);
-                  }
-                } else {
-                  try {
-                    var cfi = "epubcfi(" + partial + ")";
-                    $element = EPUBcfi.Interpreter.getTargetElementWithPartialCFI(
-                      cfi,
-                      $iframe[0].contentDocument,
-                      ["cfi-marker", "mo-cfi-highlight"],
-                      [],
-                      ["MathJax_Message"]
-                    );
-                  } catch (error) {
-                    console.error(error);
-                  }
+
+//console.debug("MO CLICK: " + elem.id);
+
+                    var data = undefined;
+                    var el = elem;
+
+                    var inLink = false;
+                    if (el.nodeName.toLowerCase() === "a")
+                    {
+                        inLink = true;
+                    }
+
+                    while (!(data = $(el).data("mediaOverlayData")))
+                    {
+                        if (el.nodeName.toLowerCase() === "a")
+                        {
+                            inLink = true;
+                        }
+                        el = el.parentNode;
+                        if (!el)
+                        {
+                            break;
+                        }
+                    }
+                    
+                    if (data && (data.par || data.pars))
+                    {
+                        if (el !== elem)
+                        {
+//console.log("MO CLICK REDIRECT: " + el.id);
+                        }
+
+                        if (!mediaOverlaySettings.mediaOverlaysEnableClick)
+                        {
+console.log("MO CLICK DISABLED");
+                            mediaOverlayPlayer.touchInit();
+                            return true;
+                        }
+
+                        if (inLink)
+                        {
+console.log("MO CLICKED LINK");
+                            mediaOverlayPlayer.touchInit();
+                            return true;
+                        }
+
+                        var par = data.par ? data.par : data.pars[0];
+
+                        if (el && el != elem && el.nodeName.toLowerCase() === "body" && par && !par.getSmil().id)
+                        {
+//console.debug("MO CLICKED BLANK BODY");
+                            mediaOverlayPlayer.touchInit();
+                            return true;
+                        }
+
+                        mediaOverlayPlayer.playUserPar(par);
+                        return true;
+                    }
+                    else
+                    {
+                        var readaloud = $(elem).attr("ibooks:readaloud");
+                        if (!readaloud)
+                        {
+                            readaloud = $(elem).attr("epub:readaloud");
+                        }
+                        if (readaloud)
+                        {
+console.debug("MO readaloud attr: " + readaloud);
+
+                            var isPlaying = mediaOverlayPlayer.isPlaying();
+                            if (readaloud === "start" && !isPlaying ||
+                                readaloud === "stop" && isPlaying ||
+                                readaloud === "startstop")
+                            {
+                                mediaOverlayPlayer.toggleMediaOverlay();
+                                return true;
+                            }
+                        }
+                    }
+
+                    mediaOverlayPlayer.touchInit();
+                    return true;
+                };
+
+                var touchClickMOEventHandler_ = _.debounce(touchClickMOEventHandler, 200);
+                
+                if ('ontouchstart' in document.documentElement)
+                {
+                  $body[0].addEventListener("touchstart", touchClickMOEventHandler_, false);
                 }
-              } else {
-                console.error(
-                  "SMIL text@src CFI fragment identifier scheme not supported: " +
-                    iter.currentPar.text.srcFragmentId
-                );
-              }
-            } else {
-              if (selectBody) {
-                $element = $body; //$("body", contentDocElement);
-              } else {
-                $element = $(
-                  $iframe[0].contentDocument.getElementById(selectId)
-                );
-                //$element = $("#" + Helpers.escapeJQuerySelector(iter.currentPar.text.srcFragmentId), contentDocElement);
-              }
+                $body[0].addEventListener("mousedown", touchClickMOEventHandler_, false);
+
+                //var clickEvent = 'ontouchstart' in document.documentElement ? 'touchstart' : 'click';
+                //$body.bind(clickEvent, touchClickMOEventHandler);
             }
+        }
 
-            if ($element && $element.length > 0) {
-              if (!isCfiTextRange) {
-                if (
-                  iter.currentPar.element &&
-                  iter.currentPar.element !== $element[0]
-                ) {
-                  console.error(
-                    "DIFFERENT ELEMENTS??! " +
-                      iter.currentPar.text.srcFragmentId +
-                      " /// " +
-                      iter.currentPar.element.id
-                  );
+        var smil = mediaOverlay.getSmilBySpineItem(spineItem);
+        if (!smil)
+        {
+            console.error("NO SMIL?? " + spineItem.idref + " /// " + spineItem.media_overlay_id);
+            return;
+        }
+
+        var traverseSmilSeqs = function(root)
+        {
+            if (!root) return;
+            
+            if (root.nodeType && root.nodeType === "seq")
+            {
+               // if (root.element)
+               // {
+               //     console.error("WARN: seq.element already set: " + root.textref);
+               // }
+                   
+               if (root.textref)
+               {
+                   var parts = root.textref.split('#');
+                   var file = parts[0];
+                   var fragmentId = (parts.length === 2) ? parts[1] : "";
+                   // 
+                   // console.debug(root.textref);
+                   // console.debug(fragmentId);
+                   // console.log("---- SHOULD BE EQUAL:");
+                   // console.debug(file);
+                   // console.debug(par.text.srcFile);
+                   // 
+                   // if (file !== par.text.srcFile)
+                   // {
+                   //     console.error("adjustParToSeqSyncGranularity textref.file !== par.text.srcFile ???");
+                   //     return par;
+                   // }
+                   // 
+                   // if (!fragmentId)
+                   // {
+                   //     console.error("adjustParToSeqSyncGranularity !fragmentId ???");
+                   //     return par;
+                   // }
+
+                   if (file && fragmentId)
+                   {
+                       var textRelativeRef = Helpers.ResolveContentRef(file, smil.href);
+                       var same = textRelativeRef === spineItem.href;
+                       if (same)
+                       {                       
+                           root.element = $iframe[0].contentDocument.getElementById(fragmentId);
+                   
+                           if (!root.element)
+                           {
+                               console.error("seq.textref !element? " + root.textref);
+                           }
+
+                           // var selector = "#" + Helpers.escapeJQuerySelector(fragmentId);
+                           // var $element = $(selector, element.ownerDocument.documentElement);
+                           // if ($element)
+                           // {
+                           //     seq.element = $element[0];
+                           // }
+                       }
+                   }
+               }
+            }
+            
+            if (root.children && root.children.length)
+            {
+                for (var i = 0; i < root.children.length; i++)
+                {
+                    var child = root.children[i];
+                    traverseSmilSeqs(child);
                 }
+            }
+        };
+        traverseSmilSeqs(smil);
 
-                var name = $element[0].nodeName
-                  ? $element[0].nodeName.toLowerCase()
-                  : undefined;
-                if (name === "audio" || name === "video") {
-                  $element.attr("preload", "auto");
-                }
+//console.debug("[[MO ATTACH]] " + spineItem.idref + " /// " + spineItem.media_overlay_id + " === " + smil.id);
 
-                iter.currentPar.element = $element[0];
+        var iter = new SmilIterator(smil);
+        
+        var fakeOpfRoot = "/99!";
+        var epubCfiPrefix = "epubcfi";
+        
+        while (iter.currentPar) {
+            iter.currentPar.element = undefined;
+            iter.currentPar.cfi = undefined;
 
-                var modata = $element.data("mediaOverlayData");
-                if (modata) {
-                  console.error("[WARN] MO DATA already exists.");
+            if (true) { //iter.currentPar.text.srcFragmentId (includes empty frag ID)
 
-                  if (modata.par && modata.par !== iter.currentPar) {
-                    console.error("DIFFERENT PARS??!");
-                  }
-                }
+                var textRelativeRef = Helpers.ResolveContentRef(iter.currentPar.text.srcFile, iter.smil.href);
 
-                $element.data("mediaOverlayData", { par: iter.currentPar });
+                var same = textRelativeRef === spineItem.href;
+                if (same) {
+                    var selectBody = !iter.currentPar.text.srcFragmentId || iter.currentPar.text.srcFragmentId.length == 0;
+                    var selectId = iter.currentPar.text.srcFragmentId.indexOf(epubCfiPrefix) == 0 ? undefined : iter.currentPar.text.srcFragmentId;
 
-                /*
+                    var $element = undefined;
+                    var isCfiTextRange = false;
+                    if (!selectBody && !selectId)
+                    {
+                        if (iter.currentPar.text.srcFragmentId.indexOf(epubCfiPrefix) === 0)
+                        {
+                            var partial = iter.currentPar.text.srcFragmentId.substr(epubCfiPrefix.length + 1, iter.currentPar.text.srcFragmentId.length - epubCfiPrefix.length - 2);
+                            
+                            if (partial.indexOf(fakeOpfRoot) === 0)
+                            {
+                                partial = partial.substr(fakeOpfRoot.length, partial.length - fakeOpfRoot.length);
+                            }
+//console.log(partial);
+                            var parts = partial.split(",");
+                            if (parts && parts.length === 3)
+                            {
+                                try
+                                {
+                                    var partialStartCfi = parts[0] + parts[1];
+                                    var startCFI = "epubcfi(" + partialStartCfi + ")";
+                                    var infoStart = EPUBcfi.getTextTerminusInfoWithPartialCFI(startCFI, $iframe[0].contentDocument,
+                ["cfi-marker", "mo-cfi-highlight"],
+                [],
+                ["MathJax_Message"]);
+//console.log(infoStart);
+
+                                    var partialEndCfi = parts[0] + parts[2];
+                                    var endCFI = "epubcfi(" + partialEndCfi + ")";
+                                    var infoEnd = EPUBcfi.getTextTerminusInfoWithPartialCFI(endCFI, $iframe[0].contentDocument,
+                ["cfi-marker", "mo-cfi-highlight"],
+                [],
+                ["MathJax_Message"]);
+//console.log(infoEnd);
+
+                                    var cfiTextParent = infoStart.textNode.parentNode;
+
+                                    iter.currentPar.cfi = {
+                                        smilTextSrcCfi: iter.currentPar.text.srcFragmentId,
+                                        partialRangeCfi: partial,
+                                        partialStartCfi: partialStartCfi,
+                                        partialEndCfi: partialEndCfi,
+                                        
+                                        cfiTextParent: cfiTextParent
+                                        
+                                        // textNode becomes invalid after highlighting! (dynamic span insertion/removal changes DOM)
+                                        // cfiRangeStart: infoStart,
+                                        // cfiRangeEnd: infoEnd
+                                    };
+                                    
+                                    // TODO: not just start textNode, but all of them between start and end...
+                                    // ...that being said, CFI text ranges likely to be used only within a single common parent,
+                                    // so this is an acceptable implementation shortcut for this CFI experimentation (word-level text/audio synchronisation).
+                                    isCfiTextRange = true;
+                                    $element = $(cfiTextParent);
+                                    var modata = $element.data("mediaOverlayData");
+                                    if (!modata)
+                                    {
+                                        modata = {pars: [iter.currentPar]};
+                                        $element.data("mediaOverlayData", modata);
+                                    }
+                                    else
+                                    {
+                                        if (modata.par)
+                                        {
+                                            console.error("[WARN] non-CFI MO DATA already exists!");
+                                            modata.par = undefined;
+                                        }
+
+                                        var found = false;
+                                        if (modata.pars)
+                                        {
+                                            for (var iPars = 0; iPars < modata.pars.length; iPars++)
+                                            {
+                                                var par = modata.pars[iPars];
+
+                                                if (par === iter.currentPar)
+                                                {
+                                                    found = true;
+                                                    console.error("[WARN] mediaOverlayData CFI PAR already registered!");
+                                                }
+                                            }
+                                        }
+                                        else
+                                        {
+                                            modata.pars = [];
+                                        }
+
+                                        if (!found)
+                                        {
+                                            modata.pars.push(iter.currentPar);
+                                        }
+                                    }
+
+                                }
+                                catch (error)
+                                {
+                                    console.error(error);
+                                }
+                            }
+                            else
+                            {
+                                try
+                                {
+                                    var cfi = "epubcfi(" + partial + ")";
+                                    $element = EPUBcfi.getTargetElementWithPartialCFI(cfi, $iframe[0].contentDocument,
+                ["cfi-marker", "mo-cfi-highlight"],
+                [],
+                ["MathJax_Message"]);
+                                }
+                                catch (error)
+                                {
+                                    console.error(error);
+                                }
+                            }
+                        }
+                        else 
+                        {
+                            console.error("SMIL text@src CFI fragment identifier scheme not supported: " + iter.currentPar.text.srcFragmentId);
+                        }
+                    }
+                    else
+                    {
+                        if (selectBody)
+                        {
+                            $element = $body; //$("body", contentDocElement);
+                        }
+                        else
+                        {
+                            $element = $($iframe[0].contentDocument.getElementById(selectId));
+                            //$element = $("#" + Helpers.escapeJQuerySelector(iter.currentPar.text.srcFragmentId), contentDocElement);
+                        }
+                    }
+
+                    if ($element && $element.length > 0) {
+
+                        if (!isCfiTextRange)
+                        {
+                            if (iter.currentPar.element && iter.currentPar.element !== $element[0]) {
+                                console.error("DIFFERENT ELEMENTS??! " + iter.currentPar.text.srcFragmentId + " /// " + iter.currentPar.element.id);
+                            }
+
+                            var name = $element[0].nodeName ? $element[0].nodeName.toLowerCase() : undefined;
+                            if (name === "audio" || name === "video") {
+                                $element.attr("preload", "auto");
+                            }
+
+                            iter.currentPar.element = $element[0];
+
+                            var modata = $element.data("mediaOverlayData");
+                            if (modata) {
+                                console.error("[WARN] MO DATA already exists.");
+
+                                if (modata.par && modata.par !== iter.currentPar) {
+                                    console.error("DIFFERENT PARS??!");
+                                }
+                            }
+
+                            $element.data("mediaOverlayData", {par: iter.currentPar});
+
+                            /*
                              $element.click(function() {
                              var elem = $(this)[0];
                              console.debug("MO CLICK (ELEM): " + elem.id);
@@ -42682,28 +42279,23 @@ define('readium_shared_js/views/media_overlay_data_injector',[
                              mediaOverlayPlayer.playUserPar(par);
                              });
                              */
-              }
-            } else {
-              console.error(
-                "!! CANNOT FIND ELEMENT: " +
-                  iter.currentPar.text.srcFragmentId +
-                  " == " +
-                  iter.currentPar.text.srcFile +
-                  " /// " +
-                  spineItem.href
-              );
+                        }
+                    }
+                    else {
+                        console.error("!! CANNOT FIND ELEMENT: " + iter.currentPar.text.srcFragmentId + " == " + iter.currentPar.text.srcFile + " /// " + spineItem.href);
+                    }
+                }
+                else {
+//console.debug("[INFO] " + spineItem.href + " != " + textRelativeRef + " # " + iter.currentPar.text.srcFragmentId);
+                }
             }
-          } else {
-            //console.debug("[INFO] " + spineItem.href + " != " + textRelativeRef + " # " + iter.currentPar.text.srcFragmentId);
-          }
+
+            iter.next();
         }
+    }
+};
 
-        iter.next();
-      }
-    };
-  };
-
-  return MediaOverlayDataInjector;
+return MediaOverlayDataInjector;
 });
 
 //  LauncherOSX
@@ -45393,72 +44985,48 @@ return ScrollView;
 //  Created by Boris Schneiderman.
 // Modified by Daniel Weck
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
-//
-//  Redistribution and use in source and binary forms, with or without modification,
+//  
+//  Redistribution and use in source and binary forms, with or without modification, 
 //  are permitted provided that the following conditions are met:
-//  1. Redistributions of source code must retain the above copyright notice, this
+//  1. Redistributions of source code must retain the above copyright notice, this 
 //  list of conditions and the following disclaimer.
-//  2. Redistributions in binary form must reproduce the above copyright notice,
-//  this list of conditions and the following disclaimer in the documentation and/or
+//  2. Redistributions in binary form must reproduce the above copyright notice, 
+//  this list of conditions and the following disclaimer in the documentation and/or 
 //  other materials provided with the distribution.
-//  3. Neither the name of the organization nor the names of its contributors may be
-//  used to endorse or promote products derived from this software without specific
+//  3. Neither the name of the organization nor the names of its contributors may be 
+//  used to endorse or promote products derived from this software without specific 
 //  prior written permission.
-//
-//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+//  
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define('readium_shared_js/views/media_overlay_player',[
-  "../globals",
-  "jquery",
-  "../helpers",
-  "./audio_player",
-  "./media_overlay_element_highlighter",
-  "../models/smil_iterator",
-  "readium_cfi_js",
-  "./scroll_view"
-], function(
-  Globals,
-  $,
-  Helpers,
-  AudioPlayer,
-  MediaOverlayElementHighlighter,
-  SmilIterator,
-  EPUBcfi,
-  ScrollView
-) {
-  /**
-   *
-   * @param reader
-   * @param onStatusChanged
-   * @constructor
-   */
-  var MediaOverlayPlayer = function(reader, onStatusChanged) {
+define('readium_shared_js/views/media_overlay_player',["../globals", "jquery", "../helpers", "./audio_player", "./media_overlay_element_highlighter", "../models/smil_iterator", 'readium_cfi_js', './scroll_view'],
+    function(Globals, $, Helpers, AudioPlayer, MediaOverlayElementHighlighter, SmilIterator, EPUBcfi, ScrollView) {
+/**
+ *
+ * @param reader
+ * @param onStatusChanged
+ * @constructor
+ */
+var MediaOverlayPlayer = function(reader, onStatusChanged) {
+
+
     var _smilIterator = undefined;
 
-    var _audioPlayer = new AudioPlayer(
-      onStatusChanged,
-      onAudioPositionChanged,
-      onAudioEnded,
-      onPlay,
-      onPause
-    );
+    var _audioPlayer = new AudioPlayer(onStatusChanged, onAudioPositionChanged, onAudioEnded, onPlay, onPause);
 
     var _ttsIsPlaying = false;
     var _currentTTS = undefined;
-    var _enableHTMLSpeech =
-      true &&
-      typeof window.speechSynthesis !== "undefined" &&
-      speechSynthesis != null; // set to false to force "native" platform TTS engine, rather than HTML Speech API
-
+    var _enableHTMLSpeech = true && typeof window.speechSynthesis !== "undefined" && speechSynthesis != null; // set to false to force "native" platform TTS engine, rather than HTML Speech API
+    
     var _SpeechSynthesisUtterance = undefined;
     //var _skipTTSEndEvent = false;
     var TOKENIZE_TTS = false;
@@ -45466,14 +45034,11 @@ define('readium_shared_js/views/media_overlay_player',[
     var _embeddedIsPlaying = false;
     var _currentEmbedded = undefined;
 
-    this.isPlaying = function() {
-      return (
-        _audioPlayer.isPlaying() ||
-        _ttsIsPlaying ||
-        _embeddedIsPlaying ||
-        _blankPagePlayer
-      );
-    };
+
+    this.isPlaying = function()
+    {
+        return _audioPlayer.isPlaying() || _ttsIsPlaying || _embeddedIsPlaying || _blankPagePlayer;
+    }
 
     //var _currentPagination = undefined;
     var _package = reader.package();
@@ -45481,44 +45046,40 @@ define('readium_shared_js/views/media_overlay_player',[
     var self = this;
     var _elementHighlighter = new MediaOverlayElementHighlighter(reader);
 
-    reader.on(Globals.Events.READER_VIEW_DESTROYED, function() {
-      Globals.logEvent(
-        "READER_VIEW_DESTROYED",
-        "ON",
-        "media_overlay_player.js"
-      );
-
-      self.reset();
+    reader.on(Globals.Events.READER_VIEW_DESTROYED, function(){
+        Globals.logEvent("READER_VIEW_DESTROYED", "ON", "media_overlay_player.js");
+        
+        self.reset();
     });
 
-    this.applyStyles = function() {
-      _elementHighlighter.reDo();
+
+    this.applyStyles = function()
+    {
+        _elementHighlighter.reDo();
     };
 
-    //
-    // should use this.onSettingsApplied() instead!
-    //    this.setRate = function(rate) {
-    //        _audioPlayer.setRate(rate);
-    //    };
-    //    this.setVolume = function(volume) {
-    //        _audioPlayer.setVolume(volume);
-    //    };
+//
+// should use this.onSettingsApplied() instead!
+//    this.setRate = function(rate) {
+//        _audioPlayer.setRate(rate);
+//    };
+//    this.setVolume = function(volume) {
+//        _audioPlayer.setVolume(volume);
+//    };
+
 
     this.onSettingsApplied = function() {
-      //console.debug(_settings);
-      _audioPlayer.setRate(_settings.mediaOverlaysRate);
-      _audioPlayer.setVolume(_settings.mediaOverlaysVolume / 100.0);
+//console.debug(_settings);
+        _audioPlayer.setRate(_settings.mediaOverlaysRate);
+        _audioPlayer.setVolume(_settings.mediaOverlaysVolume / 100.0);
     };
     self.onSettingsApplied();
-
-    reader.on(
-      Globals.Events.SETTINGS_APPLIED,
-      function() {
+    
+    reader.on(Globals.Events.SETTINGS_APPLIED, function() {
+        
         Globals.logEvent("SETTINGS_APPLIED", "ON", "media_overlay_player.js");
         this.onSettingsApplied();
-      },
-      this
-    );
+    }, this);
 
     /*
     var lastElement = undefined;
@@ -45527,46 +45088,48 @@ define('readium_shared_js/views/media_overlay_player',[
 
     var _wasPlayingAtDocLoadStart = false;
     this.onDocLoadStart = function() {
-      // 1) Globals.Events.CONTENT_DOCUMENT_LOAD_START
-      // (maybe 2-page fixed-layout or reflowable spread == 2 documents == 2x events)
-      // MOPLayer.onDocLoad()
+        // 1) Globals.Events.CONTENT_DOCUMENT_LOAD_START
+        // (maybe 2-page fixed-layout or reflowable spread == 2 documents == 2x events)
+        // MOPLayer.onDocLoad()
+        
+        // 2) Globals.Events.CONTENT_DOCUMENT_LOADED
+        // (maybe 2-page fixed-layout or reflowable spread == 2 documents == 2x events)
+        //_mediaOverlayDataInjector.attachMediaOverlayData($iframe, spineItem, _viewerSettings);
+        
+        // 3) Globals.Events.PAGINATION_CHANGED (layout finished, notified before rest of app, just once)
+        // MOPLayer.onPageChanged()
 
-      // 2) Globals.Events.CONTENT_DOCUMENT_LOADED
-      // (maybe 2-page fixed-layout or reflowable spread == 2 documents == 2x events)
-      //_mediaOverlayDataInjector.attachMediaOverlayData($iframe, spineItem, _viewerSettings);
-
-      // 3) Globals.Events.PAGINATION_CHANGED (layout finished, notified before rest of app, just once)
-      // MOPLayer.onPageChanged()
-
-      var wasPlaying = self.isPlaying();
-      if (wasPlaying) {
-        _wasPlayingAtDocLoadStart = true;
-        self.pause();
-      }
+        var wasPlaying = self.isPlaying();
+        if (wasPlaying)
+        {
+            _wasPlayingAtDocLoadStart = true;
+            self.pause();
+        }
     };
-
+    
     var _lastPaginationData = undefined;
-
+    
     this.onPageChanged = function(paginationData) {
-      _lastPaginationData = paginationData;
+        
+        _lastPaginationData = paginationData;
+        
+        var wasPausedBecauseNoAutoNextSmil = _wasPausedBecauseNoAutoNextSmil;
+        _wasPausedBecauseNoAutoNextSmil = false;
+        
+        var wasPlayingAtDocLoadStart = _wasPlayingAtDocLoadStart;
+        _wasPlayingAtDocLoadStart = false;
 
-      var wasPausedBecauseNoAutoNextSmil = _wasPausedBecauseNoAutoNextSmil;
-      _wasPausedBecauseNoAutoNextSmil = false;
+        if(!paginationData) {
+            self.reset();
+            return;
+        }
 
-      var wasPlayingAtDocLoadStart = _wasPlayingAtDocLoadStart;
-      _wasPlayingAtDocLoadStart = false;
+//        if (paginationData.paginationInfo)
+//        {
+//            _currentPagination = paginationData.paginationInfo;
+//        }
 
-      if (!paginationData) {
-        self.reset();
-        return;
-      }
-
-      //        if (paginationData.paginationInfo)
-      //        {
-      //            _currentPagination = paginationData.paginationInfo;
-      //        }
-
-      /*
+        /*
         if (lastElement)
         {
             $(lastElement).css("background-color", lastElementColor);
@@ -45574,1404 +45137,1432 @@ define('readium_shared_js/views/media_overlay_player',[
         }
         */
 
-      var element = undefined;
-      var isCfiTextRange = false;
+        var element = undefined;
+        var isCfiTextRange = false;
+        
+        var fakeOpfRoot = "/99!";
+        var epubCfiPrefix = "epubcfi";
+        
+        if (paginationData.elementId || paginationData.initiator == self)
+        {
+            var spineItems = reader.getLoadedSpineItems();
 
-      var fakeOpfRoot = "/99!";
-      var epubCfiPrefix = "epubcfi";
+            var rtl = reader.spine().isRightToLeft();
 
-      if (paginationData.elementId || paginationData.initiator == self) {
-        var spineItems = reader.getLoadedSpineItems();
-
-        var rtl = reader.spine().isRightToLeft();
-
-        for (
-          var i = rtl ? spineItems.length - 1 : 0;
-          (rtl && i >= 0) || (!rtl && i < spineItems.length);
-          i += rtl ? -1 : 1
-        ) {
-          var spineItem = spineItems[i];
-          if (
-            paginationData.spineItem &&
-            paginationData.spineItem != spineItem
-          ) {
-            continue;
-          }
-
-          if (
-            paginationData.elementId &&
-            paginationData.elementId.indexOf(epubCfiPrefix) === 0
-          ) {
-            _elementHighlighter.reset(); // ensure clean DOM (no CFI span markers)
-
-            var partial = paginationData.elementId.substr(
-              epubCfiPrefix.length + 1,
-              paginationData.elementId.length - epubCfiPrefix.length - 2
-            );
-
-            if (partial.indexOf(fakeOpfRoot) === 0) {
-              partial = partial.substr(
-                fakeOpfRoot.length,
-                partial.length - fakeOpfRoot.length
-              );
-            }
-            //console.log(partial);
-            var parts = partial.split(",");
-            if (parts && parts.length === 3) {
-              try {
-                var cfi = parts[0] + parts[1];
-                var $element = reader.getElementByCfi(
-                  spineItem.idref,
-                  cfi,
-                  ["cfi-marker", "mo-cfi-highlight"],
-                  [],
-                  ["MathJax_Message"]
-                );
-
-                element =
-                  $element && $element.length > 0 ? $element[0] : undefined;
-                if (element) {
-                  if (element.nodeType === Node.TEXT_NODE) {
-                    element = element.parentNode;
-                  }
-                  break;
+            for(var i = (rtl ? (spineItems.length - 1) : 0); rtl && i >=0 || !rtl && i < spineItems.length; i += (rtl ? -1: 1))
+            {
+                var spineItem = spineItems[i];
+                if (paginationData.spineItem && paginationData.spineItem != spineItem)
+                {
+                    continue;
                 }
-              } catch (error) {
-                console.error(error);
-              }
-            } else {
-              try {
-                //var cfi = "epubcfi(" + partial + ")";
-                //var $element = EPUBcfi.getTargetElementWithPartialCFI(cfi, DOC);
-                var $element = reader.getElementByCfi(
-                  spineItem.idref,
-                  partial,
-                  ["cfi-marker", "mo-cfi-highlight"],
-                  [],
-                  ["MathJax_Message"]
-                );
+                
+                if (paginationData.elementId && paginationData.elementId.indexOf(epubCfiPrefix) === 0)
+                {
+                    _elementHighlighter.reset(); // ensure clean DOM (no CFI span markers)
+                    
+                    var partial = paginationData.elementId.substr(epubCfiPrefix.length + 1, paginationData.elementId.length - epubCfiPrefix.length - 2);
+                    
+                    if (partial.indexOf(fakeOpfRoot) === 0)
+                    {
+                        partial = partial.substr(fakeOpfRoot.length, partial.length - fakeOpfRoot.length);
+                    }
+//console.log(partial);
+                    var parts = partial.split(",");
+                    if (parts && parts.length === 3)
+                    {
+                        try
+                        {
+                            var cfi = parts[0] + parts[1];
+                            var $element = reader.getElementByCfi(spineItem.idref, cfi,
+                ["cfi-marker", "mo-cfi-highlight"],
+                [],
+                ["MathJax_Message"]);
 
-                element =
-                  $element && $element.length > 0 ? $element[0] : undefined;
-                if (element) {
-                  if (element.nodeType === Node.TEXT_NODE) {
-                    element = element.parentNode;
-                  }
-                  break;
+                            element = ($element && $element.length > 0) ? $element[0] : undefined;
+                            if (element)
+                            {
+                                if (element.nodeType === Node.TEXT_NODE)
+                                {
+                                    element = element.parentNode;
+                                }
+                                break;
+                            }
+                        }
+                        catch (error)
+                        {
+                            console.error(error);
+                        }
+                    }
+                    else
+                    {
+                        try
+                        {
+                            //var cfi = "epubcfi(" + partial + ")";
+                            //var $element = EPUBcfi.getTargetElementWithPartialCFI(cfi, DOC);
+                            var $element = reader.getElementByCfi(spineItem.idref, partial,
+                ["cfi-marker", "mo-cfi-highlight"],
+                [],
+                ["MathJax_Message"]);
+                                
+                            element = ($element && $element.length > 0) ? $element[0] : undefined;
+                            if (element)
+                            {
+                                if (element.nodeType === Node.TEXT_NODE)
+                                {
+                                    element = element.parentNode;
+                                }
+                                break;
+                            }
+                        }
+                        catch (error)
+                        {
+                            console.error(error);
+                        }
+                    }
                 }
-              } catch (error) {
-                console.error(error);
-              }
-            }
-          }
 
-          if (!element) {
-            if (paginationData.initiator == self && !paginationData.elementId) {
-              var $element = reader.getElement(spineItem.idref, "body");
-              element =
-                $element && $element.length > 0 ? $element[0] : undefined;
-            } else {
-              var $element = reader.getElementById(
-                spineItem.idref,
-                paginationData.elementId
-              );
-              element =
-                $element && $element.length > 0 ? $element[0] : undefined;
-              //("#" + Globals.Helpers.escapeJQuerySelector(paginationData.elementId))
-            }
-
-            if (element) {
-              /*
+                if (!element)
+                {
+                    if (paginationData.initiator == self && !paginationData.elementId)
+                    {
+                        var $element = reader.getElement(spineItem.idref, "body");
+                        element = ($element && $element.length > 0) ? $element[0] : undefined;
+                    }
+                    else
+                    {
+                        var $element = reader.getElementById(spineItem.idref, paginationData.elementId);
+                        element = ($element && $element.length > 0) ? $element[0] : undefined;
+                        //("#" + Globals.Helpers.escapeJQuerySelector(paginationData.elementId))
+                    }
+                    
+                    if (element)
+                    {
+                        /*
                         console.error("GREEN: " + paginationData.elementId);
                         lastElement = element;
                         lastElementColor = $(element).css("background-color");
                         $(element).css("background-color", "green");
                          */
-              break;
+                        break;
+                    }
+                }
             }
-          }
-        }
 
-        if (!element) {
-          console.error(
-            "paginationData.elementId BUT !element: " + paginationData.elementId
-          );
-        }
-      }
-
-      var wasPlaying = self.isPlaying() || wasPlayingAtDocLoadStart;
-
-      if (!_smilIterator || !_smilIterator.currentPar) {
-        if (paginationData.initiator !== self) {
-          clipBeginOffset = 0.0;
-          self.reset();
-
-          if (paginationData.elementId && element) {
-            if (wasPlaying || wasPausedBecauseNoAutoNextSmil) {
-              paginationData.elementIdResolved = element;
-              self.toggleMediaOverlayRefresh(paginationData);
+            if (!element)
+            {
+                console.error("paginationData.elementId BUT !element: " + paginationData.elementId);
             }
-          } else if (wasPlaying || wasPausedBecauseNoAutoNextSmil) {
-            self.toggleMediaOverlay();
-          }
-          return;
         }
 
-        //paginationData.initiator === self
-        //
-        //            if (!paginationData.elementId)
-        //            {
-        //                console.error("!paginationData.elementId");
-        //                clipBeginOffset = 0.0;
-        //                return;
-        //            }
+        var wasPlaying = self.isPlaying() || wasPlayingAtDocLoadStart;
 
-        if (!element) {
-          console.error("!element: " + paginationData.elementId);
-          clipBeginOffset = 0.0;
-          return;
-        }
+        if(!_smilIterator || !_smilIterator.currentPar) {
+            if(paginationData.initiator !== self) {
+                clipBeginOffset = 0.0;
+                self.reset();
 
-        var moData = $(element).data("mediaOverlayData");
-        if (!moData) {
-          console.error("!moData: " + paginationData.elementId);
-          clipBeginOffset = 0.0;
-          return;
-        }
-
-        var parToPlay = moData.par ? moData.par : moData.pars[0];
-
-        if (moData.pars) {
-          for (var iPar = 0; iPar < moData.pars.length; iPar++) {
-            var p = moData.pars[iPar];
-
-            if (paginationData.elementId === p.cfi.smilTextSrcCfi) {
-              parToPlay = p;
-              break;
+                if (paginationData.elementId && element)
+                {
+                    if (wasPlaying || wasPausedBecauseNoAutoNextSmil)
+                    {
+                        paginationData.elementIdResolved = element;
+                        self.toggleMediaOverlayRefresh(paginationData);
+                    }
+                }
+                else if (wasPlaying || wasPausedBecauseNoAutoNextSmil)
+                {
+                    self.toggleMediaOverlay();
+                }
+                return;
             }
-          }
+
+            //paginationData.initiator === self
+//
+//            if (!paginationData.elementId)
+//            {
+//                console.error("!paginationData.elementId");
+//                clipBeginOffset = 0.0;
+//                return;
+//            }
+
+            if(!element)
+            {
+                console.error("!element: " + paginationData.elementId);
+                clipBeginOffset = 0.0;
+                return;
+            }
+
+            var moData = $(element).data("mediaOverlayData");
+            if(!moData) {
+                console.error("!moData: " + paginationData.elementId);
+                clipBeginOffset = 0.0;
+                return;
+            }
+
+            var parToPlay = moData.par ? moData.par : moData.pars[0];
+
+            if (moData.pars)
+            {
+                for (var iPar = 0; iPar < moData.pars.length; iPar++)
+                {
+                    var p = moData.pars[iPar];
+                    
+                    if (paginationData.elementId === p.cfi.smilTextSrcCfi)
+                    {
+                        parToPlay = p;
+                        break;
+                    }
+                }
+            }
+            
+            playPar(parToPlay);
+            return;
         }
 
-        playPar(parToPlay);
-        return;
-      }
-
-      var noReverseData =
-        !_smilIterator.currentPar.element && !_smilIterator.currentPar.cfi;
-      if (noReverseData) {
-        console.error("!! _smilIterator.currentPar.element ??");
-      }
-
-      //console.debug("+++> paginationData.elementId: " + paginationData.elementId + " /// " + _smilIterator.currentPar.text.srcFile + " # " + _smilIterator.currentPar.text.srcFragmentId); //PageOpenRequest.elementId
-
-      if (paginationData.initiator == self) {
-        var notSameTargetID =
-          paginationData.elementId &&
-          paginationData.elementId !==
-            _smilIterator.currentPar.text.srcFragmentId;
-
-        if (notSameTargetID) {
-          console.error(
-            "!! paginationData.elementId !== _smilIterator.currentPar.text.srcFragmentId"
-          );
+        var noReverseData = !_smilIterator.currentPar.element && !_smilIterator.currentPar.cfi;
+        if(noReverseData) {
+            console.error("!! _smilIterator.currentPar.element ??");
         }
 
-        if (notSameTargetID || noReverseData) {
-          clipBeginOffset = 0.0;
-          return;
-        }
+//console.debug("+++> paginationData.elementId: " + paginationData.elementId + " /// " + _smilIterator.currentPar.text.srcFile + " # " + _smilIterator.currentPar.text.srcFragmentId); //PageOpenRequest.elementId
 
-        if (wasPlaying) {
-          highlightCurrentElement();
-        } else {
-          playCurrentPar();
-        }
-      } else {
-        if (!wasPlaying && !wasPausedBecauseNoAutoNextSmil) {
-          self.reset();
-          return;
-        }
 
-        if (!paginationData.elementId) {
-          //self.reset();
-        }
+        if(paginationData.initiator == self)
+        {
+            var notSameTargetID = paginationData.elementId && paginationData.elementId !== _smilIterator.currentPar.text.srcFragmentId;
 
-        if (paginationData.elementId && !element) {
-          //self.reset();
-          return;
-        }
+            if(notSameTargetID) {
+                console.error("!! paginationData.elementId !== _smilIterator.currentPar.text.srcFragmentId");
+            }
 
-        if (paginationData.elementId) {
-          paginationData.elementIdResolved = element;
-        }
+            if(notSameTargetID || noReverseData) {
+                clipBeginOffset = 0.0;
+                return;
+            }
 
-        self.toggleMediaOverlayRefresh(paginationData);
-      }
+            if(wasPlaying)
+            {
+                highlightCurrentElement();
+            }
+            else
+            {
+                playCurrentPar();
+            }
+        }
+        else
+        {
+            if(!wasPlaying && !wasPausedBecauseNoAutoNextSmil)
+            {
+                self.reset();
+                return;
+            }
+
+            if(!paginationData.elementId)
+            {
+                //self.reset();
+            }
+
+            if(paginationData.elementId && !element)
+            {
+                //self.reset();
+                return;
+            }
+
+            if(paginationData.elementId)
+            {
+                paginationData.elementIdResolved = element;
+            }
+            
+            self.toggleMediaOverlayRefresh(paginationData);
+        }
     };
 
     function playPar(par) {
-      var parSmil = par.getSmil();
-      if (!_smilIterator || _smilIterator.smil != parSmil) {
-        _smilIterator = new SmilIterator(parSmil);
-      } else {
-        _smilIterator.reset();
-      }
 
-      _smilIterator.goToPar(par);
+        var parSmil = par.getSmil();
+        if(!_smilIterator || _smilIterator.smil != parSmil)
+        {
+            _smilIterator = new SmilIterator(parSmil);
+        }
+        else {
+            _smilIterator.reset();
+        }
 
-      if (!_smilIterator.currentPar) {
-        console.error("playPar !_smilIterator.currentPar");
-        return;
-      }
+        _smilIterator.goToPar(par);
 
-      playCurrentPar();
+        if(!_smilIterator.currentPar) {
+            console.error("playPar !_smilIterator.currentPar");
+            return;
+        }
+
+        playCurrentPar();
     }
 
     var clipBeginOffset = 0.0;
 
     var _blankPagePlayer = undefined;
 
-    function initBlankPagePlayer() {
-      self.resetBlankPage();
-
-      _blankPagePlayer = setTimeout(function() {
-        if (!_blankPagePlayer) {
-          return;
-        }
-
+    function initBlankPagePlayer()
+    {
         self.resetBlankPage();
 
-        if (!_smilIterator || !_smilIterator.currentPar) {
-          self.reset();
-          return;
-        }
+        _blankPagePlayer = setTimeout(function() {
 
-        audioCurrentTime = 0.0;
-        //console.log("BLANK END.");
-        //nextSmil(true);
-        onAudioPositionChanged(_smilIterator.currentPar.audio.clipEnd + 0.1, 2);
-      }, 2000);
+            if (!_blankPagePlayer)
+            {
+                return;
+            }
 
-      onStatusChanged({ isPlaying: true });
+            self.resetBlankPage();
+
+            if (!_smilIterator || !_smilIterator.currentPar)
+            {
+                self.reset();
+                return;
+            }
+
+            audioCurrentTime = 0.0;
+//console.log("BLANK END.");
+            //nextSmil(true);
+            onAudioPositionChanged(_smilIterator.currentPar.audio.clipEnd + 0.1, 2);
+
+        }, 2000);
+
+        onStatusChanged({isPlaying: true});
     }
 
     function playCurrentPar() {
-      _wasPlayingScrolling = false;
+        _wasPlayingScrolling = false;
+        
+        if (!_smilIterator || !_smilIterator.currentPar)
+        {
+            console.error("playCurrentPar !_smilIterator || !_smilIterator.currentPar ???");
+            return;
+        }
 
-      if (!_smilIterator || !_smilIterator.currentPar) {
-        console.error(
-          "playCurrentPar !_smilIterator || !_smilIterator.currentPar ???"
-        );
-        return;
-      }
+        if (!_smilIterator.smil.id)
+        {
+            _audioPlayer.reset();
 
-      if (!_smilIterator.smil.id) {
-        _audioPlayer.reset();
-
-        self.resetTTS();
-        self.resetEmbedded();
-
-        setTimeout(function() {
-          initBlankPagePlayer();
-        }, 100);
-
-        return;
-      } else if (!_smilIterator.currentPar.audio.src) {
-        clipBeginOffset = 0.0;
-
-        //            if (_currentTTS)
-        //            {
-        //                _skipTTSEnded = true;
-        //            }
-
-        _audioPlayer.reset();
-
-        var element = _smilIterator.currentPar.element;
-        if (element) {
-          audioCurrentTime = 0.0;
-
-          var name = element.nodeName
-            ? element.nodeName.toLowerCase()
-            : undefined;
-
-          if (name === "audio" || name === "video") {
             self.resetTTS();
-            self.resetBlankPage();
+            self.resetEmbedded();
 
-            if (_currentEmbedded) {
-              self.resetEmbedded();
+            setTimeout(function()
+            {
+                initBlankPagePlayer();
+            }, 100);
+
+            return;
+        }
+        else if (!_smilIterator.currentPar.audio.src)
+        {
+            clipBeginOffset = 0.0;
+
+//            if (_currentTTS)
+//            {
+//                _skipTTSEnded = true;
+//            }
+
+            _audioPlayer.reset();
+
+            var element = _smilIterator.currentPar.element;
+            if (element)
+            {
+                audioCurrentTime = 0.0;
+
+                var name = element.nodeName ? element.nodeName.toLowerCase() : undefined;
+
+                if (name === "audio" || name === "video")
+                {
+                    self.resetTTS();
+                    self.resetBlankPage();
+
+                    if (_currentEmbedded)
+                    {
+                        self.resetEmbedded();
+                    }
+
+                    _currentEmbedded = element;
+
+                    _currentEmbedded.pause();
+
+                    // DONE at reader_view.attachMO()
+                    //$(_currentEmbedded).attr("preload", "auto");
+
+                    _currentEmbedded.currentTime = 0;
+
+                    _currentEmbedded.play();
+
+                    $(_currentEmbedded).on("ended", self.onEmbeddedEnd);
+
+                    _embeddedIsPlaying = true;
+                    
+                    // gives the audio player some dispatcher time to raise the onPause event
+                    setTimeout(function(){
+                        onStatusChanged({isPlaying: true});
+                    }, 80);
+
+//                    $(element).on("seeked", function()
+//                    {
+//                        $(element).off("seeked", onSeeked);
+//                    });
+                }
+                else
+                {
+                    self.resetEmbedded();
+                    self.resetBlankPage();
+
+                    _currentTTS = element.textContent; //.innerText (CSS display sensitive + script + style tags)
+                    if (!_currentTTS || _currentTTS == "")
+                    {
+                        _currentTTS = undefined;
+                    }
+                    else
+                    {
+                        speakStart(_currentTTS);
+                    }
+                }
             }
+            
+            var cfi = _smilIterator.currentPar.cfi;
+            if (cfi)
+            {
+                audioCurrentTime = 0.0;
+                self.resetEmbedded();
+                self.resetBlankPage();
 
-            _currentEmbedded = element;
+                _elementHighlighter.reset(); // ensure clean DOM (no CFI span markers)
+                
+                var doc = cfi.cfiTextParent.ownerDocument;
 
-            _currentEmbedded.pause();
+                var startCFI = "epubcfi(" + cfi.partialStartCfi + ")";
+                var infoStart = EPUBcfi.getTextTerminusInfoWithPartialCFI(startCFI, doc,
+                ["cfi-marker", "mo-cfi-highlight"],
+                [],
+                ["MathJax_Message"]);
+//console.log(infoStart);
 
-            // DONE at reader_view.attachMO()
-            //$(_currentEmbedded).attr("preload", "auto");
+                var endCFI = "epubcfi(" + cfi.partialEndCfi + ")";
+                var infoEnd = EPUBcfi.getTextTerminusInfoWithPartialCFI(endCFI, doc,
+                ["cfi-marker", "mo-cfi-highlight"],
+                [],
+                ["MathJax_Message"]);
+//console.log(infoEnd);
 
-            _currentEmbedded.currentTime = 0;
+                // TODO: get string range to speak
+                _currentTTS = undefined;
 
-            _currentEmbedded.play();
-
-            $(_currentEmbedded).on("ended", self.onEmbeddedEnd);
-
-            _embeddedIsPlaying = true;
-
-            // gives the audio player some dispatcher time to raise the onPause event
-            setTimeout(function() {
-              onStatusChanged({ isPlaying: true });
-            }, 80);
-
-            //                    $(element).on("seeked", function()
-            //                    {
-            //                        $(element).off("seeked", onSeeked);
-            //                    });
-          } else {
+                if (!_currentTTS || _currentTTS == "")
+                {
+                    _currentTTS = undefined;
+                }
+                else
+                {
+                    speakStart(_currentTTS);
+                }
+            }
+        }
+        else
+        {
+            self.resetTTS();
             self.resetEmbedded();
             self.resetBlankPage();
 
-            _currentTTS = element.textContent; //.innerText (CSS display sensitive + script + style tags)
-            if (!_currentTTS || _currentTTS == "") {
-              _currentTTS = undefined;
-            } else {
-              speakStart(_currentTTS);
+            var dur = _smilIterator.currentPar.audio.clipEnd - _smilIterator.currentPar.audio.clipBegin;
+            if (dur <= 0 || clipBeginOffset > dur)
+            {
+                console.error("### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur);
+                clipBeginOffset = 0.0;
             }
-          }
+            else
+            {
+//console.debug("### MO PAR OFFSET: " + clipBeginOffset);
+            }
+
+            var audioContentRef = Helpers.ResolveContentRef(_smilIterator.currentPar.audio.src, _smilIterator.smil.href);
+
+            var audioSource = _package.resolveRelativeUrlMO(audioContentRef);
+
+            var startTime = _smilIterator.currentPar.audio.clipBegin + clipBeginOffset;
+
+//console.debug("PLAY START TIME: " + startTime + "("+_smilIterator.currentPar.audio.clipBegin+" + "+clipBeginOffset+")");
+
+            _audioPlayer.playFile(_smilIterator.currentPar.audio.src, audioSource, startTime); //_smilIterator.currentPar.element ? _smilIterator.currentPar.element : _smilIterator.currentPar.cfi.cfiTextParent
         }
 
-        var cfi = _smilIterator.currentPar.cfi;
-        if (cfi) {
-          audioCurrentTime = 0.0;
-          self.resetEmbedded();
-          self.resetBlankPage();
+        clipBeginOffset = 0.0;
 
-          _elementHighlighter.reset(); // ensure clean DOM (no CFI span markers)
-
-          var doc = cfi.cfiTextParent.ownerDocument;
-
-          var startCFI = "epubcfi(" + cfi.partialStartCfi + ")";
-          var infoStart = EPUBcfi.Interpreter.getTextTerminusInfoWithPartialCFI(
-            startCFI,
-            doc,
-            ["cfi-marker", "mo-cfi-highlight"],
-            [],
-            ["MathJax_Message"]
-          );
-          //console.log(infoStart);
-
-          var endCFI = "epubcfi(" + cfi.partialEndCfi + ")";
-          var infoEnd = EPUBcfi.Interpreter.getTextTerminusInfoWithPartialCFI(
-            endCFI,
-            doc,
-            ["cfi-marker", "mo-cfi-highlight"],
-            [],
-            ["MathJax_Message"]
-          );
-          //console.log(infoEnd);
-
-          // TODO: get string range to speak
-          _currentTTS = undefined;
-
-          if (!_currentTTS || _currentTTS == "") {
-            _currentTTS = undefined;
-          } else {
-            speakStart(_currentTTS);
-          }
-        }
-      } else {
-        self.resetTTS();
-        self.resetEmbedded();
-        self.resetBlankPage();
-
-        var dur =
-          _smilIterator.currentPar.audio.clipEnd -
-          _smilIterator.currentPar.audio.clipBegin;
-        if (dur <= 0 || clipBeginOffset > dur) {
-          console.error(
-            "### MO XXX PAR OFFSET: " + clipBeginOffset + " / " + dur
-          );
-          clipBeginOffset = 0.0;
-        } else {
-          //console.debug("### MO PAR OFFSET: " + clipBeginOffset);
-        }
-
-        var audioContentRef = Helpers.ResolveContentRef(
-          _smilIterator.currentPar.audio.src,
-          _smilIterator.smil.href
-        );
-
-        var audioSource = _package.resolveRelativeUrlMO(audioContentRef);
-
-        var startTime =
-          _smilIterator.currentPar.audio.clipBegin + clipBeginOffset;
-
-        //console.debug("PLAY START TIME: " + startTime + "("+_smilIterator.currentPar.audio.clipBegin+" + "+clipBeginOffset+")");
-
-        _audioPlayer.playFile(
-          _smilIterator.currentPar.audio.src,
-          audioSource,
-          startTime
-        ); //_smilIterator.currentPar.element ? _smilIterator.currentPar.element : _smilIterator.currentPar.cfi.cfiTextParent
-      }
-
-      clipBeginOffset = 0.0;
-
-      highlightCurrentElement();
+        highlightCurrentElement();
     }
 
-    function nextSmil(goNext) {
-      self.pause();
+    function nextSmil(goNext)
+    {
+        self.pause();
 
-      //console.debug("current Smil: " + _smilIterator.smil.href + " /// " + _smilIterator.smil.id);
+//console.debug("current Smil: " + _smilIterator.smil.href + " /// " + _smilIterator.smil.id);
 
-      var nextSmil = goNext
-        ? _package.media_overlay.getNextSmil(_smilIterator.smil)
-        : _package.media_overlay.getPreviousSmil(_smilIterator.smil);
-      if (nextSmil) {
-        //console.debug("nextSmil: " + nextSmil.href + " /// " + nextSmil.id);
+        var nextSmil = goNext ? _package.media_overlay.getNextSmil(_smilIterator.smil) : _package.media_overlay.getPreviousSmil(_smilIterator.smil);
+        if(nextSmil) {
 
-        _smilIterator = new SmilIterator(nextSmil);
-        if (_smilIterator.currentPar) {
-          if (!goNext) {
-            while (!_smilIterator.isLast()) {
-              _smilIterator.next();
+//console.debug("nextSmil: " + nextSmil.href + " /// " + nextSmil.id);
+
+            _smilIterator = new SmilIterator(nextSmil);
+            if(_smilIterator.currentPar) {
+                if (!goNext)
+                {
+                    while (!_smilIterator.isLast())
+                    {
+                        _smilIterator.next();
+                    }
+                }
+
+//console.debug("openContentUrl (nextSmil): " + _smilIterator.currentPar.text.src + " -- " + _smilIterator.smil.href);
+
+                reader.openContentUrl(_smilIterator.currentPar.text.src, _smilIterator.smil.href, self);
             }
-          }
-
-          //console.debug("openContentUrl (nextSmil): " + _smilIterator.currentPar.text.src + " -- " + _smilIterator.smil.href);
-
-          reader.openContentUrl(
-            _smilIterator.currentPar.text.src,
-            _smilIterator.smil.href,
-            self
-          );
         }
-      } else {
-        console.log("No more SMIL");
-        self.reset();
-      }
+        else
+        {
+            console.log("No more SMIL");
+            self.reset();
+        }
     }
+
 
     var _skipAudioEnded = false;
-    //    var _skipTTSEnded = false;
+//    var _skipTTSEnded = false;
 
     var audioCurrentTime = 0.0;
 
     var DIRECTION_MARK = -999;
 
-    //    var _letPlay = false;
+//    var _letPlay = false;
 
-    //from
-    //1 = audio player
-    //2 = blank page
-    //3 = video/audio embbeded
-    //4 = TTS
-    //5 = audio end
-    //6 = user previous/next/escape
-    function onAudioPositionChanged(position, from, skipping) {
-      //noLetPlay
+//from
+//1 = audio player
+//2 = blank page
+//3 = video/audio embbeded
+//4 = TTS
+//5 = audio end
+//6 = user previous/next/escape
+    function onAudioPositionChanged(position, from, skipping) { //noLetPlay
 
-      audioCurrentTime = position;
+        audioCurrentTime = position;
 
-      //        if (_letPlay)
-      //        {
-      //            return;
-      //        }
+//        if (_letPlay)
+//        {
+//            return;
+//        }
 
-      _skipAudioEnded = false;
-      //        _skipTTSEnded = false;
+        _skipAudioEnded = false;
+//        _skipTTSEnded = false;
 
-      if (!_smilIterator || !_smilIterator.currentPar) {
-        return;
-      }
+        if (!_smilIterator || !_smilIterator.currentPar)
+        {
+            return;
+        }
 
-      var parFrom = _smilIterator.currentPar;
+        var parFrom = _smilIterator.currentPar;
+        
+        var audio = _smilIterator.currentPar.audio;
 
-      var audio = _smilIterator.currentPar.audio;
-
-      //var TOLERANCE = 0.05;
-      if (
-        //position >= (audio.clipBegin - TOLERANCE) &&
+        //var TOLERANCE = 0.05;
+        if(
+            //position >= (audio.clipBegin - TOLERANCE) &&
         position > DIRECTION_MARK &&
-        position <= audio.clipEnd
-      ) {
-        //console.debug("onAudioPositionChanged: " + position);
-        return;
-      }
+            position <= audio.clipEnd) {
 
-      _skipAudioEnded = true;
-
-      //console.debug("PLAY NEXT: " + "(" + audio.clipBegin + " -- " + audio.clipEnd + ") [" + from + "] " +  position);
-      //console.debug(_smilIterator.currentPar.text.srcFragmentId);
-
-      var isPlaying = _audioPlayer.isPlaying();
-      if (isPlaying && from === 6) {
-        console.debug("from userNav _audioPlayer.isPlaying() ???");
-      }
-
-      var goNext = position > audio.clipEnd;
-
-      var doNotNextSmil = !_autoNextSmil && from !== 6 && goNext;
-
-      var spineItemIdRef =
-        _smilIterator && _smilIterator.smil && _smilIterator.smil.spineItemId
-          ? _smilIterator.smil.spineItemId
-          : _lastPaginationData &&
-            _lastPaginationData.spineItem &&
-            _lastPaginationData.spineItem.idref
-            ? _lastPaginationData.spineItem.idref
-            : undefined;
-      if (
-        doNotNextSmil &&
-        spineItemIdRef &&
-        _lastPaginationData &&
-        _lastPaginationData.paginationInfo &&
-        _lastPaginationData.paginationInfo.openPages &&
-        _lastPaginationData.paginationInfo.openPages.length > 1
-      ) {
-        //var iPage = _lastPaginationData.paginationInfo.isRightToLeft ? _lastPaginationData.paginationInfo.openPages.length - 1 : 0;
-        var iPage = 0;
-
-        var openPage = _lastPaginationData.paginationInfo.openPages[iPage];
-        if (spineItemIdRef === openPage.idref) {
-          doNotNextSmil = false;
-        }
-      }
-
-      if (goNext) {
-        _smilIterator.next();
-      } //position <= DIRECTION_MARK
-      else {
-        _smilIterator.previous();
-      }
-
-      if (!_smilIterator.currentPar) {
-        //
-        //        if (!noLetPlay)
-        //        {
-        //            _letPlay = true;
-        //            setTimeout(function()
-        //            {
-        //                _letPlay = false;
-        //                nextSmil(goNext);
-        //            }, 200);
-        //        }
-        //        else
-        //        {
-        //            nextSmil(goNext);
-        //        }
-
-        //console.debug("NEXT SMIL ON AUDIO POS");
-
-        if (doNotNextSmil) {
-          _wasPausedBecauseNoAutoNextSmil = true;
-          self.reset();
-          //self.pause();
-        } else {
-          nextSmil(goNext);
-        }
-        return;
-      }
-
-      //console.debug("ITER: " + _smilIterator.currentPar.text.srcFragmentId);
-
-      if (!_smilIterator.currentPar.audio) {
-        self.pause();
-        return;
-      }
-
-      if (_settings.mediaOverlaysSkipSkippables) {
-        var skip = false;
-        var parent = _smilIterator.currentPar;
-        while (parent) {
-          if (
-            parent.isSkippable &&
-            parent.isSkippable(_settings.mediaOverlaysSkippables)
-          ) {
-            skip = true;
-            break;
-          }
-          parent = parent.parent;
+//console.debug("onAudioPositionChanged: " + position);
+            return;
         }
 
-        if (skip) {
-          console.log("MO SKIP: " + parent.epubtype);
+        _skipAudioEnded = true;
 
-          self.pause();
+//console.debug("PLAY NEXT: " + "(" + audio.clipBegin + " -- " + audio.clipEnd + ") [" + from + "] " +  position);
+//console.debug(_smilIterator.currentPar.text.srcFragmentId);
 
-          var pos = goNext
-            ? _smilIterator.currentPar.audio.clipEnd + 0.1
-            : DIRECTION_MARK - 1;
-
-          onAudioPositionChanged(pos, from, true); //noLetPlay
-          return;
+        var isPlaying = _audioPlayer.isPlaying();
+        if (isPlaying && from === 6)
+        {
+            console.debug("from userNav _audioPlayer.isPlaying() ???");
         }
-      }
 
-      // _settings.mediaOverlaysSynchronizationGranularity
-      if (
-        !isPlaying &&
-        (_smilIterator.currentPar.element ||
-          (_smilIterator.currentPar.cfi &&
-            _smilIterator.currentPar.cfi.cfiTextParent))
-      ) {
-        var scopeTo = _elementHighlighter.adjustParToSeqSyncGranularity(
-          _smilIterator.currentPar
-        );
-        if (scopeTo && scopeTo !== _smilIterator.currentPar) {
-          var scopeFrom = _elementHighlighter.adjustParToSeqSyncGranularity(
-            parFrom
-          );
-          if (scopeFrom && (scopeFrom === scopeTo || !goNext)) {
-            if (scopeFrom === scopeTo) {
-              do {
-                if (goNext) _smilIterator.next();
-                else _smilIterator.previous();
-              } while (
-                _smilIterator.currentPar &&
-                _smilIterator.currentPar.hasAncestor(scopeFrom)
-              );
+        var goNext = position > audio.clipEnd;
 
-              if (!_smilIterator.currentPar) {
-                //console.debug("adjustParToSeqSyncGranularity nextSmil(goNext)");
+        var doNotNextSmil = !_autoNextSmil && from !== 6 && goNext;
 
-                if (doNotNextSmil) {
-                  _wasPausedBecauseNoAutoNextSmil = true;
-                  self.reset();
-                  //self.pause();
-                } else {
-                  nextSmil(goNext);
+        var spineItemIdRef = (_smilIterator && _smilIterator.smil && _smilIterator.smil.spineItemId) ? _smilIterator.smil.spineItemId : ((_lastPaginationData && _lastPaginationData.spineItem && _lastPaginationData.spineItem.idref) ? _lastPaginationData.spineItem.idref : undefined);
+        if (doNotNextSmil && spineItemIdRef && _lastPaginationData && _lastPaginationData.paginationInfo && _lastPaginationData.paginationInfo.openPages && _lastPaginationData.paginationInfo.openPages.length > 1)
+        {
+            //var iPage = _lastPaginationData.paginationInfo.isRightToLeft ? _lastPaginationData.paginationInfo.openPages.length - 1 : 0;
+            var iPage = 0;
+            
+            var openPage = _lastPaginationData.paginationInfo.openPages[iPage];
+            if (spineItemIdRef === openPage.idref)
+            {
+                doNotNextSmil = false;
+            }
+        }
+        
+        if (goNext)
+        {
+            _smilIterator.next();
+        }
+        else //position <= DIRECTION_MARK
+        {
+            _smilIterator.previous();
+        }
+
+        if(!_smilIterator.currentPar)
+        {
+            //
+            //        if (!noLetPlay)
+            //        {
+            //            _letPlay = true;
+            //            setTimeout(function()
+            //            {
+            //                _letPlay = false;
+            //                nextSmil(goNext);
+            //            }, 200);
+            //        }
+            //        else
+            //        {
+            //            nextSmil(goNext);
+            //        }
+
+//console.debug("NEXT SMIL ON AUDIO POS");
+        
+            if (doNotNextSmil)
+            {
+                _wasPausedBecauseNoAutoNextSmil = true;
+                self.reset();
+                //self.pause();
+            }
+            else
+            {
+                nextSmil(goNext);
+            }
+            return;
+        }
+
+//console.debug("ITER: " + _smilIterator.currentPar.text.srcFragmentId);
+
+        if(!_smilIterator.currentPar.audio) {
+            self.pause();
+            return;
+        }
+        
+        if(_settings.mediaOverlaysSkipSkippables)
+        {
+            var skip = false;
+            var parent = _smilIterator.currentPar;
+            while (parent)
+            {
+                if (parent.isSkippable && parent.isSkippable(_settings.mediaOverlaysSkippables))
+                {
+                    skip = true;
+                    break;
                 }
+                parent = parent.parent;
+            }
 
+            if (skip)
+            {
+                console.log("MO SKIP: " + parent.epubtype);
+
+                self.pause();
+
+                var pos = goNext ? _smilIterator.currentPar.audio.clipEnd + 0.1 : DIRECTION_MARK - 1;
+
+                onAudioPositionChanged(pos, from, true); //noLetPlay
                 return;
-              }
             }
-
-            //console.debug("ADJUSTED: " + _smilIterator.currentPar.text.srcFragmentId);
-            if (!goNext) {
-              var landed = _elementHighlighter.adjustParToSeqSyncGranularity(
-                _smilIterator.currentPar
-              );
-              if (landed && landed !== _smilIterator.currentPar) {
-                var backup = _smilIterator.currentPar;
-
-                var innerPar = undefined;
-                do {
-                  innerPar = _smilIterator.currentPar;
-                  _smilIterator.previous();
-                } while (
-                  _smilIterator.currentPar &&
-                  _smilIterator.currentPar.hasAncestor(landed)
-                );
-
-                if (_smilIterator.currentPar) {
-                  _smilIterator.next();
-
-                  if (!_smilIterator.currentPar.hasAncestor(landed)) {
-                    console.error(
-                      "adjustParToSeqSyncGranularity !_smilIterator.currentPar.hasAncestor(landed) ???"
-                    );
-                  }
-                  //assert
-                } else {
-                  //console.debug("adjustParToSeqSyncGranularity reached begin");
-
-                  _smilIterator.reset();
-
-                  if (_smilIterator.currentPar !== innerPar) {
-                    console.error(
-                      "adjustParToSeqSyncGranularity _smilIterator.currentPar !=== innerPar???"
-                    );
-                  }
-                }
-
-                if (!_smilIterator.currentPar) {
-                  console.error(
-                    "adjustParToSeqSyncGranularity !_smilIterator.currentPar ?????"
-                  );
-                  _smilIterator.goToPar(backup);
-                }
-
-                //console.debug("ADJUSTED PREV: " + _smilIterator.currentPar.text.srcFragmentId);
-              }
-            }
-          }
         }
-      }
 
-      if (
-        _audioPlayer.isPlaying() &&
-        _smilIterator.currentPar.audio.src &&
-        _smilIterator.currentPar.audio.src == _audioPlayer.currentSmilSrc() &&
-        position >= _smilIterator.currentPar.audio.clipBegin &&
-        position <= _smilIterator.currentPar.audio.clipEnd
-      ) {
-        //console.debug("ONLY highlightCurrentElement");
-        highlightCurrentElement();
-        return;
-      }
+        // _settings.mediaOverlaysSynchronizationGranularity
+        if (!isPlaying && (_smilIterator.currentPar.element || _smilIterator.currentPar.cfi && _smilIterator.currentPar.cfi.cfiTextParent))
+        {
+            var scopeTo = _elementHighlighter.adjustParToSeqSyncGranularity(_smilIterator.currentPar);
+            if (scopeTo && scopeTo !== _smilIterator.currentPar)
+            {
+                var scopeFrom = _elementHighlighter.adjustParToSeqSyncGranularity(parFrom);
+                if (scopeFrom && (scopeFrom === scopeTo || !goNext))
+                {
+                    if (scopeFrom === scopeTo)
+                    {
+                        do
+                        {
+                            if (goNext) _smilIterator.next();
+                            else  _smilIterator.previous();
+                        } while (_smilIterator.currentPar && _smilIterator.currentPar.hasAncestor(scopeFrom));
 
-      //position <= DIRECTION_MARK goes here (goto previous):
+                        if (!_smilIterator.currentPar)
+                        {
+    //console.debug("adjustParToSeqSyncGranularity nextSmil(goNext)");
 
-      //            if (!noLetPlay && position > DIRECTION_MARK
-      //                && _audioPlayer.isPlaying() && _audioPlayer.srcRef() != _smilIterator.currentPar.audio.src)
-      //            {
-      //                _letPlay = true;
-      //                setTimeout(function()
-      //                {
-      //                    _letPlay = false;
-      //                    playCurrentPar();
-      //                }, 100);
-      //
-      //                playCurrentPar();
-      //
-      //                return;
-      //            }
+                            if (doNotNextSmil)
+                            {
+                                _wasPausedBecauseNoAutoNextSmil = true;
+                                self.reset();
+                                //self.pause();
+                            }
+                            else
+                            {
+                                nextSmil(goNext);
+                            }
+                            
+                            return;
+                        }
+                    }
+                    
+//console.debug("ADJUSTED: " + _smilIterator.currentPar.text.srcFragmentId);
+                    if (!goNext)
+                    {
+                        var landed = _elementHighlighter.adjustParToSeqSyncGranularity(_smilIterator.currentPar);
+                        if (landed && landed !== _smilIterator.currentPar)
+                        {
+                            var backup = _smilIterator.currentPar;
+                    
+                            var innerPar = undefined;
+                            do
+                            {
+                                innerPar = _smilIterator.currentPar;
+                                _smilIterator.previous();
+                            }
+                            while (_smilIterator.currentPar && _smilIterator.currentPar.hasAncestor(landed));
+                        
+                            if (_smilIterator.currentPar)
+                            {
+                                _smilIterator.next();
+                                
+                                if (!_smilIterator.currentPar.hasAncestor(landed))
+                                {
+                                    console.error("adjustParToSeqSyncGranularity !_smilIterator.currentPar.hasAncestor(landed) ???");
+                                }
+                                //assert 
+                            }
+                            else
+                            {
+//console.debug("adjustParToSeqSyncGranularity reached begin");
 
-      playCurrentPar();
+                                _smilIterator.reset();
+                                
+                                if (_smilIterator.currentPar !== innerPar)
+                                {
+                                    console.error("adjustParToSeqSyncGranularity _smilIterator.currentPar !=== innerPar???");
+                                }
+                            }
+
+                            if (!_smilIterator.currentPar)
+                            {
+                                console.error("adjustParToSeqSyncGranularity !_smilIterator.currentPar ?????");
+                                _smilIterator.goToPar(backup);
+                            }
+                            
+//console.debug("ADJUSTED PREV: " + _smilIterator.currentPar.text.srcFragmentId);
+                        }
+                    }
+                }
+            }
+        }
+        
+        if(_audioPlayer.isPlaying()
+            && _smilIterator.currentPar.audio.src
+            && _smilIterator.currentPar.audio.src == _audioPlayer.currentSmilSrc()
+                && position >= _smilIterator.currentPar.audio.clipBegin
+                && position <= _smilIterator.currentPar.audio.clipEnd)
+        {
+//console.debug("ONLY highlightCurrentElement");
+            highlightCurrentElement();
+            return;
+        }
+
+        //position <= DIRECTION_MARK goes here (goto previous):
+
+//            if (!noLetPlay && position > DIRECTION_MARK
+//                && _audioPlayer.isPlaying() && _audioPlayer.srcRef() != _smilIterator.currentPar.audio.src)
+//            {
+//                _letPlay = true;
+//                setTimeout(function()
+//                {
+//                    _letPlay = false;
+//                    playCurrentPar();
+//                }, 100);
+//
+//                playCurrentPar();
+//
+//                return;
+//            }
+
+        playCurrentPar();
     }
 
-    this.touchInit = function() {
-      return _audioPlayer.touchInit();
+    this.touchInit = function()
+    {
+        return _audioPlayer.touchInit();
     };
 
-    var tokeniseTTS = function(element) {
-      var BLOCK_DELIMITERS = [
-        "p",
-        "div",
-        "pagenum",
-        "td",
-        "table",
-        "li",
-        "ul",
-        "ol"
-      ];
-      var BOUNDARY_PUNCTUATION = [",", ";", ".", "-", "??", "??", "?", "!"];
-      var IGNORABLE_PUNCTUATION = ['"', "'", "??", "??", "??", "??"];
+    var tokeniseTTS = function(element)
+    {
+        var BLOCK_DELIMITERS = ['p', 'div', 'pagenum', 'td', 'table', 'li', 'ul', 'ol'];
+        var BOUNDARY_PUNCTUATION = [',', ';', '.', '-', '??', '??', '?', '!'];
+        var IGNORABLE_PUNCTUATION = ['"', '\'', '??', '??', '??', '??'];
 
-      var flush = function(t, r) {
-        if (t.word.length <= 0) {
-          return;
+        var flush = function(t, r)
+        {
+            if (t.word.length <= 0)
+            {
+                return;
+            }
+
+            var pos = t.text.length;
+            r.spanMap[pos] = t.counter;
+            t.text += t.word;
+            t.markup += t.html.substring(0, t.wordStart) +
+                '<span class="tts_off" id="tts_' + t.counter + '">' +
+                t.html.substring(t.wordStart, t.wordEnd) +
+                '</span>' + t.html.substring(t.wordEnd, t.html.length);
+            t.word = "";
+            t.html = "";
+            t.wordStart = -1;
+            t.wordEnd = -1;
+            t.counter++;
+        };
+
+        var r =
+        {
+            element : element,
+            innerHTML_tts : "",
+            spanMap : {},
+            text : "",
+            lastCharIndex : undefined
+        };
+        r.element.innerHTML_original = element.innerHTML;
+
+        var t =
+        {
+            inTag : false,
+            counter : 0,
+            wordStart : -1,
+            wordEnd : -1,
+            text : '',
+            markup : '',
+            word : '',
+            html : ''
+        };
+
+        var limit = r.element.innerHTML_original.length;
+        var i = 0;
+        while (i <= limit)
+        {
+            if (t.inTag)
+            {
+                t.html += r.element.innerHTML_original[i];
+                if (r.element.innerHTML_original[i] == ">") {
+                    t.inTag = false;
+                    // if it's a block element delimiter, flush
+                    var blockCheck = t.html.match(/<\/(.*?)>$/);
+                    if (blockCheck && BLOCK_DELIMITERS.indexOf(blockCheck[1]) > -1)
+                    {
+                        flush(t, r);
+                        t.text += ' ';
+                    }
+                }
+            }
+            else
+            {
+                if (i == limit || r.element.innerHTML_original[i].match(/\s/))
+                {
+                    flush(t, r);
+
+                    // append the captured whitespace
+                    if (i < limit)
+                    {
+                        t.text += r.element.innerHTML_original[i];
+                        t.markup += r.element.innerHTML_original[i];
+                    }
+                }
+                else if (BOUNDARY_PUNCTUATION.indexOf(r.element.innerHTML_original[i]) > -1)
+                {
+                    flush(t, r);
+
+                    t.wordStart = t.html.length;
+                    t.wordEnd = t.html.length + 1;
+                    t.word += r.element.innerHTML_original[i];
+                    t.html += r.element.innerHTML_original[i];
+
+                    flush(t, r);
+                }
+                else if (r.element.innerHTML_original[i] == "<")
+                {
+                    t.inTag = true;
+                    t.html += r.element.innerHTML_original[i];
+                }
+                else
+                {
+                    if (t.word.length == 0)
+                    {
+                        t.wordStart = t.html.length;
+                    }
+                    t.wordEnd = t.html.length + 1;
+                    t.word += r.element.innerHTML_original[i];
+                    t.html += r.element.innerHTML_original[i];
+                }
+            }
+            i++;
         }
+//
+//console.debug(t.text);
+//        console.debug("----");
+//console.debug(t.markup);
 
-        var pos = t.text.length;
-        r.spanMap[pos] = t.counter;
-        t.text += t.word;
-        t.markup +=
-          t.html.substring(0, t.wordStart) +
-          '<span class="tts_off" id="tts_' +
-          t.counter +
-          '">' +
-          t.html.substring(t.wordStart, t.wordEnd) +
-          "</span>" +
-          t.html.substring(t.wordEnd, t.html.length);
-        t.word = "";
-        t.html = "";
-        t.wordStart = -1;
-        t.wordEnd = -1;
-        t.counter++;
-      };
+        r.text = t.text;
+        r.innerHTML_tts = t.markup;
+        r.element.innerHTML = r.innerHTML_tts;
 
-      var r = {
-        element: element,
-        innerHTML_tts: "",
-        spanMap: {},
-        text: "",
-        lastCharIndex: undefined
-      };
-      r.element.innerHTML_original = element.innerHTML;
-
-      var t = {
-        inTag: false,
-        counter: 0,
-        wordStart: -1,
-        wordEnd: -1,
-        text: "",
-        markup: "",
-        word: "",
-        html: ""
-      };
-
-      var limit = r.element.innerHTML_original.length;
-      var i = 0;
-      while (i <= limit) {
-        if (t.inTag) {
-          t.html += r.element.innerHTML_original[i];
-          if (r.element.innerHTML_original[i] == ">") {
-            t.inTag = false;
-            // if it's a block element delimiter, flush
-            var blockCheck = t.html.match(/<\/(.*?)>$/);
-            if (blockCheck && BLOCK_DELIMITERS.indexOf(blockCheck[1]) > -1) {
-              flush(t, r);
-              t.text += " ";
-            }
-          }
-        } else {
-          if (i == limit || r.element.innerHTML_original[i].match(/\s/)) {
-            flush(t, r);
-
-            // append the captured whitespace
-            if (i < limit) {
-              t.text += r.element.innerHTML_original[i];
-              t.markup += r.element.innerHTML_original[i];
-            }
-          } else if (
-            BOUNDARY_PUNCTUATION.indexOf(r.element.innerHTML_original[i]) > -1
-          ) {
-            flush(t, r);
-
-            t.wordStart = t.html.length;
-            t.wordEnd = t.html.length + 1;
-            t.word += r.element.innerHTML_original[i];
-            t.html += r.element.innerHTML_original[i];
-
-            flush(t, r);
-          } else if (r.element.innerHTML_original[i] == "<") {
-            t.inTag = true;
-            t.html += r.element.innerHTML_original[i];
-          } else {
-            if (t.word.length == 0) {
-              t.wordStart = t.html.length;
-            }
-            t.wordEnd = t.html.length + 1;
-            t.word += r.element.innerHTML_original[i];
-            t.html += r.element.innerHTML_original[i];
-          }
-        }
-        i++;
-      }
-      //
-      //console.debug(t.text);
-      //        console.debug("----");
-      //console.debug(t.markup);
-
-      r.text = t.text;
-      r.innerHTML_tts = t.markup;
-      r.element.innerHTML = r.innerHTML_tts;
-
-      return r;
+        return r;
     };
 
     var $ttsStyle = undefined;
-    function ensureTTSStyle($element) {
-      if (
-        $ttsStyle &&
-        $ttsStyle[0].ownerDocument === $element[0].ownerDocument
-      ) {
-        return;
-      }
+    function ensureTTSStyle($element)
+    {
+        if ($ttsStyle && $ttsStyle[0].ownerDocument === $element[0].ownerDocument)
+        {
+            return;
+        }
 
-      var style = ".tts_on{background-color:red;color:white;} .tts_off{}";
+        var style = ".tts_on{background-color:red;color:white;} .tts_off{}";
 
-      $head = $("head", $element[0].ownerDocument.documentElement);
+        $head = $("head", $element[0].ownerDocument.documentElement);
 
-      $ttsStyle = $("<style type='text/css'> </style>").appendTo($head);
+        $ttsStyle = $("<style type='text/css'> </style>").appendTo($head);
 
-      $ttsStyle.append(style);
+        $ttsStyle.append(style);
     }
 
-    var speakStart = function(txt, volume) {
-      var tokenData = undefined;
-      var curPar =
-        _smilIterator && _smilIterator.currentPar
-          ? _smilIterator.currentPar
-          : undefined;
-      var element = curPar ? curPar.element : undefined;
-      var cfi = curPar ? curPar.cfi : undefined;
+    var speakStart = function(txt, volume)
+    {
+        var tokenData = undefined;
+        var curPar = (_smilIterator && _smilIterator.currentPar) ? _smilIterator.currentPar : undefined;
+        var element = curPar ? curPar.element : undefined;
+        var cfi = curPar ? curPar.cfi : undefined;
 
-      if (!volume || volume > 0) {
-        // gives the audio player some dispatcher time to raise the onPause event
-        setTimeout(function() {
-          onStatusChanged({ isPlaying: true });
-        }, 80);
+        if (!volume || volume > 0)
+        {
+            // gives the audio player some dispatcher time to raise the onPause event
+            setTimeout(function(){
+                onStatusChanged({isPlaying: true});
+            }, 80);
+            
+            _ttsIsPlaying = true;
 
-        _ttsIsPlaying = true;
-
-        if (TOKENIZE_TTS && element) {
-          var $el = $(element);
-          ensureTTSStyle($el);
-
-          if (element.innerHTML_original) {
-            element.innerHTML = element.innerHTML_original;
-            element.innerHTML_original = undefined;
-          }
-          tokenData = tokeniseTTS(element);
-        }
-      }
-
-      if (!_enableHTMLSpeech) {
-        Globals.logEvent(
-          "MEDIA_OVERLAY_TTS_SPEAK",
-          "EMIT",
-          "media_overlay_player.js"
-        );
-        reader.emit(Globals.Events.MEDIA_OVERLAY_TTS_SPEAK, { tts: txt }); // resume if txt == undefined
-        return;
-      }
-
-      if (!txt && window.speechSynthesis.paused) {
-        //console.debug("TTS resume");
-        window.speechSynthesis.resume();
-
-        return;
-      }
-
-      var text = txt || _currentTTS;
-
-      if (text) {
-        if (_SpeechSynthesisUtterance) {
-          //console.debug("_SpeechSynthesisUtterance nullify");
-
-          if (TOKENIZE_TTS) {
-            if (_SpeechSynthesisUtterance.onend) {
-              _SpeechSynthesisUtterance.onend({
-                forceSkipEnd: true,
-                target: _SpeechSynthesisUtterance
-              });
-            }
-
-            _SpeechSynthesisUtterance.tokenData = undefined;
-
-            _SpeechSynthesisUtterance.onboundary = undefined;
-            //                 _SpeechSynthesisUtterance.onboundary = function(event)
-            //                 {
-            // console.debug("OLD TTS boundary");
-            //
-            //                         event.target.tokenData = undefined;
-            //
-            //                 };
-          }
-
-          _SpeechSynthesisUtterance.onend = undefined;
-          //                 _SpeechSynthesisUtterance.onend = function(event)
-          //                 {
-          // console.debug("OLD TTS ended");
-          //                     if (TOKENIZE_TTS)
-          //                     {
-          //                         event.target.tokenData = undefined;
-          //                     }
-          //                 };
-
-          _SpeechSynthesisUtterance.onerror = undefined;
-          //                 _SpeechSynthesisUtterance.onerror = function(event)
-          //                 {
-          // console.debug("OLD TTS error");
-          // //console.debug(event);
-          //                     if (TOKENIZE_TTS)
-          //                     {
-          //                         event.target.tokenData = undefined;
-          //                     }
-          //                 };
-
-          _SpeechSynthesisUtterance = undefined;
-        }
-        //
-        //            if (window.speechSynthesis.pending ||
-        //                window.speechSynthesis.speaking)
-        //            {
-        //                _skipTTSEndEvent = true;
-        //            }
-
-        console.debug("paused: " + window.speechSynthesis.paused);
-        console.debug("speaking: " + window.speechSynthesis.speaking);
-        console.debug("pending: " + window.speechSynthesis.pending);
-
-        //             if (!window.speechSynthesis.paused)
-        //             {
-        // console.debug("TTS pause before speak");
-        //                 window.speechSynthesis.pause();
-        //             }
-
-        function cancelTTS(first) {
-          if (first || window.speechSynthesis.pending) {
-            console.debug("TTS cancel before speak");
-            window.speechSynthesis.cancel();
-
-            setTimeout(function() {
-              cancelTTS(false);
-            }, 5);
-          } else {
-            updateTTS();
-          }
-        }
-        cancelTTS(true);
-
-        function updateTTS() {
-          // setTimeout(function()
-          // {
-
-          _SpeechSynthesisUtterance = new SpeechSynthesisUtterance();
-
-          if (TOKENIZE_TTS && tokenData) {
-            _SpeechSynthesisUtterance.tokenData = tokenData;
-
-            _SpeechSynthesisUtterance.onboundary = function(
-              event
-            ) //_SpeechSynthesisUtterance.addEventListener("boundary", function(event)
+            if (TOKENIZE_TTS && element)
             {
-              if (!_SpeechSynthesisUtterance) {
-                return;
-              }
+                var $el = $(element);
+                ensureTTSStyle($el);
 
-              console.debug(
-                "TTS boundary: " + event.name + " / " + event.charIndex
-              );
-              //console.debug(event);
 
-              var tokenised = event.target.tokenData;
-              if (
-                !tokenised ||
-                !tokenised.spanMap.hasOwnProperty(event.charIndex)
-              ) {
-                return;
-              }
-
-              if (false && tokenised.lastCharIndex) {
-                //console.debug("TTS lastCharIndex: " + tokenised.lastCharIndex);
-                var id = "tts_" + tokenised.spanMap[tokenised.lastCharIndex];
-                //console.debug("TTS lastCharIndex ID: " + id);
-                var spanPrevious = tokenised.element.querySelector("#" + id);
-                if (spanPrevious) {
-                  //console.debug("TTS OFF");
-                  spanPrevious.className = "tts_off";
-                  //spanPrevious.style.backgroundColor = "white";
+                if (element.innerHTML_original)
+                {
+                    element.innerHTML = element.innerHTML_original;
+                    element.innerHTML_original = undefined;
                 }
-              } else {
-                [].forEach.call(
-                  tokenised.element.querySelectorAll(".tts_on"),
-                  function(el) {
-                    console.debug("TTS OFF " + el.id);
-                    el.className = "tts_off";
-                  }
-                );
-              }
-
-              var id = "tts_" + tokenised.spanMap[event.charIndex];
-              console.debug("TTS charIndex ID: " + id);
-              var spanNew = tokenised.element.querySelector("#" + id);
-              if (spanNew) {
-                console.debug("TTS ON");
-                spanNew.className = "tts_on";
-                //spanNew.style.backgroundColor = "transparent";
-              }
-
-              tokenised.lastCharIndex = event.charIndex;
-            };
-          }
-
-          _SpeechSynthesisUtterance.onend = function(
-            event
-          ) //_SpeechSynthesisUtterance.addEventListener("end", function(event)
-          {
-            if (!_SpeechSynthesisUtterance) {
-              //_skipTTSEndEvent = false;
-              return;
+                tokenData = tokeniseTTS(element);
             }
-            //
-            //                if (_skipTTSEndEvent)
-            //                {
-            //                    _skipTTSEndEvent = false;
-            //                    return;
-            //                }
-
-            console.debug("TTS ended");
-            //console.debug(event);
-
-            if (TOKENIZE_TTS) {
-              var tokenised = event.target.tokenData;
-
-              var doEnd =
-                !event.forceSkipEnd &&
-                _SpeechSynthesisUtterance === event.target &&
-                (!tokenised || tokenised.element.innerHTML_original);
-
-              if (tokenised) {
-                if (tokenised.element.innerHTML_original) {
-                  tokenised.element.innerHTML =
-                    tokenised.element.innerHTML_original;
-                } else {
-                  [].forEach.call(
-                    tokenised.element.querySelectorAll(".tts_on"),
-                    function(el) {
-                      console.debug("TTS OFF (end)" + el.id);
-                      el.className = "tts_off";
-                    }
-                  );
-                }
-
-                tokenised.element.innerHTML_original = undefined;
-              }
-
-              if (doEnd) {
-                self.onTTSEnd();
-              } else {
-                console.debug("TTS end SKIPPED");
-              }
-            } else {
-              self.onTTSEnd();
-            }
-          };
-
-          _SpeechSynthesisUtterance.onerror = function(
-            event
-          ) //_SpeechSynthesisUtterance.addEventListener("error", function(event)
-          {
-            if (!_SpeechSynthesisUtterance) {
-              return;
-            }
-
-            console.error("TTS error");
-            //console.debug(event);
-            console.debug(_SpeechSynthesisUtterance.text);
-            console.debug(window.speechSynthesis.paused);
-            console.debug(window.speechSynthesis.pending);
-            console.debug(window.speechSynthesis.speaking);
-
-            if (TOKENIZE_TTS) {
-              var tokenised = event.target.tokenData;
-              if (tokenised) {
-                if (tokenised.element.innerHTML_original) {
-                  tokenised.element.innerHTML =
-                    tokenised.element.innerHTML_original;
-                } else {
-                  [].forEach.call(
-                    tokenised.element.ownerDocument.querySelectorAll(".tts_on"),
-                    function(el) {
-                      console.debug("TTS OFF (error)" + el.id);
-                      el.className = "tts_off";
-                    }
-                  );
-                }
-                tokenised.element.innerHTML_original = undefined;
-              }
-            }
-          };
-
-          var vol = volume || _audioPlayer.getVolume();
-          _SpeechSynthesisUtterance.volume = vol;
-
-          _SpeechSynthesisUtterance.rate = _audioPlayer.getRate();
-          _SpeechSynthesisUtterance.pitch = 1;
-
-          //_SpeechSynthesisUtterance.lang = "en-US";
-
-          _SpeechSynthesisUtterance.text = text;
-
-          //console.debug("TTS speak: " + text);
-          window.speechSynthesis.speak(_SpeechSynthesisUtterance);
-
-          if (window.speechSynthesis.paused) {
-            console.debug("TTS resume");
-            window.speechSynthesis.resume();
-          }
-
-          //}, 5);
         }
-      }
+
+        if (!_enableHTMLSpeech)
+        {
+            Globals.logEvent("MEDIA_OVERLAY_TTS_SPEAK", "EMIT", "media_overlay_player.js");
+            reader.emit(Globals.Events.MEDIA_OVERLAY_TTS_SPEAK, {tts: txt}); // resume if txt == undefined
+            return;
+        }
+
+        if (!txt && window.speechSynthesis.paused)
+        {
+//console.debug("TTS resume");
+            window.speechSynthesis.resume();
+
+            return;
+        }
+
+        var text = txt || _currentTTS;
+
+        if (text)
+        {
+            if (_SpeechSynthesisUtterance)
+            {
+//console.debug("_SpeechSynthesisUtterance nullify");
+
+                if (TOKENIZE_TTS)
+                {
+                    if (_SpeechSynthesisUtterance.onend)
+                    {
+                        _SpeechSynthesisUtterance.onend({forceSkipEnd: true, target: _SpeechSynthesisUtterance});
+                    }
+                    
+                    _SpeechSynthesisUtterance.tokenData = undefined;
+                    
+                    _SpeechSynthesisUtterance.onboundary = undefined;
+    //                 _SpeechSynthesisUtterance.onboundary = function(event)
+    //                 {
+    // console.debug("OLD TTS boundary");
+    //                 
+    //                         event.target.tokenData = undefined;
+    //  
+    //                 };
+                }
+
+                _SpeechSynthesisUtterance.onend = undefined;
+//                 _SpeechSynthesisUtterance.onend = function(event)
+//                 {
+// console.debug("OLD TTS ended");
+//                     if (TOKENIZE_TTS)
+//                     {
+//                         event.target.tokenData = undefined;
+//                     }
+//                 };
+                
+                _SpeechSynthesisUtterance.onerror = undefined;
+//                 _SpeechSynthesisUtterance.onerror = function(event)
+//                 {
+// console.debug("OLD TTS error");
+// //console.debug(event);
+//                     if (TOKENIZE_TTS)
+//                     {
+//                         event.target.tokenData = undefined;
+//                     }
+//                 };
+
+                _SpeechSynthesisUtterance = undefined;
+            }
+//
+//            if (window.speechSynthesis.pending ||
+//                window.speechSynthesis.speaking)
+//            {
+//                _skipTTSEndEvent = true;
+//            }
+            
+console.debug("paused: "+window.speechSynthesis.paused);
+console.debug("speaking: "+window.speechSynthesis.speaking);
+console.debug("pending: "+window.speechSynthesis.pending);
+
+//             if (!window.speechSynthesis.paused)
+//             {
+// console.debug("TTS pause before speak");
+//                 window.speechSynthesis.pause();
+//             }
+            
+            function cancelTTS(first)
+            {
+                if (first || window.speechSynthesis.pending)
+                {
+    console.debug("TTS cancel before speak");
+                    window.speechSynthesis.cancel();
+
+                    setTimeout(function()
+                    {
+                        cancelTTS(false);
+                    }, 5);
+                }
+                else
+                {
+                    updateTTS();
+                }
+            }
+            cancelTTS(true);
+            
+            function updateTTS()
+            {
+            // setTimeout(function()
+            // {
+
+                _SpeechSynthesisUtterance = new SpeechSynthesisUtterance();
+
+                if (TOKENIZE_TTS && tokenData)
+                {
+                    _SpeechSynthesisUtterance.tokenData = tokenData;
+                
+                    _SpeechSynthesisUtterance.onboundary = function(event)
+                    //_SpeechSynthesisUtterance.addEventListener("boundary", function(event)
+                    {
+                        if (!_SpeechSynthesisUtterance)
+                        {
+                            return;
+                        }
+
+        console.debug("TTS boundary: " + event.name + " / " + event.charIndex);
+        //console.debug(event);
+
+                        var tokenised = event.target.tokenData;
+                        if (!tokenised || !tokenised.spanMap.hasOwnProperty(event.charIndex))
+                        {
+                            return;
+                        }
+
+                        if (false && tokenised.lastCharIndex)
+                        {
+        //console.debug("TTS lastCharIndex: " + tokenised.lastCharIndex);
+                            var id = 'tts_' + tokenised.spanMap[tokenised.lastCharIndex];
+        //console.debug("TTS lastCharIndex ID: " + id);
+                            var spanPrevious = tokenised.element.querySelector("#"+id);
+                            if (spanPrevious)
+                            {
+        //console.debug("TTS OFF");
+                                spanPrevious.className = 'tts_off';
+                                //spanPrevious.style.backgroundColor = "white";
+                            }
+                        }
+                        else
+                        {
+                            [].forEach.call(
+                                tokenised.element.querySelectorAll(".tts_on"),
+                                function(el)
+                                {
+        console.debug("TTS OFF " + el.id);
+                                    el.className = 'tts_off';
+                                }
+                            );
+                        }
+
+                        var id = 'tts_' + tokenised.spanMap[event.charIndex];
+        console.debug("TTS charIndex ID: " + id);
+                        var spanNew = tokenised.element.querySelector("#"+id);
+                        if (spanNew)
+                        {
+        console.debug("TTS ON");
+                            spanNew.className = 'tts_on';
+                            //spanNew.style.backgroundColor = "transparent";
+                        }
+
+                        tokenised.lastCharIndex = event.charIndex;
+                    };
+                }
+
+                _SpeechSynthesisUtterance.onend = function(event)
+                //_SpeechSynthesisUtterance.addEventListener("end", function(event)
+                {
+                    if (!_SpeechSynthesisUtterance)
+                    {
+                        //_skipTTSEndEvent = false;
+                        return;
+                    }
+    //
+    //                if (_skipTTSEndEvent)
+    //                {
+    //                    _skipTTSEndEvent = false;
+    //                    return;
+    //                }
+
+console.debug("TTS ended");
+    //console.debug(event);
+
+                    if (TOKENIZE_TTS)
+                    {
+                        var tokenised = event.target.tokenData;
+
+                        var doEnd = !event.forceSkipEnd && (_SpeechSynthesisUtterance === event.target) && (!tokenised || tokenised.element.innerHTML_original);
+
+                        if (tokenised)
+                        {
+                            if (tokenised.element.innerHTML_original)
+                            {
+                                tokenised.element.innerHTML = tokenised.element.innerHTML_original;
+                            }
+                            else
+                            {
+                                [].forEach.call(
+                                    tokenised.element.querySelectorAll(".tts_on"),
+                                    function(el)
+                                    {
+        console.debug("TTS OFF (end)" + el.id);
+                                        el.className = 'tts_off';
+                                    }
+                                );
+                            }
+
+                            tokenised.element.innerHTML_original = undefined;
+                        }
+
+
+                        if (doEnd)
+                        {
+                            self.onTTSEnd();
+                        }
+                        else
+                        {
+    console.debug("TTS end SKIPPED");
+                        }
+                    }
+                    else
+                    {
+                        self.onTTSEnd();
+                    }
+                };
+
+                _SpeechSynthesisUtterance.onerror = function(event)
+                //_SpeechSynthesisUtterance.addEventListener("error", function(event)
+                {
+                    if (!_SpeechSynthesisUtterance)
+                    {
+                        return;
+                    }
+
+console.error("TTS error");
+//console.debug(event);
+console.debug(_SpeechSynthesisUtterance.text);
+console.debug(window.speechSynthesis.paused);
+console.debug(window.speechSynthesis.pending);
+console.debug(window.speechSynthesis.speaking);
+
+                    if (TOKENIZE_TTS)
+                    {
+                        var tokenised = event.target.tokenData;
+                        if (tokenised)
+                        {
+                            if (tokenised.element.innerHTML_original)
+                            {
+                                tokenised.element.innerHTML = tokenised.element.innerHTML_original;
+                            }
+                            else
+                            {
+                                [].forEach.call(
+                                    tokenised.element.ownerDocument.querySelectorAll(".tts_on"),
+                                    function(el)
+                                    {
+        console.debug("TTS OFF (error)" + el.id);
+                                        el.className = 'tts_off';
+                                    }
+                                );
+                            }
+                            tokenised.element.innerHTML_original = undefined;
+                        }
+                    }
+                };
+
+                var vol = volume || _audioPlayer.getVolume();
+                _SpeechSynthesisUtterance.volume = vol;
+
+                _SpeechSynthesisUtterance.rate = _audioPlayer.getRate();
+                _SpeechSynthesisUtterance.pitch = 1;
+
+                //_SpeechSynthesisUtterance.lang = "en-US";
+
+                _SpeechSynthesisUtterance.text = text;
+
+    //console.debug("TTS speak: " + text);
+                window.speechSynthesis.speak(_SpeechSynthesisUtterance);
+
+                if (window.speechSynthesis.paused)
+                {
+console.debug("TTS resume");
+                    window.speechSynthesis.resume();
+                }
+
+           //}, 5);
+           }
+        }
     };
 
-    var speakStop = function() {
-      var wasPlaying = _ttsIsPlaying;
+    var speakStop = function()
+    {
+        var wasPlaying = _ttsIsPlaying;
 
-      if (wasPlaying) {
-        onStatusChanged({ isPlaying: false });
-      }
-
-      _ttsIsPlaying = false;
-
-      if (!_enableHTMLSpeech) {
         if (wasPlaying) {
-          Globals.logEvent(
-            "MEDIA_OVERLAY_TTS_STOP",
-            "EMIT",
-            "media_overlay_player.js"
-          );
-          reader.emit(Globals.Events.MEDIA_OVERLAY_TTS_STOP, undefined);
+            onStatusChanged({isPlaying: false});
         }
-        return;
-      }
+        
+        _ttsIsPlaying = false;
 
-      //console.debug("TTS pause");
-      window.speechSynthesis.pause();
+        if (!_enableHTMLSpeech)
+        {
+            if (wasPlaying) {
+                Globals.logEvent("MEDIA_OVERLAY_TTS_STOP", "EMIT", "media_overlay_player.js");
+                reader.emit(Globals.Events.MEDIA_OVERLAY_TTS_STOP, undefined);
+            }
+            return;
+        }
+
+//console.debug("TTS pause");
+        window.speechSynthesis.pause();
     };
 
     var _timerTick = undefined;
 
     function onPlay() {
-      onPause();
+        onPause();
 
-      var func = function() {
-        if (!_smilIterator || !_smilIterator.currentPar) {
-          return;
-        }
+        var func = function() {
 
-        var smil = _smilIterator.smil; //currentPar.getSmil();
-        if (!smil.mo) {
-          return;
-        }
+            if (!_smilIterator || !_smilIterator.currentPar)
+            {
+                return;
+            }
 
-        //            if (!_smilIterator.currentPar.audio.src)
-        //            {
-        //                return;
-        //            }
+            var smil = _smilIterator.smil; //currentPar.getSmil();
+            if (!smil.mo)
+            {
+                return;
+            }
 
-        var playPosition =
-          audioCurrentTime - _smilIterator.currentPar.audio.clipBegin;
-        if (playPosition <= 0) {
-          return;
-        }
+//            if (!_smilIterator.currentPar.audio.src)
+//            {
+//                return;
+//            }
 
-        var smilIndex = smil.mo.smil_models.indexOf(smil);
+            var playPosition = audioCurrentTime - _smilIterator.currentPar.audio.clipBegin;
+            if (playPosition <= 0)
+            {
+                return;
+            }
 
-        var smilIterator = new SmilIterator(smil);
-        var parIndex = -1;
-        while (smilIterator.currentPar) {
-          parIndex++;
-          if (smilIterator.currentPar == _smilIterator.currentPar) {
-            break;
-          }
-          smilIterator.next();
-        }
+            var smilIndex = smil.mo.smil_models.indexOf(smil);
 
-        onStatusChanged({
-          playPosition: playPosition,
-          smilIndex: smilIndex,
-          parIndex: parIndex
-        });
-      };
+            var smilIterator = new SmilIterator(smil);
+            var parIndex = -1;
+            while (smilIterator.currentPar)
+            {
+                parIndex++;
+                if (smilIterator.currentPar == _smilIterator.currentPar)
+                {
+                    break;
+                }
+                smilIterator.next();
+            }
 
-      setTimeout(func, 500);
+            onStatusChanged({playPosition: playPosition, smilIndex: smilIndex, parIndex: parIndex});
+        };
 
-      _timerTick = setInterval(func, 1500);
+        setTimeout(func, 500);
+
+        _timerTick = setInterval(func, 1500);
     }
 
     function onPause() {
-      audioCurrentTime = 0.0;
-      if (_timerTick !== undefined) {
-        clearInterval(_timerTick);
-      }
-      _timerTick = undefined;
+
+        audioCurrentTime = 0.0;
+        if (_timerTick !== undefined)
+        {
+            clearInterval(_timerTick);
+        }
+        _timerTick = undefined;
     }
 
-    this.onEmbeddedEnd = function() {
-      audioCurrentTime = 0.0;
 
-      _embeddedIsPlaying = false;
-      //_currentEmbedded = undefined;
+    this.onEmbeddedEnd = function()
+    {
+        audioCurrentTime = 0.0;
 
-      if (!_smilIterator || !_smilIterator.currentPar) {
-        self.reset();
-        return;
-      }
+        _embeddedIsPlaying = false;
+        //_currentEmbedded = undefined;
 
-      onAudioPositionChanged(_smilIterator.currentPar.audio.clipEnd + 0.1, 3);
+        if (!_smilIterator || !_smilIterator.currentPar)
+        {
+            self.reset();
+            return;
+        }
+
+        onAudioPositionChanged(_smilIterator.currentPar.audio.clipEnd + 0.1, 3);
     };
 
-    this.onTTSEnd = function() {
-      audioCurrentTime = 0.0;
+    this.onTTSEnd = function()
+    {
+        audioCurrentTime = 0.0;
 
-      _ttsIsPlaying = false;
-      //_currentTTS = undefined;
+        _ttsIsPlaying = false;
+        //_currentTTS = undefined;
 
-      //        if(_skipTTSEnded)
-      //        {
-      //            _skipTTSEnded = false;
-      //            return;
-      //        }
+//        if(_skipTTSEnded)
+//        {
+//            _skipTTSEnded = false;
+//            return;
+//        }
 
-      if (!_smilIterator || !_smilIterator.currentPar) {
-        self.reset();
-        return;
-      }
+        if (!_smilIterator || !_smilIterator.currentPar)
+        {
+            self.reset();
+            return;
+        }
 
-      onAudioPositionChanged(_smilIterator.currentPar.audio.clipEnd + 0.1, 4);
+        onAudioPositionChanged(_smilIterator.currentPar.audio.clipEnd + 0.1, 4);
     };
 
     function onAudioEnded() {
-      onPause();
-      //
-      //        if (_letPlay)
-      //        {
-      //            return;
-      //        }
 
-      if (_skipAudioEnded) {
-        _skipAudioEnded = false;
-        return;
-      }
+        onPause();
+//
+//        if (_letPlay)
+//        {
+//            return;
+//        }
 
-      if (!_smilIterator || !_smilIterator.currentPar) {
-        self.reset();
-        return;
-      }
+        if(_skipAudioEnded)
+        {
+            _skipAudioEnded = false;
+            return;
+        }
 
-      onAudioPositionChanged(_smilIterator.currentPar.audio.clipEnd + 0.1, 5);
+        if (!_smilIterator || !_smilIterator.currentPar)
+        {
+            self.reset();
+            return;
+        }
+
+        onAudioPositionChanged(_smilIterator.currentPar.audio.clipEnd + 0.1, 5);
     }
 
     function highlightCurrentElement() {
-      if (!_smilIterator) {
-        return;
-      }
 
-      if (!_smilIterator.currentPar) {
-        return;
-      }
-
-      if (
-        _smilIterator.currentPar.text.srcFragmentId &&
-        _smilIterator.currentPar.text.srcFragmentId.length > 0
-      ) {
-        if (_smilIterator.currentPar.element) {
-          //console.error(_smilIterator.currentPar.element.id + ": " + _smilIterator.currentPar.audio.clipBegin + " / " + _smilIterator.currentPar.audio.clipEnd);
-
-          if (
-            !_elementHighlighter.isElementHighlighted(_smilIterator.currentPar)
-          ) {
-            _elementHighlighter.highlightElement(
-              _smilIterator.currentPar,
-              _package.media_overlay.activeClass,
-              _package.media_overlay.playbackActiveClass
-            );
-
-            if (!_wasPlayingScrolling) {
-              reader.insureElementVisibility(
-                _smilIterator.currentPar.getSmil().spineItemId,
-                _smilIterator.currentPar.element,
-                self
-              );
-            }
-          }
-
-          return;
-        } else if (_smilIterator.currentPar.cfi) {
-          if (!_elementHighlighter.isCfiHighlighted(_smilIterator.currentPar)) {
-            _elementHighlighter.highlightCfi(
-              _smilIterator.currentPar,
-              _package.media_overlay.activeClass,
-              _package.media_overlay.playbackActiveClass
-            );
-
-            if (!_wasPlayingScrolling) {
-              reader.insureElementVisibility(
-                _smilIterator.currentPar.getSmil().spineItemId,
-                _smilIterator.currentPar.cfi.cfiTextParent,
-                self
-              );
-            }
-          }
-
-          return;
+        if(!_smilIterator) {
+            return;
         }
-      }
 
-      // body (not FRAG ID)
-      if (_smilIterator.currentPar.element) {
-        return;
-      }
+        if(!_smilIterator.currentPar) {
+            return;
+        }
 
-      //else: single SMIL per multiple XHTML? ==> open new spine item
+        if (_smilIterator.currentPar.text.srcFragmentId && _smilIterator.currentPar.text.srcFragmentId.length > 0)
+        {
+            if (_smilIterator.currentPar.element) {
+    //console.error(_smilIterator.currentPar.element.id + ": " + _smilIterator.currentPar.audio.clipBegin + " / " + _smilIterator.currentPar.audio.clipEnd);
 
-      /*
+                if (!_elementHighlighter.isElementHighlighted(_smilIterator.currentPar))
+                {
+                    _elementHighlighter.highlightElement(_smilIterator.currentPar, _package.media_overlay.activeClass, _package.media_overlay.playbackActiveClass);
+
+                    if (!_wasPlayingScrolling)
+                    {
+                        reader.insureElementVisibility(_smilIterator.currentPar.getSmil().spineItemId, _smilIterator.currentPar.element, self);
+                    }
+                }
+            
+                return;
+            
+            } else if (_smilIterator.currentPar.cfi) {
+
+                if (!_elementHighlighter.isCfiHighlighted(_smilIterator.currentPar))
+                {
+                    _elementHighlighter.highlightCfi(_smilIterator.currentPar, _package.media_overlay.activeClass, _package.media_overlay.playbackActiveClass);
+
+                    if (!_wasPlayingScrolling)
+                    {
+                        reader.insureElementVisibility(_smilIterator.currentPar.getSmil().spineItemId, _smilIterator.currentPar.cfi.cfiTextParent, self);
+                    }
+                }
+                
+                return;
+            }
+        }
+        
+        // body (not FRAG ID)
+        if (_smilIterator.currentPar.element) {
+            return;
+        }
+        
+        //else: single SMIL per multiple XHTML? ==> open new spine item
+        
+        /*
         var textRelativeRef = Globals.Helpers.ResolveContentRef(_smilIterator.currentPar.text.srcFile, _smilIterator.smil.href);
 console.debug("textRelativeRef: " + textRelativeRef);
         if (textRelativeRef)
@@ -46981,239 +46572,269 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
         }
         */
 
-      var src = _smilIterator.currentPar.text.src;
-      var base = _smilIterator.smil.href;
+        var src = _smilIterator.currentPar.text.src;
+        var base = _smilIterator.smil.href;
 
-      //self.pause();
-      //self.reset();
-      _smilIterator = undefined;
+        //self.pause();
+        //self.reset();
+        _smilIterator = undefined;
 
-      reader.openContentUrl(src, base, self);
+        reader.openContentUrl(src, base, self);
     }
 
     this.escape = function() {
-      if (!_smilIterator || !_smilIterator.currentPar) {
-        this.toggleMediaOverlay();
-        return;
-      }
+        
+        if(!_smilIterator || !_smilIterator.currentPar) {
 
-      if (!self.isPlaying()) {
-        //playCurrentPar();
-        self.play();
-        return;
-      }
-
-      if (_settings.mediaOverlaysEscapeEscapables) {
-        var parent = _smilIterator.currentPar;
-        while (parent) {
-          if (
-            parent.isEscapable &&
-            parent.isEscapable(_settings.mediaOverlaysEscapables)
-          ) {
-            do {
-              _smilIterator.next();
-            } while (
-              _smilIterator.currentPar &&
-              _smilIterator.currentPar.hasAncestor(parent)
-            );
-
-            if (!_smilIterator.currentPar) {
-              nextSmil(true);
-              return;
-            }
-
-            //_smilIterator.goToPar(_smilIterator.currentPar);
-            playCurrentPar();
+            this.toggleMediaOverlay();
             return;
-          }
-
-          parent = parent.parent;
         }
-      }
 
-      this.nextMediaOverlay(true);
+        if(!self.isPlaying())
+        {
+            //playCurrentPar();
+            self.play();
+            return;
+        }
+
+        if(_settings.mediaOverlaysEscapeEscapables)
+        {
+            var parent = _smilIterator.currentPar;
+            while (parent)
+            {
+                if (parent.isEscapable && parent.isEscapable(_settings.mediaOverlaysEscapables))
+                {
+                    do
+                    {
+                        _smilIterator.next();
+                    } while (_smilIterator.currentPar && _smilIterator.currentPar.hasAncestor(parent));
+
+                    if (!_smilIterator.currentPar)
+                    {
+                        nextSmil(true);
+                        return;
+                    }
+
+                    //_smilIterator.goToPar(_smilIterator.currentPar);
+                    playCurrentPar();
+                    return;
+                }
+
+                parent = parent.parent;
+            }
+        }
+
+        this.nextMediaOverlay(true);
     };
 
+
     this.playUserPar = function(par) {
-      if (self.isPlaying()) {
-        self.pause();
-      }
-
-      if (par.element || (par.cfi && par.cfi.cfiTextParent)) {
-        var seq = _elementHighlighter.adjustParToSeqSyncGranularity(par);
-        if (seq && seq !== par) {
-          var findFirstPar = function(smilNode) {
-            if (smilNode.nodeType && smilNode.nodeType === "par")
-              return smilNode;
-
-            if (!smilNode.children || smilNode.children.length <= 0)
-              return undefined;
-
-            for (var i = 0; i < smilNode.children.length; i++) {
-              var child = smilNode.children[i];
-              var inPar = findFirstPar(child);
-              if (inPar) return inPar;
-            }
-          };
-          var firstPar = findFirstPar(seq);
-          if (firstPar) par = firstPar;
+        if(self.isPlaying())
+        {
+            self.pause();
         }
-      }
 
-      playPar(par);
+        if (par.element || par.cfi && par.cfi.cfiTextParent)
+        {
+            var seq = _elementHighlighter.adjustParToSeqSyncGranularity(par);
+            if (seq && seq !== par)
+            {
+                var findFirstPar = function(smilNode)
+                {
+                    if (smilNode.nodeType && smilNode.nodeType === "par") return smilNode;
+                    
+                    if (!smilNode.children || smilNode.children.length <= 0) return undefined;
+                    
+                    for (var i = 0; i < smilNode.children.length; i++)
+                    {
+                        var child = smilNode.children[i];
+                        var inPar = findFirstPar(child);
+                        if (inPar) return inPar;
+                    }
+                };
+                var firstPar = findFirstPar(seq);
+                if (firstPar) par = firstPar;
+            }
+        }
+
+        playPar(par);
     };
 
     this.resetTTS = function() {
-      _currentTTS = undefined;
-      //        _skipTTSEnded = false;
-      speakStop();
+        _currentTTS = undefined;
+//        _skipTTSEnded = false;
+        speakStop();
     };
 
     this.resetBlankPage = function() {
-      var wasPlaying = false;
-
-      if (_blankPagePlayer) {
-        wasPlaying = true;
-
-        var timer = _blankPagePlayer;
+        var wasPlaying = false;
+        
+        if (_blankPagePlayer)
+        {
+            wasPlaying = true;
+            
+            var timer = _blankPagePlayer;
+            _blankPagePlayer = undefined;
+            clearTimeout(timer);
+        }
         _blankPagePlayer = undefined;
-        clearTimeout(timer);
-      }
-      _blankPagePlayer = undefined;
 
-      if (wasPlaying) {
-        onStatusChanged({ isPlaying: false });
-      }
+        if (wasPlaying) {
+            onStatusChanged({isPlaying: false});
+        }
     };
 
     this.resetEmbedded = function() {
-      var wasPlaying = _embeddedIsPlaying;
-
-      if (_currentEmbedded) {
-        $(_currentEmbedded).off("ended", self.onEmbeddedEnd);
-        _currentEmbedded.pause();
-      }
-      _currentEmbedded = undefined;
-
-      if (wasPlaying) {
-        onStatusChanged({ isPlaying: false });
-      }
-      _embeddedIsPlaying = false;
+        var wasPlaying = _embeddedIsPlaying;
+        
+        if (_currentEmbedded)
+        {
+            $(_currentEmbedded).off("ended", self.onEmbeddedEnd);
+            _currentEmbedded.pause();
+        }
+        _currentEmbedded = undefined;
+        
+        if (wasPlaying) {
+            onStatusChanged({isPlaying: false});
+        }
+        _embeddedIsPlaying = false;
     };
 
     this.reset = function() {
-      clipBeginOffset = 0.0;
-      _audioPlayer.reset();
-      self.resetTTS();
-      self.resetEmbedded();
-      self.resetBlankPage();
-      _elementHighlighter.reset();
-      _smilIterator = undefined;
-      _skipAudioEnded = false;
+        clipBeginOffset = 0.0;
+        _audioPlayer.reset();
+        self.resetTTS();
+        self.resetEmbedded();
+        self.resetBlankPage();
+        _elementHighlighter.reset();
+        _smilIterator = undefined;
+        _skipAudioEnded = false;
     };
 
-    this.play = function() {
-      if (_smilIterator && _smilIterator.smil && !_smilIterator.smil.id) {
-        initBlankPagePlayer();
-        return;
-      } else if (_currentEmbedded) {
-        _embeddedIsPlaying = true;
-        _currentEmbedded.play();
-        onStatusChanged({ isPlaying: true });
-      } else if (_currentTTS) {
-        speakStart(undefined);
-      } else {
-        if (!_audioPlayer.play()) {
-          console.log("Audio player was dead, reactivating...");
-
-          this.reset();
-          this.toggleMediaOverlay();
-          return;
+    this.play = function ()
+    {
+        if (_smilIterator && _smilIterator.smil && !_smilIterator.smil.id)
+        {
+            initBlankPagePlayer();
+            return;
         }
-      }
-
-      highlightCurrentElement();
-    };
-
-    this.pause = function() {
-      _wasPlayingScrolling = false;
-
-      if (_blankPagePlayer) {
-        this.resetBlankPage();
-      } else if (_embeddedIsPlaying) {
-        _embeddedIsPlaying = false;
-        if (_currentEmbedded) {
-          _currentEmbedded.pause();
+        else if (_currentEmbedded)
+        {
+            _embeddedIsPlaying = true;
+            _currentEmbedded.play();
+            onStatusChanged({isPlaying: true});
         }
-        onStatusChanged({ isPlaying: false });
-      } else if (_ttsIsPlaying) {
-        speakStop();
-      } else {
-        _audioPlayer.pause();
-      }
+        else if (_currentTTS)
+        {
+            speakStart(undefined);
+        }
+        else
+        {
+            if (!_audioPlayer.play())
+            {
+                console.log("Audio player was dead, reactivating...");
 
-      _elementHighlighter.reset();
-    };
+                this.reset();
+                this.toggleMediaOverlay();
+                return;
+            }
+        }
+
+        highlightCurrentElement();
+    }
+
+    this.pause = function()
+    {
+        _wasPlayingScrolling = false;
+        
+        if (_blankPagePlayer)
+        {
+            this.resetBlankPage();
+        }
+        else if (_embeddedIsPlaying)
+        {
+            _embeddedIsPlaying = false;
+            if (_currentEmbedded)
+            {
+                _currentEmbedded.pause();
+            }
+            onStatusChanged({isPlaying: false});
+        }
+        else if (_ttsIsPlaying)
+        {
+            speakStop();
+        }
+        else
+        {
+            _audioPlayer.pause();
+        }
+
+        _elementHighlighter.reset();
+    }
 
     this.isMediaOverlayAvailable = function() {
-      //        console.debug("isMediaOverlayAvailable()");
-      //
-      //        var now1 = window.performance && window.performance.now ? window.performance.now() : Date.now();
-      //
-      //        if (console.time)
-      //        {
-      //            console.time("MO");
-      //        }
 
-      var visibleMediaElement = reader.getFirstVisibleMediaOverlayElement();
+//        console.debug("isMediaOverlayAvailable()");
+//
+//        var now1 = window.performance && window.performance.now ? window.performance.now() : Date.now();
+//
+//        if (console.time)
+//        {
+//            console.time("MO");
+//        }
 
-      //        if (console.timeEnd)
-      //        {
-      //            console.timeEnd("MO");
-      //        }
-      //
-      //        var now2 = window.performance && window.performance.now ? window.performance.now() : Date.now();
-      //
-      //        console.debug(now2 - now1);
+        var visibleMediaElement = reader.getFirstVisibleMediaOverlayElement();
 
-      return typeof visibleMediaElement !== "undefined";
+//        if (console.timeEnd)
+//        {
+//            console.timeEnd("MO");
+//        }
+//
+//        var now2 = window.performance && window.performance.now ? window.performance.now() : Date.now();
+//
+//        console.debug(now2 - now1);
+
+        return typeof visibleMediaElement !== "undefined";
     };
 
     this.nextOrPreviousMediaOverlay = function(previous) {
-      if (self.isPlaying()) {
-        self.pause();
-      } else {
-        if (_smilIterator && _smilIterator.currentPar) {
-          //playCurrentPar();
-          self.play();
-          return;
+        if(self.isPlaying())
+        {
+            self.pause();
         }
-      }
+        else
+        {
+            if (_smilIterator && _smilIterator.currentPar)
+            {
+                //playCurrentPar();
+                self.play();
+                return;
+            }
+        }
 
-      if (!_smilIterator) {
-        this.toggleMediaOverlay();
-        return;
-      }
+        if(!_smilIterator)
+        {
+            this.toggleMediaOverlay();
+            return;
+        }
 
-      var position = previous
-        ? DIRECTION_MARK - 1
-        : _smilIterator.currentPar.audio.clipEnd + 0.1;
+        var position = previous ? DIRECTION_MARK - 1 : _smilIterator.currentPar.audio.clipEnd + 0.1;
 
-      onAudioPositionChanged(position, 6);
-      // setTimeout(function(){
-      //
-      // }, 1);
+        onAudioPositionChanged(position, 6);
+        // setTimeout(function(){
+        //     
+        // }, 1);
 
-      //self.play();
-      //playCurrentPar();
+        //self.play();
+        //playCurrentPar();
     };
 
     this.nextMediaOverlay = function() {
-      this.nextOrPreviousMediaOverlay(false);
+        this.nextOrPreviousMediaOverlay(false);
     };
 
     this.previousMediaOverlay = function() {
-      this.nextOrPreviousMediaOverlay(true);
+        this.nextOrPreviousMediaOverlay(true);
     };
 
     /*
@@ -47226,20 +46847,17 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
     };
     */
 
-    this.mediaOverlaysOpenContentUrl = function(
-      contentRefUrl,
-      sourceFileHref,
-      offset
-    ) {
-      clipBeginOffset = offset;
+    this.mediaOverlaysOpenContentUrl = function(contentRefUrl, sourceFileHref, offset)
+    {
+        clipBeginOffset = offset;
 
-      //self.pause();
-      //self.reset();
-      _smilIterator = undefined;
+        //self.pause();
+        //self.reset();
+        _smilIterator = undefined;
 
-      reader.openContentUrl(contentRefUrl, sourceFileHref, self);
+        reader.openContentUrl(contentRefUrl, sourceFileHref, self);
 
-      /*
+        /*
         if (_currentPagination && _currentPagination.isFixedLayout && _currentPagination.openPages && _currentPagination.openPages.length > 0)
         {
             var combinedPath = Globals.Helpers.ResolveContentRef(contentRefUrl, sourceFileHref);
@@ -47276,221 +46894,227 @@ console.debug("textAbsoluteRef: " + textAbsoluteRef);
     };
 
     this.toggleMediaOverlay = function() {
-      if (self.isPlaying()) {
-        self.pause();
-        return;
-      }
+        if(self.isPlaying()) {
+            self.pause();
+            return;
+        }
 
-      //if we have position to continue from (reset wasn't called)
-      if (_smilIterator) {
-        self.play();
-        return;
-      }
+        //if we have position to continue from (reset wasn't called)
+        if(_smilIterator) {
+            self.play();
+            return;
+        }
 
-      this.toggleMediaOverlayRefresh(undefined);
+        this.toggleMediaOverlayRefresh(undefined);
     };
 
     var _wasPlayingScrolling = false;
 
-    this.toggleMediaOverlayRefresh = function(paginationData) {
-      //console.debug("moData SMIL: " + moData.par.getSmil().href + " // " + + moData.par.getSmil().id);
+    this.toggleMediaOverlayRefresh = function(paginationData)
+    {
+//console.debug("moData SMIL: " + moData.par.getSmil().href + " // " + + moData.par.getSmil().id);
 
-      var spineItems = reader.getLoadedSpineItems();
+        var spineItems = reader.getLoadedSpineItems();
 
-      //paginationData.isRightToLeft
-      var rtl = reader.spine().isRightToLeft();
+        //paginationData.isRightToLeft
+        var rtl = reader.spine().isRightToLeft();
 
-      //paginationData.spineItemCount
-      //paginationData.openPages
-      //{spineItemPageIndex: , spineItemPageCount: , idref: , spineItemIndex: }
+        //paginationData.spineItemCount
+        //paginationData.openPages
+        //{spineItemPageIndex: , spineItemPageCount: , idref: , spineItemIndex: }
 
-      var playingPar = undefined;
-      var wasPlaying = self.isPlaying();
-      if (wasPlaying && _smilIterator) {
-        var isScrollView =
-          paginationData.initiator &&
-          paginationData.initiator instanceof ScrollView;
-        if (isScrollView && _settings.mediaOverlaysPreservePlaybackWhenScroll) {
-          _wasPlayingScrolling = true;
-          return;
-        }
-
-        playingPar = _smilIterator.currentPar;
-        self.pause();
-      }
-
-      _wasPlayingScrolling = false;
-
-      //paginationData && paginationData.elementId
-      //paginationData.initiator != self
-
-      //_package.isFixedLayout()
-
-      var element =
-        paginationData && paginationData.elementIdResolved
-          ? paginationData.elementIdResolved
-          : undefined;
-
-      var id =
-        paginationData && paginationData.elementId
-          ? paginationData.elementId
-          : undefined;
-
-      if (!element) {
-        if (id) {
-          console.error("[WARN] id did not resolve to element?");
-        }
-
-        for (
-          var i = rtl ? spineItems.length - 1 : 0;
-          (rtl && i >= 0) || (!rtl && i < spineItems.length);
-          i += rtl ? -1 : 1
-        ) {
-          var spineItem = spineItems[i];
-          if (!spineItem) {
-            console.error("spineItems[i] is undefined??");
-            continue;
-          }
-
-          if (
-            paginationData &&
-            paginationData.spineItem &&
-            paginationData.spineItem != spineItem
-          ) {
-            continue;
-          }
-
-          if (id) {
-            var $element = reader.getElementById(spineItem.idref, id);
-            //var $element = reader.getElement(spineItem.idref, "#" + ReadiumSDK.Helpers.escapeJQuerySelector(id));
-            element = $element && $element.length > 0 ? $element[0] : undefined;
-          } else if (spineItem.isFixedLayout()) {
-            if (
-              paginationData &&
-              paginationData.paginationInfo &&
-              paginationData.paginationInfo.openPages
-            ) {
-              // openPages are sorted by spineItem index, so the smallest index on display is the one we need to play (page on the left in LTR, or page on the right in RTL progression)
-              var index = 0; // !paginationData.paginationInfo.isRightToLeft ? 0 : paginationData.paginationInfo.openPages.length - 1;
-
-              if (
-                paginationData.paginationInfo.openPages[index] &&
-                paginationData.paginationInfo.openPages[index].idref &&
-                paginationData.paginationInfo.openPages[index].idref ===
-                  spineItem.idref
-              ) {
-                var $element = reader.getElement(spineItem.idref, "body");
-                element =
-                  $element && $element.length > 0 ? $element[0] : undefined;
-              }
+        var playingPar = undefined;
+        var wasPlaying = self.isPlaying();
+        if(wasPlaying && _smilIterator)
+        {
+            var isScrollView = paginationData.initiator && paginationData.initiator instanceof ScrollView;
+            if (isScrollView && _settings.mediaOverlaysPreservePlaybackWhenScroll)
+            {
+                _wasPlayingScrolling = true;
+                return;
             }
-          }
-
-          if (element) {
-            break;
-          }
+            
+            playingPar = _smilIterator.currentPar;
+            self.pause();
         }
-      }
+        
+        _wasPlayingScrolling = false;
 
-      if (!element) {
-        element = reader.getFirstVisibleMediaOverlayElement();
-      }
+        //paginationData && paginationData.elementId
+        //paginationData.initiator != self
 
-      if (!element) {
-        self.reset();
-        return;
-      }
+        //_package.isFixedLayout()
 
-      var moData = $(element).data("mediaOverlayData");
+        var element = (paginationData && paginationData.elementIdResolved) ? paginationData.elementIdResolved : undefined;
 
-      if (!moData) {
-        var foundMe = false;
-        var depthFirstTraversal = function(elements) {
-          if (!elements) {
-            return false;
-          }
+        var id = (paginationData && paginationData.elementId) ? paginationData.elementId : undefined;
 
-          for (var i = 0; i < elements.length; i++) {
-            if (element === elements[i]) foundMe = true;
+        if (!element)
+        {
+            if (id)
+            {
+                console.error("[WARN] id did not resolve to element?");
+            }
+            
+            for(var i = (rtl ? (spineItems.length - 1) : 0); (rtl && i >=0) || (!rtl && i < spineItems.length); i += (rtl ? -1: 1))
+            {
+                var spineItem = spineItems[i];
+                if (!spineItem)
+                {
+                    console.error("spineItems[i] is undefined??");
+                    continue;
+                }
+            
+                if (paginationData && paginationData.spineItem && paginationData.spineItem != spineItem)
+                {
+                    continue;
+                }
 
-            if (foundMe) {
-              var d = $(elements[i]).data("mediaOverlayData");
-              if (d) {
-                moData = d;
-                return true;
-              }
+                if (id)
+                {
+                    var $element = reader.getElementById(spineItem.idref, id);
+                    //var $element = reader.getElement(spineItem.idref, "#" + ReadiumSDK.Helpers.escapeJQuerySelector(id));
+                    element = ($element && $element.length > 0) ? $element[0] : undefined;
+                }
+                else if (spineItem.isFixedLayout())
+                {
+                    if (paginationData && paginationData.paginationInfo && paginationData.paginationInfo.openPages)
+                    {
+                        // openPages are sorted by spineItem index, so the smallest index on display is the one we need to play (page on the left in LTR, or page on the right in RTL progression)
+                        var index = 0; // !paginationData.paginationInfo.isRightToLeft ? 0 : paginationData.paginationInfo.openPages.length - 1;
+                    
+                        if (paginationData.paginationInfo.openPages[index] && paginationData.paginationInfo.openPages[index].idref && paginationData.paginationInfo.openPages[index].idref === spineItem.idref)
+                        {
+                            var $element = reader.getElement(spineItem.idref, "body");
+                            element = ($element && $element.length > 0) ? $element[0] : undefined;
+                        }
+                    }
+                }
+
+                if (element)
+                {
+                    break;
+                }
+            }
+        }
+
+        if (!element)
+        {
+            element = reader.getFirstVisibleMediaOverlayElement();
+        }
+
+        if (!element)
+        {
+            self.reset();
+            return;
+        }
+
+        var moData = $(element).data("mediaOverlayData");
+
+        if (!moData)
+        {
+            var foundMe = false;
+            var depthFirstTraversal = function(elements)
+            {
+                if (!elements)
+                {
+                    return false;
+                }
+
+                for (var i = 0; i < elements.length; i++)
+                {
+                    if (element === elements[i]) foundMe = true;
+                    
+                    if (foundMe)
+                    {
+                        var d = $(elements[i]).data("mediaOverlayData");
+                        if (d)
+                        {
+                            moData = d;
+                            return true;
+                        }
+                    }
+
+                    var found = depthFirstTraversal(elements[i].children);
+                    if (found)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
             }
 
-            var found = depthFirstTraversal(elements[i].children);
-            if (found) {
-              return true;
+            var root = element;
+            while (root && root.nodeName.toLowerCase() !== "body")
+            {
+                root = root.parentNode;
             }
-          }
 
-          return false;
-        };
+            if (!root)
+            {
+                self.reset();
+                return;
+            }
 
-        var root = element;
-        while (root && root.nodeName.toLowerCase() !== "body") {
-          root = root.parentNode;
+            depthFirstTraversal([root]);
         }
 
-        if (!root) {
-          self.reset();
-          return;
+        if (!moData)
+        {
+            self.reset();
+            return;
         }
 
-        depthFirstTraversal([root]);
-      }
+        var zPar = moData.par ? moData.par : moData.pars[0];
+        var parSmil = zPar.getSmil();
+        if(!_smilIterator || _smilIterator.smil != parSmil)
+        {
+            _smilIterator = new SmilIterator(parSmil);
+        }
+        else
+        {
+            _smilIterator.reset();
+        }
+        
+        _smilIterator.goToPar(zPar);
+        
+        if (!_smilIterator.currentPar && id)
+        {
+            _smilIterator.reset();
+            _smilIterator.findTextId(id);
+        }
+        
+        if (!_smilIterator.currentPar)
+        {
+            self.reset();
+            return;
+        }
 
-      if (!moData) {
-        self.reset();
-        return;
-      }
-
-      var zPar = moData.par ? moData.par : moData.pars[0];
-      var parSmil = zPar.getSmil();
-      if (!_smilIterator || _smilIterator.smil != parSmil) {
-        _smilIterator = new SmilIterator(parSmil);
-      } else {
-        _smilIterator.reset();
-      }
-
-      _smilIterator.goToPar(zPar);
-
-      if (!_smilIterator.currentPar && id) {
-        _smilIterator.reset();
-        _smilIterator.findTextId(id);
-      }
-
-      if (!_smilIterator.currentPar) {
-        self.reset();
-        return;
-      }
-
-      if (wasPlaying && playingPar && playingPar === _smilIterator.currentPar) {
-        self.play();
-      } else {
-        playCurrentPar();
-        //playPar(zPar);
-      }
+        if (wasPlaying && playingPar && playingPar === _smilIterator.currentPar)
+        {
+            self.play();
+        }
+        else
+        {
+            playCurrentPar();
+            //playPar(zPar);
+        }
     };
 
-    this.isPlayingCfi = function() {
-      return (
-        _smilIterator &&
-        _smilIterator.currentPar &&
-        _smilIterator.currentPar.cfi
-      );
+    this.isPlayingCfi = function()
+    {
+        return _smilIterator && _smilIterator.currentPar && _smilIterator.currentPar.cfi;
     };
-
+    
     var _wasPausedBecauseNoAutoNextSmil = false;
     var _autoNextSmil = true;
-    this.setAutomaticNextSmil = function(autoNext) {
-      _autoNextSmil = autoNext;
+    this.setAutomaticNextSmil = function(autoNext)
+    {
+        _autoNextSmil = autoNext;
     };
-  };
-  return MediaOverlayPlayer;
+};
+    return MediaOverlayPlayer;
 });
 
 //  Created by Boris Schneiderman.

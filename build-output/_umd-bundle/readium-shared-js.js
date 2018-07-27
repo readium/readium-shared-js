@@ -28242,7 +28242,7 @@ _readium_shared_js_helpers = function (Globals, _, $, JQuerySizes, SpineItem, UR
    * @param $epubHtml: The html that is to have font attributes added.
    * @param fontSize: The font size that is to be added to the element at all locations.
    * @param fontObj: The font Object containing at minimum the URL, and fontFamilyName (In fields url and fontFamily) respectively. Pass in null's on the object's fields to signal no font.
-   * @param callback: function invoked when "done", which means that if there are asynchronous operations such as font-face loading via injected stylesheets, then the UpdateHtmlFontAttributes() function returns immediately but the caller should wait for the callback function call if fully-loaded font-face *stylesheets* are required on the caller's side (note that the caller's side may still need to detect *actual font loading*, via the FontLoader API or some sort of ResizeSensor to indicate that the updated font-family has been used to render the document).
+   * @param callback: function invoked when "done", which means that if there are asynchronous operations such as font-face loading via injected stylesheets, then the UpdateHtmlFontAttributes() function returns immediately but the caller should wait for the callback function call if fully-loaded font-face *stylesheets* are required on the caller's side (note that the caller's side may still need to detect *actual font loading*, via the FontLoader API or some sort of ResizeSensor to indicate that the updated font-family has been used to render the document). 
    */
   Helpers.UpdateHtmlFontAttributes = function ($epubHtml, fontSize, fontObj, callback) {
     var FONT_FAMILY_ID = 'readium_font_family_link';
@@ -28324,7 +28324,7 @@ _readium_shared_js_helpers = function (Globals, _, $, JQuerySizes, SpineItem, UR
       }
       for (var i = 0; i < $textblocks.length; i++) {
         var ele = $textblocks[i];
-        // TODO: group the 3x potential $(ele).css() calls below to avoid multiple jQuery style mutations
+        // TODO: group the 3x potential $(ele).css() calls below to avoid multiple jQuery style mutations 
         var fontSizeAttr = ele.getAttribute('data-original-font-size');
         var originalFontSize = fontSizeAttr ? Number(fontSizeAttr) : 0;
         if (originalFontSize) {
@@ -28368,19 +28368,19 @@ _readium_shared_js_helpers = function (Globals, _, $, JQuerySizes, SpineItem, UR
         changeFontFamily = ADD;
         setTimeout(function () {
           link = $('<link/>', {
-            id: FONT_FAMILY_ID,
+            'id': FONT_FAMILY_ID,
             'data-fontfamily': fontObj.fontFamily,
-            rel: 'stylesheet',
-            type: 'text/css'
+            'rel': 'stylesheet',
+            'type': 'text/css'
           });
           docHead.append(link);
-          link.attr({ href: fontObj.url });
+          link.attr({ 'href': fontObj.url });
         }, 0);
       } else if (dataFontFamily != fontObj.fontFamily) {
         changeFontFamily = ADD;
         link.attr({
           'data-fontfamily': fontObj.fontFamily,
-          href: fontObj.url
+          'href': fontObj.url
         });
       } else {
         changeFontFamily = NOTHING;
@@ -28620,12 +28620,12 @@ _readium_shared_js_helpers = function (Globals, _, $, JQuerySizes, SpineItem, UR
    * @type {{fixed_book_frame: string, single_page_frame: string, scrolled_book_frame: string, reflowable_book_frame: string, reflowable_book_page_frame: string}}
    */
   Helpers.loadTemplate.cache = {
-    fixed_book_frame: '<div id="fixed-book-frame" class="clearfix book-frame fixed-book-frame"></div>',
-    single_page_frame: '<div><div id="scaler"><iframe enable-annotation="enable-annotation" allowfullscreen="allowfullscreen" scrolling="no" class="iframe-fixed"></iframe></div></div>',
+    'fixed_book_frame': '<div id="fixed-book-frame" class="clearfix book-frame fixed-book-frame"></div>',
+    'single_page_frame': '<div><div id="scaler"><iframe enable-annotation="enable-annotation" allowfullscreen="allowfullscreen" scrolling="no" class="iframe-fixed"></iframe></div></div>',
     //"single_page_frame" : '<div><iframe scrolling="no" class="iframe-fixed" id="scaler"></iframe></div>',
-    scrolled_book_frame: '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"><div id="scrolled-content-frame"></div></div>',
-    reflowable_book_frame: '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"></div>',
-    reflowable_book_page_frame: '<div id="reflowable-content-frame" class="reflowable-content-frame"><iframe enable-annotation="enable-annotation" allowfullscreen="allowfullscreen" scrolling="no" id="epubContentIframe"></iframe></div>'  /***
+    'scrolled_book_frame': '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"><div id="scrolled-content-frame"></div></div>',
+    'reflowable_book_frame': '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"></div>',
+    'reflowable_book_page_frame': '<div id="reflowable-content-frame" class="reflowable-content-frame"><iframe enable-annotation="enable-annotation" allowfullscreen="allowfullscreen" scrolling="no" id="epubContentIframe"></iframe></div>'  /***
                                                                                                                                                                                                                   * The `enable-annotation` attribute on an iframe helps detect the content frames for annotating tools such as Hypothesis
                                                                                                                                                                                                                   * See here for more details:
                                                                                                                                                                                                                   * https://h.readthedocs.io/projects/client/en/latest/publishers/embedding/
@@ -33084,14 +33084,14 @@ _readium_shared_js_views_cfi_navigation_logic = function ($, _, Helpers, EPUBcfi
     };
     function generateCfiFromDomRange(range) {
       if (range.collapsed && range.startContainer.nodeType === Node.TEXT_NODE) {
-        return EPUBcfi.Generator.generateCharacterOffsetCFIComponent(range.startContainer, range.startOffset, ['cfi-marker'], [], [
+        return EPUBcfi.generateCharacterOffsetCFIComponent(range.startContainer, range.startOffset, ['cfi-marker'], [], [
           'MathJax_Message',
           'MathJax_SVG_Hidden'
         ]);
       } else if (range.collapsed) {
         return self.getCfiForElement(range.startContainer);
       } else {
-        return EPUBcfi.Generator.generateRangeComponent(range.startContainer, range.startOffset, range.endContainer, range.endOffset, self.getClassBlacklist(), self.getElementBlacklist(), self.getIdBlacklist());
+        return EPUBcfi.generateRangeComponent(range.startContainer, range.startOffset, range.endContainer, range.endOffset, self.getClassBlacklist(), self.getElementBlacklist(), self.getIdBlacklist());
       }
     }
     this.getDomRangeFromRangeCfi = function (rangeCfi, rangeCfi2, inclusive) {
@@ -33160,7 +33160,7 @@ _readium_shared_js_views_cfi_navigation_logic = function ($, _, Helpers, EPUBcfi
       var wrappedCfi = getWrappedCfi(cfi);
       try {
         //noinspection JSUnresolvedVariable
-        var $element = EPUBcfi.Interpreter.getTargetElement(wrappedCfi, contentDoc, classBlacklist, elementBlacklist, idBlacklist);
+        var $element = EPUBcfi.getTargetElement(wrappedCfi, contentDoc, classBlacklist, elementBlacklist, idBlacklist);
       } catch (ex) {
       }
       if (!$element || $element.length == 0) {
@@ -36084,19 +36084,19 @@ _readium_shared_js_views_media_overlay_data_injector = function ($, _, Helpers, 
             var parts = root.textref.split('#');
             var file = parts[0];
             var fragmentId = parts.length === 2 ? parts[1] : '';
-            //
+            // 
             // console.debug(root.textref);
             // console.debug(fragmentId);
             // console.log("---- SHOULD BE EQUAL:");
             // console.debug(file);
             // console.debug(par.text.srcFile);
-            //
+            // 
             // if (file !== par.text.srcFile)
             // {
             //     console.error("adjustParToSeqSyncGranularity textref.file !== par.text.srcFile ???");
             //     return par;
             // }
-            //
+            // 
             // if (!fragmentId)
             // {
             //     console.error("adjustParToSeqSyncGranularity !fragmentId ???");
@@ -36155,14 +36155,14 @@ _readium_shared_js_views_media_overlay_data_injector = function ($, _, Helpers, 
                   try {
                     var partialStartCfi = parts[0] + parts[1];
                     var startCFI = 'epubcfi(' + partialStartCfi + ')';
-                    var infoStart = EPUBcfi.Interpreter.getTextTerminusInfoWithPartialCFI(startCFI, $iframe[0].contentDocument, [
+                    var infoStart = EPUBcfi.getTextTerminusInfoWithPartialCFI(startCFI, $iframe[0].contentDocument, [
                       'cfi-marker',
                       'mo-cfi-highlight'
                     ], [], ['MathJax_Message']);
                     //console.log(infoStart);
                     var partialEndCfi = parts[0] + parts[2];
                     var endCFI = 'epubcfi(' + partialEndCfi + ')';
-                    var infoEnd = EPUBcfi.Interpreter.getTextTerminusInfoWithPartialCFI(endCFI, $iframe[0].contentDocument, [
+                    var infoEnd = EPUBcfi.getTextTerminusInfoWithPartialCFI(endCFI, $iframe[0].contentDocument, [
                       'cfi-marker',
                       'mo-cfi-highlight'
                     ], [], ['MathJax_Message']);
@@ -36213,7 +36213,7 @@ _readium_shared_js_views_media_overlay_data_injector = function ($, _, Helpers, 
                 } else {
                   try {
                     var cfi = 'epubcfi(' + partial + ')';
-                    $element = EPUBcfi.Interpreter.getTargetElementWithPartialCFI(cfi, $iframe[0].contentDocument, [
+                    $element = EPUBcfi.getTargetElementWithPartialCFI(cfi, $iframe[0].contentDocument, [
                       'cfi-marker',
                       'mo-cfi-highlight'
                     ], [], ['MathJax_Message']);
@@ -38004,13 +38004,13 @@ _readium_shared_js_views_media_overlay_player = function (Globals, $, Helpers, A
           // ensure clean DOM (no CFI span markers)
           var doc = cfi.cfiTextParent.ownerDocument;
           var startCFI = 'epubcfi(' + cfi.partialStartCfi + ')';
-          var infoStart = EPUBcfi.Interpreter.getTextTerminusInfoWithPartialCFI(startCFI, doc, [
+          var infoStart = EPUBcfi.getTextTerminusInfoWithPartialCFI(startCFI, doc, [
             'cfi-marker',
             'mo-cfi-highlight'
           ], [], ['MathJax_Message']);
           //console.log(infoStart);
           var endCFI = 'epubcfi(' + cfi.partialEndCfi + ')';
-          var infoEnd = EPUBcfi.Interpreter.getTextTerminusInfoWithPartialCFI(endCFI, doc, [
+          var infoEnd = EPUBcfi.getTextTerminusInfoWithPartialCFI(endCFI, doc, [
             'cfi-marker',
             'mo-cfi-highlight'
           ], [], ['MathJax_Message']);
@@ -38115,10 +38115,11 @@ _readium_shared_js_views_media_overlay_player = function (Globals, $, Helpers, A
       }
       if (goNext) {
         _smilIterator.next();
-      }  //position <= DIRECTION_MARK
-      else {
-        _smilIterator.previous();
-      }
+      } else
+        //position <= DIRECTION_MARK
+        {
+          _smilIterator.previous();
+        }
       if (!_smilIterator.currentPar) {
         //
         //        if (!noLetPlay)
@@ -38205,7 +38206,7 @@ _readium_shared_js_views_media_overlay_player = function (Globals, $, Helpers, A
                   _smilIterator.next();
                   if (!_smilIterator.currentPar.hasAncestor(landed)) {
                     console.error('adjustParToSeqSyncGranularity !_smilIterator.currentPar.hasAncestor(landed) ???');
-                  }  //assert
+                  }  //assert 
                 } else {
                   //console.debug("adjustParToSeqSyncGranularity reached begin");
                   _smilIterator.reset();
@@ -38417,9 +38418,9 @@ _readium_shared_js_views_media_overlay_player = function (Globals, $, Helpers, A
             _SpeechSynthesisUtterance.onboundary = undefined;  //                 _SpeechSynthesisUtterance.onboundary = function(event)
                                                                //                 {
                                                                // console.debug("OLD TTS boundary");
-                                                               //
+                                                               //                 
                                                                //                         event.target.tokenData = undefined;
-                                                               //
+                                                               //  
                                                                //                 };
           }
           _SpeechSynthesisUtterance.onend = undefined;
@@ -38913,7 +38914,7 @@ _readium_shared_js_views_media_overlay_player = function (Globals, $, Helpers, A
       }
       var position = previous ? DIRECTION_MARK - 1 : _smilIterator.currentPar.audio.clipEnd + 0.1;
       onAudioPositionChanged(position, 6);  // setTimeout(function(){
-                                            //
+                                            //     
                                             // }, 1);
                                             //self.play();
                                             //playCurrentPar();
