@@ -26,7 +26,7 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define(["jquery", "underscore"], function($, _) {
+define(["jquery", "underscore", 'URIjs'], function($, _, URI) {
 /**
  *
  * @constructor

@@ -22,7 +22,7 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define(['jquery', '../helpers', 'readium_cfi_js', 'readium_cfi_js/XmlParse'], function($, Helpers, epubCfi, XmlParse) {
+define(['jquery', '../helpers', 'readium_cfi_js', 'URIjs', '../XmlParse'], function($, Helpers, EPUBcfi, URI, XmlParse) {
 /**
  *
  * @param reader

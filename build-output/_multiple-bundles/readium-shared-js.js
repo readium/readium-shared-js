@@ -182,236 +182,3848 @@ navigator.epubReadingSystem = {
         return false;
     }
 };
-(function (exports) {'use strict';
-  //shared pointer
-  var i;
-  //shortcuts
-  var defineProperty = Object.defineProperty, is = function(a,b) { return (a === b) || (a !== a && b !== b) };
+ /*!
+  * https://github.com/paulmillr/es6-shim
+  * @license es6-shim Copyright 2013-2016 by Paul Miller (http://paulmillr.com)
+  *   and contributors,  MIT License
+  * es6-shim: v0.35.1
+  * see https://github.com/paulmillr/es6-shim/blob/0.35.1/LICENSE
+  * Details and documentation:
+  * https://github.com/paulmillr/es6-shim/
+  */
 
-
-  //Polyfill global objects
-  if (typeof WeakMap == 'undefined') {
-    exports.WeakMap = createCollection({
-      // WeakMap#delete(key:void*):boolean
-      'delete': sharedDelete,
-      // WeakMap#clear():
-      clear: sharedClear,
-      // WeakMap#get(key:void*):void*
-      get: sharedGet,
-      // WeakMap#has(key:void*):boolean
-      has: mapHas,
-      // WeakMap#set(key:void*, value:void*):void
-      set: sharedSet
-    }, true);
+// UMD (Universal Module Definition)
+// see https://github.com/umdjs/umd/blob/master/returnExports.js
+(function (root, factory) {
+  /*global define, module, exports */
+  if (typeof define === 'function' && define.amd) {
+    // AMD. Register as an anonymous module.
+    define('es6-shim',factory);
+  } else if (typeof exports === 'object') {
+    // Node. Does not work with strict CommonJS, but
+    // only CommonJS-like environments that support module.exports,
+    // like Node.
+    module.exports = factory();
+  } else {
+    // Browser globals (root is window)
+    root.returnExports = factory();
   }
+}(this, function () {
+  'use strict';
 
-  if (typeof Map == 'undefined' || typeof ((new Map).values) !== 'function' || !(new Map).values().next) {
-    exports.Map = createCollection({
-      // WeakMap#delete(key:void*):boolean
-      'delete': sharedDelete,
-      //:was Map#get(key:void*[, d3fault:void*]):void*
-      // Map#has(key:void*):boolean
-      has: mapHas,
-      // Map#get(key:void*):boolean
-      get: sharedGet,
-      // Map#set(key:void*, value:void*):void
-      set: sharedSet,
-      // Map#keys(void):Iterator
-      keys: sharedKeys,
-      // Map#values(void):Iterator
-      values: sharedValues,
-      // Map#entries(void):Iterator
-      entries: mapEntries,
-      // Map#forEach(callback:Function, context:void*):void ==> callback.call(context, key, value, mapObject) === not in specs`
-      forEach: sharedForEach,
-      // Map#clear():
-      clear: sharedClear
-    });
-  }
+  var _apply = Function.call.bind(Function.apply);
+  var _call = Function.call.bind(Function.call);
+  var isArray = Array.isArray;
+  var keys = Object.keys;
 
-  if (typeof Set == 'undefined' || typeof ((new Set).values) !== 'function' || !(new Set).values().next) {
-    exports.Set = createCollection({
-      // Set#has(value:void*):boolean
-      has: setHas,
-      // Set#add(value:void*):boolean
-      add: sharedAdd,
-      // Set#delete(key:void*):boolean
-      'delete': sharedDelete,
-      // Set#clear():
-      clear: sharedClear,
-      // Set#keys(void):Iterator
-      keys: sharedValues, // specs actually say "the same function object as the initial value of the values property"
-      // Set#values(void):Iterator
-      values: sharedValues,
-      // Set#entries(void):Iterator
-      entries: setEntries,
-      // Set#forEach(callback:Function, context:void*):void ==> callback.call(context, value, index) === not in specs
-      forEach: sharedForEach
-    });
-  }
-
-  if (typeof WeakSet == 'undefined') {
-    exports.WeakSet = createCollection({
-      // WeakSet#delete(key:void*):boolean
-      'delete': sharedDelete,
-      // WeakSet#add(value:void*):boolean
-      add: sharedAdd,
-      // WeakSet#clear():
-      clear: sharedClear,
-      // WeakSet#has(value:void*):boolean
-      has: setHas
-    }, true);
-  }
-
-
-  /**
-   * ES6 collection constructor
-   * @return {Function} a collection class
-   */
-  function createCollection(proto, objectOnly){
-    function Collection(a){
-      if (!this || this.constructor !== Collection) return new Collection(a);
-      this._keys = [];
-      this._values = [];
-      this._itp = []; // iteration pointers
-      this.objectOnly = objectOnly;
-
-      //parse initial iterable argument passed
-      if (a) init.call(this, a);
+  var not = function notThunker(func) {
+    return function notThunk() {
+      return !_apply(func, this, arguments);
+    };
+  };
+  var throwsError = function (func) {
+    try {
+      func();
+      return false;
+    } catch (e) {
+      return true;
     }
-
-    //define size for non object-only collections
-    if (!objectOnly) {
-      defineProperty(proto, 'size', {
-        get: sharedSize
-      });
+  };
+  var valueOrFalseIfThrows = function valueOrFalseIfThrows(func) {
+    try {
+      return func();
+    } catch (e) {
+      return false;
     }
-
-    //set prototype
-    proto.constructor = Collection;
-    Collection.prototype = proto;
-
-    return Collection;
-  }
-
-
-  /** parse initial iterable argument passed */
-  function init(a){
-    var i;
-    //init Set argument, like `[1,2,3,{}]`
-    if (this.add)
-      a.forEach(this.add, this);
-    //init Map argument like `[[1,2], [{}, 4]]`
-    else
-      a.forEach(function(a){this.set(a[0],a[1])}, this);
-  }
-
-
-  /** delete */
-  function sharedDelete(key) {
-    if (this.has(key)) {
-      this._keys.splice(i, 1);
-      this._values.splice(i, 1);
-      // update iteration pointers
-      this._itp.forEach(function(p) { if (i < p[0]) p[0]--; });
-    }
-    // Aurora here does it while Canary doesn't
-    return -1 < i;
   };
 
-  function sharedGet(key) {
-    return this.has(key) ? this._values[i] : undefined;
-  }
+  var isCallableWithoutNew = not(throwsError);
+  var arePropertyDescriptorsSupported = function () {
+    // if Object.defineProperty exists but throws, it's IE 8
+    return !throwsError(function () {
+      Object.defineProperty({}, 'x', { get: function () {} });
+    });
+  };
+  var supportsDescriptors = !!Object.defineProperty && arePropertyDescriptorsSupported();
+  var functionsHaveNames = (function foo() {}).name === 'foo'; // eslint-disable-line no-extra-parens
 
-  function has(list, key) {
-    if (this.objectOnly && key !== Object(key))
-      throw new TypeError("Invalid value used as weak collection key");
-    //NaN or 0 passed
-    if (key != key || key === 0) for (i = list.length; i-- && !is(list[i], key);){}
-    else i = list.indexOf(key);
-    return -1 < i;
-  }
+  var _forEach = Function.call.bind(Array.prototype.forEach);
+  var _reduce = Function.call.bind(Array.prototype.reduce);
+  var _filter = Function.call.bind(Array.prototype.filter);
+  var _some = Function.call.bind(Array.prototype.some);
 
-  function setHas(value) {
-    return has.call(this, this._values, value);
-  }
+  var defineProperty = function (object, name, value, force) {
+    if (!force && name in object) { return; }
+    if (supportsDescriptors) {
+      Object.defineProperty(object, name, {
+        configurable: true,
+        enumerable: false,
+        writable: true,
+        value: value
+      });
+    } else {
+      object[name] = value;
+    }
+  };
 
-  function mapHas(value) {
-    return has.call(this, this._keys, value);
-  }
+  // Define configurable, writable and non-enumerable props
+  // if they don’t exist.
+  var defineProperties = function (object, map, forceOverride) {
+    _forEach(keys(map), function (name) {
+      var method = map[name];
+      defineProperty(object, name, method, !!forceOverride);
+    });
+  };
 
-  /** @chainable */
-  function sharedSet(key, value) {
-    this.has(key) ?
-      this._values[i] = value
-      :
-      this._values[this._keys.push(key) - 1] = value
-    ;
-    return this;
-  }
+  var _toString = Function.call.bind(Object.prototype.toString);
+  var isCallable = typeof /abc/ === 'function' ? function IsCallableSlow(x) {
+    // Some old browsers (IE, FF) say that typeof /abc/ === 'function'
+    return typeof x === 'function' && _toString(x) === '[object Function]';
+  } : function IsCallableFast(x) { return typeof x === 'function'; };
 
-  /** @chainable */
-  function sharedAdd(value) {
-    if (!this.has(value)) this._values.push(value);
-    return this;
-  }
-
-  function sharedClear() {
-    (this._keys || 0).length =
-    this._values.length = 0;
-  }
-
-  /** keys, values, and iterate related methods */
-  function sharedKeys() {
-    return sharedIterator(this._itp, this._keys);
-  }
-
-  function sharedValues() {
-    return sharedIterator(this._itp, this._values);
-  }
-
-  function mapEntries() {
-    return sharedIterator(this._itp, this._keys, this._values);
-  }
-
-  function setEntries() {
-    return sharedIterator(this._itp, this._values, this._values);
-  }
-
-  function sharedIterator(itp, array, array2) {
-    var p = [0], done = false;
-    itp.push(p);
-    return {
-      next: function() {
-        var v, k = p[0];
-        if (!done && k < array.length) {
-          v = array2 ? [array[k], array2[k]]: array[k];
-          p[0]++;
-        } else {
-          done = true;
-          itp.splice(itp.indexOf(p), 1);
-        }
-        return { done: done, value: v };
+  var Value = {
+    getter: function (object, name, getter) {
+      if (!supportsDescriptors) {
+        throw new TypeError('getters require true ES5 support');
       }
+      Object.defineProperty(object, name, {
+        configurable: true,
+        enumerable: false,
+        get: getter
+      });
+    },
+    proxy: function (originalObject, key, targetObject) {
+      if (!supportsDescriptors) {
+        throw new TypeError('getters require true ES5 support');
+      }
+      var originalDescriptor = Object.getOwnPropertyDescriptor(originalObject, key);
+      Object.defineProperty(targetObject, key, {
+        configurable: originalDescriptor.configurable,
+        enumerable: originalDescriptor.enumerable,
+        get: function getKey() { return originalObject[key]; },
+        set: function setKey(value) { originalObject[key] = value; }
+      });
+    },
+    redefine: function (object, property, newValue) {
+      if (supportsDescriptors) {
+        var descriptor = Object.getOwnPropertyDescriptor(object, property);
+        descriptor.value = newValue;
+        Object.defineProperty(object, property, descriptor);
+      } else {
+        object[property] = newValue;
+      }
+    },
+    defineByDescriptor: function (object, property, descriptor) {
+      if (supportsDescriptors) {
+        Object.defineProperty(object, property, descriptor);
+      } else if ('value' in descriptor) {
+        object[property] = descriptor.value;
+      }
+    },
+    preserveToString: function (target, source) {
+      if (source && isCallable(source.toString)) {
+        defineProperty(target, 'toString', source.toString.bind(source), true);
+      }
+    }
+  };
+
+  // Simple shim for Object.create on ES3 browsers
+  // (unlike real shim, no attempt to support `prototype === null`)
+  var create = Object.create || function (prototype, properties) {
+    var Prototype = function Prototype() {};
+    Prototype.prototype = prototype;
+    var object = new Prototype();
+    if (typeof properties !== 'undefined') {
+      keys(properties).forEach(function (key) {
+        Value.defineByDescriptor(object, key, properties[key]);
+      });
+    }
+    return object;
+  };
+
+  var supportsSubclassing = function (C, f) {
+    if (!Object.setPrototypeOf) { return false; /* skip test on IE < 11 */ }
+    return valueOrFalseIfThrows(function () {
+      var Sub = function Subclass(arg) {
+        var o = new C(arg);
+        Object.setPrototypeOf(o, Subclass.prototype);
+        return o;
+      };
+      Object.setPrototypeOf(Sub, C);
+      Sub.prototype = create(C.prototype, {
+        constructor: { value: Sub }
+      });
+      return f(Sub);
+    });
+  };
+
+  var getGlobal = function () {
+    /* global self, window, global */
+    // the only reliable means to get the global object is
+    // `Function('return this')()`
+    // However, this causes CSP violations in Chrome apps.
+    if (typeof self !== 'undefined') { return self; }
+    if (typeof window !== 'undefined') { return window; }
+    if (typeof global !== 'undefined') { return global; }
+    throw new Error('unable to locate global object');
+  };
+
+  var globals = getGlobal();
+  var globalIsFinite = globals.isFinite;
+  var _indexOf = Function.call.bind(String.prototype.indexOf);
+  var _arrayIndexOfApply = Function.apply.bind(Array.prototype.indexOf);
+  var _concat = Function.call.bind(Array.prototype.concat);
+  // var _sort = Function.call.bind(Array.prototype.sort);
+  var _strSlice = Function.call.bind(String.prototype.slice);
+  var _push = Function.call.bind(Array.prototype.push);
+  var _pushApply = Function.apply.bind(Array.prototype.push);
+  var _shift = Function.call.bind(Array.prototype.shift);
+  var _max = Math.max;
+  var _min = Math.min;
+  var _floor = Math.floor;
+  var _abs = Math.abs;
+  var _exp = Math.exp;
+  var _log = Math.log;
+  var _sqrt = Math.sqrt;
+  var _hasOwnProperty = Function.call.bind(Object.prototype.hasOwnProperty);
+  var ArrayIterator; // make our implementation private
+  var noop = function () {};
+
+  var OrigMap = globals.Map;
+  var origMapDelete = OrigMap && OrigMap.prototype['delete'];
+  var origMapGet = OrigMap && OrigMap.prototype.get;
+  var origMapHas = OrigMap && OrigMap.prototype.has;
+  var origMapSet = OrigMap && OrigMap.prototype.set;
+
+  var Symbol = globals.Symbol || {};
+  var symbolSpecies = Symbol.species || '@@species';
+
+  var numberIsNaN = Number.isNaN || function isNaN(value) {
+    // NaN !== NaN, but they are identical.
+    // NaNs are the only non-reflexive value, i.e., if x !== x,
+    // then x is NaN.
+    // isNaN is broken: it converts its argument to number, so
+    // isNaN('foo') => true
+    return value !== value;
+  };
+  var numberIsFinite = Number.isFinite || function isFinite(value) {
+    return typeof value === 'number' && globalIsFinite(value);
+  };
+  var _sign = isCallable(Math.sign) ? Math.sign : function sign(value) {
+    var number = Number(value);
+    if (number === 0) { return number; }
+    if (numberIsNaN(number)) { return number; }
+    return number < 0 ? -1 : 1;
+  };
+
+  // taken directly from https://github.com/ljharb/is-arguments/blob/master/index.js
+  // can be replaced with require('is-arguments') if we ever use a build process instead
+  var isStandardArguments = function isArguments(value) {
+    return _toString(value) === '[object Arguments]';
+  };
+  var isLegacyArguments = function isArguments(value) {
+    return value !== null &&
+      typeof value === 'object' &&
+      typeof value.length === 'number' &&
+      value.length >= 0 &&
+      _toString(value) !== '[object Array]' &&
+      _toString(value.callee) === '[object Function]';
+  };
+  var isArguments = isStandardArguments(arguments) ? isStandardArguments : isLegacyArguments;
+
+  var Type = {
+    primitive: function (x) { return x === null || (typeof x !== 'function' && typeof x !== 'object'); },
+    string: function (x) { return _toString(x) === '[object String]'; },
+    regex: function (x) { return _toString(x) === '[object RegExp]'; },
+    symbol: function (x) {
+      return typeof globals.Symbol === 'function' && typeof x === 'symbol';
+    }
+  };
+
+  var overrideNative = function overrideNative(object, property, replacement) {
+    var original = object[property];
+    defineProperty(object, property, replacement, true);
+    Value.preserveToString(object[property], original);
+  };
+
+  // eslint-disable-next-line no-restricted-properties
+  var hasSymbols = typeof Symbol === 'function' && typeof Symbol['for'] === 'function' && Type.symbol(Symbol());
+
+  // This is a private name in the es6 spec, equal to '[Symbol.iterator]'
+  // we're going to use an arbitrary _-prefixed name to make our shims
+  // work properly with each other, even though we don't have full Iterator
+  // support.  That is, `Array.from(map.keys())` will work, but we don't
+  // pretend to export a "real" Iterator interface.
+  var $iterator$ = Type.symbol(Symbol.iterator) ? Symbol.iterator : '_es6-shim iterator_';
+  // Firefox ships a partial implementation using the name @@iterator.
+  // https://bugzilla.mozilla.org/show_bug.cgi?id=907077#c14
+  // So use that name if we detect it.
+  if (globals.Set && typeof new globals.Set()['@@iterator'] === 'function') {
+    $iterator$ = '@@iterator';
+  }
+
+  // Reflect
+  if (!globals.Reflect) {
+    defineProperty(globals, 'Reflect', {}, true);
+  }
+  var Reflect = globals.Reflect;
+
+  var $String = String;
+
+  /* global document */
+  var domAll = (typeof document === 'undefined' || !document) ? null : document.all;
+  /* jshint eqnull:true */
+  var isNullOrUndefined = domAll == null ? function isNullOrUndefined(x) {
+    /* jshint eqnull:true */
+    return x == null;
+  } : function isNullOrUndefinedAndNotDocumentAll(x) {
+    /* jshint eqnull:true */
+    return x == null && x !== domAll;
+  };
+
+  var ES = {
+    // http://www.ecma-international.org/ecma-262/6.0/#sec-call
+    Call: function Call(F, V) {
+      var args = arguments.length > 2 ? arguments[2] : [];
+      if (!ES.IsCallable(F)) {
+        throw new TypeError(F + ' is not a function');
+      }
+      return _apply(F, V, args);
+    },
+
+    RequireObjectCoercible: function (x, optMessage) {
+      if (isNullOrUndefined(x)) {
+        throw new TypeError(optMessage || 'Cannot call method on ' + x);
+      }
+      return x;
+    },
+
+    // This might miss the "(non-standard exotic and does not implement
+    // [[Call]])" case from
+    // http://www.ecma-international.org/ecma-262/6.0/#sec-typeof-operator-runtime-semantics-evaluation
+    // but we can't find any evidence these objects exist in practice.
+    // If we find some in the future, you could test `Object(x) === x`,
+    // which is reliable according to
+    // http://www.ecma-international.org/ecma-262/6.0/#sec-toobject
+    // but is not well optimized by runtimes and creates an object
+    // whenever it returns false, and thus is very slow.
+    TypeIsObject: function (x) {
+      if (x === void 0 || x === null || x === true || x === false) {
+        return false;
+      }
+      return typeof x === 'function' || typeof x === 'object' || x === domAll;
+    },
+
+    ToObject: function (o, optMessage) {
+      return Object(ES.RequireObjectCoercible(o, optMessage));
+    },
+
+    IsCallable: isCallable,
+
+    IsConstructor: function (x) {
+      // We can't tell callables from constructors in ES5
+      return ES.IsCallable(x);
+    },
+
+    ToInt32: function (x) {
+      return ES.ToNumber(x) >> 0;
+    },
+
+    ToUint32: function (x) {
+      return ES.ToNumber(x) >>> 0;
+    },
+
+    ToNumber: function (value) {
+      if (_toString(value) === '[object Symbol]') {
+        throw new TypeError('Cannot convert a Symbol value to a number');
+      }
+      return +value;
+    },
+
+    ToInteger: function (value) {
+      var number = ES.ToNumber(value);
+      if (numberIsNaN(number)) { return 0; }
+      if (number === 0 || !numberIsFinite(number)) { return number; }
+      return (number > 0 ? 1 : -1) * _floor(_abs(number));
+    },
+
+    ToLength: function (value) {
+      var len = ES.ToInteger(value);
+      if (len <= 0) { return 0; } // includes converting -0 to +0
+      if (len > Number.MAX_SAFE_INTEGER) { return Number.MAX_SAFE_INTEGER; }
+      return len;
+    },
+
+    SameValue: function (a, b) {
+      if (a === b) {
+        // 0 === -0, but they are not identical.
+        if (a === 0) { return 1 / a === 1 / b; }
+        return true;
+      }
+      return numberIsNaN(a) && numberIsNaN(b);
+    },
+
+    SameValueZero: function (a, b) {
+      // same as SameValue except for SameValueZero(+0, -0) == true
+      return (a === b) || (numberIsNaN(a) && numberIsNaN(b));
+    },
+
+    IsIterable: function (o) {
+      return ES.TypeIsObject(o) && (typeof o[$iterator$] !== 'undefined' || isArguments(o));
+    },
+
+    GetIterator: function (o) {
+      if (isArguments(o)) {
+        // special case support for `arguments`
+        return new ArrayIterator(o, 'value');
+      }
+      var itFn = ES.GetMethod(o, $iterator$);
+      if (!ES.IsCallable(itFn)) {
+        // Better diagnostics if itFn is null or undefined
+        throw new TypeError('value is not an iterable');
+      }
+      var it = ES.Call(itFn, o);
+      if (!ES.TypeIsObject(it)) {
+        throw new TypeError('bad iterator');
+      }
+      return it;
+    },
+
+    GetMethod: function (o, p) {
+      var func = ES.ToObject(o)[p];
+      if (isNullOrUndefined(func)) {
+        return void 0;
+      }
+      if (!ES.IsCallable(func)) {
+        throw new TypeError('Method not callable: ' + p);
+      }
+      return func;
+    },
+
+    IteratorComplete: function (iterResult) {
+      return !!iterResult.done;
+    },
+
+    IteratorClose: function (iterator, completionIsThrow) {
+      var returnMethod = ES.GetMethod(iterator, 'return');
+      if (returnMethod === void 0) {
+        return;
+      }
+      var innerResult, innerException;
+      try {
+        innerResult = ES.Call(returnMethod, iterator);
+      } catch (e) {
+        innerException = e;
+      }
+      if (completionIsThrow) {
+        return;
+      }
+      if (innerException) {
+        throw innerException;
+      }
+      if (!ES.TypeIsObject(innerResult)) {
+        throw new TypeError("Iterator's return method returned a non-object.");
+      }
+    },
+
+    IteratorNext: function (it) {
+      var result = arguments.length > 1 ? it.next(arguments[1]) : it.next();
+      if (!ES.TypeIsObject(result)) {
+        throw new TypeError('bad iterator');
+      }
+      return result;
+    },
+
+    IteratorStep: function (it) {
+      var result = ES.IteratorNext(it);
+      var done = ES.IteratorComplete(result);
+      return done ? false : result;
+    },
+
+    Construct: function (C, args, newTarget, isES6internal) {
+      var target = typeof newTarget === 'undefined' ? C : newTarget;
+
+      if (!isES6internal && Reflect.construct) {
+        // Try to use Reflect.construct if available
+        return Reflect.construct(C, args, target);
+      }
+      // OK, we have to fake it.  This will only work if the
+      // C.[[ConstructorKind]] == "base" -- but that's the only
+      // kind we can make in ES5 code anyway.
+
+      // OrdinaryCreateFromConstructor(target, "%ObjectPrototype%")
+      var proto = target.prototype;
+      if (!ES.TypeIsObject(proto)) {
+        proto = Object.prototype;
+      }
+      var obj = create(proto);
+      // Call the constructor.
+      var result = ES.Call(C, obj, args);
+      return ES.TypeIsObject(result) ? result : obj;
+    },
+
+    SpeciesConstructor: function (O, defaultConstructor) {
+      var C = O.constructor;
+      if (C === void 0) {
+        return defaultConstructor;
+      }
+      if (!ES.TypeIsObject(C)) {
+        throw new TypeError('Bad constructor');
+      }
+      var S = C[symbolSpecies];
+      if (isNullOrUndefined(S)) {
+        return defaultConstructor;
+      }
+      if (!ES.IsConstructor(S)) {
+        throw new TypeError('Bad @@species');
+      }
+      return S;
+    },
+
+    CreateHTML: function (string, tag, attribute, value) {
+      var S = ES.ToString(string);
+      var p1 = '<' + tag;
+      if (attribute !== '') {
+        var V = ES.ToString(value);
+        var escapedV = V.replace(/"/g, '&quot;');
+        p1 += ' ' + attribute + '="' + escapedV + '"';
+      }
+      var p2 = p1 + '>';
+      var p3 = p2 + S;
+      return p3 + '</' + tag + '>';
+    },
+
+    IsRegExp: function IsRegExp(argument) {
+      if (!ES.TypeIsObject(argument)) {
+        return false;
+      }
+      var isRegExp = argument[Symbol.match];
+      if (typeof isRegExp !== 'undefined') {
+        return !!isRegExp;
+      }
+      return Type.regex(argument);
+    },
+
+    ToString: function ToString(string) {
+      return $String(string);
+    }
+  };
+
+  // Well-known Symbol shims
+  if (supportsDescriptors && hasSymbols) {
+    var defineWellKnownSymbol = function defineWellKnownSymbol(name) {
+      if (Type.symbol(Symbol[name])) {
+        return Symbol[name];
+      }
+      // eslint-disable-next-line no-restricted-properties
+      var sym = Symbol['for']('Symbol.' + name);
+      Object.defineProperty(Symbol, name, {
+        configurable: false,
+        enumerable: false,
+        writable: false,
+        value: sym
+      });
+      return sym;
+    };
+    if (!Type.symbol(Symbol.search)) {
+      var symbolSearch = defineWellKnownSymbol('search');
+      var originalSearch = String.prototype.search;
+      defineProperty(RegExp.prototype, symbolSearch, function search(string) {
+        return ES.Call(originalSearch, string, [this]);
+      });
+      var searchShim = function search(regexp) {
+        var O = ES.RequireObjectCoercible(this);
+        if (!isNullOrUndefined(regexp)) {
+          var searcher = ES.GetMethod(regexp, symbolSearch);
+          if (typeof searcher !== 'undefined') {
+            return ES.Call(searcher, regexp, [O]);
+          }
+        }
+        return ES.Call(originalSearch, O, [ES.ToString(regexp)]);
+      };
+      overrideNative(String.prototype, 'search', searchShim);
+    }
+    if (!Type.symbol(Symbol.replace)) {
+      var symbolReplace = defineWellKnownSymbol('replace');
+      var originalReplace = String.prototype.replace;
+      defineProperty(RegExp.prototype, symbolReplace, function replace(string, replaceValue) {
+        return ES.Call(originalReplace, string, [this, replaceValue]);
+      });
+      var replaceShim = function replace(searchValue, replaceValue) {
+        var O = ES.RequireObjectCoercible(this);
+        if (!isNullOrUndefined(searchValue)) {
+          var replacer = ES.GetMethod(searchValue, symbolReplace);
+          if (typeof replacer !== 'undefined') {
+            return ES.Call(replacer, searchValue, [O, replaceValue]);
+          }
+        }
+        return ES.Call(originalReplace, O, [ES.ToString(searchValue), replaceValue]);
+      };
+      overrideNative(String.prototype, 'replace', replaceShim);
+    }
+    if (!Type.symbol(Symbol.split)) {
+      var symbolSplit = defineWellKnownSymbol('split');
+      var originalSplit = String.prototype.split;
+      defineProperty(RegExp.prototype, symbolSplit, function split(string, limit) {
+        return ES.Call(originalSplit, string, [this, limit]);
+      });
+      var splitShim = function split(separator, limit) {
+        var O = ES.RequireObjectCoercible(this);
+        if (!isNullOrUndefined(separator)) {
+          var splitter = ES.GetMethod(separator, symbolSplit);
+          if (typeof splitter !== 'undefined') {
+            return ES.Call(splitter, separator, [O, limit]);
+          }
+        }
+        return ES.Call(originalSplit, O, [ES.ToString(separator), limit]);
+      };
+      overrideNative(String.prototype, 'split', splitShim);
+    }
+    var symbolMatchExists = Type.symbol(Symbol.match);
+    var stringMatchIgnoresSymbolMatch = symbolMatchExists && (function () {
+      // Firefox 41, through Nightly 45 has Symbol.match, but String#match ignores it.
+      // Firefox 40 and below have Symbol.match but String#match works fine.
+      var o = {};
+      o[Symbol.match] = function () { return 42; };
+      return 'a'.match(o) !== 42;
+    }());
+    if (!symbolMatchExists || stringMatchIgnoresSymbolMatch) {
+      var symbolMatch = defineWellKnownSymbol('match');
+
+      var originalMatch = String.prototype.match;
+      defineProperty(RegExp.prototype, symbolMatch, function match(string) {
+        return ES.Call(originalMatch, string, [this]);
+      });
+
+      var matchShim = function match(regexp) {
+        var O = ES.RequireObjectCoercible(this);
+        if (!isNullOrUndefined(regexp)) {
+          var matcher = ES.GetMethod(regexp, symbolMatch);
+          if (typeof matcher !== 'undefined') {
+            return ES.Call(matcher, regexp, [O]);
+          }
+        }
+        return ES.Call(originalMatch, O, [ES.ToString(regexp)]);
+      };
+      overrideNative(String.prototype, 'match', matchShim);
+    }
+  }
+
+  var wrapConstructor = function wrapConstructor(original, replacement, keysToSkip) {
+    Value.preserveToString(replacement, original);
+    if (Object.setPrototypeOf) {
+      // sets up proper prototype chain where possible
+      Object.setPrototypeOf(original, replacement);
+    }
+    if (supportsDescriptors) {
+      _forEach(Object.getOwnPropertyNames(original), function (key) {
+        if (key in noop || keysToSkip[key]) { return; }
+        Value.proxy(original, key, replacement);
+      });
+    } else {
+      _forEach(Object.keys(original), function (key) {
+        if (key in noop || keysToSkip[key]) { return; }
+        replacement[key] = original[key];
+      });
+    }
+    replacement.prototype = original.prototype;
+    Value.redefine(original.prototype, 'constructor', replacement);
+  };
+
+  var defaultSpeciesGetter = function () { return this; };
+  var addDefaultSpecies = function (C) {
+    if (supportsDescriptors && !_hasOwnProperty(C, symbolSpecies)) {
+      Value.getter(C, symbolSpecies, defaultSpeciesGetter);
+    }
+  };
+
+  var addIterator = function (prototype, impl) {
+    var implementation = impl || function iterator() { return this; };
+    defineProperty(prototype, $iterator$, implementation);
+    if (!prototype[$iterator$] && Type.symbol($iterator$)) {
+      // implementations are buggy when $iterator$ is a Symbol
+      prototype[$iterator$] = implementation;
+    }
+  };
+
+  var createDataProperty = function createDataProperty(object, name, value) {
+    if (supportsDescriptors) {
+      Object.defineProperty(object, name, {
+        configurable: true,
+        enumerable: true,
+        writable: true,
+        value: value
+      });
+    } else {
+      object[name] = value;
+    }
+  };
+  var createDataPropertyOrThrow = function createDataPropertyOrThrow(object, name, value) {
+    createDataProperty(object, name, value);
+    if (!ES.SameValue(object[name], value)) {
+      throw new TypeError('property is nonconfigurable');
+    }
+  };
+
+  var emulateES6construct = function (o, defaultNewTarget, defaultProto, slots) {
+    // This is an es5 approximation to es6 construct semantics.  in es6,
+    // 'new Foo' invokes Foo.[[Construct]] which (for almost all objects)
+    // just sets the internal variable NewTarget (in es6 syntax `new.target`)
+    // to Foo and then returns Foo().
+
+    // Many ES6 object then have constructors of the form:
+    // 1. If NewTarget is undefined, throw a TypeError exception
+    // 2. Let xxx by OrdinaryCreateFromConstructor(NewTarget, yyy, zzz)
+
+    // So we're going to emulate those first two steps.
+    if (!ES.TypeIsObject(o)) {
+      throw new TypeError('Constructor requires `new`: ' + defaultNewTarget.name);
+    }
+    var proto = defaultNewTarget.prototype;
+    if (!ES.TypeIsObject(proto)) {
+      proto = defaultProto;
+    }
+    var obj = create(proto);
+    for (var name in slots) {
+      if (_hasOwnProperty(slots, name)) {
+        var value = slots[name];
+        defineProperty(obj, name, value, true);
+      }
+    }
+    return obj;
+  };
+
+  // Firefox 31 reports this function's length as 0
+  // https://bugzilla.mozilla.org/show_bug.cgi?id=1062484
+  if (String.fromCodePoint && String.fromCodePoint.length !== 1) {
+    var originalFromCodePoint = String.fromCodePoint;
+    overrideNative(String, 'fromCodePoint', function fromCodePoint(codePoints) {
+      return ES.Call(originalFromCodePoint, this, arguments);
+    });
+  }
+
+  var StringShims = {
+    fromCodePoint: function fromCodePoint(codePoints) {
+      var result = [];
+      var next;
+      for (var i = 0, length = arguments.length; i < length; i++) {
+        next = Number(arguments[i]);
+        if (!ES.SameValue(next, ES.ToInteger(next)) || next < 0 || next > 0x10FFFF) {
+          throw new RangeError('Invalid code point ' + next);
+        }
+
+        if (next < 0x10000) {
+          _push(result, String.fromCharCode(next));
+        } else {
+          next -= 0x10000;
+          _push(result, String.fromCharCode((next >> 10) + 0xD800));
+          _push(result, String.fromCharCode((next % 0x400) + 0xDC00));
+        }
+      }
+      return result.join('');
+    },
+
+    raw: function raw(callSite) {
+      var cooked = ES.ToObject(callSite, 'bad callSite');
+      var rawString = ES.ToObject(cooked.raw, 'bad raw value');
+      var len = rawString.length;
+      var literalsegments = ES.ToLength(len);
+      if (literalsegments <= 0) {
+        return '';
+      }
+
+      var stringElements = [];
+      var nextIndex = 0;
+      var nextKey, next, nextSeg, nextSub;
+      while (nextIndex < literalsegments) {
+        nextKey = ES.ToString(nextIndex);
+        nextSeg = ES.ToString(rawString[nextKey]);
+        _push(stringElements, nextSeg);
+        if (nextIndex + 1 >= literalsegments) {
+          break;
+        }
+        next = nextIndex + 1 < arguments.length ? arguments[nextIndex + 1] : '';
+        nextSub = ES.ToString(next);
+        _push(stringElements, nextSub);
+        nextIndex += 1;
+      }
+      return stringElements.join('');
+    }
+  };
+  if (String.raw && String.raw({ raw: { 0: 'x', 1: 'y', length: 2 } }) !== 'xy') {
+    // IE 11 TP has a broken String.raw implementation
+    overrideNative(String, 'raw', StringShims.raw);
+  }
+  defineProperties(String, StringShims);
+
+  // Fast repeat, uses the `Exponentiation by squaring` algorithm.
+  // Perf: http://jsperf.com/string-repeat2/2
+  var stringRepeat = function repeat(s, times) {
+    if (times < 1) { return ''; }
+    if (times % 2) { return repeat(s, times - 1) + s; }
+    var half = repeat(s, times / 2);
+    return half + half;
+  };
+  var stringMaxLength = Infinity;
+
+  var StringPrototypeShims = {
+    repeat: function repeat(times) {
+      var thisStr = ES.ToString(ES.RequireObjectCoercible(this));
+      var numTimes = ES.ToInteger(times);
+      if (numTimes < 0 || numTimes >= stringMaxLength) {
+        throw new RangeError('repeat count must be less than infinity and not overflow maximum string size');
+      }
+      return stringRepeat(thisStr, numTimes);
+    },
+
+    startsWith: function startsWith(searchString) {
+      var S = ES.ToString(ES.RequireObjectCoercible(this));
+      if (ES.IsRegExp(searchString)) {
+        throw new TypeError('Cannot call method "startsWith" with a regex');
+      }
+      var searchStr = ES.ToString(searchString);
+      var position;
+      if (arguments.length > 1) {
+        position = arguments[1];
+      }
+      var start = _max(ES.ToInteger(position), 0);
+      return _strSlice(S, start, start + searchStr.length) === searchStr;
+    },
+
+    endsWith: function endsWith(searchString) {
+      var S = ES.ToString(ES.RequireObjectCoercible(this));
+      if (ES.IsRegExp(searchString)) {
+        throw new TypeError('Cannot call method "endsWith" with a regex');
+      }
+      var searchStr = ES.ToString(searchString);
+      var len = S.length;
+      var endPosition;
+      if (arguments.length > 1) {
+        endPosition = arguments[1];
+      }
+      var pos = typeof endPosition === 'undefined' ? len : ES.ToInteger(endPosition);
+      var end = _min(_max(pos, 0), len);
+      return _strSlice(S, end - searchStr.length, end) === searchStr;
+    },
+
+    includes: function includes(searchString) {
+      if (ES.IsRegExp(searchString)) {
+        throw new TypeError('"includes" does not accept a RegExp');
+      }
+      var searchStr = ES.ToString(searchString);
+      var position;
+      if (arguments.length > 1) {
+        position = arguments[1];
+      }
+      // Somehow this trick makes method 100% compat with the spec.
+      return _indexOf(this, searchStr, position) !== -1;
+    },
+
+    codePointAt: function codePointAt(pos) {
+      var thisStr = ES.ToString(ES.RequireObjectCoercible(this));
+      var position = ES.ToInteger(pos);
+      var length = thisStr.length;
+      if (position >= 0 && position < length) {
+        var first = thisStr.charCodeAt(position);
+        var isEnd = position + 1 === length;
+        if (first < 0xD800 || first > 0xDBFF || isEnd) { return first; }
+        var second = thisStr.charCodeAt(position + 1);
+        if (second < 0xDC00 || second > 0xDFFF) { return first; }
+        return ((first - 0xD800) * 1024) + (second - 0xDC00) + 0x10000;
+      }
+    }
+  };
+  if (String.prototype.includes && 'a'.includes('a', Infinity) !== false) {
+    overrideNative(String.prototype, 'includes', StringPrototypeShims.includes);
+  }
+
+  if (String.prototype.startsWith && String.prototype.endsWith) {
+    var startsWithRejectsRegex = throwsError(function () {
+      /* throws if spec-compliant */
+      '/a/'.startsWith(/a/);
+    });
+    var startsWithHandlesInfinity = valueOrFalseIfThrows(function () {
+      return 'abc'.startsWith('a', Infinity) === false;
+    });
+    if (!startsWithRejectsRegex || !startsWithHandlesInfinity) {
+      // Firefox (< 37?) and IE 11 TP have a noncompliant startsWith implementation
+      overrideNative(String.prototype, 'startsWith', StringPrototypeShims.startsWith);
+      overrideNative(String.prototype, 'endsWith', StringPrototypeShims.endsWith);
+    }
+  }
+  if (hasSymbols) {
+    var startsWithSupportsSymbolMatch = valueOrFalseIfThrows(function () {
+      var re = /a/;
+      re[Symbol.match] = false;
+      return '/a/'.startsWith(re);
+    });
+    if (!startsWithSupportsSymbolMatch) {
+      overrideNative(String.prototype, 'startsWith', StringPrototypeShims.startsWith);
+    }
+    var endsWithSupportsSymbolMatch = valueOrFalseIfThrows(function () {
+      var re = /a/;
+      re[Symbol.match] = false;
+      return '/a/'.endsWith(re);
+    });
+    if (!endsWithSupportsSymbolMatch) {
+      overrideNative(String.prototype, 'endsWith', StringPrototypeShims.endsWith);
+    }
+    var includesSupportsSymbolMatch = valueOrFalseIfThrows(function () {
+      var re = /a/;
+      re[Symbol.match] = false;
+      return '/a/'.includes(re);
+    });
+    if (!includesSupportsSymbolMatch) {
+      overrideNative(String.prototype, 'includes', StringPrototypeShims.includes);
+    }
+  }
+
+  defineProperties(String.prototype, StringPrototypeShims);
+
+  // whitespace from: http://es5.github.io/#x15.5.4.20
+  // implementation from https://github.com/es-shims/es5-shim/blob/v3.4.0/es5-shim.js#L1304-L1324
+  var ws = [
+    '\x09\x0A\x0B\x0C\x0D\x20\xA0\u1680\u180E\u2000\u2001\u2002\u2003',
+    '\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u202F\u205F\u3000\u2028',
+    '\u2029\uFEFF'
+  ].join('');
+  var trimRegexp = new RegExp('(^[' + ws + ']+)|([' + ws + ']+$)', 'g');
+  var trimShim = function trim() {
+    return ES.ToString(ES.RequireObjectCoercible(this)).replace(trimRegexp, '');
+  };
+  var nonWS = ['\u0085', '\u200b', '\ufffe'].join('');
+  var nonWSregex = new RegExp('[' + nonWS + ']', 'g');
+  var isBadHexRegex = /^[-+]0x[0-9a-f]+$/i;
+  var hasStringTrimBug = nonWS.trim().length !== nonWS.length;
+  defineProperty(String.prototype, 'trim', trimShim, hasStringTrimBug);
+
+  // Given an argument x, it will return an IteratorResult object,
+  // with value set to x and done to false.
+  // Given no arguments, it will return an iterator completion object.
+  var iteratorResult = function (x) {
+    return { value: x, done: arguments.length === 0 };
+  };
+
+  // see http://www.ecma-international.org/ecma-262/6.0/#sec-string.prototype-@@iterator
+  var StringIterator = function (s) {
+    ES.RequireObjectCoercible(s);
+    this._s = ES.ToString(s);
+    this._i = 0;
+  };
+  StringIterator.prototype.next = function () {
+    var s = this._s;
+    var i = this._i;
+    if (typeof s === 'undefined' || i >= s.length) {
+      this._s = void 0;
+      return iteratorResult();
+    }
+    var first = s.charCodeAt(i);
+    var second, len;
+    if (first < 0xD800 || first > 0xDBFF || (i + 1) === s.length) {
+      len = 1;
+    } else {
+      second = s.charCodeAt(i + 1);
+      len = (second < 0xDC00 || second > 0xDFFF) ? 1 : 2;
+    }
+    this._i = i + len;
+    return iteratorResult(s.substr(i, len));
+  };
+  addIterator(StringIterator.prototype);
+  addIterator(String.prototype, function () {
+    return new StringIterator(this);
+  });
+
+  var ArrayShims = {
+    from: function from(items) {
+      var C = this;
+      var mapFn;
+      if (arguments.length > 1) {
+        mapFn = arguments[1];
+      }
+      var mapping, T;
+      if (typeof mapFn === 'undefined') {
+        mapping = false;
+      } else {
+        if (!ES.IsCallable(mapFn)) {
+          throw new TypeError('Array.from: when provided, the second argument must be a function');
+        }
+        if (arguments.length > 2) {
+          T = arguments[2];
+        }
+        mapping = true;
+      }
+
+      // Note that that Arrays will use ArrayIterator:
+      // https://bugs.ecmascript.org/show_bug.cgi?id=2416
+      var usingIterator = typeof (isArguments(items) || ES.GetMethod(items, $iterator$)) !== 'undefined';
+
+      var length, result, i;
+      if (usingIterator) {
+        result = ES.IsConstructor(C) ? Object(new C()) : [];
+        var iterator = ES.GetIterator(items);
+        var next, nextValue;
+
+        i = 0;
+        while (true) {
+          next = ES.IteratorStep(iterator);
+          if (next === false) {
+            break;
+          }
+          nextValue = next.value;
+          try {
+            if (mapping) {
+              nextValue = typeof T === 'undefined' ? mapFn(nextValue, i) : _call(mapFn, T, nextValue, i);
+            }
+            result[i] = nextValue;
+          } catch (e) {
+            ES.IteratorClose(iterator, true);
+            throw e;
+          }
+          i += 1;
+        }
+        length = i;
+      } else {
+        var arrayLike = ES.ToObject(items);
+        length = ES.ToLength(arrayLike.length);
+        result = ES.IsConstructor(C) ? Object(new C(length)) : new Array(length);
+        var value;
+        for (i = 0; i < length; ++i) {
+          value = arrayLike[i];
+          if (mapping) {
+            value = typeof T === 'undefined' ? mapFn(value, i) : _call(mapFn, T, value, i);
+          }
+          createDataPropertyOrThrow(result, i, value);
+        }
+      }
+
+      result.length = length;
+      return result;
+    },
+
+    of: function of() {
+      var len = arguments.length;
+      var C = this;
+      var A = isArray(C) || !ES.IsCallable(C) ? new Array(len) : ES.Construct(C, [len]);
+      for (var k = 0; k < len; ++k) {
+        createDataPropertyOrThrow(A, k, arguments[k]);
+      }
+      A.length = len;
+      return A;
+    }
+  };
+  defineProperties(Array, ArrayShims);
+  addDefaultSpecies(Array);
+
+  // Our ArrayIterator is private; see
+  // https://github.com/paulmillr/es6-shim/issues/252
+  ArrayIterator = function (array, kind) {
+    this.i = 0;
+    this.array = array;
+    this.kind = kind;
+  };
+
+  defineProperties(ArrayIterator.prototype, {
+    next: function () {
+      var i = this.i;
+      var array = this.array;
+      if (!(this instanceof ArrayIterator)) {
+        throw new TypeError('Not an ArrayIterator');
+      }
+      if (typeof array !== 'undefined') {
+        var len = ES.ToLength(array.length);
+        for (; i < len; i++) {
+          var kind = this.kind;
+          var retval;
+          if (kind === 'key') {
+            retval = i;
+          } else if (kind === 'value') {
+            retval = array[i];
+          } else if (kind === 'entry') {
+            retval = [i, array[i]];
+          }
+          this.i = i + 1;
+          return iteratorResult(retval);
+        }
+      }
+      this.array = void 0;
+      return iteratorResult();
+    }
+  });
+  addIterator(ArrayIterator.prototype);
+
+/*
+  var orderKeys = function orderKeys(a, b) {
+    var aNumeric = String(ES.ToInteger(a)) === a;
+    var bNumeric = String(ES.ToInteger(b)) === b;
+    if (aNumeric && bNumeric) {
+      return b - a;
+    } else if (aNumeric && !bNumeric) {
+      return -1;
+    } else if (!aNumeric && bNumeric) {
+      return 1;
+    } else {
+      return a.localeCompare(b);
+    }
+  };
+
+  var getAllKeys = function getAllKeys(object) {
+    var ownKeys = [];
+    var keys = [];
+
+    for (var key in object) {
+      _push(_hasOwnProperty(object, key) ? ownKeys : keys, key);
+    }
+    _sort(ownKeys, orderKeys);
+    _sort(keys, orderKeys);
+
+    return _concat(ownKeys, keys);
+  };
+  */
+
+  // note: this is positioned here because it depends on ArrayIterator
+  var arrayOfSupportsSubclassing = Array.of === ArrayShims.of || (function () {
+    // Detects a bug in Webkit nightly r181886
+    var Foo = function Foo(len) { this.length = len; };
+    Foo.prototype = [];
+    var fooArr = Array.of.apply(Foo, [1, 2]);
+    return fooArr instanceof Foo && fooArr.length === 2;
+  }());
+  if (!arrayOfSupportsSubclassing) {
+    overrideNative(Array, 'of', ArrayShims.of);
+  }
+
+  var ArrayPrototypeShims = {
+    copyWithin: function copyWithin(target, start) {
+      var o = ES.ToObject(this);
+      var len = ES.ToLength(o.length);
+      var relativeTarget = ES.ToInteger(target);
+      var relativeStart = ES.ToInteger(start);
+      var to = relativeTarget < 0 ? _max(len + relativeTarget, 0) : _min(relativeTarget, len);
+      var from = relativeStart < 0 ? _max(len + relativeStart, 0) : _min(relativeStart, len);
+      var end;
+      if (arguments.length > 2) {
+        end = arguments[2];
+      }
+      var relativeEnd = typeof end === 'undefined' ? len : ES.ToInteger(end);
+      var finalItem = relativeEnd < 0 ? _max(len + relativeEnd, 0) : _min(relativeEnd, len);
+      var count = _min(finalItem - from, len - to);
+      var direction = 1;
+      if (from < to && to < (from + count)) {
+        direction = -1;
+        from += count - 1;
+        to += count - 1;
+      }
+      while (count > 0) {
+        if (from in o) {
+          o[to] = o[from];
+        } else {
+          delete o[to];
+        }
+        from += direction;
+        to += direction;
+        count -= 1;
+      }
+      return o;
+    },
+
+    fill: function fill(value) {
+      var start;
+      if (arguments.length > 1) {
+        start = arguments[1];
+      }
+      var end;
+      if (arguments.length > 2) {
+        end = arguments[2];
+      }
+      var O = ES.ToObject(this);
+      var len = ES.ToLength(O.length);
+      start = ES.ToInteger(typeof start === 'undefined' ? 0 : start);
+      end = ES.ToInteger(typeof end === 'undefined' ? len : end);
+
+      var relativeStart = start < 0 ? _max(len + start, 0) : _min(start, len);
+      var relativeEnd = end < 0 ? len + end : end;
+
+      for (var i = relativeStart; i < len && i < relativeEnd; ++i) {
+        O[i] = value;
+      }
+      return O;
+    },
+
+    find: function find(predicate) {
+      var list = ES.ToObject(this);
+      var length = ES.ToLength(list.length);
+      if (!ES.IsCallable(predicate)) {
+        throw new TypeError('Array#find: predicate must be a function');
+      }
+      var thisArg = arguments.length > 1 ? arguments[1] : null;
+      for (var i = 0, value; i < length; i++) {
+        value = list[i];
+        if (thisArg) {
+          if (_call(predicate, thisArg, value, i, list)) {
+            return value;
+          }
+        } else if (predicate(value, i, list)) {
+          return value;
+        }
+      }
+    },
+
+    findIndex: function findIndex(predicate) {
+      var list = ES.ToObject(this);
+      var length = ES.ToLength(list.length);
+      if (!ES.IsCallable(predicate)) {
+        throw new TypeError('Array#findIndex: predicate must be a function');
+      }
+      var thisArg = arguments.length > 1 ? arguments[1] : null;
+      for (var i = 0; i < length; i++) {
+        if (thisArg) {
+          if (_call(predicate, thisArg, list[i], i, list)) {
+            return i;
+          }
+        } else if (predicate(list[i], i, list)) {
+          return i;
+        }
+      }
+      return -1;
+    },
+
+    keys: function keys() {
+      return new ArrayIterator(this, 'key');
+    },
+
+    values: function values() {
+      return new ArrayIterator(this, 'value');
+    },
+
+    entries: function entries() {
+      return new ArrayIterator(this, 'entry');
+    }
+  };
+  // Safari 7.1 defines Array#keys and Array#entries natively,
+  // but the resulting ArrayIterator objects don't have a "next" method.
+  if (Array.prototype.keys && !ES.IsCallable([1].keys().next)) {
+    delete Array.prototype.keys;
+  }
+  if (Array.prototype.entries && !ES.IsCallable([1].entries().next)) {
+    delete Array.prototype.entries;
+  }
+
+  // Chrome 38 defines Array#keys and Array#entries, and Array#@@iterator, but not Array#values
+  if (Array.prototype.keys && Array.prototype.entries && !Array.prototype.values && Array.prototype[$iterator$]) {
+    defineProperties(Array.prototype, {
+      values: Array.prototype[$iterator$]
+    });
+    if (Type.symbol(Symbol.unscopables)) {
+      Array.prototype[Symbol.unscopables].values = true;
+    }
+  }
+  // Chrome 40 defines Array#values with the incorrect name, although Array#{keys,entries} have the correct name
+  if (functionsHaveNames && Array.prototype.values && Array.prototype.values.name !== 'values') {
+    var originalArrayPrototypeValues = Array.prototype.values;
+    overrideNative(Array.prototype, 'values', function values() { return ES.Call(originalArrayPrototypeValues, this, arguments); });
+    defineProperty(Array.prototype, $iterator$, Array.prototype.values, true);
+  }
+  defineProperties(Array.prototype, ArrayPrototypeShims);
+
+  if (1 / [true].indexOf(true, -0) < 0) {
+    // indexOf when given a position arg of -0 should return +0.
+    // https://github.com/tc39/ecma262/pull/316
+    defineProperty(Array.prototype, 'indexOf', function indexOf(searchElement) {
+      var value = _arrayIndexOfApply(this, arguments);
+      if (value === 0 && (1 / value) < 0) {
+        return 0;
+      }
+      return value;
+    }, true);
+  }
+
+  addIterator(Array.prototype, function () { return this.values(); });
+  // Chrome defines keys/values/entries on Array, but doesn't give us
+  // any way to identify its iterator.  So add our own shimmed field.
+  if (Object.getPrototypeOf) {
+    addIterator(Object.getPrototypeOf([].values()));
+  }
+
+  // note: this is positioned here because it relies on Array#entries
+  var arrayFromSwallowsNegativeLengths = (function () {
+    // Detects a Firefox bug in v32
+    // https://bugzilla.mozilla.org/show_bug.cgi?id=1063993
+    return valueOrFalseIfThrows(function () {
+      return Array.from({ length: -1 }).length === 0;
+    });
+  }());
+  var arrayFromHandlesIterables = (function () {
+    // Detects a bug in Webkit nightly r181886
+    var arr = Array.from([0].entries());
+    return arr.length === 1 && isArray(arr[0]) && arr[0][0] === 0 && arr[0][1] === 0;
+  }());
+  if (!arrayFromSwallowsNegativeLengths || !arrayFromHandlesIterables) {
+    overrideNative(Array, 'from', ArrayShims.from);
+  }
+  var arrayFromHandlesUndefinedMapFunction = (function () {
+    // Microsoft Edge v0.11 throws if the mapFn argument is *provided* but undefined,
+    // but the spec doesn't care if it's provided or not - undefined doesn't throw.
+    return valueOrFalseIfThrows(function () {
+      return Array.from([0], void 0);
+    });
+  }());
+  if (!arrayFromHandlesUndefinedMapFunction) {
+    var origArrayFrom = Array.from;
+    overrideNative(Array, 'from', function from(items) {
+      if (arguments.length > 1 && typeof arguments[1] !== 'undefined') {
+        return ES.Call(origArrayFrom, this, arguments);
+      } else {
+        return _call(origArrayFrom, this, items);
+      }
+    });
+  }
+
+  var int32sAsOne = -(Math.pow(2, 32) - 1);
+  var toLengthsCorrectly = function (method, reversed) {
+    var obj = { length: int32sAsOne };
+    obj[reversed ? (obj.length >>> 0) - 1 : 0] = true;
+    return valueOrFalseIfThrows(function () {
+      _call(method, obj, function () {
+        // note: in nonconforming browsers, this will be called
+        // -1 >>> 0 times, which is 4294967295, so the throw matters.
+        throw new RangeError('should not reach here');
+      }, []);
+      return true;
+    });
+  };
+  if (!toLengthsCorrectly(Array.prototype.forEach)) {
+    var originalForEach = Array.prototype.forEach;
+    overrideNative(Array.prototype, 'forEach', function forEach(callbackFn) {
+      return ES.Call(originalForEach, this.length >= 0 ? this : [], arguments);
+    }, true);
+  }
+  if (!toLengthsCorrectly(Array.prototype.map)) {
+    var originalMap = Array.prototype.map;
+    overrideNative(Array.prototype, 'map', function map(callbackFn) {
+      return ES.Call(originalMap, this.length >= 0 ? this : [], arguments);
+    }, true);
+  }
+  if (!toLengthsCorrectly(Array.prototype.filter)) {
+    var originalFilter = Array.prototype.filter;
+    overrideNative(Array.prototype, 'filter', function filter(callbackFn) {
+      return ES.Call(originalFilter, this.length >= 0 ? this : [], arguments);
+    }, true);
+  }
+  if (!toLengthsCorrectly(Array.prototype.some)) {
+    var originalSome = Array.prototype.some;
+    overrideNative(Array.prototype, 'some', function some(callbackFn) {
+      return ES.Call(originalSome, this.length >= 0 ? this : [], arguments);
+    }, true);
+  }
+  if (!toLengthsCorrectly(Array.prototype.every)) {
+    var originalEvery = Array.prototype.every;
+    overrideNative(Array.prototype, 'every', function every(callbackFn) {
+      return ES.Call(originalEvery, this.length >= 0 ? this : [], arguments);
+    }, true);
+  }
+  if (!toLengthsCorrectly(Array.prototype.reduce)) {
+    var originalReduce = Array.prototype.reduce;
+    overrideNative(Array.prototype, 'reduce', function reduce(callbackFn) {
+      return ES.Call(originalReduce, this.length >= 0 ? this : [], arguments);
+    }, true);
+  }
+  if (!toLengthsCorrectly(Array.prototype.reduceRight, true)) {
+    var originalReduceRight = Array.prototype.reduceRight;
+    overrideNative(Array.prototype, 'reduceRight', function reduceRight(callbackFn) {
+      return ES.Call(originalReduceRight, this.length >= 0 ? this : [], arguments);
+    }, true);
+  }
+
+  var lacksOctalSupport = Number('0o10') !== 8;
+  var lacksBinarySupport = Number('0b10') !== 2;
+  var trimsNonWhitespace = _some(nonWS, function (c) {
+    return Number(c + 0 + c) === 0;
+  });
+  if (lacksOctalSupport || lacksBinarySupport || trimsNonWhitespace) {
+    var OrigNumber = Number;
+    var binaryRegex = /^0b[01]+$/i;
+    var octalRegex = /^0o[0-7]+$/i;
+    // Note that in IE 8, RegExp.prototype.test doesn't seem to exist: ie, "test" is an own property of regexes. wtf.
+    var isBinary = binaryRegex.test.bind(binaryRegex);
+    var isOctal = octalRegex.test.bind(octalRegex);
+    var toPrimitive = function (O) { // need to replace this with `es-to-primitive/es6`
+      var result;
+      if (typeof O.valueOf === 'function') {
+        result = O.valueOf();
+        if (Type.primitive(result)) {
+          return result;
+        }
+      }
+      if (typeof O.toString === 'function') {
+        result = O.toString();
+        if (Type.primitive(result)) {
+          return result;
+        }
+      }
+      throw new TypeError('No default value');
+    };
+    var hasNonWS = nonWSregex.test.bind(nonWSregex);
+    var isBadHex = isBadHexRegex.test.bind(isBadHexRegex);
+    var NumberShim = (function () {
+      // this is wrapped in an IIFE because of IE 6-8's wacky scoping issues with named function expressions.
+      var NumberShim = function Number(value) {
+        var primValue;
+        if (arguments.length > 0) {
+          primValue = Type.primitive(value) ? value : toPrimitive(value, 'number');
+        } else {
+          primValue = 0;
+        }
+        if (typeof primValue === 'string') {
+          primValue = ES.Call(trimShim, primValue);
+          if (isBinary(primValue)) {
+            primValue = parseInt(_strSlice(primValue, 2), 2);
+          } else if (isOctal(primValue)) {
+            primValue = parseInt(_strSlice(primValue, 2), 8);
+          } else if (hasNonWS(primValue) || isBadHex(primValue)) {
+            primValue = NaN;
+          }
+        }
+        var receiver = this;
+        var valueOfSucceeds = valueOrFalseIfThrows(function () {
+          OrigNumber.prototype.valueOf.call(receiver);
+          return true;
+        });
+        if (receiver instanceof NumberShim && !valueOfSucceeds) {
+          return new OrigNumber(primValue);
+        }
+        /* jshint newcap: false */
+        return OrigNumber(primValue);
+        /* jshint newcap: true */
+      };
+      return NumberShim;
+    }());
+    wrapConstructor(OrigNumber, NumberShim, {});
+    // this is necessary for ES3 browsers, where these properties are non-enumerable.
+    defineProperties(NumberShim, {
+      NaN: OrigNumber.NaN,
+      MAX_VALUE: OrigNumber.MAX_VALUE,
+      MIN_VALUE: OrigNumber.MIN_VALUE,
+      NEGATIVE_INFINITY: OrigNumber.NEGATIVE_INFINITY,
+      POSITIVE_INFINITY: OrigNumber.POSITIVE_INFINITY
+    });
+    /* globals Number: true */
+    /* eslint-disable no-undef, no-global-assign */
+    /* jshint -W020 */
+    Number = NumberShim;
+    Value.redefine(globals, 'Number', NumberShim);
+    /* jshint +W020 */
+    /* eslint-enable no-undef, no-global-assign */
+    /* globals Number: false */
+  }
+
+  var maxSafeInteger = Math.pow(2, 53) - 1;
+  defineProperties(Number, {
+    MAX_SAFE_INTEGER: maxSafeInteger,
+    MIN_SAFE_INTEGER: -maxSafeInteger,
+    EPSILON: 2.220446049250313e-16,
+
+    parseInt: globals.parseInt,
+    parseFloat: globals.parseFloat,
+
+    isFinite: numberIsFinite,
+
+    isInteger: function isInteger(value) {
+      return numberIsFinite(value) && ES.ToInteger(value) === value;
+    },
+
+    isSafeInteger: function isSafeInteger(value) {
+      return Number.isInteger(value) && _abs(value) <= Number.MAX_SAFE_INTEGER;
+    },
+
+    isNaN: numberIsNaN
+  });
+  // Firefox 37 has a conforming Number.parseInt, but it's not === to the global parseInt (fixed in v40)
+  defineProperty(Number, 'parseInt', globals.parseInt, Number.parseInt !== globals.parseInt);
+
+  // Work around bugs in Array#find and Array#findIndex -- early
+  // implementations skipped holes in sparse arrays. (Note that the
+  // implementations of find/findIndex indirectly use shimmed
+  // methods of Number, so this test has to happen down here.)
+  /*jshint elision: true */
+  /* eslint-disable no-sparse-arrays */
+  if ([, 1].find(function () { return true; }) === 1) {
+    overrideNative(Array.prototype, 'find', ArrayPrototypeShims.find);
+  }
+  if ([, 1].findIndex(function () { return true; }) !== 0) {
+    overrideNative(Array.prototype, 'findIndex', ArrayPrototypeShims.findIndex);
+  }
+  /* eslint-enable no-sparse-arrays */
+  /*jshint elision: false */
+
+  var isEnumerableOn = Function.bind.call(Function.bind, Object.prototype.propertyIsEnumerable);
+  var ensureEnumerable = function ensureEnumerable(obj, prop) {
+    if (supportsDescriptors && isEnumerableOn(obj, prop)) {
+      Object.defineProperty(obj, prop, { enumerable: false });
+    }
+  };
+  var sliceArgs = function sliceArgs() {
+    // per https://github.com/petkaantonov/bluebird/wiki/Optimization-killers#32-leaking-arguments
+    // and https://gist.github.com/WebReflection/4327762cb87a8c634a29
+    var initial = Number(this);
+    var len = arguments.length;
+    var desiredArgCount = len - initial;
+    var args = new Array(desiredArgCount < 0 ? 0 : desiredArgCount);
+    for (var i = initial; i < len; ++i) {
+      args[i - initial] = arguments[i];
+    }
+    return args;
+  };
+  var assignTo = function assignTo(source) {
+    return function assignToSource(target, key) {
+      target[key] = source[key];
+      return target;
+    };
+  };
+  var assignReducer = function (target, source) {
+    var sourceKeys = keys(Object(source));
+    var symbols;
+    if (ES.IsCallable(Object.getOwnPropertySymbols)) {
+      symbols = _filter(Object.getOwnPropertySymbols(Object(source)), isEnumerableOn(source));
+    }
+    return _reduce(_concat(sourceKeys, symbols || []), assignTo(source), target);
+  };
+
+  var ObjectShims = {
+    // 19.1.3.1
+    assign: function (target, source) {
+      var to = ES.ToObject(target, 'Cannot convert undefined or null to object');
+      return _reduce(ES.Call(sliceArgs, 1, arguments), assignReducer, to);
+    },
+
+    // Added in WebKit in https://bugs.webkit.org/show_bug.cgi?id=143865
+    is: function is(a, b) {
+      return ES.SameValue(a, b);
+    }
+  };
+  var assignHasPendingExceptions = Object.assign && Object.preventExtensions && (function () {
+    // Firefox 37 still has "pending exception" logic in its Object.assign implementation,
+    // which is 72% slower than our shim, and Firefox 40's native implementation.
+    var thrower = Object.preventExtensions({ 1: 2 });
+    try {
+      Object.assign(thrower, 'xy');
+    } catch (e) {
+      return thrower[1] === 'y';
+    }
+  }());
+  if (assignHasPendingExceptions) {
+    overrideNative(Object, 'assign', ObjectShims.assign);
+  }
+  defineProperties(Object, ObjectShims);
+
+  if (supportsDescriptors) {
+    var ES5ObjectShims = {
+      // 19.1.3.9
+      // shim from https://gist.github.com/WebReflection/5593554
+      setPrototypeOf: (function (Object, magic) {
+        var set;
+
+        var checkArgs = function (O, proto) {
+          if (!ES.TypeIsObject(O)) {
+            throw new TypeError('cannot set prototype on a non-object');
+          }
+          if (!(proto === null || ES.TypeIsObject(proto))) {
+            throw new TypeError('can only set prototype to an object or null' + proto);
+          }
+        };
+
+        var setPrototypeOf = function (O, proto) {
+          checkArgs(O, proto);
+          _call(set, O, proto);
+          return O;
+        };
+
+        try {
+          // this works already in Firefox and Safari
+          set = Object.getOwnPropertyDescriptor(Object.prototype, magic).set;
+          _call(set, {}, null);
+        } catch (e) {
+          if (Object.prototype !== {}[magic]) {
+            // IE < 11 cannot be shimmed
+            return;
+          }
+          // probably Chrome or some old Mobile stock browser
+          set = function (proto) {
+            this[magic] = proto;
+          };
+          // please note that this will **not** work
+          // in those browsers that do not inherit
+          // __proto__ by mistake from Object.prototype
+          // in these cases we should probably throw an error
+          // or at least be informed about the issue
+          setPrototypeOf.polyfill = setPrototypeOf(
+            setPrototypeOf({}, null),
+            Object.prototype
+          ) instanceof Object;
+          // setPrototypeOf.polyfill === true means it works as meant
+          // setPrototypeOf.polyfill === false means it's not 100% reliable
+          // setPrototypeOf.polyfill === undefined
+          // or
+          // setPrototypeOf.polyfill ==  null means it's not a polyfill
+          // which means it works as expected
+          // we can even delete Object.prototype.__proto__;
+        }
+        return setPrototypeOf;
+      }(Object, '__proto__'))
+    };
+
+    defineProperties(Object, ES5ObjectShims);
+  }
+
+  // Workaround bug in Opera 12 where setPrototypeOf(x, null) doesn't work,
+  // but Object.create(null) does.
+  if (Object.setPrototypeOf && Object.getPrototypeOf &&
+      Object.getPrototypeOf(Object.setPrototypeOf({}, null)) !== null &&
+      Object.getPrototypeOf(Object.create(null)) === null) {
+    (function () {
+      var FAKENULL = Object.create(null);
+      var gpo = Object.getPrototypeOf;
+      var spo = Object.setPrototypeOf;
+      Object.getPrototypeOf = function (o) {
+        var result = gpo(o);
+        return result === FAKENULL ? null : result;
+      };
+      Object.setPrototypeOf = function (o, p) {
+        var proto = p === null ? FAKENULL : p;
+        return spo(o, proto);
+      };
+      Object.setPrototypeOf.polyfill = false;
+    }());
+  }
+
+  var objectKeysAcceptsPrimitives = !throwsError(function () { Object.keys('foo'); });
+  if (!objectKeysAcceptsPrimitives) {
+    var originalObjectKeys = Object.keys;
+    overrideNative(Object, 'keys', function keys(value) {
+      return originalObjectKeys(ES.ToObject(value));
+    });
+    keys = Object.keys;
+  }
+  var objectKeysRejectsRegex = throwsError(function () { Object.keys(/a/g); });
+  if (objectKeysRejectsRegex) {
+    var regexRejectingObjectKeys = Object.keys;
+    overrideNative(Object, 'keys', function keys(value) {
+      if (Type.regex(value)) {
+        var regexKeys = [];
+        for (var k in value) {
+          if (_hasOwnProperty(value, k)) {
+            _push(regexKeys, k);
+          }
+        }
+        return regexKeys;
+      }
+      return regexRejectingObjectKeys(value);
+    });
+    keys = Object.keys;
+  }
+
+  if (Object.getOwnPropertyNames) {
+    var objectGOPNAcceptsPrimitives = !throwsError(function () { Object.getOwnPropertyNames('foo'); });
+    if (!objectGOPNAcceptsPrimitives) {
+      var cachedWindowNames = typeof window === 'object' ? Object.getOwnPropertyNames(window) : [];
+      var originalObjectGetOwnPropertyNames = Object.getOwnPropertyNames;
+      overrideNative(Object, 'getOwnPropertyNames', function getOwnPropertyNames(value) {
+        var val = ES.ToObject(value);
+        if (_toString(val) === '[object Window]') {
+          try {
+            return originalObjectGetOwnPropertyNames(val);
+          } catch (e) {
+            // IE bug where layout engine calls userland gOPN for cross-domain `window` objects
+            return _concat([], cachedWindowNames);
+          }
+        }
+        return originalObjectGetOwnPropertyNames(val);
+      });
+    }
+  }
+  if (Object.getOwnPropertyDescriptor) {
+    var objectGOPDAcceptsPrimitives = !throwsError(function () { Object.getOwnPropertyDescriptor('foo', 'bar'); });
+    if (!objectGOPDAcceptsPrimitives) {
+      var originalObjectGetOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
+      overrideNative(Object, 'getOwnPropertyDescriptor', function getOwnPropertyDescriptor(value, property) {
+        return originalObjectGetOwnPropertyDescriptor(ES.ToObject(value), property);
+      });
+    }
+  }
+  if (Object.seal) {
+    var objectSealAcceptsPrimitives = !throwsError(function () { Object.seal('foo'); });
+    if (!objectSealAcceptsPrimitives) {
+      var originalObjectSeal = Object.seal;
+      overrideNative(Object, 'seal', function seal(value) {
+        if (!ES.TypeIsObject(value)) { return value; }
+        return originalObjectSeal(value);
+      });
+    }
+  }
+  if (Object.isSealed) {
+    var objectIsSealedAcceptsPrimitives = !throwsError(function () { Object.isSealed('foo'); });
+    if (!objectIsSealedAcceptsPrimitives) {
+      var originalObjectIsSealed = Object.isSealed;
+      overrideNative(Object, 'isSealed', function isSealed(value) {
+        if (!ES.TypeIsObject(value)) { return true; }
+        return originalObjectIsSealed(value);
+      });
+    }
+  }
+  if (Object.freeze) {
+    var objectFreezeAcceptsPrimitives = !throwsError(function () { Object.freeze('foo'); });
+    if (!objectFreezeAcceptsPrimitives) {
+      var originalObjectFreeze = Object.freeze;
+      overrideNative(Object, 'freeze', function freeze(value) {
+        if (!ES.TypeIsObject(value)) { return value; }
+        return originalObjectFreeze(value);
+      });
+    }
+  }
+  if (Object.isFrozen) {
+    var objectIsFrozenAcceptsPrimitives = !throwsError(function () { Object.isFrozen('foo'); });
+    if (!objectIsFrozenAcceptsPrimitives) {
+      var originalObjectIsFrozen = Object.isFrozen;
+      overrideNative(Object, 'isFrozen', function isFrozen(value) {
+        if (!ES.TypeIsObject(value)) { return true; }
+        return originalObjectIsFrozen(value);
+      });
+    }
+  }
+  if (Object.preventExtensions) {
+    var objectPreventExtensionsAcceptsPrimitives = !throwsError(function () { Object.preventExtensions('foo'); });
+    if (!objectPreventExtensionsAcceptsPrimitives) {
+      var originalObjectPreventExtensions = Object.preventExtensions;
+      overrideNative(Object, 'preventExtensions', function preventExtensions(value) {
+        if (!ES.TypeIsObject(value)) { return value; }
+        return originalObjectPreventExtensions(value);
+      });
+    }
+  }
+  if (Object.isExtensible) {
+    var objectIsExtensibleAcceptsPrimitives = !throwsError(function () { Object.isExtensible('foo'); });
+    if (!objectIsExtensibleAcceptsPrimitives) {
+      var originalObjectIsExtensible = Object.isExtensible;
+      overrideNative(Object, 'isExtensible', function isExtensible(value) {
+        if (!ES.TypeIsObject(value)) { return false; }
+        return originalObjectIsExtensible(value);
+      });
+    }
+  }
+  if (Object.getPrototypeOf) {
+    var objectGetProtoAcceptsPrimitives = !throwsError(function () { Object.getPrototypeOf('foo'); });
+    if (!objectGetProtoAcceptsPrimitives) {
+      var originalGetProto = Object.getPrototypeOf;
+      overrideNative(Object, 'getPrototypeOf', function getPrototypeOf(value) {
+        return originalGetProto(ES.ToObject(value));
+      });
+    }
+  }
+
+  var hasFlags = supportsDescriptors && (function () {
+    var desc = Object.getOwnPropertyDescriptor(RegExp.prototype, 'flags');
+    return desc && ES.IsCallable(desc.get);
+  }());
+  if (supportsDescriptors && !hasFlags) {
+    var regExpFlagsGetter = function flags() {
+      if (!ES.TypeIsObject(this)) {
+        throw new TypeError('Method called on incompatible type: must be an object.');
+      }
+      var result = '';
+      if (this.global) {
+        result += 'g';
+      }
+      if (this.ignoreCase) {
+        result += 'i';
+      }
+      if (this.multiline) {
+        result += 'm';
+      }
+      if (this.unicode) {
+        result += 'u';
+      }
+      if (this.sticky) {
+        result += 'y';
+      }
+      return result;
+    };
+
+    Value.getter(RegExp.prototype, 'flags', regExpFlagsGetter);
+  }
+
+  var regExpSupportsFlagsWithRegex = supportsDescriptors && valueOrFalseIfThrows(function () {
+    return String(new RegExp(/a/g, 'i')) === '/a/i';
+  });
+  var regExpNeedsToSupportSymbolMatch = hasSymbols && supportsDescriptors && (function () {
+    // Edge 0.12 supports flags fully, but does not support Symbol.match
+    var regex = /./;
+    regex[Symbol.match] = false;
+    return RegExp(regex) === regex;
+  }());
+
+  var regexToStringIsGeneric = valueOrFalseIfThrows(function () {
+    return RegExp.prototype.toString.call({ source: 'abc' }) === '/abc/';
+  });
+  var regexToStringSupportsGenericFlags = regexToStringIsGeneric && valueOrFalseIfThrows(function () {
+    return RegExp.prototype.toString.call({ source: 'a', flags: 'b' }) === '/a/b';
+  });
+  if (!regexToStringIsGeneric || !regexToStringSupportsGenericFlags) {
+    var origRegExpToString = RegExp.prototype.toString;
+    defineProperty(RegExp.prototype, 'toString', function toString() {
+      var R = ES.RequireObjectCoercible(this);
+      if (Type.regex(R)) {
+        return _call(origRegExpToString, R);
+      }
+      var pattern = $String(R.source);
+      var flags = $String(R.flags);
+      return '/' + pattern + '/' + flags;
+    }, true);
+    Value.preserveToString(RegExp.prototype.toString, origRegExpToString);
+  }
+
+  if (supportsDescriptors && (!regExpSupportsFlagsWithRegex || regExpNeedsToSupportSymbolMatch)) {
+    var flagsGetter = Object.getOwnPropertyDescriptor(RegExp.prototype, 'flags').get;
+    var sourceDesc = Object.getOwnPropertyDescriptor(RegExp.prototype, 'source') || {};
+    var legacySourceGetter = function () {
+      // prior to it being a getter, it's own + nonconfigurable
+      return this.source;
+    };
+    var sourceGetter = ES.IsCallable(sourceDesc.get) ? sourceDesc.get : legacySourceGetter;
+
+    var OrigRegExp = RegExp;
+    var RegExpShim = (function () {
+      return function RegExp(pattern, flags) {
+        var patternIsRegExp = ES.IsRegExp(pattern);
+        var calledWithNew = this instanceof RegExp;
+        if (!calledWithNew && patternIsRegExp && typeof flags === 'undefined' && pattern.constructor === RegExp) {
+          return pattern;
+        }
+
+        var P = pattern;
+        var F = flags;
+        if (Type.regex(pattern)) {
+          P = ES.Call(sourceGetter, pattern);
+          F = typeof flags === 'undefined' ? ES.Call(flagsGetter, pattern) : flags;
+          return new RegExp(P, F);
+        } else if (patternIsRegExp) {
+          P = pattern.source;
+          F = typeof flags === 'undefined' ? pattern.flags : flags;
+        }
+        return new OrigRegExp(pattern, flags);
+      };
+    }());
+    wrapConstructor(OrigRegExp, RegExpShim, {
+      $input: true // Chrome < v39 & Opera < 26 have a nonstandard "$input" property
+    });
+    /* globals RegExp: true */
+    /* eslint-disable no-undef, no-global-assign */
+    /* jshint -W020 */
+    RegExp = RegExpShim;
+    Value.redefine(globals, 'RegExp', RegExpShim);
+    /* jshint +W020 */
+    /* eslint-enable no-undef, no-global-assign */
+    /* globals RegExp: false */
+  }
+
+  if (supportsDescriptors) {
+    var regexGlobals = {
+      input: '$_',
+      lastMatch: '$&',
+      lastParen: '$+',
+      leftContext: '$`',
+      rightContext: '$\''
+    };
+    _forEach(keys(regexGlobals), function (prop) {
+      if (prop in RegExp && !(regexGlobals[prop] in RegExp)) {
+        Value.getter(RegExp, regexGlobals[prop], function get() {
+          return RegExp[prop];
+        });
+      }
+    });
+  }
+  addDefaultSpecies(RegExp);
+
+  var inverseEpsilon = 1 / Number.EPSILON;
+  var roundTiesToEven = function roundTiesToEven(n) {
+    // Even though this reduces down to `return n`, it takes advantage of built-in rounding.
+    return (n + inverseEpsilon) - inverseEpsilon;
+  };
+  var BINARY_32_EPSILON = Math.pow(2, -23);
+  var BINARY_32_MAX_VALUE = Math.pow(2, 127) * (2 - BINARY_32_EPSILON);
+  var BINARY_32_MIN_VALUE = Math.pow(2, -126);
+  var E = Math.E;
+  var LOG2E = Math.LOG2E;
+  var LOG10E = Math.LOG10E;
+  var numberCLZ = Number.prototype.clz;
+  delete Number.prototype.clz; // Safari 8 has Number#clz
+
+  var MathShims = {
+    acosh: function acosh(value) {
+      var x = Number(value);
+      if (numberIsNaN(x) || value < 1) { return NaN; }
+      if (x === 1) { return 0; }
+      if (x === Infinity) { return x; }
+      return _log((x / E) + (_sqrt(x + 1) * _sqrt(x - 1) / E)) + 1;
+    },
+
+    asinh: function asinh(value) {
+      var x = Number(value);
+      if (x === 0 || !globalIsFinite(x)) {
+        return x;
+      }
+      return x < 0 ? -asinh(-x) : _log(x + _sqrt((x * x) + 1));
+    },
+
+    atanh: function atanh(value) {
+      var x = Number(value);
+      if (numberIsNaN(x) || x < -1 || x > 1) {
+        return NaN;
+      }
+      if (x === -1) { return -Infinity; }
+      if (x === 1) { return Infinity; }
+      if (x === 0) { return x; }
+      return 0.5 * _log((1 + x) / (1 - x));
+    },
+
+    cbrt: function cbrt(value) {
+      var x = Number(value);
+      if (x === 0) { return x; }
+      var negate = x < 0;
+      var result;
+      if (negate) { x = -x; }
+      if (x === Infinity) {
+        result = Infinity;
+      } else {
+        result = _exp(_log(x) / 3);
+        // from http://en.wikipedia.org/wiki/Cube_root#Numerical_methods
+        result = ((x / (result * result)) + (2 * result)) / 3;
+      }
+      return negate ? -result : result;
+    },
+
+    clz32: function clz32(value) {
+      // See https://bugs.ecmascript.org/show_bug.cgi?id=2465
+      var x = Number(value);
+      var number = ES.ToUint32(x);
+      if (number === 0) {
+        return 32;
+      }
+      return numberCLZ ? ES.Call(numberCLZ, number) : 31 - _floor(_log(number + 0.5) * LOG2E);
+    },
+
+    cosh: function cosh(value) {
+      var x = Number(value);
+      if (x === 0) { return 1; } // +0 or -0
+      if (numberIsNaN(x)) { return NaN; }
+      if (!globalIsFinite(x)) { return Infinity; }
+      if (x < 0) { x = -x; }
+      if (x > 21) { return _exp(x) / 2; }
+      return (_exp(x) + _exp(-x)) / 2;
+    },
+
+    expm1: function expm1(value) {
+      var x = Number(value);
+      if (x === -Infinity) { return -1; }
+      if (!globalIsFinite(x) || x === 0) { return x; }
+      if (_abs(x) > 0.5) {
+        return _exp(x) - 1;
+      }
+      // A more precise approximation using Taylor series expansion
+      // from https://github.com/paulmillr/es6-shim/issues/314#issuecomment-70293986
+      var t = x;
+      var sum = 0;
+      var n = 1;
+      while (sum + t !== sum) {
+        sum += t;
+        n += 1;
+        t *= x / n;
+      }
+      return sum;
+    },
+
+    hypot: function hypot(x, y) {
+      var result = 0;
+      var largest = 0;
+      for (var i = 0; i < arguments.length; ++i) {
+        var value = _abs(Number(arguments[i]));
+        if (largest < value) {
+          result *= (largest / value) * (largest / value);
+          result += 1;
+          largest = value;
+        } else {
+          result += value > 0 ? (value / largest) * (value / largest) : value;
+        }
+      }
+      return largest === Infinity ? Infinity : largest * _sqrt(result);
+    },
+
+    log2: function log2(value) {
+      return _log(value) * LOG2E;
+    },
+
+    log10: function log10(value) {
+      return _log(value) * LOG10E;
+    },
+
+    log1p: function log1p(value) {
+      var x = Number(value);
+      if (x < -1 || numberIsNaN(x)) { return NaN; }
+      if (x === 0 || x === Infinity) { return x; }
+      if (x === -1) { return -Infinity; }
+
+      return (1 + x) - 1 === 0 ? x : x * (_log(1 + x) / ((1 + x) - 1));
+    },
+
+    sign: _sign,
+
+    sinh: function sinh(value) {
+      var x = Number(value);
+      if (!globalIsFinite(x) || x === 0) { return x; }
+
+      if (_abs(x) < 1) {
+        return (Math.expm1(x) - Math.expm1(-x)) / 2;
+      }
+      return (_exp(x - 1) - _exp(-x - 1)) * E / 2;
+    },
+
+    tanh: function tanh(value) {
+      var x = Number(value);
+      if (numberIsNaN(x) || x === 0) { return x; }
+      // can exit early at +-20 as JS loses precision for true value at this integer
+      if (x >= 20) { return 1; }
+      if (x <= -20) { return -1; }
+
+      return (Math.expm1(x) - Math.expm1(-x)) / (_exp(x) + _exp(-x));
+    },
+
+    trunc: function trunc(value) {
+      var x = Number(value);
+      return x < 0 ? -_floor(-x) : _floor(x);
+    },
+
+    imul: function imul(x, y) {
+      // taken from https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/imul
+      var a = ES.ToUint32(x);
+      var b = ES.ToUint32(y);
+      var ah = (a >>> 16) & 0xffff;
+      var al = a & 0xffff;
+      var bh = (b >>> 16) & 0xffff;
+      var bl = b & 0xffff;
+      // the shift by 0 fixes the sign on the high part
+      // the final |0 converts the unsigned value into a signed value
+      return (al * bl) + ((((ah * bl) + (al * bh)) << 16) >>> 0) | 0;
+    },
+
+    fround: function fround(x) {
+      var v = Number(x);
+      if (v === 0 || v === Infinity || v === -Infinity || numberIsNaN(v)) {
+        return v;
+      }
+      var sign = _sign(v);
+      var abs = _abs(v);
+      if (abs < BINARY_32_MIN_VALUE) {
+        return sign * roundTiesToEven(
+          abs / BINARY_32_MIN_VALUE / BINARY_32_EPSILON
+        ) * BINARY_32_MIN_VALUE * BINARY_32_EPSILON;
+      }
+      // Veltkamp's splitting (?)
+      var a = (1 + (BINARY_32_EPSILON / Number.EPSILON)) * abs;
+      var result = a - (a - abs);
+      if (result > BINARY_32_MAX_VALUE || numberIsNaN(result)) {
+        return sign * Infinity;
+      }
+      return sign * result;
+    }
+  };
+  defineProperties(Math, MathShims);
+  // IE 11 TP has an imprecise log1p: reports Math.log1p(-1e-17) as 0
+  defineProperty(Math, 'log1p', MathShims.log1p, Math.log1p(-1e-17) !== -1e-17);
+  // IE 11 TP has an imprecise asinh: reports Math.asinh(-1e7) as not exactly equal to -Math.asinh(1e7)
+  defineProperty(Math, 'asinh', MathShims.asinh, Math.asinh(-1e7) !== -Math.asinh(1e7));
+  // Chrome 40 has an imprecise Math.tanh with very small numbers
+  defineProperty(Math, 'tanh', MathShims.tanh, Math.tanh(-2e-17) !== -2e-17);
+  // Chrome 40 loses Math.acosh precision with high numbers
+  defineProperty(Math, 'acosh', MathShims.acosh, Math.acosh(Number.MAX_VALUE) === Infinity);
+  // Firefox 38 on Windows
+  defineProperty(Math, 'cbrt', MathShims.cbrt, Math.abs(1 - (Math.cbrt(1e-300) / 1e-100)) / Number.EPSILON > 8);
+  // node 0.11 has an imprecise Math.sinh with very small numbers
+  defineProperty(Math, 'sinh', MathShims.sinh, Math.sinh(-2e-17) !== -2e-17);
+  // FF 35 on Linux reports 22025.465794806725 for Math.expm1(10)
+  var expm1OfTen = Math.expm1(10);
+  defineProperty(Math, 'expm1', MathShims.expm1, expm1OfTen > 22025.465794806719 || expm1OfTen < 22025.4657948067165168);
+
+  var origMathRound = Math.round;
+  // breaks in e.g. Safari 8, Internet Explorer 11, Opera 12
+  var roundHandlesBoundaryConditions = Math.round(0.5 - (Number.EPSILON / 4)) === 0 &&
+    Math.round(-0.5 + (Number.EPSILON / 3.99)) === 1;
+
+  // When engines use Math.floor(x + 0.5) internally, Math.round can be buggy for large integers.
+  // This behavior should be governed by "round to nearest, ties to even mode"
+  // see http://www.ecma-international.org/ecma-262/6.0/#sec-terms-and-definitions-number-type
+  // These are the boundary cases where it breaks.
+  var smallestPositiveNumberWhereRoundBreaks = inverseEpsilon + 1;
+  var largestPositiveNumberWhereRoundBreaks = (2 * inverseEpsilon) - 1;
+  var roundDoesNotIncreaseIntegers = [
+    smallestPositiveNumberWhereRoundBreaks,
+    largestPositiveNumberWhereRoundBreaks
+  ].every(function (num) {
+    return Math.round(num) === num;
+  });
+  defineProperty(Math, 'round', function round(x) {
+    var floor = _floor(x);
+    var ceil = floor === -1 ? -0 : floor + 1;
+    return x - floor < 0.5 ? floor : ceil;
+  }, !roundHandlesBoundaryConditions || !roundDoesNotIncreaseIntegers);
+  Value.preserveToString(Math.round, origMathRound);
+
+  var origImul = Math.imul;
+  if (Math.imul(0xffffffff, 5) !== -5) {
+    // Safari 6.1, at least, reports "0" for this value
+    Math.imul = MathShims.imul;
+    Value.preserveToString(Math.imul, origImul);
+  }
+  if (Math.imul.length !== 2) {
+    // Safari 8.0.4 has a length of 1
+    // fixed in https://bugs.webkit.org/show_bug.cgi?id=143658
+    overrideNative(Math, 'imul', function imul(x, y) {
+      return ES.Call(origImul, Math, arguments);
+    });
+  }
+
+  // Promises
+  // Simplest possible implementation; use a 3rd-party library if you
+  // want the best possible speed and/or long stack traces.
+  var PromiseShim = (function () {
+    var setTimeout = globals.setTimeout;
+    // some environments don't have setTimeout - no way to shim here.
+    if (typeof setTimeout !== 'function' && typeof setTimeout !== 'object') { return; }
+
+    ES.IsPromise = function (promise) {
+      if (!ES.TypeIsObject(promise)) {
+        return false;
+      }
+      if (typeof promise._promise === 'undefined') {
+        return false; // uninitialized, or missing our hidden field.
+      }
+      return true;
+    };
+
+    // "PromiseCapability" in the spec is what most promise implementations
+    // call a "deferred".
+    var PromiseCapability = function (C) {
+      if (!ES.IsConstructor(C)) {
+        throw new TypeError('Bad promise constructor');
+      }
+      var capability = this;
+      var resolver = function (resolve, reject) {
+        if (capability.resolve !== void 0 || capability.reject !== void 0) {
+          throw new TypeError('Bad Promise implementation!');
+        }
+        capability.resolve = resolve;
+        capability.reject = reject;
+      };
+      // Initialize fields to inform optimizers about the object shape.
+      capability.resolve = void 0;
+      capability.reject = void 0;
+      capability.promise = new C(resolver);
+      if (!(ES.IsCallable(capability.resolve) && ES.IsCallable(capability.reject))) {
+        throw new TypeError('Bad promise constructor');
+      }
+    };
+
+    // find an appropriate setImmediate-alike
+    var makeZeroTimeout;
+    /*global window */
+    if (typeof window !== 'undefined' && ES.IsCallable(window.postMessage)) {
+      makeZeroTimeout = function () {
+        // from http://dbaron.org/log/20100309-faster-timeouts
+        var timeouts = [];
+        var messageName = 'zero-timeout-message';
+        var setZeroTimeout = function (fn) {
+          _push(timeouts, fn);
+          window.postMessage(messageName, '*');
+        };
+        var handleMessage = function (event) {
+          if (event.source === window && event.data === messageName) {
+            event.stopPropagation();
+            if (timeouts.length === 0) { return; }
+            var fn = _shift(timeouts);
+            fn();
+          }
+        };
+        window.addEventListener('message', handleMessage, true);
+        return setZeroTimeout;
+      };
+    }
+    var makePromiseAsap = function () {
+      // An efficient task-scheduler based on a pre-existing Promise
+      // implementation, which we can use even if we override the
+      // global Promise below (in order to workaround bugs)
+      // https://github.com/Raynos/observ-hash/issues/2#issuecomment-35857671
+      var P = globals.Promise;
+      var pr = P && P.resolve && P.resolve();
+      return pr && function (task) {
+        return pr.then(task);
+      };
+    };
+    /*global process */
+    /* jscs:disable disallowMultiLineTernary */
+    var enqueue = ES.IsCallable(globals.setImmediate) ?
+      globals.setImmediate :
+      typeof process === 'object' && process.nextTick ? process.nextTick :
+      makePromiseAsap() ||
+      (ES.IsCallable(makeZeroTimeout) ? makeZeroTimeout() :
+      function (task) { setTimeout(task, 0); }); // fallback
+    /* jscs:enable disallowMultiLineTernary */
+
+    // Constants for Promise implementation
+    var PROMISE_IDENTITY = function (x) { return x; };
+    var PROMISE_THROWER = function (e) { throw e; };
+    var PROMISE_PENDING = 0;
+    var PROMISE_FULFILLED = 1;
+    var PROMISE_REJECTED = 2;
+    // We store fulfill/reject handlers and capabilities in a single array.
+    var PROMISE_FULFILL_OFFSET = 0;
+    var PROMISE_REJECT_OFFSET = 1;
+    var PROMISE_CAPABILITY_OFFSET = 2;
+    // This is used in an optimization for chaining promises via then.
+    var PROMISE_FAKE_CAPABILITY = {};
+
+    var enqueuePromiseReactionJob = function (handler, capability, argument) {
+      enqueue(function () {
+        promiseReactionJob(handler, capability, argument);
+      });
+    };
+
+    var promiseReactionJob = function (handler, promiseCapability, argument) {
+      var handlerResult, f;
+      if (promiseCapability === PROMISE_FAKE_CAPABILITY) {
+        // Fast case, when we don't actually need to chain through to a
+        // (real) promiseCapability.
+        return handler(argument);
+      }
+      try {
+        handlerResult = handler(argument);
+        f = promiseCapability.resolve;
+      } catch (e) {
+        handlerResult = e;
+        f = promiseCapability.reject;
+      }
+      f(handlerResult);
+    };
+
+    var fulfillPromise = function (promise, value) {
+      var _promise = promise._promise;
+      var length = _promise.reactionLength;
+      if (length > 0) {
+        enqueuePromiseReactionJob(
+          _promise.fulfillReactionHandler0,
+          _promise.reactionCapability0,
+          value
+        );
+        _promise.fulfillReactionHandler0 = void 0;
+        _promise.rejectReactions0 = void 0;
+        _promise.reactionCapability0 = void 0;
+        if (length > 1) {
+          for (var i = 1, idx = 0; i < length; i++, idx += 3) {
+            enqueuePromiseReactionJob(
+              _promise[idx + PROMISE_FULFILL_OFFSET],
+              _promise[idx + PROMISE_CAPABILITY_OFFSET],
+              value
+            );
+            promise[idx + PROMISE_FULFILL_OFFSET] = void 0;
+            promise[idx + PROMISE_REJECT_OFFSET] = void 0;
+            promise[idx + PROMISE_CAPABILITY_OFFSET] = void 0;
+          }
+        }
+      }
+      _promise.result = value;
+      _promise.state = PROMISE_FULFILLED;
+      _promise.reactionLength = 0;
+    };
+
+    var rejectPromise = function (promise, reason) {
+      var _promise = promise._promise;
+      var length = _promise.reactionLength;
+      if (length > 0) {
+        enqueuePromiseReactionJob(
+          _promise.rejectReactionHandler0,
+          _promise.reactionCapability0,
+          reason
+        );
+        _promise.fulfillReactionHandler0 = void 0;
+        _promise.rejectReactions0 = void 0;
+        _promise.reactionCapability0 = void 0;
+        if (length > 1) {
+          for (var i = 1, idx = 0; i < length; i++, idx += 3) {
+            enqueuePromiseReactionJob(
+              _promise[idx + PROMISE_REJECT_OFFSET],
+              _promise[idx + PROMISE_CAPABILITY_OFFSET],
+              reason
+            );
+            promise[idx + PROMISE_FULFILL_OFFSET] = void 0;
+            promise[idx + PROMISE_REJECT_OFFSET] = void 0;
+            promise[idx + PROMISE_CAPABILITY_OFFSET] = void 0;
+          }
+        }
+      }
+      _promise.result = reason;
+      _promise.state = PROMISE_REJECTED;
+      _promise.reactionLength = 0;
+    };
+
+    var createResolvingFunctions = function (promise) {
+      var alreadyResolved = false;
+      var resolve = function (resolution) {
+        var then;
+        if (alreadyResolved) { return; }
+        alreadyResolved = true;
+        if (resolution === promise) {
+          return rejectPromise(promise, new TypeError('Self resolution'));
+        }
+        if (!ES.TypeIsObject(resolution)) {
+          return fulfillPromise(promise, resolution);
+        }
+        try {
+          then = resolution.then;
+        } catch (e) {
+          return rejectPromise(promise, e);
+        }
+        if (!ES.IsCallable(then)) {
+          return fulfillPromise(promise, resolution);
+        }
+        enqueue(function () {
+          promiseResolveThenableJob(promise, resolution, then);
+        });
+      };
+      var reject = function (reason) {
+        if (alreadyResolved) { return; }
+        alreadyResolved = true;
+        return rejectPromise(promise, reason);
+      };
+      return { resolve: resolve, reject: reject };
+    };
+
+    var optimizedThen = function (then, thenable, resolve, reject) {
+      // Optimization: since we discard the result, we can pass our
+      // own then implementation a special hint to let it know it
+      // doesn't have to create it.  (The PROMISE_FAKE_CAPABILITY
+      // object is local to this implementation and unforgeable outside.)
+      if (then === Promise$prototype$then) {
+        _call(then, thenable, resolve, reject, PROMISE_FAKE_CAPABILITY);
+      } else {
+        _call(then, thenable, resolve, reject);
+      }
+    };
+    var promiseResolveThenableJob = function (promise, thenable, then) {
+      var resolvingFunctions = createResolvingFunctions(promise);
+      var resolve = resolvingFunctions.resolve;
+      var reject = resolvingFunctions.reject;
+      try {
+        optimizedThen(then, thenable, resolve, reject);
+      } catch (e) {
+        reject(e);
+      }
+    };
+
+    var Promise$prototype, Promise$prototype$then;
+    var Promise = (function () {
+      var PromiseShim = function Promise(resolver) {
+        if (!(this instanceof PromiseShim)) {
+          throw new TypeError('Constructor Promise requires "new"');
+        }
+        if (this && this._promise) {
+          throw new TypeError('Bad construction');
+        }
+        // see https://bugs.ecmascript.org/show_bug.cgi?id=2482
+        if (!ES.IsCallable(resolver)) {
+          throw new TypeError('not a valid resolver');
+        }
+        var promise = emulateES6construct(this, PromiseShim, Promise$prototype, {
+          _promise: {
+            result: void 0,
+            state: PROMISE_PENDING,
+            // The first member of the "reactions" array is inlined here,
+            // since most promises only have one reaction.
+            // We've also exploded the 'reaction' object to inline the
+            // "handler" and "capability" fields, since both fulfill and
+            // reject reactions share the same capability.
+            reactionLength: 0,
+            fulfillReactionHandler0: void 0,
+            rejectReactionHandler0: void 0,
+            reactionCapability0: void 0
+          }
+        });
+        var resolvingFunctions = createResolvingFunctions(promise);
+        var reject = resolvingFunctions.reject;
+        try {
+          resolver(resolvingFunctions.resolve, reject);
+        } catch (e) {
+          reject(e);
+        }
+        return promise;
+      };
+      return PromiseShim;
+    }());
+    Promise$prototype = Promise.prototype;
+
+    var _promiseAllResolver = function (index, values, capability, remaining) {
+      var alreadyCalled = false;
+      return function (x) {
+        if (alreadyCalled) { return; }
+        alreadyCalled = true;
+        values[index] = x;
+        if ((--remaining.count) === 0) {
+          var resolve = capability.resolve;
+          resolve(values); // call w/ this===undefined
+        }
+      };
+    };
+
+    var performPromiseAll = function (iteratorRecord, C, resultCapability) {
+      var it = iteratorRecord.iterator;
+      var values = [];
+      var remaining = { count: 1 };
+      var next, nextValue;
+      var index = 0;
+      while (true) {
+        try {
+          next = ES.IteratorStep(it);
+          if (next === false) {
+            iteratorRecord.done = true;
+            break;
+          }
+          nextValue = next.value;
+        } catch (e) {
+          iteratorRecord.done = true;
+          throw e;
+        }
+        values[index] = void 0;
+        var nextPromise = C.resolve(nextValue);
+        var resolveElement = _promiseAllResolver(
+          index, values, resultCapability, remaining
+        );
+        remaining.count += 1;
+        optimizedThen(nextPromise.then, nextPromise, resolveElement, resultCapability.reject);
+        index += 1;
+      }
+      if ((--remaining.count) === 0) {
+        var resolve = resultCapability.resolve;
+        resolve(values); // call w/ this===undefined
+      }
+      return resultCapability.promise;
+    };
+
+    var performPromiseRace = function (iteratorRecord, C, resultCapability) {
+      var it = iteratorRecord.iterator;
+      var next, nextValue, nextPromise;
+      while (true) {
+        try {
+          next = ES.IteratorStep(it);
+          if (next === false) {
+            // NOTE: If iterable has no items, resulting promise will never
+            // resolve; see:
+            // https://github.com/domenic/promises-unwrapping/issues/75
+            // https://bugs.ecmascript.org/show_bug.cgi?id=2515
+            iteratorRecord.done = true;
+            break;
+          }
+          nextValue = next.value;
+        } catch (e) {
+          iteratorRecord.done = true;
+          throw e;
+        }
+        nextPromise = C.resolve(nextValue);
+        optimizedThen(nextPromise.then, nextPromise, resultCapability.resolve, resultCapability.reject);
+      }
+      return resultCapability.promise;
+    };
+
+    defineProperties(Promise, {
+      all: function all(iterable) {
+        var C = this;
+        if (!ES.TypeIsObject(C)) {
+          throw new TypeError('Promise is not object');
+        }
+        var capability = new PromiseCapability(C);
+        var iterator, iteratorRecord;
+        try {
+          iterator = ES.GetIterator(iterable);
+          iteratorRecord = { iterator: iterator, done: false };
+          return performPromiseAll(iteratorRecord, C, capability);
+        } catch (e) {
+          var exception = e;
+          if (iteratorRecord && !iteratorRecord.done) {
+            try {
+              ES.IteratorClose(iterator, true);
+            } catch (ee) {
+              exception = ee;
+            }
+          }
+          var reject = capability.reject;
+          reject(exception);
+          return capability.promise;
+        }
+      },
+
+      race: function race(iterable) {
+        var C = this;
+        if (!ES.TypeIsObject(C)) {
+          throw new TypeError('Promise is not object');
+        }
+        var capability = new PromiseCapability(C);
+        var iterator, iteratorRecord;
+        try {
+          iterator = ES.GetIterator(iterable);
+          iteratorRecord = { iterator: iterator, done: false };
+          return performPromiseRace(iteratorRecord, C, capability);
+        } catch (e) {
+          var exception = e;
+          if (iteratorRecord && !iteratorRecord.done) {
+            try {
+              ES.IteratorClose(iterator, true);
+            } catch (ee) {
+              exception = ee;
+            }
+          }
+          var reject = capability.reject;
+          reject(exception);
+          return capability.promise;
+        }
+      },
+
+      reject: function reject(reason) {
+        var C = this;
+        if (!ES.TypeIsObject(C)) {
+          throw new TypeError('Bad promise constructor');
+        }
+        var capability = new PromiseCapability(C);
+        var rejectFunc = capability.reject;
+        rejectFunc(reason); // call with this===undefined
+        return capability.promise;
+      },
+
+      resolve: function resolve(v) {
+        // See https://esdiscuss.org/topic/fixing-promise-resolve for spec
+        var C = this;
+        if (!ES.TypeIsObject(C)) {
+          throw new TypeError('Bad promise constructor');
+        }
+        if (ES.IsPromise(v)) {
+          var constructor = v.constructor;
+          if (constructor === C) {
+            return v;
+          }
+        }
+        var capability = new PromiseCapability(C);
+        var resolveFunc = capability.resolve;
+        resolveFunc(v); // call with this===undefined
+        return capability.promise;
+      }
+    });
+
+    defineProperties(Promise$prototype, {
+      'catch': function (onRejected) {
+        return this.then(null, onRejected);
+      },
+
+      then: function then(onFulfilled, onRejected) {
+        var promise = this;
+        if (!ES.IsPromise(promise)) { throw new TypeError('not a promise'); }
+        var C = ES.SpeciesConstructor(promise, Promise);
+        var resultCapability;
+        var returnValueIsIgnored = arguments.length > 2 && arguments[2] === PROMISE_FAKE_CAPABILITY;
+        if (returnValueIsIgnored && C === Promise) {
+          resultCapability = PROMISE_FAKE_CAPABILITY;
+        } else {
+          resultCapability = new PromiseCapability(C);
+        }
+        // PerformPromiseThen(promise, onFulfilled, onRejected, resultCapability)
+        // Note that we've split the 'reaction' object into its two
+        // components, "capabilities" and "handler"
+        // "capabilities" is always equal to `resultCapability`
+        var fulfillReactionHandler = ES.IsCallable(onFulfilled) ? onFulfilled : PROMISE_IDENTITY;
+        var rejectReactionHandler = ES.IsCallable(onRejected) ? onRejected : PROMISE_THROWER;
+        var _promise = promise._promise;
+        var value;
+        if (_promise.state === PROMISE_PENDING) {
+          if (_promise.reactionLength === 0) {
+            _promise.fulfillReactionHandler0 = fulfillReactionHandler;
+            _promise.rejectReactionHandler0 = rejectReactionHandler;
+            _promise.reactionCapability0 = resultCapability;
+          } else {
+            var idx = 3 * (_promise.reactionLength - 1);
+            _promise[idx + PROMISE_FULFILL_OFFSET] = fulfillReactionHandler;
+            _promise[idx + PROMISE_REJECT_OFFSET] = rejectReactionHandler;
+            _promise[idx + PROMISE_CAPABILITY_OFFSET] = resultCapability;
+          }
+          _promise.reactionLength += 1;
+        } else if (_promise.state === PROMISE_FULFILLED) {
+          value = _promise.result;
+          enqueuePromiseReactionJob(
+            fulfillReactionHandler, resultCapability, value
+          );
+        } else if (_promise.state === PROMISE_REJECTED) {
+          value = _promise.result;
+          enqueuePromiseReactionJob(
+            rejectReactionHandler, resultCapability, value
+          );
+        } else {
+          throw new TypeError('unexpected Promise state');
+        }
+        return resultCapability.promise;
+      }
+    });
+    // This helps the optimizer by ensuring that methods which take
+    // capabilities aren't polymorphic.
+    PROMISE_FAKE_CAPABILITY = new PromiseCapability(Promise);
+    Promise$prototype$then = Promise$prototype.then;
+
+    return Promise;
+  }());
+
+  // Chrome's native Promise has extra methods that it shouldn't have. Let's remove them.
+  if (globals.Promise) {
+    delete globals.Promise.accept;
+    delete globals.Promise.defer;
+    delete globals.Promise.prototype.chain;
+  }
+
+  if (typeof PromiseShim === 'function') {
+    // export the Promise constructor.
+    defineProperties(globals, { Promise: PromiseShim });
+    // In Chrome 33 (and thereabouts) Promise is defined, but the
+    // implementation is buggy in a number of ways.  Let's check subclassing
+    // support to see if we have a buggy implementation.
+    var promiseSupportsSubclassing = supportsSubclassing(globals.Promise, function (S) {
+      return S.resolve(42).then(function () {}) instanceof S;
+    });
+    var promiseIgnoresNonFunctionThenCallbacks = !throwsError(function () {
+      globals.Promise.reject(42).then(null, 5).then(null, noop);
+    });
+    var promiseRequiresObjectContext = throwsError(function () { globals.Promise.call(3, noop); });
+    // Promise.resolve() was errata'ed late in the ES6 process.
+    // See: https://bugzilla.mozilla.org/show_bug.cgi?id=1170742
+    //      https://code.google.com/p/v8/issues/detail?id=4161
+    // It serves as a proxy for a number of other bugs in early Promise
+    // implementations.
+    var promiseResolveBroken = (function (Promise) {
+      var p = Promise.resolve(5);
+      p.constructor = {};
+      var p2 = Promise.resolve(p);
+      try {
+        p2.then(null, noop).then(null, noop); // avoid "uncaught rejection" warnings in console
+      } catch (e) {
+        return true; // v8 native Promises break here https://code.google.com/p/chromium/issues/detail?id=575314
+      }
+      return p === p2; // This *should* be false!
+    }(globals.Promise));
+
+    // Chrome 46 (probably older too) does not retrieve a thenable's .then synchronously
+    var getsThenSynchronously = supportsDescriptors && (function () {
+      var count = 0;
+      var thenable = Object.defineProperty({}, 'then', { get: function () { count += 1; } });
+      Promise.resolve(thenable);
+      return count === 1;
+    }());
+
+    var BadResolverPromise = function BadResolverPromise(executor) {
+      var p = new Promise(executor);
+      executor(3, function () {});
+      this.then = p.then;
+      this.constructor = BadResolverPromise;
+    };
+    BadResolverPromise.prototype = Promise.prototype;
+    BadResolverPromise.all = Promise.all;
+    // Chrome Canary 49 (probably older too) has some implementation bugs
+    var hasBadResolverPromise = valueOrFalseIfThrows(function () {
+      return !!BadResolverPromise.all([1, 2]);
+    });
+
+    if (!promiseSupportsSubclassing || !promiseIgnoresNonFunctionThenCallbacks ||
+        !promiseRequiresObjectContext || promiseResolveBroken ||
+        !getsThenSynchronously || hasBadResolverPromise) {
+      /* globals Promise: true */
+      /* eslint-disable no-undef, no-global-assign */
+      /* jshint -W020 */
+      Promise = PromiseShim;
+      /* jshint +W020 */
+      /* eslint-enable no-undef, no-global-assign */
+      /* globals Promise: false */
+      overrideNative(globals, 'Promise', PromiseShim);
+    }
+    if (Promise.all.length !== 1) {
+      var origAll = Promise.all;
+      overrideNative(Promise, 'all', function all(iterable) {
+        return ES.Call(origAll, this, arguments);
+      });
+    }
+    if (Promise.race.length !== 1) {
+      var origRace = Promise.race;
+      overrideNative(Promise, 'race', function race(iterable) {
+        return ES.Call(origRace, this, arguments);
+      });
+    }
+    if (Promise.resolve.length !== 1) {
+      var origResolve = Promise.resolve;
+      overrideNative(Promise, 'resolve', function resolve(x) {
+        return ES.Call(origResolve, this, arguments);
+      });
+    }
+    if (Promise.reject.length !== 1) {
+      var origReject = Promise.reject;
+      overrideNative(Promise, 'reject', function reject(r) {
+        return ES.Call(origReject, this, arguments);
+      });
+    }
+    ensureEnumerable(Promise, 'all');
+    ensureEnumerable(Promise, 'race');
+    ensureEnumerable(Promise, 'resolve');
+    ensureEnumerable(Promise, 'reject');
+    addDefaultSpecies(Promise);
+  }
+
+  // Map and Set require a true ES5 environment
+  // Their fast path also requires that the environment preserve
+  // property insertion order, which is not guaranteed by the spec.
+  var testOrder = function (a) {
+    var b = keys(_reduce(a, function (o, k) {
+      o[k] = true;
+      return o;
+    }, {}));
+    return a.join(':') === b.join(':');
+  };
+  var preservesInsertionOrder = testOrder(['z', 'a', 'bb']);
+  // some engines (eg, Chrome) only preserve insertion order for string keys
+  var preservesNumericInsertionOrder = testOrder(['z', 1, 'a', '3', 2]);
+
+  if (supportsDescriptors) {
+
+    var fastkey = function fastkey(key, skipInsertionOrderCheck) {
+      if (!skipInsertionOrderCheck && !preservesInsertionOrder) {
+        return null;
+      }
+      if (isNullOrUndefined(key)) {
+        return '^' + ES.ToString(key);
+      } else if (typeof key === 'string') {
+        return '$' + key;
+      } else if (typeof key === 'number') {
+        // note that -0 will get coerced to "0" when used as a property key
+        if (!preservesNumericInsertionOrder) {
+          return 'n' + key;
+        }
+        return key;
+      } else if (typeof key === 'boolean') {
+        return 'b' + key;
+      }
+      return null;
+    };
+
+    var emptyObject = function emptyObject() {
+      // accomodate some older not-quite-ES5 browsers
+      return Object.create ? Object.create(null) : {};
+    };
+
+    var addIterableToMap = function addIterableToMap(MapConstructor, map, iterable) {
+      if (isArray(iterable) || Type.string(iterable)) {
+        _forEach(iterable, function (entry) {
+          if (!ES.TypeIsObject(entry)) {
+            throw new TypeError('Iterator value ' + entry + ' is not an entry object');
+          }
+          map.set(entry[0], entry[1]);
+        });
+      } else if (iterable instanceof MapConstructor) {
+        _call(MapConstructor.prototype.forEach, iterable, function (value, key) {
+          map.set(key, value);
+        });
+      } else {
+        var iter, adder;
+        if (!isNullOrUndefined(iterable)) {
+          adder = map.set;
+          if (!ES.IsCallable(adder)) { throw new TypeError('bad map'); }
+          iter = ES.GetIterator(iterable);
+        }
+        if (typeof iter !== 'undefined') {
+          while (true) {
+            var next = ES.IteratorStep(iter);
+            if (next === false) { break; }
+            var nextItem = next.value;
+            try {
+              if (!ES.TypeIsObject(nextItem)) {
+                throw new TypeError('Iterator value ' + nextItem + ' is not an entry object');
+              }
+              _call(adder, map, nextItem[0], nextItem[1]);
+            } catch (e) {
+              ES.IteratorClose(iter, true);
+              throw e;
+            }
+          }
+        }
+      }
+    };
+    var addIterableToSet = function addIterableToSet(SetConstructor, set, iterable) {
+      if (isArray(iterable) || Type.string(iterable)) {
+        _forEach(iterable, function (value) {
+          set.add(value);
+        });
+      } else if (iterable instanceof SetConstructor) {
+        _call(SetConstructor.prototype.forEach, iterable, function (value) {
+          set.add(value);
+        });
+      } else {
+        var iter, adder;
+        if (!isNullOrUndefined(iterable)) {
+          adder = set.add;
+          if (!ES.IsCallable(adder)) { throw new TypeError('bad set'); }
+          iter = ES.GetIterator(iterable);
+        }
+        if (typeof iter !== 'undefined') {
+          while (true) {
+            var next = ES.IteratorStep(iter);
+            if (next === false) { break; }
+            var nextValue = next.value;
+            try {
+              _call(adder, set, nextValue);
+            } catch (e) {
+              ES.IteratorClose(iter, true);
+              throw e;
+            }
+          }
+        }
+      }
+    };
+
+    var collectionShims = {
+      Map: (function () {
+
+        var empty = {};
+
+        var MapEntry = function MapEntry(key, value) {
+          this.key = key;
+          this.value = value;
+          this.next = null;
+          this.prev = null;
+        };
+
+        MapEntry.prototype.isRemoved = function isRemoved() {
+          return this.key === empty;
+        };
+
+        var isMap = function isMap(map) {
+          return !!map._es6map;
+        };
+
+        var requireMapSlot = function requireMapSlot(map, method) {
+          if (!ES.TypeIsObject(map) || !isMap(map)) {
+            throw new TypeError('Method Map.prototype.' + method + ' called on incompatible receiver ' + ES.ToString(map));
+          }
+        };
+
+        var MapIterator = function MapIterator(map, kind) {
+          requireMapSlot(map, '[[MapIterator]]');
+          this.head = map._head;
+          this.i = this.head;
+          this.kind = kind;
+        };
+
+        MapIterator.prototype = {
+          next: function next() {
+            var i = this.i;
+            var kind = this.kind;
+            var head = this.head;
+            if (typeof this.i === 'undefined') {
+              return iteratorResult();
+            }
+            while (i.isRemoved() && i !== head) {
+              // back up off of removed entries
+              i = i.prev;
+            }
+            // advance to next unreturned element.
+            var result;
+            while (i.next !== head) {
+              i = i.next;
+              if (!i.isRemoved()) {
+                if (kind === 'key') {
+                  result = i.key;
+                } else if (kind === 'value') {
+                  result = i.value;
+                } else {
+                  result = [i.key, i.value];
+                }
+                this.i = i;
+                return iteratorResult(result);
+              }
+            }
+            // once the iterator is done, it is done forever.
+            this.i = void 0;
+            return iteratorResult();
+          }
+        };
+        addIterator(MapIterator.prototype);
+
+        var Map$prototype;
+        var MapShim = function Map() {
+          if (!(this instanceof Map)) {
+            throw new TypeError('Constructor Map requires "new"');
+          }
+          if (this && this._es6map) {
+            throw new TypeError('Bad construction');
+          }
+          var map = emulateES6construct(this, Map, Map$prototype, {
+            _es6map: true,
+            _head: null,
+            _map: OrigMap ? new OrigMap() : null,
+            _size: 0,
+            _storage: emptyObject()
+          });
+
+          var head = new MapEntry(null, null);
+          // circular doubly-linked list.
+          /* eslint no-multi-assign: 1 */
+          head.next = head.prev = head;
+          map._head = head;
+
+          // Optionally initialize map from iterable
+          if (arguments.length > 0) {
+            addIterableToMap(Map, map, arguments[0]);
+          }
+          return map;
+        };
+        Map$prototype = MapShim.prototype;
+
+        Value.getter(Map$prototype, 'size', function () {
+          if (typeof this._size === 'undefined') {
+            throw new TypeError('size method called on incompatible Map');
+          }
+          return this._size;
+        });
+
+        defineProperties(Map$prototype, {
+          get: function get(key) {
+            requireMapSlot(this, 'get');
+            var entry;
+            var fkey = fastkey(key, true);
+            if (fkey !== null) {
+              // fast O(1) path
+              entry = this._storage[fkey];
+              if (entry) {
+                return entry.value;
+              } else {
+                return;
+              }
+            }
+            if (this._map) {
+              // fast object key path
+              entry = origMapGet.call(this._map, key);
+              if (entry) {
+                return entry.value;
+              } else {
+                return;
+              }
+            }
+            var head = this._head;
+            var i = head;
+            while ((i = i.next) !== head) {
+              if (ES.SameValueZero(i.key, key)) {
+                return i.value;
+              }
+            }
+          },
+
+          has: function has(key) {
+            requireMapSlot(this, 'has');
+            var fkey = fastkey(key, true);
+            if (fkey !== null) {
+              // fast O(1) path
+              return typeof this._storage[fkey] !== 'undefined';
+            }
+            if (this._map) {
+              // fast object key path
+              return origMapHas.call(this._map, key);
+            }
+            var head = this._head;
+            var i = head;
+            while ((i = i.next) !== head) {
+              if (ES.SameValueZero(i.key, key)) {
+                return true;
+              }
+            }
+            return false;
+          },
+
+          set: function set(key, value) {
+            requireMapSlot(this, 'set');
+            var head = this._head;
+            var i = head;
+            var entry;
+            var fkey = fastkey(key, true);
+            if (fkey !== null) {
+              // fast O(1) path
+              if (typeof this._storage[fkey] !== 'undefined') {
+                this._storage[fkey].value = value;
+                return this;
+              } else {
+                entry = this._storage[fkey] = new MapEntry(key, value); /* eslint no-multi-assign: 1 */
+                i = head.prev;
+                // fall through
+              }
+            } else if (this._map) {
+              // fast object key path
+              if (origMapHas.call(this._map, key)) {
+                origMapGet.call(this._map, key).value = value;
+              } else {
+                entry = new MapEntry(key, value);
+                origMapSet.call(this._map, key, entry);
+                i = head.prev;
+                // fall through
+              }
+            }
+            while ((i = i.next) !== head) {
+              if (ES.SameValueZero(i.key, key)) {
+                i.value = value;
+                return this;
+              }
+            }
+            entry = entry || new MapEntry(key, value);
+            if (ES.SameValue(-0, key)) {
+              entry.key = +0; // coerce -0 to +0 in entry
+            }
+            entry.next = this._head;
+            entry.prev = this._head.prev;
+            entry.prev.next = entry;
+            entry.next.prev = entry;
+            this._size += 1;
+            return this;
+          },
+
+          'delete': function (key) {
+            requireMapSlot(this, 'delete');
+            var head = this._head;
+            var i = head;
+            var fkey = fastkey(key, true);
+            if (fkey !== null) {
+              // fast O(1) path
+              if (typeof this._storage[fkey] === 'undefined') {
+                return false;
+              }
+              i = this._storage[fkey].prev;
+              delete this._storage[fkey];
+              // fall through
+            } else if (this._map) {
+              // fast object key path
+              if (!origMapHas.call(this._map, key)) {
+                return false;
+              }
+              i = origMapGet.call(this._map, key).prev;
+              origMapDelete.call(this._map, key);
+              // fall through
+            }
+            while ((i = i.next) !== head) {
+              if (ES.SameValueZero(i.key, key)) {
+                i.key = empty;
+                i.value = empty;
+                i.prev.next = i.next;
+                i.next.prev = i.prev;
+                this._size -= 1;
+                return true;
+              }
+            }
+            return false;
+          },
+
+          clear: function clear() {
+             /* eslint no-multi-assign: 1 */
+            requireMapSlot(this, 'clear');
+            this._map = OrigMap ? new OrigMap() : null;
+            this._size = 0;
+            this._storage = emptyObject();
+            var head = this._head;
+            var i = head;
+            var p = i.next;
+            while ((i = p) !== head) {
+              i.key = empty;
+              i.value = empty;
+              p = i.next;
+              i.next = i.prev = head;
+            }
+            head.next = head.prev = head;
+          },
+
+          keys: function keys() {
+            requireMapSlot(this, 'keys');
+            return new MapIterator(this, 'key');
+          },
+
+          values: function values() {
+            requireMapSlot(this, 'values');
+            return new MapIterator(this, 'value');
+          },
+
+          entries: function entries() {
+            requireMapSlot(this, 'entries');
+            return new MapIterator(this, 'key+value');
+          },
+
+          forEach: function forEach(callback) {
+            requireMapSlot(this, 'forEach');
+            var context = arguments.length > 1 ? arguments[1] : null;
+            var it = this.entries();
+            for (var entry = it.next(); !entry.done; entry = it.next()) {
+              if (context) {
+                _call(callback, context, entry.value[1], entry.value[0], this);
+              } else {
+                callback(entry.value[1], entry.value[0], this);
+              }
+            }
+          }
+        });
+        addIterator(Map$prototype, Map$prototype.entries);
+
+        return MapShim;
+      }()),
+
+      Set: (function () {
+        var isSet = function isSet(set) {
+          return set._es6set && typeof set._storage !== 'undefined';
+        };
+        var requireSetSlot = function requireSetSlot(set, method) {
+          if (!ES.TypeIsObject(set) || !isSet(set)) {
+            // https://github.com/paulmillr/es6-shim/issues/176
+            throw new TypeError('Set.prototype.' + method + ' called on incompatible receiver ' + ES.ToString(set));
+          }
+        };
+
+        // Creating a Map is expensive.  To speed up the common case of
+        // Sets containing only string or numeric keys, we use an object
+        // as backing storage and lazily create a full Map only when
+        // required.
+        var Set$prototype;
+        var SetShim = function Set() {
+          if (!(this instanceof Set)) {
+            throw new TypeError('Constructor Set requires "new"');
+          }
+          if (this && this._es6set) {
+            throw new TypeError('Bad construction');
+          }
+          var set = emulateES6construct(this, Set, Set$prototype, {
+            _es6set: true,
+            '[[SetData]]': null,
+            _storage: emptyObject()
+          });
+          if (!set._es6set) {
+            throw new TypeError('bad set');
+          }
+
+          // Optionally initialize Set from iterable
+          if (arguments.length > 0) {
+            addIterableToSet(Set, set, arguments[0]);
+          }
+          return set;
+        };
+        Set$prototype = SetShim.prototype;
+
+        var decodeKey = function (key) {
+          var k = key;
+          if (k === '^null') {
+            return null;
+          } else if (k === '^undefined') {
+            return void 0;
+          } else {
+            var first = k.charAt(0);
+            if (first === '$') {
+              return _strSlice(k, 1);
+            } else if (first === 'n') {
+              return +_strSlice(k, 1);
+            } else if (first === 'b') {
+              return k === 'btrue';
+            }
+          }
+          return +k;
+        };
+        // Switch from the object backing storage to a full Map.
+        var ensureMap = function ensureMap(set) {
+          if (!set['[[SetData]]']) {
+            var m = new collectionShims.Map();
+            set['[[SetData]]'] = m;
+            _forEach(keys(set._storage), function (key) {
+              var k = decodeKey(key);
+              m.set(k, k);
+            });
+            set['[[SetData]]'] = m;
+          }
+          set._storage = null; // free old backing storage
+        };
+
+        Value.getter(SetShim.prototype, 'size', function () {
+          requireSetSlot(this, 'size');
+          if (this._storage) {
+            return keys(this._storage).length;
+          }
+          ensureMap(this);
+          return this['[[SetData]]'].size;
+        });
+
+        defineProperties(SetShim.prototype, {
+          has: function has(key) {
+            requireSetSlot(this, 'has');
+            var fkey;
+            if (this._storage && (fkey = fastkey(key)) !== null) {
+              return !!this._storage[fkey];
+            }
+            ensureMap(this);
+            return this['[[SetData]]'].has(key);
+          },
+
+          add: function add(key) {
+            requireSetSlot(this, 'add');
+            var fkey;
+            if (this._storage && (fkey = fastkey(key)) !== null) {
+              this._storage[fkey] = true;
+              return this;
+            }
+            ensureMap(this);
+            this['[[SetData]]'].set(key, key);
+            return this;
+          },
+
+          'delete': function (key) {
+            requireSetSlot(this, 'delete');
+            var fkey;
+            if (this._storage && (fkey = fastkey(key)) !== null) {
+              var hasFKey = _hasOwnProperty(this._storage, fkey);
+              return (delete this._storage[fkey]) && hasFKey;
+            }
+            ensureMap(this);
+            return this['[[SetData]]']['delete'](key);
+          },
+
+          clear: function clear() {
+            requireSetSlot(this, 'clear');
+            if (this._storage) {
+              this._storage = emptyObject();
+            }
+            if (this['[[SetData]]']) {
+              this['[[SetData]]'].clear();
+            }
+          },
+
+          values: function values() {
+            requireSetSlot(this, 'values');
+            ensureMap(this);
+            return this['[[SetData]]'].values();
+          },
+
+          entries: function entries() {
+            requireSetSlot(this, 'entries');
+            ensureMap(this);
+            return this['[[SetData]]'].entries();
+          },
+
+          forEach: function forEach(callback) {
+            requireSetSlot(this, 'forEach');
+            var context = arguments.length > 1 ? arguments[1] : null;
+            var entireSet = this;
+            ensureMap(entireSet);
+            this['[[SetData]]'].forEach(function (value, key) {
+              if (context) {
+                _call(callback, context, key, key, entireSet);
+              } else {
+                callback(key, key, entireSet);
+              }
+            });
+          }
+        });
+        defineProperty(SetShim.prototype, 'keys', SetShim.prototype.values, true);
+        addIterator(SetShim.prototype, SetShim.prototype.values);
+
+        return SetShim;
+      }())
+    };
+
+    if (globals.Map || globals.Set) {
+      // Safari 8, for example, doesn't accept an iterable.
+      var mapAcceptsArguments = valueOrFalseIfThrows(function () { return new Map([[1, 2]]).get(1) === 2; });
+      if (!mapAcceptsArguments) {
+        globals.Map = function Map() {
+          if (!(this instanceof Map)) {
+            throw new TypeError('Constructor Map requires "new"');
+          }
+          var m = new OrigMap();
+          if (arguments.length > 0) {
+            addIterableToMap(Map, m, arguments[0]);
+          }
+          delete m.constructor;
+          Object.setPrototypeOf(m, globals.Map.prototype);
+          return m;
+        };
+        globals.Map.prototype = create(OrigMap.prototype);
+        defineProperty(globals.Map.prototype, 'constructor', globals.Map, true);
+        Value.preserveToString(globals.Map, OrigMap);
+      }
+      var testMap = new Map();
+      var mapUsesSameValueZero = (function () {
+        // Chrome 38-42, node 0.11/0.12, iojs 1/2 also have a bug when the Map has a size > 4
+        var m = new Map([[1, 0], [2, 0], [3, 0], [4, 0]]);
+        m.set(-0, m);
+        return m.get(0) === m && m.get(-0) === m && m.has(0) && m.has(-0);
+      }());
+      var mapSupportsChaining = testMap.set(1, 2) === testMap;
+      if (!mapUsesSameValueZero || !mapSupportsChaining) {
+        overrideNative(Map.prototype, 'set', function set(k, v) {
+          _call(origMapSet, this, k === 0 ? 0 : k, v);
+          return this;
+        });
+      }
+      if (!mapUsesSameValueZero) {
+        defineProperties(Map.prototype, {
+          get: function get(k) {
+            return _call(origMapGet, this, k === 0 ? 0 : k);
+          },
+          has: function has(k) {
+            return _call(origMapHas, this, k === 0 ? 0 : k);
+          }
+        }, true);
+        Value.preserveToString(Map.prototype.get, origMapGet);
+        Value.preserveToString(Map.prototype.has, origMapHas);
+      }
+      var testSet = new Set();
+      var setUsesSameValueZero = (function (s) {
+        s['delete'](0);
+        s.add(-0);
+        return !s.has(0);
+      }(testSet));
+      var setSupportsChaining = testSet.add(1) === testSet;
+      if (!setUsesSameValueZero || !setSupportsChaining) {
+        var origSetAdd = Set.prototype.add;
+        Set.prototype.add = function add(v) {
+          _call(origSetAdd, this, v === 0 ? 0 : v);
+          return this;
+        };
+        Value.preserveToString(Set.prototype.add, origSetAdd);
+      }
+      if (!setUsesSameValueZero) {
+        var origSetHas = Set.prototype.has;
+        Set.prototype.has = function has(v) {
+          return _call(origSetHas, this, v === 0 ? 0 : v);
+        };
+        Value.preserveToString(Set.prototype.has, origSetHas);
+        var origSetDel = Set.prototype['delete'];
+        Set.prototype['delete'] = function SetDelete(v) {
+          return _call(origSetDel, this, v === 0 ? 0 : v);
+        };
+        Value.preserveToString(Set.prototype['delete'], origSetDel);
+      }
+      var mapSupportsSubclassing = supportsSubclassing(globals.Map, function (M) {
+        var m = new M([]);
+        // Firefox 32 is ok with the instantiating the subclass but will
+        // throw when the map is used.
+        m.set(42, 42);
+        return m instanceof M;
+      });
+      // without Object.setPrototypeOf, subclassing is not possible
+      var mapFailsToSupportSubclassing = Object.setPrototypeOf && !mapSupportsSubclassing;
+      var mapRequiresNew = (function () {
+        try {
+          return !(globals.Map() instanceof globals.Map);
+        } catch (e) {
+          return e instanceof TypeError;
+        }
+      }());
+      if (globals.Map.length !== 0 || mapFailsToSupportSubclassing || !mapRequiresNew) {
+        globals.Map = function Map() {
+          if (!(this instanceof Map)) {
+            throw new TypeError('Constructor Map requires "new"');
+          }
+          var m = new OrigMap();
+          if (arguments.length > 0) {
+            addIterableToMap(Map, m, arguments[0]);
+          }
+          delete m.constructor;
+          Object.setPrototypeOf(m, Map.prototype);
+          return m;
+        };
+        globals.Map.prototype = OrigMap.prototype;
+        defineProperty(globals.Map.prototype, 'constructor', globals.Map, true);
+        Value.preserveToString(globals.Map, OrigMap);
+      }
+      var setSupportsSubclassing = supportsSubclassing(globals.Set, function (S) {
+        var s = new S([]);
+        s.add(42, 42);
+        return s instanceof S;
+      });
+      // without Object.setPrototypeOf, subclassing is not possible
+      var setFailsToSupportSubclassing = Object.setPrototypeOf && !setSupportsSubclassing;
+      var setRequiresNew = (function () {
+        try {
+          return !(globals.Set() instanceof globals.Set);
+        } catch (e) {
+          return e instanceof TypeError;
+        }
+      }());
+      if (globals.Set.length !== 0 || setFailsToSupportSubclassing || !setRequiresNew) {
+        var OrigSet = globals.Set;
+        globals.Set = function Set() {
+          if (!(this instanceof Set)) {
+            throw new TypeError('Constructor Set requires "new"');
+          }
+          var s = new OrigSet();
+          if (arguments.length > 0) {
+            addIterableToSet(Set, s, arguments[0]);
+          }
+          delete s.constructor;
+          Object.setPrototypeOf(s, Set.prototype);
+          return s;
+        };
+        globals.Set.prototype = OrigSet.prototype;
+        defineProperty(globals.Set.prototype, 'constructor', globals.Set, true);
+        Value.preserveToString(globals.Set, OrigSet);
+      }
+      var newMap = new globals.Map();
+      var mapIterationThrowsStopIterator = !valueOrFalseIfThrows(function () {
+        return newMap.keys().next().done;
+      });
+      /*
+        - In Firefox < 23, Map#size is a function.
+        - In all current Firefox, Set#entries/keys/values & Map#clear do not exist
+        - https://bugzilla.mozilla.org/show_bug.cgi?id=869996
+        - In Firefox 24, Map and Set do not implement forEach
+        - In Firefox 25 at least, Map and Set are callable without "new"
+      */
+      if (
+        typeof globals.Map.prototype.clear !== 'function' ||
+        new globals.Set().size !== 0 ||
+        newMap.size !== 0 ||
+        typeof globals.Map.prototype.keys !== 'function' ||
+        typeof globals.Set.prototype.keys !== 'function' ||
+        typeof globals.Map.prototype.forEach !== 'function' ||
+        typeof globals.Set.prototype.forEach !== 'function' ||
+        isCallableWithoutNew(globals.Map) ||
+        isCallableWithoutNew(globals.Set) ||
+        typeof newMap.keys().next !== 'function' || // Safari 8
+        mapIterationThrowsStopIterator || // Firefox 25
+        !mapSupportsSubclassing
+      ) {
+        defineProperties(globals, {
+          Map: collectionShims.Map,
+          Set: collectionShims.Set
+        }, true);
+      }
+
+      if (globals.Set.prototype.keys !== globals.Set.prototype.values) {
+        // Fixed in WebKit with https://bugs.webkit.org/show_bug.cgi?id=144190
+        defineProperty(globals.Set.prototype, 'keys', globals.Set.prototype.values, true);
+      }
+
+      // Shim incomplete iterator implementations.
+      addIterator(Object.getPrototypeOf((new globals.Map()).keys()));
+      addIterator(Object.getPrototypeOf((new globals.Set()).keys()));
+
+      if (functionsHaveNames && globals.Set.prototype.has.name !== 'has') {
+        // Microsoft Edge v0.11.10074.0 is missing a name on Set#has
+        var anonymousSetHas = globals.Set.prototype.has;
+        overrideNative(globals.Set.prototype, 'has', function has(key) {
+          return _call(anonymousSetHas, this, key);
+        });
+      }
+    }
+    defineProperties(globals, collectionShims);
+    addDefaultSpecies(globals.Map);
+    addDefaultSpecies(globals.Set);
+  }
+
+  var throwUnlessTargetIsObject = function throwUnlessTargetIsObject(target) {
+    if (!ES.TypeIsObject(target)) {
+      throw new TypeError('target must be an object');
+    }
+  };
+
+  // Some Reflect methods are basically the same as
+  // those on the Object global, except that a TypeError is thrown if
+  // target isn't an object. As well as returning a boolean indicating
+  // the success of the operation.
+  var ReflectShims = {
+    // Apply method in a functional form.
+    apply: function apply() {
+      return ES.Call(ES.Call, null, arguments);
+    },
+
+    // New operator in a functional form.
+    construct: function construct(constructor, args) {
+      if (!ES.IsConstructor(constructor)) {
+        throw new TypeError('First argument must be a constructor.');
+      }
+      var newTarget = arguments.length > 2 ? arguments[2] : constructor;
+      if (!ES.IsConstructor(newTarget)) {
+        throw new TypeError('new.target must be a constructor.');
+      }
+      return ES.Construct(constructor, args, newTarget, 'internal');
+    },
+
+    // When deleting a non-existent or configurable property,
+    // true is returned.
+    // When attempting to delete a non-configurable property,
+    // it will return false.
+    deleteProperty: function deleteProperty(target, key) {
+      throwUnlessTargetIsObject(target);
+      if (supportsDescriptors) {
+        var desc = Object.getOwnPropertyDescriptor(target, key);
+
+        if (desc && !desc.configurable) {
+          return false;
+        }
+      }
+
+      // Will return true.
+      return delete target[key];
+    },
+
+    has: function has(target, key) {
+      throwUnlessTargetIsObject(target);
+      return key in target;
+    }
+  };
+
+  if (Object.getOwnPropertyNames) {
+    Object.assign(ReflectShims, {
+      // Basically the result of calling the internal [[OwnPropertyKeys]].
+      // Concatenating propertyNames and propertySymbols should do the trick.
+      // This should continue to work together with a Symbol shim
+      // which overrides Object.getOwnPropertyNames and implements
+      // Object.getOwnPropertySymbols.
+      ownKeys: function ownKeys(target) {
+        throwUnlessTargetIsObject(target);
+        var keys = Object.getOwnPropertyNames(target);
+
+        if (ES.IsCallable(Object.getOwnPropertySymbols)) {
+          _pushApply(keys, Object.getOwnPropertySymbols(target));
+        }
+
+        return keys;
+      }
+    });
+  }
+
+  var callAndCatchException = function ConvertExceptionToBoolean(func) {
+    return !throwsError(func);
+  };
+
+  if (Object.preventExtensions) {
+    Object.assign(ReflectShims, {
+      isExtensible: function isExtensible(target) {
+        throwUnlessTargetIsObject(target);
+        return Object.isExtensible(target);
+      },
+      preventExtensions: function preventExtensions(target) {
+        throwUnlessTargetIsObject(target);
+        return callAndCatchException(function () {
+          Object.preventExtensions(target);
+        });
+      }
+    });
+  }
+
+  if (supportsDescriptors) {
+    var internalGet = function get(target, key, receiver) {
+      var desc = Object.getOwnPropertyDescriptor(target, key);
+
+      if (!desc) {
+        var parent = Object.getPrototypeOf(target);
+
+        if (parent === null) {
+          return void 0;
+        }
+
+        return internalGet(parent, key, receiver);
+      }
+
+      if ('value' in desc) {
+        return desc.value;
+      }
+
+      if (desc.get) {
+        return ES.Call(desc.get, receiver);
+      }
+
+      return void 0;
+    };
+
+    var internalSet = function set(target, key, value, receiver) {
+      var desc = Object.getOwnPropertyDescriptor(target, key);
+
+      if (!desc) {
+        var parent = Object.getPrototypeOf(target);
+
+        if (parent !== null) {
+          return internalSet(parent, key, value, receiver);
+        }
+
+        desc = {
+          value: void 0,
+          writable: true,
+          enumerable: true,
+          configurable: true
+        };
+      }
+
+      if ('value' in desc) {
+        if (!desc.writable) {
+          return false;
+        }
+
+        if (!ES.TypeIsObject(receiver)) {
+          return false;
+        }
+
+        var existingDesc = Object.getOwnPropertyDescriptor(receiver, key);
+
+        if (existingDesc) {
+          return Reflect.defineProperty(receiver, key, {
+            value: value
+          });
+        } else {
+          return Reflect.defineProperty(receiver, key, {
+            value: value,
+            writable: true,
+            enumerable: true,
+            configurable: true
+          });
+        }
+      }
+
+      if (desc.set) {
+        _call(desc.set, receiver, value);
+        return true;
+      }
+
+      return false;
+    };
+
+    Object.assign(ReflectShims, {
+      defineProperty: function defineProperty(target, propertyKey, attributes) {
+        throwUnlessTargetIsObject(target);
+        return callAndCatchException(function () {
+          Object.defineProperty(target, propertyKey, attributes);
+        });
+      },
+
+      getOwnPropertyDescriptor: function getOwnPropertyDescriptor(target, propertyKey) {
+        throwUnlessTargetIsObject(target);
+        return Object.getOwnPropertyDescriptor(target, propertyKey);
+      },
+
+      // Syntax in a functional form.
+      get: function get(target, key) {
+        throwUnlessTargetIsObject(target);
+        var receiver = arguments.length > 2 ? arguments[2] : target;
+
+        return internalGet(target, key, receiver);
+      },
+
+      set: function set(target, key, value) {
+        throwUnlessTargetIsObject(target);
+        var receiver = arguments.length > 3 ? arguments[3] : target;
+
+        return internalSet(target, key, value, receiver);
+      }
+    });
+  }
+
+  if (Object.getPrototypeOf) {
+    var objectDotGetPrototypeOf = Object.getPrototypeOf;
+    ReflectShims.getPrototypeOf = function getPrototypeOf(target) {
+      throwUnlessTargetIsObject(target);
+      return objectDotGetPrototypeOf(target);
     };
   }
 
-  function sharedSize() {
-    return this._values.length;
-  }
+  if (Object.setPrototypeOf && ReflectShims.getPrototypeOf) {
+    var willCreateCircularPrototype = function (object, lastProto) {
+      var proto = lastProto;
+      while (proto) {
+        if (object === proto) {
+          return true;
+        }
+        proto = ReflectShims.getPrototypeOf(proto);
+      }
+      return false;
+    };
 
-  function sharedForEach(callback, context) {
-    var it = this.entries();
-    for (;;) {
-      var r = it.next();
-      if (r.done) break;
-      callback.call(context, r.value[1], r.value[0], this);
+    Object.assign(ReflectShims, {
+      // Sets the prototype of the given object.
+      // Returns true on success, otherwise false.
+      setPrototypeOf: function setPrototypeOf(object, proto) {
+        throwUnlessTargetIsObject(object);
+        if (proto !== null && !ES.TypeIsObject(proto)) {
+          throw new TypeError('proto must be an object or null');
+        }
+
+        // If they already are the same, we're done.
+        if (proto === Reflect.getPrototypeOf(object)) {
+          return true;
+        }
+
+        // Cannot alter prototype if object not extensible.
+        if (Reflect.isExtensible && !Reflect.isExtensible(object)) {
+          return false;
+        }
+
+        // Ensure that we do not create a circular prototype chain.
+        if (willCreateCircularPrototype(object, proto)) {
+          return false;
+        }
+
+        Object.setPrototypeOf(object, proto);
+
+        return true;
+      }
+    });
+  }
+  var defineOrOverrideReflectProperty = function (key, shim) {
+    if (!ES.IsCallable(globals.Reflect[key])) {
+      defineProperty(globals.Reflect, key, shim);
+    } else {
+      var acceptsPrimitives = valueOrFalseIfThrows(function () {
+        globals.Reflect[key](1);
+        globals.Reflect[key](NaN);
+        globals.Reflect[key](true);
+        return true;
+      });
+      if (acceptsPrimitives) {
+        overrideNative(globals.Reflect, key, shim);
+      }
+    }
+  };
+  Object.keys(ReflectShims).forEach(function (key) {
+    defineOrOverrideReflectProperty(key, ReflectShims[key]);
+  });
+  var originalReflectGetProto = globals.Reflect.getPrototypeOf;
+  if (functionsHaveNames && originalReflectGetProto && originalReflectGetProto.name !== 'getPrototypeOf') {
+    overrideNative(globals.Reflect, 'getPrototypeOf', function getPrototypeOf(target) {
+      return _call(originalReflectGetProto, globals.Reflect, target);
+    });
+  }
+  if (globals.Reflect.setPrototypeOf) {
+    if (valueOrFalseIfThrows(function () {
+      globals.Reflect.setPrototypeOf(1, {});
+      return true;
+    })) {
+      overrideNative(globals.Reflect, 'setPrototypeOf', ReflectShims.setPrototypeOf);
+    }
+  }
+  if (globals.Reflect.defineProperty) {
+    if (!valueOrFalseIfThrows(function () {
+      var basic = !globals.Reflect.defineProperty(1, 'test', { value: 1 });
+      // "extensible" fails on Edge 0.12
+      var extensible = typeof Object.preventExtensions !== 'function' || !globals.Reflect.defineProperty(Object.preventExtensions({}), 'test', {});
+      return basic && extensible;
+    })) {
+      overrideNative(globals.Reflect, 'defineProperty', ReflectShims.defineProperty);
+    }
+  }
+  if (globals.Reflect.construct) {
+    if (!valueOrFalseIfThrows(function () {
+      var F = function F() {};
+      return globals.Reflect.construct(function () {}, [], F) instanceof F;
+    })) {
+      overrideNative(globals.Reflect, 'construct', ReflectShims.construct);
     }
   }
 
-})(typeof exports != 'undefined' && typeof global != 'undefined' ? global : window );
+  if (String(new Date(NaN)) !== 'Invalid Date') {
+    var dateToString = Date.prototype.toString;
+    var shimmedDateToString = function toString() {
+      var valueOf = +this;
+      if (valueOf !== valueOf) {
+        return 'Invalid Date';
+      }
+      return ES.Call(dateToString, this);
+    };
+    overrideNative(Date.prototype, 'toString', shimmedDateToString);
+  }
 
-define("es6-collections", function(){});
+  // Annex B HTML methods
+  // http://www.ecma-international.org/ecma-262/6.0/#sec-additional-properties-of-the-string.prototype-object
+  var stringHTMLshims = {
+    anchor: function anchor(name) { return ES.CreateHTML(this, 'a', 'name', name); },
+    big: function big() { return ES.CreateHTML(this, 'big', '', ''); },
+    blink: function blink() { return ES.CreateHTML(this, 'blink', '', ''); },
+    bold: function bold() { return ES.CreateHTML(this, 'b', '', ''); },
+    fixed: function fixed() { return ES.CreateHTML(this, 'tt', '', ''); },
+    fontcolor: function fontcolor(color) { return ES.CreateHTML(this, 'font', 'color', color); },
+    fontsize: function fontsize(size) { return ES.CreateHTML(this, 'font', 'size', size); },
+    italics: function italics() { return ES.CreateHTML(this, 'i', '', ''); },
+    link: function link(url) { return ES.CreateHTML(this, 'a', 'href', url); },
+    small: function small() { return ES.CreateHTML(this, 'small', '', ''); },
+    strike: function strike() { return ES.CreateHTML(this, 'strike', '', ''); },
+    sub: function sub() { return ES.CreateHTML(this, 'sub', '', ''); },
+    sup: function sub() { return ES.CreateHTML(this, 'sup', '', ''); }
+  };
+  _forEach(Object.keys(stringHTMLshims), function (key) {
+    var method = String.prototype[key];
+    var shouldOverwrite = false;
+    if (ES.IsCallable(method)) {
+      var output = _call(method, '', ' " ');
+      var quotesCount = _concat([], output.match(/"/g)).length;
+      shouldOverwrite = output !== output.toLowerCase() || quotesCount > 2;
+    } else {
+      shouldOverwrite = true;
+    }
+    if (shouldOverwrite) {
+      overrideNative(String.prototype, key, stringHTMLshims[key]);
+    }
+  });
+
+  var JSONstringifiesSymbols = (function () {
+    // Microsoft Edge v0.12 stringifies Symbols incorrectly
+    if (!hasSymbols) { return false; } // Symbols are not supported
+    var stringify = typeof JSON === 'object' && typeof JSON.stringify === 'function' ? JSON.stringify : null;
+    if (!stringify) { return false; } // JSON.stringify is not supported
+    if (typeof stringify(Symbol()) !== 'undefined') { return true; } // Symbols should become `undefined`
+    if (stringify([Symbol()]) !== '[null]') { return true; } // Symbols in arrays should become `null`
+    var obj = { a: Symbol() };
+    obj[Symbol()] = true;
+    if (stringify(obj) !== '{}') { return true; } // Symbol-valued keys *and* Symbol-valued properties should be omitted
+    return false;
+  }());
+  var JSONstringifyAcceptsObjectSymbol = valueOrFalseIfThrows(function () {
+    // Chrome 45 throws on stringifying object symbols
+    if (!hasSymbols) { return true; } // Symbols are not supported
+    return JSON.stringify(Object(Symbol())) === '{}' && JSON.stringify([Object(Symbol())]) === '[{}]';
+  });
+  if (JSONstringifiesSymbols || !JSONstringifyAcceptsObjectSymbol) {
+    var origStringify = JSON.stringify;
+    overrideNative(JSON, 'stringify', function stringify(value) {
+      if (typeof value === 'symbol') { return; }
+      var replacer;
+      if (arguments.length > 1) {
+        replacer = arguments[1];
+      }
+      var args = [value];
+      if (!isArray(replacer)) {
+        var replaceFn = ES.IsCallable(replacer) ? replacer : null;
+        var wrappedReplacer = function (key, val) {
+          var parsedValue = replaceFn ? _call(replaceFn, this, key, val) : val;
+          if (typeof parsedValue !== 'symbol') {
+            if (Type.symbol(parsedValue)) {
+              return assignTo({})(parsedValue);
+            } else {
+              return parsedValue;
+            }
+          }
+        };
+        args.push(wrappedReplacer);
+      } else {
+        // create wrapped replacer that handles an array replacer?
+        args.push(replacer);
+      }
+      if (arguments.length > 2) {
+        args.push(arguments[2]);
+      }
+      return origStringify.apply(this, args);
+    });
+  }
+
+  return globals;
+}));
 
 //
 //  Created by Juan Corona
@@ -614,9 +4226,62 @@ define('readium_js_plugins',["jquery", "underscore", "eventEmitter"], function (
 //  prior written permission.
 
 //'text!empty:'
-define('readium_shared_js/globalsSetup',['./globals', 'jquery', 'console_shim', 'es6-collections', 'eventEmitter', 'URIjs', 'readium_cfi_js', 'readium_js_plugins'], function (Globals, $, console_shim, es6collections, EventEmitter, URI, epubCfi, PluginsController) {
+define('readium_shared_js/globalsSetup',['./globals', 'jquery', 'console_shim', 'es6-shim', 'eventEmitter', 'URIjs', 'readium_cfi_js', 'readium_js_plugins'],
+function (Globals, $, console_shim, es6Shim, EventEmitter, URI, EPUBcfi, PluginsController) {
 
     console.log("Globals...");
+
+    // https://tc39.github.io/ecma262/#sec-array.prototype.includes
+    if (!Array.prototype.includes) {
+        Object.defineProperty(Array.prototype, 'includes', {
+            value: function (searchElement, fromIndex) {
+
+                if (this == null) {
+                    throw new TypeError('"this" is null or not defined');
+                }
+
+                // 1. Let O be ? ToObject(this value).
+                var o = Object(this);
+
+                // 2. Let len be ? ToLength(? Get(O, "length")).
+                var len = o.length >>> 0;
+
+                // 3. If len is 0, return false.
+                if (len === 0) {
+                    return false;
+                }
+
+                // 4. Let n be ? ToInteger(fromIndex).
+                //    (If fromIndex is undefined, this step produces the value 0.)
+                var n = fromIndex | 0;
+
+                // 5. If n ≥ 0, then
+                //  a. Let k be n.
+                // 6. Else n < 0,
+                //  a. Let k be len + n.
+                //  b. If k < 0, let k be 0.
+                var k = Math.max(n >= 0 ? n : len - Math.abs(n), 0);
+
+                function sameValueZero(x, y) {
+                    return x === y || (typeof x === 'number' && typeof y === 'number' && isNaN(x) && isNaN(y));
+                }
+
+                // 7. Repeat, while k < len
+                while (k < len) {
+                    // a. Let elementK be the result of ? Get(O, ! ToString(k)).
+                    // b. If SameValueZero(searchElement, elementK) is true, return true.
+                    if (sameValueZero(o[k], searchElement)) {
+                        return true;
+                    }
+                    // c. Increase k by 1. 
+                    k++;
+                }
+
+                // 8. Return false
+                return false;
+            }
+        });
+    }
 
     if (window["ReadiumSDK"]) {
         console.log("ReadiumSDK extend.");
@@ -1300,6 +4965,16 @@ var SpineItem = function(itemData, index, spine){
     this.href = itemData.href;
 
     /**
+     * The package level CFI of the spine item, i.e. the CFI path to the spine item
+     * element in the package document.
+     *
+     * @property cfi
+     * @type String
+     * @default  None
+     */
+    this.cfi = itemData.cfi;
+
+    /**
      * A flag indicating whether the spineItem has the attribute linear, which 
      * is either yes or no.  Default is yes.
      *
@@ -1823,7 +5498,7 @@ SpineItem.alternateSpread = function(spread) {
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define('readium_shared_js/helpers',["./globals", 'underscore', "jquery", "./models/spine_item", "jquerySizes"], function(Globals, _, $, SpineItem, jquerySizes) { // NOTE that the jquerySizes parameter is not used anywhere explicitely, as this is a jQuery plugin!
+define('readium_shared_js/helpers',["./globals", 'underscore', "jquery", "jquerySizes", "./models/spine_item", 'URIjs'], function(Globals, _, $, JQuerySizes, SpineItem, URI) {  // NOTE that the jquerySizes parameter is not used anywhere explicitely, as this is a jQuery plugin!
 
 (function()
 {
@@ -1914,13 +5589,13 @@ Helpers.getEbookUrlFilePath = function(ebookURL) {
 };
 
 /**
- *
+ * @param initialQuery: (optional) initial query string
  * @returns object (map between URL query parameter names and corresponding decoded / unescaped values)
  */
-Helpers.getURLQueryParams = function() {
+Helpers.getURLQueryParams = function(initialQuery) {
     var params = {};
 
-    var query = window.location.search;
+    var query = initialQuery || window.location.search;
     if (query && query.length) {
         query = query.substring(1);
         var keyParams = query.split('&');
@@ -1938,57 +5613,64 @@ Helpers.getURLQueryParams = function() {
 
 
 /**
- * @param urlpath: string corresponding a URL without query parameters (i.e. the part before the '?' question mark in index.html?param=value). If undefined/null, the default window.location is used.
- * @param overrides: object that maps query parameter names with values (to be included in the resulting URL, while any other query params in the current window.location are preserved as-is) 
- * @returns a string corresponding to a URL obtained by concatenating the given URL with the given query parameters (and those already in window.location)
+ * @param initialUrl: string corresponding a URL. If undefined/null, the default window.location is used.
+ * @param queryStringOverrides: object that maps query parameter names with values (to be included in the resulting URL, while any other query params in the current window.location are preserved as-is)
+ * @returns string corresponding to a URL obtained by concatenating the given URL with the given query parameters
  */
-Helpers.buildUrlQueryParameters = function(urlpath, overrides) {
-    
-    if (!urlpath) {
-        urlpath =
-        window.location ? (
-            window.location.protocol
-            + "//"
-            + window.location.hostname
-            + (window.location.port ? (':' + window.location.port) : '')
-            + window.location.pathname
-        ) : 'index.html';
+Helpers.buildUrlQueryParameters = function(initialUrl, queryStringOverrides) {
+    var uriInstance = new URI(initialUrl || window.location);
+    var startingQueryString = uriInstance.search();
+    var urlFragment = uriInstance.hash();
+    var urlPath = uriInstance.search('').hash('').toString();
+
+    var newQueryString = "";
+
+    for (var overrideKey in queryStringOverrides) {
+        if (!queryStringOverrides.hasOwnProperty(overrideKey)) continue;
+
+        if (!queryStringOverrides[overrideKey]) continue;
+
+        var overrideEntry = queryStringOverrides[overrideKey];
+        if (_.isString(overrideEntry)) {
+            overrideEntry = overrideEntry.trim();
+        }
+
+        if (!overrideEntry) continue;
+
+        if (overrideEntry.verbatim) {
+            overrideEntry = overrideEntry.value; // grab value from entry as object
+        } else {
+            overrideEntry = encodeURIComponent(overrideEntry);
+        }
+
+        console.debug("URL QUERY PARAM OVERRIDE: " + overrideKey + " = " + overrideEntry);
+
+        newQueryString += (overrideKey + "=" + overrideEntry);
+        newQueryString += "&";
     }
 
-    var paramsString = "";
-    
-    for (var key in overrides) {
-        if (!overrides.hasOwnProperty(key)) continue;
-        
-        if (!overrides[key]) continue;
-        
-        var val = overrides[key].trim();
-        if (!val) continue;
-        
-        console.debug("URL QUERY PARAM OVERRIDE: " + key + " = " + val);
 
-        paramsString += (key + "=" + encodeURIComponent(val));
-        paramsString += "&";
+    var parsedQueryString = Helpers.getURLQueryParams(startingQueryString);
+    for (var parsedKey in parsedQueryString) {
+        if (!parsedQueryString.hasOwnProperty(parsedKey)) continue;
+
+        if (!parsedQueryString[parsedKey]) continue;
+
+        if (queryStringOverrides[parsedKey]) continue;
+
+        var parsedValue = parsedQueryString[parsedKey].trim();
+        if (!parsedValue) continue;
+
+        console.debug("URL QUERY PARAM PRESERVED: " + parsedKey + " = " + parsedValue);
+
+        newQueryString += (parsedKey + "=" + encodeURIComponent(parsedValue));
+        newQueryString += "&";
     }
-    
-    var urlParams = Helpers.getURLQueryParams();
-    for (var key in urlParams) {
-        if (!urlParams.hasOwnProperty(key)) continue;
-        
-        if (!urlParams[key]) continue;
-        
-        if (overrides[key]) continue;
 
-        var val = urlParams[key].trim();
-        if (!val) continue;
-        
-        console.debug("URL QUERY PARAM PRESERVED: " + key + " = " + val);
+    // remove trailing "&"
+    newQueryString = newQueryString.slice(0, -1);
 
-        paramsString += (key + "=" + encodeURIComponent(val));
-        paramsString += "&";
-    }
-    
-    return urlpath + "?" + paramsString;
+    return urlPath + "?" + newQueryString + urlFragment;
 };
 
 
@@ -2177,8 +5859,10 @@ Helpers.UpdateHtmlFontAttributes = function ($epubHtml, fontSize, fontObj, callb
             // TODO: group the 3x potential $(ele).css() calls below to avoid multiple jQuery style mutations 
 
             var fontSizeAttr = ele.getAttribute('data-original-font-size');
-            var originalFontSize = Number(fontSizeAttr);
-            $(ele).css("font-size", (originalFontSize * factor) + 'px');
+            var originalFontSize = fontSizeAttr ? Number(fontSizeAttr) : 0;
+            if (originalFontSize) {
+                $(ele).css("font-size", (originalFontSize * factor) + 'px');
+            }
 
             var lineHeightAttr = ele.getAttribute('data-original-line-height');
             var originalLineHeight = lineHeightAttr ? Number(lineHeightAttr) : 0;
@@ -2539,13 +6223,18 @@ Helpers.loadTemplate = function (name, params) {
  */
 Helpers.loadTemplate.cache = {
     "fixed_book_frame": '<div id="fixed-book-frame" class="clearfix book-frame fixed-book-frame"></div>',
-
-    "single_page_frame": '<div><div id="scaler"><iframe allowfullscreen="allowfullscreen" scrolling="no" class="iframe-fixed"></iframe></div></div>',
+    "single_page_frame": '<div><div id="scaler"><iframe enable-annotation="enable-annotation" allowfullscreen="allowfullscreen" scrolling="no" class="iframe-fixed"></iframe></div></div>',
     //"single_page_frame" : '<div><iframe scrolling="no" class="iframe-fixed" id="scaler"></iframe></div>',
 
     "scrolled_book_frame": '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"><div id="scrolled-content-frame"></div></div>',
     "reflowable_book_frame": '<div id="reflowable-book-frame" class="clearfix book-frame reflowable-book-frame"></div>',
-    "reflowable_book_page_frame": '<div id="reflowable-content-frame" class="reflowable-content-frame"><iframe allowfullscreen="allowfullscreen" scrolling="no" id="epubContentIframe"></iframe></div>'
+    "reflowable_book_page_frame": '<div id="reflowable-content-frame" class="reflowable-content-frame"><iframe enable-annotation="enable-annotation" allowfullscreen="allowfullscreen" scrolling="no" id="epubContentIframe"></iframe></div>'
+    /***
+     * The `enable-annotation` attribute on an iframe helps detect the content frames for annotating tools such as Hypothesis
+     * See here for more details:
+     * https://h.readthedocs.io/projects/client/en/latest/publishers/embedding/
+     * https://github.com/hypothesis/client/pull/533
+     ***/
 };
 
 /**
@@ -2925,48 +6614,61 @@ return Helpers;
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /**
- * CFI navigation helper class
- *
- * @param options Additional settings for NavigationLogic object
- *      - paginationInfo            Layout details, used by clientRect-based geometry
- *      - visibleContentOffsets     Function that returns offsets. If supplied it is used instead of the inferred offsets
- *      - frameDimensions           Function that returns an object with width and height properties. Needs to be set.
- *      - $iframe                   Iframe reference, and needs to be set.
- * @constructor
- */
-define('readium_shared_js/views/cfi_navigation_logic',["jquery", "underscore", "../helpers", 'readium_cfi_js'], function($, _, Helpers, epubCfi) {
+* CFI navigation helper class
+*
+* @param options Additional settings for NavigationLogic object
+*      - paginationInfo            Layout details, used by clientRect-based geometry
+*      - visibleContentOffsets     Function that returns offsets. If supplied it is used instead of the inferred offsets
+*      - frameDimensions           Function that returns an object with width and height properties. Needs to be set.
+*      - $iframe                   Iframe reference, and needs to be set.
+* @constructor
+*/
+define('readium_shared_js/views/cfi_navigation_logic',["jquery", "underscore", "../helpers", 'readium_cfi_js'], function($, _, Helpers, EPUBcfi) {
 
-var CfiNavigationLogic = function(options) {
-
+var CfiNavigationLogic = function (options) {
     var self = this;
     options = options || {};
 
-    var debugMode = ReadiumSDK.DEBUG_MODE;
+    var _DEBUG = ReadiumSDK.DEBUG_MODE;
+    if (_DEBUG) {
+        window.top._DEBUG_visibleTextRangeOffsetsRuns = window.top._DEBUG_visibleTextRangeOffsetsRuns || [];
+    }
 
-    this.getRootElement = function() {
+    this.getRootElement = function () {
+        if (!options.$iframe) {
+            return null;
+        }
 
         return options.$iframe[0].contentDocument.documentElement;
     };
-    
+
     this.getBodyElement = function () {
-        
-        // In SVG documents the root element can be considered the body.
-        return this.getRootDocument().body || this.getRootElement();
+        var rootDocument = this.getRootDocument();
+        if (rootDocument && rootDocument.body) {
+            return rootDocument.body;
+        } else {
+            // In SVG documents the root element can be considered the body.
+            return this.getRootElement();
+        }
     };
 
     this.getClassBlacklist = function () {
         return options.classBlacklist || [];
-    }
+    };
 
     this.getIdBlacklist = function () {
         return options.idBlacklist || [];
-    }
+    };
 
     this.getElementBlacklist = function () {
         return options.elementBlacklist || [];
-    }
+    };
 
     this.getRootDocument = function () {
+        if (!options.$iframe) {
+            return null;
+        }
+
         return options.$iframe[0].contentDocument;
     };
 
@@ -2974,21 +6676,23 @@ var CfiNavigationLogic = function(options) {
         return self.getRootDocument().createRange();
     }
 
-    function getNodeClientRect(node) {
-        var range = createRange();
-        range.selectNode(node);
-        return normalizeRectangle(range.getBoundingClientRect(),0,0);
+    function createRangeFromNode(textnode) {
+        var documentRange = createRange();
+        documentRange.selectNodeContents(textnode);
+        return documentRange;
     }
+
+    function getNodeClientRect(node) {
+            var range = createRange();
+            range.selectNode(node);
+            return normalizeRectangle(range.getBoundingClientRect(), 0, 0);
+        }
 
     function getNodeContentsClientRect(node) {
-        var range = createRange();
-        range.selectNodeContents(node);
-        return normalizeRectangle(range.getBoundingClientRect(),0,0);
-    }
-
-    function getElementClientRect($element) {
-        return normalizeRectangle($element[0].getBoundingClientRect(),0,0);
-    }
+            var range = createRange();
+            range.selectNodeContents(node);
+            return normalizeRectangle(range.getBoundingClientRect(), 0, 0);
+        }
 
     function getNodeRangeClientRect(startNode, startOffset, endNode, endOffset) {
         var range = createRange();
@@ -2998,24 +6702,42 @@ var CfiNavigationLogic = function(options) {
         } else if (endNode.nodeType === Node.TEXT_NODE) {
             range.setEnd(endNode, endOffset ? endOffset : 0);
         }
-        return normalizeRectangle(range.getBoundingClientRect(),0,0);
+
+        // Webkit has a bug where collapsed ranges provide an empty rect with getBoundingClientRect()
+        // https://bugs.webkit.org/show_bug.cgi?id=138949
+        // Thankfully it implements getClientRects() properly...
+        // A collapsed text range may still have geometry!
+        if (range.collapsed) {
+            return normalizeRectangle(range.getClientRects()[0], 0, 0);
+        } else {
+            return normalizeRectangle(range.getBoundingClientRect(), 0, 0);
+        }
     }
 
     function getNodeClientRectList(node, visibleContentOffsets) {
         visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
-        
+
         var range = createRange();
         range.selectNode(node);
+        return getRangeClientRectList(range, visibleContentOffsets);
+    }
+
+    function getRangeClientRectList(range, visibleContentOffsets) {
+        visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
+
+        //noinspection JSUnresolvedFunction
+
         return _.map(range.getClientRects(), function (rect) {
+
             return normalizeRectangle(rect, visibleContentOffsets.left, visibleContentOffsets.top);
         });
     }
 
     function getFrameDimensions() {
-        if (options.frameDimensions) {
-            return options.frameDimensions();
+        if (options.frameDimensionsGetter) {
+            return options.frameDimensionsGetter();
         }
-        
+
         console.error('CfiNavigationLogic: No frame dimensions specified!');
         return null;
     }
@@ -3053,17 +6775,16 @@ var CfiNavigationLogic = function(options) {
 
     /**
      * @private
-     * Checks whether or not a (fully adjusted) rectangle is at least partly visible
+     * Checks whether or not a (fully adjusted) rectangle is visible
      *
      * @param {Object} rect
+     * @param {boolean} [ignorePartiallyVisible]
      * @param {Object} [frameDimensions]
-     * @param {boolean} [isVwm]           isVerticalWritingMode
      * @returns {boolean}
      */
-    function isRectVisible(rect, ignorePartiallyVisible, frameDimensions, isVwm) {
+    function isRectVisible(rect, ignorePartiallyVisible, frameDimensions) {
 
         frameDimensions = frameDimensions || getFrameDimensions();
-        isVwm = isVwm || isVerticalWritingMode();
 
         //Text nodes without printable text dont have client rectangles
         if (!rect) {
@@ -3074,1361 +6795,1293 @@ var CfiNavigationLogic = function(options) {
             return false;
         }
 
-        if (isPaginatedView()) {
-            return (rect.left >= 0 && rect.left < frameDimensions.width) || 
-                (!ignorePartiallyVisible && rect.left < 0 && rect.right >= 0);
+        if (isPaginatedView() && !isVerticalWritingMode()) {
+            return (rect.left >= 0 && rect.left < frameDimensions.width) ||
+                (!ignorePartiallyVisible && rect.left < 0 && rect.right > 0);
         } else {
-            return (rect.top >= 0 && rect.top < frameDimensions.height) || 
-                (!ignorePartiallyVisible && rect.top < 0 && rect.bottom >= 0);
+            return (rect.top >= 0 && rect.top < frameDimensions.height) ||
+                (!ignorePartiallyVisible && rect.top < 0 && rect.bottom > 0);
         }
 
     }
 
-    /**
-     * @private
-     * Retrieves _current_ full width of a column (including its gap)
-     *
-     * @returns {number} Full width of a column in pixels
-     */
-    function getColumnFullWidth() {
+        /**
+         * @private
+         * Retrieves _current_ full width of a column (including its gap)
+         *
+         * @returns {number} Full width of a column in pixels
+         */
+        function getColumnFullWidth() {
 
-        if (!options.paginationInfo || isVerticalWritingMode())
-        {
-            return options.$iframe.width();
+            if (!options.paginationInfo || isVerticalWritingMode()) {
+                return options.$iframe.width();
+            }
+
+            return options.paginationInfo.columnWidth + options.paginationInfo.columnGap;
         }
 
-        return options.paginationInfo.columnWidth + options.paginationInfo.columnGap;
-    }
+        /**
+         * @private
+         *
+         * Retrieves _current_ offset of a viewport
+         * (relational to the beginning of the chapter)
+         *
+         * @returns {Object}
+         */
+        function getVisibleContentOffsets() {
+            if (options.visibleContentOffsetsGetter) {
+                return options.visibleContentOffsetsGetter();
+            }
 
-    /**
-     * @private
-     *
-     * Retrieves _current_ offset of a viewport
-     * (related to the beginning of the chapter)
-     *
-     * @returns {Object}
-     */
-    function getVisibleContentOffsets() {
-        if (options.visibleContentOffsets) {
-            return options.visibleContentOffsets();
-        }
+            if (isVerticalWritingMode() && options.paginationOffsetsGetter) {
+                return options.paginationOffsetsGetter();
+            }
 
-        if (isVerticalWritingMode()) {
             return {
-                top: (options.paginationInfo ? options.paginationInfo.pageOffset : 0),
+                top: 0,
                 left: 0
             };
         }
 
-        return {
-            top: 0,
-            left: 0
-        };
-    }
-
-    /**
-     * New (rectangle-based) algorithm, useful in multi-column layouts
-     *
-     * Note: the second param (props) is ignored intentionally
-     * (no need to use those in normalization)
-     *
-     * @param {jQuery} $element
-     * @param {Object} _props
-     * @param {boolean} shouldCalculateVisibilityPercentage
-     * @param {Object} [frameDimensions]
-     * @returns {number|null}
-     *      0 for non-visible elements,
-     *      0 < n <= 100 for visible elements
-     *      (will just give 100, if `shouldCalculateVisibilityPercentage` => false)
-     *      null for elements with display:none
-     */
-    function checkVisibilityByRectangles($element, shouldCalculateVisibilityPercentage, visibleContentOffsets, frameDimensions) {
-        visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
-        frameDimensions = frameDimensions || getFrameDimensions();
-
-        var clientRectangles = getNormalizedRectangles($element, visibleContentOffsets);
-        if (clientRectangles.length === 0) { // elements with display:none, etc.
-            return null;
-        }
-
-        var visibilityPercentage = 0;
-
-        if (clientRectangles.length === 1) {
-            var adjustedRect = clientRectangles[0];
-            
-            if (isPaginatedView()) {
-                if (adjustedRect.bottom > frameDimensions.height || adjustedRect.top < 0) {
-                    // because of webkit inconsistency, that single rectangle should be adjusted
-                    // until it hits the end OR will be based on the FIRST column that is visible
-                    adjustRectangle(adjustedRect, true, frameDimensions);
-                }
+        function getPaginationOffsets() {
+            if (options.paginationOffsetsGetter) {
+                return options.paginationOffsetsGetter();
             }
 
-            if (isRectVisible(adjustedRect, false, frameDimensions)) {
-                //it might still be partially visible in webkit
-                if (shouldCalculateVisibilityPercentage && adjustedRect.top < 0) {
-                    visibilityPercentage =
-                        Math.floor(100 * (adjustedRect.height + adjustedRect.top) / adjustedRect.height);
-                } else {
-                    visibilityPercentage = 100;
-                }
-            }
-        } else {
-            // for an element split between several CSS columns,z
-            // both Firefox and IE produce as many client rectangles;
-            // each of those should be checked
-            for (var i = 0, l = clientRectangles.length; i < l; ++i) {
-                if (isRectVisible(clientRectangles[i], false, frameDimensions)) {
-                    visibilityPercentage = shouldCalculateVisibilityPercentage
-                        ? measureVisibilityPercentageByRectangles(clientRectangles, i)
-                        : 100;
-                    break;
-                }
-            }
-        }
-
-        return visibilityPercentage;
-    }
-
-    /**
-     * Finds a page index (0-based) for a specific element.
-     * Calculations are based on rectangles retrieved with getClientRects() method.
-     *
-     * @param {jQuery} $element
-     * @param {number} spatialVerticalOffset
-     * @returns {number|null}
-     */
-    function findPageByRectangles($element, spatialVerticalOffset) {
-
-        var visibleContentOffsets = getVisibleContentOffsets();
-
-        var clientRectangles = getNormalizedRectangles($element, visibleContentOffsets);
-        if (clientRectangles.length === 0) { // elements with display:none, etc.
-            return null;
-        }
-
-        return calculatePageIndexByRectangles(clientRectangles, spatialVerticalOffset);
-    }
-
-    /**
-     * @private
-     * Calculate a page index (0-based) for given client rectangles.
-     *
-     * @param {object} clientRectangles
-     * @param {number} [spatialVerticalOffset]
-     * @param {object} [frameDimensions]
-     * @param {object} [columnFullWidth]
-     * @returns {number|null}
-     */
-    function calculatePageIndexByRectangles(clientRectangles, spatialVerticalOffset, frameDimensions, columnFullWidth) {
-        var isRtl = isPageProgressionRightToLeft();
-        var isVwm = isVerticalWritingMode();
-        columnFullWidth = columnFullWidth || getColumnFullWidth();
-        frameDimensions = frameDimensions || getFrameDimensions();
-
-        if (spatialVerticalOffset) {
-            trimRectanglesByVertOffset(clientRectangles, spatialVerticalOffset,
-                frameDimensions, columnFullWidth, isRtl, isVwm);
-        }
-
-        var firstRectangle = _.first(clientRectangles);
-        if (clientRectangles.length === 1) {
-            adjustRectangle(firstRectangle, false, frameDimensions, columnFullWidth, isRtl, isVwm);
-        }
-
-        var pageIndex;
-
-        if (isVwm) {
-            var topOffset = firstRectangle.top;
-            pageIndex = Math.floor(topOffset / frameDimensions.height);
-        } else {
-            var leftOffset = firstRectangle.left;
-            if (isRtl) {
-                leftOffset = (columnFullWidth * (options.paginationInfo ? options.paginationInfo.visibleColumnCount : 1)) - leftOffset;
-            }
-            pageIndex = Math.floor(leftOffset / columnFullWidth);
-        }
-
-        if (pageIndex < 0) {
-            pageIndex = 0;
-        }
-        else if (pageIndex >= (options.paginationInfo ? options.paginationInfo.columnCount : 1)) {
-            pageIndex = (options.paginationInfo ? (options.paginationInfo.columnCount - 1) : 0);
-        }
-
-        return pageIndex;
-    }
-
-    /**
-     * Finds a page index (0-based) for a specific client rectangle.
-     * Calculations are based on viewport dimensions, offsets, and rectangle coordinates
-     *
-     * @param {ClientRect} clientRectangle
-     * @param {Object} [visibleContentOffsets]
-     * @param {Object} [frameDimensions]
-     * @returns {number|null}
-     */
-    function findPageBySingleRectangle(clientRectangle, visibleContentOffsets, frameDimensions) {
-        visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
-        frameDimensions = frameDimensions || getFrameDimensions();
-        
-        var normalizedRectangle = normalizeRectangle(
-            clientRectangle, visibleContentOffsets.left, visibleContentOffsets.top);
-
-        return calculatePageIndexByRectangles([normalizedRectangle], frameDimensions);
-    }
-
-    /**
-     * @private
-     * Calculates the visibility offset percentage based on ClientRect dimensions
-     *
-     * @param {Array} clientRectangles (should already be normalized)
-     * @param {number} firstVisibleRectIndex
-     * @returns {number} - visibility percentage (0 < n <= 100)
-     */
-    function measureVisibilityPercentageByRectangles(clientRectangles, firstVisibleRectIndex) {
-
-        var heightTotal = 0;
-        var heightVisible = 0;
-
-        if (clientRectangles.length > 1) {
-            _.each(clientRectangles, function (rect, index) {
-                heightTotal += rect.height;
-                if (index >= firstVisibleRectIndex) {
-                    // in this case, all the rectangles after the first visible
-                    // should be counted as visible
-                    heightVisible += rect.height;
-                }
-            });
-        }
-        else {
-            // should already be normalized and adjusted
-            heightTotal = clientRectangles[0].height;
-            heightVisible = clientRectangles[0].height - Math.max(
-                0, -clientRectangles[0].top);
-        }
-        return heightVisible === heightTotal
-            ? 100 // trivial case: element is 100% visible
-            : Math.floor(100 * heightVisible / heightTotal);
-    }
-
-    /**
-     * @private
-     * Retrieves the position of $element in multi-column layout
-     *
-     * @param {jQuery} $el
-     * @param {Object} [visibleContentOffsets]
-     * @returns {Object}
-     */
-    function getNormalizedRectangles($el, visibleContentOffsets) {
-
-        visibleContentOffsets = visibleContentOffsets || {};
-        var leftOffset = visibleContentOffsets.left || 0;
-        var topOffset = visibleContentOffsets.top || 0;
-
-        var isTextNode = ($el[0].nodeType === Node.TEXT_NODE);
-        var clientRectList;
-
-        if (isTextNode) {
-            var range = createRange();
-            range.selectNode($el[0]);
-            clientRectList = range.getClientRects();
-        } else {
-            clientRectList = $el[0].getClientRects();
-        }
-
-        // all the separate rectangles (for detecting position of the element
-        // split between several columns)
-        var clientRectangles = [];
-        for (var i = 0, l = clientRectList.length; i < l; ++i) {
-            if (clientRectList[i].height > 0) {
-                // Firefox sometimes gets it wrong,
-                // adding literally empty (height = 0) client rectangle preceding the real one,
-                // that empty client rectanle shouldn't be retrieved
-                clientRectangles.push(
-                    normalizeRectangle(clientRectList[i], leftOffset, topOffset));
-            }
-        }
-
-        return clientRectangles;
-    }
-
-    function getNormalizedBoundingRect($el, visibleContentOffsets) {
-        visibleContentOffsets = visibleContentOffsets || {};
-        var leftOffset = visibleContentOffsets.left || 0;
-        var topOffset = visibleContentOffsets.top || 0;
-
-        var isTextNode = ($el[0].nodeType === Node.TEXT_NODE);
-        var boundingClientRect;
-
-        if (isTextNode) {
-            var range = createRange();
-            range.selectNode($el[0]);
-            boundingClientRect = range.getBoundingClientRect();
-        } else {
-            boundingClientRect = $el[0].getBoundingClientRect();
-        }
-
-        // union of all rectangles wrapping the element
-        return normalizeRectangle(boundingClientRect, leftOffset, topOffset);
-    }
-
-    /**
-     * @private
-     * Converts TextRectangle object into a plain object,
-     * taking content offsets (=scrolls, position shifts etc.) into account
-     *
-     * @param {TextRectangle} textRect
-     * @param {number} leftOffset
-     * @param {number} topOffset
-     * @returns {Object}
-     */
-    function normalizeRectangle(textRect, leftOffset, topOffset) {
-
-        var plainRectObject = {
-            left: textRect.left,
-            right: textRect.right,
-            top: textRect.top,
-            bottom: textRect.bottom,
-            width: textRect.right - textRect.left,
-            height: textRect.bottom - textRect.top
-        };
-        offsetRectangle(plainRectObject, leftOffset, topOffset);
-        return plainRectObject;
-    }
-
-    /**
-     * @private
-     * Offsets plain object (which represents a TextRectangle).
-     *
-     * @param {Object} rect
-     * @param {number} leftOffset
-     * @param {number} topOffset
-     */
-    function offsetRectangle(rect, leftOffset, topOffset) {
-
-        rect.left += leftOffset;
-        rect.right += leftOffset;
-        rect.top += topOffset;
-        rect.bottom += topOffset;
-    }
-
-    /**
-     * @private
-     *
-     * When element is spilled over two or more columns,
-     * most of the time Webkit-based browsers
-     * still assign a single clientRectangle to it, setting its `top` property to negative value
-     * (so it looks like it's rendered based on the second column)
-     * Alas, sometimes they decide to continue the leftmost column - from _below_ its real height.
-     * In this case, `bottom` property is actually greater than element's height and had to be adjusted accordingly.
-     *
-     * Ugh.
-     *
-     * @param {Object} rect
-     * @param {boolean} [shouldLookForFirstVisibleColumn]
-     *      If set, there'll be two-phase adjustment
-     *      (to align a rectangle with a viewport)
-     * @param {Object} [frameDimensions]
-     * @param {number} [columnFullWidth]
-     * @param {boolean} [isRtl]
-     * @param {boolean} [isVwm]               isVerticalWritingMode
-     */
-    function adjustRectangle(rect, shouldLookForFirstVisibleColumn, frameDimensions, columnFullWidth, isRtl, isVwm) {
-
-        frameDimensions = frameDimensions || getFrameDimensions();
-        columnFullWidth = columnFullWidth || getColumnFullWidth();
-        isRtl = isRtl || isPageProgressionRightToLeft();
-        isVwm = isVwm || isVerticalWritingMode();
-
-        // Rectangle adjustment is not needed in VWM since it does not deal with columns
-        if (isVwm) {
-            return;
-        }
-
-        if (isRtl) {
-            columnFullWidth *= -1; // horizontal shifts are reverted in RTL mode
-        }
-
-        // first we go left/right (rebasing onto the very first column available)
-        while (rect.top < 0) {
-            offsetRectangle(rect, -columnFullWidth, frameDimensions.height);
-        }
-
-        // ... then, if necessary (for visibility offset checks),
-        // each column is tried again (now in reverse order)
-        // the loop will be stopped when the column is aligned with a viewport
-        // (i.e., is the first visible one).
-        if (shouldLookForFirstVisibleColumn) {
-            while (rect.bottom >= frameDimensions.height) {
-                if (isRectVisible(rect, false, frameDimensions, isVwm)) {
-                    break;
-                }
-                offsetRectangle(rect, columnFullWidth, -frameDimensions.height);
-            }
-        }
-    }
-
-    /**
-     * @private
-     * Trims the rectangle(s) representing the given element.
-     *
-     * @param {Array} rects
-     * @param {number} verticalOffset
-     * @param {number} frameDimensions
-     * @param {number} columnFullWidth
-     * @param {boolean} isRtl
-     * @param {boolean} isVwm               isVerticalWritingMode
-     */
-    function trimRectanglesByVertOffset(
-            rects, verticalOffset, frameDimensions, columnFullWidth, isRtl, isVwm) {
-
-        frameDimensions = frameDimensions || getFrameDimensions();
-        columnFullWidth = columnFullWidth || getColumnFullWidth();
-        isRtl = isRtl || isPageProgressionRightToLeft();
-        isVwm = isVwm || isVerticalWritingMode();
-
-        //TODO: Support vertical writing mode
-        if (isVwm) {
-            return;
-        }
-
-        var totalHeight = _.reduce(rects, function(prev, cur) {
-            return prev + cur.height;
-        }, 0);
-
-        var heightToHide = totalHeight * verticalOffset / 100;
-        if (rects.length > 1) {
-            var heightAccum = 0;
-            do {
-                heightAccum += rects[0].height;
-                if (heightAccum > heightToHide) {
-                    break;
-                }
-                rects.shift();
-            } while (rects.length > 1);
-        }
-        else {
-            // rebase to the last possible column
-            // (so that adding to top will be properly processed later)
-            if (isRtl) {
-                columnFullWidth *= -1;
-            }
-            while (rects[0].bottom >= frameDimensions.height) {
-                offsetRectangle(rects[0], columnFullWidth, -frameDimensions.height);
-            }
-
-            rects[0].top += heightToHide;
-            rects[0].height -= heightToHide;
-        }
-    }
-
-    this.getCfiForElement = function (element) {
-        var cfi = EPUBcfi.Generator.generateElementCFIComponent(element,
-            this.getClassBlacklist(),
-            this.getElementBlacklist(),
-            this.getIdBlacklist());
-
-        if (cfi[0] == "!") {
-            cfi = cfi.substring(1);
-        }
-        return cfi;
-    };
-
-    this.getVisibleCfiFromPoint = function (x, y, precisePoint) {
-        var document = self.getRootDocument();
-        var firstVisibleCaretRange = getCaretRangeFromPoint(x, y, document);
-        var elementFromPoint = document.elementFromPoint(x, y);
-        var invalidElementFromPoint = !elementFromPoint || elementFromPoint === document.documentElement;
-
-        if (precisePoint) {
-            if (!elementFromPoint || invalidElementFromPoint) {
-                return null;
-            }
-            var testRect = getNodeContentsClientRect(elementFromPoint);
-            if (!isRectVisible(testRect, false)) {
-                return null;
-            }
-            if ((x < testRect.left || x > testRect.right) || (y < testRect.top || y > testRect.bottom)) {
-                return null;
-            }
-        }
-
-        if (!firstVisibleCaretRange) {
-            if (invalidElementFromPoint) {
-                console.error("Could not generate CFI no visible element on page");
-                return null;
-            }
-            firstVisibleCaretRange = createRange();
-            firstVisibleCaretRange.selectNode(elementFromPoint);
-        }
-
-        var range = firstVisibleCaretRange;
-        var cfi;
-        //if we get a text node we need to get an approximate range for the first visible character offsets.
-        var node = range.startContainer;
-        var startOffset, endOffset;
-        if (node.nodeType === Node.TEXT_NODE) {
-            if (precisePoint && node.parentNode !== elementFromPoint) {
-                return null;
-            }
-            if (node.length === 1 && range.startOffset === 1) {
-                startOffset = 0;
-                endOffset = 1;
-            } else if (range.startOffset === node.length) {
-                startOffset = range.startOffset - 1;
-                endOffset = range.startOffset;
-            } else {
-                startOffset = range.startOffset;
-                endOffset = range.startOffset + 1;
-            }
-            var wrappedRange = {
-                startContainer: node,
-                endContainer: node,
-                startOffset: startOffset,
-                endOffset: endOffset,
-                commonAncestorContainer: range.commonAncestorContainer
+            return {
+                top: 0,
+                left: 0
             };
+        }
 
-            if (debugMode) {
-                drawDebugOverlayFromDomRange(wrappedRange);
-            }
+        /**
+         * New (rectangle-based) algorithm, useful in multi-column layouts
+         *
+         * Note: the second param (props) is ignored intentionally
+         * (no need to use those in normalization)
+         *
+         * @param {jQuery} $element
+         * @param {boolean} shouldCalculateVisibilityPercentage
+         * @param {Object} [visibleContentOffsets]
+         * @param {Object} [frameDimensions]
+         * @returns {number|null}
+         *      0 for non-visible elements,
+         *      0 < n <= 100 for visible elements
+         *      (will just give 100, if `shouldCalculateVisibilityPercentage` => false)
+         *      null for elements with display:none
+         */
+        function checkVisibilityByRectangles($element, shouldCalculateVisibilityPercentage, visibleContentOffsets, frameDimensions) {
+            visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
+            frameDimensions = frameDimensions || getFrameDimensions();
 
-            cfi = generateCfiFromDomRange(wrappedRange);
-        } else if (node.nodeType === Node.ELEMENT_NODE) {
-            node =
-                range.startContainer.childNodes[range.startOffset] ||
-                range.startContainer.childNodes[0] ||
-                range.startContainer;
-            if (precisePoint && node !== elementFromPoint) {
+            var clientRectangles = getNormalizedRectangles($element, visibleContentOffsets);
+            if (clientRectangles.length === 0) { // elements with display:none, etc.
                 return null;
             }
 
-            if (node.nodeType !== Node.ELEMENT_NODE) {
-                cfi = generateCfiFromDomRange(range);
+            var visibilityPercentage = 0;
+
+            if (clientRectangles.length === 1) {
+                var adjustedRect = clientRectangles[0];
+
+                if (isPaginatedView()) {
+                    if (adjustedRect.bottom > frameDimensions.height || adjustedRect.top < 0) {
+                        // because of webkit inconsistency, that single rectangle should be adjusted
+                        // until it hits the end OR will be based on the FIRST column that is visible
+                        adjustRectangle(adjustedRect, true, frameDimensions);
+                    }
+                }
+
+                if (isRectVisible(adjustedRect, false, frameDimensions)) {
+                    if (shouldCalculateVisibilityPercentage && adjustedRect.top < 0) {
+                        visibilityPercentage =
+                            Math.floor(100 * (adjustedRect.height + adjustedRect.top) / adjustedRect.height);
+                    } else if (shouldCalculateVisibilityPercentage && adjustedRect.bottom > frameDimensions.height) {
+                        visibilityPercentage =
+                            Math.floor(100 * (frameDimensions.height - adjustedRect.top) / adjustedRect.height);
+                    } else if (shouldCalculateVisibilityPercentage && adjustedRect.left < 0 && adjustedRect.right > 0) {
+                        visibilityPercentage =
+                            Math.floor(100 * adjustedRect.right / adjustedRect.width);
+                    } else if (shouldCalculateVisibilityPercentage && adjustedRect.left < 0 && adjustedRect.right > 0) {
+                        visibilityPercentage =
+                            Math.floor(100 * adjustedRect.right / adjustedRect.width);
+                    } else {
+                        visibilityPercentage = 100;
+                    }
+                }
             } else {
-                cfi = self.getCfiForElement(node);
+                // for an element split between several CSS columns,z
+                // both Firefox and IE produce as many client rectangles;
+                // each of those should be checked
+                for (var i = 0, l = clientRectangles.length; i < l; ++i) {
+                    if (isRectVisible(clientRectangles[i], false, frameDimensions)) {
+                        visibilityPercentage = shouldCalculateVisibilityPercentage
+                            ? measureVisibilityPercentageByRectangles(clientRectangles, i)
+                            : 100;
+                        break;
+                    }
+                }
             }
-        } else {
-            if (precisePoint && node !== elementFromPoint) {
+
+            return visibilityPercentage;
+        }
+
+        /**
+         * Finds a page index (0-based) delta for a specific element.
+         * Calculations are based on rectangles retrieved with getClientRects() method.
+         *
+         * @param {jQuery} $element
+         * @returns {number|null}
+         */
+        function findPageIndexDeltaByRectangles($element) {
+
+            var visibleContentOffsets = getVisibleContentOffsets();
+
+            var clientRectangles = getNormalizedRectangles($element, visibleContentOffsets);
+            if (clientRectangles.length === 0) { // elements with display:none, etc.
                 return null;
             }
 
-            cfi = self.getCfiForElement(elementFromPoint);
+            return calculatePageIndexDeltaByRectangles(clientRectangles);
         }
 
-        //This should not happen but if it does print some output, just in case
-        if (cfi && cfi.indexOf('NaN') !== -1) {
-            console.log('Did not generate a valid CFI:' + cfi);
-            return undefined;
+        /**
+         * @private
+         * Calculate a page index (0-based) delta for given client rectangles.
+         *
+         * @param {object[]} clientRectangles
+         * @param {object} [frameDimensions]
+         * @param {number} [columnFullWidth]
+         * @returns {number|null}
+         */
+        function calculatePageIndexDeltaByRectangles(clientRectangles, frameDimensions, columnFullWidth) {
+            var isRtl = isPageProgressionRightToLeft();
+            var isVwm = isVerticalWritingMode();
+            columnFullWidth = columnFullWidth || getColumnFullWidth();
+            frameDimensions = frameDimensions || getFrameDimensions();
+
+            var firstRectangle = _.first(clientRectangles);
+            if (clientRectangles.length === 1) {
+                adjustRectangle(firstRectangle, false, frameDimensions, columnFullWidth, isRtl, isVwm);
+            }
+
+            var pageIndex;
+
+            if (isVwm) {
+                var topOffset = firstRectangle.top;
+                pageIndex = Math.floor(topOffset / frameDimensions.height);
+            } else {
+                var leftOffset = firstRectangle.left;
+                if (isRtl) {
+                    leftOffset = (columnFullWidth * (options.paginationInfo ? options.paginationInfo.visibleColumnCount : 1)) - leftOffset;
+                }
+                pageIndex = Math.floor(leftOffset / columnFullWidth);
+            }
+
+            return pageIndex;
         }
 
-        return cfi;
-    };
+        /**
+         * Finds a page index (0-based) delta for a specific client rectangle.
+         * Calculations are based on viewport dimensions, offsets, and rectangle coordinates
+         *
+         * @param {ClientRect} clientRectangle
+         * @param {Object} [visibleContentOffsets]
+         * @param {Object} [frameDimensions]
+         * @returns {number|null}
+         */
+        function findPageIndexDeltaBySingleRectangle(clientRectangle, visibleContentOffsets, frameDimensions) {
+            visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
+            frameDimensions = frameDimensions || getFrameDimensions();
 
-    this.getRangeCfiFromPoints = function(startX, startY, endX, endY) {
-        var document = self.getRootDocument();
-        var start = getCaretRangeFromPoint(startX, startY, document),
-            end = getCaretRangeFromPoint(endX, endY, document),
-            range = createRange();
-        range.setStart(start.startContainer, start.startOffset);
-        range.setEnd(end.startContainer, end.startOffset);
-        // if we're looking at a text node create a nice range (n, n+1)
-        if (start.startContainer === start.endContainer && start.startContainer.nodeType === Node.TEXT_NODE && end.startContainer.length > end.startOffset+1) {
-            range.setEnd(end.startContainer, end.startOffset+1);
+            var normalizedRectangle = normalizeRectangle(
+                clientRectangle, visibleContentOffsets.left, visibleContentOffsets.top);
+
+            return calculatePageIndexDeltaByRectangles([normalizedRectangle], frameDimensions);
         }
-        return generateCfiFromDomRange(range);
-    };
 
-    function getTextNodeRectCornerPairs(rect) {
-        //
-        //    top left             top right
-        //    ╲                   ╱
-        //  ── ▒T▒E▒X▒T▒ ▒R▒E▒C▒T▒ ──
-        //
-        // top left corner & top right corner
-        // but for y coord use the mid point between top and bottom
+        /**
+         * @private
+         * Calculates the visibility offset percentage based on ClientRect dimensions
+         *
+         * @param {Array} clientRectangles (should already be normalized)
+         * @param {number} firstVisibleRectIndex
+         * @returns {number} - visibility percentage (0 < n <= 100)
+         */
+        function measureVisibilityPercentageByRectangles(clientRectangles, firstVisibleRectIndex) {
 
-        if (isVerticalWritingMode()) {
-            var x = rect.right - (rect.width / 2);
-            return [{x: x, y: rect.top}, {x: x, y: rect.bottom}];
-        } else {
-            var y = rect.top + (rect.height / 2);
-            var result = [{x: rect.left, y: y}, {x: rect.right, y: y}]
-            return isPageProgressionRightToLeft() ? result.reverse() : result;
+            var heightTotal = 0;
+            var heightVisible = 0;
+
+            if (clientRectangles.length > 1) {
+                _.each(clientRectangles, function (rect, index) {
+                    heightTotal += rect.height;
+                    if (index >= firstVisibleRectIndex) {
+                        // in this case, all the rectangles after the first visible
+                        // should be counted as visible
+                        heightVisible += rect.height;
+                    }
+                });
+            }
+            else {
+                // should already be normalized and adjusted
+                heightTotal = clientRectangles[0].height;
+                heightVisible = clientRectangles[0].height - Math.max(
+                    0, -clientRectangles[0].top);
+            }
+            return heightVisible === heightTotal
+                ? 100 // trivial case: element is 100% visible
+                : Math.floor(100 * heightVisible / heightTotal);
         }
-    }
 
-    var DEBUG = false;
+        /**
+         * @private
+         * Retrieves the position of $element in multi-column layout
+         *
+         * @param {jQuery} $el
+         * @param {Object} [visibleContentOffsets]
+         * @returns {Object[]}
+         */
+        function getNormalizedRectangles($el, visibleContentOffsets) {
 
-    function getVisibleTextRangeOffsetsSelectedByFunc(textNode, pickerFunc, visibleContentOffsets, frameDimensions) {
-        visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
-        
-        var textNodeFragments = getNodeClientRectList(textNode, visibleContentOffsets);
+            visibleContentOffsets = visibleContentOffsets || {};
+            var leftOffset = visibleContentOffsets.left || 0;
+            var topOffset = visibleContentOffsets.top || 0;
 
-        var visibleFragments = _.filter(textNodeFragments, function (rect) {
-            return isRectVisible(rect, false, frameDimensions);
-        });
+            var isTextNode = ($el[0].nodeType === Node.TEXT_NODE);
+            var clientRectList;
 
-        var fragment = pickerFunc(visibleFragments);
-        if (!fragment) {
-            //no visible fragment, empty text node?
-            return null;
-        }
-        var fragmentCorner = pickerFunc(getTextNodeRectCornerPairs(fragment));
-        // Reverse taking into account of visible content offsets
-        fragmentCorner.x -= visibleContentOffsets.left;
-        fragmentCorner.y -= visibleContentOffsets.top;
-        
-        var caretRange = getCaretRangeFromPoint(fragmentCorner.x, fragmentCorner.y);
+            if (isTextNode) {
+                var range = createRange();
+                range.selectNode($el[0]);
+                //noinspection JSUnresolvedFunction
+                clientRectList = range.getClientRects();
+            } else {
+                //noinspection JSUnresolvedFunction
+                clientRectList = $el[0].getClientRects();
+            }
 
-        // Workaround for inconsistencies with the caretRangeFromPoint IE TextRange based shim.
-        if (caretRange && caretRange.startContainer !== textNode && caretRange.startContainer === textNode.parentNode) {
-            if (DEBUG) console.log('ieTextRangeWorkaround needed');
-            var startOrEnd = pickerFunc([0, 1]);
-
-            // #1
-            if (caretRange.startOffset === caretRange.endOffset) {
-                var checkNode = caretRange.startContainer.childNodes[Math.max(caretRange.startOffset - 1, 0)];
-                if (checkNode === textNode) {
-                    caretRange = {
-                        startContainer: textNode,
-                        endContainer: textNode,
-                        startOffset: startOrEnd === 0 ? 0 : textNode.nodeValue.length,
-                        startOffset: startOrEnd === 0 ? 0 : textNode.nodeValue.length
-                    };
-                    if (DEBUG) console.log('ieTextRangeWorkaround #1:', caretRange);
+            // all the separate rectangles (for detecting position of the element
+            // split between several columns)
+            var clientRectangles = [];
+            for (var i = 0, l = clientRectList.length; i < l; ++i) {
+                if (clientRectList[i].height > 0 || clientRectList.length === 1) {
+                    // Firefox sometimes gets it wrong,
+                    // adding literally empty (height = 0) client rectangle preceding the real one,
+                    // that empty client rectanle shouldn't be retrieved
+                    clientRectangles.push(
+                        normalizeRectangle(clientRectList[i], leftOffset, topOffset));
                 }
             }
 
-            // Failed
-            else if (DEBUG) {
-                console.log('ieTextRangeWorkaround didn\'t work :(');
-            }
+            return clientRectangles;
         }
 
-        if (DEBUG)
-        console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'a0');
-        
-        // Desperately try to find it from all angles! Darn sub pixeling..
-        //TODO: remove the need for this brute-force method, since it's making the result non-deterministic
-        if (!caretRange || caretRange.startContainer !== textNode) {
-            caretRange = getCaretRangeFromPoint(fragmentCorner.x - 1, fragmentCorner.y);
-            
-            if (DEBUG)
-            console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'a1');
-        }
-        if (!caretRange || caretRange.startContainer !== textNode) {
-            caretRange = getCaretRangeFromPoint(fragmentCorner.x, fragmentCorner.y - 1);
-            
-            if (DEBUG)
-            console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'a2');
-        }
-        if (!caretRange || caretRange.startContainer !== textNode) {
-            caretRange = getCaretRangeFromPoint(fragmentCorner.x - 1, fragmentCorner.y - 1);
-            
-            if (DEBUG)
-            console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'a3');
-        }
-        if (!caretRange || caretRange.startContainer !== textNode) {
-            fragmentCorner.x = Math.floor(fragmentCorner.x);
-            fragmentCorner.y = Math.floor(fragmentCorner.y);
-            caretRange = getCaretRangeFromPoint(fragmentCorner.x, fragmentCorner.y);
-            
-            if (DEBUG)
-            console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'b0');
-        }
-        // Desperately try to find it from all angles! Darn sub pixeling..
-        if (!caretRange || caretRange.startContainer !== textNode) {
-            caretRange = getCaretRangeFromPoint(fragmentCorner.x - 1, fragmentCorner.y);
-            
-            if (DEBUG)
-            console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'b1');
-        }
-        if (!caretRange || caretRange.startContainer !== textNode) {
-            caretRange = getCaretRangeFromPoint(fragmentCorner.x, fragmentCorner.y - 1);
-            
-            if (DEBUG)
-            console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'b2');
-        }
-        if (!caretRange || caretRange.startContainer !== textNode) {
-            caretRange = getCaretRangeFromPoint(fragmentCorner.x - 1, fragmentCorner.y - 1);
-            
-            if (DEBUG)
-            console.log('getVisibleTextRangeOffsetsSelectedByFunc: ', 'b3');
-        }
+        function getNormalizedBoundingRect($el, visibleContentOffsets) {
+            visibleContentOffsets = visibleContentOffsets || {};
+            var leftOffset = visibleContentOffsets.left || 0;
+            var topOffset = visibleContentOffsets.top || 0;
 
-        // Still nothing? fall through..
-        if (!caretRange) {
-            
-            if (DEBUG)
-            console.warn('getVisibleTextRangeOffsetsSelectedByFunc: no caret range result');
-            
-            return null;
-        }
+            var isTextNode = ($el[0].nodeType === Node.TEXT_NODE);
+            var boundingClientRect;
 
-        if (caretRange.startContainer === textNode) {
-            return pickerFunc(
-                [{start: caretRange.startOffset, end: caretRange.startOffset + 1},
-                {start: caretRange.startOffset - 1, end: caretRange.startOffset}]
-            );
-        } else {
-            
-            if (DEBUG)
-            console.warn('getVisibleTextRangeOffsetsSelectedByFunc: incorrect caret range result');
-            
-            return null;
-        }
-    }
-
-    function findVisibleLeafNodeCfi(leafNodeList, pickerFunc, targetLeafNode, visibleContentOffsets, frameDimensions, startingParent) {
-        var index = 0;
-        if (!targetLeafNode) {
-            index = leafNodeList.indexOf(pickerFunc(leafNodeList));
-            var leafNode = leafNodeList[index];
-            if (leafNode) {
-                startingParent = leafNode.element;
-            }
-        } else {
-            index = leafNodeList.indexOf(targetLeafNode);
-            if (index === -1) {
-                //target leaf node not the right type? not in list?
-                return null;
-            }
-            // use the next leaf node in the list
-            index += pickerFunc([1, -1]);
-        }
-        var visibleLeafNode = leafNodeList[index];
-
-        if (!visibleLeafNode) {
-            return null;
-        }
-
-        var element = visibleLeafNode.element;
-        var textNode = visibleLeafNode.textNode;
-
-        if (targetLeafNode && element !== startingParent && !_.contains($(textNode || element).parents(), startingParent)) {
-            if (DEBUG) console.warn("findVisibleLeafNodeCfi: stopped recursion early");
-            return null;
-        }
-
-        //if a valid text node is found, try to generate a CFI with range offsets
-        if (textNode && isValidTextNode(textNode)) {
-            var visibleRange = getVisibleTextRangeOffsetsSelectedByFunc(textNode, pickerFunc, visibleContentOffsets, frameDimensions);
-            if (!visibleRange) {
-                //the text node is valid, but not visible..
-                //let's try again with the next node in the list
-                return findVisibleLeafNodeCfi(leafNodeList, pickerFunc, visibleLeafNode, visibleContentOffsets, frameDimensions, startingParent);
-            }
-            var range = createRange();
-            range.setStart(textNode, visibleRange.start);
-            range.setEnd(textNode, visibleRange.end);
-            return generateCfiFromDomRange(range);
-        } else {
-            //if not then generate a CFI for the element
-            return self.getCfiForElement(element);
-        }
-    }
-
-    // get an array of visible text elements and then select one based on the func supplied
-    // and generate a CFI for the first visible text subrange.
-    function getVisibleTextRangeCfiForTextElementSelectedByFunc(pickerFunc, visibleContentOffsets, frameDimensions) {        
-        var visibleLeafNodeList = self.getVisibleLeafNodes(visibleContentOffsets, frameDimensions);
-        return findVisibleLeafNodeCfi(visibleLeafNodeList, pickerFunc, null, visibleContentOffsets, frameDimensions);
-    }
-
-    function getLastVisibleTextRangeCfi(visibleContentOffsets, frameDimensions) {
-        return getVisibleTextRangeCfiForTextElementSelectedByFunc(_.last, visibleContentOffsets, frameDimensions);
-    }
-
-    function getFirstVisibleTextRangeCfi(visibleContentOffsets, frameDimensions) {
-        return getVisibleTextRangeCfiForTextElementSelectedByFunc(_.first, visibleContentOffsets, frameDimensions);
-    }
-
-    this.getFirstVisibleCfi = function (visibleContentOffsets, frameDimensions) {
-        return getFirstVisibleTextRangeCfi(visibleContentOffsets, frameDimensions);
-    };
-
-    this.getLastVisibleCfi = function (visibleContentOffsets, frameDimensions) {
-        return getLastVisibleTextRangeCfi(visibleContentOffsets, frameDimensions);
-    };
-
-    function generateCfiFromDomRange(range) {
-        return EPUBcfi.generateRangeComponent(
-            range.startContainer, range.startOffset,
-            range.endContainer, range.endOffset,
-            self.getClassBlacklist(), self.getElementBlacklist(), self.getIdBlacklist());
-    }
-
-    function getRangeTargetNodes(rangeCfi) {
-        return EPUBcfi.getRangeTargetElements(
-            getWrappedCfiRelativeToContent(rangeCfi),
-            self.getRootDocument(),
-            self.getClassBlacklist(), self.getElementBlacklist(), self.getIdBlacklist());
-    }
-
-    this.getDomRangeFromRangeCfi = function(rangeCfi, rangeCfi2, inclusive) {
-        var range = createRange();
-
-        if (!rangeCfi2) {
-            if (self.isRangeCfi(rangeCfi)) {
-                var rangeInfo = getRangeTargetNodes(rangeCfi);
-                range.setStart(rangeInfo.startElement, rangeInfo.startOffset);
-                range.setEnd(rangeInfo.endElement, rangeInfo.endOffset);
+            if (isTextNode) {
+                var range = createRange();
+                range.selectNode($el[0]);
+                boundingClientRect = range.getBoundingClientRect();
             } else {
-                var element = self.getElementByCfi(rangeCfi,
-                    this.getClassBlacklist(), this.getElementBlacklist(), this.getIdBlacklist())[0];
-                range.selectNode(element);
-            }
-        } else {
-            if (self.isRangeCfi(rangeCfi)) {
-                var rangeInfo1 = getRangeTargetNodes(rangeCfi);
-                range.setStart(rangeInfo1.startElement, rangeInfo1.startOffset);
-            } else {
-                var startElement = self.getElementByCfi(rangeCfi,
-                    this.getClassBlacklist(), this.getElementBlacklist(), this.getIdBlacklist())[0];
-                range.setStart(startElement, 0);
+                boundingClientRect = $el[0].getBoundingClientRect();
             }
 
-            if (self.isRangeCfi(rangeCfi2)) {
-                var rangeInfo2 = getRangeTargetNodes(rangeCfi2);
-                if (inclusive) {
-                    range.setEnd(rangeInfo2.endElement, rangeInfo2.endOffset);
-                } else {
-                    range.setEnd(rangeInfo2.startElement, rangeInfo2.startOffset);
+            // union of all rectangles wrapping the element
+            return normalizeRectangle(boundingClientRect, leftOffset, topOffset);
+        }
+
+        /**
+         * @private
+         * Converts TextRectangle object into a plain object,
+         * taking content offsets (=scrolls, position shifts etc.) into account
+         *
+         * @param {Object} textRect
+         * @param {number} leftOffset
+         * @param {number} topOffset
+         * @returns {Object}
+         */
+        function normalizeRectangle(textRect, leftOffset, topOffset) {
+
+            var plainRectObject = {
+                left: textRect.left,
+                right: textRect.right,
+                top: textRect.top,
+                bottom: textRect.bottom,
+                width: textRect.right - textRect.left,
+                height: textRect.bottom - textRect.top
+            };
+            leftOffset = leftOffset || 0;
+            topOffset = topOffset || 0;
+            offsetRectangle(plainRectObject, leftOffset, topOffset);
+            return plainRectObject;
+        }
+
+        /**
+         * @private
+         * Offsets plain object (which represents a TextRectangle).
+         *
+         * @param {Object} rect
+         * @param {number} leftOffset
+         * @param {number} topOffset
+         */
+        function offsetRectangle(rect, leftOffset, topOffset) {
+
+            rect.left += leftOffset;
+            rect.right += leftOffset;
+            rect.top += topOffset;
+            rect.bottom += topOffset;
+        }
+
+        /**
+         * @private
+         *
+         * When element is spilled over two or more columns,
+         * most of the time Webkit-based browsers
+         * still assign a single clientRectangle to it, setting its `top` property to negative value
+         * (so it looks like it's rendered based on the second column)
+         * Alas, sometimes they decide to continue the leftmost column - from _below_ its real height.
+         * In this case, `bottom` property is actually greater than element's height and had to be adjusted accordingly.
+         *
+         * Ugh.
+         *
+         * @param {Object} rect
+         * @param {boolean} [shouldLookForFirstVisibleColumn]
+         *      If set, there'll be two-phase adjustment
+         *      (to align a rectangle with a viewport)
+         * @param {Object} [frameDimensions]
+         * @param {number} [columnFullWidth]
+         * @param {boolean} [isRtl]
+         * @param {boolean} [isVwm]               isVerticalWritingMode
+         */
+        function adjustRectangle(rect, shouldLookForFirstVisibleColumn, frameDimensions, columnFullWidth, isRtl, isVwm) {
+
+            frameDimensions = frameDimensions || getFrameDimensions();
+            columnFullWidth = columnFullWidth || getColumnFullWidth();
+            isRtl = isRtl || isPageProgressionRightToLeft();
+            isVwm = isVwm || isVerticalWritingMode();
+
+            // Rectangle adjustment is not needed in VWM since it does not deal with columns
+            if (isVwm) {
+                return;
+            }
+
+            if (isRtl) {
+                columnFullWidth *= -1; // horizontal shifts are reverted in RTL mode
+            }
+
+            // first we go left/right (rebasing onto the very first column available)
+            while (rect.top < 0) {
+                offsetRectangle(rect, -columnFullWidth, frameDimensions.height);
+            }
+
+            // ... then, if necessary (for visibility offset checks),
+            // each column is tried again (now in reverse order)
+            // the loop will be stopped when the column is aligned with a viewport
+            // (i.e., is the first visible one).
+            if (shouldLookForFirstVisibleColumn) {
+                while (rect.bottom >= frameDimensions.height) {
+                    if (isRectVisible(rect, false, frameDimensions)) {
+                        break;
+                    }
+                    offsetRectangle(rect, columnFullWidth, -frameDimensions.height);
                 }
-            } else {
-                var endElement = self.getElementByCfi(rangeCfi2,
-                    this.getClassBlacklist(), this.getElementBlacklist(), this.getIdBlacklist())[0];
-                range.setEnd(endElement, endElement.childNodes.length);
             }
         }
-        return range;
-    };
 
-    this.getRangeCfiFromDomRange = function(domRange) {
-        return generateCfiFromDomRange(domRange);
-    };
+        this.getCfiForElement = function (element) {
 
-    function getWrappedCfi(partialCfi) {
-        return "epubcfi(" + partialCfi + ")";
-    }
-
-    function getWrappedCfiRelativeToContent(partialCfi) {
-        return "epubcfi(/99!" + partialCfi + ")";
-    }
-
-    this.isRangeCfi = function (partialCfi) {
-        return EPUBcfi.Interpreter.isRangeCfi(getWrappedCfi(partialCfi)) || EPUBcfi.Interpreter.isRangeCfi(getWrappedCfiRelativeToContent(partialCfi));
-    };
-
-    this.getPageForElementCfi = function (cfi, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var cfiParts = splitCfi(cfi);
-        var partialCfi = cfiParts.cfi;
-
-        if (this.isRangeCfi(partialCfi)) {
-            //if given a range cfi the exact page index needs to be calculated by getting node info from the range cfi
-            var nodeRangeInfoFromCfi = this.getNodeRangeInfoFromCfi(partialCfi);
-            //the page index is calculated from the node's client rectangle
-            return findPageBySingleRectangle(nodeRangeInfoFromCfi.clientRect);
-        }
-
-        var $element = getElementByPartialCfi(cfiParts.cfi, classBlacklist, elementBlacklist, idBlacklist);
-
-        if (!$element) {
-            return -1;
-        }
-
-        var pageIndex = this.getPageForPointOnElement($element, cfiParts.x, cfiParts.y);
-
-        return pageIndex;
-
-    };
-
-    function getElementByPartialCfi(cfi, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var contentDoc = self.getRootDocument();
-
-        var wrappedCfi = getWrappedCfi(cfi);
-
-        try {
-            //noinspection JSUnresolvedVariable
-            var $element = EPUBcfi.getTargetElementWithPartialCFI(wrappedCfi, contentDoc, classBlacklist, elementBlacklist, idBlacklist);
-
-        } catch (ex) {
-            //EPUBcfi.Interpreter can throw a SyntaxError
-        }
-
-        if (!$element || $element.length == 0) {
-            console.log("Can't find element for CFI: " + cfi);
-            return undefined;
-        }
-
-        return $element;
-    }
-
-    this.getElementFromPoint = function (x, y) {
-
-        var document = self.getRootDocument();
-        return document.elementFromPoint(x, y);
-    };
-
-    this.getNodeRangeInfoFromCfi = function (cfi) {
-        var contentDoc = self.getRootDocument();
-        if (self.isRangeCfi(cfi)) {
-            var wrappedCfi = getWrappedCfiRelativeToContent(cfi);
-
-            try {
-                //noinspection JSUnresolvedVariable
-                var nodeResult = EPUBcfi.Interpreter.getRangeTargetElements(wrappedCfi, contentDoc,
-                    this.getClassBlacklist(),
-                    this.getElementBlacklist(),
-                    this.getIdBlacklist());
-
-                if (debugMode) {
-                    console.log(nodeResult);
-                }
-            } catch (ex) {
-                //EPUBcfi.Interpreter can throw a SyntaxError
-            }
-
-            if (!nodeResult) {
-                console.log("Can't find nodes for range CFI: " + cfi);
-                return undefined;
-            }
-
-            var startRangeInfo = {node: nodeResult.startElement, offset: nodeResult.startOffset};
-            var endRangeInfo = {node: nodeResult.endElement, offset: nodeResult.endOffset};
-            var nodeRangeClientRect =
-                startRangeInfo && endRangeInfo ?
-                    getNodeRangeClientRect(
-                        startRangeInfo.node,
-                        startRangeInfo.offset,
-                        endRangeInfo.node,
-                        endRangeInfo.offset)
-                    : null;
-
-            if (debugMode) {
-                console.log(nodeRangeClientRect);
-                addOverlayRect(nodeRangeClientRect, 'purple', contentDoc);
-            }
-
-            return {startInfo: startRangeInfo, endInfo: endRangeInfo, clientRect: nodeRangeClientRect}
-        } else {
-            var $element = self.getElementByCfi(cfi,
+            var cfi = EPUBcfi.Generator.generateElementCFIComponent(element,
                 this.getClassBlacklist(),
                 this.getElementBlacklist(),
                 this.getIdBlacklist());
 
-            var visibleContentOffsets = getVisibleContentOffsets();
-            return {startInfo: null, endInfo: null, clientRect: getNormalizedBoundingRect($element, visibleContentOffsets)};
-        }
-    };
-
-    this.isNodeFromRangeCfiVisible = function (cfi) {
-        var nodeRangeInfo = this.getNodeRangeInfoFromCfi(cfi);
-        if (nodeRangeInfo) {
-            return isRectVisible(nodeRangeInfo.clientRect, false);
-        } else {
-            return undefined;
-        }
-    };
-
-    this.getElementByCfi = function (cfi, classBlacklist, elementBlacklist, idBlacklist) {
-
-        var cfiParts = splitCfi(cfi);
-        return getElementByPartialCfi(cfiParts.cfi, classBlacklist, elementBlacklist, idBlacklist);
-    };
-
-    this.getPageForElement = function ($element) {
-
-        return this.getPageForPointOnElement($element, 0, 0);
-    };
-
-    this.getPageForPointOnElement = function ($element, x, y) {
-
-        var pageIndex = findPageByRectangles($element, y);
-        if (pageIndex === null) {
-            console.warn('Impossible to locate a hidden element: ', $element);
-            return 0;
-        }
-        return pageIndex;
-    };
-
-    this.getVerticalOffsetForElement = function ($element) {
-      return this.getVerticalOffsetForPointOnElement($element, 0, 0);
-    };
-
-    this.getVerticalOffsetForPointOnElement = function ($element, x, y) {
-      var elementRect = Helpers.Rect.fromElement($element);
-      return Math.ceil(elementRect.top + y * elementRect.height / 100);
-    };
-
-    this.getElementById = function (id) {
-
-        var contentDoc = this.getRootDocument();
-
-        var $element = $(contentDoc.getElementById(id));
-        //$("#" + Helpers.escapeJQuerySelector(id), contentDoc);
-
-        if($element.length == 0) {
-            return undefined;
-        }
-
-        return $element;
-    };
-
-    this.getPageForElementId = function (id) {
-
-        var $element = this.getElementById(id);
-        if (!$element) {
-            return -1;
-        }
-
-        return this.getPageForElement($element);
-    };
-
-    function splitCfi(cfi) {
-
-        var ret = {
-            cfi: "",
-            x: 0,
-            y: 0
+            if (cfi[0] == "!") {
+                cfi = cfi.substring(1);
+            }
+            return cfi;
         };
 
-        var ix = cfi.indexOf("@");
+        this.getVisibleCfiFromPoint = function (x, y, precisePoint) {
+            var document = self.getRootDocument();
+            var firstVisibleCaretRange = getCaretRangeFromPoint(x, y, document);
+            var elementFromPoint = document.elementFromPoint(x, y);
+            var invalidElementFromPoint = !elementFromPoint || elementFromPoint === document.documentElement;
 
-        if (ix != -1) {
-            var terminus = cfi.substring(ix + 1);
-
-            var colIx = terminus.indexOf(":");
-            if (colIx != -1) {
-                ret.x = parseInt(terminus.substr(0, colIx));
-                ret.y = parseInt(terminus.substr(colIx + 1));
-            }
-            else {
-                console.log("Unexpected terminating step format");
-            }
-
-            ret.cfi = cfi.substring(0, ix);
-        }
-        else {
-
-            ret.cfi = cfi;
-        }
-
-        return ret;
-    }
-
-    // returns raw DOM element (not $ jQuery-wrapped)
-    this.getFirstVisibleMediaOverlayElement = function(visibleContentOffsets) {
-        var $root = $(this.getBodyElement());
-        if (!$root || !$root.length || !$root[0]) return undefined;
-
-        var that = this;
-
-        var firstPartial = undefined;
-
-        function traverseArray(arr) {
-            if (!arr || !arr.length) return undefined;
-
-            for (var i = 0, count = arr.length; i < count; i++) {
-                var item = arr[i];
-                if (!item) continue;
-
-                var $item = $(item);
-
-                if ($item.data("mediaOverlayData")) {
-                    var visible = that.getElementVisibility($item, visibleContentOffsets);
-                    if (visible) {
-                        if (!firstPartial) firstPartial = item;
-
-                        if (visible == 100) return item;
-                    }
+            if (precisePoint) {
+                if (!elementFromPoint || invalidElementFromPoint) {
+                    return null;
                 }
-                else {
-                    var elem = traverseArray(item.children);
-                    if (elem) return elem;
+                var testRect = getNodeContentsClientRect(elementFromPoint);
+                if (!isRectVisible(testRect, false)) {
+                    return null;
+                }
+                if ((x < testRect.left || x > testRect.right) || (y < testRect.top || y > testRect.bottom)) {
+                    return null;
                 }
             }
 
-            return undefined;
+            if (!firstVisibleCaretRange) {
+                if (invalidElementFromPoint) {
+                    console.error("Could not generate CFI no visible element on page");
+                    return null;
+                }
+                firstVisibleCaretRange = createRange();
+                firstVisibleCaretRange.selectNode(elementFromPoint);
+            }
+
+            var range = firstVisibleCaretRange;
+            var cfi;
+            //if we get a text node we need to get an approximate range for the first visible character offsets.
+            var node = range.startContainer;
+            var startOffset, endOffset;
+            if (node.nodeType === Node.TEXT_NODE) {
+                if (precisePoint && node.parentNode !== elementFromPoint) {
+                    return null;
+                }
+                if (node.length === 1 && range.startOffset === 1) {
+                    startOffset = 0;
+                    endOffset = 1;
+                } else if (range.startOffset === node.length) {
+                    startOffset = range.startOffset - 1;
+                    endOffset = range.startOffset;
+                } else {
+                    startOffset = range.startOffset;
+                    endOffset = range.startOffset + 1;
+                }
+                var wrappedRange = {
+                    startContainer: node,
+                    endContainer: node,
+                    startOffset: startOffset,
+                    endOffset: endOffset,
+                    commonAncestorContainer: range.commonAncestorContainer
+                };
+
+                if (_DEBUG) {
+                    drawDebugOverlayFromDomRange(wrappedRange);
+                }
+
+                cfi = generateCfiFromDomRange(wrappedRange);
+            } else if (node.nodeType === Node.ELEMENT_NODE) {
+                node =
+                    range.startContainer.childNodes[range.startOffset] ||
+                    range.startContainer.childNodes[0] ||
+                    range.startContainer;
+                if (precisePoint && node !== elementFromPoint) {
+                    return null;
+                }
+
+                if (node.nodeType !== Node.ELEMENT_NODE) {
+                    cfi = generateCfiFromDomRange(range);
+                } else {
+                    cfi = self.getCfiForElement(node);
+                }
+            } else {
+                if (precisePoint && node !== elementFromPoint) {
+                    return null;
+                }
+
+                cfi = self.getCfiForElement(elementFromPoint);
+            }
+
+            //This should not happen but if it does print some output, just in case
+            if (cfi && cfi.indexOf('NaN') !== -1) {
+                console.log('Did not generate a valid CFI:' + cfi);
+                return undefined;
+            }
+            return cfi;
+        };
+
+        this.getRangeCfiFromPoints = function (startX, startY, endX, endY) {
+            var document = self.getRootDocument();
+            var start = getCaretRangeFromPoint(startX, startY, document),
+                end = getCaretRangeFromPoint(endX, endY, document),
+                range = createRange();
+            range.setStart(start.startContainer, start.startOffset);
+            range.setEnd(end.startContainer, end.startOffset);
+            // if we're looking at a text node create a nice range (n, n+1)
+            if (start.startContainer === start.endContainer && start.startContainer.nodeType === Node.TEXT_NODE && end.startContainer.length > end.startOffset + 1) {
+                range.setEnd(end.startContainer, end.startOffset + 1);
+            }
+            return generateCfiFromDomRange(range);
+        };
+
+        function determineSplit(range, division) {
+            var percent = division / 100;
+            return Math.round((range.endOffset - range.startOffset ) * percent);
         }
 
-        var el = traverseArray([$root[0]]);
-        if (!el) el = firstPartial;
-        return el;
+        function splitRange(range, division) {
+            if (range.endOffset - range.startOffset === 1) {
+                return [range];
+            }
+            var length = determineSplit(range, division);
+            var textNode = range.startContainer;
+            var leftNodeRange = range.cloneRange();
+            leftNodeRange.setStart(textNode, range.startOffset);
+            leftNodeRange.setEnd(textNode, range.startOffset + length);
+            var rightNodeRange = range.cloneRange();
+            rightNodeRange.setStart(textNode, range.startOffset + length);
+            rightNodeRange.setEnd(textNode, range.endOffset);
 
-        // var $elements = this.getMediaOverlayElements($root);
-        // return this.getVisibleElements($elements, visibleContentOffsets);
-    };
+            return [leftNodeRange, rightNodeRange];
 
-    this.getElementVisibility = function ($element, visibleContentOffsets) {
-        return checkVisibilityByRectangles($element, true, visibleContentOffsets);
-    };
+        }
 
+        // create Range from target node and search for visibleOutput Range
+        function getVisibleTextRangeOffsets(textNode, pickerFunc, visibleContentOffsets, frameDimensions) {
+            visibleContentOffsets = visibleContentOffsets || getVisibleContentOffsets();
 
-    this.isElementVisible = checkVisibilityByRectangles;
-
-    this.getVisibleElementsWithFilter = function (visibleContentOffsets, filterFunction) {
-        var $elements = this.getElementsWithFilter($(this.getBodyElement()), filterFunction);
-        return this.getVisibleElements($elements, visibleContentOffsets);
-    };
-
-    this.getAllElementsWithFilter = function (filterFunction) {
-        var $elements = this.getElementsWithFilter($(this.getBodyElement()), filterFunction);
-        return $elements;
-    };
-
-    this.getAllVisibleElementsWithSelector = function (selector, visibleContentOffset) {
-        var elements = $(selector, this.getRootElement());
-        var $newElements = [];
-        $.each(elements, function () {
-            $newElements.push($(this));
-        });
-        var visibleElements = this.getVisibleElements($newElements, visibleContentOffset);
-        return visibleElements;
-    };
-
-    this.getVisibleElements = function ($elements, visibleContentOffsets, frameDimensions) {
-
-        var visibleElements = [];
-
-        _.each($elements, function ($node) {
-            var node = $node[0];
-            var isTextNode = (node.nodeType === Node.TEXT_NODE);
-            var element = isTextNode ? node.parentElement : node;
-            var visibilityPercentage = checkVisibilityByRectangles(
-                $node, true, visibleContentOffsets, frameDimensions);
-
-            if (visibilityPercentage) {
-                visibleElements.push({
-                    element: element, // DOM Element is pushed
-                    textNode: isTextNode ? node : null,
-                    percentVisible: visibilityPercentage
+            var nodeRange = createRangeFromNode(textNode);
+            var nodeClientRects = getRangeClientRectList(nodeRange, visibleContentOffsets);
+            var splitRatio = deterministicSplit(nodeClientRects, pickerFunc([0, 1]));
+            return getTextRangeOffset(splitRange(nodeRange, splitRatio), visibleContentOffsets,
+                pickerFunc([0, 1]), splitRatio,
+                function (rect) {
+                    return (isVerticalWritingMode() ? rect.height : rect.width) && isRectVisible(rect, false, frameDimensions);
                 });
-            }
-        });
-
-        return visibleElements;
-    };
-
-    this.getVisibleLeafNodes = function (visibleContentOffsets, frameDimensions) {
-
-        if (_cacheEnabled) {
-            var cacheKey = (options.paginationInfo || {}).currentSpreadIndex || 0;
-            var fromCache = _cache.visibleLeafNodes.get(cacheKey);
-            if (fromCache) {
-                return fromCache;
-            }
         }
 
-        var $elements = this.getLeafNodeElements($(this.getBodyElement()));
+        function deterministicSplit(rectList, directionBit) {
+            var split = 0;
+            // Calculate total cumulative Height for both visible portions and invisible portions and find the split
+            var visibleRects = _.filter(rectList, function (rect) {
+                return (isVerticalWritingMode() ? rect.height : rect.width) && isRectVisible(rect, false, getFrameDimensions());
+            });
+            var visibleRectHeight = calculateCumulativeHeight(visibleRects);
+            var invisibleRectHeight = totalHeight - visibleRectHeight;
+            var totalHeight = calculateCumulativeHeight(rectList);
 
-        var visibleElements = this.getVisibleElements($elements, visibleContentOffsets, frameDimensions);
-
-        if (_cacheEnabled) {
-            _cache.visibleLeafNodes.set(cacheKey, visibleElements);
-        }
-
-        return visibleElements;
-    };
-
-    this.getElementsWithFilter = function ($root, filterFunction) {
-
-        var $elements = [];
-
-        function traverseCollection(elements) {
-
-            if (elements == undefined) return;
-
-            for (var i = 0, count = elements.length; i < count; i++) {
-
-                var $element = $(elements[i]);
-
-                if (filterFunction($element)) {
-                    $elements.push($element);
-                }
-                else {
-                    traverseCollection($element[0].children);
-                }
-
+            if (visibleRectHeight === totalHeight) {
+                // either all visible or split
+                // heuristic: slight bias to increase likelihood of hits
+                return directionBit ? 55 : 45;
+            } else {
+                split = 100 * (visibleRectHeight / totalHeight);
+                return invisibleRectHeight > visibleRectHeight ? split + 5 : split - 5;
             }
         }
 
-        traverseCollection([$root[0]]);
-
-        return $elements;
-    };
-
-    function isElementBlacklisted(element) {
-        var isBlacklisted = false;
-        var classAttribute = element.className;
-        var classList = classAttribute ? classAttribute.split(' ') : [];
-        var id = element.id;
-
-        var classBlacklist = self.getClassBlacklist();
-        if (classList.length === 1 && _.contains(classBlacklist, classList[0])) {
-            isBlacklisted = true;
-            return;
-        } else if (classList.length && _.intersection(classBlacklist, classList).length) {
-            isBlacklisted = true;
-            return;
-        }
-
-        if (id && id.length && _.contains(self.getIdBlacklist(), id)) {
-            isBlacklisted = true;
-            return;
-        }
-
-        return isBlacklisted;
-    }
-
-    this.getLeafNodeElements = function ($root) {
-
-        if (_cacheEnabled) {
-            var fromCache = _cache.leafNodeElements.get($root);
-            if (fromCache) {
-                return fromCache;
-            }
-        }
-
-        var nodeIterator = document.createNodeIterator(
-            $root[0],
-            NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
-            function() {
-                return NodeFilter.FILTER_ACCEPT;
-            },
-            false
-        );
-
-        var $leafNodeElements = [];
-
-        var node;
-        while ((node = nodeIterator.nextNode())) {
-            var isLeafNode = node.nodeType === Node.ELEMENT_NODE && !node.childElementCount && !isValidTextNodeContent(node.textContent);
-            if (isLeafNode || isValidTextNode(node)){
-                var element = (node.nodeType === Node.TEXT_NODE) ? node.parentElement : node;
-                if (!isElementBlacklisted(element)) {
-                    $leafNodeElements.push($(node));
-                }
-            }
-        }
-
-        if (_cacheEnabled) {
-            _cache.leafNodeElements.set($root, $leafNodeElements);
-        }
-
-        return $leafNodeElements;
-    };
-
-    function isValidTextNode(node) {
-
-        if (node.nodeType === Node.TEXT_NODE) {
-
-            return isValidTextNodeContent(node.nodeValue);
-        }
-
-        return false;
-
-    }
-
-    function isValidTextNodeContent(text) {
-        // Heuristic to find a text node with actual text
-        // If we don't do this, we may get a reference to a node that doesn't get rendered
-        // (such as for example a node that has tab character and a bunch of spaces)
-        // this is would be bad! ask me why.
-        return !!text.trim().length;
-    }
-
-    this.getElements = function (selector) {
-        if (!selector) {
-            return $(this.getRootElement()).children();
-        }
-        return $(selector, this.getRootElement());
-    };
-
-    this.getElement = function (selector) {
-
-        var $element = this.getElements(selector);
-
-        if($element.length > 0) {
-            return $element;
-        }
-
-        return undefined;
-    };
-
-    function Cache() {
-        var that = this;
-
-        //true = survives invalidation
-        var props = {
-            leafNodeElements: true,
-            visibleLeafNodes: false
-        };
-
-        _.each(props, function (val, key) {
-            that[key] = new Map();
-        });
-
-        this._invalidate = function () {
-            _.each(props, function (val, key) {
-                if (!val) {
-                    that[key] = new Map();
+        function rectTopHash (rectList) {
+            // sort the rectangles by top value
+            var sortedList = rectList.sort(function (a, b) {
+                return a.top < b.top;
+            });
+            var lineMap = [];
+            _.each(sortedList, function (rect) {
+                var key = rect.top;
+                if (!lineMap[key]) {
+                    lineMap[key] = [rect.height];
+                } else {
+                    var currentLine = lineMap[key];
+                    currentLine.push(rect.height);
+                    lineMap[key] = currentLine;
                 }
             });
         }
-    }
 
-    var _cache = new Cache();
+        function calculateCumulativeHeight (rectList) {
+            var lineMap = rectTopHash(rectList);
+            var height = 0;
+            _.each(lineMap, function (line) {
+                height = height + Math.max.apply(null, line);
+            });
+            return height;
+        }
 
-    var _cacheEnabled = false;
-
-    this.invalidateCache = function () {
-        _cache._invalidate();
-    };
-
-
-    // dmitry debug
-    // dmitry debug
-    // dmitry debug
-    // dmitry debug
-    // dmitry debug
-    // dmitry debug
-
-    var parseContentCfi = function(cont) {
-        return cont.replace(/\[(.*?)\]/, "").split(/[\/,:]/).map(function(n) { return parseInt(n); }).filter(Boolean);
-    };
-
-    var contentCfiComparator = function(cont1, cont2) {
-        cont1 = this.parseContentCfi(cont1);
-        cont2 = this.parseContentCfi(cont2);
-
-        //compare cont arrays looking for differences
-        for (var i=0; i<cont1.length; i++) {
-            if (cont1[i] > cont2[i]) {
-                return 1;
+        function getTextRangeOffset(startingSet, visibleContentOffsets, directionBit, splitRatio, filterFunc) {
+            var runCount = 0;
+            var currRange = startingSet;
+            //begin iterative binary search, each iteration will check Range length and visibility
+            while (currRange.length !== 1) {
+                runCount++;
+                var currTextNodeFragments = getRangeClientRectList(currRange[directionBit], visibleContentOffsets);
+                if (hasVisibleFragments(currTextNodeFragments, filterFunc)) {
+                    currRange = splitRange(currRange[directionBit], splitRatio);
+                }
+                // No visible fragment Look in other half
+                else {
+                    currRange = splitRange(currRange[directionBit ? 0 : 1], splitRatio);
+                }
             }
-            else if (cont1[i] < cont2[i]) {
+            if (_DEBUG) {
+                console.debug('getVisibleTextRangeOffsets:getTextRangeOffset:runCount', runCount);
+                window.top._DEBUG_visibleTextRangeOffsetsRuns.push(runCount);
+            }
+            var resultRange = currRange[0];
+            if (resultRange) {
+                resultRange.collapse(!directionBit);
+            }
+            return resultRange;
+        }
+
+        function hasVisibleFragments(fragments, filterFunc) {
+            var visibleFragments = _.filter(fragments, filterFunc);
+            return !!visibleFragments.length;
+        }
+
+        function findVisibleLeafNodeCfi(visibleLeafNode, pickerFunc, visibleContentOffsets, frameDimensions) {
+            if (!visibleLeafNode) {
+                return null;
+            }
+
+            var element = visibleLeafNode.element;
+            var textNode = visibleLeafNode.textNode;
+
+            //if a valid text node is found, try to generate a CFI with range offsets
+            if (textNode && isValidTextNode(textNode)) {
+                var visibleRange = getVisibleTextRangeOffsets(textNode, pickerFunc, visibleContentOffsets, frameDimensions);
+                if (!visibleRange) {
+                    if (_DEBUG) console.warn("findVisibleLeafNodeCfi: failed to find text range offset");
+                    return null;
+                }
+                return generateCfiFromDomRange(visibleRange);
+            } else {
+                //if not then generate a CFI for the element
+                return self.getCfiForElement(element);
+            }
+        }
+
+        function getLastVisibleTextRangeCfi(visibleContentOffsets, frameDimensions) {
+            var visibleLeafNode = self.findLastVisibleElement(visibleContentOffsets, frameDimensions);
+            return findVisibleLeafNodeCfi(visibleLeafNode, _.last, visibleContentOffsets, frameDimensions);
+        }
+
+        function getFirstVisibleTextRangeCfi(visibleContentOffsets, frameDimensions) {
+            var visibleLeafNode = self.findFirstVisibleElement(visibleContentOffsets, frameDimensions);
+            return findVisibleLeafNodeCfi(visibleLeafNode, _.first, visibleContentOffsets, frameDimensions);
+        }
+
+        this.getFirstVisibleCfi = function (visibleContentOffsets, frameDimensions) {
+            return getFirstVisibleTextRangeCfi(visibleContentOffsets, frameDimensions);
+        };
+
+        this.getLastVisibleCfi = function (visibleContentOffsets, frameDimensions) {
+            return getLastVisibleTextRangeCfi(visibleContentOffsets, frameDimensions);
+        };
+
+        function generateCfiFromDomRange(range) {
+            if (range.collapsed && range.startContainer.nodeType === Node.TEXT_NODE) {
+                return EPUBcfi.generateCharacterOffsetCFIComponent(
+                    range.startContainer, range.startOffset,
+                    ['cfi-marker'], [], ["MathJax_Message", "MathJax_SVG_Hidden"]);
+            } else if (range.collapsed) {
+                return self.getCfiForElement(range.startContainer);
+            } else {
+                return EPUBcfi.generateRangeComponent(
+                    range.startContainer, range.startOffset,
+                    range.endContainer, range.endOffset,
+                    self.getClassBlacklist(), self.getElementBlacklist(), self.getIdBlacklist());
+            }
+        }
+
+        this.getDomRangeFromRangeCfi = function (rangeCfi, rangeCfi2, inclusive) {
+            var range = createRange();
+
+            if (!rangeCfi2) {
+                if (self.isRangeCfi(rangeCfi)) {
+                    var rangeInfo = self.getNodeRangeInfoFromCfi(rangeCfi);
+                    range.setStart(rangeInfo.startInfo.node, rangeInfo.startInfo.offset);
+                    range.setEnd(rangeInfo.endInfo.node, rangeInfo.endInfo.offset);
+                } else {
+                    var element = self.getElementByCfi(rangeCfi,
+                        this.getClassBlacklist(), this.getElementBlacklist(), this.getIdBlacklist())[0];
+                    range.selectNode(element);
+                }
+            } else {
+                if (self.isRangeCfi(rangeCfi)) {
+                    var rangeInfo1 = self.getNodeRangeInfoFromCfi(rangeCfi);
+                    range.setStart(rangeInfo1.startInfo.node, rangeInfo1.startInfo.offset);
+                } else {
+                    var startElement = self.getElementByCfi(rangeCfi,
+                        this.getClassBlacklist(), this.getElementBlacklist(), this.getIdBlacklist())[0];
+                    range.setStart(startElement, 0);
+                }
+
+                if (self.isRangeCfi(rangeCfi2)) {
+                    var rangeInfo2 = self.getNodeRangeInfoFromCfi(rangeCfi2);
+                    if (inclusive) {
+                        range.setEnd(rangeInfo2.endInfo.node, rangeInfo2.endInfo.offset);
+                    } else {
+                        range.setEnd(rangeInfo2.startInfo.node, rangeInfo2.startInfo.offset);
+                    }
+                } else {
+                    var endElement = self.getElementByCfi(rangeCfi2,
+                        this.getClassBlacklist(), this.getElementBlacklist(), this.getIdBlacklist())[0];
+                    range.setEnd(endElement, endElement.childNodes.length);
+                }
+            }
+            return range;
+        };
+
+        this.getRangeCfiFromDomRange = function (domRange) {
+            return generateCfiFromDomRange(domRange);
+        };
+
+        function getWrappedCfi(partialCfi) {
+            return "epubcfi(/99!" + partialCfi + ")";
+        }
+
+        this.isRangeCfi = function (partialCfi) {
+            return _isRangeCfi(partialCfi) || _hasTextTerminus(partialCfi);
+        };
+
+        function _isRangeCfi(partialCfi) {
+            return EPUBcfi.Interpreter.isRangeCfi(getWrappedCfi(partialCfi));
+        }
+
+        function _hasTextTerminus(partialCfi) {
+            return EPUBcfi.Interpreter.hasTextTerminus(getWrappedCfi(partialCfi));
+        }
+
+        this.getPageIndexDeltaForCfi = function (partialCfi, classBlacklist, elementBlacklist, idBlacklist) {
+
+            if (this.isRangeCfi(partialCfi)) {
+                //if given a range cfi the exact page index needs to be calculated by getting node info from the range cfi
+                var nodeRangeInfoFromCfi = this.getNodeRangeInfoFromCfi(partialCfi);
+                //the page index is calculated from the node's client rectangle
+                return findPageIndexDeltaBySingleRectangle(nodeRangeInfoFromCfi.clientRect);
+            }
+
+            var $element = getElementByPartialCfi(partialCfi, classBlacklist, elementBlacklist, idBlacklist);
+
+            if (!$element) {
                 return -1;
             }
+
+            return this.getPageIndexDeltaForElement($element);
+        };
+
+        function getElementByPartialCfi(cfi, classBlacklist, elementBlacklist, idBlacklist) {
+
+            var contentDoc = self.getRootDocument();
+
+            var wrappedCfi = getWrappedCfi(cfi);
+
+            try {
+                //noinspection JSUnresolvedVariable
+                var $element = EPUBcfi.getTargetElement(wrappedCfi, contentDoc, classBlacklist, elementBlacklist, idBlacklist);
+
+            } catch (ex) {
+                //EPUBcfi.Interpreter can throw a SyntaxError
+            }
+
+            if (!$element || $element.length == 0) {
+                console.log("Can't find element for CFI: " + cfi);
+                return undefined;
+            }
+
+            return $element;
         }
 
-        //no differences found, so confirm that cont2 did not have values we didn't check
-        if (cont1.length < cont2.length) {
-            return -1;
+        this.getElementFromPoint = function (x, y) {
+
+            var document = self.getRootDocument();
+            return document.elementFromPoint(x, y);
+        };
+
+        this.getNodeRangeInfoFromCfi = function (cfi) {
+            var contentDoc = self.getRootDocument();
+
+            var wrappedCfi = getWrappedCfi(cfi);
+            if (_isRangeCfi(cfi)) {
+
+                try {
+                    //noinspection JSUnresolvedVariable
+                    var nodeResult = EPUBcfi.Interpreter.getRangeTargetElements(wrappedCfi, contentDoc,
+                        this.getClassBlacklist(),
+                        this.getElementBlacklist(),
+                        this.getIdBlacklist());
+
+                    if (_DEBUG) {
+                        console.log(nodeResult);
+                    }
+                } catch (ex) {
+                    //EPUBcfi.Interpreter can throw a SyntaxError
+                }
+
+                if (!nodeResult) {
+                    console.log("Can't find nodes for range CFI: " + cfi);
+                    return undefined;
+                }
+
+                var startRangeInfo = {node: nodeResult.startElement, offset: nodeResult.startOffset};
+                var endRangeInfo = {node: nodeResult.endElement, offset: nodeResult.endOffset};
+                var nodeRangeClientRect =
+                    startRangeInfo && endRangeInfo ?
+                        getNodeRangeClientRect(
+                            startRangeInfo.node,
+                            startRangeInfo.offset,
+                            endRangeInfo.node,
+                            endRangeInfo.offset)
+                        : null;
+
+                if (_DEBUG) {
+                    console.log(nodeRangeClientRect);
+                    addOverlayRect(nodeRangeClientRect, 'purple', contentDoc);
+                }
+
+                return {startInfo: startRangeInfo, endInfo: endRangeInfo, clientRect: nodeRangeClientRect};
+            } else if (_hasTextTerminus(cfi)) {
+
+                try {
+                    //noinspection JSUnresolvedVariable
+                    var textTerminusResult = EPUBcfi.Interpreter.getTextTerminusInfo(wrappedCfi, contentDoc,
+                        this.getClassBlacklist(),
+                        this.getElementBlacklist(),
+                        this.getIdBlacklist());
+
+                    if (_DEBUG) {
+                        console.log(textTerminusResult);
+                    }
+                } catch (ex) {
+                    //EPUBcfi.Interpreter can throw a SyntaxError
+                }
+
+                if (!textTerminusResult) {
+                    console.log("Can't find node for text term CFI: " + cfi);
+                    return undefined;
+                }
+
+                var textTermRangeInfo = {node: textTerminusResult.textNode, offset: textTerminusResult.textOffset};
+                var textTermClientRect =
+                    getNodeRangeClientRect(
+                        textTermRangeInfo.node,
+                        textTermRangeInfo.offset,
+                        textTermRangeInfo.node,
+                        textTermRangeInfo.offset);
+                if (_DEBUG) {
+                    console.log(textTermClientRect);
+                    addOverlayRect(textTermClientRect, 'purple', contentDoc);
+                }
+
+                return {startInfo: textTermRangeInfo, endInfo: textTermRangeInfo, clientRect: textTermClientRect};
+            } else {
+                var $element = self.getElementByCfi(cfi,
+                    this.getClassBlacklist(),
+                    this.getElementBlacklist(),
+                    this.getIdBlacklist());
+
+                var visibleContentOffsets = getVisibleContentOffsets();
+                return {
+                    startInfo: null,
+                    endInfo: null,
+                    clientRect: getNormalizedBoundingRect($element, visibleContentOffsets)
+                };
+            }
+        };
+
+        this.isNodeFromRangeCfiVisible = function (cfi) {
+            var nodeRangeInfo = this.getNodeRangeInfoFromCfi(cfi);
+            if (nodeRangeInfo) {
+                return isRectVisible(nodeRangeInfo.clientRect, false);
+            } else {
+                return undefined;
+            }
+        };
+
+        this.getNearestCfiFromElement = function (element) {
+            var collapseToStart;
+            var chosenNode;
+            var isTextNode;
+
+            var siblingTextNodesAndSelf = _.filter(element.parentNode.childNodes, function (n) {
+                return n === element || isValidTextNode(n);
+            });
+
+            var indexOfSelf = siblingTextNodesAndSelf.indexOf(element);
+            var nearestNode = siblingTextNodesAndSelf[indexOfSelf - 1];
+            if (!nearestNode) {
+                nearestNode = siblingTextNodesAndSelf[indexOfSelf + 1];
+                collapseToStart = true;
+            }
+            if (!nearestNode) {
+                nearestNode = _.last(this.getLeafNodeElements($(element.previousElementSibling)));
+                if (!nearestNode) {
+                    collapseToStart = true;
+                    nearestNode = _.first(this.getLeafNodeElements($(element.nextElementSibling)));
+                }
+            }
+
+            // Prioritize text node use
+            if (isValidTextNode(nearestNode)) {
+                chosenNode = nearestNode;
+                isTextNode = true;
+            } else if (isElementNode(nearestNode)) {
+                chosenNode = nearestNode;
+            } else if (isElementNode(element.previousElementSibling)) {
+                chosenNode = element.previousElementSibling;
+            } else if (isElementNode(element.nextElementSibling)) {
+                chosenNode = element.nextElementSibling;
+            } else {
+                chosenNode = element.parentNode;
+            }
+
+            if (isTextNode) {
+                var range = chosenNode.ownerDocument.createRange();
+                range.selectNodeContents(chosenNode);
+                range.collapse(collapseToStart);
+                return this.getRangeCfiFromDomRange(range);
+            } else {
+                return this.getCfiForElement(chosenNode);
+            }
+        };
+
+        this.getElementByCfi = function (partialCfi, classBlacklist, elementBlacklist, idBlacklist) {
+            return getElementByPartialCfi(partialCfi, classBlacklist, elementBlacklist, idBlacklist);
+        };
+
+        this.getPageIndexDeltaForElement = function ($element) {
+
+            // first try to get delta by rectangles
+            var pageIndex = findPageIndexDeltaByRectangles($element);
+
+            // for hidden elements (e.g., page breaks) there are no rectangles
+            if (pageIndex === null) {
+
+                // get CFI of the nearest (to hidden) element, and then get CFI's element
+                var nearestVisibleElement = this.getElementByCfi(this.getNearestCfiFromElement($element[0]));
+
+                // find page index by rectangles again, for the nearest element
+                return findPageIndexDeltaByRectangles(nearestVisibleElement);
+            }
+            return pageIndex;
+        };
+
+        this.getElementById = function (id) {
+
+            var contentDoc = this.getRootDocument();
+
+            var $element = $(contentDoc.getElementById(id));
+            //$("#" + Helpers.escapeJQuerySelector(id), contentDoc);
+
+            if ($element.length == 0) {
+                return undefined;
+            }
+
+            return $element;
+        };
+
+        this.getPageIndexDeltaForElementId = function (id) {
+
+            var $element = this.getElementById(id);
+            if (!$element) {
+                return -1;
+            }
+
+            return this.getPageIndexDeltaForElement($element);
+        };
+
+        // returns raw DOM element (not $ jQuery-wrapped)
+        this.getFirstVisibleMediaOverlayElement = function (visibleContentOffsets) {
+            var $root = $(this.getBodyElement());
+            if (!$root || !$root.length || !$root[0]) return undefined;
+
+            var that = this;
+
+            var firstPartial = undefined;
+
+            function traverseArray(arr) {
+                if (!arr || !arr.length) return undefined;
+
+                for (var i = 0, count = arr.length; i < count; i++) {
+                    var item = arr[i];
+                    if (!item) continue;
+
+                    var $item = $(item);
+
+                    if ($item.data("mediaOverlayData")) {
+                        var visible = that.getElementVisibility($item, visibleContentOffsets);
+                        if (visible) {
+                            if (!firstPartial) firstPartial = item;
+
+                            if (visible == 100) return item;
+                        }
+                    }
+                    else {
+                        var elem = traverseArray(item.children);
+                        if (elem) return elem;
+                    }
+                }
+
+                return undefined;
+            }
+
+            var el = traverseArray([$root[0]]);
+            if (!el) el = firstPartial;
+            return el;
+
+            // var $elements = this.getMediaOverlayElements($root);
+            // return this.getVisibleElements($elements, visibleContentOffsets);
+        };
+
+        this.getElementVisibility = function ($element, visibleContentOffsets) {
+            return checkVisibilityByRectangles($element, true, visibleContentOffsets);
+        };
+
+
+        this.isElementVisible = this.getElementVisibility;
+
+        this.getVisibleElementsWithFilter = function (visibleContentOffsets, filterFunction) {
+            var $elements = this.getElementsWithFilter($(this.getBodyElement()), filterFunction);
+            return this.getVisibleElements($elements, visibleContentOffsets);
+        };
+
+        this.getAllElementsWithFilter = function (filterFunction) {
+            return this.getElementsWithFilter($(this.getBodyElement()), filterFunction);
+        };
+
+        this.getAllVisibleElementsWithSelector = function (selector, visibleContentOffset) {
+            var elements = $(selector, this.getRootElement());
+            var $newElements = [];
+            $.each(elements, function () {
+                $newElements.push($(this));
+            });
+            return this.getVisibleElements($newElements, visibleContentOffset);
+        };
+
+        this.getVisibleElements = function ($elements, visibleContentOffsets, frameDimensions) {
+
+            var visibleElements = [];
+
+            _.each($elements, function ($node) {
+                var isTextNode = ($node[0].nodeType === Node.TEXT_NODE);
+                var $element = isTextNode ? $node.parent() : $node;
+                var visibilityPercentage = checkVisibilityByRectangles(
+                    $node, true, visibleContentOffsets, frameDimensions);
+
+                if (visibilityPercentage) {
+                    visibleElements.push({
+                        element: $element[0], // DOM Element is pushed
+                        textNode: isTextNode ? $node[0] : null,
+                        percentVisible: visibilityPercentage
+
+                    });
+                }
+            });
+
+            return visibleElements;
+        };
+
+        this.getVisibleLeafNodes = function (visibleContentOffsets, frameDimensions) {
+
+            if (_cacheEnabled) {
+                var cacheKey = (options.paginationInfo || {}).currentSpreadIndex || 0;
+                var fromCache = _cache.visibleLeafNodes.get(cacheKey);
+                if (fromCache) {
+                    return fromCache;
+                }
+            }
+
+            var $elements = this.getLeafNodeElements($(this.getBodyElement()));
+
+            var visibleElements = this.getVisibleElements($elements, visibleContentOffsets, frameDimensions);
+            if (_cacheEnabled) {
+                _cache.visibleLeafNodes.set(cacheKey, visibleElements);
+            }
+
+            return visibleElements;
+        };
+
+        function getBaseCfiSelectedByFunc(pickerFunc) {
+            var $elements = self.getLeafNodeElements($(self.getBodyElement()));
+            var $selectedNode = pickerFunc($elements);
+            var collapseToStart = pickerFunc([true, false]);
+            var range = createRange();
+            range.selectNodeContents($selectedNode[0]);
+            range.collapse(collapseToStart);
+            return generateCfiFromDomRange(range);
         }
 
-        //cont arrays are identical
-        return 0;
-    };
+        this.getStartCfi = function () {
+            return getBaseCfiSelectedByFunc(_.first);
+        };
 
 
-    // end dmitry debug
+        this.getEndCfi = function () {
+            return getBaseCfiSelectedByFunc(_.last);
+        };
 
-    //if (debugMode) {
+        this.getElementsWithFilter = function ($root, filterFunction) {
+
+            var $elements = [];
+
+            function traverseCollection(elements) {
+
+                if (elements == undefined) return;
+
+                for (var i = 0, count = elements.length; i < count; i++) {
+
+                    var $element = $(elements[i]);
+
+                    if (filterFunction($element)) {
+                        $elements.push($element);
+                    }
+                    else {
+                        traverseCollection($element[0].children);
+                    }
+
+                }
+            }
+
+            traverseCollection([$root[0]]);
+
+            return $elements;
+        };
+
+        function isElementBlacklisted(element) {
+            var classAttribute = element.className;
+            // check for SVGAnimatedString
+            if (classAttribute && typeof classAttribute.animVal !== "undefined") {
+                classAttribute = classAttribute.animVal;
+            } else if (classAttribute && typeof classAttribute.baseVal !== "undefined") {
+                classAttribute = classAttribute.baseVal;
+            }
+            var classList = classAttribute ? classAttribute.split(' ') : [];
+            var id = element.id;
+
+            var classBlacklist = self.getClassBlacklist();
+            if (classList.length === 1 && _.contains(classBlacklist, classList[0])) {
+                return true;
+            } else if (classList.length && _.intersection(classBlacklist, classList).length) {
+                return true;
+            }
+
+            if (id && id.length && _.contains(self.getIdBlacklist(), id)) {
+                return true;
+            }
+
+            if (_.contains(self.getElementBlacklist(), element.tagName.toLowerCase())) {
+                return true;
+            }
+
+            return false;
+        }
+
+        this.getLeafNodeElements = function ($root) {
+
+            if (_cacheEnabled) {
+                var fromCache = _cache.leafNodeElements.get($root);
+                if (fromCache) {
+                    return fromCache;
+                }
+            }
+
+            //noinspection JSUnresolvedVariable,JSCheckFunctionSignatures
+            var nodeIterator = document.createNodeIterator(
+                $root[0],
+                NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
+                function () {
+                    //noinspection JSUnresolvedVariable
+                    return NodeFilter.FILTER_ACCEPT;
+                },
+                false
+            );
+
+            var $leafNodeElements = [];
+
+            var node;
+            while ((node = nodeIterator.nextNode())) {
+                var isLeafNode = node.nodeType === Node.ELEMENT_NODE && !node.childElementCount && !isValidTextNodeContent(node.textContent);
+                if (isLeafNode || isValidTextNode(node)){
+                    var element = (node.nodeType === Node.TEXT_NODE) ? node.parentNode : node;
+                    if (!isElementBlacklisted(element)) {
+                        $leafNodeElements.push($(node));
+                    }
+                }
+            }
+
+            if (_cacheEnabled) {
+                _cache.leafNodeElements.set($root, $leafNodeElements);
+            }
+            return $leafNodeElements;
+        };
+
+        function isElementNode(node) {
+            if (!node) {
+                return false;
+            }
+            else {
+                return node.nodeType === Node.ELEMENT_NODE;
+            }
+        }
+
+        function isValidTextNode(node) {
+            if (!node) {
+                return false;
+            }
+            if (node.nodeType === Node.TEXT_NODE) {
+
+                return isValidTextNodeContent(node.nodeValue);
+            }
+
+            return false;
+
+        }
+
+        function isValidTextNodeContent(text) {
+            // Heuristic to find a text node with actual text
+            // If we don't do this, we may get a reference to a node that doesn't get rendered
+            // (such as for example a node that has tab character and a bunch of spaces)
+            // this is would be bad! ask me why.
+            return !!text.trim().length;
+        }
+
+        this.getElements = function (selector) {
+            if (!selector) {
+                return $(this.getRootElement()).children();
+            }
+            return $(selector, this.getRootElement());
+        };
+
+        this.getElement = function (selector) {
+
+            var $element = this.getElements(selector);
+
+            if ($element.length > 0) {
+                return $element;
+            }
+
+            return undefined;
+        };
+
+        function Cache() {
+            var that = this;
+
+            //true = survives invalidation
+            var props = {
+                leafNodeElements: true,
+                visibleLeafNodes: false
+            };
+
+            _.each(props, function (val, key) {
+                that[key] = new Map();
+            });
+
+            this._invalidate = function () {
+                _.each(props, function (val, key) {
+                    if (!val) {
+                        that[key] = new Map();
+                    }
+                });
+            }
+        }
+
+        var _cache = new Cache();
+
+        var _cacheEnabled = false;
+
+        this.invalidateCache = function () {
+            _cache._invalidate();
+        };
+
+        //if (_DEBUG) {
 
         var $debugOverlays = [];
 
@@ -4480,19 +8133,11 @@ var CfiNavigationLogic = function(options) {
         }
 
         function drawDebugOverlayFromRect(rect) {
-            var leftOffset, topOffset;
-
-            if (isVerticalWritingMode()) {
-                leftOffset = 0;
-                topOffset = -getPaginationLeftOffset();
-            } else {
-                leftOffset = -getPaginationLeftOffset();
-                topOffset = 0;
-            }
+            var offsets = getPaginationOffsets();
 
             addOverlayRect({
-                left: rect.left + leftOffset,
-                top: rect.top + topOffset,
+                left: rect.left + offsets.left,
+                top: rect.top + offsets.top,
                 width: rect.width,
                 height: rect.height
             }, true, self.getRootDocument());
@@ -4512,24 +8157,11 @@ var CfiNavigationLogic = function(options) {
             drawDebugOverlayFromRect(getNodeClientRect(node));
         }
 
-        function getPaginationLeftOffset() {
-
-            var $htmlElement = $("html", self.getRootDocument());
-            var offsetLeftPixels = $htmlElement.css(isVerticalWritingMode() ? "top" : (isPageProgressionRightToLeft() ? "right" : "left"));
-            var offsetLeft = parseInt(offsetLeftPixels.replace("px", ""));
-            if (isNaN(offsetLeft)) {
-                //for fixed layouts, $htmlElement.css("left") has no numerical value
-                offsetLeft = 0;
-            }
-            if (isPageProgressionRightToLeft() && !isVerticalWritingMode()) return -offsetLeft; 
-            return offsetLeft;
-        }
-
         function clearDebugOverlays() {
-            _.each($debugOverlays, function($el){
+            _.each($debugOverlays, function ($el) {
                 $el.remove();
             });
-            $debugOverlays.clear();
+            $debugOverlays = [];
         }
 
         ReadiumSDK._DEBUG_CfiNavigationLogic = {
@@ -4547,13 +8179,187 @@ var CfiNavigationLogic = function(options) {
                 var cfi2 = ReadiumSDK.reader.getLastVisibleCfi();
                 var range2 = ReadiumSDK.reader.getDomRangeFromRangeCfi(cfi2);
                 console.log(cfi2, range2, drawDebugOverlayFromDomRange(range2));
+            },
+            visibleTextRangeOffsetsRunsAvg: function () {
+                var arr = window.top._DEBUG_visibleTextRangeOffsetsRuns;
+                return arr.reduce(function (a, b) {
+                    return a + b;
+                }) / arr.length;
             }
         };
 
         //
-   // }
+        // }
 
-};
+        this.findFirstVisibleElement = function (visibleContentOffsets, frameDimensions) {
+
+            var bodyElement = this.getBodyElement();
+
+            if (!bodyElement) {
+                return null;
+            }
+
+            var firstVisibleElement;
+            var percentVisible = 0;
+            var textNode;
+
+            var treeWalker = document.createTreeWalker(
+                bodyElement,
+                NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
+                function(node) {
+                    if (node.nodeType === Node.ELEMENT_NODE && isElementBlacklisted(node))
+                        return NodeFilter.FILTER_REJECT;
+
+                    if (node.nodeType === Node.TEXT_NODE && !isValidTextNode(node))
+                        return NodeFilter.FILTER_REJECT;
+
+                    var visibilityResult = checkVisibilityByRectangles($(node), true, visibleContentOffsets, frameDimensions);
+                    return visibilityResult ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+                },
+                false
+                );
+
+            while (treeWalker.nextNode()) {
+                var node = treeWalker.currentNode;
+
+                if (node.nodeType === Node.TEXT_NODE) {
+                    firstVisibleElement = node.parentNode;
+                    textNode = node;
+                    percentVisible = 100; // not really used, assume this value unless otherwise
+                    break;
+                }
+
+                var hasChildElements = false;
+                var hasChildTextNodes = false;
+
+                for (var i = node.childNodes.length - 1; i >= 0; i--) {
+                    var childNode = node.childNodes[i];
+                    if (childNode.nodeType === Node.ELEMENT_NODE) {
+                        hasChildElements = true;
+                        break;
+                    }
+                    if (childNode.nodeType === Node.TEXT_NODE)
+                        hasChildTextNodes = true;
+                }
+
+                // potentially stop tree traversal when first element hit with no child element nodes
+                if (!hasChildElements && hasChildTextNodes) {
+                    for (var i=node.childNodes.length-1; i>=0; i--) {
+                        var childNode = node.childNodes[i];
+                        if (childNode.nodeType === Node.TEXT_NODE && isValidTextNode(childNode)) {
+                            var visibilityResult = checkVisibilityByRectangles($(childNode), true, visibleContentOffsets, frameDimensions);
+                            if (visibilityResult) {
+                                firstVisibleElement = node;
+                                textNode = childNode;
+                                percentVisible = visibilityResult;
+                                break;
+                            }
+                        }
+                    }
+                } else if (!hasChildElements) {
+                    firstVisibleElement = node;
+                    percentVisible = 100;
+                    textNode = null;
+                    break;
+                }
+            }
+
+            if (!firstVisibleElement) {
+                return null;
+            }
+            return {
+                element: firstVisibleElement,
+                textNode: textNode,
+                percentVisible: percentVisible
+            };
+        };
+
+        this.findLastVisibleElement = function (visibleContentOffsets, frameDimensions) {
+
+            var bodyElement = this.getBodyElement();
+
+            if (!bodyElement) {
+                return null;
+            }
+
+            var firstVisibleElement;
+            var percentVisible = 0;
+            var textNode;
+
+            var treeWalker = document.createTreeWalker(
+                bodyElement,
+                NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
+                function(node) {
+                    if (node.nodeType === Node.ELEMENT_NODE && isElementBlacklisted(node))
+                        return NodeFilter.FILTER_REJECT;
+
+                    if (node.nodeType === Node.TEXT_NODE && !isValidTextNode(node))
+                        return NodeFilter.FILTER_REJECT;
+
+                    var visibilityResult = checkVisibilityByRectangles($(node), true, visibleContentOffsets, frameDimensions);
+                    return visibilityResult ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+                },
+                false
+                );
+
+            while (treeWalker.lastChild()) { }
+
+            do {
+                var node = treeWalker.currentNode;
+
+                if (node.nodeType === Node.TEXT_NODE) {
+                    firstVisibleElement = node.parentNode;
+                    textNode = node;
+                    percentVisible = 100; // not really used, assume this value unless otherwise
+                    break;
+                }
+
+                var hasChildElements = false;
+                var hasChildTextNodes = false;
+
+                for (var i = node.childNodes.length - 1; i >= 0; i--) {
+                    var childNode = node.childNodes[i];
+                    if (childNode.nodeType === Node.ELEMENT_NODE) {
+                        hasChildElements = true;
+                        break;
+                    }
+                    if (childNode.nodeType === Node.TEXT_NODE)
+                        hasChildTextNodes = true;
+                }
+
+                // potentially stop tree traversal when first element hit with no child element nodes
+                if (!hasChildElements && hasChildTextNodes) {
+                    for (var i=node.childNodes.length-1; i>=0; i--) {
+                        var childNode = node.childNodes[i];
+                        if (childNode.nodeType === Node.TEXT_NODE && isValidTextNode(childNode)) {
+                            var visibilityResult = checkVisibilityByRectangles($(childNode), true, visibleContentOffsets, frameDimensions);
+                            if (visibilityResult) {
+                                firstVisibleElement = node;
+                                textNode = childNode;
+                                percentVisible = visibilityResult;
+                                break;
+                            }
+                        }
+                    }
+                } else if (!hasChildElements) {
+                    firstVisibleElement = node;
+                    percentVisible = 100;
+                    textNode = null;
+                    break;
+                }
+            } while (treeWalker.previousNode());
+
+            if (!firstVisibleElement) {
+                return null;
+            }
+            return {
+                element: firstVisibleElement,
+                textNode: textNode,
+                percentVisible: percentVisible
+            };
+        };
+
+    };
 return CfiNavigationLogic;
 });
 
@@ -4829,12 +8635,13 @@ var ViewerSettings = function(settingsData) {
     return ViewerSettings;
 });
 
+
+
 /**
  * Copyright Marc J. Schmidt. See the LICENSE file at the top-level
  * directory of this distribution and at
  * https://github.com/marcj/css-element-queries/blob/master/LICENSE.
  */
-;
 (function (root, factory) {
     if (typeof define === "function" && define.amd) {
         define('ResizeSensor',factory);
@@ -4843,7 +8650,7 @@ var ViewerSettings = function(settingsData) {
     } else {
         root.ResizeSensor = factory();
     }
-}(this, function () {
+}(typeof window !== 'undefined' ? window : this, function () {
 
     // Make sure it does not throw in a SSR (Server Side Rendering) situation
     if (typeof window === "undefined") {
@@ -4885,6 +8692,26 @@ var ViewerSettings = function(settingsData) {
     }
 
     /**
+    * Get element size
+    * @param {HTMLElement} element
+    * @returns {Object} {width, height}
+    */
+    function getElementSize(element) {
+        if (!element.getBoundingClientRect) {
+            return {
+                width: element.offsetWidth,
+                height: element.offsetHeight
+            }
+        }
+
+        var rect = element.getBoundingClientRect();
+        return {
+            width: Math.round(rect.width),
+            height: Math.round(rect.height)
+        }
+    }
+
+    /**
      * Class for dimension change detection.
      *
      * @param {Element|Element[]|Elements|jQuery} element
@@ -4893,6 +8720,9 @@ var ViewerSettings = function(settingsData) {
      * @constructor
      */
     var ResizeSensor = function(element, callback) {
+
+        var observer;
+
         /**
          *
          * @constructor
@@ -4904,9 +8734,9 @@ var ViewerSettings = function(settingsData) {
             };
 
             var i, j;
-            this.call = function() {
+            this.call = function(sizeInfo) {
                 for (i = 0, j = q.length; i < j; i++) {
-                    q[i].call();
+                    q[i].call(this, sizeInfo);
                 }
             };
 
@@ -4916,27 +8746,11 @@ var ViewerSettings = function(settingsData) {
                     if(q[i] !== ev) newQueue.push(q[i]);
                 }
                 q = newQueue;
-            }
+            };
 
             this.length = function() {
                 return q.length;
             }
-        }
-
-        /**
-         * @param {HTMLElement} element
-         * @param {String}      prop
-         * @returns {String|Number}
-         */
-        function getComputedStyle(element, prop) {
-            if (element.currentStyle) {
-                return element.currentStyle[prop];
-            }
-            if (window.getComputedStyle) {
-                return window.getComputedStyle(element, null).getPropertyValue(prop);
-            }
-
-            return element.style[prop];
         }
 
         /**
@@ -4955,8 +8769,9 @@ var ViewerSettings = function(settingsData) {
             element.resizedAttached.add(resized);
 
             element.resizeSensor = document.createElement('div');
+            element.resizeSensor.dir = 'ltr';
             element.resizeSensor.className = 'resize-sensor';
-            var style = 'position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: hidden; z-index: -1; visibility: hidden;';
+            var style = 'position: absolute; left: -10px; top: -10px; right: 0; bottom: 0; overflow: hidden; z-index: -1; visibility: hidden; max-width: 100%';
             var styleChild = 'position: absolute; left: 0; top: 0; transition: 0s;';
 
             element.resizeSensor.style.cssText = style;
@@ -4969,18 +8784,24 @@ var ViewerSettings = function(settingsData) {
                 '</div>';
             element.appendChild(element.resizeSensor);
 
-            if (getComputedStyle(element, 'position') == 'static') {
+            var computedStyle = window.getComputedStyle(element);
+            var position = computedStyle ? computedStyle.getPropertyValue('position') : null;
+            if ('absolute' !== position && 'relative' !== position && 'fixed' !== position) {
                 element.style.position = 'relative';
             }
 
             var expand = element.resizeSensor.childNodes[0];
             var expandChild = expand.childNodes[0];
             var shrink = element.resizeSensor.childNodes[1];
-            var dirty, rafId, newWidth, newHeight;
-            var lastWidth = element.offsetWidth;
-            var lastHeight = element.offsetHeight;
 
-            var reset = function() {
+            var dirty, rafId;
+            var size = getElementSize(element);
+            var lastWidth = size.width;
+            var lastHeight = size.height;
+            var initialHiddenCheck = true, resetRAF_id;
+
+
+            var resetExpandShrink = function () {
                 expandChild.style.width = '100000px';
                 expandChild.style.height = '100000px';
 
@@ -4991,25 +8812,50 @@ var ViewerSettings = function(settingsData) {
                 shrink.scrollTop = 100000;
             };
 
-            reset();
+            var reset = function() {
+                // Check if element is hidden
+                if (initialHiddenCheck) {
+                    if (!expand.scrollTop && !expand.scrollLeft) {
+
+                        // reset
+                        resetExpandShrink();
+
+                        // Check in next frame
+                        if (!resetRAF_id){
+                            resetRAF_id = requestAnimationFrame(function(){
+                                resetRAF_id = 0;
+
+                                reset();
+                            });
+                        }
+
+                        return;
+                    } else {
+                        // Stop checking
+                        initialHiddenCheck = false;
+                    }
+                }
+
+                resetExpandShrink();
+            };
+            element.resizeSensor.resetSensor = reset;
 
             var onResized = function() {
                 rafId = 0;
 
                 if (!dirty) return;
 
-                lastWidth = newWidth;
-                lastHeight = newHeight;
+                lastWidth = size.width;
+                lastHeight = size.height;
 
                 if (element.resizedAttached) {
-                    element.resizedAttached.call();
+                    element.resizedAttached.call(size);
                 }
             };
 
             var onScroll = function() {
-                newWidth = element.offsetWidth;
-                newHeight = element.offsetHeight;
-                dirty = newWidth != lastWidth || newHeight != lastHeight;
+                size = getElementSize(element);
+                dirty = size.width !== lastWidth || size.height !== lastHeight;
 
                 if (dirty && !rafId) {
                     rafId = requestAnimationFrame(onResized);
@@ -5028,21 +8874,61 @@ var ViewerSettings = function(settingsData) {
 
             addEvent(expand, 'scroll', onScroll);
             addEvent(shrink, 'scroll', onScroll);
+
+            // Fix for custom Elements
+            requestAnimationFrame(reset);
         }
 
-        forEachElement(element, function(elem){
-            attachResizeEvent(elem, callback);
-        });
+        if (typeof ResizeObserver !== "undefined") {
+            observer = new ResizeObserver(function(element){
+                forEachElement(element, function (elem) {
+                    callback.call(
+                        this,
+                        {
+                            width: elem.contentRect.width,
+                            height: elem.contentRect.height
+                        }
+                   );
+                });
+            });
+            if (element !== undefined) {
+                forEachElement(element, function(elem){
+                   observer.observe(elem);
+                });
+            }
+        }
+        else {
+            forEachElement(element, function(elem){
+                attachResizeEvent(elem, callback);
+            });
+        }
 
         this.detach = function(ev) {
-            ResizeSensor.detach(element, ev);
+            if (typeof ResizeObserver != "undefined") {
+                forEachElement(element, function(elem){
+                    observer.unobserve(elem);
+                });
+            }
+            else {
+                ResizeSensor.detach(element, ev);
+            }
         };
+
+        this.reset = function() {
+            element.resizeSensor.resetSensor();
+        };
+    };
+
+    ResizeSensor.reset = function(element, ev) {
+        forEachElement(element, function(elem){
+            elem.resizeSensor.resetSensor();
+        });
     };
 
     ResizeSensor.detach = function(element, ev) {
         forEachElement(element, function(elem){
-            if (!elem) return
-            if(elem.resizedAttached && typeof ev == "function"){
+            if (!elem) return;
+            if(elem.resizedAttached && typeof ev === "function"){
                 elem.resizedAttached.remove(ev);
                 if(elem.resizedAttached.length()) return;
             }
@@ -5439,6 +9325,10 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
                 _$epubBody = undefined;
             } else {
                 _$epubBody = $("body", _$epubHtml);
+
+                if (!_enableBookStyleOverrides) { // fixed layout
+                    _$epubBody.css("margin", "0"); // ensures 8px margin default user agent stylesheet is reset to zero
+                }
             }
 
             //_$epubHtml.css("overflow", "hidden");
@@ -6036,19 +9926,26 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
     }
     
     function getFrameDimensions() {
+        if (reader.needsFixedLayoutScalerWorkAround()) {
+            var parentEl = _$el.parent()[0];
+            return {
+                width: parentEl.clientWidth,
+                height: parentEl.clientHeight
+            };
+        }
         return {
-            width: _$el.parent()[0].clientWidth,
-            height: _$el.parent()[0].clientHeight
+            width: _meta_size.width,
+            height: _meta_size.height
         };
     }
     
     this.getNavigator = function () {
         return new CfiNavigationLogic({
             $iframe: _$iframe,
-            frameDimensions: getFrameDimensions,
-            visibleContentOffsets: getVisibleContentOffsets,
-            classBlacklist: ["cfi-marker", "mo-cfi-highlight", "resize-sensor", "resize-sensor-expand", "resize-sensor-shrink", "resize-sensor-inner"],
-            elementBlacklist: [],
+            frameDimensionsGetter: getFrameDimensions,
+            visibleContentOffsetsGetter: getVisibleContentOffsets,
+            classBlacklist: ["cfi-marker", "mo-cfi-highlight", "resize-sensor", "resize-sensor-expand", "resize-sensor-shrink", "resize-sensor-inner", "js-hypothesis-config", "js-hypothesis-embed"],
+            elementBlacklist: ["hypothesis-adder"],
             idBlacklist: ["MathJax_Message", "MathJax_SVG_Hidden"]
         });
     };
@@ -6139,7 +10036,11 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         return navigation.getNodeRangeInfoFromCfi(partialCfi);
     };
 
-    function createBookmarkFromCfi(cfi){
+    function createBookmarkFromCfi(cfi) {
+        if (!_currentSpineItem) {
+            return null;
+        }
+
         return new BookmarkData(_currentSpineItem.idref, cfi);
     }
 
@@ -6179,6 +10080,17 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         return self.getNavigator().getElementFromPoint(x, y);
     };
 
+    this.getStartCfi = function () {
+        return createBookmarkFromCfi(self.getNavigator().getStartCfi());
+    };
+
+    this.getEndCfi = function () {
+        return createBookmarkFromCfi(self.getNavigator().getEndCfi());
+    };
+
+    this.getNearestCfiFromElement = function(element) {
+        return createBookmarkFromCfi(self.getNavigator().getNearestCfiFromElement(element));
+    };
 };
 
 OnePageView.Events = {
@@ -6371,7 +10283,7 @@ var FixedView = function(options, reader){
     var self = this;
 
     var _$el;
-    var _$viewport = options.$viewport;
+    var _$viewport = $(options.$viewport);
     var _spine = options.spine;
     var _userStyles = options.userStyles;
     var _bookStyles = options.bookStyles;
@@ -6925,10 +10837,12 @@ var FixedView = function(options, reader){
     this.bookmarkCurrentPage = function() {
 
         var views = getDisplayingViews();
+        var loadedSpineItems = this.getLoadedSpineItems();
 
-        if(views.length > 0) {
-
+        if (views.length > 0) {
             return views[0].getFirstVisibleCfi();
+        } else if (loadedSpineItems.length > 0) {
+            return new BookmarkData(this.getLoadedSpineItems()[0].idref, null);
         }
 
         return undefined;
@@ -7193,6 +11107,27 @@ var FixedView = function(options, reader){
         });
     };
 
+    this.getStartCfi = function () {
+        return getDisplayingViews()[0].getStartCfi();
+    };
+
+    this.getEndCfi = function () {
+        return getDisplayingViews()[0].getEndCfi();
+    };
+
+    this.getNearestCfiFromElement = function(element) {
+        var views = getDisplayingViews();
+
+        for (var i = 0, count = views.length; i < count; i++) {
+
+            var view = views[i];
+            if (view.getLoadedContentFrames()[0].$iframe[0].contentDocument === element.ownerDocument) {
+                return view.getNearestCfiFromElement(element);
+            }
+        }
+
+    };
+
 };
     return FixedView;
 });
@@ -7225,7 +11160,7 @@ var FixedView = function(options, reader){
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define('readium_shared_js/views/iframe_loader',["jquery", "underscore"], function($, _) {
+define('readium_shared_js/views/iframe_loader',["jquery", "underscore", 'URIjs'], function($, _, URI) {
 /**
  *
  * @constructor
@@ -7340,6 +11275,88 @@ var IFrameLoader = function() {
 return IFrameLoader;
 });
 
+//  LauncherOSX
+//
+//  Created by Boris Schneiderman.
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//
+//  Redistribution and use in source and binary forms, with or without modification,
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice,
+//  this list of conditions and the following disclaimer in the documentation and/or
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be
+//  used to endorse or promote products derived from this software without specific
+//  prior written permission.
+//
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
+
+(function(global) {
+
+
+var init = function() {
+    var XmlParse = {};
+
+    XmlParse.preprocess = function(str) {
+        
+        if (str && (str.indexOf('version="1.1"') > 0)) {
+            
+            console.warn("Replacing XML v1.1 with v1.0 (web browser compatibility).");
+            
+            console.log(str.substr(0, 50));
+            
+            str = str.replace(/(<\?xml[\s\S]+?)version="1.1"([\s\S]+?\?>)/, '$1version="1.0"$2');
+            
+            console.log(str.substr(0, 50));
+        }
+        
+        return str;
+    };
+
+    XmlParse.fromString = function(str, contentType) {
+        
+        if (!contentType) contentType = "text/xml";
+
+        str = XmlParse.preprocess(str);
+
+        var parser = new window.DOMParser;
+        var dom = parser.parseFromString(str, contentType);
+        
+        return dom;
+    };
+
+    global.XmlParse = XmlParse;
+    return XmlParse;
+};
+
+
+if (typeof define == 'function' && typeof define.amd == 'object') {
+    console.log("RequireJS ... XmlParse");
+    
+    define('readium_shared_js/XmlParse',[],
+    function () {
+        return init();
+    });
+} else {
+    console.log("!RequireJS ... XmlParse");
+    
+    //global.XmlParse = 
+    init();
+}
+
+})(typeof window !== "undefined" ? window : this);
+
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
 // 
 //  Redistribution and use in source and binary forms, with or without modification, 
@@ -7364,7 +11381,7 @@ return IFrameLoader;
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define('readium_shared_js/views/internal_links_support',['jquery', '../helpers', 'readium_cfi_js', 'readium_cfi_js/XmlParse'], function($, Helpers, epubCfi, XmlParse) {
+define('readium_shared_js/views/internal_links_support',['jquery', '../helpers', 'readium_cfi_js', 'URIjs', '../XmlParse'], function($, Helpers, EPUBcfi, URI, XmlParse) {
 /**
  *
  * @param reader
@@ -7854,7 +11871,7 @@ return SmilIterator;
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define ('readium_shared_js/views/media_overlay_data_injector',["jquery", "underscore", "../helpers", "../models/smil_iterator", "rangy", 'readium_cfi_js'], function($, _, Helpers, SmilIterator, rangy, epubCfi) {
+define ('readium_shared_js/views/media_overlay_data_injector',["jquery", "underscore", "../helpers", "../models/smil_iterator", 'readium_cfi_js'], function($, _, Helpers, SmilIterator, EPUBcfi) {
 /**
  *
  * @param mediaOverlay
@@ -7942,124 +11959,6 @@ console.log("MO CLICKED LINK");
                         }
 
                         var par = data.par ? data.par : data.pars[0];
-
-                        if (data.pars && (typeof rangy !== "undefined"))
-                        {
-                            var wasPaused = false;
-                            
-                            // To remove highlight which may have altered DOM (and break CFI expressions)
-                            if (mediaOverlayPlayer.isPlayingCfi())
-                            {
-                                wasPaused = true;
-                                mediaOverlayPlayer.pause();
-                            }
-                         
-                            // /////////////////////
-                            // 
-                            // var p = {x: event.pageX, y: event.pageY};
-                            // if (webkitConvertPointFromPageToNode)
-                            // {
-                            //     p = webkitConvertPointFromPageToNode(elem.ownerDocument.body, new WebKitPoint(event.pageX, event.pageY));
-                            // }
-                            // 
-                            // var div = elem.ownerDocument.getElementById("CLICKED");
-                            // if (div)
-                            // {
-                            //     div.parentNode.removeChild(div);
-                            // }
-                            // 
-                            // div = elem.ownerDocument.createElementNS("http://www.w3.org/1999/xhtml", 'div');
-                            // div.setAttribute("style", "background-color: red; position: absolute; z-index: 999; width: 50px; height: 50px; left: " + p.x + "px; top: " + p.y + "px;");
-                            // div.id = "CLICKED";
-                            // div.setAttribute("id", div.id);
-                            // var divTxt = elem.ownerDocument.createTextNode(" ");
-                            // div.appendChild(divTxt);
-                            // elem.ownerDocument.body.appendChild(div);
-                            //                          
-                            // /////////////////////
-
-
-                            //rangy.init();
-                            try
-                            {
-// THIS WORKS (same as Rangy's method below)
-//                                 var r;
-//                                 if (elem.ownerDocument.caretRangeFromPoint)
-//                                 {
-//                                     r = elem.ownerDocument.caretRangeFromPoint(event.pageX, event.pageY);
-//                                 }
-//                                 else if (event.rangeParent)
-//                                 {
-//                                     r = elem.ownerDocument.createRange();
-//                                     range.setStart(event.rangeParent, event.rangeOffset);
-//                                 }
-//                                 
-// console.log("------ 1");
-// console.log(elem.ownerDocument);
-// console.log(event.pageX);
-// console.log(event.pageY);
-// console.log(r.startContainer);
-// console.log(r.startOffset);
-// console.log("------");
-
-                                var pos = rangy.positionFromPoint(event.pageX, event.pageY, elem.ownerDocument);
-// console.log("------ 2");
-// console.log(pos.node.textContent);
-// console.log(pos.offset);
-// console.log("------");
-
-                                par = undefined;
-                                
-                                for (var iPar = 0; iPar < data.pars.length; iPar++)
-                                {
-                                    var p = data.pars[iPar];
-
-                                    var startCFI = "epubcfi(" + p.cfi.partialStartCfi + ")";
-                                    var infoStart = EPUBcfi.getTextTerminusInfoWithPartialCFI(startCFI, elem.ownerDocument,
-                ["cfi-marker", "mo-cfi-highlight"],
-                [],
-                ["MathJax_Message"]);
-//console.log(infoStart);
-
-                                    var endCFI = "epubcfi(" + p.cfi.partialEndCfi + ")";
-                                    var infoEnd = EPUBcfi.getTextTerminusInfoWithPartialCFI(endCFI, elem.ownerDocument,
-                ["cfi-marker", "mo-cfi-highlight"],
-                [],
-                ["MathJax_Message"]);
-//console.log(infoEnd);
-
-                                    var range = rangy.createRange(elem.ownerDocument); //createNativeRange
-                                    range.setStartAndEnd(
-                                        infoStart.textNode, infoStart.textOffset,
-                                        infoEnd.textNode, infoEnd.textOffset
-                                    );
-        
-                                    if (range.isPointInRange(pos.node, pos.offset))
-                                    {
-// console.log(p.cfi.partialStartCfi);
-// console.log(p.cfi.partialEndCfi);
-                                        // DOUBLE CHECK WITH getClientRects ??
-                                        
-                                        par = p;
-                                        break;
-                                    }
-                                }
-                            }
-                            catch (e)
-                            {
-                                console.error(e);
-                            }
-                            
-                            if (!par)
-                            {
-                                if (wasPaused)
-                                {
-                                    mediaOverlayPlayer.toggleMediaOverlay();
-                                }
-                                return true;
-                            }
-                        }
-
 
                         if (el && el != elem && el.nodeName.toLowerCase() === "body" && par && !par.getSmil().id)
                         {
@@ -9157,7 +13056,7 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define('readium_shared_js/views/media_overlay_element_highlighter',['jquery', 'rangy', 'readium_cfi_js'], function($, rangy, epubCfi) {
+define('readium_shared_js/views/media_overlay_element_highlighter',['jquery', 'readium_cfi_js'], function($, EPUBcfi) {
 /**
  *
  * @param reader
@@ -9188,10 +13087,6 @@ var MediaOverlayElementHighlighter = function(reader) {
     var _playbackActiveClass = "";
 
     var _reader = reader;
-    
-    var USE_RANGY = true && (typeof rangy !== "undefined");
-    var _rangyCSS = undefined;
-    var _rangyRange = undefined;
     
     var HIGHLIGHT_ID = "MO_SPEAK";
     
@@ -9412,64 +13307,7 @@ var MediaOverlayElementHighlighter = function(reader) {
 
         var clazz = (overrideWithUserStyle || !hasAuthorStyle) ? ((hasAuthorStyle ? (_activeClass + " ") : "") + DEFAULT_MO_ACTIVE_CLASS) : _activeClass;
 
-        if (USE_RANGY)
-        {
-            var doc = _highlightedCfiPar.cfi.cfiTextParent.ownerDocument;
-
-            _rangyRange = rangy.createRange(doc); //createNativeRange
-
-            var startCFI = "epubcfi(" + _highlightedCfiPar.cfi.partialStartCfi + ")";
-            var infoStart = EPUBcfi.getTextTerminusInfoWithPartialCFI(startCFI, doc,
-                ["cfi-marker", "mo-cfi-highlight"],
-                [],
-                ["MathJax_Message"]);
-//console.log(infoStart);
-
-            var endCFI = "epubcfi(" + _highlightedCfiPar.cfi.partialEndCfi + ")";
-            var infoEnd = EPUBcfi.getTextTerminusInfoWithPartialCFI(endCFI, doc,
-                ["cfi-marker", "mo-cfi-highlight"],
-                [],
-                ["MathJax_Message"]);
-//console.log(infoEnd);
-            
-            _rangyRange.setStartAndEnd(
-                infoStart.textNode, infoStart.textOffset,
-                infoEnd.textNode, infoEnd.textOffset
-            );
-            
-            if (false && // we use CssClassApplier instead, because surroundContents() has no trivial undoSurroundContents() function (inc. text nodes normalisation, etc.)
-                _rangyRange.canSurroundContents())
-            {
-                _rangyRange.MO_createCssClassApplier = false;
-                
-                var span = doc.createElementNS("http://www.w3.org/1999/xhtml", 'span');
-                span.id = HIGHLIGHT_ID;
-                span.setAttribute("id", span.id);
-                span.setAttribute("class", clazz + " mo-cfi-highlight");
-            
-                _rangyRange.surroundContents(span);
-            }
-            else
-            {
-                _rangyRange.MO_createCssClassApplier = true;
-                
-                if (!_rangyCSS || _rangyCSS.cssClass !== clazz)
-                {
-                    _rangyCSS = rangy.createCssClassApplier(clazz,
-                    {
-                        elementTagName: "span",
-                        elementProperties: {className: "mo-cfi-highlight"},
-                        ignoreWhiteSpace: true,
-                        applyToEditableOnly: false,
-                        normalize: true
-                    },
-                    ["span"]);
-                }
-
-                _rangyCSS.applyToRange(_rangyRange);
-            }
-        }
-        else if (_reader.plugins.highlights) // same API, newer implementation
+        if (_reader.plugins.highlights) // same API, newer implementation
         {
             try
             {
@@ -9553,29 +13391,8 @@ var MediaOverlayElementHighlighter = function(reader) {
         if (_highlightedCfiPar)
         {
             var doc = _highlightedCfiPar.cfi.cfiTextParent.ownerDocument;
-            if (USE_RANGY)
-            {
-                if (_rangyCSS && _rangyRange.MO_createCssClassApplier)
-                {
-                    _rangyCSS.undoToRange(_rangyRange);
-                }
-                else
-                {
-                    var toRemove = undefined;
-                    while ((toRemove = doc.getElementById(HIGHLIGHT_ID)) !== null)
-                    {
-                        var txt = toRemove.textContent; // TODO: innerHTML? or better: hasChildNodes loop + detach and re-attach
-                        var txtNode = doc.createTextNode(txt);
-                        
-                        toRemove.parentNode.replaceChild(txtNode, toRemove);
-                        txtNode.parentNode.normalize();
-                    }
-                }
-        
-                //_rangyCSS = undefined;
-                _rangyRange = undefined;
-            }
-            else if (_reader.plugins.highlights) // same API, new implementation
+
+            if (_reader.plugins.highlights) // same API, new implementation
             {
                 try
                 {
@@ -9754,7 +13571,7 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
     var self = this;
 
-    var _$viewport = options.$viewport;
+    var _$viewport = $(options.$viewport);
     var _spine = options.spine;
     var _userStyles = options.userStyles;
     var _deferredPageRequest;
@@ -11049,37 +14866,24 @@ var ScrollView = function (options, isContinuousScroll, reader) {
     function getFirstOrLastVisibleCfi(pickerFunc) {
         var pageViews = getVisiblePageViews();
         var selectedPageView = pickerFunc(pageViews);
-        var pageViewTopOffset = selectedPageView.element().position().top;
+        var pageViewTopOffset =selectedPageView.element().position().top;
         var visibleContentOffsets, frameDimensions;
-        
-        var setupFunctions = [
-            function () {
-                visibleContentOffsets = {
-                    top: pageViewTopOffset,
-                    left: 0
-                };
-            },
-            function() {
-                var height = selectedPageView.element().height();
-                
-                if (pageViewTopOffset >= 0) {
-                    height = viewHeight() - pageViewTopOffset;
-                }
 
-                frameDimensions = {
-                    width: selectedPageView.element().width(),
-                    height: height
-                };
-                
-                visibleContentOffsets = {
-                    top: 0,
-                    left: 0
-                };
-            }
-        ];
+        visibleContentOffsets = {
+            top:  Math.min(0, pageViewTopOffset),
+            left: 0
+        };
+
+        var height = Math.min(selectedPageView.element().height(), viewHeight());
+
+        if (pageViewTopOffset >= 0) {
+            height = height - pageViewTopOffset;
+        }
         
-        //invoke setup function
-        pickerFunc(setupFunctions)();
+        frameDimensions = {
+            width: selectedPageView.element().width(),
+            height: height
+        };
         
         var cfiFunctions = [
             selectedPageView.getFirstVisibleCfi,
@@ -11115,6 +14919,10 @@ var ScrollView = function (options, isContinuousScroll, reader) {
         });
     };
 
+    function createBookmarkFromCfi(currentSpineItem, cfi){
+        return new BookmarkData(currentSpineItem.idref, cfi);
+    }
+
     this.getRangeCfiFromDomRange = function (domRange) {
         return callOnVisiblePageView(function (pageView) {
             return pageView.getRangeCfiFromDomRange(domRange);
@@ -11123,25 +14931,43 @@ var ScrollView = function (options, isContinuousScroll, reader) {
 
     this.getVisibleCfiFromPoint = function (x, y, precisePoint) {
         return callOnVisiblePageView(function (pageView) {
-            return createBookmark(pageView.currentSpineItem(), pageView.getVisibleCfiFromPoint(x, y, precisePoint));
+            return createBookmarkFromCfi(pageView.currentSpineItem(), pageView.getVisibleCfiFromPoint(x, y, precisePoint));
         });
     };
 
     this.getRangeCfiFromPoints = function (startX, startY, endX, endY) {
         return callOnVisiblePageView(function (pageView) {
-            return createBookmark(pageView.currentSpineItem(), pageView.getRangeCfiFromPoints(startX, startY, endX, endY));
+            return createBookmarkFromCfi(pageView.currentSpineItem(), pageView.getRangeCfiFromPoints(startX, startY, endX, endY));
         });
     };
 
     this.getCfiForElement = function(element) {
         return callOnVisiblePageView(function (pageView) {
-            return createBookmark(pageView.currentSpineItem(), pageView.getCfiForElement(element));
-        });
+            return createBookmarkFromCfi(pageView.currentSpineItem(), pageView.getCfiForElement(element).contentCFI);
+        })
     };
 
     this.getElementFromPoint = function (x, y) {
         return callOnVisiblePageView(function (pageView) {
             return pageView.getElementFromPoint(x, y);
+        });
+    };
+
+    this.getStartCfi = function () {
+        return callOnVisiblePageView(function (pageView) {
+            return pageView.getStartCfi();
+        });
+    };
+
+    this.getEndCfi = function () {
+        return callOnVisiblePageView(function (pageView) {
+            return pageView.getEndCfi();
+        });
+    };
+
+    this.getNearestCfiFromElement = function (element) {
+        return callOnVisiblePageView(function (pageView) {
+            return pageView.getNearestCfiFromElement(element);
         });
     };
 };
@@ -11177,8 +15003,8 @@ return ScrollView;
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define('readium_shared_js/views/media_overlay_player',["../globals", "jquery", "../helpers", "./audio_player", "./media_overlay_element_highlighter", "../models/smil_iterator", "rangy", 'readium_cfi_js', './scroll_view'],
-    function(Globals, $, Helpers, AudioPlayer, MediaOverlayElementHighlighter, SmilIterator, rangy, epubCfi, ScrollView) {
+define('readium_shared_js/views/media_overlay_player',["../globals", "jquery", "../helpers", "./audio_player", "./media_overlay_element_highlighter", "../models/smil_iterator", 'readium_cfi_js', './scroll_view'],
+    function(Globals, $, Helpers, AudioPlayer, MediaOverlayElementHighlighter, SmilIterator, EPUBcfi, ScrollView) {
 /**
  *
  * @param reader
@@ -11719,20 +15545,8 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
                 ["MathJax_Message"]);
 //console.log(infoEnd);
 
-                if (rangy)
-                {
-                    //infoStart.textNode.parentNode.ownerDocument
-                    var range = rangy.createRange(doc); //createNativeRange
-                    range.setStartAndEnd(
-                        infoStart.textNode, infoStart.textOffset,
-                        infoEnd.textNode, infoEnd.textOffset
-                    );
-                    _currentTTS = range.toString(); //.text()
-                }
-                else
-                {
-                    _currentTTS = undefined;
-                }
+                // TODO: get string range to speak
+                _currentTTS = undefined;
 
                 if (!_currentTTS || _currentTTS == "")
                 {
@@ -12081,14 +15895,7 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
 
     this.touchInit = function()
     {
-        var todo = _audioPlayer.touchInit();
-        if (todo)
-        {
-            if (_enableHTMLSpeech)
-            {
-                speakStart("o", 0);
-            }
-        }
+        return _audioPlayer.touchInit();
     };
 
     var tokeniseTTS = function(element)
@@ -13593,13 +17400,17 @@ var Spine = function(epubPackage, spineDTO) {
      */
     this.getItemByHref = function(href) {
         
-        var href1 = new URI(self.package.resolveRelativeUrl(href)).normalizePathname().pathname();
+        var href1_ = self.package.resolveRelativeUrl(href);
+        href1_ = href1_.replace("filesystem:chrome-extension://", "filesystem-chrome-extension://");
+        var href1 = new URI(href1_).normalizePathname().pathname();
         
         var length = self.items.length;
 
         for(var i = 0; i < length; i++) {
             
-            var href2 = new URI(self.package.resolveRelativeUrl(self.items[i].href)).normalizePathname().pathname();
+            var href2_ = self.package.resolveRelativeUrl(self.items[i].href);
+            href2_ = href2_.replace("filesystem:chrome-extension://", "filesystem-chrome-extension://");
+            var href2 = new URI(href2_).normalizePathname().pathname();
             
             if(href1 == href2) {
                 return self.items[i];
@@ -14882,10 +18693,10 @@ define('readium_shared_js/models/media_overlay',["./smil_model"], function(SmilM
  *
  * @class Models.MediaOverlay
  * @constructor
- * @param {Models.Package} package EPUB package
+ * @param {Models.Package} packageModel  EPUB package
 */
 
-var MediaOverlay = function(package) {
+var MediaOverlay = function(packageModel) {
 
     /**
      * The parent package object
@@ -14893,7 +18704,7 @@ var MediaOverlay = function(package) {
      * @property package
      * @type Models.Package
      */    
-    this.package = package;
+    this.package = packageModel;
 
     /**
      * Checks if a parallel smil node exists at a given timecode. 
@@ -15204,13 +19015,13 @@ var MediaOverlay = function(package) {
  *
  * @method MediaOverlay.fromDTO
  * @param {Object} moDTO Media overlay data object (raw JSON, as returned by a parser)
- * @param {Models.Package} package EPUB package object
+ * @param {Models.Package} packageModel EPUB package object
  * @return {Models.MediaOverlay}
 */
 
-MediaOverlay.fromDTO = function(moDTO, pack) {
+MediaOverlay.fromDTO = function(moDTO, packageModel) {
 
-    var mo = new MediaOverlay(pack);
+    var mo = new MediaOverlay(packageModel);
 
     if(!moDTO) {
         return mo;
@@ -15600,6 +19411,67 @@ return Package;
 });
 
 
+//  Created by Juan Corona
+//  Copyright (c) 2016 Readium Foundation and/or its licensees. All rights reserved.
+//
+//  Redistribution and use in source and binary forms, with or without modification,
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice,
+//  this list of conditions and the following disclaimer in the documentation and/or
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be
+//  used to endorse or promote products derived from this software without specific
+//  prior written permission.
+//
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
+define('readium_shared_js/models/metadata',[], function () {
+
+    /**
+     *  Wrapper of the Metadata object, created in openBook()
+     *
+     * @class  Models.Metadata
+     */
+    var Metadata = function(packageMetadata) {
+        this.identifier = undefined;
+        this.title = undefined;
+        this.author = undefined;
+        this.description = undefined;
+        this.publisher = undefined;
+        this.language = undefined;
+        this.rights = undefined;
+        this.modifiedDate = undefined;
+        this.publishedDate = undefined;
+        this.epubVersion = undefined;
+
+        if (packageMetadata) {
+            this.identifier = packageMetadata.id;
+            this.title = packageMetadata.title;
+            this.author = packageMetadata.author;
+            this.description = packageMetadata.description;
+            this.language = packageMetadata.language;
+            this.publisher = packageMetadata.publisher;
+            this.rights = packageMetadata.rights;
+            this.modifiedDate = packageMetadata.modified_date;
+            this.publishedDate = packageMetadata.pubdate;
+            this.epubVersion = packageMetadata.epub_version;
+        }
+    };
+
+    return Metadata;
+});
+
+
 
 //  LauncherOSX
 //
@@ -15644,7 +19516,7 @@ var ReflowableView = function(options, reader){
 
     var self = this;
 
-    var _$viewport = options.$viewport;
+    var _$viewport = $(options.$viewport);
     var _spine = options.spine;
     var _userStyles = options.userStyles;
     var _bookStyles = options.bookStyles;
@@ -15662,8 +19534,8 @@ var ReflowableView = function(options, reader){
     var _$epubHtml;
     var _lastPageRequest = undefined;
 
-    var _cfiClassBlacklist = ["cfi-marker", "mo-cfi-highlight", "resize-sensor", "resize-sensor-expand", "resize-sensor-shrink", "resize-sensor-inner"];
-    var _cfiElementBlacklist = [];
+    var _cfiClassBlacklist = ["cfi-marker", "mo-cfi-highlight", "resize-sensor", "resize-sensor-expand", "resize-sensor-shrink", "resize-sensor-inner", "js-hypothesis-config", "js-hypothesis-embed"];
+    var _cfiElementBlacklist = ["hypothesis-adder"];
     var _cfiIdBlacklist = ["MathJax_Message", "MathJax_SVG_Hidden"];
 
     var _$htmlBody;
@@ -15693,6 +19565,7 @@ var ReflowableView = function(options, reader){
         columnMinWidth: 400,
         spreadCount : 0,
         currentSpreadIndex : 0,
+        currentPageIndex: 0,
         columnWidth : undefined,
         pageOffset : 0,
         columnCount: 0
@@ -15778,6 +19651,27 @@ var ReflowableView = function(options, reader){
         };
     }
 
+    function getPageOffset() {
+        if (_paginationInfo.rightToLeft && !_paginationInfo.isVerticalWritingMode) {
+            return -_paginationInfo.pageOffset;
+        }
+        return _paginationInfo.pageOffset;
+    }
+
+    function getPaginationOffsets() {
+        var offset = getPageOffset();
+        if (_paginationInfo.isVerticalWritingMode) {
+            return {
+                top: offset,
+                left: 0
+            };
+        }
+        return {
+            top: 0,
+            left: offset
+        };
+    }
+
     function renderIframe() {
         if (_$contentFrame) {
             //destroy old contentFrame
@@ -15800,8 +19694,9 @@ var ReflowableView = function(options, reader){
 
         _navigationLogic = new CfiNavigationLogic({
             $iframe: _$iframe,
-            frameDimensions: getFrameDimensions,
+            frameDimensionsGetter: getFrameDimensions,
             paginationInfo: _paginationInfo,
+            paginationOffsetsGetter: getPaginationOffsets,
             classBlacklist: _cfiClassBlacklist,
             elementBlacklist: _cfiElementBlacklist,
             idBlacklist: _cfiIdBlacklist
@@ -15823,6 +19718,7 @@ var ReflowableView = function(options, reader){
 
             _paginationInfo.pageOffset = 0;
             _paginationInfo.currentSpreadIndex = 0;
+            _paginationInfo.currentPageIndex = 0;
             _currentSpineItem = spineItem;
             
             // TODO: this is a dirty hack!!
@@ -16014,18 +19910,18 @@ var ReflowableView = function(options, reader){
 
     }
 
-    this.openPageInternal = function(pageRequest) {
+    function _openPageInternal(pageRequest) {
 
         if(_isWaitingFrameRender) {
             _deferredPageRequest = pageRequest;
-            return;
+            return false;
         }
 
         // if no spine item specified we are talking about current spine item
         if(pageRequest.spineItem && pageRequest.spineItem != _currentSpineItem) {
             _deferredPageRequest = pageRequest;
             loadSpineItem(pageRequest.spineItem);
-            return;
+            return true;
         }
 
         var pageIndex = undefined;
@@ -16035,21 +19931,17 @@ var ReflowableView = function(options, reader){
             pageIndex = pageRequest.spineItemPageIndex;
         }
         else if(pageRequest.elementId) {
-            pageIndex = _navigationLogic.getPageForElementId(pageRequest.elementId);
-            
-            if (pageIndex < 0) pageIndex = 0;
+            pageIndex = _paginationInfo.currentPageIndex + _navigationLogic.getPageIndexDeltaForElementId(pageRequest.elementId);
         }
         else if(pageRequest.firstVisibleCfi && pageRequest.lastVisibleCfi) {
             var firstPageIndex;
             var lastPageIndex;
             try
             {
-                firstPageIndex = _navigationLogic.getPageForElementCfi(pageRequest.firstVisibleCfi,
+                firstPageIndex = _navigationLogic.getPageIndexDeltaForCfi(pageRequest.firstVisibleCfi,
                     _cfiClassBlacklist,
                     _cfiElementBlacklist,
                     _cfiIdBlacklist);
-                
-                if (firstPageIndex < 0) firstPageIndex = 0;
             }
             catch (e)
             {
@@ -16058,12 +19950,10 @@ var ReflowableView = function(options, reader){
             }
             try
             {
-                lastPageIndex = _navigationLogic.getPageForElementCfi(pageRequest.lastVisibleCfi,
+                lastPageIndex = _navigationLogic.getPageIndexDeltaForCfi(pageRequest.lastVisibleCfi,
                     _cfiClassBlacklist,
                     _cfiElementBlacklist,
                     _cfiIdBlacklist);
-                
-                if (lastPageIndex < 0) lastPageIndex = 0;
             }
             catch (e)
             {
@@ -16071,17 +19961,15 @@ var ReflowableView = function(options, reader){
                 console.error(e);
             }
             // Go to the page in the middle of the two elements
-            pageIndex = Math.round((firstPageIndex + lastPageIndex) / 2);
+            pageIndex = _paginationInfo.currentPageIndex + Math.round((firstPageIndex + lastPageIndex) / 2);
         }
         else if(pageRequest.elementCfi) {
             try
             {
-                pageIndex = _navigationLogic.getPageForElementCfi(pageRequest.elementCfi,
+                pageIndex = _paginationInfo.currentPageIndex + _navigationLogic.getPageIndexDeltaForCfi(pageRequest.elementCfi,
                     _cfiClassBlacklist,
                     _cfiElementBlacklist,
                     _cfiIdBlacklist);
-                
-                if (pageIndex < 0) pageIndex = 0;
             }
             catch (e)
             {
@@ -16100,18 +19988,20 @@ var ReflowableView = function(options, reader){
             pageIndex = 0;
         }
 
-        if(pageIndex >= 0 && pageIndex < _paginationInfo.columnCount) {
-            _paginationInfo.currentSpreadIndex = Math.floor(pageIndex / _paginationInfo.visibleColumnCount) ;
-            onPaginationChanged(pageRequest.initiator, pageRequest.spineItem, pageRequest.elementId);
-        }
-        else {
+        if (pageIndex < 0 || pageIndex > _paginationInfo.columnCount) {
             console.log('Illegal pageIndex value: ', pageIndex, 'column count is ', _paginationInfo.columnCount);
+            pageIndex = pageIndex < 0 ? 0 : _paginationInfo.columnCount;
         }
-    };
+
+        _paginationInfo.currentPageIndex = pageIndex;
+        _paginationInfo.currentSpreadIndex = Math.floor(pageIndex / _paginationInfo.visibleColumnCount) ;
+        onPaginationChanged(pageRequest.initiator, pageRequest.spineItem, pageRequest.elementId);
+        return true;
+    }
 
     this.openPage = function(pageRequest) {
         // Go to request page, it will save the new position in onPaginationChanged
-        this.openPageInternal(pageRequest);
+        _openPageInternal(pageRequest);
         // Save it for when pagination is updated
         _lastPageRequest = pageRequest;
     };
@@ -16135,7 +20025,7 @@ var ReflowableView = function(options, reader){
 
     this.restoreCurrentPosition = function() {
         if (_lastPageRequest) {
-            this.openPageInternal(_lastPageRequest);            
+            _openPageInternal(_lastPageRequest);
         }
     };
 
@@ -16180,7 +20070,7 @@ var ReflowableView = function(options, reader){
     }
 
     function onPaginationChanged_(initiator, paginationRequest_spineItem, paginationRequest_elementId) {
-
+        _paginationInfo.currentPageIndex = _paginationInfo.currentSpreadIndex * _paginationInfo.visibleColumnCount;
         _paginationInfo.pageOffset = (_paginationInfo.columnWidth + _paginationInfo.columnGap) * _paginationInfo.visibleColumnCount * _paginationInfo.currentSpreadIndex;
         
         redraw();
@@ -16213,7 +20103,7 @@ var ReflowableView = function(options, reader){
             // Reset it so it's saved next time onPaginationChanged is called
             this.resetCurrentPosition();
             _paginationInfo.currentSpreadIndex--;
-            onPaginationChanged(initiator);
+            onPaginationChanged(initiator, _currentSpineItem);
         }
         else {
 
@@ -16238,7 +20128,7 @@ var ReflowableView = function(options, reader){
             // Reset it so it's saved next time onPaginationChanged is called
             this.resetCurrentPosition();
             _paginationInfo.currentSpreadIndex++;
-            onPaginationChanged(initiator);
+            onPaginationChanged(initiator, _currentSpineItem);
         }
         else {
 
@@ -16376,6 +20266,11 @@ var ReflowableView = function(options, reader){
         _$epubHtml.css('margin', 0);
         _$epubHtml.css('padding', 0);
         _$epubHtml.css('border', 0);
+
+        // In order for the ResizeSensor to work, the content body needs to be "positioned".
+        // This may be an issue since it changes the assumptions some content authors might make when positioning their content.
+        _$htmlBody.css('position', 'relative');
+
         _$htmlBody.css('margin', 0);
         _$htmlBody.css('padding', 0);
 
@@ -16441,12 +20336,13 @@ var ReflowableView = function(options, reader){
             if (_lastPageRequest) {
                 // Make sure we stay on the same page after the content or the viewport 
                 // has been resized
+                _paginationInfo.currentPageIndex = 0; // current page index is not stable, reset it
                 self.restoreCurrentPosition();
             } else {
-                onPaginationChanged(self); // => redraw() => showBook(), so the trick below is not needed                
+                onPaginationChanged(self, _currentSpineItem); // => redraw() => showBook(), so the trick below is not needed                
             }
 
-            //onPaginationChanged(self); // => redraw() => showBook(), so the trick below is not needed 
+            //onPaginationChanged(self, _currentSpineItem); // => redraw() => showBook(), so the trick below is not needed 
 
             // //We do this to force re-rendering of the document in the iframe.
             // //There is a bug in WebView control with right to left columns layout - after resizing the window html document
@@ -16454,7 +20350,7 @@ var ReflowableView = function(options, reader){
             // _$epubHtml.hide();
             // setTimeout(function() {
             //     _$epubHtml.show();
-            //     onPaginationChanged(self); // => redraw() => showBook()
+            //     onPaginationChanged(self, _currentSpineItem); // => redraw() => showBook()
             // }, 50);
 
         }
@@ -16652,15 +20548,15 @@ var ReflowableView = function(options, reader){
             return;
         }
 
-        var page = _navigationLogic.getPageForElement($element);
+        var elementCfi = _navigationLogic.getCfiForElement(element);
 
-        if(page == -1)
+        if (!elementCfi)
         {
             return;
         }
 
         var openPageRequest = new PageOpenRequest(_currentSpineItem, initiator);
-        openPageRequest.setPageIndex(page);
+        openPageRequest.setElementCfi(elementCfi);
 
         var id = element.id;
         if (!id)
@@ -16752,6 +20648,14 @@ var ReflowableView = function(options, reader){
         return createBookmarkFromCfi(_navigationLogic.getLastVisibleCfi());
     };
 
+    this.getStartCfi = function () {
+        return createBookmarkFromCfi(_navigationLogic.getStartCfi());
+    };
+
+    this.getEndCfi = function () {
+        return createBookmarkFromCfi(_navigationLogic.getEndCfi());
+    };
+
     this.getDomRangeFromRangeCfi = function (rangeCfi, rangeCfi2, inclusive) {
         if (rangeCfi2 && rangeCfi.idref !== rangeCfi2.idref) {
             console.error("getDomRangeFromRangeCfi: both CFIs must be scoped under the same spineitem idref");
@@ -16778,6 +20682,10 @@ var ReflowableView = function(options, reader){
 
     this.getElementFromPoint = function(x, y) {
         return _navigationLogic.getElementFromPoint(x,y);
+    };
+
+    this.getNearestCfiFromElement = function(element) {
+        return createBookmarkFromCfi(_navigationLogic.getNearestCfiFromElement(element));
     };
 };
     return ReflowableView;
@@ -17353,6 +21261,201 @@ define('readium_shared_js/models/node_range_info',[],function () {
 
     return NodeRangeInfo;
 });
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//
+//  Redistribution and use in source and binary forms, with or without modification,
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice,
+//  this list of conditions and the following disclaimer in the documentation and/or
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be
+//  used to endorse or promote products derived from this software without specific
+//  prior written permission.
+//
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
+
+define('readium_shared_js/views/external_agent_support',["../globals", "underscore"], function(Globals, _) {
+    /**
+     * This module helps external agents that interact with content documents from
+     * the level of the iframe browsing context:
+     *
+     *   - By providing a means of identifying the content through metadata
+     *     that's brought down from the package document level.
+     *
+     *   - By providing a direct link (bringing down the shareable URL) that could be used
+     *     to load the content in the proper context with the reader app instead of the actual
+     *     content document asset path.
+     *
+     *   - By responding to an event when the external agent wants to bring a
+     *     specific range of content into view.
+     *
+     * @param {Views.ReaderView} reader     The Reader instance
+     * @constructor
+     */
+    var ExternalAgentSupport = function(reader) {
+
+        var contentDocumentStates = {};
+        var contentDocuments = {};
+
+        Globals.on(Globals.Events.PLUGINS_LOADED, function() {
+            // Disable the AMD environment since it's not needed anymore at this point.
+            // This is done because external agents with their own module systems (Browserify)
+            // might load third-party scripts that are in the format of
+            // UMD (Universal Module Definition),
+            // and will mistakenly try to use Readium's AMD shim, almond.js, or require.js
+            if (window.define && window.define.amd) {
+                delete window.define.amd;
+            }
+        });
+
+        function appendMetaTag(_document, property, content) {
+            var tag = _document.createElement('meta');
+            tag.setAttribute('name', property);
+            tag.setAttribute('content', content);
+            _document.head.appendChild(tag);
+        }
+
+        function injectDublinCoreResourceIdentifiers(contentDocument, spineItem) {
+            var renditionIdentifier = reader.metadata().identifier; // the package unique identifier
+            var spineItemIdentifier = spineItem.idref; // use the spine item id as an identifier too
+            if (renditionIdentifier && spineItemIdentifier) {
+                appendMetaTag(contentDocument, 'dc.relation.ispartof', renditionIdentifier);
+                appendMetaTag(contentDocument, 'dc.identifier', spineItemIdentifier);
+            }
+        }
+
+        function determineCanonicalLinkHref(contentWindow) {
+            // Only grab the href if there's no potential cross-domain violation
+            // and the reader application URL has a CFI value in a 'goto' query param.
+            var isSameDomain = Object.keys(contentWindow).indexOf('document') !== -1;
+            if (isSameDomain && contentWindow.location.search.match(/goto=.*cfi/i)) {
+                return contentWindow.location.href.split("#")[0];
+            }
+        }
+
+        function getContentDocumentCanonicalLink(contentDocument) {
+            var contentDocWindow = contentDocument.defaultView;
+            if (contentDocWindow && (contentDocWindow.parent|| contentDocWindow.top)) {
+                var parentWindowCanonicalHref = determineCanonicalLinkHref(contentDocWindow.parent);
+                var topWindowCanonicalHref = determineCanonicalLinkHref(contentDocWindow.top);
+                return topWindowCanonicalHref || parentWindowCanonicalHref;
+            }
+        }
+
+        function injectAppUrlAsCanonicalLink(contentDocument, spineItem) {
+            if (contentDocument.defaultView && contentDocument.defaultView.parent) {
+                var canonicalLinkHref = getContentDocumentCanonicalLink(contentDocument);
+                if (canonicalLinkHref) {
+                    var link = contentDocument.createElement('link');
+                    link.setAttribute('rel', 'canonical');
+                    link.setAttribute('href', canonicalLinkHref);
+                    contentDocument.head.appendChild(link);
+                    contentDocumentStates[spineItem.idref].canonicalLinkElement = link;
+                }
+            }
+        }
+
+        var bringIntoViewDebounced = _.debounce(function (range) {
+            var target = reader.getRangeCfiFromDomRange(range);
+            var contentDocumentState = contentDocumentStates[target.idref];
+
+            if (contentDocumentState && contentDocumentState.isUpdated) {
+                reader.openSpineItemElementCfi(target.idref, target.contentCFI);
+            } else {
+                contentDocumentState.pendingNavRequest = {
+                    idref: target.idref,
+                    contentCFI: target.contentCFI
+                };
+            }
+        }, 100);
+
+        function bindBringIntoViewEvent(contentDocument) {
+            // 'scrolltorange' is a non-standard event that is emitted on the content frame
+            // by some external tools like Hypothes.is
+            contentDocument.addEventListener('scrolltorange', function (event) {
+                event.preventDefault();
+
+                var range = event.detail;
+                bringIntoViewDebounced(range);
+            });
+        }
+
+        function bindSelectionPopupWorkaround(contentDocument) {
+            // A hack to make the Hypothes.is 'adder' context menu popup work when the content doc body is positioned.
+            // When the content doc has columns and a body with position set to 'relative'
+            // the adder won't be positioned properly.
+            //
+            // The workaround is to clear the position property when a selection is active.
+            // Then restore the position property to 'relative' when the selection clears.
+            contentDocument.addEventListener('selectionchange', function () {
+                var selection = contentDocument.getSelection();
+                if (selection && selection.isCollapsed) {
+                    contentDocument.body.style.position = 'relative';
+                } else {
+                    contentDocument.body.style.position = '';
+                }
+            });
+        }
+
+        /***
+         *
+         * @param {Document} contentDocument    Document instance with DOM tree
+         * @param {Models.SpineItem} spineItem  The associated spine item object
+         */
+        this.bindToContentDocument = function(contentDocument, spineItem) {
+            contentDocuments[spineItem.idref] = contentDocument;
+            contentDocumentStates[spineItem.idref] = {};
+            injectDublinCoreResourceIdentifiers(contentDocument, spineItem);
+            injectAppUrlAsCanonicalLink(contentDocument, spineItem);
+            bindBringIntoViewEvent(contentDocument);
+
+            if (spineItem.isReflowable()) {
+                bindSelectionPopupWorkaround(contentDocument);
+            }
+        };
+
+        /***
+         *
+         * @param {Models.SpineItem} spineItem  The associated spine item object
+         */
+        this.updateContentDocument = function (spineItem) {
+            var contentDocument = contentDocuments[spineItem.idref];
+            var state = contentDocumentStates[spineItem.idref];
+
+            if (contentDocument && state) {
+
+                if (state.canonicalLinkElement) {
+                    var canonicalLinkHref = getContentDocumentCanonicalLink(contentDocument);
+                    if (canonicalLinkHref) {
+                        state.canonicalLinkElement.setAttribute('href', canonicalLinkHref);
+                    }
+                }
+
+                state.isUpdated = true;
+
+                var pendingNavRequest = state.pendingNavRequest;
+                if (pendingNavRequest) {
+                    reader.openSpineItemElementCfi(pendingNavRequest.idref, pendingNavRequest.contentCFI);
+                    state.pendingNavRequest = null;
+                }
+            }
+        };
+    };
+
+    return ExternalAgentSupport;
+});
+
 //  Created by Boris Schneiderman.
 // Modified by Daniel Weck
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
@@ -17380,13 +21483,13 @@ define('readium_shared_js/models/node_range_info',[],function () {
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
 define('readium_shared_js/views/reader_view',["../globals", "jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", "./iframe_loader", "./internal_links_support",
-        "./media_overlay_data_injector", "./media_overlay_player", "../models/package", "../models/page_open_request",
+        "./media_overlay_data_injector", "./media_overlay_player", "../models/package", "../models/metadata", "../models/page_open_request",
         "./reflowable_view", "./scroll_view", "../models/style_collection", "../models/switches", "../models/trigger",
-        "../models/viewer_settings", "../models/bookmark_data", "../models/node_range_info"],
+        "../models/viewer_settings", "../models/bookmark_data", "../models/node_range_info", "./external_agent_support"],
     function (Globals, $, _, EventEmitter, FixedView, Helpers, IFrameLoader, InternalLinksSupport,
-              MediaOverlayDataInjector, MediaOverlayPlayer, Package, PageOpenRequest,
+              MediaOverlayDataInjector, MediaOverlayPlayer, Package, Metadata, PageOpenRequest,
               ReflowableView, ScrollView, StyleCollection, Switches, Trigger,
-              ViewerSettings, BookmarkData, NodeRangeInfo) {
+              ViewerSettings, BookmarkData, NodeRangeInfo, ExternalAgentSupport) {
 /**
  * Options passed on the reader from the readium loader/initializer
  *
@@ -17407,6 +21510,7 @@ var ReaderView = function (options) {
     var self = this;
     var _currentView = undefined;
     var _package = undefined;
+    var _metadata = undefined;
     var _spine = undefined;
     var _viewerSettings = new ViewerSettings({});
     //styles applied to the container divs
@@ -17414,6 +21518,7 @@ var ReaderView = function (options) {
     //styles applied to the content documents
     var _bookStyles = new StyleCollection();
     var _internalLinksSupport = new InternalLinksSupport(this);
+    var _externalAgentSupport = new ExternalAgentSupport(this);
     var _mediaOverlayPlayer;
     var _mediaOverlayDataInjector;
     var _iframeLoader;
@@ -17589,7 +21694,8 @@ var ReaderView = function (options) {
         self.emit(Globals.Events.READER_VIEW_CREATED, desiredViewType);
 
         _currentView.on(Globals.Events.CONTENT_DOCUMENT_LOADED, function ($iframe, spineItem) {
-            
+            var contentDoc = $iframe[0].contentDocument;
+
             Globals.logEvent("CONTENT_DOCUMENT_LOADED", "ON", "reader_view.js (current view) [ " + spineItem.href + " ]");
 
             if (!Helpers.isIframeAlive($iframe[0])) return;
@@ -17599,7 +21705,8 @@ var ReaderView = function (options) {
 
             _internalLinksSupport.processLinkElements($iframe, spineItem);
 
-            var contentDoc = $iframe[0].contentDocument;
+            _externalAgentSupport.bindToContentDocument(contentDoc, spineItem);
+
             Trigger.register(contentDoc);
             Switches.apply(contentDoc);
 
@@ -17631,6 +21738,11 @@ var ReaderView = function (options) {
             _.defer(function () {
                 Globals.logEvent("PAGINATION_CHANGED", "EMIT", "reader_view.js");
                 self.emit(Globals.Events.PAGINATION_CHANGED, pageChangeData);
+                
+                if (!pageChangeData.spineItem) return;
+                _.defer(function () {
+                    _externalAgentSupport.updateContentDocument(pageChangeData.spineItem);
+                });
             });
         });
 
@@ -17703,6 +21815,15 @@ var ReaderView = function (options) {
     };
 
     /**
+     * Returns a data object based on the package document metadata
+     *
+     * @returns {Models.Metadata}
+     */
+    this.metadata = function () {
+        return _metadata;
+    };
+
+    /**
      * Returns a representation of the spine as a data object, also acts as list of spine items
      *
      * @returns {Models.Spine}
@@ -17741,6 +21862,7 @@ var ReaderView = function (options) {
         var packageData = openBookData.package ? openBookData.package : openBookData;
 
         _package = new Package(packageData);
+        _metadata = new Metadata(packageData.metadata);
 
         _spine = _package.spine;
         _spine.handleLinear(true);
@@ -17909,7 +22031,7 @@ var ReaderView = function (options) {
      * @typedef {object} Globals.Views.ReaderView.SettingsData
      * @property {number} fontSize - Font size as percentage
      * @property {number} fontSelection - Font selection as the number in the list of possible fonts, where 0 is special meaning default.
-     * @property {(string|boolean)} syntheticSpread - "auto"|true|false
+     * @property {(string|boolean)} syntheticSpread - "auto"|"single"|"double"
      * @property {(string|boolean)} scroll - "auto"|true|false
      * @property {boolean} doNotUpdateView - Indicates whether the view should be updated after the settings are applied
      * @property {boolean} mediaOverlaysEnableClick - Indicates whether media overlays are interactive on mouse clicks
@@ -18840,8 +22962,8 @@ var ReaderView = function (options) {
             Globals.logEvent("MEDIA_OVERLAY_STATUS_CHANGED", "ON", "reader_view.js (via BackgroundAudioTrackManager)");
             
             if (!value.smilIndex) return;
-            var package = readerView.package();
-            var smil = package.media_overlay.smilAt(value.smilIndex);
+            var packageModel = readerView.package();
+            var smil = packageModel.media_overlay.smilAt(value.smilIndex);
             if (!smil || !smil.spineItemId) return;
 
             var needUpdate = false;
@@ -18984,6 +23106,29 @@ var ReaderView = function (options) {
         }
         return undefined;
     };
+
+    /**
+     * Get CFI of the first element from the base of the document
+     * @returns {ReadiumSDK.Models.BookmarkData}
+     */
+    this.getStartCfi = function() {
+        if (_currentView) {
+            return _currentView.getStartCfi();
+        }
+        return undefined;
+    };
+
+    /**
+     * Get CFI of the last element from the base of the document
+     * @returns {ReadiumSDK.Models.BookmarkData}
+     */
+    this.getEndCfi = function() {
+        if (_currentView) {
+            return _currentView.getEndCfi();
+        }
+        return undefined;
+    };
+
     /**
      *
      * @param {string} rangeCfi
@@ -19089,6 +23234,19 @@ var ReaderView = function (options) {
         }
         return undefined;
     };
+       
+    /**
+     * Useful for getting a CFI that's as close as possible to an invisible (not rendered, zero client rects) element
+     * @param {HTMLElement} element
+     * @returns {*}
+     */
+    this.getNearestCfiFromElement = function(element) {
+        if (_currentView) {
+            return _currentView.getNearestCfiFromElement(element);
+        }
+        return undefined;
+    };
+    
 };
 
 /**
