@@ -286,13 +286,17 @@ var Spine = function(epubPackage, spineDTO) {
      */
     this.getItemByHref = function(href) {
         
-        var href1 = new URI(self.package.resolveRelativeUrl(href)).normalizePathname().pathname();
+        var href1_ = self.package.resolveRelativeUrl(href);
+        href1_ = href1_.replace("filesystem:chrome-extension://", "filesystem-chrome-extension://");
+        var href1 = new URI(href1_).normalizePathname().pathname();
         
         var length = self.items.length;
 
         for(var i = 0; i < length; i++) {
             
-            var href2 = new URI(self.package.resolveRelativeUrl(self.items[i].href)).normalizePathname().pathname();
+            var href2_ = self.package.resolveRelativeUrl(self.items[i].href);
+            href2_ = href2_.replace("filesystem:chrome-extension://", "filesystem-chrome-extension://");
+            var href2 = new URI(href2_).normalizePathname().pathname();
             
             if(href1 == href2) {
                 return self.items[i];

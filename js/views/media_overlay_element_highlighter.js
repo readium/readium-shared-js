@@ -26,7 +26,7 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define(['jquery', 'rangy', 'readium_cfi_js'], function($, rangy, epubCfi) {
+define(['jquery', 'readium_cfi_js'], function($, EPUBcfi) {
 /**
  *
  * @param reader
@@ -57,10 +57,6 @@ var MediaOverlayElementHighlighter = function(reader) {
     var _playbackActiveClass = "";
 
     var _reader = reader;
-    
-    var USE_RANGY = true && (typeof rangy !== "undefined");
-    var _rangyCSS = undefined;
-    var _rangyRange = undefined;
     
     var HIGHLIGHT_ID = "MO_SPEAK";
     
@@ -281,64 +277,7 @@ var MediaOverlayElementHighlighter = function(reader) {
 
         var clazz = (overrideWithUserStyle || !hasAuthorStyle) ? ((hasAuthorStyle ? (_activeClass + " ") : "") + DEFAULT_MO_ACTIVE_CLASS) : _activeClass;
 
-        if (USE_RANGY)
-        {
-            var doc = _highlightedCfiPar.cfi.cfiTextParent.ownerDocument;
-
-            _rangyRange = rangy.createRange(doc); //createNativeRange
-
-            var startCFI = "epubcfi(" + _highlightedCfiPar.cfi.partialStartCfi + ")";
-            var infoStart = EPUBcfi.getTextTerminusInfoWithPartialCFI(startCFI, doc,
-                ["cfi-marker", "mo-cfi-highlight"],
-                [],
-                ["MathJax_Message"]);
-//console.log(infoStart);
-
-            var endCFI = "epubcfi(" + _highlightedCfiPar.cfi.partialEndCfi + ")";
-            var infoEnd = EPUBcfi.getTextTerminusInfoWithPartialCFI(endCFI, doc,
-                ["cfi-marker", "mo-cfi-highlight"],
-                [],
-                ["MathJax_Message"]);
-//console.log(infoEnd);
-            
-            _rangyRange.setStartAndEnd(
-                infoStart.textNode, infoStart.textOffset,
-                infoEnd.textNode, infoEnd.textOffset
-            );
-            
-            if (false && // we use CssClassApplier instead, because surroundContents() has no trivial undoSurroundContents() function (inc. text nodes normalisation, etc.)
-                _rangyRange.canSurroundContents())
-            {
-                _rangyRange.MO_createCssClassApplier = false;
-                
-                var span = doc.createElementNS("http://www.w3.org/1999/xhtml", 'span');
-                span.id = HIGHLIGHT_ID;
-                span.setAttribute("id", span.id);
-                span.setAttribute("class", clazz + " mo-cfi-highlight");
-            
-                _rangyRange.surroundContents(span);
-            }
-            else
-            {
-                _rangyRange.MO_createCssClassApplier = true;
-                
-                if (!_rangyCSS || _rangyCSS.cssClass !== clazz)
-                {
-                    _rangyCSS = rangy.createCssClassApplier(clazz,
-                    {
-                        elementTagName: "span",
-                        elementProperties: {className: "mo-cfi-highlight"},
-                        ignoreWhiteSpace: true,
-                        applyToEditableOnly: false,
-                        normalize: true
-                    },
-                    ["span"]);
-                }
-
-                _rangyCSS.applyToRange(_rangyRange);
-            }
-        }
-        else if (_reader.plugins.highlights) // same API, newer implementation
+        if (_reader.plugins.highlights) // same API, newer implementation
         {
             try
             {
@@ -422,29 +361,8 @@ var MediaOverlayElementHighlighter = function(reader) {
         if (_highlightedCfiPar)
         {
             var doc = _highlightedCfiPar.cfi.cfiTextParent.ownerDocument;
-            if (USE_RANGY)
-            {
-                if (_rangyCSS && _rangyRange.MO_createCssClassApplier)
-                {
-                    _rangyCSS.undoToRange(_rangyRange);
-                }
-                else
-                {
-                    var toRemove = undefined;
-                    while ((toRemove = doc.getElementById(HIGHLIGHT_ID)) !== null)
-                    {
-                        var txt = toRemove.textContent; // TODO: innerHTML? or better: hasChildNodes loop + detach and re-attach
-                        var txtNode = doc.createTextNode(txt);
-                        
-                        toRemove.parentNode.replaceChild(txtNode, toRemove);
-                        txtNode.parentNode.normalize();
-                    }
-                }
-        
-                //_rangyCSS = undefined;
-                _rangyRange = undefined;
-            }
-            else if (_reader.plugins.highlights) // same API, new implementation
+
+            if (_reader.plugins.highlights) // same API, new implementation
             {
                 try
                 {

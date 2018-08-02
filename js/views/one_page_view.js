@@ -377,6 +377,10 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
                 _$epubBody = undefined;
             } else {
                 _$epubBody = $("body", _$epubHtml);
+
+                if (!_enableBookStyleOverrides) { // fixed layout
+                    _$epubBody.css("margin", "0"); // ensures 8px margin default user agent stylesheet is reset to zero
+                }
             }
 
             //_$epubHtml.css("overflow", "hidden");
@@ -974,19 +978,26 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
     }
     
     function getFrameDimensions() {
+        if (reader.needsFixedLayoutScalerWorkAround()) {
+            var parentEl = _$el.parent()[0];
+            return {
+                width: parentEl.clientWidth,
+                height: parentEl.clientHeight
+            };
+        }
         return {
-            width: _$el.parent()[0].clientWidth,
-            height: _$el.parent()[0].clientHeight
+            width: _meta_size.width,
+            height: _meta_size.height
         };
     }
     
     this.getNavigator = function () {
         return new CfiNavigationLogic({
             $iframe: _$iframe,
-            frameDimensions: getFrameDimensions,
-            visibleContentOffsets: getVisibleContentOffsets,
-            classBlacklist: ["cfi-marker", "mo-cfi-highlight", "resize-sensor", "resize-sensor-expand", "resize-sensor-shrink", "resize-sensor-inner"],
-            elementBlacklist: [],
+            frameDimensionsGetter: getFrameDimensions,
+            visibleContentOffsetsGetter: getVisibleContentOffsets,
+            classBlacklist: ["cfi-marker", "mo-cfi-highlight", "resize-sensor", "resize-sensor-expand", "resize-sensor-shrink", "resize-sensor-inner", "js-hypothesis-config", "js-hypothesis-embed"],
+            elementBlacklist: ["hypothesis-adder"],
             idBlacklist: ["MathJax_Message", "MathJax_SVG_Hidden"]
         });
     };
@@ -1077,7 +1088,11 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         return navigation.getNodeRangeInfoFromCfi(partialCfi);
     };
 
-    function createBookmarkFromCfi(cfi){
+    function createBookmarkFromCfi(cfi) {
+        if (!_currentSpineItem) {
+            return null;
+        }
+
         return new BookmarkData(_currentSpineItem.idref, cfi);
     }
 
@@ -1117,6 +1132,17 @@ var OnePageView = function (options, classes, enableBookStyleOverrides, reader) 
         return self.getNavigator().getElementFromPoint(x, y);
     };
 
+    this.getStartCfi = function () {
+        return createBookmarkFromCfi(self.getNavigator().getStartCfi());
+    };
+
+    this.getEndCfi = function () {
+        return createBookmarkFromCfi(self.getNavigator().getEndCfi());
+    };
+
+    this.getNearestCfiFromElement = function(element) {
+        return createBookmarkFromCfi(self.getNavigator().getNearestCfiFromElement(element));
+    };
 };
 
 OnePageView.Events = {

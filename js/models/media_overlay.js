@@ -33,10 +33,10 @@ define(["./smil_model"], function(SmilModel) {
  *
  * @class Models.MediaOverlay
  * @constructor
- * @param {Models.Package} package EPUB package
+ * @param {Models.Package} packageModel  EPUB package
 */
 
-var MediaOverlay = function(package) {
+var MediaOverlay = function(packageModel) {
 
     /**
      * The parent package object
@@ -44,7 +44,7 @@ var MediaOverlay = function(package) {
      * @property package
      * @type Models.Package
      */    
-    this.package = package;
+    this.package = packageModel;
 
     /**
      * Checks if a parallel smil node exists at a given timecode. 
@@ -355,13 +355,13 @@ var MediaOverlay = function(package) {
  *
  * @method MediaOverlay.fromDTO
  * @param {Object} moDTO Media overlay data object (raw JSON, as returned by a parser)
- * @param {Models.Package} package EPUB package object
+ * @param {Models.Package} packageModel EPUB package object
  * @return {Models.MediaOverlay}
 */
 
-MediaOverlay.fromDTO = function(moDTO, pack) {
+MediaOverlay.fromDTO = function(moDTO, packageModel) {
 
-    var mo = new MediaOverlay(pack);
+    var mo = new MediaOverlay(packageModel);
 
     if(!moDTO) {
         return mo;
