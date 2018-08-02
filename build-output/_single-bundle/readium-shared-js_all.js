@@ -10250,7 +10250,7 @@ if ( !noGlobal ) {
 return jQuery;
 }));
 
-(function(e){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=e()}else if(typeof define==="function"&&define.amd){define('eventEmitter',[],e)}else{var t;if(typeof window!=="undefined"){t=window}else if(typeof global!=="undefined"){t=global}else if(typeof self!=="undefined"){t=self}else{t=this}t.EventEmitter3=e()}})(function(){var e,t,n;return function e(t,n,r){function s(o,f){if(!n[o]){if(!t[o]){var u=typeof require=="function"&&require;if(!f&&u)return u(o,!0);if(i)return i(o,!0);var c=new Error("Cannot find module '"+o+"'");throw c.code="MODULE_NOT_FOUND",c}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s}({1:[function(e,t,n){"use strict";var r=Object.prototype.hasOwnProperty,s="~";function i(){}if(Object.create){i.prototype=Object.create(null);if(!(new i).__proto__)s=false}function o(e,t,n){this.fn=e;this.context=t;this.once=n||false}function f(){this._events=new i;this._eventsCount=0}f.prototype.eventNames=function e(){var t=[],n,i;if(this._eventsCount===0)return t;for(i in n=this._events){if(r.call(n,i))t.push(s?i.slice(1):i)}if(Object.getOwnPropertySymbols){return t.concat(Object.getOwnPropertySymbols(n))}return t};f.prototype.listeners=function e(t,n){var r=s?s+t:t,i=this._events[r];if(n)return!!i;if(!i)return[];if(i.fn)return[i.fn];for(var o=0,f=i.length,u=new Array(f);o<f;o++){u[o]=i[o].fn}return u};f.prototype.emit=function e(t,n,r,i,o,f){var u=s?s+t:t;if(!this._events[u])return false;var c=this._events[u],l=arguments.length,h,v;if(c.fn){if(c.once)this.removeListener(t,c.fn,undefined,true);switch(l){case 1:return c.fn.call(c.context),true;case 2:return c.fn.call(c.context,n),true;case 3:return c.fn.call(c.context,n,r),true;case 4:return c.fn.call(c.context,n,r,i),true;case 5:return c.fn.call(c.context,n,r,i,o),true;case 6:return c.fn.call(c.context,n,r,i,o,f),true}for(v=1,h=new Array(l-1);v<l;v++){h[v-1]=arguments[v]}c.fn.apply(c.context,h)}else{var a=c.length,p;for(v=0;v<a;v++){if(c[v].once)this.removeListener(t,c[v].fn,undefined,true);switch(l){case 1:c[v].fn.call(c[v].context);break;case 2:c[v].fn.call(c[v].context,n);break;case 3:c[v].fn.call(c[v].context,n,r);break;case 4:c[v].fn.call(c[v].context,n,r,i);break;default:if(!h)for(p=1,h=new Array(l-1);p<l;p++){h[p-1]=arguments[p]}c[v].fn.apply(c[v].context,h)}}}return true};f.prototype.on=function e(t,n,r){var i=new o(n,r||this),f=s?s+t:t;if(!this._events[f])this._events[f]=i,this._eventsCount++;else if(!this._events[f].fn)this._events[f].push(i);else this._events[f]=[this._events[f],i];return this};f.prototype.once=function e(t,n,r){var i=new o(n,r||this,true),f=s?s+t:t;if(!this._events[f])this._events[f]=i,this._eventsCount++;else if(!this._events[f].fn)this._events[f].push(i);else this._events[f]=[this._events[f],i];return this};f.prototype.removeListener=function e(t,n,r,o){var f=s?s+t:t;if(!this._events[f])return this;if(!n){if(--this._eventsCount===0)this._events=new i;else delete this._events[f];return this}var u=this._events[f];if(u.fn){if(u.fn===n&&(!o||u.once)&&(!r||u.context===r)){if(--this._eventsCount===0)this._events=new i;else delete this._events[f]}}else{for(var c=0,l=[],h=u.length;c<h;c++){if(u[c].fn!==n||o&&!u[c].once||r&&u[c].context!==r){l.push(u[c])}}if(l.length)this._events[f]=l.length===1?l[0]:l;else if(--this._eventsCount===0)this._events=new i;else delete this._events[f]}return this};f.prototype.removeAllListeners=function e(t){var n;if(t){n=s?s+t:t;if(this._events[n]){if(--this._eventsCount===0)this._events=new i;else delete this._events[n]}}else{this._events=new i;this._eventsCount=0}return this};f.prototype.off=f.prototype.removeListener;f.prototype.addListener=f.prototype.on;f.prototype.setMaxListeners=function e(){return this};f.prefixed=s;f.EventEmitter=f;if("undefined"!==typeof t){t.exports=f}},{}]},{},[1])(1)});
+!function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define('eventEmitter',[],e);else{("undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof self?self:this).EventEmitter3=e()}}(function(){return function i(s,f,c){function u(t,e){if(!f[t]){if(!s[t]){var n="function"==typeof require&&require;if(!e&&n)return n(t,!0);if(a)return a(t,!0);var r=new Error("Cannot find module '"+t+"'");throw r.code="MODULE_NOT_FOUND",r}var o=f[t]={exports:{}};s[t][0].call(o.exports,function(e){return u(s[t][1][e]||e)},o,o.exports,i,s,f,c)}return f[t].exports}for(var a="function"==typeof require&&require,e=0;e<c.length;e++)u(c[e]);return u}({1:[function(e,t,n){"use strict";var r=Object.prototype.hasOwnProperty,v="~";function o(){}function f(e,t,n){this.fn=e,this.context=t,this.once=n||!1}function i(e,t,n,r,o){if("function"!=typeof n)throw new TypeError("The listener must be a function");var i=new f(n,r||e,o),s=v?v+t:t;return e._events[s]?e._events[s].fn?e._events[s]=[e._events[s],i]:e._events[s].push(i):(e._events[s]=i,e._eventsCount++),e}function u(e,t){0==--e._eventsCount?e._events=new o:delete e._events[t]}function s(){this._events=new o,this._eventsCount=0}Object.create&&(o.prototype=Object.create(null),(new o).__proto__||(v=!1)),s.prototype.eventNames=function(){var e,t,n=[];if(0===this._eventsCount)return n;for(t in e=this._events)r.call(e,t)&&n.push(v?t.slice(1):t);return Object.getOwnPropertySymbols?n.concat(Object.getOwnPropertySymbols(e)):n},s.prototype.listeners=function(e){var t=v?v+e:e,n=this._events[t];if(!n)return[];if(n.fn)return[n.fn];for(var r=0,o=n.length,i=new Array(o);r<o;r++)i[r]=n[r].fn;return i},s.prototype.listenerCount=function(e){var t=v?v+e:e,n=this._events[t];return n?n.fn?1:n.length:0},s.prototype.emit=function(e,t,n,r,o,i){var s=v?v+e:e;if(!this._events[s])return!1;var f,c,u=this._events[s],a=arguments.length;if(u.fn){switch(u.once&&this.removeListener(e,u.fn,void 0,!0),a){case 1:return u.fn.call(u.context),!0;case 2:return u.fn.call(u.context,t),!0;case 3:return u.fn.call(u.context,t,n),!0;case 4:return u.fn.call(u.context,t,n,r),!0;case 5:return u.fn.call(u.context,t,n,r,o),!0;case 6:return u.fn.call(u.context,t,n,r,o,i),!0}for(c=1,f=new Array(a-1);c<a;c++)f[c-1]=arguments[c];u.fn.apply(u.context,f)}else{var l,p=u.length;for(c=0;c<p;c++)switch(u[c].once&&this.removeListener(e,u[c].fn,void 0,!0),a){case 1:u[c].fn.call(u[c].context);break;case 2:u[c].fn.call(u[c].context,t);break;case 3:u[c].fn.call(u[c].context,t,n);break;case 4:u[c].fn.call(u[c].context,t,n,r);break;default:if(!f)for(l=1,f=new Array(a-1);l<a;l++)f[l-1]=arguments[l];u[c].fn.apply(u[c].context,f)}}return!0},s.prototype.on=function(e,t,n){return i(this,e,t,n,!1)},s.prototype.once=function(e,t,n){return i(this,e,t,n,!0)},s.prototype.removeListener=function(e,t,n,r){var o=v?v+e:e;if(!this._events[o])return this;if(!t)return u(this,o),this;var i=this._events[o];if(i.fn)i.fn!==t||r&&!i.once||n&&i.context!==n||u(this,o);else{for(var s=0,f=[],c=i.length;s<c;s++)(i[s].fn!==t||r&&!i[s].once||n&&i[s].context!==n)&&f.push(i[s]);f.length?this._events[o]=1===f.length?f[0]:f:u(this,o)}return this},s.prototype.removeAllListeners=function(e){var t;return e?(t=v?v+e:e,this._events[t]&&u(this,t)):(this._events=new o,this._eventsCount=0),this},s.prototype.off=s.prototype.removeListener,s.prototype.addListener=s.prototype.on,s.prefixed=v,s.EventEmitter=s,void 0!==t&&(t.exports=s)},{}]},{},[1])(1)});
 //  LauncherOSX
 //
 //  Created by Boris Schneiderman.
@@ -10447,236 +10447,3848 @@ This code is required to IE for console shim
 })();
 define("console_shim", function(){});
 
-(function (exports) {'use strict';
-  //shared pointer
-  var i;
-  //shortcuts
-  var defineProperty = Object.defineProperty, is = function(a,b) { return (a === b) || (a !== a && b !== b) };
+ /*!
+  * https://github.com/paulmillr/es6-shim
+  * @license es6-shim Copyright 2013-2016 by Paul Miller (http://paulmillr.com)
+  *   and contributors,  MIT License
+  * es6-shim: v0.35.1
+  * see https://github.com/paulmillr/es6-shim/blob/0.35.1/LICENSE
+  * Details and documentation:
+  * https://github.com/paulmillr/es6-shim/
+  */
 
-
-  //Polyfill global objects
-  if (typeof WeakMap == 'undefined') {
-    exports.WeakMap = createCollection({
-      // WeakMap#delete(key:void*):boolean
-      'delete': sharedDelete,
-      // WeakMap#clear():
-      clear: sharedClear,
-      // WeakMap#get(key:void*):void*
-      get: sharedGet,
-      // WeakMap#has(key:void*):boolean
-      has: mapHas,
-      // WeakMap#set(key:void*, value:void*):void
-      set: sharedSet
-    }, true);
+// UMD (Universal Module Definition)
+// see https://github.com/umdjs/umd/blob/master/returnExports.js
+(function (root, factory) {
+  /*global define, module, exports */
+  if (typeof define === 'function' && define.amd) {
+    // AMD. Register as an anonymous module.
+    define('es6-shim',factory);
+  } else if (typeof exports === 'object') {
+    // Node. Does not work with strict CommonJS, but
+    // only CommonJS-like environments that support module.exports,
+    // like Node.
+    module.exports = factory();
+  } else {
+    // Browser globals (root is window)
+    root.returnExports = factory();
   }
+}(this, function () {
+  'use strict';
 
-  if (typeof Map == 'undefined' || typeof ((new Map).values) !== 'function' || !(new Map).values().next) {
-    exports.Map = createCollection({
-      // WeakMap#delete(key:void*):boolean
-      'delete': sharedDelete,
-      //:was Map#get(key:void*[, d3fault:void*]):void*
-      // Map#has(key:void*):boolean
-      has: mapHas,
-      // Map#get(key:void*):boolean
-      get: sharedGet,
-      // Map#set(key:void*, value:void*):void
-      set: sharedSet,
-      // Map#keys(void):Iterator
-      keys: sharedKeys,
-      // Map#values(void):Iterator
-      values: sharedValues,
-      // Map#entries(void):Iterator
-      entries: mapEntries,
-      // Map#forEach(callback:Function, context:void*):void ==> callback.call(context, key, value, mapObject) === not in specs`
-      forEach: sharedForEach,
-      // Map#clear():
-      clear: sharedClear
-    });
-  }
+  var _apply = Function.call.bind(Function.apply);
+  var _call = Function.call.bind(Function.call);
+  var isArray = Array.isArray;
+  var keys = Object.keys;
 
-  if (typeof Set == 'undefined' || typeof ((new Set).values) !== 'function' || !(new Set).values().next) {
-    exports.Set = createCollection({
-      // Set#has(value:void*):boolean
-      has: setHas,
-      // Set#add(value:void*):boolean
-      add: sharedAdd,
-      // Set#delete(key:void*):boolean
-      'delete': sharedDelete,
-      // Set#clear():
-      clear: sharedClear,
-      // Set#keys(void):Iterator
-      keys: sharedValues, // specs actually say "the same function object as the initial value of the values property"
-      // Set#values(void):Iterator
-      values: sharedValues,
-      // Set#entries(void):Iterator
-      entries: setEntries,
-      // Set#forEach(callback:Function, context:void*):void ==> callback.call(context, value, index) === not in specs
-      forEach: sharedForEach
-    });
-  }
-
-  if (typeof WeakSet == 'undefined') {
-    exports.WeakSet = createCollection({
-      // WeakSet#delete(key:void*):boolean
-      'delete': sharedDelete,
-      // WeakSet#add(value:void*):boolean
-      add: sharedAdd,
-      // WeakSet#clear():
-      clear: sharedClear,
-      // WeakSet#has(value:void*):boolean
-      has: setHas
-    }, true);
-  }
-
-
-  /**
-   * ES6 collection constructor
-   * @return {Function} a collection class
-   */
-  function createCollection(proto, objectOnly){
-    function Collection(a){
-      if (!this || this.constructor !== Collection) return new Collection(a);
-      this._keys = [];
-      this._values = [];
-      this._itp = []; // iteration pointers
-      this.objectOnly = objectOnly;
-
-      //parse initial iterable argument passed
-      if (a) init.call(this, a);
+  var not = function notThunker(func) {
+    return function notThunk() {
+      return !_apply(func, this, arguments);
+    };
+  };
+  var throwsError = function (func) {
+    try {
+      func();
+      return false;
+    } catch (e) {
+      return true;
     }
-
-    //define size for non object-only collections
-    if (!objectOnly) {
-      defineProperty(proto, 'size', {
-        get: sharedSize
-      });
+  };
+  var valueOrFalseIfThrows = function valueOrFalseIfThrows(func) {
+    try {
+      return func();
+    } catch (e) {
+      return false;
     }
-
-    //set prototype
-    proto.constructor = Collection;
-    Collection.prototype = proto;
-
-    return Collection;
-  }
-
-
-  /** parse initial iterable argument passed */
-  function init(a){
-    var i;
-    //init Set argument, like `[1,2,3,{}]`
-    if (this.add)
-      a.forEach(this.add, this);
-    //init Map argument like `[[1,2], [{}, 4]]`
-    else
-      a.forEach(function(a){this.set(a[0],a[1])}, this);
-  }
-
-
-  /** delete */
-  function sharedDelete(key) {
-    if (this.has(key)) {
-      this._keys.splice(i, 1);
-      this._values.splice(i, 1);
-      // update iteration pointers
-      this._itp.forEach(function(p) { if (i < p[0]) p[0]--; });
-    }
-    // Aurora here does it while Canary doesn't
-    return -1 < i;
   };
 
-  function sharedGet(key) {
-    return this.has(key) ? this._values[i] : undefined;
-  }
+  var isCallableWithoutNew = not(throwsError);
+  var arePropertyDescriptorsSupported = function () {
+    // if Object.defineProperty exists but throws, it's IE 8
+    return !throwsError(function () {
+      Object.defineProperty({}, 'x', { get: function () {} });
+    });
+  };
+  var supportsDescriptors = !!Object.defineProperty && arePropertyDescriptorsSupported();
+  var functionsHaveNames = (function foo() {}).name === 'foo'; // eslint-disable-line no-extra-parens
 
-  function has(list, key) {
-    if (this.objectOnly && key !== Object(key))
-      throw new TypeError("Invalid value used as weak collection key");
-    //NaN or 0 passed
-    if (key != key || key === 0) for (i = list.length; i-- && !is(list[i], key);){}
-    else i = list.indexOf(key);
-    return -1 < i;
-  }
+  var _forEach = Function.call.bind(Array.prototype.forEach);
+  var _reduce = Function.call.bind(Array.prototype.reduce);
+  var _filter = Function.call.bind(Array.prototype.filter);
+  var _some = Function.call.bind(Array.prototype.some);
 
-  function setHas(value) {
-    return has.call(this, this._values, value);
-  }
+  var defineProperty = function (object, name, value, force) {
+    if (!force && name in object) { return; }
+    if (supportsDescriptors) {
+      Object.defineProperty(object, name, {
+        configurable: true,
+        enumerable: false,
+        writable: true,
+        value: value
+      });
+    } else {
+      object[name] = value;
+    }
+  };
 
-  function mapHas(value) {
-    return has.call(this, this._keys, value);
-  }
+  // Define configurable, writable and non-enumerable props
+  // if they don’t exist.
+  var defineProperties = function (object, map, forceOverride) {
+    _forEach(keys(map), function (name) {
+      var method = map[name];
+      defineProperty(object, name, method, !!forceOverride);
+    });
+  };
 
-  /** @chainable */
-  function sharedSet(key, value) {
-    this.has(key) ?
-      this._values[i] = value
-      :
-      this._values[this._keys.push(key) - 1] = value
-    ;
-    return this;
-  }
+  var _toString = Function.call.bind(Object.prototype.toString);
+  var isCallable = typeof /abc/ === 'function' ? function IsCallableSlow(x) {
+    // Some old browsers (IE, FF) say that typeof /abc/ === 'function'
+    return typeof x === 'function' && _toString(x) === '[object Function]';
+  } : function IsCallableFast(x) { return typeof x === 'function'; };
 
-  /** @chainable */
-  function sharedAdd(value) {
-    if (!this.has(value)) this._values.push(value);
-    return this;
-  }
-
-  function sharedClear() {
-    (this._keys || 0).length =
-    this._values.length = 0;
-  }
-
-  /** keys, values, and iterate related methods */
-  function sharedKeys() {
-    return sharedIterator(this._itp, this._keys);
-  }
-
-  function sharedValues() {
-    return sharedIterator(this._itp, this._values);
-  }
-
-  function mapEntries() {
-    return sharedIterator(this._itp, this._keys, this._values);
-  }
-
-  function setEntries() {
-    return sharedIterator(this._itp, this._values, this._values);
-  }
-
-  function sharedIterator(itp, array, array2) {
-    var p = [0], done = false;
-    itp.push(p);
-    return {
-      next: function() {
-        var v, k = p[0];
-        if (!done && k < array.length) {
-          v = array2 ? [array[k], array2[k]]: array[k];
-          p[0]++;
-        } else {
-          done = true;
-          itp.splice(itp.indexOf(p), 1);
-        }
-        return { done: done, value: v };
+  var Value = {
+    getter: function (object, name, getter) {
+      if (!supportsDescriptors) {
+        throw new TypeError('getters require true ES5 support');
       }
+      Object.defineProperty(object, name, {
+        configurable: true,
+        enumerable: false,
+        get: getter
+      });
+    },
+    proxy: function (originalObject, key, targetObject) {
+      if (!supportsDescriptors) {
+        throw new TypeError('getters require true ES5 support');
+      }
+      var originalDescriptor = Object.getOwnPropertyDescriptor(originalObject, key);
+      Object.defineProperty(targetObject, key, {
+        configurable: originalDescriptor.configurable,
+        enumerable: originalDescriptor.enumerable,
+        get: function getKey() { return originalObject[key]; },
+        set: function setKey(value) { originalObject[key] = value; }
+      });
+    },
+    redefine: function (object, property, newValue) {
+      if (supportsDescriptors) {
+        var descriptor = Object.getOwnPropertyDescriptor(object, property);
+        descriptor.value = newValue;
+        Object.defineProperty(object, property, descriptor);
+      } else {
+        object[property] = newValue;
+      }
+    },
+    defineByDescriptor: function (object, property, descriptor) {
+      if (supportsDescriptors) {
+        Object.defineProperty(object, property, descriptor);
+      } else if ('value' in descriptor) {
+        object[property] = descriptor.value;
+      }
+    },
+    preserveToString: function (target, source) {
+      if (source && isCallable(source.toString)) {
+        defineProperty(target, 'toString', source.toString.bind(source), true);
+      }
+    }
+  };
+
+  // Simple shim for Object.create on ES3 browsers
+  // (unlike real shim, no attempt to support `prototype === null`)
+  var create = Object.create || function (prototype, properties) {
+    var Prototype = function Prototype() {};
+    Prototype.prototype = prototype;
+    var object = new Prototype();
+    if (typeof properties !== 'undefined') {
+      keys(properties).forEach(function (key) {
+        Value.defineByDescriptor(object, key, properties[key]);
+      });
+    }
+    return object;
+  };
+
+  var supportsSubclassing = function (C, f) {
+    if (!Object.setPrototypeOf) { return false; /* skip test on IE < 11 */ }
+    return valueOrFalseIfThrows(function () {
+      var Sub = function Subclass(arg) {
+        var o = new C(arg);
+        Object.setPrototypeOf(o, Subclass.prototype);
+        return o;
+      };
+      Object.setPrototypeOf(Sub, C);
+      Sub.prototype = create(C.prototype, {
+        constructor: { value: Sub }
+      });
+      return f(Sub);
+    });
+  };
+
+  var getGlobal = function () {
+    /* global self, window, global */
+    // the only reliable means to get the global object is
+    // `Function('return this')()`
+    // However, this causes CSP violations in Chrome apps.
+    if (typeof self !== 'undefined') { return self; }
+    if (typeof window !== 'undefined') { return window; }
+    if (typeof global !== 'undefined') { return global; }
+    throw new Error('unable to locate global object');
+  };
+
+  var globals = getGlobal();
+  var globalIsFinite = globals.isFinite;
+  var _indexOf = Function.call.bind(String.prototype.indexOf);
+  var _arrayIndexOfApply = Function.apply.bind(Array.prototype.indexOf);
+  var _concat = Function.call.bind(Array.prototype.concat);
+  // var _sort = Function.call.bind(Array.prototype.sort);
+  var _strSlice = Function.call.bind(String.prototype.slice);
+  var _push = Function.call.bind(Array.prototype.push);
+  var _pushApply = Function.apply.bind(Array.prototype.push);
+  var _shift = Function.call.bind(Array.prototype.shift);
+  var _max = Math.max;
+  var _min = Math.min;
+  var _floor = Math.floor;
+  var _abs = Math.abs;
+  var _exp = Math.exp;
+  var _log = Math.log;
+  var _sqrt = Math.sqrt;
+  var _hasOwnProperty = Function.call.bind(Object.prototype.hasOwnProperty);
+  var ArrayIterator; // make our implementation private
+  var noop = function () {};
+
+  var OrigMap = globals.Map;
+  var origMapDelete = OrigMap && OrigMap.prototype['delete'];
+  var origMapGet = OrigMap && OrigMap.prototype.get;
+  var origMapHas = OrigMap && OrigMap.prototype.has;
+  var origMapSet = OrigMap && OrigMap.prototype.set;
+
+  var Symbol = globals.Symbol || {};
+  var symbolSpecies = Symbol.species || '@@species';
+
+  var numberIsNaN = Number.isNaN || function isNaN(value) {
+    // NaN !== NaN, but they are identical.
+    // NaNs are the only non-reflexive value, i.e., if x !== x,
+    // then x is NaN.
+    // isNaN is broken: it converts its argument to number, so
+    // isNaN('foo') => true
+    return value !== value;
+  };
+  var numberIsFinite = Number.isFinite || function isFinite(value) {
+    return typeof value === 'number' && globalIsFinite(value);
+  };
+  var _sign = isCallable(Math.sign) ? Math.sign : function sign(value) {
+    var number = Number(value);
+    if (number === 0) { return number; }
+    if (numberIsNaN(number)) { return number; }
+    return number < 0 ? -1 : 1;
+  };
+
+  // taken directly from https://github.com/ljharb/is-arguments/blob/master/index.js
+  // can be replaced with require('is-arguments') if we ever use a build process instead
+  var isStandardArguments = function isArguments(value) {
+    return _toString(value) === '[object Arguments]';
+  };
+  var isLegacyArguments = function isArguments(value) {
+    return value !== null &&
+      typeof value === 'object' &&
+      typeof value.length === 'number' &&
+      value.length >= 0 &&
+      _toString(value) !== '[object Array]' &&
+      _toString(value.callee) === '[object Function]';
+  };
+  var isArguments = isStandardArguments(arguments) ? isStandardArguments : isLegacyArguments;
+
+  var Type = {
+    primitive: function (x) { return x === null || (typeof x !== 'function' && typeof x !== 'object'); },
+    string: function (x) { return _toString(x) === '[object String]'; },
+    regex: function (x) { return _toString(x) === '[object RegExp]'; },
+    symbol: function (x) {
+      return typeof globals.Symbol === 'function' && typeof x === 'symbol';
+    }
+  };
+
+  var overrideNative = function overrideNative(object, property, replacement) {
+    var original = object[property];
+    defineProperty(object, property, replacement, true);
+    Value.preserveToString(object[property], original);
+  };
+
+  // eslint-disable-next-line no-restricted-properties
+  var hasSymbols = typeof Symbol === 'function' && typeof Symbol['for'] === 'function' && Type.symbol(Symbol());
+
+  // This is a private name in the es6 spec, equal to '[Symbol.iterator]'
+  // we're going to use an arbitrary _-prefixed name to make our shims
+  // work properly with each other, even though we don't have full Iterator
+  // support.  That is, `Array.from(map.keys())` will work, but we don't
+  // pretend to export a "real" Iterator interface.
+  var $iterator$ = Type.symbol(Symbol.iterator) ? Symbol.iterator : '_es6-shim iterator_';
+  // Firefox ships a partial implementation using the name @@iterator.
+  // https://bugzilla.mozilla.org/show_bug.cgi?id=907077#c14
+  // So use that name if we detect it.
+  if (globals.Set && typeof new globals.Set()['@@iterator'] === 'function') {
+    $iterator$ = '@@iterator';
+  }
+
+  // Reflect
+  if (!globals.Reflect) {
+    defineProperty(globals, 'Reflect', {}, true);
+  }
+  var Reflect = globals.Reflect;
+
+  var $String = String;
+
+  /* global document */
+  var domAll = (typeof document === 'undefined' || !document) ? null : document.all;
+  /* jshint eqnull:true */
+  var isNullOrUndefined = domAll == null ? function isNullOrUndefined(x) {
+    /* jshint eqnull:true */
+    return x == null;
+  } : function isNullOrUndefinedAndNotDocumentAll(x) {
+    /* jshint eqnull:true */
+    return x == null && x !== domAll;
+  };
+
+  var ES = {
+    // http://www.ecma-international.org/ecma-262/6.0/#sec-call
+    Call: function Call(F, V) {
+      var args = arguments.length > 2 ? arguments[2] : [];
+      if (!ES.IsCallable(F)) {
+        throw new TypeError(F + ' is not a function');
+      }
+      return _apply(F, V, args);
+    },
+
+    RequireObjectCoercible: function (x, optMessage) {
+      if (isNullOrUndefined(x)) {
+        throw new TypeError(optMessage || 'Cannot call method on ' + x);
+      }
+      return x;
+    },
+
+    // This might miss the "(non-standard exotic and does not implement
+    // [[Call]])" case from
+    // http://www.ecma-international.org/ecma-262/6.0/#sec-typeof-operator-runtime-semantics-evaluation
+    // but we can't find any evidence these objects exist in practice.
+    // If we find some in the future, you could test `Object(x) === x`,
+    // which is reliable according to
+    // http://www.ecma-international.org/ecma-262/6.0/#sec-toobject
+    // but is not well optimized by runtimes and creates an object
+    // whenever it returns false, and thus is very slow.
+    TypeIsObject: function (x) {
+      if (x === void 0 || x === null || x === true || x === false) {
+        return false;
+      }
+      return typeof x === 'function' || typeof x === 'object' || x === domAll;
+    },
+
+    ToObject: function (o, optMessage) {
+      return Object(ES.RequireObjectCoercible(o, optMessage));
+    },
+
+    IsCallable: isCallable,
+
+    IsConstructor: function (x) {
+      // We can't tell callables from constructors in ES5
+      return ES.IsCallable(x);
+    },
+
+    ToInt32: function (x) {
+      return ES.ToNumber(x) >> 0;
+    },
+
+    ToUint32: function (x) {
+      return ES.ToNumber(x) >>> 0;
+    },
+
+    ToNumber: function (value) {
+      if (_toString(value) === '[object Symbol]') {
+        throw new TypeError('Cannot convert a Symbol value to a number');
+      }
+      return +value;
+    },
+
+    ToInteger: function (value) {
+      var number = ES.ToNumber(value);
+      if (numberIsNaN(number)) { return 0; }
+      if (number === 0 || !numberIsFinite(number)) { return number; }
+      return (number > 0 ? 1 : -1) * _floor(_abs(number));
+    },
+
+    ToLength: function (value) {
+      var len = ES.ToInteger(value);
+      if (len <= 0) { return 0; } // includes converting -0 to +0
+      if (len > Number.MAX_SAFE_INTEGER) { return Number.MAX_SAFE_INTEGER; }
+      return len;
+    },
+
+    SameValue: function (a, b) {
+      if (a === b) {
+        // 0 === -0, but they are not identical.
+        if (a === 0) { return 1 / a === 1 / b; }
+        return true;
+      }
+      return numberIsNaN(a) && numberIsNaN(b);
+    },
+
+    SameValueZero: function (a, b) {
+      // same as SameValue except for SameValueZero(+0, -0) == true
+      return (a === b) || (numberIsNaN(a) && numberIsNaN(b));
+    },
+
+    IsIterable: function (o) {
+      return ES.TypeIsObject(o) && (typeof o[$iterator$] !== 'undefined' || isArguments(o));
+    },
+
+    GetIterator: function (o) {
+      if (isArguments(o)) {
+        // special case support for `arguments`
+        return new ArrayIterator(o, 'value');
+      }
+      var itFn = ES.GetMethod(o, $iterator$);
+      if (!ES.IsCallable(itFn)) {
+        // Better diagnostics if itFn is null or undefined
+        throw new TypeError('value is not an iterable');
+      }
+      var it = ES.Call(itFn, o);
+      if (!ES.TypeIsObject(it)) {
+        throw new TypeError('bad iterator');
+      }
+      return it;
+    },
+
+    GetMethod: function (o, p) {
+      var func = ES.ToObject(o)[p];
+      if (isNullOrUndefined(func)) {
+        return void 0;
+      }
+      if (!ES.IsCallable(func)) {
+        throw new TypeError('Method not callable: ' + p);
+      }
+      return func;
+    },
+
+    IteratorComplete: function (iterResult) {
+      return !!iterResult.done;
+    },
+
+    IteratorClose: function (iterator, completionIsThrow) {
+      var returnMethod = ES.GetMethod(iterator, 'return');
+      if (returnMethod === void 0) {
+        return;
+      }
+      var innerResult, innerException;
+      try {
+        innerResult = ES.Call(returnMethod, iterator);
+      } catch (e) {
+        innerException = e;
+      }
+      if (completionIsThrow) {
+        return;
+      }
+      if (innerException) {
+        throw innerException;
+      }
+      if (!ES.TypeIsObject(innerResult)) {
+        throw new TypeError("Iterator's return method returned a non-object.");
+      }
+    },
+
+    IteratorNext: function (it) {
+      var result = arguments.length > 1 ? it.next(arguments[1]) : it.next();
+      if (!ES.TypeIsObject(result)) {
+        throw new TypeError('bad iterator');
+      }
+      return result;
+    },
+
+    IteratorStep: function (it) {
+      var result = ES.IteratorNext(it);
+      var done = ES.IteratorComplete(result);
+      return done ? false : result;
+    },
+
+    Construct: function (C, args, newTarget, isES6internal) {
+      var target = typeof newTarget === 'undefined' ? C : newTarget;
+
+      if (!isES6internal && Reflect.construct) {
+        // Try to use Reflect.construct if available
+        return Reflect.construct(C, args, target);
+      }
+      // OK, we have to fake it.  This will only work if the
+      // C.[[ConstructorKind]] == "base" -- but that's the only
+      // kind we can make in ES5 code anyway.
+
+      // OrdinaryCreateFromConstructor(target, "%ObjectPrototype%")
+      var proto = target.prototype;
+      if (!ES.TypeIsObject(proto)) {
+        proto = Object.prototype;
+      }
+      var obj = create(proto);
+      // Call the constructor.
+      var result = ES.Call(C, obj, args);
+      return ES.TypeIsObject(result) ? result : obj;
+    },
+
+    SpeciesConstructor: function (O, defaultConstructor) {
+      var C = O.constructor;
+      if (C === void 0) {
+        return defaultConstructor;
+      }
+      if (!ES.TypeIsObject(C)) {
+        throw new TypeError('Bad constructor');
+      }
+      var S = C[symbolSpecies];
+      if (isNullOrUndefined(S)) {
+        return defaultConstructor;
+      }
+      if (!ES.IsConstructor(S)) {
+        throw new TypeError('Bad @@species');
+      }
+      return S;
+    },
+
+    CreateHTML: function (string, tag, attribute, value) {
+      var S = ES.ToString(string);
+      var p1 = '<' + tag;
+      if (attribute !== '') {
+        var V = ES.ToString(value);
+        var escapedV = V.replace(/"/g, '&quot;');
+        p1 += ' ' + attribute + '="' + escapedV + '"';
+      }
+      var p2 = p1 + '>';
+      var p3 = p2 + S;
+      return p3 + '</' + tag + '>';
+    },
+
+    IsRegExp: function IsRegExp(argument) {
+      if (!ES.TypeIsObject(argument)) {
+        return false;
+      }
+      var isRegExp = argument[Symbol.match];
+      if (typeof isRegExp !== 'undefined') {
+        return !!isRegExp;
+      }
+      return Type.regex(argument);
+    },
+
+    ToString: function ToString(string) {
+      return $String(string);
+    }
+  };
+
+  // Well-known Symbol shims
+  if (supportsDescriptors && hasSymbols) {
+    var defineWellKnownSymbol = function defineWellKnownSymbol(name) {
+      if (Type.symbol(Symbol[name])) {
+        return Symbol[name];
+      }
+      // eslint-disable-next-line no-restricted-properties
+      var sym = Symbol['for']('Symbol.' + name);
+      Object.defineProperty(Symbol, name, {
+        configurable: false,
+        enumerable: false,
+        writable: false,
+        value: sym
+      });
+      return sym;
+    };
+    if (!Type.symbol(Symbol.search)) {
+      var symbolSearch = defineWellKnownSymbol('search');
+      var originalSearch = String.prototype.search;
+      defineProperty(RegExp.prototype, symbolSearch, function search(string) {
+        return ES.Call(originalSearch, string, [this]);
+      });
+      var searchShim = function search(regexp) {
+        var O = ES.RequireObjectCoercible(this);
+        if (!isNullOrUndefined(regexp)) {
+          var searcher = ES.GetMethod(regexp, symbolSearch);
+          if (typeof searcher !== 'undefined') {
+            return ES.Call(searcher, regexp, [O]);
+          }
+        }
+        return ES.Call(originalSearch, O, [ES.ToString(regexp)]);
+      };
+      overrideNative(String.prototype, 'search', searchShim);
+    }
+    if (!Type.symbol(Symbol.replace)) {
+      var symbolReplace = defineWellKnownSymbol('replace');
+      var originalReplace = String.prototype.replace;
+      defineProperty(RegExp.prototype, symbolReplace, function replace(string, replaceValue) {
+        return ES.Call(originalReplace, string, [this, replaceValue]);
+      });
+      var replaceShim = function replace(searchValue, replaceValue) {
+        var O = ES.RequireObjectCoercible(this);
+        if (!isNullOrUndefined(searchValue)) {
+          var replacer = ES.GetMethod(searchValue, symbolReplace);
+          if (typeof replacer !== 'undefined') {
+            return ES.Call(replacer, searchValue, [O, replaceValue]);
+          }
+        }
+        return ES.Call(originalReplace, O, [ES.ToString(searchValue), replaceValue]);
+      };
+      overrideNative(String.prototype, 'replace', replaceShim);
+    }
+    if (!Type.symbol(Symbol.split)) {
+      var symbolSplit = defineWellKnownSymbol('split');
+      var originalSplit = String.prototype.split;
+      defineProperty(RegExp.prototype, symbolSplit, function split(string, limit) {
+        return ES.Call(originalSplit, string, [this, limit]);
+      });
+      var splitShim = function split(separator, limit) {
+        var O = ES.RequireObjectCoercible(this);
+        if (!isNullOrUndefined(separator)) {
+          var splitter = ES.GetMethod(separator, symbolSplit);
+          if (typeof splitter !== 'undefined') {
+            return ES.Call(splitter, separator, [O, limit]);
+          }
+        }
+        return ES.Call(originalSplit, O, [ES.ToString(separator), limit]);
+      };
+      overrideNative(String.prototype, 'split', splitShim);
+    }
+    var symbolMatchExists = Type.symbol(Symbol.match);
+    var stringMatchIgnoresSymbolMatch = symbolMatchExists && (function () {
+      // Firefox 41, through Nightly 45 has Symbol.match, but String#match ignores it.
+      // Firefox 40 and below have Symbol.match but String#match works fine.
+      var o = {};
+      o[Symbol.match] = function () { return 42; };
+      return 'a'.match(o) !== 42;
+    }());
+    if (!symbolMatchExists || stringMatchIgnoresSymbolMatch) {
+      var symbolMatch = defineWellKnownSymbol('match');
+
+      var originalMatch = String.prototype.match;
+      defineProperty(RegExp.prototype, symbolMatch, function match(string) {
+        return ES.Call(originalMatch, string, [this]);
+      });
+
+      var matchShim = function match(regexp) {
+        var O = ES.RequireObjectCoercible(this);
+        if (!isNullOrUndefined(regexp)) {
+          var matcher = ES.GetMethod(regexp, symbolMatch);
+          if (typeof matcher !== 'undefined') {
+            return ES.Call(matcher, regexp, [O]);
+          }
+        }
+        return ES.Call(originalMatch, O, [ES.ToString(regexp)]);
+      };
+      overrideNative(String.prototype, 'match', matchShim);
+    }
+  }
+
+  var wrapConstructor = function wrapConstructor(original, replacement, keysToSkip) {
+    Value.preserveToString(replacement, original);
+    if (Object.setPrototypeOf) {
+      // sets up proper prototype chain where possible
+      Object.setPrototypeOf(original, replacement);
+    }
+    if (supportsDescriptors) {
+      _forEach(Object.getOwnPropertyNames(original), function (key) {
+        if (key in noop || keysToSkip[key]) { return; }
+        Value.proxy(original, key, replacement);
+      });
+    } else {
+      _forEach(Object.keys(original), function (key) {
+        if (key in noop || keysToSkip[key]) { return; }
+        replacement[key] = original[key];
+      });
+    }
+    replacement.prototype = original.prototype;
+    Value.redefine(original.prototype, 'constructor', replacement);
+  };
+
+  var defaultSpeciesGetter = function () { return this; };
+  var addDefaultSpecies = function (C) {
+    if (supportsDescriptors && !_hasOwnProperty(C, symbolSpecies)) {
+      Value.getter(C, symbolSpecies, defaultSpeciesGetter);
+    }
+  };
+
+  var addIterator = function (prototype, impl) {
+    var implementation = impl || function iterator() { return this; };
+    defineProperty(prototype, $iterator$, implementation);
+    if (!prototype[$iterator$] && Type.symbol($iterator$)) {
+      // implementations are buggy when $iterator$ is a Symbol
+      prototype[$iterator$] = implementation;
+    }
+  };
+
+  var createDataProperty = function createDataProperty(object, name, value) {
+    if (supportsDescriptors) {
+      Object.defineProperty(object, name, {
+        configurable: true,
+        enumerable: true,
+        writable: true,
+        value: value
+      });
+    } else {
+      object[name] = value;
+    }
+  };
+  var createDataPropertyOrThrow = function createDataPropertyOrThrow(object, name, value) {
+    createDataProperty(object, name, value);
+    if (!ES.SameValue(object[name], value)) {
+      throw new TypeError('property is nonconfigurable');
+    }
+  };
+
+  var emulateES6construct = function (o, defaultNewTarget, defaultProto, slots) {
+    // This is an es5 approximation to es6 construct semantics.  in es6,
+    // 'new Foo' invokes Foo.[[Construct]] which (for almost all objects)
+    // just sets the internal variable NewTarget (in es6 syntax `new.target`)
+    // to Foo and then returns Foo().
+
+    // Many ES6 object then have constructors of the form:
+    // 1. If NewTarget is undefined, throw a TypeError exception
+    // 2. Let xxx by OrdinaryCreateFromConstructor(NewTarget, yyy, zzz)
+
+    // So we're going to emulate those first two steps.
+    if (!ES.TypeIsObject(o)) {
+      throw new TypeError('Constructor requires `new`: ' + defaultNewTarget.name);
+    }
+    var proto = defaultNewTarget.prototype;
+    if (!ES.TypeIsObject(proto)) {
+      proto = defaultProto;
+    }
+    var obj = create(proto);
+    for (var name in slots) {
+      if (_hasOwnProperty(slots, name)) {
+        var value = slots[name];
+        defineProperty(obj, name, value, true);
+      }
+    }
+    return obj;
+  };
+
+  // Firefox 31 reports this function's length as 0
+  // https://bugzilla.mozilla.org/show_bug.cgi?id=1062484
+  if (String.fromCodePoint && String.fromCodePoint.length !== 1) {
+    var originalFromCodePoint = String.fromCodePoint;
+    overrideNative(String, 'fromCodePoint', function fromCodePoint(codePoints) {
+      return ES.Call(originalFromCodePoint, this, arguments);
+    });
+  }
+
+  var StringShims = {
+    fromCodePoint: function fromCodePoint(codePoints) {
+      var result = [];
+      var next;
+      for (var i = 0, length = arguments.length; i < length; i++) {
+        next = Number(arguments[i]);
+        if (!ES.SameValue(next, ES.ToInteger(next)) || next < 0 || next > 0x10FFFF) {
+          throw new RangeError('Invalid code point ' + next);
+        }
+
+        if (next < 0x10000) {
+          _push(result, String.fromCharCode(next));
+        } else {
+          next -= 0x10000;
+          _push(result, String.fromCharCode((next >> 10) + 0xD800));
+          _push(result, String.fromCharCode((next % 0x400) + 0xDC00));
+        }
+      }
+      return result.join('');
+    },
+
+    raw: function raw(callSite) {
+      var cooked = ES.ToObject(callSite, 'bad callSite');
+      var rawString = ES.ToObject(cooked.raw, 'bad raw value');
+      var len = rawString.length;
+      var literalsegments = ES.ToLength(len);
+      if (literalsegments <= 0) {
+        return '';
+      }
+
+      var stringElements = [];
+      var nextIndex = 0;
+      var nextKey, next, nextSeg, nextSub;
+      while (nextIndex < literalsegments) {
+        nextKey = ES.ToString(nextIndex);
+        nextSeg = ES.ToString(rawString[nextKey]);
+        _push(stringElements, nextSeg);
+        if (nextIndex + 1 >= literalsegments) {
+          break;
+        }
+        next = nextIndex + 1 < arguments.length ? arguments[nextIndex + 1] : '';
+        nextSub = ES.ToString(next);
+        _push(stringElements, nextSub);
+        nextIndex += 1;
+      }
+      return stringElements.join('');
+    }
+  };
+  if (String.raw && String.raw({ raw: { 0: 'x', 1: 'y', length: 2 } }) !== 'xy') {
+    // IE 11 TP has a broken String.raw implementation
+    overrideNative(String, 'raw', StringShims.raw);
+  }
+  defineProperties(String, StringShims);
+
+  // Fast repeat, uses the `Exponentiation by squaring` algorithm.
+  // Perf: http://jsperf.com/string-repeat2/2
+  var stringRepeat = function repeat(s, times) {
+    if (times < 1) { return ''; }
+    if (times % 2) { return repeat(s, times - 1) + s; }
+    var half = repeat(s, times / 2);
+    return half + half;
+  };
+  var stringMaxLength = Infinity;
+
+  var StringPrototypeShims = {
+    repeat: function repeat(times) {
+      var thisStr = ES.ToString(ES.RequireObjectCoercible(this));
+      var numTimes = ES.ToInteger(times);
+      if (numTimes < 0 || numTimes >= stringMaxLength) {
+        throw new RangeError('repeat count must be less than infinity and not overflow maximum string size');
+      }
+      return stringRepeat(thisStr, numTimes);
+    },
+
+    startsWith: function startsWith(searchString) {
+      var S = ES.ToString(ES.RequireObjectCoercible(this));
+      if (ES.IsRegExp(searchString)) {
+        throw new TypeError('Cannot call method "startsWith" with a regex');
+      }
+      var searchStr = ES.ToString(searchString);
+      var position;
+      if (arguments.length > 1) {
+        position = arguments[1];
+      }
+      var start = _max(ES.ToInteger(position), 0);
+      return _strSlice(S, start, start + searchStr.length) === searchStr;
+    },
+
+    endsWith: function endsWith(searchString) {
+      var S = ES.ToString(ES.RequireObjectCoercible(this));
+      if (ES.IsRegExp(searchString)) {
+        throw new TypeError('Cannot call method "endsWith" with a regex');
+      }
+      var searchStr = ES.ToString(searchString);
+      var len = S.length;
+      var endPosition;
+      if (arguments.length > 1) {
+        endPosition = arguments[1];
+      }
+      var pos = typeof endPosition === 'undefined' ? len : ES.ToInteger(endPosition);
+      var end = _min(_max(pos, 0), len);
+      return _strSlice(S, end - searchStr.length, end) === searchStr;
+    },
+
+    includes: function includes(searchString) {
+      if (ES.IsRegExp(searchString)) {
+        throw new TypeError('"includes" does not accept a RegExp');
+      }
+      var searchStr = ES.ToString(searchString);
+      var position;
+      if (arguments.length > 1) {
+        position = arguments[1];
+      }
+      // Somehow this trick makes method 100% compat with the spec.
+      return _indexOf(this, searchStr, position) !== -1;
+    },
+
+    codePointAt: function codePointAt(pos) {
+      var thisStr = ES.ToString(ES.RequireObjectCoercible(this));
+      var position = ES.ToInteger(pos);
+      var length = thisStr.length;
+      if (position >= 0 && position < length) {
+        var first = thisStr.charCodeAt(position);
+        var isEnd = position + 1 === length;
+        if (first < 0xD800 || first > 0xDBFF || isEnd) { return first; }
+        var second = thisStr.charCodeAt(position + 1);
+        if (second < 0xDC00 || second > 0xDFFF) { return first; }
+        return ((first - 0xD800) * 1024) + (second - 0xDC00) + 0x10000;
+      }
+    }
+  };
+  if (String.prototype.includes && 'a'.includes('a', Infinity) !== false) {
+    overrideNative(String.prototype, 'includes', StringPrototypeShims.includes);
+  }
+
+  if (String.prototype.startsWith && String.prototype.endsWith) {
+    var startsWithRejectsRegex = throwsError(function () {
+      /* throws if spec-compliant */
+      '/a/'.startsWith(/a/);
+    });
+    var startsWithHandlesInfinity = valueOrFalseIfThrows(function () {
+      return 'abc'.startsWith('a', Infinity) === false;
+    });
+    if (!startsWithRejectsRegex || !startsWithHandlesInfinity) {
+      // Firefox (< 37?) and IE 11 TP have a noncompliant startsWith implementation
+      overrideNative(String.prototype, 'startsWith', StringPrototypeShims.startsWith);
+      overrideNative(String.prototype, 'endsWith', StringPrototypeShims.endsWith);
+    }
+  }
+  if (hasSymbols) {
+    var startsWithSupportsSymbolMatch = valueOrFalseIfThrows(function () {
+      var re = /a/;
+      re[Symbol.match] = false;
+      return '/a/'.startsWith(re);
+    });
+    if (!startsWithSupportsSymbolMatch) {
+      overrideNative(String.prototype, 'startsWith', StringPrototypeShims.startsWith);
+    }
+    var endsWithSupportsSymbolMatch = valueOrFalseIfThrows(function () {
+      var re = /a/;
+      re[Symbol.match] = false;
+      return '/a/'.endsWith(re);
+    });
+    if (!endsWithSupportsSymbolMatch) {
+      overrideNative(String.prototype, 'endsWith', StringPrototypeShims.endsWith);
+    }
+    var includesSupportsSymbolMatch = valueOrFalseIfThrows(function () {
+      var re = /a/;
+      re[Symbol.match] = false;
+      return '/a/'.includes(re);
+    });
+    if (!includesSupportsSymbolMatch) {
+      overrideNative(String.prototype, 'includes', StringPrototypeShims.includes);
+    }
+  }
+
+  defineProperties(String.prototype, StringPrototypeShims);
+
+  // whitespace from: http://es5.github.io/#x15.5.4.20
+  // implementation from https://github.com/es-shims/es5-shim/blob/v3.4.0/es5-shim.js#L1304-L1324
+  var ws = [
+    '\x09\x0A\x0B\x0C\x0D\x20\xA0\u1680\u180E\u2000\u2001\u2002\u2003',
+    '\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u202F\u205F\u3000\u2028',
+    '\u2029\uFEFF'
+  ].join('');
+  var trimRegexp = new RegExp('(^[' + ws + ']+)|([' + ws + ']+$)', 'g');
+  var trimShim = function trim() {
+    return ES.ToString(ES.RequireObjectCoercible(this)).replace(trimRegexp, '');
+  };
+  var nonWS = ['\u0085', '\u200b', '\ufffe'].join('');
+  var nonWSregex = new RegExp('[' + nonWS + ']', 'g');
+  var isBadHexRegex = /^[-+]0x[0-9a-f]+$/i;
+  var hasStringTrimBug = nonWS.trim().length !== nonWS.length;
+  defineProperty(String.prototype, 'trim', trimShim, hasStringTrimBug);
+
+  // Given an argument x, it will return an IteratorResult object,
+  // with value set to x and done to false.
+  // Given no arguments, it will return an iterator completion object.
+  var iteratorResult = function (x) {
+    return { value: x, done: arguments.length === 0 };
+  };
+
+  // see http://www.ecma-international.org/ecma-262/6.0/#sec-string.prototype-@@iterator
+  var StringIterator = function (s) {
+    ES.RequireObjectCoercible(s);
+    this._s = ES.ToString(s);
+    this._i = 0;
+  };
+  StringIterator.prototype.next = function () {
+    var s = this._s;
+    var i = this._i;
+    if (typeof s === 'undefined' || i >= s.length) {
+      this._s = void 0;
+      return iteratorResult();
+    }
+    var first = s.charCodeAt(i);
+    var second, len;
+    if (first < 0xD800 || first > 0xDBFF || (i + 1) === s.length) {
+      len = 1;
+    } else {
+      second = s.charCodeAt(i + 1);
+      len = (second < 0xDC00 || second > 0xDFFF) ? 1 : 2;
+    }
+    this._i = i + len;
+    return iteratorResult(s.substr(i, len));
+  };
+  addIterator(StringIterator.prototype);
+  addIterator(String.prototype, function () {
+    return new StringIterator(this);
+  });
+
+  var ArrayShims = {
+    from: function from(items) {
+      var C = this;
+      var mapFn;
+      if (arguments.length > 1) {
+        mapFn = arguments[1];
+      }
+      var mapping, T;
+      if (typeof mapFn === 'undefined') {
+        mapping = false;
+      } else {
+        if (!ES.IsCallable(mapFn)) {
+          throw new TypeError('Array.from: when provided, the second argument must be a function');
+        }
+        if (arguments.length > 2) {
+          T = arguments[2];
+        }
+        mapping = true;
+      }
+
+      // Note that that Arrays will use ArrayIterator:
+      // https://bugs.ecmascript.org/show_bug.cgi?id=2416
+      var usingIterator = typeof (isArguments(items) || ES.GetMethod(items, $iterator$)) !== 'undefined';
+
+      var length, result, i;
+      if (usingIterator) {
+        result = ES.IsConstructor(C) ? Object(new C()) : [];
+        var iterator = ES.GetIterator(items);
+        var next, nextValue;
+
+        i = 0;
+        while (true) {
+          next = ES.IteratorStep(iterator);
+          if (next === false) {
+            break;
+          }
+          nextValue = next.value;
+          try {
+            if (mapping) {
+              nextValue = typeof T === 'undefined' ? mapFn(nextValue, i) : _call(mapFn, T, nextValue, i);
+            }
+            result[i] = nextValue;
+          } catch (e) {
+            ES.IteratorClose(iterator, true);
+            throw e;
+          }
+          i += 1;
+        }
+        length = i;
+      } else {
+        var arrayLike = ES.ToObject(items);
+        length = ES.ToLength(arrayLike.length);
+        result = ES.IsConstructor(C) ? Object(new C(length)) : new Array(length);
+        var value;
+        for (i = 0; i < length; ++i) {
+          value = arrayLike[i];
+          if (mapping) {
+            value = typeof T === 'undefined' ? mapFn(value, i) : _call(mapFn, T, value, i);
+          }
+          createDataPropertyOrThrow(result, i, value);
+        }
+      }
+
+      result.length = length;
+      return result;
+    },
+
+    of: function of() {
+      var len = arguments.length;
+      var C = this;
+      var A = isArray(C) || !ES.IsCallable(C) ? new Array(len) : ES.Construct(C, [len]);
+      for (var k = 0; k < len; ++k) {
+        createDataPropertyOrThrow(A, k, arguments[k]);
+      }
+      A.length = len;
+      return A;
+    }
+  };
+  defineProperties(Array, ArrayShims);
+  addDefaultSpecies(Array);
+
+  // Our ArrayIterator is private; see
+  // https://github.com/paulmillr/es6-shim/issues/252
+  ArrayIterator = function (array, kind) {
+    this.i = 0;
+    this.array = array;
+    this.kind = kind;
+  };
+
+  defineProperties(ArrayIterator.prototype, {
+    next: function () {
+      var i = this.i;
+      var array = this.array;
+      if (!(this instanceof ArrayIterator)) {
+        throw new TypeError('Not an ArrayIterator');
+      }
+      if (typeof array !== 'undefined') {
+        var len = ES.ToLength(array.length);
+        for (; i < len; i++) {
+          var kind = this.kind;
+          var retval;
+          if (kind === 'key') {
+            retval = i;
+          } else if (kind === 'value') {
+            retval = array[i];
+          } else if (kind === 'entry') {
+            retval = [i, array[i]];
+          }
+          this.i = i + 1;
+          return iteratorResult(retval);
+        }
+      }
+      this.array = void 0;
+      return iteratorResult();
+    }
+  });
+  addIterator(ArrayIterator.prototype);
+
+/*
+  var orderKeys = function orderKeys(a, b) {
+    var aNumeric = String(ES.ToInteger(a)) === a;
+    var bNumeric = String(ES.ToInteger(b)) === b;
+    if (aNumeric && bNumeric) {
+      return b - a;
+    } else if (aNumeric && !bNumeric) {
+      return -1;
+    } else if (!aNumeric && bNumeric) {
+      return 1;
+    } else {
+      return a.localeCompare(b);
+    }
+  };
+
+  var getAllKeys = function getAllKeys(object) {
+    var ownKeys = [];
+    var keys = [];
+
+    for (var key in object) {
+      _push(_hasOwnProperty(object, key) ? ownKeys : keys, key);
+    }
+    _sort(ownKeys, orderKeys);
+    _sort(keys, orderKeys);
+
+    return _concat(ownKeys, keys);
+  };
+  */
+
+  // note: this is positioned here because it depends on ArrayIterator
+  var arrayOfSupportsSubclassing = Array.of === ArrayShims.of || (function () {
+    // Detects a bug in Webkit nightly r181886
+    var Foo = function Foo(len) { this.length = len; };
+    Foo.prototype = [];
+    var fooArr = Array.of.apply(Foo, [1, 2]);
+    return fooArr instanceof Foo && fooArr.length === 2;
+  }());
+  if (!arrayOfSupportsSubclassing) {
+    overrideNative(Array, 'of', ArrayShims.of);
+  }
+
+  var ArrayPrototypeShims = {
+    copyWithin: function copyWithin(target, start) {
+      var o = ES.ToObject(this);
+      var len = ES.ToLength(o.length);
+      var relativeTarget = ES.ToInteger(target);
+      var relativeStart = ES.ToInteger(start);
+      var to = relativeTarget < 0 ? _max(len + relativeTarget, 0) : _min(relativeTarget, len);
+      var from = relativeStart < 0 ? _max(len + relativeStart, 0) : _min(relativeStart, len);
+      var end;
+      if (arguments.length > 2) {
+        end = arguments[2];
+      }
+      var relativeEnd = typeof end === 'undefined' ? len : ES.ToInteger(end);
+      var finalItem = relativeEnd < 0 ? _max(len + relativeEnd, 0) : _min(relativeEnd, len);
+      var count = _min(finalItem - from, len - to);
+      var direction = 1;
+      if (from < to && to < (from + count)) {
+        direction = -1;
+        from += count - 1;
+        to += count - 1;
+      }
+      while (count > 0) {
+        if (from in o) {
+          o[to] = o[from];
+        } else {
+          delete o[to];
+        }
+        from += direction;
+        to += direction;
+        count -= 1;
+      }
+      return o;
+    },
+
+    fill: function fill(value) {
+      var start;
+      if (arguments.length > 1) {
+        start = arguments[1];
+      }
+      var end;
+      if (arguments.length > 2) {
+        end = arguments[2];
+      }
+      var O = ES.ToObject(this);
+      var len = ES.ToLength(O.length);
+      start = ES.ToInteger(typeof start === 'undefined' ? 0 : start);
+      end = ES.ToInteger(typeof end === 'undefined' ? len : end);
+
+      var relativeStart = start < 0 ? _max(len + start, 0) : _min(start, len);
+      var relativeEnd = end < 0 ? len + end : end;
+
+      for (var i = relativeStart; i < len && i < relativeEnd; ++i) {
+        O[i] = value;
+      }
+      return O;
+    },
+
+    find: function find(predicate) {
+      var list = ES.ToObject(this);
+      var length = ES.ToLength(list.length);
+      if (!ES.IsCallable(predicate)) {
+        throw new TypeError('Array#find: predicate must be a function');
+      }
+      var thisArg = arguments.length > 1 ? arguments[1] : null;
+      for (var i = 0, value; i < length; i++) {
+        value = list[i];
+        if (thisArg) {
+          if (_call(predicate, thisArg, value, i, list)) {
+            return value;
+          }
+        } else if (predicate(value, i, list)) {
+          return value;
+        }
+      }
+    },
+
+    findIndex: function findIndex(predicate) {
+      var list = ES.ToObject(this);
+      var length = ES.ToLength(list.length);
+      if (!ES.IsCallable(predicate)) {
+        throw new TypeError('Array#findIndex: predicate must be a function');
+      }
+      var thisArg = arguments.length > 1 ? arguments[1] : null;
+      for (var i = 0; i < length; i++) {
+        if (thisArg) {
+          if (_call(predicate, thisArg, list[i], i, list)) {
+            return i;
+          }
+        } else if (predicate(list[i], i, list)) {
+          return i;
+        }
+      }
+      return -1;
+    },
+
+    keys: function keys() {
+      return new ArrayIterator(this, 'key');
+    },
+
+    values: function values() {
+      return new ArrayIterator(this, 'value');
+    },
+
+    entries: function entries() {
+      return new ArrayIterator(this, 'entry');
+    }
+  };
+  // Safari 7.1 defines Array#keys and Array#entries natively,
+  // but the resulting ArrayIterator objects don't have a "next" method.
+  if (Array.prototype.keys && !ES.IsCallable([1].keys().next)) {
+    delete Array.prototype.keys;
+  }
+  if (Array.prototype.entries && !ES.IsCallable([1].entries().next)) {
+    delete Array.prototype.entries;
+  }
+
+  // Chrome 38 defines Array#keys and Array#entries, and Array#@@iterator, but not Array#values
+  if (Array.prototype.keys && Array.prototype.entries && !Array.prototype.values && Array.prototype[$iterator$]) {
+    defineProperties(Array.prototype, {
+      values: Array.prototype[$iterator$]
+    });
+    if (Type.symbol(Symbol.unscopables)) {
+      Array.prototype[Symbol.unscopables].values = true;
+    }
+  }
+  // Chrome 40 defines Array#values with the incorrect name, although Array#{keys,entries} have the correct name
+  if (functionsHaveNames && Array.prototype.values && Array.prototype.values.name !== 'values') {
+    var originalArrayPrototypeValues = Array.prototype.values;
+    overrideNative(Array.prototype, 'values', function values() { return ES.Call(originalArrayPrototypeValues, this, arguments); });
+    defineProperty(Array.prototype, $iterator$, Array.prototype.values, true);
+  }
+  defineProperties(Array.prototype, ArrayPrototypeShims);
+
+  if (1 / [true].indexOf(true, -0) < 0) {
+    // indexOf when given a position arg of -0 should return +0.
+    // https://github.com/tc39/ecma262/pull/316
+    defineProperty(Array.prototype, 'indexOf', function indexOf(searchElement) {
+      var value = _arrayIndexOfApply(this, arguments);
+      if (value === 0 && (1 / value) < 0) {
+        return 0;
+      }
+      return value;
+    }, true);
+  }
+
+  addIterator(Array.prototype, function () { return this.values(); });
+  // Chrome defines keys/values/entries on Array, but doesn't give us
+  // any way to identify its iterator.  So add our own shimmed field.
+  if (Object.getPrototypeOf) {
+    addIterator(Object.getPrototypeOf([].values()));
+  }
+
+  // note: this is positioned here because it relies on Array#entries
+  var arrayFromSwallowsNegativeLengths = (function () {
+    // Detects a Firefox bug in v32
+    // https://bugzilla.mozilla.org/show_bug.cgi?id=1063993
+    return valueOrFalseIfThrows(function () {
+      return Array.from({ length: -1 }).length === 0;
+    });
+  }());
+  var arrayFromHandlesIterables = (function () {
+    // Detects a bug in Webkit nightly r181886
+    var arr = Array.from([0].entries());
+    return arr.length === 1 && isArray(arr[0]) && arr[0][0] === 0 && arr[0][1] === 0;
+  }());
+  if (!arrayFromSwallowsNegativeLengths || !arrayFromHandlesIterables) {
+    overrideNative(Array, 'from', ArrayShims.from);
+  }
+  var arrayFromHandlesUndefinedMapFunction = (function () {
+    // Microsoft Edge v0.11 throws if the mapFn argument is *provided* but undefined,
+    // but the spec doesn't care if it's provided or not - undefined doesn't throw.
+    return valueOrFalseIfThrows(function () {
+      return Array.from([0], void 0);
+    });
+  }());
+  if (!arrayFromHandlesUndefinedMapFunction) {
+    var origArrayFrom = Array.from;
+    overrideNative(Array, 'from', function from(items) {
+      if (arguments.length > 1 && typeof arguments[1] !== 'undefined') {
+        return ES.Call(origArrayFrom, this, arguments);
+      } else {
+        return _call(origArrayFrom, this, items);
+      }
+    });
+  }
+
+  var int32sAsOne = -(Math.pow(2, 32) - 1);
+  var toLengthsCorrectly = function (method, reversed) {
+    var obj = { length: int32sAsOne };
+    obj[reversed ? (obj.length >>> 0) - 1 : 0] = true;
+    return valueOrFalseIfThrows(function () {
+      _call(method, obj, function () {
+        // note: in nonconforming browsers, this will be called
+        // -1 >>> 0 times, which is 4294967295, so the throw matters.
+        throw new RangeError('should not reach here');
+      }, []);
+      return true;
+    });
+  };
+  if (!toLengthsCorrectly(Array.prototype.forEach)) {
+    var originalForEach = Array.prototype.forEach;
+    overrideNative(Array.prototype, 'forEach', function forEach(callbackFn) {
+      return ES.Call(originalForEach, this.length >= 0 ? this : [], arguments);
+    }, true);
+  }
+  if (!toLengthsCorrectly(Array.prototype.map)) {
+    var originalMap = Array.prototype.map;
+    overrideNative(Array.prototype, 'map', function map(callbackFn) {
+      return ES.Call(originalMap, this.length >= 0 ? this : [], arguments);
+    }, true);
+  }
+  if (!toLengthsCorrectly(Array.prototype.filter)) {
+    var originalFilter = Array.prototype.filter;
+    overrideNative(Array.prototype, 'filter', function filter(callbackFn) {
+      return ES.Call(originalFilter, this.length >= 0 ? this : [], arguments);
+    }, true);
+  }
+  if (!toLengthsCorrectly(Array.prototype.some)) {
+    var originalSome = Array.prototype.some;
+    overrideNative(Array.prototype, 'some', function some(callbackFn) {
+      return ES.Call(originalSome, this.length >= 0 ? this : [], arguments);
+    }, true);
+  }
+  if (!toLengthsCorrectly(Array.prototype.every)) {
+    var originalEvery = Array.prototype.every;
+    overrideNative(Array.prototype, 'every', function every(callbackFn) {
+      return ES.Call(originalEvery, this.length >= 0 ? this : [], arguments);
+    }, true);
+  }
+  if (!toLengthsCorrectly(Array.prototype.reduce)) {
+    var originalReduce = Array.prototype.reduce;
+    overrideNative(Array.prototype, 'reduce', function reduce(callbackFn) {
+      return ES.Call(originalReduce, this.length >= 0 ? this : [], arguments);
+    }, true);
+  }
+  if (!toLengthsCorrectly(Array.prototype.reduceRight, true)) {
+    var originalReduceRight = Array.prototype.reduceRight;
+    overrideNative(Array.prototype, 'reduceRight', function reduceRight(callbackFn) {
+      return ES.Call(originalReduceRight, this.length >= 0 ? this : [], arguments);
+    }, true);
+  }
+
+  var lacksOctalSupport = Number('0o10') !== 8;
+  var lacksBinarySupport = Number('0b10') !== 2;
+  var trimsNonWhitespace = _some(nonWS, function (c) {
+    return Number(c + 0 + c) === 0;
+  });
+  if (lacksOctalSupport || lacksBinarySupport || trimsNonWhitespace) {
+    var OrigNumber = Number;
+    var binaryRegex = /^0b[01]+$/i;
+    var octalRegex = /^0o[0-7]+$/i;
+    // Note that in IE 8, RegExp.prototype.test doesn't seem to exist: ie, "test" is an own property of regexes. wtf.
+    var isBinary = binaryRegex.test.bind(binaryRegex);
+    var isOctal = octalRegex.test.bind(octalRegex);
+    var toPrimitive = function (O) { // need to replace this with `es-to-primitive/es6`
+      var result;
+      if (typeof O.valueOf === 'function') {
+        result = O.valueOf();
+        if (Type.primitive(result)) {
+          return result;
+        }
+      }
+      if (typeof O.toString === 'function') {
+        result = O.toString();
+        if (Type.primitive(result)) {
+          return result;
+        }
+      }
+      throw new TypeError('No default value');
+    };
+    var hasNonWS = nonWSregex.test.bind(nonWSregex);
+    var isBadHex = isBadHexRegex.test.bind(isBadHexRegex);
+    var NumberShim = (function () {
+      // this is wrapped in an IIFE because of IE 6-8's wacky scoping issues with named function expressions.
+      var NumberShim = function Number(value) {
+        var primValue;
+        if (arguments.length > 0) {
+          primValue = Type.primitive(value) ? value : toPrimitive(value, 'number');
+        } else {
+          primValue = 0;
+        }
+        if (typeof primValue === 'string') {
+          primValue = ES.Call(trimShim, primValue);
+          if (isBinary(primValue)) {
+            primValue = parseInt(_strSlice(primValue, 2), 2);
+          } else if (isOctal(primValue)) {
+            primValue = parseInt(_strSlice(primValue, 2), 8);
+          } else if (hasNonWS(primValue) || isBadHex(primValue)) {
+            primValue = NaN;
+          }
+        }
+        var receiver = this;
+        var valueOfSucceeds = valueOrFalseIfThrows(function () {
+          OrigNumber.prototype.valueOf.call(receiver);
+          return true;
+        });
+        if (receiver instanceof NumberShim && !valueOfSucceeds) {
+          return new OrigNumber(primValue);
+        }
+        /* jshint newcap: false */
+        return OrigNumber(primValue);
+        /* jshint newcap: true */
+      };
+      return NumberShim;
+    }());
+    wrapConstructor(OrigNumber, NumberShim, {});
+    // this is necessary for ES3 browsers, where these properties are non-enumerable.
+    defineProperties(NumberShim, {
+      NaN: OrigNumber.NaN,
+      MAX_VALUE: OrigNumber.MAX_VALUE,
+      MIN_VALUE: OrigNumber.MIN_VALUE,
+      NEGATIVE_INFINITY: OrigNumber.NEGATIVE_INFINITY,
+      POSITIVE_INFINITY: OrigNumber.POSITIVE_INFINITY
+    });
+    /* globals Number: true */
+    /* eslint-disable no-undef, no-global-assign */
+    /* jshint -W020 */
+    Number = NumberShim;
+    Value.redefine(globals, 'Number', NumberShim);
+    /* jshint +W020 */
+    /* eslint-enable no-undef, no-global-assign */
+    /* globals Number: false */
+  }
+
+  var maxSafeInteger = Math.pow(2, 53) - 1;
+  defineProperties(Number, {
+    MAX_SAFE_INTEGER: maxSafeInteger,
+    MIN_SAFE_INTEGER: -maxSafeInteger,
+    EPSILON: 2.220446049250313e-16,
+
+    parseInt: globals.parseInt,
+    parseFloat: globals.parseFloat,
+
+    isFinite: numberIsFinite,
+
+    isInteger: function isInteger(value) {
+      return numberIsFinite(value) && ES.ToInteger(value) === value;
+    },
+
+    isSafeInteger: function isSafeInteger(value) {
+      return Number.isInteger(value) && _abs(value) <= Number.MAX_SAFE_INTEGER;
+    },
+
+    isNaN: numberIsNaN
+  });
+  // Firefox 37 has a conforming Number.parseInt, but it's not === to the global parseInt (fixed in v40)
+  defineProperty(Number, 'parseInt', globals.parseInt, Number.parseInt !== globals.parseInt);
+
+  // Work around bugs in Array#find and Array#findIndex -- early
+  // implementations skipped holes in sparse arrays. (Note that the
+  // implementations of find/findIndex indirectly use shimmed
+  // methods of Number, so this test has to happen down here.)
+  /*jshint elision: true */
+  /* eslint-disable no-sparse-arrays */
+  if ([, 1].find(function () { return true; }) === 1) {
+    overrideNative(Array.prototype, 'find', ArrayPrototypeShims.find);
+  }
+  if ([, 1].findIndex(function () { return true; }) !== 0) {
+    overrideNative(Array.prototype, 'findIndex', ArrayPrototypeShims.findIndex);
+  }
+  /* eslint-enable no-sparse-arrays */
+  /*jshint elision: false */
+
+  var isEnumerableOn = Function.bind.call(Function.bind, Object.prototype.propertyIsEnumerable);
+  var ensureEnumerable = function ensureEnumerable(obj, prop) {
+    if (supportsDescriptors && isEnumerableOn(obj, prop)) {
+      Object.defineProperty(obj, prop, { enumerable: false });
+    }
+  };
+  var sliceArgs = function sliceArgs() {
+    // per https://github.com/petkaantonov/bluebird/wiki/Optimization-killers#32-leaking-arguments
+    // and https://gist.github.com/WebReflection/4327762cb87a8c634a29
+    var initial = Number(this);
+    var len = arguments.length;
+    var desiredArgCount = len - initial;
+    var args = new Array(desiredArgCount < 0 ? 0 : desiredArgCount);
+    for (var i = initial; i < len; ++i) {
+      args[i - initial] = arguments[i];
+    }
+    return args;
+  };
+  var assignTo = function assignTo(source) {
+    return function assignToSource(target, key) {
+      target[key] = source[key];
+      return target;
+    };
+  };
+  var assignReducer = function (target, source) {
+    var sourceKeys = keys(Object(source));
+    var symbols;
+    if (ES.IsCallable(Object.getOwnPropertySymbols)) {
+      symbols = _filter(Object.getOwnPropertySymbols(Object(source)), isEnumerableOn(source));
+    }
+    return _reduce(_concat(sourceKeys, symbols || []), assignTo(source), target);
+  };
+
+  var ObjectShims = {
+    // 19.1.3.1
+    assign: function (target, source) {
+      var to = ES.ToObject(target, 'Cannot convert undefined or null to object');
+      return _reduce(ES.Call(sliceArgs, 1, arguments), assignReducer, to);
+    },
+
+    // Added in WebKit in https://bugs.webkit.org/show_bug.cgi?id=143865
+    is: function is(a, b) {
+      return ES.SameValue(a, b);
+    }
+  };
+  var assignHasPendingExceptions = Object.assign && Object.preventExtensions && (function () {
+    // Firefox 37 still has "pending exception" logic in its Object.assign implementation,
+    // which is 72% slower than our shim, and Firefox 40's native implementation.
+    var thrower = Object.preventExtensions({ 1: 2 });
+    try {
+      Object.assign(thrower, 'xy');
+    } catch (e) {
+      return thrower[1] === 'y';
+    }
+  }());
+  if (assignHasPendingExceptions) {
+    overrideNative(Object, 'assign', ObjectShims.assign);
+  }
+  defineProperties(Object, ObjectShims);
+
+  if (supportsDescriptors) {
+    var ES5ObjectShims = {
+      // 19.1.3.9
+      // shim from https://gist.github.com/WebReflection/5593554
+      setPrototypeOf: (function (Object, magic) {
+        var set;
+
+        var checkArgs = function (O, proto) {
+          if (!ES.TypeIsObject(O)) {
+            throw new TypeError('cannot set prototype on a non-object');
+          }
+          if (!(proto === null || ES.TypeIsObject(proto))) {
+            throw new TypeError('can only set prototype to an object or null' + proto);
+          }
+        };
+
+        var setPrototypeOf = function (O, proto) {
+          checkArgs(O, proto);
+          _call(set, O, proto);
+          return O;
+        };
+
+        try {
+          // this works already in Firefox and Safari
+          set = Object.getOwnPropertyDescriptor(Object.prototype, magic).set;
+          _call(set, {}, null);
+        } catch (e) {
+          if (Object.prototype !== {}[magic]) {
+            // IE < 11 cannot be shimmed
+            return;
+          }
+          // probably Chrome or some old Mobile stock browser
+          set = function (proto) {
+            this[magic] = proto;
+          };
+          // please note that this will **not** work
+          // in those browsers that do not inherit
+          // __proto__ by mistake from Object.prototype
+          // in these cases we should probably throw an error
+          // or at least be informed about the issue
+          setPrototypeOf.polyfill = setPrototypeOf(
+            setPrototypeOf({}, null),
+            Object.prototype
+          ) instanceof Object;
+          // setPrototypeOf.polyfill === true means it works as meant
+          // setPrototypeOf.polyfill === false means it's not 100% reliable
+          // setPrototypeOf.polyfill === undefined
+          // or
+          // setPrototypeOf.polyfill ==  null means it's not a polyfill
+          // which means it works as expected
+          // we can even delete Object.prototype.__proto__;
+        }
+        return setPrototypeOf;
+      }(Object, '__proto__'))
+    };
+
+    defineProperties(Object, ES5ObjectShims);
+  }
+
+  // Workaround bug in Opera 12 where setPrototypeOf(x, null) doesn't work,
+  // but Object.create(null) does.
+  if (Object.setPrototypeOf && Object.getPrototypeOf &&
+      Object.getPrototypeOf(Object.setPrototypeOf({}, null)) !== null &&
+      Object.getPrototypeOf(Object.create(null)) === null) {
+    (function () {
+      var FAKENULL = Object.create(null);
+      var gpo = Object.getPrototypeOf;
+      var spo = Object.setPrototypeOf;
+      Object.getPrototypeOf = function (o) {
+        var result = gpo(o);
+        return result === FAKENULL ? null : result;
+      };
+      Object.setPrototypeOf = function (o, p) {
+        var proto = p === null ? FAKENULL : p;
+        return spo(o, proto);
+      };
+      Object.setPrototypeOf.polyfill = false;
+    }());
+  }
+
+  var objectKeysAcceptsPrimitives = !throwsError(function () { Object.keys('foo'); });
+  if (!objectKeysAcceptsPrimitives) {
+    var originalObjectKeys = Object.keys;
+    overrideNative(Object, 'keys', function keys(value) {
+      return originalObjectKeys(ES.ToObject(value));
+    });
+    keys = Object.keys;
+  }
+  var objectKeysRejectsRegex = throwsError(function () { Object.keys(/a/g); });
+  if (objectKeysRejectsRegex) {
+    var regexRejectingObjectKeys = Object.keys;
+    overrideNative(Object, 'keys', function keys(value) {
+      if (Type.regex(value)) {
+        var regexKeys = [];
+        for (var k in value) {
+          if (_hasOwnProperty(value, k)) {
+            _push(regexKeys, k);
+          }
+        }
+        return regexKeys;
+      }
+      return regexRejectingObjectKeys(value);
+    });
+    keys = Object.keys;
+  }
+
+  if (Object.getOwnPropertyNames) {
+    var objectGOPNAcceptsPrimitives = !throwsError(function () { Object.getOwnPropertyNames('foo'); });
+    if (!objectGOPNAcceptsPrimitives) {
+      var cachedWindowNames = typeof window === 'object' ? Object.getOwnPropertyNames(window) : [];
+      var originalObjectGetOwnPropertyNames = Object.getOwnPropertyNames;
+      overrideNative(Object, 'getOwnPropertyNames', function getOwnPropertyNames(value) {
+        var val = ES.ToObject(value);
+        if (_toString(val) === '[object Window]') {
+          try {
+            return originalObjectGetOwnPropertyNames(val);
+          } catch (e) {
+            // IE bug where layout engine calls userland gOPN for cross-domain `window` objects
+            return _concat([], cachedWindowNames);
+          }
+        }
+        return originalObjectGetOwnPropertyNames(val);
+      });
+    }
+  }
+  if (Object.getOwnPropertyDescriptor) {
+    var objectGOPDAcceptsPrimitives = !throwsError(function () { Object.getOwnPropertyDescriptor('foo', 'bar'); });
+    if (!objectGOPDAcceptsPrimitives) {
+      var originalObjectGetOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
+      overrideNative(Object, 'getOwnPropertyDescriptor', function getOwnPropertyDescriptor(value, property) {
+        return originalObjectGetOwnPropertyDescriptor(ES.ToObject(value), property);
+      });
+    }
+  }
+  if (Object.seal) {
+    var objectSealAcceptsPrimitives = !throwsError(function () { Object.seal('foo'); });
+    if (!objectSealAcceptsPrimitives) {
+      var originalObjectSeal = Object.seal;
+      overrideNative(Object, 'seal', function seal(value) {
+        if (!ES.TypeIsObject(value)) { return value; }
+        return originalObjectSeal(value);
+      });
+    }
+  }
+  if (Object.isSealed) {
+    var objectIsSealedAcceptsPrimitives = !throwsError(function () { Object.isSealed('foo'); });
+    if (!objectIsSealedAcceptsPrimitives) {
+      var originalObjectIsSealed = Object.isSealed;
+      overrideNative(Object, 'isSealed', function isSealed(value) {
+        if (!ES.TypeIsObject(value)) { return true; }
+        return originalObjectIsSealed(value);
+      });
+    }
+  }
+  if (Object.freeze) {
+    var objectFreezeAcceptsPrimitives = !throwsError(function () { Object.freeze('foo'); });
+    if (!objectFreezeAcceptsPrimitives) {
+      var originalObjectFreeze = Object.freeze;
+      overrideNative(Object, 'freeze', function freeze(value) {
+        if (!ES.TypeIsObject(value)) { return value; }
+        return originalObjectFreeze(value);
+      });
+    }
+  }
+  if (Object.isFrozen) {
+    var objectIsFrozenAcceptsPrimitives = !throwsError(function () { Object.isFrozen('foo'); });
+    if (!objectIsFrozenAcceptsPrimitives) {
+      var originalObjectIsFrozen = Object.isFrozen;
+      overrideNative(Object, 'isFrozen', function isFrozen(value) {
+        if (!ES.TypeIsObject(value)) { return true; }
+        return originalObjectIsFrozen(value);
+      });
+    }
+  }
+  if (Object.preventExtensions) {
+    var objectPreventExtensionsAcceptsPrimitives = !throwsError(function () { Object.preventExtensions('foo'); });
+    if (!objectPreventExtensionsAcceptsPrimitives) {
+      var originalObjectPreventExtensions = Object.preventExtensions;
+      overrideNative(Object, 'preventExtensions', function preventExtensions(value) {
+        if (!ES.TypeIsObject(value)) { return value; }
+        return originalObjectPreventExtensions(value);
+      });
+    }
+  }
+  if (Object.isExtensible) {
+    var objectIsExtensibleAcceptsPrimitives = !throwsError(function () { Object.isExtensible('foo'); });
+    if (!objectIsExtensibleAcceptsPrimitives) {
+      var originalObjectIsExtensible = Object.isExtensible;
+      overrideNative(Object, 'isExtensible', function isExtensible(value) {
+        if (!ES.TypeIsObject(value)) { return false; }
+        return originalObjectIsExtensible(value);
+      });
+    }
+  }
+  if (Object.getPrototypeOf) {
+    var objectGetProtoAcceptsPrimitives = !throwsError(function () { Object.getPrototypeOf('foo'); });
+    if (!objectGetProtoAcceptsPrimitives) {
+      var originalGetProto = Object.getPrototypeOf;
+      overrideNative(Object, 'getPrototypeOf', function getPrototypeOf(value) {
+        return originalGetProto(ES.ToObject(value));
+      });
+    }
+  }
+
+  var hasFlags = supportsDescriptors && (function () {
+    var desc = Object.getOwnPropertyDescriptor(RegExp.prototype, 'flags');
+    return desc && ES.IsCallable(desc.get);
+  }());
+  if (supportsDescriptors && !hasFlags) {
+    var regExpFlagsGetter = function flags() {
+      if (!ES.TypeIsObject(this)) {
+        throw new TypeError('Method called on incompatible type: must be an object.');
+      }
+      var result = '';
+      if (this.global) {
+        result += 'g';
+      }
+      if (this.ignoreCase) {
+        result += 'i';
+      }
+      if (this.multiline) {
+        result += 'm';
+      }
+      if (this.unicode) {
+        result += 'u';
+      }
+      if (this.sticky) {
+        result += 'y';
+      }
+      return result;
+    };
+
+    Value.getter(RegExp.prototype, 'flags', regExpFlagsGetter);
+  }
+
+  var regExpSupportsFlagsWithRegex = supportsDescriptors && valueOrFalseIfThrows(function () {
+    return String(new RegExp(/a/g, 'i')) === '/a/i';
+  });
+  var regExpNeedsToSupportSymbolMatch = hasSymbols && supportsDescriptors && (function () {
+    // Edge 0.12 supports flags fully, but does not support Symbol.match
+    var regex = /./;
+    regex[Symbol.match] = false;
+    return RegExp(regex) === regex;
+  }());
+
+  var regexToStringIsGeneric = valueOrFalseIfThrows(function () {
+    return RegExp.prototype.toString.call({ source: 'abc' }) === '/abc/';
+  });
+  var regexToStringSupportsGenericFlags = regexToStringIsGeneric && valueOrFalseIfThrows(function () {
+    return RegExp.prototype.toString.call({ source: 'a', flags: 'b' }) === '/a/b';
+  });
+  if (!regexToStringIsGeneric || !regexToStringSupportsGenericFlags) {
+    var origRegExpToString = RegExp.prototype.toString;
+    defineProperty(RegExp.prototype, 'toString', function toString() {
+      var R = ES.RequireObjectCoercible(this);
+      if (Type.regex(R)) {
+        return _call(origRegExpToString, R);
+      }
+      var pattern = $String(R.source);
+      var flags = $String(R.flags);
+      return '/' + pattern + '/' + flags;
+    }, true);
+    Value.preserveToString(RegExp.prototype.toString, origRegExpToString);
+  }
+
+  if (supportsDescriptors && (!regExpSupportsFlagsWithRegex || regExpNeedsToSupportSymbolMatch)) {
+    var flagsGetter = Object.getOwnPropertyDescriptor(RegExp.prototype, 'flags').get;
+    var sourceDesc = Object.getOwnPropertyDescriptor(RegExp.prototype, 'source') || {};
+    var legacySourceGetter = function () {
+      // prior to it being a getter, it's own + nonconfigurable
+      return this.source;
+    };
+    var sourceGetter = ES.IsCallable(sourceDesc.get) ? sourceDesc.get : legacySourceGetter;
+
+    var OrigRegExp = RegExp;
+    var RegExpShim = (function () {
+      return function RegExp(pattern, flags) {
+        var patternIsRegExp = ES.IsRegExp(pattern);
+        var calledWithNew = this instanceof RegExp;
+        if (!calledWithNew && patternIsRegExp && typeof flags === 'undefined' && pattern.constructor === RegExp) {
+          return pattern;
+        }
+
+        var P = pattern;
+        var F = flags;
+        if (Type.regex(pattern)) {
+          P = ES.Call(sourceGetter, pattern);
+          F = typeof flags === 'undefined' ? ES.Call(flagsGetter, pattern) : flags;
+          return new RegExp(P, F);
+        } else if (patternIsRegExp) {
+          P = pattern.source;
+          F = typeof flags === 'undefined' ? pattern.flags : flags;
+        }
+        return new OrigRegExp(pattern, flags);
+      };
+    }());
+    wrapConstructor(OrigRegExp, RegExpShim, {
+      $input: true // Chrome < v39 & Opera < 26 have a nonstandard "$input" property
+    });
+    /* globals RegExp: true */
+    /* eslint-disable no-undef, no-global-assign */
+    /* jshint -W020 */
+    RegExp = RegExpShim;
+    Value.redefine(globals, 'RegExp', RegExpShim);
+    /* jshint +W020 */
+    /* eslint-enable no-undef, no-global-assign */
+    /* globals RegExp: false */
+  }
+
+  if (supportsDescriptors) {
+    var regexGlobals = {
+      input: '$_',
+      lastMatch: '$&',
+      lastParen: '$+',
+      leftContext: '$`',
+      rightContext: '$\''
+    };
+    _forEach(keys(regexGlobals), function (prop) {
+      if (prop in RegExp && !(regexGlobals[prop] in RegExp)) {
+        Value.getter(RegExp, regexGlobals[prop], function get() {
+          return RegExp[prop];
+        });
+      }
+    });
+  }
+  addDefaultSpecies(RegExp);
+
+  var inverseEpsilon = 1 / Number.EPSILON;
+  var roundTiesToEven = function roundTiesToEven(n) {
+    // Even though this reduces down to `return n`, it takes advantage of built-in rounding.
+    return (n + inverseEpsilon) - inverseEpsilon;
+  };
+  var BINARY_32_EPSILON = Math.pow(2, -23);
+  var BINARY_32_MAX_VALUE = Math.pow(2, 127) * (2 - BINARY_32_EPSILON);
+  var BINARY_32_MIN_VALUE = Math.pow(2, -126);
+  var E = Math.E;
+  var LOG2E = Math.LOG2E;
+  var LOG10E = Math.LOG10E;
+  var numberCLZ = Number.prototype.clz;
+  delete Number.prototype.clz; // Safari 8 has Number#clz
+
+  var MathShims = {
+    acosh: function acosh(value) {
+      var x = Number(value);
+      if (numberIsNaN(x) || value < 1) { return NaN; }
+      if (x === 1) { return 0; }
+      if (x === Infinity) { return x; }
+      return _log((x / E) + (_sqrt(x + 1) * _sqrt(x - 1) / E)) + 1;
+    },
+
+    asinh: function asinh(value) {
+      var x = Number(value);
+      if (x === 0 || !globalIsFinite(x)) {
+        return x;
+      }
+      return x < 0 ? -asinh(-x) : _log(x + _sqrt((x * x) + 1));
+    },
+
+    atanh: function atanh(value) {
+      var x = Number(value);
+      if (numberIsNaN(x) || x < -1 || x > 1) {
+        return NaN;
+      }
+      if (x === -1) { return -Infinity; }
+      if (x === 1) { return Infinity; }
+      if (x === 0) { return x; }
+      return 0.5 * _log((1 + x) / (1 - x));
+    },
+
+    cbrt: function cbrt(value) {
+      var x = Number(value);
+      if (x === 0) { return x; }
+      var negate = x < 0;
+      var result;
+      if (negate) { x = -x; }
+      if (x === Infinity) {
+        result = Infinity;
+      } else {
+        result = _exp(_log(x) / 3);
+        // from http://en.wikipedia.org/wiki/Cube_root#Numerical_methods
+        result = ((x / (result * result)) + (2 * result)) / 3;
+      }
+      return negate ? -result : result;
+    },
+
+    clz32: function clz32(value) {
+      // See https://bugs.ecmascript.org/show_bug.cgi?id=2465
+      var x = Number(value);
+      var number = ES.ToUint32(x);
+      if (number === 0) {
+        return 32;
+      }
+      return numberCLZ ? ES.Call(numberCLZ, number) : 31 - _floor(_log(number + 0.5) * LOG2E);
+    },
+
+    cosh: function cosh(value) {
+      var x = Number(value);
+      if (x === 0) { return 1; } // +0 or -0
+      if (numberIsNaN(x)) { return NaN; }
+      if (!globalIsFinite(x)) { return Infinity; }
+      if (x < 0) { x = -x; }
+      if (x > 21) { return _exp(x) / 2; }
+      return (_exp(x) + _exp(-x)) / 2;
+    },
+
+    expm1: function expm1(value) {
+      var x = Number(value);
+      if (x === -Infinity) { return -1; }
+      if (!globalIsFinite(x) || x === 0) { return x; }
+      if (_abs(x) > 0.5) {
+        return _exp(x) - 1;
+      }
+      // A more precise approximation using Taylor series expansion
+      // from https://github.com/paulmillr/es6-shim/issues/314#issuecomment-70293986
+      var t = x;
+      var sum = 0;
+      var n = 1;
+      while (sum + t !== sum) {
+        sum += t;
+        n += 1;
+        t *= x / n;
+      }
+      return sum;
+    },
+
+    hypot: function hypot(x, y) {
+      var result = 0;
+      var largest = 0;
+      for (var i = 0; i < arguments.length; ++i) {
+        var value = _abs(Number(arguments[i]));
+        if (largest < value) {
+          result *= (largest / value) * (largest / value);
+          result += 1;
+          largest = value;
+        } else {
+          result += value > 0 ? (value / largest) * (value / largest) : value;
+        }
+      }
+      return largest === Infinity ? Infinity : largest * _sqrt(result);
+    },
+
+    log2: function log2(value) {
+      return _log(value) * LOG2E;
+    },
+
+    log10: function log10(value) {
+      return _log(value) * LOG10E;
+    },
+
+    log1p: function log1p(value) {
+      var x = Number(value);
+      if (x < -1 || numberIsNaN(x)) { return NaN; }
+      if (x === 0 || x === Infinity) { return x; }
+      if (x === -1) { return -Infinity; }
+
+      return (1 + x) - 1 === 0 ? x : x * (_log(1 + x) / ((1 + x) - 1));
+    },
+
+    sign: _sign,
+
+    sinh: function sinh(value) {
+      var x = Number(value);
+      if (!globalIsFinite(x) || x === 0) { return x; }
+
+      if (_abs(x) < 1) {
+        return (Math.expm1(x) - Math.expm1(-x)) / 2;
+      }
+      return (_exp(x - 1) - _exp(-x - 1)) * E / 2;
+    },
+
+    tanh: function tanh(value) {
+      var x = Number(value);
+      if (numberIsNaN(x) || x === 0) { return x; }
+      // can exit early at +-20 as JS loses precision for true value at this integer
+      if (x >= 20) { return 1; }
+      if (x <= -20) { return -1; }
+
+      return (Math.expm1(x) - Math.expm1(-x)) / (_exp(x) + _exp(-x));
+    },
+
+    trunc: function trunc(value) {
+      var x = Number(value);
+      return x < 0 ? -_floor(-x) : _floor(x);
+    },
+
+    imul: function imul(x, y) {
+      // taken from https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/imul
+      var a = ES.ToUint32(x);
+      var b = ES.ToUint32(y);
+      var ah = (a >>> 16) & 0xffff;
+      var al = a & 0xffff;
+      var bh = (b >>> 16) & 0xffff;
+      var bl = b & 0xffff;
+      // the shift by 0 fixes the sign on the high part
+      // the final |0 converts the unsigned value into a signed value
+      return (al * bl) + ((((ah * bl) + (al * bh)) << 16) >>> 0) | 0;
+    },
+
+    fround: function fround(x) {
+      var v = Number(x);
+      if (v === 0 || v === Infinity || v === -Infinity || numberIsNaN(v)) {
+        return v;
+      }
+      var sign = _sign(v);
+      var abs = _abs(v);
+      if (abs < BINARY_32_MIN_VALUE) {
+        return sign * roundTiesToEven(
+          abs / BINARY_32_MIN_VALUE / BINARY_32_EPSILON
+        ) * BINARY_32_MIN_VALUE * BINARY_32_EPSILON;
+      }
+      // Veltkamp's splitting (?)
+      var a = (1 + (BINARY_32_EPSILON / Number.EPSILON)) * abs;
+      var result = a - (a - abs);
+      if (result > BINARY_32_MAX_VALUE || numberIsNaN(result)) {
+        return sign * Infinity;
+      }
+      return sign * result;
+    }
+  };
+  defineProperties(Math, MathShims);
+  // IE 11 TP has an imprecise log1p: reports Math.log1p(-1e-17) as 0
+  defineProperty(Math, 'log1p', MathShims.log1p, Math.log1p(-1e-17) !== -1e-17);
+  // IE 11 TP has an imprecise asinh: reports Math.asinh(-1e7) as not exactly equal to -Math.asinh(1e7)
+  defineProperty(Math, 'asinh', MathShims.asinh, Math.asinh(-1e7) !== -Math.asinh(1e7));
+  // Chrome 40 has an imprecise Math.tanh with very small numbers
+  defineProperty(Math, 'tanh', MathShims.tanh, Math.tanh(-2e-17) !== -2e-17);
+  // Chrome 40 loses Math.acosh precision with high numbers
+  defineProperty(Math, 'acosh', MathShims.acosh, Math.acosh(Number.MAX_VALUE) === Infinity);
+  // Firefox 38 on Windows
+  defineProperty(Math, 'cbrt', MathShims.cbrt, Math.abs(1 - (Math.cbrt(1e-300) / 1e-100)) / Number.EPSILON > 8);
+  // node 0.11 has an imprecise Math.sinh with very small numbers
+  defineProperty(Math, 'sinh', MathShims.sinh, Math.sinh(-2e-17) !== -2e-17);
+  // FF 35 on Linux reports 22025.465794806725 for Math.expm1(10)
+  var expm1OfTen = Math.expm1(10);
+  defineProperty(Math, 'expm1', MathShims.expm1, expm1OfTen > 22025.465794806719 || expm1OfTen < 22025.4657948067165168);
+
+  var origMathRound = Math.round;
+  // breaks in e.g. Safari 8, Internet Explorer 11, Opera 12
+  var roundHandlesBoundaryConditions = Math.round(0.5 - (Number.EPSILON / 4)) === 0 &&
+    Math.round(-0.5 + (Number.EPSILON / 3.99)) === 1;
+
+  // When engines use Math.floor(x + 0.5) internally, Math.round can be buggy for large integers.
+  // This behavior should be governed by "round to nearest, ties to even mode"
+  // see http://www.ecma-international.org/ecma-262/6.0/#sec-terms-and-definitions-number-type
+  // These are the boundary cases where it breaks.
+  var smallestPositiveNumberWhereRoundBreaks = inverseEpsilon + 1;
+  var largestPositiveNumberWhereRoundBreaks = (2 * inverseEpsilon) - 1;
+  var roundDoesNotIncreaseIntegers = [
+    smallestPositiveNumberWhereRoundBreaks,
+    largestPositiveNumberWhereRoundBreaks
+  ].every(function (num) {
+    return Math.round(num) === num;
+  });
+  defineProperty(Math, 'round', function round(x) {
+    var floor = _floor(x);
+    var ceil = floor === -1 ? -0 : floor + 1;
+    return x - floor < 0.5 ? floor : ceil;
+  }, !roundHandlesBoundaryConditions || !roundDoesNotIncreaseIntegers);
+  Value.preserveToString(Math.round, origMathRound);
+
+  var origImul = Math.imul;
+  if (Math.imul(0xffffffff, 5) !== -5) {
+    // Safari 6.1, at least, reports "0" for this value
+    Math.imul = MathShims.imul;
+    Value.preserveToString(Math.imul, origImul);
+  }
+  if (Math.imul.length !== 2) {
+    // Safari 8.0.4 has a length of 1
+    // fixed in https://bugs.webkit.org/show_bug.cgi?id=143658
+    overrideNative(Math, 'imul', function imul(x, y) {
+      return ES.Call(origImul, Math, arguments);
+    });
+  }
+
+  // Promises
+  // Simplest possible implementation; use a 3rd-party library if you
+  // want the best possible speed and/or long stack traces.
+  var PromiseShim = (function () {
+    var setTimeout = globals.setTimeout;
+    // some environments don't have setTimeout - no way to shim here.
+    if (typeof setTimeout !== 'function' && typeof setTimeout !== 'object') { return; }
+
+    ES.IsPromise = function (promise) {
+      if (!ES.TypeIsObject(promise)) {
+        return false;
+      }
+      if (typeof promise._promise === 'undefined') {
+        return false; // uninitialized, or missing our hidden field.
+      }
+      return true;
+    };
+
+    // "PromiseCapability" in the spec is what most promise implementations
+    // call a "deferred".
+    var PromiseCapability = function (C) {
+      if (!ES.IsConstructor(C)) {
+        throw new TypeError('Bad promise constructor');
+      }
+      var capability = this;
+      var resolver = function (resolve, reject) {
+        if (capability.resolve !== void 0 || capability.reject !== void 0) {
+          throw new TypeError('Bad Promise implementation!');
+        }
+        capability.resolve = resolve;
+        capability.reject = reject;
+      };
+      // Initialize fields to inform optimizers about the object shape.
+      capability.resolve = void 0;
+      capability.reject = void 0;
+      capability.promise = new C(resolver);
+      if (!(ES.IsCallable(capability.resolve) && ES.IsCallable(capability.reject))) {
+        throw new TypeError('Bad promise constructor');
+      }
+    };
+
+    // find an appropriate setImmediate-alike
+    var makeZeroTimeout;
+    /*global window */
+    if (typeof window !== 'undefined' && ES.IsCallable(window.postMessage)) {
+      makeZeroTimeout = function () {
+        // from http://dbaron.org/log/20100309-faster-timeouts
+        var timeouts = [];
+        var messageName = 'zero-timeout-message';
+        var setZeroTimeout = function (fn) {
+          _push(timeouts, fn);
+          window.postMessage(messageName, '*');
+        };
+        var handleMessage = function (event) {
+          if (event.source === window && event.data === messageName) {
+            event.stopPropagation();
+            if (timeouts.length === 0) { return; }
+            var fn = _shift(timeouts);
+            fn();
+          }
+        };
+        window.addEventListener('message', handleMessage, true);
+        return setZeroTimeout;
+      };
+    }
+    var makePromiseAsap = function () {
+      // An efficient task-scheduler based on a pre-existing Promise
+      // implementation, which we can use even if we override the
+      // global Promise below (in order to workaround bugs)
+      // https://github.com/Raynos/observ-hash/issues/2#issuecomment-35857671
+      var P = globals.Promise;
+      var pr = P && P.resolve && P.resolve();
+      return pr && function (task) {
+        return pr.then(task);
+      };
+    };
+    /*global process */
+    /* jscs:disable disallowMultiLineTernary */
+    var enqueue = ES.IsCallable(globals.setImmediate) ?
+      globals.setImmediate :
+      typeof process === 'object' && process.nextTick ? process.nextTick :
+      makePromiseAsap() ||
+      (ES.IsCallable(makeZeroTimeout) ? makeZeroTimeout() :
+      function (task) { setTimeout(task, 0); }); // fallback
+    /* jscs:enable disallowMultiLineTernary */
+
+    // Constants for Promise implementation
+    var PROMISE_IDENTITY = function (x) { return x; };
+    var PROMISE_THROWER = function (e) { throw e; };
+    var PROMISE_PENDING = 0;
+    var PROMISE_FULFILLED = 1;
+    var PROMISE_REJECTED = 2;
+    // We store fulfill/reject handlers and capabilities in a single array.
+    var PROMISE_FULFILL_OFFSET = 0;
+    var PROMISE_REJECT_OFFSET = 1;
+    var PROMISE_CAPABILITY_OFFSET = 2;
+    // This is used in an optimization for chaining promises via then.
+    var PROMISE_FAKE_CAPABILITY = {};
+
+    var enqueuePromiseReactionJob = function (handler, capability, argument) {
+      enqueue(function () {
+        promiseReactionJob(handler, capability, argument);
+      });
+    };
+
+    var promiseReactionJob = function (handler, promiseCapability, argument) {
+      var handlerResult, f;
+      if (promiseCapability === PROMISE_FAKE_CAPABILITY) {
+        // Fast case, when we don't actually need to chain through to a
+        // (real) promiseCapability.
+        return handler(argument);
+      }
+      try {
+        handlerResult = handler(argument);
+        f = promiseCapability.resolve;
+      } catch (e) {
+        handlerResult = e;
+        f = promiseCapability.reject;
+      }
+      f(handlerResult);
+    };
+
+    var fulfillPromise = function (promise, value) {
+      var _promise = promise._promise;
+      var length = _promise.reactionLength;
+      if (length > 0) {
+        enqueuePromiseReactionJob(
+          _promise.fulfillReactionHandler0,
+          _promise.reactionCapability0,
+          value
+        );
+        _promise.fulfillReactionHandler0 = void 0;
+        _promise.rejectReactions0 = void 0;
+        _promise.reactionCapability0 = void 0;
+        if (length > 1) {
+          for (var i = 1, idx = 0; i < length; i++, idx += 3) {
+            enqueuePromiseReactionJob(
+              _promise[idx + PROMISE_FULFILL_OFFSET],
+              _promise[idx + PROMISE_CAPABILITY_OFFSET],
+              value
+            );
+            promise[idx + PROMISE_FULFILL_OFFSET] = void 0;
+            promise[idx + PROMISE_REJECT_OFFSET] = void 0;
+            promise[idx + PROMISE_CAPABILITY_OFFSET] = void 0;
+          }
+        }
+      }
+      _promise.result = value;
+      _promise.state = PROMISE_FULFILLED;
+      _promise.reactionLength = 0;
+    };
+
+    var rejectPromise = function (promise, reason) {
+      var _promise = promise._promise;
+      var length = _promise.reactionLength;
+      if (length > 0) {
+        enqueuePromiseReactionJob(
+          _promise.rejectReactionHandler0,
+          _promise.reactionCapability0,
+          reason
+        );
+        _promise.fulfillReactionHandler0 = void 0;
+        _promise.rejectReactions0 = void 0;
+        _promise.reactionCapability0 = void 0;
+        if (length > 1) {
+          for (var i = 1, idx = 0; i < length; i++, idx += 3) {
+            enqueuePromiseReactionJob(
+              _promise[idx + PROMISE_REJECT_OFFSET],
+              _promise[idx + PROMISE_CAPABILITY_OFFSET],
+              reason
+            );
+            promise[idx + PROMISE_FULFILL_OFFSET] = void 0;
+            promise[idx + PROMISE_REJECT_OFFSET] = void 0;
+            promise[idx + PROMISE_CAPABILITY_OFFSET] = void 0;
+          }
+        }
+      }
+      _promise.result = reason;
+      _promise.state = PROMISE_REJECTED;
+      _promise.reactionLength = 0;
+    };
+
+    var createResolvingFunctions = function (promise) {
+      var alreadyResolved = false;
+      var resolve = function (resolution) {
+        var then;
+        if (alreadyResolved) { return; }
+        alreadyResolved = true;
+        if (resolution === promise) {
+          return rejectPromise(promise, new TypeError('Self resolution'));
+        }
+        if (!ES.TypeIsObject(resolution)) {
+          return fulfillPromise(promise, resolution);
+        }
+        try {
+          then = resolution.then;
+        } catch (e) {
+          return rejectPromise(promise, e);
+        }
+        if (!ES.IsCallable(then)) {
+          return fulfillPromise(promise, resolution);
+        }
+        enqueue(function () {
+          promiseResolveThenableJob(promise, resolution, then);
+        });
+      };
+      var reject = function (reason) {
+        if (alreadyResolved) { return; }
+        alreadyResolved = true;
+        return rejectPromise(promise, reason);
+      };
+      return { resolve: resolve, reject: reject };
+    };
+
+    var optimizedThen = function (then, thenable, resolve, reject) {
+      // Optimization: since we discard the result, we can pass our
+      // own then implementation a special hint to let it know it
+      // doesn't have to create it.  (The PROMISE_FAKE_CAPABILITY
+      // object is local to this implementation and unforgeable outside.)
+      if (then === Promise$prototype$then) {
+        _call(then, thenable, resolve, reject, PROMISE_FAKE_CAPABILITY);
+      } else {
+        _call(then, thenable, resolve, reject);
+      }
+    };
+    var promiseResolveThenableJob = function (promise, thenable, then) {
+      var resolvingFunctions = createResolvingFunctions(promise);
+      var resolve = resolvingFunctions.resolve;
+      var reject = resolvingFunctions.reject;
+      try {
+        optimizedThen(then, thenable, resolve, reject);
+      } catch (e) {
+        reject(e);
+      }
+    };
+
+    var Promise$prototype, Promise$prototype$then;
+    var Promise = (function () {
+      var PromiseShim = function Promise(resolver) {
+        if (!(this instanceof PromiseShim)) {
+          throw new TypeError('Constructor Promise requires "new"');
+        }
+        if (this && this._promise) {
+          throw new TypeError('Bad construction');
+        }
+        // see https://bugs.ecmascript.org/show_bug.cgi?id=2482
+        if (!ES.IsCallable(resolver)) {
+          throw new TypeError('not a valid resolver');
+        }
+        var promise = emulateES6construct(this, PromiseShim, Promise$prototype, {
+          _promise: {
+            result: void 0,
+            state: PROMISE_PENDING,
+            // The first member of the "reactions" array is inlined here,
+            // since most promises only have one reaction.
+            // We've also exploded the 'reaction' object to inline the
+            // "handler" and "capability" fields, since both fulfill and
+            // reject reactions share the same capability.
+            reactionLength: 0,
+            fulfillReactionHandler0: void 0,
+            rejectReactionHandler0: void 0,
+            reactionCapability0: void 0
+          }
+        });
+        var resolvingFunctions = createResolvingFunctions(promise);
+        var reject = resolvingFunctions.reject;
+        try {
+          resolver(resolvingFunctions.resolve, reject);
+        } catch (e) {
+          reject(e);
+        }
+        return promise;
+      };
+      return PromiseShim;
+    }());
+    Promise$prototype = Promise.prototype;
+
+    var _promiseAllResolver = function (index, values, capability, remaining) {
+      var alreadyCalled = false;
+      return function (x) {
+        if (alreadyCalled) { return; }
+        alreadyCalled = true;
+        values[index] = x;
+        if ((--remaining.count) === 0) {
+          var resolve = capability.resolve;
+          resolve(values); // call w/ this===undefined
+        }
+      };
+    };
+
+    var performPromiseAll = function (iteratorRecord, C, resultCapability) {
+      var it = iteratorRecord.iterator;
+      var values = [];
+      var remaining = { count: 1 };
+      var next, nextValue;
+      var index = 0;
+      while (true) {
+        try {
+          next = ES.IteratorStep(it);
+          if (next === false) {
+            iteratorRecord.done = true;
+            break;
+          }
+          nextValue = next.value;
+        } catch (e) {
+          iteratorRecord.done = true;
+          throw e;
+        }
+        values[index] = void 0;
+        var nextPromise = C.resolve(nextValue);
+        var resolveElement = _promiseAllResolver(
+          index, values, resultCapability, remaining
+        );
+        remaining.count += 1;
+        optimizedThen(nextPromise.then, nextPromise, resolveElement, resultCapability.reject);
+        index += 1;
+      }
+      if ((--remaining.count) === 0) {
+        var resolve = resultCapability.resolve;
+        resolve(values); // call w/ this===undefined
+      }
+      return resultCapability.promise;
+    };
+
+    var performPromiseRace = function (iteratorRecord, C, resultCapability) {
+      var it = iteratorRecord.iterator;
+      var next, nextValue, nextPromise;
+      while (true) {
+        try {
+          next = ES.IteratorStep(it);
+          if (next === false) {
+            // NOTE: If iterable has no items, resulting promise will never
+            // resolve; see:
+            // https://github.com/domenic/promises-unwrapping/issues/75
+            // https://bugs.ecmascript.org/show_bug.cgi?id=2515
+            iteratorRecord.done = true;
+            break;
+          }
+          nextValue = next.value;
+        } catch (e) {
+          iteratorRecord.done = true;
+          throw e;
+        }
+        nextPromise = C.resolve(nextValue);
+        optimizedThen(nextPromise.then, nextPromise, resultCapability.resolve, resultCapability.reject);
+      }
+      return resultCapability.promise;
+    };
+
+    defineProperties(Promise, {
+      all: function all(iterable) {
+        var C = this;
+        if (!ES.TypeIsObject(C)) {
+          throw new TypeError('Promise is not object');
+        }
+        var capability = new PromiseCapability(C);
+        var iterator, iteratorRecord;
+        try {
+          iterator = ES.GetIterator(iterable);
+          iteratorRecord = { iterator: iterator, done: false };
+          return performPromiseAll(iteratorRecord, C, capability);
+        } catch (e) {
+          var exception = e;
+          if (iteratorRecord && !iteratorRecord.done) {
+            try {
+              ES.IteratorClose(iterator, true);
+            } catch (ee) {
+              exception = ee;
+            }
+          }
+          var reject = capability.reject;
+          reject(exception);
+          return capability.promise;
+        }
+      },
+
+      race: function race(iterable) {
+        var C = this;
+        if (!ES.TypeIsObject(C)) {
+          throw new TypeError('Promise is not object');
+        }
+        var capability = new PromiseCapability(C);
+        var iterator, iteratorRecord;
+        try {
+          iterator = ES.GetIterator(iterable);
+          iteratorRecord = { iterator: iterator, done: false };
+          return performPromiseRace(iteratorRecord, C, capability);
+        } catch (e) {
+          var exception = e;
+          if (iteratorRecord && !iteratorRecord.done) {
+            try {
+              ES.IteratorClose(iterator, true);
+            } catch (ee) {
+              exception = ee;
+            }
+          }
+          var reject = capability.reject;
+          reject(exception);
+          return capability.promise;
+        }
+      },
+
+      reject: function reject(reason) {
+        var C = this;
+        if (!ES.TypeIsObject(C)) {
+          throw new TypeError('Bad promise constructor');
+        }
+        var capability = new PromiseCapability(C);
+        var rejectFunc = capability.reject;
+        rejectFunc(reason); // call with this===undefined
+        return capability.promise;
+      },
+
+      resolve: function resolve(v) {
+        // See https://esdiscuss.org/topic/fixing-promise-resolve for spec
+        var C = this;
+        if (!ES.TypeIsObject(C)) {
+          throw new TypeError('Bad promise constructor');
+        }
+        if (ES.IsPromise(v)) {
+          var constructor = v.constructor;
+          if (constructor === C) {
+            return v;
+          }
+        }
+        var capability = new PromiseCapability(C);
+        var resolveFunc = capability.resolve;
+        resolveFunc(v); // call with this===undefined
+        return capability.promise;
+      }
+    });
+
+    defineProperties(Promise$prototype, {
+      'catch': function (onRejected) {
+        return this.then(null, onRejected);
+      },
+
+      then: function then(onFulfilled, onRejected) {
+        var promise = this;
+        if (!ES.IsPromise(promise)) { throw new TypeError('not a promise'); }
+        var C = ES.SpeciesConstructor(promise, Promise);
+        var resultCapability;
+        var returnValueIsIgnored = arguments.length > 2 && arguments[2] === PROMISE_FAKE_CAPABILITY;
+        if (returnValueIsIgnored && C === Promise) {
+          resultCapability = PROMISE_FAKE_CAPABILITY;
+        } else {
+          resultCapability = new PromiseCapability(C);
+        }
+        // PerformPromiseThen(promise, onFulfilled, onRejected, resultCapability)
+        // Note that we've split the 'reaction' object into its two
+        // components, "capabilities" and "handler"
+        // "capabilities" is always equal to `resultCapability`
+        var fulfillReactionHandler = ES.IsCallable(onFulfilled) ? onFulfilled : PROMISE_IDENTITY;
+        var rejectReactionHandler = ES.IsCallable(onRejected) ? onRejected : PROMISE_THROWER;
+        var _promise = promise._promise;
+        var value;
+        if (_promise.state === PROMISE_PENDING) {
+          if (_promise.reactionLength === 0) {
+            _promise.fulfillReactionHandler0 = fulfillReactionHandler;
+            _promise.rejectReactionHandler0 = rejectReactionHandler;
+            _promise.reactionCapability0 = resultCapability;
+          } else {
+            var idx = 3 * (_promise.reactionLength - 1);
+            _promise[idx + PROMISE_FULFILL_OFFSET] = fulfillReactionHandler;
+            _promise[idx + PROMISE_REJECT_OFFSET] = rejectReactionHandler;
+            _promise[idx + PROMISE_CAPABILITY_OFFSET] = resultCapability;
+          }
+          _promise.reactionLength += 1;
+        } else if (_promise.state === PROMISE_FULFILLED) {
+          value = _promise.result;
+          enqueuePromiseReactionJob(
+            fulfillReactionHandler, resultCapability, value
+          );
+        } else if (_promise.state === PROMISE_REJECTED) {
+          value = _promise.result;
+          enqueuePromiseReactionJob(
+            rejectReactionHandler, resultCapability, value
+          );
+        } else {
+          throw new TypeError('unexpected Promise state');
+        }
+        return resultCapability.promise;
+      }
+    });
+    // This helps the optimizer by ensuring that methods which take
+    // capabilities aren't polymorphic.
+    PROMISE_FAKE_CAPABILITY = new PromiseCapability(Promise);
+    Promise$prototype$then = Promise$prototype.then;
+
+    return Promise;
+  }());
+
+  // Chrome's native Promise has extra methods that it shouldn't have. Let's remove them.
+  if (globals.Promise) {
+    delete globals.Promise.accept;
+    delete globals.Promise.defer;
+    delete globals.Promise.prototype.chain;
+  }
+
+  if (typeof PromiseShim === 'function') {
+    // export the Promise constructor.
+    defineProperties(globals, { Promise: PromiseShim });
+    // In Chrome 33 (and thereabouts) Promise is defined, but the
+    // implementation is buggy in a number of ways.  Let's check subclassing
+    // support to see if we have a buggy implementation.
+    var promiseSupportsSubclassing = supportsSubclassing(globals.Promise, function (S) {
+      return S.resolve(42).then(function () {}) instanceof S;
+    });
+    var promiseIgnoresNonFunctionThenCallbacks = !throwsError(function () {
+      globals.Promise.reject(42).then(null, 5).then(null, noop);
+    });
+    var promiseRequiresObjectContext = throwsError(function () { globals.Promise.call(3, noop); });
+    // Promise.resolve() was errata'ed late in the ES6 process.
+    // See: https://bugzilla.mozilla.org/show_bug.cgi?id=1170742
+    //      https://code.google.com/p/v8/issues/detail?id=4161
+    // It serves as a proxy for a number of other bugs in early Promise
+    // implementations.
+    var promiseResolveBroken = (function (Promise) {
+      var p = Promise.resolve(5);
+      p.constructor = {};
+      var p2 = Promise.resolve(p);
+      try {
+        p2.then(null, noop).then(null, noop); // avoid "uncaught rejection" warnings in console
+      } catch (e) {
+        return true; // v8 native Promises break here https://code.google.com/p/chromium/issues/detail?id=575314
+      }
+      return p === p2; // This *should* be false!
+    }(globals.Promise));
+
+    // Chrome 46 (probably older too) does not retrieve a thenable's .then synchronously
+    var getsThenSynchronously = supportsDescriptors && (function () {
+      var count = 0;
+      var thenable = Object.defineProperty({}, 'then', { get: function () { count += 1; } });
+      Promise.resolve(thenable);
+      return count === 1;
+    }());
+
+    var BadResolverPromise = function BadResolverPromise(executor) {
+      var p = new Promise(executor);
+      executor(3, function () {});
+      this.then = p.then;
+      this.constructor = BadResolverPromise;
+    };
+    BadResolverPromise.prototype = Promise.prototype;
+    BadResolverPromise.all = Promise.all;
+    // Chrome Canary 49 (probably older too) has some implementation bugs
+    var hasBadResolverPromise = valueOrFalseIfThrows(function () {
+      return !!BadResolverPromise.all([1, 2]);
+    });
+
+    if (!promiseSupportsSubclassing || !promiseIgnoresNonFunctionThenCallbacks ||
+        !promiseRequiresObjectContext || promiseResolveBroken ||
+        !getsThenSynchronously || hasBadResolverPromise) {
+      /* globals Promise: true */
+      /* eslint-disable no-undef, no-global-assign */
+      /* jshint -W020 */
+      Promise = PromiseShim;
+      /* jshint +W020 */
+      /* eslint-enable no-undef, no-global-assign */
+      /* globals Promise: false */
+      overrideNative(globals, 'Promise', PromiseShim);
+    }
+    if (Promise.all.length !== 1) {
+      var origAll = Promise.all;
+      overrideNative(Promise, 'all', function all(iterable) {
+        return ES.Call(origAll, this, arguments);
+      });
+    }
+    if (Promise.race.length !== 1) {
+      var origRace = Promise.race;
+      overrideNative(Promise, 'race', function race(iterable) {
+        return ES.Call(origRace, this, arguments);
+      });
+    }
+    if (Promise.resolve.length !== 1) {
+      var origResolve = Promise.resolve;
+      overrideNative(Promise, 'resolve', function resolve(x) {
+        return ES.Call(origResolve, this, arguments);
+      });
+    }
+    if (Promise.reject.length !== 1) {
+      var origReject = Promise.reject;
+      overrideNative(Promise, 'reject', function reject(r) {
+        return ES.Call(origReject, this, arguments);
+      });
+    }
+    ensureEnumerable(Promise, 'all');
+    ensureEnumerable(Promise, 'race');
+    ensureEnumerable(Promise, 'resolve');
+    ensureEnumerable(Promise, 'reject');
+    addDefaultSpecies(Promise);
+  }
+
+  // Map and Set require a true ES5 environment
+  // Their fast path also requires that the environment preserve
+  // property insertion order, which is not guaranteed by the spec.
+  var testOrder = function (a) {
+    var b = keys(_reduce(a, function (o, k) {
+      o[k] = true;
+      return o;
+    }, {}));
+    return a.join(':') === b.join(':');
+  };
+  var preservesInsertionOrder = testOrder(['z', 'a', 'bb']);
+  // some engines (eg, Chrome) only preserve insertion order for string keys
+  var preservesNumericInsertionOrder = testOrder(['z', 1, 'a', '3', 2]);
+
+  if (supportsDescriptors) {
+
+    var fastkey = function fastkey(key, skipInsertionOrderCheck) {
+      if (!skipInsertionOrderCheck && !preservesInsertionOrder) {
+        return null;
+      }
+      if (isNullOrUndefined(key)) {
+        return '^' + ES.ToString(key);
+      } else if (typeof key === 'string') {
+        return '$' + key;
+      } else if (typeof key === 'number') {
+        // note that -0 will get coerced to "0" when used as a property key
+        if (!preservesNumericInsertionOrder) {
+          return 'n' + key;
+        }
+        return key;
+      } else if (typeof key === 'boolean') {
+        return 'b' + key;
+      }
+      return null;
+    };
+
+    var emptyObject = function emptyObject() {
+      // accomodate some older not-quite-ES5 browsers
+      return Object.create ? Object.create(null) : {};
+    };
+
+    var addIterableToMap = function addIterableToMap(MapConstructor, map, iterable) {
+      if (isArray(iterable) || Type.string(iterable)) {
+        _forEach(iterable, function (entry) {
+          if (!ES.TypeIsObject(entry)) {
+            throw new TypeError('Iterator value ' + entry + ' is not an entry object');
+          }
+          map.set(entry[0], entry[1]);
+        });
+      } else if (iterable instanceof MapConstructor) {
+        _call(MapConstructor.prototype.forEach, iterable, function (value, key) {
+          map.set(key, value);
+        });
+      } else {
+        var iter, adder;
+        if (!isNullOrUndefined(iterable)) {
+          adder = map.set;
+          if (!ES.IsCallable(adder)) { throw new TypeError('bad map'); }
+          iter = ES.GetIterator(iterable);
+        }
+        if (typeof iter !== 'undefined') {
+          while (true) {
+            var next = ES.IteratorStep(iter);
+            if (next === false) { break; }
+            var nextItem = next.value;
+            try {
+              if (!ES.TypeIsObject(nextItem)) {
+                throw new TypeError('Iterator value ' + nextItem + ' is not an entry object');
+              }
+              _call(adder, map, nextItem[0], nextItem[1]);
+            } catch (e) {
+              ES.IteratorClose(iter, true);
+              throw e;
+            }
+          }
+        }
+      }
+    };
+    var addIterableToSet = function addIterableToSet(SetConstructor, set, iterable) {
+      if (isArray(iterable) || Type.string(iterable)) {
+        _forEach(iterable, function (value) {
+          set.add(value);
+        });
+      } else if (iterable instanceof SetConstructor) {
+        _call(SetConstructor.prototype.forEach, iterable, function (value) {
+          set.add(value);
+        });
+      } else {
+        var iter, adder;
+        if (!isNullOrUndefined(iterable)) {
+          adder = set.add;
+          if (!ES.IsCallable(adder)) { throw new TypeError('bad set'); }
+          iter = ES.GetIterator(iterable);
+        }
+        if (typeof iter !== 'undefined') {
+          while (true) {
+            var next = ES.IteratorStep(iter);
+            if (next === false) { break; }
+            var nextValue = next.value;
+            try {
+              _call(adder, set, nextValue);
+            } catch (e) {
+              ES.IteratorClose(iter, true);
+              throw e;
+            }
+          }
+        }
+      }
+    };
+
+    var collectionShims = {
+      Map: (function () {
+
+        var empty = {};
+
+        var MapEntry = function MapEntry(key, value) {
+          this.key = key;
+          this.value = value;
+          this.next = null;
+          this.prev = null;
+        };
+
+        MapEntry.prototype.isRemoved = function isRemoved() {
+          return this.key === empty;
+        };
+
+        var isMap = function isMap(map) {
+          return !!map._es6map;
+        };
+
+        var requireMapSlot = function requireMapSlot(map, method) {
+          if (!ES.TypeIsObject(map) || !isMap(map)) {
+            throw new TypeError('Method Map.prototype.' + method + ' called on incompatible receiver ' + ES.ToString(map));
+          }
+        };
+
+        var MapIterator = function MapIterator(map, kind) {
+          requireMapSlot(map, '[[MapIterator]]');
+          this.head = map._head;
+          this.i = this.head;
+          this.kind = kind;
+        };
+
+        MapIterator.prototype = {
+          next: function next() {
+            var i = this.i;
+            var kind = this.kind;
+            var head = this.head;
+            if (typeof this.i === 'undefined') {
+              return iteratorResult();
+            }
+            while (i.isRemoved() && i !== head) {
+              // back up off of removed entries
+              i = i.prev;
+            }
+            // advance to next unreturned element.
+            var result;
+            while (i.next !== head) {
+              i = i.next;
+              if (!i.isRemoved()) {
+                if (kind === 'key') {
+                  result = i.key;
+                } else if (kind === 'value') {
+                  result = i.value;
+                } else {
+                  result = [i.key, i.value];
+                }
+                this.i = i;
+                return iteratorResult(result);
+              }
+            }
+            // once the iterator is done, it is done forever.
+            this.i = void 0;
+            return iteratorResult();
+          }
+        };
+        addIterator(MapIterator.prototype);
+
+        var Map$prototype;
+        var MapShim = function Map() {
+          if (!(this instanceof Map)) {
+            throw new TypeError('Constructor Map requires "new"');
+          }
+          if (this && this._es6map) {
+            throw new TypeError('Bad construction');
+          }
+          var map = emulateES6construct(this, Map, Map$prototype, {
+            _es6map: true,
+            _head: null,
+            _map: OrigMap ? new OrigMap() : null,
+            _size: 0,
+            _storage: emptyObject()
+          });
+
+          var head = new MapEntry(null, null);
+          // circular doubly-linked list.
+          /* eslint no-multi-assign: 1 */
+          head.next = head.prev = head;
+          map._head = head;
+
+          // Optionally initialize map from iterable
+          if (arguments.length > 0) {
+            addIterableToMap(Map, map, arguments[0]);
+          }
+          return map;
+        };
+        Map$prototype = MapShim.prototype;
+
+        Value.getter(Map$prototype, 'size', function () {
+          if (typeof this._size === 'undefined') {
+            throw new TypeError('size method called on incompatible Map');
+          }
+          return this._size;
+        });
+
+        defineProperties(Map$prototype, {
+          get: function get(key) {
+            requireMapSlot(this, 'get');
+            var entry;
+            var fkey = fastkey(key, true);
+            if (fkey !== null) {
+              // fast O(1) path
+              entry = this._storage[fkey];
+              if (entry) {
+                return entry.value;
+              } else {
+                return;
+              }
+            }
+            if (this._map) {
+              // fast object key path
+              entry = origMapGet.call(this._map, key);
+              if (entry) {
+                return entry.value;
+              } else {
+                return;
+              }
+            }
+            var head = this._head;
+            var i = head;
+            while ((i = i.next) !== head) {
+              if (ES.SameValueZero(i.key, key)) {
+                return i.value;
+              }
+            }
+          },
+
+          has: function has(key) {
+            requireMapSlot(this, 'has');
+            var fkey = fastkey(key, true);
+            if (fkey !== null) {
+              // fast O(1) path
+              return typeof this._storage[fkey] !== 'undefined';
+            }
+            if (this._map) {
+              // fast object key path
+              return origMapHas.call(this._map, key);
+            }
+            var head = this._head;
+            var i = head;
+            while ((i = i.next) !== head) {
+              if (ES.SameValueZero(i.key, key)) {
+                return true;
+              }
+            }
+            return false;
+          },
+
+          set: function set(key, value) {
+            requireMapSlot(this, 'set');
+            var head = this._head;
+            var i = head;
+            var entry;
+            var fkey = fastkey(key, true);
+            if (fkey !== null) {
+              // fast O(1) path
+              if (typeof this._storage[fkey] !== 'undefined') {
+                this._storage[fkey].value = value;
+                return this;
+              } else {
+                entry = this._storage[fkey] = new MapEntry(key, value); /* eslint no-multi-assign: 1 */
+                i = head.prev;
+                // fall through
+              }
+            } else if (this._map) {
+              // fast object key path
+              if (origMapHas.call(this._map, key)) {
+                origMapGet.call(this._map, key).value = value;
+              } else {
+                entry = new MapEntry(key, value);
+                origMapSet.call(this._map, key, entry);
+                i = head.prev;
+                // fall through
+              }
+            }
+            while ((i = i.next) !== head) {
+              if (ES.SameValueZero(i.key, key)) {
+                i.value = value;
+                return this;
+              }
+            }
+            entry = entry || new MapEntry(key, value);
+            if (ES.SameValue(-0, key)) {
+              entry.key = +0; // coerce -0 to +0 in entry
+            }
+            entry.next = this._head;
+            entry.prev = this._head.prev;
+            entry.prev.next = entry;
+            entry.next.prev = entry;
+            this._size += 1;
+            return this;
+          },
+
+          'delete': function (key) {
+            requireMapSlot(this, 'delete');
+            var head = this._head;
+            var i = head;
+            var fkey = fastkey(key, true);
+            if (fkey !== null) {
+              // fast O(1) path
+              if (typeof this._storage[fkey] === 'undefined') {
+                return false;
+              }
+              i = this._storage[fkey].prev;
+              delete this._storage[fkey];
+              // fall through
+            } else if (this._map) {
+              // fast object key path
+              if (!origMapHas.call(this._map, key)) {
+                return false;
+              }
+              i = origMapGet.call(this._map, key).prev;
+              origMapDelete.call(this._map, key);
+              // fall through
+            }
+            while ((i = i.next) !== head) {
+              if (ES.SameValueZero(i.key, key)) {
+                i.key = empty;
+                i.value = empty;
+                i.prev.next = i.next;
+                i.next.prev = i.prev;
+                this._size -= 1;
+                return true;
+              }
+            }
+            return false;
+          },
+
+          clear: function clear() {
+             /* eslint no-multi-assign: 1 */
+            requireMapSlot(this, 'clear');
+            this._map = OrigMap ? new OrigMap() : null;
+            this._size = 0;
+            this._storage = emptyObject();
+            var head = this._head;
+            var i = head;
+            var p = i.next;
+            while ((i = p) !== head) {
+              i.key = empty;
+              i.value = empty;
+              p = i.next;
+              i.next = i.prev = head;
+            }
+            head.next = head.prev = head;
+          },
+
+          keys: function keys() {
+            requireMapSlot(this, 'keys');
+            return new MapIterator(this, 'key');
+          },
+
+          values: function values() {
+            requireMapSlot(this, 'values');
+            return new MapIterator(this, 'value');
+          },
+
+          entries: function entries() {
+            requireMapSlot(this, 'entries');
+            return new MapIterator(this, 'key+value');
+          },
+
+          forEach: function forEach(callback) {
+            requireMapSlot(this, 'forEach');
+            var context = arguments.length > 1 ? arguments[1] : null;
+            var it = this.entries();
+            for (var entry = it.next(); !entry.done; entry = it.next()) {
+              if (context) {
+                _call(callback, context, entry.value[1], entry.value[0], this);
+              } else {
+                callback(entry.value[1], entry.value[0], this);
+              }
+            }
+          }
+        });
+        addIterator(Map$prototype, Map$prototype.entries);
+
+        return MapShim;
+      }()),
+
+      Set: (function () {
+        var isSet = function isSet(set) {
+          return set._es6set && typeof set._storage !== 'undefined';
+        };
+        var requireSetSlot = function requireSetSlot(set, method) {
+          if (!ES.TypeIsObject(set) || !isSet(set)) {
+            // https://github.com/paulmillr/es6-shim/issues/176
+            throw new TypeError('Set.prototype.' + method + ' called on incompatible receiver ' + ES.ToString(set));
+          }
+        };
+
+        // Creating a Map is expensive.  To speed up the common case of
+        // Sets containing only string or numeric keys, we use an object
+        // as backing storage and lazily create a full Map only when
+        // required.
+        var Set$prototype;
+        var SetShim = function Set() {
+          if (!(this instanceof Set)) {
+            throw new TypeError('Constructor Set requires "new"');
+          }
+          if (this && this._es6set) {
+            throw new TypeError('Bad construction');
+          }
+          var set = emulateES6construct(this, Set, Set$prototype, {
+            _es6set: true,
+            '[[SetData]]': null,
+            _storage: emptyObject()
+          });
+          if (!set._es6set) {
+            throw new TypeError('bad set');
+          }
+
+          // Optionally initialize Set from iterable
+          if (arguments.length > 0) {
+            addIterableToSet(Set, set, arguments[0]);
+          }
+          return set;
+        };
+        Set$prototype = SetShim.prototype;
+
+        var decodeKey = function (key) {
+          var k = key;
+          if (k === '^null') {
+            return null;
+          } else if (k === '^undefined') {
+            return void 0;
+          } else {
+            var first = k.charAt(0);
+            if (first === '$') {
+              return _strSlice(k, 1);
+            } else if (first === 'n') {
+              return +_strSlice(k, 1);
+            } else if (first === 'b') {
+              return k === 'btrue';
+            }
+          }
+          return +k;
+        };
+        // Switch from the object backing storage to a full Map.
+        var ensureMap = function ensureMap(set) {
+          if (!set['[[SetData]]']) {
+            var m = new collectionShims.Map();
+            set['[[SetData]]'] = m;
+            _forEach(keys(set._storage), function (key) {
+              var k = decodeKey(key);
+              m.set(k, k);
+            });
+            set['[[SetData]]'] = m;
+          }
+          set._storage = null; // free old backing storage
+        };
+
+        Value.getter(SetShim.prototype, 'size', function () {
+          requireSetSlot(this, 'size');
+          if (this._storage) {
+            return keys(this._storage).length;
+          }
+          ensureMap(this);
+          return this['[[SetData]]'].size;
+        });
+
+        defineProperties(SetShim.prototype, {
+          has: function has(key) {
+            requireSetSlot(this, 'has');
+            var fkey;
+            if (this._storage && (fkey = fastkey(key)) !== null) {
+              return !!this._storage[fkey];
+            }
+            ensureMap(this);
+            return this['[[SetData]]'].has(key);
+          },
+
+          add: function add(key) {
+            requireSetSlot(this, 'add');
+            var fkey;
+            if (this._storage && (fkey = fastkey(key)) !== null) {
+              this._storage[fkey] = true;
+              return this;
+            }
+            ensureMap(this);
+            this['[[SetData]]'].set(key, key);
+            return this;
+          },
+
+          'delete': function (key) {
+            requireSetSlot(this, 'delete');
+            var fkey;
+            if (this._storage && (fkey = fastkey(key)) !== null) {
+              var hasFKey = _hasOwnProperty(this._storage, fkey);
+              return (delete this._storage[fkey]) && hasFKey;
+            }
+            ensureMap(this);
+            return this['[[SetData]]']['delete'](key);
+          },
+
+          clear: function clear() {
+            requireSetSlot(this, 'clear');
+            if (this._storage) {
+              this._storage = emptyObject();
+            }
+            if (this['[[SetData]]']) {
+              this['[[SetData]]'].clear();
+            }
+          },
+
+          values: function values() {
+            requireSetSlot(this, 'values');
+            ensureMap(this);
+            return this['[[SetData]]'].values();
+          },
+
+          entries: function entries() {
+            requireSetSlot(this, 'entries');
+            ensureMap(this);
+            return this['[[SetData]]'].entries();
+          },
+
+          forEach: function forEach(callback) {
+            requireSetSlot(this, 'forEach');
+            var context = arguments.length > 1 ? arguments[1] : null;
+            var entireSet = this;
+            ensureMap(entireSet);
+            this['[[SetData]]'].forEach(function (value, key) {
+              if (context) {
+                _call(callback, context, key, key, entireSet);
+              } else {
+                callback(key, key, entireSet);
+              }
+            });
+          }
+        });
+        defineProperty(SetShim.prototype, 'keys', SetShim.prototype.values, true);
+        addIterator(SetShim.prototype, SetShim.prototype.values);
+
+        return SetShim;
+      }())
+    };
+
+    if (globals.Map || globals.Set) {
+      // Safari 8, for example, doesn't accept an iterable.
+      var mapAcceptsArguments = valueOrFalseIfThrows(function () { return new Map([[1, 2]]).get(1) === 2; });
+      if (!mapAcceptsArguments) {
+        globals.Map = function Map() {
+          if (!(this instanceof Map)) {
+            throw new TypeError('Constructor Map requires "new"');
+          }
+          var m = new OrigMap();
+          if (arguments.length > 0) {
+            addIterableToMap(Map, m, arguments[0]);
+          }
+          delete m.constructor;
+          Object.setPrototypeOf(m, globals.Map.prototype);
+          return m;
+        };
+        globals.Map.prototype = create(OrigMap.prototype);
+        defineProperty(globals.Map.prototype, 'constructor', globals.Map, true);
+        Value.preserveToString(globals.Map, OrigMap);
+      }
+      var testMap = new Map();
+      var mapUsesSameValueZero = (function () {
+        // Chrome 38-42, node 0.11/0.12, iojs 1/2 also have a bug when the Map has a size > 4
+        var m = new Map([[1, 0], [2, 0], [3, 0], [4, 0]]);
+        m.set(-0, m);
+        return m.get(0) === m && m.get(-0) === m && m.has(0) && m.has(-0);
+      }());
+      var mapSupportsChaining = testMap.set(1, 2) === testMap;
+      if (!mapUsesSameValueZero || !mapSupportsChaining) {
+        overrideNative(Map.prototype, 'set', function set(k, v) {
+          _call(origMapSet, this, k === 0 ? 0 : k, v);
+          return this;
+        });
+      }
+      if (!mapUsesSameValueZero) {
+        defineProperties(Map.prototype, {
+          get: function get(k) {
+            return _call(origMapGet, this, k === 0 ? 0 : k);
+          },
+          has: function has(k) {
+            return _call(origMapHas, this, k === 0 ? 0 : k);
+          }
+        }, true);
+        Value.preserveToString(Map.prototype.get, origMapGet);
+        Value.preserveToString(Map.prototype.has, origMapHas);
+      }
+      var testSet = new Set();
+      var setUsesSameValueZero = (function (s) {
+        s['delete'](0);
+        s.add(-0);
+        return !s.has(0);
+      }(testSet));
+      var setSupportsChaining = testSet.add(1) === testSet;
+      if (!setUsesSameValueZero || !setSupportsChaining) {
+        var origSetAdd = Set.prototype.add;
+        Set.prototype.add = function add(v) {
+          _call(origSetAdd, this, v === 0 ? 0 : v);
+          return this;
+        };
+        Value.preserveToString(Set.prototype.add, origSetAdd);
+      }
+      if (!setUsesSameValueZero) {
+        var origSetHas = Set.prototype.has;
+        Set.prototype.has = function has(v) {
+          return _call(origSetHas, this, v === 0 ? 0 : v);
+        };
+        Value.preserveToString(Set.prototype.has, origSetHas);
+        var origSetDel = Set.prototype['delete'];
+        Set.prototype['delete'] = function SetDelete(v) {
+          return _call(origSetDel, this, v === 0 ? 0 : v);
+        };
+        Value.preserveToString(Set.prototype['delete'], origSetDel);
+      }
+      var mapSupportsSubclassing = supportsSubclassing(globals.Map, function (M) {
+        var m = new M([]);
+        // Firefox 32 is ok with the instantiating the subclass but will
+        // throw when the map is used.
+        m.set(42, 42);
+        return m instanceof M;
+      });
+      // without Object.setPrototypeOf, subclassing is not possible
+      var mapFailsToSupportSubclassing = Object.setPrototypeOf && !mapSupportsSubclassing;
+      var mapRequiresNew = (function () {
+        try {
+          return !(globals.Map() instanceof globals.Map);
+        } catch (e) {
+          return e instanceof TypeError;
+        }
+      }());
+      if (globals.Map.length !== 0 || mapFailsToSupportSubclassing || !mapRequiresNew) {
+        globals.Map = function Map() {
+          if (!(this instanceof Map)) {
+            throw new TypeError('Constructor Map requires "new"');
+          }
+          var m = new OrigMap();
+          if (arguments.length > 0) {
+            addIterableToMap(Map, m, arguments[0]);
+          }
+          delete m.constructor;
+          Object.setPrototypeOf(m, Map.prototype);
+          return m;
+        };
+        globals.Map.prototype = OrigMap.prototype;
+        defineProperty(globals.Map.prototype, 'constructor', globals.Map, true);
+        Value.preserveToString(globals.Map, OrigMap);
+      }
+      var setSupportsSubclassing = supportsSubclassing(globals.Set, function (S) {
+        var s = new S([]);
+        s.add(42, 42);
+        return s instanceof S;
+      });
+      // without Object.setPrototypeOf, subclassing is not possible
+      var setFailsToSupportSubclassing = Object.setPrototypeOf && !setSupportsSubclassing;
+      var setRequiresNew = (function () {
+        try {
+          return !(globals.Set() instanceof globals.Set);
+        } catch (e) {
+          return e instanceof TypeError;
+        }
+      }());
+      if (globals.Set.length !== 0 || setFailsToSupportSubclassing || !setRequiresNew) {
+        var OrigSet = globals.Set;
+        globals.Set = function Set() {
+          if (!(this instanceof Set)) {
+            throw new TypeError('Constructor Set requires "new"');
+          }
+          var s = new OrigSet();
+          if (arguments.length > 0) {
+            addIterableToSet(Set, s, arguments[0]);
+          }
+          delete s.constructor;
+          Object.setPrototypeOf(s, Set.prototype);
+          return s;
+        };
+        globals.Set.prototype = OrigSet.prototype;
+        defineProperty(globals.Set.prototype, 'constructor', globals.Set, true);
+        Value.preserveToString(globals.Set, OrigSet);
+      }
+      var newMap = new globals.Map();
+      var mapIterationThrowsStopIterator = !valueOrFalseIfThrows(function () {
+        return newMap.keys().next().done;
+      });
+      /*
+        - In Firefox < 23, Map#size is a function.
+        - In all current Firefox, Set#entries/keys/values & Map#clear do not exist
+        - https://bugzilla.mozilla.org/show_bug.cgi?id=869996
+        - In Firefox 24, Map and Set do not implement forEach
+        - In Firefox 25 at least, Map and Set are callable without "new"
+      */
+      if (
+        typeof globals.Map.prototype.clear !== 'function' ||
+        new globals.Set().size !== 0 ||
+        newMap.size !== 0 ||
+        typeof globals.Map.prototype.keys !== 'function' ||
+        typeof globals.Set.prototype.keys !== 'function' ||
+        typeof globals.Map.prototype.forEach !== 'function' ||
+        typeof globals.Set.prototype.forEach !== 'function' ||
+        isCallableWithoutNew(globals.Map) ||
+        isCallableWithoutNew(globals.Set) ||
+        typeof newMap.keys().next !== 'function' || // Safari 8
+        mapIterationThrowsStopIterator || // Firefox 25
+        !mapSupportsSubclassing
+      ) {
+        defineProperties(globals, {
+          Map: collectionShims.Map,
+          Set: collectionShims.Set
+        }, true);
+      }
+
+      if (globals.Set.prototype.keys !== globals.Set.prototype.values) {
+        // Fixed in WebKit with https://bugs.webkit.org/show_bug.cgi?id=144190
+        defineProperty(globals.Set.prototype, 'keys', globals.Set.prototype.values, true);
+      }
+
+      // Shim incomplete iterator implementations.
+      addIterator(Object.getPrototypeOf((new globals.Map()).keys()));
+      addIterator(Object.getPrototypeOf((new globals.Set()).keys()));
+
+      if (functionsHaveNames && globals.Set.prototype.has.name !== 'has') {
+        // Microsoft Edge v0.11.10074.0 is missing a name on Set#has
+        var anonymousSetHas = globals.Set.prototype.has;
+        overrideNative(globals.Set.prototype, 'has', function has(key) {
+          return _call(anonymousSetHas, this, key);
+        });
+      }
+    }
+    defineProperties(globals, collectionShims);
+    addDefaultSpecies(globals.Map);
+    addDefaultSpecies(globals.Set);
+  }
+
+  var throwUnlessTargetIsObject = function throwUnlessTargetIsObject(target) {
+    if (!ES.TypeIsObject(target)) {
+      throw new TypeError('target must be an object');
+    }
+  };
+
+  // Some Reflect methods are basically the same as
+  // those on the Object global, except that a TypeError is thrown if
+  // target isn't an object. As well as returning a boolean indicating
+  // the success of the operation.
+  var ReflectShims = {
+    // Apply method in a functional form.
+    apply: function apply() {
+      return ES.Call(ES.Call, null, arguments);
+    },
+
+    // New operator in a functional form.
+    construct: function construct(constructor, args) {
+      if (!ES.IsConstructor(constructor)) {
+        throw new TypeError('First argument must be a constructor.');
+      }
+      var newTarget = arguments.length > 2 ? arguments[2] : constructor;
+      if (!ES.IsConstructor(newTarget)) {
+        throw new TypeError('new.target must be a constructor.');
+      }
+      return ES.Construct(constructor, args, newTarget, 'internal');
+    },
+
+    // When deleting a non-existent or configurable property,
+    // true is returned.
+    // When attempting to delete a non-configurable property,
+    // it will return false.
+    deleteProperty: function deleteProperty(target, key) {
+      throwUnlessTargetIsObject(target);
+      if (supportsDescriptors) {
+        var desc = Object.getOwnPropertyDescriptor(target, key);
+
+        if (desc && !desc.configurable) {
+          return false;
+        }
+      }
+
+      // Will return true.
+      return delete target[key];
+    },
+
+    has: function has(target, key) {
+      throwUnlessTargetIsObject(target);
+      return key in target;
+    }
+  };
+
+  if (Object.getOwnPropertyNames) {
+    Object.assign(ReflectShims, {
+      // Basically the result of calling the internal [[OwnPropertyKeys]].
+      // Concatenating propertyNames and propertySymbols should do the trick.
+      // This should continue to work together with a Symbol shim
+      // which overrides Object.getOwnPropertyNames and implements
+      // Object.getOwnPropertySymbols.
+      ownKeys: function ownKeys(target) {
+        throwUnlessTargetIsObject(target);
+        var keys = Object.getOwnPropertyNames(target);
+
+        if (ES.IsCallable(Object.getOwnPropertySymbols)) {
+          _pushApply(keys, Object.getOwnPropertySymbols(target));
+        }
+
+        return keys;
+      }
+    });
+  }
+
+  var callAndCatchException = function ConvertExceptionToBoolean(func) {
+    return !throwsError(func);
+  };
+
+  if (Object.preventExtensions) {
+    Object.assign(ReflectShims, {
+      isExtensible: function isExtensible(target) {
+        throwUnlessTargetIsObject(target);
+        return Object.isExtensible(target);
+      },
+      preventExtensions: function preventExtensions(target) {
+        throwUnlessTargetIsObject(target);
+        return callAndCatchException(function () {
+          Object.preventExtensions(target);
+        });
+      }
+    });
+  }
+
+  if (supportsDescriptors) {
+    var internalGet = function get(target, key, receiver) {
+      var desc = Object.getOwnPropertyDescriptor(target, key);
+
+      if (!desc) {
+        var parent = Object.getPrototypeOf(target);
+
+        if (parent === null) {
+          return void 0;
+        }
+
+        return internalGet(parent, key, receiver);
+      }
+
+      if ('value' in desc) {
+        return desc.value;
+      }
+
+      if (desc.get) {
+        return ES.Call(desc.get, receiver);
+      }
+
+      return void 0;
+    };
+
+    var internalSet = function set(target, key, value, receiver) {
+      var desc = Object.getOwnPropertyDescriptor(target, key);
+
+      if (!desc) {
+        var parent = Object.getPrototypeOf(target);
+
+        if (parent !== null) {
+          return internalSet(parent, key, value, receiver);
+        }
+
+        desc = {
+          value: void 0,
+          writable: true,
+          enumerable: true,
+          configurable: true
+        };
+      }
+
+      if ('value' in desc) {
+        if (!desc.writable) {
+          return false;
+        }
+
+        if (!ES.TypeIsObject(receiver)) {
+          return false;
+        }
+
+        var existingDesc = Object.getOwnPropertyDescriptor(receiver, key);
+
+        if (existingDesc) {
+          return Reflect.defineProperty(receiver, key, {
+            value: value
+          });
+        } else {
+          return Reflect.defineProperty(receiver, key, {
+            value: value,
+            writable: true,
+            enumerable: true,
+            configurable: true
+          });
+        }
+      }
+
+      if (desc.set) {
+        _call(desc.set, receiver, value);
+        return true;
+      }
+
+      return false;
+    };
+
+    Object.assign(ReflectShims, {
+      defineProperty: function defineProperty(target, propertyKey, attributes) {
+        throwUnlessTargetIsObject(target);
+        return callAndCatchException(function () {
+          Object.defineProperty(target, propertyKey, attributes);
+        });
+      },
+
+      getOwnPropertyDescriptor: function getOwnPropertyDescriptor(target, propertyKey) {
+        throwUnlessTargetIsObject(target);
+        return Object.getOwnPropertyDescriptor(target, propertyKey);
+      },
+
+      // Syntax in a functional form.
+      get: function get(target, key) {
+        throwUnlessTargetIsObject(target);
+        var receiver = arguments.length > 2 ? arguments[2] : target;
+
+        return internalGet(target, key, receiver);
+      },
+
+      set: function set(target, key, value) {
+        throwUnlessTargetIsObject(target);
+        var receiver = arguments.length > 3 ? arguments[3] : target;
+
+        return internalSet(target, key, value, receiver);
+      }
+    });
+  }
+
+  if (Object.getPrototypeOf) {
+    var objectDotGetPrototypeOf = Object.getPrototypeOf;
+    ReflectShims.getPrototypeOf = function getPrototypeOf(target) {
+      throwUnlessTargetIsObject(target);
+      return objectDotGetPrototypeOf(target);
     };
   }
 
-  function sharedSize() {
-    return this._values.length;
-  }
+  if (Object.setPrototypeOf && ReflectShims.getPrototypeOf) {
+    var willCreateCircularPrototype = function (object, lastProto) {
+      var proto = lastProto;
+      while (proto) {
+        if (object === proto) {
+          return true;
+        }
+        proto = ReflectShims.getPrototypeOf(proto);
+      }
+      return false;
+    };
 
-  function sharedForEach(callback, context) {
-    var it = this.entries();
-    for (;;) {
-      var r = it.next();
-      if (r.done) break;
-      callback.call(context, r.value[1], r.value[0], this);
+    Object.assign(ReflectShims, {
+      // Sets the prototype of the given object.
+      // Returns true on success, otherwise false.
+      setPrototypeOf: function setPrototypeOf(object, proto) {
+        throwUnlessTargetIsObject(object);
+        if (proto !== null && !ES.TypeIsObject(proto)) {
+          throw new TypeError('proto must be an object or null');
+        }
+
+        // If they already are the same, we're done.
+        if (proto === Reflect.getPrototypeOf(object)) {
+          return true;
+        }
+
+        // Cannot alter prototype if object not extensible.
+        if (Reflect.isExtensible && !Reflect.isExtensible(object)) {
+          return false;
+        }
+
+        // Ensure that we do not create a circular prototype chain.
+        if (willCreateCircularPrototype(object, proto)) {
+          return false;
+        }
+
+        Object.setPrototypeOf(object, proto);
+
+        return true;
+      }
+    });
+  }
+  var defineOrOverrideReflectProperty = function (key, shim) {
+    if (!ES.IsCallable(globals.Reflect[key])) {
+      defineProperty(globals.Reflect, key, shim);
+    } else {
+      var acceptsPrimitives = valueOrFalseIfThrows(function () {
+        globals.Reflect[key](1);
+        globals.Reflect[key](NaN);
+        globals.Reflect[key](true);
+        return true;
+      });
+      if (acceptsPrimitives) {
+        overrideNative(globals.Reflect, key, shim);
+      }
+    }
+  };
+  Object.keys(ReflectShims).forEach(function (key) {
+    defineOrOverrideReflectProperty(key, ReflectShims[key]);
+  });
+  var originalReflectGetProto = globals.Reflect.getPrototypeOf;
+  if (functionsHaveNames && originalReflectGetProto && originalReflectGetProto.name !== 'getPrototypeOf') {
+    overrideNative(globals.Reflect, 'getPrototypeOf', function getPrototypeOf(target) {
+      return _call(originalReflectGetProto, globals.Reflect, target);
+    });
+  }
+  if (globals.Reflect.setPrototypeOf) {
+    if (valueOrFalseIfThrows(function () {
+      globals.Reflect.setPrototypeOf(1, {});
+      return true;
+    })) {
+      overrideNative(globals.Reflect, 'setPrototypeOf', ReflectShims.setPrototypeOf);
+    }
+  }
+  if (globals.Reflect.defineProperty) {
+    if (!valueOrFalseIfThrows(function () {
+      var basic = !globals.Reflect.defineProperty(1, 'test', { value: 1 });
+      // "extensible" fails on Edge 0.12
+      var extensible = typeof Object.preventExtensions !== 'function' || !globals.Reflect.defineProperty(Object.preventExtensions({}), 'test', {});
+      return basic && extensible;
+    })) {
+      overrideNative(globals.Reflect, 'defineProperty', ReflectShims.defineProperty);
+    }
+  }
+  if (globals.Reflect.construct) {
+    if (!valueOrFalseIfThrows(function () {
+      var F = function F() {};
+      return globals.Reflect.construct(function () {}, [], F) instanceof F;
+    })) {
+      overrideNative(globals.Reflect, 'construct', ReflectShims.construct);
     }
   }
 
-})(typeof exports != 'undefined' && typeof global != 'undefined' ? global : window );
+  if (String(new Date(NaN)) !== 'Invalid Date') {
+    var dateToString = Date.prototype.toString;
+    var shimmedDateToString = function toString() {
+      var valueOf = +this;
+      if (valueOf !== valueOf) {
+        return 'Invalid Date';
+      }
+      return ES.Call(dateToString, this);
+    };
+    overrideNative(Date.prototype, 'toString', shimmedDateToString);
+  }
 
-define("es6-collections", function(){});
+  // Annex B HTML methods
+  // http://www.ecma-international.org/ecma-262/6.0/#sec-additional-properties-of-the-string.prototype-object
+  var stringHTMLshims = {
+    anchor: function anchor(name) { return ES.CreateHTML(this, 'a', 'name', name); },
+    big: function big() { return ES.CreateHTML(this, 'big', '', ''); },
+    blink: function blink() { return ES.CreateHTML(this, 'blink', '', ''); },
+    bold: function bold() { return ES.CreateHTML(this, 'b', '', ''); },
+    fixed: function fixed() { return ES.CreateHTML(this, 'tt', '', ''); },
+    fontcolor: function fontcolor(color) { return ES.CreateHTML(this, 'font', 'color', color); },
+    fontsize: function fontsize(size) { return ES.CreateHTML(this, 'font', 'size', size); },
+    italics: function italics() { return ES.CreateHTML(this, 'i', '', ''); },
+    link: function link(url) { return ES.CreateHTML(this, 'a', 'href', url); },
+    small: function small() { return ES.CreateHTML(this, 'small', '', ''); },
+    strike: function strike() { return ES.CreateHTML(this, 'strike', '', ''); },
+    sub: function sub() { return ES.CreateHTML(this, 'sub', '', ''); },
+    sup: function sub() { return ES.CreateHTML(this, 'sup', '', ''); }
+  };
+  _forEach(Object.keys(stringHTMLshims), function (key) {
+    var method = String.prototype[key];
+    var shouldOverwrite = false;
+    if (ES.IsCallable(method)) {
+      var output = _call(method, '', ' " ');
+      var quotesCount = _concat([], output.match(/"/g)).length;
+      shouldOverwrite = output !== output.toLowerCase() || quotesCount > 2;
+    } else {
+      shouldOverwrite = true;
+    }
+    if (shouldOverwrite) {
+      overrideNative(String.prototype, key, stringHTMLshims[key]);
+    }
+  });
+
+  var JSONstringifiesSymbols = (function () {
+    // Microsoft Edge v0.12 stringifies Symbols incorrectly
+    if (!hasSymbols) { return false; } // Symbols are not supported
+    var stringify = typeof JSON === 'object' && typeof JSON.stringify === 'function' ? JSON.stringify : null;
+    if (!stringify) { return false; } // JSON.stringify is not supported
+    if (typeof stringify(Symbol()) !== 'undefined') { return true; } // Symbols should become `undefined`
+    if (stringify([Symbol()]) !== '[null]') { return true; } // Symbols in arrays should become `null`
+    var obj = { a: Symbol() };
+    obj[Symbol()] = true;
+    if (stringify(obj) !== '{}') { return true; } // Symbol-valued keys *and* Symbol-valued properties should be omitted
+    return false;
+  }());
+  var JSONstringifyAcceptsObjectSymbol = valueOrFalseIfThrows(function () {
+    // Chrome 45 throws on stringifying object symbols
+    if (!hasSymbols) { return true; } // Symbols are not supported
+    return JSON.stringify(Object(Symbol())) === '{}' && JSON.stringify([Object(Symbol())]) === '[{}]';
+  });
+  if (JSONstringifiesSymbols || !JSONstringifyAcceptsObjectSymbol) {
+    var origStringify = JSON.stringify;
+    overrideNative(JSON, 'stringify', function stringify(value) {
+      if (typeof value === 'symbol') { return; }
+      var replacer;
+      if (arguments.length > 1) {
+        replacer = arguments[1];
+      }
+      var args = [value];
+      if (!isArray(replacer)) {
+        var replaceFn = ES.IsCallable(replacer) ? replacer : null;
+        var wrappedReplacer = function (key, val) {
+          var parsedValue = replaceFn ? _call(replaceFn, this, key, val) : val;
+          if (typeof parsedValue !== 'symbol') {
+            if (Type.symbol(parsedValue)) {
+              return assignTo({})(parsedValue);
+            } else {
+              return parsedValue;
+            }
+          }
+        };
+        args.push(wrappedReplacer);
+      } else {
+        // create wrapped replacer that handles an array replacer?
+        args.push(replacer);
+      }
+      if (arguments.length > 2) {
+        args.push(arguments[2]);
+      }
+      return origStringify.apply(this, args);
+    });
+  }
+
+  return globals;
+}));
 
 /*! https://mths.be/punycode v1.4.0 by @mathias */
 ;(function(root) {
@@ -28727,9 +32339,9 @@ Object.defineProperty(exports, '__esModule', { value: true });
 })));
 //# sourceMappingURL=readium-cfi.umd.js.map
 ;
-//     Underscore.js 1.8.3
+//     Underscore.js 1.9.1
 //     http://underscorejs.org
-//     (c) 2009-2015 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+//     (c) 2009-2018 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
 //     Underscore may be freely distributed under the MIT license.
 
 (function() {
@@ -28737,29 +32349,32 @@ Object.defineProperty(exports, '__esModule', { value: true });
   // Baseline setup
   // --------------
 
-  // Establish the root object, `window` in the browser, or `exports` on the server.
-  var root = this;
+  // Establish the root object, `window` (`self`) in the browser, `global`
+  // on the server, or `this` in some virtual machines. We use `self`
+  // instead of `window` for `WebWorker` support.
+  var root = typeof self == 'object' && self.self === self && self ||
+            typeof global == 'object' && global.global === global && global ||
+            this ||
+            {};
 
   // Save the previous value of the `_` variable.
   var previousUnderscore = root._;
 
   // Save bytes in the minified (but not gzipped) version:
-  var ArrayProto = Array.prototype, ObjProto = Object.prototype, FuncProto = Function.prototype;
+  var ArrayProto = Array.prototype, ObjProto = Object.prototype;
+  var SymbolProto = typeof Symbol !== 'undefined' ? Symbol.prototype : null;
 
   // Create quick reference variables for speed access to core prototypes.
-  var
-    push             = ArrayProto.push,
-    slice            = ArrayProto.slice,
-    toString         = ObjProto.toString,
-    hasOwnProperty   = ObjProto.hasOwnProperty;
+  var push = ArrayProto.push,
+      slice = ArrayProto.slice,
+      toString = ObjProto.toString,
+      hasOwnProperty = ObjProto.hasOwnProperty;
 
   // All **ECMAScript 5** native function implementations that we hope to use
   // are declared here.
-  var
-    nativeIsArray      = Array.isArray,
-    nativeKeys         = Object.keys,
-    nativeBind         = FuncProto.bind,
-    nativeCreate       = Object.create;
+  var nativeIsArray = Array.isArray,
+      nativeKeys = Object.keys,
+      nativeCreate = Object.create;
 
   // Naked function reference for surrogate-prototype-swapping.
   var Ctor = function(){};
@@ -28772,10 +32387,12 @@ Object.defineProperty(exports, '__esModule', { value: true });
   };
 
   // Export the Underscore object for **Node.js**, with
-  // backwards-compatibility for the old `require()` API. If we're in
+  // backwards-compatibility for their old module API. If we're in
   // the browser, add `_` as a global object.
-  if (typeof exports !== 'undefined') {
-    if (typeof module !== 'undefined' && module.exports) {
+  // (`nodeType` is checked to ensure that `module`
+  // and `exports` are not HTML elements.)
+  if (typeof exports != 'undefined' && !exports.nodeType) {
+    if (typeof module != 'undefined' && !module.nodeType && module.exports) {
       exports = module.exports = _;
     }
     exports._ = _;
@@ -28784,7 +32401,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
   }
 
   // Current version.
-  _.VERSION = '1.8.3';
+  _.VERSION = '1.9.1';
 
   // Internal function that returns an efficient (for current engines) version
   // of the passed-in callback, to be repeatedly applied in other Underscore
@@ -28795,9 +32412,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
       case 1: return function(value) {
         return func.call(context, value);
       };
-      case 2: return function(value, other) {
-        return func.call(context, value, other);
-      };
+      // The 2-argument case is omitted because we’re not using it.
       case 3: return function(value, index, collection) {
         return func.call(context, value, index, collection);
       };
@@ -28810,34 +32425,51 @@ Object.defineProperty(exports, '__esModule', { value: true });
     };
   };
 
-  // A mostly-internal function to generate callbacks that can be applied
-  // to each element in a collection, returning the desired result — either
-  // identity, an arbitrary callback, a property matcher, or a property accessor.
+  var builtinIteratee;
+
+  // An internal function to generate callbacks that can be applied to each
+  // element in a collection, returning the desired result — either `identity`,
+  // an arbitrary callback, a property matcher, or a property accessor.
   var cb = function(value, context, argCount) {
+    if (_.iteratee !== builtinIteratee) return _.iteratee(value, context);
     if (value == null) return _.identity;
     if (_.isFunction(value)) return optimizeCb(value, context, argCount);
-    if (_.isObject(value)) return _.matcher(value);
+    if (_.isObject(value) && !_.isArray(value)) return _.matcher(value);
     return _.property(value);
   };
-  _.iteratee = function(value, context) {
+
+  // External wrapper for our callback generator. Users may customize
+  // `_.iteratee` if they want additional predicate/iteratee shorthand styles.
+  // This abstraction hides the internal-only argCount argument.
+  _.iteratee = builtinIteratee = function(value, context) {
     return cb(value, context, Infinity);
   };
 
-  // An internal function for creating assigner functions.
-  var createAssigner = function(keysFunc, undefinedOnly) {
-    return function(obj) {
-      var length = arguments.length;
-      if (length < 2 || obj == null) return obj;
-      for (var index = 1; index < length; index++) {
-        var source = arguments[index],
-            keys = keysFunc(source),
-            l = keys.length;
-        for (var i = 0; i < l; i++) {
-          var key = keys[i];
-          if (!undefinedOnly || obj[key] === void 0) obj[key] = source[key];
-        }
+  // Some functions take a variable number of arguments, or a few expected
+  // arguments at the beginning and then a variable number of values to operate
+  // on. This helper accumulates all remaining arguments past the function’s
+  // argument length (or an explicit `startIndex`), into an array that becomes
+  // the last argument. Similar to ES6’s "rest parameter".
+  var restArguments = function(func, startIndex) {
+    startIndex = startIndex == null ? func.length - 1 : +startIndex;
+    return function() {
+      var length = Math.max(arguments.length - startIndex, 0),
+          rest = Array(length),
+          index = 0;
+      for (; index < length; index++) {
+        rest[index] = arguments[index + startIndex];
       }
-      return obj;
+      switch (startIndex) {
+        case 0: return func.call(this, rest);
+        case 1: return func.call(this, arguments[0], rest);
+        case 2: return func.call(this, arguments[0], arguments[1], rest);
+      }
+      var args = Array(startIndex + 1);
+      for (index = 0; index < startIndex; index++) {
+        args[index] = arguments[index];
+      }
+      args[startIndex] = rest;
+      return func.apply(this, args);
     };
   };
 
@@ -28851,18 +32483,31 @@ Object.defineProperty(exports, '__esModule', { value: true });
     return result;
   };
 
-  var property = function(key) {
+  var shallowProperty = function(key) {
     return function(obj) {
       return obj == null ? void 0 : obj[key];
     };
   };
 
+  var has = function(obj, path) {
+    return obj != null && hasOwnProperty.call(obj, path);
+  }
+
+  var deepGet = function(obj, path) {
+    var length = path.length;
+    for (var i = 0; i < length; i++) {
+      if (obj == null) return void 0;
+      obj = obj[path[i]];
+    }
+    return length ? obj : void 0;
+  };
+
   // Helper for collection methods to determine whether a collection
-  // should be iterated as an array or as an object
+  // should be iterated as an array or as an object.
   // Related: http://people.mozilla.org/~jorendorff/es6-draft.html#sec-tolength
   // Avoids a very nasty iOS 8 JIT bug on ARM-64. #2094
   var MAX_ARRAY_INDEX = Math.pow(2, 53) - 1;
-  var getLength = property('length');
+  var getLength = shallowProperty('length');
   var isArrayLike = function(collection) {
     var length = getLength(collection);
     return typeof length == 'number' && length >= 0 && length <= MAX_ARRAY_INDEX;
@@ -28904,30 +32549,29 @@ Object.defineProperty(exports, '__esModule', { value: true });
   };
 
   // Create a reducing function iterating left or right.
-  function createReduce(dir) {
-    // Optimized iterator function as using arguments.length
-    // in the main function will deoptimize the, see #1991.
-    function iterator(obj, iteratee, memo, keys, index, length) {
+  var createReduce = function(dir) {
+    // Wrap code that reassigns argument variables in a separate function than
+    // the one that accesses `arguments.length` to avoid a perf hit. (#1991)
+    var reducer = function(obj, iteratee, memo, initial) {
+      var keys = !isArrayLike(obj) && _.keys(obj),
+          length = (keys || obj).length,
+          index = dir > 0 ? 0 : length - 1;
+      if (!initial) {
+        memo = obj[keys ? keys[index] : index];
+        index += dir;
+      }
       for (; index >= 0 && index < length; index += dir) {
         var currentKey = keys ? keys[index] : index;
         memo = iteratee(memo, obj[currentKey], currentKey, obj);
       }
       return memo;
-    }
+    };
 
     return function(obj, iteratee, memo, context) {
-      iteratee = optimizeCb(iteratee, context, 4);
-      var keys = !isArrayLike(obj) && _.keys(obj),
-          length = (keys || obj).length,
-          index = dir > 0 ? 0 : length - 1;
-      // Determine the initial value if none is provided.
-      if (arguments.length < 3) {
-        memo = obj[keys ? keys[index] : index];
-        index += dir;
-      }
-      return iterator(obj, iteratee, memo, keys, index, length);
+      var initial = arguments.length >= 3;
+      return reducer(obj, optimizeCb(iteratee, context, 4), memo, initial);
     };
-  }
+  };
 
   // **Reduce** builds up a single result from a list of values, aka `inject`,
   // or `foldl`.
@@ -28938,12 +32582,8 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
   // Return the first value which passes a truth test. Aliased as `detect`.
   _.find = _.detect = function(obj, predicate, context) {
-    var key;
-    if (isArrayLike(obj)) {
-      key = _.findIndex(obj, predicate, context);
-    } else {
-      key = _.findKey(obj, predicate, context);
-    }
+    var keyFinder = isArrayLike(obj) ? _.findIndex : _.findKey;
+    var key = keyFinder(obj, predicate, context);
     if (key !== void 0 && key !== -1) return obj[key];
   };
 
@@ -28998,14 +32638,26 @@ Object.defineProperty(exports, '__esModule', { value: true });
   };
 
   // Invoke a method (with arguments) on every item in a collection.
-  _.invoke = function(obj, method) {
-    var args = slice.call(arguments, 2);
-    var isFunc = _.isFunction(method);
-    return _.map(obj, function(value) {
-      var func = isFunc ? method : value[method];
-      return func == null ? func : func.apply(value, args);
+  _.invoke = restArguments(function(obj, path, args) {
+    var contextPath, func;
+    if (_.isFunction(path)) {
+      func = path;
+    } else if (_.isArray(path)) {
+      contextPath = path.slice(0, -1);
+      path = path[path.length - 1];
+    }
+    return _.map(obj, function(context) {
+      var method = func;
+      if (!method) {
+        if (contextPath && contextPath.length) {
+          context = deepGet(context, contextPath);
+        }
+        if (context == null) return void 0;
+        method = context[path];
+      }
+      return method == null ? method : method.apply(context, args);
     });
-  };
+  });
 
   // Convenience version of a common use case of `map`: fetching a property.
   _.pluck = function(obj, key) {
@@ -29028,20 +32680,20 @@ Object.defineProperty(exports, '__esModule', { value: true });
   _.max = function(obj, iteratee, context) {
     var result = -Infinity, lastComputed = -Infinity,
         value, computed;
-    if (iteratee == null && obj != null) {
+    if (iteratee == null || typeof iteratee == 'number' && typeof obj[0] != 'object' && obj != null) {
       obj = isArrayLike(obj) ? obj : _.values(obj);
       for (var i = 0, length = obj.length; i < length; i++) {
         value = obj[i];
-        if (value > result) {
+        if (value != null && value > result) {
           result = value;
         }
       }
     } else {
       iteratee = cb(iteratee, context);
-      _.each(obj, function(value, index, list) {
-        computed = iteratee(value, index, list);
+      _.each(obj, function(v, index, list) {
+        computed = iteratee(v, index, list);
         if (computed > lastComputed || computed === -Infinity && result === -Infinity) {
-          result = value;
+          result = v;
           lastComputed = computed;
         }
       });
@@ -29053,20 +32705,20 @@ Object.defineProperty(exports, '__esModule', { value: true });
   _.min = function(obj, iteratee, context) {
     var result = Infinity, lastComputed = Infinity,
         value, computed;
-    if (iteratee == null && obj != null) {
+    if (iteratee == null || typeof iteratee == 'number' && typeof obj[0] != 'object' && obj != null) {
       obj = isArrayLike(obj) ? obj : _.values(obj);
       for (var i = 0, length = obj.length; i < length; i++) {
         value = obj[i];
-        if (value < result) {
+        if (value != null && value < result) {
           result = value;
         }
       }
     } else {
       iteratee = cb(iteratee, context);
-      _.each(obj, function(value, index, list) {
-        computed = iteratee(value, index, list);
+      _.each(obj, function(v, index, list) {
+        computed = iteratee(v, index, list);
         if (computed < lastComputed || computed === Infinity && result === Infinity) {
-          result = value;
+          result = v;
           lastComputed = computed;
         }
       });
@@ -29074,21 +32726,13 @@ Object.defineProperty(exports, '__esModule', { value: true });
     return result;
   };
 
-  // Shuffle a collection, using the modern version of the
-  // [Fisher-Yates shuffle](http://en.wikipedia.org/wiki/Fisher–Yates_shuffle).
+  // Shuffle a collection.
   _.shuffle = function(obj) {
-    var set = isArrayLike(obj) ? obj : _.values(obj);
-    var length = set.length;
-    var shuffled = Array(length);
-    for (var index = 0, rand; index < length; index++) {
-      rand = _.random(0, index);
-      if (rand !== index) shuffled[index] = shuffled[rand];
-      shuffled[rand] = set[index];
-    }
-    return shuffled;
+    return _.sample(obj, Infinity);
   };
 
-  // Sample **n** random values from a collection.
+  // Sample **n** random values from a collection using the modern version of the
+  // [Fisher-Yates shuffle](http://en.wikipedia.org/wiki/Fisher–Yates_shuffle).
   // If **n** is not specified, returns a single random element.
   // The internal `guard` argument allows it to work with `map`.
   _.sample = function(obj, n, guard) {
@@ -29096,17 +32740,28 @@ Object.defineProperty(exports, '__esModule', { value: true });
       if (!isArrayLike(obj)) obj = _.values(obj);
       return obj[_.random(obj.length - 1)];
     }
-    return _.shuffle(obj).slice(0, Math.max(0, n));
+    var sample = isArrayLike(obj) ? _.clone(obj) : _.values(obj);
+    var length = getLength(sample);
+    n = Math.max(Math.min(n, length), 0);
+    var last = length - 1;
+    for (var index = 0; index < n; index++) {
+      var rand = _.random(index, last);
+      var temp = sample[index];
+      sample[index] = sample[rand];
+      sample[rand] = temp;
+    }
+    return sample.slice(0, n);
   };
 
   // Sort the object's values by a criterion produced by an iteratee.
   _.sortBy = function(obj, iteratee, context) {
+    var index = 0;
     iteratee = cb(iteratee, context);
-    return _.pluck(_.map(obj, function(value, index, list) {
+    return _.pluck(_.map(obj, function(value, key, list) {
       return {
         value: value,
-        index: index,
-        criteria: iteratee(value, index, list)
+        index: index++,
+        criteria: iteratee(value, key, list)
       };
     }).sort(function(left, right) {
       var a = left.criteria;
@@ -29120,9 +32775,9 @@ Object.defineProperty(exports, '__esModule', { value: true });
   };
 
   // An internal function used for aggregate "group by" operations.
-  var group = function(behavior) {
+  var group = function(behavior, partition) {
     return function(obj, iteratee, context) {
-      var result = {};
+      var result = partition ? [[], []] : {};
       iteratee = cb(iteratee, context);
       _.each(obj, function(value, index) {
         var key = iteratee(value, index, obj);
@@ -29135,7 +32790,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
   // Groups the object's values by a criterion. Pass either a string attribute
   // to group by, or a function that returns the criterion.
   _.groupBy = group(function(result, value, key) {
-    if (_.has(result, key)) result[key].push(value); else result[key] = [value];
+    if (has(result, key)) result[key].push(value); else result[key] = [value];
   });
 
   // Indexes the object's values by a criterion, similar to `groupBy`, but for
@@ -29148,13 +32803,18 @@ Object.defineProperty(exports, '__esModule', { value: true });
   // either a string attribute to count by, or a function that returns the
   // criterion.
   _.countBy = group(function(result, value, key) {
-    if (_.has(result, key)) result[key]++; else result[key] = 1;
+    if (has(result, key)) result[key]++; else result[key] = 1;
   });
 
+  var reStrSymbol = /[^\ud800-\udfff]|[\ud800-\udbff][\udc00-\udfff]|[\ud800-\udfff]/g;
   // Safely create a real, live array from anything iterable.
   _.toArray = function(obj) {
     if (!obj) return [];
     if (_.isArray(obj)) return slice.call(obj);
+    if (_.isString(obj)) {
+      // Keep surrogate pair characters together
+      return obj.match(reStrSymbol);
+    }
     if (isArrayLike(obj)) return _.map(obj, _.identity);
     return _.values(obj);
   };
@@ -29167,14 +32827,9 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
   // Split a collection into two arrays: one whose elements all satisfy the given
   // predicate, and one whose elements all do not satisfy the predicate.
-  _.partition = function(obj, predicate, context) {
-    predicate = cb(predicate, context);
-    var pass = [], fail = [];
-    _.each(obj, function(value, key, obj) {
-      (predicate(value, key, obj) ? pass : fail).push(value);
-    });
-    return [pass, fail];
-  };
+  _.partition = group(function(result, value, pass) {
+    result[pass ? 0 : 1].push(value);
+  }, true);
 
   // Array Functions
   // ---------------
@@ -29183,7 +32838,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
   // values in the array. Aliased as `head` and `take`. The **guard** check
   // allows it to work with `_.map`.
   _.first = _.head = _.take = function(array, n, guard) {
-    if (array == null) return void 0;
+    if (array == null || array.length < 1) return n == null ? void 0 : [];
     if (n == null || guard) return array[0];
     return _.initial(array, array.length - n);
   };
@@ -29198,7 +32853,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
   // Get the last element of an array. Passing **n** will return the last N
   // values in the array.
   _.last = function(array, n, guard) {
-    if (array == null) return void 0;
+    if (array == null || array.length < 1) return n == null ? void 0 : [];
     if (n == null || guard) return array[array.length - 1];
     return _.rest(array, Math.max(0, array.length - n));
   };
@@ -29212,21 +32867,23 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
   // Trim out all falsy values from an array.
   _.compact = function(array) {
-    return _.filter(array, _.identity);
+    return _.filter(array, Boolean);
   };
 
   // Internal implementation of a recursive `flatten` function.
-  var flatten = function(input, shallow, strict, startIndex) {
-    var output = [], idx = 0;
-    for (var i = startIndex || 0, length = getLength(input); i < length; i++) {
+  var flatten = function(input, shallow, strict, output) {
+    output = output || [];
+    var idx = output.length;
+    for (var i = 0, length = getLength(input); i < length; i++) {
       var value = input[i];
       if (isArrayLike(value) && (_.isArray(value) || _.isArguments(value))) {
-        //flatten current level of array or arguments object
-        if (!shallow) value = flatten(value, shallow, strict);
-        var j = 0, len = value.length;
-        output.length += len;
-        while (j < len) {
-          output[idx++] = value[j++];
+        // Flatten current level of array or arguments object.
+        if (shallow) {
+          var j = 0, len = value.length;
+          while (j < len) output[idx++] = value[j++];
+        } else {
+          flatten(value, shallow, strict, output);
+          idx = output.length;
         }
       } else if (!strict) {
         output[idx++] = value;
@@ -29241,12 +32898,15 @@ Object.defineProperty(exports, '__esModule', { value: true });
   };
 
   // Return a version of the array that does not contain the specified value(s).
-  _.without = function(array) {
-    return _.difference(array, slice.call(arguments, 1));
-  };
+  _.without = restArguments(function(array, otherArrays) {
+    return _.difference(array, otherArrays);
+  });
 
   // Produce a duplicate-free version of the array. If the array has already
   // been sorted, you have the option of using a faster algorithm.
+  // The faster algorithm will not work with an iteratee if the iteratee
+  // is not a one-to-one function, so providing an iteratee will disable
+  // the faster algorithm.
   // Aliased as `unique`.
   _.uniq = _.unique = function(array, isSorted, iteratee, context) {
     if (!_.isBoolean(isSorted)) {
@@ -29260,7 +32920,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
     for (var i = 0, length = getLength(array); i < length; i++) {
       var value = array[i],
           computed = iteratee ? iteratee(value, i, array) : value;
-      if (isSorted) {
+      if (isSorted && !iteratee) {
         if (!i || seen !== computed) result.push(value);
         seen = computed;
       } else if (iteratee) {
@@ -29277,9 +32937,9 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
   // Produce an array that contains the union: each distinct element from all of
   // the passed-in arrays.
-  _.union = function() {
-    return _.uniq(flatten(arguments, true, true));
-  };
+  _.union = restArguments(function(arrays) {
+    return _.uniq(flatten(arrays, true, true));
+  });
 
   // Produce an array that contains every item shared between all the
   // passed-in arrays.
@@ -29289,7 +32949,8 @@ Object.defineProperty(exports, '__esModule', { value: true });
     for (var i = 0, length = getLength(array); i < length; i++) {
       var item = array[i];
       if (_.contains(result, item)) continue;
-      for (var j = 1; j < argsLength; j++) {
+      var j;
+      for (j = 1; j < argsLength; j++) {
         if (!_.contains(arguments[j], item)) break;
       }
       if (j === argsLength) result.push(item);
@@ -29299,21 +32960,15 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
   // Take the difference between one array and a number of other arrays.
   // Only the elements present in just the first array will remain.
-  _.difference = function(array) {
-    var rest = flatten(arguments, true, true, 1);
+  _.difference = restArguments(function(array, rest) {
+    rest = flatten(rest, true, true);
     return _.filter(array, function(value){
       return !_.contains(rest, value);
     });
-  };
-
-  // Zip together multiple lists into a single array -- elements that share
-  // an index go together.
-  _.zip = function() {
-    return _.unzip(arguments);
-  };
+  });
 
   // Complement of _.zip. Unzip accepts an array of arrays and groups
-  // each array's elements on shared indices
+  // each array's elements on shared indices.
   _.unzip = function(array) {
     var length = array && _.max(array, getLength).length || 0;
     var result = Array(length);
@@ -29324,9 +32979,13 @@ Object.defineProperty(exports, '__esModule', { value: true });
     return result;
   };
 
+  // Zip together multiple lists into a single array -- elements that share
+  // an index go together.
+  _.zip = restArguments(_.unzip);
+
   // Converts lists into objects. Pass either a single array of `[key, value]`
   // pairs, or two parallel arrays of the same length -- one of keys, and one of
-  // the corresponding values.
+  // the corresponding values. Passing by pairs is the reverse of _.pairs.
   _.object = function(list, values) {
     var result = {};
     for (var i = 0, length = getLength(list); i < length; i++) {
@@ -29339,8 +32998,8 @@ Object.defineProperty(exports, '__esModule', { value: true });
     return result;
   };
 
-  // Generator function to create the findIndex and findLastIndex functions
-  function createPredicateIndexFinder(dir) {
+  // Generator function to create the findIndex and findLastIndex functions.
+  var createPredicateIndexFinder = function(dir) {
     return function(array, predicate, context) {
       predicate = cb(predicate, context);
       var length = getLength(array);
@@ -29350,9 +33009,9 @@ Object.defineProperty(exports, '__esModule', { value: true });
       }
       return -1;
     };
-  }
+  };
 
-  // Returns the first index on an array-like that passes a predicate test
+  // Returns the first index on an array-like that passes a predicate test.
   _.findIndex = createPredicateIndexFinder(1);
   _.findLastIndex = createPredicateIndexFinder(-1);
 
@@ -29369,15 +33028,15 @@ Object.defineProperty(exports, '__esModule', { value: true });
     return low;
   };
 
-  // Generator function to create the indexOf and lastIndexOf functions
-  function createIndexFinder(dir, predicateFind, sortedIndex) {
+  // Generator function to create the indexOf and lastIndexOf functions.
+  var createIndexFinder = function(dir, predicateFind, sortedIndex) {
     return function(array, item, idx) {
       var i = 0, length = getLength(array);
       if (typeof idx == 'number') {
         if (dir > 0) {
-            i = idx >= 0 ? idx : Math.max(idx + length, i);
+          i = idx >= 0 ? idx : Math.max(idx + length, i);
         } else {
-            length = idx >= 0 ? Math.min(idx + 1, length) : idx + length + 1;
+          length = idx >= 0 ? Math.min(idx + 1, length) : idx + length + 1;
         }
       } else if (sortedIndex && idx && length) {
         idx = sortedIndex(array, item);
@@ -29392,7 +33051,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
       }
       return -1;
     };
-  }
+  };
 
   // Return the position of the first occurrence of an item in an array,
   // or -1 if the item is not included in the array.
@@ -29409,7 +33068,9 @@ Object.defineProperty(exports, '__esModule', { value: true });
       stop = start || 0;
       start = 0;
     }
-    step = step || 1;
+    if (!step) {
+      step = stop < start ? -1 : 1;
+    }
 
     var length = Math.max(Math.ceil((stop - start) / step), 0);
     var range = Array(length);
@@ -29421,11 +33082,23 @@ Object.defineProperty(exports, '__esModule', { value: true });
     return range;
   };
 
+  // Chunk a single array into multiple arrays, each containing `count` or fewer
+  // items.
+  _.chunk = function(array, count) {
+    if (count == null || count < 1) return [];
+    var result = [];
+    var i = 0, length = array.length;
+    while (i < length) {
+      result.push(slice.call(array, i, i += count));
+    }
+    return result;
+  };
+
   // Function (ahem) Functions
   // ------------------
 
   // Determines whether to execute a function as a constructor
-  // or a normal function with the provided arguments
+  // or a normal function with the provided arguments.
   var executeBound = function(sourceFunc, boundFunc, context, callingContext, args) {
     if (!(callingContext instanceof boundFunc)) return sourceFunc.apply(context, args);
     var self = baseCreate(sourceFunc.prototype);
@@ -29437,52 +33110,53 @@ Object.defineProperty(exports, '__esModule', { value: true });
   // Create a function bound to a given object (assigning `this`, and arguments,
   // optionally). Delegates to **ECMAScript 5**'s native `Function.bind` if
   // available.
-  _.bind = function(func, context) {
-    if (nativeBind && func.bind === nativeBind) return nativeBind.apply(func, slice.call(arguments, 1));
+  _.bind = restArguments(function(func, context, args) {
     if (!_.isFunction(func)) throw new TypeError('Bind must be called on a function');
-    var args = slice.call(arguments, 2);
-    var bound = function() {
-      return executeBound(func, bound, context, this, args.concat(slice.call(arguments)));
-    };
+    var bound = restArguments(function(callArgs) {
+      return executeBound(func, bound, context, this, args.concat(callArgs));
+    });
     return bound;
-  };
+  });
 
   // Partially apply a function by creating a version that has had some of its
   // arguments pre-filled, without changing its dynamic `this` context. _ acts
-  // as a placeholder, allowing any combination of arguments to be pre-filled.
-  _.partial = function(func) {
-    var boundArgs = slice.call(arguments, 1);
+  // as a placeholder by default, allowing any combination of arguments to be
+  // pre-filled. Set `_.partial.placeholder` for a custom placeholder argument.
+  _.partial = restArguments(function(func, boundArgs) {
+    var placeholder = _.partial.placeholder;
     var bound = function() {
       var position = 0, length = boundArgs.length;
       var args = Array(length);
       for (var i = 0; i < length; i++) {
-        args[i] = boundArgs[i] === _ ? arguments[position++] : boundArgs[i];
+        args[i] = boundArgs[i] === placeholder ? arguments[position++] : boundArgs[i];
       }
       while (position < arguments.length) args.push(arguments[position++]);
       return executeBound(func, bound, this, this, args);
     };
     return bound;
-  };
+  });
+
+  _.partial.placeholder = _;
 
   // Bind a number of an object's methods to that object. Remaining arguments
   // are the method names to be bound. Useful for ensuring that all callbacks
   // defined on an object belong to it.
-  _.bindAll = function(obj) {
-    var i, length = arguments.length, key;
-    if (length <= 1) throw new Error('bindAll must be passed function names');
-    for (i = 1; i < length; i++) {
-      key = arguments[i];
+  _.bindAll = restArguments(function(obj, keys) {
+    keys = flatten(keys, false, false);
+    var index = keys.length;
+    if (index < 1) throw new Error('bindAll must be passed function names');
+    while (index--) {
+      var key = keys[index];
       obj[key] = _.bind(obj[key], obj);
     }
-    return obj;
-  };
+  });
 
   // Memoize an expensive function by storing its results.
   _.memoize = function(func, hasher) {
     var memoize = function(key) {
       var cache = memoize.cache;
       var address = '' + (hasher ? hasher.apply(this, arguments) : key);
-      if (!_.has(cache, address)) cache[address] = func.apply(this, arguments);
+      if (!has(cache, address)) cache[address] = func.apply(this, arguments);
       return cache[address];
     };
     memoize.cache = {};
@@ -29491,12 +33165,11 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
   // Delays a function for the given number of milliseconds, and then calls
   // it with the arguments supplied.
-  _.delay = function(func, wait) {
-    var args = slice.call(arguments, 2);
-    return setTimeout(function(){
+  _.delay = restArguments(function(func, wait, args) {
+    return setTimeout(function() {
       return func.apply(null, args);
     }, wait);
-  };
+  });
 
   // Defers a function, scheduling it to run after the current call stack has
   // cleared.
@@ -29508,17 +33181,18 @@ Object.defineProperty(exports, '__esModule', { value: true });
   // but if you'd like to disable the execution on the leading edge, pass
   // `{leading: false}`. To disable execution on the trailing edge, ditto.
   _.throttle = function(func, wait, options) {
-    var context, args, result;
-    var timeout = null;
+    var timeout, context, args, result;
     var previous = 0;
     if (!options) options = {};
+
     var later = function() {
       previous = options.leading === false ? 0 : _.now();
       timeout = null;
       result = func.apply(context, args);
       if (!timeout) context = args = null;
     };
-    return function() {
+
+    var throttled = function() {
       var now = _.now();
       if (!previous && options.leading === false) previous = now;
       var remaining = wait - (now - previous);
@@ -29537,6 +33211,14 @@ Object.defineProperty(exports, '__esModule', { value: true });
       }
       return result;
     };
+
+    throttled.cancel = function() {
+      clearTimeout(timeout);
+      previous = 0;
+      timeout = context = args = null;
+    };
+
+    return throttled;
   };
 
   // Returns a function, that, as long as it continues to be invoked, will not
@@ -29544,35 +33226,32 @@ Object.defineProperty(exports, '__esModule', { value: true });
   // N milliseconds. If `immediate` is passed, trigger the function on the
   // leading edge, instead of the trailing.
   _.debounce = function(func, wait, immediate) {
-    var timeout, args, context, timestamp, result;
+    var timeout, result;
 
-    var later = function() {
-      var last = _.now() - timestamp;
-
-      if (last < wait && last >= 0) {
-        timeout = setTimeout(later, wait - last);
-      } else {
-        timeout = null;
-        if (!immediate) {
-          result = func.apply(context, args);
-          if (!timeout) context = args = null;
-        }
-      }
+    var later = function(context, args) {
+      timeout = null;
+      if (args) result = func.apply(context, args);
     };
 
-    return function() {
-      context = this;
-      args = arguments;
-      timestamp = _.now();
-      var callNow = immediate && !timeout;
-      if (!timeout) timeout = setTimeout(later, wait);
-      if (callNow) {
-        result = func.apply(context, args);
-        context = args = null;
+    var debounced = restArguments(function(args) {
+      if (timeout) clearTimeout(timeout);
+      if (immediate) {
+        var callNow = !timeout;
+        timeout = setTimeout(later, wait);
+        if (callNow) result = func.apply(this, args);
+      } else {
+        timeout = _.delay(later, wait, this, args);
       }
 
       return result;
+    });
+
+    debounced.cancel = function() {
+      clearTimeout(timeout);
+      timeout = null;
     };
+
+    return debounced;
   };
 
   // Returns the first function passed as an argument to the second,
@@ -29627,22 +33306,24 @@ Object.defineProperty(exports, '__esModule', { value: true });
   // often you call it. Useful for lazy initialization.
   _.once = _.partial(_.before, 2);
 
+  _.restArguments = restArguments;
+
   // Object Functions
   // ----------------
 
   // Keys in IE < 9 that won't be iterated by `for key in ...` and thus missed.
   var hasEnumBug = !{toString: null}.propertyIsEnumerable('toString');
   var nonEnumerableProps = ['valueOf', 'isPrototypeOf', 'toString',
-                      'propertyIsEnumerable', 'hasOwnProperty', 'toLocaleString'];
+    'propertyIsEnumerable', 'hasOwnProperty', 'toLocaleString'];
 
-  function collectNonEnumProps(obj, keys) {
+  var collectNonEnumProps = function(obj, keys) {
     var nonEnumIdx = nonEnumerableProps.length;
     var constructor = obj.constructor;
-    var proto = (_.isFunction(constructor) && constructor.prototype) || ObjProto;
+    var proto = _.isFunction(constructor) && constructor.prototype || ObjProto;
 
     // Constructor is a special case.
     var prop = 'constructor';
-    if (_.has(obj, prop) && !_.contains(keys, prop)) keys.push(prop);
+    if (has(obj, prop) && !_.contains(keys, prop)) keys.push(prop);
 
     while (nonEnumIdx--) {
       prop = nonEnumerableProps[nonEnumIdx];
@@ -29650,15 +33331,15 @@ Object.defineProperty(exports, '__esModule', { value: true });
         keys.push(prop);
       }
     }
-  }
+  };
 
   // Retrieve the names of an object's own properties.
-  // Delegates to **ECMAScript 5**'s native `Object.keys`
+  // Delegates to **ECMAScript 5**'s native `Object.keys`.
   _.keys = function(obj) {
     if (!_.isObject(obj)) return [];
     if (nativeKeys) return nativeKeys(obj);
     var keys = [];
-    for (var key in obj) if (_.has(obj, key)) keys.push(key);
+    for (var key in obj) if (has(obj, key)) keys.push(key);
     // Ahem, IE < 9.
     if (hasEnumBug) collectNonEnumProps(obj, keys);
     return keys;
@@ -29685,22 +33366,22 @@ Object.defineProperty(exports, '__esModule', { value: true });
     return values;
   };
 
-  // Returns the results of applying the iteratee to each element of the object
-  // In contrast to _.map it returns an object
+  // Returns the results of applying the iteratee to each element of the object.
+  // In contrast to _.map it returns an object.
   _.mapObject = function(obj, iteratee, context) {
     iteratee = cb(iteratee, context);
-    var keys =  _.keys(obj),
-          length = keys.length,
-          results = {},
-          currentKey;
-      for (var index = 0; index < length; index++) {
-        currentKey = keys[index];
-        results[currentKey] = iteratee(obj[currentKey], currentKey, obj);
-      }
-      return results;
+    var keys = _.keys(obj),
+        length = keys.length,
+        results = {};
+    for (var index = 0; index < length; index++) {
+      var currentKey = keys[index];
+      results[currentKey] = iteratee(obj[currentKey], currentKey, obj);
+    }
+    return results;
   };
 
   // Convert an object into a list of `[key, value]` pairs.
+  // The opposite of _.object.
   _.pairs = function(obj) {
     var keys = _.keys(obj);
     var length = keys.length;
@@ -29722,7 +33403,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
   };
 
   // Return a sorted list of the function names available on the object.
-  // Aliased as `methods`
+  // Aliased as `methods`.
   _.functions = _.methods = function(obj) {
     var names = [];
     for (var key in obj) {
@@ -29731,14 +33412,33 @@ Object.defineProperty(exports, '__esModule', { value: true });
     return names.sort();
   };
 
+  // An internal function for creating assigner functions.
+  var createAssigner = function(keysFunc, defaults) {
+    return function(obj) {
+      var length = arguments.length;
+      if (defaults) obj = Object(obj);
+      if (length < 2 || obj == null) return obj;
+      for (var index = 1; index < length; index++) {
+        var source = arguments[index],
+            keys = keysFunc(source),
+            l = keys.length;
+        for (var i = 0; i < l; i++) {
+          var key = keys[i];
+          if (!defaults || obj[key] === void 0) obj[key] = source[key];
+        }
+      }
+      return obj;
+    };
+  };
+
   // Extend a given object with all the properties in passed-in object(s).
   _.extend = createAssigner(_.allKeys);
 
-  // Assigns a given object with all the own properties in the passed-in object(s)
+  // Assigns a given object with all the own properties in the passed-in object(s).
   // (https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object/assign)
   _.extendOwn = _.assign = createAssigner(_.keys);
 
-  // Returns the first key on an object that passes a predicate test
+  // Returns the first key on an object that passes a predicate test.
   _.findKey = function(obj, predicate, context) {
     predicate = cb(predicate, context);
     var keys = _.keys(obj), key;
@@ -29748,16 +33448,21 @@ Object.defineProperty(exports, '__esModule', { value: true });
     }
   };
 
+  // Internal pick helper function to determine if `obj` has key `key`.
+  var keyInObj = function(value, key, obj) {
+    return key in obj;
+  };
+
   // Return a copy of the object only containing the whitelisted properties.
-  _.pick = function(object, oiteratee, context) {
-    var result = {}, obj = object, iteratee, keys;
+  _.pick = restArguments(function(obj, keys) {
+    var result = {}, iteratee = keys[0];
     if (obj == null) return result;
-    if (_.isFunction(oiteratee)) {
+    if (_.isFunction(iteratee)) {
+      if (keys.length > 1) iteratee = optimizeCb(iteratee, keys[1]);
       keys = _.allKeys(obj);
-      iteratee = optimizeCb(oiteratee, context);
     } else {
-      keys = flatten(arguments, false, false, 1);
-      iteratee = function(value, key, obj) { return key in obj; };
+      iteratee = keyInObj;
+      keys = flatten(keys, false, false);
       obj = Object(obj);
     }
     for (var i = 0, length = keys.length; i < length; i++) {
@@ -29766,20 +33471,22 @@ Object.defineProperty(exports, '__esModule', { value: true });
       if (iteratee(value, key, obj)) result[key] = value;
     }
     return result;
-  };
+  });
 
-   // Return a copy of the object without the blacklisted properties.
-  _.omit = function(obj, iteratee, context) {
+  // Return a copy of the object without the blacklisted properties.
+  _.omit = restArguments(function(obj, keys) {
+    var iteratee = keys[0], context;
     if (_.isFunction(iteratee)) {
       iteratee = _.negate(iteratee);
+      if (keys.length > 1) context = keys[1];
     } else {
-      var keys = _.map(flatten(arguments, false, false, 1), String);
+      keys = _.map(flatten(keys, false, false), String);
       iteratee = function(value, key) {
         return !_.contains(keys, key);
       };
     }
     return _.pick(obj, iteratee, context);
-  };
+  });
 
   // Fill in a given object with default properties.
   _.defaults = createAssigner(_.allKeys, true);
@@ -29821,12 +33528,23 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
 
   // Internal recursive comparison function for `isEqual`.
-  var eq = function(a, b, aStack, bStack) {
+  var eq, deepEq;
+  eq = function(a, b, aStack, bStack) {
     // Identical objects are equal. `0 === -0`, but they aren't identical.
     // See the [Harmony `egal` proposal](http://wiki.ecmascript.org/doku.php?id=harmony:egal).
     if (a === b) return a !== 0 || 1 / a === 1 / b;
-    // A strict comparison is necessary because `null == undefined`.
-    if (a == null || b == null) return a === b;
+    // `null` or `undefined` only equal to itself (strict comparison).
+    if (a == null || b == null) return false;
+    // `NaN`s are equivalent, but non-reflexive.
+    if (a !== a) return b !== b;
+    // Exhaust primitive checks
+    var type = typeof a;
+    if (type !== 'function' && type !== 'object' && typeof b != 'object') return false;
+    return deepEq(a, b, aStack, bStack);
+  };
+
+  // Internal recursive comparison function for `isEqual`.
+  deepEq = function(a, b, aStack, bStack) {
     // Unwrap any wrapped objects.
     if (a instanceof _) a = a._wrapped;
     if (b instanceof _) b = b._wrapped;
@@ -29843,7 +33561,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
         return '' + a === '' + b;
       case '[object Number]':
         // `NaN`s are equivalent, but non-reflexive.
-        // Object(NaN) is equivalent to NaN
+        // Object(NaN) is equivalent to NaN.
         if (+a !== +a) return +b !== +b;
         // An `egal` comparison is performed for other numeric values.
         return +a === 0 ? 1 / +a === 1 / b : +a === +b;
@@ -29853,6 +33571,8 @@ Object.defineProperty(exports, '__esModule', { value: true });
         // millisecond representations. Note that invalid dates with millisecond representations
         // of `NaN` are not equivalent.
         return +a === +b;
+      case '[object Symbol]':
+        return SymbolProto.valueOf.call(a) === SymbolProto.valueOf.call(b);
     }
 
     var areArrays = className === '[object Array]';
@@ -29904,7 +33624,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
       while (length--) {
         // Deep compare each member
         key = keys[length];
-        if (!(_.has(b, key) && eq(a[key], b[key], aStack, bStack))) return false;
+        if (!(has(b, key) && eq(a[key], b[key], aStack, bStack))) return false;
       }
     }
     // Remove the first object from the stack of traversed objects.
@@ -29943,8 +33663,8 @@ Object.defineProperty(exports, '__esModule', { value: true });
     return type === 'function' || type === 'object' && !!obj;
   };
 
-  // Add some isType methods: isArguments, isFunction, isString, isNumber, isDate, isRegExp, isError.
-  _.each(['Arguments', 'Function', 'String', 'Number', 'Date', 'RegExp', 'Error'], function(name) {
+  // Add some isType methods: isArguments, isFunction, isString, isNumber, isDate, isRegExp, isError, isMap, isWeakMap, isSet, isWeakSet.
+  _.each(['Arguments', 'Function', 'String', 'Number', 'Date', 'RegExp', 'Error', 'Symbol', 'Map', 'WeakMap', 'Set', 'WeakSet'], function(name) {
     _['is' + name] = function(obj) {
       return toString.call(obj) === '[object ' + name + ']';
     };
@@ -29954,13 +33674,14 @@ Object.defineProperty(exports, '__esModule', { value: true });
   // there isn't any inspectable "Arguments" type.
   if (!_.isArguments(arguments)) {
     _.isArguments = function(obj) {
-      return _.has(obj, 'callee');
+      return has(obj, 'callee');
     };
   }
 
   // Optimize `isFunction` if appropriate. Work around some typeof bugs in old v8,
-  // IE 11 (#1621), and in Safari 8 (#1929).
-  if (typeof /./ != 'function' && typeof Int8Array != 'object') {
+  // IE 11 (#1621), Safari 8 (#1929), and PhantomJS (#2236).
+  var nodelist = root.document && root.document.childNodes;
+  if (typeof /./ != 'function' && typeof Int8Array != 'object' && typeof nodelist != 'function') {
     _.isFunction = function(obj) {
       return typeof obj == 'function' || false;
     };
@@ -29968,12 +33689,12 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
   // Is a given object a finite number?
   _.isFinite = function(obj) {
-    return isFinite(obj) && !isNaN(parseFloat(obj));
+    return !_.isSymbol(obj) && isFinite(obj) && !isNaN(parseFloat(obj));
   };
 
-  // Is the given value `NaN`? (NaN is the only number which does not equal itself).
+  // Is the given value `NaN`?
   _.isNaN = function(obj) {
-    return _.isNumber(obj) && obj !== +obj;
+    return _.isNumber(obj) && isNaN(obj);
   };
 
   // Is a given value a boolean?
@@ -29993,8 +33714,19 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
   // Shortcut function for checking if an object has a given property directly
   // on itself (in other words, not on a prototype).
-  _.has = function(obj, key) {
-    return obj != null && hasOwnProperty.call(obj, key);
+  _.has = function(obj, path) {
+    if (!_.isArray(path)) {
+      return has(obj, path);
+    }
+    var length = path.length;
+    for (var i = 0; i < length; i++) {
+      var key = path[i];
+      if (obj == null || !hasOwnProperty.call(obj, key)) {
+        return false;
+      }
+      obj = obj[key];
+    }
+    return !!length;
   };
 
   // Utility Functions
@@ -30021,12 +33753,24 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
   _.noop = function(){};
 
-  _.property = property;
+  // Creates a function that, when passed an object, will traverse that object’s
+  // properties down the given `path`, specified as an array of keys or indexes.
+  _.property = function(path) {
+    if (!_.isArray(path)) {
+      return shallowProperty(path);
+    }
+    return function(obj) {
+      return deepGet(obj, path);
+    };
+  };
 
   // Generates a function for a given object that returns a given property.
   _.propertyOf = function(obj) {
-    return obj == null ? function(){} : function(key) {
-      return obj[key];
+    if (obj == null) {
+      return function(){};
+    }
+    return function(path) {
+      return !_.isArray(path) ? obj[path] : deepGet(obj, path);
     };
   };
 
@@ -30061,7 +33805,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
     return new Date().getTime();
   };
 
-   // List of HTML entities for escaping.
+  // List of HTML entities for escaping.
   var escapeMap = {
     '&': '&amp;',
     '<': '&lt;',
@@ -30077,7 +33821,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
     var escaper = function(match) {
       return map[match];
     };
-    // Regexes for identifying a key that needs to be escaped
+    // Regexes for identifying a key that needs to be escaped.
     var source = '(?:' + _.keys(map).join('|') + ')';
     var testRegexp = RegExp(source);
     var replaceRegexp = RegExp(source, 'g');
@@ -30089,14 +33833,24 @@ Object.defineProperty(exports, '__esModule', { value: true });
   _.escape = createEscaper(escapeMap);
   _.unescape = createEscaper(unescapeMap);
 
-  // If the value of the named `property` is a function then invoke it with the
-  // `object` as context; otherwise, return it.
-  _.result = function(object, property, fallback) {
-    var value = object == null ? void 0 : object[property];
-    if (value === void 0) {
-      value = fallback;
+  // Traverses the children of `obj` along `path`. If a child is a function, it
+  // is invoked with its parent as context. Returns the value of the final
+  // child, or `fallback` if any child is undefined.
+  _.result = function(obj, path, fallback) {
+    if (!_.isArray(path)) path = [path];
+    var length = path.length;
+    if (!length) {
+      return _.isFunction(fallback) ? fallback.call(obj) : fallback;
     }
-    return _.isFunction(value) ? value.call(object) : value;
+    for (var i = 0; i < length; i++) {
+      var prop = obj == null ? void 0 : obj[path[i]];
+      if (prop === void 0) {
+        prop = fallback;
+        i = length; // Ensure we don't continue iterating.
+      }
+      obj = _.isFunction(prop) ? prop.call(obj) : prop;
+    }
+    return obj;
   };
 
   // Generate a unique integer id (unique within the entire client session).
@@ -30110,9 +33864,9 @@ Object.defineProperty(exports, '__esModule', { value: true });
   // By default, Underscore uses ERB-style template delimiters, change the
   // following template settings to use alternative delimiters.
   _.templateSettings = {
-    evaluate    : /<%([\s\S]+?)%>/g,
-    interpolate : /<%=([\s\S]+?)%>/g,
-    escape      : /<%-([\s\S]+?)%>/g
+    evaluate: /<%([\s\S]+?)%>/g,
+    interpolate: /<%=([\s\S]+?)%>/g,
+    escape: /<%-([\s\S]+?)%>/g
   };
 
   // When customizing `templateSettings`, if you don't want to define an
@@ -30123,15 +33877,15 @@ Object.defineProperty(exports, '__esModule', { value: true });
   // Certain characters need to be escaped so that they can be put into a
   // string literal.
   var escapes = {
-    "'":      "'",
-    '\\':     '\\',
-    '\r':     'r',
-    '\n':     'n',
+    "'": "'",
+    '\\': '\\',
+    '\r': 'r',
+    '\n': 'n',
     '\u2028': 'u2028',
     '\u2029': 'u2029'
   };
 
-  var escaper = /\\|'|\r|\n|\u2028|\u2029/g;
+  var escapeRegExp = /\\|'|\r|\n|\u2028|\u2029/g;
 
   var escapeChar = function(match) {
     return '\\' + escapes[match];
@@ -30156,7 +33910,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
     var index = 0;
     var source = "__p+='";
     text.replace(matcher, function(match, escape, interpolate, evaluate, offset) {
-      source += text.slice(index, offset).replace(escaper, escapeChar);
+      source += text.slice(index, offset).replace(escapeRegExp, escapeChar);
       index = offset + match.length;
 
       if (escape) {
@@ -30167,7 +33921,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
         source += "';\n" + evaluate + "\n__p+='";
       }
 
-      // Adobe VMs need the match returned to produce the correct offest.
+      // Adobe VMs need the match returned to produce the correct offset.
       return match;
     });
     source += "';\n";
@@ -30179,8 +33933,9 @@ Object.defineProperty(exports, '__esModule', { value: true });
       "print=function(){__p+=__j.call(arguments,'');};\n" +
       source + 'return __p;\n';
 
+    var render;
     try {
-      var render = new Function(settings.variable || 'obj', '_', source);
+      render = new Function(settings.variable || 'obj', '_', source);
     } catch (e) {
       e.source = source;
       throw e;
@@ -30211,7 +33966,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
   // underscore functions. Wrapped objects may be chained.
 
   // Helper function to continue chaining intermediate results.
-  var result = function(instance, obj) {
+  var chainResult = function(instance, obj) {
     return instance._chain ? _(obj).chain() : obj;
   };
 
@@ -30222,9 +33977,10 @@ Object.defineProperty(exports, '__esModule', { value: true });
       _.prototype[name] = function() {
         var args = [this._wrapped];
         push.apply(args, arguments);
-        return result(this, func.apply(_, args));
+        return chainResult(this, func.apply(_, args));
       };
     });
+    return _;
   };
 
   // Add all of the Underscore functions to the wrapper object.
@@ -30237,7 +33993,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
       var obj = this._wrapped;
       method.apply(obj, arguments);
       if ((name === 'shift' || name === 'splice') && obj.length === 0) delete obj[0];
-      return result(this, obj);
+      return chainResult(this, obj);
     };
   });
 
@@ -30245,7 +34001,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
   _.each(['concat', 'join', 'slice'], function(name) {
     var method = ArrayProto[name];
     _.prototype[name] = function() {
-      return result(this, method.apply(this._wrapped, arguments));
+      return chainResult(this, method.apply(this._wrapped, arguments));
     };
   });
 
@@ -30259,7 +34015,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
   _.prototype.valueOf = _.prototype.toJSON = _.prototype.value;
 
   _.prototype.toString = function() {
-    return '' + this._wrapped;
+    return String(this._wrapped);
   };
 
   // AMD registration happens at the end for compatibility with AMD loaders
@@ -30269,12 +34025,12 @@ Object.defineProperty(exports, '__esModule', { value: true });
   // popular enough to be bundled in a third party lib, but not be part of
   // an AMD load request. Those cases could generate an error when an
   // anonymous define() is called outside of a loader request.
-  if (typeof define === 'function' && define.amd) {
+  if (typeof define == 'function' && define.amd) {
     define('underscore', [], function() {
       return _;
     });
   }
-}.call(this));
+}());
 
 //
 //  Created by Juan Corona
@@ -30477,9 +34233,62 @@ define('readium_js_plugins',["jquery", "underscore", "eventEmitter"], function (
 //  prior written permission.
 
 //'text!empty:'
-define('readium_shared_js/globalsSetup',['./globals', 'jquery', 'console_shim', 'es6-collections', 'eventEmitter', 'URIjs', 'readium_cfi_js', 'readium_js_plugins'], function (Globals, $, console_shim, es6collections, EventEmitter, URI, EPUBcfi, PluginsController) {
+define('readium_shared_js/globalsSetup',['./globals', 'jquery', 'console_shim', 'es6-shim', 'eventEmitter', 'URIjs', 'readium_cfi_js', 'readium_js_plugins'],
+function (Globals, $, console_shim, es6Shim, EventEmitter, URI, EPUBcfi, PluginsController) {
 
     console.log("Globals...");
+
+    // https://tc39.github.io/ecma262/#sec-array.prototype.includes
+    if (!Array.prototype.includes) {
+        Object.defineProperty(Array.prototype, 'includes', {
+            value: function (searchElement, fromIndex) {
+
+                if (this == null) {
+                    throw new TypeError('"this" is null or not defined');
+                }
+
+                // 1. Let O be ? ToObject(this value).
+                var o = Object(this);
+
+                // 2. Let len be ? ToLength(? Get(O, "length")).
+                var len = o.length >>> 0;
+
+                // 3. If len is 0, return false.
+                if (len === 0) {
+                    return false;
+                }
+
+                // 4. Let n be ? ToInteger(fromIndex).
+                //    (If fromIndex is undefined, this step produces the value 0.)
+                var n = fromIndex | 0;
+
+                // 5. If n ≥ 0, then
+                //  a. Let k be n.
+                // 6. Else n < 0,
+                //  a. Let k be len + n.
+                //  b. If k < 0, let k be 0.
+                var k = Math.max(n >= 0 ? n : len - Math.abs(n), 0);
+
+                function sameValueZero(x, y) {
+                    return x === y || (typeof x === 'number' && typeof y === 'number' && isNaN(x) && isNaN(y));
+                }
+
+                // 7. Repeat, while k < len
+                while (k < len) {
+                    // a. Let elementK be the result of ? Get(O, ! ToString(k)).
+                    // b. If SameValueZero(searchElement, elementK) is true, return true.
+                    if (sameValueZero(o[k], searchElement)) {
+                        return true;
+                    }
+                    // c. Increase k by 1. 
+                    k++;
+                }
+
+                // 8. Return false
+                return false;
+            }
+        });
+    }
 
     if (window["ReadiumSDK"]) {
         console.log("ReadiumSDK extend.");
@@ -34999,9 +38808,9 @@ var ViewerSettings = function(settingsData) {
      * @constructor
      */
     var ResizeSensor = function(element, callback) {
-       
+
         var observer;
-       
+
         /**
          *
          * @constructor
@@ -35050,7 +38859,7 @@ var ViewerSettings = function(settingsData) {
             element.resizeSensor = document.createElement('div');
             element.resizeSensor.dir = 'ltr';
             element.resizeSensor.className = 'resize-sensor';
-            var style = 'position: absolute; left: -10px; top: -10px; right: 0; bottom: 0; overflow: hidden; z-index: -1; visibility: hidden;';
+            var style = 'position: absolute; left: -10px; top: -10px; right: 0; bottom: 0; overflow: hidden; z-index: -1; visibility: hidden; max-width: 100%';
             var styleChild = 'position: absolute; left: 0; top: 0; transition: 0s;';
 
             element.resizeSensor.style.cssText = style;
@@ -35063,7 +38872,8 @@ var ViewerSettings = function(settingsData) {
                 '</div>';
             element.appendChild(element.resizeSensor);
 
-            var position = window.getComputedStyle(element).getPropertyValue('position');
+            var computedStyle = window.getComputedStyle(element);
+            var position = computedStyle ? computedStyle.getPropertyValue('position') : null;
             if ('absolute' !== position && 'relative' !== position && 'fixed' !== position) {
                 element.style.position = 'relative';
             }
@@ -35077,15 +38887,15 @@ var ViewerSettings = function(settingsData) {
             var lastWidth = size.width;
             var lastHeight = size.height;
             var initialHiddenCheck = true, resetRAF_id;
-            
-            
+
+
             var resetExpandShrink = function () {
                 expandChild.style.width = '100000px';
                 expandChild.style.height = '100000px';
-        
+
                 expand.scrollLeft = 100000;
                 expand.scrollTop = 100000;
-        
+
                 shrink.scrollLeft = 100000;
                 shrink.scrollTop = 100000;
             };
@@ -35102,11 +38912,11 @@ var ViewerSettings = function(settingsData) {
                         if (!resetRAF_id){
                             resetRAF_id = requestAnimationFrame(function(){
                                 resetRAF_id = 0;
-                                
+
                                 reset();
                             });
                         }
-                        
+
                         return;
                     } else {
                         // Stop checking
@@ -35152,11 +38962,11 @@ var ViewerSettings = function(settingsData) {
 
             addEvent(expand, 'scroll', onScroll);
             addEvent(shrink, 'scroll', onScroll);
-            
+
             // Fix for custom Elements
             requestAnimationFrame(reset);
         }
-         
+
         if (typeof ResizeObserver !== "undefined") {
             observer = new ResizeObserver(function(element){
                 forEachElement(element, function (elem) {
@@ -38043,8085 +41853,6 @@ var SmilIterator = function(smil) {
 return SmilIterator;
 });
 
-/**
- * Rangy, a cross-browser JavaScript range and selection library
- * https://github.com/timdown/rangy
- *
- * Copyright 2015, Tim Down
- * Licensed under the MIT license.
- * Version: 1.3.0
- * Build date: 10 May 2015
- */
-
-(function(factory, root) {
-    if (typeof define == "function" && define.amd) {
-        // AMD. Register as an anonymous module.
-        define('rangy-core',factory);
-    } else if (typeof module != "undefined" && typeof exports == "object") {
-        // Node/CommonJS style
-        module.exports = factory();
-    } else {
-        // No AMD or CommonJS support so we place Rangy in (probably) the global variable
-        root.rangy = factory();
-    }
-})(function() {
-
-    var OBJECT = "object", FUNCTION = "function", UNDEFINED = "undefined";
-
-    // Minimal set of properties required for DOM Level 2 Range compliance. Comparison constants such as START_TO_START
-    // are omitted because ranges in KHTML do not have them but otherwise work perfectly well. See issue 113.
-    var domRangeProperties = ["startContainer", "startOffset", "endContainer", "endOffset", "collapsed",
-        "commonAncestorContainer"];
-
-    // Minimal set of methods required for DOM Level 2 Range compliance
-    var domRangeMethods = ["setStart", "setStartBefore", "setStartAfter", "setEnd", "setEndBefore",
-        "setEndAfter", "collapse", "selectNode", "selectNodeContents", "compareBoundaryPoints", "deleteContents",
-        "extractContents", "cloneContents", "insertNode", "surroundContents", "cloneRange", "toString", "detach"];
-
-    var textRangeProperties = ["boundingHeight", "boundingLeft", "boundingTop", "boundingWidth", "htmlText", "text"];
-
-    // Subset of TextRange's full set of methods that we're interested in
-    var textRangeMethods = ["collapse", "compareEndPoints", "duplicate", "moveToElementText", "parentElement", "select",
-        "setEndPoint", "getBoundingClientRect"];
-
-    /*----------------------------------------------------------------------------------------------------------------*/
-
-    // Trio of functions taken from Peter Michaux's article:
-    // http://peter.michaux.ca/articles/feature-detection-state-of-the-art-browser-scripting
-    function isHostMethod(o, p) {
-        var t = typeof o[p];
-        return t == FUNCTION || (!!(t == OBJECT && o[p])) || t == "unknown";
-    }
-
-    function isHostObject(o, p) {
-        return !!(typeof o[p] == OBJECT && o[p]);
-    }
-
-    function isHostProperty(o, p) {
-        return typeof o[p] != UNDEFINED;
-    }
-
-    // Creates a convenience function to save verbose repeated calls to tests functions
-    function createMultiplePropertyTest(testFunc) {
-        return function(o, props) {
-            var i = props.length;
-            while (i--) {
-                if (!testFunc(o, props[i])) {
-                    return false;
-                }
-            }
-            return true;
-        };
-    }
-
-    // Next trio of functions are a convenience to save verbose repeated calls to previous two functions
-    var areHostMethods = createMultiplePropertyTest(isHostMethod);
-    var areHostObjects = createMultiplePropertyTest(isHostObject);
-    var areHostProperties = createMultiplePropertyTest(isHostProperty);
-
-    function isTextRange(range) {
-        return range && areHostMethods(range, textRangeMethods) && areHostProperties(range, textRangeProperties);
-    }
-
-    function getBody(doc) {
-        return isHostObject(doc, "body") ? doc.body : doc.getElementsByTagName("body")[0];
-    }
-
-    var forEach = [].forEach ?
-        function(arr, func) {
-            arr.forEach(func);
-        } :
-        function(arr, func) {
-            for (var i = 0, len = arr.length; i < len; ++i) {
-                func(arr[i], i);
-            }
-        };
-
-    var modules = {};
-
-    var isBrowser = (typeof window != UNDEFINED && typeof document != UNDEFINED);
-
-    var util = {
-        isHostMethod: isHostMethod,
-        isHostObject: isHostObject,
-        isHostProperty: isHostProperty,
-        areHostMethods: areHostMethods,
-        areHostObjects: areHostObjects,
-        areHostProperties: areHostProperties,
-        isTextRange: isTextRange,
-        getBody: getBody,
-        forEach: forEach
-    };
-
-    var api = {
-        version: "1.3.0",
-        initialized: false,
-        isBrowser: isBrowser,
-        supported: true,
-        util: util,
-        features: {},
-        modules: modules,
-        config: {
-            alertOnFail: false,
-            alertOnWarn: false,
-            preferTextRange: false,
-            autoInitialize: (typeof rangyAutoInitialize == UNDEFINED) ? true : rangyAutoInitialize
-        }
-    };
-
-    function consoleLog(msg) {
-        if (typeof console != UNDEFINED && isHostMethod(console, "log")) {
-            console.log(msg);
-        }
-    }
-
-    function alertOrLog(msg, shouldAlert) {
-        if (isBrowser && shouldAlert) {
-            alert(msg);
-        } else  {
-            consoleLog(msg);
-        }
-    }
-
-    function fail(reason) {
-        api.initialized = true;
-        api.supported = false;
-        alertOrLog("Rangy is not supported in this environment. Reason: " + reason, api.config.alertOnFail);
-    }
-
-    api.fail = fail;
-
-    function warn(msg) {
-        alertOrLog("Rangy warning: " + msg, api.config.alertOnWarn);
-    }
-
-    api.warn = warn;
-
-    // Add utility extend() method
-    var extend;
-    if ({}.hasOwnProperty) {
-        util.extend = extend = function(obj, props, deep) {
-            var o, p;
-            for (var i in props) {
-                if (props.hasOwnProperty(i)) {
-                    o = obj[i];
-                    p = props[i];
-                    if (deep && o !== null && typeof o == "object" && p !== null && typeof p == "object") {
-                        extend(o, p, true);
-                    }
-                    obj[i] = p;
-                }
-            }
-            // Special case for toString, which does not show up in for...in loops in IE <= 8
-            if (props.hasOwnProperty("toString")) {
-                obj.toString = props.toString;
-            }
-            return obj;
-        };
-
-        util.createOptions = function(optionsParam, defaults) {
-            var options = {};
-            extend(options, defaults);
-            if (optionsParam) {
-                extend(options, optionsParam);
-            }
-            return options;
-        };
-    } else {
-        fail("hasOwnProperty not supported");
-    }
-
-    // Test whether we're in a browser and bail out if not
-    if (!isBrowser) {
-        fail("Rangy can only run in a browser");
-    }
-
-    // Test whether Array.prototype.slice can be relied on for NodeLists and use an alternative toArray() if not
-    (function() {
-        var toArray;
-
-        if (isBrowser) {
-            var el = document.createElement("div");
-            el.appendChild(document.createElement("span"));
-            var slice = [].slice;
-            try {
-                if (slice.call(el.childNodes, 0)[0].nodeType == 1) {
-                    toArray = function(arrayLike) {
-                        return slice.call(arrayLike, 0);
-                    };
-                }
-            } catch (e) {}
-        }
-
-        if (!toArray) {
-            toArray = function(arrayLike) {
-                var arr = [];
-                for (var i = 0, len = arrayLike.length; i < len; ++i) {
-                    arr[i] = arrayLike[i];
-                }
-                return arr;
-            };
-        }
-
-        util.toArray = toArray;
-    })();
-
-    // Very simple event handler wrapper function that doesn't attempt to solve issues such as "this" handling or
-    // normalization of event properties
-    var addListener;
-    if (isBrowser) {
-        if (isHostMethod(document, "addEventListener")) {
-            addListener = function(obj, eventType, listener) {
-                obj.addEventListener(eventType, listener, false);
-            };
-        } else if (isHostMethod(document, "attachEvent")) {
-            addListener = function(obj, eventType, listener) {
-                obj.attachEvent("on" + eventType, listener);
-            };
-        } else {
-            fail("Document does not have required addEventListener or attachEvent method");
-        }
-
-        util.addListener = addListener;
-    }
-
-    var initListeners = [];
-
-    function getErrorDesc(ex) {
-        return ex.message || ex.description || String(ex);
-    }
-
-    // Initialization
-    function init() {
-        if (!isBrowser || api.initialized) {
-            return;
-        }
-        var testRange;
-        var implementsDomRange = false, implementsTextRange = false;
-
-        // First, perform basic feature tests
-
-        if (isHostMethod(document, "createRange")) {
-            testRange = document.createRange();
-            if (areHostMethods(testRange, domRangeMethods) && areHostProperties(testRange, domRangeProperties)) {
-                implementsDomRange = true;
-            }
-        }
-
-        var body = getBody(document);
-        if (!body || body.nodeName.toLowerCase() != "body") {
-            fail("No body element found");
-            return;
-        }
-
-        if (body && isHostMethod(body, "createTextRange")) {
-            testRange = body.createTextRange();
-            if (isTextRange(testRange)) {
-                implementsTextRange = true;
-            }
-        }
-
-        if (!implementsDomRange && !implementsTextRange) {
-            fail("Neither Range nor TextRange are available");
-            return;
-        }
-
-        api.initialized = true;
-        api.features = {
-            implementsDomRange: implementsDomRange,
-            implementsTextRange: implementsTextRange
-        };
-
-        // Initialize modules
-        var module, errorMessage;
-        for (var moduleName in modules) {
-            if ( (module = modules[moduleName]) instanceof Module ) {
-                module.init(module, api);
-            }
-        }
-
-        // Call init listeners
-        for (var i = 0, len = initListeners.length; i < len; ++i) {
-            try {
-                initListeners[i](api);
-            } catch (ex) {
-                errorMessage = "Rangy init listener threw an exception. Continuing. Detail: " + getErrorDesc(ex);
-                consoleLog(errorMessage);
-            }
-        }
-    }
-
-    function deprecationNotice(deprecated, replacement, module) {
-        if (module) {
-            deprecated += " in module " + module.name;
-        }
-        api.warn("DEPRECATED: " + deprecated + " is deprecated. Please use " +
-        replacement + " instead.");
-    }
-
-    function createAliasForDeprecatedMethod(owner, deprecated, replacement, module) {
-        owner[deprecated] = function() {
-            deprecationNotice(deprecated, replacement, module);
-            return owner[replacement].apply(owner, util.toArray(arguments));
-        };
-    }
-
-    util.deprecationNotice = deprecationNotice;
-    util.createAliasForDeprecatedMethod = createAliasForDeprecatedMethod;
-
-    // Allow external scripts to initialize this library in case it's loaded after the document has loaded
-    api.init = init;
-
-    // Execute listener immediately if already initialized
-    api.addInitListener = function(listener) {
-        if (api.initialized) {
-            listener(api);
-        } else {
-            initListeners.push(listener);
-        }
-    };
-
-    var shimListeners = [];
-
-    api.addShimListener = function(listener) {
-        shimListeners.push(listener);
-    };
-
-    function shim(win) {
-        win = win || window;
-        init();
-
-        // Notify listeners
-        for (var i = 0, len = shimListeners.length; i < len; ++i) {
-            shimListeners[i](win);
-        }
-    }
-
-    if (isBrowser) {
-        api.shim = api.createMissingNativeApi = shim;
-        createAliasForDeprecatedMethod(api, "createMissingNativeApi", "shim");
-    }
-
-    function Module(name, dependencies, initializer) {
-        this.name = name;
-        this.dependencies = dependencies;
-        this.initialized = false;
-        this.supported = false;
-        this.initializer = initializer;
-    }
-
-    Module.prototype = {
-        init: function() {
-            var requiredModuleNames = this.dependencies || [];
-            for (var i = 0, len = requiredModuleNames.length, requiredModule, moduleName; i < len; ++i) {
-                moduleName = requiredModuleNames[i];
-
-                requiredModule = modules[moduleName];
-                if (!requiredModule || !(requiredModule instanceof Module)) {
-                    throw new Error("required module '" + moduleName + "' not found");
-                }
-
-                requiredModule.init();
-
-                if (!requiredModule.supported) {
-                    throw new Error("required module '" + moduleName + "' not supported");
-                }
-            }
-
-            // Now run initializer
-            this.initializer(this);
-        },
-
-        fail: function(reason) {
-            this.initialized = true;
-            this.supported = false;
-            throw new Error(reason);
-        },
-
-        warn: function(msg) {
-            api.warn("Module " + this.name + ": " + msg);
-        },
-
-        deprecationNotice: function(deprecated, replacement) {
-            api.warn("DEPRECATED: " + deprecated + " in module " + this.name + " is deprecated. Please use " +
-                replacement + " instead");
-        },
-
-        createError: function(msg) {
-            return new Error("Error in Rangy " + this.name + " module: " + msg);
-        }
-    };
-
-    function createModule(name, dependencies, initFunc) {
-        var newModule = new Module(name, dependencies, function(module) {
-            if (!module.initialized) {
-                module.initialized = true;
-                try {
-                    initFunc(api, module);
-                    module.supported = true;
-                } catch (ex) {
-                    var errorMessage = "Module '" + name + "' failed to load: " + getErrorDesc(ex);
-                    consoleLog(errorMessage);
-                    if (ex.stack) {
-                        consoleLog(ex.stack);
-                    }
-                }
-            }
-        });
-        modules[name] = newModule;
-        return newModule;
-    }
-
-    api.createModule = function(name) {
-        // Allow 2 or 3 arguments (second argument is an optional array of dependencies)
-        var initFunc, dependencies;
-        if (arguments.length == 2) {
-            initFunc = arguments[1];
-            dependencies = [];
-        } else {
-            initFunc = arguments[2];
-            dependencies = arguments[1];
-        }
-
-        var module = createModule(name, dependencies, initFunc);
-
-        // Initialize the module immediately if the core is already initialized
-        if (api.initialized && api.supported) {
-            module.init();
-        }
-    };
-
-    api.createCoreModule = function(name, dependencies, initFunc) {
-        createModule(name, dependencies, initFunc);
-    };
-
-    /*----------------------------------------------------------------------------------------------------------------*/
-
-    // Ensure rangy.rangePrototype and rangy.selectionPrototype are available immediately
-
-    function RangePrototype() {}
-    api.RangePrototype = RangePrototype;
-    api.rangePrototype = new RangePrototype();
-
-    function SelectionPrototype() {}
-    api.selectionPrototype = new SelectionPrototype();
-
-    /*----------------------------------------------------------------------------------------------------------------*/
-
-    // DOM utility methods used by Rangy
-    api.createCoreModule("DomUtil", [], function(api, module) {
-        var UNDEF = "undefined";
-        var util = api.util;
-        var getBody = util.getBody;
-
-        // Perform feature tests
-        if (!util.areHostMethods(document, ["createDocumentFragment", "createElement", "createTextNode"])) {
-            module.fail("document missing a Node creation method");
-        }
-
-        if (!util.isHostMethod(document, "getElementsByTagName")) {
-            module.fail("document missing getElementsByTagName method");
-        }
-
-        var el = document.createElement("div");
-        if (!util.areHostMethods(el, ["insertBefore", "appendChild", "cloneNode"] ||
-                !util.areHostObjects(el, ["previousSibling", "nextSibling", "childNodes", "parentNode"]))) {
-            module.fail("Incomplete Element implementation");
-        }
-
-        // innerHTML is required for Range's createContextualFragment method
-        if (!util.isHostProperty(el, "innerHTML")) {
-            module.fail("Element is missing innerHTML property");
-        }
-
-        var textNode = document.createTextNode("test");
-        if (!util.areHostMethods(textNode, ["splitText", "deleteData", "insertData", "appendData", "cloneNode"] ||
-                !util.areHostObjects(el, ["previousSibling", "nextSibling", "childNodes", "parentNode"]) ||
-                !util.areHostProperties(textNode, ["data"]))) {
-            module.fail("Incomplete Text Node implementation");
-        }
-
-        /*----------------------------------------------------------------------------------------------------------------*/
-
-        // Removed use of indexOf because of a bizarre bug in Opera that is thrown in one of the Acid3 tests. I haven't been
-        // able to replicate it outside of the test. The bug is that indexOf returns -1 when called on an Array that
-        // contains just the document as a single element and the value searched for is the document.
-        var arrayContains = /*Array.prototype.indexOf ?
-            function(arr, val) {
-                return arr.indexOf(val) > -1;
-            }:*/
-
-            function(arr, val) {
-                var i = arr.length;
-                while (i--) {
-                    if (arr[i] === val) {
-                        return true;
-                    }
-                }
-                return false;
-            };
-
-        // Opera 11 puts HTML elements in the null namespace, it seems, and IE 7 has undefined namespaceURI
-        function isHtmlNamespace(node) {
-            var ns;
-            return typeof node.namespaceURI == UNDEF || ((ns = node.namespaceURI) === null || ns == "http://www.w3.org/1999/xhtml");
-        }
-
-        function parentElement(node) {
-            var parent = node.parentNode;
-            return (parent.nodeType == 1) ? parent : null;
-        }
-
-        function getNodeIndex(node) {
-            var i = 0;
-            while( (node = node.previousSibling) ) {
-                ++i;
-            }
-            return i;
-        }
-
-        function getNodeLength(node) {
-            switch (node.nodeType) {
-                case 7:
-                case 10:
-                    return 0;
-                case 3:
-                case 8:
-                    return node.length;
-                default:
-                    return node.childNodes.length;
-            }
-        }
-
-        function getCommonAncestor(node1, node2) {
-            var ancestors = [], n;
-            for (n = node1; n; n = n.parentNode) {
-                ancestors.push(n);
-            }
-
-            for (n = node2; n; n = n.parentNode) {
-                if (arrayContains(ancestors, n)) {
-                    return n;
-                }
-            }
-
-            return null;
-        }
-
-        function isAncestorOf(ancestor, descendant, selfIsAncestor) {
-            var n = selfIsAncestor ? descendant : descendant.parentNode;
-            while (n) {
-                if (n === ancestor) {
-                    return true;
-                } else {
-                    n = n.parentNode;
-                }
-            }
-            return false;
-        }
-
-        function isOrIsAncestorOf(ancestor, descendant) {
-            return isAncestorOf(ancestor, descendant, true);
-        }
-
-        function getClosestAncestorIn(node, ancestor, selfIsAncestor) {
-            var p, n = selfIsAncestor ? node : node.parentNode;
-            while (n) {
-                p = n.parentNode;
-                if (p === ancestor) {
-                    return n;
-                }
-                n = p;
-            }
-            return null;
-        }
-
-        function isCharacterDataNode(node) {
-            var t = node.nodeType;
-            return t == 3 || t == 4 || t == 8 ; // Text, CDataSection or Comment
-        }
-
-        function isTextOrCommentNode(node) {
-            if (!node) {
-                return false;
-            }
-            var t = node.nodeType;
-            return t == 3 || t == 8 ; // Text or Comment
-        }
-
-        function insertAfter(node, precedingNode) {
-            var nextNode = precedingNode.nextSibling, parent = precedingNode.parentNode;
-            if (nextNode) {
-                parent.insertBefore(node, nextNode);
-            } else {
-                parent.appendChild(node);
-            }
-            return node;
-        }
-
-        // Note that we cannot use splitText() because it is bugridden in IE 9.
-        function splitDataNode(node, index, positionsToPreserve) {
-            var newNode = node.cloneNode(false);
-            newNode.deleteData(0, index);
-            node.deleteData(index, node.length - index);
-            insertAfter(newNode, node);
-
-            // Preserve positions
-            if (positionsToPreserve) {
-                for (var i = 0, position; position = positionsToPreserve[i++]; ) {
-                    // Handle case where position was inside the portion of node after the split point
-                    if (position.node == node && position.offset > index) {
-                        position.node = newNode;
-                        position.offset -= index;
-                    }
-                    // Handle the case where the position is a node offset within node's parent
-                    else if (position.node == node.parentNode && position.offset > getNodeIndex(node)) {
-                        ++position.offset;
-                    }
-                }
-            }
-            return newNode;
-        }
-
-        function getDocument(node) {
-            if (node.nodeType == 9) {
-                return node;
-            } else if (typeof node.ownerDocument != UNDEF) {
-                return node.ownerDocument;
-            } else if (typeof node.document != UNDEF) {
-                return node.document;
-            } else if (node.parentNode) {
-                return getDocument(node.parentNode);
-            } else {
-                throw module.createError("getDocument: no document found for node");
-            }
-        }
-
-        function getWindow(node) {
-            var doc = getDocument(node);
-            if (typeof doc.defaultView != UNDEF) {
-                return doc.defaultView;
-            } else if (typeof doc.parentWindow != UNDEF) {
-                return doc.parentWindow;
-            } else {
-                throw module.createError("Cannot get a window object for node");
-            }
-        }
-
-        function getIframeDocument(iframeEl) {
-            if (typeof iframeEl.contentDocument != UNDEF) {
-                return iframeEl.contentDocument;
-            } else if (typeof iframeEl.contentWindow != UNDEF) {
-                return iframeEl.contentWindow.document;
-            } else {
-                throw module.createError("getIframeDocument: No Document object found for iframe element");
-            }
-        }
-
-        function getIframeWindow(iframeEl) {
-            if (typeof iframeEl.contentWindow != UNDEF) {
-                return iframeEl.contentWindow;
-            } else if (typeof iframeEl.contentDocument != UNDEF) {
-                return iframeEl.contentDocument.defaultView;
-            } else {
-                throw module.createError("getIframeWindow: No Window object found for iframe element");
-            }
-        }
-
-        // This looks bad. Is it worth it?
-        function isWindow(obj) {
-            return obj && util.isHostMethod(obj, "setTimeout") && util.isHostObject(obj, "document");
-        }
-
-        function getContentDocument(obj, module, methodName) {
-            var doc;
-
-            if (!obj) {
-                doc = document;
-            }
-
-            // Test if a DOM node has been passed and obtain a document object for it if so
-            else if (util.isHostProperty(obj, "nodeType")) {
-                doc = (obj.nodeType == 1 && obj.tagName.toLowerCase() == "iframe") ?
-                    getIframeDocument(obj) : getDocument(obj);
-            }
-
-            // Test if the doc parameter appears to be a Window object
-            else if (isWindow(obj)) {
-                doc = obj.document;
-            }
-
-            if (!doc) {
-                throw module.createError(methodName + "(): Parameter must be a Window object or DOM node");
-            }
-
-            return doc;
-        }
-
-        function getRootContainer(node) {
-            var parent;
-            while ( (parent = node.parentNode) ) {
-                node = parent;
-            }
-            return node;
-        }
-
-        function comparePoints(nodeA, offsetA, nodeB, offsetB) {
-            // See http://www.w3.org/TR/DOM-Level-2-Traversal-Range/ranges.html#Level-2-Range-Comparing
-            var nodeC, root, childA, childB, n;
-            if (nodeA == nodeB) {
-                // Case 1: nodes are the same
-                return offsetA === offsetB ? 0 : (offsetA < offsetB) ? -1 : 1;
-            } else if ( (nodeC = getClosestAncestorIn(nodeB, nodeA, true)) ) {
-                // Case 2: node C (container B or an ancestor) is a child node of A
-                return offsetA <= getNodeIndex(nodeC) ? -1 : 1;
-            } else if ( (nodeC = getClosestAncestorIn(nodeA, nodeB, true)) ) {
-                // Case 3: node C (container A or an ancestor) is a child node of B
-                return getNodeIndex(nodeC) < offsetB  ? -1 : 1;
-            } else {
-                root = getCommonAncestor(nodeA, nodeB);
-                if (!root) {
-                    throw new Error("comparePoints error: nodes have no common ancestor");
-                }
-
-                // Case 4: containers are siblings or descendants of siblings
-                childA = (nodeA === root) ? root : getClosestAncestorIn(nodeA, root, true);
-                childB = (nodeB === root) ? root : getClosestAncestorIn(nodeB, root, true);
-
-                if (childA === childB) {
-                    // This shouldn't be possible
-                    throw module.createError("comparePoints got to case 4 and childA and childB are the same!");
-                } else {
-                    n = root.firstChild;
-                    while (n) {
-                        if (n === childA) {
-                            return -1;
-                        } else if (n === childB) {
-                            return 1;
-                        }
-                        n = n.nextSibling;
-                    }
-                }
-            }
-        }
-
-        /*----------------------------------------------------------------------------------------------------------------*/
-
-        // Test for IE's crash (IE 6/7) or exception (IE >= 8) when a reference to garbage-collected text node is queried
-        var crashyTextNodes = false;
-
-        function isBrokenNode(node) {
-            var n;
-            try {
-                n = node.parentNode;
-                return false;
-            } catch (e) {
-                return true;
-            }
-        }
-
-        (function() {
-            var el = document.createElement("b");
-            el.innerHTML = "1";
-            var textNode = el.firstChild;
-            el.innerHTML = "<br />";
-            crashyTextNodes = isBrokenNode(textNode);
-
-            api.features.crashyTextNodes = crashyTextNodes;
-        })();
-
-        /*----------------------------------------------------------------------------------------------------------------*/
-
-        function inspectNode(node) {
-            if (!node) {
-                return "[No node]";
-            }
-            if (crashyTextNodes && isBrokenNode(node)) {
-                return "[Broken node]";
-            }
-            if (isCharacterDataNode(node)) {
-                return '"' + node.data + '"';
-            }
-            if (node.nodeType == 1) {
-                var idAttr = node.id ? ' id="' + node.id + '"' : "";
-                return "<" + node.nodeName + idAttr + ">[index:" + getNodeIndex(node) + ",length:" + node.childNodes.length + "][" + (node.innerHTML || "[innerHTML not supported]").slice(0, 25) + "]";
-            }
-            return node.nodeName;
-        }
-
-        function fragmentFromNodeChildren(node) {
-            var fragment = getDocument(node).createDocumentFragment(), child;
-            while ( (child = node.firstChild) ) {
-                fragment.appendChild(child);
-            }
-            return fragment;
-        }
-
-        var getComputedStyleProperty;
-        if (typeof window.getComputedStyle != UNDEF) {
-            getComputedStyleProperty = function(el, propName) {
-                return getWindow(el).getComputedStyle(el, null)[propName];
-            };
-        } else if (typeof document.documentElement.currentStyle != UNDEF) {
-            getComputedStyleProperty = function(el, propName) {
-                return el.currentStyle ? el.currentStyle[propName] : "";
-            };
-        } else {
-            module.fail("No means of obtaining computed style properties found");
-        }
-
-        function createTestElement(doc, html, contentEditable) {
-            var body = getBody(doc);
-            var el = doc.createElement("div");
-            el.contentEditable = "" + !!contentEditable;
-            if (html) {
-                el.innerHTML = html;
-            }
-
-            // Insert the test element at the start of the body to prevent scrolling to the bottom in iOS (issue #292)
-            var bodyFirstChild = body.firstChild;
-            if (bodyFirstChild) {
-                body.insertBefore(el, bodyFirstChild);
-            } else {
-                body.appendChild(el);
-            }
-
-            return el;
-        }
-
-        function removeNode(node) {
-            return node.parentNode.removeChild(node);
-        }
-
-        function NodeIterator(root) {
-            this.root = root;
-            this._next = root;
-        }
-
-        NodeIterator.prototype = {
-            _current: null,
-
-            hasNext: function() {
-                return !!this._next;
-            },
-
-            next: function() {
-                var n = this._current = this._next;
-                var child, next;
-                if (this._current) {
-                    child = n.firstChild;
-                    if (child) {
-                        this._next = child;
-                    } else {
-                        next = null;
-                        while ((n !== this.root) && !(next = n.nextSibling)) {
-                            n = n.parentNode;
-                        }
-                        this._next = next;
-                    }
-                }
-                return this._current;
-            },
-
-            detach: function() {
-                this._current = this._next = this.root = null;
-            }
-        };
-
-        function createIterator(root) {
-            return new NodeIterator(root);
-        }
-
-        function DomPosition(node, offset) {
-            this.node = node;
-            this.offset = offset;
-        }
-
-        DomPosition.prototype = {
-            equals: function(pos) {
-                return !!pos && this.node === pos.node && this.offset == pos.offset;
-            },
-
-            inspect: function() {
-                return "[DomPosition(" + inspectNode(this.node) + ":" + this.offset + ")]";
-            },
-
-            toString: function() {
-                return this.inspect();
-            }
-        };
-
-        function DOMException(codeName) {
-            this.code = this[codeName];
-            this.codeName = codeName;
-            this.message = "DOMException: " + this.codeName;
-        }
-
-        DOMException.prototype = {
-            INDEX_SIZE_ERR: 1,
-            HIERARCHY_REQUEST_ERR: 3,
-            WRONG_DOCUMENT_ERR: 4,
-            NO_MODIFICATION_ALLOWED_ERR: 7,
-            NOT_FOUND_ERR: 8,
-            NOT_SUPPORTED_ERR: 9,
-            INVALID_STATE_ERR: 11,
-            INVALID_NODE_TYPE_ERR: 24
-        };
-
-        DOMException.prototype.toString = function() {
-            return this.message;
-        };
-
-        api.dom = {
-            arrayContains: arrayContains,
-            isHtmlNamespace: isHtmlNamespace,
-            parentElement: parentElement,
-            getNodeIndex: getNodeIndex,
-            getNodeLength: getNodeLength,
-            getCommonAncestor: getCommonAncestor,
-            isAncestorOf: isAncestorOf,
-            isOrIsAncestorOf: isOrIsAncestorOf,
-            getClosestAncestorIn: getClosestAncestorIn,
-            isCharacterDataNode: isCharacterDataNode,
-            isTextOrCommentNode: isTextOrCommentNode,
-            insertAfter: insertAfter,
-            splitDataNode: splitDataNode,
-            getDocument: getDocument,
-            getWindow: getWindow,
-            getIframeWindow: getIframeWindow,
-            getIframeDocument: getIframeDocument,
-            getBody: getBody,
-            isWindow: isWindow,
-            getContentDocument: getContentDocument,
-            getRootContainer: getRootContainer,
-            comparePoints: comparePoints,
-            isBrokenNode: isBrokenNode,
-            inspectNode: inspectNode,
-            getComputedStyleProperty: getComputedStyleProperty,
-            createTestElement: createTestElement,
-            removeNode: removeNode,
-            fragmentFromNodeChildren: fragmentFromNodeChildren,
-            createIterator: createIterator,
-            DomPosition: DomPosition
-        };
-
-        api.DOMException = DOMException;
-    });
-
-    /*----------------------------------------------------------------------------------------------------------------*/
-
-    // Pure JavaScript implementation of DOM Range
-    api.createCoreModule("DomRange", ["DomUtil"], function(api, module) {
-        var dom = api.dom;
-        var util = api.util;
-        var DomPosition = dom.DomPosition;
-        var DOMException = api.DOMException;
-
-        var isCharacterDataNode = dom.isCharacterDataNode;
-        var getNodeIndex = dom.getNodeIndex;
-        var isOrIsAncestorOf = dom.isOrIsAncestorOf;
-        var getDocument = dom.getDocument;
-        var comparePoints = dom.comparePoints;
-        var splitDataNode = dom.splitDataNode;
-        var getClosestAncestorIn = dom.getClosestAncestorIn;
-        var getNodeLength = dom.getNodeLength;
-        var arrayContains = dom.arrayContains;
-        var getRootContainer = dom.getRootContainer;
-        var crashyTextNodes = api.features.crashyTextNodes;
-
-        var removeNode = dom.removeNode;
-
-        /*----------------------------------------------------------------------------------------------------------------*/
-
-        // Utility functions
-
-        function isNonTextPartiallySelected(node, range) {
-            return (node.nodeType != 3) &&
-                   (isOrIsAncestorOf(node, range.startContainer) || isOrIsAncestorOf(node, range.endContainer));
-        }
-
-        function getRangeDocument(range) {
-            return range.document || getDocument(range.startContainer);
-        }
-
-        function getRangeRoot(range) {
-            return getRootContainer(range.startContainer);
-        }
-
-        function getBoundaryBeforeNode(node) {
-            return new DomPosition(node.parentNode, getNodeIndex(node));
-        }
-
-        function getBoundaryAfterNode(node) {
-            return new DomPosition(node.parentNode, getNodeIndex(node) + 1);
-        }
-
-        function insertNodeAtPosition(node, n, o) {
-            var firstNodeInserted = node.nodeType == 11 ? node.firstChild : node;
-            if (isCharacterDataNode(n)) {
-                if (o == n.length) {
-                    dom.insertAfter(node, n);
-                } else {
-                    n.parentNode.insertBefore(node, o == 0 ? n : splitDataNode(n, o));
-                }
-            } else if (o >= n.childNodes.length) {
-                n.appendChild(node);
-            } else {
-                n.insertBefore(node, n.childNodes[o]);
-            }
-            return firstNodeInserted;
-        }
-
-        function rangesIntersect(rangeA, rangeB, touchingIsIntersecting) {
-            assertRangeValid(rangeA);
-            assertRangeValid(rangeB);
-
-            if (getRangeDocument(rangeB) != getRangeDocument(rangeA)) {
-                throw new DOMException("WRONG_DOCUMENT_ERR");
-            }
-
-            var startComparison = comparePoints(rangeA.startContainer, rangeA.startOffset, rangeB.endContainer, rangeB.endOffset),
-                endComparison = comparePoints(rangeA.endContainer, rangeA.endOffset, rangeB.startContainer, rangeB.startOffset);
-
-            return touchingIsIntersecting ? startComparison <= 0 && endComparison >= 0 : startComparison < 0 && endComparison > 0;
-        }
-
-        function cloneSubtree(iterator) {
-            var partiallySelected;
-            for (var node, frag = getRangeDocument(iterator.range).createDocumentFragment(), subIterator; node = iterator.next(); ) {
-                partiallySelected = iterator.isPartiallySelectedSubtree();
-                node = node.cloneNode(!partiallySelected);
-                if (partiallySelected) {
-                    subIterator = iterator.getSubtreeIterator();
-                    node.appendChild(cloneSubtree(subIterator));
-                    subIterator.detach();
-                }
-
-                if (node.nodeType == 10) { // DocumentType
-                    throw new DOMException("HIERARCHY_REQUEST_ERR");
-                }
-                frag.appendChild(node);
-            }
-            return frag;
-        }
-
-        function iterateSubtree(rangeIterator, func, iteratorState) {
-            var it, n;
-            iteratorState = iteratorState || { stop: false };
-            for (var node, subRangeIterator; node = rangeIterator.next(); ) {
-                if (rangeIterator.isPartiallySelectedSubtree()) {
-                    if (func(node) === false) {
-                        iteratorState.stop = true;
-                        return;
-                    } else {
-                        // The node is partially selected by the Range, so we can use a new RangeIterator on the portion of
-                        // the node selected by the Range.
-                        subRangeIterator = rangeIterator.getSubtreeIterator();
-                        iterateSubtree(subRangeIterator, func, iteratorState);
-                        subRangeIterator.detach();
-                        if (iteratorState.stop) {
-                            return;
-                        }
-                    }
-                } else {
-                    // The whole node is selected, so we can use efficient DOM iteration to iterate over the node and its
-                    // descendants
-                    it = dom.createIterator(node);
-                    while ( (n = it.next()) ) {
-                        if (func(n) === false) {
-                            iteratorState.stop = true;
-                            return;
-                        }
-                    }
-                }
-            }
-        }
-
-        function deleteSubtree(iterator) {
-            var subIterator;
-            while (iterator.next()) {
-                if (iterator.isPartiallySelectedSubtree()) {
-                    subIterator = iterator.getSubtreeIterator();
-                    deleteSubtree(subIterator);
-                    subIterator.detach();
-                } else {
-                    iterator.remove();
-                }
-            }
-        }
-
-        function extractSubtree(iterator) {
-            for (var node, frag = getRangeDocument(iterator.range).createDocumentFragment(), subIterator; node = iterator.next(); ) {
-
-                if (iterator.isPartiallySelectedSubtree()) {
-                    node = node.cloneNode(false);
-                    subIterator = iterator.getSubtreeIterator();
-                    node.appendChild(extractSubtree(subIterator));
-                    subIterator.detach();
-                } else {
-                    iterator.remove();
-                }
-                if (node.nodeType == 10) { // DocumentType
-                    throw new DOMException("HIERARCHY_REQUEST_ERR");
-                }
-                frag.appendChild(node);
-            }
-            return frag;
-        }
-
-        function getNodesInRange(range, nodeTypes, filter) {
-            var filterNodeTypes = !!(nodeTypes && nodeTypes.length), regex;
-            var filterExists = !!filter;
-            if (filterNodeTypes) {
-                regex = new RegExp("^(" + nodeTypes.join("|") + ")$");
-            }
-
-            var nodes = [];
-            iterateSubtree(new RangeIterator(range, false), function(node) {
-                if (filterNodeTypes && !regex.test(node.nodeType)) {
-                    return;
-                }
-                if (filterExists && !filter(node)) {
-                    return;
-                }
-                // Don't include a boundary container if it is a character data node and the range does not contain any
-                // of its character data. See issue 190.
-                var sc = range.startContainer;
-                if (node == sc && isCharacterDataNode(sc) && range.startOffset == sc.length) {
-                    return;
-                }
-
-                var ec = range.endContainer;
-                if (node == ec && isCharacterDataNode(ec) && range.endOffset == 0) {
-                    return;
-                }
-
-                nodes.push(node);
-            });
-            return nodes;
-        }
-
-        function inspect(range) {
-            var name = (typeof range.getName == "undefined") ? "Range" : range.getName();
-            return "[" + name + "(" + dom.inspectNode(range.startContainer) + ":" + range.startOffset + ", " +
-                    dom.inspectNode(range.endContainer) + ":" + range.endOffset + ")]";
-        }
-
-        /*----------------------------------------------------------------------------------------------------------------*/
-
-        // RangeIterator code partially borrows from IERange by Tim Ryan (http://github.com/timcameronryan/IERange)
-
-        function RangeIterator(range, clonePartiallySelectedTextNodes) {
-            this.range = range;
-            this.clonePartiallySelectedTextNodes = clonePartiallySelectedTextNodes;
-
-
-            if (!range.collapsed) {
-                this.sc = range.startContainer;
-                this.so = range.startOffset;
-                this.ec = range.endContainer;
-                this.eo = range.endOffset;
-                var root = range.commonAncestorContainer;
-
-                if (this.sc === this.ec && isCharacterDataNode(this.sc)) {
-                    this.isSingleCharacterDataNode = true;
-                    this._first = this._last = this._next = this.sc;
-                } else {
-                    this._first = this._next = (this.sc === root && !isCharacterDataNode(this.sc)) ?
-                        this.sc.childNodes[this.so] : getClosestAncestorIn(this.sc, root, true);
-                    this._last = (this.ec === root && !isCharacterDataNode(this.ec)) ?
-                        this.ec.childNodes[this.eo - 1] : getClosestAncestorIn(this.ec, root, true);
-                }
-            }
-        }
-
-        RangeIterator.prototype = {
-            _current: null,
-            _next: null,
-            _first: null,
-            _last: null,
-            isSingleCharacterDataNode: false,
-
-            reset: function() {
-                this._current = null;
-                this._next = this._first;
-            },
-
-            hasNext: function() {
-                return !!this._next;
-            },
-
-            next: function() {
-                // Move to next node
-                var current = this._current = this._next;
-                if (current) {
-                    this._next = (current !== this._last) ? current.nextSibling : null;
-
-                    // Check for partially selected text nodes
-                    if (isCharacterDataNode(current) && this.clonePartiallySelectedTextNodes) {
-                        if (current === this.ec) {
-                            (current = current.cloneNode(true)).deleteData(this.eo, current.length - this.eo);
-                        }
-                        if (this._current === this.sc) {
-                            (current = current.cloneNode(true)).deleteData(0, this.so);
-                        }
-                    }
-                }
-
-                return current;
-            },
-
-            remove: function() {
-                var current = this._current, start, end;
-
-                if (isCharacterDataNode(current) && (current === this.sc || current === this.ec)) {
-                    start = (current === this.sc) ? this.so : 0;
-                    end = (current === this.ec) ? this.eo : current.length;
-                    if (start != end) {
-                        current.deleteData(start, end - start);
-                    }
-                } else {
-                    if (current.parentNode) {
-                        removeNode(current);
-                    } else {
-                    }
-                }
-            },
-
-            // Checks if the current node is partially selected
-            isPartiallySelectedSubtree: function() {
-                var current = this._current;
-                return isNonTextPartiallySelected(current, this.range);
-            },
-
-            getSubtreeIterator: function() {
-                var subRange;
-                if (this.isSingleCharacterDataNode) {
-                    subRange = this.range.cloneRange();
-                    subRange.collapse(false);
-                } else {
-                    subRange = new Range(getRangeDocument(this.range));
-                    var current = this._current;
-                    var startContainer = current, startOffset = 0, endContainer = current, endOffset = getNodeLength(current);
-
-                    if (isOrIsAncestorOf(current, this.sc)) {
-                        startContainer = this.sc;
-                        startOffset = this.so;
-                    }
-                    if (isOrIsAncestorOf(current, this.ec)) {
-                        endContainer = this.ec;
-                        endOffset = this.eo;
-                    }
-
-                    updateBoundaries(subRange, startContainer, startOffset, endContainer, endOffset);
-                }
-                return new RangeIterator(subRange, this.clonePartiallySelectedTextNodes);
-            },
-
-            detach: function() {
-                this.range = this._current = this._next = this._first = this._last = this.sc = this.so = this.ec = this.eo = null;
-            }
-        };
-
-        /*----------------------------------------------------------------------------------------------------------------*/
-
-        var beforeAfterNodeTypes = [1, 3, 4, 5, 7, 8, 10];
-        var rootContainerNodeTypes = [2, 9, 11];
-        var readonlyNodeTypes = [5, 6, 10, 12];
-        var insertableNodeTypes = [1, 3, 4, 5, 7, 8, 10, 11];
-        var surroundNodeTypes = [1, 3, 4, 5, 7, 8];
-
-        function createAncestorFinder(nodeTypes) {
-            return function(node, selfIsAncestor) {
-                var t, n = selfIsAncestor ? node : node.parentNode;
-                while (n) {
-                    t = n.nodeType;
-                    if (arrayContains(nodeTypes, t)) {
-                        return n;
-                    }
-                    n = n.parentNode;
-                }
-                return null;
-            };
-        }
-
-        var getDocumentOrFragmentContainer = createAncestorFinder( [9, 11] );
-        var getReadonlyAncestor = createAncestorFinder(readonlyNodeTypes);
-        var getDocTypeNotationEntityAncestor = createAncestorFinder( [6, 10, 12] );
-
-        function assertNoDocTypeNotationEntityAncestor(node, allowSelf) {
-            if (getDocTypeNotationEntityAncestor(node, allowSelf)) {
-                throw new DOMException("INVALID_NODE_TYPE_ERR");
-            }
-        }
-
-        function assertValidNodeType(node, invalidTypes) {
-            if (!arrayContains(invalidTypes, node.nodeType)) {
-                throw new DOMException("INVALID_NODE_TYPE_ERR");
-            }
-        }
-
-        function assertValidOffset(node, offset) {
-            if (offset < 0 || offset > (isCharacterDataNode(node) ? node.length : node.childNodes.length)) {
-                throw new DOMException("INDEX_SIZE_ERR");
-            }
-        }
-
-        function assertSameDocumentOrFragment(node1, node2) {
-            if (getDocumentOrFragmentContainer(node1, true) !== getDocumentOrFragmentContainer(node2, true)) {
-                throw new DOMException("WRONG_DOCUMENT_ERR");
-            }
-        }
-
-        function assertNodeNotReadOnly(node) {
-            if (getReadonlyAncestor(node, true)) {
-                throw new DOMException("NO_MODIFICATION_ALLOWED_ERR");
-            }
-        }
-
-        function assertNode(node, codeName) {
-            if (!node) {
-                throw new DOMException(codeName);
-            }
-        }
-
-        function isValidOffset(node, offset) {
-            return offset <= (isCharacterDataNode(node) ? node.length : node.childNodes.length);
-        }
-
-        function isRangeValid(range) {
-            return (!!range.startContainer && !!range.endContainer &&
-                    !(crashyTextNodes && (dom.isBrokenNode(range.startContainer) || dom.isBrokenNode(range.endContainer))) &&
-                    getRootContainer(range.startContainer) == getRootContainer(range.endContainer) &&
-                    isValidOffset(range.startContainer, range.startOffset) &&
-                    isValidOffset(range.endContainer, range.endOffset));
-        }
-
-        function assertRangeValid(range) {
-            if (!isRangeValid(range)) {
-                throw new Error("Range error: Range is not valid. This usually happens after DOM mutation. Range: (" + range.inspect() + ")");
-            }
-        }
-
-        /*----------------------------------------------------------------------------------------------------------------*/
-
-        // Test the browser's innerHTML support to decide how to implement createContextualFragment
-        var styleEl = document.createElement("style");
-        var htmlParsingConforms = false;
-        try {
-            styleEl.innerHTML = "<b>x</b>";
-            htmlParsingConforms = (styleEl.firstChild.nodeType == 3); // Opera incorrectly creates an element node
-        } catch (e) {
-            // IE 6 and 7 throw
-        }
-
-        api.features.htmlParsingConforms = htmlParsingConforms;
-
-        var createContextualFragment = htmlParsingConforms ?
-
-            // Implementation as per HTML parsing spec, trusting in the browser's implementation of innerHTML. See
-            // discussion and base code for this implementation at issue 67.
-            // Spec: http://html5.org/specs/dom-parsing.html#extensions-to-the-range-interface
-            // Thanks to Aleks Williams.
-            function(fragmentStr) {
-                // "Let node the context object's start's node."
-                var node = this.startContainer;
-                var doc = getDocument(node);
-
-                // "If the context object's start's node is null, raise an INVALID_STATE_ERR
-                // exception and abort these steps."
-                if (!node) {
-                    throw new DOMException("INVALID_STATE_ERR");
-                }
-
-                // "Let element be as follows, depending on node's interface:"
-                // Document, Document Fragment: null
-                var el = null;
-
-                // "Element: node"
-                if (node.nodeType == 1) {
-                    el = node;
-
-                // "Text, Comment: node's parentElement"
-                } else if (isCharacterDataNode(node)) {
-                    el = dom.parentElement(node);
-                }
-
-                // "If either element is null or element's ownerDocument is an HTML document
-                // and element's local name is "html" and element's namespace is the HTML
-                // namespace"
-                if (el === null || (
-                    el.nodeName == "HTML" &&
-                    dom.isHtmlNamespace(getDocument(el).documentElement) &&
-                    dom.isHtmlNamespace(el)
-                )) {
-
-                // "let element be a new Element with "body" as its local name and the HTML
-                // namespace as its namespace.""
-                    el = doc.createElement("body");
-                } else {
-                    el = el.cloneNode(false);
-                }
-
-                // "If the node's document is an HTML document: Invoke the HTML fragment parsing algorithm."
-                // "If the node's document is an XML document: Invoke the XML fragment parsing algorithm."
-                // "In either case, the algorithm must be invoked with fragment as the input
-                // and element as the context element."
-                el.innerHTML = fragmentStr;
-
-                // "If this raises an exception, then abort these steps. Otherwise, let new
-                // children be the nodes returned."
-
-                // "Let fragment be a new DocumentFragment."
-                // "Append all new children to fragment."
-                // "Return fragment."
-                return dom.fragmentFromNodeChildren(el);
-            } :
-
-            // In this case, innerHTML cannot be trusted, so fall back to a simpler, non-conformant implementation that
-            // previous versions of Rangy used (with the exception of using a body element rather than a div)
-            function(fragmentStr) {
-                var doc = getRangeDocument(this);
-                var el = doc.createElement("body");
-                el.innerHTML = fragmentStr;
-
-                return dom.fragmentFromNodeChildren(el);
-            };
-
-        function splitRangeBoundaries(range, positionsToPreserve) {
-            assertRangeValid(range);
-
-            var sc = range.startContainer, so = range.startOffset, ec = range.endContainer, eo = range.endOffset;
-            var startEndSame = (sc === ec);
-
-            if (isCharacterDataNode(ec) && eo > 0 && eo < ec.length) {
-                splitDataNode(ec, eo, positionsToPreserve);
-            }
-
-            if (isCharacterDataNode(sc) && so > 0 && so < sc.length) {
-                sc = splitDataNode(sc, so, positionsToPreserve);
-                if (startEndSame) {
-                    eo -= so;
-                    ec = sc;
-                } else if (ec == sc.parentNode && eo >= getNodeIndex(sc)) {
-                    eo++;
-                }
-                so = 0;
-            }
-            range.setStartAndEnd(sc, so, ec, eo);
-        }
-
-        function rangeToHtml(range) {
-            assertRangeValid(range);
-            var container = range.commonAncestorContainer.parentNode.cloneNode(false);
-            container.appendChild( range.cloneContents() );
-            return container.innerHTML;
-        }
-
-        /*----------------------------------------------------------------------------------------------------------------*/
-
-        var rangeProperties = ["startContainer", "startOffset", "endContainer", "endOffset", "collapsed",
-            "commonAncestorContainer"];
-
-        var s2s = 0, s2e = 1, e2e = 2, e2s = 3;
-        var n_b = 0, n_a = 1, n_b_a = 2, n_i = 3;
-
-        util.extend(api.rangePrototype, {
-            compareBoundaryPoints: function(how, range) {
-                assertRangeValid(this);
-                assertSameDocumentOrFragment(this.startContainer, range.startContainer);
-
-                var nodeA, offsetA, nodeB, offsetB;
-                var prefixA = (how == e2s || how == s2s) ? "start" : "end";
-                var prefixB = (how == s2e || how == s2s) ? "start" : "end";
-                nodeA = this[prefixA + "Container"];
-                offsetA = this[prefixA + "Offset"];
-                nodeB = range[prefixB + "Container"];
-                offsetB = range[prefixB + "Offset"];
-                return comparePoints(nodeA, offsetA, nodeB, offsetB);
-            },
-
-            insertNode: function(node) {
-                assertRangeValid(this);
-                assertValidNodeType(node, insertableNodeTypes);
-                assertNodeNotReadOnly(this.startContainer);
-
-                if (isOrIsAncestorOf(node, this.startContainer)) {
-                    throw new DOMException("HIERARCHY_REQUEST_ERR");
-                }
-
-                // No check for whether the container of the start of the Range is of a type that does not allow
-                // children of the type of node: the browser's DOM implementation should do this for us when we attempt
-                // to add the node
-
-                var firstNodeInserted = insertNodeAtPosition(node, this.startContainer, this.startOffset);
-                this.setStartBefore(firstNodeInserted);
-            },
-
-            cloneContents: function() {
-                assertRangeValid(this);
-
-                var clone, frag;
-                if (this.collapsed) {
-                    return getRangeDocument(this).createDocumentFragment();
-                } else {
-                    if (this.startContainer === this.endContainer && isCharacterDataNode(this.startContainer)) {
-                        clone = this.startContainer.cloneNode(true);
-                        clone.data = clone.data.slice(this.startOffset, this.endOffset);
-                        frag = getRangeDocument(this).createDocumentFragment();
-                        frag.appendChild(clone);
-                        return frag;
-                    } else {
-                        var iterator = new RangeIterator(this, true);
-                        clone = cloneSubtree(iterator);
-                        iterator.detach();
-                    }
-                    return clone;
-                }
-            },
-
-            canSurroundContents: function() {
-                assertRangeValid(this);
-                assertNodeNotReadOnly(this.startContainer);
-                assertNodeNotReadOnly(this.endContainer);
-
-                // Check if the contents can be surrounded. Specifically, this means whether the range partially selects
-                // no non-text nodes.
-                var iterator = new RangeIterator(this, true);
-                var boundariesInvalid = (iterator._first && (isNonTextPartiallySelected(iterator._first, this)) ||
-                        (iterator._last && isNonTextPartiallySelected(iterator._last, this)));
-                iterator.detach();
-                return !boundariesInvalid;
-            },
-
-            surroundContents: function(node) {
-                assertValidNodeType(node, surroundNodeTypes);
-
-                if (!this.canSurroundContents()) {
-                    throw new DOMException("INVALID_STATE_ERR");
-                }
-
-                // Extract the contents
-                var content = this.extractContents();
-
-                // Clear the children of the node
-                if (node.hasChildNodes()) {
-                    while (node.lastChild) {
-                        node.removeChild(node.lastChild);
-                    }
-                }
-
-                // Insert the new node and add the extracted contents
-                insertNodeAtPosition(node, this.startContainer, this.startOffset);
-                node.appendChild(content);
-
-                this.selectNode(node);
-            },
-
-            cloneRange: function() {
-                assertRangeValid(this);
-                var range = new Range(getRangeDocument(this));
-                var i = rangeProperties.length, prop;
-                while (i--) {
-                    prop = rangeProperties[i];
-                    range[prop] = this[prop];
-                }
-                return range;
-            },
-
-            toString: function() {
-                assertRangeValid(this);
-                var sc = this.startContainer;
-                if (sc === this.endContainer && isCharacterDataNode(sc)) {
-                    return (sc.nodeType == 3 || sc.nodeType == 4) ? sc.data.slice(this.startOffset, this.endOffset) : "";
-                } else {
-                    var textParts = [], iterator = new RangeIterator(this, true);
-                    iterateSubtree(iterator, function(node) {
-                        // Accept only text or CDATA nodes, not comments
-                        if (node.nodeType == 3 || node.nodeType == 4) {
-                            textParts.push(node.data);
-                        }
-                    });
-                    iterator.detach();
-                    return textParts.join("");
-                }
-            },
-
-            // The methods below are all non-standard. The following batch were introduced by Mozilla but have since
-            // been removed from Mozilla.
-
-            compareNode: function(node) {
-                assertRangeValid(this);
-
-                var parent = node.parentNode;
-                var nodeIndex = getNodeIndex(node);
-
-                if (!parent) {
-                    throw new DOMException("NOT_FOUND_ERR");
-                }
-
-                var startComparison = this.comparePoint(parent, nodeIndex),
-                    endComparison = this.comparePoint(parent, nodeIndex + 1);
-
-                if (startComparison < 0) { // Node starts before
-                    return (endComparison > 0) ? n_b_a : n_b;
-                } else {
-                    return (endComparison > 0) ? n_a : n_i;
-                }
-            },
-
-            comparePoint: function(node, offset) {
-                assertRangeValid(this);
-                assertNode(node, "HIERARCHY_REQUEST_ERR");
-                assertSameDocumentOrFragment(node, this.startContainer);
-
-                if (comparePoints(node, offset, this.startContainer, this.startOffset) < 0) {
-                    return -1;
-                } else if (comparePoints(node, offset, this.endContainer, this.endOffset) > 0) {
-                    return 1;
-                }
-                return 0;
-            },
-
-            createContextualFragment: createContextualFragment,
-
-            toHtml: function() {
-                return rangeToHtml(this);
-            },
-
-            // touchingIsIntersecting determines whether this method considers a node that borders a range intersects
-            // with it (as in WebKit) or not (as in Gecko pre-1.9, and the default)
-            intersectsNode: function(node, touchingIsIntersecting) {
-                assertRangeValid(this);
-                if (getRootContainer(node) != getRangeRoot(this)) {
-                    return false;
-                }
-
-                var parent = node.parentNode, offset = getNodeIndex(node);
-                if (!parent) {
-                    return true;
-                }
-
-                var startComparison = comparePoints(parent, offset, this.endContainer, this.endOffset),
-                    endComparison = comparePoints(parent, offset + 1, this.startContainer, this.startOffset);
-
-                return touchingIsIntersecting ? startComparison <= 0 && endComparison >= 0 : startComparison < 0 && endComparison > 0;
-            },
-
-            isPointInRange: function(node, offset) {
-                assertRangeValid(this);
-                assertNode(node, "HIERARCHY_REQUEST_ERR");
-                assertSameDocumentOrFragment(node, this.startContainer);
-
-                return (comparePoints(node, offset, this.startContainer, this.startOffset) >= 0) &&
-                       (comparePoints(node, offset, this.endContainer, this.endOffset) <= 0);
-            },
-
-            // The methods below are non-standard and invented by me.
-
-            // Sharing a boundary start-to-end or end-to-start does not count as intersection.
-            intersectsRange: function(range) {
-                return rangesIntersect(this, range, false);
-            },
-
-            // Sharing a boundary start-to-end or end-to-start does count as intersection.
-            intersectsOrTouchesRange: function(range) {
-                return rangesIntersect(this, range, true);
-            },
-
-            intersection: function(range) {
-                if (this.intersectsRange(range)) {
-                    var startComparison = comparePoints(this.startContainer, this.startOffset, range.startContainer, range.startOffset),
-                        endComparison = comparePoints(this.endContainer, this.endOffset, range.endContainer, range.endOffset);
-
-                    var intersectionRange = this.cloneRange();
-                    if (startComparison == -1) {
-                        intersectionRange.setStart(range.startContainer, range.startOffset);
-                    }
-                    if (endComparison == 1) {
-                        intersectionRange.setEnd(range.endContainer, range.endOffset);
-                    }
-                    return intersectionRange;
-                }
-                return null;
-            },
-
-            union: function(range) {
-                if (this.intersectsOrTouchesRange(range)) {
-                    var unionRange = this.cloneRange();
-                    if (comparePoints(range.startContainer, range.startOffset, this.startContainer, this.startOffset) == -1) {
-                        unionRange.setStart(range.startContainer, range.startOffset);
-                    }
-                    if (comparePoints(range.endContainer, range.endOffset, this.endContainer, this.endOffset) == 1) {
-                        unionRange.setEnd(range.endContainer, range.endOffset);
-                    }
-                    return unionRange;
-                } else {
-                    throw new DOMException("Ranges do not intersect");
-                }
-            },
-
-            containsNode: function(node, allowPartial) {
-                if (allowPartial) {
-                    return this.intersectsNode(node, false);
-                } else {
-                    return this.compareNode(node) == n_i;
-                }
-            },
-
-            containsNodeContents: function(node) {
-                return this.comparePoint(node, 0) >= 0 && this.comparePoint(node, getNodeLength(node)) <= 0;
-            },
-
-            containsRange: function(range) {
-                var intersection = this.intersection(range);
-                return intersection !== null && range.equals(intersection);
-            },
-
-            containsNodeText: function(node) {
-                var nodeRange = this.cloneRange();
-                nodeRange.selectNode(node);
-                var textNodes = nodeRange.getNodes([3]);
-                if (textNodes.length > 0) {
-                    nodeRange.setStart(textNodes[0], 0);
-                    var lastTextNode = textNodes.pop();
-                    nodeRange.setEnd(lastTextNode, lastTextNode.length);
-                    return this.containsRange(nodeRange);
-                } else {
-                    return this.containsNodeContents(node);
-                }
-            },
-
-            getNodes: function(nodeTypes, filter) {
-                assertRangeValid(this);
-                return getNodesInRange(this, nodeTypes, filter);
-            },
-
-            getDocument: function() {
-                return getRangeDocument(this);
-            },
-
-            collapseBefore: function(node) {
-                this.setEndBefore(node);
-                this.collapse(false);
-            },
-
-            collapseAfter: function(node) {
-                this.setStartAfter(node);
-                this.collapse(true);
-            },
-
-            getBookmark: function(containerNode) {
-                var doc = getRangeDocument(this);
-                var preSelectionRange = api.createRange(doc);
-                containerNode = containerNode || dom.getBody(doc);
-                preSelectionRange.selectNodeContents(containerNode);
-                var range = this.intersection(preSelectionRange);
-                var start = 0, end = 0;
-                if (range) {
-                    preSelectionRange.setEnd(range.startContainer, range.startOffset);
-                    start = preSelectionRange.toString().length;
-                    end = start + range.toString().length;
-                }
-
-                return {
-                    start: start,
-                    end: end,
-                    containerNode: containerNode
-                };
-            },
-
-            moveToBookmark: function(bookmark) {
-                var containerNode = bookmark.containerNode;
-                var charIndex = 0;
-                this.setStart(containerNode, 0);
-                this.collapse(true);
-                var nodeStack = [containerNode], node, foundStart = false, stop = false;
-                var nextCharIndex, i, childNodes;
-
-                while (!stop && (node = nodeStack.pop())) {
-                    if (node.nodeType == 3) {
-                        nextCharIndex = charIndex + node.length;
-                        if (!foundStart && bookmark.start >= charIndex && bookmark.start <= nextCharIndex) {
-                            this.setStart(node, bookmark.start - charIndex);
-                            foundStart = true;
-                        }
-                        if (foundStart && bookmark.end >= charIndex && bookmark.end <= nextCharIndex) {
-                            this.setEnd(node, bookmark.end - charIndex);
-                            stop = true;
-                        }
-                        charIndex = nextCharIndex;
-                    } else {
-                        childNodes = node.childNodes;
-                        i = childNodes.length;
-                        while (i--) {
-                            nodeStack.push(childNodes[i]);
-                        }
-                    }
-                }
-            },
-
-            getName: function() {
-                return "DomRange";
-            },
-
-            equals: function(range) {
-                return Range.rangesEqual(this, range);
-            },
-
-            isValid: function() {
-                return isRangeValid(this);
-            },
-
-            inspect: function() {
-                return inspect(this);
-            },
-
-            detach: function() {
-                // In DOM4, detach() is now a no-op.
-            }
-        });
-
-        function copyComparisonConstantsToObject(obj) {
-            obj.START_TO_START = s2s;
-            obj.START_TO_END = s2e;
-            obj.END_TO_END = e2e;
-            obj.END_TO_START = e2s;
-
-            obj.NODE_BEFORE = n_b;
-            obj.NODE_AFTER = n_a;
-            obj.NODE_BEFORE_AND_AFTER = n_b_a;
-            obj.NODE_INSIDE = n_i;
-        }
-
-        function copyComparisonConstants(constructor) {
-            copyComparisonConstantsToObject(constructor);
-            copyComparisonConstantsToObject(constructor.prototype);
-        }
-
-        function createRangeContentRemover(remover, boundaryUpdater) {
-            return function() {
-                assertRangeValid(this);
-
-                var sc = this.startContainer, so = this.startOffset, root = this.commonAncestorContainer;
-
-                var iterator = new RangeIterator(this, true);
-
-                // Work out where to position the range after content removal
-                var node, boundary;
-                if (sc !== root) {
-                    node = getClosestAncestorIn(sc, root, true);
-                    boundary = getBoundaryAfterNode(node);
-                    sc = boundary.node;
-                    so = boundary.offset;
-                }
-
-                // Check none of the range is read-only
-                iterateSubtree(iterator, assertNodeNotReadOnly);
-
-                iterator.reset();
-
-                // Remove the content
-                var returnValue = remover(iterator);
-                iterator.detach();
-
-                // Move to the new position
-                boundaryUpdater(this, sc, so, sc, so);
-
-                return returnValue;
-            };
-        }
-
-        function createPrototypeRange(constructor, boundaryUpdater) {
-            function createBeforeAfterNodeSetter(isBefore, isStart) {
-                return function(node) {
-                    assertValidNodeType(node, beforeAfterNodeTypes);
-                    assertValidNodeType(getRootContainer(node), rootContainerNodeTypes);
-
-                    var boundary = (isBefore ? getBoundaryBeforeNode : getBoundaryAfterNode)(node);
-                    (isStart ? setRangeStart : setRangeEnd)(this, boundary.node, boundary.offset);
-                };
-            }
-
-            function setRangeStart(range, node, offset) {
-                var ec = range.endContainer, eo = range.endOffset;
-                if (node !== range.startContainer || offset !== range.startOffset) {
-                    // Check the root containers of the range and the new boundary, and also check whether the new boundary
-                    // is after the current end. In either case, collapse the range to the new position
-                    if (getRootContainer(node) != getRootContainer(ec) || comparePoints(node, offset, ec, eo) == 1) {
-                        ec = node;
-                        eo = offset;
-                    }
-                    boundaryUpdater(range, node, offset, ec, eo);
-                }
-            }
-
-            function setRangeEnd(range, node, offset) {
-                var sc = range.startContainer, so = range.startOffset;
-                if (node !== range.endContainer || offset !== range.endOffset) {
-                    // Check the root containers of the range and the new boundary, and also check whether the new boundary
-                    // is after the current end. In either case, collapse the range to the new position
-                    if (getRootContainer(node) != getRootContainer(sc) || comparePoints(node, offset, sc, so) == -1) {
-                        sc = node;
-                        so = offset;
-                    }
-                    boundaryUpdater(range, sc, so, node, offset);
-                }
-            }
-
-            // Set up inheritance
-            var F = function() {};
-            F.prototype = api.rangePrototype;
-            constructor.prototype = new F();
-
-            util.extend(constructor.prototype, {
-                setStart: function(node, offset) {
-                    assertNoDocTypeNotationEntityAncestor(node, true);
-                    assertValidOffset(node, offset);
-
-                    setRangeStart(this, node, offset);
-                },
-
-                setEnd: function(node, offset) {
-                    assertNoDocTypeNotationEntityAncestor(node, true);
-                    assertValidOffset(node, offset);
-
-                    setRangeEnd(this, node, offset);
-                },
-
-                /**
-                 * Convenience method to set a range's start and end boundaries. Overloaded as follows:
-                 * - Two parameters (node, offset) creates a collapsed range at that position
-                 * - Three parameters (node, startOffset, endOffset) creates a range contained with node starting at
-                 *   startOffset and ending at endOffset
-                 * - Four parameters (startNode, startOffset, endNode, endOffset) creates a range starting at startOffset in
-                 *   startNode and ending at endOffset in endNode
-                 */
-                setStartAndEnd: function() {
-                    var args = arguments;
-                    var sc = args[0], so = args[1], ec = sc, eo = so;
-
-                    switch (args.length) {
-                        case 3:
-                            eo = args[2];
-                            break;
-                        case 4:
-                            ec = args[2];
-                            eo = args[3];
-                            break;
-                    }
-
-                    boundaryUpdater(this, sc, so, ec, eo);
-                },
-
-                setBoundary: function(node, offset, isStart) {
-                    this["set" + (isStart ? "Start" : "End")](node, offset);
-                },
-
-                setStartBefore: createBeforeAfterNodeSetter(true, true),
-                setStartAfter: createBeforeAfterNodeSetter(false, true),
-                setEndBefore: createBeforeAfterNodeSetter(true, false),
-                setEndAfter: createBeforeAfterNodeSetter(false, false),
-
-                collapse: function(isStart) {
-                    assertRangeValid(this);
-                    if (isStart) {
-                        boundaryUpdater(this, this.startContainer, this.startOffset, this.startContainer, this.startOffset);
-                    } else {
-                        boundaryUpdater(this, this.endContainer, this.endOffset, this.endContainer, this.endOffset);
-                    }
-                },
-
-                selectNodeContents: function(node) {
-                    assertNoDocTypeNotationEntityAncestor(node, true);
-
-                    boundaryUpdater(this, node, 0, node, getNodeLength(node));
-                },
-
-                selectNode: function(node) {
-                    assertNoDocTypeNotationEntityAncestor(node, false);
-                    assertValidNodeType(node, beforeAfterNodeTypes);
-
-                    var start = getBoundaryBeforeNode(node), end = getBoundaryAfterNode(node);
-                    boundaryUpdater(this, start.node, start.offset, end.node, end.offset);
-                },
-
-                extractContents: createRangeContentRemover(extractSubtree, boundaryUpdater),
-
-                deleteContents: createRangeContentRemover(deleteSubtree, boundaryUpdater),
-
-                canSurroundContents: function() {
-                    assertRangeValid(this);
-                    assertNodeNotReadOnly(this.startContainer);
-                    assertNodeNotReadOnly(this.endContainer);
-
-                    // Check if the contents can be surrounded. Specifically, this means whether the range partially selects
-                    // no non-text nodes.
-                    var iterator = new RangeIterator(this, true);
-                    var boundariesInvalid = (iterator._first && isNonTextPartiallySelected(iterator._first, this) ||
-                            (iterator._last && isNonTextPartiallySelected(iterator._last, this)));
-                    iterator.detach();
-                    return !boundariesInvalid;
-                },
-
-                splitBoundaries: function() {
-                    splitRangeBoundaries(this);
-                },
-
-                splitBoundariesPreservingPositions: function(positionsToPreserve) {
-                    splitRangeBoundaries(this, positionsToPreserve);
-                },
-
-                normalizeBoundaries: function() {
-                    assertRangeValid(this);
-
-                    var sc = this.startContainer, so = this.startOffset, ec = this.endContainer, eo = this.endOffset;
-
-                    var mergeForward = function(node) {
-                        var sibling = node.nextSibling;
-                        if (sibling && sibling.nodeType == node.nodeType) {
-                            ec = node;
-                            eo = node.length;
-                            node.appendData(sibling.data);
-                            removeNode(sibling);
-                        }
-                    };
-
-                    var mergeBackward = function(node) {
-                        var sibling = node.previousSibling;
-                        if (sibling && sibling.nodeType == node.nodeType) {
-                            sc = node;
-                            var nodeLength = node.length;
-                            so = sibling.length;
-                            node.insertData(0, sibling.data);
-                            removeNode(sibling);
-                            if (sc == ec) {
-                                eo += so;
-                                ec = sc;
-                            } else if (ec == node.parentNode) {
-                                var nodeIndex = getNodeIndex(node);
-                                if (eo == nodeIndex) {
-                                    ec = node;
-                                    eo = nodeLength;
-                                } else if (eo > nodeIndex) {
-                                    eo--;
-                                }
-                            }
-                        }
-                    };
-
-                    var normalizeStart = true;
-                    var sibling;
-
-                    if (isCharacterDataNode(ec)) {
-                        if (eo == ec.length) {
-                            mergeForward(ec);
-                        } else if (eo == 0) {
-                            sibling = ec.previousSibling;
-                            if (sibling && sibling.nodeType == ec.nodeType) {
-                                eo = sibling.length;
-                                if (sc == ec) {
-                                    normalizeStart = false;
-                                }
-                                sibling.appendData(ec.data);
-                                removeNode(ec);
-                                ec = sibling;
-                            }
-                        }
-                    } else {
-                        if (eo > 0) {
-                            var endNode = ec.childNodes[eo - 1];
-                            if (endNode && isCharacterDataNode(endNode)) {
-                                mergeForward(endNode);
-                            }
-                        }
-                        normalizeStart = !this.collapsed;
-                    }
-
-                    if (normalizeStart) {
-                        if (isCharacterDataNode(sc)) {
-                            if (so == 0) {
-                                mergeBackward(sc);
-                            } else if (so == sc.length) {
-                                sibling = sc.nextSibling;
-                                if (sibling && sibling.nodeType == sc.nodeType) {
-                                    if (ec == sibling) {
-                                        ec = sc;
-                                        eo += sc.length;
-                                    }
-                                    sc.appendData(sibling.data);
-                                    removeNode(sibling);
-                                }
-                            }
-                        } else {
-                            if (so < sc.childNodes.length) {
-                                var startNode = sc.childNodes[so];
-                                if (startNode && isCharacterDataNode(startNode)) {
-                                    mergeBackward(startNode);
-                                }
-                            }
-                        }
-                    } else {
-                        sc = ec;
-                        so = eo;
-                    }
-
-                    boundaryUpdater(this, sc, so, ec, eo);
-                },
-
-                collapseToPoint: function(node, offset) {
-                    assertNoDocTypeNotationEntityAncestor(node, true);
-                    assertValidOffset(node, offset);
-                    this.setStartAndEnd(node, offset);
-                }
-            });
-
-            copyComparisonConstants(constructor);
-        }
-
-        /*----------------------------------------------------------------------------------------------------------------*/
-
-        // Updates commonAncestorContainer and collapsed after boundary change
-        function updateCollapsedAndCommonAncestor(range) {
-            range.collapsed = (range.startContainer === range.endContainer && range.startOffset === range.endOffset);
-            range.commonAncestorContainer = range.collapsed ?
-                range.startContainer : dom.getCommonAncestor(range.startContainer, range.endContainer);
-        }
-
-        function updateBoundaries(range, startContainer, startOffset, endContainer, endOffset) {
-            range.startContainer = startContainer;
-            range.startOffset = startOffset;
-            range.endContainer = endContainer;
-            range.endOffset = endOffset;
-            range.document = dom.getDocument(startContainer);
-
-            updateCollapsedAndCommonAncestor(range);
-        }
-
-        function Range(doc) {
-            this.startContainer = doc;
-            this.startOffset = 0;
-            this.endContainer = doc;
-            this.endOffset = 0;
-            this.document = doc;
-            updateCollapsedAndCommonAncestor(this);
-        }
-
-        createPrototypeRange(Range, updateBoundaries);
-
-        util.extend(Range, {
-            rangeProperties: rangeProperties,
-            RangeIterator: RangeIterator,
-            copyComparisonConstants: copyComparisonConstants,
-            createPrototypeRange: createPrototypeRange,
-            inspect: inspect,
-            toHtml: rangeToHtml,
-            getRangeDocument: getRangeDocument,
-            rangesEqual: function(r1, r2) {
-                return r1.startContainer === r2.startContainer &&
-                    r1.startOffset === r2.startOffset &&
-                    r1.endContainer === r2.endContainer &&
-                    r1.endOffset === r2.endOffset;
-            }
-        });
-
-        api.DomRange = Range;
-    });
-
-    /*----------------------------------------------------------------------------------------------------------------*/
-
-    // Wrappers for the browser's native DOM Range and/or TextRange implementation
-    api.createCoreModule("WrappedRange", ["DomRange"], function(api, module) {
-        var WrappedRange, WrappedTextRange;
-        var dom = api.dom;
-        var util = api.util;
-        var DomPosition = dom.DomPosition;
-        var DomRange = api.DomRange;
-        var getBody = dom.getBody;
-        var getContentDocument = dom.getContentDocument;
-        var isCharacterDataNode = dom.isCharacterDataNode;
-
-
-        /*----------------------------------------------------------------------------------------------------------------*/
-
-        if (api.features.implementsDomRange) {
-            // This is a wrapper around the browser's native DOM Range. It has two aims:
-            // - Provide workarounds for specific browser bugs
-            // - provide convenient extensions, which are inherited from Rangy's DomRange
-
-            (function() {
-                var rangeProto;
-                var rangeProperties = DomRange.rangeProperties;
-
-                function updateRangeProperties(range) {
-                    var i = rangeProperties.length, prop;
-                    while (i--) {
-                        prop = rangeProperties[i];
-                        range[prop] = range.nativeRange[prop];
-                    }
-                    // Fix for broken collapsed property in IE 9.
-                    range.collapsed = (range.startContainer === range.endContainer && range.startOffset === range.endOffset);
-                }
-
-                function updateNativeRange(range, startContainer, startOffset, endContainer, endOffset) {
-                    var startMoved = (range.startContainer !== startContainer || range.startOffset != startOffset);
-                    var endMoved = (range.endContainer !== endContainer || range.endOffset != endOffset);
-                    var nativeRangeDifferent = !range.equals(range.nativeRange);
-
-                    // Always set both boundaries for the benefit of IE9 (see issue 35)
-                    if (startMoved || endMoved || nativeRangeDifferent) {
-                        range.setEnd(endContainer, endOffset);
-                        range.setStart(startContainer, startOffset);
-                    }
-                }
-
-                var createBeforeAfterNodeSetter;
-
-                WrappedRange = function(range) {
-                    if (!range) {
-                        throw module.createError("WrappedRange: Range must be specified");
-                    }
-                    this.nativeRange = range;
-                    updateRangeProperties(this);
-                };
-
-                DomRange.createPrototypeRange(WrappedRange, updateNativeRange);
-
-                rangeProto = WrappedRange.prototype;
-
-                rangeProto.selectNode = function(node) {
-                    this.nativeRange.selectNode(node);
-                    updateRangeProperties(this);
-                };
-
-                rangeProto.cloneContents = function() {
-                    return this.nativeRange.cloneContents();
-                };
-
-                // Due to a long-standing Firefox bug that I have not been able to find a reliable way to detect,
-                // insertNode() is never delegated to the native range.
-
-                rangeProto.surroundContents = function(node) {
-                    this.nativeRange.surroundContents(node);
-                    updateRangeProperties(this);
-                };
-
-                rangeProto.collapse = function(isStart) {
-                    this.nativeRange.collapse(isStart);
-                    updateRangeProperties(this);
-                };
-
-                rangeProto.cloneRange = function() {
-                    return new WrappedRange(this.nativeRange.cloneRange());
-                };
-
-                rangeProto.refresh = function() {
-                    updateRangeProperties(this);
-                };
-
-                rangeProto.toString = function() {
-                    return this.nativeRange.toString();
-                };
-
-                // Create test range and node for feature detection
-
-                var testTextNode = document.createTextNode("test");
-                getBody(document).appendChild(testTextNode);
-                var range = document.createRange();
-
-                /*--------------------------------------------------------------------------------------------------------*/
-
-                // Test for Firefox 2 bug that prevents moving the start of a Range to a point after its current end and
-                // correct for it
-
-                range.setStart(testTextNode, 0);
-                range.setEnd(testTextNode, 0);
-
-                try {
-                    range.setStart(testTextNode, 1);
-
-                    rangeProto.setStart = function(node, offset) {
-                        this.nativeRange.setStart(node, offset);
-                        updateRangeProperties(this);
-                    };
-
-                    rangeProto.setEnd = function(node, offset) {
-                        this.nativeRange.setEnd(node, offset);
-                        updateRangeProperties(this);
-                    };
-
-                    createBeforeAfterNodeSetter = function(name) {
-                        return function(node) {
-                            this.nativeRange[name](node);
-                            updateRangeProperties(this);
-                        };
-                    };
-
-                } catch(ex) {
-
-                    rangeProto.setStart = function(node, offset) {
-                        try {
-                            this.nativeRange.setStart(node, offset);
-                        } catch (ex) {
-                            this.nativeRange.setEnd(node, offset);
-                            this.nativeRange.setStart(node, offset);
-                        }
-                        updateRangeProperties(this);
-                    };
-
-                    rangeProto.setEnd = function(node, offset) {
-                        try {
-                            this.nativeRange.setEnd(node, offset);
-                        } catch (ex) {
-                            this.nativeRange.setStart(node, offset);
-                            this.nativeRange.setEnd(node, offset);
-                        }
-                        updateRangeProperties(this);
-                    };
-
-                    createBeforeAfterNodeSetter = function(name, oppositeName) {
-                        return function(node) {
-                            try {
-                                this.nativeRange[name](node);
-                            } catch (ex) {
-                                this.nativeRange[oppositeName](node);
-                                this.nativeRange[name](node);
-                            }
-                            updateRangeProperties(this);
-                        };
-                    };
-                }
-
-                rangeProto.setStartBefore = createBeforeAfterNodeSetter("setStartBefore", "setEndBefore");
-                rangeProto.setStartAfter = createBeforeAfterNodeSetter("setStartAfter", "setEndAfter");
-                rangeProto.setEndBefore = createBeforeAfterNodeSetter("setEndBefore", "setStartBefore");
-                rangeProto.setEndAfter = createBeforeAfterNodeSetter("setEndAfter", "setStartAfter");
-
-                /*--------------------------------------------------------------------------------------------------------*/
-
-                // Always use DOM4-compliant selectNodeContents implementation: it's simpler and less code than testing
-                // whether the native implementation can be trusted
-                rangeProto.selectNodeContents = function(node) {
-                    this.setStartAndEnd(node, 0, dom.getNodeLength(node));
-                };
-
-                /*--------------------------------------------------------------------------------------------------------*/
-
-                // Test for and correct WebKit bug that has the behaviour of compareBoundaryPoints round the wrong way for
-                // constants START_TO_END and END_TO_START: https://bugs.webkit.org/show_bug.cgi?id=20738
-
-                range.selectNodeContents(testTextNode);
-                range.setEnd(testTextNode, 3);
-
-                var range2 = document.createRange();
-                range2.selectNodeContents(testTextNode);
-                range2.setEnd(testTextNode, 4);
-                range2.setStart(testTextNode, 2);
-
-                if (range.compareBoundaryPoints(range.START_TO_END, range2) == -1 &&
-                        range.compareBoundaryPoints(range.END_TO_START, range2) == 1) {
-                    // This is the wrong way round, so correct for it
-
-                    rangeProto.compareBoundaryPoints = function(type, range) {
-                        range = range.nativeRange || range;
-                        if (type == range.START_TO_END) {
-                            type = range.END_TO_START;
-                        } else if (type == range.END_TO_START) {
-                            type = range.START_TO_END;
-                        }
-                        return this.nativeRange.compareBoundaryPoints(type, range);
-                    };
-                } else {
-                    rangeProto.compareBoundaryPoints = function(type, range) {
-                        return this.nativeRange.compareBoundaryPoints(type, range.nativeRange || range);
-                    };
-                }
-
-                /*--------------------------------------------------------------------------------------------------------*/
-
-                // Test for IE deleteContents() and extractContents() bug and correct it. See issue 107.
-
-                var el = document.createElement("div");
-                el.innerHTML = "123";
-                var textNode = el.firstChild;
-                var body = getBody(document);
-                body.appendChild(el);
-
-                range.setStart(textNode, 1);
-                range.setEnd(textNode, 2);
-                range.deleteContents();
-
-                if (textNode.data == "13") {
-                    // Behaviour is correct per DOM4 Range so wrap the browser's implementation of deleteContents() and
-                    // extractContents()
-                    rangeProto.deleteContents = function() {
-                        this.nativeRange.deleteContents();
-                        updateRangeProperties(this);
-                    };
-
-                    rangeProto.extractContents = function() {
-                        var frag = this.nativeRange.extractContents();
-                        updateRangeProperties(this);
-                        return frag;
-                    };
-                } else {
-                }
-
-                body.removeChild(el);
-                body = null;
-
-                /*--------------------------------------------------------------------------------------------------------*/
-
-                // Test for existence of createContextualFragment and delegate to it if it exists
-                if (util.isHostMethod(range, "createContextualFragment")) {
-                    rangeProto.createContextualFragment = function(fragmentStr) {
-                        return this.nativeRange.createContextualFragment(fragmentStr);
-                    };
-                }
-
-                /*--------------------------------------------------------------------------------------------------------*/
-
-                // Clean up
-                getBody(document).removeChild(testTextNode);
-
-                rangeProto.getName = function() {
-                    return "WrappedRange";
-                };
-
-                api.WrappedRange = WrappedRange;
-
-                api.createNativeRange = function(doc) {
-                    doc = getContentDocument(doc, module, "createNativeRange");
-                    return doc.createRange();
-                };
-            })();
-        }
-
-        if (api.features.implementsTextRange) {
-            /*
-            This is a workaround for a bug where IE returns the wrong container element from the TextRange's parentElement()
-            method. For example, in the following (where pipes denote the selection boundaries):
-
-            <ul id="ul"><li id="a">| a </li><li id="b"> b |</li></ul>
-
-            var range = document.selection.createRange();
-            alert(range.parentElement().id); // Should alert "ul" but alerts "b"
-
-            This method returns the common ancestor node of the following:
-            - the parentElement() of the textRange
-            - the parentElement() of the textRange after calling collapse(true)
-            - the parentElement() of the textRange after calling collapse(false)
-            */
-            var getTextRangeContainerElement = function(textRange) {
-                var parentEl = textRange.parentElement();
-                var range = textRange.duplicate();
-                range.collapse(true);
-                var startEl = range.parentElement();
-                range = textRange.duplicate();
-                range.collapse(false);
-                var endEl = range.parentElement();
-                var startEndContainer = (startEl == endEl) ? startEl : dom.getCommonAncestor(startEl, endEl);
-
-                return startEndContainer == parentEl ? startEndContainer : dom.getCommonAncestor(parentEl, startEndContainer);
-            };
-
-            var textRangeIsCollapsed = function(textRange) {
-                return textRange.compareEndPoints("StartToEnd", textRange) == 0;
-            };
-
-            // Gets the boundary of a TextRange expressed as a node and an offset within that node. This function started
-            // out as an improved version of code found in Tim Cameron Ryan's IERange (http://code.google.com/p/ierange/)
-            // but has grown, fixing problems with line breaks in preformatted text, adding workaround for IE TextRange
-            // bugs, handling for inputs and images, plus optimizations.
-            var getTextRangeBoundaryPosition = function(textRange, wholeRangeContainerElement, isStart, isCollapsed, startInfo) {
-                var workingRange = textRange.duplicate();
-                workingRange.collapse(isStart);
-                var containerElement = workingRange.parentElement();
-
-                // Sometimes collapsing a TextRange that's at the start of a text node can move it into the previous node, so
-                // check for that
-                if (!dom.isOrIsAncestorOf(wholeRangeContainerElement, containerElement)) {
-                    containerElement = wholeRangeContainerElement;
-                }
-
-
-                // Deal with nodes that cannot "contain rich HTML markup". In practice, this means form inputs, images and
-                // similar. See http://msdn.microsoft.com/en-us/library/aa703950%28VS.85%29.aspx
-                if (!containerElement.canHaveHTML) {
-                    var pos = new DomPosition(containerElement.parentNode, dom.getNodeIndex(containerElement));
-                    return {
-                        boundaryPosition: pos,
-                        nodeInfo: {
-                            nodeIndex: pos.offset,
-                            containerElement: pos.node
-                        }
-                    };
-                }
-
-                var workingNode = dom.getDocument(containerElement).createElement("span");
-
-                // Workaround for HTML5 Shiv's insane violation of document.createElement(). See Rangy issue 104 and HTML5
-                // Shiv issue 64: https://github.com/aFarkas/html5shiv/issues/64
-                if (workingNode.parentNode) {
-                    dom.removeNode(workingNode);
-                }
-
-                var comparison, workingComparisonType = isStart ? "StartToStart" : "StartToEnd";
-                var previousNode, nextNode, boundaryPosition, boundaryNode;
-                var start = (startInfo && startInfo.containerElement == containerElement) ? startInfo.nodeIndex : 0;
-                var childNodeCount = containerElement.childNodes.length;
-                var end = childNodeCount;
-
-                // Check end first. Code within the loop assumes that the endth child node of the container is definitely
-                // after the range boundary.
-                var nodeIndex = end;
-
-                while (true) {
-                    if (nodeIndex == childNodeCount) {
-                        containerElement.appendChild(workingNode);
-                    } else {
-                        containerElement.insertBefore(workingNode, containerElement.childNodes[nodeIndex]);
-                    }
-                    workingRange.moveToElementText(workingNode);
-                    comparison = workingRange.compareEndPoints(workingComparisonType, textRange);
-                    if (comparison == 0 || start == end) {
-                        break;
-                    } else if (comparison == -1) {
-                        if (end == start + 1) {
-                            // We know the endth child node is after the range boundary, so we must be done.
-                            break;
-                        } else {
-                            start = nodeIndex;
-                        }
-                    } else {
-                        end = (end == start + 1) ? start : nodeIndex;
-                    }
-                    nodeIndex = Math.floor((start + end) / 2);
-                    containerElement.removeChild(workingNode);
-                }
-
-
-                // We've now reached or gone past the boundary of the text range we're interested in
-                // so have identified the node we want
-                boundaryNode = workingNode.nextSibling;
-
-                if (comparison == -1 && boundaryNode && isCharacterDataNode(boundaryNode)) {
-                    // This is a character data node (text, comment, cdata). The working range is collapsed at the start of
-                    // the node containing the text range's boundary, so we move the end of the working range to the
-                    // boundary point and measure the length of its text to get the boundary's offset within the node.
-                    workingRange.setEndPoint(isStart ? "EndToStart" : "EndToEnd", textRange);
-
-                    var offset;
-
-                    if (/[\r\n]/.test(boundaryNode.data)) {
-                        /*
-                        For the particular case of a boundary within a text node containing rendered line breaks (within a
-                        <pre> element, for example), we need a slightly complicated approach to get the boundary's offset in
-                        IE. The facts:
-
-                        - Each line break is represented as \r in the text node's data/nodeValue properties
-                        - Each line break is represented as \r\n in the TextRange's 'text' property
-                        - The 'text' property of the TextRange does not contain trailing line breaks
-
-                        To get round the problem presented by the final fact above, we can use the fact that TextRange's
-                        moveStart() and moveEnd() methods return the actual number of characters moved, which is not
-                        necessarily the same as the number of characters it was instructed to move. The simplest approach is
-                        to use this to store the characters moved when moving both the start and end of the range to the
-                        start of the document body and subtracting the start offset from the end offset (the
-                        "move-negative-gazillion" method). However, this is extremely slow when the document is large and
-                        the range is near the end of it. Clearly doing the mirror image (i.e. moving the range boundaries to
-                        the end of the document) has the same problem.
-
-                        Another approach that works is to use moveStart() to move the start boundary of the range up to the
-                        end boundary one character at a time and incrementing a counter with the value returned by the
-                        moveStart() call. However, the check for whether the start boundary has reached the end boundary is
-                        expensive, so this method is slow (although unlike "move-negative-gazillion" is largely unaffected
-                        by the location of the range within the document).
-
-                        The approach used below is a hybrid of the two methods above. It uses the fact that a string
-                        containing the TextRange's 'text' property with each \r\n converted to a single \r character cannot
-                        be longer than the text of the TextRange, so the start of the range is moved that length initially
-                        and then a character at a time to make up for any trailing line breaks not contained in the 'text'
-                        property. This has good performance in most situations compared to the previous two methods.
-                        */
-                        var tempRange = workingRange.duplicate();
-                        var rangeLength = tempRange.text.replace(/\r\n/g, "\r").length;
-
-                        offset = tempRange.moveStart("character", rangeLength);
-                        while ( (comparison = tempRange.compareEndPoints("StartToEnd", tempRange)) == -1) {
-                            offset++;
-                            tempRange.moveStart("character", 1);
-                        }
-                    } else {
-                        offset = workingRange.text.length;
-                    }
-                    boundaryPosition = new DomPosition(boundaryNode, offset);
-                } else {
-
-                    // If the boundary immediately follows a character data node and this is the end boundary, we should favour
-                    // a position within that, and likewise for a start boundary preceding a character data node
-                    previousNode = (isCollapsed || !isStart) && workingNode.previousSibling;
-                    nextNode = (isCollapsed || isStart) && workingNode.nextSibling;
-                    if (nextNode && isCharacterDataNode(nextNode)) {
-                        boundaryPosition = new DomPosition(nextNode, 0);
-                    } else if (previousNode && isCharacterDataNode(previousNode)) {
-                        boundaryPosition = new DomPosition(previousNode, previousNode.data.length);
-                    } else {
-                        boundaryPosition = new DomPosition(containerElement, dom.getNodeIndex(workingNode));
-                    }
-                }
-
-                // Clean up
-                dom.removeNode(workingNode);
-
-                return {
-                    boundaryPosition: boundaryPosition,
-                    nodeInfo: {
-                        nodeIndex: nodeIndex,
-                        containerElement: containerElement
-                    }
-                };
-            };
-
-            // Returns a TextRange representing the boundary of a TextRange expressed as a node and an offset within that
-            // node. This function started out as an optimized version of code found in Tim Cameron Ryan's IERange
-            // (http://code.google.com/p/ierange/)
-            var createBoundaryTextRange = function(boundaryPosition, isStart) {
-                var boundaryNode, boundaryParent, boundaryOffset = boundaryPosition.offset;
-                var doc = dom.getDocument(boundaryPosition.node);
-                var workingNode, childNodes, workingRange = getBody(doc).createTextRange();
-                var nodeIsDataNode = isCharacterDataNode(boundaryPosition.node);
-
-                if (nodeIsDataNode) {
-                    boundaryNode = boundaryPosition.node;
-                    boundaryParent = boundaryNode.parentNode;
-                } else {
-                    childNodes = boundaryPosition.node.childNodes;
-                    boundaryNode = (boundaryOffset < childNodes.length) ? childNodes[boundaryOffset] : null;
-                    boundaryParent = boundaryPosition.node;
-                }
-
-                // Position the range immediately before the node containing the boundary
-                workingNode = doc.createElement("span");
-
-                // Making the working element non-empty element persuades IE to consider the TextRange boundary to be within
-                // the element rather than immediately before or after it
-                workingNode.innerHTML = "&#feff;";
-
-                // insertBefore is supposed to work like appendChild if the second parameter is null. However, a bug report
-                // for IERange suggests that it can crash the browser: http://code.google.com/p/ierange/issues/detail?id=12
-                if (boundaryNode) {
-                    boundaryParent.insertBefore(workingNode, boundaryNode);
-                } else {
-                    boundaryParent.appendChild(workingNode);
-                }
-
-                workingRange.moveToElementText(workingNode);
-                workingRange.collapse(!isStart);
-
-                // Clean up
-                boundaryParent.removeChild(workingNode);
-
-                // Move the working range to the text offset, if required
-                if (nodeIsDataNode) {
-                    workingRange[isStart ? "moveStart" : "moveEnd"]("character", boundaryOffset);
-                }
-
-                return workingRange;
-            };
-
-            /*------------------------------------------------------------------------------------------------------------*/
-
-            // This is a wrapper around a TextRange, providing full DOM Range functionality using rangy's DomRange as a
-            // prototype
-
-            WrappedTextRange = function(textRange) {
-                this.textRange = textRange;
-                this.refresh();
-            };
-
-            WrappedTextRange.prototype = new DomRange(document);
-
-            WrappedTextRange.prototype.refresh = function() {
-                var start, end, startBoundary;
-
-                // TextRange's parentElement() method cannot be trusted. getTextRangeContainerElement() works around that.
-                var rangeContainerElement = getTextRangeContainerElement(this.textRange);
-
-                if (textRangeIsCollapsed(this.textRange)) {
-                    end = start = getTextRangeBoundaryPosition(this.textRange, rangeContainerElement, true,
-                        true).boundaryPosition;
-                } else {
-                    startBoundary = getTextRangeBoundaryPosition(this.textRange, rangeContainerElement, true, false);
-                    start = startBoundary.boundaryPosition;
-
-                    // An optimization used here is that if the start and end boundaries have the same parent element, the
-                    // search scope for the end boundary can be limited to exclude the portion of the element that precedes
-                    // the start boundary
-                    end = getTextRangeBoundaryPosition(this.textRange, rangeContainerElement, false, false,
-                        startBoundary.nodeInfo).boundaryPosition;
-                }
-
-                this.setStart(start.node, start.offset);
-                this.setEnd(end.node, end.offset);
-            };
-
-            WrappedTextRange.prototype.getName = function() {
-                return "WrappedTextRange";
-            };
-
-            DomRange.copyComparisonConstants(WrappedTextRange);
-
-            var rangeToTextRange = function(range) {
-                if (range.collapsed) {
-                    return createBoundaryTextRange(new DomPosition(range.startContainer, range.startOffset), true);
-                } else {
-                    var startRange = createBoundaryTextRange(new DomPosition(range.startContainer, range.startOffset), true);
-                    var endRange = createBoundaryTextRange(new DomPosition(range.endContainer, range.endOffset), false);
-                    var textRange = getBody( DomRange.getRangeDocument(range) ).createTextRange();
-                    textRange.setEndPoint("StartToStart", startRange);
-                    textRange.setEndPoint("EndToEnd", endRange);
-                    return textRange;
-                }
-            };
-
-            WrappedTextRange.rangeToTextRange = rangeToTextRange;
-
-            WrappedTextRange.prototype.toTextRange = function() {
-                return rangeToTextRange(this);
-            };
-
-            api.WrappedTextRange = WrappedTextRange;
-
-            // IE 9 and above have both implementations and Rangy makes both available. The next few lines sets which
-            // implementation to use by default.
-            if (!api.features.implementsDomRange || api.config.preferTextRange) {
-                // Add WrappedTextRange as the Range property of the global object to allow expression like Range.END_TO_END to work
-                var globalObj = (function(f) { return f("return this;")(); })(Function);
-                if (typeof globalObj.Range == "undefined") {
-                    globalObj.Range = WrappedTextRange;
-                }
-
-                api.createNativeRange = function(doc) {
-                    doc = getContentDocument(doc, module, "createNativeRange");
-                    return getBody(doc).createTextRange();
-                };
-
-                api.WrappedRange = WrappedTextRange;
-            }
-        }
-
-        api.createRange = function(doc) {
-            doc = getContentDocument(doc, module, "createRange");
-            return new api.WrappedRange(api.createNativeRange(doc));
-        };
-
-        api.createRangyRange = function(doc) {
-            doc = getContentDocument(doc, module, "createRangyRange");
-            return new DomRange(doc);
-        };
-
-        util.createAliasForDeprecatedMethod(api, "createIframeRange", "createRange");
-        util.createAliasForDeprecatedMethod(api, "createIframeRangyRange", "createRangyRange");
-
-        api.addShimListener(function(win) {
-            var doc = win.document;
-            if (typeof doc.createRange == "undefined") {
-                doc.createRange = function() {
-                    return api.createRange(doc);
-                };
-            }
-            doc = win = null;
-        });
-    });
-
-    /*----------------------------------------------------------------------------------------------------------------*/
-
-    // This module creates a selection object wrapper that conforms as closely as possible to the Selection specification
-    // in the HTML Editing spec (http://dvcs.w3.org/hg/editing/raw-file/tip/editing.html#selections)
-    api.createCoreModule("WrappedSelection", ["DomRange", "WrappedRange"], function(api, module) {
-        api.config.checkSelectionRanges = true;
-
-        var BOOLEAN = "boolean";
-        var NUMBER = "number";
-        var dom = api.dom;
-        var util = api.util;
-        var isHostMethod = util.isHostMethod;
-        var DomRange = api.DomRange;
-        var WrappedRange = api.WrappedRange;
-        var DOMException = api.DOMException;
-        var DomPosition = dom.DomPosition;
-        var getNativeSelection;
-        var selectionIsCollapsed;
-        var features = api.features;
-        var CONTROL = "Control";
-        var getDocument = dom.getDocument;
-        var getBody = dom.getBody;
-        var rangesEqual = DomRange.rangesEqual;
-
-
-        // Utility function to support direction parameters in the API that may be a string ("backward", "backwards",
-        // "forward" or "forwards") or a Boolean (true for backwards).
-        function isDirectionBackward(dir) {
-            return (typeof dir == "string") ? /^backward(s)?$/i.test(dir) : !!dir;
-        }
-
-        function getWindow(win, methodName) {
-            if (!win) {
-                return window;
-            } else if (dom.isWindow(win)) {
-                return win;
-            } else if (win instanceof WrappedSelection) {
-                return win.win;
-            } else {
-                var doc = dom.getContentDocument(win, module, methodName);
-                return dom.getWindow(doc);
-            }
-        }
-
-        function getWinSelection(winParam) {
-            return getWindow(winParam, "getWinSelection").getSelection();
-        }
-
-        function getDocSelection(winParam) {
-            return getWindow(winParam, "getDocSelection").document.selection;
-        }
-
-        function winSelectionIsBackward(sel) {
-            var backward = false;
-            if (sel.anchorNode) {
-                backward = (dom.comparePoints(sel.anchorNode, sel.anchorOffset, sel.focusNode, sel.focusOffset) == 1);
-            }
-            return backward;
-        }
-
-        // Test for the Range/TextRange and Selection features required
-        // Test for ability to retrieve selection
-        var implementsWinGetSelection = isHostMethod(window, "getSelection"),
-            implementsDocSelection = util.isHostObject(document, "selection");
-
-        features.implementsWinGetSelection = implementsWinGetSelection;
-        features.implementsDocSelection = implementsDocSelection;
-
-        var useDocumentSelection = implementsDocSelection && (!implementsWinGetSelection || api.config.preferTextRange);
-
-        if (useDocumentSelection) {
-            getNativeSelection = getDocSelection;
-            api.isSelectionValid = function(winParam) {
-                var doc = getWindow(winParam, "isSelectionValid").document, nativeSel = doc.selection;
-
-                // Check whether the selection TextRange is actually contained within the correct document
-                return (nativeSel.type != "None" || getDocument(nativeSel.createRange().parentElement()) == doc);
-            };
-        } else if (implementsWinGetSelection) {
-            getNativeSelection = getWinSelection;
-            api.isSelectionValid = function() {
-                return true;
-            };
-        } else {
-            module.fail("Neither document.selection or window.getSelection() detected.");
-            return false;
-        }
-
-        api.getNativeSelection = getNativeSelection;
-
-        var testSelection = getNativeSelection();
-
-        // In Firefox, the selection is null in an iframe with display: none. See issue #138.
-        if (!testSelection) {
-            module.fail("Native selection was null (possibly issue 138?)");
-            return false;
-        }
-
-        var testRange = api.createNativeRange(document);
-        var body = getBody(document);
-
-        // Obtaining a range from a selection
-        var selectionHasAnchorAndFocus = util.areHostProperties(testSelection,
-            ["anchorNode", "focusNode", "anchorOffset", "focusOffset"]);
-
-        features.selectionHasAnchorAndFocus = selectionHasAnchorAndFocus;
-
-        // Test for existence of native selection extend() method
-        var selectionHasExtend = isHostMethod(testSelection, "extend");
-        features.selectionHasExtend = selectionHasExtend;
-
-        // Test if rangeCount exists
-        var selectionHasRangeCount = (typeof testSelection.rangeCount == NUMBER);
-        features.selectionHasRangeCount = selectionHasRangeCount;
-
-        var selectionSupportsMultipleRanges = false;
-        var collapsedNonEditableSelectionsSupported = true;
-
-        var addRangeBackwardToNative = selectionHasExtend ?
-            function(nativeSelection, range) {
-                var doc = DomRange.getRangeDocument(range);
-                var endRange = api.createRange(doc);
-                endRange.collapseToPoint(range.endContainer, range.endOffset);
-                nativeSelection.addRange(getNativeRange(endRange));
-                nativeSelection.extend(range.startContainer, range.startOffset);
-            } : null;
-
-        if (util.areHostMethods(testSelection, ["addRange", "getRangeAt", "removeAllRanges"]) &&
-                typeof testSelection.rangeCount == NUMBER && features.implementsDomRange) {
-
-            (function() {
-                // Previously an iframe was used but this caused problems in some circumstances in IE, so tests are
-                // performed on the current document's selection. See issue 109.
-
-                // Note also that if a selection previously existed, it is wiped and later restored by these tests. This
-                // will result in the selection direction begin reversed if the original selection was backwards and the
-                // browser does not support setting backwards selections (Internet Explorer, I'm looking at you).
-                var sel = window.getSelection();
-                if (sel) {
-                    // Store the current selection
-                    var originalSelectionRangeCount = sel.rangeCount;
-                    var selectionHasMultipleRanges = (originalSelectionRangeCount > 1);
-                    var originalSelectionRanges = [];
-                    var originalSelectionBackward = winSelectionIsBackward(sel);
-                    for (var i = 0; i < originalSelectionRangeCount; ++i) {
-                        originalSelectionRanges[i] = sel.getRangeAt(i);
-                    }
-
-                    // Create some test elements
-                    var testEl = dom.createTestElement(document, "", false);
-                    var textNode = testEl.appendChild( document.createTextNode("\u00a0\u00a0\u00a0") );
-
-                    // Test whether the native selection will allow a collapsed selection within a non-editable element
-                    var r1 = document.createRange();
-
-                    r1.setStart(textNode, 1);
-                    r1.collapse(true);
-                    sel.removeAllRanges();
-                    sel.addRange(r1);
-                    collapsedNonEditableSelectionsSupported = (sel.rangeCount == 1);
-                    sel.removeAllRanges();
-
-                    // Test whether the native selection is capable of supporting multiple ranges.
-                    if (!selectionHasMultipleRanges) {
-                        // Doing the original feature test here in Chrome 36 (and presumably later versions) prints a
-                        // console error of "Discontiguous selection is not supported." that cannot be suppressed. There's
-                        // nothing we can do about this while retaining the feature test so we have to resort to a browser
-                        // sniff. I'm not happy about it. See
-                        // https://code.google.com/p/chromium/issues/detail?id=399791
-                        var chromeMatch = window.navigator.appVersion.match(/Chrome\/(.*?) /);
-                        if (chromeMatch && parseInt(chromeMatch[1]) >= 36) {
-                            selectionSupportsMultipleRanges = false;
-                        } else {
-                            var r2 = r1.cloneRange();
-                            r1.setStart(textNode, 0);
-                            r2.setEnd(textNode, 3);
-                            r2.setStart(textNode, 2);
-                            sel.addRange(r1);
-                            sel.addRange(r2);
-                            selectionSupportsMultipleRanges = (sel.rangeCount == 2);
-                        }
-                    }
-
-                    // Clean up
-                    dom.removeNode(testEl);
-                    sel.removeAllRanges();
-
-                    for (i = 0; i < originalSelectionRangeCount; ++i) {
-                        if (i == 0 && originalSelectionBackward) {
-                            if (addRangeBackwardToNative) {
-                                addRangeBackwardToNative(sel, originalSelectionRanges[i]);
-                            } else {
-                                api.warn("Rangy initialization: original selection was backwards but selection has been restored forwards because the browser does not support Selection.extend");
-                                sel.addRange(originalSelectionRanges[i]);
-                            }
-                        } else {
-                            sel.addRange(originalSelectionRanges[i]);
-                        }
-                    }
-                }
-            })();
-        }
-
-        features.selectionSupportsMultipleRanges = selectionSupportsMultipleRanges;
-        features.collapsedNonEditableSelectionsSupported = collapsedNonEditableSelectionsSupported;
-
-        // ControlRanges
-        var implementsControlRange = false, testControlRange;
-
-        if (body && isHostMethod(body, "createControlRange")) {
-            testControlRange = body.createControlRange();
-            if (util.areHostProperties(testControlRange, ["item", "add"])) {
-                implementsControlRange = true;
-            }
-        }
-        features.implementsControlRange = implementsControlRange;
-
-        // Selection collapsedness
-        if (selectionHasAnchorAndFocus) {
-            selectionIsCollapsed = function(sel) {
-                return sel.anchorNode === sel.focusNode && sel.anchorOffset === sel.focusOffset;
-            };
-        } else {
-            selectionIsCollapsed = function(sel) {
-                return sel.rangeCount ? sel.getRangeAt(sel.rangeCount - 1).collapsed : false;
-            };
-        }
-
-        function updateAnchorAndFocusFromRange(sel, range, backward) {
-            var anchorPrefix = backward ? "end" : "start", focusPrefix = backward ? "start" : "end";
-            sel.anchorNode = range[anchorPrefix + "Container"];
-            sel.anchorOffset = range[anchorPrefix + "Offset"];
-            sel.focusNode = range[focusPrefix + "Container"];
-            sel.focusOffset = range[focusPrefix + "Offset"];
-        }
-
-        function updateAnchorAndFocusFromNativeSelection(sel) {
-            var nativeSel = sel.nativeSelection;
-            sel.anchorNode = nativeSel.anchorNode;
-            sel.anchorOffset = nativeSel.anchorOffset;
-            sel.focusNode = nativeSel.focusNode;
-            sel.focusOffset = nativeSel.focusOffset;
-        }
-
-        function updateEmptySelection(sel) {
-            sel.anchorNode = sel.focusNode = null;
-            sel.anchorOffset = sel.focusOffset = 0;
-            sel.rangeCount = 0;
-            sel.isCollapsed = true;
-            sel._ranges.length = 0;
-        }
-
-        function getNativeRange(range) {
-            var nativeRange;
-            if (range instanceof DomRange) {
-                nativeRange = api.createNativeRange(range.getDocument());
-                nativeRange.setEnd(range.endContainer, range.endOffset);
-                nativeRange.setStart(range.startContainer, range.startOffset);
-            } else if (range instanceof WrappedRange) {
-                nativeRange = range.nativeRange;
-            } else if (features.implementsDomRange && (range instanceof dom.getWindow(range.startContainer).Range)) {
-                nativeRange = range;
-            }
-            return nativeRange;
-        }
-
-        function rangeContainsSingleElement(rangeNodes) {
-            if (!rangeNodes.length || rangeNodes[0].nodeType != 1) {
-                return false;
-            }
-            for (var i = 1, len = rangeNodes.length; i < len; ++i) {
-                if (!dom.isAncestorOf(rangeNodes[0], rangeNodes[i])) {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        function getSingleElementFromRange(range) {
-            var nodes = range.getNodes();
-            if (!rangeContainsSingleElement(nodes)) {
-                throw module.createError("getSingleElementFromRange: range " + range.inspect() + " did not consist of a single element");
-            }
-            return nodes[0];
-        }
-
-        // Simple, quick test which only needs to distinguish between a TextRange and a ControlRange
-        function isTextRange(range) {
-            return !!range && typeof range.text != "undefined";
-        }
-
-        function updateFromTextRange(sel, range) {
-            // Create a Range from the selected TextRange
-            var wrappedRange = new WrappedRange(range);
-            sel._ranges = [wrappedRange];
-
-            updateAnchorAndFocusFromRange(sel, wrappedRange, false);
-            sel.rangeCount = 1;
-            sel.isCollapsed = wrappedRange.collapsed;
-        }
-
-        function updateControlSelection(sel) {
-            // Update the wrapped selection based on what's now in the native selection
-            sel._ranges.length = 0;
-            if (sel.docSelection.type == "None") {
-                updateEmptySelection(sel);
-            } else {
-                var controlRange = sel.docSelection.createRange();
-                if (isTextRange(controlRange)) {
-                    // This case (where the selection type is "Control" and calling createRange() on the selection returns
-                    // a TextRange) can happen in IE 9. It happens, for example, when all elements in the selected
-                    // ControlRange have been removed from the ControlRange and removed from the document.
-                    updateFromTextRange(sel, controlRange);
-                } else {
-                    sel.rangeCount = controlRange.length;
-                    var range, doc = getDocument(controlRange.item(0));
-                    for (var i = 0; i < sel.rangeCount; ++i) {
-                        range = api.createRange(doc);
-                        range.selectNode(controlRange.item(i));
-                        sel._ranges.push(range);
-                    }
-                    sel.isCollapsed = sel.rangeCount == 1 && sel._ranges[0].collapsed;
-                    updateAnchorAndFocusFromRange(sel, sel._ranges[sel.rangeCount - 1], false);
-                }
-            }
-        }
-
-        function addRangeToControlSelection(sel, range) {
-            var controlRange = sel.docSelection.createRange();
-            var rangeElement = getSingleElementFromRange(range);
-
-            // Create a new ControlRange containing all the elements in the selected ControlRange plus the element
-            // contained by the supplied range
-            var doc = getDocument(controlRange.item(0));
-            var newControlRange = getBody(doc).createControlRange();
-            for (var i = 0, len = controlRange.length; i < len; ++i) {
-                newControlRange.add(controlRange.item(i));
-            }
-            try {
-                newControlRange.add(rangeElement);
-            } catch (ex) {
-                throw module.createError("addRange(): Element within the specified Range could not be added to control selection (does it have layout?)");
-            }
-            newControlRange.select();
-
-            // Update the wrapped selection based on what's now in the native selection
-            updateControlSelection(sel);
-        }
-
-        var getSelectionRangeAt;
-
-        if (isHostMethod(testSelection, "getRangeAt")) {
-            // try/catch is present because getRangeAt() must have thrown an error in some browser and some situation.
-            // Unfortunately, I didn't write a comment about the specifics and am now scared to take it out. Let that be a
-            // lesson to us all, especially me.
-            getSelectionRangeAt = function(sel, index) {
-                try {
-                    return sel.getRangeAt(index);
-                } catch (ex) {
-                    return null;
-                }
-            };
-        } else if (selectionHasAnchorAndFocus) {
-            getSelectionRangeAt = function(sel) {
-                var doc = getDocument(sel.anchorNode);
-                var range = api.createRange(doc);
-                range.setStartAndEnd(sel.anchorNode, sel.anchorOffset, sel.focusNode, sel.focusOffset);
-
-                // Handle the case when the selection was selected backwards (from the end to the start in the
-                // document)
-                if (range.collapsed !== this.isCollapsed) {
-                    range.setStartAndEnd(sel.focusNode, sel.focusOffset, sel.anchorNode, sel.anchorOffset);
-                }
-
-                return range;
-            };
-        }
-
-        function WrappedSelection(selection, docSelection, win) {
-            this.nativeSelection = selection;
-            this.docSelection = docSelection;
-            this._ranges = [];
-            this.win = win;
-            this.refresh();
-        }
-
-        WrappedSelection.prototype = api.selectionPrototype;
-
-        function deleteProperties(sel) {
-            sel.win = sel.anchorNode = sel.focusNode = sel._ranges = null;
-            sel.rangeCount = sel.anchorOffset = sel.focusOffset = 0;
-            sel.detached = true;
-        }
-
-        var cachedRangySelections = [];
-
-        function actOnCachedSelection(win, action) {
-            var i = cachedRangySelections.length, cached, sel;
-            while (i--) {
-                cached = cachedRangySelections[i];
-                sel = cached.selection;
-                if (action == "deleteAll") {
-                    deleteProperties(sel);
-                } else if (cached.win == win) {
-                    if (action == "delete") {
-                        cachedRangySelections.splice(i, 1);
-                        return true;
-                    } else {
-                        return sel;
-                    }
-                }
-            }
-            if (action == "deleteAll") {
-                cachedRangySelections.length = 0;
-            }
-            return null;
-        }
-
-        var getSelection = function(win) {
-            // Check if the parameter is a Rangy Selection object
-            if (win && win instanceof WrappedSelection) {
-                win.refresh();
-                return win;
-            }
-
-            win = getWindow(win, "getNativeSelection");
-
-            var sel = actOnCachedSelection(win);
-            var nativeSel = getNativeSelection(win), docSel = implementsDocSelection ? getDocSelection(win) : null;
-            if (sel) {
-                sel.nativeSelection = nativeSel;
-                sel.docSelection = docSel;
-                sel.refresh();
-            } else {
-                sel = new WrappedSelection(nativeSel, docSel, win);
-                cachedRangySelections.push( { win: win, selection: sel } );
-            }
-            return sel;
-        };
-
-        api.getSelection = getSelection;
-
-        util.createAliasForDeprecatedMethod(api, "getIframeSelection", "getSelection");
-
-        var selProto = WrappedSelection.prototype;
-
-        function createControlSelection(sel, ranges) {
-            // Ensure that the selection becomes of type "Control"
-            var doc = getDocument(ranges[0].startContainer);
-            var controlRange = getBody(doc).createControlRange();
-            for (var i = 0, el, len = ranges.length; i < len; ++i) {
-                el = getSingleElementFromRange(ranges[i]);
-                try {
-                    controlRange.add(el);
-                } catch (ex) {
-                    throw module.createError("setRanges(): Element within one of the specified Ranges could not be added to control selection (does it have layout?)");
-                }
-            }
-            controlRange.select();
-
-            // Update the wrapped selection based on what's now in the native selection
-            updateControlSelection(sel);
-        }
-
-        // Selecting a range
-        if (!useDocumentSelection && selectionHasAnchorAndFocus && util.areHostMethods(testSelection, ["removeAllRanges", "addRange"])) {
-            selProto.removeAllRanges = function() {
-                this.nativeSelection.removeAllRanges();
-                updateEmptySelection(this);
-            };
-
-            var addRangeBackward = function(sel, range) {
-                addRangeBackwardToNative(sel.nativeSelection, range);
-                sel.refresh();
-            };
-
-            if (selectionHasRangeCount) {
-                selProto.addRange = function(range, direction) {
-                    if (implementsControlRange && implementsDocSelection && this.docSelection.type == CONTROL) {
-                        addRangeToControlSelection(this, range);
-                    } else {
-                        if (isDirectionBackward(direction) && selectionHasExtend) {
-                            addRangeBackward(this, range);
-                        } else {
-                            var previousRangeCount;
-                            if (selectionSupportsMultipleRanges) {
-                                previousRangeCount = this.rangeCount;
-                            } else {
-                                this.removeAllRanges();
-                                previousRangeCount = 0;
-                            }
-                            // Clone the native range so that changing the selected range does not affect the selection.
-                            // This is contrary to the spec but is the only way to achieve consistency between browsers. See
-                            // issue 80.
-                            var clonedNativeRange = getNativeRange(range).cloneRange();
-                            try {
-                                this.nativeSelection.addRange(clonedNativeRange);
-                            } catch (ex) {
-                            }
-
-                            // Check whether adding the range was successful
-                            this.rangeCount = this.nativeSelection.rangeCount;
-
-                            if (this.rangeCount == previousRangeCount + 1) {
-                                // The range was added successfully
-
-                                // Check whether the range that we added to the selection is reflected in the last range extracted from
-                                // the selection
-                                if (api.config.checkSelectionRanges) {
-                                    var nativeRange = getSelectionRangeAt(this.nativeSelection, this.rangeCount - 1);
-                                    if (nativeRange && !rangesEqual(nativeRange, range)) {
-                                        // Happens in WebKit with, for example, a selection placed at the start of a text node
-                                        range = new WrappedRange(nativeRange);
-                                    }
-                                }
-                                this._ranges[this.rangeCount - 1] = range;
-                                updateAnchorAndFocusFromRange(this, range, selectionIsBackward(this.nativeSelection));
-                                this.isCollapsed = selectionIsCollapsed(this);
-                            } else {
-                                // The range was not added successfully. The simplest thing is to refresh
-                                this.refresh();
-                            }
-                        }
-                    }
-                };
-            } else {
-                selProto.addRange = function(range, direction) {
-                    if (isDirectionBackward(direction) && selectionHasExtend) {
-                        addRangeBackward(this, range);
-                    } else {
-                        this.nativeSelection.addRange(getNativeRange(range));
-                        this.refresh();
-                    }
-                };
-            }
-
-            selProto.setRanges = function(ranges) {
-                if (implementsControlRange && implementsDocSelection && ranges.length > 1) {
-                    createControlSelection(this, ranges);
-                } else {
-                    this.removeAllRanges();
-                    for (var i = 0, len = ranges.length; i < len; ++i) {
-                        this.addRange(ranges[i]);
-                    }
-                }
-            };
-        } else if (isHostMethod(testSelection, "empty") && isHostMethod(testRange, "select") &&
-                   implementsControlRange && useDocumentSelection) {
-
-            selProto.removeAllRanges = function() {
-                // Added try/catch as fix for issue #21
-                try {
-                    this.docSelection.empty();
-
-                    // Check for empty() not working (issue #24)
-                    if (this.docSelection.type != "None") {
-                        // Work around failure to empty a control selection by instead selecting a TextRange and then
-                        // calling empty()
-                        var doc;
-                        if (this.anchorNode) {
-                            doc = getDocument(this.anchorNode);
-                        } else if (this.docSelection.type == CONTROL) {
-                            var controlRange = this.docSelection.createRange();
-                            if (controlRange.length) {
-                                doc = getDocument( controlRange.item(0) );
-                            }
-                        }
-                        if (doc) {
-                            var textRange = getBody(doc).createTextRange();
-                            textRange.select();
-                            this.docSelection.empty();
-                        }
-                    }
-                } catch(ex) {}
-                updateEmptySelection(this);
-            };
-
-            selProto.addRange = function(range) {
-                if (this.docSelection.type == CONTROL) {
-                    addRangeToControlSelection(this, range);
-                } else {
-                    api.WrappedTextRange.rangeToTextRange(range).select();
-                    this._ranges[0] = range;
-                    this.rangeCount = 1;
-                    this.isCollapsed = this._ranges[0].collapsed;
-                    updateAnchorAndFocusFromRange(this, range, false);
-                }
-            };
-
-            selProto.setRanges = function(ranges) {
-                this.removeAllRanges();
-                var rangeCount = ranges.length;
-                if (rangeCount > 1) {
-                    createControlSelection(this, ranges);
-                } else if (rangeCount) {
-                    this.addRange(ranges[0]);
-                }
-            };
-        } else {
-            module.fail("No means of selecting a Range or TextRange was found");
-            return false;
-        }
-
-        selProto.getRangeAt = function(index) {
-            if (index < 0 || index >= this.rangeCount) {
-                throw new DOMException("INDEX_SIZE_ERR");
-            } else {
-                // Clone the range to preserve selection-range independence. See issue 80.
-                return this._ranges[index].cloneRange();
-            }
-        };
-
-        var refreshSelection;
-
-        if (useDocumentSelection) {
-            refreshSelection = function(sel) {
-                var range;
-                if (api.isSelectionValid(sel.win)) {
-                    range = sel.docSelection.createRange();
-                } else {
-                    range = getBody(sel.win.document).createTextRange();
-                    range.collapse(true);
-                }
-
-                if (sel.docSelection.type == CONTROL) {
-                    updateControlSelection(sel);
-                } else if (isTextRange(range)) {
-                    updateFromTextRange(sel, range);
-                } else {
-                    updateEmptySelection(sel);
-                }
-            };
-        } else if (isHostMethod(testSelection, "getRangeAt") && typeof testSelection.rangeCount == NUMBER) {
-            refreshSelection = function(sel) {
-                if (implementsControlRange && implementsDocSelection && sel.docSelection.type == CONTROL) {
-                    updateControlSelection(sel);
-                } else {
-                    sel._ranges.length = sel.rangeCount = sel.nativeSelection.rangeCount;
-                    if (sel.rangeCount) {
-                        for (var i = 0, len = sel.rangeCount; i < len; ++i) {
-                            sel._ranges[i] = new api.WrappedRange(sel.nativeSelection.getRangeAt(i));
-                        }
-                        updateAnchorAndFocusFromRange(sel, sel._ranges[sel.rangeCount - 1], selectionIsBackward(sel.nativeSelection));
-                        sel.isCollapsed = selectionIsCollapsed(sel);
-                    } else {
-                        updateEmptySelection(sel);
-                    }
-                }
-            };
-        } else if (selectionHasAnchorAndFocus && typeof testSelection.isCollapsed == BOOLEAN && typeof testRange.collapsed == BOOLEAN && features.implementsDomRange) {
-            refreshSelection = function(sel) {
-                var range, nativeSel = sel.nativeSelection;
-                if (nativeSel.anchorNode) {
-                    range = getSelectionRangeAt(nativeSel, 0);
-                    sel._ranges = [range];
-                    sel.rangeCount = 1;
-                    updateAnchorAndFocusFromNativeSelection(sel);
-                    sel.isCollapsed = selectionIsCollapsed(sel);
-                } else {
-                    updateEmptySelection(sel);
-                }
-            };
-        } else {
-            module.fail("No means of obtaining a Range or TextRange from the user's selection was found");
-            return false;
-        }
-
-        selProto.refresh = function(checkForChanges) {
-            var oldRanges = checkForChanges ? this._ranges.slice(0) : null;
-            var oldAnchorNode = this.anchorNode, oldAnchorOffset = this.anchorOffset;
-
-            refreshSelection(this);
-            if (checkForChanges) {
-                // Check the range count first
-                var i = oldRanges.length;
-                if (i != this._ranges.length) {
-                    return true;
-                }
-
-                // Now check the direction. Checking the anchor position is the same is enough since we're checking all the
-                // ranges after this
-                if (this.anchorNode != oldAnchorNode || this.anchorOffset != oldAnchorOffset) {
-                    return true;
-                }
-
-                // Finally, compare each range in turn
-                while (i--) {
-                    if (!rangesEqual(oldRanges[i], this._ranges[i])) {
-                        return true;
-                    }
-                }
-                return false;
-            }
-        };
-
-        // Removal of a single range
-        var removeRangeManually = function(sel, range) {
-            var ranges = sel.getAllRanges();
-            sel.removeAllRanges();
-            for (var i = 0, len = ranges.length; i < len; ++i) {
-                if (!rangesEqual(range, ranges[i])) {
-                    sel.addRange(ranges[i]);
-                }
-            }
-            if (!sel.rangeCount) {
-                updateEmptySelection(sel);
-            }
-        };
-
-        if (implementsControlRange && implementsDocSelection) {
-            selProto.removeRange = function(range) {
-                if (this.docSelection.type == CONTROL) {
-                    var controlRange = this.docSelection.createRange();
-                    var rangeElement = getSingleElementFromRange(range);
-
-                    // Create a new ControlRange containing all the elements in the selected ControlRange minus the
-                    // element contained by the supplied range
-                    var doc = getDocument(controlRange.item(0));
-                    var newControlRange = getBody(doc).createControlRange();
-                    var el, removed = false;
-                    for (var i = 0, len = controlRange.length; i < len; ++i) {
-                        el = controlRange.item(i);
-                        if (el !== rangeElement || removed) {
-                            newControlRange.add(controlRange.item(i));
-                        } else {
-                            removed = true;
-                        }
-                    }
-                    newControlRange.select();
-
-                    // Update the wrapped selection based on what's now in the native selection
-                    updateControlSelection(this);
-                } else {
-                    removeRangeManually(this, range);
-                }
-            };
-        } else {
-            selProto.removeRange = function(range) {
-                removeRangeManually(this, range);
-            };
-        }
-
-        // Detecting if a selection is backward
-        var selectionIsBackward;
-        if (!useDocumentSelection && selectionHasAnchorAndFocus && features.implementsDomRange) {
-            selectionIsBackward = winSelectionIsBackward;
-
-            selProto.isBackward = function() {
-                return selectionIsBackward(this);
-            };
-        } else {
-            selectionIsBackward = selProto.isBackward = function() {
-                return false;
-            };
-        }
-
-        // Create an alias for backwards compatibility. From 1.3, everything is "backward" rather than "backwards"
-        selProto.isBackwards = selProto.isBackward;
-
-        // Selection stringifier
-        // This is conformant to the old HTML5 selections draft spec but differs from WebKit and Mozilla's implementation.
-        // The current spec does not yet define this method.
-        selProto.toString = function() {
-            var rangeTexts = [];
-            for (var i = 0, len = this.rangeCount; i < len; ++i) {
-                rangeTexts[i] = "" + this._ranges[i];
-            }
-            return rangeTexts.join("");
-        };
-
-        function assertNodeInSameDocument(sel, node) {
-            if (sel.win.document != getDocument(node)) {
-                throw new DOMException("WRONG_DOCUMENT_ERR");
-            }
-        }
-
-        // No current browser conforms fully to the spec for this method, so Rangy's own method is always used
-        selProto.collapse = function(node, offset) {
-            assertNodeInSameDocument(this, node);
-            var range = api.createRange(node);
-            range.collapseToPoint(node, offset);
-            this.setSingleRange(range);
-            this.isCollapsed = true;
-        };
-
-        selProto.collapseToStart = function() {
-            if (this.rangeCount) {
-                var range = this._ranges[0];
-                this.collapse(range.startContainer, range.startOffset);
-            } else {
-                throw new DOMException("INVALID_STATE_ERR");
-            }
-        };
-
-        selProto.collapseToEnd = function() {
-            if (this.rangeCount) {
-                var range = this._ranges[this.rangeCount - 1];
-                this.collapse(range.endContainer, range.endOffset);
-            } else {
-                throw new DOMException("INVALID_STATE_ERR");
-            }
-        };
-
-        // The spec is very specific on how selectAllChildren should be implemented and not all browsers implement it as
-        // specified so the native implementation is never used by Rangy.
-        selProto.selectAllChildren = function(node) {
-            assertNodeInSameDocument(this, node);
-            var range = api.createRange(node);
-            range.selectNodeContents(node);
-            this.setSingleRange(range);
-        };
-
-        selProto.deleteFromDocument = function() {
-            // Sepcial behaviour required for IE's control selections
-            if (implementsControlRange && implementsDocSelection && this.docSelection.type == CONTROL) {
-                var controlRange = this.docSelection.createRange();
-                var element;
-                while (controlRange.length) {
-                    element = controlRange.item(0);
-                    controlRange.remove(element);
-                    dom.removeNode(element);
-                }
-                this.refresh();
-            } else if (this.rangeCount) {
-                var ranges = this.getAllRanges();
-                if (ranges.length) {
-                    this.removeAllRanges();
-                    for (var i = 0, len = ranges.length; i < len; ++i) {
-                        ranges[i].deleteContents();
-                    }
-                    // The spec says nothing about what the selection should contain after calling deleteContents on each
-                    // range. Firefox moves the selection to where the final selected range was, so we emulate that
-                    this.addRange(ranges[len - 1]);
-                }
-            }
-        };
-
-        // The following are non-standard extensions
-        selProto.eachRange = function(func, returnValue) {
-            for (var i = 0, len = this._ranges.length; i < len; ++i) {
-                if ( func( this.getRangeAt(i) ) ) {
-                    return returnValue;
-                }
-            }
-        };
-
-        selProto.getAllRanges = function() {
-            var ranges = [];
-            this.eachRange(function(range) {
-                ranges.push(range);
-            });
-            return ranges;
-        };
-
-        selProto.setSingleRange = function(range, direction) {
-            this.removeAllRanges();
-            this.addRange(range, direction);
-        };
-
-        selProto.callMethodOnEachRange = function(methodName, params) {
-            var results = [];
-            this.eachRange( function(range) {
-                results.push( range[methodName].apply(range, params || []) );
-            } );
-            return results;
-        };
-
-        function createStartOrEndSetter(isStart) {
-            return function(node, offset) {
-                var range;
-                if (this.rangeCount) {
-                    range = this.getRangeAt(0);
-                    range["set" + (isStart ? "Start" : "End")](node, offset);
-                } else {
-                    range = api.createRange(this.win.document);
-                    range.setStartAndEnd(node, offset);
-                }
-                this.setSingleRange(range, this.isBackward());
-            };
-        }
-
-        selProto.setStart = createStartOrEndSetter(true);
-        selProto.setEnd = createStartOrEndSetter(false);
-
-        // Add select() method to Range prototype. Any existing selection will be removed.
-        api.rangePrototype.select = function(direction) {
-            getSelection( this.getDocument() ).setSingleRange(this, direction);
-        };
-
-        selProto.changeEachRange = function(func) {
-            var ranges = [];
-            var backward = this.isBackward();
-
-            this.eachRange(function(range) {
-                func(range);
-                ranges.push(range);
-            });
-
-            this.removeAllRanges();
-            if (backward && ranges.length == 1) {
-                this.addRange(ranges[0], "backward");
-            } else {
-                this.setRanges(ranges);
-            }
-        };
-
-        selProto.containsNode = function(node, allowPartial) {
-            return this.eachRange( function(range) {
-                return range.containsNode(node, allowPartial);
-            }, true ) || false;
-        };
-
-        selProto.getBookmark = function(containerNode) {
-            return {
-                backward: this.isBackward(),
-                rangeBookmarks: this.callMethodOnEachRange("getBookmark", [containerNode])
-            };
-        };
-
-        selProto.moveToBookmark = function(bookmark) {
-            var selRanges = [];
-            for (var i = 0, rangeBookmark, range; rangeBookmark = bookmark.rangeBookmarks[i++]; ) {
-                range = api.createRange(this.win);
-                range.moveToBookmark(rangeBookmark);
-                selRanges.push(range);
-            }
-            if (bookmark.backward) {
-                this.setSingleRange(selRanges[0], "backward");
-            } else {
-                this.setRanges(selRanges);
-            }
-        };
-
-        selProto.saveRanges = function() {
-            return {
-                backward: this.isBackward(),
-                ranges: this.callMethodOnEachRange("cloneRange")
-            };
-        };
-
-        selProto.restoreRanges = function(selRanges) {
-            this.removeAllRanges();
-            for (var i = 0, range; range = selRanges.ranges[i]; ++i) {
-                this.addRange(range, (selRanges.backward && i == 0));
-            }
-        };
-
-        selProto.toHtml = function() {
-            var rangeHtmls = [];
-            this.eachRange(function(range) {
-                rangeHtmls.push( DomRange.toHtml(range) );
-            });
-            return rangeHtmls.join("");
-        };
-
-        if (features.implementsTextRange) {
-            selProto.getNativeTextRange = function() {
-                var sel, textRange;
-                if ( (sel = this.docSelection) ) {
-                    var range = sel.createRange();
-                    if (isTextRange(range)) {
-                        return range;
-                    } else {
-                        throw module.createError("getNativeTextRange: selection is a control selection");
-                    }
-                } else if (this.rangeCount > 0) {
-                    return api.WrappedTextRange.rangeToTextRange( this.getRangeAt(0) );
-                } else {
-                    throw module.createError("getNativeTextRange: selection contains no range");
-                }
-            };
-        }
-
-        function inspect(sel) {
-            var rangeInspects = [];
-            var anchor = new DomPosition(sel.anchorNode, sel.anchorOffset);
-            var focus = new DomPosition(sel.focusNode, sel.focusOffset);
-            var name = (typeof sel.getName == "function") ? sel.getName() : "Selection";
-
-            if (typeof sel.rangeCount != "undefined") {
-                for (var i = 0, len = sel.rangeCount; i < len; ++i) {
-                    rangeInspects[i] = DomRange.inspect(sel.getRangeAt(i));
-                }
-            }
-            return "[" + name + "(Ranges: " + rangeInspects.join(", ") +
-                    ")(anchor: " + anchor.inspect() + ", focus: " + focus.inspect() + "]";
-        }
-
-        selProto.getName = function() {
-            return "WrappedSelection";
-        };
-
-        selProto.inspect = function() {
-            return inspect(this);
-        };
-
-        selProto.detach = function() {
-            actOnCachedSelection(this.win, "delete");
-            deleteProperties(this);
-        };
-
-        WrappedSelection.detachAll = function() {
-            actOnCachedSelection(null, "deleteAll");
-        };
-
-        WrappedSelection.inspect = inspect;
-        WrappedSelection.isDirectionBackward = isDirectionBackward;
-
-        api.Selection = WrappedSelection;
-
-        api.selectionPrototype = selProto;
-
-        api.addShimListener(function(win) {
-            if (typeof win.getSelection == "undefined") {
-                win.getSelection = function() {
-                    return getSelection(win);
-                };
-            }
-            win = null;
-        });
-    });
-    
-
-    /*----------------------------------------------------------------------------------------------------------------*/
-
-    // Wait for document to load before initializing
-    var docReady = false;
-
-    var loadHandler = function(e) {
-        if (!docReady) {
-            docReady = true;
-            if (!api.initialized && api.config.autoInitialize) {
-                init();
-            }
-        }
-    };
-
-    if (isBrowser) {
-        // Test whether the document has already been loaded and initialize immediately if so
-        if (document.readyState == "complete") {
-            loadHandler();
-        } else {
-            if (isHostMethod(document, "addEventListener")) {
-                document.addEventListener("DOMContentLoaded", loadHandler, false);
-            }
-
-            // Add a fallback in case the DOMContentLoaded event isn't supported
-            addListener(window, "load", loadHandler);
-        }
-    }
-
-    return api;
-}, this);
-/**
- * Class Applier module for Rangy.
- * Adds, removes and toggles classes on Ranges and Selections
- *
- * Part of Rangy, a cross-browser JavaScript range and selection library
- * https://github.com/timdown/rangy
- *
- * Depends on Rangy core.
- *
- * Copyright 2015, Tim Down
- * Licensed under the MIT license.
- * Version: 1.3.0
- * Build date: 10 May 2015
- */
-(function(factory, root) {
-    if (typeof define == "function" && define.amd) {
-        // AMD. Register as an anonymous module with a dependency on Rangy.
-        define('rangy-classapplier',["./rangy-core"], factory);
-    } else if (typeof module != "undefined" && typeof exports == "object") {
-        // Node/CommonJS style
-        module.exports = factory( require("rangy") );
-    } else {
-        // No AMD or CommonJS support so we use the rangy property of root (probably the global variable)
-        factory(root.rangy);
-    }
-})(function(rangy) {
-    rangy.createModule("ClassApplier", ["WrappedSelection"], function(api, module) {
-        var dom = api.dom;
-        var DomPosition = dom.DomPosition;
-        var contains = dom.arrayContains;
-        var util = api.util;
-        var forEach = util.forEach;
-
-
-        var defaultTagName = "span";
-        var createElementNSSupported = util.isHostMethod(document, "createElementNS");
-
-        function each(obj, func) {
-            for (var i in obj) {
-                if (obj.hasOwnProperty(i)) {
-                    if (func(i, obj[i]) === false) {
-                        return false;
-                    }
-                }
-            }
-            return true;
-        }
-
-        function trim(str) {
-            return str.replace(/^\s\s*/, "").replace(/\s\s*$/, "");
-        }
-
-        function classNameContainsClass(fullClassName, className) {
-            return !!fullClassName && new RegExp("(?:^|\\s)" + className + "(?:\\s|$)").test(fullClassName);
-        }
-
-        // Inefficient, inelegant nonsense for IE's svg element, which has no classList and non-HTML className implementation
-        function hasClass(el, className) {
-            if (typeof el.classList == "object") {
-                return el.classList.contains(className);
-            } else {
-                var classNameSupported = (typeof el.className == "string");
-                var elClass = classNameSupported ? el.className : el.getAttribute("class");
-                return classNameContainsClass(elClass, className);
-            }
-        }
-
-        function addClass(el, className) {
-            if (typeof el.classList == "object") {
-                el.classList.add(className);
-            } else {
-                var classNameSupported = (typeof el.className == "string");
-                var elClass = classNameSupported ? el.className : el.getAttribute("class");
-                if (elClass) {
-                    if (!classNameContainsClass(elClass, className)) {
-                        elClass += " " + className;
-                    }
-                } else {
-                    elClass = className;
-                }
-                if (classNameSupported) {
-                    el.className = elClass;
-                } else {
-                    el.setAttribute("class", elClass);
-                }
-            }
-        }
-
-        var removeClass = (function() {
-            function replacer(matched, whiteSpaceBefore, whiteSpaceAfter) {
-                return (whiteSpaceBefore && whiteSpaceAfter) ? " " : "";
-            }
-
-            return function(el, className) {
-                if (typeof el.classList == "object") {
-                    el.classList.remove(className);
-                } else {
-                    var classNameSupported = (typeof el.className == "string");
-                    var elClass = classNameSupported ? el.className : el.getAttribute("class");
-                    elClass = elClass.replace(new RegExp("(^|\\s)" + className + "(\\s|$)"), replacer);
-                    if (classNameSupported) {
-                        el.className = elClass;
-                    } else {
-                        el.setAttribute("class", elClass);
-                    }
-                }
-            };
-        })();
-
-        function getClass(el) {
-            var classNameSupported = (typeof el.className == "string");
-            return classNameSupported ? el.className : el.getAttribute("class");
-        }
-
-        function sortClassName(className) {
-            return className && className.split(/\s+/).sort().join(" ");
-        }
-
-        function getSortedClassName(el) {
-            return sortClassName( getClass(el) );
-        }
-
-        function haveSameClasses(el1, el2) {
-            return getSortedClassName(el1) == getSortedClassName(el2);
-        }
-
-        function hasAllClasses(el, className) {
-            var classes = className.split(/\s+/);
-            for (var i = 0, len = classes.length; i < len; ++i) {
-                if (!hasClass(el, trim(classes[i]))) {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        function canTextBeStyled(textNode) {
-            var parent = textNode.parentNode;
-            return (parent && parent.nodeType == 1 && !/^(textarea|style|script|select|iframe)$/i.test(parent.nodeName));
-        }
-
-        function movePosition(position, oldParent, oldIndex, newParent, newIndex) {
-            var posNode = position.node, posOffset = position.offset;
-            var newNode = posNode, newOffset = posOffset;
-
-            if (posNode == newParent && posOffset > newIndex) {
-                ++newOffset;
-            }
-
-            if (posNode == oldParent && (posOffset == oldIndex  || posOffset == oldIndex + 1)) {
-                newNode = newParent;
-                newOffset += newIndex - oldIndex;
-            }
-
-            if (posNode == oldParent && posOffset > oldIndex + 1) {
-                --newOffset;
-            }
-
-            position.node = newNode;
-            position.offset = newOffset;
-        }
-
-        function movePositionWhenRemovingNode(position, parentNode, index) {
-            if (position.node == parentNode && position.offset > index) {
-                --position.offset;
-            }
-        }
-
-        function movePreservingPositions(node, newParent, newIndex, positionsToPreserve) {
-            // For convenience, allow newIndex to be -1 to mean "insert at the end".
-            if (newIndex == -1) {
-                newIndex = newParent.childNodes.length;
-            }
-
-            var oldParent = node.parentNode;
-            var oldIndex = dom.getNodeIndex(node);
-
-            forEach(positionsToPreserve, function(position) {
-                movePosition(position, oldParent, oldIndex, newParent, newIndex);
-            });
-
-            // Now actually move the node.
-            if (newParent.childNodes.length == newIndex) {
-                newParent.appendChild(node);
-            } else {
-                newParent.insertBefore(node, newParent.childNodes[newIndex]);
-            }
-        }
-
-        function removePreservingPositions(node, positionsToPreserve) {
-
-            var oldParent = node.parentNode;
-            var oldIndex = dom.getNodeIndex(node);
-
-            forEach(positionsToPreserve, function(position) {
-                movePositionWhenRemovingNode(position, oldParent, oldIndex);
-            });
-
-            dom.removeNode(node);
-        }
-
-        function moveChildrenPreservingPositions(node, newParent, newIndex, removeNode, positionsToPreserve) {
-            var child, children = [];
-            while ( (child = node.firstChild) ) {
-                movePreservingPositions(child, newParent, newIndex++, positionsToPreserve);
-                children.push(child);
-            }
-            if (removeNode) {
-                removePreservingPositions(node, positionsToPreserve);
-            }
-            return children;
-        }
-
-        function replaceWithOwnChildrenPreservingPositions(element, positionsToPreserve) {
-            return moveChildrenPreservingPositions(element, element.parentNode, dom.getNodeIndex(element), true, positionsToPreserve);
-        }
-
-        function rangeSelectsAnyText(range, textNode) {
-            var textNodeRange = range.cloneRange();
-            textNodeRange.selectNodeContents(textNode);
-
-            var intersectionRange = textNodeRange.intersection(range);
-            var text = intersectionRange ? intersectionRange.toString() : "";
-
-            return text != "";
-        }
-
-        function getEffectiveTextNodes(range) {
-            var nodes = range.getNodes([3]);
-
-            // Optimization as per issue 145
-
-            // Remove non-intersecting text nodes from the start of the range
-            var start = 0, node;
-            while ( (node = nodes[start]) && !rangeSelectsAnyText(range, node) ) {
-                ++start;
-            }
-
-            // Remove non-intersecting text nodes from the start of the range
-            var end = nodes.length - 1;
-            while ( (node = nodes[end]) && !rangeSelectsAnyText(range, node) ) {
-                --end;
-            }
-
-            return nodes.slice(start, end + 1);
-        }
-
-        function elementsHaveSameNonClassAttributes(el1, el2) {
-            if (el1.attributes.length != el2.attributes.length) return false;
-            for (var i = 0, len = el1.attributes.length, attr1, attr2, name; i < len; ++i) {
-                attr1 = el1.attributes[i];
-                name = attr1.name;
-                if (name != "class") {
-                    attr2 = el2.attributes.getNamedItem(name);
-                    if ( (attr1 === null) != (attr2 === null) ) return false;
-                    if (attr1.specified != attr2.specified) return false;
-                    if (attr1.specified && attr1.nodeValue !== attr2.nodeValue) return false;
-                }
-            }
-            return true;
-        }
-
-        function elementHasNonClassAttributes(el, exceptions) {
-            for (var i = 0, len = el.attributes.length, attrName; i < len; ++i) {
-                attrName = el.attributes[i].name;
-                if ( !(exceptions && contains(exceptions, attrName)) && el.attributes[i].specified && attrName != "class") {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        var getComputedStyleProperty = dom.getComputedStyleProperty;
-        var isEditableElement = (function() {
-            var testEl = document.createElement("div");
-            return typeof testEl.isContentEditable == "boolean" ?
-                function (node) {
-                    return node && node.nodeType == 1 && node.isContentEditable;
-                } :
-                function (node) {
-                    if (!node || node.nodeType != 1 || node.contentEditable == "false") {
-                        return false;
-                    }
-                    return node.contentEditable == "true" || isEditableElement(node.parentNode);
-                };
-        })();
-
-        function isEditingHost(node) {
-            var parent;
-            return node && node.nodeType == 1 &&
-                (( (parent = node.parentNode) && parent.nodeType == 9 && parent.designMode == "on") ||
-                (isEditableElement(node) && !isEditableElement(node.parentNode)));
-        }
-
-        function isEditable(node) {
-            return (isEditableElement(node) || (node.nodeType != 1 && isEditableElement(node.parentNode))) && !isEditingHost(node);
-        }
-
-        var inlineDisplayRegex = /^inline(-block|-table)?$/i;
-
-        function isNonInlineElement(node) {
-            return node && node.nodeType == 1 && !inlineDisplayRegex.test(getComputedStyleProperty(node, "display"));
-        }
-
-        // White space characters as defined by HTML 4 (http://www.w3.org/TR/html401/struct/text.html)
-        var htmlNonWhiteSpaceRegex = /[^\r\n\t\f \u200B]/;
-
-        function isUnrenderedWhiteSpaceNode(node) {
-            if (node.data.length == 0) {
-                return true;
-            }
-            if (htmlNonWhiteSpaceRegex.test(node.data)) {
-                return false;
-            }
-            var cssWhiteSpace = getComputedStyleProperty(node.parentNode, "whiteSpace");
-            switch (cssWhiteSpace) {
-                case "pre":
-                case "pre-wrap":
-                case "-moz-pre-wrap":
-                    return false;
-                case "pre-line":
-                    if (/[\r\n]/.test(node.data)) {
-                        return false;
-                    }
-            }
-
-            // We now have a whitespace-only text node that may be rendered depending on its context. If it is adjacent to a
-            // non-inline element, it will not be rendered. This seems to be a good enough definition.
-            return isNonInlineElement(node.previousSibling) || isNonInlineElement(node.nextSibling);
-        }
-
-        function getRangeBoundaries(ranges) {
-            var positions = [], i, range;
-            for (i = 0; range = ranges[i++]; ) {
-                positions.push(
-                    new DomPosition(range.startContainer, range.startOffset),
-                    new DomPosition(range.endContainer, range.endOffset)
-                );
-            }
-            return positions;
-        }
-
-        function updateRangesFromBoundaries(ranges, positions) {
-            for (var i = 0, range, start, end, len = ranges.length; i < len; ++i) {
-                range = ranges[i];
-                start = positions[i * 2];
-                end = positions[i * 2 + 1];
-                range.setStartAndEnd(start.node, start.offset, end.node, end.offset);
-            }
-        }
-
-        function isSplitPoint(node, offset) {
-            if (dom.isCharacterDataNode(node)) {
-                if (offset == 0) {
-                    return !!node.previousSibling;
-                } else if (offset == node.length) {
-                    return !!node.nextSibling;
-                } else {
-                    return true;
-                }
-            }
-
-            return offset > 0 && offset < node.childNodes.length;
-        }
-
-        function splitNodeAt(node, descendantNode, descendantOffset, positionsToPreserve) {
-            var newNode, parentNode;
-            var splitAtStart = (descendantOffset == 0);
-
-            if (dom.isAncestorOf(descendantNode, node)) {
-                return node;
-            }
-
-            if (dom.isCharacterDataNode(descendantNode)) {
-                var descendantIndex = dom.getNodeIndex(descendantNode);
-                if (descendantOffset == 0) {
-                    descendantOffset = descendantIndex;
-                } else if (descendantOffset == descendantNode.length) {
-                    descendantOffset = descendantIndex + 1;
-                } else {
-                    throw module.createError("splitNodeAt() should not be called with offset in the middle of a data node (" +
-                        descendantOffset + " in " + descendantNode.data);
-                }
-                descendantNode = descendantNode.parentNode;
-            }
-
-            if (isSplitPoint(descendantNode, descendantOffset)) {
-                // descendantNode is now guaranteed not to be a text or other character node
-                newNode = descendantNode.cloneNode(false);
-                parentNode = descendantNode.parentNode;
-                if (newNode.id) {
-                    newNode.removeAttribute("id");
-                }
-                var child, newChildIndex = 0;
-
-                while ( (child = descendantNode.childNodes[descendantOffset]) ) {
-                    movePreservingPositions(child, newNode, newChildIndex++, positionsToPreserve);
-                }
-                movePreservingPositions(newNode, parentNode, dom.getNodeIndex(descendantNode) + 1, positionsToPreserve);
-                return (descendantNode == node) ? newNode : splitNodeAt(node, parentNode, dom.getNodeIndex(newNode), positionsToPreserve);
-            } else if (node != descendantNode) {
-                newNode = descendantNode.parentNode;
-
-                // Work out a new split point in the parent node
-                var newNodeIndex = dom.getNodeIndex(descendantNode);
-
-                if (!splitAtStart) {
-                    newNodeIndex++;
-                }
-                return splitNodeAt(node, newNode, newNodeIndex, positionsToPreserve);
-            }
-            return node;
-        }
-
-        function areElementsMergeable(el1, el2) {
-            return el1.namespaceURI == el2.namespaceURI &&
-                el1.tagName.toLowerCase() == el2.tagName.toLowerCase() &&
-                haveSameClasses(el1, el2) &&
-                elementsHaveSameNonClassAttributes(el1, el2) &&
-                getComputedStyleProperty(el1, "display") == "inline" &&
-                getComputedStyleProperty(el2, "display") == "inline";
-        }
-
-        function createAdjacentMergeableTextNodeGetter(forward) {
-            var siblingPropName = forward ? "nextSibling" : "previousSibling";
-
-            return function(textNode, checkParentElement) {
-                var el = textNode.parentNode;
-                var adjacentNode = textNode[siblingPropName];
-                if (adjacentNode) {
-                    // Can merge if the node's previous/next sibling is a text node
-                    if (adjacentNode && adjacentNode.nodeType == 3) {
-                        return adjacentNode;
-                    }
-                } else if (checkParentElement) {
-                    // Compare text node parent element with its sibling
-                    adjacentNode = el[siblingPropName];
-                    if (adjacentNode && adjacentNode.nodeType == 1 && areElementsMergeable(el, adjacentNode)) {
-                        var adjacentNodeChild = adjacentNode[forward ? "firstChild" : "lastChild"];
-                        if (adjacentNodeChild && adjacentNodeChild.nodeType == 3) {
-                            return adjacentNodeChild;
-                        }
-                    }
-                }
-                return null;
-            };
-        }
-
-        var getPreviousMergeableTextNode = createAdjacentMergeableTextNodeGetter(false),
-            getNextMergeableTextNode = createAdjacentMergeableTextNodeGetter(true);
-
-    
-        function Merge(firstNode) {
-            this.isElementMerge = (firstNode.nodeType == 1);
-            this.textNodes = [];
-            var firstTextNode = this.isElementMerge ? firstNode.lastChild : firstNode;
-            if (firstTextNode) {
-                this.textNodes[0] = firstTextNode;
-            }
-        }
-
-        Merge.prototype = {
-            doMerge: function(positionsToPreserve) {
-                var textNodes = this.textNodes;
-                var firstTextNode = textNodes[0];
-                if (textNodes.length > 1) {
-                    var firstTextNodeIndex = dom.getNodeIndex(firstTextNode);
-                    var textParts = [], combinedTextLength = 0, textNode, parent;
-                    forEach(textNodes, function(textNode, i) {
-                        parent = textNode.parentNode;
-                        if (i > 0) {
-                            parent.removeChild(textNode);
-                            if (!parent.hasChildNodes()) {
-                                dom.removeNode(parent);
-                            }
-                            if (positionsToPreserve) {
-                                forEach(positionsToPreserve, function(position) {
-                                    // Handle case where position is inside the text node being merged into a preceding node
-                                    if (position.node == textNode) {
-                                        position.node = firstTextNode;
-                                        position.offset += combinedTextLength;
-                                    }
-                                    // Handle case where both text nodes precede the position within the same parent node
-                                    if (position.node == parent && position.offset > firstTextNodeIndex) {
-                                        --position.offset;
-                                        if (position.offset == firstTextNodeIndex + 1 && i < len - 1) {
-                                            position.node = firstTextNode;
-                                            position.offset = combinedTextLength;
-                                        }
-                                    }
-                                });
-                            }
-                        }
-                        textParts[i] = textNode.data;
-                        combinedTextLength += textNode.data.length;
-                    });
-                    firstTextNode.data = textParts.join("");
-                }
-                return firstTextNode.data;
-            },
-
-            getLength: function() {
-                var i = this.textNodes.length, len = 0;
-                while (i--) {
-                    len += this.textNodes[i].length;
-                }
-                return len;
-            },
-
-            toString: function() {
-                var textParts = [];
-                forEach(this.textNodes, function(textNode, i) {
-                    textParts[i] = "'" + textNode.data + "'";
-                });
-                return "[Merge(" + textParts.join(",") + ")]";
-            }
-        };
-
-        var optionProperties = ["elementTagName", "ignoreWhiteSpace", "applyToEditableOnly", "useExistingElements",
-            "removeEmptyElements", "onElementCreate"];
-
-        // TODO: Populate this with every attribute name that corresponds to a property with a different name. Really??
-        var attrNamesForProperties = {};
-
-        function ClassApplier(className, options, tagNames) {
-            var normalize, i, len, propName, applier = this;
-            applier.cssClass = applier.className = className; // cssClass property is for backward compatibility
-
-            var elementPropertiesFromOptions = null, elementAttributes = {};
-
-            // Initialize from options object
-            if (typeof options == "object" && options !== null) {
-                if (typeof options.elementTagName !== "undefined") {
-                    options.elementTagName = options.elementTagName.toLowerCase();
-                }
-                tagNames = options.tagNames;
-                elementPropertiesFromOptions = options.elementProperties;
-                elementAttributes = options.elementAttributes;
-
-                for (i = 0; propName = optionProperties[i++]; ) {
-                    if (options.hasOwnProperty(propName)) {
-                        applier[propName] = options[propName];
-                    }
-                }
-                normalize = options.normalize;
-            } else {
-                normalize = options;
-            }
-
-            // Backward compatibility: the second parameter can also be a Boolean indicating to normalize after unapplying
-            applier.normalize = (typeof normalize == "undefined") ? true : normalize;
-
-            // Initialize element properties and attribute exceptions
-            applier.attrExceptions = [];
-            var el = document.createElement(applier.elementTagName);
-            applier.elementProperties = applier.copyPropertiesToElement(elementPropertiesFromOptions, el, true);
-            each(elementAttributes, function(attrName, attrValue) {
-                applier.attrExceptions.push(attrName);
-                // Ensure each attribute value is a string
-                elementAttributes[attrName] = "" + attrValue;
-            });
-            applier.elementAttributes = elementAttributes;
-
-            applier.elementSortedClassName = applier.elementProperties.hasOwnProperty("className") ?
-                sortClassName(applier.elementProperties.className + " " + className) : className;
-
-            // Initialize tag names
-            applier.applyToAnyTagName = false;
-            var type = typeof tagNames;
-            if (type == "string") {
-                if (tagNames == "*") {
-                    applier.applyToAnyTagName = true;
-                } else {
-                    applier.tagNames = trim(tagNames.toLowerCase()).split(/\s*,\s*/);
-                }
-            } else if (type == "object" && typeof tagNames.length == "number") {
-                applier.tagNames = [];
-                for (i = 0, len = tagNames.length; i < len; ++i) {
-                    if (tagNames[i] == "*") {
-                        applier.applyToAnyTagName = true;
-                    } else {
-                        applier.tagNames.push(tagNames[i].toLowerCase());
-                    }
-                }
-            } else {
-                applier.tagNames = [applier.elementTagName];
-            }
-        }
-
-        ClassApplier.prototype = {
-            elementTagName: defaultTagName,
-            elementProperties: {},
-            elementAttributes: {},
-            ignoreWhiteSpace: true,
-            applyToEditableOnly: false,
-            useExistingElements: true,
-            removeEmptyElements: true,
-            onElementCreate: null,
-
-            copyPropertiesToElement: function(props, el, createCopy) {
-                var s, elStyle, elProps = {}, elPropsStyle, propValue, elPropValue, attrName;
-
-                for (var p in props) {
-                    if (props.hasOwnProperty(p)) {
-                        propValue = props[p];
-                        elPropValue = el[p];
-
-                        // Special case for class. The copied properties object has the applier's class as well as its own
-                        // to simplify checks when removing styling elements
-                        if (p == "className") {
-                            addClass(el, propValue);
-                            addClass(el, this.className);
-                            el[p] = sortClassName(el[p]);
-                            if (createCopy) {
-                                elProps[p] = propValue;
-                            }
-                        }
-
-                        // Special case for style
-                        else if (p == "style") {
-                            elStyle = elPropValue;
-                            if (createCopy) {
-                                elProps[p] = elPropsStyle = {};
-                            }
-                            for (s in props[p]) {
-                                if (props[p].hasOwnProperty(s)) {
-                                    elStyle[s] = propValue[s];
-                                    if (createCopy) {
-                                        elPropsStyle[s] = elStyle[s];
-                                    }
-                                }
-                            }
-                            this.attrExceptions.push(p);
-                        } else {
-                            el[p] = propValue;
-                            // Copy the property back from the dummy element so that later comparisons to check whether
-                            // elements may be removed are checking against the right value. For example, the href property
-                            // of an element returns a fully qualified URL even if it was previously assigned a relative
-                            // URL.
-                            if (createCopy) {
-                                elProps[p] = el[p];
-
-                                // Not all properties map to identically-named attributes
-                                attrName = attrNamesForProperties.hasOwnProperty(p) ? attrNamesForProperties[p] : p;
-                                this.attrExceptions.push(attrName);
-                            }
-                        }
-                    }
-                }
-
-                return createCopy ? elProps : "";
-            },
-
-            copyAttributesToElement: function(attrs, el) {
-                for (var attrName in attrs) {
-                    if (attrs.hasOwnProperty(attrName) && !/^class(?:Name)?$/i.test(attrName)) {
-                        el.setAttribute(attrName, attrs[attrName]);
-                    }
-                }
-            },
-
-            appliesToElement: function(el) {
-                return contains(this.tagNames, el.tagName.toLowerCase());
-            },
-
-            getEmptyElements: function(range) {
-                var applier = this;
-                return range.getNodes([1], function(el) {
-                    return applier.appliesToElement(el) && !el.hasChildNodes();
-                });
-            },
-
-            hasClass: function(node) {
-                return node.nodeType == 1 &&
-                    (this.applyToAnyTagName || this.appliesToElement(node)) &&
-                    hasClass(node, this.className);
-            },
-
-            getSelfOrAncestorWithClass: function(node) {
-                while (node) {
-                    if (this.hasClass(node)) {
-                        return node;
-                    }
-                    node = node.parentNode;
-                }
-                return null;
-            },
-
-            isModifiable: function(node) {
-                return !this.applyToEditableOnly || isEditable(node);
-            },
-
-            // White space adjacent to an unwrappable node can be ignored for wrapping
-            isIgnorableWhiteSpaceNode: function(node) {
-                return this.ignoreWhiteSpace && node && node.nodeType == 3 && isUnrenderedWhiteSpaceNode(node);
-            },
-
-            // Normalizes nodes after applying a class to a Range.
-            postApply: function(textNodes, range, positionsToPreserve, isUndo) {
-                var firstNode = textNodes[0], lastNode = textNodes[textNodes.length - 1];
-
-                var merges = [], currentMerge;
-
-                var rangeStartNode = firstNode, rangeEndNode = lastNode;
-                var rangeStartOffset = 0, rangeEndOffset = lastNode.length;
-
-                var textNode, precedingTextNode;
-
-                // Check for every required merge and create a Merge object for each
-                forEach(textNodes, function(textNode) {
-                    precedingTextNode = getPreviousMergeableTextNode(textNode, !isUndo);
-                    if (precedingTextNode) {
-                        if (!currentMerge) {
-                            currentMerge = new Merge(precedingTextNode);
-                            merges.push(currentMerge);
-                        }
-                        currentMerge.textNodes.push(textNode);
-                        if (textNode === firstNode) {
-                            rangeStartNode = currentMerge.textNodes[0];
-                            rangeStartOffset = rangeStartNode.length;
-                        }
-                        if (textNode === lastNode) {
-                            rangeEndNode = currentMerge.textNodes[0];
-                            rangeEndOffset = currentMerge.getLength();
-                        }
-                    } else {
-                        currentMerge = null;
-                    }
-                });
-
-                // Test whether the first node after the range needs merging
-                var nextTextNode = getNextMergeableTextNode(lastNode, !isUndo);
-
-                if (nextTextNode) {
-                    if (!currentMerge) {
-                        currentMerge = new Merge(lastNode);
-                        merges.push(currentMerge);
-                    }
-                    currentMerge.textNodes.push(nextTextNode);
-                }
-
-                // Apply the merges
-                if (merges.length) {
-                    for (i = 0, len = merges.length; i < len; ++i) {
-                        merges[i].doMerge(positionsToPreserve);
-                    }
-
-                    // Set the range boundaries
-                    range.setStartAndEnd(rangeStartNode, rangeStartOffset, rangeEndNode, rangeEndOffset);
-                }
-            },
-
-            createContainer: function(parentNode) {
-                var doc = dom.getDocument(parentNode);
-                var namespace;
-                var el = createElementNSSupported && !dom.isHtmlNamespace(parentNode) && (namespace = parentNode.namespaceURI) ?
-                    doc.createElementNS(parentNode.namespaceURI, this.elementTagName) :
-                    doc.createElement(this.elementTagName);
-
-                this.copyPropertiesToElement(this.elementProperties, el, false);
-                this.copyAttributesToElement(this.elementAttributes, el);
-                addClass(el, this.className);
-                if (this.onElementCreate) {
-                    this.onElementCreate(el, this);
-                }
-                return el;
-            },
-
-            elementHasProperties: function(el, props) {
-                var applier = this;
-                return each(props, function(p, propValue) {
-                    if (p == "className") {
-                        // For checking whether we should reuse an existing element, we just want to check that the element
-                        // has all the classes specified in the className property. When deciding whether the element is
-                        // removable when unapplying a class, there is separate special handling to check whether the
-                        // element has extra classes so the same simple check will do.
-                        return hasAllClasses(el, propValue);
-                    } else if (typeof propValue == "object") {
-                        if (!applier.elementHasProperties(el[p], propValue)) {
-                            return false;
-                        }
-                    } else if (el[p] !== propValue) {
-                        return false;
-                    }
-                });
-            },
-
-            elementHasAttributes: function(el, attrs) {
-                return each(attrs, function(name, value) {
-                    if (el.getAttribute(name) !== value) {
-                        return false;
-                    }
-                });
-            },
-
-            applyToTextNode: function(textNode, positionsToPreserve) {
-
-                // Check whether the text node can be styled. Text within a <style> or <script> element, for example,
-                // should not be styled. See issue 283.
-                if (canTextBeStyled(textNode)) {
-                    var parent = textNode.parentNode;
-                    if (parent.childNodes.length == 1 &&
-                        this.useExistingElements &&
-                        this.appliesToElement(parent) &&
-                        this.elementHasProperties(parent, this.elementProperties) &&
-                        this.elementHasAttributes(parent, this.elementAttributes)) {
-
-                        addClass(parent, this.className);
-                    } else {
-                        var textNodeParent = textNode.parentNode;
-                        var el = this.createContainer(textNodeParent);
-                        textNodeParent.insertBefore(el, textNode);
-                        el.appendChild(textNode);
-                    }
-                }
-
-            },
-
-            isRemovable: function(el) {
-                return el.tagName.toLowerCase() == this.elementTagName &&
-                    getSortedClassName(el) == this.elementSortedClassName &&
-                    this.elementHasProperties(el, this.elementProperties) &&
-                    !elementHasNonClassAttributes(el, this.attrExceptions) &&
-                    this.elementHasAttributes(el, this.elementAttributes) &&
-                    this.isModifiable(el);
-            },
-
-            isEmptyContainer: function(el) {
-                var childNodeCount = el.childNodes.length;
-                return el.nodeType == 1 &&
-                    this.isRemovable(el) &&
-                    (childNodeCount == 0 || (childNodeCount == 1 && this.isEmptyContainer(el.firstChild)));
-            },
-
-            removeEmptyContainers: function(range) {
-                var applier = this;
-                var nodesToRemove = range.getNodes([1], function(el) {
-                    return applier.isEmptyContainer(el);
-                });
-
-                var rangesToPreserve = [range];
-                var positionsToPreserve = getRangeBoundaries(rangesToPreserve);
-
-                forEach(nodesToRemove, function(node) {
-                    removePreservingPositions(node, positionsToPreserve);
-                });
-
-                // Update the range from the preserved boundary positions
-                updateRangesFromBoundaries(rangesToPreserve, positionsToPreserve);
-            },
-
-            undoToTextNode: function(textNode, range, ancestorWithClass, positionsToPreserve) {
-                if (!range.containsNode(ancestorWithClass)) {
-                    // Split out the portion of the ancestor from which we can remove the class
-                    //var parent = ancestorWithClass.parentNode, index = dom.getNodeIndex(ancestorWithClass);
-                    var ancestorRange = range.cloneRange();
-                    ancestorRange.selectNode(ancestorWithClass);
-                    if (ancestorRange.isPointInRange(range.endContainer, range.endOffset)) {
-                        splitNodeAt(ancestorWithClass, range.endContainer, range.endOffset, positionsToPreserve);
-                        range.setEndAfter(ancestorWithClass);
-                    }
-                    if (ancestorRange.isPointInRange(range.startContainer, range.startOffset)) {
-                        ancestorWithClass = splitNodeAt(ancestorWithClass, range.startContainer, range.startOffset, positionsToPreserve);
-                    }
-                }
-
-                if (this.isRemovable(ancestorWithClass)) {
-                    replaceWithOwnChildrenPreservingPositions(ancestorWithClass, positionsToPreserve);
-                } else {
-                    removeClass(ancestorWithClass, this.className);
-                }
-            },
-
-            splitAncestorWithClass: function(container, offset, positionsToPreserve) {
-                var ancestorWithClass = this.getSelfOrAncestorWithClass(container);
-                if (ancestorWithClass) {
-                    splitNodeAt(ancestorWithClass, container, offset, positionsToPreserve);
-                }
-            },
-
-            undoToAncestor: function(ancestorWithClass, positionsToPreserve) {
-                if (this.isRemovable(ancestorWithClass)) {
-                    replaceWithOwnChildrenPreservingPositions(ancestorWithClass, positionsToPreserve);
-                } else {
-                    removeClass(ancestorWithClass, this.className);
-                }
-            },
-
-            applyToRange: function(range, rangesToPreserve) {
-                var applier = this;
-                rangesToPreserve = rangesToPreserve || [];
-
-                // Create an array of range boundaries to preserve
-                var positionsToPreserve = getRangeBoundaries(rangesToPreserve || []);
-
-                range.splitBoundariesPreservingPositions(positionsToPreserve);
-
-                // Tidy up the DOM by removing empty containers
-                if (applier.removeEmptyElements) {
-                    applier.removeEmptyContainers(range);
-                }
-
-                var textNodes = getEffectiveTextNodes(range);
-
-                if (textNodes.length) {
-                    forEach(textNodes, function(textNode) {
-                        if (!applier.isIgnorableWhiteSpaceNode(textNode) && !applier.getSelfOrAncestorWithClass(textNode) &&
-                                applier.isModifiable(textNode)) {
-                            applier.applyToTextNode(textNode, positionsToPreserve);
-                        }
-                    });
-                    var lastTextNode = textNodes[textNodes.length - 1];
-                    range.setStartAndEnd(textNodes[0], 0, lastTextNode, lastTextNode.length);
-                    if (applier.normalize) {
-                        applier.postApply(textNodes, range, positionsToPreserve, false);
-                    }
-
-                    // Update the ranges from the preserved boundary positions
-                    updateRangesFromBoundaries(rangesToPreserve, positionsToPreserve);
-                }
-
-                // Apply classes to any appropriate empty elements
-                var emptyElements = applier.getEmptyElements(range);
-
-                forEach(emptyElements, function(el) {
-                    addClass(el, applier.className);
-                });
-            },
-
-            applyToRanges: function(ranges) {
-
-                var i = ranges.length;
-                while (i--) {
-                    this.applyToRange(ranges[i], ranges);
-                }
-
-
-                return ranges;
-            },
-
-            applyToSelection: function(win) {
-                var sel = api.getSelection(win);
-                sel.setRanges( this.applyToRanges(sel.getAllRanges()) );
-            },
-
-            undoToRange: function(range, rangesToPreserve) {
-                var applier = this;
-                // Create an array of range boundaries to preserve
-                rangesToPreserve = rangesToPreserve || [];
-                var positionsToPreserve = getRangeBoundaries(rangesToPreserve);
-
-
-                range.splitBoundariesPreservingPositions(positionsToPreserve);
-
-                // Tidy up the DOM by removing empty containers
-                if (applier.removeEmptyElements) {
-                    applier.removeEmptyContainers(range, positionsToPreserve);
-                }
-
-                var textNodes = getEffectiveTextNodes(range);
-                var textNode, ancestorWithClass;
-                var lastTextNode = textNodes[textNodes.length - 1];
-
-                if (textNodes.length) {
-                    applier.splitAncestorWithClass(range.endContainer, range.endOffset, positionsToPreserve);
-                    applier.splitAncestorWithClass(range.startContainer, range.startOffset, positionsToPreserve);
-                    for (var i = 0, len = textNodes.length; i < len; ++i) {
-                        textNode = textNodes[i];
-                        ancestorWithClass = applier.getSelfOrAncestorWithClass(textNode);
-                        if (ancestorWithClass && applier.isModifiable(textNode)) {
-                            applier.undoToAncestor(ancestorWithClass, positionsToPreserve);
-                        }
-                    }
-                    // Ensure the range is still valid
-                    range.setStartAndEnd(textNodes[0], 0, lastTextNode, lastTextNode.length);
-
-
-                    if (applier.normalize) {
-                        applier.postApply(textNodes, range, positionsToPreserve, true);
-                    }
-
-                    // Update the ranges from the preserved boundary positions
-                    updateRangesFromBoundaries(rangesToPreserve, positionsToPreserve);
-                }
-
-                // Remove class from any appropriate empty elements
-                var emptyElements = applier.getEmptyElements(range);
-
-                forEach(emptyElements, function(el) {
-                    removeClass(el, applier.className);
-                });
-            },
-
-            undoToRanges: function(ranges) {
-                // Get ranges returned in document order
-                var i = ranges.length;
-
-                while (i--) {
-                    this.undoToRange(ranges[i], ranges);
-                }
-
-                return ranges;
-            },
-
-            undoToSelection: function(win) {
-                var sel = api.getSelection(win);
-                var ranges = api.getSelection(win).getAllRanges();
-                this.undoToRanges(ranges);
-                sel.setRanges(ranges);
-            },
-
-            isAppliedToRange: function(range) {
-                if (range.collapsed || range.toString() == "") {
-                    return !!this.getSelfOrAncestorWithClass(range.commonAncestorContainer);
-                } else {
-                    var textNodes = range.getNodes( [3] );
-                    if (textNodes.length)
-                    for (var i = 0, textNode; textNode = textNodes[i++]; ) {
-                        if (!this.isIgnorableWhiteSpaceNode(textNode) && rangeSelectsAnyText(range, textNode) &&
-                                this.isModifiable(textNode) && !this.getSelfOrAncestorWithClass(textNode)) {
-                            return false;
-                        }
-                    }
-                    return true;
-                }
-            },
-
-            isAppliedToRanges: function(ranges) {
-                var i = ranges.length;
-                if (i == 0) {
-                    return false;
-                }
-                while (i--) {
-                    if (!this.isAppliedToRange(ranges[i])) {
-                        return false;
-                    }
-                }
-                return true;
-            },
-
-            isAppliedToSelection: function(win) {
-                var sel = api.getSelection(win);
-                return this.isAppliedToRanges(sel.getAllRanges());
-            },
-
-            toggleRange: function(range) {
-                if (this.isAppliedToRange(range)) {
-                    this.undoToRange(range);
-                } else {
-                    this.applyToRange(range);
-                }
-            },
-
-            toggleSelection: function(win) {
-                if (this.isAppliedToSelection(win)) {
-                    this.undoToSelection(win);
-                } else {
-                    this.applyToSelection(win);
-                }
-            },
-
-            getElementsWithClassIntersectingRange: function(range) {
-                var elements = [];
-                var applier = this;
-                range.getNodes([3], function(textNode) {
-                    var el = applier.getSelfOrAncestorWithClass(textNode);
-                    if (el && !contains(elements, el)) {
-                        elements.push(el);
-                    }
-                });
-                return elements;
-            },
-
-            detach: function() {}
-        };
-
-        function createClassApplier(className, options, tagNames) {
-            return new ClassApplier(className, options, tagNames);
-        }
-
-        ClassApplier.util = {
-            hasClass: hasClass,
-            addClass: addClass,
-            removeClass: removeClass,
-            getClass: getClass,
-            hasSameClasses: haveSameClasses,
-            hasAllClasses: hasAllClasses,
-            replaceWithOwnChildren: replaceWithOwnChildrenPreservingPositions,
-            elementsHaveSameNonClassAttributes: elementsHaveSameNonClassAttributes,
-            elementHasNonClassAttributes: elementHasNonClassAttributes,
-            splitNodeAt: splitNodeAt,
-            isEditableElement: isEditableElement,
-            isEditingHost: isEditingHost,
-            isEditable: isEditable
-        };
-
-        api.CssClassApplier = api.ClassApplier = ClassApplier;
-        api.createClassApplier = createClassApplier;
-        util.createAliasForDeprecatedMethod(api, "createCssClassApplier", "createClassApplier", module);
-    });
-    
-    return rangy;
-}, this);
-
-/**
- * Highlighter module for Rangy, a cross-browser JavaScript range and selection library
- * https://github.com/timdown/rangy
- *
- * Depends on Rangy core, ClassApplier and optionally TextRange modules.
- *
- * Copyright 2015, Tim Down
- * Licensed under the MIT license.
- * Version: 1.3.0
- * Build date: 10 May 2015
- */
-(function(factory, root) {
-    if (typeof define == "function" && define.amd) {
-        // AMD. Register as an anonymous module with a dependency on Rangy.
-        define('rangy-highlighter',["./rangy-core"], factory);
-    } else if (typeof module != "undefined" && typeof exports == "object") {
-        // Node/CommonJS style
-        module.exports = factory( require("rangy") );
-    } else {
-        // No AMD or CommonJS support so we use the rangy property of root (probably the global variable)
-        factory(root.rangy);
-    }
-})(function(rangy) {
-    rangy.createModule("Highlighter", ["ClassApplier"], function(api, module) {
-        var dom = api.dom;
-        var contains = dom.arrayContains;
-        var getBody = dom.getBody;
-        var createOptions = api.util.createOptions;
-        var forEach = api.util.forEach;
-        var nextHighlightId = 1;
-
-        // Puts highlights in order, last in document first.
-        function compareHighlights(h1, h2) {
-            return h1.characterRange.start - h2.characterRange.start;
-        }
-
-        function getContainerElement(doc, id) {
-            return id ? doc.getElementById(id) : getBody(doc);
-        }
-
-        /*----------------------------------------------------------------------------------------------------------------*/
-
-        var highlighterTypes = {};
-
-        function HighlighterType(type, converterCreator) {
-            this.type = type;
-            this.converterCreator = converterCreator;
-        }
-
-        HighlighterType.prototype.create = function() {
-            var converter = this.converterCreator();
-            converter.type = this.type;
-            return converter;
-        };
-
-        function registerHighlighterType(type, converterCreator) {
-            highlighterTypes[type] = new HighlighterType(type, converterCreator);
-        }
-
-        function getConverter(type) {
-            var highlighterType = highlighterTypes[type];
-            if (highlighterType instanceof HighlighterType) {
-                return highlighterType.create();
-            } else {
-                throw new Error("Highlighter type '" + type + "' is not valid");
-            }
-        }
-
-        api.registerHighlighterType = registerHighlighterType;
-
-        /*----------------------------------------------------------------------------------------------------------------*/
-
-        function CharacterRange(start, end) {
-            this.start = start;
-            this.end = end;
-        }
-
-        CharacterRange.prototype = {
-            intersects: function(charRange) {
-                return this.start < charRange.end && this.end > charRange.start;
-            },
-
-            isContiguousWith: function(charRange) {
-                return this.start == charRange.end || this.end == charRange.start;
-            },
-
-            union: function(charRange) {
-                return new CharacterRange(Math.min(this.start, charRange.start), Math.max(this.end, charRange.end));
-            },
-
-            intersection: function(charRange) {
-                return new CharacterRange(Math.max(this.start, charRange.start), Math.min(this.end, charRange.end));
-            },
-
-            getComplements: function(charRange) {
-                var ranges = [];
-                if (this.start >= charRange.start) {
-                    if (this.end <= charRange.end) {
-                        return [];
-                    }
-                    ranges.push(new CharacterRange(charRange.end, this.end));
-                } else {
-                    ranges.push(new CharacterRange(this.start, Math.min(this.end, charRange.start)));
-                    if (this.end > charRange.end) {
-                        ranges.push(new CharacterRange(charRange.end, this.end));
-                    }
-                }
-                return ranges;
-            },
-
-            toString: function() {
-                return "[CharacterRange(" + this.start + ", " + this.end + ")]";
-            }
-        };
-
-        CharacterRange.fromCharacterRange = function(charRange) {
-            return new CharacterRange(charRange.start, charRange.end);
-        };
-
-        /*----------------------------------------------------------------------------------------------------------------*/
-
-        var textContentConverter = {
-            rangeToCharacterRange: function(range, containerNode) {
-                var bookmark = range.getBookmark(containerNode);
-                return new CharacterRange(bookmark.start, bookmark.end);
-            },
-
-            characterRangeToRange: function(doc, characterRange, containerNode) {
-                var range = api.createRange(doc);
-                range.moveToBookmark({
-                    start: characterRange.start,
-                    end: characterRange.end,
-                    containerNode: containerNode
-                });
-
-                return range;
-            },
-
-            serializeSelection: function(selection, containerNode) {
-                var ranges = selection.getAllRanges(), rangeCount = ranges.length;
-                var rangeInfos = [];
-
-                var backward = rangeCount == 1 && selection.isBackward();
-
-                for (var i = 0, len = ranges.length; i < len; ++i) {
-                    rangeInfos[i] = {
-                        characterRange: this.rangeToCharacterRange(ranges[i], containerNode),
-                        backward: backward
-                    };
-                }
-
-                return rangeInfos;
-            },
-
-            restoreSelection: function(selection, savedSelection, containerNode) {
-                selection.removeAllRanges();
-                var doc = selection.win.document;
-                for (var i = 0, len = savedSelection.length, range, rangeInfo, characterRange; i < len; ++i) {
-                    rangeInfo = savedSelection[i];
-                    characterRange = rangeInfo.characterRange;
-                    range = this.characterRangeToRange(doc, rangeInfo.characterRange, containerNode);
-                    selection.addRange(range, rangeInfo.backward);
-                }
-            }
-        };
-
-        registerHighlighterType("textContent", function() {
-            return textContentConverter;
-        });
-
-        /*----------------------------------------------------------------------------------------------------------------*/
-
-        // Lazily load the TextRange-based converter so that the dependency is only checked when required.
-        registerHighlighterType("TextRange", (function() {
-            var converter;
-
-            return function() {
-                if (!converter) {
-                    // Test that textRangeModule exists and is supported
-                    var textRangeModule = api.modules.TextRange;
-                    if (!textRangeModule) {
-                        throw new Error("TextRange module is missing.");
-                    } else if (!textRangeModule.supported) {
-                        throw new Error("TextRange module is present but not supported.");
-                    }
-
-                    converter = {
-                        rangeToCharacterRange: function(range, containerNode) {
-                            return CharacterRange.fromCharacterRange( range.toCharacterRange(containerNode) );
-                        },
-
-                        characterRangeToRange: function(doc, characterRange, containerNode) {
-                            var range = api.createRange(doc);
-                            range.selectCharacters(containerNode, characterRange.start, characterRange.end);
-                            return range;
-                        },
-
-                        serializeSelection: function(selection, containerNode) {
-                            return selection.saveCharacterRanges(containerNode);
-                        },
-
-                        restoreSelection: function(selection, savedSelection, containerNode) {
-                            selection.restoreCharacterRanges(containerNode, savedSelection);
-                        }
-                    };
-                }
-
-                return converter;
-            };
-        })());
-
-        /*----------------------------------------------------------------------------------------------------------------*/
-
-        function Highlight(doc, characterRange, classApplier, converter, id, containerElementId) {
-            if (id) {
-                this.id = id;
-                nextHighlightId = Math.max(nextHighlightId, id + 1);
-            } else {
-                this.id = nextHighlightId++;
-            }
-            this.characterRange = characterRange;
-            this.doc = doc;
-            this.classApplier = classApplier;
-            this.converter = converter;
-            this.containerElementId = containerElementId || null;
-            this.applied = false;
-        }
-
-        Highlight.prototype = {
-            getContainerElement: function() {
-                return getContainerElement(this.doc, this.containerElementId);
-            },
-
-            getRange: function() {
-                return this.converter.characterRangeToRange(this.doc, this.characterRange, this.getContainerElement());
-            },
-
-            fromRange: function(range) {
-                this.characterRange = this.converter.rangeToCharacterRange(range, this.getContainerElement());
-            },
-
-            getText: function() {
-                return this.getRange().toString();
-            },
-
-            containsElement: function(el) {
-                return this.getRange().containsNodeContents(el.firstChild);
-            },
-
-            unapply: function() {
-                this.classApplier.undoToRange(this.getRange());
-                this.applied = false;
-            },
-
-            apply: function() {
-                this.classApplier.applyToRange(this.getRange());
-                this.applied = true;
-            },
-
-            getHighlightElements: function() {
-                return this.classApplier.getElementsWithClassIntersectingRange(this.getRange());
-            },
-
-            toString: function() {
-                return "[Highlight(ID: " + this.id + ", class: " + this.classApplier.className + ", character range: " +
-                    this.characterRange.start + " - " + this.characterRange.end + ")]";
-            }
-        };
-
-        /*----------------------------------------------------------------------------------------------------------------*/
-
-        function Highlighter(doc, type) {
-            type = type || "textContent";
-            this.doc = doc || document;
-            this.classAppliers = {};
-            this.highlights = [];
-            this.converter = getConverter(type);
-        }
-
-        Highlighter.prototype = {
-            addClassApplier: function(classApplier) {
-                this.classAppliers[classApplier.className] = classApplier;
-            },
-
-            getHighlightForElement: function(el) {
-                var highlights = this.highlights;
-                for (var i = 0, len = highlights.length; i < len; ++i) {
-                    if (highlights[i].containsElement(el)) {
-                        return highlights[i];
-                    }
-                }
-                return null;
-            },
-
-            removeHighlights: function(highlights) {
-                for (var i = 0, len = this.highlights.length, highlight; i < len; ++i) {
-                    highlight = this.highlights[i];
-                    if (contains(highlights, highlight)) {
-                        highlight.unapply();
-                        this.highlights.splice(i--, 1);
-                    }
-                }
-            },
-
-            removeAllHighlights: function() {
-                this.removeHighlights(this.highlights);
-            },
-
-            getIntersectingHighlights: function(ranges) {
-                // Test each range against each of the highlighted ranges to see whether they overlap
-                var intersectingHighlights = [], highlights = this.highlights;
-                forEach(ranges, function(range) {
-                    //var selCharRange = converter.rangeToCharacterRange(range);
-                    forEach(highlights, function(highlight) {
-                        if (range.intersectsRange( highlight.getRange() ) && !contains(intersectingHighlights, highlight)) {
-                            intersectingHighlights.push(highlight);
-                        }
-                    });
-                });
-
-                return intersectingHighlights;
-            },
-
-            highlightCharacterRanges: function(className, charRanges, options) {
-                var i, len, j;
-                var highlights = this.highlights;
-                var converter = this.converter;
-                var doc = this.doc;
-                var highlightsToRemove = [];
-                var classApplier = className ? this.classAppliers[className] : null;
-
-                options = createOptions(options, {
-                    containerElementId: null,
-                    exclusive: true
-                });
-
-                var containerElementId = options.containerElementId;
-                var exclusive = options.exclusive;
-
-                var containerElement, containerElementRange, containerElementCharRange;
-                if (containerElementId) {
-                    containerElement = this.doc.getElementById(containerElementId);
-                    if (containerElement) {
-                        containerElementRange = api.createRange(this.doc);
-                        containerElementRange.selectNodeContents(containerElement);
-                        containerElementCharRange = new CharacterRange(0, containerElementRange.toString().length);
-                    }
-                }
-
-                var charRange, highlightCharRange, removeHighlight, isSameClassApplier, highlightsToKeep, splitHighlight;
-
-                for (i = 0, len = charRanges.length; i < len; ++i) {
-                    charRange = charRanges[i];
-                    highlightsToKeep = [];
-
-                    // Restrict character range to container element, if it exists
-                    if (containerElementCharRange) {
-                        charRange = charRange.intersection(containerElementCharRange);
-                    }
-
-                    // Ignore empty ranges
-                    if (charRange.start == charRange.end) {
-                        continue;
-                    }
-
-                    // Check for intersection with existing highlights. For each intersection, create a new highlight
-                    // which is the union of the highlight range and the selected range
-                    for (j = 0; j < highlights.length; ++j) {
-                        removeHighlight = false;
-
-                        if (containerElementId == highlights[j].containerElementId) {
-                            highlightCharRange = highlights[j].characterRange;
-                            isSameClassApplier = (classApplier == highlights[j].classApplier);
-                            splitHighlight = !isSameClassApplier && exclusive;
-
-                            // Replace the existing highlight if it needs to be:
-                            //  1. merged (isSameClassApplier)
-                            //  2. partially or entirely erased (className === null)
-                            //  3. partially or entirely replaced (isSameClassApplier == false && exclusive == true)
-                            if (    (highlightCharRange.intersects(charRange) || highlightCharRange.isContiguousWith(charRange)) &&
-                                    (isSameClassApplier || splitHighlight) ) {
-
-                                // Remove existing highlights, keeping the unselected parts
-                                if (splitHighlight) {
-                                    forEach(highlightCharRange.getComplements(charRange), function(rangeToAdd) {
-                                        highlightsToKeep.push( new Highlight(doc, rangeToAdd, highlights[j].classApplier, converter, null, containerElementId) );
-                                    });
-                                }
-
-                                removeHighlight = true;
-                                if (isSameClassApplier) {
-                                    charRange = highlightCharRange.union(charRange);
-                                }
-                            }
-                        }
-
-                        if (removeHighlight) {
-                            highlightsToRemove.push(highlights[j]);
-                            highlights[j] = new Highlight(doc, highlightCharRange.union(charRange), classApplier, converter, null, containerElementId);
-                        } else {
-                            highlightsToKeep.push(highlights[j]);
-                        }
-                    }
-
-                    // Add new range
-                    if (classApplier) {
-                        highlightsToKeep.push(new Highlight(doc, charRange, classApplier, converter, null, containerElementId));
-                    }
-                    this.highlights = highlights = highlightsToKeep;
-                }
-
-                // Remove the old highlights
-                forEach(highlightsToRemove, function(highlightToRemove) {
-                    highlightToRemove.unapply();
-                });
-
-                // Apply new highlights
-                var newHighlights = [];
-                forEach(highlights, function(highlight) {
-                    if (!highlight.applied) {
-                        highlight.apply();
-                        newHighlights.push(highlight);
-                    }
-                });
-
-                return newHighlights;
-            },
-
-            highlightRanges: function(className, ranges, options) {
-                var selCharRanges = [];
-                var converter = this.converter;
-
-                options = createOptions(options, {
-                    containerElement: null,
-                    exclusive: true
-                });
-
-                var containerElement = options.containerElement;
-                var containerElementId = containerElement ? containerElement.id : null;
-                var containerElementRange;
-                if (containerElement) {
-                    containerElementRange = api.createRange(containerElement);
-                    containerElementRange.selectNodeContents(containerElement);
-                }
-
-                forEach(ranges, function(range) {
-                    var scopedRange = containerElement ? containerElementRange.intersection(range) : range;
-                    selCharRanges.push( converter.rangeToCharacterRange(scopedRange, containerElement || getBody(range.getDocument())) );
-                });
-
-                return this.highlightCharacterRanges(className, selCharRanges, {
-                    containerElementId: containerElementId,
-                    exclusive: options.exclusive
-                });
-            },
-
-            highlightSelection: function(className, options) {
-                var converter = this.converter;
-                var classApplier = className ? this.classAppliers[className] : false;
-
-                options = createOptions(options, {
-                    containerElementId: null,
-                    selection: api.getSelection(this.doc),
-                    exclusive: true
-                });
-
-                var containerElementId = options.containerElementId;
-                var exclusive = options.exclusive;
-                var selection = options.selection;
-                var doc = selection.win.document;
-                var containerElement = getContainerElement(doc, containerElementId);
-
-                if (!classApplier && className !== false) {
-                    throw new Error("No class applier found for class '" + className + "'");
-                }
-
-                // Store the existing selection as character ranges
-                var serializedSelection = converter.serializeSelection(selection, containerElement);
-
-                // Create an array of selected character ranges
-                var selCharRanges = [];
-                forEach(serializedSelection, function(rangeInfo) {
-                    selCharRanges.push( CharacterRange.fromCharacterRange(rangeInfo.characterRange) );
-                });
-
-                var newHighlights = this.highlightCharacterRanges(className, selCharRanges, {
-                    containerElementId: containerElementId,
-                    exclusive: exclusive
-                });
-
-                // Restore selection
-                converter.restoreSelection(selection, serializedSelection, containerElement);
-
-                return newHighlights;
-            },
-
-            unhighlightSelection: function(selection) {
-                selection = selection || api.getSelection(this.doc);
-                var intersectingHighlights = this.getIntersectingHighlights( selection.getAllRanges() );
-                this.removeHighlights(intersectingHighlights);
-                selection.removeAllRanges();
-                return intersectingHighlights;
-            },
-
-            getHighlightsInSelection: function(selection) {
-                selection = selection || api.getSelection(this.doc);
-                return this.getIntersectingHighlights(selection.getAllRanges());
-            },
-
-            selectionOverlapsHighlight: function(selection) {
-                return this.getHighlightsInSelection(selection).length > 0;
-            },
-
-            serialize: function(options) {
-                var highlighter = this;
-                var highlights = highlighter.highlights;
-                var serializedType, serializedHighlights, convertType, serializationConverter;
-
-                highlights.sort(compareHighlights);
-                options = createOptions(options, {
-                    serializeHighlightText: false,
-                    type: highlighter.converter.type
-                });
-
-                serializedType = options.type;
-                convertType = (serializedType != highlighter.converter.type);
-
-                if (convertType) {
-                    serializationConverter = getConverter(serializedType);
-                }
-
-                serializedHighlights = ["type:" + serializedType];
-
-                forEach(highlights, function(highlight) {
-                    var characterRange = highlight.characterRange;
-                    var containerElement;
-
-                    // Convert to the current Highlighter's type, if different from the serialization type
-                    if (convertType) {
-                        containerElement = highlight.getContainerElement();
-                        characterRange = serializationConverter.rangeToCharacterRange(
-                            highlighter.converter.characterRangeToRange(highlighter.doc, characterRange, containerElement),
-                            containerElement
-                        );
-                    }
-
-                    var parts = [
-                        characterRange.start,
-                        characterRange.end,
-                        highlight.id,
-                        highlight.classApplier.className,
-                        highlight.containerElementId
-                    ];
-
-                    if (options.serializeHighlightText) {
-                        parts.push(highlight.getText());
-                    }
-                    serializedHighlights.push( parts.join("$") );
-                });
-
-                return serializedHighlights.join("|");
-            },
-
-            deserialize: function(serialized) {
-                var serializedHighlights = serialized.split("|");
-                var highlights = [];
-
-                var firstHighlight = serializedHighlights[0];
-                var regexResult;
-                var serializationType, serializationConverter, convertType = false;
-                if ( firstHighlight && (regexResult = /^type:(\w+)$/.exec(firstHighlight)) ) {
-                    serializationType = regexResult[1];
-                    if (serializationType != this.converter.type) {
-                        serializationConverter = getConverter(serializationType);
-                        convertType = true;
-                    }
-                    serializedHighlights.shift();
-                } else {
-                    throw new Error("Serialized highlights are invalid.");
-                }
-
-                var classApplier, highlight, characterRange, containerElementId, containerElement;
-
-                for (var i = serializedHighlights.length, parts; i-- > 0; ) {
-                    parts = serializedHighlights[i].split("$");
-                    characterRange = new CharacterRange(+parts[0], +parts[1]);
-                    containerElementId = parts[4] || null;
-
-                    // Convert to the current Highlighter's type, if different from the serialization type
-                    if (convertType) {
-                        containerElement = getContainerElement(this.doc, containerElementId);
-                        characterRange = this.converter.rangeToCharacterRange(
-                            serializationConverter.characterRangeToRange(this.doc, characterRange, containerElement),
-                            containerElement
-                        );
-                    }
-
-                    classApplier = this.classAppliers[ parts[3] ];
-
-                    if (!classApplier) {
-                        throw new Error("No class applier found for class '" + parts[3] + "'");
-                    }
-
-                    highlight = new Highlight(this.doc, characterRange, classApplier, this.converter, parseInt(parts[2]), containerElementId);
-                    highlight.apply();
-                    highlights.push(highlight);
-                }
-                this.highlights = highlights;
-            }
-        };
-
-        api.Highlighter = Highlighter;
-
-        api.createHighlighter = function(doc, rangeCharacterOffsetConverterType) {
-            return new Highlighter(doc, rangeCharacterOffsetConverterType);
-        };
-    });
-    
-    return rangy;
-}, this);
-
-/**
- * Text range module for Rangy.
- * Text-based manipulation and searching of ranges and selections.
- *
- * Features
- *
- * - Ability to move range boundaries by character or word offsets
- * - Customizable word tokenizer
- * - Ignores text nodes inside <script> or <style> elements or those hidden by CSS display and visibility properties
- * - Range findText method to search for text or regex within the page or within a range. Flags for whole words and case
- *   sensitivity
- * - Selection and range save/restore as text offsets within a node
- * - Methods to return visible text within a range or selection
- * - innerText method for elements
- *
- * References
- *
- * https://www.w3.org/Bugs/Public/show_bug.cgi?id=13145
- * http://aryeh.name/spec/innertext/innertext.html
- * http://dvcs.w3.org/hg/editing/raw-file/tip/editing.html
- *
- * Part of Rangy, a cross-browser JavaScript range and selection library
- * https://github.com/timdown/rangy
- *
- * Depends on Rangy core.
- *
- * Copyright 2015, Tim Down
- * Licensed under the MIT license.
- * Version: 1.3.0
- * Build date: 10 May 2015
- */
-
-/**
- * Problem: handling of trailing spaces before line breaks is handled inconsistently between browsers.
- *
- * First, a <br>: this is relatively simple. For the following HTML:
- *
- * 1 <br>2
- *
- * - IE and WebKit render the space, include it in the selection (i.e. when the content is selected and pasted into a
- *   textarea, the space is present) and allow the caret to be placed after it.
- * - Firefox does not acknowledge the space in the selection but it is possible to place the caret after it.
- * - Opera does not render the space but has two separate caret positions on either side of the space (left and right
- *   arrow keys show this) and includes the space in the selection.
- *
- * The other case is the line break or breaks implied by block elements. For the following HTML:
- *
- * <p>1 </p><p>2<p>
- *
- * - WebKit does not acknowledge the space in any way
- * - Firefox, IE and Opera as per <br>
- *
- * One more case is trailing spaces before line breaks in elements with white-space: pre-line. For the following HTML:
- *
- * <p style="white-space: pre-line">1
- * 2</p>
- *
- * - Firefox and WebKit include the space in caret positions
- * - IE does not support pre-line up to and including version 9
- * - Opera ignores the space
- * - Trailing space only renders if there is a non-collapsed character in the line
- *
- * Problem is whether Rangy should ever acknowledge the space and if so, when. Another problem is whether this can be
- * feature-tested
- */
-(function(factory, root) {
-    if (typeof define == "function" && define.amd) {
-        // AMD. Register as an anonymous module with a dependency on Rangy.
-        define('rangy-textrange',["./rangy-core"], factory);
-    } else if (typeof module != "undefined" && typeof exports == "object") {
-        // Node/CommonJS style
-        module.exports = factory( require("rangy") );
-    } else {
-        // No AMD or CommonJS support so we use the rangy property of root (probably the global variable)
-        factory(root.rangy);
-    }
-})(function(rangy) {
-    rangy.createModule("TextRange", ["WrappedSelection"], function(api, module) {
-        var UNDEF = "undefined";
-        var CHARACTER = "character", WORD = "word";
-        var dom = api.dom, util = api.util;
-        var extend = util.extend;
-        var createOptions = util.createOptions;
-        var getBody = dom.getBody;
-
-
-        var spacesRegex = /^[ \t\f\r\n]+$/;
-        var spacesMinusLineBreaksRegex = /^[ \t\f\r]+$/;
-        var allWhiteSpaceRegex = /^[\t-\r \u0085\u00A0\u1680\u180E\u2000-\u200B\u2028\u2029\u202F\u205F\u3000]+$/;
-        var nonLineBreakWhiteSpaceRegex = /^[\t \u00A0\u1680\u180E\u2000-\u200B\u202F\u205F\u3000]+$/;
-        var lineBreakRegex = /^[\n-\r\u0085\u2028\u2029]$/;
-
-        var defaultLanguage = "en";
-
-        var isDirectionBackward = api.Selection.isDirectionBackward;
-
-        // Properties representing whether trailing spaces inside blocks are completely collapsed (as they are in WebKit,
-        // but not other browsers). Also test whether trailing spaces before <br> elements are collapsed.
-        var trailingSpaceInBlockCollapses = false;
-        var trailingSpaceBeforeBrCollapses = false;
-        var trailingSpaceBeforeBlockCollapses = false;
-        var trailingSpaceBeforeLineBreakInPreLineCollapses = true;
-
-        (function() {
-            var el = dom.createTestElement(document, "<p>1 </p><p></p>", true);
-            var p = el.firstChild;
-            var sel = api.getSelection();
-            sel.collapse(p.lastChild, 2);
-            sel.setStart(p.firstChild, 0);
-            trailingSpaceInBlockCollapses = ("" + sel).length == 1;
-
-            el.innerHTML = "1 <br />";
-            sel.collapse(el, 2);
-            sel.setStart(el.firstChild, 0);
-            trailingSpaceBeforeBrCollapses = ("" + sel).length == 1;
-
-            el.innerHTML = "1 <p>1</p>";
-            sel.collapse(el, 2);
-            sel.setStart(el.firstChild, 0);
-            trailingSpaceBeforeBlockCollapses = ("" + sel).length == 1;
-
-            dom.removeNode(el);
-            sel.removeAllRanges();
-        })();
-
-        /*----------------------------------------------------------------------------------------------------------------*/
-
-        // This function must create word and non-word tokens for the whole of the text supplied to it
-        function defaultTokenizer(chars, wordOptions) {
-            var word = chars.join(""), result, tokenRanges = [];
-
-            function createTokenRange(start, end, isWord) {
-                tokenRanges.push( { start: start, end: end, isWord: isWord } );
-            }
-
-            // Match words and mark characters
-            var lastWordEnd = 0, wordStart, wordEnd;
-            while ( (result = wordOptions.wordRegex.exec(word)) ) {
-                wordStart = result.index;
-                wordEnd = wordStart + result[0].length;
-
-                // Create token for non-word characters preceding this word
-                if (wordStart > lastWordEnd) {
-                    createTokenRange(lastWordEnd, wordStart, false);
-                }
-
-                // Get trailing space characters for word
-                if (wordOptions.includeTrailingSpace) {
-                    while ( nonLineBreakWhiteSpaceRegex.test(chars[wordEnd]) ) {
-                        ++wordEnd;
-                    }
-                }
-                createTokenRange(wordStart, wordEnd, true);
-                lastWordEnd = wordEnd;
-            }
-
-            // Create token for trailing non-word characters, if any exist
-            if (lastWordEnd < chars.length) {
-                createTokenRange(lastWordEnd, chars.length, false);
-            }
-
-            return tokenRanges;
-        }
-
-        function convertCharRangeToToken(chars, tokenRange) {
-            var tokenChars = chars.slice(tokenRange.start, tokenRange.end);
-            var token = {
-                isWord: tokenRange.isWord,
-                chars: tokenChars,
-                toString: function() {
-                    return tokenChars.join("");
-                }
-            };
-            for (var i = 0, len = tokenChars.length; i < len; ++i) {
-                tokenChars[i].token = token;
-            }
-            return token;
-        }
-
-        function tokenize(chars, wordOptions, tokenizer) {
-            var tokenRanges = tokenizer(chars, wordOptions);
-            var tokens = [];
-            for (var i = 0, tokenRange; tokenRange = tokenRanges[i++]; ) {
-                tokens.push( convertCharRangeToToken(chars, tokenRange) );
-            }
-            return tokens;
-        }
-
-        var defaultCharacterOptions = {
-            includeBlockContentTrailingSpace: true,
-            includeSpaceBeforeBr: true,
-            includeSpaceBeforeBlock: true,
-            includePreLineTrailingSpace: true,
-            ignoreCharacters: ""
-        };
-
-        function normalizeIgnoredCharacters(ignoredCharacters) {
-            // Check if character is ignored
-            var ignoredChars = ignoredCharacters || "";
-
-            // Normalize ignored characters into a string consisting of characters in ascending order of character code
-            var ignoredCharsArray = (typeof ignoredChars == "string") ? ignoredChars.split("") : ignoredChars;
-            ignoredCharsArray.sort(function(char1, char2) {
-                return char1.charCodeAt(0) - char2.charCodeAt(0);
-            });
-
-            /// Convert back to a string and remove duplicates
-            return ignoredCharsArray.join("").replace(/(.)\1+/g, "$1");
-        }
-
-        var defaultCaretCharacterOptions = {
-            includeBlockContentTrailingSpace: !trailingSpaceBeforeLineBreakInPreLineCollapses,
-            includeSpaceBeforeBr: !trailingSpaceBeforeBrCollapses,
-            includeSpaceBeforeBlock: !trailingSpaceBeforeBlockCollapses,
-            includePreLineTrailingSpace: true
-        };
-
-        var defaultWordOptions = {
-            "en": {
-                wordRegex: /[a-z0-9]+('[a-z0-9]+)*/gi,
-                includeTrailingSpace: false,
-                tokenizer: defaultTokenizer
-            }
-        };
-
-        var defaultFindOptions = {
-            caseSensitive: false,
-            withinRange: null,
-            wholeWordsOnly: false,
-            wrap: false,
-            direction: "forward",
-            wordOptions: null,
-            characterOptions: null
-        };
-
-        var defaultMoveOptions = {
-            wordOptions: null,
-            characterOptions: null
-        };
-
-        var defaultExpandOptions = {
-            wordOptions: null,
-            characterOptions: null,
-            trim: false,
-            trimStart: true,
-            trimEnd: true
-        };
-
-        var defaultWordIteratorOptions = {
-            wordOptions: null,
-            characterOptions: null,
-            direction: "forward"
-        };
-
-        function createWordOptions(options) {
-            var lang, defaults;
-            if (!options) {
-                return defaultWordOptions[defaultLanguage];
-            } else {
-                lang = options.language || defaultLanguage;
-                defaults = {};
-                extend(defaults, defaultWordOptions[lang] || defaultWordOptions[defaultLanguage]);
-                extend(defaults, options);
-                return defaults;
-            }
-        }
-
-        function createNestedOptions(optionsParam, defaults) {
-            var options = createOptions(optionsParam, defaults);
-            if (defaults.hasOwnProperty("wordOptions")) {
-                options.wordOptions = createWordOptions(options.wordOptions);
-            }
-            if (defaults.hasOwnProperty("characterOptions")) {
-                options.characterOptions = createOptions(options.characterOptions, defaultCharacterOptions);
-            }
-            return options;
-        }
-
-        /*----------------------------------------------------------------------------------------------------------------*/
-
-        /* DOM utility functions */
-        var getComputedStyleProperty = dom.getComputedStyleProperty;
-
-        // Create cachable versions of DOM functions
-
-        // Test for old IE's incorrect display properties
-        var tableCssDisplayBlock;
-        (function() {
-            var table = document.createElement("table");
-            var body = getBody(document);
-            body.appendChild(table);
-            tableCssDisplayBlock = (getComputedStyleProperty(table, "display") == "block");
-            body.removeChild(table);
-        })();
-
-        var defaultDisplayValueForTag = {
-            table: "table",
-            caption: "table-caption",
-            colgroup: "table-column-group",
-            col: "table-column",
-            thead: "table-header-group",
-            tbody: "table-row-group",
-            tfoot: "table-footer-group",
-            tr: "table-row",
-            td: "table-cell",
-            th: "table-cell"
-        };
-
-        // Corrects IE's "block" value for table-related elements
-        function getComputedDisplay(el, win) {
-            var display = getComputedStyleProperty(el, "display", win);
-            var tagName = el.tagName.toLowerCase();
-            return (display == "block" &&
-                    tableCssDisplayBlock &&
-                    defaultDisplayValueForTag.hasOwnProperty(tagName)) ?
-                defaultDisplayValueForTag[tagName] : display;
-        }
-
-        function isHidden(node) {
-            var ancestors = getAncestorsAndSelf(node);
-            for (var i = 0, len = ancestors.length; i < len; ++i) {
-                if (ancestors[i].nodeType == 1 && getComputedDisplay(ancestors[i]) == "none") {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        function isVisibilityHiddenTextNode(textNode) {
-            var el;
-            return textNode.nodeType == 3 &&
-                (el = textNode.parentNode) &&
-                getComputedStyleProperty(el, "visibility") == "hidden";
-        }
-
-        /*----------------------------------------------------------------------------------------------------------------*/
-
-    
-        // "A block node is either an Element whose "display" property does not have
-        // resolved value "inline" or "inline-block" or "inline-table" or "none", or a
-        // Document, or a DocumentFragment."
-        function isBlockNode(node) {
-            return node &&
-                ((node.nodeType == 1 && !/^(inline(-block|-table)?|none)$/.test(getComputedDisplay(node))) ||
-                node.nodeType == 9 || node.nodeType == 11);
-        }
-
-        function getLastDescendantOrSelf(node) {
-            var lastChild = node.lastChild;
-            return lastChild ? getLastDescendantOrSelf(lastChild) : node;
-        }
-
-        function containsPositions(node) {
-            return dom.isCharacterDataNode(node) ||
-                !/^(area|base|basefont|br|col|frame|hr|img|input|isindex|link|meta|param)$/i.test(node.nodeName);
-        }
-
-        function getAncestors(node) {
-            var ancestors = [];
-            while (node.parentNode) {
-                ancestors.unshift(node.parentNode);
-                node = node.parentNode;
-            }
-            return ancestors;
-        }
-
-        function getAncestorsAndSelf(node) {
-            return getAncestors(node).concat([node]);
-        }
-
-        function nextNodeDescendants(node) {
-            while (node && !node.nextSibling) {
-                node = node.parentNode;
-            }
-            if (!node) {
-                return null;
-            }
-            return node.nextSibling;
-        }
-
-        function nextNode(node, excludeChildren) {
-            if (!excludeChildren && node.hasChildNodes()) {
-                return node.firstChild;
-            }
-            return nextNodeDescendants(node);
-        }
-
-        function previousNode(node) {
-            var previous = node.previousSibling;
-            if (previous) {
-                node = previous;
-                while (node.hasChildNodes()) {
-                    node = node.lastChild;
-                }
-                return node;
-            }
-            var parent = node.parentNode;
-            if (parent && parent.nodeType == 1) {
-                return parent;
-            }
-            return null;
-        }
-
-        // Adpated from Aryeh's code.
-        // "A whitespace node is either a Text node whose data is the empty string; or
-        // a Text node whose data consists only of one or more tabs (0x0009), line
-        // feeds (0x000A), carriage returns (0x000D), and/or spaces (0x0020), and whose
-        // parent is an Element whose resolved value for "white-space" is "normal" or
-        // "nowrap"; or a Text node whose data consists only of one or more tabs
-        // (0x0009), carriage returns (0x000D), and/or spaces (0x0020), and whose
-        // parent is an Element whose resolved value for "white-space" is "pre-line"."
-        function isWhitespaceNode(node) {
-            if (!node || node.nodeType != 3) {
-                return false;
-            }
-            var text = node.data;
-            if (text === "") {
-                return true;
-            }
-            var parent = node.parentNode;
-            if (!parent || parent.nodeType != 1) {
-                return false;
-            }
-            var computedWhiteSpace = getComputedStyleProperty(node.parentNode, "whiteSpace");
-
-            return (/^[\t\n\r ]+$/.test(text) && /^(normal|nowrap)$/.test(computedWhiteSpace)) ||
-                (/^[\t\r ]+$/.test(text) && computedWhiteSpace == "pre-line");
-        }
-
-        // Adpated from Aryeh's code.
-        // "node is a collapsed whitespace node if the following algorithm returns
-        // true:"
-        function isCollapsedWhitespaceNode(node) {
-            // "If node's data is the empty string, return true."
-            if (node.data === "") {
-                return true;
-            }
-
-            // "If node is not a whitespace node, return false."
-            if (!isWhitespaceNode(node)) {
-                return false;
-            }
-
-            // "Let ancestor be node's parent."
-            var ancestor = node.parentNode;
-
-            // "If ancestor is null, return true."
-            if (!ancestor) {
-                return true;
-            }
-
-            // "If the "display" property of some ancestor of node has resolved value "none", return true."
-            if (isHidden(node)) {
-                return true;
-            }
-
-            return false;
-        }
-
-        function isCollapsedNode(node) {
-            var type = node.nodeType;
-            return type == 7 /* PROCESSING_INSTRUCTION */ ||
-                type == 8 /* COMMENT */ ||
-                isHidden(node) ||
-                /^(script|style)$/i.test(node.nodeName) ||
-                isVisibilityHiddenTextNode(node) ||
-                isCollapsedWhitespaceNode(node);
-        }
-
-        function isIgnoredNode(node, win) {
-            var type = node.nodeType;
-            return type == 7 /* PROCESSING_INSTRUCTION */ ||
-                type == 8 /* COMMENT */ ||
-                (type == 1 && getComputedDisplay(node, win) == "none");
-        }
-
-        /*----------------------------------------------------------------------------------------------------------------*/
-
-        // Possibly overengineered caching system to prevent repeated DOM calls slowing everything down
-
-        function Cache() {
-            this.store = {};
-        }
-
-        Cache.prototype = {
-            get: function(key) {
-                return this.store.hasOwnProperty(key) ? this.store[key] : null;
-            },
-
-            set: function(key, value) {
-                return this.store[key] = value;
-            }
-        };
-
-        var cachedCount = 0, uncachedCount = 0;
-
-        function createCachingGetter(methodName, func, objProperty) {
-            return function(args) {
-                var cache = this.cache;
-                if (cache.hasOwnProperty(methodName)) {
-                    cachedCount++;
-                    return cache[methodName];
-                } else {
-                    uncachedCount++;
-                    var value = func.call(this, objProperty ? this[objProperty] : this, args);
-                    cache[methodName] = value;
-                    return value;
-                }
-            };
-        }
-
-        /*----------------------------------------------------------------------------------------------------------------*/
-
-        function NodeWrapper(node, session) {
-            this.node = node;
-            this.session = session;
-            this.cache = new Cache();
-            this.positions = new Cache();
-        }
-
-        var nodeProto = {
-            getPosition: function(offset) {
-                var positions = this.positions;
-                return positions.get(offset) || positions.set(offset, new Position(this, offset));
-            },
-
-            toString: function() {
-                return "[NodeWrapper(" + dom.inspectNode(this.node) + ")]";
-            }
-        };
-
-        NodeWrapper.prototype = nodeProto;
-
-        var EMPTY = "EMPTY",
-            NON_SPACE = "NON_SPACE",
-            UNCOLLAPSIBLE_SPACE = "UNCOLLAPSIBLE_SPACE",
-            COLLAPSIBLE_SPACE = "COLLAPSIBLE_SPACE",
-            TRAILING_SPACE_BEFORE_BLOCK = "TRAILING_SPACE_BEFORE_BLOCK",
-            TRAILING_SPACE_IN_BLOCK = "TRAILING_SPACE_IN_BLOCK",
-            TRAILING_SPACE_BEFORE_BR = "TRAILING_SPACE_BEFORE_BR",
-            PRE_LINE_TRAILING_SPACE_BEFORE_LINE_BREAK = "PRE_LINE_TRAILING_SPACE_BEFORE_LINE_BREAK",
-            TRAILING_LINE_BREAK_AFTER_BR = "TRAILING_LINE_BREAK_AFTER_BR",
-            INCLUDED_TRAILING_LINE_BREAK_AFTER_BR = "INCLUDED_TRAILING_LINE_BREAK_AFTER_BR";
-
-        extend(nodeProto, {
-            isCharacterDataNode: createCachingGetter("isCharacterDataNode", dom.isCharacterDataNode, "node"),
-            getNodeIndex: createCachingGetter("nodeIndex", dom.getNodeIndex, "node"),
-            getLength: createCachingGetter("nodeLength", dom.getNodeLength, "node"),
-            containsPositions: createCachingGetter("containsPositions", containsPositions, "node"),
-            isWhitespace: createCachingGetter("isWhitespace", isWhitespaceNode, "node"),
-            isCollapsedWhitespace: createCachingGetter("isCollapsedWhitespace", isCollapsedWhitespaceNode, "node"),
-            getComputedDisplay: createCachingGetter("computedDisplay", getComputedDisplay, "node"),
-            isCollapsed: createCachingGetter("collapsed", isCollapsedNode, "node"),
-            isIgnored: createCachingGetter("ignored", isIgnoredNode, "node"),
-            next: createCachingGetter("nextPos", nextNode, "node"),
-            previous: createCachingGetter("previous", previousNode, "node"),
-
-            getTextNodeInfo: createCachingGetter("textNodeInfo", function(textNode) {
-                var spaceRegex = null, collapseSpaces = false;
-                var cssWhitespace = getComputedStyleProperty(textNode.parentNode, "whiteSpace");
-                var preLine = (cssWhitespace == "pre-line");
-                if (preLine) {
-                    spaceRegex = spacesMinusLineBreaksRegex;
-                    collapseSpaces = true;
-                } else if (cssWhitespace == "normal" || cssWhitespace == "nowrap") {
-                    spaceRegex = spacesRegex;
-                    collapseSpaces = true;
-                }
-
-                return {
-                    node: textNode,
-                    text: textNode.data,
-                    spaceRegex: spaceRegex,
-                    collapseSpaces: collapseSpaces,
-                    preLine: preLine
-                };
-            }, "node"),
-
-            hasInnerText: createCachingGetter("hasInnerText", function(el, backward) {
-                var session = this.session;
-                var posAfterEl = session.getPosition(el.parentNode, this.getNodeIndex() + 1);
-                var firstPosInEl = session.getPosition(el, 0);
-
-                var pos = backward ? posAfterEl : firstPosInEl;
-                var endPos = backward ? firstPosInEl : posAfterEl;
-
-                /*
-                 <body><p>X  </p><p>Y</p></body>
-
-                 Positions:
-
-                 body:0:""
-                 p:0:""
-                 text:0:""
-                 text:1:"X"
-                 text:2:TRAILING_SPACE_IN_BLOCK
-                 text:3:COLLAPSED_SPACE
-                 p:1:""
-                 body:1:"\n"
-                 p:0:""
-                 text:0:""
-                 text:1:"Y"
-
-                 A character is a TRAILING_SPACE_IN_BLOCK iff:
-
-                 - There is no uncollapsed character after it within the visible containing block element
-
-                 A character is a TRAILING_SPACE_BEFORE_BR iff:
-
-                 - There is no uncollapsed character after it preceding a <br> element
-
-                 An element has inner text iff
-
-                 - It is not hidden
-                 - It contains an uncollapsed character
-
-                 All trailing spaces (pre-line, before <br>, end of block) require definite non-empty characters to render.
-                 */
-
-                while (pos !== endPos) {
-                    pos.prepopulateChar();
-                    if (pos.isDefinitelyNonEmpty()) {
-                        return true;
-                    }
-                    pos = backward ? pos.previousVisible() : pos.nextVisible();
-                }
-
-                return false;
-            }, "node"),
-
-            isRenderedBlock: createCachingGetter("isRenderedBlock", function(el) {
-                // Ensure that a block element containing a <br> is considered to have inner text
-                var brs = el.getElementsByTagName("br");
-                for (var i = 0, len = brs.length; i < len; ++i) {
-                    if (!isCollapsedNode(brs[i])) {
-                        return true;
-                    }
-                }
-                return this.hasInnerText();
-            }, "node"),
-
-            getTrailingSpace: createCachingGetter("trailingSpace", function(el) {
-                if (el.tagName.toLowerCase() == "br") {
-                    return "";
-                } else {
-                    switch (this.getComputedDisplay()) {
-                        case "inline":
-                            var child = el.lastChild;
-                            while (child) {
-                                if (!isIgnoredNode(child)) {
-                                    return (child.nodeType == 1) ? this.session.getNodeWrapper(child).getTrailingSpace() : "";
-                                }
-                                child = child.previousSibling;
-                            }
-                            break;
-                        case "inline-block":
-                        case "inline-table":
-                        case "none":
-                        case "table-column":
-                        case "table-column-group":
-                            break;
-                        case "table-cell":
-                            return "\t";
-                        default:
-                            return this.isRenderedBlock(true) ? "\n" : "";
-                    }
-                }
-                return "";
-            }, "node"),
-
-            getLeadingSpace: createCachingGetter("leadingSpace", function(el) {
-                switch (this.getComputedDisplay()) {
-                    case "inline":
-                    case "inline-block":
-                    case "inline-table":
-                    case "none":
-                    case "table-column":
-                    case "table-column-group":
-                    case "table-cell":
-                        break;
-                    default:
-                        return this.isRenderedBlock(false) ? "\n" : "";
-                }
-                return "";
-            }, "node")
-        });
-
-        /*----------------------------------------------------------------------------------------------------------------*/
-
-        function Position(nodeWrapper, offset) {
-            this.offset = offset;
-            this.nodeWrapper = nodeWrapper;
-            this.node = nodeWrapper.node;
-            this.session = nodeWrapper.session;
-            this.cache = new Cache();
-        }
-
-        function inspectPosition() {
-            return "[Position(" + dom.inspectNode(this.node) + ":" + this.offset + ")]";
-        }
-
-        var positionProto = {
-            character: "",
-            characterType: EMPTY,
-            isBr: false,
-
-            /*
-            This method:
-            - Fully populates positions that have characters that can be determined independently of any other characters.
-            - Populates most types of space positions with a provisional character. The character is finalized later.
-             */
-            prepopulateChar: function() {
-                var pos = this;
-                if (!pos.prepopulatedChar) {
-                    var node = pos.node, offset = pos.offset;
-                    var visibleChar = "", charType = EMPTY;
-                    var finalizedChar = false;
-                    if (offset > 0) {
-                        if (node.nodeType == 3) {
-                            var text = node.data;
-                            var textChar = text.charAt(offset - 1);
-
-                            var nodeInfo = pos.nodeWrapper.getTextNodeInfo();
-                            var spaceRegex = nodeInfo.spaceRegex;
-                            if (nodeInfo.collapseSpaces) {
-                                if (spaceRegex.test(textChar)) {
-                                    // "If the character at position is from set, append a single space (U+0020) to newdata and advance
-                                    // position until the character at position is not from set."
-
-                                    // We also need to check for the case where we're in a pre-line and we have a space preceding a
-                                    // line break, because such spaces are collapsed in some browsers
-                                    if (offset > 1 && spaceRegex.test(text.charAt(offset - 2))) {
-                                    } else if (nodeInfo.preLine && text.charAt(offset) === "\n") {
-                                        visibleChar = " ";
-                                        charType = PRE_LINE_TRAILING_SPACE_BEFORE_LINE_BREAK;
-                                    } else {
-                                        visibleChar = " ";
-                                        //pos.checkForFollowingLineBreak = true;
-                                        charType = COLLAPSIBLE_SPACE;
-                                    }
-                                } else {
-                                    visibleChar = textChar;
-                                    charType = NON_SPACE;
-                                    finalizedChar = true;
-                                }
-                            } else {
-                                visibleChar = textChar;
-                                charType = UNCOLLAPSIBLE_SPACE;
-                                finalizedChar = true;
-                            }
-                        } else {
-                            var nodePassed = node.childNodes[offset - 1];
-                            if (nodePassed && nodePassed.nodeType == 1 && !isCollapsedNode(nodePassed)) {
-                                if (nodePassed.tagName.toLowerCase() == "br") {
-                                    visibleChar = "\n";
-                                    pos.isBr = true;
-                                    charType = COLLAPSIBLE_SPACE;
-                                    finalizedChar = false;
-                                } else {
-                                    pos.checkForTrailingSpace = true;
-                                }
-                            }
-
-                            // Check the leading space of the next node for the case when a block element follows an inline
-                            // element or text node. In that case, there is an implied line break between the two nodes.
-                            if (!visibleChar) {
-                                var nextNode = node.childNodes[offset];
-                                if (nextNode && nextNode.nodeType == 1 && !isCollapsedNode(nextNode)) {
-                                    pos.checkForLeadingSpace = true;
-                                }
-                            }
-                        }
-                    }
-
-                    pos.prepopulatedChar = true;
-                    pos.character = visibleChar;
-                    pos.characterType = charType;
-                    pos.isCharInvariant = finalizedChar;
-                }
-            },
-
-            isDefinitelyNonEmpty: function() {
-                var charType = this.characterType;
-                return charType == NON_SPACE || charType == UNCOLLAPSIBLE_SPACE;
-            },
-
-            // Resolve leading and trailing spaces, which may involve prepopulating other positions
-            resolveLeadingAndTrailingSpaces: function() {
-                if (!this.prepopulatedChar) {
-                    this.prepopulateChar();
-                }
-                if (this.checkForTrailingSpace) {
-                    var trailingSpace = this.session.getNodeWrapper(this.node.childNodes[this.offset - 1]).getTrailingSpace();
-                    if (trailingSpace) {
-                        this.isTrailingSpace = true;
-                        this.character = trailingSpace;
-                        this.characterType = COLLAPSIBLE_SPACE;
-                    }
-                    this.checkForTrailingSpace = false;
-                }
-                if (this.checkForLeadingSpace) {
-                    var leadingSpace = this.session.getNodeWrapper(this.node.childNodes[this.offset]).getLeadingSpace();
-                    if (leadingSpace) {
-                        this.isLeadingSpace = true;
-                        this.character = leadingSpace;
-                        this.characterType = COLLAPSIBLE_SPACE;
-                    }
-                    this.checkForLeadingSpace = false;
-                }
-            },
-
-            getPrecedingUncollapsedPosition: function(characterOptions) {
-                var pos = this, character;
-                while ( (pos = pos.previousVisible()) ) {
-                    character = pos.getCharacter(characterOptions);
-                    if (character !== "") {
-                        return pos;
-                    }
-                }
-
-                return null;
-            },
-
-            getCharacter: function(characterOptions) {
-                this.resolveLeadingAndTrailingSpaces();
-
-                var thisChar = this.character, returnChar;
-
-                // Check if character is ignored
-                var ignoredChars = normalizeIgnoredCharacters(characterOptions.ignoreCharacters);
-                var isIgnoredCharacter = (thisChar !== "" && ignoredChars.indexOf(thisChar) > -1);
-
-                // Check if this position's  character is invariant (i.e. not dependent on character options) and return it
-                // if so
-                if (this.isCharInvariant) {
-                    returnChar = isIgnoredCharacter ? "" : thisChar;
-                    return returnChar;
-                }
-
-                var cacheKey = ["character", characterOptions.includeSpaceBeforeBr, characterOptions.includeBlockContentTrailingSpace, characterOptions.includePreLineTrailingSpace, ignoredChars].join("_");
-                var cachedChar = this.cache.get(cacheKey);
-                if (cachedChar !== null) {
-                    return cachedChar;
-                }
-
-                // We need to actually get the character now
-                var character = "";
-                var collapsible = (this.characterType == COLLAPSIBLE_SPACE);
-
-                var nextPos, previousPos;
-                var gotPreviousPos = false;
-                var pos = this;
-
-                function getPreviousPos() {
-                    if (!gotPreviousPos) {
-                        previousPos = pos.getPrecedingUncollapsedPosition(characterOptions);
-                        gotPreviousPos = true;
-                    }
-                    return previousPos;
-                }
-
-                // Disallow a collapsible space that is followed by a line break or is the last character
-                if (collapsible) {
-                    // Allow a trailing space that we've previously determined should be included
-                    if (this.type == INCLUDED_TRAILING_LINE_BREAK_AFTER_BR) {
-                        character = "\n";
-                    }
-                    // Disallow a collapsible space that follows a trailing space or line break, or is the first character,
-                    // or follows a collapsible included space
-                    else if (thisChar == " " &&
-                            (!getPreviousPos() || previousPos.isTrailingSpace || previousPos.character == "\n" || (previousPos.character == " " && previousPos.characterType == COLLAPSIBLE_SPACE))) {
-                    }
-                    // Allow a leading line break unless it follows a line break
-                    else if (thisChar == "\n" && this.isLeadingSpace) {
-                        if (getPreviousPos() && previousPos.character != "\n") {
-                            character = "\n";
-                        } else {
-                        }
-                    } else {
-                        nextPos = this.nextUncollapsed();
-                        if (nextPos) {
-                            if (nextPos.isBr) {
-                                this.type = TRAILING_SPACE_BEFORE_BR;
-                            } else if (nextPos.isTrailingSpace && nextPos.character == "\n") {
-                                this.type = TRAILING_SPACE_IN_BLOCK;
-                            } else if (nextPos.isLeadingSpace && nextPos.character == "\n") {
-                                this.type = TRAILING_SPACE_BEFORE_BLOCK;
-                            }
-
-                            if (nextPos.character == "\n") {
-                                if (this.type == TRAILING_SPACE_BEFORE_BR && !characterOptions.includeSpaceBeforeBr) {
-                                } else if (this.type == TRAILING_SPACE_BEFORE_BLOCK && !characterOptions.includeSpaceBeforeBlock) {
-                                } else if (this.type == TRAILING_SPACE_IN_BLOCK && nextPos.isTrailingSpace && !characterOptions.includeBlockContentTrailingSpace) {
-                                } else if (this.type == PRE_LINE_TRAILING_SPACE_BEFORE_LINE_BREAK && nextPos.type == NON_SPACE && !characterOptions.includePreLineTrailingSpace) {
-                                } else if (thisChar == "\n") {
-                                    if (nextPos.isTrailingSpace) {
-                                        if (this.isTrailingSpace) {
-                                        } else if (this.isBr) {
-                                            nextPos.type = TRAILING_LINE_BREAK_AFTER_BR;
-
-                                            if (getPreviousPos() && previousPos.isLeadingSpace && !previousPos.isTrailingSpace && previousPos.character == "\n") {
-                                                nextPos.character = "";
-                                            } else {
-                                                nextPos.type = INCLUDED_TRAILING_LINE_BREAK_AFTER_BR;
-                                            }
-                                        }
-                                    } else {
-                                        character = "\n";
-                                    }
-                                } else if (thisChar == " ") {
-                                    character = " ";
-                                } else {
-                                }
-                            } else {
-                                character = thisChar;
-                            }
-                        } else {
-                        }
-                    }
-                }
-
-                if (ignoredChars.indexOf(character) > -1) {
-                    character = "";
-                }
-
-
-                this.cache.set(cacheKey, character);
-
-                return character;
-            },
-
-            equals: function(pos) {
-                return !!pos && this.node === pos.node && this.offset === pos.offset;
-            },
-
-            inspect: inspectPosition,
-
-            toString: function() {
-                return this.character;
-            }
-        };
-
-        Position.prototype = positionProto;
-
-        extend(positionProto, {
-            next: createCachingGetter("nextPos", function(pos) {
-                var nodeWrapper = pos.nodeWrapper, node = pos.node, offset = pos.offset, session = nodeWrapper.session;
-                if (!node) {
-                    return null;
-                }
-                var nextNode, nextOffset, child;
-                if (offset == nodeWrapper.getLength()) {
-                    // Move onto the next node
-                    nextNode = node.parentNode;
-                    nextOffset = nextNode ? nodeWrapper.getNodeIndex() + 1 : 0;
-                } else {
-                    if (nodeWrapper.isCharacterDataNode()) {
-                        nextNode = node;
-                        nextOffset = offset + 1;
-                    } else {
-                        child = node.childNodes[offset];
-                        // Go into the children next, if children there are
-                        if (session.getNodeWrapper(child).containsPositions()) {
-                            nextNode = child;
-                            nextOffset = 0;
-                        } else {
-                            nextNode = node;
-                            nextOffset = offset + 1;
-                        }
-                    }
-                }
-
-                return nextNode ? session.getPosition(nextNode, nextOffset) : null;
-            }),
-
-            previous: createCachingGetter("previous", function(pos) {
-                var nodeWrapper = pos.nodeWrapper, node = pos.node, offset = pos.offset, session = nodeWrapper.session;
-                var previousNode, previousOffset, child;
-                if (offset == 0) {
-                    previousNode = node.parentNode;
-                    previousOffset = previousNode ? nodeWrapper.getNodeIndex() : 0;
-                } else {
-                    if (nodeWrapper.isCharacterDataNode()) {
-                        previousNode = node;
-                        previousOffset = offset - 1;
-                    } else {
-                        child = node.childNodes[offset - 1];
-                        // Go into the children next, if children there are
-                        if (session.getNodeWrapper(child).containsPositions()) {
-                            previousNode = child;
-                            previousOffset = dom.getNodeLength(child);
-                        } else {
-                            previousNode = node;
-                            previousOffset = offset - 1;
-                        }
-                    }
-                }
-                return previousNode ? session.getPosition(previousNode, previousOffset) : null;
-            }),
-
-            /*
-             Next and previous position moving functions that filter out
-
-             - Hidden (CSS visibility/display) elements
-             - Script and style elements
-             */
-            nextVisible: createCachingGetter("nextVisible", function(pos) {
-                var next = pos.next();
-                if (!next) {
-                    return null;
-                }
-                var nodeWrapper = next.nodeWrapper, node = next.node;
-                var newPos = next;
-                if (nodeWrapper.isCollapsed()) {
-                    // We're skipping this node and all its descendants
-                    newPos = nodeWrapper.session.getPosition(node.parentNode, nodeWrapper.getNodeIndex() + 1);
-                }
-                return newPos;
-            }),
-
-            nextUncollapsed: createCachingGetter("nextUncollapsed", function(pos) {
-                var nextPos = pos;
-                while ( (nextPos = nextPos.nextVisible()) ) {
-                    nextPos.resolveLeadingAndTrailingSpaces();
-                    if (nextPos.character !== "") {
-                        return nextPos;
-                    }
-                }
-                return null;
-            }),
-
-            previousVisible: createCachingGetter("previousVisible", function(pos) {
-                var previous = pos.previous();
-                if (!previous) {
-                    return null;
-                }
-                var nodeWrapper = previous.nodeWrapper, node = previous.node;
-                var newPos = previous;
-                if (nodeWrapper.isCollapsed()) {
-                    // We're skipping this node and all its descendants
-                    newPos = nodeWrapper.session.getPosition(node.parentNode, nodeWrapper.getNodeIndex());
-                }
-                return newPos;
-            })
-        });
-
-        /*----------------------------------------------------------------------------------------------------------------*/
-
-        var currentSession = null;
-
-        var Session = (function() {
-            function createWrapperCache(nodeProperty) {
-                var cache = new Cache();
-
-                return {
-                    get: function(node) {
-                        var wrappersByProperty = cache.get(node[nodeProperty]);
-                        if (wrappersByProperty) {
-                            for (var i = 0, wrapper; wrapper = wrappersByProperty[i++]; ) {
-                                if (wrapper.node === node) {
-                                    return wrapper;
-                                }
-                            }
-                        }
-                        return null;
-                    },
-
-                    set: function(nodeWrapper) {
-                        var property = nodeWrapper.node[nodeProperty];
-                        var wrappersByProperty = cache.get(property) || cache.set(property, []);
-                        wrappersByProperty.push(nodeWrapper);
-                    }
-                };
-            }
-
-            var uniqueIDSupported = util.isHostProperty(document.documentElement, "uniqueID");
-
-            function Session() {
-                this.initCaches();
-            }
-
-            Session.prototype = {
-                initCaches: function() {
-                    this.elementCache = uniqueIDSupported ? (function() {
-                        var elementsCache = new Cache();
-
-                        return {
-                            get: function(el) {
-                                return elementsCache.get(el.uniqueID);
-                            },
-
-                            set: function(elWrapper) {
-                                elementsCache.set(elWrapper.node.uniqueID, elWrapper);
-                            }
-                        };
-                    })() : createWrapperCache("tagName");
-
-                    // Store text nodes keyed by data, although we may need to truncate this
-                    this.textNodeCache = createWrapperCache("data");
-                    this.otherNodeCache = createWrapperCache("nodeName");
-                },
-
-                getNodeWrapper: function(node) {
-                    var wrapperCache;
-                    switch (node.nodeType) {
-                        case 1:
-                            wrapperCache = this.elementCache;
-                            break;
-                        case 3:
-                            wrapperCache = this.textNodeCache;
-                            break;
-                        default:
-                            wrapperCache = this.otherNodeCache;
-                            break;
-                    }
-
-                    var wrapper = wrapperCache.get(node);
-                    if (!wrapper) {
-                        wrapper = new NodeWrapper(node, this);
-                        wrapperCache.set(wrapper);
-                    }
-                    return wrapper;
-                },
-
-                getPosition: function(node, offset) {
-                    return this.getNodeWrapper(node).getPosition(offset);
-                },
-
-                getRangeBoundaryPosition: function(range, isStart) {
-                    var prefix = isStart ? "start" : "end";
-                    return this.getPosition(range[prefix + "Container"], range[prefix + "Offset"]);
-                },
-
-                detach: function() {
-                    this.elementCache = this.textNodeCache = this.otherNodeCache = null;
-                }
-            };
-
-            return Session;
-        })();
-
-        /*----------------------------------------------------------------------------------------------------------------*/
-
-        function startSession() {
-            endSession();
-            return (currentSession = new Session());
-        }
-
-        function getSession() {
-            return currentSession || startSession();
-        }
-
-        function endSession() {
-            if (currentSession) {
-                currentSession.detach();
-            }
-            currentSession = null;
-        }
-
-        /*----------------------------------------------------------------------------------------------------------------*/
-
-        // Extensions to the rangy.dom utility object
-
-        extend(dom, {
-            nextNode: nextNode,
-            previousNode: previousNode
-        });
-
-        /*----------------------------------------------------------------------------------------------------------------*/
-
-        function createCharacterIterator(startPos, backward, endPos, characterOptions) {
-
-            // Adjust the end position to ensure that it is actually reached
-            if (endPos) {
-                if (backward) {
-                    if (isCollapsedNode(endPos.node)) {
-                        endPos = startPos.previousVisible();
-                    }
-                } else {
-                    if (isCollapsedNode(endPos.node)) {
-                        endPos = endPos.nextVisible();
-                    }
-                }
-            }
-
-            var pos = startPos, finished = false;
-
-            function next() {
-                var charPos = null;
-                if (backward) {
-                    charPos = pos;
-                    if (!finished) {
-                        pos = pos.previousVisible();
-                        finished = !pos || (endPos && pos.equals(endPos));
-                    }
-                } else {
-                    if (!finished) {
-                        charPos = pos = pos.nextVisible();
-                        finished = !pos || (endPos && pos.equals(endPos));
-                    }
-                }
-                if (finished) {
-                    pos = null;
-                }
-                return charPos;
-            }
-
-            var previousTextPos, returnPreviousTextPos = false;
-
-            return {
-                next: function() {
-                    if (returnPreviousTextPos) {
-                        returnPreviousTextPos = false;
-                        return previousTextPos;
-                    } else {
-                        var pos, character;
-                        while ( (pos = next()) ) {
-                            character = pos.getCharacter(characterOptions);
-                            if (character) {
-                                previousTextPos = pos;
-                                return pos;
-                            }
-                        }
-                        return null;
-                    }
-                },
-
-                rewind: function() {
-                    if (previousTextPos) {
-                        returnPreviousTextPos = true;
-                    } else {
-                        throw module.createError("createCharacterIterator: cannot rewind. Only one position can be rewound.");
-                    }
-                },
-
-                dispose: function() {
-                    startPos = endPos = null;
-                }
-            };
-        }
-
-        var arrayIndexOf = Array.prototype.indexOf ?
-            function(arr, val) {
-                return arr.indexOf(val);
-            } :
-            function(arr, val) {
-                for (var i = 0, len = arr.length; i < len; ++i) {
-                    if (arr[i] === val) {
-                        return i;
-                    }
-                }
-                return -1;
-            };
-
-        // Provides a pair of iterators over text positions, tokenized. Transparently requests more text when next()
-        // is called and there is no more tokenized text
-        function createTokenizedTextProvider(pos, characterOptions, wordOptions) {
-            var forwardIterator = createCharacterIterator(pos, false, null, characterOptions);
-            var backwardIterator = createCharacterIterator(pos, true, null, characterOptions);
-            var tokenizer = wordOptions.tokenizer;
-
-            // Consumes a word and the whitespace beyond it
-            function consumeWord(forward) {
-                var pos, textChar;
-                var newChars = [], it = forward ? forwardIterator : backwardIterator;
-
-                var passedWordBoundary = false, insideWord = false;
-
-                while ( (pos = it.next()) ) {
-                    textChar = pos.character;
-
-
-                    if (allWhiteSpaceRegex.test(textChar)) {
-                        if (insideWord) {
-                            insideWord = false;
-                            passedWordBoundary = true;
-                        }
-                    } else {
-                        if (passedWordBoundary) {
-                            it.rewind();
-                            break;
-                        } else {
-                            insideWord = true;
-                        }
-                    }
-                    newChars.push(pos);
-                }
-
-
-                return newChars;
-            }
-
-            // Get initial word surrounding initial position and tokenize it
-            var forwardChars = consumeWord(true);
-            var backwardChars = consumeWord(false).reverse();
-            var tokens = tokenize(backwardChars.concat(forwardChars), wordOptions, tokenizer);
-
-            // Create initial token buffers
-            var forwardTokensBuffer = forwardChars.length ?
-                tokens.slice(arrayIndexOf(tokens, forwardChars[0].token)) : [];
-
-            var backwardTokensBuffer = backwardChars.length ?
-                tokens.slice(0, arrayIndexOf(tokens, backwardChars.pop().token) + 1) : [];
-
-            function inspectBuffer(buffer) {
-                var textPositions = ["[" + buffer.length + "]"];
-                for (var i = 0; i < buffer.length; ++i) {
-                    textPositions.push("(word: " + buffer[i] + ", is word: " + buffer[i].isWord + ")");
-                }
-                return textPositions;
-            }
-
-
-            return {
-                nextEndToken: function() {
-                    var lastToken, forwardChars;
-
-                    // If we're down to the last token, consume character chunks until we have a word or run out of
-                    // characters to consume
-                    while ( forwardTokensBuffer.length == 1 &&
-                        !(lastToken = forwardTokensBuffer[0]).isWord &&
-                        (forwardChars = consumeWord(true)).length > 0) {
-
-                        // Merge trailing non-word into next word and tokenize
-                        forwardTokensBuffer = tokenize(lastToken.chars.concat(forwardChars), wordOptions, tokenizer);
-                    }
-
-                    return forwardTokensBuffer.shift();
-                },
-
-                previousStartToken: function() {
-                    var lastToken, backwardChars;
-
-                    // If we're down to the last token, consume character chunks until we have a word or run out of
-                    // characters to consume
-                    while ( backwardTokensBuffer.length == 1 &&
-                        !(lastToken = backwardTokensBuffer[0]).isWord &&
-                        (backwardChars = consumeWord(false)).length > 0) {
-
-                        // Merge leading non-word into next word and tokenize
-                        backwardTokensBuffer = tokenize(backwardChars.reverse().concat(lastToken.chars), wordOptions, tokenizer);
-                    }
-
-                    return backwardTokensBuffer.pop();
-                },
-
-                dispose: function() {
-                    forwardIterator.dispose();
-                    backwardIterator.dispose();
-                    forwardTokensBuffer = backwardTokensBuffer = null;
-                }
-            };
-        }
-
-        function movePositionBy(pos, unit, count, characterOptions, wordOptions) {
-            var unitsMoved = 0, currentPos, newPos = pos, charIterator, nextPos, absCount = Math.abs(count), token;
-            if (count !== 0) {
-                var backward = (count < 0);
-
-                switch (unit) {
-                    case CHARACTER:
-                        charIterator = createCharacterIterator(pos, backward, null, characterOptions);
-                        while ( (currentPos = charIterator.next()) && unitsMoved < absCount ) {
-                            ++unitsMoved;
-                            newPos = currentPos;
-                        }
-                        nextPos = currentPos;
-                        charIterator.dispose();
-                        break;
-                    case WORD:
-                        var tokenizedTextProvider = createTokenizedTextProvider(pos, characterOptions, wordOptions);
-                        var next = backward ? tokenizedTextProvider.previousStartToken : tokenizedTextProvider.nextEndToken;
-
-                        while ( (token = next()) && unitsMoved < absCount ) {
-                            if (token.isWord) {
-                                ++unitsMoved;
-                                newPos = backward ? token.chars[0] : token.chars[token.chars.length - 1];
-                            }
-                        }
-                        break;
-                    default:
-                        throw new Error("movePositionBy: unit '" + unit + "' not implemented");
-                }
-
-                // Perform any necessary position tweaks
-                if (backward) {
-                    newPos = newPos.previousVisible();
-                    unitsMoved = -unitsMoved;
-                } else if (newPos && newPos.isLeadingSpace && !newPos.isTrailingSpace) {
-                    // Tweak the position for the case of a leading space. The problem is that an uncollapsed leading space
-                    // before a block element (for example, the line break between "1" and "2" in the following HTML:
-                    // "1<p>2</p>") is considered to be attached to the position immediately before the block element, which
-                    // corresponds with a different selection position in most browsers from the one we want (i.e. at the
-                    // start of the contents of the block element). We get round this by advancing the position returned to
-                    // the last possible equivalent visible position.
-                    if (unit == WORD) {
-                        charIterator = createCharacterIterator(pos, false, null, characterOptions);
-                        nextPos = charIterator.next();
-                        charIterator.dispose();
-                    }
-                    if (nextPos) {
-                        newPos = nextPos.previousVisible();
-                    }
-                }
-            }
-
-
-            return {
-                position: newPos,
-                unitsMoved: unitsMoved
-            };
-        }
-
-        function createRangeCharacterIterator(session, range, characterOptions, backward) {
-            var rangeStart = session.getRangeBoundaryPosition(range, true);
-            var rangeEnd = session.getRangeBoundaryPosition(range, false);
-            var itStart = backward ? rangeEnd : rangeStart;
-            var itEnd = backward ? rangeStart : rangeEnd;
-
-            return createCharacterIterator(itStart, !!backward, itEnd, characterOptions);
-        }
-
-        function getRangeCharacters(session, range, characterOptions) {
-
-            var chars = [], it = createRangeCharacterIterator(session, range, characterOptions), pos;
-            while ( (pos = it.next()) ) {
-                chars.push(pos);
-            }
-
-            it.dispose();
-            return chars;
-        }
-
-        function isWholeWord(startPos, endPos, wordOptions) {
-            var range = api.createRange(startPos.node);
-            range.setStartAndEnd(startPos.node, startPos.offset, endPos.node, endPos.offset);
-            return !range.expand("word", { wordOptions: wordOptions });
-        }
-
-        function findTextFromPosition(initialPos, searchTerm, isRegex, searchScopeRange, findOptions) {
-            var backward = isDirectionBackward(findOptions.direction);
-            var it = createCharacterIterator(
-                initialPos,
-                backward,
-                initialPos.session.getRangeBoundaryPosition(searchScopeRange, backward),
-                findOptions.characterOptions
-            );
-            var text = "", chars = [], pos, currentChar, matchStartIndex, matchEndIndex;
-            var result, insideRegexMatch;
-            var returnValue = null;
-
-            function handleMatch(startIndex, endIndex) {
-                var startPos = chars[startIndex].previousVisible();
-                var endPos = chars[endIndex - 1];
-                var valid = (!findOptions.wholeWordsOnly || isWholeWord(startPos, endPos, findOptions.wordOptions));
-
-                return {
-                    startPos: startPos,
-                    endPos: endPos,
-                    valid: valid
-                };
-            }
-
-            while ( (pos = it.next()) ) {
-                currentChar = pos.character;
-                if (!isRegex && !findOptions.caseSensitive) {
-                    currentChar = currentChar.toLowerCase();
-                }
-
-                if (backward) {
-                    chars.unshift(pos);
-                    text = currentChar + text;
-                } else {
-                    chars.push(pos);
-                    text += currentChar;
-                }
-
-                if (isRegex) {
-                    result = searchTerm.exec(text);
-                    if (result) {
-                        matchStartIndex = result.index;
-                        matchEndIndex = matchStartIndex + result[0].length;
-                        if (insideRegexMatch) {
-                            // Check whether the match is now over
-                            if ((!backward && matchEndIndex < text.length) || (backward && matchStartIndex > 0)) {
-                                returnValue = handleMatch(matchStartIndex, matchEndIndex);
-                                break;
-                            }
-                        } else {
-                            insideRegexMatch = true;
-                        }
-                    }
-                } else if ( (matchStartIndex = text.indexOf(searchTerm)) != -1 ) {
-                    returnValue = handleMatch(matchStartIndex, matchStartIndex + searchTerm.length);
-                    break;
-                }
-            }
-
-            // Check whether regex match extends to the end of the range
-            if (insideRegexMatch) {
-                returnValue = handleMatch(matchStartIndex, matchEndIndex);
-            }
-            it.dispose();
-
-            return returnValue;
-        }
-
-        function createEntryPointFunction(func) {
-            return function() {
-                var sessionRunning = !!currentSession;
-                var session = getSession();
-                var args = [session].concat( util.toArray(arguments) );
-                var returnValue = func.apply(this, args);
-                if (!sessionRunning) {
-                    endSession();
-                }
-                return returnValue;
-            };
-        }
-
-        /*----------------------------------------------------------------------------------------------------------------*/
-
-        // Extensions to the Rangy Range object
-
-        function createRangeBoundaryMover(isStart, collapse) {
-            /*
-             Unit can be "character" or "word"
-             Options:
-
-             - includeTrailingSpace
-             - wordRegex
-             - tokenizer
-             - collapseSpaceBeforeLineBreak
-             */
-            return createEntryPointFunction(
-                function(session, unit, count, moveOptions) {
-                    if (typeof count == UNDEF) {
-                        count = unit;
-                        unit = CHARACTER;
-                    }
-                    moveOptions = createNestedOptions(moveOptions, defaultMoveOptions);
-
-                    var boundaryIsStart = isStart;
-                    if (collapse) {
-                        boundaryIsStart = (count >= 0);
-                        this.collapse(!boundaryIsStart);
-                    }
-                    var moveResult = movePositionBy(session.getRangeBoundaryPosition(this, boundaryIsStart), unit, count, moveOptions.characterOptions, moveOptions.wordOptions);
-                    var newPos = moveResult.position;
-                    this[boundaryIsStart ? "setStart" : "setEnd"](newPos.node, newPos.offset);
-                    return moveResult.unitsMoved;
-                }
-            );
-        }
-
-        function createRangeTrimmer(isStart) {
-            return createEntryPointFunction(
-                function(session, characterOptions) {
-                    characterOptions = createOptions(characterOptions, defaultCharacterOptions);
-                    var pos;
-                    var it = createRangeCharacterIterator(session, this, characterOptions, !isStart);
-                    var trimCharCount = 0;
-                    while ( (pos = it.next()) && allWhiteSpaceRegex.test(pos.character) ) {
-                        ++trimCharCount;
-                    }
-                    it.dispose();
-                    var trimmed = (trimCharCount > 0);
-                    if (trimmed) {
-                        this[isStart ? "moveStart" : "moveEnd"](
-                            "character",
-                            isStart ? trimCharCount : -trimCharCount,
-                            { characterOptions: characterOptions }
-                        );
-                    }
-                    return trimmed;
-                }
-            );
-        }
-
-        extend(api.rangePrototype, {
-            moveStart: createRangeBoundaryMover(true, false),
-
-            moveEnd: createRangeBoundaryMover(false, false),
-
-            move: createRangeBoundaryMover(true, true),
-
-            trimStart: createRangeTrimmer(true),
-
-            trimEnd: createRangeTrimmer(false),
-
-            trim: createEntryPointFunction(
-                function(session, characterOptions) {
-                    var startTrimmed = this.trimStart(characterOptions), endTrimmed = this.trimEnd(characterOptions);
-                    return startTrimmed || endTrimmed;
-                }
-            ),
-
-            expand: createEntryPointFunction(
-                function(session, unit, expandOptions) {
-                    var moved = false;
-                    expandOptions = createNestedOptions(expandOptions, defaultExpandOptions);
-                    var characterOptions = expandOptions.characterOptions;
-                    if (!unit) {
-                        unit = CHARACTER;
-                    }
-                    if (unit == WORD) {
-                        var wordOptions = expandOptions.wordOptions;
-                        var startPos = session.getRangeBoundaryPosition(this, true);
-                        var endPos = session.getRangeBoundaryPosition(this, false);
-
-                        var startTokenizedTextProvider = createTokenizedTextProvider(startPos, characterOptions, wordOptions);
-                        var startToken = startTokenizedTextProvider.nextEndToken();
-                        var newStartPos = startToken.chars[0].previousVisible();
-                        var endToken, newEndPos;
-
-                        if (this.collapsed) {
-                            endToken = startToken;
-                        } else {
-                            var endTokenizedTextProvider = createTokenizedTextProvider(endPos, characterOptions, wordOptions);
-                            endToken = endTokenizedTextProvider.previousStartToken();
-                        }
-                        newEndPos = endToken.chars[endToken.chars.length - 1];
-
-                        if (!newStartPos.equals(startPos)) {
-                            this.setStart(newStartPos.node, newStartPos.offset);
-                            moved = true;
-                        }
-                        if (newEndPos && !newEndPos.equals(endPos)) {
-                            this.setEnd(newEndPos.node, newEndPos.offset);
-                            moved = true;
-                        }
-
-                        if (expandOptions.trim) {
-                            if (expandOptions.trimStart) {
-                                moved = this.trimStart(characterOptions) || moved;
-                            }
-                            if (expandOptions.trimEnd) {
-                                moved = this.trimEnd(characterOptions) || moved;
-                            }
-                        }
-
-                        return moved;
-                    } else {
-                        return this.moveEnd(CHARACTER, 1, expandOptions);
-                    }
-                }
-            ),
-
-            text: createEntryPointFunction(
-                function(session, characterOptions) {
-                    return this.collapsed ?
-                        "" : getRangeCharacters(session, this, createOptions(characterOptions, defaultCharacterOptions)).join("");
-                }
-            ),
-
-            selectCharacters: createEntryPointFunction(
-                function(session, containerNode, startIndex, endIndex, characterOptions) {
-                    var moveOptions = { characterOptions: characterOptions };
-                    if (!containerNode) {
-                        containerNode = getBody( this.getDocument() );
-                    }
-                    this.selectNodeContents(containerNode);
-                    this.collapse(true);
-                    this.moveStart("character", startIndex, moveOptions);
-                    this.collapse(true);
-                    this.moveEnd("character", endIndex - startIndex, moveOptions);
-                }
-            ),
-
-            // Character indexes are relative to the start of node
-            toCharacterRange: createEntryPointFunction(
-                function(session, containerNode, characterOptions) {
-                    if (!containerNode) {
-                        containerNode = getBody( this.getDocument() );
-                    }
-                    var parent = containerNode.parentNode, nodeIndex = dom.getNodeIndex(containerNode);
-                    var rangeStartsBeforeNode = (dom.comparePoints(this.startContainer, this.endContainer, parent, nodeIndex) == -1);
-                    var rangeBetween = this.cloneRange();
-                    var startIndex, endIndex;
-                    if (rangeStartsBeforeNode) {
-                        rangeBetween.setStartAndEnd(this.startContainer, this.startOffset, parent, nodeIndex);
-                        startIndex = -rangeBetween.text(characterOptions).length;
-                    } else {
-                        rangeBetween.setStartAndEnd(parent, nodeIndex, this.startContainer, this.startOffset);
-                        startIndex = rangeBetween.text(characterOptions).length;
-                    }
-                    endIndex = startIndex + this.text(characterOptions).length;
-
-                    return {
-                        start: startIndex,
-                        end: endIndex
-                    };
-                }
-            ),
-
-            findText: createEntryPointFunction(
-                function(session, searchTermParam, findOptions) {
-                    // Set up options
-                    findOptions = createNestedOptions(findOptions, defaultFindOptions);
-
-                    // Create word options if we're matching whole words only
-                    if (findOptions.wholeWordsOnly) {
-                        // We don't ever want trailing spaces for search results
-                        findOptions.wordOptions.includeTrailingSpace = false;
-                    }
-
-                    var backward = isDirectionBackward(findOptions.direction);
-
-                    // Create a range representing the search scope if none was provided
-                    var searchScopeRange = findOptions.withinRange;
-                    if (!searchScopeRange) {
-                        searchScopeRange = api.createRange();
-                        searchScopeRange.selectNodeContents(this.getDocument());
-                    }
-
-                    // Examine and prepare the search term
-                    var searchTerm = searchTermParam, isRegex = false;
-                    if (typeof searchTerm == "string") {
-                        if (!findOptions.caseSensitive) {
-                            searchTerm = searchTerm.toLowerCase();
-                        }
-                    } else {
-                        isRegex = true;
-                    }
-
-                    var initialPos = session.getRangeBoundaryPosition(this, !backward);
-
-                    // Adjust initial position if it lies outside the search scope
-                    var comparison = searchScopeRange.comparePoint(initialPos.node, initialPos.offset);
-
-                    if (comparison === -1) {
-                        initialPos = session.getRangeBoundaryPosition(searchScopeRange, true);
-                    } else if (comparison === 1) {
-                        initialPos = session.getRangeBoundaryPosition(searchScopeRange, false);
-                    }
-
-                    var pos = initialPos;
-                    var wrappedAround = false;
-
-                    // Try to find a match and ignore invalid ones
-                    var findResult;
-                    while (true) {
-                        findResult = findTextFromPosition(pos, searchTerm, isRegex, searchScopeRange, findOptions);
-
-                        if (findResult) {
-                            if (findResult.valid) {
-                                this.setStartAndEnd(findResult.startPos.node, findResult.startPos.offset, findResult.endPos.node, findResult.endPos.offset);
-                                return true;
-                            } else {
-                                // We've found a match that is not a whole word, so we carry on searching from the point immediately
-                                // after the match
-                                pos = backward ? findResult.startPos : findResult.endPos;
-                            }
-                        } else if (findOptions.wrap && !wrappedAround) {
-                            // No result found but we're wrapping around and limiting the scope to the unsearched part of the range
-                            searchScopeRange = searchScopeRange.cloneRange();
-                            pos = session.getRangeBoundaryPosition(searchScopeRange, !backward);
-                            searchScopeRange.setBoundary(initialPos.node, initialPos.offset, backward);
-                            wrappedAround = true;
-                        } else {
-                            // Nothing found and we can't wrap around, so we're done
-                            return false;
-                        }
-                    }
-                }
-            ),
-
-            pasteHtml: function(html) {
-                this.deleteContents();
-                if (html) {
-                    var frag = this.createContextualFragment(html);
-                    var lastChild = frag.lastChild;
-                    this.insertNode(frag);
-                    this.collapseAfter(lastChild);
-                }
-            }
-        });
-
-        /*----------------------------------------------------------------------------------------------------------------*/
-
-        // Extensions to the Rangy Selection object
-
-        function createSelectionTrimmer(methodName) {
-            return createEntryPointFunction(
-                function(session, characterOptions) {
-                    var trimmed = false;
-                    this.changeEachRange(function(range) {
-                        trimmed = range[methodName](characterOptions) || trimmed;
-                    });
-                    return trimmed;
-                }
-            );
-        }
-
-        extend(api.selectionPrototype, {
-            expand: createEntryPointFunction(
-                function(session, unit, expandOptions) {
-                    this.changeEachRange(function(range) {
-                        range.expand(unit, expandOptions);
-                    });
-                }
-            ),
-
-            move: createEntryPointFunction(
-                function(session, unit, count, options) {
-                    var unitsMoved = 0;
-                    if (this.focusNode) {
-                        this.collapse(this.focusNode, this.focusOffset);
-                        var range = this.getRangeAt(0);
-                        if (!options) {
-                            options = {};
-                        }
-                        options.characterOptions = createOptions(options.characterOptions, defaultCaretCharacterOptions);
-                        unitsMoved = range.move(unit, count, options);
-                        this.setSingleRange(range);
-                    }
-                    return unitsMoved;
-                }
-            ),
-
-            trimStart: createSelectionTrimmer("trimStart"),
-            trimEnd: createSelectionTrimmer("trimEnd"),
-            trim: createSelectionTrimmer("trim"),
-
-            selectCharacters: createEntryPointFunction(
-                function(session, containerNode, startIndex, endIndex, direction, characterOptions) {
-                    var range = api.createRange(containerNode);
-                    range.selectCharacters(containerNode, startIndex, endIndex, characterOptions);
-                    this.setSingleRange(range, direction);
-                }
-            ),
-
-            saveCharacterRanges: createEntryPointFunction(
-                function(session, containerNode, characterOptions) {
-                    var ranges = this.getAllRanges(), rangeCount = ranges.length;
-                    var rangeInfos = [];
-
-                    var backward = rangeCount == 1 && this.isBackward();
-
-                    for (var i = 0, len = ranges.length; i < len; ++i) {
-                        rangeInfos[i] = {
-                            characterRange: ranges[i].toCharacterRange(containerNode, characterOptions),
-                            backward: backward,
-                            characterOptions: characterOptions
-                        };
-                    }
-
-                    return rangeInfos;
-                }
-            ),
-
-            restoreCharacterRanges: createEntryPointFunction(
-                function(session, containerNode, saved) {
-                    this.removeAllRanges();
-                    for (var i = 0, len = saved.length, range, rangeInfo, characterRange; i < len; ++i) {
-                        rangeInfo = saved[i];
-                        characterRange = rangeInfo.characterRange;
-                        range = api.createRange(containerNode);
-                        range.selectCharacters(containerNode, characterRange.start, characterRange.end, rangeInfo.characterOptions);
-                        this.addRange(range, rangeInfo.backward);
-                    }
-                }
-            ),
-
-            text: createEntryPointFunction(
-                function(session, characterOptions) {
-                    var rangeTexts = [];
-                    for (var i = 0, len = this.rangeCount; i < len; ++i) {
-                        rangeTexts[i] = this.getRangeAt(i).text(characterOptions);
-                    }
-                    return rangeTexts.join("");
-                }
-            )
-        });
-
-        /*----------------------------------------------------------------------------------------------------------------*/
-
-        // Extensions to the core rangy object
-
-        api.innerText = function(el, characterOptions) {
-            var range = api.createRange(el);
-            range.selectNodeContents(el);
-            var text = range.text(characterOptions);
-            return text;
-        };
-
-        api.createWordIterator = function(startNode, startOffset, iteratorOptions) {
-            var session = getSession();
-            iteratorOptions = createNestedOptions(iteratorOptions, defaultWordIteratorOptions);
-            var startPos = session.getPosition(startNode, startOffset);
-            var tokenizedTextProvider = createTokenizedTextProvider(startPos, iteratorOptions.characterOptions, iteratorOptions.wordOptions);
-            var backward = isDirectionBackward(iteratorOptions.direction);
-
-            return {
-                next: function() {
-                    return backward ? tokenizedTextProvider.previousStartToken() : tokenizedTextProvider.nextEndToken();
-                },
-
-                dispose: function() {
-                    tokenizedTextProvider.dispose();
-                    this.next = function() {};
-                }
-            };
-        };
-
-        /*----------------------------------------------------------------------------------------------------------------*/
-
-        api.noMutation = function(func) {
-            var session = getSession();
-            func(session);
-            endSession();
-        };
-
-        api.noMutation.createEntryPointFunction = createEntryPointFunction;
-
-        api.textRange = {
-            isBlockNode: isBlockNode,
-            isCollapsedWhitespaceNode: isCollapsedWhitespaceNode,
-
-            createPosition: createEntryPointFunction(
-                function(session, node, offset) {
-                    return session.getPosition(node, offset);
-                }
-            )
-        };
-    });
-    
-    return rangy;
-}, this);
-/**
- * Position module for Rangy.
- * Extensions to Range and Selection objects to provide access to pixel positions relative to the viewport or document.
- *
- * Part of Rangy, a cross-browser JavaScript range and selection library
- * http://code.google.com/p/rangy/
- *
- * Depends on Rangy core.
- *
- * Copyright %%build:year%%, Tim Down
- * Licensed under the MIT license.
- * Version: %%build:version%%
- * Build date: %%build:date%%
- */
-(function(factory, root) {
-    if (typeof define == "function" && define.amd) {
-        // AMD. Register as an anonymous module with a dependency on Rangy.
-        define('rangy-position',["./rangy-core"], factory);
-    } else if (typeof module != "undefined" && typeof exports == "object") {
-        // Node/CommonJS style
-        module.exports = factory( require("rangy") );
-    } else {
-        // No AMD or CommonJS support so we use the rangy property of root (probably the global variable)
-        factory(root.rangy);
-    }
-})(function(rangy) {
-
-rangy.createModule("Position", ["WrappedSelection"], function(api, module) {
-    //var log = log4javascript.getLogger("rangy.position");
-
-    var NUMBER = "number", UNDEF = "undefined";
-    var WrappedRange = api.WrappedRange;
-    var WrappedTextRange = api.WrappedTextRange;
-    var dom = api.dom, util = api.util, DomPosition = dom.DomPosition;
-    
-    // Feature detection
-
-    //var caretPositionFromPointSupported = (typeof document.caretPositionFromPoint != UNDEF);
-
-    // Since Rangy can deal with multiple documents which could be in different modes, we have to do the checks every
-    // time, unless we cache a getScrollPosition function in each document. This would necessarily pollute the
-    // document's global namespace, which I'm choosing to view as a greater evil than a slight performance hit.
-    function getScrollPosition(win) {
-        var x = 0, y = 0;
-        if (typeof win.pageXOffset == NUMBER && typeof win.pageYOffset == NUMBER) {
-            x = win.pageXOffset;
-            y = win.pageYOffset;
-        } else {
-            var doc = win.document;
-            var docEl = doc.documentElement;
-            var compatMode = doc.compatMode;
-            var scrollEl = (typeof compatMode == "string" && compatMode.indexOf("CSS") >= 0 && docEl)
-                ? docEl : dom.getBody(doc);
-
-            if (scrollEl && typeof scrollEl.scrollLeft == NUMBER && typeof scrollEl.scrollTop == NUMBER) {
-                try {
-                    x = scrollEl.scrollLeft;
-                    y = scrollEl.scrollTop;
-                } catch (ex) {}
-            }
-        }
-        return { x: x, y: y };
-    }
-
-    function getAncestorElement(node, tagName) {
-        tagName = tagName.toLowerCase();
-        while (node) {
-            if (node.nodeType == 1 && node.tagName.toLowerCase() == tagName) {
-                return node;
-            }
-            node = node.parentNode;
-        }
-        return null;
-    }
-
-    function Rect(top, right, bottom, left) {
-        this.top = top;
-        this.right = right;
-        this.bottom = bottom;
-        this.left = left;
-        this.width = right - left;
-        this.height = bottom - top;
-    }
-
-    function createRelativeRect(rect, dx, dy) {
-        return new Rect(rect.top + dy, rect.right + dx, rect.bottom + dy, rect.left + dx);
-    }
-
-    function adjustClientRect(rect, doc) {
-        // Older IEs have an issue with a two pixel margin on the body element
-        var dx = 0, dy = 0;
-        var docEl = doc.documentElement, body = dom.getBody(doc);
-        var container = (docEl.clientWidth === 0 && typeof body.clientTop == NUMBER) ? body : docEl;
-        var clientLeft = container.clientLeft, clientTop = container.clientTop;
-        if (clientLeft) {
-            dx = -clientLeft;
-        }
-        if (clientTop) {
-            dy = -clientTop;
-        }
-        return createRelativeRect(rect, dx, dy);
-    }
-
-    function mergeRects(rects) {
-        var tops = [], bottoms = [], lefts = [], rights = [];
-        for (var i = 0, len = rects.length, rect; i < len; ++i) {
-            rect = rects[i];
-            if (rect) {
-                tops.push(rect.top);
-                bottoms.push(rect.bottom);
-                lefts.push(rect.left);
-                rights.push(rect.right);
-            }
-        }
-        return new Rect(
-            Math.min.apply(Math, tops),
-            Math.max.apply(Math, rights),
-            Math.max.apply(Math, bottoms),
-            Math.min.apply(Math, lefts)
-        );
-    }
-    
-    function getTextRangePosition(doc, x, y) {
-        var textRange = dom.getBody(doc).createTextRange();
-        textRange.moveToPoint(x, y);
-        var range = new api.WrappedTextRange(textRange);
-        return new DomPosition(range.startContainer, range.startOffset);
-    }
-
-    function caretPositionFromPoint(doc, x, y) {
-        var pos = doc.caretPositionFromPoint(x, y);
-        return new DomPosition(pos.offsetNode, pos.offset);
-    }
-
-    function caretRangeFromPoint(doc, x, y) {
-        var range = doc.caretRangeFromPoint(x, y);
-        return new DomPosition(range.startContainer, range.startOffset);
-    }
-
-    function getLastRangeRect(range) {
-        var rects = (range.nativeRange || range).getClientRects();
-        return (rects.length > 0) ? rects[rects.length - 1] : null;
-    }
-
-    function pointIsInOrAboveRect(x, y, rect) {
-        console.log("pointIsInOrAboveRect", x, y, Math.floor(rect.top), Math.floor(rect.right), Math.floor(rect.bottom), Math.floor(rect.left))
-        return y < rect.bottom && x >= rect.left && x <= rect.right;
-    }
-
-    function positionFromPoint(doc, x, y, favourPrecedingPosition) {
-        var el = doc.elementFromPoint(x, y);
-        
-        console.log("elementFromPoint is ", el);
-
-        var range = api.createRange(doc);
-        range.selectNodeContents(el);
-        range.collapse(true);
-
-        var node = el.firstChild, offset, rect, textLen;
-
-        if (!node) {
-            node = el.parentNode;
-            offset = dom.getNodeIndex(el);
-            if (!favourPrecedingPosition) {
-                ++offset;
-            }
-        } else {
-            // Search through the text node children of el
-            main: while (node) {
-                console.log(node);
-                if (node.nodeType == 3) {
-                    // Go through the text node character by character
-                    for (offset = 0, textLen = node.length; offset <= textLen; ++offset) {
-                        range.setEnd(node, offset);
-                        rect = getLastRangeRect(range);
-                        if (rect && pointIsInOrAboveRect(x, y, rect)) {
-                            // We've gone past the point. Now we check which side (left or right) of the character the point is nearer to
-                            if (rect.right - x > x - rect.left) {
-                                --offset;
-                            }
-                            break main;
-                        }
-                    }
-                } else {
-                    // Handle elements
-                    range.setEndAfter(node);
-                    rect = getLastRangeRect(range);
-                    if (rect && pointIsInOrAboveRect(x, y, rect)) {
-                        offset = dom.getNodeIndex(node);
-                        node = el.parentNode;
-                        if (!favourPrecedingPosition) {
-                            ++offset;
-                        }
-                        break;
-                    }
-                }
-
-                node = node.nextSibling;
-            }
-            if (!node) {
-                node = el;
-                offset = el.childNodes.length;
-            }
-        }
-
-        return new DomPosition(node, offset);
-    }
-
-    function createCaretPositionFromPointGetter(doc) {
-        if (api.features.implementsTextRange) {
-            return getTextRangePosition;
-        } else if (typeof doc.caretPositionFromPoint != UNDEF) {
-            return caretPositionFromPoint;
-        } else if (typeof doc.caretRangeFromPoint != UNDEF) {
-            return caretRangeFromPoint;
-        } else if (typeof doc.elementFromPoint != UNDEF && rangeSupportsGetClientRects) {
-            return positionFromPoint;
-        } else {
-            throw module.createError("createCaretPositionFromPointGetter(): Browser does not provide a recognised method to create a selection from pixel coordinates");
-        }
-    }
-    
-    function createRangeFromPoints(startX, startY, endX, endY, doc) {
-        doc = dom.getContentDocument(doc, module, "createRangeFromPoints");
-        var positionFinder = createCaretPositionFromPointGetter(doc);
-        var startPos = positionFinder(doc, startX, startY, false);
-        var endPos = positionFinder(doc, endX, endY, true);
-        console.log(startPos.node, startPos.offset, endPos.node, endPos.offset);
-        var range = api.createRange(doc);
-        range.setStartAndEnd(startPos.node, startPos.offset, endPos.node, endPos.offset);
-        return range;
-    }
-
-    function moveSelectionToPoints(anchorX, anchorY, focusX, focusY, doc) {
-        var startX, startY, endX, endY;
-
-        // Detect backward selection for coordinates and flip start and end coordinates if necessary
-        var backward = focusY < anchorY || (anchorY == focusY && focusX < anchorX);
-
-        if (backward) {
-            startX = focusX;
-            startY = focusY;
-            endX = anchorX;
-            endY = anchorY;
-        } else {
-            startX = anchorX;
-            startY = anchorY;
-            endX = focusX;
-            endY = focusY;
-        }
-
-        var sel = rangy.getSelection(doc);
-        var range = createRangeFromPoints(startX, startY, endX, endY, doc);
-        sel.setSingleRange(range);
-        return sel;
-    }
-    
-    // Test that <span> elements support getBoundingClientRect
-    var span = document.createElementNS("http://www.w3.org/1999/xhtml", "span");
-    var elementSupportsGetBoundingClientRect = util.isHostMethod(span, "getBoundingClientRect");
-    span = null;
-
-    // Test for getBoundingClientRect support in Range
-    var rangeSupportsGetClientRects = false, rangeSupportsGetBoundingClientRect = false;
-    if (api.features.implementsDomRange) {
-        var testRange = api.createNativeRange();
-        rangeSupportsGetClientRects = util.isHostMethod(testRange, "getClientRects");
-        rangeSupportsGetBoundingClientRect = util.isHostMethod(testRange, "getBoundingClientRect");
-        testRange.detach();
-    }
-
-    util.extend(api.features, {
-        rangeSupportsGetBoundingClientRect: rangeSupportsGetBoundingClientRect,
-        rangeSupportsGetClientRects: rangeSupportsGetClientRects,
-        elementSupportsGetBoundingClientRect: elementSupportsGetBoundingClientRect
-    });
-
-    var createClientBoundaryPosGetter = function(isStart) {
-        return function() {
-            var boundaryRange = this.cloneRange();
-            boundaryRange.collapse(isStart);
-            var rect = boundaryRange.getBoundingClientRect();
-            return {
-                x: rect[isStart ? "left" : "right"],
-                y: rect[isStart ? "top" : "bottom"]
-            };
-        };
-    };
-
-    var rangeProto = api.rangePrototype;
-
-    if (api.features.implementsTextRange && elementSupportsGetBoundingClientRect) {
-        rangeProto.getBoundingClientRect = function() {
-            // We need a TextRange
-            var textRange = WrappedTextRange.rangeToTextRange(this);
-
-            // Work around table problems (table cell bounding rects seem not to count if TextRange spans cells)
-            var cells = this.getNodes([1], function(el) {
-                return /^t[dh]$/i.test(el.tagName);
-            });
-
-            // Merge rects for each cell selected by the range into overall rect
-            var rect, rects = [];
-            if (cells.length > 0) {
-                var lastTable = getAncestorElement(this.startContainer, "table");
-
-                for (var i = 0, cell, tempTextRange, table, subRange, subRect; cell = cells[i]; ++i) {
-                    // Handle non-table sections of the range
-                    table = getAncestorElement(cell, "table");
-                    if (!lastTable || table != lastTable) {
-                        // There is a section of the range prior to the current table, or lying between tables.
-                        // Merge in its rect
-                        subRange = this.cloneRange();
-                        if (lastTable) {
-                            subRange.setStartAfter(lastTable);
-                        }
-                        subRange.setEndBefore(table);
-                        rects.push(WrappedTextRange.rangeToTextRange(subRange).getBoundingClientRect());
-                    }
-
-                    if (this.containsNode(cell)) {
-                        rects.push(cell.getBoundingClientRect());
-                    } else {
-                        tempTextRange = textRange.duplicate();
-                        tempTextRange.moveToElementText(cell);
-                        if (tempTextRange.compareEndPoints("StartToStart", textRange) == -1) {
-                            tempTextRange.setEndPoint("StartToStart", textRange);
-                        } else if (tempTextRange.compareEndPoints("EndToEnd", textRange) == 1) {
-                            tempTextRange.setEndPoint("EndToEnd", textRange);
-                        }
-                        rects.push(tempTextRange.getBoundingClientRect());
-                    }
-                    lastTable = table;
-                }
-
-                // Merge in the rect for any content lying after the final table
-                var endTable = getAncestorElement(this.endContainer, "table");
-                if (!endTable && lastTable) {
-                    subRange = this.cloneRange();
-                    subRange.setStartAfter(lastTable);
-                    rects.push(WrappedTextRange.rangeToTextRange(subRange).getBoundingClientRect());
-                }
-                rect = mergeRects(rects);
-            } else {
-                rect = textRange.getBoundingClientRect();
-            }
-
-            return adjustClientRect(rect, dom.getDocument(this.startContainer));
-        };
-    } else if (api.features.implementsDomRange) {
-        var createWrappedRange = function(range) {
-            return (range instanceof WrappedRange) ? range : new WrappedRange(range);
-        };
-
-        if (rangeSupportsGetBoundingClientRect) {
-            rangeProto.getBoundingClientRect = function() {
-                var nativeRange = createWrappedRange(this).nativeRange;
-                // Test for WebKit getBoundingClientRect bug (https://bugs.webkit.org/show_bug.cgi?id=65324)
-                var rect = nativeRange.getBoundingClientRect() || nativeRange.getClientRects()[0];
-                return adjustClientRect(rect, dom.getDocument(this.startContainer));
-            };
-
-            if (rangeSupportsGetClientRects) {
-                var getElementRectsForPosition = function(node, offset) {
-                    var children = node.childNodes;
-                    //if (offset < children.length)
-                };
-
-                createClientBoundaryPosGetter = function(isStart) {
-                    return function() {
-                        var rect, nativeRange = createWrappedRange(this).nativeRange;
-                        var rects = nativeRange.getClientRects();
-
-                        if (rects.length == 0 && elementSupportsGetBoundingClientRect) {
-                            if (isStart) {
-
-
-                            }
-
-                            console.log(nativeRange, nativeRange.getClientRects(), nativeRange.getBoundingClientRect());
-                            if (this.collapsed
-                                    && this.startContainer.nodeType == 1
-                                    && this.startOffset < this.startContainer.childNodes.length) {
-                                var n = this.startContainer.childNodes[this.startOffset];
-                                if (n.getClientRects) {
-                                    console.log(n, n.getClientRects(), this.startContainer.getClientRects())
-                                }
-
-                            }
-                        }
-
-                        if (rects.length > 0) {
-                            if (isStart) {
-                                rect = rects[0];
-                                return { x: rect.left, y: rect.top };
-                            } else {
-                                rect = rects[rects.length - 1];
-                                return { x: rect.right, y: rect.bottom };
-                            }
-                        } else {
-                            throw module.createError("Cannot get position for range " + this.inspect());
-                        }
-                    };
-                }
-            }
-        } else {
-            var getElementBoundingClientRect = elementSupportsGetBoundingClientRect ?
-                function(el) {
-                    return adjustClientRect(el.getBoundingClientRect(), dom.getDocument(el));
-                } :
-
-                // This implementation is very naive. There are many browser quirks that make it extremely
-                // difficult to get accurate element coordinates in all situations
-                function(el) {
-                    var x = 0, y = 0, offsetEl = el, width = el.offsetWidth, height = el.offsetHeight;
-                    while (offsetEl) {
-                        x += offsetEl.offsetLeft;
-                        y += offsetEl.offsetTop;
-                        offsetEl = offsetEl.offsetParent;
-                    }
-
-                    return adjustClientRect(new Rect(y, x + width, y + height, x), dom.getDocument(el));
-                };
-
-            var getRectFromBoundaries = function(range) {
-                var rect;
-                range.splitBoundaries();
-                var span = document.createElementNS("http://www.w3.org/1999/xhtml", "span");
-
-                if (range.collapsed) {
-                    range.insertNode(span);
-                    rect = getElementBoundingClientRect(span);
-                    span.parentNode.removeChild(span);
-                } else {
-                    // TODO: This isn't right. I'm not sure it can be made right sensibly. Consider what to do.
-                    // This doesn't consider all the line boxes it needs to consider.
-                    var workingRange = range.cloneRange();
-
-                    // Get the start rectangle
-                    workingRange.collapse(true);
-                    workingRange.insertNode(span);
-                    var startRect = getElementBoundingClientRect(span);
-                    span.parentNode.removeChild(span);
-
-                    // Get the end rectangle
-                    workingRange.collapseToPoint(range.endContainer, range.endOffset);
-                    workingRange.insertNode(span);
-                    var endRect = getElementBoundingClientRect(span);
-                    span.parentNode.removeChild(span);
-
-                    // Merge the start and end rects
-                    var rects = [startRect, endRect];
-
-                    // Merge in rectangles for all elements in the range
-                    var elements = range.getNodes([1], function(el) {
-                        return range.containsNode(el);
-                    });
-
-                    for (var i = 0, len = elements.length; i < len; ++i) {
-                        rects.push(getElementBoundingClientRect(elements[i]));
-                    }
-                    rect = mergeRects(rects)
-                }
-
-                // Clean up
-                range.normalizeBoundaries();
-                return rect;
-            };
-
-            rangeProto.getBoundingClientRect = function(range) {
-                return getRectFromBoundaries(createWrappedRange(range));
-            };
-        }
-
-        function createDocumentBoundaryPosGetter(isStart) {
-            return function() {
-                var pos = this["get" + (isStart ? "Start" : "End") + "ClientPos"]();
-                var scrollPos = getScrollPosition( dom.getWindow(this.startContainer) );
-                return { x: pos.x + scrollPos.x, y: pos.y + scrollPos.y };
-            };
-        }
-    }
-
-    util.extend(rangeProto, {
-        getBoundingDocumentRect: function() {
-            var scrollPos = getScrollPosition( dom.getWindow(this.startContainer) );
-            return createRelativeRect(this.getBoundingClientRect(), scrollPos.x, scrollPos.y);
-        },
-
-        getStartClientPos: createClientBoundaryPosGetter(true),
-        getEndClientPos: createClientBoundaryPosGetter(false),
-
-        getStartDocumentPos: createDocumentBoundaryPosGetter(true),
-        getEndDocumentPos: createDocumentBoundaryPosGetter(false)
-    });
-
-    // Add Selection methods
-    function compareRanges(r1, r2) {
-        return r1.compareBoundaryPoints(r2.START_TO_START, r2);
-    }
-
-    function createSelectionRectGetter(isDocument) {
-        return function() {
-            var rangeMethodName = "getBounding" + (isDocument ? "Document" : "Client") + "Rect";
-            var rects = [];
-            for (var i = 0, rect = null, rangeRect; i < this.rangeCount; ++i) {
-                rects.push(this.getRangeAt(i)[rangeMethodName]());
-            }
-            return mergeRects(rects);
-        };
-    }
-
-    function createSelectionBoundaryPosGetter(isStart, isDocument) {
-        return function() {
-            if (this.rangeCount == 0) {
-                return null;
-            }
-
-            var posType = isDocument ? "Document" : "Client";
-
-            var ranges = this.getAllRanges();
-            if (ranges.length > 1) {
-                // Order the ranges by position within the DOM
-                ranges.sort(compareRanges);
-            }
-
-            return isStart ?
-                ranges[0]["getStart" + posType + "Pos"]() :
-                ranges[ranges.length - 1]["getEnd" + posType + "Pos"]();
-        };
-    }
-
-    util.extend(api.selectionPrototype, {
-        getBoundingClientRect: createSelectionRectGetter(false),
-        getBoundingDocumentRect: createSelectionRectGetter(true),
-
-        getStartClientPos: createSelectionBoundaryPosGetter(true, false),
-        getEndClientPos: createSelectionBoundaryPosGetter(false, false),
-
-        getStartDocumentPos: createSelectionBoundaryPosGetter(true, true),
-        getEndDocumentPos: createSelectionBoundaryPosGetter(false, true)
-    });
-    
-    api.positionFromPoint = function(x, y, doc) {
-        doc = dom.getContentDocument(doc, module, "positionFromPoint");
-        return createCaretPositionFromPointGetter(doc)(doc, x, y);
-    };
-    
-    api.createRangeFromPoints = createRangeFromPoints;
-    api.moveSelectionToPoints = moveSelectionToPoints;
-});
-
-}, this);
-define('rangy',["rangy-core",
-        "rangy-classapplier",
-        "rangy-highlighter",
-        "rangy-textrange", 
-        "rangy-position"
-
-        //"domReady" //"domReady!" forces wait for DOM doc
-
-        /*
-        "rangy-serializer",
-        "rangy-selectionsaverestore"
-        */
-        ],
-function (core, textrange, cssclassapplier, highlighter, position
-//, domReady
-/* serializer, selectionsaverestore */
-) {
-
-// domReady(function(){
-//     core.init();
-// });
-
-
-return core;
-
-});
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
 //  
 //  Redistribution and use in source and binary forms, with or without modification, 
@@ -46146,7 +41877,7 @@ return core;
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define ('readium_shared_js/views/media_overlay_data_injector',["jquery", "underscore", "../helpers", "../models/smil_iterator", "rangy", 'readium_cfi_js'], function($, _, Helpers, SmilIterator, rangy, EPUBcfi) {
+define ('readium_shared_js/views/media_overlay_data_injector',["jquery", "underscore", "../helpers", "../models/smil_iterator", 'readium_cfi_js'], function($, _, Helpers, SmilIterator, EPUBcfi) {
 /**
  *
  * @param mediaOverlay
@@ -46234,124 +41965,6 @@ console.log("MO CLICKED LINK");
                         }
 
                         var par = data.par ? data.par : data.pars[0];
-
-                        if (data.pars && (typeof rangy !== "undefined"))
-                        {
-                            var wasPaused = false;
-                            
-                            // To remove highlight which may have altered DOM (and break CFI expressions)
-                            if (mediaOverlayPlayer.isPlayingCfi())
-                            {
-                                wasPaused = true;
-                                mediaOverlayPlayer.pause();
-                            }
-                         
-                            // /////////////////////
-                            // 
-                            // var p = {x: event.pageX, y: event.pageY};
-                            // if (webkitConvertPointFromPageToNode)
-                            // {
-                            //     p = webkitConvertPointFromPageToNode(elem.ownerDocument.body, new WebKitPoint(event.pageX, event.pageY));
-                            // }
-                            // 
-                            // var div = elem.ownerDocument.getElementById("CLICKED");
-                            // if (div)
-                            // {
-                            //     div.parentNode.removeChild(div);
-                            // }
-                            // 
-                            // div = elem.ownerDocument.createElementNS("http://www.w3.org/1999/xhtml", 'div');
-                            // div.setAttribute("style", "background-color: red; position: absolute; z-index: 999; width: 50px; height: 50px; left: " + p.x + "px; top: " + p.y + "px;");
-                            // div.id = "CLICKED";
-                            // div.setAttribute("id", div.id);
-                            // var divTxt = elem.ownerDocument.createTextNode(" ");
-                            // div.appendChild(divTxt);
-                            // elem.ownerDocument.body.appendChild(div);
-                            //                          
-                            // /////////////////////
-
-
-                            //rangy.init();
-                            try
-                            {
-// THIS WORKS (same as Rangy's method below)
-//                                 var r;
-//                                 if (elem.ownerDocument.caretRangeFromPoint)
-//                                 {
-//                                     r = elem.ownerDocument.caretRangeFromPoint(event.pageX, event.pageY);
-//                                 }
-//                                 else if (event.rangeParent)
-//                                 {
-//                                     r = elem.ownerDocument.createRange();
-//                                     range.setStart(event.rangeParent, event.rangeOffset);
-//                                 }
-//                                 
-// console.log("------ 1");
-// console.log(elem.ownerDocument);
-// console.log(event.pageX);
-// console.log(event.pageY);
-// console.log(r.startContainer);
-// console.log(r.startOffset);
-// console.log("------");
-
-                                var pos = rangy.positionFromPoint(event.pageX, event.pageY, elem.ownerDocument);
-// console.log("------ 2");
-// console.log(pos.node.textContent);
-// console.log(pos.offset);
-// console.log("------");
-
-                                par = undefined;
-                                
-                                for (var iPar = 0; iPar < data.pars.length; iPar++)
-                                {
-                                    var p = data.pars[iPar];
-
-                                    var startCFI = "epubcfi(" + p.cfi.partialStartCfi + ")";
-                                    var infoStart = EPUBcfi.getTextTerminusInfoWithPartialCFI(startCFI, elem.ownerDocument,
-                ["cfi-marker", "mo-cfi-highlight"],
-                [],
-                ["MathJax_Message"]);
-//console.log(infoStart);
-
-                                    var endCFI = "epubcfi(" + p.cfi.partialEndCfi + ")";
-                                    var infoEnd = EPUBcfi.getTextTerminusInfoWithPartialCFI(endCFI, elem.ownerDocument,
-                ["cfi-marker", "mo-cfi-highlight"],
-                [],
-                ["MathJax_Message"]);
-//console.log(infoEnd);
-
-                                    var range = rangy.createRange(elem.ownerDocument); //createNativeRange
-                                    range.setStartAndEnd(
-                                        infoStart.textNode, infoStart.textOffset,
-                                        infoEnd.textNode, infoEnd.textOffset
-                                    );
-        
-                                    if (range.isPointInRange(pos.node, pos.offset))
-                                    {
-// console.log(p.cfi.partialStartCfi);
-// console.log(p.cfi.partialEndCfi);
-                                        // DOUBLE CHECK WITH getClientRects ??
-                                        
-                                        par = p;
-                                        break;
-                                    }
-                                }
-                            }
-                            catch (e)
-                            {
-                                console.error(e);
-                            }
-                            
-                            if (!par)
-                            {
-                                if (wasPaused)
-                                {
-                                    mediaOverlayPlayer.toggleMediaOverlay();
-                                }
-                                return true;
-                            }
-                        }
-
 
                         if (el && el != elem && el.nodeName.toLowerCase() === "body" && par && !par.getSmil().id)
                         {
@@ -47449,7 +43062,7 @@ define('readium_shared_js/views/audio_player',['jquery'],function($) {
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define('readium_shared_js/views/media_overlay_element_highlighter',['jquery', 'rangy', 'readium_cfi_js'], function($, rangy, EPUBcfi) {
+define('readium_shared_js/views/media_overlay_element_highlighter',['jquery', 'readium_cfi_js'], function($, EPUBcfi) {
 /**
  *
  * @param reader
@@ -47480,10 +43093,6 @@ var MediaOverlayElementHighlighter = function(reader) {
     var _playbackActiveClass = "";
 
     var _reader = reader;
-    
-    var USE_RANGY = true && (typeof rangy !== "undefined");
-    var _rangyCSS = undefined;
-    var _rangyRange = undefined;
     
     var HIGHLIGHT_ID = "MO_SPEAK";
     
@@ -47704,64 +43313,7 @@ var MediaOverlayElementHighlighter = function(reader) {
 
         var clazz = (overrideWithUserStyle || !hasAuthorStyle) ? ((hasAuthorStyle ? (_activeClass + " ") : "") + DEFAULT_MO_ACTIVE_CLASS) : _activeClass;
 
-        if (USE_RANGY)
-        {
-            var doc = _highlightedCfiPar.cfi.cfiTextParent.ownerDocument;
-
-            _rangyRange = rangy.createRange(doc); //createNativeRange
-
-            var startCFI = "epubcfi(" + _highlightedCfiPar.cfi.partialStartCfi + ")";
-            var infoStart = EPUBcfi.getTextTerminusInfoWithPartialCFI(startCFI, doc,
-                ["cfi-marker", "mo-cfi-highlight"],
-                [],
-                ["MathJax_Message"]);
-//console.log(infoStart);
-
-            var endCFI = "epubcfi(" + _highlightedCfiPar.cfi.partialEndCfi + ")";
-            var infoEnd = EPUBcfi.getTextTerminusInfoWithPartialCFI(endCFI, doc,
-                ["cfi-marker", "mo-cfi-highlight"],
-                [],
-                ["MathJax_Message"]);
-//console.log(infoEnd);
-            
-            _rangyRange.setStartAndEnd(
-                infoStart.textNode, infoStart.textOffset,
-                infoEnd.textNode, infoEnd.textOffset
-            );
-            
-            if (false && // we use CssClassApplier instead, because surroundContents() has no trivial undoSurroundContents() function (inc. text nodes normalisation, etc.)
-                _rangyRange.canSurroundContents())
-            {
-                _rangyRange.MO_createCssClassApplier = false;
-                
-                var span = doc.createElementNS("http://www.w3.org/1999/xhtml", 'span');
-                span.id = HIGHLIGHT_ID;
-                span.setAttribute("id", span.id);
-                span.setAttribute("class", clazz + " mo-cfi-highlight");
-            
-                _rangyRange.surroundContents(span);
-            }
-            else
-            {
-                _rangyRange.MO_createCssClassApplier = true;
-                
-                if (!_rangyCSS || _rangyCSS.cssClass !== clazz)
-                {
-                    _rangyCSS = rangy.createCssClassApplier(clazz,
-                    {
-                        elementTagName: "span",
-                        elementProperties: {className: "mo-cfi-highlight"},
-                        ignoreWhiteSpace: true,
-                        applyToEditableOnly: false,
-                        normalize: true
-                    },
-                    ["span"]);
-                }
-
-                _rangyCSS.applyToRange(_rangyRange);
-            }
-        }
-        else if (_reader.plugins.highlights) // same API, newer implementation
+        if (_reader.plugins.highlights) // same API, newer implementation
         {
             try
             {
@@ -47845,29 +43397,8 @@ var MediaOverlayElementHighlighter = function(reader) {
         if (_highlightedCfiPar)
         {
             var doc = _highlightedCfiPar.cfi.cfiTextParent.ownerDocument;
-            if (USE_RANGY)
-            {
-                if (_rangyCSS && _rangyRange.MO_createCssClassApplier)
-                {
-                    _rangyCSS.undoToRange(_rangyRange);
-                }
-                else
-                {
-                    var toRemove = undefined;
-                    while ((toRemove = doc.getElementById(HIGHLIGHT_ID)) !== null)
-                    {
-                        var txt = toRemove.textContent; // TODO: innerHTML? or better: hasChildNodes loop + detach and re-attach
-                        var txtNode = doc.createTextNode(txt);
-                        
-                        toRemove.parentNode.replaceChild(txtNode, toRemove);
-                        txtNode.parentNode.normalize();
-                    }
-                }
-        
-                //_rangyCSS = undefined;
-                _rangyRange = undefined;
-            }
-            else if (_reader.plugins.highlights) // same API, new implementation
+
+            if (_reader.plugins.highlights) // same API, new implementation
             {
                 try
                 {
@@ -49478,8 +45009,8 @@ return ScrollView;
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define('readium_shared_js/views/media_overlay_player',["../globals", "jquery", "../helpers", "./audio_player", "./media_overlay_element_highlighter", "../models/smil_iterator", "rangy", 'readium_cfi_js', './scroll_view'],
-    function(Globals, $, Helpers, AudioPlayer, MediaOverlayElementHighlighter, SmilIterator, rangy, EPUBcfi, ScrollView) {
+define('readium_shared_js/views/media_overlay_player',["../globals", "jquery", "../helpers", "./audio_player", "./media_overlay_element_highlighter", "../models/smil_iterator", 'readium_cfi_js', './scroll_view'],
+    function(Globals, $, Helpers, AudioPlayer, MediaOverlayElementHighlighter, SmilIterator, EPUBcfi, ScrollView) {
 /**
  *
  * @param reader
@@ -50020,20 +45551,8 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
                 ["MathJax_Message"]);
 //console.log(infoEnd);
 
-                if (rangy)
-                {
-                    //infoStart.textNode.parentNode.ownerDocument
-                    var range = rangy.createRange(doc); //createNativeRange
-                    range.setStartAndEnd(
-                        infoStart.textNode, infoStart.textOffset,
-                        infoEnd.textNode, infoEnd.textOffset
-                    );
-                    _currentTTS = range.toString(); //.text()
-                }
-                else
-                {
-                    _currentTTS = undefined;
-                }
+                // TODO: get string range to speak
+                _currentTTS = undefined;
 
                 if (!_currentTTS || _currentTTS == "")
                 {
