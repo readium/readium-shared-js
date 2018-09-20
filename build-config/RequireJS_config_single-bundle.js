@@ -13,7 +13,7 @@
 
 require.config({
 
-    baseUrl: process._RJS_baseUrl(1),
+    baseUrl: process._RJS_baseUrl(0),
 
     name: "readium-shared-js_all",
 
@@ -27,6 +27,6 @@ require.config({
     paths:
     {
         "readium-shared-js_all":
-            process._RJS_rootDir(1) + '/readium-cfi-js/node_modules/almond/almond'
+            process._RJS_rootDir(0) + '/node_modules/almond/almond'
     }
 });

@@ -35,7 +35,7 @@
 *      - $iframe                   Iframe reference, and needs to be set.
 * @constructor
 */
-define(["jquery", "underscore", "../helpers", 'readium_cfi_js'], function($, _, Helpers, epubCfi) {
+define(["jquery", "underscore", "../helpers", 'readium_cfi_js'], function($, _, Helpers, EPUBcfi) {
 
 var CfiNavigationLogic = function (options) {
     var self = this;
@@ -381,13 +381,13 @@ var CfiNavigationLogic = function (options) {
 
             if (isVwm) {
                 var topOffset = firstRectangle.top;
-                pageIndex = Math.round(topOffset / frameDimensions.height);
+                pageIndex = Math.floor(topOffset / frameDimensions.height);
             } else {
                 var leftOffset = firstRectangle.left;
                 if (isRtl) {
                     leftOffset = (columnFullWidth * (options.paginationInfo ? options.paginationInfo.visibleColumnCount : 1)) - leftOffset;
                 }
-                pageIndex = Math.round(leftOffset / columnFullWidth);
+                pageIndex = Math.floor(leftOffset / columnFullWidth);
             }
 
             return pageIndex;
