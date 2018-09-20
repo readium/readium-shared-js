@@ -1,6 +1,6 @@
 {
   "name": "readium-shared-js",
-  "version": "0.31.0",
+  "version": "0.31.1",
   "engines": {
     "node": ">=4",
     "npm": ">=2",
@@ -42,7 +42,7 @@
   "main": "build-output/_umd-bundle/readium-shared-js.js",
   "types": "dev/readium-shared-js.d.ts",
   "dependencies": {
-    "readium-cfi-js": "github:readium/readium-cfi-js#v0.31.0-alpha"
+    "readium-cfi-js": "github:readium/readium-cfi-js#0.31.0"
   },
   "devDependencies": {
     "almond": "^0.3.3",
