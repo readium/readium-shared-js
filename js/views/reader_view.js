@@ -1187,7 +1187,8 @@ var ReaderView = function (options) {
      * Pause currently playing media overlays.
      */
     this.pauseMediaOverlay = function () {
-
+    
+        _mediaOverlayPlayer.holdMediaOverlayPlayback(true);
         _mediaOverlayPlayer.pause();
     };
 
@@ -1196,7 +1197,22 @@ var ReaderView = function (options) {
      */
     this.playMediaOverlay = function () {
 
+        _mediaOverlayPlayer.holdMediaOverlayPlayback(false);
         _mediaOverlayPlayer.play();
+    };
+
+    /**
+     * Hold the playback of the next media overlay, and pause at the end of the current playback.
+     */
+    this.holdNextMediaOverlay = function() {
+        _mediaOverlayPlayer.holdNextMediaOverlay();
+    };
+
+    /**
+     * Resume playback beginning immediately with any held up media overlays.
+     */
+    this.resumeNextMediaOverlay = function() {
+        _mediaOverlayPlayer.resumeNextMediaOverlay();
     };
 
     /**
@@ -1230,15 +1246,6 @@ var ReaderView = function (options) {
         }
 
         return undefined;
-    };
-
-
-    this.holdNextMediaOverlay = function() {
-        _mediaOverlayPlayer.holdNextMediaOverlay();
-    };
-
-    this.resumeNextMediaOverlay = function() {
-        _mediaOverlayPlayer.resumeNextMediaOverlay();
     };
 
     /**

@@ -679,6 +679,10 @@ var MediaOverlayPlayer = function(reader, onStatusChanged) {
         }
     };
 
+    this.holdMediaOverlayPlayback = function(enable) {
+        _audioPlayer.setHoldPlayback(enable);
+    };
+
     function onAudioStatusChanged(status) {
         onStatusChanged($.extend({}, status, getStatusInfo()));
     }

@@ -43,6 +43,7 @@ define(['jquery'],function($) {
         var _iOS = navigator.userAgent.match(/(iPad|iPhone|iPod)/g) ? true : false;
         var _Android = navigator.userAgent.toLowerCase().indexOf('android') > -1;
         var _isMobile = _iOS || _Android;
+        var _shouldHoldPlayback = false;
 
         //var _isReadiumJS = typeof window.requirejs !== "undefined";
 
@@ -148,6 +149,11 @@ define(['jquery'],function($) {
             return _currentSmilSrc;
         };
 
+        this.setHoldPlayback = function(value)
+        {
+            _shouldHoldPlayback = value;
+        };
+
         var _rate = 1.0;
         this.setRate = function(rate)
         {
@@ -208,6 +214,8 @@ define(['jquery'],function($) {
             self.setRate(_rate);
     
             _audioElement.play();
+
+            if (_shouldHoldPlayback) _audioElement.pause();
     
             return true;
         };
