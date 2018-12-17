@@ -381,7 +381,7 @@ var processListItem = function(list, i) {
                             opdsXml += '</author>';
                             opdsXml += '\n';
                             
-                            var fullUrl = 'https://cdn.rawgit.com/'+args[1]+'/'+args[2]+'/'+args[3]+'/'+listItem.path;
+                            var fullUrl = 'https://raw.githack.com/'+args[1]+'/'+args[2]+'/'+args[3]+'/'+listItem.path;
                             var escapedURL = encodeURI(escapeMarkupEntitiesInUrl(fullUrl));
                             opdsXml += '<link type="application/epub" href="'+escapedURL+'" rel="http://opds-spec.org/acquisition"/>';
                             opdsXml += '\n';
