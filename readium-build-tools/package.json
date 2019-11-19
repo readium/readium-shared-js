@@ -47,9 +47,9 @@
   ],
   "dependencies": {
     "concurrently": "^3.5.0",
+    "http-server": "github:danielweck/http-server#master",
     "npm-run-all": "^4.1.2",
-    "opener": "^1.4.3",
-    "http-server": "github:danielweck/http-server#master"
+    "opener": "^1.4.3"
   },
   "devDependencies": {
     "requirejs": "^2.3.5",
@@ -71,6 +71,7 @@
     "watch": "^1.0.2",
     "jshint": "^2.9.5",
     "glob": "^7.1.2",
+    "xml2js": "^0.4.22",
     "yuidocjs": "^0.10.2"
   },
   "scripts": {

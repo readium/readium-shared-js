@@ -1,3 +1,7 @@
+// node genOPDS.js idpf_samples.opds IDPF epub3-samples master 30
+// node genOPDS.js epub_testsuite.opds IDPF epub-testsuite master content/30
+// node genOPDS.js epub_tests_a11y.opds daisy epub-accessibility-tests master content
+
 var fs = require('fs');
 
 var path = require('path');
@@ -381,7 +385,7 @@ var processListItem = function(list, i) {
                             opdsXml += '</author>';
                             opdsXml += '\n';
                             
-                            var fullUrl = 'https://raw.githack.com/'+args[1]+'/'+args[2]+'/'+args[3]+'/'+listItem.path;
+                            var fullUrl = 'https://cdn.statically.io/gh/'+args[1]+'/'+args[2]+'/'+args[3]+'/'+listItem.path;
                             var escapedURL = encodeURI(escapeMarkupEntitiesInUrl(fullUrl));
                             opdsXml += '<link type="application/epub" href="'+escapedURL+'" rel="http://opds-spec.org/acquisition"/>';
                             opdsXml += '\n';
