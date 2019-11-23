@@ -32,6 +32,8 @@ define([], function() {
 var ViewerSettings = function(settingsData) {
 
     var self = this;
+    
+    this.epubPopupFootnotes = true;
 
     /** Set to "auto"
      *
@@ -244,6 +246,7 @@ var ViewerSettings = function(settingsData) {
 
     this.update = function(settingsData) {
 
+        mapProperty("epubPopupFootnotes", settingsData);
         mapProperty("columnGap", settingsData);
         mapProperty("columnMaxWidth", settingsData);
         mapProperty("columnMinWidth", settingsData);

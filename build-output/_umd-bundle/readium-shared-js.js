@@ -7508,7 +7508,11 @@ _readium_shared_js_globals = function ($, EventEmitter) {
       /**
        * @event
        */
-      PLUGINS_LOADED: 'PluginsLoaded'
+      PLUGINS_LOADED: 'PluginsLoaded',
+      /**
+       * @event
+       */
+      EPUB_POPUP_FOOTNOTE: 'EpubPopupFootnote'
     },
     /**
      * Internal Events
@@ -31731,6 +31735,7 @@ _readium_shared_js_models_viewer_settings = function () {
    */
   var ViewerSettings = function (settingsData) {
     var self = this;
+    this.epubPopupFootnotes = true;
     /** Set to "auto"
      *
      * @property syntheticSpread
@@ -31890,6 +31895,7 @@ _readium_shared_js_models_viewer_settings = function () {
      * @param      settingsData
      */
     this.update = function (settingsData) {
+      mapProperty('epubPopupFootnotes', settingsData);
       mapProperty('columnGap', settingsData);
       mapProperty('columnMaxWidth', settingsData);
       mapProperty('columnMinWidth', settingsData);
@@ -35829,7 +35835,7 @@ _readium_shared_js_views_iframe_loader = function ($, _, URI) {
   };
   return IFrameLoader;
 }(_jquery, _underscore, _URIjs);
-_readium_shared_js_views_internal_links_support = function ($, Helpers, EPUBcfi, URI) {
+_readium_shared_js_views_internal_links_support = function ($, Helpers, EPUBcfi, URI, Globals, ViewerSettings) {
   /**
    *
    * @param reader
@@ -35939,30 +35945,126 @@ _readium_shared_js_views_internal_links_support = function ($, Helpers, EPUBcfi,
       reader.openSpineItemElementId(idref, hashFrag, self);
     }
     this.processLinkElements = function ($iframe, spineItem) {
+      var settings = reader.viewerSettings();
+      if (!settings || typeof settings.epubPopupFootnotes === 'undefined') {
+        //defaults
+        settings = new ViewerSettings({});
+      }
+      var epubPopupFootNotesAreEnabled = settings.epubPopupFootnotes;
+      if (epubPopupFootNotesAreEnabled) {
+        var doc = ($iframe[0].contentWindow || $iframe[0].contentDocument).document;
+        var $elements = $('*[epub\\:type]', doc);
+        if ($elements.length) {
+          var sources = [];
+          var targets = [];
+          $elements.each(function (i) {
+            if ($elements[i].localName !== 'a' && $elements[i].localName !== 'aside') {
+              return true;  // continue
+            }
+            var $element = $($elements[i]);
+            var epubType = $element.attr('epub:type');
+            if (epubType == 'noteref' && $element[0].localName === 'a') {
+              sources.push($element);
+            } else if ((epubType == 'footnote' || epubType == 'note' || epubType == 'rearnote') && $element[0].localName === 'aside') {
+              targets.push($element);
+            }
+          });
+          for (var i = 0; i < targets.length; i++) {
+            var target = targets[i];
+            var targetID = target.attr('id');
+            if (!targetID) {
+              console.warn('Aside footnote has no ID!');
+              continue;
+            }
+            for (var j = 0; j < sources.length; j++) {
+              var source = sources[j];
+              var sourceIDREF = source.attr('href');
+              if (!sourceIDREF) {
+                console.warn('Link has no HREF!');
+                continue;
+              }
+              if (sourceIDREF === '#' + targetID) {
+                target.hide();
+                source.data('popupfootnotedata', targetID);
+              }
+            }
+          }
+        }
+      }
       var epubContentDocument = $iframe[0].contentDocument;
       $('a', epubContentDocument).click(function (clickEvent) {
-        // Check for both href and xlink:href attribute and get value
-        var href;
-        if (clickEvent.currentTarget.attributes['xlink:href']) {
-          href = clickEvent.currentTarget.attributes['xlink:href'].value;
-        } else {
-          href = clickEvent.currentTarget.attributes['href'].value;
-        }
-        var overrideClickEvent = false;
-        var hrefUri = new URI(href);
-        var hrefIsRelative = hrefUri.is('relative');
-        if (hrefIsRelative) {
-          if (isDeepLikHref(hrefUri)) {
-            processDeepLink(hrefUri, spineItem);
-            overrideClickEvent = true;
-          } else {
-            processLinkWithHash(hrefUri, spineItem);
+        var $aElement = $(this);
+        var popupfootnotedata = $aElement.data('popupfootnotedata');
+        if (popupfootnotedata) {
+          var target = epubContentDocument.getElementById(popupfootnotedata);
+          if (target) {
+            var $target = $(target);
+            $('img', $target).each(function (i) {
+              var $thiz = $(this);
+              $thiz.attr('data-readium-baseuri', $thiz[0].baseURI);
+              if ($thiz[0].currentSrc) {
+                $thiz.attr('data-readium-src', $thiz[0].currentSrc);
+              }
+            });
+            var htmlFragment = $target.html();
+            //console.debug(htmlFragment);
+            var $html = $('<div>' + htmlFragment + '</div>');
+            $('img', $html).each(function (i) {
+              var $thiz = $(this);
+              var readiumSrc = $thiz.attr('data-readium-src');
+              if (readiumSrc) {
+                $thiz.attr('src', readiumSrc);
+              } else {
+                var readiumBaseUri = $thiz.attr('data-readium-baseuri');
+                if (readiumBaseUri) {
+                  $thiz.attr('src', readiumBaseUri + '/../' + $thiz.attr('src'));
+                }
+              }
+            });
+            $('a', $html).each(function (i) {
+              var $thiz = $(this);
+              $thiz.attr('target', '_BLANK');
+              var href = $thiz.attr('href');
+              if (href && href.indexOf('http') !== 0) {
+                //$thiz.attr("href", "about:blank");
+                $thiz.removeAttr('href');
+              }
+            });
+            $('script', $html).each(function (i) {
+              var $thiz = $(this);
+              $thiz.remove();
+            });
+            var sanitizedHTML = $html.html();
+            //console.log(sanitizedHTML);
+            sanitizedHTML = sanitizedHTML.replace(/xmlns="http:\/\/www.w3.org\/1999\/xhtml"/g, ' ');
+            Globals.logEvent('EPUB_POPUP_FOOTNOTE', 'EMIT', 'internal_links_support.js [ ' + popupfootnotedata + ' ]');
+            reader.emit(Globals.Events.EPUB_POPUP_FOOTNOTE, popupfootnotedata, sanitizedHTML);
             overrideClickEvent = true;
           }
         } else {
-          // It's an absolute URL to a remote site - open it in a separate window outside the reader
-          window.open(href, '_blank');
-          overrideClickEvent = true;
+          // Check for both href and xlink:href attribute and get value
+          var href;
+          if (clickEvent.currentTarget.attributes['xlink:href']) {
+            href = clickEvent.currentTarget.attributes['xlink:href'].value;
+          } else {
+            href = clickEvent.currentTarget.attributes['href'].value;
+          }
+          var overrideClickEvent = false;
+          var hrefUri = new URI(href);
+          var hrefIsRelative = hrefUri.is('relative');
+          if (hrefIsRelative) {
+            if (isDeepLikHref(hrefUri)) {
+              processDeepLink(hrefUri, spineItem);
+              overrideClickEvent = true;
+            } else {
+              processLinkWithHash(hrefUri, spineItem);
+              overrideClickEvent = true;
+            }
+          } else {
+            // It's an absolute URL to a remote site - open it in a separate window outside the reader
+            window.open(href, '_blank');
+            overrideClickEvent = true;
+          }
         }
         if (overrideClickEvent) {
           clickEvent.preventDefault();
@@ -35972,7 +36074,7 @@ _readium_shared_js_views_internal_links_support = function ($, Helpers, EPUBcfi,
     };
   };
   return InternalLinksSupport;
-}(_jquery, _readium_shared_js_helpers, _readium_cfi_js, _URIjs);
+}(_jquery, _readium_shared_js_helpers, _readium_cfi_js, _URIjs, _readium_shared_js_globals, _readium_shared_js_models_viewer_settings);
 _readium_shared_js_views_media_overlay_data_injector = function ($, _, Helpers, SmilIterator, EPUBcfi) {
   /**
    *

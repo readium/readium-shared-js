@@ -112,7 +112,11 @@ var Globals = {
         /**
          * @event
          */
-        PLUGINS_LOADED: "PluginsLoaded"
+        PLUGINS_LOADED: "PluginsLoaded",
+        /**
+         * @event
+         */
+        EPUB_POPUP_FOOTNOTE: "EpubPopupFootnote"
     },
     /**
      * Internal Events
