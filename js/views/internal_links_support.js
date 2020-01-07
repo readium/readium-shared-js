@@ -22,7 +22,7 @@
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define(['jquery', '../helpers', 'readium_cfi_js', 'URIjs'], function($, Helpers, EPUBcfi, URI) {
+define(['jquery', '../helpers', 'readium_cfi_js', 'URIjs', '../XmlParse'], function($, Helpers, EPUBcfi, URI, XmlParse) {
 /**
  *
  * @param reader
@@ -83,8 +83,8 @@ var InternalLinksSupport = function(reader) {
                 return;
             }
 
-            var parser = new window.DOMParser;
-            var packageDom = parser.parseFromString(opfText, 'text/xml');
+            var packageDom = XmlParse.fromString(opfText, "text/xml");
+            
             var cfi = splitCfi(fullCfi);
 
             if(!cfi) {

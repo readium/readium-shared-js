@@ -20,7 +20,7 @@
  *
  * Date: 2016-05-20T17:23Z
  */
-var _jquery, _eventEmitter, _readium_shared_js_globals, _console_shim, _es6_shim, _punycode, _IPv6, _SecondLevelDomains, _URIjs, _readium_cfi_js, _underscore, _readium_js_plugins, _readium_shared_js_globalsSetup, _readium_shared_js, _jquerySizes, _readium_shared_js_models_spine_item, _readium_shared_js_helpers, _readium_shared_js_plugins_controller, _readium_shared_js_models_bookmark_data, _readium_shared_js_models_current_pages_info, _readium_shared_js_models_fixed_page_spread, _readium_shared_js_models_smil_model, _readium_shared_js_models_media_overlay, _readium_shared_js_models_metadata, _readium_shared_js_models_node_range_info, _readium_shared_js_models_spine, _readium_shared_js_models_package_data, _readium_shared_js_models_package, _readium_shared_js_models_page_open_request, _readium_shared_js_models_smil_iterator, _readium_shared_js_models_style, _readium_shared_js_models_style_collection, _readium_shared_js_models_switches, _readium_shared_js_models_trigger, _readium_shared_js_models_viewer_settings, _readium_shared_js_views_audio_player, _readium_shared_js_views_cfi_navigation_logic, _readium_shared_js_views_external_agent_support, _ResizeSensor, _readium_shared_js_views_one_page_view, _readium_shared_js_views_fixed_view, _readium_shared_js_views_iframe_loader, _readium_shared_js_views_internal_links_support, _readium_shared_js_views_media_overlay_data_injector, _readium_shared_js_views_media_overlay_element_highlighter, _readium_shared_js_views_scroll_view, _readium_shared_js_views_media_overlay_player, _readium_shared_js_views_reflowable_view, _readium_shared_js_views_reader_view, _readium_shared_js_all = {};
+var _jquery, _eventEmitter, _readium_shared_js_globals, _console_shim, _es6_shim, _punycode, _IPv6, _SecondLevelDomains, _URIjs, _readium_cfi_js, _underscore, _readium_js_plugins, _readium_shared_js_globalsSetup, _readium_shared_js, _jquerySizes, _readium_shared_js_models_spine_item, _readium_shared_js_helpers, _readium_shared_js_plugins_controller, _readium_shared_js_models_bookmark_data, _readium_shared_js_models_current_pages_info, _readium_shared_js_models_fixed_page_spread, _readium_shared_js_models_smil_model, _readium_shared_js_models_media_overlay, _readium_shared_js_models_metadata, _readium_shared_js_models_node_range_info, _readium_shared_js_models_spine, _readium_shared_js_models_package_data, _readium_shared_js_models_package, _readium_shared_js_models_page_open_request, _readium_shared_js_models_smil_iterator, _readium_shared_js_models_style, _readium_shared_js_models_style_collection, _readium_shared_js_models_switches, _readium_shared_js_models_trigger, _readium_shared_js_models_viewer_settings, _readium_shared_js_views_audio_player, _readium_shared_js_views_cfi_navigation_logic, _readium_shared_js_views_external_agent_support, _ResizeSensor, _readium_shared_js_views_one_page_view, _readium_shared_js_views_fixed_view, _readium_shared_js_views_iframe_loader, _readium_shared_js_XmlParse, _readium_shared_js_views_internal_links_support, _readium_shared_js_views_media_overlay_data_injector, _readium_shared_js_views_media_overlay_element_highlighter, _readium_shared_js_views_scroll_view, _readium_shared_js_views_media_overlay_player, _readium_shared_js_views_reflowable_view, _readium_shared_js_views_reader_view, _readium_shared_js_all = {};
 (function (global, factory) {
   if (typeof module === 'object' && typeof module.exports === 'object') {
     // For CommonJS and CommonJS-like environments where a proper `window`
@@ -28064,6 +28064,7 @@ _readium_shared_js_models_spine_item = function () {
   return SpineItem;
 }();
 _readium_shared_js_helpers = function (Globals, _, $, JQuerySizes, SpineItem, URI) {
+  // NOTE that the jquerySizes parameter is not used anywhere explicitely, as this is a jQuery plugin!
   (function () {
     /* jshint strict: true */
     /* jshint -W034 */
@@ -28098,6 +28099,25 @@ _readium_shared_js_helpers = function (Globals, _, $, JQuerySizes, SpineItem, UR
     };
   }());
   var Helpers = {};
+  /**
+   *
+   * @param el XML / HTML element node
+   * @returns string value of attribute epub:type (XHTML) or role (HTML) 
+   */
+  Helpers.getEpubTypeRoleAttributeValue = function (el) {
+    if (!el)
+      return undefined;
+    var attr = undefined;
+    if (el.getAttributeNS) {
+      attr = el.getAttributeNS('http://www.idpf.org/2007/ops', 'type');
+    }
+    if (!attr) {
+      attr = el.getAttribute('epub:type') || el.getAttribute('type') || el.getAttribute('role');
+    }
+    if (!attr)
+      return undefined;
+    return attr;
+  };
   /**
    *
    * @param ebookURL URL string, or Blob (possibly File)
@@ -35829,7 +35849,67 @@ _readium_shared_js_views_iframe_loader = function ($, _, URI) {
   };
   return IFrameLoader;
 }(_jquery, _underscore, _URIjs);
-_readium_shared_js_views_internal_links_support = function ($, Helpers, EPUBcfi, URI) {
+//  LauncherOSX
+//
+//  Created by Boris Schneiderman.
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//
+//  Redistribution and use in source and binary forms, with or without modification,
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice,
+//  this list of conditions and the following disclaimer in the documentation and/or
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be
+//  used to endorse or promote products derived from this software without specific
+//  prior written permission.
+//
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
+(function (global) {
+  var init = function () {
+    var XmlParse = {};
+    XmlParse.preprocess = function (str) {
+      if (str && str.indexOf('version="1.1"') > 0) {
+        console.warn('Replacing XML v1.1 with v1.0 (web browser compatibility).');
+        console.log(str.substr(0, 50));
+        str = str.replace(/(<\?xml[\s\S]+?)version="1.1"([\s\S]+?\?>)/, '$1version="1.0"$2');
+        console.log(str.substr(0, 50));
+      }
+      return str;
+    };
+    XmlParse.fromString = function (str, contentType) {
+      if (!contentType)
+        contentType = 'text/xml';
+      str = XmlParse.preprocess(str);
+      var parser = new window.DOMParser();
+      var dom = parser.parseFromString(str, contentType);
+      return dom;
+    };
+    global.XmlParse = XmlParse;
+    return XmlParse;
+  };
+  if (true) {
+    console.log('RequireJS ... XmlParse');
+    _readium_shared_js_XmlParse = function () {
+      return init();
+    }();
+  } else {
+    console.log('!RequireJS ... XmlParse');
+    //global.XmlParse = 
+    init();
+  }
+}(typeof window !== 'undefined' ? window : this));
+_readium_shared_js_views_internal_links_support = function ($, Helpers, EPUBcfi, URI, XmlParse) {
   /**
    *
    * @param reader
@@ -35870,8 +35950,7 @@ _readium_shared_js_views_internal_links_support = function ($, Helpers, EPUBcfi,
         if (!opfText) {
           return;
         }
-        var parser = new window.DOMParser();
-        var packageDom = parser.parseFromString(opfText, 'text/xml');
+        var packageDom = XmlParse.fromString(opfText, 'text/xml');
         var cfi = splitCfi(fullCfi);
         if (!cfi) {
           console.warn('Unable to split cfi:' + fullCfi);
@@ -35972,7 +36051,7 @@ _readium_shared_js_views_internal_links_support = function ($, Helpers, EPUBcfi,
     };
   };
   return InternalLinksSupport;
-}(_jquery, _readium_shared_js_helpers, _readium_cfi_js, _URIjs);
+}(_jquery, _readium_shared_js_helpers, _readium_cfi_js, _URIjs, _readium_shared_js_XmlParse);
 _readium_shared_js_views_media_overlay_data_injector = function ($, _, Helpers, SmilIterator, EPUBcfi) {
   /**
    *
@@ -41014,7 +41093,7 @@ _readium_shared_js_views_reader_view = function (Globals, $, _, EventEmitter, Fi
               continue;
             var $audios = $('audio', $iframe[0].contentDocument);
             $.each($audios, function () {
-              var attr = this.getAttribute('epub:type') || this.getAttribute('type');
+              var attr = Helpers.getEpubTypeRoleAttributeValue(this);
               if (!attr)
                 return true;
               // continue
@@ -41102,7 +41181,7 @@ _readium_shared_js_views_reader_view = function (Globals, $, _, EventEmitter, Fi
               var href = data.href;
               var $audios = $('audio', $iframe[0].contentDocument);
               $.each($audios, function () {
-                var attr = this.getAttribute('epub:type') || this.getAttribute('type');
+                var attr = getEpubTypeRoleAttributeValue(this);
                 if (!attr)
                   return true;
                 // continue

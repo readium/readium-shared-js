@@ -24,8 +24,9 @@
 //  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
-define(["./globals", 'underscore', "jquery", "jquerySizes", "./models/spine_item", 'URIjs'], function(Globals, _, $, JQuerySizes, SpineItem, URI) {
-    
+
+define(["./globals", 'underscore', "jquery", "jquerySizes", "./models/spine_item", 'URIjs'], function(Globals, _, $, JQuerySizes, SpineItem, URI) {  // NOTE that the jquerySizes parameter is not used anywhere explicitely, as this is a jQuery plugin!
+
 (function()
 {
 /* jshint strict: true */
@@ -73,6 +74,30 @@ define(["./globals", 'underscore', "jquery", "jquerySizes", "./models/spine_item
 
 var Helpers = {};
 
+/**
+ *
+ * @param el XML / HTML element node
+ * @returns string value of attribute epub:type (XHTML) or role (HTML) 
+ */
+Helpers.getEpubTypeRoleAttributeValue = function(el) {
+    if (!el) return undefined;
+
+    var attr = undefined;
+    
+    if (el.getAttributeNS) {
+        attr = el.getAttributeNS('http://www.idpf.org/2007/ops', 'type'); 
+    }
+    
+    if (!attr) {
+        attr = el.getAttribute("epub:type") || el.getAttribute("type") || el.getAttribute("role");
+    }
+    
+    if (!attr) return undefined;
+    
+    return attr;
+}
+
+    
 /**
  *
  * @param ebookURL URL string, or Blob (possibly File)

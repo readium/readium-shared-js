@@ -5497,8 +5497,9 @@ SpineItem.alternateSpread = function(spread) {
 //  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
-define('readium_shared_js/helpers',["./globals", 'underscore', "jquery", "jquerySizes", "./models/spine_item", 'URIjs'], function(Globals, _, $, JQuerySizes, SpineItem, URI) {
-    
+
+define('readium_shared_js/helpers',["./globals", 'underscore', "jquery", "jquerySizes", "./models/spine_item", 'URIjs'], function(Globals, _, $, JQuerySizes, SpineItem, URI) {  // NOTE that the jquerySizes parameter is not used anywhere explicitely, as this is a jQuery plugin!
+
 (function()
 {
 /* jshint strict: true */
@@ -5546,6 +5547,30 @@ define('readium_shared_js/helpers',["./globals", 'underscore', "jquery", "jquery
 
 var Helpers = {};
 
+/**
+ *
+ * @param el XML / HTML element node
+ * @returns string value of attribute epub:type (XHTML) or role (HTML) 
+ */
+Helpers.getEpubTypeRoleAttributeValue = function(el) {
+    if (!el) return undefined;
+
+    var attr = undefined;
+    
+    if (el.getAttributeNS) {
+        attr = el.getAttributeNS('http://www.idpf.org/2007/ops', 'type'); 
+    }
+    
+    if (!attr) {
+        attr = el.getAttribute("epub:type") || el.getAttribute("type") || el.getAttribute("role");
+    }
+    
+    if (!attr) return undefined;
+    
+    return attr;
+}
+
+    
 /**
  *
  * @param ebookURL URL string, or Blob (possibly File)
@@ -11250,6 +11275,88 @@ var IFrameLoader = function() {
 return IFrameLoader;
 });
 
+//  LauncherOSX
+//
+//  Created by Boris Schneiderman.
+//  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
+//
+//  Redistribution and use in source and binary forms, with or without modification,
+//  are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright notice, this
+//  list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright notice,
+//  this list of conditions and the following disclaimer in the documentation and/or
+//  other materials provided with the distribution.
+//  3. Neither the name of the organization nor the names of its contributors may be
+//  used to endorse or promote products derived from this software without specific
+//  prior written permission.
+//
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+//  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+//  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+//  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+//  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+//  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+//  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+//  OF THE POSSIBILITY OF SUCH DAMAGE.
+
+(function(global) {
+
+
+var init = function() {
+    var XmlParse = {};
+
+    XmlParse.preprocess = function(str) {
+        
+        if (str && (str.indexOf('version="1.1"') > 0)) {
+            
+            console.warn("Replacing XML v1.1 with v1.0 (web browser compatibility).");
+            
+            console.log(str.substr(0, 50));
+            
+            str = str.replace(/(<\?xml[\s\S]+?)version="1.1"([\s\S]+?\?>)/, '$1version="1.0"$2');
+            
+            console.log(str.substr(0, 50));
+        }
+        
+        return str;
+    };
+
+    XmlParse.fromString = function(str, contentType) {
+        
+        if (!contentType) contentType = "text/xml";
+
+        str = XmlParse.preprocess(str);
+
+        var parser = new window.DOMParser;
+        var dom = parser.parseFromString(str, contentType);
+        
+        return dom;
+    };
+
+    global.XmlParse = XmlParse;
+    return XmlParse;
+};
+
+
+if (typeof define == 'function' && typeof define.amd == 'object') {
+    console.log("RequireJS ... XmlParse");
+    
+    define('readium_shared_js/XmlParse',[],
+    function () {
+        return init();
+    });
+} else {
+    console.log("!RequireJS ... XmlParse");
+    
+    //global.XmlParse = 
+    init();
+}
+
+})(typeof window !== "undefined" ? window : this);
+
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
 // 
 //  Redistribution and use in source and binary forms, with or without modification, 
@@ -11274,7 +11381,7 @@ return IFrameLoader;
 //  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 //  OF THE POSSIBILITY OF SUCH DAMAGE.
 
-define('readium_shared_js/views/internal_links_support',['jquery', '../helpers', 'readium_cfi_js', 'URIjs'], function($, Helpers, EPUBcfi, URI) {
+define('readium_shared_js/views/internal_links_support',['jquery', '../helpers', 'readium_cfi_js', 'URIjs', '../XmlParse'], function($, Helpers, EPUBcfi, URI, XmlParse) {
 /**
  *
  * @param reader
@@ -11335,8 +11442,8 @@ var InternalLinksSupport = function(reader) {
                 return;
             }
 
-            var parser = new window.DOMParser;
-            var packageDom = parser.parseFromString(opfText, 'text/xml');
+            var packageDom = XmlParse.fromString(opfText, "text/xml");
+            
             var cfi = splitCfi(fullCfi);
 
             if(!cfi) {
@@ -22649,6 +22756,7 @@ var ReaderView = function (options) {
     };
 
     var BackgroundAudioTrackManager = function (readerView) {
+                
         var _spineItemIframeMap = {};
         var _wasPlaying = false;
 
@@ -22689,7 +22797,7 @@ var ReaderView = function (options) {
 
                     $.each($audios, function () {
 
-                        var attr = this.getAttribute("epub:type") || this.getAttribute("type");
+                        var attr = Helpers.getEpubTypeRoleAttributeValue(this);
 
                         if (!attr) return true; // continue
 
@@ -22792,8 +22900,8 @@ var ReaderView = function (options) {
 
                         var $audios = $("audio", $iframe[0].contentDocument);
                         $.each($audios, function () {
-
-                            var attr = this.getAttribute("epub:type") || this.getAttribute("type");
+                            
+                            var attr = getEpubTypeRoleAttributeValue(this);
 
                             if (!attr) return true; // continue
 

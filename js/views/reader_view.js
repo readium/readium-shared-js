@@ -1298,6 +1298,7 @@ var ReaderView = function (options) {
     };
 
     var BackgroundAudioTrackManager = function (readerView) {
+                
         var _spineItemIframeMap = {};
         var _wasPlaying = false;
 
@@ -1338,7 +1339,7 @@ var ReaderView = function (options) {
 
                     $.each($audios, function () {
 
-                        var attr = this.getAttribute("epub:type") || this.getAttribute("type");
+                        var attr = Helpers.getEpubTypeRoleAttributeValue(this);
 
                         if (!attr) return true; // continue
 
@@ -1441,8 +1442,8 @@ var ReaderView = function (options) {
 
                         var $audios = $("audio", $iframe[0].contentDocument);
                         $.each($audios, function () {
-
-                            var attr = this.getAttribute("epub:type") || this.getAttribute("type");
+                            
+                            var attr = getEpubTypeRoleAttributeValue(this);
 
                             if (!attr) return true; // continue
 
