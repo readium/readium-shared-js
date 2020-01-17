@@ -27,11 +27,11 @@
 define(["../globals", "jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", "./iframe_loader", "./internal_links_support",
         "./media_overlay_data_injector", "./media_overlay_player", "../models/package", "../models/metadata", "../models/page_open_request",
         "./reflowable_view", "./scroll_view", "../models/style_collection", "../models/switches", "../models/trigger",
-        "../models/viewer_settings", "../models/bookmark_data", "../models/node_range_info", "./external_agent_support"],
+        "../models/viewer_settings", "../models/bookmark_data", "../models/node_range_info", "./external_agent_support", "../models/navigation_history"],
     function (Globals, $, _, EventEmitter, FixedView, Helpers, IFrameLoader, InternalLinksSupport,
               MediaOverlayDataInjector, MediaOverlayPlayer, Package, Metadata, PageOpenRequest,
               ReflowableView, ScrollView, StyleCollection, Switches, Trigger,
-              ViewerSettings, BookmarkData, NodeRangeInfo, ExternalAgentSupport) {
+              ViewerSettings, BookmarkData, NodeRangeInfo, ExternalAgentSupport, NavigationHistory) {
 /**
  * Options passed on the reader from the readium loader/initializer
  *
@@ -50,6 +50,9 @@ var ReaderView = function (options) {
     $.extend(this, new EventEmitter());
 
     var self = this;
+    
+    var _navigationHistory = new NavigationHistory(self);
+    
     var _currentView = undefined;
     var _package = undefined;
     var _metadata = undefined;
@@ -171,13 +174,20 @@ var ReaderView = function (options) {
     //based on https://docs.google.com/spreadsheet/ccc?key=0AoPMUkQhc4wcdDI0anFvWm96N0xRT184ZE96MXFRdFE&usp=drive_web#gid=0 document
     function deduceDesiredViewType(spineItem) {
 
+        var isLinear = self.spine().isValidLinearItem(spineItem.index);
+        
         //check settings
         if (_viewerSettings.scroll == "scroll-doc") {
             return ReaderView.VIEW_TYPE_SCROLLED_DOC;
         }
 
         if (_viewerSettings.scroll == "scroll-continuous") {
-            return ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
+            
+           if (isLinear) {
+               return ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
+           } else {
+               return ReaderView.VIEW_TYPE_SCROLLED_DOC;
+           }
         }
 
         //is fixed layout ignore flow
@@ -191,13 +201,18 @@ var ReaderView = function (options) {
         }
 
         if (spineItem.isFlowScrolledContinuous()) {
-            return ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
+            
+           if (isLinear) {
+               return ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
+           } else {
+               return ReaderView.VIEW_TYPE_SCROLLED_DOC;
+           }
         }
 
         return ReaderView.VIEW_TYPE_COLUMNIZED;
     }
 
-    // returns true is view changed
+    // callback is passed true parameter is view changed
     function initViewForItem(spineItem, callback) {
 
         var desiredViewType = deduceDesiredViewType(spineItem);
@@ -205,6 +220,7 @@ var ReaderView = function (options) {
         if (_currentView) {
 
             if (self.getCurrentViewType() == desiredViewType) {
+            
                 callback(false);
                 return;
             }
@@ -269,7 +285,7 @@ var ReaderView = function (options) {
         });
 
         _currentView.on(Globals.InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED, function (pageChangeData) {
-            
+
             Globals.logEvent("InternalEvents.CURRENT_VIEW_PAGINATION_CHANGED", "ON", "reader_view.js");
 
             //we call on onPageChanged explicitly instead of subscribing to the Globals.Events.PAGINATION_CHANGED by
@@ -302,7 +318,6 @@ var ReaderView = function (options) {
         setTimeout(function () {
 
             callback(true);
-
         }, 50);
 
     }
@@ -401,13 +416,15 @@ var ReaderView = function (options) {
      */
     this.openBook = function (openBookData) {
 
+        _navigationHistory.flush();
+
         var packageData = openBookData.package ? openBookData.package : openBookData;
 
         _package = new Package(packageData);
         _metadata = new Metadata(packageData.metadata);
 
         _spine = _package.spine;
-        _spine.handleLinear(true);
+        //_spine.handleLinear(false);
 
         if (_mediaOverlayPlayer) {
             _mediaOverlayPlayer.reset();
@@ -484,9 +501,7 @@ var ReaderView = function (options) {
                 pageOpenRequest.setFirstPage();
                 openPage(pageOpenRequest, 0);
             }
-
         }
-
     };
 
     function onMediaPlayerStatusChanged(status) {
@@ -611,6 +626,8 @@ var ReaderView = function (options) {
 
                 var spineItem = _spine.getItemById(bookMark.idref);
 
+                _navigationHistory.skipNext();
+
                 initViewForItem(spineItem, function (isViewChanged) {
 
                     if (!isViewChanged) {
@@ -636,7 +653,7 @@ var ReaderView = function (options) {
                     Globals.logEvent("SETTINGS_APPLIED 1 (view update)", "EMIT", "reader_view.js");
                     self.emit(Globals.Events.SETTINGS_APPLIED);
                 });
-                
+               
                 return;
             }
         }
@@ -679,6 +696,8 @@ var ReaderView = function (options) {
         var openPageRequest = new PageOpenRequest(nextSpineItem, self);
         openPageRequest.setFirstPage();
 
+        _navigationHistory.skipNext();
+        
         openPage(openPageRequest, 2);
     };
 
@@ -716,6 +735,8 @@ var ReaderView = function (options) {
         var openPageRequest = new PageOpenRequest(prevSpineItem, self);
         openPageRequest.setLastPage();
 
+        _navigationHistory.skipNext();
+        
         openPage(openPageRequest, 1);
     };
 
@@ -799,8 +820,63 @@ var ReaderView = function (options) {
         return true;
     };
 
+    // this.navigationHistoryForward = function() {
+    //     // Not implemented 
+    // };
+    this.navigationHistoryBack = function(forceLinear) {
+        
+        console.log("back nav request ...");
+        
+        while (true) {
+            var bookMark = _navigationHistory.pop();
+            if (bookMark && bookMark.idref) {
+                var spineItem = _spine.getItemById(bookMark.idref);
+                
+                if (forceLinear) {
+                    var isLinear = _spine.isValidLinearItem(spineItem.index);
+                    if (!isLinear) {
+                        console.log("back nav, skipping non-linear " + bookMark.idref);
+                        continue;
+                    }
+                }
+    
+                console.log("back nav: ");
+                console.debug(bookMark);
+                
+                _navigationHistory.skipNext();
+                
+                initViewForItem(spineItem, function (isViewChanged) {
+                    
+                    if (!isViewChanged) {
+                        _currentView.setViewSettings(_viewerSettings);
+                    }
+
+                    self.openSpineItemElementCfi(bookMark.idref, bookMark.contentCFI, self);
+                });
+                
+                return;
+            }
+            
+            console.error("no valid back history?");
+            return;
+        }
+    };
+
+    this.navigationHistoryCanBack = function(forceLinear) {
+        
+        if (!_navigationHistory.canPop()) return false;
+            
+        if (!forceLinear) {
+            return true;
+        }
+        
+        return _navigationHistory.containsLinear();
+    };
+    
     // dir: 0 => new or same page, 1 => previous, 2 => next
     function openPage(pageRequest, dir) {
+
+        if (_currentView) _navigationHistory.push(_currentView.bookmarkCurrentPage());
 
         initViewForItem(pageRequest.spineItem, function (isViewChanged) {
 
@@ -1001,6 +1077,11 @@ var ReaderView = function (options) {
                 console.warn('decoded spineItem ' + decodedHrefPart + ' missing as well');
                 return false;
             }
+        }
+        
+        if (initiator && initiator instanceof MediaOverlayPlayer)
+        {
+            _navigationHistory.skipNext();
         }
 
         return self.openSpineItemElementId(spineItem.idref, elementId, initiator);

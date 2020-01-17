@@ -20,7 +20,7 @@
  *
  * Date: 2016-05-20T17:23Z
  */
-var _jquery, _eventEmitter, _readium_shared_js_globals, _console_shim, _es6_shim, _punycode, _IPv6, _SecondLevelDomains, _URIjs, _readium_cfi_js, _underscore, _readium_js_plugins, _readium_shared_js_globalsSetup, _readium_shared_js, _jquerySizes, _readium_shared_js_models_spine_item, _readium_shared_js_helpers, _readium_shared_js_plugins_controller, _readium_shared_js_models_bookmark_data, _readium_shared_js_models_current_pages_info, _readium_shared_js_models_fixed_page_spread, _readium_shared_js_models_smil_model, _readium_shared_js_models_media_overlay, _readium_shared_js_models_metadata, _readium_shared_js_models_node_range_info, _readium_shared_js_models_spine, _readium_shared_js_models_package_data, _readium_shared_js_models_package, _readium_shared_js_models_page_open_request, _readium_shared_js_models_smil_iterator, _readium_shared_js_models_style, _readium_shared_js_models_style_collection, _readium_shared_js_models_switches, _readium_shared_js_models_trigger, _readium_shared_js_models_viewer_settings, _readium_shared_js_views_audio_player, _readium_shared_js_views_cfi_navigation_logic, _readium_shared_js_views_external_agent_support, _ResizeSensor, _readium_shared_js_views_one_page_view, _readium_shared_js_views_fixed_view, _readium_shared_js_views_iframe_loader, _readium_shared_js_views_internal_links_support, _readium_shared_js_views_media_overlay_data_injector, _readium_shared_js_views_media_overlay_element_highlighter, _readium_shared_js_views_scroll_view, _readium_shared_js_views_media_overlay_player, _readium_shared_js_views_reflowable_view, _readium_shared_js_views_reader_view, _readium_shared_js_all = {};
+var _jquery, _eventEmitter, _readium_shared_js_globals, _console_shim, _es6_shim, _punycode, _IPv6, _SecondLevelDomains, _URIjs, _readium_cfi_js, _underscore, _readium_js_plugins, _readium_shared_js_globalsSetup, _readium_shared_js, _jquerySizes, _readium_shared_js_models_spine_item, _readium_shared_js_helpers, _readium_shared_js_plugins_controller, _readium_shared_js_models_bookmark_data, _readium_shared_js_models_current_pages_info, _readium_shared_js_models_fixed_page_spread, _readium_shared_js_models_smil_model, _readium_shared_js_models_media_overlay, _readium_shared_js_models_metadata, _readium_shared_js_models_node_range_info, _readium_shared_js_models_spine, _readium_shared_js_models_package_data, _readium_shared_js_models_package, _readium_shared_js_models_page_open_request, _readium_shared_js_models_smil_iterator, _readium_shared_js_models_style, _readium_shared_js_models_style_collection, _readium_shared_js_models_switches, _readium_shared_js_models_trigger, _readium_shared_js_models_viewer_settings, _readium_shared_js_views_audio_player, _readium_shared_js_views_cfi_navigation_logic, _readium_shared_js_views_external_agent_support, _ResizeSensor, _readium_shared_js_views_one_page_view, _readium_shared_js_views_fixed_view, _readium_shared_js_views_iframe_loader, _readium_shared_js_views_internal_links_support, _readium_shared_js_views_media_overlay_data_injector, _readium_shared_js_views_media_overlay_element_highlighter, _readium_shared_js_views_scroll_view, _readium_shared_js_views_media_overlay_player, _readium_shared_js_views_reflowable_view, _readium_shared_js_models_navigation_history, _readium_shared_js_views_reader_view, _readium_shared_js_all = {};
 (function (global, factory) {
   if (typeof module === 'object' && typeof module.exports === 'object') {
     // For CommonJS and CommonJS-like environments where a proper `window`
@@ -29180,13 +29180,10 @@ _readium_shared_js_models_current_pages_info = function () {
       if (this.openPages.length == 0)
         return false;
       var lastOpenPage = this.openPages[this.openPages.length - 1];
-      // TODO: handling of non-linear spine items ("ancillary" documents), allowing page turn within the reflowable XHTML, but preventing previous/next access to sibling spine items. Also needs "go back" feature to navigate to source hyperlink location that led to the non-linear document.
-      // See https://github.com/readium/readium-shared-js/issues/26
-      // Removed, needs to be implemented properly as per above.
-      // See https://github.com/readium/readium-shared-js/issues/108
-      // if(!spine.isValidLinearItem(lastOpenPage.spineItemIndex))
-      //     return false;
-      return lastOpenPage.spineItemIndex < spine.last().index || lastOpenPage.spineItemPageIndex < lastOpenPage.spineItemPageCount - 1;
+      if (spine.isValidLinearItem(lastOpenPage.spineItemIndex))
+        return lastOpenPage.spineItemIndex < spine.last().index || lastOpenPage.spineItemPageIndex < lastOpenPage.spineItemPageCount - 1;
+      else
+        return lastOpenPage.spineItemPageIndex < lastOpenPage.spineItemPageCount - 1;
     };
     /**
      * Checks if navigation to the previous page is possible (depending on page-progression-direction: left page in LTR mode, right page in RTL mode)
@@ -29198,13 +29195,10 @@ _readium_shared_js_models_current_pages_info = function () {
       if (this.openPages.length == 0)
         return false;
       var firstOpenPage = this.openPages[0];
-      // TODO: handling of non-linear spine items ("ancillary" documents), allowing page turn within the reflowable XHTML, but preventing previous/next access to sibling spine items. Also needs "go back" feature to navigate to source hyperlink location that led to the non-linear document.
-      // See https://github.com/readium/readium-shared-js/issues/26
-      // Removed, needs to be implemented properly as per above.
-      // //https://github.com/readium/readium-shared-js/issues/108
-      // if(!spine.isValidLinearItem(firstOpenPage.spineItemIndex))
-      //     return false;
-      return spine.first().index < firstOpenPage.spineItemIndex || 0 < firstOpenPage.spineItemPageIndex;
+      if (spine.isValidLinearItem(firstOpenPage.spineItemIndex))
+        return spine.first().index < firstOpenPage.spineItemIndex || 0 < firstOpenPage.spineItemPageIndex;
+      else
+        return 0 < firstOpenPage.spineItemPageIndex;
     };
     /**
      * Sorts the openPages array based on spineItemIndex and spineItemPageIndex
@@ -30686,7 +30680,7 @@ _readium_shared_js_models_spine = function (SpineItem, Helpers, URI) {
      *
      */
     this.package = epubPackage;
-    var _handleLinear = false;
+    var _handleLinear = true;
     /**
      * Sets a flag indicating that the app handles linear spine items
      *
@@ -40009,7 +40003,94 @@ _readium_shared_js_views_reflowable_view = function (Globals, $, _, EventEmitter
   };
   return ReflowableView;
 }(_readium_shared_js_globals, _jquery, _underscore, _eventEmitter, _readium_shared_js_models_bookmark_data, _readium_shared_js_views_cfi_navigation_logic, _readium_shared_js_models_current_pages_info, _readium_shared_js_helpers, _readium_shared_js_models_page_open_request, _readium_shared_js_models_viewer_settings, _ResizeSensor);
-_readium_shared_js_views_reader_view = function (Globals, $, _, EventEmitter, FixedView, Helpers, IFrameLoader, InternalLinksSupport, MediaOverlayDataInjector, MediaOverlayPlayer, Package, Metadata, PageOpenRequest, ReflowableView, ScrollView, StyleCollection, Switches, Trigger, ViewerSettings, BookmarkData, NodeRangeInfo, ExternalAgentSupport) {
+_readium_shared_js_models_navigation_history = function () {
+  var NavigationHistory = function (readerview) {
+    var _DEBUG = true;
+    var self = this;
+    var _readerView = readerview;
+    var _breadcrumb = [];
+    var _skipNext = false;
+    this.flush = function () {
+      if (_DEBUG) {
+        console.error('NavigationHistory FLUSH.');
+      }
+      _breadcrumb = [];
+    };
+    this.flush();
+    this.containsLinear = function () {
+      for (var i = 0; i < _breadcrumb.length; i++) {
+        var bookMark = _breadcrumb[i];
+        if (bookMark && bookMark.idref) {
+          var spineItem = readerview.spine().getItemById(bookMark.idref);
+          var isLinear = spineItem && readerview.spine().isValidLinearItem(spineItem.index);
+          if (isLinear) {
+            return true;
+          }
+        }
+      }
+      return false;
+    };
+    this.push = function (bookMark) {
+      if (_skipNext) {
+        if (_DEBUG) {
+          console.error('NavigationHistory PUSH SKIP: ');
+          console.debug(bookMark);
+        }
+        _skipNext = false;
+        return;
+      }
+      if (_DEBUG) {
+        console.error('NavigationHistory PUSH: ');
+        console.debug(bookMark);
+      }
+      if (_breadcrumb.length) {
+        var lastBookMark = _breadcrumb[_breadcrumb.length - 1];
+        var bookMark_contentCFI = bookMark.contentCFI;
+        // TODO bookmark spatial @x:y! (should be charcter offset)
+        // if (bookMark_contentCFI) {
+        //     var i = bookMark_contentCFI.lastIndexOf("@");
+        //     if (i > 1) {
+        //         bookMark_contentCFI = bookMark_contentCFI.substr(0, i);
+        //     }
+        // }
+        var lastBookMark_contentCFI = lastBookMark.contentCFI;
+        // TODO bookmark spatial @x:y! (should be charcter offset)
+        // if (lastBookMark_contentCFI) {
+        //     i = lastBookMark_contentCFI.lastIndexOf("@");
+        //     if (i > 1) {
+        //         lastBookMark_contentCFI = lastBookMark_contentCFI.substr(0, i);
+        //     }
+        // }
+        if (bookMark.idref == lastBookMark.idref && bookMark_contentCFI == lastBookMark_contentCFI) {
+          if (_DEBUG) {
+            console.log('--- NavigationHistory skipping duplicate bookmark: ' + bookMark.idref + ' -- ' + bookMark_contentCFI);
+          }
+          return;
+        }
+      }
+      _breadcrumb.push(bookMark);
+    };
+    this.pop = function () {
+      var bookMark = _breadcrumb.pop();
+      if (_DEBUG) {
+        console.error('NavigationHistory POP: ');
+        console.debug(bookMark);
+      }
+      return bookMark;
+    };
+    this.canPop = function () {
+      return _breadcrumb.length > 0;
+    };
+    this.skipNext = function () {
+      if (_DEBUG) {
+        console.error('NavigationHistory SKIP NEXT.');
+      }
+      _skipNext = true;
+    };
+  };
+  return NavigationHistory;
+}();
+_readium_shared_js_views_reader_view = function (Globals, $, _, EventEmitter, FixedView, Helpers, IFrameLoader, InternalLinksSupport, MediaOverlayDataInjector, MediaOverlayPlayer, Package, Metadata, PageOpenRequest, ReflowableView, ScrollView, StyleCollection, Switches, Trigger, ViewerSettings, BookmarkData, NodeRangeInfo, ExternalAgentSupport, NavigationHistory) {
   /**
    * Options passed on the reader from the readium loader/initializer
    *
@@ -40026,6 +40107,7 @@ _readium_shared_js_views_reader_view = function (Globals, $, _, EventEmitter, Fi
   var ReaderView = function (options) {
     $.extend(this, new EventEmitter());
     var self = this;
+    var _navigationHistory = new NavigationHistory(self);
     var _currentView = undefined;
     var _package = undefined;
     var _metadata = undefined;
@@ -40120,12 +40202,17 @@ _readium_shared_js_views_reader_view = function (Globals, $, _, EventEmitter, Fi
     };
     //based on https://docs.google.com/spreadsheet/ccc?key=0AoPMUkQhc4wcdDI0anFvWm96N0xRT184ZE96MXFRdFE&usp=drive_web#gid=0 document
     function deduceDesiredViewType(spineItem) {
+      var isLinear = self.spine().isValidLinearItem(spineItem.index);
       //check settings
       if (_viewerSettings.scroll == 'scroll-doc') {
         return ReaderView.VIEW_TYPE_SCROLLED_DOC;
       }
       if (_viewerSettings.scroll == 'scroll-continuous') {
-        return ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
+        if (isLinear) {
+          return ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
+        } else {
+          return ReaderView.VIEW_TYPE_SCROLLED_DOC;
+        }
       }
       //is fixed layout ignore flow
       if (spineItem.isFixedLayout()) {
@@ -40136,11 +40223,15 @@ _readium_shared_js_views_reader_view = function (Globals, $, _, EventEmitter, Fi
         return ReaderView.VIEW_TYPE_SCROLLED_DOC;
       }
       if (spineItem.isFlowScrolledContinuous()) {
-        return ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
+        if (isLinear) {
+          return ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS;
+        } else {
+          return ReaderView.VIEW_TYPE_SCROLLED_DOC;
+        }
       }
       return ReaderView.VIEW_TYPE_COLUMNIZED;
     }
-    // returns true is view changed
+    // callback is passed true parameter is view changed
     function initViewForItem(spineItem, callback) {
       var desiredViewType = deduceDesiredViewType(spineItem);
       if (_currentView) {
@@ -40297,11 +40388,12 @@ _readium_shared_js_views_reader_view = function (Globals, $, _, EventEmitter, Fi
      * @param {Views.ReaderView.OpenBookData} openBookData Open book data object
      */
     this.openBook = function (openBookData) {
+      _navigationHistory.flush();
       var packageData = openBookData.package ? openBookData.package : openBookData;
       _package = new Package(packageData);
       _metadata = new Metadata(packageData.metadata);
       _spine = _package.spine;
-      _spine.handleLinear(true);
+      //_spine.handleLinear(false);
       if (_mediaOverlayPlayer) {
         _mediaOverlayPlayer.reset();
       }
@@ -40458,6 +40550,7 @@ _readium_shared_js_views_reader_view = function (Globals, $, _, EventEmitter, Fi
             }
           }
           var spineItem = _spine.getItemById(bookMark.idref);
+          _navigationHistory.skipNext();
           initViewForItem(spineItem, function (isViewChanged) {
             if (!isViewChanged) {
               var docWillChange = false;
@@ -40506,6 +40599,7 @@ _readium_shared_js_views_reader_view = function (Globals, $, _, EventEmitter, Fi
       }
       var openPageRequest = new PageOpenRequest(nextSpineItem, self);
       openPageRequest.setFirstPage();
+      _navigationHistory.skipNext();
       openPage(openPageRequest, 2);
     };
     /**
@@ -40532,6 +40626,7 @@ _readium_shared_js_views_reader_view = function (Globals, $, _, EventEmitter, Fi
       }
       var openPageRequest = new PageOpenRequest(prevSpineItem, self);
       openPageRequest.setLastPage();
+      _navigationHistory.skipNext();
       openPage(openPageRequest, 1);
     };
     function getSpineItem(idref) {
@@ -40593,8 +40688,49 @@ _readium_shared_js_views_reader_view = function (Globals, $, _, EventEmitter, Fi
       openPage(pageRequest, 0);
       return true;
     };
+    // this.navigationHistoryForward = function() {
+    //     // Not implemented 
+    // };
+    this.navigationHistoryBack = function (forceLinear) {
+      console.log('back nav request ...');
+      while (true) {
+        var bookMark = _navigationHistory.pop();
+        if (bookMark && bookMark.idref) {
+          var spineItem = _spine.getItemById(bookMark.idref);
+          if (forceLinear) {
+            var isLinear = _spine.isValidLinearItem(spineItem.index);
+            if (!isLinear) {
+              console.log('back nav, skipping non-linear ' + bookMark.idref);
+              continue;
+            }
+          }
+          console.log('back nav: ');
+          console.debug(bookMark);
+          _navigationHistory.skipNext();
+          initViewForItem(spineItem, function (isViewChanged) {
+            if (!isViewChanged) {
+              _currentView.setViewSettings(_viewerSettings);
+            }
+            self.openSpineItemElementCfi(bookMark.idref, bookMark.contentCFI, self);
+          });
+          return;
+        }
+        console.error('no valid back history?');
+        return;
+      }
+    };
+    this.navigationHistoryCanBack = function (forceLinear) {
+      if (!_navigationHistory.canPop())
+        return false;
+      if (!forceLinear) {
+        return true;
+      }
+      return _navigationHistory.containsLinear();
+    };
     // dir: 0 => new or same page, 1 => previous, 2 => next
     function openPage(pageRequest, dir) {
+      if (_currentView)
+        _navigationHistory.push(_currentView.bookmarkCurrentPage());
       initViewForItem(pageRequest.spineItem, function (isViewChanged) {
         if (!isViewChanged) {
           var docWillChange = true;
@@ -40752,6 +40888,9 @@ _readium_shared_js_views_reader_view = function (Globals, $, _, EventEmitter, Fi
           console.warn('decoded spineItem ' + decodedHrefPart + ' missing as well');
           return false;
         }
+      }
+      if (initiator && initiator instanceof MediaOverlayPlayer) {
+        _navigationHistory.skipNext();
       }
       return self.openSpineItemElementId(spineItem.idref, elementId, initiator);
     };
@@ -41422,7 +41561,7 @@ _readium_shared_js_views_reader_view = function (Globals, $, _, EventEmitter, Fi
   ReaderView.VIEW_TYPE_SCROLLED_DOC = 3;
   ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS = 4;
   return ReaderView;
-}(_readium_shared_js_globals, _jquery, _underscore, _eventEmitter, _readium_shared_js_views_fixed_view, _readium_shared_js_helpers, _readium_shared_js_views_iframe_loader, _readium_shared_js_views_internal_links_support, _readium_shared_js_views_media_overlay_data_injector, _readium_shared_js_views_media_overlay_player, _readium_shared_js_models_package, _readium_shared_js_models_metadata, _readium_shared_js_models_page_open_request, _readium_shared_js_views_reflowable_view, _readium_shared_js_views_scroll_view, _readium_shared_js_models_style_collection, _readium_shared_js_models_switches, _readium_shared_js_models_trigger, _readium_shared_js_models_viewer_settings, _readium_shared_js_models_bookmark_data, _readium_shared_js_models_node_range_info, _readium_shared_js_views_external_agent_support);
+}(_readium_shared_js_globals, _jquery, _underscore, _eventEmitter, _readium_shared_js_views_fixed_view, _readium_shared_js_helpers, _readium_shared_js_views_iframe_loader, _readium_shared_js_views_internal_links_support, _readium_shared_js_views_media_overlay_data_injector, _readium_shared_js_views_media_overlay_player, _readium_shared_js_models_package, _readium_shared_js_models_metadata, _readium_shared_js_models_page_open_request, _readium_shared_js_views_reflowable_view, _readium_shared_js_views_scroll_view, _readium_shared_js_models_style_collection, _readium_shared_js_models_switches, _readium_shared_js_models_trigger, _readium_shared_js_models_viewer_settings, _readium_shared_js_models_bookmark_data, _readium_shared_js_models_node_range_info, _readium_shared_js_views_external_agent_support, _readium_shared_js_models_navigation_history);
 _readium_shared_js_all = function (exports, Globals, GlobalsSetup, Helpers, PluginsController, BookmarkData, CurrentPagesInfo, FixedPageSpread, MediaOverlay, Metadata, NodeRangeInfo, Package, PackageData, PageOpenRequest, SmilIterator, SmilModel, Spine, SpineItem, Style, StyleCollection, Switches, Trigger, ViewerSettings, AudioPlayer, CfiNavigationLogic, ExternalAgentSupport, FixedView, IframeLoader, InternalLinksSupport, MediaOverlayDataInjector, MediaOverlayElementHighlighter, OnePageView, ReaderView, ReflowableView, ScrollView) {
   // Top Level
   exports.Globals = Globals;

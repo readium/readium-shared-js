@@ -128,15 +128,11 @@ var CurrentPagesInfo = function(spine, isFixedLayout) {
 
         var lastOpenPage = this.openPages[this.openPages.length - 1];
 
-        // TODO: handling of non-linear spine items ("ancillary" documents), allowing page turn within the reflowable XHTML, but preventing previous/next access to sibling spine items. Also needs "go back" feature to navigate to source hyperlink location that led to the non-linear document.
-        // See https://github.com/readium/readium-shared-js/issues/26
-
-        // Removed, needs to be implemented properly as per above.
-        // See https://github.com/readium/readium-shared-js/issues/108
-        // if(!spine.isValidLinearItem(lastOpenPage.spineItemIndex))
-        //     return false;
-
-        return lastOpenPage.spineItemIndex < spine.last().index || lastOpenPage.spineItemPageIndex < lastOpenPage.spineItemPageCount - 1;
+        if(spine.isValidLinearItem(lastOpenPage.spineItemIndex))
+            return lastOpenPage.spineItemIndex < spine.last().index || lastOpenPage.spineItemPageIndex < lastOpenPage.spineItemPageCount - 1;
+        else
+            return lastOpenPage.spineItemPageIndex < lastOpenPage.spineItemPageCount - 1;
+            
     };
 
     /**
@@ -153,15 +149,10 @@ var CurrentPagesInfo = function(spine, isFixedLayout) {
 
         var firstOpenPage = this.openPages[0];
 
-        // TODO: handling of non-linear spine items ("ancillary" documents), allowing page turn within the reflowable XHTML, but preventing previous/next access to sibling spine items. Also needs "go back" feature to navigate to source hyperlink location that led to the non-linear document.
-        // See https://github.com/readium/readium-shared-js/issues/26
-
-        // Removed, needs to be implemented properly as per above.
-        // //https://github.com/readium/readium-shared-js/issues/108
-        // if(!spine.isValidLinearItem(firstOpenPage.spineItemIndex))
-        //     return false;
-
-        return spine.first().index < firstOpenPage.spineItemIndex || 0 < firstOpenPage.spineItemPageIndex;
+        if(spine.isValidLinearItem(firstOpenPage.spineItemIndex))
+            return spine.first().index < firstOpenPage.spineItemIndex || 0 < firstOpenPage.spineItemPageIndex;
+        else
+            return 0 < firstOpenPage.spineItemPageIndex;
     };
 
     /**

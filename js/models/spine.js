@@ -62,7 +62,7 @@ var Spine = function(epubPackage, spineDTO) {
      */
     this.package = epubPackage;
 
-    var _handleLinear = false;
+    var _handleLinear = true;
 
     /**
      * Sets a flag indicating that the app handles linear spine items
