@@ -27,11 +27,11 @@
 define(["../globals", "jquery", "underscore", "eventEmitter", "./fixed_view", "../helpers", "./iframe_loader", "./internal_links_support",
         "./media_overlay_data_injector", "./media_overlay_player", "../models/package", "../models/metadata", "../models/page_open_request",
         "./reflowable_view", "./scroll_view", "../models/style_collection", "../models/switches", "../models/trigger",
-        "../models/viewer_settings", "../models/bookmark_data", "../models/node_range_info", "./external_agent_support"],
+        "../models/viewer_settings", "../models/bookmark_data", "../models/node_range_info", "./external_agent_support", "../models/multiple_renditions"],
     function (Globals, $, _, EventEmitter, FixedView, Helpers, IFrameLoader, InternalLinksSupport,
               MediaOverlayDataInjector, MediaOverlayPlayer, Package, Metadata, PageOpenRequest,
               ReflowableView, ScrollView, StyleCollection, Switches, Trigger,
-              ViewerSettings, BookmarkData, NodeRangeInfo, ExternalAgentSupport) {
+              ViewerSettings, BookmarkData, NodeRangeInfo, ExternalAgentSupport, MultipleRenditions) {
 /**
  * Options passed on the reader from the readium loader/initializer
  *
@@ -382,7 +382,16 @@ var ReaderView = function (options) {
     this.userStyles = function () {
         return _userStyles;
     };
-
+    
+    /**
+     * Returns the EPUB3 Multiple Renditions data for the currently-opened ebook (initialised in this.openBook())
+     *
+     * @returns {ReadiumSDK.Models.MultipleRenditions} can be undefined
+     */
+    this.getMultipleRenditions = function() {
+        return _multipleRenditions;
+    };
+    
     /**
      * Open Book Data
      *
@@ -429,10 +438,23 @@ var ReaderView = function (options) {
             self.setStyles(openBookData.styles);
         }
 
+        if (openBookData.multipleRenditions) {
+            _multipleRenditions = new MultipleRenditions(openBookData.multipleRenditions);
+        } else {
+            _multipleRenditions = undefined;
+        }
+        
         var pageRequestData = undefined;
 
         if (openBookData.openPageRequest && typeof(openBookData.openPageRequest) === 'function') {
             openBookData.openPageRequest = openBookData.openPageRequest();
+        }
+
+        if (openBookData.openPageRequest) {
+            
+            if (_multipleRenditions) {
+                openBookData.openPageRequest = _multipleRenditions.adjustPageRequestRenditionMapping(openBookData.openPageRequest);
+            }
         }
 
         if (openBookData.openPageRequest) {

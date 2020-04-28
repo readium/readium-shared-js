@@ -20,7 +20,7 @@
  *
  * Date: 2016-05-20T17:23Z
  */
-var _jquery, _eventEmitter, _readium_shared_js_globals, _console_shim, _es6_shim, _punycode, _IPv6, _SecondLevelDomains, _URIjs, _readium_cfi_js, _underscore, _readium_js_plugins, _readium_shared_js_globalsSetup, _readium_shared_js, _jquerySizes, _readium_shared_js_models_spine_item, _readium_shared_js_helpers, _readium_shared_js_plugins_controller, _readium_shared_js_models_bookmark_data, _readium_shared_js_models_current_pages_info, _readium_shared_js_models_fixed_page_spread, _readium_shared_js_models_smil_model, _readium_shared_js_models_media_overlay, _readium_shared_js_models_metadata, _readium_shared_js_models_node_range_info, _readium_shared_js_models_spine, _readium_shared_js_models_package_data, _readium_shared_js_models_package, _readium_shared_js_models_page_open_request, _readium_shared_js_models_smil_iterator, _readium_shared_js_models_style, _readium_shared_js_models_style_collection, _readium_shared_js_models_switches, _readium_shared_js_models_trigger, _readium_shared_js_models_viewer_settings, _readium_shared_js_views_audio_player, _readium_shared_js_views_cfi_navigation_logic, _readium_shared_js_views_external_agent_support, _ResizeSensor, _readium_shared_js_views_one_page_view, _readium_shared_js_views_fixed_view, _readium_shared_js_views_iframe_loader, _readium_shared_js_views_internal_links_support, _readium_shared_js_views_media_overlay_data_injector, _readium_shared_js_views_media_overlay_element_highlighter, _readium_shared_js_views_scroll_view, _readium_shared_js_views_media_overlay_player, _readium_shared_js_views_reflowable_view, _readium_shared_js_views_reader_view, _readium_shared_js_all = {};
+var _jquery, _eventEmitter, _readium_shared_js_globals, _console_shim, _es6_shim, _punycode, _IPv6, _SecondLevelDomains, _URIjs, _readium_cfi_js, _underscore, _readium_js_plugins, _readium_shared_js_globalsSetup, _readium_shared_js, _jquerySizes, _readium_shared_js_models_spine_item, _readium_shared_js_helpers, _readium_shared_js_plugins_controller, _readium_shared_js_models_bookmark_data, _readium_shared_js_models_current_pages_info, _readium_shared_js_models_fixed_page_spread, _readium_shared_js_models_smil_model, _readium_shared_js_models_media_overlay, _readium_shared_js_models_metadata, _readium_shared_js_models_node_range_info, _readium_shared_js_models_spine, _readium_shared_js_models_package_data, _readium_shared_js_models_package, _readium_shared_js_models_page_open_request, _readium_shared_js_models_smil_iterator, _readium_shared_js_models_style, _readium_shared_js_models_style_collection, _readium_shared_js_models_switches, _readium_shared_js_models_trigger, _readium_shared_js_models_viewer_settings, _readium_shared_js_views_audio_player, _readium_shared_js_views_cfi_navigation_logic, _readium_shared_js_views_external_agent_support, _ResizeSensor, _readium_shared_js_views_one_page_view, _readium_shared_js_views_fixed_view, _readium_shared_js_views_iframe_loader, _readium_shared_js_views_internal_links_support, _readium_shared_js_views_media_overlay_data_injector, _readium_shared_js_views_media_overlay_element_highlighter, _readium_shared_js_views_scroll_view, _readium_shared_js_views_media_overlay_player, _readium_shared_js_views_reflowable_view, _readium_shared_js_models_multiple_renditions, _readium_shared_js_views_reader_view, _readium_shared_js_all = {};
 (function (global, factory) {
   if (typeof module === 'object' && typeof module.exports === 'object') {
     // For CommonJS and CommonJS-like environments where a proper `window`
@@ -40009,7 +40009,141 @@ _readium_shared_js_views_reflowable_view = function (Globals, $, _, EventEmitter
   };
   return ReflowableView;
 }(_readium_shared_js_globals, _jquery, _underscore, _eventEmitter, _readium_shared_js_models_bookmark_data, _readium_shared_js_views_cfi_navigation_logic, _readium_shared_js_models_current_pages_info, _readium_shared_js_helpers, _readium_shared_js_models_page_open_request, _readium_shared_js_models_viewer_settings, _ResizeSensor);
-_readium_shared_js_views_reader_view = function (Globals, $, _, EventEmitter, FixedView, Helpers, IFrameLoader, InternalLinksSupport, MediaOverlayDataInjector, MediaOverlayPlayer, Package, Metadata, PageOpenRequest, ReflowableView, ScrollView, StyleCollection, Switches, Trigger, ViewerSettings, BookmarkData, NodeRangeInfo, ExternalAgentSupport) {
+_readium_shared_js_models_multiple_renditions = function () {
+  /**
+   * EPUB3 Multiple Renditions, see http://www.idpf.org/epub/renditions/multiple
+   * @class ReadiumSDK.Models.MultipleRenditions
+   * @param {ReadiumSDK.Models.MultipleRenditionsData} multipleRenditions
+   * @constructor
+   */
+  var MultipleRenditions = function (multipleRenditions) {
+    var self = this;
+    /**
+     * @see {ReadiumSDK.Models.MultipleRenditionsData}
+     */
+    this.renditions = multipleRenditions ? multipleRenditions.renditions : undefined;
+    this.selectedIndex = multipleRenditions ? multipleRenditions.selectedIndex : -1;
+    this.mappings = multipleRenditions ? multipleRenditions.mappings : undefined;
+    var cfiTokenise = function (cfi) {
+      //console.log(cfi);
+      var arrayOfIndices = [];
+      var split = cfi.split('/');
+      for (var i = 0; i < split.length; i++) {
+        var token = split[i];
+        var j = token.indexOf('[');
+        if (j > 0) {
+          token = token.substr(0, token.length - j);
+        }
+        j = token.indexOf('@');
+        if (j > 0) {
+          token = token.substr(0, token.length - j);
+        }
+        if (!token.length)
+          continue;
+        var index = parseInt(token);
+        //console.log(index);
+        arrayOfIndices.push(index);
+      }
+      return arrayOfIndices;
+    };
+    // cfi1 <= cfi2
+    var cfiIsBeforeOrEqual = function (cfi1, cfi2) {
+      var i = 0;
+      while (i < cfi1.length && i < cfi2.length) {
+        if (cfi1[i] > cfi2[i])
+          return false;
+        i++;
+      }
+      return true;
+    };
+    /**
+     * Get spine item data in readium-shared-js accepted format.
+     * @param openPageRequest the original page request
+     * @returns The unmodified openPageRequest parameter if the rendition OPF is the same, or the modified openPageRequest parameter if the rendition OPF was mapped succesfully, or undefined if the OPF could not be mapped.
+     */
+    this.adjustPageRequestRenditionMapping = function (openPageRequest) {
+      if (!openPageRequest)
+        return undefined;
+      if (!multipleRenditions || !openPageRequest.opfPath)
+        return openPageRequest;
+      var rendition = multipleRenditions.renditions[multipleRenditions.selectedIndex];
+      if (rendition.opfPath == openPageRequest.opfPath)
+        return openPageRequest;
+      if (!multipleRenditions.mappings)
+        return undefined;
+      var nearestMapping = undefined;
+      console.log('ADJUSTING READING LOCATION');
+      console.debug(openPageRequest.elementCfi);
+      var cfi2 = cfiTokenise(openPageRequest.elementCfi);
+      for (var i = 0; i < multipleRenditions.mappings.length; i++) {
+        var mappingUL = multipleRenditions.mappings[i];
+        for (var j = 0; j < mappingUL.length; j++) {
+          var mapping = mappingUL[j];
+          if (openPageRequest.opfPath === mapping.opf && openPageRequest.idref === mapping.idref) {
+            var cfi1 = cfiTokenise(mapping.cfiPartial);
+            if (nearestMapping) {
+              var cfi3 = cfiTokenise(nearestMapping.cfiPartial);
+              if (cfiIsBeforeOrEqual(cfi1, cfi3)) {
+                break;
+              }
+            }
+            if (cfiIsBeforeOrEqual(cfi1, cfi2)) {
+              for (var k = 0; k < mappingUL.length; k++) {
+                var m = mappingUL[k];
+                if (rendition.opfPath === m.opf) {
+                  nearestMapping = m;
+                  break;
+                }
+              }
+              break;
+            }
+          }  //mapping.opf
+             //openPageRequest.opfPath
+             //mapping.idref
+             //openPageRequest.idref
+             //mapping.cfiPartial
+             //openPageRequest.elementCfi
+        }
+      }
+      if (nearestMapping) {
+        console.log('FOUND!');
+        console.debug(nearestMapping);
+        var elCfi = nearestMapping.cfiPartial;
+        var split = elCfi.split('/');
+        var lastIndex = split[split.length - 1];
+        var l = lastIndex.indexOf('@');
+        if (l > 0) {
+          lastIndex = lastIndex.substr(0, lastIndex.length - l);
+        }
+        var isOdd = lastIndex % 2 == 1;
+        if (isOdd) {
+          elCfi = '';
+          for (var k = 0; k < split.length - 1; k++) {
+            var index = split[k];
+            if (!index.length)
+              continue;
+            elCfi += '/' + index;
+          }
+          console.debug('ODD: ' + elCfi);
+        }
+        var l = elCfi.indexOf('@');
+        if (l < 0) {
+          elCfi += '@0:0';
+        }
+        openPageRequest.opfPath = nearestMapping.opf;
+        openPageRequest.idref = nearestMapping.idref;
+        openPageRequest.elementCfi = elCfi;
+        console.debug(JSON.stringify(openPageRequest));
+      } else {
+        console.log('RENDITION MAPPING NOT FOUND!');
+        openPageRequest = undefined;
+      }
+      return openPageRequest;
+    };
+  };
+  return MultipleRenditions;
+}();
+_readium_shared_js_views_reader_view = function (Globals, $, _, EventEmitter, FixedView, Helpers, IFrameLoader, InternalLinksSupport, MediaOverlayDataInjector, MediaOverlayPlayer, Package, Metadata, PageOpenRequest, ReflowableView, ScrollView, StyleCollection, Switches, Trigger, ViewerSettings, BookmarkData, NodeRangeInfo, ExternalAgentSupport, MultipleRenditions) {
   /**
    * Options passed on the reader from the readium loader/initializer
    *
@@ -40282,6 +40416,14 @@ _readium_shared_js_views_reader_view = function (Globals, $, _, EventEmitter, Fi
       return _userStyles;
     };
     /**
+     * Returns the EPUB3 Multiple Renditions data for the currently-opened ebook (initialised in this.openBook())
+     *
+     * @returns {ReadiumSDK.Models.MultipleRenditions} can be undefined
+     */
+    this.getMultipleRenditions = function () {
+      return _multipleRenditions;
+    };
+    /**
      * Open Book Data
      *
      * @typedef {object} Globals.Views.ReaderView.OpenBookData
@@ -40316,9 +40458,19 @@ _readium_shared_js_views_reader_view = function (Globals, $, _, EventEmitter, Fi
       if (openBookData.styles) {
         self.setStyles(openBookData.styles);
       }
+      if (openBookData.multipleRenditions) {
+        _multipleRenditions = new MultipleRenditions(openBookData.multipleRenditions);
+      } else {
+        _multipleRenditions = undefined;
+      }
       var pageRequestData = undefined;
       if (openBookData.openPageRequest && typeof openBookData.openPageRequest === 'function') {
         openBookData.openPageRequest = openBookData.openPageRequest();
+      }
+      if (openBookData.openPageRequest) {
+        if (_multipleRenditions) {
+          openBookData.openPageRequest = _multipleRenditions.adjustPageRequestRenditionMapping(openBookData.openPageRequest);
+        }
       }
       if (openBookData.openPageRequest) {
         if (openBookData.openPageRequest.idref || openBookData.openPageRequest.contentRefUrl && openBookData.openPageRequest.sourceFileHref) {
@@ -41422,7 +41574,7 @@ _readium_shared_js_views_reader_view = function (Globals, $, _, EventEmitter, Fi
   ReaderView.VIEW_TYPE_SCROLLED_DOC = 3;
   ReaderView.VIEW_TYPE_SCROLLED_CONTINUOUS = 4;
   return ReaderView;
-}(_readium_shared_js_globals, _jquery, _underscore, _eventEmitter, _readium_shared_js_views_fixed_view, _readium_shared_js_helpers, _readium_shared_js_views_iframe_loader, _readium_shared_js_views_internal_links_support, _readium_shared_js_views_media_overlay_data_injector, _readium_shared_js_views_media_overlay_player, _readium_shared_js_models_package, _readium_shared_js_models_metadata, _readium_shared_js_models_page_open_request, _readium_shared_js_views_reflowable_view, _readium_shared_js_views_scroll_view, _readium_shared_js_models_style_collection, _readium_shared_js_models_switches, _readium_shared_js_models_trigger, _readium_shared_js_models_viewer_settings, _readium_shared_js_models_bookmark_data, _readium_shared_js_models_node_range_info, _readium_shared_js_views_external_agent_support);
+}(_readium_shared_js_globals, _jquery, _underscore, _eventEmitter, _readium_shared_js_views_fixed_view, _readium_shared_js_helpers, _readium_shared_js_views_iframe_loader, _readium_shared_js_views_internal_links_support, _readium_shared_js_views_media_overlay_data_injector, _readium_shared_js_views_media_overlay_player, _readium_shared_js_models_package, _readium_shared_js_models_metadata, _readium_shared_js_models_page_open_request, _readium_shared_js_views_reflowable_view, _readium_shared_js_views_scroll_view, _readium_shared_js_models_style_collection, _readium_shared_js_models_switches, _readium_shared_js_models_trigger, _readium_shared_js_models_viewer_settings, _readium_shared_js_models_bookmark_data, _readium_shared_js_models_node_range_info, _readium_shared_js_views_external_agent_support, _readium_shared_js_models_multiple_renditions);
 _readium_shared_js_all = function (exports, Globals, GlobalsSetup, Helpers, PluginsController, BookmarkData, CurrentPagesInfo, FixedPageSpread, MediaOverlay, Metadata, NodeRangeInfo, Package, PackageData, PageOpenRequest, SmilIterator, SmilModel, Spine, SpineItem, Style, StyleCollection, Switches, Trigger, ViewerSettings, AudioPlayer, CfiNavigationLogic, ExternalAgentSupport, FixedView, IframeLoader, InternalLinksSupport, MediaOverlayDataInjector, MediaOverlayElementHighlighter, OnePageView, ReaderView, ReflowableView, ScrollView) {
   // Top Level
   exports.Globals = Globals;
