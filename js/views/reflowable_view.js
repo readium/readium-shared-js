@@ -602,6 +602,8 @@ var ReflowableView = function(options, reader){
         redraw();
 
         _.defer(function () {
+            resizeImages();
+
 
             if (_lastPageRequest == undefined) {
                 self.saveCurrentPosition();
@@ -1003,8 +1005,18 @@ var ReflowableView = function(options, reader){
             // if we set max-width/max-height to 100% columnizing engine chops images embedded in the text
             // (but not if we set it to 99-98%) go figure.
             // TODO: CSS min-w/h is content-box, not border-box (does not take into account padding + border)? => images may still overrun?
-            $elem.css('max-width', '98%');
-            $elem.css('max-height', '98%');
+            $elem.css('max-width', _$epubHtml.css("width"));
+            $elem.css('max-height', _$epubHtml.css("height"));
+
+            if ($elem.attr('height') == '100%')
+                $elem.css('height', _$epubHtml.css("height"));
+            else if (!$elem.css('height')) {
+                $elem.css('height', 'auto');
+            }
+
+            if (!$elem.css('width')) {
+                $elem.css('width', 'auto');
+            }
 
             if(!$elem.css('height')) {
                 $elem.css('height', 'auto');
