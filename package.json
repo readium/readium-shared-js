@@ -59,7 +59,7 @@
     "eventemitter3": "^3.1.0",
     "glob": "^7.1.2",
     "http-server": "github:danielweck/http-server#master",
-    "jquery": "2.x.x",
+    "jquery": "3.x.x",
     "jquery-sizes": "github:JCCR/jquery-sizes#master",
     "jshint": "^2.9.5",
     "json": "^9.0.6",
