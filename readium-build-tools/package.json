@@ -54,7 +54,7 @@
   "devDependencies": {
     "requirejs": "^2.3.5",
     "almond": "^0.3.3",
-    "jquery": "2.x.x",
+    "jquery": "3.x.x",
     "underscore": "^1.8.3",
     "pegjs": "^0.10.0",
     "karma": "^1.7.1",
