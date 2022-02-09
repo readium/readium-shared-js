@@ -1,6 +1,6 @@
 {
   "name": "readium-shared-js",
-  "version": "0.32.0",
+  "version": "0.33.0-alpha",
   "engines": {
     "node": ">=16",
     "npm": ">=8",
