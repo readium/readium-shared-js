@@ -133,7 +133,7 @@
     &&
         mv build-output/r.js
         build-output/_multiple-bundles/RequireJS.js
-    ||
+    &&
     npm run rimraf
         build-output/_multiple-bundles/RequireJS.js.src.js
 '
