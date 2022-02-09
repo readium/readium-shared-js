@@ -127,7 +127,7 @@
 '
 
 'postbuild:scripts:multiple': '
-    cpy
+    npm run cpy
         node_modules/requirejs/bin/r.js
         build-output/
     &&

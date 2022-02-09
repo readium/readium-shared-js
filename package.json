@@ -91,7 +91,7 @@
     "prebuild:scripts": "npm run genPluginsConfig --readium-shared-js:RJS_PLUGINS_OVERRIDE=no",
     "build:scripts": "npm run build:scripts:multiple --readium-shared-js:RJS_UGLY=no && npm run build:scripts:single --readium-shared-js:RJS_UGLY=no && npm run build:scripts:umd --readium-shared-js:RJS_UGLY=no",
     "build:scripts:multiple": "node ./node_modules/requirejs/bin/r.js -o ./readium-build-tools/RequireJS_config.js --rjs_bundle=multiple",
-    "postbuild:scripts:multiple": "cpy node_modules/requirejs/bin/r.js build-output/ && mv build-output/r.js build-output/_multiple-bundles/RequireJS.js || node ./node_modules/rimraf/bin.js build-output/_multiple-bundles/RequireJS.js.src.js",
+    "postbuild:scripts:multiple": "node ./node_modules/cpy-cli/cli.js node_modules/requirejs/bin/r.js build-output/ && mv build-output/r.js build-output/_multiple-bundles/RequireJS.js && node ./node_modules/rimraf/bin.js build-output/_multiple-bundles/RequireJS.js.src.js",
     "build:scripts:single": "node ./node_modules/requirejs/bin/r.js -o ./readium-build-tools/RequireJS_config.js --rjs_bundle=single",
     "build:scripts:umd": "node ./node_modules/requirejs/bin/r.js -o ./readium-build-tools/RequireJS_config.js --rjs_bundle=umd",
     "prebuild:styles": "mkdirp build-output/css/",
