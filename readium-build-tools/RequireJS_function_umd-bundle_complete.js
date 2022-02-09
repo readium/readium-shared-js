@@ -84,17 +84,17 @@ function (data) {
     rimraf.sync(outputPath); // Delete the original path as it was temporary
     
     console.log("UMD bundle created.");
-    var pathTo =  path.join(cleanedOutputPath, outputFileName);
-    var chain = sorcery.loadSync(pathTo, {
-        content: {
-            [newCodePath]: concatenatedContent,
-            [codePath]: code,
-        },
-        sourcemaps: {
-            [newMapPath]: sourceMapForContent,
-            [mapPath]: map
-        }
-    });
-    chain.writeSync(newCodePath);
-    console.log("UMD source map created.");
+    // var pathTo =  path.join(cleanedOutputPath, outputFileName);
+    // var chain = sorcery.loadSync(pathTo, {
+    //     content: {
+    //         [newCodePath]: concatenatedContent,
+    //         [codePath]: code,
+    //     },
+    //     sourcemaps: {
+    //         [newMapPath]: sourceMapForContent,
+    //         [mapPath]: map
+    //     }
+    // });
+    // chain.writeSync(newCodePath);
+    // console.log("UMD source map created.");
 }

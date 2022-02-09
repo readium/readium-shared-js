@@ -107,10 +107,10 @@ function (Globals, $, console_shim, es6Shim, EventEmitter, URI, EPUBcfi, Plugins
             console.error("Plugins failed to initialize:", ex);
         }
 
-        _.defer(function() {
+        setTimeout(function() {
             Globals.logEvent("PLUGINS_LOADED", "EMIT", "globalsSetup.js");
             Globals.emit(Globals.Events.PLUGINS_LOADED, reader);
-        });
+        }, 0);
     });
 
     if (window._RJS_isBrowser) {

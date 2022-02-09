@@ -17,7 +17,7 @@ fs.writeFileSync(rjsPath,
   
   rjs.replace('sourceMapGenerator.setSourceContent(sourceMapPath, singleContents);', 'if ((typeof config.sourceMapIncludeSources === "undefined") || config.sourceMapIncludeSources) sourceMapGenerator.setSourceContent( sourceMapPath,singleContents );')
   
-  .replace('resultMap = finalMap.toString();', 'resultMap=finalMap.toString() ; if ((typeof uconfig.sourceMapIncludeSources !== "undefined") && !uconfig.sourceMapIncludeSources) { resultMap = resultMap.replace(/,"sourcesContent":\\[[\\s\\S]*/, "}"); }')
+  .replace('resultMap = result.map;', 'resultMap=result.map ; if ((typeof uconfig.sourceMapIncludeSources !== "undefined") && !uconfig.sourceMapIncludeSources) { resultMap = resultMap.replace(/,"sourcesContent":\\[[\\s\\S]*/, "}"); }')
   /*
   
                                 var parsedSourceMap = JSON.parse(resultMap);

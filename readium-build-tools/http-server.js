@@ -192,7 +192,7 @@ child.on('close', function(code) {
 
 
 if (PATH) {
-    var child2 = child_process.spawn('node', ['node_modules/opener/opener.js', 'http://'+(IP=="0.0.0.0"?localIP:IP)+':'+PORT+PATH]);
+    var child2 = child_process.spawn('node', ['node_modules/opener/bin/opener-bin.js', 'http://'+(IP=="0.0.0.0"?localIP:IP)+':'+PORT+PATH]);
     child2.stdout.on('data', function(data) {
         console.log(data.toString());
     });
