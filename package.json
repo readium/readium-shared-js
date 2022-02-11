@@ -59,7 +59,7 @@
     "eventemitter3": "^3.1.0",
     "glob": "^7.1.2",
     "http-server": "github:readium/http-server#9c6e56279af34381a5dae640b7d73762e8135bd7",
-    "jquery": "2.x.x",
+    "jquery": "3.x.x",
     "jquery-sizes": "github:readium/jquery-sizes#d26d2510d069f84a64052c443a06b8534c5e9d0e",
     "jshint": "^2.9.5",
     "json": "^9.0.6",
