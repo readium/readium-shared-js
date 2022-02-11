@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project
+  xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.readium</groupId>
+  <artifactId>readium-shared-js</artifactId>
+  <version>0.20.0-alpha</version>
+
+  <packaging>jar</packaging>
+  <description>Readium SDK (Shared JavaScript components)</description>
+  <url>https://github.com/readium/readium-shared-js</url>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+  </properties>
+
+  <scm>
+    <url>https://github.com/readium/readium-shared-js</url>
+    <connection>scm:https://github.com/readium/readium-shared-js</connection>
+    <developerConnection>scm:https://github.com/readium/readium-shared-js</developerConnection>
+  </scm>
+
+  <issueManagement>
+    <url>https://github.com/readium/readium-shared-js/issues</url>
+    <system>GitHub</system>
+  </issueManagement>
+
+  <distributionManagement>
+    <site>
+      <id>GitHub</id>
+      <name>GitHub</name>
+      <url>${project.url}</url>
+    </site>
+  </distributionManagement>
+
+  <licenses>
+    <license>
+      <name>3-Clause BSD License</name>
+      <url>http://opensource.org/licenses/BSD-3-Clause</url>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <name>Daniel Weck</name>
+      <email>daniel.weck@gmail.com</email>
+      <organization>Readium Foundation</organization>
+      <organizationUrl>http://readium.org/</organizationUrl>
+    </developer>
+    <developer>
+      <name>Mark Raynsford</name>
+      <email>code@io7m.com</email>
+      <roles>
+        <role>Maven operator</role>
+      </roles>
+    </developer>
+  </developers>
+
+  <prerequisites>
+    <maven>3.2.1</maven>
+  </prerequisites>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-clean-plugin</artifactId>
+          <version>2.6.1</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-deploy-plugin</artifactId>
+          <version>2.8.2</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-install-plugin</artifactId>
+          <version>2.5.2</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-resources-plugin</artifactId>
+          <version>2.7</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-source-plugin</artifactId>
+          <version>2.4</version>
+        </plugin>
+
+        <!-- Produce custom manifest in jar files -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>2.6</version>
+          <configuration>
+            <archive>
+              <manifestEntries>
+                <Specification-Title>${project.name}</Specification-Title>
+                <Specification-Version>${project.version}</Specification-Version>
+                <Specification-Vendor>Readium Foundation</Specification-Vendor>
+                <Implementation-Title>${project.name}</Implementation-Title>
+                <Implementation-Version>${project.version}</Implementation-Version>
+                <Implementation-Vendor>Readium Foundation</Implementation-Vendor>
+                <Implementation-Vendor-Id>${project.groupId}</Implementation-Vendor-Id>
+                <Sealed>true</Sealed>
+              </manifestEntries>
+            </archive>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
+    <!-- Pack all resources into the package -->
+    <resources>
+      <resource>
+        <directory>build-output/_single-bundle</directory>
+        <includes>
+          <include>readium-shared-js_all.js</include>
+          <include>readium-shared-js_all.js.bundles.js</include>
+          <include>readium-shared-js_all.js.map</include>
+        </includes>
+      </resource>
+      <resource>
+        <directory>build-output/css</directory>
+        <includes>
+          <include>sdk.css</include>
+        </includes>
+      </resource>
+    </resources>
+
+    <!-- Produce a jar of the JS output, and empty sources and javadoc jars. -->
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>default-jar</id>
+            <phase>package</phase>
+            <goals><goal>jar</goal></goals>
+          </execution>
+          <execution>
+            <id>source-jar</id>
+            <phase>package</phase>
+            <goals><goal>jar</goal></goals>
+            <configuration>
+              <excludes>
+                <exclude>**/**</exclude>
+              </excludes>
+              <classifier>sources</classifier>
+            </configuration>
+          </execution>
+          <execution>
+            <id>javadoc-jar</id>
+            <phase>package</phase>
+            <goals><goal>jar</goal></goals>
+            <configuration>
+              <excludes>
+                <exclude>**/**</exclude>
+              </excludes>
+              <classifier>javadoc</classifier>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <!-- Optionally PGP sign artifacts. -->
+  <profiles>
+    <profile>
+      <id>readium-sign</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.6</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
+</project>
